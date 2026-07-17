@@ -2494,27 +2494,19 @@ export function App() {
 					<WorkspaceOnboardingNoticeBars />
 					<AppRouter />
 
-					{/* <VoiceAssistantUI 
-          onNavigate={(view) => {
-            setCurrentView(view);
-            window.location.hash = view;
-          }}
-          onSearchQuery={(q) => {
-            setQuery(q);
-          }}
-          onDateChange={(date) => {
-            setScheduleDateFilter(date);
-          }}
-        />
-        <Omnibar />
-        <CommandPalette 
-          patients={filteredPatients} 
-          onSelectPatient={(id) => {
-            setSelectedPatientId(id);
-            setCurrentView("patients");
-          }} 
-          onNavigate={(view) => setCurrentView(view as any)} 
-        /> */}
+					<VoiceAssistantUI 
+						onNavigate={(view) => {
+							setCurrentView(view);
+							window.location.hash = view;
+						}}
+						onSearchQuery={(q) => {
+							setQuery(q);
+						}}
+						onDateChange={(date) => {
+							setScheduleDateFilter(date);
+						}}
+					/>
+					<Omnibar />
 				</section>
 				<IncomingCallToast />
 			</main>

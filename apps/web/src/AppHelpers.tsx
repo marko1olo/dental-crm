@@ -8142,6 +8142,9 @@ export const settingsTabs = [
 	{ id: "imports", title: "Импорт" },
 	{ id: "audit", title: "Аудит" },
 	{ id: "modules", title: "Модули" },
+	{ id: "marketing", title: "Маркетинг" },
+	{ id: "bpmn", title: "Бизнес-процессы" },
+	{ id: "reporting", title: "Отчетность" },
 ] as const;
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 export type AdminSecretSessionDomain =

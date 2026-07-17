@@ -32,6 +32,8 @@ export interface WorkspaceFeatureFlags {
 	aiEnableDocuments: boolean;
 	hasEngineeringStatus: boolean;
 	hasClinicalRules: boolean;
+	hasReferralModule: boolean;
+	hasBpmWorkflows: boolean;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
@@ -67,6 +69,8 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	aiEnableDocuments: true,
 	hasEngineeringStatus: false,
 	hasClinicalRules: false,
+	hasReferralModule: false,
+	hasBpmWorkflows: false,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -111,6 +115,8 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				aiEnableDocuments: s.aiEnableDocuments,
 				hasEngineeringStatus: s.hasEngineeringStatus,
 				hasClinicalRules: s.hasClinicalRules,
+				hasReferralModule: s.hasReferralModule,
+				hasBpmWorkflows: s.hasBpmWorkflows,
 			}),
 		},
 	),

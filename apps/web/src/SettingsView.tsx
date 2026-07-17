@@ -157,6 +157,10 @@ import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
 import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
+import { SettingsBpmnTab } from "./components/settings/SettingsBpmnTab";
+import { SettingsMarketingTab } from "./components/settings/SettingsMarketingTab";
+import { SettingsReportingTab } from "./components/settings/SettingsReportingTab";
+
 import {
 	clinicalRuleOwnerRoles,
 	clinicPublicLookupFieldLabels,
@@ -314,7 +318,10 @@ type SettingsTabId =
 	| "imports"
 	| "audit"
 	| "inventory"
-	| "modules";
+	| "modules"
+	| "marketing"
+	| "bpmn"
+	| "reporting";
 type SettingsTab = { id: SettingsTabId; title: string };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
@@ -1238,9 +1245,22 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 						.map(renderTabButton)}
 				</div>
 				<div className="settings-tabs-group">
+					<span className="settings-tabs-group-header">Маркетинг</span>
+					{typedSettingsTabs
+						.filter((t) => {
+							if (t.id === "marketing") return activeWorkspaceProfile?.hasMarketingModule;
+							if (t.id === "bpmn") return activeWorkspaceProfile?.hasBpmWorkflows;
+							return false;
+						})
+						.map(renderTabButton)}
+				</div>
+				<div className="settings-tabs-group">
 					<span className="settings-tabs-group-header">Системные</span>
 					{typedSettingsTabs
-						.filter((t) => ["sources", "imports", "audit"].includes(t.id))
+						.filter((t) => {
+							if (t.id === "reporting" && !activeWorkspaceProfile?.hasAnalyticsModule) return false;
+							return ["sources", "imports", "audit", "reporting"].includes(t.id);
+						})
 						.map(renderTabButton)}
 				</div>
 			</div>
@@ -1362,6 +1382,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
 				{settingsTab === "ai" ? <SettingsAiTab /> : null}
 				{settingsTab === "modules" ? <SettingsModulesTab /> : null}
+				{settingsTab === "marketing" && activeWorkspaceProfile?.hasMarketingModule ? <SettingsMarketingTab /> : null}
+				{settingsTab === "bpmn" && activeWorkspaceProfile?.hasBpmWorkflows ? <SettingsBpmnTab /> : null}
+				{settingsTab === "reporting" && activeWorkspaceProfile?.hasAnalyticsModule ? <SettingsReportingTab /> : null}
 
 				<SettingsImportsTab />
 				<SettingsAuditTab />
