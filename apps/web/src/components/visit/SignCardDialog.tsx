@@ -112,7 +112,7 @@ export function SignCardDialog({ isOpen, onClose, visitId, patientId, diaryConte
 						animate={{ scale: 1, opacity: 1, y: 0 }}
 						exit={{ scale: 0.95, opacity: 0, y: 20 }}
 						transition={{ type: "spring", damping: 25, stiffness: 300 }}
-					> e.stopPropagation()}>
+					>
 				<div className="sign-dialog-header">
 					<div className="sign-dialog-title-row">
 						<Lock className="sign-dialog-icon" />

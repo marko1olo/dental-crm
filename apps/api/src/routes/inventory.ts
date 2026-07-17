@@ -49,6 +49,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			criticalThreshold?: number;
 			unitCostRub?: number;
 			stockQuantity?: number;
+			sku?: string | null;
+			barcode?: string | null;
 		};
 	}>("/:organizationId", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -68,6 +70,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			criticalThreshold = 5,
 			unitCostRub = 0,
 			stockQuantity = 0,
+			sku = null,
+			barcode = null,
 		} = request.body;
 		if (!name?.trim()) {
 			return reply.status(400).send({ error: "Name is required" });
@@ -81,6 +85,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				criticalThreshold: Math.max(0, criticalThreshold),
 				unitCostRub: Math.max(0, unitCostRub).toString(),
 				stockQuantity: Math.max(0, stockQuantity),
+				sku: sku?.trim() || null,
+				barcode: barcode?.trim() || null,
 			})
 			.returning();
 
@@ -158,10 +164,16 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		return updated;
 	});
 
-	// PUT update inventory item properties (staff/admin only)
+	// PUT update inventory item details (staff/admin only)
 	server.put<{
 		Params: { organizationId: string; itemId: string };
-		Body: { name: string; criticalThreshold?: number; unitCostRub?: number };
+		Body: {
+			name: string;
+			criticalThreshold?: number;
+			unitCostRub?: number;
+			sku?: string | null;
+			barcode?: string | null;
+		};
 	}>("/:organizationId/:itemId", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,

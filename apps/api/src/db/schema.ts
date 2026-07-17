@@ -1672,6 +1672,8 @@ export const inventoryItems = pgTable("inventory_items", {
 	unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 })
 		.notNull()
 		.default("0"),
+	sku: text("sku"),
+	barcode: text("barcode"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

@@ -3,7 +3,7 @@ import type {
 	Patient,
 	PatientAdministrativeProfile,
 } from "@dental/shared";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
@@ -349,11 +349,17 @@ export function PatientsView(props: PatientsViewProps) {
 			>
 				<aside className="patients-sidebar-column">
 					<div className="patient-list">
+						<AnimatePresence mode="popLayout">
 						{filteredPatients.map((patient) => {
 							const insight = patientInsightById.get(patient.id);
 							const patientIsSelected = selectedPatient?.id === patient.id;
 							return (
-								<article
+								<motion.article
+									layout
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, scale: 0.95 }}
+									transition={{ type: "spring", stiffness: 300, damping: 25 }}
 									className={`patient-row ${insight ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
 									key={patient.id}
 								>
@@ -384,9 +390,10 @@ export function PatientsView(props: PatientsViewProps) {
 									>
 										<ArrowRight aria-hidden="true" />
 									</button>
-								</article>
+								</motion.article>
 							);
 						})}
+						</AnimatePresence>
 						{filteredPatients.length === 0 ? (
 							<article className="patient-empty-state">
 								<Search aria-hidden="true" />

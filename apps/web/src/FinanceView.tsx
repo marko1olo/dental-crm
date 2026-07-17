@@ -275,7 +275,7 @@ export function FinanceView({
 				serviceCatalog={dashboard.serviceCatalog}
 				treatmentItems={activeTreatmentPlanItems}
 				treatmentStatusLabels={treatmentStatusLabels}
-				onCreateDocument={onCreateDocument}
+				{...(onCreateDocument ? { onCreateDocument } : {})}
 			/>
 
 			<ServiceCatalogStrip

@@ -103,11 +103,15 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
 					
 					// Optional: Auto-filter the list or open the "Add" modal for this item
-					const found = items.find(i => i.barcode === barcodeBuffer);
+					const found = items.find((i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer);
 					if (found) {
 						showToast(`Найден товар: ${found.name}`, "info");
+						setSearchQuery(barcodeBuffer);
 					} else {
 						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
+						setFormData({ name: "", threshold: "5", unitCostRub: "0", sku: "", barcode: barcodeBuffer });
+						setEditingItem(null);
+						setShowModal(true);
 					}
 				}
 				barcodeBuffer = "";
@@ -186,6 +190,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		name: "",
 		threshold: "5",
 		unitCostRub: "0",
+		sku: "",
+		barcode: "",
 	});
 
 	// Adjust Modal
@@ -223,7 +229,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 
 	const openAddModal = () => {
 		setEditingItem(null);
-		setFormData({ name: "", threshold: "5", unitCostRub: "0" });
+		setFormData({ name: "", threshold: "5", unitCostRub: "0", sku: "", barcode: "" });
 		setShowModal(true);
 	};
 
@@ -233,6 +239,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 			name: item.name,
 			threshold: String(item.criticalThreshold),
 			unitCostRub: item.unitCostRub || "0",
+			sku: item.sku || "",
+			barcode: item.barcode || "",
 		});
 		setShowModal(true);
 	};
@@ -255,6 +263,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							name: formData.name.trim(),
 							criticalThreshold: threshold,
 							unitCostRub: unitCost,
+							sku: formData.sku.trim() || null,
+							barcode: formData.barcode.trim() || null,
 						}),
 					},
 				);
@@ -276,6 +286,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						criticalThreshold: threshold,
 						unitCostRub: unitCost,
 						stockQuantity: 0,
+						sku: formData.sku.trim() || null,
+						barcode: formData.barcode.trim() || null,
 					}),
 				});
 				if (res.ok) {

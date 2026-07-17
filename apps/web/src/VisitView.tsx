@@ -564,84 +564,52 @@ export function VisitView() {
 					style={{
 						display: "flex",
 						gap: "8px",
-						borderBottom: "1px solid var(--line)",
-						marginBottom: "16px",
+						borderBottom: "1px solid var(--glass-border)",
+						marginBottom: "24px",
 						padding: "0 24px",
+						position: "relative"
 					}}
 				>
-					<button
-						type="button"
-						className={activeVisitTab === "diary" ? "active" : ""}
-						onClick={() => setActiveVisitTab("diary")}
-						style={{
-							padding: "8px 16px",
-							background:
-								activeVisitTab === "diary" ? "var(--teal)" : "transparent",
-							color: activeVisitTab === "diary" ? "white" : "var(--slate-600)",
-							borderRadius: "8px",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Осмотр
-					</button>
-					<button
-						type="button"
-						className={activeVisitTab === "odontogram" ? "active" : ""}
-						onClick={() => setActiveVisitTab("odontogram")}
-						style={{
-							padding: "8px 16px",
-							background:
-								activeVisitTab === "odontogram" ? "var(--teal)" : "transparent",
-							color:
-								activeVisitTab === "odontogram" ? "white" : "var(--slate-600)",
-							borderRadius: "8px",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Зубная формула и Дневник
-					</button>
-					<button
-						type="button"
-						className={activeVisitTab === "diagnostics" ? "active" : ""}
-						onClick={() => setActiveVisitTab("diagnostics")}
-						style={{
-							padding: "8px 16px",
-							background:
-								activeVisitTab === "diagnostics"
-									? "var(--teal)"
-									: "transparent",
-							color:
-								activeVisitTab === "diagnostics" ? "white" : "var(--slate-600)",
-							borderRadius: "8px",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Снимки и Анализы
-					</button>
-					<button
-						type="button"
-						className={activeVisitTab === "conclusion" ? "active" : ""}
-						onClick={() => setActiveVisitTab("conclusion")}
-						style={{
-							padding: "8px 16px",
-							background:
-								activeVisitTab === "conclusion" ? "var(--teal)" : "transparent",
-							color:
-								activeVisitTab === "conclusion" ? "white" : "var(--slate-600)",
-							borderRadius: "8px",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Заключение
-					</button>
+					{[
+						{ id: "diary", label: "Осмотр" },
+						{ id: "odontogram", label: "Зубная формула и Дневник" },
+						{ id: "diagnostics", label: "Снимки и Анализы" },
+						{ id: "conclusion", label: "Заключение" }
+					].map((tab) => (
+						<button
+							key={tab.id}
+							type="button"
+							className={`nav-item ${activeVisitTab === tab.id ? "active" : ""}`}
+							onClick={() => setActiveVisitTab(tab.id as any)}
+							style={{
+								padding: "12px 20px",
+								background: "transparent",
+								border: "none",
+								cursor: "pointer",
+								fontWeight: activeVisitTab === tab.id ? 700 : 500,
+								color: activeVisitTab === tab.id ? "var(--text-primary)" : "var(--text-secondary)",
+								position: "relative",
+								transition: "color 0.2s"
+							}}
+						>
+							{tab.label}
+							{activeVisitTab === tab.id && (
+								<motion.div
+									layoutId="visit-tab-indicator"
+									style={{
+										position: "absolute",
+										bottom: -1,
+										left: 0,
+										right: 0,
+										height: 3,
+										background: "var(--teal)",
+										borderRadius: "3px 3px 0 0",
+										boxShadow: "0 0 10px rgba(13, 148, 136, 0.5)"
+									}}
+								/>
+							)}
+						</button>
+					))}
 				</div>
 
 				<div style={{ display: activeVisitTab === "diary" ? "block" : "none" }}>
