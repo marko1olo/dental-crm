@@ -162,23 +162,30 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	};
 
 	const handleDeleteRule = async (ruleId: string) => {
-		if (!window.confirm("Удалить это правило списания?")) return;
-		try {
-			const res = await fetch(`/api/inventory/${organizationId}/rules/${ruleId}`, {
-				method: "DELETE",
-				headers: auth.denteClinicalReadHeaders(),
-			});
+		setConfirmDialog({
+			isOpen: true,
+			title: "Удалить правило?",
+			message: "Удалить это правило списания? Это действие необратимо.",
+			onConfirm: async () => {
+				setConfirmDialog(null);
+				try {
+					const res = await fetch(`/api/inventory/${organizationId}/rules/${ruleId}`, {
+						method: "DELETE",
+						headers: auth.denteClinicalReadHeaders(),
+					});
 
-			if (res.ok) {
-				showToast("Правило списания удалено", "success");
-				fetchRules(selectedServiceId);
-			} else {
-				showToast("Ошибка удаления правила", "error");
+					if (res.ok) {
+						showToast("Правило списания удалено", "success");
+						fetchRules(selectedServiceId);
+					} else {
+						showToast("Ошибка удаления правила", "error");
+					}
+				} catch (e) {
+					console.error(e);
+					showToast("Системная ошибка", "error");
+				}
 			}
-		} catch (e) {
-			console.error(e);
-			showToast("Системная ошибка", "error");
-		}
+		});
 	};
 
 	const [searchQuery, setSearchQuery] = useState("");
@@ -193,6 +200,14 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		sku: "",
 		barcode: "",
 	});
+
+	// Confirm Dialog State
+	const [confirmDialog, setConfirmDialog] = useState<{
+		isOpen: boolean;
+		title: string;
+		message: string;
+		onConfirm: () => void;
+	} | null>(null);
 
 	// Adjust Modal
 	const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(
@@ -305,25 +320,29 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	};
 
 	const handleDeleteItem = async (itemId: string, name: string) => {
-		if (
-			!window.confirm(`Удалить «${name}» со склада? Это действие необратимо.`)
-		)
-			return;
-		try {
-			const res = await fetch(`/api/inventory/${organizationId}/${itemId}`, {
-				method: "DELETE",
-				headers: auth.denteClinicalReadHeaders(),
-			});
-			if (res.ok) {
-				showToast("Материал удалён со склада", "success");
-				fetchItems();
-			} else {
-				showToast("Ошибка удаления", "error");
+		setConfirmDialog({
+			isOpen: true,
+			title: "Удалить материал?",
+			message: `Удалить «${name}» со склада? Это действие необратимо.`,
+			onConfirm: async () => {
+				setConfirmDialog(null);
+				try {
+					const res = await fetch(`/api/inventory/${organizationId}/${itemId}`, {
+						method: "DELETE",
+						headers: auth.denteClinicalReadHeaders(),
+					});
+					if (res.ok) {
+						showToast("Материал удалён со склада", "success");
+						fetchItems();
+					} else {
+						showToast("Ошибка удаления", "error");
+					}
+				} catch (e) {
+					console.error(e);
+					showToast("Системная ошибка", "error");
+				}
 			}
-		} catch (e) {
-			console.error(e);
-			showToast("Системная ошибка", "error");
-		}
+		});
 	};
 
 	const handleAdjustStock = async (e: React.FormEvent) => {
