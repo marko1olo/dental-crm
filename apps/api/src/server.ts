@@ -1,6 +1,9 @@
 import { RecallScheduler } from "./services/recallScheduler.js";
 import "dotenv/config";
+import fs from "node:fs";
 import net from "node:net";
+import nodePath from "node:path";
+import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
@@ -75,6 +78,41 @@ import { startWatchdog } from "./watchdog.js";
 loadAdditionalServerEnv();
 startWatchdog();
 // startNotificationWorker();
+
+/**
+ * Runs all .sql files in src/db/migrations/ at server startup.
+ * Uses IF NOT EXISTS guards so it's idempotent on existing databases.
+ */
+async function runPendingMigrations() {
+	const __dirname = nodePath.dirname(fileURLToPath(import.meta.url));
+	const migrationsDir = nodePath.resolve(__dirname, "./db/migrations");
+	if (!fs.existsSync(migrationsDir)) return;
+	const files = fs
+		.readdirSync(migrationsDir)
+		.filter((f) => f.endsWith(".sql"))
+		.sort();
+	for (const file of files) {
+		const sql = fs.readFileSync(nodePath.join(migrationsDir, file), "utf8");
+		const statements = sql
+			.split(/;(\r?\n|$)/)
+			.map((s) => s.replace(/--[^\n]*/g, "").trim())
+			.filter(Boolean);
+		for (const stmt of statements) {
+			try {
+				await (db.$client as any).exec(stmt);
+			} catch (err: any) {
+				if (
+					err?.message?.includes("already exists") ||
+					err?.message?.includes("duplicate column")
+				) {
+					// Column already exists — that's fine
+				} else {
+					console.warn(`[Migrations] ${file}: ${err?.message?.slice(0, 120)}`);
+				}
+			}
+		}
+	}
+}
 
 async function checkProxyPortDirectly(
 	proxyUrlString: string,
@@ -298,6 +336,9 @@ export async function createDenteApiApp(
 		service: "dental-crm-api",
 		time: new Date().toISOString(),
 	}));
+
+	// Apply pending schema migrations on every startup (idempotent)
+	await runPendingMigrations();
 
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);

@@ -24,6 +24,7 @@ export function PatientCockpit() {
 		activeCommunicationTasks,
 		activeImagingStudies,
 		activeUsableDocuments,
+		patientBillingSummary,
 	} = useAppLogicContext();
 
 	if (!activePatient) {
@@ -288,8 +289,8 @@ export function PatientCockpit() {
 						<div>
 							<h3>Оплаты</h3>
 							<p className="tile-meta">
-								{money(dashboard?.billingSummary?.totalPaidRub || 0)} · долг{" "}
-								{money(dashboard?.billingSummary?.totalDueRub || 0)}
+								{money(patientBillingSummary?.totalPaidRub || 0)} · долг{" "}
+								{money(patientBillingSummary?.totalDueRub || 0)}
 							</p>
 						</div>
 					</motion.article>

@@ -1,6 +1,8 @@
-import { ClipboardCheck, ImageIcon, Phone } from "lucide-react";
+import { ClipboardCheck, ImageIcon, Phone, CalendarClock, CreditCard, PlayCircle, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { money } from "../../../AppHelpers";
 
 export function ActivePatientHero() {
 	const {
@@ -10,6 +12,21 @@ export function ActivePatientHero() {
 		dashboard,
 		setError,
 	} = useAppLogicContext();
+
+	const patientAppointment = useMemo(() => {
+		if (!dashboard?.appointments || !activePatient) return null;
+		return dashboard.appointments.find((app: any) => app.patientId === activePatient.id);
+	}, [dashboard, activePatient]);
+
+	const patientDebt = useMemo(() => {
+		if (!dashboard?.patientInsights || !activePatient) return 0;
+		const insight = dashboard.patientInsights.find((i: any) => i.patientId === activePatient.id);
+		return insight?.balanceDueRub || 0;
+	}, [dashboard, activePatient]);
+
+	const visitActive = !!dashboard?.activeVisit;
+	const isCompleted = patientAppointment?.status === "completed";
+	const needsPayment = patientDebt > 0;
 
 	return (
 		<motion.div
@@ -51,6 +68,15 @@ export function ActivePatientHero() {
 						<button
 							className="secondary-button"
 							type="button"
+							onClick={() => {
+								window.location.hash = "finance";
+							}}
+						>
+							<CreditCard aria-hidden="true" /> Касса
+						</button>
+						<button
+							className="secondary-button"
+							type="button"
 							aria-describedby={
 								!activePatientHasCallablePhone
 									? "shift-call-guidance"
@@ -77,16 +103,18 @@ export function ActivePatientHero() {
 						</button>
 					</div>
 
-					{/* Compact Status Tracker */}
+					{/* Intelligent Dynamic Status Tracker */}
 					<div
 						style={{
 							display: "flex",
 							gap: "12px",
 							marginTop: "16px",
-							padding: "8px 12px",
+							padding: "12px 16px",
 							alignItems: "center",
+							background: isCompleted && !needsPayment ? "var(--green-soft)" : "rgba(255,255,255,0.05)",
+							borderRadius: "12px",
+							border: "1px solid rgba(255,255,255,0.1)"
 						}}
-						className="glass-panel"
 					>
 						<span
 							style={{
@@ -101,26 +129,36 @@ export function ActivePatientHero() {
 							style={{
 								display: "flex",
 								alignItems: "center",
-								gap: "4px",
-								fontSize: "12px",
+								gap: "6px",
+								fontSize: "13px",
 							}}
 						>
-							<span style={{ color: "var(--teal)", fontWeight: 600 }}>
-								1. Запись
+							<span style={{ 
+								display: "flex", alignItems: "center", gap: "4px",
+								color: patientAppointment ? "var(--teal)" : "var(--muted)", 
+								fontWeight: patientAppointment ? 600 : 400 
+							}}>
+								<CalendarClock size={14} /> 1. Запись {patientAppointment?.status === 'arrived' && '(Ожидает)'}
 							</span>
 							<span style={{ color: "var(--muted)" }}>→</span>
 							<span
 								style={{
-									color: dashboard?.activeVisit
-										? "var(--teal)"
-										: "var(--muted)",
-									fontWeight: dashboard?.activeVisit ? 600 : 400,
+									display: "flex", alignItems: "center", gap: "4px",
+									color: visitActive || isCompleted ? "var(--teal)" : "var(--muted)",
+									fontWeight: visitActive ? 600 : 400,
 								}}
 							>
-								2. ЭМК
+								<PlayCircle size={14} /> 2. ЭМК {visitActive && '(В процессе)'}
 							</span>
 							<span style={{ color: "var(--muted)" }}>→</span>
-							<span style={{ color: "var(--muted)" }}>3. Оплата</span>
+							<span style={{ 
+								display: "flex", alignItems: "center", gap: "4px",
+								color: needsPayment ? "var(--amber)" : isCompleted ? "var(--green)" : "var(--muted)",
+								fontWeight: needsPayment ? 600 : 400
+							}}>
+								<CreditCard size={14} /> 3. Оплата 
+								{needsPayment ? `(Долг ${money(patientDebt)})` : (isCompleted ? "(Оплачено)" : "")}
+							</span>
 						</div>
 					</div>
 
@@ -138,9 +176,9 @@ export function ActivePatientHero() {
 					) : null}
 				</>
 			) : (
-				<div style={{ padding: "20px 0", color: "#6b7280", fontSize: "15px" }}>
-					Нет активного приема. Выберите пациента или запланируйте запись в
-					расписании.
+				<div style={{ padding: "20px 0", color: "#6b7280", fontSize: "15px", display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+					<CheckCircle2 size={48} color="var(--line-strong)" strokeWidth={1} />
+					<span>Нет активного приема. Выберите пациента или запланируйте запись в расписании.</span>
 				</div>
 			)}
 		</motion.div>

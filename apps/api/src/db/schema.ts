@@ -1035,6 +1035,7 @@ export const communicationEvents = pgTable("communication_events", {
 	direction: communicationDirection("direction").notNull(),
 	status: communicationStatus("status").notNull(),
 	message: text("message").notNull(),
+	readAt: timestamp("read_at", { withTimezone: true }),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),
