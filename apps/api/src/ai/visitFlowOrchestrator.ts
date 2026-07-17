@@ -57,7 +57,7 @@ function extractPlanPayload(
 		risksAndLimitations: ["Стандартные риски медицинского вмешательства"],
 		prognosisAndLimits: "Прогноз благоприятный при соблюдении рекомендаций",
 		controlPlan: "Профилактический осмотр через 6 месяцев",
-		doctorFullName: "Врач DENTE", // This could be passed in request if needed
+		doctorFullName: request.doctorFullName || "Лечащий врач", // This could be passed in request if needed
 		plannedAt: new Date().toISOString(),
 		patientQuestionsAnswered: true,
 		planRequiresSeparateConsent: true,
@@ -104,7 +104,7 @@ function extractRecommendationsPayload(
 		procedureName,
 		toothOrArea: "Полость рта",
 		performedAt: new Date().toISOString(),
-		doctorFullName: "Лечащий врач",
+		doctorFullName: request.doctorFullName || "Лечащий врач",
 		allowedAfter: ["Через 2 часа после окончания действия анестезии"],
 		temporaryRestrictions: ["Ограничить физические нагрузки", "Не греть область вмешательства"],
 		medicationAndRinsePlan: ["По назначению врача"],
@@ -164,7 +164,12 @@ export async function runVisitFlow(
 			const personalized = await personalizeTreatmentPlan(payload);
 			result.plan.data = {
 				...payload,
-				...personalized,
+				alternatives: personalized.alternatives ?? payload.alternatives,
+				risksAndLimitations: personalized.risksAndLimitations ?? payload.risksAndLimitations,
+				prognosisAndLimits: personalized.prognosisAndLimits ?? payload.prognosisAndLimits,
+				controlPlan: personalized.controlPlan ?? payload.controlPlan,
+				patientFriendlyExplanation: personalized.patientFriendlyExplanation,
+				patientHygieneAdvice: personalized.patientHygieneAdvice,
 			};
 			result.plan.status = "success";
 		} catch (error) {

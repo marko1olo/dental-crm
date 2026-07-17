@@ -1038,6 +1038,7 @@ export function useVisitLogic({
 					specialty: selectedSpecialty,
 					source: "voice",
 					completedServices: dashboard?.activeVisit?.completedServices ?? [],
+					doctorFullName: activeDoctor?.fullName ?? undefined,
 					planPayload: null, // extracted inside flow
 					recommendationsPayload: null,
 				}),

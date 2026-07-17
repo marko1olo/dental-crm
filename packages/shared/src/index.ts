@@ -10719,6 +10719,7 @@ export const visitFlowRequestSchema = z.object({
 	specialty: dentalSpecialtySchema.default("universal"),
 	source: z.enum(["voice", "typed", "image"]).default("voice"),
 	completedServices: z.array(visitServiceItemSchema).optional(),
+	doctorFullName: z.string().trim().min(1).max(180).optional(),
 	planPayload: treatmentPlanPayloadSchema.optional().nullable(),
 	recommendationsPayload: postVisitRecommendationsPayloadSchema.optional().nullable(),
 	orchestratorConfig: z.object({

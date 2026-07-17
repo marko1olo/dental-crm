@@ -1,3 +1,176 @@
+
+import {
+	fetchWithProviderTimeout,
+	getProviderKeyPoolSummary,
+	keyRetryLimit,
+	numberFromEnv,
+	providerHttpError,
+	recordProviderKeyFailure,
+	recordProviderKeySuccess,
+	selectProviderKey,
+	shouldTryNextProviderKey,
+} from "../speech/keyPool.js";
+
+import {
+	createAIPlanNeuralConfig,
+	baseUrlForProvider,
+	keyProviderForPolishProvider,
+	type AIPlanNeuralConfig,
+} from "./treatmentPlanPersonalize.js";
+
+const DENTAL_AI_CASCADING_MODELS = [
+	{ provider: "gemini", model: "gemini-2.5-flash" },
+	{ provider: "gemini", model: "gemini-3-flash" },
+	{ provider: "gemini", model: "gemini-3.1-flash-lite" },
+	{ provider: "groq", model: "llama-3.3-70b-versatile" },
+];
+
+async function callOpenAiCompatiblePostVisit(input: {
+	config: AIPlanNeuralConfig;
+	payload: PostVisitPersonalizeInput;
+	apiKey: string;
+}): Promise<PostVisitPersonalizedResult> {
+	if (!input.config.baseUrl || !input.config.modelName) {
+		throw new Error("ИИ-сервер не настроен.");
+	}
+
+	const requestBody = {
+		model: input.config.modelName,
+		temperature: 0.2,
+		response_format: { type: "json_object" },
+		messages: [
+			{
+				role: "system",
+				content: `Вы — ведущий стоматолог-эксперт клиники DENTE.
+Ваша задача — сгенерировать персонализированные послеоперационные рекомендации для пациента на основе данных о процедуре.
+Верните ответ СТРОГО в формате JSON со следующими ключами (все массивы строк):
+"allowedAfter" — Что и когда можно делать (например, когда можно есть и пить).
+"temporaryRestrictions" — Временные ограничения (баня, спорт, курение, жесткая пища).
+"medicationAndRinsePlan" — Медикаменты и полоскания (когда и что принимать).
+"hygieneInstructions" — Инструкции по гигиене полости рта.
+"nutritionInstructions" — Инструкции по питанию.
+"urgentWarningSigns" — Тревожные симптомы, при которых нужно срочно обратиться в клинику.
+"telegramSummary" — Короткое (1-2 предложения) резюме для отправки в Telegram.`,
+			},
+			{
+				role: "user",
+				content: `Процедура: ${input.payload.procedureName}
+Область: ${input.payload.toothOrArea}
+Врач: ${input.payload.doctorFullName}`,
+			},
+		],
+	};
+
+	const response = await fetchWithProviderTimeout(
+		`${input.config.baseUrl}/chat/completions`,
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${input.apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestBody),
+		},
+		45_000,
+	);
+
+	const data = (await response.json().catch(() => ({}))) as any;
+	if (!response.ok) {
+		throw providerHttpError(response.status, response.statusText, data.error?.message);
+	}
+
+	const content = data.choices?.[0]?.message?.content;
+	if (typeof content !== "string") throw new Error("ИИ-модель вернула неожиданный ответ.");
+
+	let parsed: any;
+	try {
+		parsed = JSON.parse(content.trim());
+	} catch {
+		const match = content.match(/\{[\s\S]*\}/);
+		if (!match?.[0]) throw new Error("ИИ-модель вернула ответ не в формате JSON.");
+		parsed = JSON.parse(match[0]);
+	}
+
+	return {
+		allowedAfter: Array.isArray(parsed.allowedAfter) ? parsed.allowedAfter : [],
+		temporaryRestrictions: Array.isArray(parsed.temporaryRestrictions) ? parsed.temporaryRestrictions : [],
+		medicationAndRinsePlan: Array.isArray(parsed.medicationAndRinsePlan) ? parsed.medicationAndRinsePlan : [],
+		hygieneInstructions: Array.isArray(parsed.hygieneInstructions) ? parsed.hygieneInstructions : [],
+		nutritionInstructions: Array.isArray(parsed.nutritionInstructions) ? parsed.nutritionInstructions : [],
+		urgentWarningSigns: Array.isArray(parsed.urgentWarningSigns) ? parsed.urgentWarningSigns : [],
+		telegramSummary: String(parsed.telegramSummary || "").trim(),
+	};
+}
+
+export async function personalizePostVisitRecommendations(
+	payload: PostVisitPersonalizeInput,
+): Promise<PostVisitPersonalizedResult> {
+	const config = createAIPlanNeuralConfig();
+	if (!config.neuralEnabled) {
+		return fallbackPersonalizePostVisitRecommendations(payload);
+	}
+
+	try {
+		if (config.explicitApiKey) {
+			return await callOpenAiCompatiblePostVisit({
+				config,
+				payload,
+				apiKey: config.explicitApiKey,
+			});
+		}
+		const keyProviderId = config.keyProviderId;
+		if (keyProviderId) {
+			const triedFingerprints = new Set<string>();
+			const maxAttempts = keyRetryLimit(keyProviderId);
+			for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+				const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
+				if (!keyCandidate) break;
+				triedFingerprints.add(keyCandidate.fingerprint);
+				try {
+					const result = await callOpenAiCompatiblePostVisit({
+						config,
+						payload,
+						apiKey: keyCandidate.value,
+					});
+					recordProviderKeySuccess(keyProviderId, keyCandidate);
+					return result;
+				} catch (error) {
+					recordProviderKeyFailure(keyProviderId, keyCandidate, error);
+					if (!shouldTryNextProviderKey(error)) break;
+				}
+			}
+		}
+	} catch (error) {
+		console.warn(`[AI PostVisit Primary Failed]: ${error}`);
+	}
+
+	// Fallback across providers
+	for (const fallback of DENTAL_AI_CASCADING_MODELS) {
+		if (fallback.provider === config.provider && fallback.model === config.modelName) continue;
+		try {
+			const fallbackBaseUrl = baseUrlForProvider(fallback.provider as any);
+			const fallbackKeyProviderId = keyProviderForPolishProvider(fallback.provider as any);
+			if (!fallbackBaseUrl || !fallbackKeyProviderId) continue;
+
+			const triedFingerprints = new Set<string>();
+			const keyCandidate = selectProviderKey(fallbackKeyProviderId, triedFingerprints);
+			if (!keyCandidate) continue;
+
+			const result = await callOpenAiCompatiblePostVisit({
+				config: { ...config, provider: fallback.provider as any, baseUrl: fallbackBaseUrl, keyProviderId: fallbackKeyProviderId, modelName: fallback.model },
+				payload,
+				apiKey: keyCandidate.value,
+			});
+			recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
+			return result;
+		} catch (fallbackError) {
+			console.warn(`[AI PostVisit Cascade Failed]: ${fallbackError}`);
+		}
+	}
+
+	return fallbackPersonalizePostVisitRecommendations(payload);
+}
+
 export interface PostVisitPersonalizeInput {
 	careTopic: string;
 	procedureName: string;
@@ -15,7 +188,7 @@ export interface PostVisitPersonalizedResult {
 	telegramSummary: string;
 }
 
-export async function personalizePostVisitRecommendations(
+export async function fallbackPersonalizePostVisitRecommendations(
 	payload: PostVisitPersonalizeInput,
 ): Promise<PostVisitPersonalizedResult> {
 	const topic = (payload.careTopic ?? "").toLowerCase();
