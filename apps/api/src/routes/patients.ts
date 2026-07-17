@@ -286,6 +286,9 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 					allergies: [],
 					systemicDiseases: [],
 					hasCriticalAlerts: false,
+					medications: [],
+					pregnancyStatus: null,
+					criticalAlertNote: null,
 				}
 			);
 		} catch (e) {
@@ -320,6 +323,17 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 					hasCriticalAlerts:
 						typeof input?.hasCriticalAlerts === "boolean"
 							? input.hasCriticalAlerts
+							: undefined,
+					medications: Array.isArray(input?.medications)
+						? input.medications
+						: undefined,
+					pregnancyStatus:
+						typeof input?.pregnancyStatus === "string" || input?.pregnancyStatus === null
+							? input.pregnancyStatus
+							: undefined,
+					criticalAlertNote:
+						typeof input?.criticalAlertNote === "string" || input?.criticalAlertNote === null
+							? input.criticalAlertNote
 							: undefined,
 				},
 			);

@@ -3003,6 +3003,7 @@ export function App() {
 						staffRoleLabels={staffRoleLabels}
 						todayIso={dashboard.todayIso}
 						onLockSession={handleLockSession}
+						activeTasksCount={dashboard?.communicationTasks?.filter((t: any) => t.status === "open").length || 0}
 						isOmniRoleMode={dashboard.clinicSettings?.profile?.isOmniRole}
 					/>
 					<WorkspaceContinuityStrip

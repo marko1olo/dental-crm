@@ -35,6 +35,9 @@ export interface PatientStore {
 		allergies: string[];
 		systemicDiseases: string[];
 		hasCriticalAlerts: boolean;
+		medications: string[];
+		pregnancyStatus: string;
+		criticalAlertNote: string;
 	};
 	setAnamnesisDraft: (
 		val:
@@ -196,6 +199,9 @@ export const usePatientStore = create<PatientStore>((set) => ({
 		allergies: [],
 		systemicDiseases: [],
 		hasCriticalAlerts: false,
+		medications: [],
+		pregnancyStatus: "none",
+		criticalAlertNote: "",
 	},
 	setAnamnesisDraft: (val) =>
 		set((state) => ({
@@ -216,6 +222,9 @@ export const usePatientStore = create<PatientStore>((set) => ({
 						allergies: data.allergies || [],
 						systemicDiseases: data.systemicDiseases || [],
 						hasCriticalAlerts: data.hasCriticalAlerts || false,
+						medications: data.medications || [],
+						pregnancyStatus: data.pregnancyStatus || "none",
+						criticalAlertNote: data.criticalAlertNote || "",
 					},
 					anamnesisSaveState: "idle",
 				});

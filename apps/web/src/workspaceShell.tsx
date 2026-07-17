@@ -258,6 +258,7 @@ interface WorkspaceTopbarProps {
 	todayIso: string;
 	onLockSession?: () => void;
 	isOmniRoleMode?: boolean;
+	activeTasksCount?: number;
 }
 
 export function WorkspaceTopbar({
@@ -276,6 +277,7 @@ export function WorkspaceTopbar({
 	todayIso,
 	onLockSession,
 	isOmniRoleMode,
+	activeTasksCount,
 }: WorkspaceTopbarProps) {
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
@@ -393,6 +395,36 @@ export function WorkspaceTopbar({
 						<ClipboardCheck aria-hidden="true" /> Прием
 					</button>
 				) : null}
+				
+				{useWorkspaceProfile().hasTasks && (
+					<button
+						aria-label="Задачи"
+						className="icon-button"
+						type="button"
+						title="Задачи и тикеты"
+						onClick={() => onViewIntent?.("communications")}
+						style={{ position: "relative" }}
+					>
+						<ClipboardList aria-hidden="true" size={20} />
+						{activeTasksCount && activeTasksCount > 0 ? (
+							<span style={{
+								position: "absolute",
+								top: "-4px",
+								right: "-4px",
+								background: "var(--amber)",
+								color: "#fff",
+								fontSize: "10px",
+								fontWeight: "bold",
+								padding: "2px 4px",
+								borderRadius: "10px",
+								lineHeight: 1
+							}}>
+								✓ {activeTasksCount}
+							</span>
+						) : null}
+					</button>
+				)}
+
 				<button
 					aria-label="Открыть диктовку приема"
 					className="icon-button top-dictation-button"

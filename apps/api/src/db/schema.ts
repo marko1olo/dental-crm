@@ -1651,7 +1651,10 @@ export const patientAnamnesis = pgTable("patient_anamnesis", {
 		.unique(),
 	allergies: jsonb("allergies").$type<string[]>(),
 	systemicDiseases: jsonb("systemic_diseases").$type<string[]>(),
+	medications: jsonb("medications").$type<string[]>(),
+	pregnancyStatus: text("pregnancy_status"),
 	hasCriticalAlerts: boolean("has_critical_alerts").notNull().default(false),
+	criticalAlertNote: text("critical_alert_note"),
 	signatureData: text("signature_data"), // Base64 or URL
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()

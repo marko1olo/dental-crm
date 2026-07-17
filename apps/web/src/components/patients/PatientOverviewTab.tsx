@@ -68,9 +68,25 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 							fontSize: "14px",
 							fontWeight: 600,
 							color: "var(--ink)",
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
 						}}
 					>
 						Карточка пациента
+						{props.dashboard?.activeVisit?.patientId === selectedPatientId && (
+							<span
+								title="Пациент сейчас находится в клинике (Активный приём)"
+								style={{
+									width: "8px",
+									height: "8px",
+									borderRadius: "50%",
+									backgroundColor: "var(--emerald)",
+									display: "inline-block",
+									boxShadow: "0 0 8px var(--emerald)",
+								}}
+							/>
+						)}
 					</span>
 					{selectedPatientId && <PatientLoyaltyHeader patientId={selectedPatientId} />}
 				</div>

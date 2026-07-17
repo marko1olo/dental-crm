@@ -28,6 +28,7 @@ import {
 	signBase64WithCertificate,
 } from "../utils/cryptoPro";
 import { showToast } from "./GlobalToast";
+import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 
 // ─── ICD-10 Стоматологический справочник ────────────────────────────────────
 const ICD10_DICTIONARY = [
@@ -771,10 +772,25 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			<div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4">
 				{/* S — Subjective (Жалобы) */}
 				<div className="flex flex-col space-y-1.5 h-full">
-					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5">
+					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5 w-full">
 						<Stethoscope className="w-3 h-3 text-blue-400" />
 						<span className="text-blue-400 font-mono font-bold">S</span> —
 						Жалобы и анамнез
+						{!isLocked && (
+							<div className="ml-auto">
+								<SmartMicrophoneButton
+									context="visit"
+									sterileMode={false}
+									className="hover:bg-zinc-800/80 transition-colors p-1"
+									onResult={(text) =>
+										setDiary((p) => ({
+											...p,
+											anamnesis: p.anamnesis ? p.anamnesis + " " + text : text,
+										}))
+									}
+								/>
+							</div>
+						)}
 					</label>
 					<textarea
 						id="diary-anamnesis"
@@ -793,10 +809,25 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 				{/* O — Objective (Status Localis) */}
 				<div className="flex flex-col space-y-1.5 h-full">
-					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5">
+					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5 w-full">
 						<Search className="w-3 h-3 text-purple-400" />
 						<span className="text-purple-400 font-mono font-bold">O</span> —
 						Объективно (Status Localis)
+						{!isLocked && (
+							<div className="ml-auto">
+								<SmartMicrophoneButton
+									context="visit"
+									sterileMode={false}
+									className="hover:bg-zinc-800/80 transition-colors p-1"
+									onResult={(text) =>
+										setDiary((p) => ({
+											...p,
+											statusLocalis: p.statusLocalis ? p.statusLocalis + " " + text : text,
+										}))
+									}
+								/>
+							</div>
+						)}
 					</label>
 					<textarea
 						id="diary-status-localis"
@@ -916,10 +947,25 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 				{/* P — Plan (Treatment) */}
 				<div className="space-y-1.5 lg:col-span-2">
-					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5">
+					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5 w-full">
 						<FileText className="w-3 h-3 text-emerald-400" />
 						<span className="text-emerald-400 font-mono font-bold">P</span> —
 						Лечение и рекомендации
+						{!isLocked && (
+							<div className="ml-auto">
+								<SmartMicrophoneButton
+									context="visit"
+									sterileMode={false}
+									className="hover:bg-zinc-800/80 transition-colors p-1"
+									onResult={(text) =>
+										setDiary((p) => ({
+											...p,
+											treatmentDescription: p.treatmentDescription ? p.treatmentDescription + " " + text : text,
+										}))
+									}
+								/>
+							</div>
+						)}
 					</label>
 					<textarea
 						id="diary-treatment"

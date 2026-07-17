@@ -230,6 +230,9 @@ export async function updatePatientAnamnesisInDb(
 		allergies?: string[];
 		systemicDiseases?: string[];
 		hasCriticalAlerts?: boolean;
+		medications?: string[];
+		pregnancyStatus?: string | null;
+		criticalAlertNote?: string | null;
 	},
 ) {
 	if (!(await patientBelongsToOrganization(patientId, organizationId))) {
@@ -246,8 +249,11 @@ export async function updatePatientAnamnesisInDb(
 			.set({
 				allergies: input.allergies ?? existing.allergies,
 				systemicDiseases: input.systemicDiseases ?? existing.systemicDiseases,
-				hasCriticalAlerts:
-					input.hasCriticalAlerts ?? existing.hasCriticalAlerts,
+				hasCriticalAlerts: input.hasCriticalAlerts ?? existing.hasCriticalAlerts,
+				medications: input.medications ?? existing.medications,
+				pregnancyStatus: input.pregnancyStatus ?? existing.pregnancyStatus,
+				criticalAlertNote: input.criticalAlertNote ?? existing.criticalAlertNote,
+				updatedAt: new Date(),
 			})
 			.where(eq(schema.patientAnamnesis.patientId, patientId))
 			.returning();
@@ -260,6 +266,9 @@ export async function updatePatientAnamnesisInDb(
 				allergies: input.allergies ?? [],
 				systemicDiseases: input.systemicDiseases ?? [],
 				hasCriticalAlerts: input.hasCriticalAlerts ?? false,
+				medications: input.medications ?? [],
+				pregnancyStatus: input.pregnancyStatus ?? null,
+				criticalAlertNote: input.criticalAlertNote ?? null,
 			})
 			.returning();
 		return created;
