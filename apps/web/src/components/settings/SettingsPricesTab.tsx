@@ -170,7 +170,7 @@ export function SettingsPricesTab() {
 	const handleSaveService = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!createServiceCatalogItem || !updateServiceCatalogItem) {
-			alert("API недоступно");
+			mergedProps.setError?.("API недоступно");
 			return;
 		}
 		setIsSaving(true);
@@ -182,7 +182,7 @@ export function SettingsPricesTab() {
 			}
 			setEditServiceId(null);
 		} catch (error: any) {
-			alert(error.message || "Ошибка сохранения");
+			mergedProps.setError?.(error.message || "Ошибка сохранения");
 		} finally {
 			setIsSaving(false);
 		}
@@ -194,7 +194,7 @@ export function SettingsPricesTab() {
 		try {
 			await deleteServiceCatalogItem(id);
 		} catch (error: any) {
-			alert(error.message || "Ошибка удаления");
+			mergedProps.setError?.(error.message || "Ошибка удаления");
 		}
 	};
 

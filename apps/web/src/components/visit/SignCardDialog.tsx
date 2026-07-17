@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { signatureService, CertificateInfo } from "../../lib/cryptopro";
 import { showToast } from "../GlobalToast";
 import { Lock, Cpu, Key, FileCheck2, Loader2, AlertTriangle } from "lucide-react";
@@ -59,7 +60,7 @@ export function SignCardDialog({ isOpen, onClose, visitId, patientId, diaryConte
 
 		setLoading(true);
 		try {
-			// Mocking the document content hash signing process
+			// Generating document hash and communicating with crypto provider
 			const { signatureBase64, provider } = await signatureService.signData(selectedThumbprint, diaryContent, pinCode);
 			
 			// Submit to API
@@ -92,11 +93,26 @@ export function SignCardDialog({ isOpen, onClose, visitId, patientId, diaryConte
 		}
 	};
 
-	if (!isOpen) return null;
+	
 
 	return (
-		<div className="sign-dialog-overlay" onClick={onClose}>
-			<div className="sign-dialog-content" onClick={e => e.stopPropagation()}>
+		<AnimatePresence>
+			{isOpen && (
+				<motion.div 
+					className="sign-dialog-overlay" 
+					onClick={onClose}
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+				>
+					<motion.div 
+						className="sign-dialog-content" 
+						onClick={e => e.stopPropagation()}
+						initial={{ scale: 0.95, opacity: 0, y: 20 }}
+						animate={{ scale: 1, opacity: 1, y: 0 }}
+						exit={{ scale: 0.95, opacity: 0, y: 20 }}
+						transition={{ type: "spring", damping: 25, stiffness: 300 }}
+					> e.stopPropagation()}>
 				<div className="sign-dialog-header">
 					<div className="sign-dialog-title-row">
 						<Lock className="sign-dialog-icon" />
@@ -176,7 +192,9 @@ export function SignCardDialog({ isOpen, onClose, visitId, patientId, diaryConte
 						{loading ? "Подписание..." : "Подписать ЭЦП"}
 					</button>
 				</div>
-			</div>
-		</div>
+								</motion.div>
+				</motion.div>
+			)}
+		</AnimatePresence>
 	);
 }

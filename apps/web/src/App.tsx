@@ -5454,6 +5454,7 @@ export function App() {
 											formatDateTime={formatDateTime}
 											isPaymentSaving={isPaymentSaving}
 											money={money}
+											onCreateDocument={createDocument}
 											onGoToDocuments={() => {
 												window.location.hash = "documents";
 											}}

@@ -83,6 +83,7 @@ type FinanceViewProps = {
 	setPaymentTaxDeductionCode: (value: TaxDeductionCode) => void;
 	staffRoleLabels: Record<ClinicalRuleEvaluation["ownerRole"], string>;
 	treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
+	onCreateDocument?: (kind: string) => void;
 };
 
 export function FinanceView({
@@ -99,6 +100,7 @@ export function FinanceView({
 	formatDateTime,
 	isPaymentSaving,
 	money,
+	onCreateDocument,
 	onGoToDocuments,
 	onGoToPrices,
 	onGoToVisit,
@@ -273,6 +275,7 @@ export function FinanceView({
 				serviceCatalog={dashboard.serviceCatalog}
 				treatmentItems={activeTreatmentPlanItems}
 				treatmentStatusLabels={treatmentStatusLabels}
+				onCreateDocument={onCreateDocument}
 			/>
 
 			<ServiceCatalogStrip

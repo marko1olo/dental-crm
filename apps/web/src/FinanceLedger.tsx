@@ -21,6 +21,7 @@ type FinanceLedgerProps = {
 	serviceCatalog: ServiceCatalogItem[];
 	treatmentItems: TreatmentPlanItem[];
 	treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
+	onCreateDocument?: (kind: string) => void;
 };
 
 export function FinanceLedger({
@@ -36,6 +37,7 @@ export function FinanceLedger({
 	serviceCatalog,
 	treatmentItems,
 	treatmentStatusLabels,
+	onCreateDocument,
 }: FinanceLedgerProps) {
 	return (
 		<div className="finance-split">
@@ -98,13 +100,7 @@ export function FinanceLedger({
 							className="secondary-button"
 							type="button"
 							title="Сгенерировать справку ИФНС для налогового вычета"
-							onClick={() => {
-								// Mock PDF generation
-								const link = document.createElement("a");
-								link.href = "data:application/pdf;base64,JVBERi0xLjcKCjEgMCBvYmog...";
-								link.download = `Spravka_IFNS_${new Date().getFullYear()}.pdf`;
-								link.click();
-							}}
+							onClick={() => onCreateDocument?.("tax_deduction_certificate")}
 							style={{ padding: '4px 8px', fontSize: '0.85rem' }}
 						>
 							<FileText size={14} style={{ marginRight: '4px' }} /> Справка ИФНС

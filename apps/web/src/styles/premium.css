@@ -1,47 +1,54 @@
 /* 
  * ULTRA-PREMIUM SICK UI OVERRIDES 
- * Glassmorphism, dynamic gradients, micro-animations
+ * UI UX PRO MAX - Deep Glassmorphism, dynamic gradients, micro-animations
  */
 
 :root,
 [data-theme="dark"] {
 	--bg-app: #030305;
-	--glass-panel: rgba(20, 20, 25, 0.55);
-	--glass-border: rgba(255, 255, 255, 0.08);
-	--glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-	--teal-glow: 0 0 20px rgba(45, 212, 191, 0.4);
+	--glass-panel: rgba(15, 15, 20, 0.45);
+	--glass-border: rgba(255, 255, 255, 0.05);
+	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--glass-blur: blur(40px);
+	--teal-glow: 0 0 30px rgba(45, 212, 191, 0.25);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(45, 212, 191, 0.2),
+		rgba(45, 212, 191, 0.15),
 		rgba(13, 148, 136, 0.05)
 	);
-	--active-item-border: rgba(45, 212, 191, 0.5);
+	--active-item-border: rgba(45, 212, 191, 0.4);
 
 	--text-primary: #ffffff;
 	--text-secondary: #94a3b8;
 
 	--mesh-bg-1: radial-gradient(
-		at 0% 0%,
-		rgba(13, 148, 136, 0.15) 0px,
-		transparent 50%
+		circle at 10% 20%,
+		rgba(13, 148, 136, 0.12) 0px,
+		transparent 40%
 	);
 	--mesh-bg-2: radial-gradient(
-		at 100% 100%,
-		rgba(59, 130, 246, 0.1) 0px,
+		circle at 90% 80%,
+		rgba(59, 130, 246, 0.08) 0px,
+		transparent 40%
+	);
+	--mesh-bg-3: radial-gradient(
+		circle at 50% 50%,
+		rgba(139, 92, 246, 0.05) 0px,
 		transparent 50%
 	);
 }
 
 [data-theme="light"] {
 	--bg-app: #f4f4f6;
-	--glass-panel: rgba(255, 255, 255, 0.7);
-	--glass-border: rgba(255, 255, 255, 1);
-	--glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-	--teal-glow: 0 0 20px rgba(13, 148, 136, 0.2);
+	--glass-panel: rgba(255, 255, 255, 0.65);
+	--glass-border: rgba(255, 255, 255, 0.9);
+	--glass-shadow: 0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+	--glass-blur: blur(30px);
+	--teal-glow: 0 0 30px rgba(13, 148, 136, 0.15);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(13, 148, 136, 0.1),
-		rgba(15, 118, 110, 0.02)
+		rgba(13, 148, 136, 0.08),
+		rgba(13, 148, 136, 0.02)
 	);
 	--active-item-border: rgba(13, 148, 136, 0.5);
 
@@ -49,13 +56,18 @@
 	--text-secondary: #64748b;
 
 	--mesh-bg-1: radial-gradient(
-		at 0% 0%,
-		rgba(13, 148, 136, 0.1) 0px,
+		circle at 0% 0%,
+		rgba(13, 148, 136, 0.08) 0px,
 		transparent 50%
 	);
 	--mesh-bg-2: radial-gradient(
-		at 100% 100%,
+		circle at 100% 100%,
 		rgba(59, 130, 246, 0.05) 0px,
+		transparent 50%
+	);
+	--mesh-bg-3: radial-gradient(
+		circle at 50% 50%,
+		rgba(139, 92, 246, 0.03) 0px,
 		transparent 50%
 	);
 }
@@ -63,7 +75,7 @@
 /* Base Body Background with Mesh Gradients */
 body {
 	background-color: var(--bg-app) !important;
-	background-image: var(--mesh-bg-1), var(--mesh-bg-2) !important;
+	background-image: var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3) !important;
 	background-attachment: fixed !important;
 	color: var(--text-primary) !important;
 }
@@ -72,8 +84,8 @@ body {
 .sidebar,
 .app-shell .sidebar {
 	background: var(--glass-panel) !important;
-	backdrop-filter: blur(24px) saturate(180%) !important;
-	-webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+	backdrop-filter: var(--glass-blur) saturate(180%) !important;
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
 	border-right: 1px solid var(--glass-border) !important;
 	box-shadow: var(--glass-shadow) !important;
 }
@@ -97,13 +109,16 @@ body {
 	background: var(--active-item-bg) !important;
 	border: 1px solid var(--active-item-border) !important;
 	box-shadow: var(--teal-glow) !important;
-	color: var(--text-primary) !important;
+	color: #fff !important;
+	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 	transform: scale(1.02) !important;
 }
 
+.nav-item.active .nav-label,
+.nav-item.active svg,
 .nav-item.active .nav-copy small,
 .nav-item:hover .nav-copy small {
-	color: var(--text-primary) !important;
+	color: #fff !important;
 	opacity: 0.9 !important;
 }
 
@@ -117,30 +132,23 @@ body {
 .app-notice,
 .workspace-continuity-strip {
 	background: var(--glass-panel) !important;
-	backdrop-filter: blur(16px) saturate(180%) !important;
-	-webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+	backdrop-filter: var(--glass-blur) saturate(180%) !important;
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
 	border: 1px solid var(--glass-border) !important;
 	box-shadow: var(--glass-shadow) !important;
 	border-radius: 16px !important;
 	transition:
-		transform 0.3s ease,
-		box-shadow 0.3s ease !important;
+		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
 .onboarding-shell:hover {
 	transform: translateY(-2px) !important;
-	box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3) !important;
+	box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-theme="light"] .onboarding-shell:hover {
-	box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1) !important;
-}
-
-/* Glowing Primary Buttons */
-button.primary,
-.btn-primary,
-[class*="button"]:not(.icon-button):not(.nav-item) {
-	/* Using generic selectors for buttons as a baseline. Need to refine based on specific app classes if they get overriden */
+	box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.15) !important;
 }
 
 /* Remove clunky active left border */
@@ -166,6 +174,7 @@ button.primary,
 	.nav-item.active {
 		transform: translateY(-2px) !important;
 		border-bottom: 2px solid var(--active-item-border) !important;
+		box-shadow: none !important;
 	}
 
 	.nav-item .nav-copy {
@@ -190,22 +199,20 @@ button.primary,
 .card,
 article {
 	background: var(--glass-panel) !important;
-	backdrop-filter: blur(16px) saturate(180%) !important;
-	-webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+	backdrop-filter: var(--glass-blur) saturate(180%) !important;
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
 	border: 1px solid var(--glass-border) !important;
 	box-shadow: var(--glass-shadow) !important;
 	border-radius: 16px !important;
 	transition:
-		transform 0.3s ease,
-		box-shadow 0.3s ease !important;
+		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
-.nav-item.active {
-	color: #fff !important;
-	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-.nav-item.active .nav-label {
-	color: #fff !important;
-}
-.nav-item.active svg {
-	color: #fff !important;
+
+.mode-fit-card:hover,
+.role-queue-card:hover,
+.patient-summary-card:hover,
+.card:hover,
+.glass-panel:hover {
+	box-shadow: var(--glass-shadow), 0 12px 30px rgba(0, 0, 0, 0.15) !important;
 }
