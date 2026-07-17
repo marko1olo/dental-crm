@@ -16,19 +16,8 @@ import {
 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
-	clinicModeLabels,
-	documentIngestionTargetLabels,
 	documentSourceStatusLabels,
-	importSourceLabels,
-	legalReadinessLabels,
-	pricelistSourceKindLabels,
-	smartImportModeLabels,
-	telegramPrivacyModeLabels,
-	telegramFeatureOptions,
-	telegramPostVisitCheckupDelayFields,
-	telegramVisualCardFields,
 	documentFactoryGroups,
-	telegramFeatureLabel,
 } from "@dental/shared";
 import type {
 	ClinicMode,

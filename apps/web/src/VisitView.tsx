@@ -36,12 +36,14 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
 import { VisitFlowProgress } from "./components/visit/VisitFlowProgress";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import "./styles/VisitView.css";
 
 export function VisitView() {
+	const workspaceFlags = useWorkspaceProfile();
 	const {
 		acceptDraftToVisit,
 		activeAppointment,
@@ -343,7 +345,7 @@ export function VisitView() {
 				>
 					<VisitPrimaryActions isSignDialogOpen={isSignDialogOpen} setIsSignDialogOpen={setIsSignDialogOpen} isSigned={isSigned} />
 
-					<VisitSafetyStrip />
+					{workspaceFlags.hasEngineeringStatus && <VisitSafetyStrip />}
 				</div>
 
 				<div
@@ -1584,34 +1586,36 @@ export function VisitView() {
 					) : null}
 				</details>
 
-				<details className="clinical-rules-toggle">
-					<summary>
-						📋 Клинические рекомендации
-						{activeVisitClinicalRuleEvaluations?.length
-							? ` (${activeVisitClinicalRuleEvaluations.length})`
-							: ""}
-					</summary>
-					<div style={{ marginTop: "1rem" }}>
-						<ClinicalRulePanel
-							actionLabels={clinicalRuleActionLabels}
-							context="visit"
-							// evaluations={activeVisitClinicalRuleEvaluations}
-							evaluations={
-								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-									? activeVisitClinicalRuleEvaluations.filter(
-											(e: any) => e.ownerRole !== "assistant",
-										)
-									: activeVisitClinicalRuleEvaluations
-							}
-							serviceTitle={serviceTitle}
-							severityLabels={clinicalRuleSeverityLabels}
-							staffRoleLabels={staffRoleLabels}
-							summary={activeVisitClinicalRuleSummary}
-						/>
-					</div>
-				</details>
+				{workspaceFlags.hasClinicalRules && (
+					<details className="clinical-rules-toggle">
+						<summary>
+							📋 Клинические рекомендации
+							{activeVisitClinicalRuleEvaluations?.length
+								? ` (${activeVisitClinicalRuleEvaluations.length})`
+								: ""}
+						</summary>
+						<div style={{ marginTop: "1rem" }}>
+							<ClinicalRulePanel
+								actionLabels={clinicalRuleActionLabels}
+								context="visit"
+								// evaluations={activeVisitClinicalRuleEvaluations}
+								evaluations={
+									dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
+										? activeVisitClinicalRuleEvaluations.filter(
+												(e: any) => e.ownerRole !== "assistant",
+											)
+										: activeVisitClinicalRuleEvaluations
+								}
+								serviceTitle={serviceTitle}
+								severityLabels={clinicalRuleSeverityLabels}
+								staffRoleLabels={staffRoleLabels}
+								summary={activeVisitClinicalRuleSummary}
+							/>
+						</div>
+					</details>
+				)}
 
-				{activePatient?.id && (
+				{activePatient?.id && workspaceFlags.hasDentalLab && (
 					<LabOrdersPanel
 						patientId={activePatient.id}
 					/>

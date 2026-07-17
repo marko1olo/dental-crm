@@ -13,21 +13,13 @@ export const ClinicalScheduler: React.FC<any> = ({
 	dashboard,
 	onSlotClick,
 	onSlotDrop,
+	onAppointmentClick,
 }) => {
 	const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
 	const [mobileChairId, setMobileChairId] = useState<string | null>(null);
 
-	const [patientsList, setPatientsList] = useState<any[]>([]);
-
 	useEffect(() => {
-		fetch("/api/patients", { headers: denteAdminSecretRequestHeaders() })
-			.then((res) => res.json())
-			.then((data) => {
-				if (Array.isArray(data)) setPatientsList(data);
-			})
-			.catch(console.error);
-
 		const checkMobile = () => setIsMobile(window.innerWidth < 768);
 		checkMobile();
 		window.addEventListener("resize", checkMobile);
@@ -308,6 +300,12 @@ export const ClinicalScheduler: React.FC<any> = ({
 						const colIdx = displayedChairs.findIndex((c: any) => c.id === appt.chairId);
 						if (colIdx === -1) return null; // Not in view
 
+						// Resolve patient from dashboard
+						const patient = dashboard?.patients?.find((p: any) => p.id === appt.patientId);
+						
+						// Resolve readiness from dashboard
+						const readiness = dashboard?.appointmentReadiness?.find((r: any) => r.appointmentId === appt.id);
+
 						return (
 							<div
 								key={appt.id}
@@ -320,13 +318,13 @@ export const ClinicalScheduler: React.FC<any> = ({
 								<div
 									className={`sg-appt-card sg-appt-${appt.type || "therapy"}`}
 									onClick={(e) => {
-										// We prevent event bubbling so it doesn't trigger the background empty cell click
 										e.stopPropagation();
+										if (onAppointmentClick) onAppointmentClick(appt);
 									}}
 									style={{ position: 'relative' }}
 								>
 									<div className="sg-appt-title">
-										{appt.patient?.fullName || "Пациент"}
+										{patient?.fullName || "Неизвестный пациент"}
 									</div>
 									<div className="sg-appt-meta">{appt.status}</div>
 									<div className="sg-appt-time">
@@ -337,24 +335,14 @@ export const ClinicalScheduler: React.FC<any> = ({
 									
 									{/* Status Lights (Светофоры) */}
 									<div className="sg-appt-status-lights">
-										{/* Долг (Красная точка) */}
-										{appt.patient?.balance < 0 && (
-											<span className="sg-status-dot red" title={`Долг: ${appt.patient.balance} ₽`} />
+										{readiness?.state === "ready" && (
+											<span className="sg-status-dot green" title={readiness.nextAction} />
 										)}
-										
-										{/* Отсутствие плана лечения / не подписанные док-ты (Желтая точка) */}
-										{(!appt.patient?.hasSignedAgreement || !appt.patient?.hasTreatmentPlan) && (
-											<span className="sg-status-dot yellow" title="Отсутствуют подписанные документы или план лечения" />
+										{readiness?.state === "needs_attention" && (
+											<span className="sg-status-dot yellow" title={readiness.nextAction} />
 										)}
-
-										{/* Заказ ЗТЛ (Синяя точка) */}
-										{appt.patient?.hasActiveLabOrder && (
-											<span className="sg-status-dot blue" title="Есть активный заказ в зуботехнической лаборатории" />
-										)}
-
-										{/* Всё готово (Зеленая точка) */}
-										{appt.patient?.balance >= 0 && appt.patient?.hasSignedAgreement && appt.patient?.hasTreatmentPlan && (
-											<span className="sg-status-dot green" title="Пациент готов к приёму (предоплата, документы подписаны)" />
+										{readiness?.state === "blocked" && (
+											<span className="sg-status-dot red" title={readiness.nextAction} />
 										)}
 									</div>
 								</div>

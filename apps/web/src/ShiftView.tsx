@@ -24,9 +24,11 @@ import {
 	patientInsightRiskLabels,
 } from "./AppHelpers";
 import { ActionIcon } from "./workspaceShell";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { workloadStateLabels } from "./workspaceUiLabels";
 
-export function ShiftView({
+export function ShiftView() {
+	const {
 	activePatient,
 	activePatientHasCallablePhone,
 	activePatientCallablePhone,
@@ -48,7 +50,7 @@ export function ShiftView({
 	mostLoadedResource,
 	setSelectedPatientId,
 	activeDoctor,
-}: any) {
+} = useAppLogicContext();
 	const doctorTodayAppointments = useMemo(() => {
 		if (!dashboard || !dashboard.appointments || !activeDoctor) return [];
 		return dashboard.appointments
@@ -561,14 +563,15 @@ export function ShiftView({
 	);
 }
 
-export function PatientCockpit({
+export function PatientCockpit() {
+	const {
 	activePatient,
 	activePatientInsight,
 	dashboard,
 	activeCommunicationTasks,
 	activeImagingStudies,
 	activeUsableDocuments,
-}: any) {
+} = useAppLogicContext();
 	if (!activePatient) {
 		return (
 			<motion.section

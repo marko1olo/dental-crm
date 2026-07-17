@@ -417,6 +417,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 			<ClinicalScheduler
 				appointments={sortedAppointments}
 				dashboard={dashboard}
+				onAppointmentClick={openAppointmentEditor}
 				onSlotClick={(date, time, chairId) => {
 					const localTimeStr = `${date}T${time}:00`;
 					const startsAtIso = new Date(localTimeStr).toISOString();

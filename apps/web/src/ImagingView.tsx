@@ -36,12 +36,12 @@ import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { type ToothState, useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
 
-type ImagingViewProps = Record<string, any>;
 
-export function ImagingView(props: ImagingViewProps) {
+export function ImagingView() {
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const apiUrl = (() => {
 		const envUrl = (import.meta as any).env.VITE_API_URL;
@@ -181,14 +181,11 @@ export function ImagingView(props: ImagingViewProps) {
 		setMprWindowPreset,
 		setSelectedImagingStudyId,
 		visibleImagingStudies,
-	} = props;
+	} = useAppLogicContext();
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
-	const browserImagingFilesInputRef =
-		props.browserImagingFilesInputRef || localFilesInputRef;
-	const pickBrowserImagingFiles =
-		props.pickBrowserImagingFiles ||
-		(() => {
+	const browserImagingFilesInputRef = localFilesInputRef;
+	const pickBrowserImagingFiles = (() => {
 			browserImagingFilesInputRef.current?.click();
 		});
 

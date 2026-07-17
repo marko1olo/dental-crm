@@ -197,15 +197,17 @@ export function FinanceView({
 				treatmentItems={activeTreatmentPlanItems}
 			/>
 
-			<ClinicalRulePanel
-				actionLabels={clinicalRuleActionLabels}
-				context="finance"
-				evaluations={clinicalRuleEvaluations}
-				serviceTitle={serviceTitle}
-				severityLabels={clinicalRuleSeverityLabels}
-				staffRoleLabels={staffRoleLabels}
-				summary={clinicalRuleSummary}
-			/>
+			{workspaceFlags.hasClinicalRules && (
+				<ClinicalRulePanel
+					actionLabels={clinicalRuleActionLabels}
+					context="finance"
+					evaluations={clinicalRuleEvaluations}
+					serviceTitle={serviceTitle}
+					severityLabels={clinicalRuleSeverityLabels}
+					staffRoleLabels={staffRoleLabels}
+					summary={clinicalRuleSummary}
+				/>
+			)}
 
 			{documentPatient?.id && (
 				<FamilyWalletPanel

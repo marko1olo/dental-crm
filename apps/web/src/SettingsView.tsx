@@ -1742,7 +1742,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 							if (t.id === "messengers") {
 								return activeStaffUser?.role !== "doctor";
 							}
-							return ["clinic", "staff", "access"].includes(t.id);
+							return ["clinic", "staff", "access", "modules"].includes(t.id);
 						})
 						.map(renderTabButton)}
 				</div>

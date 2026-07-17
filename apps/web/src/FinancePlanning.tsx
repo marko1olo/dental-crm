@@ -1,6 +1,7 @@
 import type { Dashboard } from "@dental/shared";
 import { ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import { useState } from "react";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 
 type TreatmentPlanScenario = Dashboard["treatmentPlanScenarios"][number];
 type ServiceCatalogItem = Dashboard["serviceCatalog"][number];
@@ -50,6 +51,7 @@ export function FinancePlanningOverview({
 	strategyLabels,
 	treatmentItems,
 }: FinancePlanningOverviewProps) {
+	const workspaceFlags = useWorkspaceProfile();
 	const [showScenarios, setShowScenarios] = useState(false);
 
 	const activeItems = treatmentItems.filter((i) => i.status !== "cancelled");
@@ -121,7 +123,7 @@ export function FinancePlanningOverview({
 					<strong>{money(billingSummary.taxDeductionEligibleRub)}</strong>
 					<p>медицинские услуги, пригодные для справки</p>
 				</article>
-				{((billingSummary as any).insuranceCoverageRub ?? 0) > 0 && (
+				{workspaceFlags.hasInsuranceCoPay && ((billingSummary as any).insuranceCoverageRub ?? 0) > 0 && (
 					<article className="finance-insurance">
 						<span>Покрытие ДМС</span>
 						<strong>{money((billingSummary as any).insuranceCoverageRub ?? 0)}</strong>
