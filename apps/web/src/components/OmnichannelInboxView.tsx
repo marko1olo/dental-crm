@@ -297,6 +297,7 @@ function NewChatModal({
 								{[
 									{ value: "whatsapp", label: "WhatsApp", color: "#25D366" },
 									{ value: "telegram", label: "Telegram", color: "#0088cc" },
+									{ value: "vk", label: "VK", color: "#0077FF" },
 									{ value: "sms", label: "SMS", color: "var(--muted)" },
 								].map((c) => (
 									<button
@@ -711,6 +712,7 @@ export function OmnichannelInboxView() {
 								{ value: "all", label: "Все" },
 								{ value: "whatsapp", label: "WA", color: "#25D366" },
 								{ value: "telegram", label: "TG", color: "#0088cc" },
+								{ value: "vk", label: "VK", color: "#0077FF" },
 								{ value: "sms", label: "SMS", color: "var(--muted)" },
 							].map((f) => (
 								<button
