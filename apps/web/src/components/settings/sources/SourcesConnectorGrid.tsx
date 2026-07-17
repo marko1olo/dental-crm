@@ -19,13 +19,13 @@ import {
 	ScanSearch,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { CtPlanningToolsPanel } from "../../ctPlanningTools";
+import { CtPlanningToolsPanel } from "../../../ctPlanningTools";
 
 type MprClinicalPreset =
-	import("../../mprClinicalStatus").MprClinicalPresetFitTarget;
+	import("../../../mprClinicalStatus").MprClinicalPresetFitTarget;
 
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../../useSettingsDerivations";
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
