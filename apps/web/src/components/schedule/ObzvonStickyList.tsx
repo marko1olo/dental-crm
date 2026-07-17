@@ -98,8 +98,27 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 								<a
 									href={`tel:${patient?.phone}`}
 									className="flex-1 flex items-center justify-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 py-1.5 px-2 rounded-md text-xs font-medium transition-colors"
+									title="Позвонить"
 								>
-									<PhoneCall size={12} /> Позвонить
+									<PhoneCall size={12} /> Звонок
+								</a>
+								<a
+									href={`https://wa.me/${patient?.phone?.replace(/\D/g, "")}`}
+									target="_blank"
+									rel="noreferrer"
+									className="flex-1 flex items-center justify-center gap-1 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 py-1.5 px-2 rounded-md text-xs font-medium transition-colors"
+									title="Написать в WhatsApp"
+								>
+									WA
+								</a>
+								<a
+									href={`https://t.me/+${patient?.phone?.replace(/\D/g, "")}`}
+									target="_blank"
+									rel="noreferrer"
+									className="flex-1 flex items-center justify-center gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 py-1.5 px-2 rounded-md text-xs font-medium transition-colors"
+									title="Написать в Telegram"
+								>
+									TG
 								</a>
 								<button
 									type="button"

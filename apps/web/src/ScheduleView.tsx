@@ -175,6 +175,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 	const [showWaitlist, setShowWaitlist] = useState(false);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const [useManualSelects, setUseManualSelects] = useState(false);
+	const [showFreeDoctorsOnly, setShowFreeDoctorsOnly] = useState(false);
 
 	const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
 
@@ -303,6 +304,25 @@ export function ScheduleView(props: ScheduleViewProps) {
 			detail: shiftWarnings[0]?.title ?? "нет срочных предупреждений",
 		},
 	];
+
+	const now = new Date();
+	const freeDoctorIds = dashboard.clinicSettings.staff
+		.filter((m) => m.role === "doctor" || m.role === "owner")
+		.filter((m) => {
+			const hasActiveAppointment = sortedAppointments.some(
+				(a) => a.doctorUserId === m.id && ["scheduled", "arrived", "in_chair"].includes(a.status) && new Date(a.startsAt) <= now && new Date(a.endsAt) >= now
+			);
+			return !hasActiveAppointment;
+		})
+		.map((m) => m.id);
+
+	const doctorsToRender = showFreeDoctorsOnly 
+		? dashboard.clinicSettings.staff.filter((m) => freeDoctorIds.includes(m.id))
+		: dashboard.clinicSettings.staff.filter(
+				(member) =>
+					member.active &&
+					(member.role === "doctor" || member.role === "owner"),
+			);
 
 	return (
 		<motion.div
@@ -500,15 +520,18 @@ export function ScheduleView(props: ScheduleViewProps) {
 				>
 					Все записи
 				</button>
+				
+				<button
+					type="button"
+					className={`quick-chip ${showFreeDoctorsOnly ? "active" : ""}`}
+					onClick={() => setShowFreeDoctorsOnly(!showFreeDoctorsOnly)}
+					style={showFreeDoctorsOnly ? { backgroundColor: "var(--emerald-50)", color: "var(--emerald-700)", border: "1px solid var(--emerald-200)" } : {}}
+				>
+					🔍 Свободные врачи
+				</button>
 
 				{dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
-					dashboard.clinicSettings.staff
-						.filter(
-							(member) =>
-								member.active &&
-								(member.role === "doctor" || member.role === "owner"),
-						)
-						.map((member) => (
+					doctorsToRender.map((member) => (
 							<button
 								key={member.id}
 								type="button"
@@ -520,6 +543,9 @@ export function ScheduleView(props: ScheduleViewProps) {
 								}
 							>
 								{member.fullName.split(" ")[0]}
+								{freeDoctorIds.includes(member.id) && (
+									<span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", marginLeft: "6px", verticalAlign: "middle" }} title="Свободен" />
+								)}
 							</button>
 						))}
 

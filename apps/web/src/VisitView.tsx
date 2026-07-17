@@ -2249,6 +2249,111 @@ export function VisitView() {
 					</div>
 				</details>
 
+				<details className="ztl-toggle" style={{ marginTop: "8px", border: "1px solid var(--slate-200)", borderRadius: "8px", padding: "12px", background: "white" }}>
+					<summary style={{ fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+						🦷 Ортопедия и Лаборатория (ЗТЛ)
+						{dashboard?.labOrders?.filter((o: any) => o.patientId === activePatient.id && o.status !== "delivered").length ? " 🔵 (В работе)" : ""}
+					</summary>
+					<div className="ztl-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Лаборатория / Техник
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>-- Выберите лабораторию --</option>
+									<option>ZTL "Сириус" (CAD/CAM)</option>
+									<option>Иванов А.В. (Керамика)</option>
+									<option>Дентал-Лаб 3D</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Тип работы
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>Коронка диоксид циркония (Prettau)</option>
+									<option>Винир E-Max</option>
+									<option>Абатмент индивидуальный (Ti)</option>
+									<option>Вкладка культевая</option>
+									<option>Элайнеры (набор)</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Зубы / Сегмент
+								<input type="text" placeholder="Напр: 1.1, 1.2" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+							</label>
+						</div>
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Оттиски
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>Силикон (А-силикон)</option>
+									<option>Силикон (С-силикон)</option>
+									<option>Полиэфир (Impregum)</option>
+									<option>Цифровой скан (STL)</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Цвет (VITA)
+								<input type="text" placeholder="A1, Bleach 1..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+							</label>
+						</div>
+						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+							Комментарий для техника
+							<textarea rows={2} placeholder="Особенности уступа, форма, прозрачность режущего края..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
+						</label>
+						<div style={{ display: "flex", gap: "8px" }}>
+							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={() => showToast("Заказ-наряд сформирован и отправлен в лабораторию", "success")}>
+								<FlaskConical size={16} /> Создать наряд
+							</button>
+						</div>
+					</div>
+				</details>
+
+				<details className="gnathology-toggle" style={{ marginTop: "8px", border: "1px solid var(--slate-200)", borderRadius: "8px", padding: "12px", background: "white" }}>
+					<summary style={{ fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+						💀 Гнатология и Остеопатия
+					</summary>
+					<div className="gnathology-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Тип окклюзии
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>I класс (нейтральная)</option>
+									<option>II класс, 1 подкласс</option>
+									<option>II класс, 2 подкласс</option>
+									<option>III класс (мезиальная)</option>
+									<option>Открытый прикус</option>
+									<option>Глубокий прикус</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Смещение челюсти
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>Нет смещения</option>
+									<option>Латеродевиация вправо</option>
+									<option>Латеродевиация влево</option>
+									<option>Ретрузия</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Состояние ВНЧС
+								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option>Безболезненно, шумов нет</option>
+									<option>Щелчок справа</option>
+									<option>Щелчок слева</option>
+									<option>Крепитация</option>
+								</select>
+							</label>
+							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+								Амплитуда открывания рта
+								<input type="number" placeholder="мм" defaultValue={45} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+							</label>
+						</div>
+						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
+							Остеопатический статус (постура)
+							<textarea rows={2} placeholder="Положение головы, асимметрия надплечий, перекос таза..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
+						</label>
+					</div>
+				</details>
+
 				{visitCloseChecklist ? (
 					<div
 						className="close-checklist"

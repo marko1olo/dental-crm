@@ -27,8 +27,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	const [loading, setLoading] = useState(false);
 	const [searchLoading, setSearchLoading] = useState(false);
 
-	if (!patientId) return null;
-
 	useEffect(() => {
 		if (isLinking && searchQuery.length >= 2) {
 			const delayFn = setTimeout(async () => {
@@ -55,6 +53,8 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			setSearchResults([]);
 		}
 	}, [searchQuery, isLinking]);
+
+	if (!patientId) return null;
 
 	const handleCreateFamily = async () => {
 		if (!newFamilyName.trim()) {

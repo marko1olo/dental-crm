@@ -11,6 +11,7 @@ import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
+import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -270,6 +271,7 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && <PatientNoShowRisk patientId={selectedPatientId} />}
+					{selectedPatientId && <OrthodonticProgressWidget patientId={selectedPatientId} />}
 				</div>
 			</div>
 		</>
