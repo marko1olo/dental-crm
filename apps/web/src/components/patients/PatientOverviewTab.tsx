@@ -12,6 +12,8 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
+import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
+import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -274,6 +276,8 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && <PatientNoShowRisk patientId={selectedPatientId} />}
 					{selectedPatientId && <OrthodonticProgressWidget patientId={selectedPatientId} />}
+					{selectedPatientId && <PatientReclamationsWidget patientId={selectedPatientId} />}
+					{selectedPatientId && <PatientTaskTicketsWidget patientId={selectedPatientId} />}
 				</div>
 			</div>
 		</>

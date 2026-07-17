@@ -2286,3 +2286,67 @@ export const patientOrthoTrackers = pgTable("patient_ortho_trackers", {
 	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const serviceConsumables = pgTable("service_consumables", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	serviceCatalogId: uuid("service_catalog_id").notNull(), 
+	inventoryItemId: uuid("inventory_item_id").notNull().references(() => inventoryItems.id), 
+	quantityRequired: numeric("quantity_required").notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const taskTickets = pgTable("task_tickets", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	patientId: uuid("patient_id").references(() => patients.id), 
+	assignedToId: uuid("assigned_to_id").notNull().references(() => users.id),
+	title: text("title").notNull(),
+	description: text("description"),
+	status: text("status").default("pending").notNull(), 
+	priority: text("priority").default("normal").notNull(), 
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const patientReclamations = pgTable("patient_reclamations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	patientId: uuid("patient_id").notNull().references(() => patients.id),
+	doctorId: uuid("doctor_id").notNull().references(() => users.id),
+	complicationDetails: text("complication_details").notNull(),
+	proposedAction: text("proposed_action"),
+	status: text("status").default("under_review").notNull(), 
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	resolvedAt: timestamp("resolved_at"),
+});
+
+export const bankInstallmentAgreements = pgTable("bank_installment_agreements", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	patientId: uuid("patient_id").notNull().references(() => patients.id),
+	bankName: text("bank_name").notNull(), 
+	agreementNumber: text("agreement_number").unique().notNull(),
+	loanAmount: numeric("loan_amount").notNull(),
+	downpaymentAmount: numeric("downpayment_amount").default("0.0").notNull(),
+	interestRate: numeric("interest_rate").default("0.0").notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const syncableReportBlocks = pgTable("syncable_report_blocks", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	name: text("name").notNull(), 
+	querySql: text("query_sql").notNull(), 
+	isFavorited: boolean("is_favorited").default(false).notNull(),
+	isSyncActive: boolean("is_sync_active").default(false).notNull(),
+	syncIntervalMinutes: integer("sync_interval").default(1440), 
+	externalWebhookUrl: text("external_webhook_url"), 
+	lastSyncedAt: timestamp("last_synced_at"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const employeeMobileTokens = pgTable("employee_mobile_tokens", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	employeeId: uuid("employee_id").notNull().references(() => users.id),
+	tokenValue: text("token_value").unique().notNull(), 
+	deviceModel: text("device_model"), 
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	lastAccessedAt: timestamp("last_accessed_at"),
+});
+

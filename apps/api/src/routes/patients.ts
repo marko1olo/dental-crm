@@ -9,6 +9,9 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
+import { db } from "../db/client.js";
+import { patientReclamations, taskTickets, patients } from "../db/schema.js";
+import { eq, desc } from "drizzle-orm";
 
 type PatientPayloadSchema<T> = {
 	safeParse: (
@@ -326,6 +329,81 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		} catch (e) {
 			console.error("[Patients] Update anamnesis error:", e);
 			return sendPatientNotFound(reply);
+		}
+	});
+
+	app.get("/api/patients/:patientId/reclamations", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "read reclamations");
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+		try {
+			const rows = await db
+				.select()
+				.from(patientReclamations)
+				.where(eq(patientReclamations.patientId, patientId))
+				.orderBy(desc(patientReclamations.createdAt));
+			return rows;
+		} catch (e) {
+			console.error("Reclamations GET error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.post("/api/patients/:patientId/reclamations", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "create reclamation");
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+		const { doctorId, complicationDetails, proposedAction } = request.body as any;
+		try {
+			const [reclamation] = await db.insert(patientReclamations).values({
+				patientId,
+				doctorId,
+				complicationDetails,
+				proposedAction,
+				status: "under_review",
+			}).returning();
+			return reclamation;
+		} catch (e) {
+			console.error("Reclamations POST error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.get("/api/patients/:patientId/tickets", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "read tickets");
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+		try {
+			const rows = await db
+				.select()
+				.from(taskTickets)
+				.where(eq(taskTickets.patientId, patientId))
+				.orderBy(desc(taskTickets.createdAt));
+			return rows;
+		} catch (e) {
+			console.error("Task Tickets GET error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.post("/api/patients/:patientId/tickets", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "create ticket");
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+		const { assignedToId, title, description, priority } = request.body as any;
+		try {
+			const [ticket] = await db.insert(taskTickets).values({
+				patientId,
+				assignedToId,
+				title,
+				description,
+				priority: priority || "normal",
+				status: "pending",
+			}).returning();
+			return ticket;
+		} catch (e) {
+			console.error("Task Tickets POST error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
 		}
 	});
 }

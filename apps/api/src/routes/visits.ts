@@ -226,13 +226,16 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			await upsertVisitGnathologyInDb(visitId, payload.patientId, {
+			const data: any = {
 				occlusionType: payload.occlusionType,
 				jawShift: payload.jawShift,
 				tmjState: payload.tmjState,
-				mouthOpeningMm: payload.mouthOpeningMm ? Number(payload.mouthOpeningMm) : null,
 				osteopathicStatus: payload.osteopathicStatus,
-			});
+			};
+			if (payload.mouthOpeningMm) {
+				data.mouthOpeningMm = Number(payload.mouthOpeningMm);
+			}
+			await upsertVisitGnathologyInDb(visitId, payload.patientId, data);
 			return reply.send({ success: true });
 		} catch (error) {
 			return reply.code(500).send({ error: "Internal error saving gnathology" });
