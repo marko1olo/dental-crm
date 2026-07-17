@@ -4120,10 +4120,7 @@ export function useAppLogic(): any {
 		const saveTimer = window.setTimeout(
 			() => {
 				dirtyAppointmentIds.forEach(
-					(appointmentId) =>
-						void saveAppointmentSchedule(appointmentId, {
-							closeEditorOnSave: false,
-						}),
+						void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }),
 				);
 			},
 			appointmentRetryingErrors ? 5000 : 1200,
@@ -4151,9 +4148,7 @@ export function useAppLogic(): any {
 			});
 			Array.from(appointmentScheduleDirtyIds).forEach((appointmentId) => {
 				if (appointmentScheduleSaveStates[appointmentId] !== "saving") {
-					void saveAppointmentSchedule(appointmentId, {
-						closeEditorOnSave: false,
-					});
+					void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false });
 				}
 			});
 		};

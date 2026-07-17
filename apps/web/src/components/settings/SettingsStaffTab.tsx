@@ -29,6 +29,7 @@ export function SettingsStaffTab() {
 		staffScheduleDrafts,
 		staffScheduleDirtyIds,
 		staffScheduleSavingId,
+		staffScheduleSaveStates,
 		updateStaffScheduleDraft,
 		toggleStaffWorkingDay,
 		saveStaffSchedule,
@@ -310,8 +311,20 @@ export function SettingsStaffTab() {
 							.map((member: any) => {
 								const draft = staffScheduleDrafts?.[member.id];
 								if (!draft) return null;
+								const scheduleSaveState =
+									staffScheduleSaveStates?.[member.id] ?? "saved";
 								const isDirty = staffScheduleDirtyIds?.has(member.id);
-								const isSaving = staffScheduleSavingId === member.id;
+								const isSaving =
+									staffScheduleSavingId === member.id ||
+									scheduleSaveState === "saving";
+
+								const scheduleSaveLabel = isSaving
+									? "Автосохранение"
+									: scheduleSaveState === "error"
+										? "Не сохранено"
+										: isDirty
+											? "Ждет автосохранения"
+											: "Сохранено";
 
 								return (
 									<div className="schedule-member-row" key={member.id}>
@@ -357,7 +370,7 @@ export function SettingsStaffTab() {
 															</label>
 														</div>
 														{dayDraft.working && (
-															<div className="day-hours">
+															<div className="staff-day-hours">
 																<input
 																	type="time"
 																	value={dayDraft.start}
@@ -390,7 +403,12 @@ export function SettingsStaffTab() {
 											})}
 										</div>
 
-										<div className="schedule-actions">
+										<div className="staff-schedule-actions">
+											<span
+												className={`save-state save-state-${scheduleSaveState}`}
+											>
+												{scheduleSaveLabel}
+											</span>
 											<button
 												className="primary-button compact"
 												disabled={!isDirty || isSaving}

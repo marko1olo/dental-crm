@@ -27,6 +27,9 @@ export interface WorkspaceFeatureFlags {
 	hasPayrollModule: boolean;
 	hasMarketingModule: boolean;
 	hasAnalyticsModule: boolean;
+	hasCsoScanner: boolean;
+	hasLeadsKanban: boolean;
+	hasOmnichannel: boolean;
 	hasInventoryModule: boolean;
 	aiEnableTreatmentPlan: boolean;
 	aiEnableRecommendations: boolean;
@@ -65,6 +68,9 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	hasPayrollModule: true,
 	hasMarketingModule: true,
 	hasAnalyticsModule: true,
+	hasCsoScanner: false,
+	hasLeadsKanban: false,
+	hasOmnichannel: false,
 	hasInventoryModule: true,
 	aiEnableTreatmentPlan: true,
 	aiEnableRecommendations: true,
@@ -112,6 +118,9 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				hasPayrollModule: s.hasPayrollModule,
 				hasMarketingModule: s.hasMarketingModule,
 				hasAnalyticsModule: s.hasAnalyticsModule,
+				hasCsoScanner: s.hasCsoScanner,
+				hasLeadsKanban: s.hasLeadsKanban,
+				hasOmnichannel: s.hasOmnichannel,
 				hasInventoryModule: s.hasInventoryModule,
 				aiEnableTreatmentPlan: s.aiEnableTreatmentPlan,
 				aiEnableRecommendations: s.aiEnableRecommendations,

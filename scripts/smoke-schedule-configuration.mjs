@@ -1373,10 +1373,18 @@ const appSource = [
 			"utf8",
 		),
 	fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	fs.readFileSync("apps/web/src/hooks/domains/useAuthLogic.ts", "utf8"),
+	fs.readFileSync("apps/web/src/hooks/domains/usePatientLogic.ts", "utf8"),
+	fs.readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8"),
+	fs.readFileSync("apps/web/src/hooks/domains/useVisitLogic.ts", "utf8"),
 	fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
 	fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
 	fs.readFileSync(
 		"apps/web/src/components/settings/SettingsAccessTab.tsx",
+		"utf8",
+	),
+	fs.readFileSync(
+		"apps/web/src/components/settings/SettingsStaffTab.tsx",
 		"utf8",
 	),
 	fs.readFileSync(
@@ -1385,6 +1393,10 @@ const appSource = [
 	),
 	fs.readFileSync(
 		"apps/web/src/components/settings/SettingsTelegramTab.tsx",
+		"utf8",
+	),
+	fs.readFileSync(
+		"apps/web/src/components/patients/PatientDocsTab.tsx",
 		"utf8",
 	),
 	fs.readFileSync("apps/web/src/ScheduleView.tsx", "utf8"),

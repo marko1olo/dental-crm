@@ -202,6 +202,12 @@ export function filterViewsByFlags(
 		filtered = filtered.filter((v) => v !== "marketing");
 	if (!flags.hasAnalyticsModule)
 		filtered = filtered.filter((v) => v !== "analytics");
+	if (!flags.hasCsoScanner)
+		filtered = filtered.filter((v) => v !== "scanner");
+	if (!flags.hasLeadsKanban)
+		filtered = filtered.filter((v) => v !== "leads");
+	if (!flags.hasOmnichannel)
+		filtered = filtered.filter((v) => v !== "inbox");
 	if (!flags.hasInventoryModule)
 		filtered = filtered.filter((v) => v !== "inventory");
 	return filtered;

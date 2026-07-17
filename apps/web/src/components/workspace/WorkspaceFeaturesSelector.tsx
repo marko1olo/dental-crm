@@ -39,6 +39,9 @@ interface FeatureToggleDef {
 		| "hasPayrollModule"
 		| "hasMarketingModule"
 		| "hasAnalyticsModule"
+		| "hasCsoScanner"
+		| "hasLeadsKanban"
+		| "hasOmnichannel"
 		| "hasOrthodontics"
 		| "hasGnathology"
 		| "hasTasks"
@@ -168,6 +171,31 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 		icon: <LayoutGrid size={20} />,
 		color: "hsl(220 80% 50%)",
 	},
+	{
+		key: "hasCsoScanner",
+		label: "Сканнер лотков (ЦСО)",
+		description:
+			"Модуль стерилизации: учет медицинских лотков, сканирование штрих-кодов и контроль сроков.",
+		icon: <CheckCircle2 size={20} />,
+		color: "hsl(210 80% 50%)",
+	},
+	{
+		key: "hasLeadsKanban",
+		label: "Канбан Лидов (CRM)",
+		description:
+			"Воронка продаж: учет потенциальных пациентов, статусы сделок и контроль первичных записей.",
+		icon: <LayoutGrid size={20} />,
+		color: "hsl(25 80% 50%)",
+	},
+	{
+		key: "hasOmnichannel",
+		label: "Омниканальная Почта",
+		description:
+			"Единый инбокс для мессенджеров (WhatsApp, Telegram) и email для общения с пациентами.",
+		icon: <MessageSquare size={20} />,
+		color: "hsl(200 80% 45%)",
+	},
+
 	{
 		key: "aiEnableTreatmentPlan",
 		label: "AI: Генерация планов лечения",

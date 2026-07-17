@@ -308,14 +308,10 @@ export function useScheduleLogic({
 	) {
 		newAppointmentDraftUserEditedRef.current = true;
 		setNewAppointmentDraft((current) => ({ ...current, [key]: value }));
-		if (key === "patientId" && typeof value === "string")
-			setSelectedPatientId(value || null);
-		if (key === "doctorUserId" && typeof value === "string")
-			setScheduleDefaultDoctorUserId(value || null);
-		if (key === "assistantUserId" && typeof value === "string")
-			setScheduleDefaultAssistantUserId(value || null);
-		if (key === "chairId" && typeof value === "string")
-			setScheduleDefaultChairId(value || null);
+		if (key === "patientId" && typeof value === "string") setSelectedPatientId(value || null);
+		if (key === "doctorUserId" && typeof value === "string") setScheduleDefaultDoctorUserId(value || null);
+		if (key === "assistantUserId" && typeof value === "string") setScheduleDefaultAssistantUserId(value || null);
+		if (key === "chairId" && typeof value === "string") setScheduleDefaultChairId(value || null);
 		setNewAppointmentSaveState("idle");
 		setNewAppointmentError(null);
 	}
