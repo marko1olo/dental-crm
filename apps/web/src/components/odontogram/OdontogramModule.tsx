@@ -16,6 +16,7 @@ import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientStore } from "../../store/patientStore";
 import "./odontogram.css";
 
 const SurfaceSelector = ({
@@ -237,6 +238,20 @@ export const OdontogramModule = ({
 			}),
 			body: JSON.stringify({ toothNumbers, state, surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined }),
 		});
+		
+		// Push suggestion to global state for ComparativePlannerDashboard
+		const { addPendingPlanSuggestion } = usePatientStore.getState();
+		for (const t of toothNumbers) {
+			if (state === "Caries" || state === "Pulpitis" || state === "Planned_Implant" || state === "Missing" || state === "Crown") {
+				addPendingPlanSuggestion({
+					toothNumber: t,
+					state,
+					surfaces: activeSurfaces.length > 0 ? [...activeSurfaces] : undefined,
+					suggestedAt: new Date().toISOString()
+				});
+			}
+		}
+
 		setActiveSurfaces([]);
 	};
 

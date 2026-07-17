@@ -106,10 +106,21 @@ export interface PatientStore {
 	newRulePatientText: string;
 	setNewRulePatientText: (val: string | ((prev: string) => string)) => void;
 
+	pendingPlanSuggestions: any[];
+	addPendingPlanSuggestion: (item: any) => void;
+	clearPendingPlanSuggestions: () => void;
+
 	reset: () => void;
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
+	pendingPlanSuggestions: [],
+	addPendingPlanSuggestion: (item) =>
+		set((state) => ({
+			pendingPlanSuggestions: [...state.pendingPlanSuggestions, item],
+		})),
+	clearPendingPlanSuggestions: () => set({ pendingPlanSuggestions: [] }),
+	
 	odontogramState: {},
 	setToothStatus: (toothNumber, status) =>
 		set((state) => ({

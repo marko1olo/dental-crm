@@ -12,6 +12,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 	appointments,
 	dashboard,
 	onSlotClick,
+	onSlotDrop,
 }) => {
 	const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
@@ -271,6 +272,27 @@ export const ClinicalScheduler: React.FC<any> = ({
 									style={{ gridRow: ri + 2, gridColumn: ci + 2 }}
 									onMouseEnter={() => setCrosshair({ rowIdx: ri, colIdx: ci })}
 									onClick={() => handleEmptyClick(time, chair.id)}
+									onDragOver={(e) => {
+										e.preventDefault(); // Allow drop
+										e.dataTransfer.dropEffect = "copy";
+										setCrosshair({ rowIdx: ri, colIdx: ci });
+									}}
+									onDrop={(e) => {
+										e.preventDefault();
+										setCrosshair(null);
+										if (onSlotDrop) {
+											const today = new Date().toISOString().split("T")[0];
+											try {
+												const dataStr = e.dataTransfer.getData("application/json");
+												if (dataStr) {
+													const data = JSON.parse(dataStr);
+													onSlotDrop(today, time, chair.id, data);
+												}
+											} catch(err) {
+												console.error("Drop failed", err);
+											}
+										}
+									}}
 								>
 									<div className="sg-cell-plus">+</div>
 								</div>
@@ -301,6 +323,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 										// We prevent event bubbling so it doesn't trigger the background empty cell click
 										e.stopPropagation();
 									}}
+									style={{ position: 'relative' }}
 								>
 									<div className="sg-appt-title">
 										{appt.patient?.fullName || "Пациент"}
@@ -310,6 +333,29 @@ export const ClinicalScheduler: React.FC<any> = ({
 										{new Date(appt.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
 										{" - "}
 										{new Date(appt.endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+									</div>
+									
+									{/* Status Lights (Светофоры) */}
+									<div className="sg-appt-status-lights">
+										{/* Долг (Красная точка) */}
+										{appt.patient?.balance < 0 && (
+											<span className="sg-status-dot red" title={`Долг: ${appt.patient.balance} ₽`} />
+										)}
+										
+										{/* Отсутствие плана лечения / не подписанные док-ты (Желтая точка) */}
+										{(!appt.patient?.hasSignedAgreement || !appt.patient?.hasTreatmentPlan) && (
+											<span className="sg-status-dot yellow" title="Отсутствуют подписанные документы или план лечения" />
+										)}
+
+										{/* Заказ ЗТЛ (Синяя точка) */}
+										{appt.patient?.hasActiveLabOrder && (
+											<span className="sg-status-dot blue" title="Есть активный заказ в зуботехнической лаборатории" />
+										)}
+
+										{/* Всё готово (Зеленая точка) */}
+										{appt.patient?.balance >= 0 && appt.patient?.hasSignedAgreement && appt.patient?.hasTreatmentPlan && (
+											<span className="sg-status-dot green" title="Пациент готов к приёму (предоплата, документы подписаны)" />
+										)}
 									</div>
 								</div>
 							</div>

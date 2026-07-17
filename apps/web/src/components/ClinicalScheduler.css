@@ -326,6 +326,29 @@
 	transform: translateY(-2px);
 }
 
+/* ── Status Lights (Светофоры) ── */
+.sg-appt-status-lights {
+	position: absolute;
+	bottom: 6px;
+	right: 6px;
+	display: flex;
+	gap: 4px;
+	z-index: 2;
+}
+
+.sg-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+	box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+.sg-status-dot.red { background-color: #ef4444; box-shadow: 0 0 6px #ef444480; }
+.sg-status-dot.yellow { background-color: #eab308; box-shadow: 0 0 6px #eab30880; }
+.sg-status-dot.blue { background-color: #3b82f6; box-shadow: 0 0 6px #3b82f680; }
+.sg-status-dot.green { background-color: #10b981; box-shadow: 0 0 6px #10b98180; }
+
 @media (max-width: 480px) {
 	.clinical-scheduler {
 		padding: 14px;

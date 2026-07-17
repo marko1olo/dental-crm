@@ -684,6 +684,27 @@ export function ScheduleView(props: ScheduleViewProps) {
 					focusNewAppointmentEditor();
 					showToast("Слот выбран, заполните форму", "info");
 				}}
+				onSlotDrop={(date, time, chairId, data) => {
+					if (data?.type === "waitlist_item" && data.item) {
+						const { item } = data;
+						const localTimeStr = `${date}T${time}:00`;
+						const startsAtIso = new Date(localTimeStr).toISOString();
+						const endsAtIso = new Date(
+							new Date(localTimeStr).getTime() + 3600000,
+						).toISOString();
+
+						updateNewAppointmentDraft("patientId", item.patientId);
+						if (item.preferredDoctorId) {
+							updateNewAppointmentDraft("doctorUserId", item.preferredDoctorId);
+						}
+						updateNewAppointmentDraft("startsAt", startsAtIso);
+						updateNewAppointmentDraft("endsAt", endsAtIso);
+						updateNewAppointmentDraft("chairId", chairId);
+
+						focusNewAppointmentEditor();
+						showToast(`Пациент ${item.patientName || ""} перенесен из листа ожидания. Завершите запись.`, "success");
+					}
+				}}
 			/>
 
 			<div className="schedule-timeline timeline">

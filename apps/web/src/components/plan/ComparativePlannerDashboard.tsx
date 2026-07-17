@@ -29,6 +29,7 @@ interface PlanItem {
 	price: number;
 	discount?: number | null;
 	phase?: string | null;
+	status?: "Proposed" | "In_Progress" | "Completed";
 }
 
 type PlanStatus =
@@ -124,6 +125,8 @@ function statusCssClass(status: PlanStatus): string {
 export const ComparativePlannerDashboard: React.FC = () => {
 	const { auth, dashboard } = useAppLogicContext();
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const pendingPlanSuggestions = usePatientStore((s) => s.pendingPlanSuggestions);
+	const clearPendingPlanSuggestions = usePatientStore((s) => s.clearPendingPlanSuggestions);
 
 	const [plans, setPlans] = useState<TreatmentPlan[]>([]);
 	const [insuranceActive, setInsuranceActive] = useState(false);
@@ -259,12 +262,90 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		}
 	};
 
+	const updatePlanItemStatus = async (planId: string, itemId: string, newStatus: "Proposed" | "In_Progress" | "Completed") => {
+		if (!selectedPatientId) return;
+		const plan = plans.find(p => p.id === planId);
+		if (!plan) return;
+
+		const newItems = plan.items.map(i => i.id === itemId ? { ...i, status: newStatus } : i);
+		setSavingPlanId(planId);
+		try {
+			const res = await fetch(`/api/patients/${selectedPatientId}/treatment-plans`, {
+				method: "POST",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					id: planId,
+					status: plan.status,
+					items: newItems,
+				}),
+			});
+			if (res.ok) {
+				setPlans(prev => prev.map(p => p.id === planId ? { ...p, items: newItems } : p));
+				showToast("Статус услуги обновлён", "success");
+			} else {
+				showToast("Не удалось обновить статус услуги", "error");
+			}
+		} catch {
+			showToast("Ошибка сети при обновлении услуги", "error");
+		} finally {
+			setSavingPlanId(null);
+		}
+	};
+
 	// ── Plan creation ─────────────────────────────────────────────────────────
 
 	const openCreateForm = () => {
 		setNewPlanName("Комплексный план лечения");
 		setDraftRows([makeDraftRow()]);
 		setShowCreateForm(true);
+		setTimeout(
+			() => formRef.current?.scrollIntoView({ behavior: "smooth" }),
+			50,
+		);
+	};
+
+	const importSuggestions = () => {
+		if (pendingPlanSuggestions.length === 0) return;
+		
+		const catalog = dashboard?.serviceCatalog || [];
+		const findService = (category: string, isBaby: boolean, keywords: string[]) => {
+			const candidates = catalog.filter((s: any) => s.category === category);
+			let best = candidates.find((s: any) => keywords.some((k) => s.title.toLowerCase().includes(k)));
+			if (!best && candidates.length > 0) best = candidates[0];
+			return best;
+		};
+
+		const newRows: DraftServiceRow[] = pendingPlanSuggestions.map(sug => {
+			const isBaby = sug.toothNumber > 50;
+			let service: any = null;
+			if (sug.state === "Caries") {
+				service = findService("therapy", isBaby, ["кариес"]) || { id: "service_caries", title: "Лечение кариеса", priceRub: 4000 };
+			} else if (sug.state === "Pulpitis") {
+				service = findService("therapy", isBaby, ["пульпит", "эндо"]) || { id: "service_pulpitis", title: "Лечение пульпита", priceRub: 8000 };
+			} else if (sug.state === "Planned_Implant" || sug.state === "Implant") {
+				service = findService("surgery", false, ["имплант", "установка"]) || { id: "service_implant", title: "Установка имплантата", priceRub: 35000 };
+			} else if (sug.state === "Crown") {
+				service = findService("prosthetics", isBaby, ["коронка"]) || { id: "service_crown", title: "Коронка", priceRub: 15000 };
+			} else if (sug.state === "Missing") {
+				service = findService("surgery", false, ["имплант"]) || { id: "service_implant", title: "Установка имплантата", priceRub: 35000 };
+			}
+			
+			return {
+				key: Math.random().toString(36).slice(2),
+				priceId: service?.id || "",
+				name: `[Зуб ${sug.toothNumber}] ${service?.title || "Процедура"}`,
+				price: service?.priceRub?.toString() || "0",
+				quantity: "1"
+			};
+		});
+
+		setNewPlanName("План лечения (из зубной формулы)");
+		setDraftRows(newRows);
+		setShowCreateForm(true);
+		clearPendingPlanSuggestions();
+		
 		setTimeout(
 			() => formRef.current?.scrollIntoView({ behavior: "smooth" }),
 			50,
@@ -448,6 +529,19 @@ export const ComparativePlannerDashboard: React.FC = () => {
 									animation: "spin 1s linear infinite",
 								}}
 							/>
+						)}
+
+						{/* Suggestions button */}
+						{pendingPlanSuggestions.length > 0 && (
+							<button
+								type="button"
+								className="new-plan-btn"
+								style={{ background: "var(--teal-500)", borderColor: "var(--teal-600)" }}
+								onClick={importSuggestions}
+							>
+								<Plus size={16} />
+								Предложения из зубной формулы ({pendingPlanSuggestions.length})
+							</button>
 						)}
 
 						{/* New plan button */}
@@ -875,6 +969,28 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																	: ""}
 															</p>
 														</div>
+														{plan.status !== "Draft" && plan.status !== "Archived" && plan.status !== "Rejected" && (
+															<div className="tile-actions" style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+																<select
+																	value={item.status || "Proposed"}
+																	onChange={(e) => updatePlanItemStatus(plan.id, item.id, e.target.value as any)}
+																	onClick={(e) => e.stopPropagation()}
+																	style={{
+																		padding: "4px 8px",
+																		fontSize: "12px",
+																		borderRadius: "6px",
+																		background: "var(--paper)",
+																		border: "1px solid var(--line)",
+																		color: "var(--ink)",
+																		outline: "none"
+																	}}
+																>
+																	<option value="Proposed">Предложено</option>
+																	<option value="In_Progress">В процессе</option>
+																	<option value="Completed">Завершено</option>
+																</select>
+															</div>
+														)}
 													</div>
 												))
 											)}

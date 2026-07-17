@@ -18847,3 +18847,46 @@ body[data-ui-scale="large"] .appointment-card-footer button {
 	border-radius: 2px 2px 0 0;
 }
 
+/* ── Accessibility: High Contrast Theme (Слабовидящие) ── */
+html.theme-accessibility {
+	/* Override global variables for maximum contrast */
+	--bg: #ffffff;
+	--paper: #ffffff;
+	--ink: #000000;
+	--muted: #000000;
+	--line: #000000;
+	--brand: #000000;
+	--sidebar: #ffffff;
+	--sidebar-ink: #000000;
+	--sidebar-line: #000000;
+	
+	/* Scale up typography base */
+	font-size: 1.25rem !important;
+}
+
+html.theme-accessibility * {
+	/* Disable transitions and animations for accessibility */
+	transition: none !important;
+	animation: none !important;
+	/* Ensure all borders are pure black for contrast */
+	border-color: #000000 !important;
+}
+
+/* Dark version of high-contrast if system prefers dark */
+@media (prefers-color-scheme: dark) {
+	html.theme-accessibility {
+		--bg: #000000;
+		--paper: #000000;
+		--ink: #ffffff;
+		--muted: #ffffff;
+		--line: #ffffff;
+		--brand: #ffffff;
+		--sidebar: #000000;
+		--sidebar-ink: #ffffff;
+		--sidebar-line: #ffffff;
+	}
+	html.theme-accessibility * {
+		border-color: #ffffff !important;
+	}
+}
+

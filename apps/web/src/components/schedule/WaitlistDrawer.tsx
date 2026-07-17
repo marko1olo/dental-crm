@@ -314,7 +314,12 @@ export function WaitlistDrawer({
 								{items.map((item) => (
 									<div
 										key={item.id}
-										className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-600/50 transition-colors"
+										draggable
+										onDragStart={(e) => {
+											e.dataTransfer.setData("application/json", JSON.stringify({ type: "waitlist_item", item }));
+											e.dataTransfer.effectAllowed = "copy";
+										}}
+										className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 hover:border-teal-500/50 cursor-grab active:cursor-grabbing transition-colors"
 									>
 										<div className="flex justify-between items-start">
 											<div>

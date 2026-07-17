@@ -75,6 +75,8 @@ export function SettingsProfileTab() {
 	const [confirmPin, setConfirmPin] = useState("");
 	const [pinLoading, setPinLoading] = useState(false);
 
+	const [highContrast, setHighContrast] = useState(() => localStorage.getItem("dente_high_contrast") === "true");
+
 	const strength = getPasswordStrength(newPassword);
 	const passwordMismatch = confirmPassword && newPassword !== confirmPassword;
 
@@ -386,7 +388,7 @@ export function SettingsProfileTab() {
 						</div>
 						
 						<div className="profile-form-group">
-							<label>Масштаб интерфейса</label>
+							<label>Масштаб элементов</label>
 							<select
 								value={uiStore.uiScale}
 								onChange={(e) =>
@@ -394,8 +396,30 @@ export function SettingsProfileTab() {
 								}
 							>
 								<option value="standard">Компактный (Стандарт)</option>
-								<option value="large">Крупный (Для слабовидящих)</option>
+								<option value="large">Крупный</option>
 							</select>
+						</div>
+
+						<div className="profile-form-group full-width">
+							<label>Версия для слабовидящих (ГОСТ Р 52872-2019)</label>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+								<label className="switch">
+									<input 
+										type="checkbox" 
+										checked={highContrast}
+										onChange={(e) => {
+											const val = e.target.checked;
+											setHighContrast(val);
+											localStorage.setItem("dente_high_contrast", val.toString());
+											window.dispatchEvent(new Event("dente:theme-change"));
+										}} 
+									/>
+									<span className="slider round"></span>
+								</label>
+								<span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+									Включает чёрно-белую схему максимального контраста, отключает анимации и глобально увеличивает шрифт.
+								</span>
+							</div>
 						</div>
 
 						<div className="profile-form-group full-width">

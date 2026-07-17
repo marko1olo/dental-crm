@@ -336,7 +336,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 				// 2. Cancellation history
 				db.select({ count: sql<number>`COUNT(*)::int` })
 					.from(appointments)
-					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'canceled'`),
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'cancelled'`),
 
 				// 3. No-show history
 				db.select({ count: sql<number>`COUNT(*)::int` })
