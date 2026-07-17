@@ -13254,6 +13254,35 @@ async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 	const serviceTitle = (serviceId: string) =>
 		dashboard?.serviceCatalog?.find((service) => service.id === serviceId)
 			?.title ?? serviceId;
+
+	const [isQuickConsultLoading, setIsQuickConsultLoading] = useState(false);
+	const handleQuickConsult = async () => {
+		if (isQuickConsultLoading) return;
+		setIsQuickConsultLoading(true);
+		try {
+			const response = await fetch("/api/visits/quick", {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+			});
+			if (!response.ok) {
+				const msg = await response.text().catch(() => "Ошибка");
+				setError(`Быстрый приём: ${msg}`);
+				return;
+			}
+			const { patientId } = (await response.json()) as { patientId: string; appointmentId: string };
+			// Select the patient and navigate to visit
+			setSelectedPatientId(patientId);
+			await loadDashboard();
+			window.location.hash = "visit";
+		} catch (err: any) {
+			setError(`Быстрый приём: ${err.message ?? "Ошибка сети"}`);
+		} finally {
+			setIsQuickConsultLoading(false);
+		}
+	};
+
 	const goToVisitDictation = () => {
 		window.location.hash = "visit";
 		const openDictation = () => {
@@ -13487,6 +13516,8 @@ async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 		formatTime,
 		fromDateTimeLocalValue,
 		goToVisitDictation,
+		handleQuickConsult,
+		isQuickConsultLoading,
 		handleBrowserDirectoryInputChange,
 		handleBrowserMigrationInputChange,
 		handleMprKeyboardNavigation,

@@ -70,6 +70,10 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			})
 			.returning();
 
+		if (!attachment) {
+			return reply.code(500).send({ error: "Failed to insert attachment" });
+		}
+
 		return reply.code(201).send({ success: true, attachment });
 	});
 
@@ -105,5 +109,76 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		} catch (e) {
 			return reply.code(404).send({ error: "FileNotFoundOnDisk" });
 		}
+	});
+	app.get("/api/files/visits/:visitId/attachments", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const { visitId } = request.params as { visitId: string };
+
+		const visitAttachments = await db
+			.select()
+			.from(attachments)
+			.where(
+				and(
+					eq(attachments.visitId, visitId),
+					eq(attachments.organizationId, orgId),
+				),
+			);
+
+		return reply.send({ files: visitAttachments.map(a => ({
+			id: a.id,
+			url: `/api/attachments/${a.id}/download`,
+			name: a.fileName,
+			type: a.mimeType
+		}))});
+	});
+
+	app.post("/api/files/visits/:visitId/attachments", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const { visitId } = request.params as { visitId: string };
+
+		const data = await (request as any).file();
+		if (!data) {
+			return reply.code(400).send({ error: "Missing file payload" });
+		}
+
+		const uniqueSuffix = crypto.randomUUID();
+		const safeFilename = data.filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+		const filename = `${uniqueSuffix}-${safeFilename}`;
+		const storagePath = path.join(UPLOADS_DIR, filename);
+
+		const hash = crypto.createHash("sha256");
+		let sha256 = "";
+		const writeStream = createWriteStream(storagePath);
+		data.file.on("data", (chunk: Buffer) => hash.update(chunk));
+		await pipeline(data.file, writeStream);
+		sha256 = hash.digest("hex");
+
+		const [attachment] = await db
+			.insert(attachments)
+			.values({
+				organizationId: orgId,
+				visitId,
+				fileName: data.filename,
+				mimeType: data.mimetype,
+				storagePath: filename,
+				sha256,
+			})
+			.returning();
+
+		if (!attachment) {
+			return reply.code(500).send({ error: "Failed to insert attachment" });
+		}
+
+		return reply.code(201).send({ 
+			success: true, 
+			file: {
+				id: attachment.id,
+				url: `/api/attachments/${attachment.id}/download`,
+				name: attachment.fileName,
+				type: attachment.mimeType
+			} 
+		});
 	});
 }

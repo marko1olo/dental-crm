@@ -287,8 +287,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							.catch(() => {});
 					}
 
+					const clinicToken = localStorage.getItem("dente_clinic_token");
 					// Fetch attachments if supported
-					fetch(`/api/files/diary/${d.id}`)
+					fetch(`/api/files/visits/${visitId}/attachments`, {
+						headers: {
+							"x-dente-clinic-token": clinicToken || "",
+						}
+					})
 						.then((r) => r.json())
 						.then((res) => {
 							if (alive && res.files) setAttachments(res.files);
@@ -556,8 +561,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			formData.append("entityType", "diary");
 			formData.append("entityId", diaryId);
 
-			const res = await fetch("/api/files/upload", {
+			const clinicToken = localStorage.getItem("dente_clinic_token");
+
+			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
 				method: "POST",
+				headers: {
+					"x-dente-clinic-token": clinicToken || "",
+				},
 				body: formData,
 			});
 			if (!res.ok) throw new Error("Upload failed");

@@ -259,6 +259,8 @@ interface WorkspaceTopbarProps {
 	onLockSession?: () => void;
 	isOmniRoleMode?: boolean;
 	activeTasksCount?: number;
+	onQuickConsult?: () => void;
+	isQuickConsultLoading?: boolean;
 }
 
 export function WorkspaceTopbar({
@@ -278,6 +280,8 @@ export function WorkspaceTopbar({
 	onLockSession,
 	isOmniRoleMode,
 	activeTasksCount,
+	onQuickConsult,
+	isQuickConsultLoading,
 }: WorkspaceTopbarProps) {
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
@@ -425,6 +429,19 @@ export function WorkspaceTopbar({
 					</button>
 				)}
 
+				{onQuickConsult && (
+					<button
+						aria-label="Быстрый приём без паспорта"
+						className="secondary-button compact-top-button"
+						type="button"
+						onClick={onQuickConsult}
+						disabled={isQuickConsultLoading}
+						title="Создать быстрый приём без документов"
+					>
+						<UserPlus aria-hidden="true" size={16} />
+						{isQuickConsultLoading ? "..." : "Быстрый приём"}
+					</button>
+				)}
 				<button
 					aria-label="Открыть диктовку приема"
 					className="icon-button top-dictation-button"

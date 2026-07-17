@@ -1367,6 +1367,8 @@ export function App() {
 		formatTime,
 		fromDateTimeLocalValue,
 		goToVisitDictation,
+		handleQuickConsult,
+		isQuickConsultLoading,
 		handleBrowserDirectoryInputChange,
 		handleBrowserMigrationInputChange,
 		handleMprKeyboardNavigation,
@@ -3005,6 +3007,8 @@ export function App() {
 						onLockSession={handleLockSession}
 						activeTasksCount={dashboard?.communicationTasks?.filter((t: any) => t.status === "open").length || 0}
 						isOmniRoleMode={dashboard.clinicSettings?.profile?.isOmniRole}
+						onQuickConsult={handleQuickConsult}
+						isQuickConsultLoading={isQuickConsultLoading}
 					/>
 					<WorkspaceContinuityStrip
 						browserContinuityCritical={browserContinuityCritical}

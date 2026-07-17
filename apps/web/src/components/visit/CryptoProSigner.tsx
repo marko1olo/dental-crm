@@ -43,7 +43,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			await detectPlugin();
 			const certs = await getPersonalCertificates();
 			setCertificates(certs);
-			if (certs.length > 0) setSelectedCert(certs[0].thumbprint);
+			if (certs.length > 0) setSelectedCert(certs[0]?.thumbprint ?? "");
 		} catch (error) {
 			console.error("Ошибка загрузки сертификатов:", error);
 			setIsDevMode(true);
