@@ -835,17 +835,45 @@ export function drawCrownMockup(
 	ctx.lineWidth = 1.5;
 	ctx.setLineDash([3, 3]);
 
-	// Main crown body — trapezoid shape (wider at occlusal, narrower at cervical)
+	// Anatomically specific crown drawing
 	ctx.beginPath();
-	ctx.moveTo(-cervW, 0); // cervical left
-	ctx.lineTo(-hw, -h * 0.3); // shoulder left
-	ctx.lineTo(-hw, -h * 0.7); // buccal wall left
-	ctx.lineTo(-hw * 0.6, -h); // occlusal left
-	ctx.lineTo(hw * 0.6, -h); // occlusal right
-	ctx.lineTo(hw, -h * 0.7); // buccal wall right
-	ctx.lineTo(hw, -h * 0.3); // shoulder right
-	ctx.lineTo(cervW, 0); // cervical right
-	ctx.closePath();
+	
+	if (group === "incisor") {
+		// Shovel-shaped incisor
+		ctx.moveTo(-cervW, 0); // cervical left
+		ctx.bezierCurveTo(-hw * 0.8, -h * 0.3, -hw, -h * 0.7, -hw * 0.9, -h * 0.95);
+		// Incisal edge (slight curve)
+		ctx.quadraticCurveTo(0, -h, hw * 0.9, -h * 0.95);
+		ctx.bezierCurveTo(hw, -h * 0.7, hw * 0.8, -h * 0.3, cervW, 0);
+	} else if (group === "canine") {
+		// Pointed canine
+		ctx.moveTo(-cervW, 0);
+		ctx.bezierCurveTo(-hw * 0.9, -h * 0.4, -hw, -h * 0.6, -hw * 0.6, -h * 0.8);
+		// Single cusp
+		ctx.quadraticCurveTo(0, -h * 1.1, hw * 0.6, -h * 0.8);
+		ctx.bezierCurveTo(hw, -h * 0.6, hw * 0.9, -h * 0.4, cervW, 0);
+	} else if (group === "premolar") {
+		// Bicuspid shape
+		ctx.moveTo(-cervW, 0);
+		ctx.bezierCurveTo(-hw, -h * 0.3, -hw, -h * 0.7, -hw * 0.7, -h * 0.9);
+		// Two cusps
+		ctx.quadraticCurveTo(-hw * 0.35, -h * 1.05, 0, -h * 0.85); // central fossa
+		ctx.quadraticCurveTo(hw * 0.35, -h * 1.05, hw * 0.7, -h * 0.9);
+		ctx.bezierCurveTo(hw, -h * 0.7, hw, -h * 0.3, cervW, 0);
+	} else {
+		// Molar (wide with multiple cusps)
+		ctx.moveTo(-cervW, 0);
+		ctx.bezierCurveTo(-hw * 1.1, -h * 0.2, -hw * 1.1, -h * 0.8, -hw * 0.8, -h * 0.95);
+		// Three/Four cusps represented schematically
+		ctx.quadraticCurveTo(-hw * 0.5, -h * 1.05, -hw * 0.3, -h * 0.85);
+		ctx.quadraticCurveTo(0, -h * 1.0, hw * 0.3, -h * 0.85);
+		ctx.quadraticCurveTo(hw * 0.5, -h * 1.05, hw * 0.8, -h * 0.95);
+		ctx.bezierCurveTo(hw * 1.1, -h * 0.8, hw * 1.1, -h * 0.2, cervW, 0);
+	}
+	
+	// Close cervical margin
+	ctx.quadraticCurveTo(0, h * 0.1, -cervW, 0);
+	
 	ctx.fill();
 	ctx.stroke();
 

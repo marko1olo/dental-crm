@@ -1,11 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Lock, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
-import {
-	type CryptoProCertificate,
-	checkCryptoProPlugin,
-	getPersonalCertificates,
-	signBase64WithCertificate,
-} from "../../utils/cryptoPro";
+import { signatureService, type CertificateInfo } from "../../lib/cryptopro";
 
 interface CryptoProSignerProps {
 	diaryHash: string | null;
@@ -20,50 +15,42 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	lockedAt,
 	onLock,
 }) => {
-	const [hasPlugin, setHasPlugin] = useState(false);
-	const [certificates, setCertificates] = useState<CryptoProCertificate[]>([]);
+	const [certificates, setCertificates] = useState<CertificateInfo[]>([]);
 	const [selectedCert, setSelectedCert] = useState("");
 	const [isLoadingCerts, setIsLoadingCerts] = useState(false);
-	const [isDevMode, setIsDevMode] = useState(false);
 	const [showPinDialog, setShowPinDialog] = useState(false);
 	const [pinCode, setPinCode] = useState("");
-	const [signatureType, setSignatureType] = useState<"crypto_pro" | "pin">("pin");
-
-	const detectPlugin = async () => {
-		const detected = await checkCryptoProPlugin();
-		setHasPlugin(detected);
-		if (!detected) {
-			setIsDevMode(true);
-		}
-	};
+	const [signatureType, setSignatureType] = useState<"crypto" | "pin">("pin");
 
 	const loadCertificates = async () => {
 		setIsLoadingCerts(true);
 		try {
-			await detectPlugin();
-			const certs = await getPersonalCertificates();
+			const certs = await signatureService.getCertificates();
 			setCertificates(certs);
 			if (certs.length > 0) setSelectedCert(certs[0]?.thumbprint ?? "");
 		} catch (error) {
 			console.error("Ошибка загрузки сертификатов:", error);
-			setIsDevMode(true);
 		} finally {
 			setIsLoadingCerts(false);
 		}
 	};
 
 	const handleConfirmLock = async () => {
-		if (signatureType === "crypto_pro") {
-			if (!selectedCert && !isDevMode) {
-				alert("Выберите сертификат КриптоПро");
+		if (signatureType === "crypto") {
+			if (!selectedCert) {
+				alert("Выберите сертификат для подписания");
+				return;
+			}
+			if (!diaryHash) {
+				alert("Нет данных для подписания");
 				return;
 			}
 			try {
-				let signature = "DEV_MOCK_SIGNATURE";
-				if (!isDevMode && diaryHash) {
-					signature = await signBase64WithCertificate(selectedCert, diaryHash);
-				}
-				await onLock(selectedCert || "DEV_CERT", signature);
+				// Use Rutoken if deviceId exists (rutoken heuristic is inside signatureService)
+				const certInfo = certificates.find(c => c.thumbprint === selectedCert);
+				const { signatureBase64 } = await signatureService.signData(selectedCert, diaryHash, pinCode, certInfo?.deviceId);
+				
+				await onLock(selectedCert, signatureBase64);
 				setShowPinDialog(false);
 			} catch (err: any) {
 				alert(`Ошибка подписания: ${err.message}`);
@@ -133,16 +120,16 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							<button
 								type="button"
 								onClick={() => {
-									setSignatureType("crypto_pro");
-									if (!hasPlugin) loadCertificates();
+									setSignatureType("crypto");
+									loadCertificates();
 								}}
 								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-									signatureType === "crypto_pro"
+									signatureType === "crypto"
 										? "bg-zinc-800 text-white shadow-sm"
 										: "text-zinc-500 hover:text-zinc-300"
 								}`}
 							>
-								УКЭП (КриптоПро)
+								КриптоПро / Рутокен
 							</button>
 						</div>
 
