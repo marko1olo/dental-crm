@@ -9,6 +9,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 
 interface LabOrder {
@@ -39,6 +40,9 @@ interface LabOrder {
 
 export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const { auth, dashboard } = useAppLogicContext();
+	const liveStatus = useAppStore(
+		(state) => state.labOrderStatuses[patientId],
+	);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -87,6 +91,15 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			fetchOrders();
 		}
 	}, [patientId]);
+
+	// A technician changing an order from the guest portal broadcasts over WS
+	// into the app store; refetch so the clinic view reflects it live instead of
+	// only on remount.
+	useEffect(() => {
+		if (patientId && liveStatus) {
+			fetchOrders();
+		}
+	}, [liveStatus]);
 
 	const handleCreateOrder = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -141,6 +154,37 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				showToast("Ошибка удаления", "error");
 			}
 		} catch (e) {
+			showToast("Системная ошибка", "error");
+		}
+	};
+
+	const handleStatusChange = async (
+		id: string,
+		status: LabOrder["status"],
+	) => {
+		// Optimistic: reflect the new status immediately, roll back on failure.
+		const previous = orders;
+		setOrders((current) =>
+			current.map((o) => (o.id === id ? { ...o, status } : o)),
+		);
+		try {
+			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
+				method: "PUT",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ status }),
+			});
+			if (res.ok) {
+				showToast("Статус заказа ЗТЛ обновлён", "success");
+				fetchOrders();
+			} else {
+				setOrders(previous);
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка обновления статуса", "error");
+			}
+		} catch (e) {
+			setOrders(previous);
 			showToast("Системная ошибка", "error");
 		}
 	};
@@ -383,6 +427,30 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											{order.priceRub.toLocaleString()} ₽
 										</span>
 									)}
+									<select
+										value={order.status}
+										onChange={(e) =>
+											handleStatusChange(
+												order.id,
+												e.target.value as LabOrder["status"],
+											)
+										}
+										className="py-1 px-2 bg-[#1e293b] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500"
+										title="Изменить статус заказа ЗТЛ"
+									>
+										{clinicStatusFlow.map((s) => (
+											<option key={s} value={s}>
+												{statusLabels[s]}
+											</option>
+										))}
+										{/* Keep technician-owned states selectable-as-current so the
+											control never silently drops the order's real status. */}
+										{!clinicStatusFlow.includes(order.status) && (
+											<option value={order.status}>
+												{statusLabels[order.status]}
+											</option>
+										)}
+									</select>
 									<button
 										onClick={() => copyPortalLink(order.secureToken)}
 										className="py-1 px-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1"

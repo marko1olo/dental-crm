@@ -5360,6 +5360,7 @@ export const createStaffMemberSchema = z.object({
 	specialties: z.array(dentalSpecialtySchema).min(1).default(["universal"]),
 	phone: z.string().trim().max(80).nullable().optional(),
 	email: z.string().trim().email().max(240).nullable().optional(),
+	commissionRate: z.number().min(0).max(100).optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
 });
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
@@ -5370,6 +5371,7 @@ export const updateStaffMemberSchema = z.object({
 	specialties: z.array(dentalSpecialtySchema).optional(),
 	phone: z.string().trim().max(40).nullable().optional(),
 	email: z.string().trim().email().max(240).nullable().optional(),
+	commissionRate: z.number().min(0).max(100).optional(),
 	active: z.boolean().optional(),
 	canSignMedicalRecords: z.boolean().optional(),
 	canManageMoney: z.boolean().optional(),

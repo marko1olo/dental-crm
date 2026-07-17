@@ -43,6 +43,7 @@ export function SettingsStaffTab() {
 		password: string;
 		color: string;
 		specialties: string[];
+		commissionRate: number;
 	}>({
 		fullName: "",
 		role: "doctor",
@@ -56,6 +57,7 @@ export function SettingsStaffTab() {
 		password: "",
 		color: "#0d9488",
 		specialties: ["universal"],
+		commissionRate: 30,
 	});
 
 	const startEditing = (member: any) => {
@@ -73,6 +75,7 @@ export function SettingsStaffTab() {
 			password: "",
 			color: member.color || "#0d9488",
 			specialties: member.specialties || ["universal"],
+			commissionRate: member.commissionRate != null ? member.commissionRate : 30,
 		});
 	};
 
@@ -82,6 +85,7 @@ export function SettingsStaffTab() {
 			fullName: "", role: "doctor", email: "", phone: "",
 			active: true, canSignMedicalRecords: true, canManageImports: false,
 			canManageMoney: false, pin: "", password: "", color: "#0d9488", specialties: ["universal"],
+			commissionRate: 30,
 		});
 	};
 
@@ -105,6 +109,7 @@ export function SettingsStaffTab() {
 				canManageImports: ["administrator", "owner", "manager"].includes(editForm.role) ? editForm.canManageImports : false,
 				color: editForm.color,
 				specialties: editForm.specialties,
+				commissionRate: editForm.role === "doctor" ? editForm.commissionRate : undefined,
 				...(editForm.password ? { password: editForm.password } : {}),
 				...(editForm.pin ? { pin: editForm.pin } : {}),
 			};
@@ -412,17 +417,34 @@ export function SettingsStaffTab() {
 								</label>
 
 								{editForm.role === "doctor" && (
-									<label className="permission-toggle">
-										<input
-											type="checkbox"
-											checked={editForm.canSignMedicalRecords}
-											onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
-										/>
-										<div>
-											<strong>Подписание мед. документации</strong>
-											<span>Право создавать и подписывать дневники приемов</span>
+									<>
+										<label className="permission-toggle">
+											<input
+												type="checkbox"
+												checked={editForm.canSignMedicalRecords}
+												onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
+											/>
+											<div>
+												<strong>Подписание мед. документации</strong>
+												<span>Право создавать и подписывать дневники приемов</span>
+											</div>
+										</label>
+										<div className="staff-form-group" style={{ marginTop: '16px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+											<label>Комиссия врача (Зарплата, %)</label>
+											<input
+												type="number"
+												min="0"
+												max="100"
+												step="0.1"
+												value={editForm.commissionRate}
+												onChange={(e) => setEditForm({ ...editForm, commissionRate: parseFloat(e.target.value) || 0 })}
+												placeholder="Например, 30"
+											/>
+											<span style={{ fontSize: '11px', color: 'var(--foreground-muted)', display: 'block', marginTop: '4px' }}>
+												Процент от выручки (за вычетом материалов)
+											</span>
 										</div>
-									</label>
+									</>
 								)}
 
 								{["administrator", "manager", "owner"].includes(editForm.role) && (

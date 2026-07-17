@@ -360,14 +360,29 @@ export async function createStaffMemberInDb(
 	organizationId: string,
 	input: CreateStaffMemberInput,
 ) {
-	await db.insert(schema.users).values({
-		organizationId,
-		fullName: input.fullName,
-		role: input.role,
-		phone: input.phone || null,
-		email: input.email || null,
-		isActive: true,
-		workingHours: input.workingHours,
+	await db.transaction(async (tx) => {
+		const result = await tx.insert(schema.users).values({
+			organizationId,
+			fullName: input.fullName,
+			role: input.role,
+			phone: input.phone || null,
+			email: input.email || null,
+			isActive: true,
+			workingHours: input.workingHours,
+		}).returning({ id: schema.users.id });
+		
+		const user = result[0];
+
+		if (user && input.commissionRate !== undefined) {
+			await tx.insert(schema.doctorCommissions).values({
+				organizationId,
+				userId: user.id,
+				specialty: "universal",
+				serviceCategory: "therapy",
+				commissionPct: input.commissionRate,
+				isActive: true,
+			});
+		}
 	});
 }
 
@@ -385,17 +400,47 @@ export async function updateStaffMemberInDb(
 		canManageMoney: boolean | undefined;
 		canManageImports: boolean | undefined;
 		color: string | undefined;
+		commissionRate: number | undefined;
 	}>,
 ) {
-	await db
-		.update(schema.users)
-		.set({ ...updates, updatedAt: sql`now()` })
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		);
+	const { commissionRate, ...userUpdates } = updates;
+	await db.transaction(async (tx) => {
+		if (Object.keys(userUpdates).length > 0) {
+			await tx
+				.update(schema.users)
+				.set({ ...userUpdates, updatedAt: sql`now()` })
+				.where(
+					and(
+						eq(schema.users.id, staffId),
+						eq(schema.users.organizationId, organizationId),
+					),
+				);
+		}
+
+		if (commissionRate !== undefined) {
+			const existing = await tx.select({ id: schema.doctorCommissions.id }).from(schema.doctorCommissions).where(
+				and(
+					eq(schema.doctorCommissions.userId, staffId),
+					eq(schema.doctorCommissions.organizationId, organizationId),
+				)
+			).limit(1);
+
+			if (existing.length > 0 && existing[0]) {
+				await tx.update(schema.doctorCommissions)
+					.set({ commissionPct: commissionRate, isActive: true })
+					.where(eq(schema.doctorCommissions.id, existing[0].id));
+			} else {
+				await tx.insert(schema.doctorCommissions).values({
+					organizationId,
+					userId: staffId,
+					specialty: "universal",
+					serviceCategory: "therapy",
+					commissionPct: commissionRate,
+					isActive: true,
+				});
+			}
+		}
+	});
 }
 
 export async function updateStaffWorkingHoursInDb(
