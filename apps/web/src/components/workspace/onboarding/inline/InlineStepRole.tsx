@@ -1,7 +1,7 @@
 import type { DentalSpecialty } from "@dental/shared";
 import React from "react";
-import { roleFocusOrder } from "../../../AppHelpers";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { roleFocusOrder } from "../../../../AppHelpers";
+import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
 
 export function InlineStepRole() {
 	const {

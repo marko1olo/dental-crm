@@ -2492,20 +2492,24 @@ export function App() {
 						</section>
 					) : null}
 					<WorkspaceOnboardingNoticeBars />
-					<AppRouter />
+					{!showFullOnboardingGuide ? (
+						<>
+							<AppRouter />
 
-					<VoiceAssistantUI 
-						onNavigate={(view) => {
-							setCurrentView(view);
-							window.location.hash = view;
-						}}
-						onSearchQuery={(q) => {
-							setQuery(q);
-						}}
-						onDateChange={(date) => {
-							setScheduleDateFilter(date);
-						}}
-					/>
+							<VoiceAssistantUI 
+								onNavigate={(view) => {
+									setCurrentView(view);
+									window.location.hash = view;
+								}}
+								onSearchQuery={(q) => {
+									setQuery(q);
+								}}
+								onDateChange={(date) => {
+									setScheduleDateFilter(date);
+								}}
+							/>
+						</>
+					) : null}
 					<Omnibar />
 				</section>
 				<IncomingCallToast />

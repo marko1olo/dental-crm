@@ -4,13 +4,15 @@ import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function SettingsMarketingTab() {
-	const { denteClinicalReadHeaders } = useAppLogicContext();
-	const [isNpsEnabled, setIsNpsEnabled] = useState(false);
-	const [npsDelay, setNpsDelay] = useState("24");
+	const { denteClinicalReadHeaders, clinicSettings } = useAppLogicContext();
+	const mSettings = clinicSettings?.marketingSettings || {};
+	
+	const [isNpsEnabled, setIsNpsEnabled] = useState(mSettings.npsEnabled || false);
+	const [npsDelay, setNpsDelay] = useState(mSettings.npsDelayHours?.toString() || "24");
 	const [npsMessage, setNpsMessage] = useState(
-		"Здравствуйте, {patientName}! Оцените ваш визит в клинику по шкале от 1 до 10. Если вам всё понравилось, будем рады отзыву: {reviewLink}",
+		mSettings.npsMessageTemplate || "Здравствуйте, {patientName}! Оцените ваш визит в клинику по шкале от 1 до 10. Если вам всё понравилось, будем рады отзыву: {reviewLink}",
 	);
-	const [reviewLink, setReviewLink] = useState("");
+	const [reviewLink, setReviewLink] = useState(mSettings.reviewPlatformUrl || "");
 	const [isSaving, setIsSaving] = useState(false);
 
 	const handleSave = async (e: React.FormEvent) => {

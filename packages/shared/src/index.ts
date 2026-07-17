@@ -1786,6 +1786,8 @@ export const clinicSettingsSchema = z.object({
 	roleAccessPolicies: z.array(roleAccessPolicySchema),
 	modeHints: z.array(z.string()),
 	soloDoctorMode: z.boolean().optional(),
+	marketingSettings: z.any().optional(),
+	reportingSettings: z.any().optional(),
 });
 export type ClinicSettings = z.infer<typeof clinicSettingsSchema>;
 

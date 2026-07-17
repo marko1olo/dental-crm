@@ -4,11 +4,13 @@ import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function SettingsReportingTab() {
-	const { denteClinicalReadHeaders } = useAppLogicContext();
-	const [syncEnabled, setSyncEnabled] = useState(false);
-	const [exportFormat, setExportFormat] = useState("json");
-	const [syncFrequency, setSyncFrequency] = useState("daily");
-	const [apiToken, setApiToken] = useState<string | null>(null);
+	const { denteClinicalReadHeaders, clinicSettings } = useAppLogicContext();
+	const rSettings = clinicSettings?.reportingSettings || {};
+
+	const [syncEnabled, setSyncEnabled] = useState(rSettings.syncEnabled || false);
+	const [exportFormat, setExportFormat] = useState(rSettings.exportFormat || "json");
+	const [syncFrequency, setSyncFrequency] = useState(rSettings.syncFrequency || "daily");
+	const [apiToken, setApiToken] = useState<string | null>(rSettings.apiToken || null);
 	const [tokenLoading, setTokenLoading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 

@@ -219,6 +219,8 @@ export async function getClinicSettingsFromDb(
 		],
 		modeHints: [],
 		soloDoctorMode: false,
+		marketingSettings: clinic?.marketingSettings || null,
+		reportingSettings: clinic?.reportingSettings || null,
 	};
 }
 

@@ -8159,9 +8159,12 @@ export const onboardingSteps: Array<{
 	title: string;
 	detail: string;
 }> = [
-	{ id: "intro", title: "Режим запуска", detail: "демо или чистая" },
-	{ id: "clinic", title: "Клиника", detail: "название и телефон" },
-	{ id: "team", title: "Команда", detail: "первый врач и кресло" },
+	{ id: "intro", title: "Режим", detail: "демо или чистая" },
+	{ id: "role", title: "Роль", detail: "доступ и профиль" },
+	{ id: "clinic", title: "Клиника", detail: "название и график" },
+	{ id: "legal", title: "Реквизиты", detail: "для документов" },
+	{ id: "team", title: "Команда", detail: "врачи и кресла" },
+	{ id: "sources", title: "Базы", detail: "импорт из МИС" },
 	{ id: "telegram", title: "ТГ-бот", detail: "бот, QR и отзывы" },
 	{ id: "done", title: "Готово", detail: "проверка и старт" },
 ];
@@ -8206,3 +8209,10 @@ export function settingsTabFromHash(): SettingsTab {
 }
 
 export const initialUiPreferences = {} as any;
+
+export {
+	telegramFeatureLabels,
+	telegramFeatureOptions
+} from "./workspaceStaticOptions";
+export { imagingSourceLabels } from "./imagingUiLabels";
+export { pricelistSourceKindLabels } from "./pricelistUiMeta";
