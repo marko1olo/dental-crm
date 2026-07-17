@@ -1,6 +1,8 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
+import { CheckoutDrawer } from "./components/finance/CheckoutDrawer";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { InstallmentScheduler } from "./components/InstallmentScheduler";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -94,16 +96,10 @@ export function FinanceView() {
 		window.location.hash = "visit";
 	};
 	const workspaceFlags = useWorkspaceProfile();
+	const [isCheckoutDrawerOpen, setIsCheckoutDrawerOpen] = useState(false);
 
 	const focusPaymentCapture = () => {
-		const amountInput = document.getElementById(
-			"payment-amount-input",
-		) as HTMLInputElement | null;
-		const paymentCapture = document.getElementById("payment-capture");
-		motionSafeScrollIntoView(amountInput ?? paymentCapture, {
-			block: "center",
-		});
-		amountInput?.focus({ preventScroll: true });
+		setIsCheckoutDrawerOpen(true);
 	};
 
 	return (
@@ -122,9 +118,14 @@ export function FinanceView() {
 						{documentPatient?.fullName ?? "пациент не выбран"}
 					</p>
 				</div>
-				<button className="text-button" type="button" onClick={onGoToDocuments}>
-					Документы
-				</button>
+				<div style={{ display: "flex", gap: "12px" }}>
+					<button className="primary-button" type="button" onClick={() => setIsCheckoutDrawerOpen(true)}>
+						💳 Принять оплату
+					</button>
+					<button className="text-button" type="button" onClick={onGoToDocuments}>
+						Документы
+					</button>
+				</div>
 			</div>
 
 			<FinancePlanningOverview
@@ -158,61 +159,63 @@ export function FinanceView() {
 				/>
 			)}
 
-			<PaymentCapture
-				remainingDebt={billingSummary?.totalDueRub}
-				amount={paymentAmount}
-				feedback={paymentFeedback}
-				fiscalCashierName={paymentFiscalCashierName}
-				fiscalFd={paymentFiscalFd}
-				fiscalFn={paymentFiscalFn}
-				fiscalFpd={paymentFiscalFpd}
-				fiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
-				fiscalReceiptNumber={paymentFiscalReceiptNumber}
-				fiscalReceiptUrl={paymentFiscalReceiptUrl}
-				isSaving={isPaymentSaving}
-				method={paymentMethod}
-				methodLabels={paymentMethodLabels}
-				onAmountChange={(v) => setPaymentAmount(formatCurrencyNumeric(v))}
-				onFiscalCashierNameChange={setPaymentFiscalCashierName}
-				onFiscalFdChange={setPaymentFiscalFd}
-				onFiscalFnChange={setPaymentFiscalFn}
-				onFiscalFpdChange={setPaymentFiscalFpd}
-				onFiscalReceiptIssuedAtChange={setPaymentFiscalReceiptIssuedAt}
-				onFiscalReceiptNumberChange={setPaymentFiscalReceiptNumber}
-				onFiscalReceiptUrlChange={setPaymentFiscalReceiptUrl}
-				onMethodChange={setPaymentMethod}
-				onPayerBirthDateChange={setPaymentPayerBirthDate}
-				onPayerFullNameChange={setPaymentPayerFullName}
-				onPayerIdentityDocumentChange={setPaymentPayerIdentityDocument}
-				onPayerInnChange={setPaymentPayerInn}
-				onPayerRelationshipChange={setPaymentPayerRelationship}
-				onSubmit={onRecordPayment}
-				onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
-				patientContextMessage={paymentPatientContextMessage}
-				patientContextReady={paymentPatientContextReady}
-				patientId={documentPatient?.id}
-				patientDefaults={{
-					birthDate: documentPatient?.birthDate ?? null,
-					fullName: documentPatient?.fullName ?? null,
-					identityDocument:
-						documentPatient?.administrativeProfile?.identityDocument ?? null,
-					taxpayerInn:
-						documentPatient?.administrativeProfile?.taxpayerInn ?? null,
-				}}
-				payerBirthDate={paymentPayerBirthDate}
-				payerFullName={paymentPayerFullName}
-				payerIdentityDocument={paymentPayerIdentityDocument}
-				payerInn={paymentPayerInn}
-				payerRelationship={paymentPayerRelationship}
-				taxDeductionCode={paymentTaxDeductionCode}
-			/>
-
-			{workspaceFlags.hasInstallments && (
-				<InstallmentScheduler
-					totalEstimate={billingSummary?.totalDueRub || 0}
+			<CheckoutDrawer isOpen={isCheckoutDrawerOpen} onClose={() => setIsCheckoutDrawerOpen(false)}>
+				<PaymentCapture
+					remainingDebt={billingSummary?.totalDueRub}
+					amount={paymentAmount}
+					feedback={paymentFeedback}
+					fiscalCashierName={paymentFiscalCashierName}
+					fiscalFd={paymentFiscalFd}
+					fiscalFn={paymentFiscalFn}
+					fiscalFpd={paymentFiscalFpd}
+					fiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
+					fiscalReceiptNumber={paymentFiscalReceiptNumber}
+					fiscalReceiptUrl={paymentFiscalReceiptUrl}
+					isSaving={isPaymentSaving}
+					method={paymentMethod}
+					methodLabels={paymentMethodLabels}
+					onAmountChange={(v) => setPaymentAmount(formatCurrencyNumeric(v))}
+					onFiscalCashierNameChange={setPaymentFiscalCashierName}
+					onFiscalFdChange={setPaymentFiscalFd}
+					onFiscalFnChange={setPaymentFiscalFn}
+					onFiscalFpdChange={setPaymentFiscalFpd}
+					onFiscalReceiptIssuedAtChange={setPaymentFiscalReceiptIssuedAt}
+					onFiscalReceiptNumberChange={setPaymentFiscalReceiptNumber}
+					onFiscalReceiptUrlChange={setPaymentFiscalReceiptUrl}
+					onMethodChange={setPaymentMethod}
+					onPayerBirthDateChange={setPaymentPayerBirthDate}
+					onPayerFullNameChange={setPaymentPayerFullName}
+					onPayerIdentityDocumentChange={setPaymentPayerIdentityDocument}
+					onPayerInnChange={setPaymentPayerInn}
+					onPayerRelationshipChange={setPaymentPayerRelationship}
+					onSubmit={onRecordPayment}
+					onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
+					patientContextMessage={paymentPatientContextMessage}
+					patientContextReady={paymentPatientContextReady}
 					patientId={documentPatient?.id}
+					patientDefaults={{
+						birthDate: documentPatient?.birthDate ?? null,
+						fullName: documentPatient?.fullName ?? null,
+						identityDocument:
+							documentPatient?.administrativeProfile?.identityDocument ?? null,
+						taxpayerInn:
+							documentPatient?.administrativeProfile?.taxpayerInn ?? null,
+					}}
+					payerBirthDate={paymentPayerBirthDate}
+					payerFullName={paymentPayerFullName}
+					payerIdentityDocument={paymentPayerIdentityDocument}
+					payerInn={paymentPayerInn}
+					payerRelationship={paymentPayerRelationship}
+					taxDeductionCode={paymentTaxDeductionCode}
 				/>
-			)}
+
+				{workspaceFlags.hasInstallments && (
+					<InstallmentScheduler
+						totalEstimate={billingSummary?.totalDueRub || 0}
+						patientId={documentPatient?.id}
+					/>
+				)}
+			</CheckoutDrawer>
 
 			<FinanceLedger
 				categoryLabels={serviceCategoryLabels}

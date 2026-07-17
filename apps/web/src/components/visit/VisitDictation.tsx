@@ -40,6 +40,8 @@ export function VisitDictation() {
 		speechGatewayStatus,
 		emptyDictationVoiceActionLabel,
 		visitDraftBuildMissingSteps,
+		updateVisitNoteField,
+		savedVisitNoteForm,
 	} = useAppLogicContext();
 
 	const [showHints, setShowHints] = useState(false);
@@ -47,7 +49,15 @@ export function VisitDictation() {
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
 	const appendToEMKField = (k: string, v: string) => {
-		// Mock for now, will fix if needed
+		if (!k || !v || !updateVisitNoteField) return;
+		const field = k as any;
+		if (savedVisitNoteForm && typeof (savedVisitNoteForm as any)[field] === "string") {
+			const current = (savedVisitNoteForm as any)[field] as string;
+			const newValue = current ? `${current}\n${v}` : v;
+			updateVisitNoteField(field, newValue);
+		} else {
+			updateVisitNoteField(field, v);
+		}
 	};
 
 	return (

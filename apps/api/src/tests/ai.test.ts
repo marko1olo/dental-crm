@@ -93,14 +93,15 @@ describe("AI Routes Integration", () => {
 });
 
 describe("buildVisitDraftFromTranscript", () => {
-	const originalEnv = process.env;
+	let originalEnv: NodeJS.ProcessEnv;
 
 	beforeEach(() => {
-		process.env = { ...originalEnv };
+		originalEnv = { ...process.env };
 	});
 
 	afterEach(() => {
-		process.env = originalEnv;
+		for (const key in process.env) delete process.env[key];
+		for (const key in originalEnv) process.env[key] = originalEnv[key];
 	});
 
 	test("falls back to rule-based parser on AI JSON parsing error", async () => {

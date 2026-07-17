@@ -10,6 +10,7 @@ export interface VisitToothMapProps {
 	activeQuadrant: number | null;
 	setActiveQuadrant: (q: number | null) => void;
 	pediatricMode: boolean;
+	onToothClick?: (code: string, state: string) => void;
 }
 
 export function VisitToothMap({
@@ -18,6 +19,7 @@ export function VisitToothMap({
 	activeQuadrant,
 	setActiveQuadrant,
 	pediatricMode,
+	onToothClick,
 }: VisitToothMapProps) {
 	const appLogic = useAppLogicContext();
 	const {
@@ -27,7 +29,11 @@ export function VisitToothMap({
 		setToothState,
 	} = appLogic;
 	const handleToothClick = (code: string, state: string) => {
-		setToothState(Number(code), state);
+		if (onToothClick) {
+			onToothClick(code, state);
+		} else {
+			setToothState(Number(code), state);
+		}
 	};
 	return (
 		<div className="tooth-map" aria-label="Зубная карта">

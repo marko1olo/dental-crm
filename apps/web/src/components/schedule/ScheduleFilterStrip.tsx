@@ -54,7 +54,7 @@ export function ScheduleFilterStrip({
 	return (
 		<div
 			className="schedule-filter-strip"
-			aria-label="Сохраненные фильтры расписания"
+			aria-label="Фильтры расписания"
 			style={{
 				display: "flex",
 				gap: "8px",
@@ -97,7 +97,7 @@ export function ScheduleFilterStrip({
 				className={`quick-chip ${!scheduleDoctorFilterId && !scheduleChairFilterId ? "active" : ""}`}
 				onClick={resetScheduleFilters}
 			>
-				Все записи
+				Все
 			</button>
 
 			<button
