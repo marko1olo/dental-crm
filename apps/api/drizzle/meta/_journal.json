@@ -64,6 +64,41 @@
       "when": 1784320145514,
       "tag": "0008_add_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784320145515,
+      "tag": "0009_add_comm_read_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784320145516,
+      "tag": "0010_add_vk_channel",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784320145517,
+      "tag": "0011_add_snils_and_diagnosis",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784320145518,
+      "tag": "0012_add_feature_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784320145519,
+      "tag": "0013_add_missing_organization_columns",
+      "breakpoints": true
     }
   ]
 }

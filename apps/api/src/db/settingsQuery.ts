@@ -128,12 +128,20 @@ export async function getClinicSettingsFromDb(
 		hasInsuranceCoPay: (org as any).hasInsuranceCoPay ?? true,
 		hasInstallments: (org as any).hasInstallments ?? true,
 		hasOrthodontics: (org as any).hasOrthodontics ?? true,
+		hasGnathology: (org as any).hasGnathology ?? false,
 		hasTasks: (org as any).hasTasks ?? true,
 		hasReclamations: (org as any).hasReclamations ?? true,
 		workspacePreset: (org as any).workspacePreset ?? "enterprise",
 		onboardingCompleted: (org as any).onboardingCompleted ?? false,
 		hasPediatricMode: (org as any).hasPediatricMode ?? false,
 		isOmniRole: (org as any).isOmniRole ?? false,
+		hasPayrollModule: (org as any).hasPayrollModule ?? true,
+		hasMarketingModule: (org as any).hasMarketingModule ?? true,
+		hasAnalyticsModule: (org as any).hasAnalyticsModule ?? true,
+		hasInventoryModule: (org as any).hasInventoryModule ?? true,
+		aiEnableTreatmentPlan: (org as any).aiEnableTreatmentPlan ?? true,
+		aiEnableRecommendations: (org as any).aiEnableRecommendations ?? true,
+		aiEnableDocuments: (org as any).aiEnableDocuments ?? true,
 	};
 
 	return {

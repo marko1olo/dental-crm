@@ -518,10 +518,12 @@ export function VisitView() {
 					<LabOrdersPanel patientId={activePatient.id} />
 				)}
 
-				<GnathologyForm
-					visitId={dashboard?.activeVisit?.id ?? null}
-					patientId={activePatient?.id ?? null}
-				/>
+				{workspaceFlags.hasGnathology && (
+					<GnathologyForm
+						visitId={dashboard?.activeVisit?.id ?? null}
+						patientId={activePatient?.id ?? null}
+					/>
+				)}
 
 				{visitCloseChecklist ? (
 					<div

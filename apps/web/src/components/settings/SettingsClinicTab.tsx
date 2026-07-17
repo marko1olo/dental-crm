@@ -670,9 +670,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	);
 }
 
+import { useState } from "react";
+
 function AuthArtSettingsBlock() {
-	const React = require("react");
-	const [settings, setSettings] = React.useState(() => {
+	const [settings, setSettings] = useState(() => {
 		try {
 			const saved = localStorage.getItem("dente_auth_art_settings");
 			if (saved) return JSON.parse(saved);

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { showToast } from "./components/GlobalToast";
+import "./GuestLabPortal.css";
 
 interface LabOrderData {
 	id: string;
@@ -31,7 +32,6 @@ export function GuestLabPortal() {
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	useEffect(() => {
-		// Extract token from hash "#/portal/lab-order/TOKEN"
 		const hash = window.location.hash;
 		const parts = hash.split("/lab-order/");
 		if (parts.length > 1 && parts[1]) {
@@ -86,25 +86,21 @@ export function GuestLabPortal() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-zinc-100/30 dark:bg-slate-950 flex items-center justify-center p-4">
-				<div className="animate-spin text-primary">
-					<RefreshCcw className="w-8 h-8" />
-				</div>
+			<div className="guest-portal-container" style={{ justifyContent: "center" }}>
+				<RefreshCcw className="guest-portal-spinner" size={32} />
 			</div>
 		);
 	}
 
 	if (error || !order) {
 		return (
-			<div className="min-h-screen bg-zinc-100/30 dark:bg-zinc-950 flex items-center justify-center p-4">
-				<div className="bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
-					<div className="w-16 h-16 bg-red-100 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-						<Beaker className="w-8 h-8" />
+			<div className="guest-portal-container" style={{ justifyContent: "center" }}>
+				<div className="guest-portal-card">
+					<div className="guest-portal-icon-wrapper">
+						<Beaker size={32} />
 					</div>
-					<h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-						Ошибка доступа
-					</h2>
-					<p className="text-slate-500 dark:text-slate-400">{error}</p>
+					<h2 className="guest-portal-title">Ошибка доступа</h2>
+					<p className="guest-portal-subtitle">{error}</p>
 				</div>
 			</div>
 		);
@@ -113,30 +109,15 @@ export function GuestLabPortal() {
 	const getStatusIcon = (status: string) => {
 		switch (status) {
 			case "in_progress":
-				return <Clock className="w-5 h-5 text-yellow-500" />;
+				return <Clock size={20} />;
 			case "refitting":
-				return <RefreshCcw className="w-5 h-5 text-orange-500" />;
+				return <RefreshCcw size={20} />;
 			case "shipped":
-				return <PackageCheck className="w-5 h-5 text-green-500" />;
+				return <PackageCheck size={20} />;
 			case "completed":
-				return <CheckCircle2 className="w-5 h-5 text-emerald-600" />;
+				return <CheckCircle2 size={20} />;
 			default:
-				return <Clock className="w-5 h-5 text-slate-400" />;
-		}
-	};
-
-	const getStatusBadgeClass = (status: string) => {
-		switch (status) {
-			case "in_progress":
-				return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
-			case "refitting":
-				return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800";
-			case "shipped":
-				return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800";
-			case "completed":
-				return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
-			default:
-				return "bg-zinc-100/50 text-slate-800 dark:bg-zinc-800/40 dark:text-zinc-300 border-zinc-200/50 dark:border-zinc-700/50";
+				return <Clock size={20} />;
 		}
 	};
 
@@ -152,175 +133,109 @@ export function GuestLabPortal() {
 		}[order.status] || order.status;
 
 	return (
-		<div className="min-h-screen bg-zinc-100/30 dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-3xl mx-auto space-y-8">
-				{/* Header */}
-				<div className="text-center space-y-2">
-					<div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-						<Beaker className="w-8 h-8" />
-					</div>
-					<h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-						Портал Зуботехнической Лаборатории
-					</h1>
-					<p className="text-slate-500 dark:text-slate-400">
-						Безопасный доступ к деталям заказа
-					</p>
+		<div className="guest-portal-container">
+			<div className="guest-portal-card">
+				<div className="guest-portal-icon-wrapper" style={{ background: "var(--primary-bg)", color: "var(--primary)", borderColor: "transparent" }}>
+					<Beaker size={32} />
 				</div>
+				<h1 className="guest-portal-title">Портал Зуботехнической Лаборатории</h1>
+				<p className="guest-portal-subtitle">Безопасный доступ к деталям заказа</p>
 
-				<div className="bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50">
-					{/* Order Header / Status */}
-					<div className="p-6 sm:p-8 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-50/20 dark:bg-zinc-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-						<div>
-							<p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+				<div style={{ background: "var(--bg-default)", borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid var(--line)", paddingBottom: "16px" }}>
+						<div style={{ textAlign: "left" }}>
+							<p style={{ fontSize: "12px", textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: "4px" }}>
 								Заказ № {(order.id ?? "").substring(0, 8).toUpperCase()}
 							</p>
-							<h2 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-								<User className="w-6 h-6 text-slate-400" />
+							<h2 style={{ fontSize: "20px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+								<User size={20} />
 								{order.patientFullName || "Пациент не указан"}
 							</h2>
 						</div>
-
-						<div
-							className={`px-4 py-2 rounded-full border flex items-center gap-2 font-medium ${getStatusBadgeClass(order.status)}`}
-						>
+						<div className={`guest-portal-status-badge ${order.status}`}>
 							{getStatusIcon(order.status)}
 							{statusLabel}
 						</div>
 					</div>
 
-					{/* Details Grid */}
-					<div className="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-						<div className="space-y-6">
-							<div>
-								<h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-									<CheckCircle2 className="w-4 h-4" /> Технические параметры
-								</h3>
-								<div className="bg-zinc-100/30 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
-									<div className="flex justify-between items-center">
-										<span className="text-slate-600 dark:text-slate-400">
-											Зуб (FDI)
-										</span>
-										<span className="font-semibold text-slate-900 dark:text-white text-lg px-2 py-1 bg-zinc-50/40 dark:bg-zinc-800/50 rounded-md shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
-											{order.toothFdi || "—"}
-										</span>
-									</div>
-									<div className="flex justify-between items-center">
-										<span className="text-slate-600 dark:text-slate-400">
-											Материал
-										</span>
-										<span className="font-medium text-slate-900 dark:text-white">
-											{order.material || "—"}
-										</span>
-									</div>
-									<div className="flex justify-between items-center">
-										<span className="text-slate-600 dark:text-slate-400">
-											Цвет (Vita)
-										</span>
-										<span className="font-medium text-slate-900 dark:text-white">
-											{order.colorVita || "—"}
-										</span>
-									</div>
+					<div className="guest-portal-grid">
+						<div>
+							<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+								<CheckCircle2 size={16} /> Технические параметры
+							</h3>
+							<div className="guest-portal-field" style={{ background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--line)" }}>
+								<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+									<span className="guest-portal-field-label">Зуб (FDI)</span>
+									<span className="guest-portal-field-value">{order.toothFdi || "—"}</span>
 								</div>
-							</div>
-
-							<div>
-								<h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-									<AlignLeft className="w-4 h-4" /> Клинические заметки
-								</h3>
-								<div className="bg-yellow-50/50 dark:bg-yellow-900/10 rounded-xl p-4 text-slate-700 dark:text-slate-300 border border-yellow-100 dark:border-yellow-900/30 min-h-[100px]">
-									{order.clinicalNotes ? (
-										<p className="whitespace-pre-wrap text-sm leading-relaxed">
-											{order.clinicalNotes}
-										</p>
-									) : (
-										<p className="text-slate-400 italic text-sm">
-											Врач не оставил дополнительных комментариев.
-										</p>
-									)}
+								<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+									<span className="guest-portal-field-label">Материал</span>
+									<span className="guest-portal-field-value">{order.material || "—"}</span>
+								</div>
+								<div style={{ display: "flex", justifyContent: "space-between" }}>
+									<span className="guest-portal-field-label">Цвет (Vita)</span>
+									<span className="guest-portal-field-value">{order.colorVita || "—"}</span>
 								</div>
 							</div>
 						</div>
-
-						<div className="space-y-6">
-							<div>
-								<h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-									<ImageIcon className="w-4 h-4" /> Приложенные снимки
-								</h3>
-								{order.attachedImageUrl ? (
-									<div className="rounded-xl overflow-hidden border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm bg-zinc-100/50 dark:bg-zinc-900/40">
-										<img
-											src={order.attachedImageUrl}
-											alt="Клинический снимок"
-											className="w-full h-auto object-cover max-h-[250px]"
-										/>
-									</div>
+						<div>
+							<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+								<AlignLeft size={16} /> Клинические заметки
+							</h3>
+							<div style={{ background: "#fef9c3", padding: "16px", borderRadius: "8px", color: "#854d0e", minHeight: "100px", border: "1px solid #fef08a" }}>
+								{order.clinicalNotes ? (
+									<p style={{ margin: 0, fontSize: "14px", whiteSpace: "pre-wrap" }}>{order.clinicalNotes}</p>
 								) : (
-									<div className="rounded-xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 h-[250px] flex flex-col items-center justify-center text-slate-400 bg-zinc-100/30 dark:bg-zinc-900/20 backdrop-blur-sm">
-										<ImageIcon className="w-10 h-10 mb-2 opacity-50" />
-										<span className="text-sm font-medium">
-											Нет приложенных снимков
-										</span>
-									</div>
+									<p style={{ margin: 0, fontSize: "14px", fontStyle: "italic", opacity: 0.8 }}>Врач не оставил комментариев.</p>
 								)}
 							</div>
 						</div>
 					</div>
 
-					{/* Actions */}
-					<div className="p-6 sm:p-8 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/20">
-						<h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">
-							Управление статусом заказа
+					<div style={{ textAlign: "left", marginBottom: "32px" }}>
+						<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
+							<ImageIcon size={16} /> Приложенные снимки
 						</h3>
+						{order.attachedImageUrl ? (
+							<img src={order.attachedImageUrl} alt="Клинический снимок" className="guest-portal-image" />
+						) : (
+							<div style={{ padding: "40px", border: "1px dashed var(--line)", borderRadius: "12px", textAlign: "center", color: "var(--text-secondary)" }}>
+								<ImageIcon size={32} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
+								Нет приложенных снимков
+							</div>
+						)}
+					</div>
 
-						<div className="flex flex-wrap gap-3">
+					<div className="guest-portal-actions">
+						<h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textAlign: "left" }}>Управление статусом заказа</h3>
+						<div style={{ display: "flex", gap: "12px" }}>
 							<button
 								onClick={() => updateStatus("in_progress")}
 								disabled={isUpdating || order.status === "in_progress"}
-								className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
-									order.status === "in_progress"
-										? "bg-yellow-500 text-white ring-2 ring-yellow-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900"
-										: "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-yellow-300 disabled:opacity-50"
-								}`}
+								className={`secondary-button ${order.status === "in_progress" ? "active" : ""}`}
+								style={{ flex: 1, padding: "12px" }}
 							>
-								<div className="flex items-center justify-center gap-2">
-									<Clock className="w-5 h-5" />
-									Взять в работу
-								</div>
+								Взять в работу
 							</button>
-
 							<button
 								onClick={() => updateStatus("shipped")}
 								disabled={isUpdating || order.status === "shipped"}
-								className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
-									order.status === "shipped"
-										? "bg-green-500 text-white ring-2 ring-green-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900"
-										: "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-green-300 disabled:opacity-50"
-								}`}
+								className={`secondary-button ${order.status === "shipped" ? "active" : ""}`}
+								style={{ flex: 1, padding: "12px" }}
 							>
-								<div className="flex items-center justify-center gap-2">
-									<PackageCheck className="w-5 h-5" />
-									Работа готова
-								</div>
+								Работа готова
 							</button>
-
 							<button
 								onClick={() => updateStatus("refitting")}
 								disabled={isUpdating || order.status === "refitting"}
-								className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
-									order.status === "refitting"
-										? "bg-orange-500 text-white ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900"
-										: "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-orange-300 disabled:opacity-50"
-								}`}
+								className={`secondary-button ${order.status === "refitting" ? "active" : ""}`}
+								style={{ flex: 1, padding: "12px" }}
 							>
-								<div className="flex items-center justify-center gap-2">
-									<RefreshCcw className="w-5 h-5" />
-									На переделке
-								</div>
+								На переделке
 							</button>
 						</div>
-						<p className="mt-4 text-xs text-slate-400 dark:text-slate-500 text-center sm:text-left">
-							* Изменение статуса автоматически уведомит врача в расписании
-							клиники.
+						<p style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
+							* Изменение статуса автоматически уведомит врача в расписании клиники.
 						</p>
 					</div>
 				</div>

@@ -16,6 +16,7 @@ export interface WorkspaceFeatureFlags {
 	hasInsuranceCoPay: boolean;
 	hasInstallments: boolean;
 	hasOrthodontics: boolean;
+	hasGnathology: boolean;
 	hasTasks: boolean;
 	hasReclamations: boolean;
 	workspacePreset: string;
@@ -53,6 +54,7 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	hasInsuranceCoPay: true,
 	hasInstallments: true,
 	hasOrthodontics: true,
+	hasGnathology: false,
 	hasTasks: true,
 	hasReclamations: true,
 	workspacePreset: "enterprise",
@@ -101,6 +103,7 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				hasInsuranceCoPay: s.hasInsuranceCoPay,
 				hasInstallments: s.hasInstallments,
 				hasOrthodontics: s.hasOrthodontics,
+				hasGnathology: s.hasGnathology ?? false,
 				hasTasks: s.hasTasks,
 				hasReclamations: s.hasReclamations,
 				workspacePreset: s.workspacePreset,
@@ -162,7 +165,8 @@ export async function applyWorkspacePreset(
 			baseFlags.hasMultipleChairs = false;
 			baseFlags.hasPayrollModule = false;
 			baseFlags.hasMarketingModule = false;
-			baseFlags.hasAnalyticsModule = false;
+			baseFlags.hasOrthodontics = false;
+			baseFlags.hasGnathology = false;
 			baseFlags.hasTasks = false;
 			baseFlags.numberOfDoctors = 1;
 		} else if (presetName === "clinic") {

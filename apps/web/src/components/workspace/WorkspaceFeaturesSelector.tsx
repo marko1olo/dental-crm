@@ -40,6 +40,7 @@ interface FeatureToggleDef {
 		| "hasMarketingModule"
 		| "hasAnalyticsModule"
 		| "hasOrthodontics"
+		| "hasGnathology"
 		| "hasTasks"
 		| "hasReclamations"
 		| "hasPediatricMode"
@@ -123,11 +124,17 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 	},
 	{
 		key: "hasOrthodontics",
-		label: "Ортодонтия (Трекер элайнеров)",
-		description:
-			"Включает виджет ортодонтического лечения и ведение плана брекетов в картах пациентов.",
+		label: "Ортодонтия",
+		description: "Лечение на брекет-системах и элайнерах.",
 		icon: <ShieldPlus size={20} />,
 		color: "hsl(200 80% 50%)",
+	},
+	{
+		key: "hasGnathology",
+		label: "Гнатология и Остеопатия",
+		description: "Специализированные протоколы для диагностики и лечения ВНЧС.",
+		icon: <Stethoscope size={20} />,
+		color: "hsl(180 80% 40%)",
 	},
 	{
 		key: "hasTasks",
