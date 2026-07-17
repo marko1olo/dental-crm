@@ -151,6 +151,16 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		showToast("Ссылка для зуботехника скопирована в буфер обмена", "success");
 	};
 
+	// Mirrors the <option> set in the create form so every material renders with
+	// a correct label instead of falling back to "Металлокерамика".
+	const materialLabels: Record<string, string> = {
+		zirconia: "Цирконий",
+		emax: "E.max",
+		pfm: "Металлокерамика",
+		composite: "Композит",
+		temporary: "Временная пластмасса",
+	};
+
 	const statusLabels = {
 		draft: "Черновик",
 		sent: "Отправлен в лабораторию",
@@ -160,6 +170,15 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		refitting: "Переделка",
 		completed: "Установлен пациенту",
 	};
+
+	// Statuses the clinic controls directly (the technician owns in_progress /
+	// shipped / refitting from the guest portal).
+	const clinicStatusFlow: LabOrder["status"][] = [
+		"draft",
+		"sent",
+		"received",
+		"completed",
+	];
 
 	const statusColors = {
 		draft: "text-slate-400 border-slate-700/50 bg-slate-800/40",
@@ -326,11 +345,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										</span>
 										<span className="text-slate-400">·</span>
 										<span className="text-slate-300">
-											{order.material === "zirconia"
-												? "Цирконий"
-												: order.material === "emax"
-													? "E.max"
-													: "Металлокерамика"}
+											{order.material
+												? (materialLabels[order.material] ?? order.material)
+												: "не указ."}
 										</span>
 										<span className="text-slate-400">·</span>
 										<span className="text-slate-300">
