@@ -1,1 +1,0 @@
-ALTER TABLE "tooth_states" ADD COLUMN "surfaces" text[];
