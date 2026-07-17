@@ -149,45 +149,36 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							</div>
 						) : (
 							<div className="mb-6 space-y-4">
-								{!hasPlugin && !isDevMode ? (
-									<div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
-										<AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-										<div className="text-sm text-orange-200">
-											Плагин КриптоПро ЭЦП Browser не найден. Установите расширение или используйте PIN.
-										</div>
-									</div>
-								) : (
-									<div>
-										<label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
-											Выберите сертификат
-										</label>
-										<select
-											className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:ring-2 focus:ring-rose-500 focus:outline-none"
-											value={selectedCert}
-											onChange={(e) => setSelectedCert(e.target.value)}
-											disabled={isLoadingCerts}
-										>
-											{isLoadingCerts ? (
-												<option>Загрузка сертификатов...</option>
-											) : certificates.length === 0 ? (
-												<option value="">Нет доступных сертификатов</option>
-											) : (
-												certificates.map((c) => (
-													<option key={c.thumbprint} value={c.thumbprint}>
-														{c.subjectName} (до {new Date(c.validTo).toLocaleDateString()})
-													</option>
-												))
-											)}
-										</select>
-										<button
-											type="button"
-											onClick={loadCertificates}
-											className="mt-2 text-xs text-rose-400 hover:text-rose-300"
-										>
-											Обновить список
-										</button>
-									</div>
-								)}
+								<div>
+									<label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
+										Выберите сертификат
+									</label>
+									<select
+										className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+										value={selectedCert}
+										onChange={(e) => setSelectedCert(e.target.value)}
+										disabled={isLoadingCerts}
+									>
+										{isLoadingCerts ? (
+											<option>Загрузка сертификатов...</option>
+										) : certificates.length === 0 ? (
+											<option value="">Нет доступных сертификатов</option>
+										) : (
+											certificates.map((c) => (
+												<option key={c.thumbprint} value={c.thumbprint}>
+													{c.name} (до {new Date(c.validTo).toLocaleDateString()})
+												</option>
+											))
+										)}
+									</select>
+									<button
+										type="button"
+										onClick={loadCertificates}
+										className="mt-2 text-xs text-rose-400 hover:text-rose-300"
+									>
+										Обновить список
+									</button>
+								</div>
 							</div>
 						)}
 

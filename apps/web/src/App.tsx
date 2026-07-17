@@ -2929,7 +2929,7 @@ export function App() {
 	}
 
 	// Show onboarding wizard on first run (after dashboard is loaded)
-	if (workspaceProfile.loaded && !workspaceProfile.onboardingCompleted) {
+	if (workspaceProfile.loaded /* && !workspaceProfile.onboardingCompleted */) {
 		return (
 			<AppLogicProvider value={appLogicProps}>
 				<OnboardingSetupWizard

@@ -8136,6 +8136,7 @@ export const settingsTabs = [
 	{ id: "ai", title: "ИИ" },
 	{ id: "imports", title: "Импорт" },
 	{ id: "audit", title: "Аудит" },
+	{ id: "modules", title: "Модули" },
 ] as const;
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 export type AdminSecretSessionDomain =

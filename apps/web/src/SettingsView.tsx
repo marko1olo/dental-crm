@@ -666,6 +666,7 @@ import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
 import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
+import { SettingsModulesTab } from "./components/settings/SettingsModulesTab";
 import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
@@ -829,7 +830,8 @@ type SettingsTabId =
 	| "ai"
 	| "imports"
 	| "audit"
-	| "inventory";
+	| "inventory"
+	| "modules";
 type SettingsTab = { id: SettingsTabId; title: string };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";

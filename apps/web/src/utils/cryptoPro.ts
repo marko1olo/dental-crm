@@ -10,6 +10,8 @@ declare global {
 }
 
 export interface CryptoProCertificate {
+	/** Readable display name — alias of subjectName for UI convenience */
+	name: string;
 	subjectName: string;
 	issuerName: string;
 	validFrom: string;
@@ -82,6 +84,7 @@ export async function getPersonalCertificates(): Promise<
 				const isValid = await (await cert.IsValid()).Result;
 
 				certs.push({
+					name: subjectName,
 					subjectName,
 					issuerName,
 					validFrom: String(validFrom),

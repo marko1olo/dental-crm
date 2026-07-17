@@ -1,4 +1,5 @@
 import { CompletedServicesChecklist } from "./components/visit/CompletedServicesChecklist";
+import { GnathologyForm } from "./components/visit/GnathologyForm";
 import { motion } from "framer-motion";
 import {
 	AlertTriangle,
@@ -140,7 +141,7 @@ export function VisitView() {
 	const [isSignDialogOpen, setIsSignDialogOpen] = useState(false);
 	const [isSigned, setIsSigned] = useState(false);
 
-	// ZTL Form State
+	// ZTL (Зуботехническая Лаборатория) Form State
 	const [ztlLab, setZtlLab] = useState("");
 	const [ztlWorkType, setZtlWorkType] = useState("");
 	const [ztlTeeth, setZtlTeeth] = useState("");
@@ -148,31 +149,6 @@ export function VisitView() {
 	const [ztlColor, setZtlColor] = useState("");
 	const [ztlComment, setZtlComment] = useState("");
 
-	// Gnathology State
-	const [gnathOcclusion, setGnathOcclusion] = useState("");
-	const [gnathShift, setGnathShift] = useState("");
-	const [gnathTmj, setGnathTmj] = useState("");
-	const [gnathOpening, setGnathOpening] = useState("45");
-	const [gnathStatus, setGnathStatus] = useState("");
-	useEffect(() => {
-		if (dashboard?.activeVisit?.id && activePatient?.id) {
-			const staffToken = localStorage.getItem("dente_staff_token");
-			fetch(`/api/visits/${dashboard.activeVisit.id}/gnathology`, {
-				headers: { Authorization: `Bearer ${staffToken}` },
-			})
-				.then((r) => r.json())
-				.then((data) => {
-					if (data && !data.error) {
-						setGnathOcclusion(data.occlusionType || "");
-						setGnathShift(data.jawShift || "");
-						setGnathTmj(data.tmjState || "");
-						setGnathOpening(data.mouthOpeningMm ? String(data.mouthOpeningMm) : "45");
-						setGnathStatus(data.osteopathicStatus || "");
-					}
-				})
-				.catch(console.error);
-		}
-	}, [dashboard?.activeVisit?.id, activePatient?.id]);
 
 	useEffect(() => {
 		return () => {
@@ -2400,89 +2376,12 @@ export function VisitView() {
 					</div>
 				</details>
 
-				<details className="gnathology-toggle" style={{ marginTop: "8px", border: "1px solid var(--slate-200)", borderRadius: "8px", padding: "12px", background: "white" }}>
-					<summary style={{ fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
-						💀 Гнатология и Остеопатия
-					</summary>
-					<div className="gnathology-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Тип окклюзии
-								<select value={gnathOcclusion} onChange={(e) => setGnathOcclusion(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите --</option>
-									<option value="I класс">I класс (нейтральная)</option>
-									<option value="II класс, 1">II класс, 1 подкласс</option>
-									<option value="II класс, 2">II класс, 2 подкласс</option>
-									<option value="III класс">III класс (мезиальная)</option>
-									<option value="Открытый прикус">Открытый прикус</option>
-									<option value="Глубокий прикус">Глубокий прикус</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Смещение челюсти
-								<select value={gnathShift} onChange={(e) => setGnathShift(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите --</option>
-									<option value="Нет">Нет смещения</option>
-									<option value="Вправо">Латеродевиация вправо</option>
-									<option value="Влево">Латеродевиация влево</option>
-									<option value="Ретрузия">Ретрузия</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Состояние ВНЧС
-								<select value={gnathTmj} onChange={(e) => setGnathTmj(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите --</option>
-									<option value="Норма">Безболезненно, шумов нет</option>
-									<option value="Щелчок справа">Щелчок справа</option>
-									<option value="Щелчок слева">Щелчок слева</option>
-									<option value="Крепитация">Крепитация</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Амплитуда открывания рта
-								<input value={gnathOpening} onChange={(e) => setGnathOpening(e.target.value)} type="number" placeholder="мм" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
-							</label>
-						</div>
-						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-							Остеопатический статус (постура)
-							<textarea value={gnathStatus} onChange={(e) => setGnathStatus(e.target.value)} rows={2} placeholder="Положение головы, асимметрия надплечий, перекос таза..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
-						</label>
-						<div style={{ display: "flex", justifyContent: "flex-end" }}>
-							<button type="button" className="primary-button" style={{ padding: "8px 16px" }} onClick={async () => {
-								try {
-									const staffToken = localStorage.getItem("dente_staff_token");
-									const visitId = dashboard?.activeVisit?.id;
-									if (!visitId) {
-										showToast("Визит не активен", "warning");
-										return;
-									}
-									const res = await fetch(`/api/visits/${visitId}/gnathology`, {
-										method: "PUT",
-										headers: {
-											"Content-Type": "application/json",
-											Authorization: `Bearer ${staffToken}`,
-										},
-										body: JSON.stringify({
-											patientId: activePatient?.id,
-											occlusionType: gnathOcclusion,
-											jawShift: gnathShift,
-											tmjState: gnathTmj,
-											mouthOpeningMm: gnathOpening ? Number(gnathOpening) : null,
-											osteopathicStatus: gnathStatus,
-										}),
-									});
-									if (!res.ok) throw new Error("Ошибка при сохранении");
-									showToast("Данные гнатологии сохранены", "success");
-								} catch (err) {
-									console.error(err);
-									showToast("Ошибка сохранения", "error");
-								}
-							}}>
-								Сохранить данные
-							</button>
-						</div>
-					</div>
-				</details>
+
+				<GnathologyForm
+					visitId={dashboard?.activeVisit?.id ?? null}
+					patientId={activePatient?.id ?? null}
+				/>
+
 
 				{visitCloseChecklist ? (
 					<div
