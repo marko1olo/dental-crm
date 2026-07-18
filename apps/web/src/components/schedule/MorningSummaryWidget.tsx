@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { Dashboard, Appointment, Patient } from "@dental/shared";
 import { Sun, AlertCircle, PhoneCall, CheckCircle2, FlaskConical } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface MorningSummaryWidgetProps {
 	dashboard: Dashboard;
@@ -8,6 +9,31 @@ interface MorningSummaryWidgetProps {
 }
 
 export const MorningSummaryWidget: React.FC<MorningSummaryWidgetProps> = ({ dashboard, dateFilter }) => {
+	const { auth } = useAppLogicContext();
+	const [pendingLabs, setPendingLabs] = useState(0);
+
+	// Fetch lab orders once on mount
+	useEffect(() => {
+		const fetchLabs = async () => {
+			try {
+				const res = await fetch("/api/clinical/lab-orders", {
+					headers: auth.denteClinicalReadHeaders(),
+				});
+				if (res.ok) {
+					const data = await res.json();
+					if (Array.isArray(data)) {
+						// Filter for ready status (technician finished, ready for clinic to receive)
+						const readyCount = data.filter(o => o.status === "received" || o.status === "shipped").length;
+						setPendingLabs(readyCount);
+					}
+				}
+			} catch (e) {
+				console.error("Failed to load morning summary lab orders", e);
+			}
+		};
+		fetchLabs();
+	}, []);
+
 	// Only show morning summary for 'today'
 	const todayStr = new Date().toLocaleDateString("en-CA");
 	if (dateFilter !== "all" && dateFilter !== todayStr) return null;
@@ -47,10 +73,6 @@ export const MorningSummaryWidget: React.FC<MorningSummaryWidgetProps> = ({ dash
 	const obzvonCount = (dashboard.communicationTasks || [])
 		.filter((t) => (t.status === "needs_call" || t.status === "scheduled") && t.dueAt?.startsWith(todayStr))
 		.length;
-
-	// Lab orders are not currently provided in Dashboard schema, removing phantom data mock
-	// TODO: When backend adds `labOrders` to Dashboard, wire it here.
-	const pendingLabs = 0;
 
 	return (
 		<div style={{

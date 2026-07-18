@@ -29,7 +29,6 @@ import { CheckoutDrawer } from "./components/finance/CheckoutDrawer";
 import { PaymentCapture } from "./PaymentCapture";
 import { formatCurrencyNumeric } from "./utils/inputSanitation";
 import { VisitHeader } from "./components/visit/VisitHeader";
-import { VisitPaymentOverlay } from "./components/visit/VisitPaymentOverlay";
 import { VisitDocsOverlay } from "./components/visit/VisitDocsOverlay";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitPrimaryActions } from "./components/visit/VisitPrimaryActions";
