@@ -11,13 +11,17 @@ interface VisitDocsOverlayProps {
 export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, patientName, createDocument }) => {
 	const [generating, setGenerating] = useState<string | null>(null);
 
-	const handleGenerate = (label: string, docType: string) => {
+	const handleGenerate = async (label: string, docType: string) => {
 		setGenerating(docType);
-		createDocument(docType);
-		setTimeout(() => {
+		try {
+			await createDocument(docType);
+			onClose(); // Automatically close overlay on success
+		} catch (err) {
+			console.error(`Failed to generate ${docType}:`, err);
+			showToast(`Ошибка генерации документа: ${label}`, "error");
+		} finally {
 			setGenerating(null);
-			onClose(); // Automatically close overlay to switch to Documents view if needed
-		}, 600);
+		}
 	};
 
 	return (

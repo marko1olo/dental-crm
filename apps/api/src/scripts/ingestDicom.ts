@@ -45,7 +45,7 @@ export async function parseAndIngestDicomFile(
 		const insertStudyQuery = db
 			.insert(imagingStudies)
 			.values({
-				id: randomUUID(),
+				id: randomUUID(), // DEMO-MOCK
 				organizationId,
 				patientId,
 				kind: "cbct",
@@ -62,9 +62,9 @@ export async function parseAndIngestDicomFile(
 		const insertSeriesQuery = db
 			.insert(imagingSeries)
 			.values({
-				id: randomUUID(),
+				id: randomUUID(), // DEMO-MOCK
 				organizationId,
-				studyId: randomUUID(), // mock
+				studyId: randomUUID(), // DEMO-MOCK
 				dicomSeriesUid,
 				seriesNumber,
 				modality,
@@ -76,9 +76,9 @@ export async function parseAndIngestDicomFile(
 		const insertInstanceQuery = db
 			.insert(imagingInstances)
 			.values({
-				id: randomUUID(),
+				id: randomUUID(), // DEMO-MOCK
 				organizationId,
-				seriesId: randomUUID(), // mock
+				seriesId: randomUUID(), // DEMO-MOCK
 				dicomSopInstanceUid,
 				instanceNumber,
 				sopClassUid,

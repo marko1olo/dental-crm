@@ -4881,6 +4881,10 @@ export function useAppLogic(): any {
 		setLocalTreatmentPlanItems((prev) => [...prev, item]);
 	};
 
+	const removeTreatmentPlanItem = (itemId: string) => {
+		setLocalTreatmentPlanItems((prev) => prev.filter((i) => i.id !== itemId));
+	};
+
 	const inferredTreatmentArea = useMemo(() => {
 		const toothCodes = activeTreatmentPlanItems
 			.filter((item) => item.status !== "cancelled")
@@ -13376,6 +13380,7 @@ export function useAppLogic(): any {
 		activeSpeechProviderHealth,
 		activeTreatmentPlanItems,
 		addTreatmentPlanItem,
+		removeTreatmentPlanItem,
 		activeTreatmentPlanScenarios,
 		activeUsableDocuments,
 		activeVisitClinicalRuleEvaluations,

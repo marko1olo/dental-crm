@@ -192,6 +192,7 @@ export function VisitView() {
 		visitWarnings,
 		visitWorkflowSteps,
 		addTreatmentPlanItem,
+		removeTreatmentPlanItem,
 		auth,
 	} = useAppLogicContext();
 
@@ -286,22 +287,37 @@ export function VisitView() {
 			};
 			addTreatmentPlanItem(newItem);
 			
-			// Fire-and-forget save to backend
-			fetch(`/api/patients/${activePatient.id}/treatment-plans`, {
-				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					name: `Лечение зуба ${selectedToothForMenu.code}`,
-					items: [{
-						toothNumber: parseInt(selectedToothForMenu.code, 10),
-						priceId: service.id,
-						name: service.title,
-						price: service.basePriceRub || 0,
-						quantity: 1,
-						discount: 0
-					}]
-				})
-			}).catch(console.error);
+			// Robust save to backend
+			try {
+				const res = await fetch(`/api/patients/${activePatient.id}/treatment-plans`, {
+					method: "POST",
+					headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						name: `Лечение зуба ${selectedToothForMenu.code}`,
+						items: [{
+							toothNumber: parseInt(selectedToothForMenu.code, 10),
+							priceId: service.id,
+							name: service.title,
+							price: service.basePriceRub || 0,
+							quantity: 1,
+							discount: 0
+						}]
+					})
+				});
+				if (res.ok) {
+					const data = await res.json();
+					// The backend returns an array of inserted items, or the plan itself.
+					// Let's assume it returns { success: true, planId: ... }
+					// For robust synchronization, we can just reload the dashboard.
+					void loadDashboard();
+				} else {
+					throw new Error("Failed to save treatment plan");
+				}
+			} catch (err) {
+				removeTreatmentPlanItem(newItem.id);
+				showToast("Не удалось сохранить назначение, повторите", "error");
+				console.error("Failed to save treatment plan:", err);
+			}
 		}
 		setSelectedToothForMenu(null);
 	};

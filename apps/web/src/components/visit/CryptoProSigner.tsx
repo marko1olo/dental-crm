@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, Lock, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
+import { showToast } from "../GlobalToast";
 
 interface CryptoProSignerProps {
 	diaryHash: string | null;
@@ -39,11 +40,11 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	const handleConfirmLock = async () => {
 		if (signatureType === "crypto") {
 			if (!selectedCert) {
-				alert("Выберите сертификат для подписания");
+				showToast("Выберите сертификат для подписания", "error");
 				return;
 			}
 			if (!diaryHash) {
-				alert("Нет данных для подписания");
+				showToast("Нет данных для подписания", "error");
 				return;
 			}
 			try {
@@ -61,11 +62,11 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 				await onLock(selectedCert, signatureBase64);
 				setShowPinDialog(false);
 			} catch (err: any) {
-				alert(`Ошибка подписания: ${err.message}`);
+				showToast(`Ошибка подписания: ${err.message}`, "error");
 			}
 		} else {
 			if (!pinCode) {
-				alert("Введите PIN-код для простой ЭП");
+				showToast("Введите PIN-код для простой ЭП", "error");
 				return;
 			}
 			await onLock("PIN_SIGNATURE", `PIN:${pinCode}`);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Patient } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { showToast } from "../GlobalToast";
 
 interface PatientSelectorProps {
 	patients: Patient[];
@@ -171,10 +172,10 @@ export const PatientSelector: React.FC<PatientSelectorProps> = ({ patients, valu
 												setIsOpen(false);
 												void loadDashboard();
 											} else {
-												alert("Ошибка при создании пациента");
+												showToast("Не удалось создать пациента, попробуйте ещё раз", "error");
 											}
 										} catch (err) {
-											alert("Ошибка сети");
+											showToast("Нет связи с сервером", "error");
 										}
 									}}
 								>
