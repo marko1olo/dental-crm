@@ -211,14 +211,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const clinicStatusFlow: LabOrder["status"][] = ["draft","sent","received","completed",
 	];
 
-	const statusColors = {
-		draft:"",
-		sent:"text-blue-400 border-blue-500/30 bg-blue-500/10",
-		in_progress:"text-amber-400 border-amber-500/30 bg-amber-500/10",
-		shipped:"text-purple-400 border-purple-500/30 bg-purple-500/10",
-		received:"text-indigo-400 border-indigo-500/30 bg-indigo-500/10",
-		refitting:"text-rose-400 border-rose-500/30 bg-rose-500/10",
-		completed:"text-teal-400 border-teal-500/30 bg-teal-500/10",
+	const statusStyles: Record<string, React.CSSProperties> = {
+		draft: { color: "var(--ink-muted)", backgroundColor: "var(--paper-muted)", borderColor: "var(--line)" },
+		sent: { color: "var(--color-info)", backgroundColor: "var(--color-info-muted, rgba(59, 130, 246, 0.1))", borderColor: "var(--color-info-muted, rgba(59, 130, 246, 0.3))" },
+		in_progress: { color: "var(--color-warning)", backgroundColor: "var(--color-warning-muted, rgba(245, 158, 11, 0.1))", borderColor: "var(--color-warning-muted, rgba(245, 158, 11, 0.3))" },
+		shipped: { color: "var(--color-accent, #a855f7)", backgroundColor: "var(--color-accent-muted, rgba(168, 85, 247, 0.1))", borderColor: "var(--color-accent-muted, rgba(168, 85, 247, 0.3))" },
+		received: { color: "var(--primary)", backgroundColor: "var(--primary-muted, rgba(99, 102, 241, 0.1))", borderColor: "var(--primary-muted, rgba(99, 102, 241, 0.3))" },
+		refitting: { color: "var(--color-danger)", backgroundColor: "var(--color-danger-muted, rgba(244, 63, 94, 0.1))", borderColor: "var(--color-danger-muted, rgba(244, 63, 94, 0.3))" },
+		completed: { color: "var(--color-success)", backgroundColor: "var(--color-success-muted, rgba(20, 184, 166, 0.1))", borderColor: "var(--color-success-muted, rgba(20, 184, 166, 0.3))" },
 	};
 
 	return (
@@ -229,7 +229,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				className="p-4 border  rounded-xl space-y-4"
 			>
 				<h4 className="text-sm font-semibold  flex items-center gap-2">
-					<FlaskConical className="w-4 h-4 text-teal-400" />
+					<FlaskConical className="w-4 h-4" style={{ color: "var(--primary)" }} />
 					Новый наряд ЗТЛ
 				</h4>
 
@@ -241,7 +241,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Напр. 16, 24"
 							value={toothFdi}
 							onChange={(e) => setToothFdi(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						/>
 					</div>
@@ -251,7 +251,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={material}
 							onChange={(e) => setMaterial(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						>
 							<option value="zirconia">Диоксид циркония</option>
@@ -267,7 +267,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={colorVita}
 							onChange={(e) => setColorVita(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						>
 							{["OM1","OM2","OM3","A1","A2","A3","A3.5","A4","B1","B2","B3","C1","C2","D2","D3",
@@ -286,7 +286,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="0"
 							value={priceRub}
 							onChange={(e) => setPriceRub(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						/>
 					</div>
@@ -298,7 +298,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={doctorId}
 							onChange={(e) => setDoctorId(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						>
 							<option value="">Не указан</option>
@@ -316,7 +316,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="datetime-local"
 							value={dueDate}
 							onChange={(e) => setDueDate(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						/>
 					</div>
@@ -330,7 +330,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Опишите особенности прикуса, уступы..."
 							value={clinicalNotes}
 							onChange={(e) => setClinicalNotes(e.target.value)}
-							className="w-full border  rounded-lg p-2 text-xs focus:outline-none focus:border-teal-500"
+							className="w-full border rounded-lg p-2 text-xs"
 							style={{ background:"var(--paper)", color:"var(--ink)" }}
 						/>
 					</div>
@@ -338,8 +338,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 				<button
 					type="submit"
-					className="w-full py-2 bg-teal-500 font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10"
-					style={{ background:"var(--teal)", color:"var(--paper)" }}
+					className="w-full py-2 font-bold rounded-lg text-xs transition-colors shadow-md primary-button"
+					style={{ background:"var(--primary)", color:"var(--paper)" }}
 				>
 					Создать наряд ЗТЛ
 				</button>
@@ -378,7 +378,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											Цвет: {order.colorVita ||"не указ."}
 										</span>
 										<span
-											className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${statusColors[order.status]}`}
+											className="px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase"
+											style={statusStyles[order.status]}
 										>
 											{statusLabels[order.status]}
 										</span>
@@ -390,7 +391,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									)}
 									{order.dueDate && (
 										<div className="text-[11px]  flex items-center gap-1">
-											<Calendar className="w-3.5 h-3.5 text-teal-400/80" />
+											<Calendar className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
 											Срок: {new Date(order.dueDate).toLocaleDateString()} в{""}
 											{new Date(order.dueDate).toLocaleTimeString([], {
 												hour:"2-digit",
@@ -402,7 +403,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 								<div className="flex items-center gap-2">
 									{order.priceRub && (
-										<span className="font-semibold text-teal-400 flex items-center gap-0.5 mr-2">
+										<span className="font-semibold flex items-center gap-0.5 mr-2" style={{ color: "var(--primary)" }}>
 											<DollarSign className="w-3.5 h-3.5" />
 											{order.priceRub.toLocaleString()} ₽
 										</span>
@@ -415,7 +416,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1 px-2 border  rounded-lg focus:outline-none focus:border-teal-500"
+										className="py-1 px-2 border rounded-lg"
 										style={{ background:"var(--paper)", color:"var(--ink)" }}
 										title="Изменить статус заказа ЗТЛ"
 									>
@@ -434,14 +435,16 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 									</select>
 									<button
 										onClick={() => copyPortalLink(order.secureToken)}
-										className="py-1 px-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1"
+										className="py-1 px-2.5 border rounded-lg font-semibold transition-colors flex items-center gap-1"
+										style={{ color: "var(--primary)", borderColor: "var(--primary)", background: "var(--paper-muted)" }}
 									>
 										<Link className="w-3.5 h-3.5" />
 										Линк
 									</button>
 									<button
 										onClick={() => handleDeleteOrder(order.id)}
-										className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-colors"
+										className="p-1 border rounded-lg transition-colors"
+										style={{ color: "var(--color-danger)", borderColor: "var(--color-danger)", background: "var(--paper-muted)" }}
 									>
 										<Trash2 className="w-3.5 h-3.5" />
 									</button>

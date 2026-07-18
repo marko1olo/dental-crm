@@ -83,3 +83,4 @@ __pycache__/
 temp-test-db/
 
 script.js
+*.bak
