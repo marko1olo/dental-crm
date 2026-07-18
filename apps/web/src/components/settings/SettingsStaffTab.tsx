@@ -8,7 +8,7 @@ import { useStaffSettingsLogic } from "./staff/useStaffSettingsLogic";
 import { StaffListSection } from "./staff/StaffListSection";
 import { StaffScheduleSection } from "./staff/StaffScheduleSection";
 import { StaffEditModal } from "./staff/StaffEditModal";
-import { useWorkspaceProfileStore } from "../../../hooks/useWorkspaceProfile";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 
 export function SettingsStaffTab() {
 	const appLogic = useAppLogicContext();

@@ -8,6 +8,7 @@ export function StaffEditModal({
 	handleSaveStaff,
 	loading,
 	specialtyLabels,
+	hasAssistants,
 }: {
 	editingStaffId: string;
 	editForm: any;
