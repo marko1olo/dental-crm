@@ -36,6 +36,7 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type ToothStatus, usePatientStore } from "../../store/patientStore";
 import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
+import DOMPurify from 'dompurify';
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
@@ -944,7 +945,7 @@ export function VisiographAnalyzer() {
 														color: "var(--text)",
 													}}
 													dangerouslySetInnerHTML={{
-														__html: renderMarkdown(section.content),
+														__html: DOMPurify.sanitize(renderMarkdown(section.content)),
 													}}
 												/>
 											)}
