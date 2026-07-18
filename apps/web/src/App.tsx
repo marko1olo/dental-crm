@@ -2358,6 +2358,7 @@ export function App() {
 						useWorkspaceProfileStore
 							.getState()
 							.setFlag("onboardingCompleted", true);
+						loadWorkspaceProfile();
 						loadDashboard();
 					}}
 				/>

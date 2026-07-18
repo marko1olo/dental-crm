@@ -19,6 +19,7 @@ interface ClinicChairsSectionProps {
 	newChairHasSurgeryKit: boolean;
 	setNewChairHasSurgeryKit: (v: boolean | ((v: boolean) => boolean)) => void;
 	deleteChair: (id: string) => void;
+	hasMultipleChairs: boolean;
 }
 
 export const ClinicChairsSection: React.FC<ClinicChairsSectionProps> = ({
@@ -35,11 +36,9 @@ export const ClinicChairsSection: React.FC<ClinicChairsSectionProps> = ({
 	newChairHasSurgeryKit,
 	setNewChairHasSurgeryKit,
 	deleteChair,
+	hasMultipleChairs,
 }) => {
-	if (
-		dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
-		dashboard?.clinicSettings?.profile?.mode === "one_chair"
-	) {
+	if (!hasMultipleChairs) {
 		return null;
 	}
 

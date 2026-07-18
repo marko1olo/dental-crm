@@ -8,6 +8,7 @@ import { useStaffSettingsLogic } from "./staff/useStaffSettingsLogic";
 import { StaffListSection } from "./staff/StaffListSection";
 import { StaffScheduleSection } from "./staff/StaffScheduleSection";
 import { StaffEditModal } from "./staff/StaffEditModal";
+import { useWorkspaceProfileStore } from "../../../hooks/useWorkspaceProfile";
 
 export function SettingsStaffTab() {
 	const appLogic = useAppLogicContext();
@@ -35,6 +36,7 @@ export function SettingsStaffTab() {
 
 	const typedWeekdayOptions = weekdayOptions || [];
 	const staff = dashboard?.clinicSettings?.staff || [];
+	const hasAssistants = useWorkspaceProfileStore((s) => s.hasAssistants);
 
 	const [activeTab, setActiveTab] = useState<"staff_list" | "staff_schedule">(
 		"staff_list",
@@ -175,6 +177,7 @@ export function SettingsStaffTab() {
 					handleSaveStaff={onSubmit}
 					loading={loading}
 					specialtyLabels={specialtyLabels}
+					hasAssistants={hasAssistants}
 				/>
 			)}
 		</div>

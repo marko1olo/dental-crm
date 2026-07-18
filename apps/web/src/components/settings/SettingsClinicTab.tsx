@@ -11,6 +11,7 @@ import { ClinicLegalProfileSection } from "./clinic/ClinicLegalProfileSection";
 import { ClinicScheduleSection } from "./clinic/ClinicScheduleSection";
 import { ClinicChairsSection } from "./clinic/ClinicChairsSection";
 import { AuthArtSection } from "./clinic/AuthArtSection";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 
 export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogic = useAppLogicContext();
@@ -23,6 +24,8 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 		setError: appLogic.setError,
 		loadDashboard: appLogic.loadDashboard,
 	});
+	
+	const hasMultipleChairs = useWorkspaceProfileStore((s) => s.hasMultipleChairs);
 
 	const newChairReadyToCreate =
 		(appLogicProps.newChairName || "").trim().length > 0;
@@ -123,6 +126,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 				newChairHasSurgeryKit={newChairHasSurgeryKit}
 				setNewChairHasSurgeryKit={setNewChairHasSurgeryKit}
 				deleteChair={deleteChair}
+				hasMultipleChairs={hasMultipleChairs}
 			/>
 
 			<AuthArtSection />

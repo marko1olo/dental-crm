@@ -41,6 +41,8 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 	const [loading, setLoading] = useState(false);
 	const [copied, setCopied] = useState(false);
 
+	const hasAssistants = activeWorkspaceProfile?.hasAssistants ?? true;
+
 	if (settingsTab !== "access") return null;
 
 	const handleGenerateInvite = async (e: React.FormEvent) => {
@@ -124,7 +126,7 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 						>
 							<option value="doctor">Врач</option>
 							<option value="admin">Администратор</option>
-							<option value="assistant">Ассистент</option>
+							{hasAssistants && <option value="assistant">Ассистент</option>}
 							<option value="owner">Владелец / Главврач</option>
 						</select>
 					</div>

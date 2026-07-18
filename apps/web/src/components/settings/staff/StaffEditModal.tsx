@@ -16,6 +16,7 @@ export function StaffEditModal({
 	handleSaveStaff: (e: React.FormEvent) => void;
 	loading: boolean;
 	specialtyLabels: Record<string, string>;
+	hasAssistants: boolean;
 }) {
 	return (
 		<div
@@ -66,7 +67,7 @@ export function StaffEditModal({
 								}
 							>
 								<option value="doctor">Врач</option>
-								<option value="assistant">Ассистент</option>
+								{hasAssistants && <option value="assistant">Ассистент</option>}
 								<option value="administrator">Администратор</option>
 								<option value="manager">Управляющий</option>
 								<option value="owner">Владелец</option>
