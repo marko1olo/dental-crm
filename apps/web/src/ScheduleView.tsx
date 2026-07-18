@@ -110,6 +110,7 @@ export function ScheduleView() {
 		toDateTimeLocalValue,
 		unlockScheduleAdminSession,
 		updateAppointmentScheduleDraft,
+		moveAppointment,
 		updateNewAppointmentDraft,
 		visibleScheduleSuggestions,
 		lockTelegramAdminSession,
@@ -418,6 +419,27 @@ export function ScheduleView() {
 					showToast("Слот выбран, заполните форму", "info");
 				}}
 				onSlotDrop={(date, time, chairId, data) => {
+					if (data?.type === "existing_appointment" && data.id) {
+						const localTimeStr = `${date}T${time}:00`;
+						const startsAtIso = new Date(localTimeStr).toISOString();
+						const endsAtIso = new Date(
+							new Date(localTimeStr).getTime() + (data.durationMs || 3600000),
+						).toISOString();
+
+						const patch: any = {
+							startsAt: startsAtIso,
+							endsAt: endsAtIso,
+						};
+						if (chairId) patch.chairId = chairId;
+
+						moveAppointment(data.id, patch).then(success => {
+							if (success) {
+								showToast("Запись успешно перенесена", "success");
+							}
+						});
+						return;
+					}
+
 					if (data?.type === "waitlist_item" && data.item) {
 						const { item } = data;
 						const localTimeStr = `${date}T${time}:00`;

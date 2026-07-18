@@ -171,6 +171,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article
 					className={`appointment-card appointment-card-node status-${appointment.status} ${readiness ? "readiness-" + readiness.state : ""}`}
+					draggable={true}
+					onDragStart={(e) => {
+						const durMs = new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
+						e.dataTransfer.setData("application/json", JSON.stringify({
+							type: "existing_appointment",
+							id: appointment.id,
+							durationMs: durMs
+						}));
+						e.dataTransfer.effectAllowed = "move";
+					}}
 				>
 					<div className="mobile-time-badge">
 						{formatTime(appointment.startsAt)} -{" "}

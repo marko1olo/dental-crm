@@ -6,6 +6,7 @@ import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { DictationHints } from "../../DictationHints";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
+import { PatientSelector } from "./PatientSelector";
 
 type AppointmentScheduleDraft = {
 	patientId: string;
@@ -283,31 +284,11 @@ export function AppointmentDraftEditor(props: AppointmentDraftEditorProps) {
 					<div className="schedule-entity-grid">
 						<div>
 							<span className="schedule-entity-label">Пациент</span>
-							<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-								<select
-									value={newAppointmentDraft.patientId || ""}
-									onChange={(e) =>
-										updateNewAppointmentDraft("patientId", e.target.value)
-									}
-									style={{
-										width: "100%",
-										padding: "8px",
-										borderRadius: "8px",
-										border: "1px solid var(--slate-300)",
-										fontSize: "14px",
-										background: "var(--paper-soft)",
-									}}
-								>
-									<option value="">-- Выберите пациента --</option>
-									{dashboard.patients
-										.filter((patient) => patient.status === "active")
-										.map((patient) => (
-											<option key={patient.id} value={patient.id}>
-												{patient.fullName}
-											</option>
-										))}
-								</select>
-							</div>
+							<PatientSelector 
+								patients={dashboard.patients}
+								value={newAppointmentDraft.patientId || ""}
+								onChange={(id) => updateNewAppointmentDraft("patientId", id)}
+							/>
 						</div>
 
 						<div>
@@ -419,32 +400,43 @@ export function AppointmentDraftEditor(props: AppointmentDraftEditorProps) {
 							}}
 						>
 									{[
-										"Кариес",
-										"Пульпит",
-										"Удаление",
-										"Осмотр",
-										"Профгигиена",
-										"Консультация",
-										workspaceFlags.hasOrthodontics && "Брекеты",
-										workspaceFlags.hasDentalLab && "Коронка",
-										"КЛКТ",
-										"Имплантация",
+										{ name: "Кариес", duration: 60 },
+										{ name: "Пульпит", duration: 90 },
+										{ name: "Удаление", duration: 45 },
+										{ name: "Осмотр", duration: 30 },
+										{ name: "Профгигиена", duration: 60 },
+										{ name: "Консультация", duration: 30 },
+										workspaceFlags.hasOrthodontics ? { name: "Брекеты", duration: 60 } : null,
+										workspaceFlags.hasDentalLab ? { name: "Коронка", duration: 90 } : null,
+										{ name: "КЛКТ", duration: 15 },
+										{ name: "Имплантация", duration: 120 },
 									]
-										.filter((chip): chip is string => Boolean(chip))
+										.filter((chip): chip is { name: string; duration: number } => Boolean(chip))
 										.map((chip) => (
 								<button
-									key={chip}
+									key={chip.name}
 									type="button"
 									onClick={() => {
 										const currentVal = newAppointmentDraft.reason.trim();
 										const newVal = currentVal
-											? `${currentVal}, ${chip.toLowerCase()}`
-											: chip;
+											? `${currentVal}, ${chip.name.toLowerCase()}`
+											: chip.name;
 										updateNewAppointmentDraft("reason", newVal);
+										
+										// Auto-calculate duration if we have startsAt
+										if (newAppointmentDraft.startsAt) {
+											const start = new Date(newAppointmentDraft.startsAt);
+											if (!isNaN(start.getTime())) {
+												start.setMinutes(start.getMinutes() + chip.duration);
+												// format local time back
+												const localEnd = new Date(start.getTime() - start.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+												updateNewAppointmentDraft("endsAt", localEnd);
+											}
+										}
 									}}
 									className="quick-chip quick-chip--sm"
 								>
-									+ {chip}
+									+ {chip.name} ({chip.duration}м)
 								</button>
 							))}
 						</div>

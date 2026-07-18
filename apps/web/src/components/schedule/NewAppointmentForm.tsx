@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { Bot, Plus } from "lucide-react";
+import { Bot, Plus, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppHelpers";
@@ -8,6 +8,7 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { PatientSelector } from "./PatientSelector";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -27,6 +28,8 @@ export type NewAppointmentFormProps = {
 	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
 	useManualSelects: boolean;
 	setUseManualSelects: (val: boolean) => void;
+	showCreateForm: boolean;
+	setShowCreateForm: (show: boolean) => void;
 };
 
 export function NewAppointmentForm(props: NewAppointmentFormProps) {
@@ -43,9 +46,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		fromDateTimeLocalValue,
 		useManualSelects,
 		setUseManualSelects,
+		showCreateForm,
+		setShowCreateForm,
 	} = props;
 
-	const [showCreateForm, setShowCreateForm] = useState(false);
+	const profile = useWorkspaceProfile();
 	const [smartInputText, setSmartInputText] = useState("");
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
@@ -89,165 +94,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
 	return (
 		<div className="appointment-create-wrapper" aria-label="Создание записи">
-			<div
-				className="appointment-create-editor"
-				style={{
-					position: "absolute",
-					opacity: 0,
-					pointerEvents: "none",
-					width: 0,
-					height: 0,
-					overflow: "hidden",
-				}}
-			>
-				<input
-					type="datetime-local"
-					value={toDateTimeLocalValue(
-						newAppointmentDraft.startsAt,
-						dashboard.clinicSettings.profile.timezone,
-					)}
-					onChange={(event) =>
-						updateNewAppointmentDraft(
-							"startsAt",
-							fromDateTimeLocalValue(
-								event.target.value,
-								dashboard.clinicSettings.profile.timezone,
-							),
-						)
-					}
-				/>
-				<input
-					type="datetime-local"
-					value={toDateTimeLocalValue(
-						newAppointmentDraft.endsAt,
-						dashboard.clinicSettings.profile.timezone,
-					)}
-					onChange={(event) =>
-						updateNewAppointmentDraft(
-							"endsAt",
-							fromDateTimeLocalValue(
-								event.target.value,
-								dashboard.clinicSettings.profile.timezone,
-							),
-						)
-					}
-				/>
-				<select
-					value={newAppointmentDraft.patientId || ""}
-					onChange={(e) =>
-						updateNewAppointmentDraft("patientId", e.target.value)
-					}
-				>
-					<option value="">-- Выберите пациента --</option>
-					{dashboard.patients.map((p) => (
-						<option key={p.id} value={p.id}>
-							{p.fullName}
-						</option>
-					))}
-				</select>
-				<select
-					value={newAppointmentDraft.doctorUserId || ""}
-					onChange={(e) =>
-						updateNewAppointmentDraft("doctorUserId", e.target.value)
-					}
-				>
-					<option value="">-- Выберите врача --</option>
-					{dashboard.clinicSettings.staff.map((m) => (
-						<option key={m.id} value={m.id}>
-							{m.fullName}
-						</option>
-					))}
-				</select>
-				{workspaceFlags.hasAssistants && (
-					<select
-						value={newAppointmentDraft.assistantUserId || ""}
-						onChange={(e) =>
-							updateNewAppointmentDraft("assistantUserId", e.target.value)
-						}
-					>
-						<option value="">-- выбрать ассистента --</option>
-						<option value="">-- без ассистента --</option>
-						{dashboard.clinicSettings.staff.map(
-							(m) =>
-								m.role === "assistant" &&
-								m.active && (
-									<option key={m.id} value={m.id}>
-										{m.fullName}
-									</option>
-								),
-						)}
-					</select>
-				)}
-				<select
-					value={newAppointmentDraft.chairId || ""}
-					onChange={(e) => updateNewAppointmentDraft("chairId", e.target.value)}
-				>
-					<option value="">-- Выберите кресло --</option>
-					{dashboard.clinicSettings.chairs.map((c) => (
-						<option key={c.id} value={c.id}>
-							{c.name}
-						</option>
-					))}
-				</select>
-				<select
-					value={newAppointmentDraft.status || ""}
-					onChange={(e) =>
-						updateNewAppointmentDraft("status", e.target.value as any)
-					}
-				>
-					{Object.keys(appointmentLabels).map((status) => (
-						<option key={status} value={status}>
-							{appointmentLabels[status as Appointment["status"]]}
-						</option>
-					))}
-				</select>
-				<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-					<input
-						type="text"
-						placeholder="Услуга / Причина (например: Кариес, Осмотр)"
-						value={newAppointmentDraft.reason}
-						onChange={(event) =>
-							updateNewAppointmentDraft("reason", event.target.value)
-						}
-					/>
-					<div className="chip-templates-row">
-						{[
-							"Осмотр",
-							"Кариес",
-							"Пульпит",
-							"Профгигиена",
-							"Удаление",
-							"Консультация",
-							"Снятие швов",
-						].map((t) => (
-							<button
-								key={t}
-								type="button"
-								className="chip-template-button"
-								onClick={() => updateNewAppointmentDraft("reason", t)}
-							>
-								{t}
-							</button>
-						))}
-					</div>
-				</div>
-				<textarea
-					placeholder="Комментарий (опционально)"
-					value={newAppointmentDraft.comment}
-					onChange={(event) =>
-						updateNewAppointmentDraft("comment", event.target.value)
-					}
-				/>
-				<div className="appointment-editor-actions">
-					<button
-						className="primary-button"
-						type="button"
-						onClick={() => void createAppointmentFromDraft()}
-					>
-						Сохранить новую запись
-					</button>
-				</div>
-			</div>
+			{/* The invisible jumping focus element was removed here */}
 
 			<div className="smart-ai-booking">
 				<div
@@ -358,7 +205,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						<button
 							className="text-button"
 							type="button"
-							onClick={() => setShowCreateForm((v) => !v)}
+							onClick={() => setShowCreateForm(!showCreateForm)}
 							style={{
 								fontSize: "13px",
 								color: "var(--muted)",
@@ -437,15 +284,81 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			</div>
 
 			{showCreateForm && (
-				<div className="appointment-editor">
+				<div
+					className="appointment-modal-overlay"
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						width: "100vw",
+						height: "100vh",
+						backgroundColor: "rgba(0, 0, 0, 0.5)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 9999,
+						backdropFilter: "blur(4px)",
+					}}
+					onClick={(e) => {
+						if (e.target === e.currentTarget) {
+							setShowCreateForm(false);
+						}
+					}}
+				>
 					<div
+						className="appointment-editor appointment-modal-content"
 						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-							gap: "16px",
-							marginBottom: "16px",
+							backgroundColor: "var(--surface)",
+							padding: "24px",
+							borderRadius: "16px",
+							boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+							maxWidth: "800px",
+							width: "90%",
+							maxHeight: "90vh",
+							overflowY: "auto",
+							position: "relative",
 						}}
 					>
+						<button
+							type="button"
+							onClick={() => setShowCreateForm(false)}
+							style={{
+								position: "absolute",
+								top: "16px",
+								right: "16px",
+								background: "none",
+								border: "none",
+								cursor: "pointer",
+								padding: "8px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								color: "var(--text-secondary)",
+								borderRadius: "50%",
+								transition: "background-color 0.2s",
+							}}
+							onMouseOver={(e) =>
+								(e.currentTarget.style.backgroundColor = "var(--border)")
+							}
+							onMouseOut={(e) =>
+								(e.currentTarget.style.backgroundColor = "transparent")
+							}
+						>
+							<X size={20} />
+						</button>
+
+						<h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.25rem", color: "var(--text-primary)" }}>
+							Создание новой записи
+						</h2>
+
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+								gap: "16px",
+								marginBottom: "20px",
+							}}
+						>
 						<label>
 							Начало
 							<input
@@ -489,41 +402,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					<div className="appointment-editor-grid">
 						<div>
 							<span className="appointment-editor-label">Пациент</span>
-							{useManualSelects || dashboard.patients.length > 20 ? (
-								<select
-									value={newAppointmentDraft.patientId || ""}
-									onChange={(e) =>
-										updateNewAppointmentDraft("patientId", e.target.value)
-									}
-									className="appointment-editor-select"
-								>
-									<option value="">-- Выберите пациента --</option>
-									{dashboard.patients
-										.filter((p) => p.status === "active")
-										.map((p) => (
-											<option key={p.id} value={p.id}>
-												{p.fullName}
-											</option>
-										))}
-								</select>
-							) : (
-								<div className="appointment-editor-chips">
-									{dashboard.patients
-										.filter((patient) => patient.status === "active")
-										.map((patient) => (
-											<button
-												key={patient.id}
-												type="button"
-												className={`quick-chip ${newAppointmentDraft.patientId === patient.id ? "active" : ""}`}
-												onClick={() =>
-													updateNewAppointmentDraft("patientId", patient.id)
-												}
-											>
-												{patient.fullName}
-											</button>
-										))}
-								</div>
-							)}
+							<PatientSelector 
+								patients={dashboard.patients}
+								value={newAppointmentDraft.patientId || ""}
+								onChange={(id) => updateNewAppointmentDraft("patientId", id)}
+							/>
 						</div>
 
 						<div>
@@ -665,32 +548,43 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							style={{ marginTop: "8px" }}
 						>
 							{[
-								"Кариес",
-								"Пульпит",
-								"Удаление",
-								"Осмотр",
-								"Профгигиена",
-								"Консультация",
-								workspaceFlags.hasOrthodontics && "Брекеты",
-								workspaceFlags.hasDentalLab && "Коронка",
-								"КЛКТ",
-								"Имплантация",
+								{ name: "Кариес", duration: 60 },
+								{ name: "Пульпит", duration: 90 },
+								{ name: "Удаление", duration: 45 },
+								{ name: "Осмотр", duration: 30 },
+								{ name: "Профгигиена", duration: 60 },
+								{ name: "Консультация", duration: 30 },
+								workspaceFlags.hasOrthodontics ? { name: "Брекеты", duration: 60 } : null,
+								workspaceFlags.hasDentalLab ? { name: "Коронка", duration: 90 } : null,
+								{ name: "КЛКТ", duration: 15 },
+								{ name: "Имплантация", duration: 120 },
 							]
-								.filter((chip): chip is string => Boolean(chip))
+								.filter((chip): chip is { name: string; duration: number } => Boolean(chip))
 								.map((chip) => (
 								<button
-									key={chip}
+									key={chip.name}
 									type="button"
 									onClick={() => {
 										const currentVal = newAppointmentDraft.reason.trim();
 										const newVal = currentVal
-											? `${currentVal}, ${chip.toLowerCase()}`
-											: chip;
+											? `${currentVal}, ${chip.name.toLowerCase()}`
+											: chip.name;
 										updateNewAppointmentDraft("reason", newVal);
+										
+										// Auto-calculate duration if we have startsAt
+										if (newAppointmentDraft.startsAt) {
+											const start = new Date(newAppointmentDraft.startsAt);
+											if (!isNaN(start.getTime())) {
+												start.setMinutes(start.getMinutes() + chip.duration);
+												// format local time back
+												const localEnd = new Date(start.getTime() - start.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+												updateNewAppointmentDraft("endsAt", localEnd);
+											}
+										}
 									}}
 									className="quick-chip quick-chip--sm"
 								>
-									+ {chip}
+									+ {chip.name} ({chip.duration}м)
 								</button>
 							))}
 						</div>
@@ -764,6 +658,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						>
 							Сбросить
 						</button>
+					</div>
 					</div>
 				</div>
 			)}

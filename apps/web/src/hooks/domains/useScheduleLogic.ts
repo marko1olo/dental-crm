@@ -616,6 +616,20 @@ export function useScheduleLogic({
 			setError(message);
 			return false;
 		}
+
+		const overlapError = checkOverlaps(draft, appointmentId);
+		if (overlapError) {
+			setAppointmentScheduleErrors((current) => ({
+				...current,
+				[appointmentId]: overlapError,
+			}));
+			setAppointmentScheduleSaveStates((current: any) => ({
+				...current,
+				[appointmentId]: "error",
+			}));
+			setError(overlapError);
+			return false;
+		}
 		const expectedSignature = appointmentScheduleDraftSignature(draft);
 		setAppointmentScheduleSaveStates((current: any) => ({
 			...current,
@@ -687,6 +701,62 @@ export function useScheduleLogic({
 		}
 	}
 
+	async function moveAppointment(appointmentId: string, patch: Partial<AppointmentScheduleDraft>): Promise<boolean> {
+		if (!dashboard) return false;
+		const sourceAppointment = dashboard.appointments?.find(
+			(appointment) => appointment.id === appointmentId,
+		);
+		if (!sourceAppointment) return false;
+
+		const baseDraft = appointmentScheduleDrafts[appointmentId] ?? appointmentScheduleDraftFromAppointment(sourceAppointment);
+		const newDraft = { ...baseDraft, ...patch };
+
+		const overlapError = checkOverlaps(newDraft, appointmentId);
+		if (overlapError) {
+			setError(overlapError);
+			return false;
+		}
+
+		const prevDashboard = { ...dashboard };
+		const nextDashboard = {
+			...dashboard,
+			appointments: dashboard.appointments.map((a: any) => 
+				a.id === appointmentId ? { ...a, ...patch } : a
+			)
+		};
+		setDashboard(nextDashboard);
+
+		try {
+			const response = await fetch(`/api/appointments/${appointmentId}`, {
+				method: "PATCH",
+				headers: auth.scheduleMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(appointmentUpdateInputFromDraft(newDraft)),
+			});
+			if (!response.ok) {
+				throw new Error(await responseErrorMessage(response, "Запись не перенесена"));
+			}
+			const payload = await response.json();
+			setDashboard(payload as any);
+			
+			// Update draft if it exists
+			if (appointmentScheduleDrafts[appointmentId]) {
+				setAppointmentScheduleDrafts((current: any) => ({
+					...current,
+					[appointmentId]: appointmentScheduleDraftFromAppointment(
+						(payload as any).appointments?.find((a: any) => a.id === appointmentId) || newDraft
+					)
+				}));
+			}
+			return true;
+		} catch (error) {
+			setDashboard(prevDashboard);
+			setError(operatorWorkflowFailureMessage("Запись не перенесена", error));
+			return false;
+		}
+	}
+
 	function newAppointmentMissingFields(
 		draft: AppointmentScheduleDraft,
 	): string[] {
@@ -696,6 +766,32 @@ export function useScheduleLogic({
 			isOmni,
 			dashboard?.clinicSettings?.staff,
 		);
+	}
+
+	function checkOverlaps(draft: AppointmentScheduleDraft, ignoreAppointmentId?: string): string | null {
+		if (!dashboard) return null;
+		const draftStart = Date.parse(draft.startsAt);
+		const draftEnd = Date.parse(draft.endsAt);
+		if (isNaN(draftStart) || isNaN(draftEnd)) return null;
+
+		for (const appt of dashboard.appointments) {
+			if (appt.id === ignoreAppointmentId) continue;
+			if (appt.status === "cancelled") continue;
+			
+			const apptStart = Date.parse(appt.startsAt);
+			const apptEnd = Date.parse(appt.endsAt);
+			
+			if (draftStart < apptEnd && draftEnd > apptStart) {
+				const patientName = dashboard.patients.find(p => p.id === appt.patientId)?.fullName || "Неизвестно";
+				if (draft.chairId && appt.chairId === draft.chairId) {
+					return `Накладка по креслу: пересекается с записью к пациенту ${patientName}`;
+				}
+				if (draft.doctorUserId && appt.doctorUserId === draft.doctorUserId) {
+					return `Накладка по врачу: пересекается с записью к пациенту ${patientName}`;
+				}
+			}
+		}
+		return null;
 	}
 
 	async function createAppointmentFromDraft(): Promise<boolean> {
@@ -715,6 +811,14 @@ export function useScheduleLogic({
 			setNewAppointmentError(message);
 			setNewAppointmentSaveState("error");
 			setError(message);
+			return false;
+		}
+
+		const overlapError = checkOverlaps(newAppointmentDraft);
+		if (overlapError) {
+			setNewAppointmentError(overlapError);
+			setNewAppointmentSaveState("error");
+			setError(overlapError);
 			return false;
 		}
 		setNewAppointmentSaveState("saving");
@@ -797,6 +901,7 @@ export function useScheduleLogic({
 		openAppointmentEditor,
 		markAppointmentScheduleDirty,
 		updateAppointmentScheduleDraft,
+		moveAppointment,
 		newAppointmentPreferenceDefaults,
 		updateNewAppointmentDraft,
 		resetNewAppointmentDraft,
