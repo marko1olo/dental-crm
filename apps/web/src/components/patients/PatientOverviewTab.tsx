@@ -30,10 +30,13 @@ export function PatientOverviewTab() {
 		patientCoreDirty,
 		patientAdministrativeProfileSaveState,
 		patientAdministrativeProfileDirty,
+		anamnesisDraft,
 	} = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();
 	const dashboard = appLogic.dashboard;
 	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
+
+	const hasCriticalAllergies = anamnesisDraft.hasCriticalAlerts || anamnesisDraft.allergies.length > 0;
 
 	const patientCoreReadyToSave =
 		patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
@@ -110,6 +113,33 @@ export function PatientOverviewTab() {
 									: "сохранено"}
 				</span>
 			</div>
+			{hasCriticalAllergies && (
+				<div
+					style={{
+						backgroundColor: "var(--red)",
+						color: "#fff",
+						padding: "16px",
+						borderRadius: "8px",
+						marginBottom: "16px",
+						display: "flex",
+						flexDirection: "column",
+						gap: "8px",
+						boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "bold", fontSize: "16px" }}>
+						<span>⚠️</span> ВНИМАНИЕ! КРИТИЧЕСКИЙ АНАМНЕЗ
+					</div>
+					<div style={{ fontSize: "14px", lineHeight: "1.5" }}>
+						{anamnesisDraft.hasCriticalAlerts && (
+							<div><strong>Внимание врача:</strong> {anamnesisDraft.criticalAlertNote || "Требуется повышенная осторожность"}</div>
+						)}
+						{anamnesisDraft.allergies.length > 0 && (
+							<div><strong>Аллергии:</strong> {anamnesisDraft.allergies.join(", ")}</div>
+						)}
+					</div>
+				</div>
+			)}
 			<div
 				className="clinic-profile-form-grid patient-core-form-grid"
 				style={{

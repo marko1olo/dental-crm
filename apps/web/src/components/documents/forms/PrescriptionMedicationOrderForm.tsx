@@ -1,6 +1,7 @@
 import { CheckCircle2, FileText } from "lucide-react";
 import React from "react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { usePatientStore } from "../../../store/patientStore";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 
 export function PrescriptionMedicationOrderForm({
@@ -20,6 +21,12 @@ export function PrescriptionMedicationOrderForm({
 		prescriptionUrgentContactReason,
 		setPrescriptionUrgentContactReason,
 	} = useDocumentStore();
+
+	const patientAllergies = usePatientStore((s) => s.anamnesisDraft.allergies);
+	
+	const triggeredAllergies = patientAllergies.filter(a => 
+		prescriptionMedication && prescriptionMedication.toLowerCase().includes(a.toLowerCase())
+	);
 
 	return (
 		<article className="document-payload-card">
@@ -41,7 +48,13 @@ export function PrescriptionMedicationOrderForm({
 								setPrescriptionMedication(event.target.value)
 							}
 							placeholder="например: ибупрофен"
+							style={{ borderColor: triggeredAllergies.length > 0 ? "var(--red)" : undefined }}
 						/>
+						{triggeredAllergies.length > 0 && (
+							<div style={{ color: "var(--red)", fontSize: "14px", marginTop: "4px", fontWeight: "bold", display: "flex", gap: "6px", alignItems: "center" }}>
+								<span style={{ fontSize: "16px" }}>⚠️</span> ВНИМАНИЕ: У ПАЦИЕНТА АЛЛЕРГИЯ НА {triggeredAllergies.join(", ").toUpperCase()}
+							</div>
+						)}
 					</label>
 					<label>
 						Дозировка
