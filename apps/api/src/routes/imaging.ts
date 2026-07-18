@@ -1435,7 +1435,7 @@ async function buildDicomHeaderManifest(
 		if (!isDicomPixelPath(filePath)) continue;
 		try {
 			const metadata = parseDicomHeader(
-				readFilePrefix(filePath, input.maxHeaderBytes),
+				await readFilePrefix(filePath, input.maxHeaderBytes),
 			);
 			filesParsed += 1;
 			warnings.push(
@@ -1526,16 +1526,16 @@ function isDicomHeaderCandidatePath(filePath: string): boolean {
 	return hasDicomMagic(filePath);
 }
 
-function readFilePrefix(filePath: string, maxBytes: number): Buffer {
-	const stats = statSync(filePath);
+async function readFilePrefix(filePath: string, maxBytes: number): Promise<Buffer> {
+	const stats = await stat(filePath);
 	const bytesToRead = Math.max(0, Math.min(stats.size, maxBytes));
 	const buffer = Buffer.alloc(bytesToRead);
-	const handle = openSync(filePath, "r");
+	const handle = await open(filePath, "r");
 	try {
-		readSync(handle, buffer, 0, bytesToRead, 0);
+		await handle.read(buffer, 0, bytesToRead, 0);
 		return buffer;
 	} finally {
-		closeSync(handle);
+		await handle.close();
 	}
 }
 
