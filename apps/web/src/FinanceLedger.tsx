@@ -129,7 +129,11 @@ export function FinanceLedger({
 									{payment.paidAt
 										? formatDateTime(payment.paidAt)
 										: "ожидает оплаты"}{" "}
-									· чек {paymentFiscalReceiptLabel(payment)} · код{" "}
+									· чек {payment.fiscalReceipt?.receiptUrl ? (
+										<a href={payment.fiscalReceipt.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+											{paymentFiscalReceiptLabel(payment)}
+										</a>
+									) : paymentFiscalReceiptLabel(payment)} · код{" "}
 									{payment.taxDeductionCode ?? "не выбран"} ·{" "}
 									{payment.note ?? "без примечания"}
 								</p>

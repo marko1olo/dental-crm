@@ -99,8 +99,8 @@ export function useVisitLogic({
 		visitNoteForm,
 		setVisitNoteForm,
 		visitToothStateByCode,
-		setToothState,
-		applyAiToothCodes,
+		setToothState: _setToothState,
+		applyAiToothCodes: _applyAiToothCodes,
 		lastServerDraftSavedAt,
 		setLastServerDraftSavedAt,
 		serverDraftSyncState,
@@ -148,6 +148,53 @@ export function useVisitLogic({
 		isImportDictating,
 		setIsImportDictating,
 	} = appStore;
+
+	const persistToothStateBatch = useCallback(async (patientId: string, toothNumbers: number[], state: import("../../store/visitStore").ToothState) => {
+		try {
+			await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+				method: "POST",
+				headers: auth.denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					toothNumbers,
+					state,
+				}),
+			});
+		} catch (err) {
+			console.error("Failed to persist tooth state batch", err);
+		}
+	}, [auth]);
+
+	const setToothState = useCallback((code: string, state: import("../../store/visitStore").ToothState) => {
+		_setToothState(code, state);
+		if (dashboard?.activeVisit?.patientId && isOnline) {
+			persistToothStateBatch(dashboard.activeVisit.patientId, [parseInt(code, 10)], state);
+		}
+	}, [_setToothState, dashboard?.activeVisit?.patientId, isOnline, persistToothStateBatch]);
+
+	const applyAiToothCodes = useCallback((
+		detectedCodes: string[],
+		primaryState?: import("../../store/visitStore").ToothState,
+		detectedToothStates?: Record<string, import("../../store/visitStore").ToothState>,
+		aiDiagnoses?: Record<string, string>,
+	) => {
+		_applyAiToothCodes(detectedCodes, primaryState, detectedToothStates, aiDiagnoses);
+		if (dashboard?.activeVisit?.patientId && isOnline) {
+			if (detectedToothStates) {
+				const grouped: Record<string, number[]> = {};
+				for (const [code, state] of Object.entries(detectedToothStates)) {
+					if (!grouped[state]) grouped[state] = [];
+					grouped[state].push(parseInt(code, 10));
+				}
+				for (const [state, nums] of Object.entries(grouped)) {
+					persistToothStateBatch(dashboard.activeVisit.patientId, nums, state as import("../../store/visitStore").ToothState);
+				}
+			} else if (detectedCodes.length > 0) {
+				persistToothStateBatch(dashboard.activeVisit.patientId, detectedCodes.map(c => parseInt(c, 10)), primaryState || "planned");
+			}
+		}
+	}, [_applyAiToothCodes, dashboard?.activeVisit?.patientId, isOnline, persistToothStateBatch]);
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -1525,6 +1572,8 @@ export function useVisitLogic({
 
 	return {
 		...visitStore,
+		setToothState,
+		applyAiToothCodes,
 		isOnline,
 		speechGatewayHealthReport,
 		speechGatewayStatus,
