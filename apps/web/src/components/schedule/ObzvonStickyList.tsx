@@ -1,7 +1,7 @@
-import type { CommunicationTask, Dashboard } from "@dental/shared";
-import { Bell, Check, PhoneCall, X } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import type { CommunicationTask, Dashboard } from"@dental/shared";
+import { Bell, Check, PhoneCall, X } from"lucide-react";
+import type React from"react";
+import { useState } from"react";
 
 interface ObzvonStickyListProps {
 	dashboard: Dashboard;
@@ -14,12 +14,12 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 
 	const pendingCalls = dashboard.communicationTasks.filter(
 		(task) =>
-			task.status === "needs_call" ||
-			task.status === "queued" ||
-			(task.status === "scheduled" &&
-				(task.intent === "recall" ||
-					task.intent === "appointment_confirmation" ||
-					task.intent === "post_visit_instruction")),
+			task.status ==="needs_call" ||
+			task.status ==="queued" ||
+			(task.status ==="scheduled" &&
+				(task.intent ==="recall" ||
+					task.intent ==="appointment_confirmation" ||
+					task.intent ==="post_visit_instruction")),
 	);
 
 	if (pendingCalls.length === 0) return null;
@@ -48,14 +48,13 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 		<div
 			className="fixed bottom-4 left-4 z-40 w-80 rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
 			style={{
-				background: "var(--paper)",
-				color: "var(--ink)",
-				border: "1px solid var(--line)",
-				boxShadow:
-					"0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+				background:"var(--paper)",
+				color:"var(--ink)",
+				border:"1px solid var(--line)",
+				boxShadow:"0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
 			}}
 		>
-			<div className="flex items-center justify-between p-3 border-b border-gray-100" style={{ background: "var(--paper-muted)", borderBottom: "1px solid var(--line)" }}>
+			<div className="flex items-center justify-between p-3 border-b border-gray-100" style={{ background:"var(--paper-muted)", borderBottom:"1px solid var(--line)" }}>
 				<h4 className="font-semibold text-sm flex items-center gap-2 m-0 text-gray-800 dark:text-gray-100">
 					<PhoneCall size={16} className="text-indigo-500" />
 					Задачи: Обзвон ({pendingCalls.length})
@@ -76,32 +75,29 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 						(p) => p.id === task.patientId,
 					);
 					const isUrgent =
-						task.priority === "urgent" || task.priority === "high";
+						task.priority ==="urgent" || task.priority ==="high";
 
 					return (
 						<div
 							key={task.id}
 							className={`p-3 rounded-lg border text-sm transition-all hover:shadow-md ${
 								isUrgent
-									? "border-red-200"
-									: ""
+									?"border-red-200"
+									:""
 							}`}
 						>
-							<div className="flex items-start justify-between mb-1" style={{ background: isUrgent ? "var(--color-danger-muted, #fee2e2)" : "var(--paper)" }}>
+							<div className="flex items-start justify-between mb-1" style={{ background: isUrgent ?"var(--color-danger-muted, #fee2e2)" :"var(--paper)" }}>
 								<span className="font-medium text-gray-900 dark:text-gray-100">
-									{patient?.fullName.split(" ").slice(0, 2).join(" ") ||
-										"Пациент DB"}
+									{patient?.fullName.split("").slice(0, 2).join("") ||"Пациент DB"}
 								</span>
 								{isUrgent && (
 									<Bell size={14} className="text-red-500 animate-pulse" />
 								)}
 							</div>
 							<div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-								{task.intent === "recall" && "Приглашение на осмотр (Recall)"}
-								{task.intent === "appointment_confirmation" &&
-									"Подтверждение записи"}
-								{task.intent === "post_visit_instruction" &&
-									"Контроль самочувствия"}
+								{task.intent ==="recall" &&"Приглашение на осмотр (Recall)"}
+								{task.intent ==="appointment_confirmation" &&"Подтверждение записи"}
+								{task.intent ==="post_visit_instruction" &&"Контроль самочувствия"}
 							</div>
 							<div className="flex items-center gap-2 mt-2">
 								<a
@@ -112,7 +108,7 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 									<PhoneCall size={12} /> Звонок
 								</a>
 								<a
-									href={`https://wa.me/${patient?.phone?.replace(/\D/g, "")}`}
+									href={`https://wa.me/${patient?.phone?.replace(/\D/g,"")}`}
 									target="_blank"
 									rel="noreferrer"
 									className="flex-1 flex items-center justify-center gap-1 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 py-1.5 px-2 rounded-md text-xs font-medium transition-colors"
@@ -121,7 +117,7 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 									WA
 								</a>
 								<a
-									href={`https://t.me/+${patient?.phone?.replace(/\D/g, "")}`}
+									href={`https://t.me/+${patient?.phone?.replace(/\D/g,"")}`}
 									target="_blank"
 									rel="noreferrer"
 									className="flex-1 flex items-center justify-center gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 py-1.5 px-2 rounded-md text-xs font-medium transition-colors"
