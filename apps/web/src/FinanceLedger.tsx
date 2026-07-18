@@ -22,6 +22,7 @@ type FinanceLedgerProps = {
 	treatmentItems: TreatmentPlanItem[];
 	treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
 	onCreateDocument?: (kind: string) => void;
+	onRefundPayment?: (paymentId: string) => void;
 };
 
 export function FinanceLedger({
@@ -38,6 +39,7 @@ export function FinanceLedger({
 	treatmentItems,
 	treatmentStatusLabels,
 	onCreateDocument,
+	onRefundPayment,
 }: FinanceLedgerProps) {
 	return (
 		<div className="finance-split">
@@ -138,7 +140,19 @@ export function FinanceLedger({
 									{payment.note ?? "без примечания"}
 								</p>
 							</div>
-							<strong>{money(payment.amountRub)}</strong>
+							<div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+								<strong>{money(payment.amountRub)}</strong>
+								{payment.status === "paid" && onRefundPayment && (
+									<button
+										className="text-button"
+										type="button"
+										onClick={() => onRefundPayment(payment.id)}
+										style={{ fontSize: "0.85rem", color: "var(--color-danger-text, #ef4444)" }}
+									>
+										Возврат
+									</button>
+								)}
+							</div>
 						</article>
 					))
 				) : (
