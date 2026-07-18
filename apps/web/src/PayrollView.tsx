@@ -278,8 +278,8 @@ export function PayrollView() {
 							borderRadius: "6px",
 							border: "1px solid var(--line)",
 							background:
-								selectedMonth === "all" ? "var(--brand-500)" : "var(--paper)",
-							color: selectedMonth === "all" ? "var(--brand-contrast, white)" : "var(--ink)",
+								selectedMonth === "all" ? "var(--teal)" : "var(--paper)",
+							color: selectedMonth === "all" ? "white" : "var(--ink)",
 							cursor: "pointer",
 							fontWeight: selectedMonth === "all" ? 700 : 400,
 							transition: "all 0.15s",
@@ -298,8 +298,8 @@ export function PayrollView() {
 								borderRadius: "6px",
 								border: "1px solid var(--line)",
 								background:
-									selectedMonth === m ? "var(--brand-500)" : "var(--paper)",
-								color: selectedMonth === m ? "var(--brand-contrast, white)" : "var(--ink)",
+									selectedMonth === m ? "var(--teal)" : "var(--paper)",
+								color: selectedMonth === m ? "white" : "var(--ink)",
 								cursor: "pointer",
 								fontWeight: selectedMonth === m ? 700 : 400,
 								transition: "all 0.15s",
