@@ -69,6 +69,7 @@ type PaymentCaptureProps = {
 	payerRelationship: string;
 	taxDeductionCode: TaxDeductionCode;
 	remainingDebt?: number;
+	visitTotalDue?: number;
 	patientId?: string | undefined;
 };
 
@@ -484,6 +485,7 @@ export function PaymentCapture({
 	payerRelationship,
 	taxDeductionCode,
 	remainingDebt,
+	visitTotalDue,
 	patientId,
 }: PaymentCaptureProps) {
 	const [smartInputText, setSmartInputText] = useState("");
@@ -756,18 +758,28 @@ export function PaymentCapture({
 						placeholder=" "
 					/>
 					<label>Сумма к оплате (₽)</label>
-					{remainingDebt !== undefined && (
+					{(remainingDebt !== undefined || visitTotalDue !== undefined) && (
 						<div
 							className="quick-chips-row"
 							style={{ marginTop: "6px", flexWrap: "wrap" }}
 						>
-							{remainingDebt > 0 && (
+							{visitTotalDue !== undefined && visitTotalDue > 0 && (
+								<button
+									type="button"
+									className="quick-chip"
+									style={{ borderColor: "var(--brand-500)", color: "var(--brand-700)", fontWeight: 500 }}
+									onClick={() => onAmountChange(String(visitTotalDue))}
+								>
+									За текущий прием: {visitTotalDue} ₽
+								</button>
+							)}
+							{remainingDebt !== undefined && remainingDebt > 0 && remainingDebt !== visitTotalDue && (
 								<button
 									type="button"
 									className="quick-chip"
 									onClick={() => onAmountChange(String(remainingDebt))}
 								>
-									Долг: {remainingDebt} ₽
+									Общий долг: {remainingDebt} ₽
 								</button>
 							)}
 							{[1000, 2000, 3000, 5000].map((val) => (

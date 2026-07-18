@@ -11,6 +11,7 @@ import {
 	toothStates,
 	treatmentPlanItemsNew,
 	treatmentPlans,
+	treatmentItems,
 } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -386,5 +387,49 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				plan: savedPlan ?? null,
 			});
 		},
+	);
+
+	app.post(
+		"/api/patients/:patientId/treatment-items/complete",
+		async (request, reply) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"treatment plan upsert",
+			);
+			if (!organizationId) return;
+			const { patientId } = request.params as { patientId: string };
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const { itemIds, visitId } = request.body as any;
+			if (!Array.isArray(itemIds) || itemIds.length === 0) {
+				return reply.send({ success: true, updatedCount: 0 });
+			}
+
+			let updatedCount = 0;
+
+			await db.transaction(async (tx) => {
+				const itemsToUpdate = await tx
+					.select()
+					.from(treatmentItems)
+					.where(
+						and(
+							inArray(treatmentItems.id, itemIds),
+							eq(treatmentItems.patientId, patientId)
+						)
+					);
+
+				if (itemsToUpdate.length > 0) {
+					await tx
+						.update(treatmentItems)
+						.set({ status: "completed" as any, ...(visitId ? { visitId } : {}) })
+						.where(inArray(treatmentItems.id, itemsToUpdate.map(i => i.id)));
+					updatedCount = itemsToUpdate.length;
+				}
+			});
+			return reply.send({ success: true, updatedCount });
+		}
 	);
 }

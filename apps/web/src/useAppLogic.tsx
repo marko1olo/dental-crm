@@ -4958,6 +4958,24 @@ export function useAppLogic(): any {
 		);
 	}, [dashboard, documentPatient?.id]);
 
+	const activeVisitCompletedAmountRub = useMemo(() => {
+		if (!activeTreatmentPlanItems || !visitNoteForm.completedServices) return 0;
+		return visitNoteForm.completedServices.reduce((sum: number, cs: any) => {
+			const matchedItem = activeTreatmentPlanItems.find(
+				(i) =>
+					i.priceId === cs.serviceId &&
+					(i.toothCode === cs.toothCode ||
+						(i.toothNumber ? String(i.toothNumber) : null) === cs.toothCode),
+			);
+			if (matchedItem) {
+				const unitPrice = matchedItem.unitPriceRub || matchedItem.price || 0;
+				const discount = matchedItem.discountRub || matchedItem.discount || 0;
+				return sum + Math.max(0, unitPrice * matchedItem.quantity - discount);
+			}
+			return sum;
+		}, 0);
+	}, [activeTreatmentPlanItems, visitNoteForm.completedServices]);
+
 	const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
 		if (!dashboard || !documentPatient)
 			return {
@@ -12366,6 +12384,31 @@ export function useAppLogic(): any {
 		}
 	}
 
+	async function completeTreatmentPlanItems(itemIds: string[]) {
+		if (!documentPatient) return;
+		try {
+			const response = await fetch(
+				`/api/patients/${documentPatient.id}/treatment-items/complete`,
+				{
+					method: "POST",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						itemIds,
+						visitId: dashboard?.activeVisit?.id,
+					}),
+				},
+			);
+			if (!response.ok) {
+				console.error("Failed to complete treatment plan items", await response.text());
+			}
+		} catch (error) {
+			console.error("Error completing treatment plan items", error);
+		}
+	}
+
+
 	async function recordPayment() {
 		setPaymentFeedback("");
 		if (isPaymentSaving) {
@@ -12551,6 +12594,21 @@ export function useAppLogic(): any {
 			setPaymentPayerRelationship("пациент");
 			setPaymentTaxDeductionCode("");
 			await loadDashboard();
+			// Fire-and-forget: mark checked services as completed in DB
+			const completedItemIds = activeTreatmentPlanItems
+				.filter((item) =>
+					(visitNoteForm.completedServices || []).some(
+						(cs: any) =>
+							cs.serviceId === item.priceId &&
+							cs.toothCode ===
+								(item.toothNumber ? String(item.toothNumber) : null),
+					),
+				)
+				.map((item) => item.id)
+				.filter(Boolean);
+			if (completedItemIds.length > 0) {
+				completeTreatmentPlanItems(completedItemIds);
+			}
 			setPaymentFeedback(
 				`Оплата ${money(amountRub)} записана для ${documentPatient.fullName}. Фискальные и налоговые поля очищены для следующего платежа.`,
 			);
@@ -13379,6 +13437,7 @@ export function useAppLogic(): any {
 		activeSettingsTabButtonRef,
 		activeSpeechProviderHealth,
 		activeTreatmentPlanItems,
+		activeVisitCompletedAmountRub,
 		addTreatmentPlanItem,
 		removeTreatmentPlanItem,
 		activeTreatmentPlanScenarios,
@@ -13946,6 +14005,7 @@ export function useAppLogic(): any {
 		recognitionText,
 		recommendedActionPriorityLabels,
 		reconnectDicomWorkbenchFromCurrentFolder,
+		completeTreatmentPlanItems,
 		recordPayment,
 		refreshBrowserContinuity,
 		refreshSpeechRuntime,

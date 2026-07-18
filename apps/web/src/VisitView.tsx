@@ -136,6 +136,7 @@ export function VisitView() {
 		setPaymentTaxDeductionCode,
 		patientBillingSummary: billingSummary,
 		documentPatient,
+		activeVisitCompletedAmountRub,
 
 		pendingSpeechFlushActionTitle,
 		pendingVisitSaveCount,
@@ -194,6 +195,7 @@ export function VisitView() {
 		addTreatmentPlanItem,
 		removeTreatmentPlanItem,
 		auth,
+		loadDashboard,
 	} = useAppLogicContext();
 
 	const [activeVisitTab, setActiveVisitTab] = useState<VisitTabType>("diary");
@@ -216,7 +218,12 @@ export function VisitView() {
 	const [ztlComment, setZtlComment] = useState("");
 
 	useEffect(() => {
-		const handleOpenPayment = () => setIsPaymentOpen(true);
+		const handleOpenPayment = () => {
+			if (activeVisitCompletedAmountRub > 0) {
+				setPaymentAmount(formatCurrencyNumeric(String(activeVisitCompletedAmountRub)));
+			}
+			setIsPaymentOpen(true);
+		};
 		const handleOpenDocs = () => setIsDocsOpen(true);
 		window.addEventListener("open-visit-payment", handleOpenPayment);
 		window.addEventListener("open-visit-docs", handleOpenDocs);
@@ -506,6 +513,7 @@ export function VisitView() {
 			<CheckoutDrawer isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)}>
 				<PaymentCapture
 					remainingDebt={billingSummary?.totalDueRub}
+					visitTotalDue={activeVisitCompletedAmountRub}
 					amount={paymentAmount}
 					feedback={paymentFeedback}
 					fiscalCashierName={paymentFiscalCashierName}

@@ -42,9 +42,8 @@ export async function processNotificationQueue() {
 			.limit(10);
 
 		for (const notif of pending) {
-			const messageText =
-				(notif.payload as Record<string, unknown>)?.text ||
-				JSON.stringify(notif.payload);
+			const messageText: string =
+				String((notif.payload as Record<string, unknown>)?.text ?? JSON.stringify(notif.payload));
 
 			let deliveryStatus = "failed";
 			let failureReason = "skipped: no telegram bot token configured or patient not linked";
@@ -62,13 +61,14 @@ export async function processNotificationQueue() {
 					where: eq(denteTelegramBotConfigs.organizationId, notif.organizationId),
 				});
 				
-				// In a real env, botToken should be decrypted or configured
-				const token = botConfig?.clinicOwnedBotTokenEncrypted || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+				// tokenSecretRef stores the key reference; in production this would be resolved
+				// from a secrets manager. Here we fall back to env var directly.
+				const token: string | undefined = process.env.DENTE_TELEGRAM_BOT_TOKEN || botConfig?.tokenSecretRef || undefined;
 				
 				if (token) {
 					const res = await sendTelegramTextMessage({
 						botToken: token,
-						chatId: chatLink.chatTransportRef, // In legacyMocks this might be encrypted, but we try as is
+						chatId: chatLink.chatTransportRef as string,
 						text: messageText,
 					});
 					
