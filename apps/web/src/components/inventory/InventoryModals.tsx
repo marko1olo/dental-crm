@@ -1,24 +1,7 @@
-import { X, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import type React from "react";
-import type { InventoryItem } from "./useInventoryLogic";
+import React from "react";
+import { ArrowDownToLine, ArrowUpFromLine, X } from "lucide-react";
 
-export interface InventoryModalsProps {
-	showModal: boolean;
-	setShowModal: (show: boolean) => void;
-	editingItem: InventoryItem | null;
-	formData: any;
-	setFormData: (data: any) => void;
-	handleSaveItem: (e: React.FormEvent) => void;
-	adjustingItem: InventoryItem | null;
-	setAdjustingItem: (item: InventoryItem | null) => void;
-	adjustType: "in" | "out";
-	setAdjustType: (type: "in" | "out") => void;
-	adjustAmount: string;
-	setAdjustAmount: (amount: string) => void;
-	handleAdjustStock: (e: React.FormEvent) => void;
-}
-
-export const InventoryModals: React.FC<InventoryModalsProps> = ({
+export function InventoryModals({
 	showModal,
 	setShowModal,
 	editingItem,
@@ -32,7 +15,21 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 	adjustAmount,
 	setAdjustAmount,
 	handleAdjustStock,
-}) => {
+}: {
+	showModal: boolean;
+	setShowModal: (show: boolean) => void;
+	editingItem: any;
+	formData: any;
+	setFormData: (data: any) => void;
+	handleSaveItem: (e: React.FormEvent) => void;
+	adjustingItem: any;
+	setAdjustingItem: (item: any) => void;
+	adjustType: "in" | "out";
+	setAdjustType: (type: "in" | "out") => void;
+	adjustAmount: string;
+	setAdjustAmount: (amount: string) => void;
+	handleAdjustStock: (e: React.FormEvent) => void;
+}) {
 	const paperBg = "var(--paper)";
 	const paperSoftBg = "var(--paper-soft)";
 	const borderColor = "var(--line)";
@@ -199,104 +196,6 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 									/>
 								</div>
 							</div>
-							<div style={{ display: "flex", gap: 12 }}>
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: 6,
-										flex: 1,
-									}}
-								>
-									<label
-										style={{
-											fontSize: 13,
-											color: "var(--muted)",
-											fontWeight: 500,
-										}}
-									>
-										Партия
-									</label>
-									<input
-										type="text"
-										value={formData.lotNumber || ""}
-										onChange={(e) =>
-											setFormData({ ...formData, lotNumber: e.target.value })
-										}
-										style={{
-											padding: "10px 14px",
-											borderRadius: 8,
-											border: `1px solid ${borderColor}`,
-											background: paperSoftBg,
-											color: "var(--ink)",
-											outline: "none",
-										}}
-									/>
-								</div>
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: 6,
-										flex: 1,
-									}}
-								>
-									<label
-										style={{
-											fontSize: 13,
-											color: "var(--muted)",
-											fontWeight: 500,
-										}}
-									>
-										Годен до
-									</label>
-									<input
-										type="date"
-										value={formData.expirationDate || ""}
-										onChange={(e) =>
-											setFormData({
-												...formData,
-												expirationDate: e.target.value,
-											})
-										}
-										style={{
-											padding: "10px 14px",
-											borderRadius: 8,
-											border: `1px solid ${borderColor}`,
-											background: paperSoftBg,
-											color: "var(--ink)",
-											outline: "none",
-										}}
-									/>
-								</div>
-							</div>
-							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label
-									style={{
-										fontSize: 13,
-										color: "var(--muted)",
-										fontWeight: 500,
-									}}
-								>
-									Штрихкод / Артикул
-								</label>
-								<input
-									type="text"
-									value={formData.barcode || ""}
-									onChange={(e) =>
-										setFormData({ ...formData, barcode: e.target.value })
-									}
-									style={{
-										padding: "10px 14px",
-										borderRadius: 8,
-										border: `1px solid ${borderColor}`,
-										background: paperSoftBg,
-										color: "var(--ink)",
-										outline: "none",
-									}}
-									placeholder="Считайте код или введите вручную"
-								/>
-							</div>
 							<button
 								type="submit"
 								className="primary-button"
@@ -322,7 +221,9 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 						alignItems: "center",
 						justifyContent: "center",
 					}}
-					onClick={(e) => e.target === e.currentTarget && setAdjustingItem(null)}
+					onClick={(e) =>
+						e.target === e.currentTarget && setAdjustingItem(null)
+					}
 				>
 					<div
 						style={{
@@ -407,13 +308,7 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 										flex: 1,
 										padding: "8px 0",
 										borderRadius: 8,
-										border: `1px solid ${
-											adjustType === t
-												? t === "in"
-													? "var(--brand-600, #3b82f6)"
-													: "var(--tomato)"
-												: borderColor
-										}`,
+										border: `1px solid ${adjustType === t ? (t === "in" ? "var(--brand-600, #3b82f6)" : "var(--tomato)") : borderColor}`,
 										background:
 											adjustType === t
 												? t === "in"
@@ -497,7 +392,7 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 											0,
 											adjustingItem.stockQuantity +
 												(adjustType === "in" ? 1 : -1) *
-													(parseInt(adjustAmount) || 0)
+													(parseInt(adjustAmount) || 0),
 										)}{" "}
 										шт.
 									</strong>
@@ -513,7 +408,9 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 									color: "var(--paper)",
 									cursor: "pointer",
 									background:
-										adjustType === "in" ? "var(--brand-600, #3b82f6)" : "var(--tomato)",
+										adjustType === "in"
+											? "var(--brand-600, #3b82f6)"
+											: "var(--tomato)",
 									fontSize: 15,
 								}}
 							>
@@ -525,4 +422,4 @@ export const InventoryModals: React.FC<InventoryModalsProps> = ({
 			)}
 		</>
 	);
-};
+}

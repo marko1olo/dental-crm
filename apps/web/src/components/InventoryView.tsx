@@ -1,11 +1,13 @@
-import { Package, TrendingUp } from "lucide-react";
+import { Package } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { useInventoryLogic, type InventoryItem } from "./inventory/useInventoryLogic";
+import { useInventoryLogic } from "./inventory/useInventoryLogic";
 import { InventoryRulesTab } from "./inventory/InventoryRulesTab";
-import { InventoryItemsTab } from "./inventory/InventoryItemsTab";
+import { InventoryHeader } from "./inventory/InventoryHeader";
+import { InventoryBarcodeGuide } from "./inventory/InventoryBarcodeGuide";
+import { InventoryListTable } from "./inventory/InventoryListTable";
 import { InventoryModals } from "./inventory/InventoryModals";
-import { InventoryHistoryDrawer } from "./inventory/InventoryHistoryDrawer";
+import { InventoryItemDrawer } from "./inventory/InventoryItemDrawer";
 
 export const InventoryView: React.FC<{ organizationId: string }> = ({
 	organizationId,
@@ -56,14 +58,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		setItemHistory,
 	} = inventory;
 
-	const [viewingItemHistory, setViewingItemHistory] = useState<InventoryItem | null>(null);
-	const [simulatedBarcode, setSimulatedBarcode] = useState("");
-	const [isBarcodeGuideOpen, setIsBarcodeGuideOpen] = useState(false);
+	const [viewingItemHistory, setViewingItemHistory] = useState<any | null>(null);
 
 	const triggerBarcodeSimulation = (barcodeStr: string) => {
 		const code = barcodeStr.trim();
 		if (!code) return;
-		
+
 		let delay = 0;
 		for (let i = 0; i < code.length; i++) {
 			const char = code[i] || "";
@@ -77,7 +77,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 			}, delay);
 			delay += 12;
 		}
-		
+
 		setTimeout(() => {
 			const event = new KeyboardEvent("keydown", {
 				key: "Enter",
@@ -88,7 +88,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		}, delay + 15);
 	};
 
-	const paperBg = "var(--paper)";
 	const borderColor = "var(--line)";
 
 	if (isLoading && items.length === 0) {
@@ -121,135 +120,13 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				gap: 0,
 			}}
 		>
-			{/* HEADER */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "flex-start",
-					justifyContent: "space-between",
-					marginBottom: 24,
-					flexWrap: "wrap",
-					gap: 16,
-				}}
-			>
-				<div>
-					<h1
-						style={{
-							fontSize: 24,
-							fontWeight: 700,
-							margin: 0,
-							display: "flex",
-							alignItems: "center",
-							gap: 12,
-							color: "var(--ink)",
-						}}
-					>
-						<Package color="var(--teal)" size={28} /> Склад материалов
-					</h1>
-					<p style={{ color: "var(--muted)", margin: "4px 0 0 0", fontSize: 14 }}>
-						Учёт расходников, приход и списание
-					</p>
-				</div>
-				{/* KPI CARDS */}
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<div
-						style={{
-							background: paperBg,
-							border: `1px solid ${borderColor}`,
-							padding: "12px 20px",
-							borderRadius: 12,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							minWidth: 110,
-						}}
-					>
-						<span
-							style={{
-								fontSize: 11,
-								color: "var(--muted)",
-								textTransform: "uppercase",
-								letterSpacing: 1,
-							}}
-						>
-							Позиций
-						</span>
-						<strong style={{ fontSize: 22, color: "var(--ink)" }}>
-							{totalItems}
-						</strong>
-					</div>
-					<div
-						style={{
-							background: paperBg,
-							border: `1px solid ${borderColor}`,
-							padding: "12px 20px",
-							borderRadius: 12,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							minWidth: 110,
-						}}
-					>
-						<span
-							style={{
-								fontSize: 11,
-								color: "var(--muted)",
-								textTransform: "uppercase",
-								letterSpacing: 1,
-							}}
-						>
-							В дефиците
-						</span>
-						<strong
-							style={{
-								fontSize: 22,
-								color: lowStockCount > 0 ? "var(--tomato)" : "var(--teal)",
-							}}
-						>
-							{lowStockCount}
-						</strong>
-					</div>
-					{totalValue > 0 && (
-						<div
-							style={{
-								background: paperBg,
-								border: `1px solid ${borderColor}`,
-								padding: "12px 20px",
-								borderRadius: 12,
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-								minWidth: 140,
-							}}
-						>
-							<span
-								style={{
-									fontSize: 11,
-									color: "var(--muted)",
-									textTransform: "uppercase",
-									letterSpacing: 1,
-								}}
-							>
-								Стоимость склада
-							</span>
-							<strong
-								style={{
-									fontSize: 18,
-									color: "var(--teal)",
-									display: "flex",
-									alignItems: "center",
-									gap: 4,
-								}}
-							>
-								<TrendingUp size={14} />
-								{totalValue.toLocaleString("ru-RU")} ₽
-							</strong>
-						</div>
-					)}
-				</div>
-			</div>
+			<InventoryHeader
+				totalItems={totalItems}
+				lowStockCount={lowStockCount}
+				totalValue={totalValue}
+			/>
 
-			{/* SUB-TABS TABS */}
+			{/* SUB-TABS */}
 			<div
 				style={{
 					display: "flex",
@@ -270,7 +147,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								? "var(--teal-50, rgba(20, 184, 166, 0.1))"
 								: "transparent",
 						border: "none",
-						color: activeSubTab === "inventory" ? "var(--teal)" : "var(--muted)",
+						color:
+							activeSubTab === "inventory" ? "var(--teal)" : "var(--muted)",
 						fontWeight: 600,
 						fontSize: 14,
 						cursor: "pointer",
@@ -302,26 +180,26 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 			</div>
 
 			{activeSubTab === "inventory" ? (
-				<InventoryItemsTab
-					items={items}
-					filteredItems={filteredItems}
-					searchQuery={searchQuery}
-					setSearchQuery={setSearchQuery}
-					openAddModal={openAddModal}
-					openEditModal={openEditModal}
-					handleDeleteItem={handleDeleteItem}
-					setAdjustingItem={setAdjustingItem}
-					setAdjustType={setAdjustType}
-					setAdjustAmount={setAdjustAmount}
-					setViewingItemHistory={setViewingItemHistory}
-					fetchHistory={fetchHistory}
-					scannedBarcode={scannedBarcode}
-					simulatedBarcode={simulatedBarcode}
-					setSimulatedBarcode={setSimulatedBarcode}
-					triggerBarcodeSimulation={triggerBarcodeSimulation}
-					isBarcodeGuideOpen={isBarcodeGuideOpen}
-					setIsBarcodeGuideOpen={setIsBarcodeGuideOpen}
-				/>
+				<>
+					<InventoryBarcodeGuide
+						scannedBarcode={scannedBarcode}
+						triggerBarcodeSimulation={triggerBarcodeSimulation}
+					/>
+
+					<InventoryListTable
+						searchQuery={searchQuery}
+						setSearchQuery={setSearchQuery}
+						openAddModal={openAddModal}
+						filteredItems={filteredItems}
+						setViewingItemHistory={setViewingItemHistory}
+						fetchHistory={fetchHistory}
+						openEditModal={openEditModal}
+						handleDeleteItem={handleDeleteItem}
+						setAdjustingItem={setAdjustingItem}
+						setAdjustType={setAdjustType}
+						setAdjustAmount={setAdjustAmount}
+					/>
+				</>
 			) : (
 				<InventoryRulesTab
 					dashboard={dashboard}
@@ -355,12 +233,16 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				handleAdjustStock={handleAdjustStock}
 			/>
 
-			<InventoryHistoryDrawer
+			<InventoryItemDrawer
 				viewingItemHistory={viewingItemHistory}
 				setViewingItemHistory={setViewingItemHistory}
-				itemHistory={itemHistory}
 				setItemHistory={setItemHistory}
 				isLoadingHistory={isLoadingHistory}
+				itemHistory={itemHistory}
+				openEditModal={openEditModal}
+				setAdjustingItem={setAdjustingItem}
+				setAdjustType={setAdjustType}
+				setAdjustAmount={setAdjustAmount}
 			/>
 		</div>
 	);
