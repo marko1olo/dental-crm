@@ -351,7 +351,7 @@ function NewChatModal({
 }
 
 export function OmnichannelInboxView() {
-	const { auth } = useAppLogicContext();
+	const { auth, dashboard } = useAppLogicContext();
 	const [chats, setChats] = useState<ChatSummary[]>([]);
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -923,8 +923,8 @@ export function OmnichannelInboxView() {
 							<div
 								style={{
 									height: 64,
-									background: "rgba(255,255,255,0.85)",
-									backdropFilter: "blur(12px)",
+									background: "var(--glass-bg, var(--paper))",
+									backdropFilter: "var(--glass-blur, blur(12px))",
 									borderBottom: "1px solid var(--line)",
 									padding: "0 20px",
 									display: "flex",
