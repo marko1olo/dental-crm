@@ -389,7 +389,6 @@ export async function createDenteApiApp(
 	await workspaceProfileRoutes(app);
 
 	if (options.startTelegramWorker !== false) {
-		// const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
 		startBiAnalyticsWorker();
 		startSyncEngine(db.$client as any); // assuming db exposes pglite
 		startBackupDaemon();
