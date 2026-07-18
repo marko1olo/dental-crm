@@ -326,7 +326,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 												style={{
 													background: "transparent",
 													border: "none",
-													color: "var(--tomato, #ef4444)",
+													color: "var(--tomato)",
 													cursor: "pointer",
 													padding: 4,
 													display: "flex",
@@ -525,12 +525,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						borderRadius: 8,
 						background:
 							activeSubTab === "inventory"
-								? "rgba(20, 184, 166, 0.1)"
+								? "var(--teal-50, rgba(20, 184, 166, 0.1))"
 								: "transparent",
 						border: "none",
 						color:
 							activeSubTab === "inventory"
-								? "var(--teal, #14b8a6)"
+								? "var(--teal)"
 								: "var(--muted)",
 						fontWeight: 600,
 						fontSize: 14,
@@ -548,12 +548,12 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						borderRadius: 8,
 						background:
 							activeSubTab === "rules"
-								? "rgba(20, 184, 166, 0.1)"
+								? "var(--teal-50, rgba(20, 184, 166, 0.1))"
 								: "transparent",
 						border: "none",
 						color:
 							activeSubTab === "rules"
-								? "var(--teal, #14b8a6)"
+								? "var(--teal)"
 								: "var(--muted)",
 						fontWeight: 600,
 						fontSize: 14,
@@ -910,8 +910,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 													<span
 														style={{
 															background: isLowStock
-																? "rgba(239, 68, 68, 0.1)"
-																: "rgba(16, 185, 129, 0.1)",
+																? "var(--red-50, rgba(239, 68, 68, 0.1))"
+																: "var(--teal-50, rgba(16, 185, 129, 0.1))",
 															color: isLowStock
 																? "var(--tomato)"
 																: "var(--teal)",
@@ -1053,8 +1053,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														<button
 															onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
 															style={{
-																background: "rgba(245, 158, 11, 0.1)",
-																color: "#d97706",
+																background: "var(--amber-50, rgba(245, 158, 11, 0.1))",
+																color: "var(--amber-600)",
 																border: "none",
 																width: 32,
 																height: 32,
@@ -1073,7 +1073,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																handleDeleteItem(item.id, item.name)
 															}
 															style={{
-																background: "rgba(239, 68, 68, 0.1)",
+																background: "var(--red-50, rgba(239, 68, 68, 0.1))",
 																color: "var(--tomato)",
 																border: "none",
 																width: 32,
@@ -1095,8 +1095,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustAmount("");
 															}}
 															style={{
-																background: "rgba(59, 130, 246, 0.1)",
-																color: "#3b82f6",
+																background: "var(--brand-50, rgba(59, 130, 246, 0.1))",
+																color: "var(--brand-600, #3b82f6)",
 																border: "none",
 																padding: "6px 12px",
 																borderRadius: 6,
@@ -1118,7 +1118,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																setAdjustAmount("");
 															}}
 															style={{
-																background: "rgba(239, 68, 68, 0.1)",
+																background: "var(--red-50, rgba(239, 68, 68, 0.1))",
 																color: "var(--tomato)",
 																border: "none",
 																padding: "6px 12px",
@@ -1420,17 +1420,17 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										flex: 1,
 										padding: "8px 0",
 										borderRadius: 8,
-										border: `1px solid ${adjustType === t ? (t === "in" ? "#3b82f6" : "var(--tomato)") : borderColor}`,
+										border: `1px solid ${adjustType === t ? (t === "in" ? "var(--brand-600, #3b82f6)" : "var(--tomato)") : borderColor}`,
 										background:
 											adjustType === t
 												? t === "in"
-													? "rgba(59,130,246,0.12)"
-													: "rgba(239,68,68,0.12)"
+													? "var(--brand-50, rgba(59,130,246,0.12))"
+													: "var(--red-50, rgba(239,68,68,0.12))"
 												: "transparent",
 										color:
 											adjustType === t
 												? t === "in"
-													? "#3b82f6"
+													? "var(--brand-600, #3b82f6)"
 													: "var(--tomato)"
 												: "var(--muted)",
 										fontWeight: 600,
@@ -1517,9 +1517,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									borderRadius: 8,
 									border: "none",
 									fontWeight: 600,
-									color: "#fff",
+									color: "var(--paper)",
 									cursor: "pointer",
-									background: adjustType === "in" ? "#3b82f6" : "var(--tomato)",
+									background: adjustType === "in" ? "var(--brand-600, #3b82f6)" : "var(--tomato)",
 									fontSize: 15,
 								}}
 							>
@@ -1611,7 +1611,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														fontSize: 16, 
 														fontWeight: 700, 
 														color: isPositive ? "var(--teal)" : "var(--tomato)",
-														background: isPositive ? "rgba(20, 184, 166, 0.1)" : "rgba(239, 68, 68, 0.1)",
+														background: isPositive ? "var(--teal-50, rgba(20, 184, 166, 0.1))" : "var(--red-50, rgba(239, 68, 68, 0.1))",
 														padding: "4px 10px",
 														borderRadius: 8
 													}}>

@@ -221,10 +221,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIsLocked(true);
 				showToast("Дневник уже был подписан ранее.", "info");
 			} else {
-				showToast(`Ошибка: ${json.error ?? "неизвестная"}`, "error");
+				showToast(`Ошибка: ${json.message || json.error || "Неизвестно"}`, "error");
 			}
-		} catch {
-			showToast("Ошибка сети при подписании", "error");
+		} catch (err: any) {
+			showToast(`Ошибка сети: ${err.message || "Сбой запроса"}`, "error");
 		}
 	};
 
