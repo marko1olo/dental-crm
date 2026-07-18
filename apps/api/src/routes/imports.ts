@@ -470,29 +470,37 @@ export async function commitPatientImport(
 			(row) => row.status === "ready" && row.fullName,
 		);
 
-		for (const row of validRows) {
-			const result = (await tx
-				.insert(patients)
-				.values({
+		if (validRows.length > 0) {
+			const chunkSize = 1000;
+			for (let i = 0; i < validRows.length; i += chunkSize) {
+				const chunk = validRows.slice(i, i + chunkSize);
+
+				const patientValues = chunk.map((row) => ({
 					organizationId: orgId,
 					fullName: row.fullName ?? "",
 					birthDate: row.birthDate,
 					phone: row.phone,
 					notes: row.notes,
-					status: "active",
-				})
-				.returning()) as any;
-			const inserted = result[0];
+					status: "active" as const,
+				}));
 
-			importedPatientIds.push(inserted!.id);
+				const insertedPatients = (await tx
+					.insert(patients)
+					.values(patientValues)
+					.returning()) as any[];
 
-			await tx.insert(auditEvents).values({
-				organizationId: orgId,
-				entityType: "patient",
-				entityId: inserted!.id,
-				action: "patient_imported",
-				reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`,
-			});
+				importedPatientIds.push(...insertedPatients.map((p) => p.id));
+
+				const auditEventValues = chunk.map((row, index) => ({
+					organizationId: orgId,
+					entityType: "patient" as const,
+					entityId: insertedPatients[index]!.id,
+					action: "patient_imported" as const,
+					reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`,
+				}));
+
+				await tx.insert(auditEvents).values(auditEventValues);
+			}
 		}
 
 		const [batch] = await tx

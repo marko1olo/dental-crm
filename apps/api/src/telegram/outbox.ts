@@ -1,5 +1,5 @@
 import type { DenteTelegramOutboxItem } from "@dental/shared";
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, or, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	appointments,
@@ -81,20 +81,32 @@ export async function buildDenteTelegramOutboxItems(
 		);
 
 	const digestDate = now.toISOString().split("T")[0];
-	for (const link of activeStaffLinks) {
-		const digestId = `staff_digest:${link.subjectId}:${digestDate}`;
+	const allDigestIds = activeStaffLinks.map(
+		(link) => `staff_digest:${link.subjectId}:${digestDate}`,
+	);
+	const sentDigestIds = new Set<string>();
 
-		// Check if already sent today
-		const [existing] = await db
-			.select()
+	if (allDigestIds.length > 0) {
+		const existingReceipts = await db
+			.select({ outboxItemId: denteTelegramOutboxDeliveryReceipts.outboxItemId })
 			.from(denteTelegramOutboxDeliveryReceipts)
 			.where(
 				and(
-					eq(denteTelegramOutboxDeliveryReceipts.outboxItemId, digestId),
+					inArray(denteTelegramOutboxDeliveryReceipts.outboxItemId, allDigestIds),
 					eq(denteTelegramOutboxDeliveryReceipts.status, "sent"),
 				),
-			)
-			.limit(1);
+			);
+
+		for (const receipt of existingReceipts) {
+			if (receipt.outboxItemId) {
+				sentDigestIds.add(receipt.outboxItemId);
+			}
+		}
+	}
+
+	for (const link of activeStaffLinks) {
+		const digestId = `staff_digest:${link.subjectId}:${digestDate}`;
+		const existing = sentDigestIds.has(digestId);
 
 		if (!existing) {
 			items.push({

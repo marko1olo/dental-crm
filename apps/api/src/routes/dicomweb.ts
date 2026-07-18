@@ -29,8 +29,6 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				const buffer = await fs.readFile(targetPath);
 				reply.header("Content-Type", "application/dicom");
 				reply.header("Content-Length", buffer.length);
-				// Browsers may need CORS for cornerstone loader
-				reply.header("Access-Control-Allow-Origin", "*");
 				return reply.send(buffer);
 			} catch (e) {
 				app.log.error(`DICOM file not found for instance ${instanceUid}: ${e}`);

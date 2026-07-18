@@ -4,7 +4,7 @@ import type {
 	VisitDraftAutosave,
 	VisitDraftAutosaveRequest,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { signedOutpatientCards, visitGnathology } from "./schema.js";
@@ -495,4 +495,10 @@ export async function upsertVisitGnathologyInDb(
 			updatedAt: new Date(),
 		});
 	}
+}
+
+export async function getVisitsByIdsInDb(organizationId: string, ids: readonly string[]) {
+	if (ids.length === 0) return [];
+	const res = await db.select().from(schema.visits).where(and(eq(schema.visits.organizationId, organizationId), inArray(schema.visits.id, ids as string[])));
+	return res;
 }

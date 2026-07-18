@@ -74,7 +74,13 @@ const AI_TO_ODONTOGRAM: Record<string, ToothStatus> = {
 // ─── Markdown-рендерер (лёгкий, без зависимостей) ────────────────────────────
 
 function renderMarkdown(text: string): string {
-	return text
+	const escaped = text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+	return escaped
 		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
 		.replace(/\*(.+?)\*/g, "<em>$1</em>")
 		.replace(/^#{1,3}\s+(.+)$/gm, '<h4 style="margin:12px 0 4px">$1</h4>')
