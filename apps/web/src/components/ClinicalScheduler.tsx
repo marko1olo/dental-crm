@@ -19,6 +19,8 @@ export const ClinicalScheduler: React.FC<any> = ({
 	const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
 	const [mobileChairId, setMobileChairId] = useState<string | null>(null);
+	const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
+	const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -152,6 +154,18 @@ export const ClinicalScheduler: React.FC<any> = ({
 		};
 	};
 
+	const occupiedCells = React.useMemo(() => {
+		const cells = new Set<string>();
+		(appointments || []).forEach((appt: any) => {
+			const pos = getAppointmentGridPosition(appt);
+			if (!pos) return;
+			for (let r = 0; r < pos.span; r++) {
+				cells.add(`${pos.startRow + r}-${appt.chairId}`);
+			}
+		});
+		return cells;
+	}, [appointments, minStart]);
+
 	const CurrentTimeIndicator = () => {
 		const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -193,9 +207,20 @@ export const ClinicalScheduler: React.FC<any> = ({
 	return (
 		<div className="clinical-scheduler">
 			<div className="scheduler-header">
-				<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+				<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px", flex: 1 }}>
 					<h3>Ежедневное расписание</h3>
-					{freeDoctors.length > 0 && (
+					
+					{/* Status Legend */}
+					<div className="sg-status-legend">
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-planned" /> Запланирован</span>
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-confirmed" /> Подтвержден</span>
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-arrived" /> Пришел</span>
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-in_treatment" /> В кресле</span>
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-completed" /> Завершен</span>
+						<span className="sg-legend-item"><span className="sg-legend-dot sg-appt-status-cancelled" /> Отменен</span>
+					</div>
+
+					{freeDoctors.length > 0 && !isSmallCabinet && (
 						<div className="free-doctors-locator">
 							<span className="free-doctors-label">
 								Свободные окна:
@@ -221,7 +246,16 @@ export const ClinicalScheduler: React.FC<any> = ({
 						</div>
 					)}
 				</div>
-				<div className="date-picker">Сегодня</div>
+				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+					<button 
+						className="secondary-button" 
+						style={{ padding: "4px 8px", fontSize: "12px", height: "auto" }}
+						onClick={() => setDensity(d => d === "comfortable" ? "compact" : "comfortable")}
+					>
+						{density === "comfortable" ? "Компактный вид" : "Комфортный вид"}
+					</button>
+					<div className="date-picker">Сегодня</div>
+				</div>
 			</div>
 
 			{isMobile && activeChairs.length > 1 && (
@@ -243,6 +277,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 			<div className="scheduler-grid-wrap" onMouseLeave={handleCellLeave}>
 				<div
 					className="sg-grid-body"
+					data-density={density}
 					style={{
 						display: "grid",
 						gridTemplateColumns: `60px repeat(${chairsCount}, minmax(180px, 1fr))`,
@@ -274,21 +309,32 @@ export const ClinicalScheduler: React.FC<any> = ({
 								{time}
 							</div>
 
-							{displayedChairs.map((chair: any, ci: number) => (
+							{displayedChairs.map((chair: any, ci: number) => {
+								const isOccupied = occupiedCells.has(`${ri + 2}-${chair.id}`);
+								const isCrosshairHere = crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci;
+								let dragClass = "";
+								if (isCrosshairHere) {
+									dragClass = isOccupied ? "sg-cell-highlight-invalid" : "sg-cell-highlight-valid";
+								}
+
+								return (
 								<div
 									key={`${time}-${chair.id}`}
-									className={`sg-cell sg-cell--empty ${crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci ? "sg-cell-highlight" : ""} ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? "sg-row-highlight" : ""}`}
+									className={`sg-cell sg-cell--empty ${isCrosshairHere ? "sg-cell-highlight" : ""} ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? "sg-row-highlight" : ""} ${dragClass}`}
 									style={{ gridRow: ri + 2, gridColumn: ci + 2 }}
 									onMouseEnter={() => setCrosshair({ rowIdx: ri, colIdx: ci })}
-									onClick={() => handleEmptyClick(time, chair.id)}
+									onClick={() => {
+										if (!isOccupied) handleEmptyClick(time, chair.id);
+									}}
 									onDragOver={(e) => {
 										e.preventDefault(); // Allow drop
-										e.dataTransfer.dropEffect = "copy";
+										e.dataTransfer.dropEffect = isOccupied ? "none" : "copy";
 										setCrosshair({ rowIdx: ri, colIdx: ci });
 									}}
 									onDrop={(e) => {
 										e.preventDefault();
 										setCrosshair(null);
+										if (isOccupied) return;
 										if (onSlotDrop) {
 											const today = new Date().toISOString().split("T")[0];
 											try {
@@ -304,9 +350,10 @@ export const ClinicalScheduler: React.FC<any> = ({
 										}
 									}}
 								>
-									<div className="sg-cell-plus">+</div>
+									{!isOccupied && <div className="sg-cell-plus">+</div>}
 								</div>
-							))}
+								);
+							})}
 						</React.Fragment>
 					))}
 
@@ -332,6 +379,19 @@ export const ClinicalScheduler: React.FC<any> = ({
 							(r: any) => r.appointmentId === appt.id,
 						);
 
+						// Resolve doctor from dashboard
+						const doctor = dashboard?.clinicSettings?.staff?.find(
+							(m: any) => m.id === appt.doctorUserId,
+						);
+
+						const tooltipTitle = [
+							`Пациент: ${patient?.fullName || "Неизвестно"}`,
+							`Врач: ${doctor?.fullName || "Не назначен"}`,
+							`Услуга: ${appt.reason || "Не указана"}`,
+							`Телефон: ${patient?.phone || "Не указан"}`,
+							appt.comment ? `Комментарий: ${appt.comment}` : ""
+						].filter(Boolean).join("\n");
+
 						return (
 							<div
 								key={appt.id}
@@ -340,6 +400,8 @@ export const ClinicalScheduler: React.FC<any> = ({
 									gridRow: `${pos.startRow} / span ${pos.span}`,
 									gridColumn: colIdx + 2,
 								}}
+								onMouseEnter={() => setHoveredApptId(appt.id)}
+								onMouseLeave={() => setHoveredApptId(null)}
 							>
 								<div
 									className={`sg-appt-card sg-appt-${appt.type || "therapy"} sg-appt-status-${appt.status || "planned"}`}
@@ -352,7 +414,10 @@ export const ClinicalScheduler: React.FC<any> = ({
 									<div className="sg-appt-title">
 										{patient?.fullName || "Неизвестный пациент"}
 									</div>
-									<div className="sg-appt-meta-status">{appt.status}</div>
+									<div className="sg-appt-meta">
+										{doctor?.fullName?.split(" ")[0] || "Без врача"}
+										{appt.reason ? ` · ${appt.reason}` : ""}
+									</div>
 									<div className="sg-appt-time">
 										{new Date(appt.startsAt).toLocaleTimeString([], {
 											hour: "2-digit",
@@ -364,6 +429,24 @@ export const ClinicalScheduler: React.FC<any> = ({
 											minute: "2-digit",
 										})}
 									</div>
+
+									{/* Custom Popover Tooltip */}
+									{hoveredApptId === appt.id && (
+										<div className="sg-appt-popover glass-panel">
+											<div className="sg-popover-header">
+												<strong>{patient?.fullName || "Неизвестный пациент"}</strong>
+												<span className="sg-popover-time">
+													{new Date(appt.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {new Date(appt.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+												</span>
+											</div>
+											<div className="sg-popover-body">
+												{patient?.phone && <div>📞 {patient.phone}</div>}
+												<div>👨‍⚕️ {doctor?.fullName || "Врач не назначен"}</div>
+												{appt.reason && <div>⚕️ {appt.reason}</div>}
+												{appt.comment && <div className="sg-popover-comment">📝 {appt.comment}</div>}
+											</div>
+										</div>
+									)}
 
 									{/* Status Lights (Светофоры) */}
 									<div className="sg-appt-status-lights">
