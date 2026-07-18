@@ -34,6 +34,9 @@ import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
 import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
+import { VisitDiaryHeader } from "./visit/VisitDiaryHeader";
+import { VisitIcdDropdown } from "./visit/VisitIcdDropdown";
+import { VisitDiaryPrintPreview } from "./visit/VisitDiaryPrintPreview";
 
 interface DiaryState {
 	anamnesis: string;
@@ -102,19 +105,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		icdRef,
 	} = useVisitDiaryLogic(visitId, patientId);
 
-	// ── ICD-10 select
-	const handleIcdSelect = (code: string) => {
-		setDiary((prev) => ({ ...prev, diagnosisIcd10: code }));
-		setIcdSearch(code);
-		setShowIcdDropdown(false);
-	};
-
-	const filteredIcd = ICD10_DICTIONARY.filter(
-		(i) =>
-			i.code.toLowerCase().includes(icdSearch.toLowerCase()) ||
-			i.label.toLowerCase().includes(icdSearch.toLowerCase()) ||
-			i.group.toLowerCase().includes(icdSearch.toLowerCase()),
-	).slice(0, 12);
+	// ICD-10 extracted to VisitIcdDropdown
 
 	const handleAutoResize = (
 		e:
@@ -125,115 +116,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		e.target.style.height = e.target.scrollHeight + "px";
 	};
 
-	// ── Print preview content
-	const icdEntry = ICD10_DICTIONARY.find(
-		(i) => i.code === diary.diagnosisIcd10,
-	);
-	const PrintPreviewContent = (
-		<div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm print-layer">
-			<div className="bg-zinc-50/40 text-black w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[92vh] print-content">
-				<div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl no-print">
-					<h3 className="font-bold flex items-center gap-2 text-gray-800">
-						<Printer className="w-5 h-5" /> Медицинская карта (Форма 043/у)
-					</h3>
-					<button
-						onClick={() => setShowPreview(false)}
-						className="text-gray-500 hover:text-black flex items-center gap-1 text-sm"
-					>
-						<X className="w-4 h-4" /> Закрыть
-					</button>
-				</div>
-
-				<div className="p-8 overflow-y-auto" id="print-043">
-					<div className="text-center mb-6 border-b-2 border-black pb-4">
-						<h1 className="text-xl font-bold uppercase">
-							Медицинская карта стоматологического больного
-						</h1>
-						<p className="text-sm text-gray-600">
-							Форма № 043/у (Приказ МЗ РФ № 834н)
-						</p>
-					</div>
-
-					{isLocked && diaryHash && (
-						<div
-							className="mb-6 mt-4 p-4 bg-green-50 border border-green-300 rounded text-xs text-green-800 font-mono break-all page-break-avoid"
-							style={{ clear: "both", display: "block", position: "relative" }}
-						>
-							<strong>ЭЦП (SHA-256):</strong> {diaryHash}
-							<br />
-							<strong>Подписан:</strong>{" "}
-							{lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : "—"}
-							{revisionCount > 0 && (
-								<span className="ml-3 text-orange-700">
-									{" "}
-									⚠ Ревизий: {revisionCount}
-								</span>
-							)}
-						</div>
-					)}
-
-					<div className="space-y-5">
-						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
-								S — Жалобы и анамнез (Subjective)
-							</h4>
-							<p className="text-sm whitespace-pre-wrap">
-								{diary.anamnesis || "—"}
-							</p>
-						</div>
-						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
-								O — Объективный статус (Status Localis)
-							</h4>
-							<p className="text-sm whitespace-pre-wrap">
-								{diary.statusLocalis || "—"}
-							</p>
-						</div>
-						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
-								A — Диагноз (Assessment)
-							</h4>
-							<p className="text-sm">
-								<strong>МКБ-10:</strong> {diary.diagnosisIcd10 || "—"}{" "}
-								{icdEntry ? `(${icdEntry.label})` : ""}
-								{diary.diagnosisTooth
-									? ` | Зуб по FDI: ${diary.diagnosisTooth}`
-									: ""}
-							</p>
-						</div>
-						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
-								P — Лечение и план (Plan)
-							</h4>
-							<p className="text-sm whitespace-pre-wrap">
-								{diary.treatmentDescription || "—"}
-							</p>
-						</div>
-					</div>
-
-					<div className="mt-10 pt-6 border-t border-gray-300 flex justify-between text-sm page-break-avoid">
-						<div>Подпись врача: ___________________</div>
-						<div>Дата: {new Date().toLocaleDateString("ru-RU")}</div>
-					</div>
-				</div>
-
-				<div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end rounded-b-xl no-print gap-3">
-					<button
-						onClick={() => setShowPreview(false)}
-						className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
-					>
-						Закрыть
-					</button>
-					<button
-						onClick={() => window.print()}
-						className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow flex items-center gap-2 text-sm"
-					>
-						<Printer className="w-4 h-4" /> Напечатать
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+	// PrintPreviewContent extracted to VisitDiaryPrintPreview
 
 	return (
 		<div className="bg-zinc-950/90 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-5 shadow-[0_0_60px_-15px_rgba(16,185,129,0.15)] flex flex-col gap-5 relative overflow-hidden group no-print">
@@ -241,68 +124,14 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			<div className="absolute -inset-px bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-blue-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition duration-1000 pointer-events-none" />
 
 			{/* ── Header ── */}
-			<div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
-					<div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-						<Activity className="w-5 h-5 text-emerald-400" />
-					</div>
-					<div>
-						<h2 className="text-lg font-bold text-zinc-100">
-							Клинический дневник SOAP
-						</h2>
-						<div className="flex items-center gap-2 text-xs text-zinc-500">
-							{lastSavedAt && (
-								<span className="flex items-center gap-1">
-									<Clock className="w-3 h-3" />
-									Сохранено{" "}
-									{lastSavedAt.toLocaleTimeString("ru-RU", {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								</span>
-							)}
-							{revisionCount > 0 && (
-								<span className="text-orange-400 flex items-center gap-1">
-									<ShieldCheck className="w-3 h-3" />
-									{revisionCount} ревиз.
-								</span>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{isLocked ? (
-					<div className="flex items-center gap-2 flex-shrink-0">
-						<button
-							id="diary-print-btn"
-							onClick={() => setShowPreview(true)}
-							className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors text-sm border border-zinc-700"
-						>
-							<Printer className="w-4 h-4" /> Печать 043/у
-						</button>
-						<span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-bold">
-							<Lock className="w-4 h-4" /> ПОДПИСАНО
-						</span>
-					</div>
-				) : (
-					<VisitDiaryTemplateSelector
-						isLocked={isLocked}
-						onSelectTemplate={(tmpl: any) => {
-							setDiary((prev) => ({
-								...prev,
-								anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
-								statusLocalis: tmpl.prefilledObjective || prev.statusLocalis,
-								treatmentDescription:
-									tmpl.prefilledTreatment || prev.treatmentDescription,
-								diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
-							}));
-							if (tmpl.defaultIcd10) {
-								setIcdSearch(tmpl.defaultIcd10);
-							}
-						}}
-					/>
-				)}
-			</div>
+			<VisitDiaryHeader
+				lastSavedAt={lastSavedAt}
+				revisionCount={revisionCount}
+				isLocked={isLocked}
+				setShowPreview={setShowPreview}
+				setDiary={setDiary}
+				setIcdSearch={setIcdSearch}
+			/>
 
 			{/* ── SOAP Fields grid ── */}
 			<div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -386,82 +215,18 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				<div className="lg:col-span-2 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/60 space-y-3">
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 						{/* ICD-10 Search */}
-						<div className="sm:col-span-2 space-y-1.5 relative" ref={icdRef}>
-							<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5">
-								<span className="text-amber-400 font-mono font-bold">A</span> —
-								Диагноз МКБ-10
-							</label>
-							{diary.diagnosisIcd10 ? (
-								<div
-									className={`w-full rounded-xl px-4 py-3 text-sm font-medium border flex items-center gap-2 ${getIcdColor(diary.diagnosisIcd10)} transition-all`}
-								>
-									<span className="font-mono bg-black/20 px-2 py-0.5 rounded text-xs">
-										{diary.diagnosisIcd10}
-									</span>
-									<span className="flex-1 truncate">
-										{ICD10_DICTIONARY.find(
-											(i) => i.code === diary.diagnosisIcd10,
-										)?.label ?? "Диагноз выбран"}
-									</span>
-									{!isLocked && (
-										<button
-											onClick={() => {
-												setDiary((p) => ({ ...p, diagnosisIcd10: "" }));
-												setIcdSearch("");
-											}}
-											className="ml-auto hover:bg-black/20 p-1 rounded"
-											title="Сбросить"
-										>
-											<X className="w-3.5 h-3.5" />
-										</button>
-									)}
-								</div>
-							) : (
-								<div className="relative">
-									<Search className="absolute left-3 top-3.5 w-4 h-4 text-zinc-500" />
-									<input
-										id="diary-icd-search"
-										disabled={isLocked}
-										className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl pl-9 p-3 text-sm text-zinc-200 focus:ring-2 focus:ring-amber-500/50 outline-none disabled:opacity-50"
-										value={icdSearch}
-										onChange={(e) => {
-											setIcdSearch(e.target.value);
-											setShowIcdDropdown(true);
-										}}
-										onFocus={() => !isLocked && setShowIcdDropdown(true)}
-										placeholder="K02.1 Кариес... или введите название"
-									/>
-									{showIcdDropdown && filteredIcd.length > 0 && (
-										<div className="absolute z-30 top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden max-h-52 overflow-y-auto">
-											{filteredIcd.map((icd) => (
-												<div
-													key={icd.code}
-													className="p-3 hover:bg-zinc-700/80 cursor-pointer flex gap-3 items-center border-b border-zinc-700/40 last:border-0"
-													onMouseDown={(e) => {
-														e.preventDefault();
-														handleIcdSelect(icd.code);
-													}}
-												>
-													<span
-														className={`px-2 py-0.5 rounded text-xs font-mono border shrink-0 ${ICD_GROUP_COLORS[icd.group] ?? ""}`}
-													>
-														{icd.code}
-													</span>
-													<div className="min-w-0">
-														<div className="text-sm text-zinc-200 truncate">
-															{icd.label}
-														</div>
-														<div className="text-xs text-zinc-500">
-															{icd.group}
-														</div>
-													</div>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							)}
-						</div>
+						<VisitIcdDropdown
+							isLocked={isLocked}
+							diagnosisIcd10={diary.diagnosisIcd10}
+							icdSearch={icdSearch}
+							showIcdDropdown={showIcdDropdown}
+							icdRef={icdRef as React.RefObject<HTMLDivElement>}
+							setDiagnosisIcd10={(code) => {
+								setDiary((prev) => ({ ...prev, diagnosisIcd10: code }));
+							}}
+							setIcdSearch={setIcdSearch}
+							setShowIcdDropdown={setShowIcdDropdown}
+						/>
 
 						{/* FDI Tooth */}
 						<div className="space-y-1.5">
@@ -693,7 +458,17 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			{/* ── Portals ── */}
 			{showPreview &&
 				typeof window !== "undefined" &&
-				createPortal(PrintPreviewContent, document.body)}
+				createPortal(
+					<VisitDiaryPrintPreview
+						diary={diary}
+						isLocked={isLocked}
+						diaryHash={diaryHash}
+						lockedAt={lockedAt}
+						revisionCount={revisionCount}
+						setShowPreview={setShowPreview}
+					/>,
+					document.body
+				)}
 		</div>
 	);
 };

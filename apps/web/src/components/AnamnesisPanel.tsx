@@ -10,8 +10,11 @@ import {
 	Syringe,
 	X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { usePatientStore } from "../store/patientStore";
+import { AnamnesisAlertBanner } from "./patients/AnamnesisAlertBanner";
+import { AnamnesisTagsEditor } from "./patients/AnamnesisTagsEditor";
+import { AnamnesisPregnancyEditor } from "./patients/AnamnesisPregnancyEditor";
 
 const QUICK_ALLERGIES = [
 	"Лидокаин",
@@ -46,9 +49,7 @@ export function AnamnesisPanel({ patientId }: { patientId: string }) {
 		saveAnamnesis,
 	} = usePatientStore();
 
-	const [newAllergy, setNewAllergy] = useState("");
-	const [newDisease, setNewDisease] = useState("");
-	const [newMed, setNewMed] = useState("");
+	// Tag inputs moved to AnamnesisTagsEditor
 
 	useEffect(() => {
 		void loadAnamnesis(patientId);
@@ -122,395 +123,66 @@ export function AnamnesisPanel({ patientId }: { patientId: string }) {
 			</div>
 
 			{/* Critical Alert Banner */}
-			<div
-				style={{
-					background: hasCriticalAlerts ? "var(--red-50)" : "var(--slate-50)",
-					border: `1px solid ${hasCriticalAlerts ? "var(--red-200)" : "var(--slate-200)"}`,
-					borderRadius: "12px",
-					padding: "16px",
-					display: "flex",
-					flexDirection: "column",
-					gap: "12px",
-					transition: "all 0.3s",
-				}}
-			>
-				<label
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "8px",
-						fontWeight: 600,
-						color: hasCriticalAlerts ? "var(--red-600)" : "var(--slate-700)",
-						cursor: "pointer",
-					}}
-				>
-					<input
-						type="checkbox"
-						checked={hasCriticalAlerts}
-						onChange={(e) =>
-							setAnamnesisDraft((prev: any) => ({
-								...prev,
-								hasCriticalAlerts: e.target.checked,
-							}))
-						}
-						style={{ transform: "scale(1.2)" }}
-					/>
-					<ShieldAlert size={20} />
-					<span>Критическое предупреждение (Внимание врача!)</span>
-				</label>
-
-				{hasCriticalAlerts && (
-					<textarea
-						className="text-input w-full"
-						value={criticalAlertNote}
-						onChange={(e) =>
-							setAnamnesisDraft((prev: any) => ({
-								...prev,
-								criticalAlertNote: e.target.value,
-							}))
-						}
-						placeholder="Укажите причину: например, 'АНАФИЛАКТИЧЕСКИЙ ШОК НА ЛИДОКАИН'"
-						style={{
-							borderColor: "var(--red-300)",
-							outlineColor: "var(--red-400)",
-							minHeight: "60px",
-							resize: "vertical",
-						}}
-					/>
-				)}
-			</div>
+			<AnamnesisAlertBanner
+				hasCriticalAlerts={hasCriticalAlerts}
+				criticalAlertNote={criticalAlertNote}
+				setHasCriticalAlerts={(val) =>
+					setAnamnesisDraft((prev: any) => ({ ...prev, hasCriticalAlerts: val }))
+				}
+				setCriticalAlertNote={(val) =>
+					setAnamnesisDraft((prev: any) => ({ ...prev, criticalAlertNote: val }))
+				}
+			/>
 
 			{/* Allergies */}
-			<div>
-				<label
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						fontWeight: 600,
-						marginBottom: "8px",
-					}}
-				>
-					<Syringe size={16} color="var(--rose-500)" /> Аллергические реакции
-				</label>
-				<div
-					style={{
-						display: "flex",
-						flexWrap: "wrap",
-						gap: "6px",
-						marginBottom: "12px",
-					}}
-				>
-					{QUICK_ALLERGIES.map((q) => (
-						<button
-							key={q}
-							type="button"
-							className="text-button"
-							style={{
-								padding: "4px 10px",
-								fontSize: "0.8rem",
-								borderRadius: "100px",
-								background: "var(--rose-50)",
-								color: "var(--rose-700)",
-								border: "1px solid var(--rose-200)",
-							}}
-							onClick={() => addTag("allergies", q)}
-						>
-							+ {q}
-						</button>
-					))}
-				</div>
-				<div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-					<input
-						className="text-input"
-						style={{ flex: 1 }}
-						value={newAllergy}
-						onChange={(e) => setNewAllergy(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								addTag("allergies", newAllergy);
-								setNewAllergy("");
-								e.preventDefault();
-							}
-						}}
-						placeholder="Добавить аллергию вручную..."
-					/>
-					<button
-						type="button"
-						className="primary-button"
-						onClick={() => {
-							addTag("allergies", newAllergy);
-							setNewAllergy("");
-						}}
-					>
-						<Plus size={16} />
-					</button>
-				</div>
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-					{allergies.map((a) => (
-						<span
-							key={a}
-							style={{
-								background: "var(--rose-100)",
-								color: "var(--rose-900)",
-								padding: "4px 12px",
-								borderRadius: "6px",
-								fontSize: "0.9rem",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
-						>
-							{a}{" "}
-							<X
-								size={14}
-								style={{ cursor: "pointer" }}
-								onClick={() => removeTag("allergies", a)}
-							/>
-						</span>
-					))}
-				</div>
-			</div>
+			<AnamnesisTagsEditor
+				title="Аллергические реакции"
+				icon={<Syringe size={16} color="var(--rose-500)" />}
+				quickTags={QUICK_ALLERGIES}
+				tags={allergies}
+				colorTheme="rose"
+				onAddTag={(val) => addTag("allergies", val)}
+				onRemoveTag={(val) => removeTag("allergies", val)}
+				placeholder="Добавить аллергию вручную..."
+			/>
 
 			<hr style={{ borderTop: "1px solid var(--slate-200)", margin: 0 }} />
 
 			{/* Systemic Diseases */}
-			<div>
-				<label
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						fontWeight: 600,
-						marginBottom: "8px",
-					}}
-				>
-					<HeartPulse size={16} color="var(--blue-500)" /> Системные заболевания
-				</label>
-				<div
-					style={{
-						display: "flex",
-						flexWrap: "wrap",
-						gap: "6px",
-						marginBottom: "12px",
-					}}
-				>
-					{QUICK_DISEASES.map((q) => (
-						<button
-							key={q}
-							type="button"
-							className="text-button"
-							style={{
-								padding: "4px 10px",
-								fontSize: "0.8rem",
-								borderRadius: "100px",
-								background: "var(--blue-50)",
-								color: "var(--blue-700)",
-								border: "1px solid var(--blue-200)",
-							}}
-							onClick={() => addTag("systemicDiseases", q)}
-						>
-							+ {q}
-						</button>
-					))}
-				</div>
-				<div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-					<input
-						className="text-input"
-						style={{ flex: 1 }}
-						value={newDisease}
-						onChange={(e) => setNewDisease(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								addTag("systemicDiseases", newDisease);
-								setNewDisease("");
-								e.preventDefault();
-							}
-						}}
-						placeholder="Добавить заболевание вручную..."
-					/>
-					<button
-						type="button"
-						className="primary-button"
-						onClick={() => {
-							addTag("systemicDiseases", newDisease);
-							setNewDisease("");
-						}}
-					>
-						<Plus size={16} />
-					</button>
-				</div>
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-					{systemicDiseases.map((a) => (
-						<span
-							key={a}
-							style={{
-								background: "var(--blue-100)",
-								color: "var(--blue-900)",
-								padding: "4px 12px",
-								borderRadius: "6px",
-								fontSize: "0.9rem",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
-						>
-							{a}{" "}
-							<X
-								size={14}
-								style={{ cursor: "pointer" }}
-								onClick={() => removeTag("systemicDiseases", a)}
-							/>
-						</span>
-					))}
-				</div>
-			</div>
+			<AnamnesisTagsEditor
+				title="Системные заболевания"
+				icon={<HeartPulse size={16} color="var(--blue-500)" />}
+				quickTags={QUICK_DISEASES}
+				tags={systemicDiseases}
+				colorTheme="blue"
+				onAddTag={(val) => addTag("systemicDiseases", val)}
+				onRemoveTag={(val) => removeTag("systemicDiseases", val)}
+				placeholder="Добавить заболевание вручную..."
+			/>
 
 			<hr style={{ borderTop: "1px solid var(--slate-200)", margin: 0 }} />
 
 			{/* Medications */}
-			<div>
-				<label
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						fontWeight: 600,
-						marginBottom: "8px",
-					}}
-				>
-					<Pill size={16} color="var(--indigo-500)" /> Принимаемые препараты
-				</label>
-				<div
-					style={{
-						display: "flex",
-						flexWrap: "wrap",
-						gap: "6px",
-						marginBottom: "12px",
-					}}
-				>
-					{QUICK_MEDICATIONS.map((q) => (
-						<button
-							key={q}
-							type="button"
-							className="text-button"
-							style={{
-								padding: "4px 10px",
-								fontSize: "0.8rem",
-								borderRadius: "100px",
-								background: "var(--indigo-50)",
-								color: "var(--indigo-700)",
-								border: "1px solid var(--indigo-200)",
-							}}
-							onClick={() => addTag("medications", q)}
-						>
-							+ {q}
-						</button>
-					))}
-				</div>
-				<div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-					<input
-						className="text-input"
-						style={{ flex: 1 }}
-						value={newMed}
-						onChange={(e) => setNewMed(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								addTag("medications", newMed);
-								setNewMed("");
-								e.preventDefault();
-							}
-						}}
-						placeholder="Добавить препарат вручную..."
-					/>
-					<button
-						type="button"
-						className="primary-button"
-						onClick={() => {
-							addTag("medications", newMed);
-							setNewMed("");
-						}}
-					>
-						<Plus size={16} />
-					</button>
-				</div>
-				<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-					{medications.map((a) => (
-						<span
-							key={a}
-							style={{
-								background: "var(--indigo-100)",
-								color: "var(--indigo-900)",
-								padding: "4px 12px",
-								borderRadius: "6px",
-								fontSize: "0.9rem",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
-						>
-							{a}{" "}
-							<X
-								size={14}
-								style={{ cursor: "pointer" }}
-								onClick={() => removeTag("medications", a)}
-							/>
-						</span>
-					))}
-				</div>
-			</div>
+			<AnamnesisTagsEditor
+				title="Принимаемые препараты"
+				icon={<Pill size={16} color="var(--indigo-500)" />}
+				quickTags={QUICK_MEDICATIONS}
+				tags={medications}
+				colorTheme="indigo"
+				onAddTag={(val) => addTag("medications", val)}
+				onRemoveTag={(val) => removeTag("medications", val)}
+				placeholder="Добавить препарат вручную..."
+			/>
 
 			<hr style={{ borderTop: "1px solid var(--slate-200)", margin: 0 }} />
 
 			{/* Pregnancy Status */}
-			<div>
-				<label
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						fontWeight: 600,
-						marginBottom: "12px",
-					}}
-				>
-					<Baby size={16} color="var(--fuchsia-500)" /> Статус беременности
-				</label>
-				<div style={{ display: "flex", gap: "12px" }}>
-					{[
-						{ val: "none", label: "Нет" },
-						{ val: "pregnant", label: "Беременность" },
-						{ val: "lactating", label: "Лактация" },
-					].map((opt) => (
-						<button
-							key={opt.val}
-							type="button"
-							className="text-button"
-							onClick={() =>
-								setAnamnesisDraft((prev: any) => ({
-									...prev,
-									pregnancyStatus: opt.val,
-								}))
-							}
-							style={{
-								flex: 1,
-								padding: "10px",
-								borderRadius: "8px",
-								background:
-									pregnancyStatus === opt.val
-										? "var(--fuchsia-500)"
-										: "var(--slate-50)",
-								color:
-									pregnancyStatus === opt.val ? "white" : "var(--slate-700)",
-								border: `1px solid ${pregnancyStatus === opt.val ? "var(--fuchsia-600)" : "var(--slate-200)"}`,
-								fontWeight: pregnancyStatus === opt.val ? 600 : 400,
-								transition: "all 0.2s",
-							}}
-						>
-							{opt.label}
-						</button>
-					))}
-				</div>
-			</div>
+			<AnamnesisPregnancyEditor
+				pregnancyStatus={pregnancyStatus}
+				setPregnancyStatus={(val) =>
+					setAnamnesisDraft((prev: any) => ({ ...prev, pregnancyStatus: val }))
+				}
+			/>
 
 			<div
 				style={{
