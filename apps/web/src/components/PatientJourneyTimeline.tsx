@@ -37,7 +37,7 @@ export const PatientJourneyTimeline: React.FC<{
 				title: `Прием: ${a.status === "completed" ? "Завершен" : a.status}`,
 				description: `Врач: ${a.doctorUserId} | Причина: ${a.reason || "Нет"}`,
 				status: a.status === "completed" ? "Completed" : "Draft",
-				actionUrl: `/patients/${patientId}/visit/${a.id}`,
+				actionUrl: "#visit",
 			}));
 
 		const payments: any[] = dashboard?.payments || [];
@@ -144,6 +144,11 @@ export const PatientJourneyTimeline: React.FC<{
 			)}
 
 			<div className="timeline-track">
+				{events.length === 0 && (
+					<div className="empty-state text-zinc-500 text-sm py-4">
+						Нет зарегистрированных событий пациента.
+					</div>
+				)}
 				{events.map((evt, index) => {
 					// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
 					const isFirst = index === 0;
