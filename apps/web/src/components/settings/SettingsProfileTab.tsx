@@ -12,6 +12,7 @@ import {
 	CheckCircle2
 } from "lucide-react";
 import "./SettingsProfileTab.css";
+import { useLocalDeviceSettings } from "../../hooks/useLocalDeviceSettings";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -87,9 +88,8 @@ export function SettingsProfileTab() {
 	const [confirmPin, setConfirmPin] = useState("");
 	const [pinLoading, setPinLoading] = useState(false);
 
-	const [highContrast, setHighContrast] = useState(
-		() => localStorage.getItem("dente_high_contrast") === "true",
-	);
+	const { settings: localDeviceSettings, setHighContrast } = useLocalDeviceSettings();
+	const highContrast = localDeviceSettings.highContrast;
 
 	const strength = getPasswordStrength(newPassword);
 	const passwordMismatch = confirmPassword && newPassword !== confirmPassword;
@@ -597,10 +597,6 @@ export function SettingsProfileTab() {
 											onChange={(e) => {
 												const val = e.target.checked;
 												setHighContrast(val);
-												localStorage.setItem(
-													"dente_high_contrast",
-													val.toString(),
-												);
 												window.dispatchEvent(new Event("dente:theme-change"));
 											}}
 										/>

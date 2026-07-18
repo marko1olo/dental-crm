@@ -670,21 +670,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	);
 }
 
-import { useState } from "react";
+import { useLocalDeviceSettings } from "../../hooks/useLocalDeviceSettings";
 
 function AuthArtSettingsBlock() {
-	const [settings, setSettings] = useState(() => {
-		try {
-			const saved = localStorage.getItem("dente_auth_art_settings");
-			if (saved) return JSON.parse(saved);
-		} catch (e) {}
-		return { enabled: true, pack: "nature", dynamicByTimeOfDay: true };
-	});
-
-	const saveSettings = (newSettings: any) => {
-		setSettings(newSettings);
-		localStorage.setItem("dente_auth_art_settings", JSON.stringify(newSettings));
-	};
+	const { settings, setAuthArtSettings } = useLocalDeviceSettings();
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -692,8 +681,8 @@ function AuthArtSettingsBlock() {
 				<label className="switch">
 					<input
 						type="checkbox"
-						checked={settings.enabled}
-						onChange={(e) => saveSettings({ ...settings, enabled: e.target.checked })}
+						checked={settings.authArtEnabled}
+						onChange={(e) => setAuthArtSettings({ authArtEnabled: e.target.checked })}
 					/>
 					<span className="slider round"></span>
 				</label>
@@ -703,20 +692,20 @@ function AuthArtSettingsBlock() {
 				<label className="switch">
 					<input
 						type="checkbox"
-						checked={settings.dynamicByTimeOfDay}
-						onChange={(e) => saveSettings({ ...settings, dynamicByTimeOfDay: e.target.checked })}
-						disabled={!settings.enabled}
+						checked={settings.authArtDynamicByTimeOfDay}
+						onChange={(e) => setAuthArtSettings({ authArtDynamicByTimeOfDay: e.target.checked })}
+						disabled={!settings.authArtEnabled}
 					/>
 					<span className="slider round"></span>
 				</label>
-				<label style={{ fontSize: "14px", fontWeight: 500, opacity: settings.enabled ? 1 : 0.5 }}>Менять фон по времени суток</label>
+				<label style={{ fontSize: "14px", fontWeight: 500, opacity: settings.authArtEnabled ? 1 : 0.5 }}>Менять фон по времени суток</label>
 			</div>
 			<div className="clinic-form-group">
-				<label style={{ opacity: settings.enabled ? 1 : 0.5 }}>Коллекция артов</label>
+				<label style={{ opacity: settings.authArtEnabled ? 1 : 0.5 }}>Коллекция артов</label>
 				<select
-					value={settings.pack}
-					onChange={(e) => saveSettings({ ...settings, pack: e.target.value })}
-					disabled={!settings.enabled}
+					value={settings.authArtPack}
+					onChange={(e) => setAuthArtSettings({ authArtPack: e.target.value })}
+					disabled={!settings.authArtEnabled}
 					style={{ maxWidth: "300px" }}
 				>
 					<option value="nature">Природа (Nature)</option>
