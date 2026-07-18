@@ -34,6 +34,28 @@ export function useInventoryLogic(organizationId: string) {
 		useState<string>("");
 	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
 
+	const [itemHistory, setItemHistory] = useState<any[]>([]);
+	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+	const fetchHistory = async (itemId: string) => {
+		try {
+			setIsLoadingHistory(true);
+			const res = await fetch(`/api/inventory/${organizationId}/${itemId}/history`, {
+				headers: auth.denteClinicalReadHeaders(),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setItemHistory(Array.isArray(data) ? data : []);
+			} else {
+				showToast("Ошибка загрузки истории", "error");
+			}
+		} catch (e) {
+			console.error(e);
+		} finally {
+			setIsLoadingHistory(false);
+		}
+	};
+
 	const fetchRules = async (serviceId: string) => {
 		if (!serviceId) {
 			setRulesList([]);
@@ -416,6 +438,10 @@ export function useInventoryLogic(organizationId: string) {
 	const totalItems = items.length;
 
 	return {
+		itemHistory,
+		isLoadingHistory,
+		fetchHistory,
+		setItemHistory,
 		items,
 		isLoading,
 		auth,

@@ -246,7 +246,7 @@ export function ScheduleView() {
 				resetScheduleFilters={resetScheduleFilters}
 			/>
 			{/* 🔐 Admin Unlock Collapsible */}
-			<details className="schedule-secret-collapsible glass-panel">
+			<details className="schedule-secret-collapsible glass-panel" aria-label="Доступ к сохранению расписания">
 				<summary><span>🔐</span> Разблокировать сохранение расписания</summary>
 				<div className="appointment-editor schedule-admin-unlock">
 					{!scheduleAdminSecretSession ? (

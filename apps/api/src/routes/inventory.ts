@@ -96,6 +96,44 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		return created;
 	});
 
+	// GET transaction history for an inventory item
+	server.get<{ Params: { organizationId: string; itemId: string } }>(
+		"/:organizationId/:itemId/history",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory read history",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId, itemId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			// Validate item belongs to org
+			const [item] = await db
+				.select({ id: inventoryItems.id })
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, itemId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!item) return reply.status(404).send({ error: "Item not found" });
+
+			const history = await db
+				.select()
+				.from(inventoryTransactions)
+				.where(eq(inventoryTransactions.inventoryItemId, itemId))
+				.orderBy(inventoryTransactions.createdAt);
+			return history;
+		},
+	);
+
 	// PATCH adjust stock quantity (staff/admin only, never below 0)
 	server.patch<{
 		Params: { organizationId: string; itemId: string };

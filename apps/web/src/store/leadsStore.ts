@@ -7,6 +7,7 @@ export interface Lead {
 	source?: string;
 	status: "new" | "contacted" | "consult_booked" | "no_answer" | "trash";
 	expectedRevenue?: string;
+	notes?: { text: string; date: string }[];
 }
 
 interface LeadsState {

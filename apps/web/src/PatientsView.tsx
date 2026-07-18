@@ -219,117 +219,42 @@ export function PatientsView() {
 						<button
 							className="mobile-back-to-list-btn"
 							onClick={() => setSelectedPatientId(null)}
-							style={{
-								display: "none",
-								marginBottom: "16px",
-								background: "var(--paper)",
-								border: "1px solid var(--line)",
-								padding: "8px 16px",
-								borderRadius: "8px",
-								cursor: "pointer",
-								fontWeight: 600,
-							}}
 						>
 							← Назад к списку пациентов
 						</button>
 					)}
 
 					{selectedPatient && (
-						<div
-							className="patients-tabs-nav"
-							style={{
-								display: "flex",
-								gap: "8px",
-								marginBottom: "24px",
-								borderBottom: "1px solid var(--line)",
-								paddingBottom: "12px",
-							}}
-						>
+						<nav className="patients-tabs-nav" aria-label="Разделы карточки пациента">
 							<button
-								className={`tab-btn ${patientTab === "overview" ? "active" : ""}`}
+								className={`patients-tab-btn${patientTab === "overview" ? " patients-tab-btn--active" : ""}`}
 								onClick={() => setPatientTab("overview")}
-								style={{
-									padding: "8px 16px",
-									background:
-										patientTab === "overview"
-											? "var(--brand-50)"
-											: "transparent",
-									color:
-										patientTab === "overview"
-											? "var(--brand-600)"
-											: "var(--slate-600)",
-									border: "none",
-									borderRadius: "8px",
-									fontWeight: 600,
-									cursor: "pointer",
-									transition: "all 0.2s",
-								}}
+								type="button"
 							>
 								Обзор профиля
 							</button>
 							<button
-								className={`tab-btn ${patientTab === "clinical" ? "active" : ""}`}
+								className={`patients-tab-btn${patientTab === "clinical" ? " patients-tab-btn--active" : ""}`}
 								onClick={() => setPatientTab("clinical")}
-								style={{
-									padding: "8px 16px",
-									background:
-										patientTab === "clinical"
-											? "var(--brand-50)"
-											: "transparent",
-									color:
-										patientTab === "clinical"
-											? "var(--brand-600)"
-											: "var(--slate-600)",
-									border: "none",
-									borderRadius: "8px",
-									fontWeight: 600,
-									cursor: "pointer",
-									transition: "all 0.2s",
-								}}
+								type="button"
 							>
 								Медицина (Зубы и Снимки)
 							</button>
 							<button
-								className={`tab-btn ${patientTab === "plans" ? "active" : ""}`}
+								className={`patients-tab-btn${patientTab === "plans" ? " patients-tab-btn--active" : ""}`}
 								onClick={() => setPatientTab("plans")}
-								style={{
-									padding: "8px 16px",
-									background:
-										patientTab === "plans" ? "var(--brand-50)" : "transparent",
-									color:
-										patientTab === "plans"
-											? "var(--brand-600)"
-											: "var(--slate-600)",
-									border: "none",
-									borderRadius: "8px",
-									fontWeight: 600,
-									cursor: "pointer",
-									transition: "all 0.2s",
-								}}
+								type="button"
 							>
 								Сметы и Планы
 							</button>
 							<button
-								className={`tab-btn ${patientTab === "docs" ? "active" : ""}`}
+								className={`patients-tab-btn${patientTab === "docs" ? " patients-tab-btn--active" : ""}`}
 								onClick={() => setPatientTab("docs")}
-								style={{
-									padding: "8px 16px",
-									background:
-										patientTab === "docs" ? "var(--brand-50)" : "transparent",
-									color:
-										patientTab === "docs"
-											? "var(--brand-600)"
-											: "var(--slate-600)",
-									border: "none",
-									borderRadius: "8px",
-									fontWeight: 600,
-									cursor: "pointer",
-									transition: "all 0.2s",
-								}}
+								type="button"
 							>
 								Документы и Реквизиты
 							</button>
-						</div>
+						</nav>
 					)}
 
 					<section
@@ -345,4 +270,5 @@ export function PatientsView() {
 			</div>
 		</motion.div>
 	);
+
 }

@@ -194,6 +194,7 @@ export function MarketingView({
 	const [activeTab, setActiveTab] = useState<
 		"reviews" | "stats" | "keys" | "nps" | "referrals"
 	>("reviews");
+	const [activePlatform, setActivePlatform] = useState<"yandex" | "gis2" | "google">("yandex");
 
 	const [newKeyInput, setNewKeyInput] = useState("");
 	const [isAiLoading, setIsAiLoading] = useState(false);
@@ -292,13 +293,19 @@ export function MarketingView({
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.1 }}
 			>
-				<div className="marketing-stat-card yandex">
+				<div 
+					className={`marketing-stat-card yandex interactive-card ${activePlatform === "yandex" ? "active-platform" : ""}`}
+					onClick={() => setActivePlatform("yandex")}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => e.key === "Enter" && setActivePlatform("yandex")}
+				>
 					<div className="marketing-stat-icon-wrapper">
 						<MapPin size={24} />
 					</div>
 					<div className="marketing-stat-content">
 						<h3 className="marketing-stat-title">Яндекс Карты</h3>
-						<div className="marketing-rating-inputs">
+						<div className="marketing-rating-inputs" onClick={(e) => e.stopPropagation()}>
 							<input
 								type="number"
 								step="0.1"
@@ -322,13 +329,19 @@ export function MarketingView({
 					</div>
 				</div>
 
-				<div className="marketing-stat-card gis2">
+				<div 
+					className={`marketing-stat-card gis2 interactive-card ${activePlatform === "gis2" ? "active-platform" : ""}`}
+					onClick={() => setActivePlatform("gis2")}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => e.key === "Enter" && setActivePlatform("gis2")}
+				>
 					<div className="marketing-stat-icon-wrapper">
 						<Globe size={24} />
 					</div>
 					<div className="marketing-stat-content">
 						<h3 className="marketing-stat-title">2ГИС</h3>
-						<div className="marketing-rating-inputs">
+						<div className="marketing-rating-inputs" onClick={(e) => e.stopPropagation()}>
 							<input
 								type="number"
 								step="0.1"
@@ -348,13 +361,19 @@ export function MarketingView({
 					</div>
 				</div>
 
-				<div className="marketing-stat-card google">
+				<div 
+					className={`marketing-stat-card google interactive-card ${activePlatform === "google" ? "active-platform" : ""}`}
+					onClick={() => setActivePlatform("google")}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => e.key === "Enter" && setActivePlatform("google")}
+				>
 					<div className="marketing-stat-icon-wrapper">
 						<Search size={24} />
 					</div>
 					<div className="marketing-stat-content">
 						<h3 className="marketing-stat-title">Google Maps</h3>
-						<div className="marketing-rating-inputs">
+						<div className="marketing-rating-inputs" onClick={(e) => e.stopPropagation()}>
 							<input
 								type="number"
 								step="0.1"
@@ -403,6 +422,132 @@ export function MarketingView({
 						</div>
 					</div>
 				</div>
+			</motion.div>
+
+			{/* LIVE SNIPPET PREVIEW COMPONENT */}
+			<motion.div
+				className="map-preview-container"
+				initial={{ opacity: 0, y: 15 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.15 }}
+			>
+				<div className="map-preview-header">
+					<div className="map-preview-title">
+						<span>🗺️</span> Симулятор выдачи на картах (кликните карточку выше для выбора)
+					</div>
+					<div className="map-preview-subtitle">
+						Показывает реальный вид вашей клиники для клиентов
+					</div>
+				</div>
+
+				{activePlatform === "yandex" && (
+					<div className="mockup-yandex">
+						<div className="mockup-yandex-header">
+							<div>
+								<strong style={{ fontSize: 17, fontWeight: 700, display: "block" }}>{clinicName}</strong>
+								<div className="mockup-yandex-stars">
+									{Array.from({ length: 5 }).map((_, i) => (
+										<Star key={i} size={14} fill={i < Math.round(stats.yandex.rating) ? "#ffc107" : "none"} stroke="#ffc107" />
+									))}
+									<span className="mockup-yandex-rating-text">{stats.yandex.rating}</span>
+									<span style={{ color: "#888", fontSize: 12, marginLeft: 4 }}>
+										({stats.yandex.reviews} отзывов)
+									</span>
+								</div>
+							</div>
+							{stats.yandex.rating >= 4.8 && (
+								<span className="mockup-yandex-badge">🥇 Хорошее место</span>
+							)}
+						</div>
+						<div className="mockup-yandex-details">
+							<div>📍 г. Москва, ул. Ленина, д. 42</div>
+							<div>📞 {phone}</div>
+							<div>🕒 Открыто • 09:00 - 21:00</div>
+						</div>
+						{generatedReply && (
+							<div className="mockup-yandex-reply">
+								<div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+									<div className="mockup-avatar">🏥</div>
+									<div>
+										<strong style={{ fontSize: 12, display: "block" }}>Официальный ответ</strong>
+										<span style={{ fontSize: 10, color: "#888" }}>Администрация "{clinicName}"</span>
+									</div>
+								</div>
+								<p style={{ margin: 0, fontSize: 13, fontStyle: "italic", color: "#333" }} className="dark:text-gray-200">
+									"{generatedReply}"
+								</p>
+							</div>
+						)}
+					</div>
+				)}
+
+				{activePlatform === "gis2" && (
+					<div className="mockup-gis2">
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+							<div>
+								<strong style={{ fontSize: 18, fontWeight: 800, color: "#2ecc71" }}>{clinicName}</strong>
+								<span style={{ display: "block", fontSize: 12, color: "#777", marginTop: 2 }}>Стоматологическая клиника</span>
+							</div>
+							<div className="mockup-gis2-rating-badge">
+								<Star size={16} fill="#fff" stroke="#fff" />
+								<span>{stats.gis2.rating}</span>
+							</div>
+						</div>
+						<div className="mockup-gis2-details">
+							<div>📍 Москва • Ленина, 42 • 1 этаж</div>
+							<div>📞 {phone}</div>
+							<div>👥 {stats.gis2.reviews} отзывов горожан</div>
+						</div>
+						{generatedReply && (
+							<div className="mockup-gis2-reply">
+								<div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+									<div className="mockup-avatar">🩺</div>
+									<div>
+										<strong style={{ fontSize: 12, display: "block" }}>Представитель компании</strong>
+										<span style={{ fontSize: 10, color: "#777" }}>Владелец аккаунта</span>
+									</div>
+								</div>
+								<p style={{ margin: 0, fontSize: 13, color: "#2d3748" }} className="dark:text-gray-200">
+									"{generatedReply}"
+								</p>
+							</div>
+						)}
+					</div>
+				)}
+
+				{activePlatform === "google" && (
+					<div className="mockup-google">
+						<strong style={{ fontSize: 18, fontWeight: 500, display: "block" }}>{clinicName}</strong>
+						<div className="mockup-google-rating" style={{ marginTop: 4 }}>
+							<span style={{ color: "#e7711b", fontWeight: 700 }}>{stats.google.rating}</span>
+							<div style={{ display: "inline-flex", gap: 2, color: "#f8b739", margin: "0 4px" }}>
+								{Array.from({ length: 5 }).map((_, i) => (
+									<Star key={i} size={14} fill={i < Math.round(stats.google.rating) ? "#f8b739" : "none"} stroke="#f8b739" />
+								))}
+							</div>
+							<span>({stats.google.reviews} reviews) • Dental Clinic</span>
+						</div>
+						<div style={{ marginTop: 12, fontSize: 13, color: "#5f6368", display: "flex", flexDirection: "column", gap: 6 }} className="dark:text-gray-300">
+							<div>📍 Address: 42 Lenina St, Moscow</div>
+							<div>📞 Phone: {phone}</div>
+							<div>🕒 Hours: Open ⋅ Closes 9 PM</div>
+						</div>
+						{generatedReply && (
+							<div className="mockup-google-reply">
+								<div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+									<div className="mockup-avatar">⭐</div>
+									<div>
+										<strong style={{ fontSize: 12, display: "block" }}>Response from the owner</strong>
+										<span style={{ fontSize: 10, color: "#bdc1c6" }}>Just now</span>
+									</div>
+								</div>
+								<p style={{ margin: 0, fontSize: 13, color: "#202124" }} className="dark:text-gray-200">
+									"{generatedReply}"
+								</p>
+							</div>
+						)}
+					</div>
+				)}
 			</motion.div>
 
 			{/* TAB NAV */}
