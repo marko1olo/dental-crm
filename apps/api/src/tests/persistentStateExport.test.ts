@@ -90,6 +90,21 @@ describe("buildPersistentStateExport", () => {
 		assert.strictEqual(result.integrity.warnings.length > 0, true);
 	});
 
+	test("error path - rawFileHash fs.promises.readFile throws", async () => {
+		const stateFilePath = process.env.DENTAL_STATE_FILE;
+		mock.method(console, "warn", () => {});
+
+		fs.writeFileSync(stateFilePath, JSON.stringify({ version: 1, savedAt: new Date().toISOString(), state: {} }));
+
+		mock.method(fs.promises, "readFile", async () => {
+			throw new Error("Mock read error");
+		});
+
+		const result = await buildPersistentStateExport();
+
+		assert.strictEqual(result.integrity.stateFileHash, null);
+	});
+
 	test("error path - invalid JSON", async () => {
 		const stateFilePath = process.env.DENTAL_STATE_FILE as string;
 		mock.method(console, "warn", () => {}); // Suppress expected warning from readPersistedState called via meta
