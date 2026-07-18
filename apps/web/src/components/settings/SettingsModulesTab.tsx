@@ -9,8 +9,9 @@ export function SettingsModulesTab() {
 	const isSmallClinic = store.clinicMode === "small_clinic";
 
 	const restartOnboarding = () => {
-		// Just clear the onboarding completed flag locally to re-trigger the wizard overlay
-		useWorkspaceProfileStore.getState().setFlag("onboardingCompleted", false);
+		if (window.confirm("Вы уверены? Это пересоберёт настройки модулей, ручные правки могут быть затронуты.")) {
+			useWorkspaceProfileStore.getState().setFlag("onboardingCompleted", false);
+		}
 	};
 
 	return (

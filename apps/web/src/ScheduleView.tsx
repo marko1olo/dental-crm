@@ -18,6 +18,7 @@ import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { ObzvonStickyList } from "./components/schedule/ObzvonStickyList";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
+import { MorningSummaryWidget } from "./components/schedule/MorningSummaryWidget";
 import { ScheduleShiftSummary } from "./components/schedule/ScheduleShiftSummary";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -283,6 +284,9 @@ export function ScheduleView() {
 					</div>
 				</div>
 			</div>
+			
+			<MorningSummaryWidget dashboard={dashboard} dateFilter={scheduleDateFilter} />
+			
 			<ScheduleShiftSummary
 				dashboard={dashboard}
 				sortedAppointments={displayAppointments}

@@ -795,6 +795,14 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				}[] = [
 					{
 						organizationId,
+						code: "B01.065.001",
+						title: "Прием (осмотр, консультация) врача-стоматолога первичный",
+						basePriceRub: 1500,
+						priceRub: 1500,
+						category: "consultation",
+					},
+					{
+						organizationId,
 						code: "A16.07.000",
 						title: "Установка имплантата Osstem",
 						basePriceRub: 45000,

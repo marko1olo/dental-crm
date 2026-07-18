@@ -21,10 +21,12 @@ import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
 import { CompletedServicesChecklist } from "./components/visit/CompletedServicesChecklist";
 import { GnathologyForm } from "./components/visit/GnathologyForm";
 import { SignCardDialog } from "./components/visit/SignCardDialog";
-import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitDictation } from "./components/visit/VisitDictation";
+import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitFlowProgress } from "./components/visit/VisitFlowProgress";
 import { VisitHeader } from "./components/visit/VisitHeader";
+import { VisitPaymentOverlay } from "./components/visit/VisitPaymentOverlay";
+import { VisitDocsOverlay } from "./components/visit/VisitDocsOverlay";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitPrimaryActions } from "./components/visit/VisitPrimaryActions";
 import { VisitSafetyStrip } from "./components/visit/VisitSafetyStrip";
@@ -154,6 +156,9 @@ export function VisitView() {
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [isSignDialogOpen, setIsSignDialogOpen] = useState(false);
 	const [isSigned, setIsSigned] = useState(false);
+	
+	const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+	const [isDocsOpen, setIsDocsOpen] = useState(false);
 
 	// ZTL (Зуботехническая Лаборатория) Form State
 	const [ztlLab, setZtlLab] = useState("");
@@ -164,7 +169,13 @@ export function VisitView() {
 	const [ztlComment, setZtlComment] = useState("");
 
 	useEffect(() => {
+		const handleOpenPayment = () => setIsPaymentOpen(true);
+		const handleOpenDocs = () => setIsDocsOpen(true);
+		window.addEventListener("open-visit-payment", handleOpenPayment);
+		window.addEventListener("open-visit-docs", handleOpenDocs);
 		return () => {
+			window.removeEventListener("open-visit-payment", handleOpenPayment);
+			window.removeEventListener("open-visit-docs", handleOpenDocs);
 			// Memory Optimization: Flush heavy visit states on unmount
 			useVisitStore.getState().reset();
 		};
@@ -397,6 +408,20 @@ export function VisitView() {
 					showToast("Прием подписан", "success");
 				}}
 			/>
+			{isPaymentOpen && (
+				<VisitPaymentOverlay 
+					onClose={() => setIsPaymentOpen(false)}
+					totalAmount={5500} // Mock total
+					patientName={activePatient.fullName}
+					hasInstallments={workspaceFlags.hasInstallments}
+				/>
+			)}
+			{isDocsOpen && (
+				<VisitDocsOverlay 
+					onClose={() => setIsDocsOpen(false)}
+					patientName={activePatient.fullName}
+				/>
+			)}
 		</>
 	);
 }

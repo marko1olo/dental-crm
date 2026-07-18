@@ -1,4 +1,4 @@
-import { AlertTriangle, Mic } from "lucide-react";
+import { AlertTriangle, Mic, CreditCard, FileText } from "lucide-react";
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
@@ -47,6 +47,43 @@ export function VisitHeader() {
 				</p>
 			</div>
 			<div className="visit-focus-actions">
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => {
+						const evt = new CustomEvent("open-visit-docs");
+						window.dispatchEvent(evt);
+					}}
+					style={{
+						padding: "16px",
+						fontSize: "14px",
+						fontWeight: "bold",
+						borderRadius: "12px",
+					}}
+					title="Документы: ИДС, Договор, Справка"
+				>
+					<FileText aria-hidden="true" style={{ marginRight: "8px" }} /> 
+					ДОКУМЕНТЫ
+				</button>
+				<button
+					className="primary-button"
+					type="button"
+					onClick={() => {
+						const evt = new CustomEvent("open-visit-payment");
+						window.dispatchEvent(evt);
+					}}
+					style={{
+						padding: "16px 24px",
+						fontSize: "16px",
+						fontWeight: "bold",
+						textTransform: "uppercase",
+						borderRadius: "12px",
+						background: "var(--brand-600)",
+						color: "white"
+					}}
+				>
+					<CreditCard aria-hidden="true" style={{ marginRight: "8px" }} /> ОПЛАТИТЬ
+				</button>
 				<button
 					className="primary-button"
 					type="button"
