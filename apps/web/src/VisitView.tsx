@@ -191,6 +191,8 @@ export function VisitView() {
 		visitSaveReceiptText,
 		visitWarnings,
 		visitWorkflowSteps,
+		addTreatmentPlanItem,
+		auth,
 	} = useAppLogicContext();
 
 	const [activeVisitTab, setActiveVisitTab] = useState<VisitTabType>("diary");
@@ -261,13 +263,46 @@ export function VisitView() {
 		setSelectedToothForMenu(null);
 	};
 
-	const handleApplyMaterial = (materialLabel: string, textTemplate: string) => {
+	const handleApplyMaterial = async (materialLabel: string, textTemplate: string, service?: any) => {
 		if (!selectedToothForMenu) return;
 		setToothState(selectedToothForMenu.code, "planned" as any);
 		appendToEMKField(
 			"treatmentPlan",
 			`Зуб ${selectedToothForMenu.code}: ${textTemplate} — ${materialLabel}`,
 		);
+		if (service) {
+			const newItem = {
+				id: crypto.randomUUID(),
+				patientId: activePatient.id,
+				visitId: dashboard?.activeVisit?.id || "draft",
+				serviceId: service.id,
+				snapshotServiceName: service.title,
+				toothCode: selectedToothForMenu.code,
+				quantity: 1,
+				unitPriceRub: service.basePriceRub || 0,
+				discountRub: 0,
+				status: "planned",
+				priceRub: service.basePriceRub || 0,
+			};
+			addTreatmentPlanItem(newItem);
+			
+			// Fire-and-forget save to backend
+			fetch(`/api/patients/${activePatient.id}/treatment-plans`, {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					name: `Лечение зуба ${selectedToothForMenu.code}`,
+					items: [{
+						toothNumber: parseInt(selectedToothForMenu.code, 10),
+						priceId: service.id,
+						name: service.title,
+						price: service.basePriceRub || 0,
+						quantity: 1,
+						discount: 0
+					}]
+				})
+			}).catch(console.error);
+		}
 		setSelectedToothForMenu(null);
 	};
 

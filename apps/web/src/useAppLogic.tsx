@@ -4867,12 +4867,19 @@ export function useAppLogic(): any {
 		selectedReleaseSourceRequestDocumentId,
 	]);
 
+	const [localTreatmentPlanItems, setLocalTreatmentPlanItems] = useState<any[]>([]);
+
 	const activeTreatmentPlanItems = useMemo(() => {
-		if (!dashboard || !documentPatient) return [];
-		return (dashboard.treatmentPlanItems || []).filter(
+		if (!dashboard || !documentPatient) return localTreatmentPlanItems;
+		const remoteItems = (dashboard.treatmentPlanItems || []).filter(
 			(item) => item.patientId === documentPatient.id,
 		);
-	}, [dashboard, documentPatient?.id]);
+		return [...remoteItems, ...localTreatmentPlanItems];
+	}, [dashboard, documentPatient?.id, localTreatmentPlanItems]);
+
+	const addTreatmentPlanItem = (item: any) => {
+		setLocalTreatmentPlanItems((prev) => [...prev, item]);
+	};
 
 	const inferredTreatmentArea = useMemo(() => {
 		const toothCodes = activeTreatmentPlanItems
@@ -13368,6 +13375,7 @@ export function useAppLogic(): any {
 		activeSettingsTabButtonRef,
 		activeSpeechProviderHealth,
 		activeTreatmentPlanItems,
+		addTreatmentPlanItem,
 		activeTreatmentPlanScenarios,
 		activeUsableDocuments,
 		activeVisitClinicalRuleEvaluations,

@@ -8,7 +8,7 @@ export interface VisitToothContextMenuProps {
 	selectedTooth: { code: string; state: string } | null;
 	onClose: () => void;
 	onSelectDiagnosis: (state: string, text?: string, fieldKey?: string) => void;
-	onApplyMaterial: (materialLabel: string, textTemplate: string) => void;
+	onApplyMaterial: (materialLabel: string, textTemplate: string, service?: any) => void;
 }
 
 const FILL: Record<string, string> = {
@@ -152,11 +152,11 @@ export function VisitToothContextMenu({
 		const catalog = dashboard?.serviceCatalog ?? [];
 		if (subMenu === "filling") {
 			const svc = catalog.filter((s) => s.category === "therapy");
-			return svc.length > 0 ? svc.map((s) => s.title) : FILLING_MATERIALS;
+			return svc.length > 0 ? svc.map((s) => ({ title: s.title, service: s })) : FILLING_MATERIALS.map(m => ({ title: m }));
 		}
 		if (subMenu === "crown") {
 			const svc = catalog.filter((s) => s.category === "prosthetics");
-			return svc.length > 0 ? svc.map((s) => s.title) : CROWN_MATERIALS;
+			return svc.length > 0 ? svc.map((s) => ({ title: s.title, service: s })) : CROWN_MATERIALS.map(m => ({ title: m }));
 		}
 		if (subMenu === "implant") {
 			const svc = catalog.filter(
@@ -164,7 +164,7 @@ export function VisitToothContextMenu({
 					s.category === "surgery" &&
 					s.title.toLowerCase().includes("имплант"),
 			);
-			return svc.length > 0 ? svc.map((s) => s.title) : IMPLANT_SYSTEMS;
+			return svc.length > 0 ? svc.map((s) => ({ title: s.title, service: s })) : IMPLANT_SYSTEMS.map(m => ({ title: m }));
 		}
 		return [];
 	};
@@ -322,7 +322,7 @@ export function VisitToothContextMenu({
 							</button>
 							{getActiveMaterials().map((mat) => (
 								<button
-									key={mat}
+									key={mat.title}
 									type="button"
 									className="_ccm-btn"
 									data-color={
@@ -332,9 +332,9 @@ export function VisitToothContextMenu({
 												? "blue"
 												: "violet"
 									}
-									onClick={() => onApplyMaterial(mat, getWorkLabel())}
+									onClick={() => onApplyMaterial(mat.title, getWorkLabel(), (mat as any).service)}
 								>
-									{mat}
+									{mat.title}
 								</button>
 							))}
 						</>

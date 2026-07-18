@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Patient } from "@dental/shared";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface PatientSelectorProps {
 	patients: Patient[];
@@ -8,6 +9,7 @@ interface PatientSelectorProps {
 }
 
 export const PatientSelector: React.FC<PatientSelectorProps> = ({ patients, value, onChange }) => {
+	const { auth, loadDashboard } = useAppLogicContext();
 	const [query, setQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
 	const wrapperRef = useRef<HTMLDivElement>(null);
@@ -159,16 +161,15 @@ export const PatientSelector: React.FC<PatientSelectorProps> = ({ patients, valu
 										try {
 											const res = await fetch("/api/patients", {
 												method: "POST",
-												headers: { "Content-Type": "application/json" },
-												// If we don't have authorization token, it might fail. Assume cookies/session works here.
+												headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 												body: JSON.stringify({ fullName: nameVal, phone: phoneVal || null })
 											});
 											if (res.ok) {
 												const newPatient = await res.json();
-												patients.push(newPatient);
 												onChange(newPatient.id);
 												setQuery(newPatient.fullName);
 												setIsOpen(false);
+												void loadDashboard();
 											} else {
 												alert("Ошибка при создании пациента");
 											}
