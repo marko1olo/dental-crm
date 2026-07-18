@@ -7,7 +7,7 @@ import type {
 	StaffRole,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import { Bot, Mic, Plus, ShieldCheck, CalendarPlus } from "lucide-react";
+import { Bot, Mic, Plus, ShieldCheck, CalendarPlus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "./AppHelpers";
@@ -125,6 +125,7 @@ export function ScheduleView() {
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const [useManualSelects, setUseManualSelects] = useState(false);
 	const [showFreeDoctorsOnly, setShowFreeDoctorsOnly] = useState(false);
+	const [scheduleViewMode, setScheduleViewMode] = useState<"day" | "week">("day");
 	const workspaceFlags = useWorkspaceProfile();
 
 	const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
@@ -170,14 +171,14 @@ export function ScheduleView() {
 		setScheduleChairFilterId(null);
 		setScheduleStatusFilter("all");
 	};
+	const navigateDay = (days: number) => {
+		const currentStr = scheduleDateFilter || todayScheduleDate();
+		const dateObj = new Date(currentStr);
+		dateObj.setDate(dateObj.getDate() + days);
+		setScheduleDateFilter(dateObj.toISOString().slice(0, 10));
+	};
 	const focusNewAppointmentEditor = () => {
-		const editor = document.querySelector<HTMLElement>(
-			".appointment-create-editor",
-		);
-		motionSafeScrollIntoView(editor, { block: "center" });
-		editor
-			?.querySelector<HTMLElement>("select, input, textarea, button")
-			?.focus({ preventScroll: true });
+		setShowCreateForm(true);
 	};
 	const openScheduleSuggestion = (section: string) => {
 		window.location.hash = section;
@@ -188,6 +189,29 @@ export function ScheduleView() {
 			});
 		});
 	};
+
+	const displayAppointments = useMemo(() => {
+		if (scheduleViewMode === "day") return sortedAppointments;
+		
+		const curr = new Date(scheduleDateFilter || todayScheduleDate());
+		const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+		const monday = new Date(curr);
+		monday.setDate(first);
+		monday.setHours(0,0,0,0);
+		
+		const nextMonday = new Date(monday);
+		nextMonday.setDate(monday.getDate() + 7);
+
+		return (dashboard.appointments || []).filter(appointment => {
+			if (scheduleDoctorFilterId && appointment.doctorUserId !== scheduleDoctorFilterId) return false;
+			if (scheduleAssistantFilterId && appointment.assistantUserId !== scheduleAssistantFilterId) return false;
+			if (scheduleChairFilterId && appointment.chairId !== scheduleChairFilterId) return false;
+			if (scheduleStatusFilter !== "all" && appointment.status !== scheduleStatusFilter) return false;
+
+			const apptDate = new Date(appointment.startsAt);
+			return apptDate >= monday && apptDate < nextMonday;
+		}).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+	}, [scheduleViewMode, sortedAppointments, dashboard.appointments, scheduleDateFilter, scheduleDoctorFilterId, scheduleAssistantFilterId, scheduleChairFilterId, scheduleStatusFilter]);
 
 	return (
 		<motion.div
@@ -222,25 +246,52 @@ export function ScheduleView() {
 					>
 						Лист ожидания
 					</button>
-					<button
-						className="text-button"
-						type="button"
-						onClick={() => setScheduleDateFilter(todayScheduleDate())}
-					>
-						День
-					</button>
+					
+					<div className="view-mode-toggle" style={{ display: "flex", background: "var(--paper-soft, #f8fafc)", border: "1px solid var(--line, #e2e8f0)", borderRadius: "8px", overflow: "hidden" }}>
+						<button 
+							type="button" 
+							className={`text-button ${scheduleViewMode === "day" ? "active" : ""}`}
+							style={{ padding: "6px 12px", background: scheduleViewMode === "day" ? "var(--line, #e2e8f0)" : "transparent" }}
+							onClick={() => setScheduleViewMode("day")}
+						>
+							День
+						</button>
+						<button 
+							type="button" 
+							className={`text-button ${scheduleViewMode === "week" ? "active" : ""}`}
+							style={{ padding: "6px 12px", background: scheduleViewMode === "week" ? "var(--line, #e2e8f0)" : "transparent" }}
+							onClick={() => setScheduleViewMode("week")}
+						>
+							Неделя
+						</button>
+					</div>
+
+					<div className="date-navigation" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+						<button className="icon-button" type="button" onClick={() => navigateDay(-1)} title="Предыдущий день"><ChevronLeft size={18} /></button>
+						<button className="text-button" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>Сегодня</button>
+						<button className="icon-button" type="button" onClick={() => navigateDay(1)} title="Следующий день"><ChevronRight size={18} /></button>
+						<div style={{ position: "relative" }}>
+							<input 
+								type="date" 
+								value={scheduleDateFilter || todayScheduleDate()} 
+								onChange={(e) => setScheduleDateFilter(e.target.value)}
+								style={{ position: "absolute", opacity: 0, left: 0, top: 0, width: "100%", height: "100%", cursor: "pointer" }}
+							/>
+							<button className="icon-button" type="button" title="Выбрать дату"><CalendarIcon size={18} /></button>
+						</div>
+					</div>
 				</div>
 			</div>
 			<ScheduleShiftSummary
 				dashboard={dashboard}
-				sortedAppointments={sortedAppointments}
+				sortedAppointments={displayAppointments}
 				shiftWarnings={shiftWarnings}
 				showShiftAnalytics={showShiftAnalytics}
 				formatTime={formatTime}
 			/>
 			<ScheduleFilterStrip
 				dashboard={dashboard}
-				sortedAppointments={sortedAppointments}
+				sortedAppointments={displayAppointments}
 				showFreeDoctorsOnly={showFreeDoctorsOnly}
 				setShowFreeDoctorsOnly={setShowFreeDoctorsOnly}
 				resetScheduleFilters={resetScheduleFilters}
@@ -341,10 +392,16 @@ export function ScheduleView() {
 				fromDateTimeLocalValue={fromDateTimeLocalValue}
 				useManualSelects={useManualSelects}
 				setUseManualSelects={setUseManualSelects}
+				showCreateForm={showCreateForm}
+				setShowCreateForm={setShowCreateForm}
 			/>
 			<ClinicalScheduler
-				appointments={sortedAppointments}
+				appointments={displayAppointments}
 				dashboard={dashboard}
+				viewMode={scheduleViewMode}
+				currentDate={scheduleDateFilter || todayScheduleDate()}
+				onSetDate={(date: string) => setScheduleDateFilter(date)}
+				onSetViewMode={(mode: "day" | "week") => setScheduleViewMode(mode)}
 				onAppointmentClick={openAppointmentEditor}
 				onSlotClick={(date, time, chairId) => {
 					const localTimeStr = `${date}T${time}:00`;
@@ -385,118 +442,123 @@ export function ScheduleView() {
 					}
 				}}
 			/>
-			<div className="schedule-timeline timeline">
-				{sortedAppointments.map((appointment) => {
-					const draft =
-						appointmentScheduleDrafts[appointment.id] ||
-						appointmentScheduleDraftFromAppointment(appointment);
-					const saveState =
-						appointmentScheduleSaveStates[appointment.id] || "idle";
-					const error = appointmentScheduleErrors[appointment.id] || null;
-					const dirty = appointmentScheduleDirtyIds.has(appointment.id);
-					const isEditing = editingAppointmentId === appointment.id;
-					const hasOpenVisit =
-						dashboard.activeVisit &&
-						dashboard.activeVisit?.appointmentId === appointment.id;
-					const startsAtMs = Date.parse(draft.startsAt);
-					const endsAtMs = Date.parse(draft.endsAt);
+			{/* Edit existing appointment modal */}
+			{editingAppointmentId && dashboard.appointments.some(a => a.id === editingAppointmentId) && (
+				<div className="schedule-form-modal-overlay" onClick={() => closeAppointmentEditor(editingAppointmentId)}>
+					<div className="schedule-form-modal-content" onClick={(e) => e.stopPropagation()}>
+						{dashboard.appointments.filter(a => a.id === editingAppointmentId).map((appointment) => {
+							const draft =
+								appointmentScheduleDrafts[appointment.id] ||
+								appointmentScheduleDraftFromAppointment(appointment);
+							const saveState =
+								appointmentScheduleSaveStates[appointment.id] || "idle";
+							const error = appointmentScheduleErrors[appointment.id] || null;
+							const dirty = appointmentScheduleDirtyIds.has(appointment.id);
+							const isEditing = true;
+							const hasOpenVisit =
+								dashboard.activeVisit &&
+								dashboard.activeVisit?.appointmentId === appointment.id;
+							const startsAtMs = Date.parse(draft.startsAt);
+							const endsAtMs = Date.parse(draft.endsAt);
 
-					const missingSteps = [
-						!draft.patientId ? "выберите пациента" : null,
-						!draft.doctorUserId ? "выберите врача" : null,
-						dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
-						dashboard.clinicSettings.staff.some(
-							(s) => s.role === "assistant" && s.active,
-						) &&
-						!draft.assistantUserId
-							? "выберите ассистента"
-							: null,
-						!draft.chairId ? "выберите кресло" : null,
-						!draft.startsAt.trim() ? "укажите начало приема" : null,
-						draft.startsAt.trim() && !Number.isFinite(startsAtMs)
-							? "проверьте дату начала"
-							: null,
-						!draft.endsAt.trim() ? "укажите окончание приема" : null,
-						draft.endsAt.trim() && !Number.isFinite(endsAtMs)
-							? "проверьте дату окончания"
-							: null,
-						Number.isFinite(startsAtMs) &&
-						Number.isFinite(endsAtMs) &&
-						endsAtMs <= startsAtMs
-							? "окончание должно быть позже начала"
-							: null,
-					].filter((step) => Boolean(step));
-					const readyToSave = missingSteps.length === 0 && dirty;
+							const missingSteps = [
+								!draft.patientId ? "выберите пациента" : null,
+								!draft.doctorUserId ? "выберите врача" : null,
+								dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
+								dashboard.clinicSettings.staff.some(
+									(s) => s.role === "assistant" && s.active,
+								) &&
+								!draft.assistantUserId
+									? "выберите ассистента"
+									: null,
+								!draft.chairId ? "выберите кресло" : null,
+								!draft.startsAt.trim() ? "укажите начало приема" : null,
+								draft.startsAt.trim() && !Number.isFinite(startsAtMs)
+									? "проверьте дату начала"
+									: null,
+								!draft.endsAt.trim() ? "укажите окончание приема" : null,
+								draft.endsAt.trim() && !Number.isFinite(endsAtMs)
+									? "проверьте дату окончания"
+									: null,
+								Number.isFinite(startsAtMs) &&
+								Number.isFinite(endsAtMs) &&
+								endsAtMs <= startsAtMs
+									? "окончание должно быть позже начала"
+									: null,
+							].filter((step) => Boolean(step));
+							const readyToSave = missingSteps.length === 0 && dirty;
 
-					return (
-						<AppointmentCard
-							key={appointment.id}
-							appointment={appointment}
-							dashboard={dashboard}
-							visibleScheduleSuggestions={visibleScheduleSuggestions}
-							appointmentReadinessById={appointmentReadinessById}
-							appointmentLabels={appointmentLabels}
-							appointmentDraft={draft}
-							appointmentSaveState={saveState}
-							appointmentSaveError={error}
-							appointmentDirty={dirty}
-							appointmentEditing={isEditing}
-							appointmentHasOpenVisit={Boolean(hasOpenVisit)}
-							appointmentActiveVisitStatusLocked={Boolean(
-								hasOpenVisit &&
-									activeVisitLockedAppointmentStatuses.has(draft.status),
-							)}
-							appointmentMissingSteps={missingSteps as string[]}
-							appointmentReadyToSave={readyToSave}
-							openScheduleSuggestion={openScheduleSuggestion}
-							formatTime={formatTime}
-							patientName={patientName}
-							openAppointmentEditor={openAppointmentEditor}
-							closeAppointmentEditor={closeAppointmentEditor}
-							updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
-							saveAppointmentSchedule={saveAppointmentSchedule}
-							normalizedAppointmentStatus={normalizedAppointmentStatus}
-							toDateTimeLocalValue={toDateTimeLocalValue}
-							fromDateTimeLocalValue={fromDateTimeLocalValue}
-							useManualSelects={useManualSelects}
-							activeVisitLockedAppointmentStatuses={
-								activeVisitLockedAppointmentStatuses
-							}
-						/>
-					);
-				})}
-				{sortedAppointments.length === 0 ? (
-					<article
-						className="schedule-empty-state actionable-empty-state glass-panel flex-column align-center"
-						data-testid="schedule-empty-state"
-						aria-label="Пустое расписание"
-						style={{ padding: "32px 20px", textAlign: "center", gap: "16px" }}
+							return (
+								<AppointmentCard
+									key={appointment.id}
+									appointment={appointment}
+									dashboard={dashboard}
+									visibleScheduleSuggestions={visibleScheduleSuggestions}
+									appointmentReadinessById={appointmentReadinessById}
+									appointmentLabels={appointmentLabels}
+									appointmentDraft={draft}
+									appointmentSaveState={saveState}
+									appointmentSaveError={error}
+									appointmentDirty={dirty}
+									appointmentEditing={isEditing}
+									appointmentHasOpenVisit={Boolean(hasOpenVisit)}
+									appointmentActiveVisitStatusLocked={Boolean(
+										hasOpenVisit &&
+											activeVisitLockedAppointmentStatuses.has(draft.status),
+									)}
+									appointmentMissingSteps={missingSteps as string[]}
+									appointmentReadyToSave={readyToSave}
+									openScheduleSuggestion={openScheduleSuggestion}
+									formatTime={formatTime}
+									patientName={patientName}
+									openAppointmentEditor={openAppointmentEditor}
+									closeAppointmentEditor={closeAppointmentEditor}
+									updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+									saveAppointmentSchedule={saveAppointmentSchedule}
+									normalizedAppointmentStatus={normalizedAppointmentStatus}
+									toDateTimeLocalValue={toDateTimeLocalValue}
+									fromDateTimeLocalValue={fromDateTimeLocalValue}
+									useManualSelects={useManualSelects}
+									activeVisitLockedAppointmentStatuses={
+										activeVisitLockedAppointmentStatuses
+									}
+								/>
+							);
+						})}
+					</div>
+				</div>
+			)}
+			{displayAppointments.length === 0 ? (
+				<article
+					className="schedule-empty-state actionable-empty-state glass-panel flex-column align-center"
+					data-testid="schedule-empty-state"
+					aria-label="Пустое расписание"
+					style={{ padding: "32px 20px", textAlign: "center", gap: "16px", margin: "20px 0" }}
+				>
+					<Plus
+						size={40}
+						className="text-muted"
+					/>
+					<h4 className="text-primary m-0">
+						Расписание пусто
+					</h4>
+					<p
+						role="status"
+						aria-live="polite"
+						className="text-muted"
+						style={{ maxWidth: "300px" }}
 					>
-						<Plus
-							size={40}
-							className="text-muted"
-						/>
-						<h4 className="text-primary m-0">
-							Расписание пусто
-						</h4>
-						<p
-							role="status"
-							aria-live="polite"
-							className="text-muted"
-							style={{ maxWidth: "300px" }}
-						>
-							Нажмите [+ Создать Запись], чтобы записать первого пациента.
-						</p>
-						<button
-							className="primary-button"
-							type="button"
-							onClick={focusNewAppointmentEditor}
-						>
-							<Plus aria-hidden="true" /> Создать Запись
-						</button>
-					</article>
-				) : null}
-			</div>
+						Нажмите [+ Создать Запись], чтобы записать первого пациента.
+					</p>
+					<button
+						className="primary-button"
+						type="button"
+						onClick={focusNewAppointmentEditor}
+					>
+						<Plus aria-hidden="true" /> Создать Запись
+					</button>
+				</article>
+			) : null}
 			<WaitlistDrawer
 				isOpen={showWaitlist}
 				onClose={() => setShowWaitlist(false)}

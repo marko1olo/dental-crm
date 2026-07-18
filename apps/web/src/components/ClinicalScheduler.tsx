@@ -15,6 +15,10 @@ export const ClinicalScheduler: React.FC<any> = ({
 	onSlotClick,
 	onSlotDrop,
 	onAppointmentClick,
+	viewMode = "day",
+	currentDate = new Date().toISOString().split("T")[0],
+	onSetDate,
+	onSetViewMode,
 }) => {
 	const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
 	const [isMobile, setIsMobile] = useState(false);
@@ -114,8 +118,31 @@ export const ClinicalScheduler: React.FC<any> = ({
 				? activeChairs.filter((c: any) => c.id === mobileChairId)
 				: activeChairs;
 
-	const chairsCount = displayedChairs.length;
-	const isSingleChair = chairsCount === 1;
+	const isWeekView = viewMode === "week";
+	
+	const getWeekDays = (dateStr: string) => {
+		const curr = new Date(dateStr);
+		const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+		const days: string[] = [];
+		for(let i=0; i<7; i++) {
+			const d = new Date(curr);
+			d.setDate(first + i);
+			days.push(d.toISOString().substring(0, 10));
+		}
+		return days;
+	};
+
+	const weekDays = isWeekView ? getWeekDays(currentDate) : [];
+	
+	const columns = isWeekView 
+		? weekDays.map(d => ({ 
+			id: d, 
+			name: new Date(d).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' }) 
+		  }))
+		: displayedChairs;
+
+	const columnsCount = columns.length;
+	const isSingleColumn = columnsCount === 1;
 
 	const freeDoctors =
 		dashboard?.shiftIntelligence?.doctorLoads?.filter(
@@ -159,12 +186,13 @@ export const ClinicalScheduler: React.FC<any> = ({
 		(appointments || []).forEach((appt: any) => {
 			const pos = getAppointmentGridPosition(appt);
 			if (!pos) return;
+			const colId = isWeekView ? appt.startsAt.substring(0, 10) : appt.chairId;
 			for (let r = 0; r < pos.span; r++) {
-				cells.add(`${pos.startRow + r}-${appt.chairId}`);
+				cells.add(`${pos.startRow + r}-${colId}`);
 			}
 		});
 		return cells;
-	}, [appointments, minStart]);
+	}, [appointments, minStart, isWeekView]);
 
 	const CurrentTimeIndicator = () => {
 		const [currentTime, setCurrentTime] = useState(new Date());
@@ -258,7 +286,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 				</div>
 			</div>
 
-			{isMobile && activeChairs.length > 1 && (
+			{isMobile && !isWeekView && activeChairs.length > 1 && (
 				<div style={{ padding: "0 16px 16px" }}>
 					<select
 						className="mobile-chair-selector"
@@ -280,22 +308,28 @@ export const ClinicalScheduler: React.FC<any> = ({
 					data-density={density}
 					style={{
 						display: "grid",
-						gridTemplateColumns: `60px repeat(${chairsCount}, minmax(180px, 1fr))`,
+						gridTemplateColumns: `60px repeat(${columnsCount}, minmax(180px, 1fr))`,
 						gridAutoRows: "44px",
 					}}
 				>
 					{/* Headers */}
-					{!isSingleChair && (
+					{!isSingleColumn && (
 						<div className="sg-corner" style={{ gridRow: 1, gridColumn: 1 }} />
 					)}
-					{!isSingleChair &&
-						displayedChairs.map((chair: any, ci: number) => (
+					{!isSingleColumn &&
+						columns.map((col: any, ci: number) => (
 							<div
-								key={chair.id}
+								key={col.id}
 								className={`sg-chair-header ${crosshair && crosshair.colIdx === ci ? "sg-col-highlight" : ""}`}
-								style={{ gridRow: 1, gridColumn: ci + 2 }}
+								style={{ gridRow: 1, gridColumn: ci + 2, cursor: isWeekView ? "pointer" : "default" }}
+								onClick={() => {
+									if (isWeekView && onSetDate && onSetViewMode) {
+										onSetDate(col.id);
+										onSetViewMode("day");
+									}
+								}}
 							>
-								{chair.name}
+								{col.name}
 							</div>
 						))}
 
@@ -309,8 +343,8 @@ export const ClinicalScheduler: React.FC<any> = ({
 								{time}
 							</div>
 
-							{displayedChairs.map((chair: any, ci: number) => {
-								const isOccupied = occupiedCells.has(`${ri + 2}-${chair.id}`);
+							{columns.map((col: any, ci: number) => {
+								const isOccupied = occupiedCells.has(`${ri + 2}-${col.id}`);
 								const isCrosshairHere = crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci;
 								let dragClass = "";
 								if (isCrosshairHere) {
@@ -319,12 +353,16 @@ export const ClinicalScheduler: React.FC<any> = ({
 
 								return (
 								<div
-									key={`${time}-${chair.id}`}
+									key={`${time}-${col.id}`}
 									className={`sg-cell sg-cell--empty ${isCrosshairHere ? "sg-cell-highlight" : ""} ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? "sg-row-highlight" : ""} ${dragClass}`}
 									style={{ gridRow: ri + 2, gridColumn: ci + 2 }}
 									onMouseEnter={() => setCrosshair({ rowIdx: ri, colIdx: ci })}
 									onClick={() => {
-										if (!isOccupied) handleEmptyClick(time, chair.id);
+										if (!isOccupied) {
+											const dateVal = isWeekView ? col.id : currentDate;
+											const chairVal = isWeekView ? (activeChairs[0]?.id || "") : col.id;
+											if (onSlotClick) onSlotClick(dateVal, time, chairVal);
+										}
 									}}
 									onDragOver={(e) => {
 										e.preventDefault(); // Allow drop
@@ -336,13 +374,14 @@ export const ClinicalScheduler: React.FC<any> = ({
 										setCrosshair(null);
 										if (isOccupied) return;
 										if (onSlotDrop) {
-											const today = new Date().toISOString().split("T")[0];
+											const dateVal = isWeekView ? col.id : currentDate;
+											const chairVal = isWeekView ? (activeChairs[0]?.id || "") : col.id;
 											try {
 												const dataStr =
 													e.dataTransfer.getData("application/json");
 												if (dataStr) {
 													const data = JSON.parse(dataStr);
-													onSlotDrop(today, time, chair.id, data);
+													onSlotDrop(dateVal, time, chairVal, data);
 												}
 											} catch (err) {
 												console.error("Drop failed", err);
@@ -364,9 +403,10 @@ export const ClinicalScheduler: React.FC<any> = ({
 						const pos = getAppointmentGridPosition(appt);
 						if (!pos) return null;
 
-						const colIdx = displayedChairs.findIndex(
-							(c: any) => c.id === appt.chairId,
-						);
+						const colIdx = isWeekView 
+							? columns.findIndex((c: any) => c.id === appt.startsAt.substring(0, 10))
+							: columns.findIndex((c: any) => c.id === appt.chairId);
+							
 						if (colIdx === -1) return null; // Not in view
 
 						// Resolve patient from dashboard
