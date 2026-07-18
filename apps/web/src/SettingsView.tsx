@@ -366,7 +366,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   
   // No Visual Overload: aggressive filtering for small cabinets
   const clinicMode = dashboard?.clinicSettings?.profile?.mode || "network_clinic";
-  const isSmallCabinet = clinicMode === "solo_doctor" || clinicMode === "one_chair";
 
   let typedSettingsTabs = settingsTabs as SettingsTab[];
   if (!flags.hasAssistants && flags.numberOfDoctors <= 1) {

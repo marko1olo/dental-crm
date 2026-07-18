@@ -3,7 +3,7 @@ import type {
 	CreateAppointmentInput,
 	UpdateAppointmentInput,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -191,9 +191,16 @@ export async function updateAppointmentInDb(
 		if (!updated) throw new Error("Failed to update appointment");
 
 		// Always clear pending reminders for this appointment
-		await tx.execute(
-			sql`DELETE FROM ${schema.outgoingNotifications.tableName} WHERE organization_id = ${organizationId} AND type = 'appointment_reminder' AND status = 'pending' AND payload->>'appointmentId' = ${updated.id}`
-		);
+		await tx
+			.delete(schema.outgoingNotifications)
+			.where(
+				and(
+					eq(schema.outgoingNotifications.organizationId, organizationId),
+					eq(schema.outgoingNotifications.type, "appointment_reminder"),
+					eq(schema.outgoingNotifications.status, "pending"),
+					sql`payload->>'appointmentId' = ${updated.id}`
+				)
+			);
 
 		// Re-schedule if it's still a valid upcoming appointment
 		if (updated.patientId && (updated.status === "scheduled" || updated.status === "confirmed" || updated.status === "arrived")) {
@@ -706,4 +713,10 @@ async function assertAppointmentCanBeScheduled(
 		}
 		throw new Error("Кресло уже занято другой записью в это время");
 	}
+}
+
+export async function getAppointmentsByIdsInDb(organizationId: string, ids: readonly string[]) {
+	if (ids.length === 0) return [];
+	const res = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), inArray(schema.appointments.id, ids as string[])));
+	return res;
 }
