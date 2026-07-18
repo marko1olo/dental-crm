@@ -166,12 +166,60 @@ export function useVisitLogic({
 		}
 	}, [auth]);
 
+	const pendingToothStatesRef = useRef<Record<number, import("../../store/visitStore").ToothState>>({});
+	const toothStateTimeoutRef = useRef<number | null>(null);
+
+	const flushToothStates = useCallback(() => {
+		if (toothStateTimeoutRef.current) {
+			window.clearTimeout(toothStateTimeoutRef.current);
+			toothStateTimeoutRef.current = null;
+		}
+		const pending = pendingToothStatesRef.current;
+		if (Object.keys(pending).length === 0) return;
+
+		const patientId = dashboard?.activeVisit?.patientId;
+		if (!patientId || !isOnline) {
+			pendingToothStatesRef.current = {};
+			return;
+		}
+
+		const grouped: Record<string, number[]> = {};
+		for (const [codeStr, state] of Object.entries(pending)) {
+			if (!grouped[state]) grouped[state] = [];
+			grouped[state].push(parseInt(codeStr, 10));
+		}
+
+		pendingToothStatesRef.current = {};
+
+		for (const [state, nums] of Object.entries(grouped)) {
+			persistToothStateBatch(patientId, nums, state as import("../../store/visitStore").ToothState);
+		}
+	}, [dashboard?.activeVisit?.patientId, isOnline, persistToothStateBatch]);
+
+	useEffect(() => {
+		return () => {
+			flushToothStates();
+		};
+	}, [flushToothStates]);
+
+	const queueToothStatePersist = useCallback((toothNumbers: number[], state: import("../../store/visitStore").ToothState) => {
+		for (const num of toothNumbers) {
+			pendingToothStatesRef.current[num] = state;
+		}
+		if (toothStateTimeoutRef.current) {
+			window.clearTimeout(toothStateTimeoutRef.current);
+		}
+		toothStateTimeoutRef.current = window.setTimeout(() => {
+			flushToothStates();
+		}, 700);
+	}, [flushToothStates]);
+
 	const setToothState = useCallback((code: string, state: import("../../store/visitStore").ToothState) => {
 		_setToothState(code, state);
 		if (dashboard?.activeVisit?.patientId && isOnline) {
-			persistToothStateBatch(dashboard.activeVisit.patientId, [parseInt(code, 10)], state);
+			queueToothStatePersist([parseInt(code, 10)], state);
 		}
-	}, [_setToothState, dashboard?.activeVisit?.patientId, isOnline, persistToothStateBatch]);
+	}, [_setToothState, dashboard?.activeVisit?.patientId, isOnline, queueToothStatePersist]);
 
 	const applyAiToothCodes = useCallback((
 		detectedCodes: string[],
@@ -182,19 +230,14 @@ export function useVisitLogic({
 		_applyAiToothCodes(detectedCodes, primaryState, detectedToothStates, aiDiagnoses);
 		if (dashboard?.activeVisit?.patientId && isOnline) {
 			if (detectedToothStates) {
-				const grouped: Record<string, number[]> = {};
 				for (const [code, state] of Object.entries(detectedToothStates)) {
-					if (!grouped[state]) grouped[state] = [];
-					grouped[state].push(parseInt(code, 10));
-				}
-				for (const [state, nums] of Object.entries(grouped)) {
-					persistToothStateBatch(dashboard.activeVisit.patientId, nums, state as import("../../store/visitStore").ToothState);
+					queueToothStatePersist([parseInt(code, 10)], state as import("../../store/visitStore").ToothState);
 				}
 			} else if (detectedCodes.length > 0) {
-				persistToothStateBatch(dashboard.activeVisit.patientId, detectedCodes.map(c => parseInt(c, 10)), primaryState || "planned");
+				queueToothStatePersist(detectedCodes.map(c => parseInt(c, 10)), primaryState || "planned");
 			}
 		}
-	}, [_applyAiToothCodes, dashboard?.activeVisit?.patientId, isOnline, persistToothStateBatch]);
+	}, [_applyAiToothCodes, dashboard?.activeVisit?.patientId, isOnline, queueToothStatePersist]);
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const mediaStreamRef = useRef<MediaStream | null>(null);
