@@ -249,7 +249,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Напр. 16, 24"
 							value={toothFdi}
 							onChange={(e) => setToothFdi(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 
@@ -258,7 +258,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={material}
 							onChange={(e) => setMaterial(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							<option value="zirconia">Диоксид циркония</option>
 							<option value="emax">E.max (керамика)</option>
@@ -273,7 +273,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={colorVita}
 							onChange={(e) => setColorVita(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							{[
 								"OM1",
@@ -306,7 +306,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="0"
 							value={priceRub}
 							onChange={(e) => setPriceRub(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 				</div>
@@ -317,7 +317,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 						<select
 							value={doctorId}
 							onChange={(e) => setDoctorId(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						>
 							<option value="">Не указан</option>
 							{doctors.map((doc: any) => (
@@ -334,7 +334,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							type="datetime-local"
 							value={dueDate}
 							onChange={(e) => setDueDate(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 
@@ -347,14 +347,14 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							placeholder="Опишите особенности прикуса, уступы..."
 							value={clinicalNotes}
 							onChange={(e) => setClinicalNotes(e.target.value)}
-							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+							className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						/>
 					</div>
 				</div>
 
 				<button
 					type="submit"
-					className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-[#1e293b] font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10"
+					className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-slate-900 dark:text-slate-900 font-bold rounded-lg text-xs transition-colors shadow-md shadow-teal-500/10"
 				>
 					Создать наряд ЗТЛ
 				</button>
@@ -430,7 +430,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 												e.target.value as LabOrder["status"],
 											)
 										}
-										className="py-1 px-2 bg-[#1e293b] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500"
+										className="py-1 px-2 bg-white dark:bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-teal-500"
 										title="Изменить статус заказа ЗТЛ"
 									>
 										{clinicStatusFlow.map((s) => (

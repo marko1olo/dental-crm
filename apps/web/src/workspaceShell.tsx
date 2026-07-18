@@ -442,7 +442,7 @@ export function WorkspaceTopbar({
 									top: "-4px",
 									right: "-4px",
 									background: "var(--amber)",
-									color: "#fff",
+									color: "var(--amber-contrast, white)",
 									fontSize: "10px",
 									fontWeight: "bold",
 									padding: "2px 4px",
@@ -511,7 +511,7 @@ export function WorkspaceTopbar({
 						type="button"
 						title="Заблокировать сессию"
 						onClick={onLockSession}
-						style={{ color: "#ef4444" }}
+						style={{ color: "var(--red, #ef4444)" }}
 					>
 						<Lock aria-hidden="true" size={20} />
 					</button>

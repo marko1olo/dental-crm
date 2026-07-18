@@ -26,7 +26,7 @@ export function IncomingCallToast() {
 	} | null>(null);
 
 	const { lastMessage } = useWebsocket(WS_URL);
-	const { dashboard } = useAppLogicContext();
+	const { dashboard, updateNewAppointmentDraft } = useAppLogicContext();
 
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
@@ -61,7 +61,7 @@ export function IncomingCallToast() {
 	const noShowRisk = patient?.noShowRisk;
 
 	return (
-		<div className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-teal-500 bg-[#1e293b] text-slate-100 shadow-2xl p-5 border border-slate-700/80 animate-slide-in">
+		<div className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-teal-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl p-5 border border-slate-200 dark:border-slate-700/80 animate-slide-in">
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex items-center gap-2 text-teal-400">
@@ -149,16 +149,33 @@ export function IncomingCallToast() {
 			{/* Action Buttons */}
 			<div className="flex gap-2 mt-2">
 				{incomingCall.patientId ? (
-					<button
-						onClick={() => {
-							setSelectedPatientId(incomingCall.patientId);
-							setCurrentView("patients");
-							setIncomingCall(null);
-						}}
-						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-[#1e293b] text-center transition-colors shadow-md shadow-teal-500/10"
-					>
-						Открыть карту пациента
-					</button>
+					<>
+						<button
+							onClick={() => {
+								setSelectedPatientId(incomingCall.patientId);
+								setCurrentView("patients");
+								setIncomingCall(null);
+							}}
+							className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-slate-900 text-center transition-colors shadow-md shadow-teal-500/10"
+						>
+							В карту
+						</button>
+						<button
+							onClick={() => {
+								if (incomingCall.patientId) {
+									updateNewAppointmentDraft("patientId", incomingCall.patientId);
+									setCurrentView("schedule");
+									setIncomingCall(null);
+									setTimeout(() => {
+										document.querySelector<HTMLElement>(".appointment-create-editor")?.focus();
+									}, 100);
+								}
+							}}
+							className="flex-1 rounded-lg bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 px-3 py-2 text-xs font-bold text-slate-100 text-center transition-colors shadow-md shadow-indigo-500/10"
+						>
+							Записать
+						</button>
+					</>
 				) : (
 					<button
 						onClick={() => {
@@ -170,7 +187,7 @@ export function IncomingCallToast() {
 								"info",
 							);
 						}}
-						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-[#1e293b] text-center transition-colors shadow-md shadow-teal-500/10"
+						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-slate-900 text-center transition-colors shadow-md shadow-teal-500/10"
 					>
 						Зарегистрировать
 					</button>

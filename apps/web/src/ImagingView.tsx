@@ -37,6 +37,7 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { useDocumentStore } from "./store/documentStore";
 import { usePatientStore } from "./store/patientStore";
 import { type ToothState, useVisitStore } from "./store/visitStore";
 
@@ -72,6 +73,7 @@ export function ImagingView() {
 		clampMprSlabMm,
 		clampMprSliceIndex,
 		createCtPlanningArtifact,
+		createDocument,
 		createImagingStudy,
 		ctPlanningActiveQuickActionId,
 		ctPlanningAnnotationRefs,
@@ -194,6 +196,22 @@ export function ImagingView() {
 	const [enhancementOn, setEnhancementOn] = useState(false);
 	const [isDiagnocatActive, setIsDiagnocatActive] = useState(false);
 	const [, forceUpdate] = useState(0);
+
+	const setXrayArea = useDocumentStore((s) => s.setXrayArea);
+	const setXrayStudyType = useDocumentStore((s) => s.setXrayStudyType);
+
+	const handleCreateCbctReferral = useCallback(() => {
+		if (selectedImagingStudy?.toothCode || selectedImagingStudy?.region) {
+			setXrayArea(selectedImagingStudy.toothCode ?? selectedImagingStudy.region ?? "");
+		} else {
+			setXrayArea("");
+		}
+		setXrayStudyType("cbct");
+		if (createDocument) {
+			createDocument("xray_cbct_referral");
+			window.location.hash = "documents";
+		}
+	}, [selectedImagingStudy, setXrayArea, setXrayStudyType, createDocument]);
 
 	const handleAnalyzeAI = async () => {
 		if (!selectedImagingStudy) return;
@@ -428,6 +446,16 @@ export function ImagingView() {
 							onClick={cancelBrowserImagingFolderScan}
 						>
 							Остановить
+						</button>
+					) : null}
+					{activePatient ? (
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={handleCreateCbctReferral}
+							title="Создать направление на КТ/рентген"
+						>
+							<FileText aria-hidden="true" /> Направление
 						</button>
 					) : null}
 					<details

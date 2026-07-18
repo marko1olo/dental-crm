@@ -46,13 +46,13 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 
 	return (
 		<div
-			className="fixed bottom-4 left-4 z-40 w-80 bg-white dark:bg-[#1a1a1c] border border-gray-200 dark:border-[#2a2a2c] rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
+			className="fixed bottom-4 left-4 z-40 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
 			style={{
 				boxShadow:
 					"0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
 			}}
 		>
-			<div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-[#2a2a2c] bg-gray-50 dark:bg-[#202022]">
+			<div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80">
 				<h4 className="font-semibold text-sm flex items-center gap-2 m-0 text-gray-800 dark:text-gray-100">
 					<PhoneCall size={16} className="text-indigo-500" />
 					Задачи: Обзвон ({pendingCalls.length})
