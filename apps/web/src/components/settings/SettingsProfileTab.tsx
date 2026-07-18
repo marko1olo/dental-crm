@@ -52,7 +52,6 @@ export function SettingsProfileTab() {
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const { staffRoleLabels } = mergedProps;
-	const hasReferralModule = useWorkspaceProfileStore((s) => s.hasReferralModule);
 
 	const [profile, setProfile] = useState<UserProfile | null>(
 		mergedProps.activeStaffUser ?? null,
@@ -249,7 +248,7 @@ export function SettingsProfileTab() {
 					</section>
 
 					{/* Referral & Bonuses */}
-					{hasReferralModule && (
+					{mergedProps.hasReferralModule && (
 						<section className="profile-section-card animate-fade-in">
 							<div className="profile-section-header">
 								<div
@@ -269,19 +268,19 @@ export function SettingsProfileTab() {
 
 							<div className="profile-form-grid">
 								<div className="profile-form-group full-width">
-									<label>Ваша персональная онлайн-запись (виджет)</label>
+									<label>Ваша реферальная ссылка</label>
 									<div className="profile-input-with-toggle">
 										<input
 											type="text"
 											readOnly
-											value={`https://${appLogic.dashboard?.clinicSettings?.profile?.slug || "app"}.dente.clinic/book/${profile?.id?.substring(0, 8) || "00000000"}`}
+											value={`https://dente.clinic/ref/${profile?.id?.substring(0, 8) || "00000000"}`}
 											style={{ background: "var(--paper-2)", color: "var(--ink)", fontWeight: 500 }}
 										/>
 										<button
 											type="button"
 											onClick={(e) => {
-												navigator.clipboard.writeText(`https://${appLogic.dashboard?.clinicSettings?.profile?.slug || "app"}.dente.clinic/book/${profile?.id?.substring(0, 8) || "00000000"}`);
-												showToast("Ссылка онлайн-записи скопирована", "success");
+												navigator.clipboard.writeText(`https://dente.clinic/ref/${profile?.id?.substring(0, 8) || "00000000"}`);
+												showToast("Ссылка скопирована", "success");
 												const target = e.currentTarget;
 												const originalHtml = target.innerHTML;
 												target.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
@@ -296,8 +295,8 @@ export function SettingsProfileTab() {
 									</div>
 								</div>
 								<div className="profile-form-group">
-									<label>Пациентов по вашей ссылке</label>
-									<input type="text" value={appLogic.dashboard?.myReferralsCount || "0"} disabled style={{ fontWeight: 600, color: "var(--slate-700)" }} />
+									<label>Привлеченные пациенты</label>
+									<input type="text" value="0" disabled style={{ fontWeight: 600, color: "var(--slate-700)" }} />
 								</div>
 								<div className="profile-form-group">
 									<label>Баланс бонусов</label>
