@@ -23,6 +23,7 @@ interface ChatMessage {
 	channel: string;
 	direction: "inbound" | "outbound";
 	createdAt: string;
+	attachments?: { name: string; url: string; type: string }[];
 	readAt?: string | null;
 	patientName?: string;
 }
@@ -360,6 +361,8 @@ export function OmnichannelInboxView() {
 	const [activeChannelFilter, setActiveChannelFilter] = useState<string>("all");
 	const [showNewChat, setShowNewChat] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
 	const { lastMessage } = useWebsocket(
 		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
@@ -475,7 +478,7 @@ export function OmnichannelInboxView() {
 
 	const handleSend = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!inputText.trim() || !selectedPatientId) return;
+		if ((!inputText.trim() && pendingAttachments.length === 0) || !selectedPatientId) return;
 
 		const activeChat = chats.find((c) => c.patientId === selectedPatientId);
 		const channelToUse = activeChat?.channel || "whatsapp";
@@ -491,6 +494,11 @@ export function OmnichannelInboxView() {
 					body: JSON.stringify({
 						message: inputText.trim(),
 						channel: channelToUse,
+						attachments: pendingAttachments.map(f => ({
+							name: f.name,
+							url: URL.createObjectURL(f),
+							type: f.type
+						}))
 					}),
 				},
 			);
@@ -499,6 +507,7 @@ export function OmnichannelInboxView() {
 				const newMessage = await res.json();
 				setMessages([...messages, newMessage]);
 				setInputText("");
+				setPendingAttachments([]);
 				scrollToBottom();
 
 				setChats((prev) => {
@@ -1087,6 +1096,16 @@ export function OmnichannelInboxView() {
 											>
 												{msg.message}
 											</span>
+											{msg.attachments && msg.attachments.length > 0 && (
+												<div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+													{msg.attachments.map((att, i) => (
+														<div key={i} style={{ background: isOutbound ? "rgba(0,0,0,0.15)" : "var(--paper-soft)", padding: "4px 8px", borderRadius: 8, fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+															<Paperclip size={12} />
+															{att.name}
+														</div>
+													))}
+												</div>
+											)}
 											<div
 												style={{
 													display: "flex",
@@ -1194,9 +1213,11 @@ export function OmnichannelInboxView() {
 											cursor: "pointer",
 											padding: 6,
 										}}
+										onClick={() => fileInputRef.current?.click()}
 									>
 										<Paperclip size={20} />
 									</button>
+									<input type="file" ref={fileInputRef} style={{ display: "none" }} multiple onChange={(e) => { if (e.target.files) { setPendingAttachments([...pendingAttachments, ...Array.from(e.target.files)]); e.target.value = ""; } }} />
 									<textarea
 										placeholder="Введите сообщение (Enter для отправки)..."
 										value={inputText}
@@ -1225,10 +1246,10 @@ export function OmnichannelInboxView() {
 									/>
 									<button
 										type="submit"
-										disabled={!inputText.trim()}
+										disabled={!inputText.trim() && pendingAttachments.length === 0}
 										title="Отправить"
 										style={{
-											background: inputText.trim() ? "var(--teal)" : "var(--line)",
+											background: (inputText.trim() || pendingAttachments.length > 0) ? "var(--teal)" : "var(--line)",
 											color: "#fff",
 											border: "none",
 											width: 42,
@@ -1237,7 +1258,7 @@ export function OmnichannelInboxView() {
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
-											cursor: inputText.trim() ? "pointer" : "default",
+											cursor: (inputText.trim() || pendingAttachments.length > 0) ? "pointer" : "default",
 											transition: "background 0.2s",
 											flexShrink: 0,
 										}}
