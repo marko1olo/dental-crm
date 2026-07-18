@@ -95,14 +95,20 @@ function laneStatus(ready: boolean, partial: boolean): CtPlanningExportStatus {
 	return "blocked";
 }
 
-function exportFact(
-	id: string,
-	title: string,
-	tone: CtPlanningExportStatus,
-	value: string,
-	detail: string,
-): CtPlanningExportFact {
-	return { id, title, tone, value, detail };
+function exportFact(options: {
+	id: string;
+	title: string;
+	tone: CtPlanningExportStatus;
+	value: string;
+	detail: string;
+}): CtPlanningExportFact {
+	return {
+		id: options.id,
+		title: options.title,
+		tone: options.tone,
+		value: options.value,
+		detail: options.detail,
+	};
 }
 
 function uniqueList(values: string[]) {
@@ -428,52 +434,52 @@ export function buildCtPlanningExportPacket(input: {
 		model.hasAxis ||
 		input.hasImplantPlan;
 	const clinicalFacts: CtPlanningExportFact[] = [
-		exportFact(
-			"implant",
-			"Имплант и втулка",
-			laneStatus(implantModelReady, input.hasImplantPlan || model.hasAxis),
-			implantValue,
-			`${sleeveValue}; ось ${model.axisLengthMm === null ? "нет" : `${model.axisLengthMm} мм`}.`,
-		),
-		exportFact(
-			"opg-coverage",
-			"ОПТГ и срезы",
-			laneStatus(
+		exportFact({
+			id: "implant",
+			title: "Имплант и втулка",
+			tone: laneStatus(implantModelReady, input.hasImplantPlan || model.hasAxis),
+			value: implantValue,
+			detail: `${sleeveValue}; ось ${model.axisLengthMm === null ? "нет" : `${model.axisLengthMm} мм`}.`,
+		}),
+		exportFact({
+			id: "opg-coverage",
+			title: "ОПТГ и срезы",
+			tone: laneStatus(
 				opgReconstructionReady,
 				reconstruction.curvePointCount > 0 || input.hasPanoramicRoute,
 			),
-			opgValue,
-			opgDetail,
-		),
-		exportFact(
-			"roi",
-			"Контур площади/объема",
-			laneStatus(
+			value: opgValue,
+			detail: opgDetail,
+		}),
+		exportFact({
+			id: "roi",
+			title: "Контур площади/объема",
+			tone: laneStatus(
 				geometry.areaCount > 0 || geometry.volumeCount > 0,
 				measurement.roiDraftCount > 0,
 			),
-			roiValue,
-			roiDetail,
-		),
-		exportFact(
-			"density",
-			"Плотность",
-			laneStatus(
+			value: roiValue,
+			detail: roiDetail,
+		}),
+		exportFact({
+			id: "density",
+			title: "Плотность",
+			tone: laneStatus(
 				measurement.densityValueCount > 0,
 				measurement.densityProbeCount > 0,
 			),
-			densityValue,
-			measurement.densityProtocolLabel,
-		),
-		exportFact(
-			"canal-guide",
-			"Канал и маршрут",
-			laneStatus(model.guideReady, guidePartial),
-			guideValue,
-			model.guideReady
+			value: densityValue,
+			detail: measurement.densityProtocolLabel,
+		}),
+		exportFact({
+			id: "canal-guide",
+			title: "Канал и маршрут",
+			tone: laneStatus(model.guideReady, guidePartial),
+			value: guideValue,
+			detail: model.guideReady
 				? "Маршрут и параметры готовы; CAD/STL делает лаборатория или локальный bridge."
 				: "Нужны маршрут, втулка, ось и канал.",
-		),
+		}),
 	];
 
 	const title = statusTitle(status);
