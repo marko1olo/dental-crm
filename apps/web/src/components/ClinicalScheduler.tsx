@@ -144,40 +144,14 @@ export const ClinicalScheduler: React.FC<any> = ({
 				<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
 					<h3>Ежедневное расписание</h3>
 					{freeDoctors.length > 0 && (
-						<div
-							className="free-doctors-locator"
-							style={{
-								display: "flex",
-								gap: "8px",
-								alignItems: "center",
-								marginLeft: "8px",
-							}}
-						>
-							<span
-								style={{
-									fontSize: "12px",
-									color: "var(--text-secondary)",
-									fontWeight: 500,
-								}}
-							>
+						<div className="free-doctors-locator">
+							<span className="free-doctors-label">
 								Свободные окна:
 							</span>
 							{freeDoctors.map((doc: any) => (
 								<div
 									key={doc.id}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-										background: "rgba(16, 185, 129, 0.1)",
-										border: "1px solid rgba(16, 185, 129, 0.2)",
-										color: "var(--ink)",
-										padding: "4px 8px",
-										borderRadius: "16px",
-										fontSize: "12px",
-										fontWeight: 500,
-										cursor: "pointer",
-									}}
+									className="free-doctor-badge"
 									onClick={() =>
 										onSlotClick &&
 										onSlotClick(
@@ -188,15 +162,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 									}
 									title="Записать к врачу"
 								>
-									<span
-										style={{
-											width: "6px",
-											height: "6px",
-											borderRadius: "50%",
-											background: "#10b981",
-											boxShadow: "0 0 6px rgba(16, 185, 129, 0.6)",
-										}}
-									/>
+									<span className="free-doctor-dot" />
 									{doc.title.split(" ")[0]} ({doc.utilizationPercent}%)
 								</div>
 							))}
@@ -209,17 +175,9 @@ export const ClinicalScheduler: React.FC<any> = ({
 			{isMobile && activeChairs.length > 1 && (
 				<div style={{ padding: "0 16px 16px" }}>
 					<select
+						className="mobile-chair-selector"
 						value={mobileChairId || activeChairs[0].id}
 						onChange={(e) => setMobileChairId(e.target.value)}
-						style={{
-							width: "100%",
-							padding: "12px",
-							borderRadius: "8px",
-							border: "1px solid var(--line)",
-							background: "var(--paper)",
-							fontSize: "16px",
-							color: "var(--ink)",
-						}}
 					>
 						{activeChairs.map((c: any) => (
 							<option key={c.id} value={c.id}>

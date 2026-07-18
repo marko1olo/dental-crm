@@ -7,7 +7,7 @@ import type {
 	StaffRole,
 } from "@dental/shared";
 import { motion } from "framer-motion";
-import { Bot, Mic, Plus, ShieldCheck } from "lucide-react";
+import { Bot, Mic, Plus, ShieldCheck, CalendarPlus } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "./AppHelpers";
@@ -27,6 +27,7 @@ import { motionSafeScrollIntoView } from "./motionPreference";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 
 type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -124,6 +125,7 @@ export function ScheduleView() {
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const [useManualSelects, setUseManualSelects] = useState(false);
 	const [showFreeDoctorsOnly, setShowFreeDoctorsOnly] = useState(false);
+	const workspaceFlags = useWorkspaceProfile();
 
 	const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
 
@@ -197,27 +199,19 @@ export function ScheduleView() {
 		>
 			<div className="panel-heading">
 				<h2>Расписание приемов</h2>
-				<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+				<div className="flex-row gap-sm align-center">
 					<button
 						className="primary-button schedule-create-btn"
 						type="button"
 						onClick={focusNewAppointmentEditor}
-						style={{
-							minHeight: "30px",
-							padding: "0 12px",
-							fontSize: "12px",
-							display: "flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
 					>
-						<Plus size={14} /> + Запись
+						<CalendarPlus size={16} />
+						Новая запись
 					</button>
 					<button
 						className="secondary-button"
 						type="button"
 						onClick={() => setShowShiftAnalytics(!showShiftAnalytics)}
-						style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
 					>
 						{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
 					</button>
@@ -225,14 +219,6 @@ export function ScheduleView() {
 						className="secondary-button"
 						type="button"
 						onClick={() => setShowWaitlist(true)}
-						style={{
-							minHeight: "30px",
-							padding: "0 12px",
-							fontSize: "12px",
-							display: "flex",
-							alignItems: "center",
-							gap: "4px",
-						}}
 					>
 						Лист ожидания
 					</button>
@@ -258,13 +244,11 @@ export function ScheduleView() {
 				showFreeDoctorsOnly={showFreeDoctorsOnly}
 				setShowFreeDoctorsOnly={setShowFreeDoctorsOnly}
 				resetScheduleFilters={resetScheduleFilters}
-			/>{" "}
-			<details className="schedule-secret-collapsible">
-				<summary>🔐 Разблокировать сохранение расписания</summary>
-				<div
-					className="appointment-editor schedule-admin-unlock"
-					aria-label="Доступ к сохранению расписания"
-				>
+			/>
+			{/* 🔐 Admin Unlock Collapsible */}
+			<details className="schedule-secret-collapsible glass-panel">
+				<summary><span>🔐</span> Разблокировать сохранение расписания</summary>
+				<div className="appointment-editor schedule-admin-unlock">
 					{!scheduleAdminSecretSession ? (
 						<>
 							<label className="form-span-2">
@@ -483,39 +467,23 @@ export function ScheduleView() {
 				})}
 				{sortedAppointments.length === 0 ? (
 					<article
-						className="schedule-empty-state actionable-empty-state"
+						className="schedule-empty-state actionable-empty-state glass-panel flex-column align-center"
 						data-testid="schedule-empty-state"
 						aria-label="Пустое расписание"
-						style={{
-							textAlign: "center",
-							padding: "32px 20px",
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-						}}
+						style={{ padding: "32px 20px", textAlign: "center", gap: "16px" }}
 					>
 						<Plus
 							size={40}
-							style={{ color: "var(--muted)", marginBottom: "16px" }}
+							className="text-muted"
 						/>
-						<h4
-							style={{
-								margin: "0 0 8px 0",
-								fontSize: "1.1rem",
-								color: "var(--ink)",
-							}}
-						>
+						<h4 className="text-primary m-0">
 							Расписание пусто
 						</h4>
 						<p
 							role="status"
 							aria-live="polite"
-							style={{
-								margin: "0 0 20px 0",
-								fontSize: "0.95rem",
-								color: "var(--muted)",
-								maxWidth: "300px",
-							}}
+							className="text-muted"
+							style={{ maxWidth: "300px" }}
 						>
 							Нажмите [+ Создать Запись], чтобы записать первого пациента.
 						</p>
@@ -535,7 +503,9 @@ export function ScheduleView() {
 				updateNewAppointmentDraft={updateNewAppointmentDraft}
 				focusNewAppointmentEditor={focusNewAppointmentEditor}
 			/>
-			<ObzvonStickyList dashboard={dashboard} />
+			{workspaceFlags.hasTasks && (
+				<ObzvonStickyList dashboard={dashboard} />
+			)}
 		</motion.div>
 	);
 }
