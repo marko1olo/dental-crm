@@ -256,6 +256,24 @@ export function PatientOverviewTab() {
 				>
 					<UserCheck aria-hidden="true" /> Сохранить карточку
 				</button>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => {
+						window.location.hash = "#schedule";
+					}}
+				>
+					Назначить визит
+				</button>
+				<button
+					className="secondary-button"
+					type="button"
+					onClick={() => {
+						window.location.hash = "#finance";
+					}}
+				>
+					Финансы и Оплата
+				</button>
 			</div>
 			{patientCoreSaveGuidance ? (
 				<p

@@ -9,6 +9,7 @@ import { PatientDocsAddress } from "./docs/PatientDocsAddress";
 import { PatientDocsInsurance } from "./docs/PatientDocsInsurance";
 import { PatientDocsPersonalDataConsent } from "./docs/PatientDocsPersonalDataConsent";
 import { PatientDocsAppointmentPreferences } from "./docs/PatientDocsAppointmentPreferences";
+import { PatientGeneratedDocumentsList } from "./docs/PatientGeneratedDocumentsList";
 
 export function PatientDocsTab() {
 	const appLogic = useAppLogicContext();
@@ -106,6 +107,8 @@ export function PatientDocsTab() {
 			<PatientDocsAddress />
 			<PatientDocsPersonalDataConsent />
 			<PatientDocsAppointmentPreferences />
+
+			<PatientGeneratedDocumentsList />
 		</div>
 	);
 }

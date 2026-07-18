@@ -37,7 +37,6 @@ export const PatientJourneyTimeline: React.FC<{
 				title: `Прием: ${a.status === "completed" ? "Завершен" : a.status}`,
 				description: `Врач: ${a.doctorUserId} | Причина: ${a.reason || "Нет"}`,
 				status: a.status === "completed" ? "Completed" : "Draft",
-				actionUrl: "#visit",
 			}));
 
 		const payments: any[] = dashboard?.payments || [];
@@ -51,7 +50,7 @@ export const PatientJourneyTimeline: React.FC<{
 				description: `Сумма: ${p.amountRub.toLocaleString("ru-RU")} ₽`,
 				amount: p.amountRub,
 				status: p.status,
-				actionUrl: `#finance`,
+				actionUrl: "#finance",
 			}));
 
 		const insights: any[] = dashboard?.patientInsights || [];
