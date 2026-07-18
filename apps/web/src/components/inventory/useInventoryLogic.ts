@@ -18,7 +18,7 @@ export interface InventoryItem {
 export function useInventoryLogic(organizationId: string) {
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const { auth, dashboard } = useAppLogicContext();
+	const { denteClinicalReadHeaders, dashboard } = useAppLogicContext();
 
 	// Barcode Scanner State
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
@@ -41,7 +41,7 @@ export function useInventoryLogic(organizationId: string) {
 		try {
 			setIsLoadingHistory(true);
 			const res = await fetch(`/api/inventory/${organizationId}/${itemId}/history`, {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -66,7 +66,7 @@ export function useInventoryLogic(organizationId: string) {
 			const res = await fetch(
 				`/api/inventory/${organizationId}/rules/${serviceId}`,
 				{
-					headers: auth.denteClinicalReadHeaders(),
+					headers: denteClinicalReadHeaders(),
 				},
 			);
 			if (res.ok) {
@@ -159,7 +159,7 @@ export function useInventoryLogic(organizationId: string) {
 		try {
 			const res = await fetch(`/api/inventory/${organizationId}/rules`, {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
+				headers: denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -195,7 +195,7 @@ export function useInventoryLogic(organizationId: string) {
 						`/api/inventory/${organizationId}/rules/${ruleId}`,
 						{
 							method: "DELETE",
-							headers: auth.denteClinicalReadHeaders(),
+							headers: denteClinicalReadHeaders(),
 						},
 					);
 
@@ -245,7 +245,7 @@ export function useInventoryLogic(organizationId: string) {
 		try {
 			setIsLoading(true);
 			const res = await fetch(`/api/inventory/${organizationId}`, {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -302,7 +302,7 @@ export function useInventoryLogic(organizationId: string) {
 					`/api/inventory/${organizationId}/${editingItem.id}`,
 					{
 						method: "PUT",
-						headers: auth.denteClinicalReadHeaders({
+						headers: denteClinicalReadHeaders({
 							"Content-Type": "application/json",
 						}),
 						body: JSON.stringify({
@@ -324,7 +324,7 @@ export function useInventoryLogic(organizationId: string) {
 			} else {
 				const res = await fetch(`/api/inventory/${organizationId}`, {
 					method: "POST",
-					headers: auth.denteClinicalReadHeaders({
+					headers: denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -362,7 +362,7 @@ export function useInventoryLogic(organizationId: string) {
 						`/api/inventory/${organizationId}/${itemId}`,
 						{
 							method: "DELETE",
-							headers: auth.denteClinicalReadHeaders(),
+							headers: denteClinicalReadHeaders(),
 						},
 					);
 					if (res.ok) {
@@ -393,7 +393,7 @@ export function useInventoryLogic(organizationId: string) {
 				`/api/inventory/${organizationId}/${adjustingItem.id}/stock`,
 				{
 					method: "PATCH",
-					headers: auth.denteClinicalReadHeaders({
+					headers: denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({ adjustment }),
@@ -444,7 +444,6 @@ export function useInventoryLogic(organizationId: string) {
 		setItemHistory,
 		items,
 		isLoading,
-		auth,
 		dashboard,
 		scannedBarcode,
 		isScannerActive,

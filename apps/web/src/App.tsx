@@ -2156,7 +2156,7 @@ export function App() {
 		}
 		// Restore staff user profile from token on page refresh
 		const staffToken = localStorage.getItem("dente_staff_token");
-		if (staffToken && !activeStaffUser) {
+		if (staffToken && (!activeStaffUser || activeStaffUser.name === "Screenshot Bot")) {
 			fetch("/api/auth/user/me", {
 				headers: { "x-dente-staff-token": staffToken },
 			})

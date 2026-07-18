@@ -59,6 +59,25 @@ async function migrate() {
 		medicalLicenseIssuedAt: state.clinicProfile.medicalLicenseIssuedAt,
 		medicalLicenseIssuer: state.clinicProfile.medicalLicenseIssuer,
 		onboardingCompleted: true,
+		// Explicitly copy over feature flags to avoid database defaults overlay issues
+		hasAssistants: state.clinicProfile.hasAssistants ?? true,
+		hasMultipleChairs: state.clinicProfile.hasMultipleChairs ?? true,
+		hasDentalLab: state.clinicProfile.hasDentalLab ?? true,
+		hasInsuranceCoPay: state.clinicProfile.hasInsuranceCoPay ?? true,
+		hasInstallments: state.clinicProfile.hasInstallments ?? true,
+		hasOrthodontics: state.clinicProfile.hasOrthodontics ?? true,
+		hasTasks: state.clinicProfile.hasTasks ?? true,
+		hasReclamations: state.clinicProfile.hasReclamations ?? true,
+		hasPediatricMode: state.clinicProfile.hasPediatricMode ?? false,
+		isOmniRole: state.clinicProfile.isOmniRole ?? false,
+		workspacePreset: state.clinicProfile.workspacePreset ?? "enterprise",
+		hasPayrollModule: state.clinicProfile.hasPayrollModule ?? true,
+		hasMarketingModule: state.clinicProfile.hasMarketingModule ?? true,
+		hasAnalyticsModule: state.clinicProfile.hasAnalyticsModule ?? true,
+		hasInventoryModule: state.clinicProfile.hasInventoryModule ?? true,
+		aiEnableTreatmentPlan: state.clinicProfile.aiEnableTreatmentPlan ?? true,
+		aiEnableRecommendations: state.clinicProfile.aiEnableRecommendations ?? true,
+		aiEnableDocuments: state.clinicProfile.aiEnableDocuments ?? true,
 	});
 
 	console.log("🏥 Migrating Clinics (Default)");

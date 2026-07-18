@@ -26,7 +26,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const {
 		items,
 		isLoading,
-		auth,
 		dashboard,
 		scannedBarcode,
 		isScannerActive,
