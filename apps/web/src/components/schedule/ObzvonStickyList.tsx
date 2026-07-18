@@ -46,13 +46,16 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 
 	return (
 		<div
-			className="fixed bottom-4 left-4 z-40 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
+			className="fixed bottom-4 left-4 z-40 w-80 rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
 			style={{
+				background: "var(--paper)",
+				color: "var(--ink)",
+				border: "1px solid var(--line)",
 				boxShadow:
 					"0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
 			}}
 		>
-			<div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80">
+			<div className="flex items-center justify-between p-3 border-b border-gray-100" style={{ background: "var(--paper-muted)", borderBottom: "1px solid var(--line)" }}>
 				<h4 className="font-semibold text-sm flex items-center gap-2 m-0 text-gray-800 dark:text-gray-100">
 					<PhoneCall size={16} className="text-indigo-500" />
 					Задачи: Обзвон ({pendingCalls.length})
@@ -80,11 +83,11 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 							key={task.id}
 							className={`p-3 rounded-lg border text-sm transition-all hover:shadow-md ${
 								isUrgent
-									? "border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10"
-									: "border-gray-200 bg-white dark:border-[#303033] dark:bg-[#232325]"
+									? "border-red-200"
+									: ""
 							}`}
 						>
-							<div className="flex items-start justify-between mb-1">
+							<div className="flex items-start justify-between mb-1" style={{ background: isUrgent ? "var(--color-danger-muted, #fee2e2)" : "var(--paper)" }}>
 								<span className="font-medium text-gray-900 dark:text-gray-100">
 									{patient?.fullName.split(" ").slice(0, 2).join(" ") ||
 										"Пациент DB"}

@@ -61,7 +61,10 @@ export function IncomingCallToast() {
 	const noShowRisk = patient?.noShowRisk;
 
 	return (
-		<div className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-teal-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl p-5 border border-slate-200 dark:border-slate-700/80 animate-slide-in">
+		<div 
+			className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 shadow-2xl p-5 animate-slide-in"
+			style={{ background: "var(--paper)", color: "var(--ink)", border: "1px solid var(--line)", borderLeft: "4px solid var(--teal)" }}
+		>
 			{/* Header */}
 			<div className="flex items-start justify-between">
 				<div className="flex items-center gap-2 text-teal-400">
@@ -81,10 +84,10 @@ export function IncomingCallToast() {
 
 			{/* Caller Info */}
 			<div>
-				<div className="text-lg font-bold text-slate-100 mb-0.5">
+				<div className="text-lg font-bold mb-0.5" style={{ color: "var(--ink)" }}>
 					{incomingCall.phone}
 				</div>
-				<div className="flex items-center gap-1.5 text-sm text-slate-400">
+				<div className="flex items-center gap-1.5 text-sm" style={{ color: "var(--foreground-muted)" }}>
 					<User size={14} className="text-slate-500" />
 					<span className="font-semibold text-slate-300">
 						{incomingCall.patientId
@@ -101,7 +104,7 @@ export function IncomingCallToast() {
 					<span>Скрипт разговора / Памятка:</span>
 				</div>
 
-				<ul className="space-y-1.5 text-slate-300 list-none pl-0">
+				<ul className="space-y-1.5 list-none pl-0" style={{ color: "var(--ink)" }}>
 					<li className="flex items-start gap-1">
 						<span className="text-teal-500 font-bold">•</span>
 						<span>
@@ -136,7 +139,7 @@ export function IncomingCallToast() {
 					)}
 
 					{incomingCall.patientId && hasNotes && (
-						<li className="flex items-start gap-1 text-slate-300 italic border-t border-slate-700/40 pt-1.5 mt-1.5">
+						<li className="flex items-start gap-1 italic border-t pt-1.5 mt-1.5" style={{ color: "var(--foreground-muted)", borderColor: "var(--line)" }}>
 							<span className="font-semibold text-slate-400 not-italic">
 								Заметка:
 							</span>
@@ -156,7 +159,8 @@ export function IncomingCallToast() {
 								setCurrentView("patients");
 								setIncomingCall(null);
 							}}
-							className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-slate-900 text-center transition-colors shadow-md shadow-teal-500/10"
+							className="flex-1 rounded-lg font-bold text-center transition-colors shadow-md px-3 py-2 text-xs"
+							style={{ background: "var(--teal)", color: "var(--paper)" }}
 						>
 							В карту
 						</button>
@@ -171,7 +175,8 @@ export function IncomingCallToast() {
 									}, 100);
 								}
 							}}
-							className="flex-1 rounded-lg bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 px-3 py-2 text-xs font-bold text-slate-100 text-center transition-colors shadow-md shadow-indigo-500/10"
+							className="flex-1 rounded-lg font-bold text-center transition-colors shadow-md px-3 py-2 text-xs"
+							style={{ background: "var(--brand-500)", color: "var(--brand-contrast)" }}
 						>
 							Записать
 						</button>
@@ -187,7 +192,8 @@ export function IncomingCallToast() {
 								"info",
 							);
 						}}
-						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-slate-900 text-center transition-colors shadow-md shadow-teal-500/10"
+						className="flex-1 rounded-lg font-bold text-center transition-colors shadow-md px-3 py-2 text-xs"
+						style={{ background: "var(--teal)", color: "var(--paper)" }}
 					>
 						Зарегистрировать
 					</button>

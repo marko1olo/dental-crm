@@ -174,10 +174,11 @@ export function WaitlistDrawer({
 			<div className="fixed bottom-4 right-4 z-50">
 				<button
 					onClick={() => setIsMinimized(false)}
-					className="bg-white dark:bg-slate-800 border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-slate-800 transition-colors"
+					className="border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 transition-colors"
+					style={{ background: "var(--paper)", color: "var(--ink)" }}
 				>
 					<Calendar className="w-5 h-5 text-teal-400" />
-					<span className="text-slate-100 font-medium">
+					<span className="font-medium">
 						Лист ожидания (Свернут)
 					</span>
 				</button>
@@ -188,7 +189,10 @@ export function WaitlistDrawer({
 	return (
 		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
 			<div className="absolute inset-0" onClick={onClose} />
-			<div className="relative w-full max-w-md h-full bg-white dark:bg-slate-800 border-l border-slate-700/80 shadow-2xl flex flex-col z-10 text-slate-100 animate-slide-in">
+			<div 
+				className="relative w-full max-w-md h-full border-l border-slate-700/80 shadow-2xl flex flex-col z-10 animate-slide-in"
+				style={{ background: "var(--paper)", color: "var(--ink)" }}
+			>
 				{/* Header */}
 				<div className="p-6 border-b border-slate-700/60 flex items-center justify-between">
 					<div className="flex items-center gap-3">
@@ -245,7 +249,8 @@ export function WaitlistDrawer({
 							<select
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
-								className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+								className="w-full border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-teal-500"
+								style={{ background: "var(--paper)", color: "var(--ink)" }}
 								required
 							>
 								<option value="">-- Выберите пациента --</option>
@@ -264,7 +269,8 @@ export function WaitlistDrawer({
 							<select
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
-								className="w-full bg-white dark:bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+								className="w-full border border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:border-teal-500"
+								style={{ background: "var(--paper)", color: "var(--ink)" }}
 							>
 								<option value="">-- Любой врач --</option>
 								{doctors.map((d: any) => (
@@ -303,7 +309,8 @@ export function WaitlistDrawer({
 
 						<button
 							type="submit"
-							className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-slate-900 dark:text-slate-900 font-bold rounded-lg text-sm transition-colors shadow-md shadow-teal-500/10"
+							className="w-full py-2 bg-teal-500 font-bold rounded-lg text-sm transition-colors shadow-md shadow-teal-500/10"
+							style={{ background: "var(--teal)", color: "var(--paper)" }}
 						>
 							Добавить в очередь
 						</button>
