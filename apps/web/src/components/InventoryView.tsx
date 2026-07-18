@@ -920,8 +920,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															fontWeight: 600,
 															fontSize: 14,
 															border: isLowStock
-																? "1px solid rgba(239, 68, 68, 0.3)"
-																: "1px solid rgba(16, 185, 129, 0.2)",
+																? "1px solid var(--red-300, rgba(239, 68, 68, 0.3))"
+																: "1px solid var(--teal-200, rgba(16, 185, 129, 0.2))",
 														}}
 													>
 														{item.stockQuantity} шт.
