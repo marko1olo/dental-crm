@@ -209,21 +209,9 @@ export function VisitEmkTab() {
 											onChange={(event) =>
 												updateVisitNoteField(field.key, event.target.value)
 											}
-											style={{
-												minHeight: "80px",
-												borderRadius: "8px",
-												padding: "0.6rem",
-												border: "1px solid var(--slate-300)",
-												resize: "vertical",
-												width: "100%",
-												outline: "none",
-											}}
-											onFocus={(e) =>
-												(e.target.style.borderColor = "var(--brand-400)")
-											}
-											onBlur={(e) =>
-												(e.target.style.borderColor = "var(--slate-300)")
-											}
+											className="emk-textarea"
+											
+											
 										/>
 									</div>
 								);

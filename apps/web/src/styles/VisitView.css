@@ -280,3 +280,111 @@
 .skeleton-wave:nth-child(3) {
 	animation-delay: 0.4s;
 }
+
+/* Visit Tab Navigation */
+.visit-tabs-navigation {
+	display: flex;
+	gap: 8px;
+	border-bottom: 1px solid var(--glass-border);
+	margin-bottom: 24px;
+	padding: 0 24px;
+	position: relative;
+}
+
+.visit-tabs-navigation .nav-item {
+	padding: 12px 20px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-weight: 500;
+	color: var(--text-secondary);
+	position: relative;
+	transition: color 0.2s;
+}
+
+.visit-tabs-navigation .nav-item.active {
+	font-weight: 700;
+	color: var(--text-primary);
+}
+
+.visit-tab-indicator {
+	position: absolute;
+	bottom: -1px;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: var(--teal);
+	border-radius: 3px 3px 0 0;
+	box-shadow: 0 0 10px rgba(13, 148, 136, 0.5);
+}
+
+/* Dictation Recording Indicator */
+.dictation-recording-indicator {
+	margin-top: 8px;
+	padding: 12px;
+	background: var(--paper);
+	color: var(--slate-500, #64748b);
+	border-radius: 8px;
+	border: 1px dashed var(--slate-300, #cbd5e1);
+	font-style: italic;
+	font-size: 14px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.dictation-wave-container {
+	display: flex;
+	gap: 4px;
+	height: 16px;
+	align-items: center;
+}
+
+.wave-red {
+	width: 4px;
+	height: 10px;
+	background: var(--red-500, #ef4444);
+	border-radius: 2px;
+}
+
+/* Tooth Map Theme Support */
+.tooth-idle .tooth-root { fill: #f8fafc; stroke: #cbd5e1; }
+.tooth-idle .tooth-crown { fill: #ffffff; stroke: #94a3b8; }
+
+.tooth-planned .tooth-root { fill: #f0f9ff; stroke: #38bdf8; }
+.tooth-planned .tooth-crown { fill: #e0f2fe; stroke: #0284c7; }
+
+.tooth-treatment .tooth-root { fill: #fff5f5; stroke: #f87171; }
+.tooth-treatment .tooth-crown { fill: #fee2e2; stroke: #dc2626; }
+
+.tooth-watch .tooth-root { fill: #fffbeb; stroke: #fbbf24; }
+.tooth-watch .tooth-crown { fill: #fef3c7; stroke: #d97706; }
+
+.tooth-done .tooth-root { fill: #f0fdf4; stroke: #4ade80; }
+.tooth-done .tooth-crown { fill: #dcfce7; stroke: #166534; }
+
+.tooth-missing path { stroke: #cbd5e1 !important; fill: #f1f5f9 !important; }
+.tooth-missing path:last-child { stroke: #ef4444 !important; fill: none !important; }
+
+/* Dark Theme Overrides for Tooth Map */
+[data-theme="dark"] .tooth-idle .tooth-root { fill: #1e293b; stroke: #475569; }
+[data-theme="dark"] .tooth-idle .tooth-crown { fill: #0f172a; stroke: #64748b; }
+
+[data-theme="dark"] .tooth-planned .tooth-root { fill: #0c4a6e; stroke: #0284c7; }
+[data-theme="dark"] .tooth-planned .tooth-crown { fill: #082f49; stroke: #0ea5e9; }
+
+[data-theme="dark"] .tooth-treatment .tooth-root { fill: #450a0a; stroke: #dc2626; }
+[data-theme="dark"] .tooth-treatment .tooth-crown { fill: #7f1d1d; stroke: #ef4444; }
+
+[data-theme="dark"] .tooth-watch .tooth-root { fill: #451a03; stroke: #d97706; }
+[data-theme="dark"] .tooth-watch .tooth-crown { fill: #78350f; stroke: #f59e0b; }
+
+[data-theme="dark"] .tooth-done .tooth-root { fill: #052e16; stroke: #16a34a; }
+[data-theme="dark"] .tooth-done .tooth-crown { fill: #14532d; stroke: #22c55e; }
+
+[data-theme="dark"] .tooth-missing path { stroke: #475569 !important; fill: #1e293b !important; }
+[data-theme="dark"] .tooth-missing path:last-child { stroke: #991b1b !important; fill: none !important; }
+
+/* EMK Textarea */
+.emk-textarea { min-height: 80px; border-radius: 8px; padding: 0.6rem; border: 1px solid var(--slate-300, #cbd5e1); resize: vertical; width: 100%; outline: none; background: var(--paper, #fff); color: var(--text-primary, #0f172a); transition: border-color 0.2s; }
+.emk-textarea:focus { border-color: var(--brand-400, #38bdf8); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1); }

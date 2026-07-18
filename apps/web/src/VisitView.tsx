@@ -42,6 +42,8 @@ import "./styles/VisitView.css";
 import { VisitToothMap } from "./components/visit/VisitToothMap";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitToothContextMenu } from "./components/visit/VisitToothContextMenu";
+import { VisitTabNavigation, VisitTabType } from "./components/visit/VisitTabNavigation";
+import { VisitConclusionTab } from "./components/visit/VisitConclusionTab";
 
 export function VisitView() {
 	const workspaceFlags = useWorkspaceProfile();
@@ -145,9 +147,7 @@ export function VisitView() {
 		visitWorkflowSteps,
 	} = useAppLogicContext();
 
-	const [activeVisitTab, setActiveVisitTab] = useState<
-		"diary" | "odontogram" | "diagnostics" | "conclusion"
-	>("diary");
+	const [activeVisitTab, setActiveVisitTab] = useState<VisitTabType>("diary");
 	const [activeEmkTab, setActiveEmkTab] = useState("all");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
@@ -307,61 +307,7 @@ export function VisitView() {
 					{workspaceFlags.hasEngineeringStatus && <VisitSafetyStrip />}
 				</div>
 
-				<div
-					className="visit-tabs-navigation"
-					style={{
-						display: "flex",
-						gap: "8px",
-						borderBottom: "1px solid var(--glass-border)",
-						marginBottom: "24px",
-						padding: "0 24px",
-						position: "relative",
-					}}
-				>
-					{[
-						{ id: "diary", label: "Осмотр" },
-						{ id: "odontogram", label: "Зубная формула и Дневник" },
-						{ id: "diagnostics", label: "Снимки и Анализы" },
-						{ id: "conclusion", label: "Заключение" },
-					].map((tab) => (
-						<button
-							key={tab.id}
-							type="button"
-							className={`nav-item ${activeVisitTab === tab.id ? "active" : ""}`}
-							onClick={() => setActiveVisitTab(tab.id as any)}
-							style={{
-								padding: "12px 20px",
-								background: "transparent",
-								border: "none",
-								cursor: "pointer",
-								fontWeight: activeVisitTab === tab.id ? 700 : 500,
-								color:
-									activeVisitTab === tab.id
-										? "var(--text-primary)"
-										: "var(--text-secondary)",
-								position: "relative",
-								transition: "color 0.2s",
-							}}
-						>
-							{tab.label}
-							{activeVisitTab === tab.id && (
-								<motion.div
-									layoutId="visit-tab-indicator"
-									style={{
-										position: "absolute",
-										bottom: -1,
-										left: 0,
-										right: 0,
-										height: 3,
-										background: "var(--teal)",
-										borderRadius: "3px 3px 0 0",
-										boxShadow: "0 0 10px rgba(13, 148, 136, 0.5)",
-									}}
-								/>
-							)}
-						</button>
-					))}
-				</div>
+				<VisitTabNavigation activeTab={activeVisitTab} onTabChange={setActiveVisitTab} />
 
 				<div style={{ display: activeVisitTab === "diary" ? "block" : "none" }}>
 					<VisitSpecialtyFocus />
@@ -397,204 +343,34 @@ export function VisitView() {
 					<VisitDiagnosticsTab />
 				</div>
 
-				<details
-					className="protocol-library"
-					aria-label="Шаблоны приема по специальности"
-				>
-					<summary className="protocol-summary">
-						<div>
-							<h3>Шаблон приема</h3>
-							<p>
-								{selectedProtocolTemplate?.title ??
-									"Выберите специальность и шаблон"}
-							</p>
-						</div>
-						<span>
-							{selectedProtocolTemplate
-								? specialtyLabels[selectedProtocolTemplate.specialty]
-								: dashboard.protocolTemplates.length}
-						</span>
-					</summary>
-					<div className="protocol-head">
-						<div>
-							<h3>Шаблон приема</h3>
-							<p>
-								Выбор специальности меняет протокол, снимки, документы и
-								предупреждения.
-							</p>
-						</div>
-						<span>{dashboard.protocolTemplates.length}</span>
-					</div>
-					<div className="specialty-strip">
-						{specialtiesWithTemplates.map((specialty) => (
-							<button
-								className={selectedSpecialty === specialty ? "active" : ""}
-								key={specialty}
-								type="button"
-								aria-pressed={selectedSpecialty === specialty}
-								onClick={() => {
-									setSelectedSpecialty(specialty);
-									setSelectedProtocolId(null);
-								}}
-							>
-								{specialtyLabels[specialty]}
-							</button>
-						))}
-					</div>
-					{selectedProtocolTemplate ? (
-						<article className="protocol-card">
-							<div>
-								<strong>{selectedProtocolTemplate.title}</strong>
-								<p>
-									{selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
-									{selectedProtocolTemplate.suggestedImaging
-										.map((kind) => imagingKindLabels[kind])
-										.join(", ")}
-								</p>
-							</div>
-							<div className="protocol-template-list">
-								{specialtyProtocolTemplates.map((template) => (
-									<button
-										className={
-											selectedProtocolTemplate.id === template.id
-												? "active"
-												: ""
-										}
-										key={template.id}
-										type="button"
-										aria-pressed={selectedProtocolTemplate.id === template.id}
-										onClick={() => setSelectedProtocolId(template.id)}
-									>
-										{template.visitReason}
-									</button>
-								))}
-							</div>
-							<ul>
-								{selectedProtocolTemplate.safetyWarnings.map((warning) => (
-									<li key={warning}>{warning}</li>
-								))}
-							</ul>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}
-							>
-								<ClipboardCheck aria-hidden="true" /> Заполнить диктовку
-							</button>
-						</article>
-					) : null}
-				</details>
-
-				{workspaceFlags.hasClinicalRules && (
-					<details className="clinical-rules-toggle">
-						<summary>
-							📋 Клинические рекомендации
-							{activeVisitClinicalRuleEvaluations?.length
-								? ` (${activeVisitClinicalRuleEvaluations.length})`
-								: ""}
-						</summary>
-						<div style={{ marginTop: "1rem" }}>
-							<ClinicalRulePanel
-								actionLabels={clinicalRuleActionLabels}
-								context="visit"
-								// evaluations={activeVisitClinicalRuleEvaluations}
-								evaluations={
-									dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-										? activeVisitClinicalRuleEvaluations.filter(
-												(e: any) => e.ownerRole !== "assistant",
-											)
-										: activeVisitClinicalRuleEvaluations
-								}
-								serviceTitle={serviceTitle}
-								severityLabels={clinicalRuleSeverityLabels}
-								staffRoleLabels={staffRoleLabels}
-								summary={activeVisitClinicalRuleSummary}
-							/>
-						</div>
-					</details>
-				)}
-
-				{activePatient?.id && workspaceFlags.hasDentalLab && (
-					<LabOrdersPanel patientId={activePatient.id} />
-				)}
-
-				{workspaceFlags.hasGnathology && (
-					<GnathologyForm
-						visitId={dashboard?.activeVisit?.id ?? null}
-						patientId={activePatient?.id ?? null}
+				{activeVisitTab === "conclusion" && (
+					<VisitConclusionTab
+						isSignDialogOpen={isSignDialogOpen}
+						setIsSignDialogOpen={setIsSignDialogOpen}
+						isSigned={isSigned}
+						workspaceFlags={workspaceFlags}
+						dashboard={dashboard}
+						activePatient={activePatient}
+						selectedProtocolTemplate={selectedProtocolTemplate}
+						specialtyLabels={specialtyLabels}
+						specialtiesWithTemplates={specialtiesWithTemplates}
+						selectedSpecialty={selectedSpecialty}
+						setSelectedSpecialty={setSelectedSpecialty}
+						setSelectedProtocolId={setSelectedProtocolId}
+						imagingKindLabels={imagingKindLabels}
+						specialtyProtocolTemplates={specialtyProtocolTemplates}
+						applyProtocolTemplate={applyProtocolTemplate}
+						activeVisitClinicalRuleEvaluations={activeVisitClinicalRuleEvaluations}
+						clinicalRuleActionLabels={clinicalRuleActionLabels}
+						serviceTitle={serviceTitle}
+						clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
+						staffRoleLabels={staffRoleLabels}
+						activeVisitClinicalRuleSummary={activeVisitClinicalRuleSummary}
+						visitCloseChecklist={visitCloseChecklist}
+						primaryVisitWarning={primaryVisitWarning}
+						setActiveVisitTab={setActiveVisitTab}
 					/>
 				)}
-
-				{visitCloseChecklist ? (
-					<div
-						className="close-checklist"
-						aria-label="Предупреждения перед закрытием приема"
-					>
-						<div className="close-checklist-head">
-							<div>
-								<h3>Закрытие приема</h3>
-								<p>
-									{primaryVisitWarning?.actionLabel ??
-										visitCloseChecklist.nextAction}
-								</p>
-							</div>
-							<span className={visitCloseChecklist.readyToSign ? "ready" : ""}>
-								{visitCloseChecklist.readyToSign
-									? "готово"
-									: `${visitCloseChecklist.score}%`}
-							</span>
-						</div>
-						{visitCloseChecklist.items
-							.filter((task: any) =>
-								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-									? task.ownerRole !== "assistant"
-									: true,
-							)
-							.map((task: any) => (
-								<button
-									className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
-									key={task.id}
-									type="button"
-									onClick={() => {
-										const section = task.section.replace("#", "");
-										if (
-											[
-												"diary",
-												"odontogram",
-												"diagnostics",
-												"conclusion",
-											].includes(section)
-										) {
-											setActiveVisitTab(section as any);
-										} else if (
-											section === "dictation" ||
-											section === "emk" ||
-											section === "smart-preview"
-										) {
-											setActiveVisitTab("diary");
-										}
-										setTimeout(() => {
-											const el = document.getElementById(section);
-											if (el)
-												el.scrollIntoView({
-													behavior: "smooth",
-													block: "start",
-												});
-										}, 50);
-									}}
-								>
-									<CheckCircle2 aria-hidden="true" />
-									<div>
-										<strong>{task.title}</strong>
-										<p>{task.detail}</p>
-										<small>
-											{staffRoleLabels[task.ownerRole]} · {task.actionLabel}
-										</small>
-									</div>
-								</button>
-							))}
-					</div>
-				) : null}
 			</motion.div>
 
 			{/* ═══════════════════════════════════════════════════════════════
