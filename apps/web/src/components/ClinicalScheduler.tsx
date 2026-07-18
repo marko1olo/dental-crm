@@ -89,9 +89,24 @@ export const ClinicalScheduler: React.FC<any> = ({
 		}
 	}, [isMobile, activeChairs, mobileChairId]);
 
+	if (!dashboard || !appointments) {
+		return (
+			<div className="clinical-scheduler skeleton-container" style={{ minHeight: "400px", opacity: 0.6, pointerEvents: "none" }}>
+				<div className="scheduler-header">
+					<div style={{ width: "200px", height: "28px", background: "var(--line, #e2e8f0)", borderRadius: "6px" }} />
+				</div>
+				<div className="scheduler-grid-wrap" style={{ background: "var(--line-light, #eff2f5)", height: "300px", marginTop: "20px", borderRadius: "12px" }} />
+			</div>
+		);
+	}
+
 	const workspaceFlags = useWorkspaceProfileStore();
+	
+	const clinicMode = dashboard?.clinicSettings?.profile?.mode || "network_clinic";
+	const isSmallCabinet = clinicMode === "solo_doctor" || clinicMode === "one_chair";
+
 	const displayedChairs =
-		!workspaceFlags.hasMultipleChairs && activeChairs.length > 0
+		(!workspaceFlags.hasMultipleChairs || isSmallCabinet) && activeChairs.length > 0
 			? [activeChairs[0]]
 			: isMobile && mobileChairId
 				? activeChairs.filter((c: any) => c.id === mobileChairId)
@@ -105,7 +120,6 @@ export const ClinicalScheduler: React.FC<any> = ({
 			(dl: any) => dl.utilizationPercent < 50 || dl.state === "under_utilized",
 		) || [];
 
-	// Helper to calculate grid row start and span
 	const getAppointmentGridPosition = (appt: any) => {
 		if (!appt.startsAt || !appt.endsAt) return null;
 
@@ -136,6 +150,44 @@ export const ClinicalScheduler: React.FC<any> = ({
 			startRow: offsetSlots + 2, // +1 for CSS Grid 1-index, +1 for Header Row = +2
 			span: durationSlots,
 		};
+	};
+
+	const CurrentTimeIndicator = () => {
+		const [currentTime, setCurrentTime] = useState(new Date());
+
+		useEffect(() => {
+			const interval = setInterval(() => setCurrentTime(new Date()), 60000);
+			return () => clearInterval(interval);
+		}, []);
+
+		const hours = currentTime.getHours();
+		const minutes = currentTime.getMinutes();
+		const currentMinutes = hours * 60 + minutes;
+
+		const minParts = minStart.split(":").map(Number);
+		const gridStartMinutes = (minParts[0] || 9) * 60 + (minParts[1] || 0);
+		const maxParts = maxEnd.split(":").map(Number);
+		const gridEndMinutes = (maxParts[0] || 18) * 60 + (maxParts[1] || 0);
+
+		if (currentMinutes < gridStartMinutes || currentMinutes >= gridEndMinutes) return null;
+
+		const offsetSlots = (currentMinutes - gridStartMinutes) / 30;
+		const rowStart = Math.floor(offsetSlots) + 2;
+		const fraction = offsetSlots - Math.floor(offsetSlots);
+		const topOffset = fraction * 44; // 44px is gridAutoRows height
+
+		return (
+			<div
+				className="sg-current-time-line"
+				style={{
+					gridRow: rowStart,
+					gridColumn: "1 / -1",
+					top: `${topOffset}px`,
+				}}
+			>
+				<div className="sg-current-time-dot"></div>
+			</div>
+		);
 	};
 
 	return (
@@ -258,6 +310,8 @@ export const ClinicalScheduler: React.FC<any> = ({
 						</React.Fragment>
 					))}
 
+					<CurrentTimeIndicator />
+
 					{/* Appointments Overlay */}
 					{(appointments || []).map((appt: any) => {
 						const pos = getAppointmentGridPosition(appt);
@@ -288,7 +342,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 								}}
 							>
 								<div
-									className={`sg-appt-card sg-appt-${appt.type || "therapy"}`}
+									className={`sg-appt-card sg-appt-${appt.type || "therapy"} sg-appt-status-${appt.status || "planned"}`}
 									onClick={(e) => {
 										e.stopPropagation();
 										if (onAppointmentClick) onAppointmentClick(appt);
@@ -298,7 +352,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 									<div className="sg-appt-title">
 										{patient?.fullName || "Неизвестный пациент"}
 									</div>
-									<div className="sg-appt-meta">{appt.status}</div>
+									<div className="sg-appt-meta-status">{appt.status}</div>
 									<div className="sg-appt-time">
 										{new Date(appt.startsAt).toLocaleTimeString([], {
 											hour: "2-digit",

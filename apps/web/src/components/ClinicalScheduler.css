@@ -437,3 +437,49 @@
 	color: #e4e4e7;
 	border-color: rgba(82, 82, 91, 0.5);
 }
+
+/* ── Current Time Indicator ── */
+.sg-current-time-line {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background-color: var(--brand-red, #ef4444);
+	z-index: 20;
+	pointer-events: none;
+}
+
+.sg-current-time-dot {
+	position: absolute;
+	left: 56px; /* align with the line between time labels and first chair */
+	top: -4px;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background-color: var(--brand-red, #ef4444);
+	box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+}
+
+/* ── Status Colors ── */
+.sg-appt-status-planned {
+	border-left: 4px solid var(--muted, #94a3b8);
+}
+.sg-appt-status-confirmed {
+	border-left: 4px solid var(--brand-blue, #3b82f6);
+}
+.sg-appt-status-arrived {
+	border-left: 4px solid var(--brand-orange, #f59e0b);
+}
+.sg-appt-status-in_treatment {
+	border-left: 4px solid var(--brand-green, #10b981);
+}
+.sg-appt-status-completed {
+	border-left: 4px solid var(--line, #e2e8f0);
+	opacity: 0.75;
+}
+.sg-appt-status-cancelled,
+.sg-appt-status-no_show {
+	border-left: 4px solid var(--brand-red, #ef4444);
+	opacity: 0.6;
+}
+
