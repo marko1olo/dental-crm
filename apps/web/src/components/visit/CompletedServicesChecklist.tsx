@@ -15,29 +15,28 @@ export const CompletedServicesChecklist: React.FC = () => {
 	const completedServices: any[] = visitNoteForm.completedServices || [];
 
 	const handleToggle = (item: any) => {
-		const toothCode = item.toothNumber ? String(item.toothNumber) : null;
+		// Dashboard maps: serviceId = item.serviceId, toothCode = item.toothCode (string or null)
+		const key = item.serviceId ?? item.id;
+		const toothCode = item.toothCode ?? null;
+
 		const isCompleted = completedServices.some(
-			(cs: any) =>
-				cs.serviceId === item.priceId && cs.toothCode === toothCode,
+			(cs: any) => cs.serviceId === key && cs.toothCode === toothCode,
 		);
 
 		let newServices = [...completedServices];
 		if (isCompleted) {
 			newServices = newServices.filter(
-				(cs: any) =>
-					!(cs.serviceId === item.priceId && cs.toothCode === toothCode),
+				(cs: any) => !(cs.serviceId === key && cs.toothCode === toothCode),
 			);
 		} else {
-			// Resolve service title: try priceId after "::" separator (format is "uuid::Название")
-			const parts = (item.priceId ?? "").split("::");
 			const serviceTitle =
-				parts.length > 1 ? parts.slice(1).join("::") : item.title || item.priceId;
-			const unitPrice = item.unitPriceRub || Number(item.price) || 0;
-			const discount = item.discountRub || Number(item.discount) || 0;
+				item.snapshotServiceName || item.title || key;
+			const unitPrice = item.unitPriceRub || 0;
+			const discount = item.discountRub || 0;
 			const total = Math.max(0, unitPrice * item.quantity - discount);
 
 			newServices.push({
-				serviceId: item.priceId,
+				serviceId: key,
 				title: serviceTitle,
 				quantity: item.quantity,
 				priceRub: total,
@@ -106,21 +105,16 @@ export const CompletedServicesChecklist: React.FC = () => {
 				}}
 			>
 				{planItems.map((item: any) => {
-					const toothCode = item.toothNumber ? String(item.toothNumber) : null;
+					const key = item.serviceId ?? item.id;
+					const toothCode = item.toothCode ?? null;
 					const isCompleted = completedServices.some(
-						(cs: any) =>
-							cs.serviceId === item.priceId && cs.toothCode === toothCode,
+						(cs: any) => cs.serviceId === key && cs.toothCode === toothCode,
 					);
 
-					// Resolve display title
-					const parts = (item.priceId ?? "").split("::");
 					const serviceTitle =
-						parts.length > 1
-							? parts.slice(1).join("::")
-							: item.snapshotServiceName || item.title || item.priceId;
-
-					const unitPrice = item.unitPriceRub || Number(item.price) || 0;
-					const discount = item.discountRub || Number(item.discount) || 0;
+						item.snapshotServiceName || item.title || key;
+					const unitPrice = item.unitPriceRub || 0;
+					const discount = item.discountRub || 0;
 					const lineTotal = Math.max(0, unitPrice * item.quantity - discount);
 
 					return (
@@ -160,10 +154,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 									}}
 								>
 									{serviceTitle}{" "}
-									{item.toothNumber ? `(зуб ${item.toothNumber})` : ""}
+									{toothCode ? `(зуб ${toothCode})` : ""}
 								</span>
 								<span style={{ fontSize: "0.75rem", color: "var(--slate-500)" }}>
-									Количество: {item.quantity} | Итого:{" "}
+									Кол-во: {item.quantity} | Итого:{" "}
 									{lineTotal.toLocaleString("ru-RU")} ₽
 								</span>
 							</div>

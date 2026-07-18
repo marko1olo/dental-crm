@@ -4962,14 +4962,13 @@ export function useAppLogic(): any {
 		if (!activeTreatmentPlanItems || !visitNoteForm.completedServices) return 0;
 		return visitNoteForm.completedServices.reduce((sum: number, cs: any) => {
 			const matchedItem = activeTreatmentPlanItems.find(
-				(i) =>
-					i.priceId === cs.serviceId &&
-					(i.toothCode === cs.toothCode ||
-						(i.toothNumber ? String(i.toothNumber) : null) === cs.toothCode),
+				(i: any) =>
+					(i.serviceId ?? i.id) === cs.serviceId &&
+					(i.toothCode ?? null) === cs.toothCode,
 			);
 			if (matchedItem) {
-				const unitPrice = matchedItem.unitPriceRub || matchedItem.price || 0;
-				const discount = matchedItem.discountRub || matchedItem.discount || 0;
+				const unitPrice = matchedItem.unitPriceRub || 0;
+				const discount = matchedItem.discountRub || 0;
 				return sum + Math.max(0, unitPrice * matchedItem.quantity - discount);
 			}
 			return sum;
@@ -12596,12 +12595,11 @@ export function useAppLogic(): any {
 			await loadDashboard();
 			// Fire-and-forget: mark checked services as completed in DB
 			const completedItemIds = activeTreatmentPlanItems
-				.filter((item) =>
+				.filter((item: any) =>
 					(visitNoteForm.completedServices || []).some(
 						(cs: any) =>
-							cs.serviceId === item.priceId &&
-							cs.toothCode ===
-								(item.toothNumber ? String(item.toothNumber) : null),
+							cs.serviceId === (item.serviceId ?? item.id) &&
+							cs.toothCode === (item.toothCode ?? null),
 					),
 				)
 				.map((item) => item.id)
