@@ -14,7 +14,7 @@ export interface StaffEntry {
   canManageImports: boolean;
 }
 
-const LS_KEY = "dente-onboarding-draft-v1";
+const LS_KEY = "dente-onboarding-draft-v2";
 
 export function useOnboardingLogic(
   onComplete: () => void,
@@ -68,182 +68,160 @@ export function useOnboardingLogic(
     return null;
   });
 
-  const [step, setStep] = useState(savedData?.step || 1);
+  const [step, setStep] = useState(savedData?.step || 0);
   const [launching, setLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
-  // Clinic Preset / Mode
-  const [preset, setPreset] = useState<"solo" | "clinic" | "enterprise">(
-    savedData?.preset || "clinic"
+  // Step 0: Practice Type
+  const [practiceType, setPracticeType] = useState<"solo" | "solo_with_team" | "small_clinic">(
+    savedData?.practiceType || "solo"
   );
 
-  // Step 1: Specializations
+  // Step 1: Doctor/Owner Info
+  const [doctorName, setDoctorName] = useState(savedData?.doctorName || "Иванов И.И.");
   const [specs, setSpecs] = useState<string[]>(savedData?.specs || ["therapy"]);
+  const [canSign, setCanSign] = useState<boolean>(savedData?.canSign ?? true);
+  
   const toggleSpec = (id: string) =>
     setSpecs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
-  // Step 2: Infrastructure
-  const [chairs, setChairs] = useState(savedData?.chairs || 3);
+  // Step 2: Team (skipped if solo)
+  const [staff, setStaff] = useState<StaffEntry[]>(
+    savedData?.staff || []
+  );
+
+  // Step 3: Workplace
+  const [chairs, setChairs] = useState(savedData?.chairs || 1);
   const [workHours, setWorkHours] = useState<[number, number]>(
     savedData?.workHours || [9, 20],
-  ); // [start, end]
-
-  // Step 3: Modules
-  const [modules, setModules] = useState(
-    savedData?.modules || {
-      lab: true,
-      dms: false,
-      installments: true,
-      egisz: false,
-      aiTreatmentPlan: true,
-      aiRecommendations: true,
-      aiDocuments: true,
-    },
   );
-  const toggleModule = (k: keyof typeof modules) =>
-    setModules((p: any) => ({ ...p, [k]: !p[k] }));
+  const [defaultDuration, setDefaultDuration] = useState(savedData?.defaultDuration || 30);
 
-  // Helper to change preset and auto-configure subsequent defaults
-  const handleSelectPreset = (p: "solo" | "clinic" | "enterprise") => {
-    setPreset(p);
-    if (p === "solo") {
-      setChairs(1);
-      setModules({
-        lab: false,
-        dms: false,
-        installments: true,
-        egisz: false,
-        aiTreatmentPlan: true,
-        aiRecommendations: true,
-        aiDocuments: true,
-      });
-      setStaff([
-        {
-          id: "1",
-          fullName: "Иванов И.И.",
-          role: "Врач",
-          phone: "+7 (999) 000-00-00",
-          specialization: "Терапевт",
-          percentage: 25,
-          canSignMedicalRecords: true,
-          canManageMoney: true,
-          canManageImports: true,
-        },
-      ]);
-    } else if (p === "clinic") {
-      setChairs(3);
-      setModules({
-        lab: true,
-        dms: false,
-        installments: true,
-        egisz: false,
-        aiTreatmentPlan: true,
-        aiRecommendations: true,
-        aiDocuments: true,
-      });
-      setStaff([
-        {
-          id: "1",
-          fullName: "Иванов И.И.",
-          role: "Врач",
-          phone: "+7 (999) 000-00-00",
-          specialization: "Терапевт",
-          percentage: 25,
-          canSignMedicalRecords: true,
-          canManageMoney: false,
-          canManageImports: false,
-        },
-      ]);
-    } else if (p === "enterprise") {
-      setChairs(6);
-      setModules({
-        lab: true,
-        dms: true,
-        installments: true,
-        egisz: true,
-        aiTreatmentPlan: true,
-        aiRecommendations: true,
-        aiDocuments: true,
-      });
-      setStaff([
-        {
-          id: "1",
-          fullName: "Иванов И.И.",
-          role: "Врач",
-          phone: "+7 (999) 000-00-00",
-          specialization: "Терапевт",
-          percentage: 25,
-          canSignMedicalRecords: true,
-          canManageMoney: false,
-          canManageImports: false,
-        },
-      ]);
-    }
-  };
-
-  // Step 4: Branding
-  const [theme, setTheme] = useState<ThemeColor>(savedData?.theme || "teal");
-
-  // Step 5: Staff
-  const [staff, setStaff] = useState<StaffEntry[]>(
-    savedData?.staff || [
-      {
-        id: "1",
-        fullName: "Иванов И.И.",
-        role: "Врач",
-        phone: "+7 (999) 000-00-00",
-        specialization: "Терапевт",
-        percentage: 25,
-        canSignMedicalRecords: true,
-        canManageMoney: false,
-        canManageImports: false,
-      },
-    ],
+  // Step 4: Services & Money
+  const [services, setServices] = useState(
+    savedData?.services || { installments: true, insurance: false }
   );
-
-  // Step 6: Legal
   const [legal, setLegal] = useState(
-    savedData?.legal || { inn: "", ogrn: "", address: "" },
+    savedData?.legal || { inn: "", ogrn: "", address: "" }
+  );
+  const toggleService = (k: keyof typeof services) =>
+    setServices((p: any) => ({ ...p, [k]: !p[k] }));
+
+  // Step 5: Equipment & Tools
+  const [equipment, setEquipment] = useState(
+    savedData?.equipment || {
+      xray: false,
+      lab: false,
+      microscope: false,
+      inventory: false,
+      cso: false
+    }
+  );
+  const toggleEquipment = (k: keyof typeof equipment) =>
+    setEquipment((p: any) => ({ ...p, [k]: !p[k] }));
+
+  // Step 6: Growth & CRM (hidden by default for solo)
+  const [growth, setGrowth] = useState(
+    savedData?.growth || {
+      crm: false,
+      analytics: false,
+      omnichannel: false
+    }
+  );
+  const toggleGrowth = (k: keyof typeof growth) =>
+    setGrowth((p: any) => ({ ...p, [k]: !p[k] }));
+
+  // Step 7: Branding & Migration
+  const [theme, setTheme] = useState<ThemeColor>(savedData?.theme || "teal");
+  const [migrationStatus, setMigrationStatus] = useState<"idle" | "analyzing" | "done">(
+    savedData?.migrationStatus || "idle"
   );
   const [logoUploaded, setLogoUploaded] = useState(
     savedData?.logoUploaded || false,
   );
 
-  // Step 7: Migration
-  const [migrationStatus, setMigrationStatus] = useState<
-    "idle" | "analyzing" | "done"
-  >(savedData?.migrationStatus || "idle");
+  // Helper to change practice type and auto-configure defaults
+  const handleSelectPracticeType = (p: "solo" | "solo_with_team" | "small_clinic") => {
+    setPracticeType(p);
+    if (p === "solo") {
+      setChairs(1);
+      setStaff([]);
+      setEquipment(prev => ({ ...prev, inventory: false }));
+      setGrowth({ crm: false, analytics: false, omnichannel: false });
+    } else if (p === "solo_with_team") {
+      setChairs(1);
+      if (staff.length === 0) {
+        setStaff([
+          {
+            id: "2",
+            fullName: "Ассистент А.А.",
+            role: "Медсестра",
+            phone: "+7 (999) 000-00-01",
+            specialization: "Ассистент",
+            percentage: 0,
+            canSignMedicalRecords: false,
+            canManageMoney: false,
+            canManageImports: false,
+          }
+        ]);
+      }
+    } else if (p === "small_clinic") {
+      setChairs(3);
+      if (staff.length === 0) {
+        setStaff([
+          {
+            id: "2",
+            fullName: "Смирнова С.С.",
+            role: "Администратор",
+            phone: "+7 (999) 000-00-02",
+            specialization: "Ресепшн",
+            percentage: 0,
+            canSignMedicalRecords: false,
+            canManageMoney: true,
+            canManageImports: false,
+          }
+        ]);
+      }
+      setEquipment(prev => ({ ...prev, inventory: true }));
+      setGrowth(prev => ({ ...prev, analytics: true }));
+    }
+  };
 
-  // Save to LocalStorage on change
+  // Smart defaults when specializations change
+  useEffect(() => {
+    setEquipment(prev => ({
+      ...prev,
+      xray: specs.includes("surgery") || specs.includes("orthodontics") || prev.xray,
+      lab: specs.includes("orthopedics") || specs.includes("orthodontics") || prev.lab,
+      microscope: specs.includes("therapy") || prev.microscope,
+    }));
+  }, [specs]);
+
   useEffect(() => {
     localStorage.setItem(
       LS_KEY,
       JSON.stringify({
         step,
-        preset,
+        practiceType,
+        doctorName,
         specs,
+        canSign,
+        staff,
         chairs,
         workHours,
-        modules,
-        theme,
-        staff,
+        defaultDuration,
+        services,
         legal,
-        logoUploaded,
+        equipment,
+        growth,
+        theme,
         migrationStatus,
+        logoUploaded
       }),
     );
   }, [
-    step,
-    preset,
-    specs,
-    chairs,
-    workHours,
-    modules,
-    theme,
-    staff,
-    legal,
-    logoUploaded,
-    migrationStatus,
+    step, practiceType, doctorName, specs, canSign, staff, chairs, workHours, 
+    defaultDuration, services, legal, equipment, growth, theme, migrationStatus, logoUploaded
   ]);
 
   const handleLaunch = async () => {
@@ -251,14 +229,19 @@ export function useOnboardingLogic(
     setLaunching(true);
     try {
       const payload = {
-        preset,
+        practiceType,
+        doctorName,
         specs,
+        canSign,
+        staff,
         chairs,
         workHours,
-        modules,
-        theme,
-        staff,
+        defaultDuration,
+        services,
         legal,
+        equipment,
+        growth,
+        theme,
       };
       await fetch("/api/workspace/onboarding/complete", {
         method: "POST",
@@ -278,28 +261,30 @@ export function useOnboardingLogic(
     setStep,
     launching,
     fadeOut,
-    preset,
-    setPreset,
-    handleSelectPreset,
-    specs,
-    setSpecs,
-    toggleSpec,
-    chairs,
-    setChairs,
-    workHours,
-    setWorkHours,
-    modules,
-    toggleModule,
-    theme,
-    setTheme,
-    staff,
-    setStaff,
-    legal,
-    setLegal,
-    logoUploaded,
-    setLogoUploaded,
-    migrationStatus,
-    setMigrationStatus,
+    
+    practiceType,
+    handleSelectPracticeType,
+    
+    doctorName, setDoctorName,
+    specs, setSpecs, toggleSpec,
+    canSign, setCanSign,
+
+    staff, setStaff,
+
+    chairs, setChairs,
+    workHours, setWorkHours,
+    defaultDuration, setDefaultDuration,
+
+    services, toggleService,
+    legal, setLegal,
+
+    equipment, toggleEquipment,
+    growth, toggleGrowth,
+
+    theme, setTheme,
+    migrationStatus, setMigrationStatus,
+    logoUploaded, setLogoUploaded,
+
     handleLaunch,
   };
 }

@@ -85,6 +85,37 @@ export function GlassCard({
 	);
 }
 
+export function OptionCard({
+	children,
+	selected,
+	onClick,
+	accentColor,
+	isDark,
+	icon,
+	title,
+	description
+}: any) {
+	return (
+		<GlassCard selected={selected} onClick={onClick} accentColor={accentColor} isDark={isDark}>
+			<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+				<div style={{
+					color: selected ? accentColor : isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
+					background: selected ? `${accentColor}15` : isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+					padding: 12,
+					borderRadius: 12,
+				}}>
+					{icon}
+				</div>
+				<div>
+					<h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{title}</h3>
+					{description && <p style={{ margin: "4px 0 0", fontSize: 13, opacity: 0.6 }}>{description}</p>}
+				</div>
+			</div>
+			{children}
+		</GlassCard>
+	);
+}
+
 export function SliderControl({
 	label,
 	value,

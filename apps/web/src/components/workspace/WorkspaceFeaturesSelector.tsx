@@ -1,7 +1,7 @@
 /**
  * WorkspaceFeaturesSelector
- * Glassmorphic feature-toggle panel shown in Settings → "Внешний вид и модули"
- * Reads from useWorkspaceProfileStore and persists changes to the server.
+ * Glassmorphic feature-toggle panel shown in Settings
+ * Grouped by domains, hides advanced features for solo practitioners.
  */
 
 import {
@@ -18,230 +18,167 @@ import {
 	Stethoscope,
 	Users,
 	XCircle,
+	ChevronDown,
+	ChevronUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
 	saveWorkspaceFlags,
 	useWorkspaceProfileStore,
 	type WorkspaceFeatureFlags,
 } from "../../hooks/useWorkspaceProfile";
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Toggle definition
-// ──────────────────────────────────────────────────────────────────────────────
 interface FeatureToggleDef {
-	key: keyof Pick<
-		WorkspaceFeatureFlags,
-		| "hasAssistants"
-		| "hasMultipleChairs"
-		| "hasDentalLab"
-		| "hasInsuranceCoPay"
-		| "hasInstallments"
-		| "hasPayrollModule"
-		| "hasMarketingModule"
-		| "hasAnalyticsModule"
-		| "hasCsoScanner"
-		| "hasLeadsKanban"
-		| "hasOmnichannel"
-		| "hasOrthodontics"
-		| "hasGnathology"
-		| "hasTasks"
-		| "hasReclamations"
-		| "hasPediatricMode"
-		| "hasInventoryModule"
-		| "aiEnableTreatmentPlan"
-		| "aiEnableRecommendations"
-		| "aiEnableDocuments"
-		| "hasEngineeringStatus"
-		| "hasClinicalRules"
-	>;
+	key: keyof WorkspaceFeatureFlags;
 	label: string;
 	description: string;
 	icon: React.ReactNode;
-	color: string; // CSS variable or hsl string
+	color: string;
+	advanced?: boolean;
 }
 
-const FEATURE_TOGGLES: FeatureToggleDef[] = [
-	{
-		key: "hasAssistants",
-		label: "Ассистенты",
-		description:
-			"Отключите, если работаете без ассистента — подписывать карты приёмов станет одним кликом, без промежуточного черновика.",
-		icon: <Users size={20} />,
-		color: "hsl(262 80% 65%)",
-	},
-	{
-		key: "hasMultipleChairs",
-		label: "Несколько кресел",
-		description:
-			"Отключите для кабинета с одной установкой — календарь схлопнется в чистый вертикальный таймлайн без заголовков кресел.",
-		icon: <LayoutGrid size={20} />,
-		color: "hsl(210 80% 60%)",
-	},
-	{
-		key: "hasDentalLab",
-		label: "Зуботехническая лаборатория",
-		description:
-			"Отключите, если не занимаетесь протезированием — скроет вкладку «Заказы в лабораторию» и индикаторы доставки коронок в расписании.",
-		icon: <FlaskConical size={20} />,
-		color: "hsl(160 70% 50%)",
-	},
-	{
-		key: "hasInsuranceCoPay",
-		label: "Страховое со-платёж (ДМС)",
-		description:
-			"Отключите, если не работаете по ДМС — из планировщика смет исчезнет колонка «Оплачивает страховая», останется чистая цена.",
-		icon: <ShieldPlus size={20} />,
-		color: "hsl(40 85% 55%)",
-	},
-	{
-		key: "hasInstallments",
-		label: "Рассрочка платежей",
-		description:
-			"Отключите, если не предлагаете рассрочку — из сметы удалится калькулятор и слайдер ежемесячных платежей.",
-		icon: <CreditCard size={20} />,
-		color: "hsl(340 75% 60%)",
-	},
-	{
-		key: "hasPayrollModule",
-		label: "Модуль «Зарплаты и комиссии»",
-		description:
-			"Отключите, если вы работаете один или считаете зарплаты в другой программе.",
-		icon: <LayoutGrid size={20} />,
-		color: "hsl(140 70% 45%)",
-	},
-	{
-		key: "hasMarketingModule",
-		label: "Модуль «Маркетинг»",
-		description:
-			"Отключите, если не ведете рекламные кампании и не используете воронку конверсий.",
-		icon: <Users size={20} />,
-		color: "hsl(35 90% 55%)",
-	},
-	{
-		key: "hasAnalyticsModule",
-		label: "Модуль «Аналитика»",
-		description:
-			"Отключите для максимального упрощения интерфейса, если вам не нужны сложные отчеты.",
-		icon: <LayoutGrid size={20} />,
-		color: "hsl(280 80% 65%)",
-	},
-	{
-		key: "hasOrthodontics",
-		label: "Ортодонтия",
-		description: "Лечение на брекет-системах и элайнерах.",
-		icon: <ShieldPlus size={20} />,
-		color: "hsl(200 80% 50%)",
-	},
-	{
-		key: "hasGnathology",
-		label: "Гнатология и Остеопатия",
-		description: "Специализированные протоколы для диагностики и лечения ВНЧС.",
-		icon: <Stethoscope size={20} />,
-		color: "hsl(180 80% 40%)",
-	},
-	{
-		key: "hasTasks",
-		label: "Задачи по пациентам",
-		description:
-			"Включает функционал поручений (тикетов) для администраторов и врачей прямо в карточке.",
-		icon: <CheckCircle2 size={20} />,
-		color: "hsl(100 70% 45%)",
-	},
-	{
-		key: "hasReclamations",
-		label: "Рекламации и осложнения",
-		description:
-			"Включает модуль фиксации жалоб, осложнений и гарантийных случаев.",
-		icon: <XCircle size={20} />,
-		color: "hsl(350 80% 60%)",
-	},
-	{
-		key: "hasPediatricMode",
-		label: "Детский прием",
-		description:
-			"Включает детскую зубную формулу (молочные зубы) и специальные детские протоколы.",
-		icon: <CheckCircle2 size={20} />,
-		color: "hsl(320 70% 60%)",
-	},
-	{
-		key: "hasInventoryModule",
-		label: "Складской учет (Inventory)",
-		description:
-			"Учет расходных материалов, контроль остатков и планирование закупок.",
-		icon: <LayoutGrid size={20} />,
-		color: "hsl(220 80% 50%)",
-	},
-	{
-		key: "hasCsoScanner",
-		label: "Сканнер лотков (ЦСО)",
-		description:
-			"Модуль стерилизации: учет медицинских лотков, сканирование штрих-кодов и контроль сроков.",
-		icon: <CheckCircle2 size={20} />,
-		color: "hsl(210 80% 50%)",
-	},
-	{
-		key: "hasLeadsKanban",
-		label: "Канбан Лидов (CRM)",
-		description:
-			"Воронка продаж: учет потенциальных пациентов, статусы сделок и контроль первичных записей.",
-		icon: <LayoutGrid size={20} />,
-		color: "hsl(25 80% 50%)",
-	},
-	{
-		key: "hasOmnichannel",
-		label: "Омниканальная Почта",
-		description:
-			"Единый инбокс для мессенджеров (WhatsApp, Telegram) и email для общения с пациентами.",
-		icon: <MessageSquare size={20} />,
-		color: "hsl(200 80% 45%)",
-	},
+type FeatureDomain = "Clinical" | "Equipment" | "Finance" | "Growth" | "Organization" | "AI & System";
 
-	{
-		key: "aiEnableTreatmentPlan",
-		label: "AI: Генерация планов лечения",
-		description:
-			"Нейросеть автоматически формирует персонализированный план лечения на основе диктовки.",
-		icon: <Blocks size={20} />,
-		color: "hsl(280 80% 65%)",
-	},
-	{
-		key: "aiEnableRecommendations",
-		label: "AI: Выдача рекомендаций",
-		description:
-			"Нейросеть автоматически подбирает и персонализирует рекомендации после приёма.",
-		icon: <Blocks size={20} />,
-		color: "hsl(280 80% 65%)",
-	},
-	{
-		key: "aiEnableDocuments",
-		label: "AI: Подбор ИДС и документов",
-		description:
-			"Нейросеть автоматически предлагает необходимые юридические документы для подписания.",
-		icon: <Blocks size={20} />,
-		color: "hsl(280 80% 65%)",
-	},
-	{
-		key: "hasEngineeringStatus",
-		label: "Инженерный статус (Отладка)",
-		description:
-			"Отображает полоску статуса синхронизации черновиков и техническую отладку. Отключите для частного кабинета, чтобы не перегружать интерфейс.",
-		icon: <Server size={20} />,
-		color: "hsl(215 16% 47%)",
-	},
-	{
-		key: "hasClinicalRules",
-		label: "Клинические правила и протоколы",
-		description:
-			"Сложная система валидации приёма и стандартов лечения. Отключите, если у вас частная практика без жестких регламентов.",
-		icon: <Activity size={20} />,
-		color: "hsl(348 83% 47%)",
-	},
-];
+const FEATURE_DOMAINS: Record<FeatureDomain, FeatureToggleDef[]> = {
+	"Organization": [
+		{
+			key: "hasMultipleChairs",
+			label: "Несколько кресел",
+			description: "Отключите для кабинета с одной установкой — календарь станет чистым вертикальным таймлайном.",
+			icon: <LayoutGrid size={20} />,
+			color: "hsl(210 80% 60%)",
+		},
+		{
+			key: "hasAssistants",
+			label: "Ассистенты",
+			description: "Если вы работаете один — отключите. Подписывать карты станет можно в 1 клик.",
+			icon: <Users size={20} />,
+			color: "hsl(262 80% 65%)",
+		},
+	],
+	"Clinical": [
+		{
+			key: "hasPediatricMode",
+			label: "Детский прием",
+			description: "Включает детскую зубную формулу и адаптационные протоколы.",
+			icon: <CheckCircle2 size={20} />,
+			color: "hsl(320 70% 60%)",
+		},
+		{
+			key: "hasOrthodontics",
+			label: "Ортодонтия",
+			description: "Лечение на брекет-системах и элайнерах.",
+			icon: <ShieldPlus size={20} />,
+			color: "hsl(200 80% 50%)",
+		},
+		{
+			key: "hasGnathology",
+			label: "Гнатология",
+			description: "Специализированные протоколы для диагностики ВНЧС.",
+			icon: <Stethoscope size={20} />,
+			color: "hsl(180 80% 40%)",
+		},
+		{
+			key: "hasReclamations",
+			label: "Рекламации и осложнения",
+			description: "Включает модуль фиксации жалоб и гарантийных случаев.",
+			icon: <XCircle size={20} />,
+			color: "hsl(350 80% 60%)",
+		},
+	],
+	"Equipment": [
+		{
+			key: "hasDentalLab",
+			label: "Зуботехническая лаборатория",
+			description: "Заказ-наряды и статусы работ.",
+			icon: <FlaskConical size={20} />,
+			color: "hsl(160 70% 50%)",
+		},
+		{
+			key: "hasInventoryModule",
+			label: "Складской учет",
+			description: "Списание материалов, контроль остатков.",
+			icon: <LayoutGrid size={20} />,
+			color: "hsl(220 80% 50%)",
+			advanced: true,
+		},
+	],
+	"Finance": [
+		{
+			key: "hasInsuranceCoPay",
+			label: "Работа по ДМС",
+			description: "Гарантийные письма, со-платежи в сметах.",
+			icon: <ShieldPlus size={20} />,
+			color: "hsl(40 85% 55%)",
+		},
+		{
+			key: "hasInstallments",
+			label: "Рассрочка платежей",
+			description: "Калькулятор ежемесячных платежей в сметах.",
+			icon: <CreditCard size={20} />,
+			color: "hsl(340 75% 60%)",
+		},
+		{
+			key: "hasPayrollModule",
+			label: "Зарплаты и комиссии",
+			description: "Расчет процента для врачей и ассистентов.",
+			icon: <LayoutGrid size={20} />,
+			color: "hsl(140 70% 45%)",
+			advanced: true,
+		},
+	],
+	"Growth": [
+		{
+			key: "hasTasks",
+			label: "Задачи по пациентам",
+			description: "Включает функционал поручений прямо в карточке.",
+			icon: <CheckCircle2 size={20} />,
+			color: "hsl(100 70% 45%)",
+		},
+		{
+			key: "hasMarketingModule",
+			label: "Маркетинг",
+			description: "Воронки конверсий, рекламные кампании.",
+			icon: <Users size={20} />,
+			color: "hsl(35 90% 55%)",
+			advanced: true,
+		},
+		{
+			key: "hasAnalyticsModule",
+			label: "Аналитика",
+			description: "Сложные финансовые отчеты.",
+			icon: <LayoutGrid size={20} />,
+			color: "hsl(280 80% 65%)",
+			advanced: true,
+		},
+	],
+	"AI & System": [
+		{
+			key: "aiEnableTreatmentPlan",
+			label: "AI: План лечения",
+			description: "Авто-формирование плана на основе диктовки.",
+			icon: <Blocks size={20} />,
+			color: "hsl(280 80% 65%)",
+		},
+		{
+			key: "hasEngineeringStatus",
+			label: "Инженерный статус",
+			description: "Отображает полоску статуса синхронизации.",
+			icon: <Server size={20} />,
+			color: "hsl(215 16% 47%)",
+			advanced: true,
+		},
+		{
+			key: "hasClinicalRules",
+			label: "Строгие клинические протоколы",
+			description: "Система валидации стандартов лечения.",
+			icon: <Activity size={20} />,
+			color: "hsl(348 83% 47%)",
+			advanced: true,
+		},
+	],
+};
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Toggle switch component
-// ──────────────────────────────────────────────────────────────────────────────
 function ToggleSwitch({
 	checked,
 	onChange,
@@ -291,13 +228,13 @@ function ToggleSwitch({
 	);
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Main component
-// ──────────────────────────────────────────────────────────────────────────────
 export function WorkspaceFeaturesSelector() {
 	const store = useWorkspaceProfileStore();
 	const [saving, setSaving] = useState<string | null>(null);
 	const [saved, setSaved] = useState<string | null>(null);
+	const [showAdvanced, setShowAdvanced] = useState(false);
+
+	const isSolo = store.clinicMode === "solo_doctor";
 
 	async function handleToggle(
 		key: keyof WorkspaceFeatureFlags,
@@ -314,123 +251,99 @@ export function WorkspaceFeaturesSelector() {
 	}
 
 	return (
-		<div
-			id="workspace-features-selector"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: 12,
-			}}
-		>
-			<p style={{ margin: "0 0 4px", opacity: 0.6, fontSize: 13 }}>
-				Активный профиль:{" "}
-				<strong style={{ textTransform: "capitalize" }}>
-					{store.workspacePreset.replace(/_/g, " ")}
-				</strong>
-			</p>
+		<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+			{Object.entries(FEATURE_DOMAINS).map(([domain, toggles]) => {
+				const visibleToggles = isSolo && !showAdvanced 
+					? toggles.filter(t => !t.advanced)
+					: toggles;
 
-			{FEATURE_TOGGLES.map((def) => {
-				const isOn = store[def.key] as boolean;
-				const isSaving = saving === def.key;
-				const isSaved = saved === def.key;
+				if (visibleToggles.length === 0) return null;
 
 				return (
-					<div
-						key={def.key}
-						id={`feature-toggle-${def.key}`}
-						style={{
-							display: "flex",
-							alignItems: "flex-start",
-							gap: 14,
-							padding: "14px 18px",
-							borderRadius: 14,
-							background: "rgba(255,255,255,.04)",
-							backdropFilter: "blur(10px)",
-							border: `1.5px solid ${isOn ? def.color + "55" : "rgba(255,255,255,.08)"}`,
-							transition: "border-color .3s",
-						}}
-					>
-						<div
-							style={{
-								marginTop: 2,
-								width: 36,
-								height: 36,
-								borderRadius: 10,
-								background: isOn ? def.color + "20" : "rgba(255,255,255,.06)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								color: isOn ? def.color : "rgba(255,255,255,.35)",
-								flexShrink: 0,
-								transition: "background .3s, color .3s",
-							}}
-						>
-							{def.icon}
-						</div>
+					<div key={domain}>
+						<h3 style={{ fontSize: 14, fontWeight: 600, opacity: 0.6, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>
+							{domain}
+						</h3>
+						<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+							{visibleToggles.map((def) => {
+								const isOn = store[def.key] as boolean;
+								const isSaving = saving === def.key;
+								const isSaved = saved === def.key;
 
-						<div style={{ flex: 1, minWidth: 0 }}>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-									marginBottom: 4,
-								}}
-							>
-								<span style={{ fontWeight: 600, fontSize: 15 }}>
-									{def.label}
-								</span>
-								{isSaving && (
-									<Loader2
-										size={14}
-										className="animate-spin"
-										style={{ opacity: 0.5 }}
-									/>
-								)}
-								{isSaved && (
-									<CheckCircle2 size={14} style={{ color: "#4ade80" }} />
-								)}
-							</div>
-							<p
-								style={{
-									margin: 0,
-									fontSize: 13,
-									opacity: 0.58,
-									lineHeight: 1.5,
-								}}
-							>
-								{def.description}
-							</p>
-						</div>
-
-						<div style={{ marginTop: 8 }}>
-							<ToggleSwitch
-								checked={isOn}
-								onChange={(v) => handleToggle(def.key, v)}
-								color={def.color}
-							/>
+								return (
+									<div
+										key={def.key}
+										style={{
+											display: "flex",
+											alignItems: "flex-start",
+											gap: 14,
+											padding: "14px 18px",
+											borderRadius: 14,
+											background: "rgba(255,255,255,.04)",
+											backdropFilter: "blur(10px)",
+											border: `1.5px solid ${isOn ? def.color + "55" : "rgba(255,255,255,.08)"}`,
+											transition: "border-color .3s",
+										}}
+									>
+										<div
+											style={{
+												marginTop: 2,
+												width: 36,
+												height: 36,
+												borderRadius: 10,
+												background: isOn ? def.color + "20" : "rgba(255,255,255,.06)",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												color: isOn ? def.color : "rgba(255,255,255,.35)",
+												flexShrink: 0,
+												transition: "background .3s, color .3s",
+											}}
+										>
+											{def.icon}
+										</div>
+										<div style={{ flex: 1, minWidth: 0 }}>
+											<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+												<span style={{ fontWeight: 600, fontSize: 15 }}>{def.label}</span>
+												{isSaving && <Loader2 size={14} className="animate-spin" style={{ opacity: 0.5 }} />}
+												{isSaved && <CheckCircle2 size={14} style={{ color: "#4ade80" }} />}
+											</div>
+											<p style={{ margin: 0, fontSize: 13, opacity: 0.58, lineHeight: 1.5 }}>
+												{def.description}
+											</p>
+										</div>
+										<div style={{ marginTop: 8 }}>
+											<ToggleSwitch checked={isOn} onChange={(v) => handleToggle(def.key, v)} color={def.color} />
+										</div>
+									</div>
+								);
+							})}
 						</div>
 					</div>
 				);
 			})}
 
-			<div
-				style={{
-					marginTop: 8,
-					padding: "10px 16px",
-					borderRadius: 10,
-					background: "rgba(255,255,255,.03)",
-					border: "1px solid rgba(255,255,255,.07)",
-					fontSize: 12,
-					opacity: 0.5,
-					display: "flex",
-					alignItems: "center",
-					gap: 6,
-				}}
-			>
-				<Stethoscope size={13} />
-				Изменения применяются мгновенно и сохраняются в базе данных клиники.
-			</div>
+			{isSolo && (
+				<button
+					onClick={() => setShowAdvanced(!showAdvanced)}
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 8,
+						padding: "12px",
+						background: "transparent",
+						border: "1px dashed rgba(255,255,255,0.2)",
+						borderRadius: 12,
+						color: "inherit",
+						opacity: 0.7,
+						cursor: "pointer"
+					}}
+				>
+					{showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+					{showAdvanced ? "Скрыть расширенные настройки" : "Показать расширенные настройки (Склад, Зарплаты и др.)"}
+				</button>
+			)}
 		</div>
 	);
 }

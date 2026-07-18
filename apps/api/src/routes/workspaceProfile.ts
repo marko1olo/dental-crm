@@ -569,6 +569,10 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 		) {
 			await db.transaction(async (tx) => {
 				// 1. Update organizations
+				// Smart mapping based on Practice Type and Specializations
+				const isSolo = payload.practiceType === "solo";
+				const isSmallClinic = payload.practiceType === "small_clinic";
+
 				await tx
 					.update(schema.organizations)
 					.set({
@@ -579,25 +583,34 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 						inn: payload.legal?.inn || null,
 						ogrn: payload.legal?.ogrn || null,
 						legalAddress: payload.legal?.address || null,
-						hasAssistants: payload.preset === "solo" ? false : true,
-						hasDentalLab: payload.modules?.lab || false,
+
+						// Smart Mapping from New Payload
+						hasAssistants: !isSolo,
 						hasMultipleChairs: (payload.chairs || 1) > 1,
-						hasInsuranceCoPay: payload.modules?.dms || false,
-						hasInstallments: payload.modules?.installments || false,
-						hasOrthodontics: true,
-						hasTasks: true,
-						hasReclamations: true,
+						
+						hasDentalLab: payload.equipment?.lab || false,
+						hasInventoryModule: payload.equipment?.inventory || false,
+						
+						hasInsuranceCoPay: payload.services?.insurance || false,
+						hasInstallments: payload.services?.installments || false,
+						
 						hasPediatricMode: payload.specs?.includes("pediatrics") || false,
-						requiresMigration: payload.requiresMigration || false,
-						workspacePreset: payload.preset || "custom",
-						clinicMode: payload.preset === "solo" ? "solo_doctor" : payload.preset === "enterprise" ? "network" : "small_clinic",
-						hasPayrollModule: payload.preset === "solo" ? false : ((payload.chairs || 1) > 1),
-						hasMarketingModule: payload.preset === "enterprise",
-						hasAnalyticsModule: payload.preset !== "solo",
-						hasInventoryModule: payload.preset !== "solo",
-						aiEnableTreatmentPlan: payload.modules?.aiTreatmentPlan ?? true,
-						aiEnableRecommendations: payload.modules?.aiRecommendations ?? true,
-						aiEnableDocuments: payload.modules?.aiDocuments ?? true,
+						hasOrthodontics: payload.specs?.includes("orthodontics") || false,
+						
+						hasTasks: payload.growth?.crm ?? true,
+						hasReclamations: true,
+						hasMarketingModule: payload.growth?.omnichannel || false,
+						hasAnalyticsModule: payload.growth?.analytics || false,
+						hasPayrollModule: isSmallClinic,
+
+						aiEnableTreatmentPlan: true,
+						aiEnableRecommendations: true,
+						aiEnableDocuments: true,
+
+						requiresMigration: payload.migrationStatus === "analyzing",
+						workspacePreset: isSolo ? "solo_therapist" : "custom",
+						clinicMode: isSolo ? "solo_doctor" : isSmallClinic ? "small_clinic" : "small_clinic",
+
 						workingHours: [
 							{
 								day: "monday",

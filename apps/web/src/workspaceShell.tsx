@@ -229,12 +229,6 @@ export function WorkspaceSidebar({
 	const flags = useWorkspaceProfile();
 	let allowedViews = filterViewsByFlags(getFilteredAppViews(role), flags);
 
-	if (clinicMode === "solo_doctor" || clinicMode === "one_chair") {
-		// Clean up UI for solo practices by hiding enterprise-heavy modules
-		const hideForSmall = ["payroll", "inventory", "marketing", "analytics", "leads"];
-		allowedViews = allowedViews.filter((v) => !hideForSmall.includes(v));
-	}
-
 	return (
 		<aside className="sidebar" aria-label="Навигация">
 			<div className="brand-mark">

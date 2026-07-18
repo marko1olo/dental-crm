@@ -1,19 +1,18 @@
 import {
 	ChevronLeft,
-	ChevronRight,
-	ListTodo,
 	Loader2,
 	Play,
 	Sparkles,
 } from "lucide-react";
 import React from "react";
-import { Step1Specializations } from "./onboarding/steps/Step1Specializations";
-import { Step2Infrastructure } from "./onboarding/steps/Step2Infrastructure";
-import { Step3Modules } from "./onboarding/steps/Step3Modules";
-import { Step4Branding } from "./onboarding/steps/Step4Branding";
-import { Step5Staff } from "./onboarding/steps/Step5Staff";
-import { Step6Legal } from "./onboarding/steps/Step6Legal";
-import { Step7Migration } from "./onboarding/steps/Step7Migration";
+import { Step0PracticeType } from "./onboarding/steps/Step0PracticeType";
+import { Step1Doctor } from "./onboarding/steps/Step1Doctor";
+import { Step2Team } from "./onboarding/steps/Step2Team";
+import { Step3Workplace } from "./onboarding/steps/Step3Workplace";
+import { Step4Services } from "./onboarding/steps/Step4Services";
+import { Step5Equipment } from "./onboarding/steps/Step5Equipment";
+import { Step6Growth } from "./onboarding/steps/Step6Growth";
+import { Step7Branding } from "./onboarding/steps/Step7Branding";
 import { THEME_COLORS } from "./onboarding/ui/SharedOnboardingUI";
 import { useOnboardingLogic } from "./onboarding/useOnboardingLogic";
 
@@ -45,19 +44,23 @@ export function OnboardingSetupWizard({
 
 	const goBack = () => {
 		let prev = logic.step - 1;
-		if (logic.preset === "solo" && prev === 5) prev = 4;
-		logic.setStep(Math.max(1, prev));
+		if (logic.practiceType === "solo" && prev === 2) prev = 1; // Skip team step back
+		logic.setStep(Math.max(0, prev));
 	};
 
 	const goNext = () => {
 		if (logic.step < 7) {
 			let next = logic.step + 1;
-			if (logic.preset === "solo" && next === 5) next = 6;
+			if (logic.practiceType === "solo" && next === 2) next = 3; // Skip team step forward
 			logic.setStep(next);
 		} else {
 			logic.handleLaunch();
 		}
 	};
+
+	const stepsList = [0, 1, 2, 3, 4, 5, 6, 7].filter(
+		(s) => !(logic.practiceType === "solo" && s === 2)
+	);
 
 	return (
 		<div
@@ -104,22 +107,6 @@ export function OnboardingSetupWizard({
 				>
 					<Sparkles size={14} /> DENTE Setup Wizard
 				</div>
-				<h1
-					style={{
-						margin: "0 0 24px",
-						fontSize: "clamp(24px,4vw,34px)",
-						fontWeight: 800,
-						letterSpacing: "-0.5px",
-					}}
-				>
-					{logic.step === 1 && "Шаг 1. Кто мы?"}
-					{logic.step === 2 && "Шаг 2. Инфраструктура"}
-					{logic.step === 3 && "Шаг 3. Инструменты"}
-					{logic.step === 4 && "Шаг 4. Брендинг"}
-					{logic.step === 5 && "Шаг 5. Команда"}
-					{logic.step === 6 && "Шаг 6. Реквизиты"}
-					{logic.step === 7 && "Шаг 7. База Данных"}
-				</h1>
 				<div
 					style={{
 						display: "flex",
@@ -128,9 +115,7 @@ export function OnboardingSetupWizard({
 						marginBottom: 32,
 					}}
 				>
-					{[1, 2, 3, 4, 5, 6, 7]
-						.filter((s) => !(logic.preset === "solo" && s === 5))
-						.map((s) => (
+					{stepsList.map((s) => (
 						<div
 							key={s}
 							style={{
@@ -170,70 +155,91 @@ export function OnboardingSetupWizard({
 						width: "100%",
 					}}
 				>
+					{logic.step === 0 && (
+						<Step0PracticeType
+							practiceType={logic.practiceType}
+							handleSelectPracticeType={logic.handleSelectPracticeType}
+							accentColor={accentColor}
+							isDark={logic.isDark}
+							textColor={textColor}
+						/>
+					)}
 					{logic.step === 1 && (
-						<Step1Specializations
+						<Step1Doctor
+							doctorName={logic.doctorName}
+							setDoctorName={logic.setDoctorName}
 							specs={logic.specs}
 							toggleSpec={logic.toggleSpec}
-							setSpecs={logic.setSpecs}
-							preset={logic.preset}
-							handleSelectPreset={logic.handleSelectPreset}
+							canSign={logic.canSign}
+							setCanSign={logic.setCanSign}
 							accentColor={accentColor}
 							isDark={logic.isDark}
 							textColor={textColor}
 						/>
 					)}
 					{logic.step === 2 && (
-						<Step2Infrastructure
+						<Step2Team
+							staff={logic.staff}
+							setStaff={logic.setStaff}
+							accentColor={accentColor}
+							isDark={logic.isDark}
+							textColor={textColor}
+						/>
+					)}
+					{logic.step === 3 && (
+						<Step3Workplace
 							chairs={logic.chairs}
 							setChairs={logic.setChairs}
 							workHours={logic.workHours}
 							setWorkHours={logic.setWorkHours}
+							defaultDuration={logic.defaultDuration}
+							setDefaultDuration={logic.setDefaultDuration}
+							practiceType={logic.practiceType}
 							accentColor={accentColor}
 							isDark={logic.isDark}
-						/>
-					)}
-					{logic.step === 3 && (
-						<Step3Modules
-							modules={logic.modules}
-							toggleModule={logic.toggleModule}
-							accentColor={accentColor}
-							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 					{logic.step === 4 && (
-						<Step4Branding
-							theme={logic.theme}
-							setTheme={logic.setTheme}
+						<Step4Services
+							services={logic.services}
+							toggleService={logic.toggleService}
+							legal={logic.legal}
+							setLegal={logic.setLegal}
+							accentColor={accentColor}
 							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 					{logic.step === 5 && (
-						<Step5Staff
-							staff={logic.staff}
-							setStaff={logic.setStaff}
-							specs={logic.specs}
+						<Step5Equipment
+							equipment={logic.equipment}
+							toggleEquipment={logic.toggleEquipment}
 							accentColor={accentColor}
 							isDark={logic.isDark}
 							textColor={textColor}
 						/>
 					)}
 					{logic.step === 6 && (
-						<Step6Legal
-							legal={logic.legal}
-							setLegal={logic.setLegal}
-							logoUploaded={logic.logoUploaded}
-							setLogoUploaded={logic.setLogoUploaded}
+						<Step6Growth
+							growth={logic.growth}
+							toggleGrowth={logic.toggleGrowth}
 							accentColor={accentColor}
 							isDark={logic.isDark}
 							textColor={textColor}
 						/>
 					)}
 					{logic.step === 7 && (
-						<Step7Migration
+						<Step7Branding
+							theme={logic.theme}
+							setTheme={logic.setTheme}
 							migrationStatus={logic.migrationStatus}
 							setMigrationStatus={logic.setMigrationStatus}
+							logoUploaded={logic.logoUploaded}
+							setLogoUploaded={logic.setLogoUploaded}
 							accentColor={accentColor}
 							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 
@@ -249,15 +255,15 @@ export function OnboardingSetupWizard({
 					>
 						<button
 							onClick={goBack}
-							disabled={logic.step === 1 || logic.launching}
+							disabled={logic.step === 0 || logic.launching}
 							style={{
 								padding: "12px 24px",
 								borderRadius: 12,
 								background: "transparent",
 								border: `1px solid ${logic.isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}`,
 								color: textColor,
-								cursor: logic.step === 1 ? "not-allowed" : "pointer",
-								opacity: logic.step === 1 ? 0.5 : 1,
+								cursor: logic.step === 0 ? "not-allowed" : "pointer",
+								opacity: logic.step === 0 ? 0.5 : 1,
 							}}
 						>
 							Назад
@@ -266,7 +272,8 @@ export function OnboardingSetupWizard({
 							onClick={goNext}
 							disabled={
 								logic.launching ||
-								(logic.step === 1 && logic.specs.length === 0)
+								(logic.step === 1 && logic.specs.length === 0) ||
+								(logic.step === 1 && !logic.doctorName.trim())
 							}
 							style={{
 								display: "flex",
@@ -275,19 +282,19 @@ export function OnboardingSetupWizard({
 								padding: "12px 32px",
 								borderRadius: 12,
 								background:
-									logic.step === 1 && logic.specs.length === 0
+									(logic.step === 1 && logic.specs.length === 0) || (logic.step === 1 && !logic.doctorName.trim())
 										? "gray"
 										: accentColor,
 								color: "#fff",
 								border: "none",
 								cursor:
-									logic.step === 1 && logic.specs.length === 0
+									(logic.step === 1 && logic.specs.length === 0) || (logic.step === 1 && !logic.doctorName.trim())
 										? "not-allowed"
 										: "pointer",
 								fontWeight: 600,
 								fontSize: 16,
 								boxShadow:
-									logic.step === 1 && logic.specs.length === 0
+									(logic.step === 1 && logic.specs.length === 0) || (logic.step === 1 && !logic.doctorName.trim())
 										? "none"
 										: `0 4px 12px ${accentColor}66`,
 							}}
@@ -297,81 +304,12 @@ export function OnboardingSetupWizard({
 							) : logic.step < 7 ? (
 								"Далее"
 							) : (
-								"Запустить DENTE"
+								<>
+									<Play size={18} fill="currentColor" />
+									Запустить DENTE
+								</>
 							)}
-							{!logic.launching && logic.step < 7 && <ChevronRight size={20} />}
-							{!logic.launching && logic.step === 7 && <Play size={20} />}
 						</button>
-					</div>
-				</div>
-
-				{/* Sticky Summary */}
-				<div
-					style={{
-						flex: "0 1 300px",
-						background: logic.isDark
-							? "rgba(255,255,255,0.03)"
-							: "rgba(0,0,0,0.03)",
-						padding: 24,
-						borderRadius: 24,
-						backdropFilter: "blur(20px)",
-						height: "fit-content",
-						position: "sticky",
-						top: 20,
-					}}
-				>
-					<h3
-						style={{
-							marginBottom: 16,
-							display: "flex",
-							alignItems: "center",
-							gap: 8,
-						}}
-					>
-						<ListTodo size={20} color={accentColor} /> Итог настройки
-					</h3>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 12,
-							fontSize: 14,
-						}}
-					>
-						<div style={{ display: "flex", justifyContent: "space-between" }}>
-							<span>Направления:</span>{" "}
-							<span style={{ fontWeight: 600 }}>
-								{logic.specs.length} выбр.
-							</span>
-						</div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}>
-							<span>Кресел:</span>{" "}
-							<span style={{ fontWeight: 600 }}>{logic.chairs} шт.</span>
-						</div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}>
-							<span>Часы работы:</span>{" "}
-							<span style={{ fontWeight: 600 }}>
-								{logic.workHours[0]}:00 - {logic.workHours[1]}:00
-							</span>
-						</div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}>
-							<span>Врачей:</span>{" "}
-							<span style={{ fontWeight: 600 }}>{logic.staff.length} чел.</span>
-						</div>
-						{logic.legal.inn && (
-							<div style={{ display: "flex", justifyContent: "space-between" }}>
-								<span>ИНН:</span>{" "}
-								<span style={{ fontWeight: 600 }}>{logic.legal.inn}</span>
-							</div>
-						)}
-						{logic.migrationStatus === "done" && (
-							<div style={{ display: "flex", justifyContent: "space-between" }}>
-								<span>База:</span>{" "}
-								<span style={{ fontWeight: 600, color: "#10b981" }}>
-									4521 пац.
-								</span>
-							</div>
-						)}
 					</div>
 				</div>
 			</div>
