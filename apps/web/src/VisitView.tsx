@@ -23,7 +23,11 @@ import { GnathologyForm } from "./components/visit/GnathologyForm";
 import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { VisitDictation } from "./components/visit/VisitDictation";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitFlowProgress } from "./components/visit/VisitFlowProgress";
+import { CheckoutDrawer } from "./components/finance/CheckoutDrawer";
+import { PaymentCapture } from "./PaymentCapture";
+import { formatCurrencyNumeric } from "./utils/inputSanitation";
 import { VisitHeader } from "./components/visit/VisitHeader";
 import { VisitPaymentOverlay } from "./components/visit/VisitPaymentOverlay";
 import { VisitDocsOverlay } from "./components/visit/VisitDocsOverlay";
@@ -42,7 +46,6 @@ import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import "./styles/VisitView.css";
 import { VisitToothMap } from "./components/visit/VisitToothMap";
-import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitToothContextMenu } from "./components/visit/VisitToothContextMenu";
 import { VisitTabNavigation, VisitTabType } from "./components/visit/VisitTabNavigation";
 import { VisitConclusionTab } from "./components/visit/VisitConclusionTab";
@@ -93,6 +96,48 @@ export function VisitView() {
 		openVisitWarningAction,
 		pendingSpeechChunkCount,
 		pendingSpeechFlushActionLabel,
+
+		// Finance variables
+		isPaymentSaving,
+		createDocument: onCreateDocument,
+		recordPayment: onRecordPayment,
+		paymentAmount,
+		paymentFeedback,
+		paymentFiscalCashierName,
+		paymentFiscalFd,
+		paymentFiscalFn,
+		paymentFiscalFpd,
+		paymentFiscalReceiptIssuedAt,
+		paymentFiscalReceiptNumber,
+		paymentFiscalReceiptUrl,
+		paymentMethod,
+		paymentMethodLabels,
+		paymentPatientContextMessage,
+		paymentPatientContextReady,
+		paymentPayerBirthDate,
+		paymentPayerFullName,
+		paymentPayerIdentityDocument,
+		paymentPayerInn,
+		paymentPayerRelationship,
+		paymentTaxDeductionCode,
+		setPaymentAmount,
+		setPaymentFiscalCashierName,
+		setPaymentFiscalFd,
+		setPaymentFiscalFn,
+		setPaymentFiscalFpd,
+		setPaymentFiscalReceiptIssuedAt,
+		setPaymentFiscalReceiptNumber,
+		setPaymentFiscalReceiptUrl,
+		setPaymentMethod,
+		setPaymentPayerBirthDate,
+		setPaymentPayerFullName,
+		setPaymentPayerIdentityDocument,
+		setPaymentPayerInn,
+		setPaymentPayerRelationship,
+		setPaymentTaxDeductionCode,
+		patientBillingSummary: billingSummary,
+		documentPatient,
+
 		pendingSpeechFlushActionTitle,
 		pendingVisitSaveCount,
 		polishTranscript,
@@ -408,18 +453,63 @@ export function VisitView() {
 					showToast("Прием подписан", "success");
 				}}
 			/>
-			{isPaymentOpen && (
-				<VisitPaymentOverlay 
-					onClose={() => setIsPaymentOpen(false)}
-					totalAmount={5500} // Mock total
-					patientName={activePatient.fullName}
-					hasInstallments={workspaceFlags.hasInstallments}
+			<CheckoutDrawer isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)}>
+				<PaymentCapture
+					remainingDebt={billingSummary?.totalDueRub}
+					amount={paymentAmount}
+					feedback={paymentFeedback}
+					fiscalCashierName={paymentFiscalCashierName}
+					fiscalFd={paymentFiscalFd}
+					fiscalFn={paymentFiscalFn}
+					fiscalFpd={paymentFiscalFpd}
+					fiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
+					fiscalReceiptNumber={paymentFiscalReceiptNumber}
+					fiscalReceiptUrl={paymentFiscalReceiptUrl}
+					isSaving={isPaymentSaving}
+					method={paymentMethod}
+					methodLabels={paymentMethodLabels}
+					onAmountChange={(v) => setPaymentAmount(formatCurrencyNumeric(v))}
+					onFiscalCashierNameChange={setPaymentFiscalCashierName}
+					onFiscalFdChange={setPaymentFiscalFd}
+					onFiscalFnChange={setPaymentFiscalFn}
+					onFiscalFpdChange={setPaymentFiscalFpd}
+					onFiscalReceiptIssuedAtChange={setPaymentFiscalReceiptIssuedAt}
+					onFiscalReceiptNumberChange={setPaymentFiscalReceiptNumber}
+					onFiscalReceiptUrlChange={setPaymentFiscalReceiptUrl}
+					onMethodChange={setPaymentMethod}
+					onPayerBirthDateChange={setPaymentPayerBirthDate}
+					onPayerFullNameChange={setPaymentPayerFullName}
+					onPayerIdentityDocumentChange={setPaymentPayerIdentityDocument}
+					onPayerInnChange={setPaymentPayerInn}
+					onPayerRelationshipChange={setPaymentPayerRelationship}
+					onSubmit={() => {
+						onRecordPayment();
+						// Delay closing to show success visual feedback inside PaymentCapture
+						setTimeout(() => setIsPaymentOpen(false), 800);
+					}}
+					onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
+					patientContextMessage={paymentPatientContextMessage}
+					patientContextReady={paymentPatientContextReady}
+					patientId={documentPatient?.id}
+					patientDefaults={{
+						birthDate: documentPatient?.birthDate ?? null,
+						fullName: documentPatient?.fullName ?? null,
+						identityDocument: documentPatient?.administrativeProfile?.identityDocument ?? null,
+						taxpayerInn: documentPatient?.administrativeProfile?.taxpayerInn ?? null,
+					}}
+					payerBirthDate={paymentPayerBirthDate}
+					payerFullName={paymentPayerFullName}
+					payerIdentityDocument={paymentPayerIdentityDocument}
+					payerInn={paymentPayerInn}
+					payerRelationship={paymentPayerRelationship}
+					taxDeductionCode={paymentTaxDeductionCode}
 				/>
-			)}
-			{isDocsOpen && (
+			</CheckoutDrawer>
+			{isDocsOpen && onCreateDocument && (
 				<VisitDocsOverlay 
 					onClose={() => setIsDocsOpen(false)}
 					patientName={activePatient.fullName}
+					createDocument={onCreateDocument}
 				/>
 			)}
 		</>

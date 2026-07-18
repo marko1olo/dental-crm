@@ -5,19 +5,19 @@ import { showToast } from "../GlobalToast";
 interface VisitDocsOverlayProps {
 	onClose: () => void;
 	patientName: string;
+	createDocument: (kind: string) => void;
 }
 
-export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, patientName }) => {
+export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, patientName, createDocument }) => {
 	const [generating, setGenerating] = useState<string | null>(null);
 
-	const handleGenerate = (docType: string) => {
+	const handleGenerate = (label: string, docType: string) => {
 		setGenerating(docType);
-		// Mock generation delay
+		createDocument(docType);
 		setTimeout(() => {
 			setGenerating(null);
-			showToast(`Документ «${docType}» готов к печати`, "success");
-			// In a real app this would open a PDF or print window
-		}, 1200);
+			onClose(); // Automatically close overlay to switch to Documents view if needed
+		}, 600);
 	};
 
 	return (
@@ -46,11 +46,11 @@ export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, pat
 						</div>
 						<button 
 							className="secondary-button" 
-							onClick={() => handleGenerate("ИДС")}
-							disabled={generating === "ИДС"}
+							onClick={() => handleGenerate("ИДС", "informed_consent")}
+							disabled={generating === "informed_consent"}
 							style={{ padding: "8px 16px", fontSize: "13px" }}
 						>
-							{generating === "ИДС" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
+							{generating === "informed_consent" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
 						</button>
 					</div>
 
@@ -65,11 +65,11 @@ export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, pat
 						</div>
 						<button 
 							className="secondary-button" 
-							onClick={() => handleGenerate("Договор")}
-							disabled={generating === "Договор"}
+							onClick={() => handleGenerate("Договор", "paid_medical_services_contract")}
+							disabled={generating === "paid_medical_services_contract"}
 							style={{ padding: "8px 16px", fontSize: "13px" }}
 						>
-							{generating === "Договор" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
+							{generating === "paid_medical_services_contract" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
 						</button>
 					</div>
 
@@ -84,11 +84,11 @@ export const VisitDocsOverlay: React.FC<VisitDocsOverlayProps> = ({ onClose, pat
 						</div>
 						<button 
 							className="secondary-button" 
-							onClick={() => handleGenerate("Справка")}
-							disabled={generating === "Справка"}
+							onClick={() => handleGenerate("Справка", "visit_attendance_certificate")}
+							disabled={generating === "visit_attendance_certificate"}
 							style={{ padding: "8px 16px", fontSize: "13px" }}
 						>
-							{generating === "Справка" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
+							{generating === "visit_attendance_certificate" ? "Формируем..." : <><Printer size={16} style={{ marginRight: "6px" }} /> Печать</>}
 						</button>
 					</div>
 

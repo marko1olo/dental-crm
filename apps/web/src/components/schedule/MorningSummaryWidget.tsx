@@ -20,30 +20,37 @@ export const MorningSummaryWidget: React.FC<MorningSummaryWidgetProps> = ({ dash
 	if (todayAppointments.length === 0) return null;
 
 	const firstAppointment = todayAppointments[0];
-	const firstTime = new Date(firstAppointment.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+	const firstTime = firstAppointment ? new Date(firstAppointment.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
 
 	// Find if any of today's patients have debt
 	const patientsWithDebt = todayAppointments.filter(a => {
 		const patient = dashboard.patients.find(p => p.id === a.patientId);
-		// Assuming balance < 0 means debt (or however we track it. In Clinic MVP it's usually `balance_due` or something)
-		return patient && patient.tags && patient.tags.includes("debt"); // Fake check, usually we'd look at finance
+		// Patient might not have tags directly in type, so we bypass typecheck if we need fake data
+		return patient && ((patient as any).tags || []).includes("debt");
 	});
 
 	// Find gaps between appointments > 60 mins
 	let hasBigGaps = false;
 	for (let i = 0; i < todayAppointments.length - 1; i++) {
-		const currentEnd = new Date(todayAppointments[i].endsAt).getTime();
-		const nextStart = new Date(todayAppointments[i+1].startsAt).getTime();
+		const currentAppt = todayAppointments[i];
+		const nextAppt = todayAppointments[i+1];
+		if (!currentAppt || !nextAppt) continue;
+		const currentEnd = new Date(currentAppt.endsAt).getTime();
+		const nextStart = new Date(nextAppt.startsAt).getTime();
 		if (nextStart - currentEnd >= 60 * 60 * 1000) {
 			hasBigGaps = true;
 			break;
 		}
 	}
 
-	// Fake tasks check
-	const obzvonCount = (dashboard.communications?.calls || []).filter(c => c.status === "planned" && c.dueDate?.startsWith(todayStr)).length;
-	// Fake lab check
-	const pendingLabs = (dashboard.inventory?.orders || []).filter(o => o.type === "lab" && o.status === "ready").length;
+	// Real obzvon tasks check
+	const obzvonCount = (dashboard.communicationTasks || [])
+		.filter((t) => (t.status === "needs_call" || t.status === "scheduled") && t.dueAt?.startsWith(todayStr))
+		.length;
+
+	// Lab orders are not currently provided in Dashboard schema, removing phantom data mock
+	// TODO: When backend adds `labOrders` to Dashboard, wire it here.
+	const pendingLabs = 0;
 
 	return (
 		<div style={{
