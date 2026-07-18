@@ -1,6 +1,5 @@
 import { Bot, Copy, Download, ExternalLink, RefreshCw } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { showToast } from "../../GlobalToast";
 
 export function TelegramConnectionWorkbench({ mergedProps }: { mergedProps: any }) {
 	const {
