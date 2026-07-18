@@ -65,7 +65,19 @@ export const PatientJourneyTimeline: React.FC<{
 				status: i.riskLevel,
 			}));
 
-		const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents];
+		const planItems: any[] = dashboard?.treatmentPlanItems || [];
+		const treatmentEvents: JourneyEvent[] = planItems
+			.filter((i) => i.patientId === patientId && (i.status === "completed" || i.status === "cancelled"))
+			.map((i) => ({
+				id: i.id || Math.random().toString(),
+				timestamp: i.updatedAt || i.createdAt || new Date().toISOString(),
+				type: "lab_order", // Reuse lab_order for dental procedures
+				title: `Процедура: ${i.serviceId || "Услуга"}`,
+				description: `Статус: ${i.status === "completed" ? "Выполнено" : "Отменено"}`,
+				status: i.status === "completed" ? "Completed" : "Cancelled",
+			}));
+
+		const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents, ...treatmentEvents];
 
 		// Sort by timestamp
 		setEvents(

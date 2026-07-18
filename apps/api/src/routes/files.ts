@@ -3,7 +3,7 @@ import { createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -14,6 +14,31 @@ const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 export async function registerFilesRoutes(app: FastifyInstance) {
 	// Ensure uploads directory exists
 	await fs.mkdir(UPLOADS_DIR, { recursive: true });
+
+	app.get("/api/patients/:patientId/attachments", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply);
+		if (!orgId) return;
+		const { patientId } = request.params as { patientId: string };
+
+		const patientAttachments = await db
+			.select({
+				id: attachments.id,
+				name: attachments.fileName,
+				type: attachments.mimeType,
+				visitId: attachments.visitId,
+				createdAt: attachments.createdAt,
+			})
+			.from(attachments)
+			.where(
+				and(
+					eq(attachments.patientId, patientId),
+					eq(attachments.organizationId, orgId)
+				)
+			)
+			.orderBy(desc(attachments.createdAt));
+
+		return reply.send({ files: patientAttachments });
+	});
 
 	app.post("/api/patients/:patientId/attachments", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
