@@ -302,6 +302,7 @@ export function WorkspaceTopbar({
 }: WorkspaceTopbarProps) {
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
+	const flags = useWorkspaceProfile();
 
 	const [actualTheme, setActualTheme] = useState<"light" | "dark">("dark");
 
@@ -416,7 +417,7 @@ export function WorkspaceTopbar({
 					</button>
 				) : null}
 
-				{useWorkspaceProfile().hasTasks && (
+				{flags.hasTasks && (
 					<button
 						aria-label="Задачи"
 						className="icon-button"
