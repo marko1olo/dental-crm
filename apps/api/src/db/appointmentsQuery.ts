@@ -174,6 +174,24 @@ export async function updateAppointmentInDb(
 
 		if (!updated) throw new Error("Failed to update appointment");
 
+		if (input.status === "no_show" && existing.status !== "no_show" && updated.patientId) {
+			const dueAt = new Date();
+			dueAt.setHours(dueAt.getHours() + 1); // Follow up in 1 hour
+			await tx.insert(schema.communicationTasks).values({
+				organizationId,
+				patientId: updated.patientId,
+				appointmentId: updated.id,
+				assignedRole: "admin",
+				channel: "phone",
+				intent: "retention",
+				status: "needs_call",
+				priority: "high",
+				dueAt,
+				title: "Уточнить причину неявки",
+				body: "Пациент не явился на прием. Необходимо связаться и предложить перенос записи.",
+			});
+		}
+
 		return {
 			id: updated.id,
 			organizationId: updated.organizationId,

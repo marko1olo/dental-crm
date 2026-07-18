@@ -3,6 +3,7 @@ import { ActivePatientHero } from "./components/workspace/shift/ActivePatientHer
 import { TodaySchedule } from "./components/workspace/shift/TodaySchedule";
 import { RoleFocusStrip } from "./components/workspace/shift/RoleFocusStrip";
 import { ShiftIntelligence } from "./components/workspace/shift/ShiftIntelligence";
+import { ShiftEndSummary } from "./components/workspace/shift/ShiftEndSummary";
 export { PatientCockpit } from "./components/workspace/shift/PatientCockpit";
 
 export function ShiftView() {
@@ -29,6 +30,7 @@ export function ShiftView() {
 			>
 				<RoleFocusStrip />
 				<ShiftIntelligence />
+				<ShiftEndSummary />
 			</div>
 		</motion.div>
 	);
