@@ -728,6 +728,16 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 					),
 				);
 
+			await tx
+				.delete(schema.outgoingNotifications)
+				.where(
+					and(
+						eq(schema.outgoingNotifications.patientId, patientId),
+						eq(schema.outgoingNotifications.type, "installment_reminder"),
+						eq(schema.outgoingNotifications.status, "pending")
+					)
+				);
+
 			// Insert new installments
 			for (const inst of installments) {
 				const amount = parseFloat(String(inst.amount));
@@ -747,6 +757,18 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 					amountRub: amount.toString(),
 					dueDate,
 					status: "pending",
+				});
+
+				const reminderDate = new Date(dueDate);
+				reminderDate.setDate(reminderDate.getDate() - 3);
+
+				await tx.insert(schema.outgoingNotifications).values({
+					organizationId: orgId,
+					patientId,
+					type: "installment_reminder",
+					payload: { text: `Уважаемый пациент! Напоминаем о плановом платеже по рассрочке (${amount} руб.) до ${dueDate.toLocaleDateString('ru-RU')}.` },
+					scheduledAt: reminderDate,
+					status: "pending"
 				});
 			}
 		});
