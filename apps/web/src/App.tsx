@@ -106,6 +106,7 @@ import {
 } from "./hooks/useWorkspaceProfile";
 import { useAppStore } from "./store/appStore";
 import { useDocumentStore } from "./store/documentStore";
+import { useThemeStore } from "./store/themeStore";
 import { useAppLogic } from "./useAppLogic";
 
 function WebSocketManager() {
@@ -1138,6 +1139,11 @@ export function App() {
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const workspaceProfile = useWorkspaceProfileStore();
+	const themeMode = useThemeStore((s) => s.themeMode);
+	const isDark =
+		themeMode === "dark" ||
+		(themeMode === "auto" &&
+			(new Date().getHours() < 7 || new Date().getHours() >= 19));
 
 	// Load workspace feature flags once on mount
 	useEffect(() => {
@@ -2343,11 +2349,11 @@ export function App() {
 	}
 
 	// Show onboarding wizard on first run (after dashboard is loaded)
-	if (workspaceProfile.loaded && !workspaceProfile.onboardingCompleted) {
+	if (workspaceProfile.loaded && (!workspaceProfile.onboardingCompleted || localStorage.getItem("force_onboarding") === "true")) {
 		return (
 			<AppLogicProvider value={appLogicProps}>
 				<OnboardingSetupWizard
-					isDark={true}
+					isDark={isDark}
 					onComplete={() => {
 						useWorkspaceProfileStore
 							.getState()

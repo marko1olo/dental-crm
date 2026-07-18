@@ -84,6 +84,7 @@ import {
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsLogic } from "../../hooks/domains/useSettingsLogic";
 import type {
 	CtImplantLibraryItem,
 	CtPlanningQuickAction,
@@ -822,7 +823,13 @@ const _dicomFirstFrameImageTypeLabel = (
 };
 
 export function LegacyMigrationStudio() {
-	const appLogic = useAppLogicContext();
+	const appLogicBase = useAppLogicContext();
+	const settingsLogic = useSettingsLogic({
+		auth: appLogicBase.auth,
+		setError: appLogicBase.setError,
+		loadDashboard: appLogicBase.loadDashboard,
+	});
+	const appLogic = Object.assign({}, appLogicBase, settingsLogic) as any;
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {

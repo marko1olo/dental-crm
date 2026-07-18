@@ -1,13 +1,22 @@
 import React from "react";
 import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
+import { useSettingsLogic } from "../../../../hooks/domains/useSettingsLogic";
 
 export function InlineStepLegal() {
+	const appLogicBase = useAppLogicContext();
+	const settingsLogic = useSettingsLogic({
+		auth: appLogicBase.auth,
+		setError: appLogicBase.setError,
+		loadDashboard: appLogicBase.loadDashboard,
+	});
+	const mergedProps = Object.assign({}, appLogicBase, settingsLogic) as any;
+
 	const {
 		clinicProfileDraft,
 		updateClinicProfileDraft,
 		legalReadinessPercent,
 		legalMissingFields,
-	} = useAppLogicContext();
+	} = mergedProps;
 
 	return (
 		<div className="onboarding-panel">

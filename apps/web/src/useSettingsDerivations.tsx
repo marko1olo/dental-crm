@@ -682,6 +682,7 @@ import {
 	migrationTriageStatusPriority,
 } from "./components/settings/SettingsViewHelpers";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useSettingsLogic } from "./hooks/domains/useSettingsLogic";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -822,7 +823,13 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
 export function useSettingsDerivations() {
-	const appLogic = useAppLogicContext();
+	const appLogicBase = useAppLogicContext();
+	const settingsLogic = useSettingsLogic({
+		auth: appLogicBase.auth,
+		setError: appLogicBase.setError,
+		loadDashboard: appLogicBase.loadDashboard,
+	});
+	const appLogic = Object.assign({}, appLogicBase, settingsLogic) as any;
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,
@@ -1328,7 +1335,7 @@ export function useSettingsDerivations() {
 		visibleTelegramOutboxItems,
 		weekdayOptions,
 		workspaceScopeLabels,
-	} = useAppLogicContext();
+	} = appLogic;
 	const {
 		clinicMode,
 		setClinicMode,

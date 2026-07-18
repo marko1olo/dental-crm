@@ -369,6 +369,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const isSmallCabinet = clinicMode === "solo_doctor" || clinicMode === "one_chair";
 
   let typedSettingsTabs = settingsTabs as SettingsTab[];
+  if (clinicMode === "solo_doctor") {
+    typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "staff");
+  }
   if (!flags.hasMarketingModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
   if (!flags.hasAnalyticsModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "reporting");
   if (!flags.hasInventoryModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "inventory");

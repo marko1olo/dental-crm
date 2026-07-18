@@ -1,8 +1,17 @@
 import type { ClinicMode } from "@dental/shared";
 import React from "react";
 import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
+import { useSettingsLogic } from "../../../../hooks/domains/useSettingsLogic";
 
 export function InlineStepClinic() {
+	const appLogicBase = useAppLogicContext();
+	const settingsLogic = useSettingsLogic({
+		auth: appLogicBase.auth,
+		setError: appLogicBase.setError,
+		loadDashboard: appLogicBase.loadDashboard,
+	});
+	const mergedProps = Object.assign({}, appLogicBase, settingsLogic) as any;
+
 	const {
 		dashboard,
 		clinicModeLabels,
@@ -16,7 +25,7 @@ export function InlineStepClinic() {
 		selectedUiLanguageOption,
 		weekdayOptions,
 		toggleClinicWorkingDay,
-	} = useAppLogicContext();
+	} = mergedProps;
 
 	return (
 		<div className="onboarding-panel">

@@ -23,6 +23,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { WorkspaceFeaturesSelector } from "../workspace/WorkspaceFeaturesSelector";
+import { useSettingsLogic } from "../../hooks/domains/useSettingsLogic";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -34,6 +35,12 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const derivations = useSettingsDerivations();
 	const appLogicProps = Object.assign({}, appLogic, derivations) as any;
 	const settingsStoreProps = useSettingsStore();
+	
+	const settingsLogic = useSettingsLogic({
+		auth: appLogic.auth,
+		setError: appLogic.setError,
+		loadDashboard: appLogic.loadDashboard,
+	});
 
 	const newChairReadyToCreate =
 		(appLogicProps.newChairName || "").trim().length > 0;
@@ -43,6 +50,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const mergedProps: Record<string, any> = {
 		...appLogicProps,
 		...settingsStoreProps,
+		...settingsLogic,
 
 		newChairReadyToCreate,
 		adminSecretReady,
@@ -526,7 +534,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 			</section>
 
 			{/* Кресла и кабинеты */}
-			<section className="clinic-section-card" aria-label="Кресла и кабинеты">
+			{dashboard?.clinicSettings?.clinicMode !== "solo_doctor" &&
+				dashboard?.clinicSettings?.clinicMode !== "one_chair" && (
+					<section className="clinic-section-card" aria-label="Кресла и кабинеты">
 				<div className="clinic-section-header">
 					<div className="clinic-section-icon">
 						<Calendar size={24} />
@@ -645,6 +655,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 					))}
 				</div>
 			</section>
+				)}
 
 			<section className="clinic-section-card" style={{ marginTop: "24px" }}>
 				<div className="clinic-section-header">

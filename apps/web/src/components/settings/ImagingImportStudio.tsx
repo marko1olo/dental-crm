@@ -93,6 +93,7 @@ import {
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsLogic } from "../../hooks/domains/useSettingsLogic";
 import type {
 	CtImplantLibraryItem,
 	CtPlanningQuickAction,
@@ -831,7 +832,13 @@ const dicomFirstFrameImageTypeLabel = (
 };
 
 export function ImagingImportStudio() {
-	const appLogic = useAppLogicContext();
+	const appLogicBase = useAppLogicContext();
+	const settingsLogic = useSettingsLogic({
+		auth: appLogicBase.auth,
+		setError: appLogicBase.setError,
+		loadDashboard: appLogicBase.loadDashboard,
+	});
+	const appLogic = Object.assign({}, appLogicBase, settingsLogic) as any;
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {

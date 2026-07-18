@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, User, Home, Building2 } from "lucide-react";
 import React from "react";
 import { GlassCard, SPECIALIZATIONS } from "../ui/SharedOnboardingUI";
 
@@ -6,10 +6,33 @@ export function Step1Specializations({
 	specs,
 	toggleSpec,
 	setSpecs,
+	preset,
+	handleSelectPreset,
 	accentColor,
 	isDark,
 	textColor,
 }: any) {
+	const PRESETS = [
+		{
+			id: "solo",
+			label: "Частный кабинет",
+			icon: <User size={24} />,
+			desc: "1 кресло, без ассистентов, упрощенный интерфейс",
+		},
+		{
+			id: "clinic",
+			label: "Семейная клиника",
+			icon: <Home size={24} />,
+			desc: "2-4 кресла, стандартные модули и ассистенты",
+		},
+		{
+			id: "enterprise",
+			label: "Крупный центр",
+			icon: <Building2 size={24} />,
+			desc: "5+ кресел, лаборатория, ДМС, маркетинг и аналитика",
+		},
+	];
+
 	return (
 		<div
 			style={{
@@ -19,6 +42,99 @@ export function Step1Specializations({
 				padding: "0 10px",
 			}}
 		>
+			{/* PRESETS SELECTION */}
+			<div
+				style={{
+					background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+					padding: "24px 20px",
+					borderRadius: 20,
+					border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+				}}
+			>
+				<p
+					style={{
+						margin: "0 0 16px 0",
+						fontSize: 14,
+						fontWeight: 700,
+						color: accentColor,
+						textTransform: "uppercase",
+						letterSpacing: 1,
+						textAlign: "center",
+					}}
+				>
+					Масштаб организации (Предустановка)
+				</p>
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+						gap: 16,
+					}}
+				>
+					{PRESETS.map((p) => {
+						const isSelected = preset === p.id;
+						return (
+							<GlassCard
+								key={p.id}
+								selected={isSelected}
+								onClick={() => handleSelectPreset(p.id)}
+								accentColor={accentColor}
+								isDark={isDark}
+							>
+								<div
+									style={{
+										color: isSelected ? accentColor : isDark ? "#aaa" : "#555",
+										marginBottom: 12,
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+									}}
+								>
+									{p.icon}
+									{isSelected && (
+										<div
+											style={{
+												width: 20,
+												height: 20,
+												borderRadius: "50%",
+												background: accentColor,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+										>
+											<Check size={12} color="#fff" strokeWidth={3} />
+										</div>
+									)}
+								</div>
+								<div>
+									<div
+										style={{
+											fontWeight: 700,
+											fontSize: 16,
+											color: isSelected ? textColor : isDark ? "#aaa" : "#333",
+										}}
+									>
+										{p.label}
+									</div>
+									<div
+										style={{
+											fontSize: 12,
+											marginTop: 4,
+											color: isSelected ? textColor : "#888",
+											opacity: isSelected ? 0.9 : 0.7,
+											lineHeight: 1.4,
+										}}
+									>
+										{p.desc}
+									</div>
+								</div>
+							</GlassCard>
+						);
+					})}
+				</div>
+			</div>
+
 			<div
 				style={{
 					textAlign: "center",

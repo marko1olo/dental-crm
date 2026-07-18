@@ -20,17 +20,38 @@ export function useOnboardingLogic(
   onComplete: () => void,
   initialIsDark: boolean = true,
 ) {
-  const [activeDark, setActiveDark] = useState(initialIsDark);
+  const [activeDark, setActiveDark] = useState(() => {
+    const stored = localStorage.getItem("dente_theme_mode");
+    if (stored === "dark") return true;
+    if (stored === "light") return false;
+    return initialIsDark;
+  });
   useEffect(() => {
     const checkDark = () => {
+      const stored = localStorage.getItem("dente_theme_mode");
+      if (stored === "dark") {
+        setActiveDark(true);
+        return;
+      }
+      if (stored === "light") {
+        setActiveDark(false);
+        return;
+      }
       setActiveDark(
         document.documentElement.classList.contains("dark") ||
-          document.documentElement.getAttribute("data-theme") === "dark",
+          document.documentElement.getAttribute("data-theme") === "dark" ||
+          document.body.classList.contains("theme-dark") ||
+          document.body.classList.contains("dark") ||
+          document.body.getAttribute("data-theme") === "dark",
       );
     };
     checkDark();
     const observer = new MutationObserver(checkDark);
     observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    });
+    observer.observe(document.body, {
       attributes: true,
       attributeFilter: ["class", "data-theme"],
     });
@@ -50,6 +71,11 @@ export function useOnboardingLogic(
   const [step, setStep] = useState(savedData?.step || 1);
   const [launching, setLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+
+  // Clinic Preset / Mode
+  const [preset, setPreset] = useState<"solo" | "clinic" | "enterprise">(
+    savedData?.preset || "clinic"
+  );
 
   // Step 1: Specializations
   const [specs, setSpecs] = useState<string[]>(savedData?.specs || ["therapy"]);
@@ -76,6 +102,84 @@ export function useOnboardingLogic(
   );
   const toggleModule = (k: keyof typeof modules) =>
     setModules((p: any) => ({ ...p, [k]: !p[k] }));
+
+  // Helper to change preset and auto-configure subsequent defaults
+  const handleSelectPreset = (p: "solo" | "clinic" | "enterprise") => {
+    setPreset(p);
+    if (p === "solo") {
+      setChairs(1);
+      setModules({
+        lab: false,
+        dms: false,
+        installments: true,
+        egisz: false,
+        aiTreatmentPlan: true,
+        aiRecommendations: true,
+        aiDocuments: true,
+      });
+      setStaff([
+        {
+          id: "1",
+          fullName: "Иванов И.И.",
+          role: "Врач",
+          phone: "+7 (999) 000-00-00",
+          specialization: "Терапевт",
+          percentage: 25,
+          canSignMedicalRecords: true,
+          canManageMoney: true,
+          canManageImports: true,
+        },
+      ]);
+    } else if (p === "clinic") {
+      setChairs(3);
+      setModules({
+        lab: true,
+        dms: false,
+        installments: true,
+        egisz: false,
+        aiTreatmentPlan: true,
+        aiRecommendations: true,
+        aiDocuments: true,
+      });
+      setStaff([
+        {
+          id: "1",
+          fullName: "Иванов И.И.",
+          role: "Врач",
+          phone: "+7 (999) 000-00-00",
+          specialization: "Терапевт",
+          percentage: 25,
+          canSignMedicalRecords: true,
+          canManageMoney: false,
+          canManageImports: false,
+        },
+      ]);
+    } else if (p === "enterprise") {
+      setChairs(6);
+      setModules({
+        lab: true,
+        dms: true,
+        installments: true,
+        egisz: true,
+        aiTreatmentPlan: true,
+        aiRecommendations: true,
+        aiDocuments: true,
+      });
+      setStaff([
+        {
+          id: "1",
+          fullName: "Иванов И.И.",
+          role: "Врач",
+          phone: "+7 (999) 000-00-00",
+          specialization: "Терапевт",
+          percentage: 25,
+          canSignMedicalRecords: true,
+          canManageMoney: false,
+          canManageImports: false,
+        },
+      ]);
+    }
+  };
 
   // Step 4: Branding
   const [theme, setTheme] = useState<ThemeColor>(savedData?.theme || "teal");
@@ -116,6 +220,7 @@ export function useOnboardingLogic(
       LS_KEY,
       JSON.stringify({
         step,
+        preset,
         specs,
         chairs,
         workHours,
@@ -129,6 +234,7 @@ export function useOnboardingLogic(
     );
   }, [
     step,
+    preset,
     specs,
     chairs,
     workHours,
@@ -145,6 +251,7 @@ export function useOnboardingLogic(
     setLaunching(true);
     try {
       const payload = {
+        preset,
         specs,
         chairs,
         workHours,
@@ -171,6 +278,9 @@ export function useOnboardingLogic(
     setStep,
     launching,
     fadeOut,
+    preset,
+    setPreset,
+    handleSelectPreset,
     specs,
     setSpecs,
     toggleSpec,

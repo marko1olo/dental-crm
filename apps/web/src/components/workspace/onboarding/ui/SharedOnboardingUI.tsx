@@ -4,6 +4,9 @@ import {
 	Scissors,
 	Stethoscope,
 	Wrench,
+	User,
+	Home,
+	Building2,
 } from "lucide-react";
 import React from "react";
 import type { ThemeColor } from "../useOnboardingLogic";

@@ -26,11 +26,38 @@ export function OnboardingSetupWizard({
 }) {
 	const logic = useOnboardingLogic(onComplete, initialIsDark);
 
+	React.useEffect(() => {
+		document.body.setAttribute("data-theme", logic.isDark ? "dark" : "light");
+		if (logic.isDark) {
+			document.documentElement.classList.add("dark");
+			document.body.classList.add("theme-dark");
+		} else {
+			document.documentElement.classList.remove("dark");
+			document.body.classList.remove("theme-dark");
+		}
+	}, [logic.isDark]);
+
 	const bg = logic.isDark
 		? `radial-gradient(ellipse at 50% 0%, hsl(240 30% 15%), hsl(230 25% 8%) 80%)`
 		: `radial-gradient(ellipse at 50% 0%, hsl(210 60% 95%), hsl(220 40% 88%) 80%)`;
 	const textColor = logic.isDark ? "#e8eaf0" : "#1a1d2e";
 	const accentColor = THEME_COLORS[logic.theme] || THEME_COLORS.teal;
+
+	const goBack = () => {
+		let prev = logic.step - 1;
+		if (logic.preset === "solo" && prev === 5) prev = 4;
+		logic.setStep(Math.max(1, prev));
+	};
+
+	const goNext = () => {
+		if (logic.step < 7) {
+			let next = logic.step + 1;
+			if (logic.preset === "solo" && next === 5) next = 6;
+			logic.setStep(next);
+		} else {
+			logic.handleLaunch();
+		}
+	};
 
 	return (
 		<div
@@ -101,7 +128,9 @@ export function OnboardingSetupWizard({
 						marginBottom: 32,
 					}}
 				>
-					{[1, 2, 3, 4, 5, 6, 7].map((s) => (
+					{[1, 2, 3, 4, 5, 6, 7]
+						.filter((s) => !(logic.preset === "solo" && s === 5))
+						.map((s) => (
 						<div
 							key={s}
 							style={{
@@ -146,6 +175,8 @@ export function OnboardingSetupWizard({
 							specs={logic.specs}
 							toggleSpec={logic.toggleSpec}
 							setSpecs={logic.setSpecs}
+							preset={logic.preset}
+							handleSelectPreset={logic.handleSelectPreset}
 							accentColor={accentColor}
 							isDark={logic.isDark}
 							textColor={textColor}
@@ -217,7 +248,7 @@ export function OnboardingSetupWizard({
 						}}
 					>
 						<button
-							onClick={() => logic.setStep(Math.max(1, logic.step - 1))}
+							onClick={goBack}
 							disabled={logic.step === 1 || logic.launching}
 							style={{
 								padding: "12px 24px",
@@ -232,11 +263,7 @@ export function OnboardingSetupWizard({
 							Назад
 						</button>
 						<button
-							onClick={() =>
-								logic.step < 7
-									? logic.setStep(logic.step + 1)
-									: logic.handleLaunch()
-							}
+							onClick={goNext}
 							disabled={
 								logic.launching ||
 								(logic.step === 1 && logic.specs.length === 0)

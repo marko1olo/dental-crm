@@ -16,11 +16,17 @@ import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
+import { useSettingsLogic } from "../../hooks/domains/useSettingsLogic";
 
 export function SettingsStaffTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const settingsLogic = useSettingsLogic({
+		auth: appLogic.auth,
+		setError: appLogic.setError,
+		loadDashboard: appLogic.loadDashboard,
+	});
+	const mergedProps = Object.assign({}, appLogic, derivations, settingsLogic) as any;
 
 	const {
 		dashboard,
