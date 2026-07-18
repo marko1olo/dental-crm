@@ -47,6 +47,22 @@ export async function createAppointmentInDb(
 
 		if (!created) throw new Error("Failed to insert appointment");
 
+		if (created.patientId && (created.status === "scheduled" || created.status === "confirmed" || created.status === "arrived")) {
+			const scheduledAt = new Date(created.startsAt);
+			scheduledAt.setHours(scheduledAt.getHours() - 24);
+			const now = new Date();
+			if (scheduledAt > now) {
+				await tx.insert(schema.outgoingNotifications).values({
+					organizationId: created.organizationId,
+					patientId: created.patientId,
+					type: "appointment_reminder",
+					payload: { appointmentId: created.id },
+					status: "pending",
+					scheduledAt,
+				});
+			}
+		}
+
 		return {
 			id: created.id,
 			organizationId: created.organizationId,
@@ -173,6 +189,28 @@ export async function updateAppointmentInDb(
 			.returning();
 
 		if (!updated) throw new Error("Failed to update appointment");
+
+		// Always clear pending reminders for this appointment
+		await tx.execute(
+			sql`DELETE FROM ${schema.outgoingNotifications.tableName} WHERE organization_id = ${organizationId} AND type = 'appointment_reminder' AND status = 'pending' AND payload->>'appointmentId' = ${updated.id}`
+		);
+
+		// Re-schedule if it's still a valid upcoming appointment
+		if (updated.patientId && (updated.status === "scheduled" || updated.status === "confirmed" || updated.status === "arrived")) {
+			const scheduledAt = new Date(updated.startsAt);
+			scheduledAt.setHours(scheduledAt.getHours() - 24);
+			const now = new Date();
+			if (scheduledAt > now) {
+				await tx.insert(schema.outgoingNotifications).values({
+					organizationId: updated.organizationId,
+					patientId: updated.patientId,
+					type: "appointment_reminder",
+					payload: { appointmentId: updated.id },
+					status: "pending",
+					scheduledAt,
+				});
+			}
+		}
 
 		if (input.status === "no_show" && existing.status !== "no_show" && updated.patientId) {
 			const dueAt = new Date();
