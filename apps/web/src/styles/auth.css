@@ -2,8 +2,7 @@
 
 :root {
 	/* Light theme values */
-	--auth-overlay-bg: rgba(244, 244, 245, 0.8);
-	--auth-modal-bg: rgba(255, 255, 255, 0.75);
+	--auth-modal-bg: rgba(255, 255, 255, 0.82);
 	--auth-modal-border: rgba(9, 9, 11, 0.08);
 	--auth-modal-shadow:
 		0 24px 48px rgba(9, 9, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -20,7 +19,7 @@
 	--auth-pin-btn-text: #09090b;
 	--auth-pin-btn-hover: rgba(9, 9, 11, 0.03);
 	--auth-pin-dot-bg: rgba(9, 9, 11, 0.1);
-	--auth-input-bg: rgba(255, 255, 255, 0.8);
+	--auth-input-bg: rgba(255, 255, 255, 0.9);
 	--auth-input-border: rgba(9, 9, 11, 0.15);
 	--auth-input-text: #09090b;
 	--auth-footer-border: rgba(9, 9, 11, 0.08);
@@ -30,8 +29,7 @@
 
 [data-theme="dark"] {
 	/* Dark theme values */
-	--auth-overlay-bg: rgba(10, 10, 10, 0.85);
-	--auth-modal-bg: rgba(20, 20, 20, 0.5);
+	--auth-modal-bg: rgba(18, 18, 20, 0.80);
 	--auth-modal-border: rgba(255, 255, 255, 0.1);
 	--auth-modal-shadow:
 		0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -48,8 +46,8 @@
 	--auth-pin-btn-text: #ffffff;
 	--auth-pin-btn-hover: rgba(255, 255, 255, 0.1);
 	--auth-pin-dot-bg: rgba(255, 255, 255, 0.1);
-	--auth-input-bg: rgba(0, 0, 0, 0.3);
-	--auth-input-border: rgba(255, 255, 255, 0.1);
+	--auth-input-bg: rgba(0, 0, 0, 0.5);
+	--auth-input-border: rgba(255, 255, 255, 0.15);
 	--auth-input-text: #ffffff;
 	--auth-footer-border: rgba(255, 255, 255, 0.05);
 	--auth-glow-left-bg: rgba(79, 70, 229, 0.08);
@@ -58,8 +56,7 @@
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme="light"]) {
-		--auth-overlay-bg: rgba(10, 10, 10, 0.85);
-		--auth-modal-bg: rgba(20, 20, 20, 0.5);
+		--auth-modal-bg: rgba(18, 18, 20, 0.80);
 		--auth-modal-border: rgba(255, 255, 255, 0.1);
 		--auth-modal-shadow:
 			0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -76,8 +73,8 @@
 		--auth-pin-btn-text: #ffffff;
 		--auth-pin-btn-hover: rgba(255, 255, 255, 0.1);
 		--auth-pin-dot-bg: rgba(255, 255, 255, 0.1);
-		--auth-input-bg: rgba(0, 0, 0, 0.3);
-		--auth-input-border: rgba(255, 255, 255, 0.1);
+		--auth-input-bg: rgba(0, 0, 0, 0.5);
+		--auth-input-border: rgba(255, 255, 255, 0.15);
 		--auth-input-text: #ffffff;
 		--auth-footer-border: rgba(255, 255, 255, 0.05);
 		--auth-glow-left-bg: rgba(79, 70, 229, 0.08);
@@ -85,18 +82,22 @@
 	}
 }
 
+/* .auth-overlay is now a TRANSPARENT centering container.
+ * Background/blur is handled by AuthArtBackground (fixed, z-index:0)
+ * and by .auth-modal glassmorphism card (backdrop-filter on the card itself).
+ * We do NOT set background-color or backdrop-filter here — that was hiding the art.
+ */
 .auth-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 50;
+	z-index: 1; /* above art background (z-index: 0), below nothing else */
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background-color: var(--auth-overlay-bg);
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
 	user-select: none;
 	font-family: Inter, system-ui, sans-serif;
+	/* NO background-color — art must show through */
+	/* NO backdrop-filter — art must show through */
 }
 
 .auth-glow {
@@ -170,7 +171,7 @@
 	animation: fade-in-up 0.5s ease-out forwards;
 }
 
-/* Base Modal Box */
+/* Base Modal Box — glassmorphism card that sits above the art background */
 .auth-modal {
 	width: 100%;
 	max-width: 440px;
@@ -179,10 +180,13 @@
 	border: 1px solid var(--auth-modal-border);
 	border-radius: 24px;
 	box-shadow: var(--auth-modal-shadow);
-	backdrop-filter: blur(16px);
+	backdrop-filter: blur(28px);
+	-webkit-backdrop-filter: blur(28px);
 	margin: 16px;
 	display: flex;
 	flex-direction: column;
+	position: relative;
+	z-index: 2; /* above .auth-overlay (z-index:1), above art (z-index:0) */
 }
 
 .auth-modal--wide {

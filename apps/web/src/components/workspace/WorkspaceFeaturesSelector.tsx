@@ -12,6 +12,7 @@ import {
 	FlaskConical,
 	LayoutGrid,
 	Loader2,
+	MessageSquare,
 	Server,
 	ShieldPlus,
 	Stethoscope,

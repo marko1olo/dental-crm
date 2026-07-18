@@ -872,6 +872,7 @@ import {
 	type AppView,
 	appViews,
 	getFilteredAppViews,
+	filterViewsByFlags,
 	viewLabels,
 	WorkspaceSidebar,
 	WorkspaceTopbar,
@@ -4120,6 +4121,7 @@ export function useAppLogic(): any {
 		const saveTimer = window.setTimeout(
 			() => {
 				dirtyAppointmentIds.forEach(
+					(appointmentId) =>
 						void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }),
 				);
 			},
@@ -4297,10 +4299,12 @@ export function useAppLogic(): any {
 	}, []);
 
 	useEffect(() => {
-		const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
-		if (!allowedViews.includes(currentView)) {
-			setCurrentView("shift");
-			window.location.hash = "shift";
+		const flags = useWorkspaceProfileStore.getState();
+		const allowedViews = filterViewsByFlags(getFilteredAppViews(selectedWorkspaceRole), flags);
+		if (!allowedViews.includes(currentView) && allowedViews.length > 0) {
+			const fallback = allowedViews[0]!;
+			setCurrentView(fallback);
+			window.location.hash = fallback;
 		}
 	}, [selectedWorkspaceRole, currentView]);
 

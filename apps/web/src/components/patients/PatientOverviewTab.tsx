@@ -300,7 +300,7 @@ export function PatientOverviewTab() {
 					)}
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
-					{selectedPatientId && (
+					{selectedPatientId && workspaceFlags.hasAnalyticsModule && (
 						<PatientNoShowRisk patientId={selectedPatientId} />
 					)}
 

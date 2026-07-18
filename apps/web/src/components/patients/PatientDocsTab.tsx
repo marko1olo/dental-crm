@@ -11,6 +11,7 @@ import type React from "react";
 import { useId } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 
 type TextFieldChangeEvent = React.ChangeEvent<
@@ -20,6 +21,7 @@ type SelectChangeEvent = React.ChangeEvent<HTMLSelectElement>;
 
 export function PatientDocsTab() {
 	const appLogic = useAppLogicContext();
+	const workspaceFlags = useWorkspaceProfile();
 	const {
 		selectedPatientId,
 		patientAdministrativeProfileDraft,
@@ -301,6 +303,7 @@ export function PatientDocsTab() {
 			</section>
 
 			{/* Insurance (DMS / VHI) */}
+			{workspaceFlags.hasInsuranceCoPay && (
 			<section className="docs-section-card">
 				<div className="docs-section-header">
 					<div className="docs-section-icon">
@@ -365,6 +368,7 @@ export function PatientDocsTab() {
 					</div>
 				</div>
 			</section>
+			)}
 
 			{/* Address */}
 			<section className="docs-section-card">

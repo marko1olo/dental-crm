@@ -206,6 +206,8 @@ export function filterViewsByFlags(
 		filtered = filtered.filter((v) => v !== "scanner");
 	if (!flags.hasLeadsKanban)
 		filtered = filtered.filter((v) => v !== "leads");
+	if (!flags.hasTasks)
+		filtered = filtered.filter((v) => v !== "communications");
 	if (!flags.hasOmnichannel)
 		filtered = filtered.filter((v) => v !== "inbox");
 	if (!flags.hasInventoryModule)
@@ -323,7 +325,6 @@ export function WorkspaceTopbar({
 			document.documentElement.classList.remove("dark");
 			document.body.classList.remove("theme-dark");
 		}
-		localStorage.setItem("dente_theme", actualTheme);
 	}, [actualTheme]);
 
 	const toggleTheme = () => {
