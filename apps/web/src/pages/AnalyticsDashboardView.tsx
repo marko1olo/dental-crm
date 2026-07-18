@@ -7,6 +7,8 @@ import { CohortLtvWidget } from "../components/analytics/CohortLtvWidget";
 import { DoctorProfitabilityWidget } from "../components/analytics/DoctorProfitabilityWidget";
 import { KpiCardsWidget } from "../components/analytics/KpiCardsWidget";
 import { PlanFunnelWidget } from "../components/analytics/PlanFunnelWidget";
+import { TopServicesWidget } from "../components/analytics/TopServicesWidget";
+import { DebtorsWidget } from "../components/analytics/DebtorsWidget";
 import "./AnalyticsDashboardView.css";
 
 interface Kpis {
@@ -21,6 +23,8 @@ interface AnalyticsData {
 	cohortLtvJson: Array<{ cohort: string; "Month 1": number; "Month 12": number }>;
 	planFunnelJson: Array<{ name: string; value: number; fill: string }>;
 	chairUtilizationJson: Array<{ name: string; value: number; fill: string }>;
+	topServicesJson: Array<{ name: string; revenue: number; count: number }>;
+	debtorsJson: Array<{ patientId: string; name: string; debt: number }>;
 	doctorProfitabilityJson: Array<{
 		name: string;
 		revenue: number;
@@ -134,6 +138,8 @@ export function AnalyticsDashboardView() {
 					/>
 
 					<div className="analytics-grid">
+						<TopServicesWidget data={data.topServicesJson} />
+						<DebtorsWidget data={data.debtorsJson} />
 						<CohortLtvWidget data={data.cohortLtvJson} />
 						<PlanFunnelWidget data={data.planFunnelJson} />
 

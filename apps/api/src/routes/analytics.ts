@@ -10,6 +10,8 @@ import {
 	treatmentPlans,
 	users,
 	visitDiaries,
+	treatmentItems,
+	payments,
 } from "../db/schema.js";
 
 const RU_MONTHS = [
@@ -229,6 +231,55 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				})
 				.filter((x) => x["Month 12"] > 0);
 
+			// 6. Top Services
+			const topServicesRaw = await db
+				.select({
+					title: treatmentItems.title,
+					count: sql<number>`count(*)`,
+					revenue: sql<number>`sum(${treatmentItems.priceRub})`
+				})
+				.from(treatmentItems)
+				.where(and(eq(treatmentItems.organizationId, orgId), eq(treatmentItems.status, 'completed')))
+				.groupBy(treatmentItems.title)
+				.orderBy(desc(sql<number>`sum(${treatmentItems.priceRub})`))
+				.limit(5);
+
+			const topServicesJson = topServicesRaw.map(r => ({
+				name: r.title,
+				revenue: Number(r.revenue),
+				count: Number(r.count)
+			}));
+
+			// 7. Debtors
+			const invoicesRaw = await db
+				.select({
+					patientId: patientInvoices.patientId,
+					total: sql<number>`coalesce(sum(${patientInvoices.totalAmountRub}), 0)`
+				})
+				.from(patientInvoices)
+				.where(eq(patientInvoices.organizationId, orgId))
+				.groupBy(patientInvoices.patientId);
+
+			const paymentsRaw = await db
+				.select({
+					patientId: payments.patientId,
+					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`
+				})
+				.from(payments)
+				.where(eq(payments.organizationId, orgId))
+				.groupBy(payments.patientId);
+
+			const paidMap = new Map(paymentsRaw.map(r => [r.patientId, Number(r.total) / 100]));
+			const allPatientsData = await db.select({ id: patients.id, fullName: patients.fullName }).from(patients).where(eq(patients.organizationId, orgId));
+			const patientNameMap = new Map(allPatientsData.map(p => [p.id, p.fullName]));
+
+			const debtorsJson = invoicesRaw.map(r => {
+				const invoiced = Number(r.total);
+				const paid = paidMap.get(r.patientId) || 0;
+				const debt = Math.max(0, invoiced - paid);
+				return { patientId: r.patientId, name: patientNameMap.get(r.patientId) || "Неизвестно", debt };
+			}).filter(x => x.debt > 0).sort((a, b) => b.debt - a.debt).slice(0, 10);
+
 			// 5. Summary KPIs for the header cards
 			const totalPatientsWhere = [eq(patients.organizationId, orgId)];
 			if (startDate) totalPatientsWhere.push(gte(patients.createdAt, startDate));
@@ -275,6 +326,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				doctorProfitabilityJson: doctorProfitabilityJson.length
 					? doctorProfitabilityJson
 					: [{ name: "Нет данных", revenue: 0, margin: 0, completionRate: 0 }],
+				topServicesJson,
+				debtorsJson,
 			};
 
 			return { success: true, data };
@@ -293,6 +346,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					planFunnelJson: [],
 					chairUtilizationJson: [],
 					doctorProfitabilityJson: [],
+					topServicesJson: [],
+					debtorsJson: [],
 				},
 			};
 		}
