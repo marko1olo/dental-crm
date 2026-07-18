@@ -13345,6 +13345,7 @@ export function useAppLogic(): any {
 	return {
 		...telegramSettingsModule,
 		...auth,
+		auth,
 		acceptDraftToVisit,
 		activeAppointment,
 		activeChair,

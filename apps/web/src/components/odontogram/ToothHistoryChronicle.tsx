@@ -61,7 +61,7 @@ export function ToothHistoryChronicle({
 		<div className="history-panel">
 			<div className="history-header">
 				<div className="history-title">
-					<History className="w-5 h-5 text-indigo-500" />
+					<History style={{ width: 20, height: 20, color: "#6366f1" }} />
 					<h3>История зуба {toothNumber}</h3>
 				</div>
 				<button onClick={onClose} className="history-close-btn">
@@ -81,12 +81,14 @@ export function ToothHistoryChronicle({
 						{events.map((evt, idx) => (
 							<div key={idx} className="timeline-item">
 								<div className="timeline-icon">
-									{evt.type === "diary" ? (
-										<FileText className="w-4 h-4 text-emerald-500" />
-									) : evt.type === "plan" ? (
-										<Calendar className="w-4 h-4 text-blue-500" />
-									) : (
-										<Activity className="w-4 h-4 text-amber-500" />
+									{evt.type === "diary" && (
+										<FileText style={{ width: 16, height: 16, color: "#10b981" }} />
+									)}
+									{evt.type === "plan" && (
+										<Calendar style={{ width: 16, height: 16, color: "#3b82f6" }} />
+									)}
+									{evt.type === "state_change" && (
+										<Activity style={{ width: 16, height: 16, color: "#f59e0b" }} />
 									)}
 								</div>
 								<div className="timeline-content">

@@ -429,24 +429,24 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const phases = [1, 2, 3];
 
 	return (
-		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
-			<div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<h2 className="flex items-center gap-2 text-lg font-bold">
+		<div className="treatment-estimator">
+			<div className="estimator-header">
+				<h2 className="estimator-title">
 					<FileText
 						size={18}
-						className="text-indigo-500 dark:text-indigo-400"
+						style={{ color: "#6366f1" }}
 					/>
 					План лечения
 				</h2>
-				<div className="flex gap-2">
+				<div className="estimator-actions">
 					{signatureUrl && (
-						<span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
+						<span className="status-signed">
 							ПОДПИСАНО
 						</span>
 					)}
 					<button
 						onClick={() => setShowSignModal(true)}
-						className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors"
+						className="btn-secondary"
 					>
 						<PenTool size={14} />
 						Подписать
@@ -454,7 +454,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					<button
 						onClick={savePlan}
 						disabled={isSaving}
-						className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+						className="btn-primary"
 					>
 						<Save size={14} />
 						{isSaving ? "Сохранение..." : "Сохранить"}
@@ -462,19 +462,16 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+			<div className="estimator-content custom-scrollbar">
 				{items.length === 0 && (
-					<div className="flex flex-col items-center justify-center p-8 mx-2 my-8 rounded-2xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 bg-zinc-50/30 dark:bg-zinc-900/20 backdrop-blur-sm text-center">
-						<div className="p-5 mb-4 rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] dark:shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] border border-indigo-500/10 dark:border-indigo-500/20">
-							<Calculator
-								size={40}
-								className="text-indigo-500 dark:text-indigo-400 opacity-40"
-							/>
+					<div className="empty-state-card">
+						<div className="empty-state-icon-wrapper">
+							<Calculator size={40} />
 						</div>
-						<h4 className="text-base font-bold text-slate-800 dark:text-zinc-100 mb-2">
+						<h4 className="empty-state-title">
 							План лечения пуст
 						</h4>
-						<p className="text-sm leading-relaxed text-slate-500 dark:text-zinc-400 max-w-[320px]">
+						<p className="empty-state-desc">
 							Кликните на любой зуб на схеме слева, выберите патологию, и
 							система автоматически подберет оптимальный набор процедур из
 							прайс-листа
@@ -516,11 +513,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 															const coverage = getCoverageInfo(item);
 															if (coverage && !coverage.covered) {
 																return (
-																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
+																	<span className="price-tag-uncovered">
 																		<span>
 																			{item.price.toLocaleString("ru-RU")} ₽
 																		</span>
-																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
+																		<span className="price-badge-uncovered">
 																			Вне покрытия ДМС
 																		</span>
 																	</span>
@@ -530,14 +527,14 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																const copayPrice =
 																	(item.price * coverage.copayPct) / 100;
 																return (
-																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">
+																	<span className="price-tag-covered">
+																		<span className="price-strike">
 																			{item.price.toLocaleString("ru-RU")} ₽
 																		</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">
+																		<span className="price-copay">
 																			{copayPrice.toLocaleString("ru-RU")} ₽
 																		</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																		<span className="price-badge-covered">
 																			Со-оплата {coverage.copayPct}%
 																		</span>
 																	</span>
@@ -545,14 +542,14 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 															}
 															if (coverage && coverage.pct === 100) {
 																return (
-																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">
+																	<span className="price-tag-covered">
+																		<span className="price-strike">
 																			{item.price.toLocaleString("ru-RU")} ₽
 																		</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">
+																		<span className="price-copay">
 																			0 ₽
 																		</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																		<span className="price-badge-covered">
 																			ДМС 100%
 																		</span>
 																	</span>
@@ -608,13 +605,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				})}
 			</div>
 
-			<div className="flex justify-between items-center px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
-				<div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+			<div className="estimator-footer">
+				<div className="estimator-footer-label">
 					Итого по плану:
 				</div>
-				<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
+				<div className="estimator-total">
 					{total.toLocaleString("ru-RU")}{" "}
-					<span className="text-sm font-medium text-slate-500 dark:text-zinc-500">
+					<span>
 						₽
 					</span>
 				</div>
