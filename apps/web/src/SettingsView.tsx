@@ -369,15 +369,15 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const isSmallCabinet = clinicMode === "solo_doctor" || clinicMode === "one_chair";
 
   let typedSettingsTabs = settingsTabs as SettingsTab[];
-  if (clinicMode === "solo_doctor") {
+  if (!flags.hasAssistants && flags.numberOfDoctors <= 1) {
     typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "staff");
   }
-  if (!flags.hasMarketingModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
-  if (!flags.hasAnalyticsModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "reporting");
-  if (!flags.hasInventoryModule || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "inventory");
-  if (!flags.hasBpmWorkflows || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "bpmn");
+  if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
+  if (!flags.hasAnalyticsModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "reporting");
+  if (!flags.hasInventoryModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "inventory");
+  if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "bpmn");
   if (!flags.hasClinicalRules) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "rules");
-  if (!flags.hasInsuranceCoPay || isSmallCabinet) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "insurance");
+  if (!flags.hasInsuranceCoPay) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "insurance");
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;
