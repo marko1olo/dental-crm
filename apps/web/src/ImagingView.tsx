@@ -456,10 +456,10 @@ export function ImagingView() {
 								top: "100%",
 								marginTop: "6px",
 								background: "var(--paper)",
-								border: "1px solid #cbd5e1",
+								border: "1px solid var(--line, #cbd5e1)",
 								borderRadius: "8px",
 								boxShadow:
-									"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+									"0 10px 15px -3px var(--shadow-sm, rgba(0, 0, 0, 0.1)), 0 4px 6px -4px var(--shadow-sm, rgba(0, 0, 0, 0.1))",
 								zIndex: 9999,
 								padding: "8px",
 								display: "flex",
@@ -1338,12 +1338,12 @@ export function ImagingView() {
 								title="Diagnocat AI: разметка зубов и костной ткани"
 								style={{
 									background: isDiagnocatActive
-										? "rgba(168, 85, 247, 0.15)"
+										? "var(--purple-500-alpha-15, rgba(168, 85, 247, 0.15))"
 										: "transparent",
-									borderColor: isDiagnocatActive ? "#a855f7" : "var(--line)",
-									color: isDiagnocatActive ? "#a855f7" : "inherit",
+									borderColor: isDiagnocatActive ? "var(--purple-500, #a855f7)" : "var(--line)",
+									color: isDiagnocatActive ? "var(--purple-500, #a855f7)" : "inherit",
 									boxShadow: isDiagnocatActive
-										? "0 0 10px rgba(168, 85, 247, 0.3)"
+										? "0 0 10px var(--purple-500-alpha-30, rgba(168, 85, 247, 0.3))"
 										: "none",
 									transition: "all 0.2s ease",
 								}}
