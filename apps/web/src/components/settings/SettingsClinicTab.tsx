@@ -534,8 +534,8 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 			</section>
 
 			{/* Кресла и кабинеты */}
-			{dashboard?.clinicSettings?.clinicMode !== "solo_doctor" &&
-				dashboard?.clinicSettings?.clinicMode !== "one_chair" && (
+			{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
+				dashboard?.clinicSettings?.profile?.mode !== "one_chair" && (
 					<section className="clinic-section-card" aria-label="Кресла и кабинеты">
 				<div className="clinic-section-header">
 					<div className="clinic-section-icon">

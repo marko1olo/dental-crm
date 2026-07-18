@@ -38,10 +38,10 @@ export function AppRouter() {
 		<AnimatePresence mode="wait">
 			<motion.div
 				key={currentView}
-				initial={{ opacity: 0, y: 10, filter: "blur(2px)" }}
-				animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-				exit={{ opacity: 0, y: -10, filter: "blur(2px)" }}
-				transition={{ duration: 0.25, ease: "easeOut" }}
+				initial={{ opacity: 0, y: 8 }}
+				animate={{ opacity: 1, y: 0 }}
+				exit={{ opacity: 0, y: -8 }}
+				transition={{ duration: 0.18, ease: "easeOut" }}
 				className="app-router-wrapper"
 				style={{ width: "100%", display: "flex", flexDirection: "column", flex: 1 }}
 			>
