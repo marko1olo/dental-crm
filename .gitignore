@@ -81,3 +81,5 @@ __pycache__/
 *.pyo
 .postgres/
 temp-test-db/
+
+script.js

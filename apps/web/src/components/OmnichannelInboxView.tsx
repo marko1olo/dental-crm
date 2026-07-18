@@ -950,24 +950,35 @@ export function OmnichannelInboxView() {
 									>
 										{selectedChatInfo?.patientName?.charAt(0).toUpperCase() ?? "?"}
 									</div>
-									<div>
-										<h3
+									<div style={{ display: "flex", flexDirection: "column" }}>
+										<a
+											href="#patients"
+											onClick={(e) => {
+												if (selectedPatientId) {
+													setSelectedPatientId(selectedPatientId);
+													window.location.hash = "patients";
+												} else {
+													e.preventDefault();
+												}
+											}}
 											style={{
 												margin: 0,
 												fontSize: 15,
 												fontWeight: 600,
 												color: "var(--ink)",
+												textDecoration: "none",
+												cursor: selectedPatientId ? "pointer" : "default"
 											}}
 										>
 											{selectedChatInfo?.patientName || "Пациент"}
-										</h3>
+										</a>
 										<div
 											style={{
 												fontSize: 12,
 												color: "var(--muted)",
 												display: "flex",
 												alignItems: "center",
-												gap: 4,
+												gap: 6,
 											}}
 										>
 											<div
@@ -981,6 +992,28 @@ export function OmnichannelInboxView() {
 											{selectedChatInfo
 												? `Диалог через ${getChannelLabel(selectedChatInfo.channel)}`
 												: ""}
+											{dashboard?.activeVisit?.patientId === selectedPatientId && selectedPatientId && (
+												<a
+													href="#visit"
+													onClick={(e) => {
+														setSelectedPatientId(selectedPatientId);
+														window.location.hash = "visit";
+													}}
+													style={{
+														marginLeft: 8,
+														fontSize: 11,
+														background: "var(--brand-50, var(--paper-soft))",
+														color: "var(--brand-600, var(--teal))",
+														padding: "2px 6px",
+														borderRadius: 4,
+														textDecoration: "none",
+														fontWeight: 600,
+													}}
+													title="Перейти к активному визиту"
+												>
+													Активный визит
+												</a>
+											)}
 										</div>
 									</div>
 								</div>
