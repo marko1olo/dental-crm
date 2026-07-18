@@ -29,11 +29,17 @@ export class RecallScheduler {
 				planId: treatmentPlans.id,
 				toothNumber: treatmentPlanItemsNew.toothNumber,
 				itemDate: treatmentPlans.updatedAt,
+				patientFullName: patients.fullName,
+				organizationId: patients.organizationId,
 			})
 			.from(treatmentPlanItemsNew)
 			.innerJoin(
 				treatmentPlans,
 				eq(treatmentPlans.id, treatmentPlanItemsNew.planId),
+			)
+			.innerJoin(
+				patients,
+				eq(patients.id, treatmentPlans.patientId),
 			)
 			.where(
 				and(
@@ -61,6 +67,8 @@ export class RecallScheduler {
 					item.patientId,
 					item.toothNumber,
 					item.planName,
+					item.patientFullName,
+					item.organizationId,
 				);
 			}
 		}
@@ -70,27 +78,15 @@ export class RecallScheduler {
 		patientId: string,
 		toothNumber: number,
 		planName: string,
+		patientFullName: string | null,
+		organizationId: string,
 	) {
-		// 1. Fetch patient
-		const patientRecord = await db
-			.select()
-			.from(patients)
-			.where(eq(patients.id, patientId))
-			.limit(1);
-		const patient = patientRecord[0];
-		if (!patient) return;
+		const patientName = patientFullName ?? "Пациент";
 
-		const message = `Уважаемый(ая) ${patient.fullName}! Период приживляемости имплантата на зубе ${toothNumber} завершен. Пора продолжить лечение по плану "${planName}"!`;
-
-		console.log(
-			`[RecallScheduler] Triggering recall for ${patientId}: ${message}`,
-		);
-
-		// 3. Instead of only a fake Telegram message, we create a CRM Task for the admins!
 		try {
 			await db.insert(communicationTasks).values({
 				id: randomUUID(),
-				organizationId: patient.organizationId,
+				organizationId: organizationId,
 				patientId: patientId,
 				assignedRole: "admin",
 				channel: "whatsapp",
@@ -99,9 +95,9 @@ export class RecallScheduler {
 				priority: "high",
 				dueAt: new Date(Date.now() + 86400000), // due in 1 day
 				title: `Пригласить пациента на 3-й этап (зуб ${toothNumber})`,
-				body: `Пациент: ${patient.fullName}. Прошло необходимое время приживления. План: ${planName}.`,
+				body: `Пациент: ${patientName}. Прошло необходимое время приживления. План: ${planName}.`,
 			});
-			console.log(`[RecallScheduler] Task created for admin to recall ${patient.fullName}`);
+			console.log(`[RecallScheduler] Task created for admin to recall ${patientName}`);
 		} catch (e) {
 			console.error("[RecallScheduler] Failed to create CRM task", e);
 		}

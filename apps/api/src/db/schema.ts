@@ -1634,6 +1634,7 @@ export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
 		.notNull()
 		.default("0"),
 	phase: integer("phase").notNull().default(1),
+	status: treatmentPlanItemStatus("status").notNull().default("proposed"),
 	isBundle: boolean("is_bundle").notNull().default(false),
 	commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })
 		.notNull()

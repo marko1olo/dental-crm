@@ -33,19 +33,22 @@ const batchToothStateSchema = z.object({
 });
 
 const treatmentPlanItemSchema = z.object({
+	id: z.string().uuid().optional().nullable(),
 	toothNumber: z.number().int().min(11).max(99).optional().nullable(),
-	priceId: z.string().trim().min(1).max(200),
+	priceId: z.string().trim().min(1).max(200).nullable().optional(),
 	name: z.string().trim().max(500).optional(),
 	quantity: z.number().int().min(1).max(999).default(1),
 	price: z.number().finite().min(0).max(100_000_000),
 	discount: z.number().finite().min(0).max(100_000_000).default(0),
 	phase: z.number().int().min(1).max(12).default(1),
+	status: z.enum(["proposed", "approved", "in_progress", "completed", "cancelled"]).default("proposed"),
 	isAuto: z.boolean().optional(),
 });
 
 const treatmentPlanUpsertSchema = z.object({
 	id: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).max(300).default("Комплексный план лечения"),
+	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected", "Archived"]).optional().nullable(),
 	patientSignature: z.string().max(2_000_000).optional().nullable(),
 	items: z.array(treatmentPlanItemSchema).max(500).default([]),
 });
@@ -109,6 +112,7 @@ function serializeTreatmentPlan(
 				price: numeric(item.price),
 				discount: numeric(item.discount),
 				phase: item.phase,
+				status: item.status,
 				isAuto: item.isBundle,
 			};
 		}),
@@ -310,6 +314,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							.update(treatmentPlans)
 							.set({
 								name: input.name,
+								status: (input.status && input.status !== "Archived" ? input.status : undefined) as any,
 								totalPrice: totalPrice.toString(),
 								...(input.patientSignature !== undefined
 									? { patientSignature: input.patientSignature }
@@ -333,6 +338,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							.values({
 								patientId,
 								name: input.name,
+								status: (input.status && input.status !== "Archived" ? input.status : "Draft") as any,
 								totalPrice: totalPrice.toString(),
 								patientSignature: input.patientSignature ?? null,
 								isSynced: false,
@@ -357,6 +363,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								price: item.price.toString(),
 								discount: item.discount.toString(),
 								phase: item.phase,
+								status: item.status,
 								isBundle: Boolean(item.isAuto),
 							})),
 						);
