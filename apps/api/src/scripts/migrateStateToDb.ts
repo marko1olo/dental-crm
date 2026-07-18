@@ -178,8 +178,8 @@ async function migrate() {
 	}
 
 	console.log(`📄 Migrating ${state.documents.length} Documents...`);
-	for (const doc of state.documents) {
-		await db.insert(schema.generatedDocuments).values({
+	if (state.documents.length > 0) {
+		const docValues = state.documents.map((doc: any) => ({
 			id: doc.id,
 			organizationId: orgId,
 			patientId: doc.patientId,
@@ -191,7 +191,8 @@ async function migrate() {
 			payloadJson: doc.payload ? JSON.stringify(doc.payload) : null,
 			issuedAt: doc.issuedAt ? new Date(doc.issuedAt) : null,
 			createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
-		});
+		}));
+		await db.insert(schema.generatedDocuments).values(docValues);
 	}
 
 	console.log(`⚖️ Migrating ${state.clinicalRules.length} Clinical Rules...`);
