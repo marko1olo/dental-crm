@@ -12,7 +12,9 @@ export type LazyWorkspaceView =
 	| "visit"
 	| "imaging"
 	| "marketing"
-	| "scanner";
+	| "scanner"
+	| "inventory"
+	| "payroll";
 
 type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
 	label: string;

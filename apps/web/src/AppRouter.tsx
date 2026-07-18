@@ -24,6 +24,10 @@ const ImagingView = React.lazy(() =>
 	import("./ImagingView").then((module) => ({ default: module.ImagingView })),
 );
 
+const PayrollView = React.lazy(() =>
+	import("./PayrollView").then((module) => ({ default: module.PayrollView })),
+);
+
 export function AppRouter() {
 	const appLogic = useAppLogicContext();
 	const {
@@ -324,9 +328,16 @@ export function AppRouter() {
 					</Suspense>
 				) : null}
 				{currentView === "inventory" ? (
-					<Suspense fallback={<AppLoadingState message="Загрузка склада" />}>
-						<InventoryView organizationId={activeWorkspaceProfile?.id || dashboard?.clinicSettings?.id || localStorage.getItem("dente_organization_id") || ""} />
-					</Suspense>
+					<WorkspaceRouteErrorBoundary
+						view="inventory"
+						label={viewLabels.inventory}
+						panelClassName="panel inventory-panel"
+						panelId="inventory"
+					>
+						<Suspense fallback={<AppLoadingState message="Загрузка склада" />}>
+							<InventoryView organizationId={activeWorkspaceProfile?.id || dashboard?.clinicSettings?.id || localStorage.getItem("dente_organization_id") || ""} />
+						</Suspense>
+					</WorkspaceRouteErrorBoundary>
 				) : null}
 				{currentView === "leads" ? (
 					<Suspense
@@ -344,6 +355,18 @@ export function AppRouter() {
 					<Suspense fallback={<AppLoadingState message="Загрузка сканера ЦСО" />}>
 						<ScannerView />
 					</Suspense>
+				) : null}
+				{currentView === "payroll" ? (
+					<WorkspaceRouteErrorBoundary
+						view="payroll"
+						label={viewLabels.payroll}
+						panelClassName="panel payroll-panel"
+						panelId="payroll"
+					>
+						<Suspense fallback={<AppLoadingState message="Загрузка расчета зарплат" />}>
+							<PayrollView />
+						</Suspense>
+					</WorkspaceRouteErrorBoundary>
 				) : null}
 			</motion.div>
 		</AnimatePresence>
