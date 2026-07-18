@@ -2378,6 +2378,7 @@ export function App() {
 					currentView={currentView}
 					onViewIntent={preloadWorkspaceView}
 					role={selectedWorkspaceRole}
+					clinicMode={dashboard?.clinicSettings?.profile?.mode || "network_clinic"}
 				/>
 
 				<section
