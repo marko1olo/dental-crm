@@ -143,6 +143,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"visit",
 			"documents",
 			"communications",
+			"payroll",
 		];
 	}
 	if (role === "assistant") {

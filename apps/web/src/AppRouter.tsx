@@ -25,7 +25,7 @@ const ImagingView = React.lazy(() =>
 );
 
 const PayrollView = React.lazy(() =>
-	import("./PayrollView").then((module) => ({ default: module.PayrollView })),
+	import("./components/payroll/PayrollDashboard").then((module) => ({ default: module.PayrollDashboard })),
 );
 
 export function AppRouter() {
