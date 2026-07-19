@@ -16,7 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
-import { SignaturePad } from "./SignaturePad";
+import { SignaturePad } from "../SignaturePad";
 import { PlanInstallmentCalculator } from "./PlanInstallmentCalculator";
 import "./ComparativePlanner.css";
 

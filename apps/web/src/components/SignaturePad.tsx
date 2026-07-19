@@ -1,226 +1,226 @@
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { Eraser, X } from "lucide-react";
 
 interface SignaturePadProps {
-	onSign: (signatureBase64: string) => void;
-	onCancel: () => void;
+	onSign: (signature: string) => void;
+	onClear?: () => void;
+	onCancel?: () => void;
+	title?: string;
 }
 
-export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
+export const SignaturePad: React.FC<SignaturePadProps> = ({
+	onSign,
+	onClear,
+	onCancel,
+	title = "Подпись пациента",
+}) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
 	const [isDrawing, setIsDrawing] = useState(false);
 	const [isEmpty, setIsEmpty] = useState(true);
 
-	// Handle resize to keep canvas responsive without losing data (ideally)
 	useEffect(() => {
-		const handleResize = () => {
-			if (containerRef.current && canvasRef.current) {
-				const { width, height } = containerRef.current.getBoundingClientRect();
-				const canvas = canvasRef.current;
-				// Save old content
-				const ctx = canvas.getContext("2d");
-				let imgData: ImageData | null = null;
-				if (!isEmpty && ctx) {
-					try {
-						imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-					} catch (e) {}
-				}
+		const canvas = canvasRef.current;
+		if (!canvas) return;
 
-				canvas.width = width;
-				canvas.height = height;
-
-				if (ctx) {
-					ctx.lineCap = "round";
-					ctx.lineJoin = "round";
-					ctx.lineWidth = 3;
-					ctx.strokeStyle = "#0f172a";
-
-					if (imgData) {
-						ctx.putImageData(imgData, 0, 0);
-					} else {
-						// Background
-						ctx.fillStyle = "#ffffff";
-						ctx.fillRect(0, 0, width, height);
-					}
-				}
-			}
-		};
-
-		handleResize();
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, [isEmpty]);
-
-	// Clean up references and memory on unmount
-	useEffect(() => {
-		return () => {
-			if (canvasRef.current) {
-				const ctx = canvasRef.current.getContext("2d");
-				if (ctx) {
-					ctx.clearRect(
-						0,
-						0,
-						canvasRef.current.width,
-						canvasRef.current.height,
-					);
-				}
-			}
-		};
+		// Handle high DPI displays
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			// Set initial background to white
+			ctx.fillStyle = "white";
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+			ctx.lineWidth = 2;
+			ctx.lineCap = "round";
+			ctx.strokeStyle = "#1a1a1a";
+		}
 	}, []);
 
-	const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		setIsDrawing(true);
-		setIsEmpty(false);
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const pos = getPos(e, canvas);
-		ctx.beginPath();
-		ctx.moveTo(pos.x, pos.y);
-	};
-
-	const draw = (e: React.MouseEvent | React.TouchEvent) => {
-		if (!isDrawing) return;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const pos = getPos(e, canvas);
-		ctx.lineTo(pos.x, pos.y);
-		ctx.stroke();
-	};
-
-	const stopDrawing = () => {
-		if (!isDrawing) return;
-		setIsDrawing(false);
-		const canvas = canvasRef.current;
-		if (canvas) {
-			const ctx = canvas.getContext("2d");
-			if (ctx) ctx.closePath();
-		}
-	};
-
-	const getPos = (
-		e: React.MouseEvent | React.TouchEvent,
-		canvas: HTMLCanvasElement,
+	const getCoordinates = (
+		e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
 	) => {
+		const canvas = canvasRef.current;
+		if (!canvas) return { x: 0, y: 0 };
 		const rect = canvas.getBoundingClientRect();
-		if ("touches" in e && e.touches.length > 0) {
+		
+		if ("touches" in e) {
+			const touch = e.touches[0];
 			return {
-				x: e.touches[0]!.clientX - rect.left,
-				y: e.touches[0]!.clientY - rect.top,
+				x: (touch?.clientX || 0) - rect.left,
+				y: (touch?.clientY || 0) - rect.top,
 			};
 		}
+		
 		return {
 			x: (e as React.MouseEvent).clientX - rect.left,
 			y: (e as React.MouseEvent).clientY - rect.top,
 		};
 	};
 
-	const clear = () => {
+	const startDrawing = (
+		e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+	) => {
+		e.preventDefault();
 		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
+		const ctx = canvas?.getContext("2d");
 		if (!ctx) return;
-		ctx.fillStyle = "#ffffff";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		setIsEmpty(true);
+
+		const { x, y } = getCoordinates(e);
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		setIsDrawing(true);
+		setIsEmpty(false);
 	};
 
-	const handleSave = () => {
-		if (isEmpty || !canvasRef.current) return;
-		const dataUrl = canvasRef.current.toDataURL("image/png");
-		onSign(dataUrl);
+	const draw = (
+		e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+	) => {
+		if (!isDrawing) return;
+		e.preventDefault();
+		const canvas = canvasRef.current;
+		const ctx = canvas?.getContext("2d");
+		if (!ctx) return;
+
+		const { x, y } = getCoordinates(e);
+		ctx.lineTo(x, y);
+		ctx.stroke();
+	};
+
+	const endDrawing = () => {
+		if (!isDrawing) return;
+		setIsDrawing(false);
+		
+		const canvas = canvasRef.current;
+		if (canvas && !isEmpty) {
+			const dataUrl = canvas.toDataURL("image/png");
+			onSign(dataUrl);
+		}
+	};
+
+	const handleClear = () => {
+		const canvas = canvasRef.current;
+		const ctx = canvas?.getContext("2d");
+		if (ctx && canvas) {
+			ctx.fillStyle = "white";
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+			setIsEmpty(true);
+			onSign("");
+			onClear?.();
+		}
 	};
 
 	return (
-		<>
-			<div className="modal-header">
-				<h2 className="modal-title">Подпись документа</h2>
-				<p className="modal-subtitle">
-					Пожалуйста, распишитесь внутри поля ниже
-				</p>
-			</div>
-
-			<div className="modal-body" style={{ paddingBottom: 0 }}>
-				<div
-					ref={containerRef}
-					style={{
-						width: "100%",
-						height: "320px",
-						border: "2px dashed var(--odontogram-border)",
-						borderRadius: "12px",
-						position: "relative",
-						overflow: "hidden",
-						touchAction: "none",
-					}}
-				>
-					<canvas
-						ref={canvasRef}
-						style={{ width: "100%", height: "100%", cursor: "crosshair" }}
-						onMouseDown={startDrawing}
-						onMouseMove={draw}
-						onMouseUp={stopDrawing}
-						onMouseOut={stopDrawing}
-						onTouchStart={startDrawing}
-						onTouchMove={draw}
-						onTouchEnd={stopDrawing}
-						onTouchCancel={stopDrawing}
-					/>
-					{isEmpty && (
-						<div
+		<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+				<label style={{ fontSize: "14px", fontWeight: 500, color: "var(--ink)" }}>
+					{title}
+				</label>
+				<div style={{ display: "flex", gap: "8px" }}>
+					{!isEmpty && (
+						<button
+							type="button"
+							onClick={handleClear}
 							style={{
-								position: "absolute",
-								inset: 0,
-								pointerEvents: "none",
+								background: "none",
+								border: "none",
+								color: "var(--muted)",
 								display: "flex",
 								alignItems: "center",
-								justifyContent: "center",
-								color: "var(--odontogram-ink-muted)",
-								fontSize: "18px",
-								fontWeight: 500,
+								gap: "4px",
+								cursor: "pointer",
+								fontSize: "12px",
 							}}
 						>
-							Место для подписи
-						</div>
+							<Eraser size={14} /> Очистить
+						</button>
+					)}
+					{onCancel && (
+						<button
+							type="button"
+							onClick={onCancel}
+							style={{
+								background: "none",
+								border: "none",
+								color: "var(--danger, #ef4444)",
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+								cursor: "pointer",
+								fontSize: "12px",
+							}}
+						>
+							<X size={14} /> Отмена
+						</button>
 					)}
 				</div>
 			</div>
-
 			<div
-				className="modal-footer"
-				style={{ paddingTop: "24px", justifyContent: "space-between" }}
+				style={{
+					border: "1px solid var(--line)",
+					borderRadius: "8px",
+					overflow: "hidden",
+					background: "white",
+					position: "relative",
+					touchAction: "none", // Prevent scrolling while signing
+				}}
 			>
-				<button
-					onClick={clear}
-					className="modal-btn secondary"
-					style={{ flex: "none" }}
-				>
-					Очистить
-				</button>
-				<div style={{ display: "flex", gap: "12px" }}>
-					<button onClick={onCancel} className="modal-btn secondary">
-						Отмена
-					</button>
-					<button
-						onClick={handleSave}
-						disabled={isEmpty}
-						className="modal-btn primary"
+				{isEmpty && (
+					<div
 						style={{
-							opacity: isEmpty ? 0.5 : 1,
-							cursor: isEmpty ? "not-allowed" : "pointer",
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%)",
+							pointerEvents: "none",
+							color: "var(--muted-border)",
+							fontSize: "14px",
 						}}
 					>
-						Подписать
-					</button>
-				</div>
+						Распишитесь здесь
+					</div>
+				)}
+				<canvas
+					ref={canvasRef}
+					width={400}
+					height={150}
+					style={{
+						width: "100%",
+						height: "150px",
+						display: "block",
+						cursor: "crosshair",
+					}}
+					onMouseDown={startDrawing}
+					onMouseMove={draw}
+					onMouseUp={endDrawing}
+					onMouseLeave={endDrawing}
+					onTouchStart={startDrawing}
+					onTouchMove={draw}
+					onTouchEnd={endDrawing}
+					onTouchCancel={endDrawing}
+				/>
 			</div>
-		</>
+			{/* For TreatmentEstimator which relies on a separate "Sign" button, we can add a manual confirm button if it's used as a modal */}
+			{onCancel && (
+				<button 
+					onClick={() => {
+						if (canvasRef.current && !isEmpty) {
+							onSign(canvasRef.current.toDataURL("image/png"));
+						}
+					}}
+					disabled={isEmpty}
+					style={{
+						marginTop: "12px",
+						width: "100%",
+						padding: "10px",
+						background: isEmpty ? "var(--muted-border)" : "var(--teal-500, #14b8a6)",
+						color: "white",
+						border: "none",
+						borderRadius: "8px",
+						cursor: isEmpty ? "not-allowed" : "pointer",
+						fontWeight: 600
+					}}
+				>
+					Подтвердить подпись
+				</button>
+			)}
+		</div>
 	);
-}
+};

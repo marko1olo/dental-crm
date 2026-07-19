@@ -12,6 +12,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
+import { usePatientStore } from "./store/patientStore";
 import { createPortal } from "react-dom";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { showToast } from "./components/GlobalToast";
@@ -50,6 +51,7 @@ import { VisitTabNavigation, VisitTabType } from "./components/visit/VisitTabNav
 import { VisitConclusionTab } from "./components/visit/VisitConclusionTab";
 
 export function VisitView() {
+	const anamnesisDraft = usePatientStore((s) => s.anamnesisDraft);
 	const workspaceFlags = useWorkspaceProfile();
 	const {
 		acceptDraftToVisit,
@@ -273,6 +275,22 @@ export function VisitView() {
 
 	const handleApplyMaterial = async (materialLabel: string, textTemplate: string, service?: any) => {
 		if (!selectedToothForMenu) return;
+
+		// ── ALLERGY CHECK (Safety) ──
+		const allergies = anamnesisDraft?.allergies || [];
+		const isAllergic = allergies.some(
+			(a) =>
+				materialLabel.toLowerCase().includes(a.toLowerCase()) ||
+				(service?.title && service.title.toLowerCase().includes(a.toLowerCase()))
+		);
+
+		if (isAllergic) {
+			const proceed = window.confirm(
+				`⚠️ ВНИМАНИЕ: БЕЗОПАСНОСТЬ ПАЦИЕНТА!\n\nУ пациента зафиксирована аллергия, которая может пересекаться с назначаемым препаратом/материалом (${materialLabel}).\n\nИзвестные аллергии: ${allergies.join(", ")}\n\nВы УВЕРЕНЫ, что хотите назначить это?`
+			);
+			if (!proceed) return;
+		}
+
 		setToothState(selectedToothForMenu.code, "planned" as any);
 		appendToEMKField(
 			"treatmentPlan",

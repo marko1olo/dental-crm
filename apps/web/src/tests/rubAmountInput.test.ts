@@ -66,4 +66,13 @@ test("rubAmountInputMissingStep", () => {
 	assert.strictEqual(rubAmountInputMissingStep(0, 10), false);
 	assert.strictEqual(rubAmountInputMissingStep(null, 10), false);
 	assert.strictEqual(rubAmountInputMissingStep(undefined, 10), false);
+
+	assert.strictEqual(rubAmountInputMissingStep(-100, 10), false);
+	assert.strictEqual(rubAmountInputMissingStep(-105, 10), true);
+
+	assert.strictEqual(rubAmountInputMissingStep(100, 2.5), false);
+	assert.strictEqual(rubAmountInputMissingStep(101, 2.5), true);
+
+	assert.strictEqual(rubAmountInputMissingStep(10.5, 1), true);
+	assert.strictEqual(rubAmountInputMissingStep(10.0, 1), false);
 });
