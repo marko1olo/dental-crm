@@ -23,8 +23,8 @@ console.log("[PATCH] PGlite ready.");
 const ownerEmail = "owner@clinic.com";
 const ownerPassword = "dente2026";
 const ownerPin = "1234";
-const passwordHash = hashCredential(ownerPassword);
-const pinHash = hashCredential(ownerPin);
+const passwordHash = await hashCredential(ownerPassword);
+const pinHash = await hashCredential(ownerPin);
 
 // Find owner user
 const ownerResult = await (db as any).query(

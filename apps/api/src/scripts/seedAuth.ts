@@ -82,7 +82,7 @@ async function seedAuth() {
 	console.log(`  Staff PIN:        ${staffPin}\n`);
 
 	// ── 1. Upsert organization ───────────────────────────────────────────────
-	const passwordHash = hashCredential(clinicPassword);
+	const passwordHash = await hashCredential(clinicPassword);
 
 	const [existingOrg] = await db
 		.select({ id: schema.organizations.id })
@@ -116,7 +116,7 @@ async function seedAuth() {
 	// ── 2. Upsert users with PIN codes ───────────────────────────────────────
 	for (const staff of DEMO_STAFF) {
 		const pin = staff.isAdmin ? adminPin : staffPin;
-		const pinCodeHash = hashCredential(pin);
+		const pinCodeHash = await hashCredential(pin);
 
 		const [existingUser] = await db
 			.select({ id: schema.users.id })

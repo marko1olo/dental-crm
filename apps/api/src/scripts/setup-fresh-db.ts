@@ -83,9 +83,9 @@ const password = "dente2026";
 const ownerName = "Администратор клиники";
 const ownerPin = "1234";
 
-const passwordHash = hashCredential(password);
-const pinHash = hashCredential(ownerPin);
-const ownerPasswordHash = hashCredential(password);
+const passwordHash = await hashCredential(password);
+const pinHash = await hashCredential(ownerPin);
+const ownerPasswordHash = await hashCredential(password);
 
 await (db as any).query(
 	`INSERT INTO organizations (id, name, login_id, password_hash, clinic_mode, onboarding_completed)

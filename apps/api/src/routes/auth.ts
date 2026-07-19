@@ -149,7 +149,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			const storedHash = org.passwordHash;
 			const isMatch = storedHash
-				? verifyCredential(password, storedHash)
+				? await verifyCredential(password, storedHash)
 				: false;
 
 			if (!isMatch) {
@@ -234,7 +234,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			const storedPinHash = user.pinCodeHash;
 			const isMatch = storedPinHash
-				? verifyCredential(pinCode, storedPinHash)
+				? await verifyCredential(pinCode, storedPinHash)
 				: false;
 
 			if (!isMatch) {
@@ -335,7 +335,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			};
 			if (!requireAdminSetupKey(reply, body.adminKey)) return;
 
-			const hash = hashCredential(body.newPassword);
+			const hash = await hashCredential(body.newPassword);
 			await db
 				.update(organizations)
 				.set({ passwordHash: hash })
@@ -356,7 +356,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			};
 			if (!requireAdminSetupKey(reply, body.adminKey)) return;
 
-			const hash = hashCredential(body.newPin);
+			const hash = await hashCredential(body.newPin);
 			await db
 				.update(users)
 				.set({ pinCodeHash: hash })
@@ -395,7 +395,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const passwordHash = hashCredential(password);
+			const passwordHash = await hashCredential(password);
 
 			const [org] = await db
 				.insert(organizations)
@@ -413,8 +413,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			let owner: any = null;
 			if (ownerName) {
 				const pinHash = ownerPin
-					? hashCredential(ownerPin)
-					: hashCredential("0000");
+					? await hashCredential(ownerPin)
+					: await hashCredential("0000");
 				const [ownerUser] = await db
 					.insert(users)
 					.values({
@@ -476,8 +476,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					message: "Пользователь с таким email уже существует.",
 				});
 
-			const passwordHash = hashCredential(password);
-			const pinCodeHash = hashCredential("0000");
+			const passwordHash = await hashCredential(password);
+			const pinCodeHash = await hashCredential("0000");
 
 			const [org] = await db
 				.insert(organizations)
@@ -562,7 +562,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					.send({ error: "AuthError", message: "Неверный email или пароль." });
 			}
 
-			if (!verifyCredential(password, user.passwordHash))
+			if (!(await verifyCredential(password, user.passwordHash)))
 				return reply
 					.code(401)
 					.send({ error: "AuthError", message: "Неверный email или пароль." });
@@ -689,8 +689,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const passwordHash = hashCredential(password);
-			const pinCodeHash = hashCredential(pinCode);
+			const passwordHash = await hashCredential(password);
+			const pinCodeHash = await hashCredential(pinCode);
 
 			const [user] = await db
 				.insert(users)
@@ -824,13 +824,13 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					message: "Пользователь не найден или пароль не установлен.",
 				});
 
-			if (!verifyCredential(oldPassword, user.passwordHash)) {
+			if (!(await verifyCredential(oldPassword, user.passwordHash))) {
 				return reply
 					.code(401)
 					.send({ error: "AuthError", message: "Старый пароль неверен." });
 			}
 
-			const newPasswordHash = hashCredential(newPassword);
+			const newPasswordHash = await hashCredential(newPassword);
 			await db
 				.update(users)
 				.set({ passwordHash: newPasswordHash })
@@ -872,13 +872,13 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					message: "Пользователь не найден или PIN не установлен.",
 				});
 
-			if (!verifyCredential(oldPin, user.pinCodeHash)) {
+			if (!(await verifyCredential(oldPin, user.pinCodeHash))) {
 				return reply
 					.code(401)
 					.send({ error: "AuthError", message: "Старый PIN-код неверен." });
 			}
 
-			const newPinHash = hashCredential(newPin);
+			const newPinHash = await hashCredential(newPin);
 			await db
 				.update(users)
 				.set({ pinCodeHash: newPinHash })

@@ -439,8 +439,8 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 				pinCodeHash?: string;
 			} = {};
 			if (email) updates.email = email.toLowerCase().trim();
-			if (password) updates.passwordHash = hashCredential(password);
-			if (pinCode) updates.pinCodeHash = hashCredential(pinCode);
+			if (password) updates.passwordHash = await hashCredential(password);
+			if (pinCode) updates.pinCodeHash = await hashCredential(pinCode);
 
 			try {
 				await updateStaffCredentialsInDb(orgId, params.staffId, updates);
