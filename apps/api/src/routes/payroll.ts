@@ -130,7 +130,7 @@ async function computePayrollForDoctor(orgId: string, doctorId: string) {
 				and(
 					eq(inventoryTransactions.organizationId, orgId),
 					eq(inventoryTransactions.visitId, inv.visitId),
-					eq(inventoryTransactions.transactionType, "deduction")
+					eq(inventoryTransactions.transactionType, "visit_deduction")
 				)
 			);
 
