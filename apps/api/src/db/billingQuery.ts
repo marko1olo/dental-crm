@@ -328,3 +328,41 @@ export async function calculatePatientBalanceInDb(organizationId: string, patien
 
 	return Math.max(0, plannedRub - paidRub);
 }
+
+export async function calculatePatientsBalancesInDb(organizationId: string): Promise<Map<string, number>> {
+	const balances = new Map<string, number>();
+
+	const invoices = await db
+		.select({ 
+			patientId: schema.patientInvoices.patientId, 
+			total: sql<number>`SUM(${schema.patientInvoices.totalAmountRub})` 
+		})
+		.from(schema.patientInvoices)
+		.where(eq(schema.patientInvoices.organizationId, organizationId))
+		.groupBy(schema.patientInvoices.patientId);
+
+	for (const inv of invoices) {
+		balances.set(inv.patientId, Number(inv.total));
+	}
+
+	const payments = await db
+		.select({ 
+			patientId: schema.payments.patientId, 
+			total: sql<number>`SUM(${schema.payments.amountRub})` 
+		})
+		.from(schema.payments)
+		.where(
+			and(
+				eq(schema.payments.organizationId, organizationId),
+				eq(schema.payments.status, "paid")
+			)
+		)
+		.groupBy(schema.payments.patientId);
+
+	for (const pay of payments) {
+		const current = balances.get(pay.patientId) ?? 0;
+		balances.set(pay.patientId, Math.max(0, current - Number(pay.total)));
+	}
+
+	return balances;
+}
