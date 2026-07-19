@@ -487,12 +487,6 @@ export async function getDashboardFromDb(
 			(plannedByPatient.get(invoice.patientId) ?? 0) +
 				money(invoice.totalAmountRub),
 		);
-	for (const document of documents)
-		plannedByPatient.set(
-			document.patientId,
-			(plannedByPatient.get(document.patientId) ?? 0) +
-				money(document.totalAmountRub),
-		);
 
 	const mode = normalizeClinicMode(org.clinicMode);
 	const specializations = safeStringArray(org.specializations).map(
