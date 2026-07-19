@@ -203,6 +203,10 @@ export async function createPaymentInDb(
 		throw new Error("Failed to create payment");
 	}
 
+	if (newPayment.visitId) {
+		await recalculateInvoiceStatusForVisit(organizationId, newPayment.visitId);
+	}
+
 	return {
 		id: newPayment.id,
 		organizationId: newPayment.organizationId,
@@ -247,4 +251,50 @@ export async function getPaymentsByPatientIdInDb(
 		createdAt: p.createdAt.toISOString(),
 		updatedAt: p.updatedAt.toISOString(),
 	})) as any;
+}
+
+export async function recalculateInvoiceStatusForVisit(organizationId: string, visitId: string) {
+	// 1. Get total payments for this visit
+	const paymentsList = await db
+		.select()
+		.from(schema.payments)
+		.where(
+			and(
+				eq(schema.payments.organizationId, organizationId),
+				eq(schema.payments.visitId, visitId),
+				eq(schema.payments.status, "paid")
+			)
+		);
+		
+	const totalPaidRub = paymentsList.reduce((acc, p) => acc + Number(p.amountRub), 0);
+
+	// 2. Get the invoice for this visit
+	const [invoice] = await db
+		.select()
+		.from(schema.patientInvoices)
+		.where(
+			and(
+				eq(schema.patientInvoices.organizationId, organizationId),
+				eq(schema.patientInvoices.visitId, visitId)
+			)
+		)
+		.limit(1);
+
+	if (!invoice) return;
+
+	// 3. Determine status
+	const totalInvoiceRub = Number(invoice.totalAmountRub);
+	let newStatus = "unpaid";
+	if (totalPaidRub >= totalInvoiceRub && totalInvoiceRub > 0) {
+		newStatus = "paid";
+	} else if (totalPaidRub > 0) {
+		newStatus = "partial";
+	}
+
+	if (invoice.status !== newStatus) {
+		await db
+			.update(schema.patientInvoices)
+			.set({ status: newStatus as any, updatedAt: new Date() })
+			.where(eq(schema.patientInvoices.id, invoice.id));
+	}
 }
