@@ -1,5 +1,5 @@
 import type { CreatePaymentInput, Payment } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -296,5 +296,35 @@ export async function recalculateInvoiceStatusForVisit(organizationId: string, v
 			.update(schema.patientInvoices)
 			.set({ status: newStatus as any, updatedAt: new Date() })
 			.where(eq(schema.patientInvoices.id, invoice.id));
-	}
+}
+
+export async function calculatePatientBalanceInDb(organizationId: string, patientId: string): Promise<number> {
+	// 1. Sum of all invoices (planned)
+	const [invoiceResult] = await db
+		.select({ total: sql<number>`SUM(${schema.patientInvoices.totalAmountRub})` })
+		.from(schema.patientInvoices)
+		.where(
+			and(
+				eq(schema.patientInvoices.organizationId, organizationId),
+				eq(schema.patientInvoices.patientId, patientId)
+			)
+		);
+	
+	const plannedRub = Number(invoiceResult?.total ?? 0);
+
+	// 2. Sum of all payments
+	const [paymentResult] = await db
+		.select({ total: sql<number>`SUM(${schema.payments.amountRub})` })
+		.from(schema.payments)
+		.where(
+			and(
+				eq(schema.payments.organizationId, organizationId),
+				eq(schema.payments.patientId, patientId),
+				eq(schema.payments.status, "paid")
+			)
+		);
+	
+	const paidRub = Number(paymentResult?.total ?? 0);
+
+	return Math.max(0, plannedRub - paidRub);
 }
