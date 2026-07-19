@@ -286,19 +286,8 @@ export async function createDenteApiApp(
 		},
 	);
 
-	app.setErrorHandler((error, _request, reply) => {
-		const logPath = process.env.ERROR_LOG_PATH;
-		if (logPath) {
-			import("node:fs").then((m) =>
-				m.appendFileSync(
-					logPath,
-					((error as any)?.stack || (error as any)?.message || String(error)) +
-						"\nCAUSE: " +
-						((error as any)?.cause || "") +
-						"\n",
-				),
-			);
-		}
+	app.setErrorHandler((error, request, reply) => {
+		request.log.error(error);
 		if (isZodValidationError(error)) {
 			reply.status(400).send({
 				error: "ValidationError",
