@@ -16,6 +16,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
+import { SignaturePad } from "./SignaturePad";
+import { PlanInstallmentCalculator } from "./PlanInstallmentCalculator";
 import "./ComparativePlanner.css";
 
 // ─── Backend-aligned types ──────────────────────────────────────────────────
@@ -142,6 +144,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 	const [activeMobileTab, setActiveMobileTab] = useState<string>("");
 	const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
+	const [signatures, setSignatures] = useState<Record<string, string>>({});
 
 	// ── New-plan form state ──────────────────────────────────────────────────
 	const [showCreateForm, setShowCreateForm] = useState(false);
@@ -226,6 +229,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 						id: planId,
 						status: newStatus,
 						items: plans.find((p) => p.id === planId)?.items || [],
+						patientSignature: newStatus === "Approved" ? signatures[planId] : undefined,
 					}),
 				},
 			);
@@ -458,41 +462,56 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	// ── Print & Export ────────────────────────────────────────────────────────
 
-	const handlePrintPlan = (plan: TreatmentPlan) => {
+	const handlePrintPlan = async (plan: TreatmentPlan) => {
+		if (!selectedPatientId) return;
 		const total = calcPlanTotal(plan);
-		const win = window.open("", "_blank");
-		if (!win) return;
-		win.document.write(`
-      <html>
-        <head><title>План лечения: ${plan.name}</title>
-        <style>body{font-family:sans-serif;padding:32px;max-width:800px;margin:0 auto}
-          h1{font-size:20px;margin-bottom:4px}
-          p{color:#555;font-size:14px;margin-bottom:20px}
-          table{width:100%;border-collapse:collapse;font-size:14px}
-          th{background:#f0f0f0;text-align:left;padding:10px;border-bottom:2px solid #ccc}
-          td{padding:8px 10px;border-bottom:1px solid #eee}
-          .total{font-weight:700;font-size:16px;text-align:right;margin-top:20px}
-        </style></head>
-        <body>
-          <h1>План лечения: ${plan.name}</h1>
-          <p>Статус: ${statusLabel(plan.status)}</p>
-          <table>
-            <thead><tr><th>Услуга</th><th>Зуб</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
-            <tbody>
-              ${(plan.items || [])
-								.map(
-									(item) =>
-										`<tr><td>${item.name}</td><td>${item.toothNumber ?? "—"}</td><td>${item.quantity}</td><td>${item.price.toLocaleString("ru-RU")} ₽</td><td>${(item.price * item.quantity).toLocaleString("ru-RU")} ₽</td></tr>`,
-								)
-								.join("")}
-            </tbody>
-          </table>
-          <div class="total">Итого: ${total.toLocaleString("ru-RU")} ₽</div>
-        </body>
-      </html>
-    `);
-		win.document.close();
-		win.print();
+		
+		const stages = [
+			{
+				stageName: "Согласованный план",
+				plannedServices: plan.items.map(i => i.name).join(", "),
+				plannedTiming: "В процессе",
+				estimatedAmountRub: total
+			}
+		];
+
+		try {
+			const res = await fetch("/api/documents", {
+				method: "POST",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId: selectedPatientId,
+					kind: "treatment_plan",
+					title: `План лечения: ${plan.name}`,
+					totalAmountRub: total,
+					payload: {
+						treatmentPlan: {
+							clinicalReason: "Обращение в клинику",
+							diagnosisSummary: "Состояние по результатам осмотра",
+							teethOrArea: "Полость рта",
+							clinicalToothRows: [],
+							plannedStages: stages,
+							treatmentGoals: ["Санация", "Восстановление функции"],
+							estimatedTotalRub: total,
+							alternatives: ["Бюджетный план лечения"],
+							risksAndLimitations: ["Необходимость регулярных осмотров"],
+							prognosisAndLimits: "Благоприятный при соблюдении рекомендаций",
+							controlPlan: "Контрольный осмотр через 6 месяцев",
+							doctorFullName: "Врач клиники"
+						}
+					}
+				})
+			});
+			if (res.ok) {
+				showToast("Документ успешно сформирован. Откройте вкладку 'Документы'", "success");
+			} else {
+				showToast("Не удалось сформировать документ", "error");
+			}
+		} catch (e) {
+			showToast("Ошибка при формировании документа", "error");
+		}
 		setActiveDropdown(null);
 	};
 
@@ -1114,46 +1133,63 @@ export const ComparativePlannerDashboard: React.FC = () => {
 											)}
 										</div>
 
-										{/* Card bottom actions */}
-										<div className="card-bottom-actions">
-											{isDraft && (
-												<>
-													<button
-														onClick={() =>
-															updatePlanStatus(plan.id, "Approved")
-														}
-														className="approve-plan-btn"
-														disabled={isSaving}
-													>
-														{isSaving ? (
-															<RefreshCw
-																className="w-5 h-5"
-																style={{
-																	animation: "spin 1s linear infinite",
-																}}
-															/>
-														) : (
-															<Check className="w-5 h-5" />
-														)}
-														<span>Утвердить план</span>
-													</button>
+										{/* Installment Calculator */}
+										<PlanInstallmentCalculator totalAmount={patientCopay} />
 
-													<button
-														onClick={() =>
-															updatePlanStatus(plan.id, "Archived")
-														}
-														className="reject-plan-btn"
-														disabled={isSaving}
-													>
-														<X className="w-5 h-5" />
-														<span>Отклонить</span>
-													</button>
-												</>
+										{/* Card bottom actions */}
+										<div className="card-bottom-actions" style={{ flexDirection: "column", alignItems: "stretch", marginTop: "16px", gap: "16px" }}>
+											{isDraft && (
+												<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+													<SignaturePad
+														onSign={(sig) => setSignatures((prev) => ({ ...prev, [plan.id]: sig }))}
+													/>
+													<div style={{ display: "flex", gap: "8px" }}>
+														<button
+															onClick={() =>
+																updatePlanStatus(plan.id, "Approved")
+															}
+															className="approve-plan-btn"
+															disabled={isSaving || !signatures[plan.id]}
+															style={{ flex: 1 }}
+														>
+															{isSaving ? (
+																<RefreshCw
+																	className="w-5 h-5"
+																	style={{
+																		animation: "spin 1s linear infinite",
+																	}}
+																/>
+															) : (
+																<Check className="w-5 h-5" />
+															)}
+															<span>Утвердить план</span>
+														</button>
+
+														<button
+															onClick={() =>
+																updatePlanStatus(plan.id, "Archived")
+															}
+															className="reject-plan-btn"
+															disabled={isSaving}
+														>
+															<X className="w-5 h-5" />
+															<span>Отклонить</span>
+														</button>
+													</div>
+												</div>
 											)}
 											{isApproved && (
-												<div className="status-badge-approved">
-													<Check className="w-5 h-5" />
-													<span>План утверждён</span>
+												<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+													<div className="status-badge-approved">
+														<Check className="w-5 h-5" />
+														<span>План утверждён</span>
+													</div>
+													{plan.patientSignature && (
+														<div style={{ padding: "8px", background: "var(--paper)", borderRadius: "8px", border: "1px solid var(--line)" }}>
+															<p style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "4px" }}>Подпись пациента:</p>
+															<img src={plan.patientSignature} alt="Подпись" style={{ maxHeight: "60px" }} />
+														</div>
+													)}
 												</div>
 											)}
 											{isArchived && (
