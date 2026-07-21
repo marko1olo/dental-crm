@@ -4119,9 +4119,9 @@ export function useAppLogic(): any {
 		);
 		const saveTimer = window.setTimeout(
 			() => {
-				dirtyAppointmentIds.forEach(
-						void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }),
-				);
+				dirtyAppointmentIds.forEach((appointmentId) => {
+					void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false });
+				});
 			},
 			appointmentRetryingErrors ? 5000 : 1200,
 		);

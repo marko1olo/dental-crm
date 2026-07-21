@@ -238,8 +238,8 @@ export async function acceptVisitDraftInDb(
 					serviceId: s.serviceId,
 					title: s.title,
 					quantity: String(s.quantity),
-					priceRub: s.priceRub,
-					unitPriceRub: s.priceRub,
+					priceRub: Math.round(Number(s.priceRub || 0)),
+					unitPriceRub: Math.round(Number(s.priceRub || 0)),
 					status: "completed" as const,
 					toothCode: s.toothCode || null,
 				}))
