@@ -299,8 +299,8 @@ module.exports = {{
         return True, "Configuration valid"
 
 
-def main():
-    """CLI entry point."""
+def _setup_argparser() -> argparse.ArgumentParser:
+    """Setup and return the argument parser."""
     parser = argparse.ArgumentParser(
         description="Generate Tailwind CSS configuration",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -381,7 +381,38 @@ Examples:
         action="store_true",
         help="Validate config without writing file",
     )
+    return parser
 
+
+def _parse_dict_args(args_list: List[str], arg_name: str) -> Dict[str, str]:
+    """Parse key:value arguments into a dictionary."""
+    result = {}
+    for spec in args_list:
+        try:
+            name, value = spec.split(":", 1)
+            result[name] = value
+        except ValueError:
+            print(f"Invalid {arg_name} spec: {spec}", file=sys.stderr)
+            sys.exit(1)
+    return result
+
+
+def _parse_font_args(args_list: List[str]) -> Dict[str, List[str]]:
+    """Parse font TYPE:FAMILY arguments into a dictionary."""
+    fonts = {}
+    for font_spec in args_list:
+        try:
+            font_type, family = font_spec.split(":", 1)
+            fonts[font_type] = [f.strip().strip("'\"") for f in family.split(",")]
+        except ValueError:
+            print(f"Invalid font spec: {font_spec}", file=sys.stderr)
+            sys.exit(1)
+    return fonts
+
+
+def main():
+    """CLI entry point."""
+    parser = _setup_argparser()
     args = parser.parse_args()
 
     # Initialize generator
@@ -393,50 +424,22 @@ Examples:
 
     # Add custom colors
     if args.colors:
-        colors = {}
-        for color_spec in args.colors:
-            try:
-                name, value = color_spec.split(":", 1)
-                colors[name] = value
-            except ValueError:
-                print(f"Invalid color spec: {color_spec}", file=sys.stderr)
-                sys.exit(1)
+        colors = _parse_dict_args(args.colors, "color")
         generator.add_colors(colors)
 
     # Add custom fonts
     if args.fonts:
-        fonts = {}
-        for font_spec in args.fonts:
-            try:
-                font_type, family = font_spec.split(":", 1)
-                fonts[font_type] = [f.strip().strip("'\"") for f in family.split(",")]
-            except ValueError:
-                print(f"Invalid font spec: {font_spec}", file=sys.stderr)
-                sys.exit(1)
+        fonts = _parse_font_args(args.fonts)
         generator.add_fonts(fonts)
 
     # Add custom spacing
     if args.spacing:
-        spacing = {}
-        for spacing_spec in args.spacing:
-            try:
-                name, value = spacing_spec.split(":", 1)
-                spacing[name] = value
-            except ValueError:
-                print(f"Invalid spacing spec: {spacing_spec}", file=sys.stderr)
-                sys.exit(1)
+        spacing = _parse_dict_args(args.spacing, "spacing")
         generator.add_spacing(spacing)
 
     # Add custom breakpoints
     if args.breakpoints:
-        breakpoints = {}
-        for bp_spec in args.breakpoints:
-            try:
-                name, width = bp_spec.split(":", 1)
-                breakpoints[name] = width
-            except ValueError:
-                print(f"Invalid breakpoint spec: {bp_spec}", file=sys.stderr)
-                sys.exit(1)
+        breakpoints = _parse_dict_args(args.breakpoints, "breakpoint")
         generator.add_breakpoints(breakpoints)
 
     # Add recommended plugins
