@@ -81,6 +81,6 @@ export async function register(app: FastifyInstance) {
 			return reply.code(404).send(apiError("Пациент не найден"));
 		}
 
-		return reply.send(buildDocumentAuditFacts(document, patient));
+		return reply.send(await buildDocumentAuditFacts(document, patient));
 	});
 }

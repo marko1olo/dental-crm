@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type {
 	DocumentIssueSignatureAttestation,
@@ -35,18 +36,23 @@ export function writeIssuedDocumentSnapshot(
 	};
 }
 
-export function readIssuedDocumentSnapshot(
+export async function readIssuedDocumentSnapshot(
 	document: import("@dental/shared").GeneratedDocument,
-): string | null {
+): Promise<string | null> {
 	if (document.status !== "issued" && document.status !== "voided") return null;
 	if (!document.issuedSnapshotSha256) return null;
 	const snapshotPath =
 		document.storagePath || documentSnapshotPath(document.id);
-	if (!existsSync(snapshotPath)) return null;
-	const html = readFileSync(snapshotPath, "utf8");
-	const actualHash = createHash("sha256").update(html, "utf8").digest("hex");
-	if (actualHash !== document.issuedSnapshotSha256) return null;
-	return html;
+
+	try {
+		const html = await readFile(snapshotPath, "utf8");
+		const actualHash = createHash("sha256").update(html, "utf8").digest("hex");
+		if (actualHash !== document.issuedSnapshotSha256) return null;
+		return html;
+	} catch (e: any) {
+		if (e.code === "ENOENT") return null;
+		throw e;
+	}
 }
 
 import { recordAuditEvent } from "../audit.js";

@@ -1202,7 +1202,7 @@ export async function buildDocumentAuditFacts(
 				(await documentIssueChainBlockReason(document)))
 			: null;
 	const issuedArchiveRequired = documentRequiresIssuedArchive(document);
-	const issuedSnapshot = readIssuedDocumentSnapshot(document);
+	const issuedSnapshot = await readIssuedDocumentSnapshot(document);
 	const immutableSnapshotReady = Boolean(
 		issuedSnapshot &&
 			documentHasIssuedArchiveMetadata(document) &&

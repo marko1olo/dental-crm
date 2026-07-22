@@ -106,7 +106,7 @@ export async function register(app: FastifyInstance) {
 				return reply.code(409).send(apiError(issuedArchiveIntegrityError));
 			}
 
-			const issuedSnapshot = readIssuedDocumentSnapshot(document);
+			const issuedSnapshot = await readIssuedDocumentSnapshot(document);
 			if (!issuedSnapshot) {
 				return reply
 					.code(409)

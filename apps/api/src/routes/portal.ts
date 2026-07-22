@@ -214,7 +214,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				return reply.status(404).send({ error: "Not found" });
 			}
 
-			const issuedSnapshot = readIssuedDocumentSnapshot(document);
+			const issuedSnapshot = await readIssuedDocumentSnapshot(document);
 			if (!issuedSnapshot) {
 				return reply
 					.status(409)

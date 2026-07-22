@@ -89,7 +89,7 @@ export async function register(app: FastifyInstance) {
 				return reply.code(404).send(apiError("Пациент не найден"));
 			}
 
-			const issuedSnapshot = readIssuedDocumentSnapshot(document);
+			const issuedSnapshot = await readIssuedDocumentSnapshot(document);
 			if (documentRequiresIssuedArchive(document)) {
 				if (!documentHasIssuedArchiveMetadata(document)) {
 					return reply.code(409).send(apiError(issuedArchiveIntegrityError));
