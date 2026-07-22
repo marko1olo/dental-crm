@@ -88,7 +88,6 @@ export function useInventoryLogic(organizationId: string) {
 			if (e.key === "Enter") {
 				if (barcodeBuffer.length > 3) {
 					// Likely a barcode scan
-					console.log("[Scanner] Barcode read:", barcodeBuffer);
 					setScannedBarcode(barcodeBuffer);
 					setIsScannerActive(true);
 					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
