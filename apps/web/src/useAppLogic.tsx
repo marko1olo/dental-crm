@@ -821,10 +821,7 @@ import {
 	recognitionPresets,
 } from "./settingsStaticData";
 import { useAppStore } from "./store/appStore";
-import {
-	useDocumentStore as _unused,
-	useDocumentStore,
-} from "./store/documentStore";
+import { useDocumentStore } from "./store/documentStore";
 import { useImagingStore } from "./store/imagingStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
