@@ -45,7 +45,7 @@ async function migrate() {
 		id: orgId,
 		name: state.clinicProfile.clinicName,
 		loginId: clinicLogin,
-		passwordHash: hashCredential(clinicPassword),
+		passwordHash: await hashCredential(clinicPassword),
 		inn: state.clinicProfile.inn,
 		kpp: state.clinicProfile.kpp,
 		ogrn: state.clinicProfile.ogrn,
@@ -84,7 +84,7 @@ async function migrate() {
 			role: staff.role,
 			phone: staff.phone,
 			email: staff.email,
-			pinCodeHash: hashCredential(pin),
+			pinCodeHash: await hashCredential(pin),
 			isActive: staff.active,
 			createdAt: new Date(staff.createdAt),
 		});

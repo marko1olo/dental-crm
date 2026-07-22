@@ -32,8 +32,8 @@ app.post(
 				message: "Пользователь с таким email уже существует.",
 			});
 
-		const passwordHash = hashCredential(password);
-		const pinCodeHash = hashCredential("0000"); // Default PIN for owner
+		const passwordHash = await hashCredential(password);
+		const pinCodeHash = await hashCredential("0000"); // Default PIN for owner
 
 		const [org] = await db
 			.insert(organizations)
@@ -94,7 +94,7 @@ app.post(
 				.send({ error: "AuthError", message: "Неверный email или пароль." });
 		}
 
-		if (!verifyCredential(password, user.passwordHash))
+		if (!(await verifyCredential(password, user.passwordHash)))
 			return reply
 				.code(401)
 				.send({ error: "AuthError", message: "Неверный email или пароль." });
@@ -194,8 +194,8 @@ app.post(
 				message: "Приглашение недействительно или истекло.",
 			});
 
-		const passwordHash = hashCredential(password);
-		const pinCodeHash = hashCredential(pinCode);
+		const passwordHash = await hashCredential(password);
+		const pinCodeHash = await hashCredential(pinCode);
 
 		const [user] = await db
 			.insert(users)

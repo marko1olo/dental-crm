@@ -60,7 +60,7 @@ async function seedPglite() {
 	console.log(`  Admin PIN:       ${adminPin}`);
 	console.log(`  Staff PIN:       ${staffPin}\n`);
 
-	const passwordHash = hashCredential(clinicPassword);
+	const passwordHash = await hashCredential(clinicPassword);
 
 	// 1. Upsert organization
 	const [existingOrg] = await db
@@ -91,7 +91,7 @@ async function seedPglite() {
 	// 2. Upsert users
 	for (const staff of DEMO_STAFF) {
 		const pin = staff.isAdmin ? adminPin : staffPin;
-		const pinCodeHash = hashCredential(pin);
+		const pinCodeHash = await hashCredential(pin);
 		const isOwner = staff.email === "owner@example.com";
 		const userPasswordHash = isOwner ? passwordHash : null;
 
