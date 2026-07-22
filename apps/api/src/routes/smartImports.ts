@@ -2619,7 +2619,6 @@ async function readWindowsMigrationWorkstationSignalValues(
 		"foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
 		"$rows | ConvertTo-Json -Compress",
 	].join("; ");
-	const encodedScript = Buffer.from(script, "utf16le").toString("base64");
 	try {
 		const psPath = path.join(
 			process.env.WINDIR || "C:\\Windows",
@@ -2628,23 +2627,29 @@ async function readWindowsMigrationWorkstationSignalValues(
 			"v1.0",
 			"powershell.exe",
 		);
-		const { stdout } = await execFileAsync(
-			psPath,
-			[
-				"-NoProfile",
-				"-NonInteractive",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-EncodedCommand",
-				encodedScript,
-			],
-			{
-				timeout: 2500,
-				maxBuffer: 160 * 1024,
-				windowsHide: true,
-				env: { ...process.env, MIGRATION_RX: rxPattern },
-			},
-		);
+		const stdout = await new Promise<string>((resolve, reject) => {
+			const child = execFile(
+				psPath,
+				["-NoProfile", "-NonInteractive", "-Command", "-"],
+				{
+					timeout: 2500,
+					maxBuffer: 160 * 1024,
+					windowsHide: true,
+					env: { ...process.env, MIGRATION_RX: rxPattern },
+				},
+				(error, stdoutStr) => {
+					if (error) {
+						reject(error);
+					} else {
+						resolve(stdoutStr);
+					}
+				},
+			);
+			if (child.stdin) {
+				child.stdin.write(script);
+				child.stdin.end();
+			}
+		});
 		if (!stdout.trim()) return [];
 		const parsed = JSON.parse(stdout);
 		const rows = Array.isArray(parsed) ? parsed : [parsed];
@@ -3076,7 +3081,6 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
 		"Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { $roots += [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
 		"$roots | ConvertTo-Json -Compress",
 	].join("; ");
-	const encodedScript = Buffer.from(script, "utf16le").toString("base64");
 	try {
 		const psPath = path.join(
 			process.env.WINDIR || "C:\\Windows",
@@ -3085,22 +3089,28 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
 			"v1.0",
 			"powershell.exe",
 		);
-		const { stdout } = await execFileAsync(
-			psPath,
-			[
-				"-NoProfile",
-				"-NonInteractive",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-EncodedCommand",
-				encodedScript,
-			],
-			{
-				timeout: 1600,
-				maxBuffer: 80 * 1024,
-				windowsHide: true,
-			},
-		);
+		const stdout = await new Promise<string>((resolve, reject) => {
+			const child = execFile(
+				psPath,
+				["-NoProfile", "-NonInteractive", "-Command", "-"],
+				{
+					timeout: 1600,
+					maxBuffer: 80 * 1024,
+					windowsHide: true,
+				},
+				(error, stdoutStr) => {
+					if (error) {
+						reject(error);
+					} else {
+						resolve(stdoutStr);
+					}
+				},
+			);
+			if (child.stdin) {
+				child.stdin.write(script);
+				child.stdin.end();
+			}
+		});
 		if (!stdout.trim()) return [];
 		const parsed = JSON.parse(stdout);
 		const rows = Array.isArray(parsed) ? parsed : [parsed];
