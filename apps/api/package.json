@@ -10,7 +10,7 @@
 		"typecheck": "tsc -p tsconfig.json --noEmit",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"test": "tsx --test src/tests/*.test.ts"
+		"test": "tsx --test \"src/**/*.test.ts\""
 	},
 	"dependencies": {
 		"@dental/shared": "*",

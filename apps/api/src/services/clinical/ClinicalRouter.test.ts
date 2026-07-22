@@ -64,4 +64,68 @@ describe("ClinicalRouter", () => {
 
 		assert.strictEqual(result, null);
 	});
+
+	test("handlePhaseCompletion formats correctly with empty toothCodes array", async () => {
+		const result = await router.handlePhaseCompletion(
+			orgId,
+			patientId,
+			"PHASE_1_THERAPY",
+			notes,
+			[],
+		);
+
+		assert.ok(result);
+		assert.strictEqual(
+			result.description,
+			"Therapy phase completed for teeth: . Handoff notes: Test notes. Please review for prosthetics.",
+		);
+	});
+
+	test("handlePhaseCompletion formats correctly with empty notes string", async () => {
+		const result = await router.handlePhaseCompletion(
+			orgId,
+			patientId,
+			"PHASE_1_THERAPY",
+			"",
+			toothCodes,
+		);
+
+		assert.ok(result);
+		assert.strictEqual(
+			result.description,
+			"Therapy phase completed for teeth: 11, 12. Handoff notes: . Please review for prosthetics.",
+		);
+	});
+
+	test("handlePhaseCompletion formats correctly with empty toothCodes array for PHASE_2_SURGERY", async () => {
+		const result = await router.handlePhaseCompletion(
+			orgId,
+			patientId,
+			"PHASE_2_SURGERY",
+			notes,
+			[],
+		);
+
+		assert.ok(result);
+		assert.strictEqual(
+			result.description,
+			"Surgery completed for teeth: . Notes: Test notes. Proceed with prosthetics after healing.",
+		);
+	});
+
+	test("handlePhaseCompletion formats correctly with empty notes string for PHASE_2_SURGERY", async () => {
+		const result = await router.handlePhaseCompletion(
+			orgId,
+			patientId,
+			"PHASE_2_SURGERY",
+			"",
+			toothCodes,
+		);
+
+		assert.ok(result);
+		assert.strictEqual(
+			result.description,
+			"Surgery completed for teeth: 11, 12. Notes: . Proceed with prosthetics after healing.",
+		);
+	});
 });
