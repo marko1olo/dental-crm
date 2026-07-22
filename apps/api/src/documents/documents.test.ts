@@ -4,6 +4,8 @@ import {
 	normalizedDocumentChainValue,
 	normalizedTaxpayerInn,
 } from "../routes/documents.js";
+import { frozenTaxXmlPayments } from '../routes/documents.js';
+import type { GeneratedDocument, Payment } from '@dental/shared';
 
 describe("normalizedDocumentChainValue", () => {
 	test("returns empty string for null", () => {
@@ -61,8 +63,8 @@ describe('normalizedTaxpayerInn', () => {
     assert.strictEqual(normalizedTaxpayerInn("123-456-789"), "123456789");
     assert.strictEqual(normalizedTaxpayerInn("A123B456C"), "123456");
     assert.strictEqual(normalizedTaxpayerInn("  123 456  "), "123456");
-import { frozenTaxXmlPayments } from '../routes/documents.js';
-import type { GeneratedDocument, Payment } from '@dental/shared';
+  });
+});
 
 describe('frozenTaxXmlPayments', () => {
   const fallbackPayments: Payment[] = [
@@ -81,12 +83,14 @@ describe('frozenTaxXmlPayments', () => {
 
     const result = frozenTaxXmlPayments(document, fallbackPayments);
     assert.deepStrictEqual(result, document.taxXmlSourceSnapshot?.payments);
+  });
 
   test('returns fallback payments if taxXmlSourceSnapshot is missing', () => {
     const document: GeneratedDocument = {} as GeneratedDocument;
 
     const result = frozenTaxXmlPayments(document, fallbackPayments);
     assert.deepStrictEqual(result, fallbackPayments);
+  });
 
   test('returns fallback payments if taxXmlSourceSnapshot is present but payments is undefined', () => {
     const document: GeneratedDocument = {
