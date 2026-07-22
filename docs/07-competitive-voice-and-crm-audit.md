@@ -1,57 +1,54 @@
-# Competitive Voice and CRM Audit
+# Competitive Voice and CRM Audit & Feature Parity Master Index
 
-Date: 2026-05-15
+Date: 2026-07-22
+
+## Overview
+
+This document serves as the master index for competitive audits between **Dental CRM (DENTE)** and major competitors (**IDENT**, **DentalPRO**, **iStom**).
+
+All competitive feature extractions, parity registries, architecture maps, and specification cards are systematically maintained in the dedicated directory:
+📂 `docs/competitive-audit/`
+
+---
+
+## Direct Links to Competitive Documentation Suite
+
+1. **[OUR_CRM_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)**
+   - Complete technical breakdown of Dental CRM monorepo capabilities across Patients, Schedule, EHR/Visits, 3D DICOM MPR, Documents/NDFL, Communications, Billing/Payroll, Inventory, and Smart Imports.
+
+2. **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)**
+   - Canonical index of **63 unique competitor features** extracted from source dumps. Includes `feature_key`, status in our CRM (`[ЛУЧШЕ У НАС]`, `[ЧАСТИЧНО]`, `[НЕТ]`), value score (1–5), implementation options, and source evidence line ranges.
+
+3. **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**
+   - Architected implementation options with concrete file paths (`apps/web`, `apps/api`), database schema considerations, and risks for all `[НЕТ]` and `[ЧАСТИЧНО]` features.
+
+4. **[PROGRESS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/PROGRESS.md)**
+   - Audit cursor log confirming 100% completion (2961 / 2961 lines processed).
+
+5. **[FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)**
+   - Self-contained specification markdown cards adhering strictly to the 13 mandatory specification fields.
+
+6. **[DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)**
+   - Deep PostgreSQL schema breakdown, 31 document kinds (`documentKind`), Drizzle ORM enums, and database table relations.
+
+7. **[API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)**
+   - Complete Fastify 4+ API route directory mapping all 48 backend endpoint files across Patients, Schedule, EHR, DICOM 3D, Documents, Finance, Communications, and Smart Imports.
+
+8. **[FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md)**
+   - Detailed React 18 frontend component map across views, 3D CT planning toolbar, clinical rule panels, and dictation bars.
+
+9. **[ALGORITHMS_AND_SHARED_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/ALGORITHMS_AND_SHARED_DEEP_MAP.md)**
+   - Detailed technical breakdown of `@dental/shared` package Zod schemas, 3D DICOM MPR WebWorker algorithms, speech normalization logic, and NDFL calculation rules.
+
+10. **[SCRIPTS_AND_CLI_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/SCRIPTS_AND_CLI_DEEP_MAP.md)**
+    - Comprehensive directory of over 170 automation, Playwright/Puppeteer visual audit scripts, and quality gate smoke suites (`scripts/`).
+
+---
 
 ## What We Must Beat
 
-The product cannot win by being another scheduler with patient cards. Existing dental systems already cover scheduling, charting, treatment planning, billing, documents, imaging links, reports, and office workflows.
+Existing dental systems already cover basic scheduling, billing, and document printing. The key vectors where Dental CRM wins:
 
-The weak spot to attack is the tired-doctor workflow:
-- the doctor should not choose STT vendors during treatment;
-- dictation must not be lost after refresh, offline mode, or provider failure;
-- AI must not pretend to sign or diagnose;
-- specialty noise must stay out of the doctor's current specialty;
-- migration from old systems must be preview-first, not destructive.
-
-## Competitor Signals
-
-Dentrix markets all-in-one practice management, AI diagnostics, voice-powered charting, voice perio/restorative charting, treatment planning, imaging integrations, eServices, productivity/reporting, IT/security, backup/recovery, and clinical charting tooling.
-
-Open Dental markets broad dental practice features and a clinical chart module with tooth-chart centered workflows. It is a strong baseline for practical clinic operations, not a narrow voice assistant.
-
-Cloud STT providers are not enough by themselves:
-- Groq is attractive for fast OpenAI-compatible Whisper STT, but short requests can waste the 10-second minimum billed duration and uploads need chunk discipline.
-- Cloudflare Workers AI Whisper is useful as an edge option and has simple REST access, but it still needs account/token setup and billing/legal review.
-- OpenAI, Deepgram, AssemblyAI, Azure, Google, and Hugging Face should remain interchangeable lanes behind our server, never exposed as treatment-screen choices.
-
-## Product Countermove
-
-Build the voice/AI layer as a continuity system, not a novelty button:
-
-1. One doctor-facing action: type, browser voice, or server STT all land in the same dictation field.
-2. Local autosave happens immediately.
-3. Server draft autosave stores the current transcript and editable EMR fields before acceptance.
-4. Audio chunks queue in IndexedDB and server chunks can be assembled by `recordingId`.
-5. Chunk policy avoids tiny Groq requests and exposes dedupe/overlap targets.
-6. Adjacent transcripts are tail-deduplicated before appending to the doctor's note.
-7. Deterministic specialty parser works offline for therapy, prosthetics, surgery, orthodontics, periodontology, hygiene/prevention, pediatric dentistry, implantology, radiology, and general exams.
-8. Optional neural polish is server-only and guarded against added tooth/diagnosis facts.
-9. Final EMR acceptance stays a separate doctor action with revision, receipt, and audit.
-
-## Current Implementation Evidence
-
-- `/api/speech/status` exposes provider, fallback, key-pool counts, timeout/cooldown, chunking, dedupe, polish, and setup hints without secrets.
-- `/api/speech/transcribe-chunk` routes Groq/OpenAI/Deepgram/AssemblyAI/Cloudflare through the API server.
-- `/api/speech/recordings/recovery` reports incomplete recordings after refresh/offline retry.
-- `/api/visits/:visitId/draft/autosave` stores pre-acceptance server drafts.
-- Visit UI keeps vendor details in Settings and leaves the doctor with a compact dictation/work note flow.
-
-## Sources
-
-- Dentrix product/features: https://www.dentrix.com/products/dentrix
-- Dentrix voice charting: https://multi-stage.dentrix.com/dental-solutions/dental-care-acceptance-and-delivery/streamline-clinical-charting/
-- Open Dental features: https://www.opendental.com/site/features.html
-- Open Dental chart module: https://www.opendental.com/manual/chart.html
-- Groq Speech to Text: https://console.groq.com/docs/speech-to-text
-- Cloudflare Workers AI Whisper: https://developers.cloudflare.com/workers-ai/models/whisper
-- Cloudflare Workers AI pricing: https://developers.cloudflare.com/workers-ai/platform/pricing/
+1. **Integrated 3D DICOM MPR Viewer**: Built directly into the browser workspace without requiring desktop installs or third-party launchers (`apps/web/src/ImagingView.tsx`, `mprWorker.ts`).
+2. **Voice Dictation & Speech Polish**: Integrated STT dictation with medical term normalization and local autosave continuity (`apps/api/src/routes/speech.ts`).
+3. **Smart Imports Engine**: Native automated database migration from IDENT, DentalPRO, and InfoClinica (`apps/api/src/routes/smartImports.ts`).

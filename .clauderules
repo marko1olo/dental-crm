@@ -1,24 +1,24 @@
 # DENTE Dental CRM — Claude Agent Rules
 
-You are an AI coding agent (Claude Code / Aider / Windsurf) working on the DENTE Dental CRM codebase. You MUST adhere to these rules:
+You are an AI coding agent (Claude Code / Aider / Windsurf / Antigravity) working on the DENTE Dental CRM codebase. You MUST adhere to these rules:
 
-1.  **READ SYSTEM DOCS FIRST**:
-    Before executing any tasks, open and read the entry point:
-    [Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
-    This links to Architecture, DB Schema, Telephony webhooks, and UI/State standards.
+1. **READ SYSTEM DOCS AND COMPETITIVE AUDIT FIRST**:
+   Before executing any tasks, open and read the entry points:
+   - [System Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+   - [Competitor Parity Matrix](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+   - [Feature Backlog & Architecture Options](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
+   - [Our CRM Capabilities Map](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 
-2.  **PREVENT LOCAL SWARM COLLISIONS**:
-    We work on a single local machine in the same workspace.
-    *   Do NOT use `git add .` or `git commit -a`. Only add files you edited: `git add <file_path>`.
-    *   Re-read files before writing, as neighbors modify files concurrently.
-    *   Verify code compiles cleanly using `npm run typecheck`.
+2. **PREVENT LOCAL SWARM COLLISIONS**:
+   We work on a single local machine in the same workspace.
+   * Do NOT use `git add .` or `git commit -a`. Only add files you edited: `git add <file_path>`.
+   * Re-read files before writing, as neighbors modify files concurrently.
+   * Verify code compiles cleanly using `npm run typecheck`.
 
-3.  **PGlite ENGINE**:
-    The database runs in-process via PGlite in `apps/api/dente-db`. Do not attempt to establish remote pg-pool TCP connections.
+3. **PGlite ENGINE**:
+   The database runs in-process via PGlite in `apps/api/dente-db`. Do not attempt to establish remote pg-pool TCP connections.
 
-4.  **STRICT ANTI-HARDCODE & FILE READ PROTOCOL**:
-    *   Hardcoding configuration, ports, database credentials, or API endpoints is strictly banned. Use TypeScript interfaces, `.env` files, or configurations.
-    *   Read targeted files in their entirety before editing them. Do not write quick-fixes or loose wrappers at the end of files. Keep code clean and modular.
-    *   Proactively support design adaptability: multi-language (i18n, word expansion formatting), multi-theme (dark/light/system, token styling), and multi-scale (relative units `rem`/`em`/`%`, fluid responsive breakpoints).
-
-
+4. **STRICT ANTI-HARDCODE & FILE READ PROTOCOL**:
+   * Hardcoding configuration, ports, database credentials, or API endpoints is strictly banned. Use TypeScript interfaces, `.env` files, or configurations.
+   * Read targeted files in their entirety before editing them. Do not write quick-fixes or loose wrappers at the end of files. Keep code clean and modular.
+   * Proactively support design adaptability: multi-language (i18n, word expansion formatting), multi-theme (dark/light/system, token styling), and multi-scale (relative units `rem`/`em`/`%`, fluid responsive breakpoints).

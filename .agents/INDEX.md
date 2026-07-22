@@ -16,6 +16,7 @@ Before starting any task, read these documents to understand the architecture, d
 8. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment double-posting idempotency layer and shared family wallets balance mechanics.
 9. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
 10. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
+11. **[COMPETITIVE_AUDIT](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom feature specs, and implementation architecture backlog.
 
 ---
 

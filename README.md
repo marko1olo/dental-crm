@@ -13,6 +13,7 @@ Primary document:
 - speech transcription plan: `docs/05-speech-transcription-plan.md`
 - speech provider research: `docs/06-speech-provider-research.md`
 - competitive voice/CRM audit: `docs/07-competitive-voice-and-crm-audit.md`
+- **competitive audit & feature parity suite**: `docs/competitive-audit/FEATURES_REGISTRY.md`
 - imaging/DICOM viewer plan: `docs/10-imaging-dicom-viewer-plan.md`
 - document generation forms: `docs/12-document-generation-forms.md`
 - DENTE Telegram bot plan: `docs/13-dente-telegram-bot-plan.md`

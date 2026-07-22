@@ -11,6 +11,7 @@ Before starting any development or refactoring, you MUST load and read the follo
 - **[Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Rule matching triggers and warning/blocking actions.
 - **[Billing & Finance Operations](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment idempotency checks and shared family wallets.
 - **[Outpatient Documents & PDF Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Headless Edge/Chrome PDF export and SHA-256 document signing.
+- **[Competitive Audit Suite](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom specs & backlog.
 
 ---
 
@@ -34,6 +35,17 @@ BE PROACTIVE. EXECUTE.
 - **DESIGN ADAPTABILITY**:
   - *Multi-Language (i18n)*: Decouple strings from components. Design layouts to support varying word lengths (especially long Russian words) without clipping.
   - *Multi-Theme*: Proactively support light, dark, and system schemes. Use CSS variables or Tailwind tokens; do not hardcode static colors.
-  - *Flexible Scaling*: Use relative units (`rem`, `em`, `%`) and media rules. Design layouts that scale dynamically and look clean at all resolutions and zoom levels.
+
+
+## 📸 SCREENSHOT PROOF LAW (MANDATORY VERIFICATION RULES)
+1. **LIVE SERVER ONLY**: Screenshots must ONLY be captured from a live, running server (`HTTP 200 OK`). Before capturing, execute `curl -i` for frontend and backend. `page.goto` MUST NOT use `.catch()` error suppressors. If a server is down, the capture script MUST throw an explicit error instead of capturing blank/500 screens.
+2. **UNIQUE SCREENS & REAL NAVIGATION**: Every screenshot must represent a distinct feature with genuine route navigation, active user session/token, data seeding, and explicit `page.waitForSelector`. Do NOT clone `body` screenshots across a loop.
+3. **SELF-AUDIT HASH & CONTENT CHECK**: Before submitting any screenshot:
+   - Verify all file MD5 hashes are strictly **UNIQUE**.
+   - Verify file sizes are $\ge$ ~40 KB for data screens (4–8 KB empty/error screenshots are strictly rejected).
+   - Verify no "Server Error", 500, or blank error bodies are present.
+4. **MANDATORY PIXEL INSPECTION**: The agent MUST open every PNG file using `view_file` and inspect the visual pixels with its own eyes BEFORE describing it in the report. The report caption MUST accurately state the exact pixel content. Describing uninspected or broken screenshots is treated as evidence fabrication.
+5. **TRUTH IN REPORTING**: 1 honest screenshot > 9 fake/cloned screenshots. If a UI feature cannot be visually captured or rendered, log it honestly as a DEBT item. Never pass off an unrendered screen as working.
+
 
 

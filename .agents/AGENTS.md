@@ -11,6 +11,7 @@ Before starting any development or refactoring, you MUST load and read the follo
 - **[Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Rule matching triggers and warning/blocking actions.
 - **[Billing & Finance Operations](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment idempotency checks and shared family wallets.
 - **[Outpatient Documents & PDF Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Headless Edge/Chrome PDF export and SHA-256 document signing.
+- **[Competitive Audit Suite](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom specs & backlog.
 
 ## [CTO SUPREMACY & OPERATIONAL MANDATE]
 **1. IDENTITY & TONE**
