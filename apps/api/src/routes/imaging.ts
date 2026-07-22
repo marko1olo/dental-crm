@@ -8188,9 +8188,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
       }
       const result = await analyzeVisiographImage(body.imageBase64);
       return reply.send(result);
-    } catch (err: any) {
+    } catch (err) {
       console.error("[Visiograph AI] Error:", err);
-      return reply.code(500).send({ error: err.message });
+      return reply.code(500).send({ error: err instanceof Error ? err.message : String(err) });
     }
   });
 
@@ -8772,8 +8772,8 @@ export async function registerImagingRoutes(app: FastifyInstance) {
         analysisResult,
         study: imagingStudySchema.parse(updatedStudy),
       });
-    } catch (err: any) {
-      const message = err?.message ?? "Анализ завершился ошибкой";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Анализ завершился ошибкой";
       return reply.code(502).send({ ok: false, message });
     }
   });
