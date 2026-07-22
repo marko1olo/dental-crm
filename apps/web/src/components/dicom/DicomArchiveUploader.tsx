@@ -222,7 +222,7 @@ export function DicomArchiveUploader({
 			<input
 				id="dicom-folder-input"
 				type="file"
-				// @ts-expect-error
+
 				webkitdirectory="true"
 				directory="true"
 				multiple
