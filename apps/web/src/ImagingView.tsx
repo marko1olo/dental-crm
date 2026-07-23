@@ -27,6 +27,7 @@ import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import { type MprWindowPreset } from "./imagingUiLabels";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
+import { BoneQualityPanel } from "./components/dicom/BoneQualityPanel";
 import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
 import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -738,6 +739,9 @@ export function ImagingView(props: ImagingViewProps) {
                           />
                         </div>
                       )}
+                      <div className="px-4">
+                        <BoneQualityPanel />
+                      </div>
                     </>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">
