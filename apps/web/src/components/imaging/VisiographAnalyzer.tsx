@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { type ToothStatus, usePatientStore } from "../../store/patientStore";
 import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
 
@@ -74,7 +75,7 @@ const AI_TO_ODONTOGRAM: Record<string, ToothStatus> = {
 // ─── Markdown-рендерер (лёгкий, без зависимостей) ────────────────────────────
 
 function renderMarkdown(text: string): string {
-	return text
+	const rawHtml = text
 		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
 		.replace(/\*(.+?)\*/g, "<em>$1</em>")
 		.replace(/^#{1,3}\s+(.+)$/gm, '<h4 style="margin:12px 0 4px">$1</h4>')
@@ -85,6 +86,8 @@ function renderMarkdown(text: string): string {
 		)
 		.replace(/\n\n+/g, "<br/><br/>")
 		.replace(/\n/g, "<br/>");
+
+	return DOMPurify.sanitize(rawHtml);
 }
 
 // ─── Заголовки отчёта (кликабельные секции) ───────────────────────────────────
