@@ -9,14 +9,12 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { Odontogram } from "./components/Odontogram";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
-import { PatientCoreForm } from "./components/patient/PatientCoreForm";
-import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 type PatientAdministrativeProfileSaveState = "idle" | "saving" | "saved" | "error";
 
-export type PatientCoreDraft = {
+type PatientCoreDraft = {
   fullName: string;
   birthDate: string;
   phone: string;
@@ -24,13 +22,13 @@ export type PatientCoreDraft = {
   notes: string;
 };
 
-export type PatientAdministrativeProfileDraft = {
+type PatientAdministrativeProfileDraft = {
   [K in Exclude<keyof PatientAdministrativeProfile, "preferredAppointmentWeekdays">]: string;
 } & {
   preferredAppointmentWeekdays: number[];
 };
 
-export type WeekdayOption = {
+type WeekdayOption = {
   label: string;
   value: number;
 };
@@ -53,7 +51,7 @@ type PatientsViewProps = {
   weekdayOptions: WeekdayOption[];
 };
 
-export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 export function PatientsView(props: PatientsViewProps) {
   const {
@@ -286,7 +284,84 @@ export function PatientsView(props: PatientsViewProps) {
                           : "сохранено"}
                 </span>
               </div>
-              <PatientCoreForm patientCoreDraft={patientCoreDraft} updatePatientCoreDraft={updatePatientCoreDraft} />
+              <div className="clinic-profile-form-grid patient-core-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <label className="form-span-2">
+                  ФИО пациента
+                  <input
+                    autoComplete="name"
+                    value={patientCoreDraft.fullName}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("fullName", event.target.value)}
+                    placeholder="Фамилия Имя Отчество"
+                  />
+                </label>
+                <label>
+                  Дата рождения
+                  <input
+                    type="date"
+                    autoComplete="bday"
+                    value={patientCoreDraft.birthDate}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("birthDate", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Телефон
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={patientCoreDraft.phone}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("phone", event.target.value)}
+                    placeholder="+7..."
+                  />
+                </label>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    value={patientCoreDraft.email}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("email", event.target.value)}
+                    placeholder="patient@example.ru"
+                  />
+                </label>
+                <div className="form-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Заметки для команды</span>
+                    <SmartMicrophoneButton
+                      context="general"
+                      onResult={(t) => {
+                        const prev = patientCoreDraft.notes || "";
+                        updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
+                      }}
+                    />
+                  </div>
+                  <textarea
+                    value={patientCoreDraft.notes}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("notes", event.target.value)}
+                    placeholder="важное для связи, приема и документов"
+                    rows={3}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical' }}
+                  />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
+                    {["Очень тревожный", "Сложный пациент", "VIP", "Просит звонить заранее", "Часто отменяет", "Плохо переносит анестезию", "Должник", "Рвотный рефлекс"].map(chip => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          const currentVal = patientCoreDraft.notes.trim();
+                          const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                          updatePatientCoreDraft("notes", newVal);
+                        }}
+                        style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--slate-100)', border: '1px solid var(--slate-200)', borderRadius: '12px', cursor: 'pointer', color: 'var(--slate-700)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--slate-200)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--slate-100)'; }}
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="patient-admin-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
                 <button
                   className="primary-button"
@@ -345,7 +420,172 @@ export function PatientsView(props: PatientsViewProps) {
                 <details className="patient-admin-details" style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                   <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--slate-700)' }}>Дополнительные документы и адреса (развернуть)</summary>
                   <div style={{ marginTop: '12px' }}>
-                <PatientAdministrativeForm patientAdministrativeProfileDraft={patientAdministrativeProfileDraft} updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft} weekdayOptions={weekdayOptions} normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft} />
+                <div className="clinic-profile-form-grid patient-admin-form-grid">
+                <label>
+                  Документ пациента
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.identityDocument}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("identityDocument", event.target.value)}
+                    placeholder="паспорт РФ 0000 000000"
+                  />
+                </label>
+                <label>
+                  ИНН пациента
+                  <input
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9]*"
+                    value={patientAdministrativeProfileDraft.taxpayerInn}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("taxpayerInn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))}
+                    placeholder="10 или 12 цифр"
+                  />
+                </label>
+                <label>
+                  Адрес регистрации
+                  <input
+                    autoComplete="street-address"
+                    value={patientAdministrativeProfileDraft.registrationAddress}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("registrationAddress", event.target.value)}
+                    placeholder="индекс, город, улица, дом"
+                  />
+                </label>
+                <label>
+                  Адрес проживания
+                  <input
+                    autoComplete="street-address"
+                    value={patientAdministrativeProfileDraft.residentialAddress}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("residentialAddress", event.target.value)}
+                    placeholder="если отличается"
+                  />
+                </label>
+                <label>
+                  Полис / ДМС
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.insurancePolicyNumber}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)}
+                    placeholder="номер при наличии"
+                  />
+                </label>
+                <label>
+                  СНИЛС
+                  <input
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9 -]*"
+                    value={patientAdministrativeProfileDraft.snils}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("snils", event.target.value)}
+                    placeholder="000-000-000 00"
+                  />
+                </label>
+                <label>
+                  Законный представитель
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.legalRepresentativeFullName}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeFullName", event.target.value)}
+                    placeholder="ФИО представителя"
+                  />
+                </label>
+                <label>
+                  Основание
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.legalRepresentativeRelationship}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", event.target.value)}
+                    placeholder="родитель, опекун, доверенность"
+                  />
+                </label>
+                <label>
+                  Документ представителя
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeIdentityDocument", event.target.value)}
+                    placeholder="паспорт / доверенность"
+                  />
+                </label>
+                <label>
+                  Телефон представителя
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={patientAdministrativeProfileDraft.legalRepresentativePhone}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativePhone", event.target.value)}
+                    placeholder="+7..."
+                  />
+                </label>
+                <label className="form-span-2">
+                  Кому выдавать документы
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.preferredDocumentRecipient}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredDocumentRecipient", event.target.value)}
+                    placeholder="пациенту / представителю / доверенному лицу"
+                  />
+                </label>
+                <div className="form-span-2 patient-appointment-preferences">
+                  <span>Удобные дни записи</span>
+                  <div className="weekday-toggle-row" role="group" aria-label="Удобные дни записи пациента">
+                    {weekdayOptions.map((day) => {
+                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
+                      return (
+                        <button
+                          aria-pressed={weekdaySelected}
+                          className={weekdaySelected ? "active" : ""}
+                          key={`patient-weekday-${day.value}`}
+                          type="button"
+                          onClick={() => {
+                            const currentDays = patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
+                            const nextDays = weekdaySelected
+                              ? currentDays.filter((item) => item !== day.value)
+                              : [...currentDays, day.value];
+                            updatePatientAdministrativeProfileDraft("preferredAppointmentWeekdays", normalizeOptionalWorkingDaysDraft(nextDays));
+                          }}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <label>
+                  Удобно с
+                  <input
+                    type="time"
+                    value={patientAdministrativeProfileDraft.preferredAppointmentStart}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentStart", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Удобно до
+                  <input
+                    type="time"
+                    value={patientAdministrativeProfileDraft.preferredAppointmentEnd}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentEnd", event.target.value)}
+                  />
+                </label>
+                <label className="form-span-2">
+                  Комментарий к записи
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.preferredAppointmentNote}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentNote", event.target.value)}
+                    placeholder="например: только утро, не звонить после 19:00, нужен сопровождающий"
+                  />
+                </label>
+                <label className="form-span-2">
+                  Основание обработки ПДн
+                  <input
+                    autoComplete="off"
+                    value={patientAdministrativeProfileDraft.dataProcessingBasisNote}
+                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("dataProcessingBasisNote", event.target.value)}
+                    placeholder="согласие пациента, представитель, договор, иной законный контекст"
+                  />
+                </label>
+              </div>
                   </div>
                 </details>
               <div className="patient-admin-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>

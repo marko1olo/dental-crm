@@ -30,8 +30,8 @@ import {
   type TaxDeductionApplicationPayload,
   type TaxDeductionApplicationRelationship
 } from "@dental/shared";
-import { getAppointmentByIdInDb, getAppointmentsByIdsInDb } from "../db/appointmentsQuery.js";
-import { getVisitByIdInDb, getVisitsByIdsInDb } from "../db/visitsQuery.js";
+import { getAppointmentByIdInDb } from "../db/appointmentsQuery.js";
+import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { getDocumentRenderContextFromDb, readIssuedDocumentSnapshot } from "../db/documentQuery.js";
 import {
   getDefaultOrganizationId,
@@ -752,41 +752,11 @@ export async function signedMedicalSourceVisitsAreValid(
   const periodStart = comparableDocumentChainDate(periodStartRaw);
   const periodEnd = comparableDocumentChainDate(periodEndRaw);
   if (!documentChainDateRangeIsChronological(periodStartRaw, periodEndRaw)) return false;
-
-  if (sourceVisitIds.length === 0) return true;
-
-  const visits = await getVisitsByIdsInDb(document.organizationId, sourceVisitIds);
-  const visitMap = new Map(visits.map(v => [v.id, v]));
-
-  // Validate visits and collect appointment IDs
-  const appointmentIdsToFetch = new Set<string>();
   for (const visitId of sourceVisitIds) {
-    const visit = visitMap.get(visitId);
+    const visit = await getVisitByIdInDb(document.organizationId, visitId);
     if (!visit || visit.patientId !== document.patientId || visit.status !== "signed") return false;
-    if (visit.appointmentId) {
-      appointmentIdsToFetch.add(visit.appointmentId);
-    }
-  }
 
-  // Fetch appointments in bulk
-  const appointments = appointmentIdsToFetch.size > 0
-    ? await getAppointmentsByIdsInDb(document.organizationId, Array.from(appointmentIdsToFetch))
-    : [];
-  const appointmentMap = new Map(appointments.map(a => [a.id, a]));
-
-  for (const visitId of sourceVisitIds) {
-    const visit = visitMap.get(visitId);
-    if (!visit) continue; // Already validated
-
-    const appointment = visit.appointmentId ? appointmentMap.get(visit.appointmentId) : null;
-
-    // Extracted logic from medicalRecordExtractVisitDate
-    const visitDate = (
-      comparableDocumentChainDate(appointment?.startsAt ? (typeof appointment.startsAt === "string" ? appointment.startsAt : appointment.startsAt.toISOString()) : null) ??
-      comparableDocumentChainDate(typeof visit.updatedAt === "string" ? visit.updatedAt : visit.updatedAt.toISOString()) ??
-      comparableDocumentChainDate(typeof visit.createdAt === "string" ? visit.createdAt : visit.createdAt.toISOString())
-    );
-
+    const visitDate = await medicalRecordExtractVisitDate(document.organizationId, visitId);
     if (visitDate === null) return false;
     if (periodStart !== null && visitDate < periodStart) return false;
     if (periodEnd !== null && visitDate > periodEnd) return false;

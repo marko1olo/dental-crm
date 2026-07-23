@@ -10,15 +10,6 @@ import * as schema from "../db/schema.js";
 import { loadPersistentState } from "../persistentState.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 
-
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-  return result;
-}
-
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL ?? "postgres://dental:dental@127.0.0.1:5432/dental_crm"
 });
@@ -98,44 +89,36 @@ async function migrate() {
   });
 
   console.log(`👥 Migrating ${state.staffMembers.length} Staff Members (Users)...`);
-  if (state.staffMembers.length > 0) {
-    const values = state.staffMembers.map((staff: any) => {
-      const isAdmin = staff.role === "owner" || staff.role === "administrator";
-      const pin = isAdmin ? adminPin : staffPin;
-      return {
-        id: staff.id,
-        organizationId: orgId,
-        fullName: staff.fullName,
-        role: staff.role,
-        phone: staff.phone,
-        email: staff.email,
-        pinCodeHash: hashCredential(pin),
-        isActive: staff.active,
-        createdAt: new Date(staff.createdAt),
-      };
+  for (const staff of state.staffMembers) {
+    const isAdmin = staff.role === "owner" || staff.role === "administrator";
+    const pin = isAdmin ? adminPin : staffPin;
+    await db.insert(schema.users).values({
+      id: staff.id,
+      organizationId: orgId,
+      fullName: staff.fullName,
+      role: staff.role,
+      phone: staff.phone,
+      email: staff.email,
+      pinCodeHash: hashCredential(pin),
+      isActive: staff.active,
+      createdAt: new Date(staff.createdAt),
     });
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.users).values(chunk as any);
-    }
   }
 
   console.log(`🪑 Migrating ${state.chairs.length} Chairs...`);
-  if (state.chairs.length > 0) {
-    const values = state.chairs.map((chair: any) => ({
+  for (const chair of state.chairs) {
+    await db.insert(schema.chairs).values({
       id: chair.id,
       organizationId: orgId,
       clinicId: "e50337ad-f762-4f3b-8255-a2267576be78",
       name: chair.name,
       isActive: chair.active
-    }));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.chairs).values(chunk as any);
-    }
+    });
   }
 
   console.log(`🧑‍⚕️ Migrating ${state.patients.length} Patients...`);
-  if (state.patients.length > 0) {
-    const values = state.patients.map((patient: any) => ({
+  for (const patient of state.patients) {
+    await db.insert(schema.patients).values({
       id: patient.id,
       organizationId: orgId,
       status: patient.status as any,
@@ -147,15 +130,12 @@ async function migrate() {
       administrativeProfile: patient.administrativeProfile,
       createdAt: new Date(patient.createdAt),
       updatedAt: new Date(patient.updatedAt),
-    }));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.patients).values(chunk as any);
-    }
+    });
   }
 
   console.log(`📅 Migrating ${state.appointments.length} Appointments...`);
-  if (state.appointments.length > 0) {
-    const values = state.appointments.map((appt: any) => ({
+  for (const appt of state.appointments) {
+    await db.insert(schema.appointments).values({
       id: appt.id,
       organizationId: orgId,
       patientId: appt.patientId,
@@ -167,10 +147,7 @@ async function migrate() {
       endsAt: new Date(appt.endsAt),
       reason: appt.reason,
       comment: appt.comment
-    }));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.appointments).values(chunk as any);
-    }
+    });
   }
   
   if (state.activeVisit) {
@@ -195,8 +172,8 @@ async function migrate() {
   }
 
   console.log(`📄 Migrating ${state.documents.length} Documents...`);
-  if (state.documents.length > 0) {
-    const values = state.documents.map((doc: any) => ({
+  for (const doc of state.documents) {
+    await db.insert(schema.generatedDocuments).values({
       id: doc.id,
       organizationId: orgId,
       patientId: doc.patientId,
@@ -204,15 +181,12 @@ async function migrate() {
       status: doc.status as any,
       payloadJson: JSON.stringify(doc.payload),
       createdAt: new Date(doc.createdAt)
-    } as any));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.generatedDocuments).values(chunk as any);
-    }
+    } as any);
   }
 
   console.log(`⚖️ Migrating ${state.clinicalRules.length} Clinical Rules...`);
-  if (state.clinicalRules.length > 0) {
-    const values = state.clinicalRules.map((rule: any) => ({
+  for (const rule of state.clinicalRules) {
+    await db.insert(schema.clinicalRules).values({
       id: rule.id,
       organizationId: orgId,
       title: rule.title,
@@ -231,15 +205,12 @@ async function migrate() {
       isActive: rule.active,
       createdAt: new Date(rule.createdAt),
       updatedAt: new Date(rule.updatedAt),
-    }));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.clinicalRules).values(chunk as any);
-    }
+    });
   }
 
   console.log(`💳 Migrating ${state.payments.length} Payments...`);
-  if (state.payments.length > 0) {
-    const values = state.payments.map((p: any) => ({
+  for (const p of state.payments) {
+    await db.insert(schema.payments).values({
       id: p.id,
       organizationId: orgId,
       patientId: p.patientId,
@@ -260,10 +231,7 @@ async function migrate() {
       payerRelationship: p.payerRelationship,
       taxDeductionCode: p.taxDeductionCode,
       note: p.note
-    }));
-    for (const chunk of chunkArray(values, 1000)) {
-      await db.insert(schema.payments).values(chunk as any);
-    }
+    });
   }
 
   console.log("\n🎉 Migration completed successfully!");

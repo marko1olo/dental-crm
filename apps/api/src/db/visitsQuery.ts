@@ -1,6 +1,6 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { VisitDraftAutosaveRequest, VisitDraftAutosave, AcceptVisitDraftInput } from "@dental/shared";
 import { createHash } from "node:crypto";
 
@@ -107,11 +107,4 @@ export async function acceptVisitDraftInDb(organizationId: string, input: Accept
 export async function getVisitByIdInDb(organizationId: string, id: string) {
   const [res] = await db.select().from(schema.visits).where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.id, id))).limit(1);
   return res || null;
-}
-
-
-export async function getVisitsByIdsInDb(organizationId: string, ids: readonly string[]) {
-  if (ids.length === 0) return [];
-  const res = await db.select().from(schema.visits).where(and(eq(schema.visits.organizationId, organizationId), inArray(schema.visits.id, ids as string[])));
-  return res;
 }
