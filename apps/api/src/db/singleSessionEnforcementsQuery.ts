@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { singleSessionEnforcements } from "./schema.js";
 
 async function ensureSingleSessionEnforcementsTable() {
 	try {
-		await db.execute(`
+		await db.execute(sql`
 			CREATE TABLE IF NOT EXISTS "single_session_enforcements" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,

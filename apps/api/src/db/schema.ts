@@ -1200,6 +1200,20 @@ export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #56 — система::запрет_одновременной_авторизации_под_одной_учеткой
+export const singleSessionEnforcements = pgTable("single_session_enforcements", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	userId: uuid("user_id").notNull(),
+	userLogin: text("user_login").notNull(),
+	activeSessionToken: text("active_session_token").notNull(),
+	clientIp: text("client_ip").notNull(),
+	userAgent: text("user_agent").notNull(),
+	ejectedPreviousSession: boolean("ejected_previous_session").default(false).notNull(),
+	lastActiveAt: timestamp("last_active_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 

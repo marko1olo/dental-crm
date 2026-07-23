@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { auth } from "../../AppHelpers";
 
 interface SessionItem {
 	id: string;
@@ -18,7 +19,7 @@ export const SingleSessionEnforcementsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/system/single-session-enforcements", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth.denteClinicalReadHeaders(),
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -34,41 +35,49 @@ export const SingleSessionEnforcementsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="single-session-enforcements-widget"
-			className="p-4 bg-slate-900 border border-sky-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">🛡️</span>
-					<h3 className="font-semibold text-sky-400">
+					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
 						Защита От Параллельного Входа (Single Session Enforcement)
 					</h3>
 				</div>
-				<span className="text-xs bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/40">
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
 					Безопасность Сессий
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка активных сессий...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+					Загрузка активных сессий...
+				</div>
+			) : sessions.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+					Активных параллельных сессий не обнаружено.
+				</div>
 			) : (
 				<div className="space-y-3">
 					{sessions.map((sess) => (
 						<div
 							key={sess.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
 						>
 							<div>
 								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold text-slate-200">{sess.userLogin}</span>
-									<span className="text-xs text-sky-300 font-mono">IP: {sess.clientIp}</span>
+									<span className="text-sm font-bold">{sess.userLogin}</span>
+									<span className="text-xs text-sky-600 dark:text-sky-300 font-mono font-bold">IP: {sess.clientIp}</span>
 								</div>
-								<div className="text-xs text-slate-400 mt-1">
-									Токен: <span className="font-mono text-slate-300">{sess.activeSessionToken}</span>
+								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
+									Токен: <span className="font-mono text-slate-700 dark:text-slate-300">{sess.activeSessionToken}</span>
 								</div>
 							</div>
 							<div className="flex items-center space-x-2">
 								{sess.ejectedPreviousSession && (
-									<span className="text-xs bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800 font-semibold">
+									<span className="text-xs px-2 py-0.5 rounded border font-semibold bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
 										⚡ Повторная сессия вытолкнута
 									</span>
 								)}
