@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClinicLogin } from './ClinicLogin';
 import { UserLogin } from './UserLogin';
 import { Register } from './Register';
 import { AcceptInvite } from './AcceptInvite';
+import { AuthArtBackground } from './AuthArtBackground';
 
 interface AuthHubProps {
   onSuccess: (clinicProfile: any, userProfile?: any) => void;
@@ -29,24 +30,32 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
-  if (view === 'accept_invite' && inviteToken) {
-    return <AcceptInvite token={inviteToken} onSuccess={onSuccess} onCancel={() => {
-      window.location.hash = '';
-      setView('user_login');
+  // Shared background art layer — wraps all auth views
+  const renderContent = () => {
+    if (view === 'accept_invite' && inviteToken) {
+      return <AcceptInvite token={inviteToken} onSuccess={onSuccess} onCancel={() => {
+        window.location.hash = '';
+        setView('user_login');
+      }} />;
+    }
+
+    if (view === 'register') {
+      return <Register onSuccess={onSuccess} onSwitchToLogin={() => setView('user_login')} />;
+    }
+
+    if (view === 'user_login') {
+      return <UserLogin onSuccess={onSuccess} onSwitchToRegister={() => setView('register')} onSwitchToClinicMode={() => setView('clinic_login')} />;
+    }
+
+    return <ClinicLogin onLoginSuccess={(cp) => {
+      onSuccess(cp, null);
     }} />;
-  }
+  };
 
-  if (view === 'register') {
-    return <Register onSuccess={onSuccess} onSwitchToLogin={() => setView('user_login')} />;
-  }
-
-  if (view === 'user_login') {
-    return <UserLogin onSuccess={onSuccess} onSwitchToRegister={() => setView('register')} onSwitchToClinicMode={() => setView('clinic_login')} />;
-  }
-
-  // Fallback to legacy shared-device clinic login mode
-  return <ClinicLogin onLoginSuccess={(cp) => {
-    // Legacy clinic login only returns clinicProfile, NO staffToken yet
-    onSuccess(cp, null);
-  }} />;
+  return (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      <AuthArtBackground />
+      {renderContent()}
+    </div>
+  );
 }
