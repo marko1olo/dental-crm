@@ -215,16 +215,17 @@ export async function registerAiRoutes(app: FastifyInstance) {
       // 3. Database Linkage (If 3D viewer context is provided and teeth were found)
       if (volumeContext && (result as any)?.toothUpdates && (result as any).toothUpdates.length > 0) {
         // We link coordinates to the first mentioned tooth, or multiple if needed
-        const annotationsToInsert = ((result as any).toothUpdates as any[]).map((update: any) => ({
-          organizationId: volumeContext.organizationId,
-          patientId: volumeContext.patientId,
-          studyId: volumeContext.studyId,
-          annotationType: "tooth",
-          toothCode: update.code,
-          coordinates: volumeContext.coordinates || null,
-          notes: (result as any).emkUpdates?.complaint || update.state
-        }));
-        await db.insert(imagingAnnotations).values(annotationsToInsert);
+        for (const update of (result as any).toothUpdates) {
+          await db.insert(imagingAnnotations).values({
+            organizationId: volumeContext.organizationId,
+            patientId: volumeContext.patientId,
+            studyId: volumeContext.studyId,
+            annotationType: "tooth",
+            toothCode: update.code,
+            coordinates: volumeContext.coordinates || null,
+            notes: (result as any).emkUpdates?.complaint || update.state
+          });
+        }
       }
 
       return reply.send(result);

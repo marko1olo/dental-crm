@@ -1,6 +1,7 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import type {
   ClinicalRule,
   ClinicalRuleEvaluation,
@@ -9,6 +10,7 @@ import type {
   CreateClinicalRuleInput,
   UpdateClinicalRuleInput
 } from "@dental/shared";
+import { getDefaultOrganizationId } from "./pricelistQuery.js";
 
 function parseJsonArray(jsonString: string | null | undefined): string[] {
   if (!jsonString) return [];
