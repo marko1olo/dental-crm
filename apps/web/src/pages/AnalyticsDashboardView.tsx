@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
+import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
 import "./AnalyticsDashboardView.css";
 
 interface Kpis {
@@ -443,6 +444,9 @@ export function AnalyticsDashboardView() {
 								)}
 							</div>
 						</article>
+					</div>
+					<div style={{ marginTop: "24px" }}>
+						<ConfirmationPerformanceReportsWidget />
 					</div>
 				</>
 			)}
