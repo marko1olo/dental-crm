@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
 import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
+import { cn } from "../../utils/classNames";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -170,7 +171,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			<div className="timeline-content">
 				<p style={{ display: "none" }}>{appointment.reason}</p>
 				<article
-					className={`appointment-card appointment-card-node status-${appointment.status} ${readiness ? "readiness-" + readiness.state : ""}`}
+					className={cn(
+						"appointment-card appointment-card-node",
+						`status-${appointment.status}`,
+						readiness && `readiness-${readiness.state}`,
+					)}
 				>
 					<div className="mobile-time-badge">
 						{formatTime(appointment.startsAt)} -{" "}
@@ -193,7 +198,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							</span>
 						</div>
 						<span
-							className={`appointment-card-status status-pill status-${appointment.status}`}
+							className={cn(
+								"appointment-card-status status-pill",
+								`status-${appointment.status}`,
+							)}
 						>
 							{appointmentLabels[appointment.status]}
 						</span>
@@ -230,14 +238,20 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					<div className="appointment-card-body">
 						<h3>{appointmentPatientName}</h3>
 						<div
-							className={`chip-group appointment-chip-group ${chipsExpanded ? "expanded" : ""}`}
+							className={cn(
+								"chip-group appointment-chip-group",
+								chipsExpanded && "expanded",
+							)}
 						>
 							{(() => {
 								const allChips = [
 									...appointmentSuggestions.map((suggestion) => (
 										<span
 											key={suggestion.id}
-											className={`chip chip-suggestion priority-${suggestion.priority}`}
+											className={cn(
+												"chip chip-suggestion",
+												`priority-${suggestion.priority}`,
+											)}
 											onClick={(e) => {
 												e.stopPropagation();
 												openScheduleSuggestion(suggestion.section);
@@ -304,7 +318,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						{readiness && (
 							<div className="appt-readiness-row">
 								<span
-									className={`readiness-dot readiness-dot-${readiness.state}`}
+									className={cn(
+										"readiness-dot",
+										`readiness-dot-${readiness.state}`,
+									)}
 								/>
 								<span className="appt-next-action">{readiness.nextAction}</span>
 								<span className="appt-readiness-score">{readiness.score}%</span>
@@ -432,7 +449,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={patient.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
+														className={cn(
+															"quick-chip",
+															appointmentDraft.patientId === patient.id && "active",
+														)}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -492,7 +512,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
+														className={cn(
+															"quick-chip",
+															appointmentDraft.doctorUserId === member.id && "active",
+														)}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -521,7 +544,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													<button
 														key={member.id}
 														type="button"
-														className={`quick-chip ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
+														className={cn(
+															"quick-chip",
+															appointmentDraft.assistantUserId === member.id && "active",
+														)}
 														onClick={() =>
 															updateAppointmentScheduleDraft(
 																appointment.id,
@@ -548,7 +574,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												<button
 													key={chair.id}
 													type="button"
-													className={`quick-chip ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
+													className={cn(
+														"quick-chip",
+														appointmentDraft.chairId === chair.id && "active",
+													)}
 													onClick={() =>
 														updateAppointmentScheduleDraft(
 															appointment.id,
@@ -572,7 +601,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											<button
 												key={status}
 												type="button"
-												className={`quick-chip ${appointmentDraft.status === status ? "active" : ""}`}
+												className={cn(
+													"quick-chip",
+													appointmentDraft.status === status && "active",
+												)}
 												onClick={() =>
 													updateAppointmentScheduleDraft(
 														appointment.id,
@@ -716,7 +748,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									) : null}
 								</div>
 								<span
-									className={`save-state save-state-${appointmentSaveState}`}
+									className={cn(
+										"save-state",
+										`save-state-${appointmentSaveState}`,
+									)}
 								>
 									{appointmentSaveState === "saving"
 										? "Сохраняю"
