@@ -41,7 +41,7 @@ export function PatientOverviewTab() {
 	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
 
 	const patientCoreReadyToSave =
-		patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
+		(patientCoreDraft?.fullName ?? "").trim().length > 0 && patientCoreDirty;
 	const patientCoreSaveGuidance =
 		patientCoreSaveState === "error"
 			? "Ошибка сохранения"
@@ -125,7 +125,7 @@ export function PatientOverviewTab() {
 					ФИО пациента
 					<input
 						autoComplete="name"
-						value={patientCoreDraft.fullName}
+						value={patientCoreDraft?.fullName ?? ""}
 						onChange={(event: TextFieldChangeEvent) =>
 							updatePatientCoreDraft("fullName", event.target.value)
 						}
@@ -137,7 +137,7 @@ export function PatientOverviewTab() {
 					<input
 						type="date"
 						autoComplete="bday"
-						value={patientCoreDraft.birthDate}
+						value={patientCoreDraft?.birthDate ?? ""}
 						onChange={(event: TextFieldChangeEvent) =>
 							updatePatientCoreDraft("birthDate", event.target.value)
 						}
@@ -149,7 +149,7 @@ export function PatientOverviewTab() {
 						type="tel"
 						inputMode="tel"
 						autoComplete="tel"
-						value={patientCoreDraft.phone}
+						value={patientCoreDraft?.phone ?? ""}
 						onChange={(event: TextFieldChangeEvent) =>
 							updatePatientCoreDraft(
 								"phone",
@@ -164,7 +164,7 @@ export function PatientOverviewTab() {
 					<input
 						type="email"
 						autoComplete="email"
-						value={patientCoreDraft.email}
+						value={patientCoreDraft?.email ?? ""}
 						onChange={(event: TextFieldChangeEvent) =>
 							updatePatientCoreDraft("email", event.target.value)
 						}
@@ -185,13 +185,13 @@ export function PatientOverviewTab() {
 						<SmartMicrophoneButton
 							context="general"
 							onResult={(t) => {
-								const prev = patientCoreDraft.notes || "";
+								const prev = patientCoreDraft?.notes || "";
 								updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
 							}}
 						/>
 					</div>
 					<textarea
-						value={patientCoreDraft.notes}
+						value={patientCoreDraft?.notes ?? ""}
 						onChange={(e) => updatePatientCoreDraft("notes", e.target.value)}
 						placeholder="важное для связи, приема и документов"
 						style={{
@@ -218,7 +218,7 @@ export function PatientOverviewTab() {
 								key={chip}
 								type="button"
 								onClick={() => {
-									const currentVal = patientCoreDraft.notes.trim();
+									const currentVal = (patientCoreDraft?.notes ?? "").trim();
 									const chipLower = chip.toLowerCase();
 									if (currentVal.toLowerCase().includes(chipLower)) return;
 									const newVal = currentVal
@@ -227,19 +227,13 @@ export function PatientOverviewTab() {
 									updatePatientCoreDraft("notes", newVal);
 								}}
 								style={{
-									padding: "2px 8px",
+									padding: "4px 10px",
 									fontSize: "12px",
-									background: "var(--paper-strong)",
-									border: "1px solid var(--slate-200)",
+									background: "var(--glass-panel, rgba(30, 41, 59, 0.5))",
+									border: "1px solid var(--line, rgba(255, 255, 255, 0.1))",
 									borderRadius: "12px",
 									cursor: "pointer",
-									color: "var(--slate-700)",
-								}}
-								onMouseEnter={(e) => {
-									e.currentTarget.style.background = "var(--slate-200)";
-								}}
-								onMouseLeave={(e) => {
-									e.currentTarget.style.background = "var(--slate-100)";
+									color: "var(--ink)",
 								}}
 							>
 								+ {chip}

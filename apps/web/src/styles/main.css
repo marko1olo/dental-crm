@@ -8925,13 +8925,18 @@ img {
 }
 
 .patient-admin-panel {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 12px;
   margin-top: 12px;
   padding: 12px;
+}
+
+[data-theme="dark"] .patient-admin-panel {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
 
 .patient-doc-heading {
