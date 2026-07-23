@@ -1,0 +1,1 @@
+function n(){return typeof window>"u"||typeof window.matchMedia!="function"?!1:window.matchMedia("(prefers-reduced-motion: reduce)").matches}function i(){return n()?"auto":"smooth"}function r(o,e={}){o==null||o.scrollIntoView({...e,behavior:i()})}export{r as m};

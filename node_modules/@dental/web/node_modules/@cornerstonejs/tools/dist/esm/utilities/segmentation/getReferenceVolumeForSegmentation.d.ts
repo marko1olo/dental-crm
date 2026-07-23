@@ -1,0 +1,1 @@
+export declare function getReferenceVolumeForSegmentation(segmentationId: string): import("@cornerstonejs/core").ImageVolume | import("packages/core/dist/esm/cache/classes/BaseStreamingImageVolume").BaseStreamingImageVolume;

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Рекомендации после приема</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Рекомендации после приема</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 29.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-06-29 22:57</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент/законный представитель</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Иванова Марина Сергеевна, Врач/администратор</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      
+    </table>
+  </section>
+  
+  <style>
+      /* Page setup and general overrides */
+      @page {
+        size: A4;
+        margin: 12mm 12mm 12mm 12mm !important;
+      }
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 12.5px !important;
+        line-height: 1.35 !important;
+      }
+      
+      /* Hide default layout elements */
+      h1 { display: none !important; }
+      body > .meta { display: none !important; }
+      body > .issue-attestation { display: none !important; }
+      body > .document-status-banner { display: none !important; }
+      
+      /* Modern Recommendations styles */
+      .recs-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #0f766e;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+      .recs-header-left h1 {
+        display: block !important;
+        font-size: 18px !important;
+        color: #0f766e;
+        margin: 0 !important;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .recs-header-left p {
+        margin: 3px 0 0 0 !important;
+        font-size: 10.5px !important;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .recs-status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .recs-status-badge.issued {
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .recs-status-badge.draft {
+        background: #fef3c7;
+        color: #b45309;
+        border: 1px solid #fde68a;
+      }
+      .recs-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .recs-info-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .recs-info-card strong {
+        color: #334155;
+        font-size: 11.5px;
+      }
+      .recs-info-label {
+        font-size: 9.5px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      
+      /* Grid for personalized recommendations */
+      .recs-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .recs-cards-grid .doc-section-card {
+        margin: 0 !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+      }
+      .recs-cards-grid .doc-section-card h3 {
+        font-size: 12px !important;
+        margin-bottom: 4px !important;
+        font-weight: 700 !important;
+      }
+      .recs-cards-grid ul {
+        margin: 4px 0 4px 16px !important;
+      }
+      .recs-cards-grid li {
+        margin: 1.5px 0 !important;
+        font-size: 11px !important;
+      }
+      
+      .recs-full-width-card {
+        grid-column: span 2;
+      }
+      
+      .recs-telegram-box {
+        background: #f0f9ff;
+        border: 1px solid #e0f2fe;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 11.5px;
+        page-break-inside: avoid;
+      }
+      .recs-telegram-box h4 {
+        margin: 0 0 4px 0;
+        font-size: 11.5px;
+        color: #0369a1;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .recs-telegram-content {
+        font-family: monospace;
+        font-size: 10.5px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 8px;
+        margin: 0;
+        white-space: pre-wrap;
+        line-height: 1.4;
+        color: #334155;
+      }
+      
+      /* Hygiene styles override */
+      .hygiene-badge-green {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10.5px;
+        font-weight: bold;
+        margin-bottom: 6px;
+      }
+      .hygiene-badge-blue {
+        display: inline-block;
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10.5px;
+        font-weight: bold;
+        margin-bottom: 6px;
+      }
+      
+      /* Force Page Break for Hygiene Guide */
+      .full-hygiene-guide {
+        page-break-before: always;
+        margin-top: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .full-hygiene-guide h2 {
+        font-size: 16px !important;
+        margin: 0 0 4px 0 !important;
+        padding-bottom: 6px !important;
+        border-bottom: 2px solid #0f766e !important;
+      }
+      .full-hygiene-guide h3 {
+        font-size: 13px !important;
+        margin: 12px 0 6px 0 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        padding-bottom: 4px !important;
+      }
+      .hygiene-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 10px 0;
+      }
+      .hygiene-card {
+        padding: 12px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+      }
+      .hygiene-card ol {
+        margin: 4px 0 0 14px !important;
+      }
+      .hygiene-card li {
+        margin-bottom: 4px !important;
+        line-height: 1.35 !important;
+      }
+      
+      .hygiene-columns-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 10px 0;
+      }
+      .hygiene-column-box {
+        padding: 12px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+      }
+      .hygiene-column-box h3 {
+        margin-bottom: 6px !important;
+        padding-bottom: 4px !important;
+        font-size: 12.5px !important;
+      }
+      .hygiene-column-box ul {
+        margin: 4px 0 0 14px !important;
+      }
+      .hygiene-column-box li {
+        margin-bottom: 4px !important;
+        line-height: 1.35 !important;
+      }
+      
+      .hygiene-math-box {
+        padding: 12px !important;
+        margin: 12px 0 !important;
+        border-radius: 8px !important;
+      }
+      .hygiene-math-title {
+        font-size: 12px !important;
+        margin-bottom: 6px !important;
+      }
+      .hygiene-math-grid {
+        gap: 10px !important;
+      }
+      .hygiene-math-col {
+        padding: 8px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+      }
+      
+      /* Keep checklist and signatures tight */
+      .check-list {
+        margin: 12px 0 !important;
+      }
+      .check-list li {
+        margin-bottom: 4px !important;
+        font-size: 11px !important;
+        padding-left: 20px !important;
+      }
+      .check-list li::before {
+        top: 0px !important;
+      }
+      .signatures {
+        margin-top: 20px !important;
+        gap: 20px !important;
+      }
+      .signatures p {
+        font-size: 11.5px !important;
+        margin: 0 !important;
+      }
+    </style>
+
+    <div class="recs-page-header">
+      <div class="recs-header-left">
+        <h1>Рекомендации после приема</h1>
+        <p>Подписан бумажный экземпляр: 2026-06-29 22:57</p>
+      </div>
+      <div class="recs-status-badge issued">
+        Выдан
+      </div>
+    </div>
+
+    <div class="recs-info-grid">
+      <div class="recs-info-card">
+        <div class="recs-info-label">👤 Пациент</div>
+        <strong>Иванова Марина Сергеевна</strong>
+      </div>
+      <div class="recs-info-card">
+        <div class="recs-info-label">🩺 Врач</div>
+        <strong>Иванова Марина Сергеевна</strong>
+      </div>
+      <div class="recs-info-card">
+        <div class="recs-info-label">📅 Дата приема</div>
+        <strong>29.06.2026, 22:57:41</strong>
+      </div>
+      <div class="recs-info-card">
+        <div class="recs-info-label">📋 Блок рекомендаций</div>
+        <strong>пломба / реставрация</strong>
+      </div>
+      <div class="recs-info-card">
+        <div class="recs-info-label">🛠 Процедура</div>
+        <strong>Пломба / композитная реставрация</strong>
+      </div>
+      <div class="recs-info-card">
+        <div class="recs-info-label">🦷 Зубы / область</div>
+        <strong>36</strong>
+      </div>
+      
+      <div class="recs-info-card" style="grid-column: span 3;">
+        📞 <strong>Связь с клиникой:</strong> связаться с клиникой по телефону или через Telegram-бот клиники
+        <br>🗓 <strong>Контрольный прием:</strong> контроль при дискомфорте, завышении пломбы или по плану врача
+      </div>
+    </div>
+
+    <div class="recs-cards-grid">
+      <div class="doc-section-card doc-alert-success">
+        <h3>🟢 Когда можно (разрешено)</h3>
+        <ul><li>Принимать пищу и пить воду можно через 30-60 минут после приема, если не было анестезии. Если применялась анестезия, дождитесь полного восстановления чувствительности (обычно 2-4 часа), чтобы избежать прикусывания щеки или губы.</li><li>Возвращаться к обычным повседневным делам можно сразу, избегая чрезмерных нагрузок.</li></ul>
+      </div>
+      
+      <div class="doc-section-card doc-alert-warning">
+        <h3>🟡 Временные ограничения</h3>
+        <ul><li>Избегайте чрезмерных физических нагрузок в течение первых 24 часов, особенно если применялась анестезия.</li><li>Горячая ванна или сауна не противопоказаны, но избегайте перегрева в первые часы после анестезии.</li><li>Воздержитесь от курения и употребления алкоголя в течение 24 часов после процедуры для лучшего заживления и предотвращения раздражения.</li><li>В первые часы после установки пломбы избегайте откусывания очень твердой или липкой пищи на стороне лечения, чтобы дать материалу полностью затвердеть и адаптироваться.</li></ul>
+      </div>
+      
+      <div class="doc-section-card">
+        <h3>💊 Назначения и препараты</h3>
+        <ul><li>При возникновении легкой ноющей боли можно принять обычное обезболивающее средство (например, Ибупрофен или Парацетамол) согласно инструкции.</li><li>Специальные полоскания не требуются. Избегайте интенсивного полоскания рта в первые часы после процедуры.</li><li>Если вы ощущаете дискомфорт при смыкании зубов, свяжитесь с клиникой для коррекции прикуса.</li></ul>
+      </div>
+      
+      <div class="doc-section-card">
+        <h3>🪥 Рекомендации по гигиене</h3>
+        <ul><li>Чистить зубы можно как обычно, но в области новой пломбы действуйте аккуратно и без сильного давления в течение первых суток.</li><li>Используйте зубную щетку с мягкой или средней жесткостью щетины.</li><li>Нет необходимости обходить зону вмешательства, просто будьте бережны.</li></ul>
+      </div>
+      
+      <div class="doc-section-card">
+        <h3>🍎 Питание</h3>
+        <ul><li>Исключите из рациона очень горячую, очень холодную, острую, жесткую и липкую пищу в течение первых 24 часов.</li><li>Рекомендуется употреблять мягкую пищу комнатной температуры. Старайтесь жевать на противоположной стороне от новой пломбы в первые часы, пока не пройдет онемение.</li></ul>
+      </div>
+      
+      
+      <div class="doc-section-card doc-alert-info">
+        <h3>📅 Контрольный прием</h3>
+        <p style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0369a1;">контроль при дискомфорте, завышении пломбы или по плану врача</p>
+      </div>
+      
+      <div class="doc-section-card doc-alert-danger recs-full-width-card">
+        <h3>🔴 Срочно связаться с клиникой при признаках</h3>
+        <ul><li>Повышение температуры тела выше 38 градусов, не связанное с другими причинами.</li><li>Нарастающий отек в области лица или десны на 2-3 день после процедуры (что крайне маловероятно после пломбирования).</li><li>Непрекращающееся кровотечение из десны вокруг пломбы (также крайне маловероятно).</li><li>Сильная, нестерпимая боль, которая не купируется обычными анальгетиками, или острая боль при накусывании, которая не проходит в течение нескольких дней.</li></ul>
+      </div>
+    </div>
+
+    
+    <div class="recs-telegram-box">
+      <h4>📱 Краткая памятка для Telegram</h4>
+      <pre class="recs-telegram-content">После установки пломбы: дождитесь полного исчезновения онемения перед едой. В первые 24 часа избегайте очень твердой, липкой, горячей/холодной пищи и алкоголя. Чистите зубы аккуратно. При сильной боли или дискомфорте при смыкании зубов, пожалуйста, свяжитесь с клиникой DENTE.</pre>
+    </div>
+
+    <!-- ВТОРАЯ СТРАНИЦА: Инфографика гигиены зубов -->
+    <div class="full-hygiene-guide">
+      <h2>✨ Ежедневный ритуал гигиены зубов</h2>
+      <p style="font-size: 12.5px; color: #64748b; margin: -2px 0 10px 0; font-style: italic;">
+        Здоровые зубы — это 90% вашей работы дома и 10% работы врача. Следуйте этому алгоритму, чтобы зубы оставались здоровыми!
+      </p>
+      
+      <div class="hygiene-grid">
+        <div class="hygiene-card morning">
+          <span class="hygiene-badge-green">☀️ УТРО (Гигиена + Защита)</span>
+          <ol>
+            <li><strong>Сначала ЗАВТРАК:</strong> Никогда не чистите зубы до еды, если планируете пить кофе или сок. После чистки эмаль уязвима к пигментам.</li>
+            <li><strong>Чистка щеткой (3-4 минуты):</strong> Используйте выметающие движения «от красного к белому» (от десны к краю зуба). Не давите сильно!</li>
+            <li><strong>Ополаскиватель:</strong> Если содержит ФТОР — используйте сразу после чистки. Если БЕЗ фтора (для свежести) — днем после перекусов.</li>
+            <li><strong>Чистка языка:</strong> Скребком или щеткой в конце чистки. Убирает 80% бактерий и неприятный запах изо рта.</li>
+          </ol>
+        </div>
+        
+        <div class="hygiene-card evening">
+          <span class="hygiene-badge-blue">🌙 ВЕЧЕР (перед сном, очень важно!)</span>
+          <ol>
+            <li><strong>Межзубная гигиена (САМОЕ ВАЖНОЕ!):</strong> Сначала используем зубную нить (флосс) и ершики. Это убирает налет там, где начинается 90% кариеса.</li>
+            <li><strong>Ирригатор:</strong> Вымываем остатки пищи мощной струей воды. Обязателен при наличии коронок, брекетов или имплантов.</li>
+            <li><strong>Финальная чистка щеткой (3-4 мин):</strong> Активно чистите. После чистки пасту сплюнуть, но <strong>рот водой НЕ полоскать</strong>, чтобы оставить полезные вещества на зубах.</li>
+            <li><strong>Бонус:</strong> Реминерализующие гели (ROCS Minerals, Tooth Mousse) — после вечерней чистки нанесите горошину геля на зубы.</li>
+          </ol>
+        </div>
+      </div>
+      
+      <h3>🛠️ Ваш арсенал для ухода за зубами</h3>
+      <div class="hygiene-columns-grid">
+        <div class="hygiene-column-box">
+          <h3>🪥 Выбор щетки и пасты</h3>
+          <ul>
+            <li><strong>Щетка:</strong> Электрическая звуковая (Sonic) или мануальная. Жесткость: СРЕДНЯЯ (Medium) или МЯГКАЯ (Soft). Меняйте каждые 3-4 месяца!</li>
+            <li><strong>Паста от кариеса:</strong> Ищите Фтор (Fluoride) 1450 ppm (Lacalut, President, Colgate, Splat).</li>
+            <li><strong>Для чувствительности:</strong> Пасты с Кальцием и Гидроксиапатитом (пасты "sensitive").</li>
+          </ul>
+        </div>
+        
+        <div class="hygiene-column-box">
+          <h3>⚙️ Специальные средства</h3>
+          <ul>
+            <li><strong>Монопучковая щетка:</strong> Обязательна для «восьмерок», скученных зубов и брекетов.</li>
+            <li><strong>Зубные ершики:</strong> Подбираются по размеру промежутка. Должны входить с легким усилием, но без боли.</li>
+            <li><strong>Ирригатор:</strong> Пробивает мощной струей воды между зубами, не травмируя десну.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="hygiene-math-box">
+        <div class="hygiene-math-title">📊 Математика здоровья: почему чистить выгодно?</div>
+        <div class="hygiene-math-grid">
+          <div class="hygiene-math-col">
+            <strong>Затраты на гигиену в год (~10 000 руб):</strong><br>
+            Хорошая щетка + ирригатор (5 000 руб) + пасты и нити (2 000 руб) + профгигиена у стоматолога раз в год (3 000 руб).
+          </div>
+          <div class="hygiene-math-col bad">
+            <strong>Затраты на лечение одного зуба (от 40 000 руб):</strong><br>
+            Лечение глубокого кариеса (6 000 руб) + каналы (10 000 руб) + коронка (25 000 руб) или имплантация (от 60 000 руб).
+          </div>
+        </div>
+        <div class="hygiene-math-footer">
+          ВЫВОД: ЧИСТИТЬ ЗУБЫ В 10-20 РАЗ ДЕШЕВЛЕ, ЧЕМ ИХ ЛЕЧИТЬ! ВАША УЛЫБКА — В ВАШИХ РУКАХ!
+        </div>
+      </div>
+    </div>
+
+    <ul class="check-list"><li><span>□</span>пациент получил бумажную или электронную копию рекомендаций</li><li><span>□</span>пациент понимает тревожные признаки и канал срочной связи</li><li><span>□</span>краткий текст подходит для Telegram и не содержит лишних медицинских подробностей</li></ul>
+    <div class="signatures">
+    <p>Пациент получил рекомендации: ____________________</p>
+    <p>Врач (Иванова Марина Сергеевна): ____________________</p>
+  </div>
+</body>
+</html>

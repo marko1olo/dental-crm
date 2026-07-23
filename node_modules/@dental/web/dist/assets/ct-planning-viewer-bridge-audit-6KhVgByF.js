@@ -1,0 +1,1 @@
+function e(a){return{version:"dental-crm-ct-viewer-bridge-audit-v1",target:a.payload.target,gateStatus:a.gate.status,canLaunch:a.gate.canLaunch,pixelPolicy:a.payload.pixelPolicy,applyStepCount:a.payload.applySteps.length,missingTargetCount:a.gate.missingTargets.length,blocker:a.gate.blocker,restoreCommandString:a.payload.commandString}}export{e as b};

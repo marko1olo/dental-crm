@@ -1,0 +1,32 @@
+import type { IPointsManager, PolyDataPointConfiguration } from '../types';
+import type Point2 from '../types/Point2';
+import type Point3 from '../types/Point3';
+import type { PointsXYZ } from '../types/Point3';
+export default class PointsManager<T> {
+    kIndex: number;
+    sources: IPointsManager<T>[];
+    data: Float32Array;
+    _dimensions: number;
+    _length: number;
+    _byteSize: number;
+    growSize: number;
+    array: ArrayBuffer;
+    constructor(configuration?: PolyDataPointConfiguration);
+    forEach(func: (value: T, index: number) => void): void;
+    get length(): number;
+    get dimensions(): number;
+    get dimensionLength(): number;
+    getPoint(index: number): T;
+    getPointArray(index: number): T;
+    protected grow(additionalSize?: number, growSize?: number): void;
+    reverse(): void;
+    getTypedArray(): Float32Array;
+    push(point: T): void;
+    map<R>(f: (value: any, index: number) => R): R[];
+    get points(): T[];
+    toXYZ(): PointsXYZ;
+    static fromXYZ({ x, y, z }: PointsXYZ): IPointsManager<Point3>;
+    subselect(count?: number, offset?: number): IPointsManager<T>;
+    static create3(initialSize?: number, points?: Point3[]): PointsManager<Point3>;
+    static create2(initialSize?: number): PointsManager<Point2>;
+}

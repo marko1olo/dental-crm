@@ -1,0 +1,67 @@
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+Error [TransformError]: Transform failed with 1 error:
+C:\hades\dental-crm\packages\shared\src\index.ts:1166:9: ERROR: Cannot use "||" with "??" without parentheses
+    at failureErrorWithLog (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+
+Node.js v24.13.0
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+Error [TransformError]: Transform failed with 1 error:
+C:\hades\dental-crm\packages\shared\src\index.ts:1166:9: ERROR: Cannot use "||" with "??" without parentheses
+    at failureErrorWithLog (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+
+Node.js v24.13.0
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+Error [TransformError]: Transform failed with 1 error:
+C:\hades\dental-crm\packages\shared\src\index.ts:1166:9: ERROR: Cannot use "||" with "??" without parentheses
+    at failureErrorWithLog (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+
+Node.js v24.13.0
+C:\hades\dental-crm\apps\api\src\speech\gateway.ts:100
+  const requestedConfigured = Boolean(providerKey(requestedProviderId));
+                              ^
+
+ReferenceError: providerKey is not defined
+    at resolveSpeechProvider (C:\hades\dental-crm\apps\api\src\speech\gateway.ts:100:31)
+    at getSpeechGatewayStatus (C:\hades\dental-crm\apps\api\src\speech\gateway.ts:157:28)
+    at speechJsonBodyLimitBytes (C:\hades\dental-crm\apps\api\src\speech\gateway.ts:212:20)
+    at registerSpeechRoutes (C:\hades\dental-crm\apps\api\src\routes\speech.ts:31:18)
+    at <anonymous> (C:\hades\dental-crm\apps\api\src\server.ts:59:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+Node.js v24.13.0

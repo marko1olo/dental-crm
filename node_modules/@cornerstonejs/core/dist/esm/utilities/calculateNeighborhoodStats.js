@@ -1,0 +1,42 @@
+export function calculateNeighborhoodStats(scalarData, dimensions, centerIjk, radius) {
+    const [width, height, numSlices] = dimensions;
+    const numPixelsPerSlice = width * height;
+    let sum = 0;
+    let sumSq = 0;
+    let count = 0;
+    const [cx, cy, cz] = centerIjk.map(Math.round);
+    for (let z = cz - radius; z <= cz + radius; z++) {
+        if (z < 0 || z >= numSlices) {
+            continue;
+        }
+        for (let y = cy - radius; y <= cy + radius; y++) {
+            if (y < 0 || y >= height) {
+                continue;
+            }
+            for (let x = cx - radius; x <= cx + radius; x++) {
+                if (x < 0 || x >= width) {
+                    continue;
+                }
+                const index = z * numPixelsPerSlice + y * width + x;
+                const value = scalarData[index];
+                sum += value;
+                sumSq += value * value;
+                count++;
+            }
+        }
+    }
+    if (count === 0) {
+        const centerIndex = cz * numPixelsPerSlice + cy * width + cx;
+        if (centerIndex >= 0 && centerIndex < scalarData.length) {
+            const centerValue = scalarData[centerIndex];
+            return { mean: centerValue, stdDev: 0, count: 1 };
+        }
+        else {
+            return { mean: 0, stdDev: 0, count: 0 };
+        }
+    }
+    const mean = sum / count;
+    const variance = sumSq / count - mean * mean;
+    const stdDev = Math.sqrt(Math.max(0, variance));
+    return { mean, stdDev, count };
+}

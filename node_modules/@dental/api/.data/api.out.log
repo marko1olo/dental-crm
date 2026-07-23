@@ -1,0 +1,7 @@
+{"level":30,"time":1778911441447,"pid":50592,"hostname":"Shinobu","msg":"Server listening at http://127.0.0.1:4100"}
+{"level":30,"time":1778911909428,"pid":50592,"hostname":"Shinobu","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:4100","remoteAddress":"127.0.0.1","remotePort":60270},"msg":"incoming request"}
+{"level":30,"time":1778911909479,"pid":50592,"hostname":"Shinobu","reqId":"req-1","res":{"statusCode":200},"responseTime":50.94700002670288,"msg":"request completed"}
+{"level":30,"time":1778911909482,"pid":50592,"hostname":"Shinobu","reqId":"req-2","req":{"method":"GET","url":"/api/speech/providers/runtime","host":"127.0.0.1:4100","remoteAddress":"127.0.0.1","remotePort":60271},"msg":"incoming request"}
+{"level":30,"time":1778911909516,"pid":50592,"hostname":"Shinobu","reqId":"req-2","res":{"statusCode":200},"responseTime":33.9830002784729,"msg":"request completed"}
+{"level":30,"time":1778911909560,"pid":50592,"hostname":"Shinobu","reqId":"req-3","req":{"method":"GET","url":"/api/speech/status","host":"127.0.0.1:4100","remoteAddress":"127.0.0.1","remotePort":60277},"msg":"incoming request"}
+{"level":30,"time":1778911909564,"pid":50592,"hostname":"Shinobu","reqId":"req-3","res":{"statusCode":200},"responseTime":4.316400051116943,"msg":"request completed"}

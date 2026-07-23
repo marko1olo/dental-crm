@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Квитанция/памятка об оплате</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Квитанция/памятка об оплате</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 23.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>payment receipt lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Платежная квитанция DENTE</h2>
+      <div class="notice">
+        Документ фиксирует состав выбранных фактических оплат и реквизиты фискальных чеков. Квитанция не заменяет кассовый чек и используется как клиническое приложение к платежному досье пациента.
+      </div>
+      <table>
+        <tr><th>Номер квитанции</th><td>KV-LIFECYCLE-001</td></tr>
+        <tr><th>Дата квитанции</th><td>23.05.2026 10:05</td></tr>
+        <tr><th>Клиника</th><td>ИП Иванова М.С.; ИНН 631234567890; ОГРН/ОГРНИП 318631300000000; лицензия Л041-01184-63/00000000; от 2024-01-15; выдана Министерство здравоохранения Самарской области; адрес Самара, ул. Демонстрационная, 12; тел. +7 927 111-22-33; email clinic@example.com; сайт https://example.com; р/с 40702810000000000000, БИК 043601000, банк ООО «Демо Банк»</td></tr>
+        <tr><th>Связанный документ</th><td>Квитанция/памятка об оплате</td></tr>
+        <tr><th>Назначение оплаты</th><td>payment receipt lifecycle smoke</td></tr>
+        <tr><th>Оплачено по выбранным платежам</th><td>3 000 руб.</td></tr>
+        <tr><th>Фискальные чеки</th><td>FN-2026-000001</td></tr>
+        <tr><th>Выдал</th><td>Smoke Admin</td></tr>
+      </table>
+      <h2>Плательщик</h2>
+      <table>
+        <tr><th>ФИО</th><td>Иванова Марина Сергеевна</td></tr>
+        <tr><th>Налоговая опора</th><td>не запрошена; паспортные данные и ИНН не включались в обычную квитанцию</td></tr>
+      </table>
+      <h2>Фактические оплаты и чеки</h2>
+      <table>
+        <tr><th>Дата</th><th>Способ</th><th>Сумма</th><th>Фискальный чек</th><th>Плательщик</th></tr>
+        <tr><td>12.05.2026, 10:05:00</td><td>карта</td><td>3 000 руб.</td><td>ФН 9287440300000001; ФД 123456; ФПД 9876543210; кассир Администратор DENTE; ОФД https://example.com/fiscal/FN-2026-000001</td><td>Иванова Марина Сергеевна; ИНН 123456789012; дата рождения 1988-04-21; документ паспорт РФ 3600 000000, выдан 01.01.2018; связь с пациентом: пациент</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>выбранные платежи сверены с платежным журналом</li><li><span>□</span>ФИО плательщика сверено; налоговые паспортные данные не запрашивались для обычной квитанции</li><li><span>□</span>номера фискальных чеков совпадают с выбранными оплатами</li><li><span>□</span>пациент предупрежден, что квитанция не заменяет кассовый чек</li></ul>
+      <div class="signatures">
+    <p>Администратор: ____________________</p>
+    <p>Пациент/плательщик: ____________________</p>
+  </div>
+</body>
+</html>

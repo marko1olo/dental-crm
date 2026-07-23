@@ -1,0 +1,22 @@
+var StrategyCallbacks;
+(function (StrategyCallbacks) {
+    StrategyCallbacks["CalculateCursorGeometry"] = "calculateCursorGeometry";
+    StrategyCallbacks["RenderCursor"] = "renderCursor";
+    StrategyCallbacks["OnInteractionStart"] = "onInteractionStart";
+    StrategyCallbacks["OnInteractionEnd"] = "onInteractionEnd";
+    StrategyCallbacks["Preview"] = "preview";
+    StrategyCallbacks["RejectPreview"] = "rejectPreview";
+    StrategyCallbacks["AcceptPreview"] = "acceptPreview";
+    StrategyCallbacks["Fill"] = "fill";
+    StrategyCallbacks["Interpolate"] = "interpolate";
+    StrategyCallbacks["StrategyFunction"] = "strategyFunction";
+    StrategyCallbacks["CreateIsInThreshold"] = "createIsInThreshold";
+    StrategyCallbacks["Initialize"] = "initialize";
+    StrategyCallbacks["INTERNAL_setValue"] = "setValue";
+    StrategyCallbacks["AddPreview"] = "addPreview";
+    StrategyCallbacks["ComputeInnerCircleRadius"] = "computeInnerCircleRadius";
+    StrategyCallbacks["GetStatistics"] = "getStatistics";
+    StrategyCallbacks["EnsureImageVolumeFor3DManipulation"] = "ensureImageVolumeFor3DManipulation";
+    StrategyCallbacks["EnsureSegmentationVolumeFor3DManipulation"] = "ensureSegmentationVolumeFor3DManipulation";
+})(StrategyCallbacks || (StrategyCallbacks = {}));
+export default StrategyCallbacks;

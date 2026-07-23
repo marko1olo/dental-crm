@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Согласие и журнал местной анестезии</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Согласие и журнал местной анестезии</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 25.05.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>anesthesia_consent_log visit workflow route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Согласие и журнал местной анестезии</h2>
+      <div class="notice">
+        Структурированные данные заполнены до выдачи. Седация и наркоз требуют отдельного утвержденного пакета клиники.
+      </div>
+      <table>
+        <tr><th>Планируемый метод</th><td>инфильтрационная и проводниковая местная анестезия</td></tr>
+        <tr><th>Анестетик</th><td>артикаин 4%</td></tr>
+        <tr><th>Вазоконстриктор</th><td>эпинефрин 1:200000</td></tr>
+        <tr><th>Зона</th><td>36 зуб и нижняя челюсть слева</td></tr>
+        <tr><th>Аллергии и реакции</th><td>аллергия на анестетики со слов пациента отрицается</td></tr>
+        <tr><th>Ограничения и риски</th><td>антикоагулянты и беременность уточнены перед вмешательством</td></tr>
+        <tr><th>Риски анестезии разъяснены</th><td>да</td></tr>
+        <tr><th>Аллергии и ограничения проверены</th><td>да</td></tr>
+        <tr><th>Согласие пациента на анестезию</th><td>да</td></tr>
+      </table>
+      <h2>Журнал введения</h2>
+      <table>
+        <tr><th>Время</th><th>Препарат</th><th>Доза</th><th>Зона</th><th>Реакция</th></tr>
+        <tr><td>24.05.2026 10:05</td><td>артикаин 4% с эпинефрином 1:200000</td><td>1.7 мл</td><td>36 зуб</td><td>без особенностей</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>пациент предупрежден об онемении, риске травмы мягких тканей и временном ограничении еды/горячего</li><li><span>□</span>перед введением уточнены аллергии, лекарства, хронические заболевания, беременность/лактация и антикоагулянты</li><li><span>□</span>при осложнении симптомы, действия врача и дальнейшие рекомендации фиксируются в записи приема</li></ul>
+      <div class="signatures">
+    <p>Пациент/законный представитель: ____________________</p>
+    <p>Врач: ____________________</p>
+  </div>
+</body>
+</html>

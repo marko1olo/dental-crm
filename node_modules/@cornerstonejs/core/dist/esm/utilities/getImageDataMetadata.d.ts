@@ -1,0 +1,21 @@
+import type { Point3, Mat3, ImagePlaneModule, ImagePixelModule, IImageCalibration } from '../types';
+import type IImage from '../types/IImage';
+import type { VOILUTFunctionType } from '../enums';
+type ReturnImageDataMetadata = {
+    imagePlaneModule: ImagePlaneModule;
+    imagePixelModule: ImagePixelModule;
+    bitsAllocated: number;
+    numVoxels: number;
+    numberOfComponents: number;
+    origin: Point3;
+    direction: Mat3;
+    dimensions: Point3;
+    spacing: Point3;
+    voiLUTFunction: VOILUTFunctionType;
+    modality: string;
+    scalingFactor: number;
+    calibration: IImageCalibration;
+    scanAxisNormal: Point3;
+};
+export declare function getImageDataMetadata(image: IImage): ReturnImageDataMetadata;
+export {};

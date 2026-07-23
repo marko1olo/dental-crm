@@ -1,0 +1,64 @@
+import type { Types } from '@cornerstonejs/core';
+import { AnnotationTool } from '../../base';
+import type { EventTypes, ToolHandle, PublicToolProps, ToolProps, SVGDrawingHelper, Annotation } from '../../../types';
+import type { UltrasoundPleuraBLineAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { FanGeometry } from './utils/types';
+type FilterFunction = (imageId: string) => boolean;
+declare class UltrasoundPleuraBLineTool extends AnnotationTool {
+    static toolName: string;
+    static USPleuraBLineAnnotationType: {
+        readonly BLINE: "bLine";
+        readonly PLEURA: "pleura";
+    };
+    _throttledCalculateCachedStats: Function;
+    editData: {
+        annotation: Annotation;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    isDrawing: boolean;
+    isHandleOutsideImage: boolean;
+    activeAnnotationType: string;
+    pleuraAnnotations: UltrasoundPleuraBLineAnnotation[];
+    bLineAnnotations: UltrasoundPleuraBLineAnnotation[];
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    static filterAnnotations(element: HTMLDivElement, filterFunction?: FilterFunction): UltrasoundPleuraBLineAnnotation[];
+    static countAnnotations(element: HTMLDivElement, filterFunction?: FilterFunction): Map<any, any>;
+    static deleteAnnotations(element: HTMLDivElement, filterFunction?: FilterFunction): void;
+    setActiveAnnotationType(type: string): void;
+    getActiveAnnotationType(): string;
+    deleteLastAnnotationType(element: HTMLDivElement, type: string): void;
+    static hydrate: (viewportId: string, points: Types.Point3[], options?: {
+        annotationUID?: string;
+        toolInstance?: UltrasoundPleuraBLineTool;
+        referencedImageId?: string;
+        viewplaneNormal?: Types.Point3;
+        viewUp?: Types.Point3;
+    }) => UltrasoundPleuraBLineAnnotation;
+    addNewAnnotation: (evt: EventTypes.InteractionEventType) => UltrasoundPleuraBLineAnnotation;
+    isPointNearTool: (element: HTMLDivElement, annotation: UltrasoundPleuraBLineAnnotation, canvasCoords: Types.Point2, proximity: number) => boolean;
+    toolSelectedCallback: (evt: EventTypes.InteractionEventType, annotation: UltrasoundPleuraBLineAnnotation) => void;
+    handleSelectedCallback(evt: EventTypes.InteractionEventType, annotation: UltrasoundPleuraBLineAnnotation, handle: ToolHandle): void;
+    _endCallback: (evt: EventTypes.InteractionEventType) => void;
+    isInsideFanShape(viewport: any, point: Types.Point3): boolean;
+    _dragCallback: (evt: EventTypes.InteractionEventType) => void;
+    cancel: (element: HTMLDivElement) => string;
+    _activateModify: (element: HTMLDivElement) => void;
+    _deactivateModify: (element: HTMLDivElement) => void;
+    _activateDraw: (element: HTMLDivElement) => void;
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    updateFanGeometryConfiguration(fanGeometry: FanGeometry): void;
+    deriveFanGeometryFromViewport(viewport: any): void;
+    isFanShapeGeometryParametersValid(fanGeometry?: FanGeometry): boolean;
+    getFanShapeGeometryParameters(viewport: any): boolean;
+    calculateBLinePleuraPercentage(viewport: any): number;
+    getColorForLineType(annotation: UltrasoundPleuraBLineAnnotation): any;
+    getIndexToCanvasRatio(viewport: any): number;
+    drawDepthGuide(svgDrawingHelper: SVGDrawingHelper, viewport: any): void;
+    renderAnnotation: (enabledElement: Types.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+}
+export default UltrasoundPleuraBLineTool;
