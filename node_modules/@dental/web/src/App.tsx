@@ -1880,7 +1880,8 @@ export function App() {
   setSelectedPatientId,
   setScheduleDateFilter,
   scheduleDateFilter,
-  handleFinishOnboarding
+  handleFinishOnboarding,
+  setOnboardingDismissed
 } = useAppLogic();
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
@@ -1959,6 +1960,11 @@ export function App() {
     setShowStaffPinPad(true);
   };
 
+  const isLocalOnboardingDismissed = typeof window !== "undefined" && (
+    window.localStorage.getItem("dental-crm:onboarding:v1")?.includes('"dismissed":true') ||
+    window.localStorage.getItem("dente_ui_preferences_v1")?.includes('"onboardingDismissed":true')
+  );
+
   // Show clinic login gate if not authed
   if (!clinicAuthed) {
     return <AuthHub onSuccess={(cp, up) => {
@@ -1990,7 +1996,7 @@ export function App() {
   }
 
 
-  if (!onboardingDismissed) {
+  if (!onboardingDismissed && !isLocalOnboardingDismissed) {
     return (
       <main className="app-shell onboarding-fullscreen" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: "40px 20px", background: "linear-gradient(135deg, #0d9488 0%, #111827 100%)", overflowY: "auto" }}>
         <section className="workspace onboarding-only-workspace" id="workspace-content" style={{ maxWidth: "800px", width: "100%", margin: "auto", padding: "0", background: "none", boxShadow: "none" }}>
@@ -2045,6 +2051,7 @@ export function App() {
                     type="button"
                     onClick={async () => {
                       setResetting(true);
+                      setOnboardingDismissed(true);
                       await handleSelectDemoMode();
                       setResetting(false);
                     }}
