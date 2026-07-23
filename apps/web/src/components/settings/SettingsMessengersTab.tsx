@@ -16,7 +16,7 @@ interface StaffOption {
 type MessengerTabId = "telegram" | "whatsapp" | "max";
 
 export function SettingsMessengersTab({
-	props,
+	props: incomingProps,
 	settingsTab,
 }: {
 	props?: any;
@@ -24,7 +24,7 @@ export function SettingsMessengersTab({
 }) {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	const props = Object.assign({}, appLogic, derivations) as any;
+	const props = Object.assign({}, appLogic, derivations, incomingProps) as any;
 	const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
 		settingsTab === "telegram" ? "telegram" : "whatsapp",
 	);
