@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { extendedOdontogramStates } from "./schema.js";
 
 async function ensureExtendedOdontogramStatesTable() {
 	try {
-		await db.execute(`
+		await db.execute(sql`
 			CREATE TABLE IF NOT EXISTS "extended_odontogram_states" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
@@ -22,6 +22,7 @@ async function ensureExtendedOdontogramStatesTable() {
 		console.warn("[ensureExtendedOdontogramStatesTable warning]:", err);
 	}
 }
+
 
 export async function getExtendedOdontogramStatesFromDb(orgId: string) {
 	try {

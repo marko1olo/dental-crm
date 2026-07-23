@@ -1072,6 +1072,86 @@ export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #35 — прием::пользовательские_справочники_бланков_осмотра
+export const customExaminationFormCatalogs = pgTable("custom_examination_form_catalogs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	formCode: text("form_code").default("FORM_043U").notNull(),
+	formTitle: text("form_title").notNull(),
+	customFieldCount: integer("custom_field_count").default(12).notNull(),
+	egiszUnified: boolean("egisz_unified").default(true).notNull(),
+	status: text("status").default("active").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #36 — прием::несколько_диагнозов_егисз
+export const egiszMultipleDiagnoses = pgTable("egisz_multiple_diagnoses", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	mainDiagnosisMkb: text("main_diagnosis_mkb").notNull(),
+	mainDiagnosisName: text("main_diagnosis_name").notNull(),
+	accompanyingDiagnosesMkb: text("accompanying_diagnoses_mkb").notNull(),
+	cdaValidationStatus: text("cda_validation_status").default("cda_r2_valid").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
+export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	toothNumber: integer("tooth_number").notNull(),
+	isPrimaryPediatric: boolean("is_primary_pediatric").default(false).notNull(),
+	secondaryCariesUnderFilling: boolean("secondary_caries_under_filling").default(false).notNull(),
+	mobilityDegree: integer("mobility_degree").default(0).notNull(),
+	pediatricCrownPresent: boolean("pediatric_crown_present").default(false).notNull(),
+	notes: text("notes").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #38 — прием::формы_осмотра_без_зубной_формулы
+export const nonDentalExaminationForms = pgTable("non_dental_examination_forms", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	specialtyType: text("specialty_type").default("ENT").notNull(),
+	formName: text("form_name").notNull(),
+	patientName: text("patient_name").notNull(),
+	complaints: text("complaints").notNull(),
+	objectiveStatus: text("objective_status").notNull(),
+	diagnosisMkb: text("diagnosis_mkb").notNull(),
+	recommendations: text("recommendations").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #41 — документы::печать_одонтограммы_в_плане_лечения
+
+export const treatmentPlanPrintOdontograms = pgTable("treatment_plan_print_odontograms", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	planTitle: text("plan_title").notNull(),
+	odontogramIncluded: boolean("odontogram_included").default(true).notNull(),
+	toothFormulaSnippet: text("tooth_formula_snippet").notNull(),
+	printLayoutReady: boolean("print_layout_ready").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #34 — план_лечения::управление_этапами_и_автоархивация
+export const treatmentPlanStages = pgTable("treatment_plan_stages", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	planTitle: text("plan_title").notNull(),
+	stageOrder: integer("stage_order").default(1).notNull(),
+	stageName: text("stage_name").notNull(),
+	completionPercentage: integer("completion_percentage").default(0).notNull(),
+	autoArchived: boolean("auto_archived").default(false).notNull(),
+	archivedAt: timestamp("archived_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 

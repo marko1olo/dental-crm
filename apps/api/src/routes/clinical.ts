@@ -121,6 +121,16 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getExtendedOdontogramStatesFromDb(orgId));
 	});
 
+	// COMPETITOR FEATURE: прием::несколько_диагнозов_егисз
+	app.get("/api/egisz/multiple-diagnoses", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getEgiszMultipleDiagnosesFromDb } = await import("../db/egiszMultipleDiagnosesQuery.js");
+		return reply.status(200).send(await getEgiszMultipleDiagnosesFromDb(orgId));
+	});
+
+
 	// COMPETITOR FEATURE #48: расписание::буфер_обмена_в_расписании_для_быстрого_переноса
 	app.get("/api/schedule/clipboard-items", async (request, reply) => {
 		const rawOrgId = request.headers["x-organization-id"];
@@ -219,6 +229,16 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getTreatmentPlanLockTokensFromDb } = await import("../db/treatmentPlanLockTokensQuery.js");
 		return reply.status(200).send(await getTreatmentPlanLockTokensFromDb(orgId));
 	});
+
+	// COMPETITOR FEATURE: документы::печать_одонтограммы_в_плане_лечения
+	app.get("/api/documents/treatment-plan-print-odontogram", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getTreatmentPlanPrintOdontogramsFromDb } = await import("../db/treatmentPlanPrintOdontogramsQuery.js");
+		return reply.status(200).send(await getTreatmentPlanPrintOdontogramsFromDb(orgId));
+	});
+
 
 	// COMPETITOR FEATURE #53: финансы::отправка_электронных_кассовых_чеков_на_email_или_смс
 	app.get("/api/finance/digital-receipt-dispatches", async (request, reply) => {

@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { treatmentPlanPrintOdontograms } from "./schema.js";
 
 async function ensureTreatmentPlanPrintOdontogramsTable() {
 	try {
-		await db.execute(`
+		await db.execute(sql`
 			CREATE TABLE IF NOT EXISTS "treatment_plan_print_odontograms" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
@@ -20,6 +20,7 @@ async function ensureTreatmentPlanPrintOdontogramsTable() {
 		console.warn("[ensureTreatmentPlanPrintOdontogramsTable warning]:", err);
 	}
 }
+
 
 export async function getTreatmentPlanPrintOdontogramsFromDb(orgId: string) {
 	try {
