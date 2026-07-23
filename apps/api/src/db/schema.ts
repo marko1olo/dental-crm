@@ -1044,5 +1044,65 @@ export const alternativeTreatmentPlans = pgTable("alternative_treatment_plans", 
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// =====================================================
+// WAVE 13 — COMPETITOR PARITY SCHEMA TABLES
+// =====================================================
+
+// #15 — коммуникации::автоматический_выбор_канала_оповещения_при_записи
+export const appointmentChannelInheritances = pgTable("appointment_channel_inheritances", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	chatId: uuid("chat_id").notNull(),
+	patientName: text("patient_name").notNull(),
+	inheritedChannel: text("inherited_channel").default("whatsapp").notNull(),
+	isAutoApplied: boolean("is_auto_applied").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #18 — расписание::автоматические_действия_внешних_сервисов_забота_loyalmed
+export const externalScheduleActionLogs = pgTable("external_schedule_action_logs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	externalProvider: text("external_provider").notNull(),
+	actionType: text("action_type").notNull(),
+	patientName: text("patient_name").notNull(),
+	appointmentSlot: text("appointment_slot").notNull(),
+	status: text("status").default("success").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #36 — пациенты::очередь_массового_объединения_дубликатов
+export const patientDuplicateMergeQueues = pgTable("patient_duplicate_merge_queues", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	primaryPatientName: text("primary_patient_name").notNull(),
+	duplicatePatientName: text("duplicate_patient_name").notNull(),
+	matchConfidencePercent: integer("match_confidence_percent").default(95).notNull(),
+	mergeStatus: text("merge_status").default("pending").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #42 — интеграции::яндекс_календарь_синхронизация
+export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	doctorName: text("doctor_name").notNull(),
+	yandexCalendarId: text("yandex_calendar_id").notNull(),
+	syncStatus: text("sync_status").default("synced").notNull(),
+	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #44 — система::индикация_нагрузки_и_хватки_оперативной_памяти
+export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	clientHostName: text("client_host_name").notNull(),
+	usedRamMb: integer("used_ram_mb").notNull(),
+	totalRamMb: integer("total_ram_mb").notNull(),
+	warningLevel: text("warning_level").default("normal").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 

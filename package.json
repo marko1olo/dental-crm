@@ -19,6 +19,7 @@
 		"smoke:wave10": "node scripts/test-edge-cases-wave10.mjs",
 		"smoke:wave11": "node scripts/test-edge-cases-wave11.mjs",
 		"smoke:wave12": "node scripts/test-edge-cases-wave12.mjs",
+		"smoke:wave13": "node scripts/test-edge-cases-wave13.mjs",
 		"smoke:mobile": "node scripts/smoke-mobile-overflow.mjs",
 		"smoke:mobile-overflow": "node scripts/smoke-mobile-overflow.mjs",
 		"smoke:web-render-gating-source": "node scripts/smoke-web-render-gating-source.mjs",

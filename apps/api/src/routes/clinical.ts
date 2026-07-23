@@ -309,7 +309,53 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getAlternativeTreatmentPlansFromDb } = await import("../db/alternativeTreatmentPlansQuery.js");
 		return reply.status(200).send(await getAlternativeTreatmentPlansFromDb(orgId));
 	});
+
+	// COMPETITOR FEATURE #15: коммуникации::автоматический_выбор_канала_оповещения_при_записи
+	app.get("/api/communications/appointment-channel-inheritances", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getAppointmentChannelInheritancesFromDb } = await import("../db/appointmentChannelInheritancesQuery.js");
+		return reply.status(200).send(await getAppointmentChannelInheritancesFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #18: расписание::автоматические_действия_внешних_сервисов_забота_loyalmed
+	app.get("/api/schedule/external-schedule-action-logs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getExternalScheduleActionLogsFromDb } = await import("../db/externalScheduleActionLogsQuery.js");
+		return reply.status(200).send(await getExternalScheduleActionLogsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #36: пациенты::очередь_массового_объединения_дубликатов
+	app.get("/api/crm/patient-duplicate-merge-queues", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getPatientDuplicateMergeQueuesFromDb } = await import("../db/patientDuplicateMergeQueuesQuery.js");
+		return reply.status(200).send(await getPatientDuplicateMergeQueuesFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #42: интеграции::яндекс_календарь_синхронизация
+	app.get("/api/integrations/yandex-calendar-syncs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getYandexCalendarSyncsFromDb } = await import("../db/yandexCalendarSyncsQuery.js");
+		return reply.status(200).send(await getYandexCalendarSyncsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #44: система::индикация_нагрузки_и_хватки_оперативной_памяти
+	app.get("/api/system/ram-watchdogs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getSystemRamWatchdogsFromDb } = await import("../db/systemRamWatchdogsQuery.js");
+		return reply.status(200).send(await getSystemRamWatchdogsFromDb(orgId));
+	});
 }
+
 
 
 

@@ -27,6 +27,11 @@ import { QuickAppointmentConfirmationsWidget } from "./components/communications
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
 import { AlternativeTreatmentPlansWidget } from "./components/documents/AlternativeTreatmentPlansWidget";
+import { AppointmentChannelInheritancesWidget } from "./components/communications/AppointmentChannelInheritancesWidget";
+import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
+import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
+import { YandexCalendarSyncsWidget } from "./components/integrations/YandexCalendarSyncsWidget";
+import { SystemRamWatchdogsWidget } from "./components/system/SystemRamWatchdogsWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -447,6 +452,11 @@ export function PatientCockpit({
             <UrgentScheduleRequestsWidget />
             <ConfirmationPerformanceReportsWidget />
             <AlternativeTreatmentPlansWidget />
+            <AppointmentChannelInheritancesWidget />
+            <ExternalScheduleActionLogsWidget />
+            <PatientDuplicateMergeQueuesWidget />
+            <YandexCalendarSyncsWidget />
+            <SystemRamWatchdogsWidget />
           </div>
         </section>
     </>
