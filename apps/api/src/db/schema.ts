@@ -840,3 +840,130 @@ export const dicomWorkbenchBundles = pgTable("dicom_workbench_bundles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
+
+// =====================================================
+// WAVE 9 & WAVE 10 — COMPETITOR PARITY SCHEMA TABLES
+// =====================================================
+
+// #46 — рабочее_место::история_последних_просмотренных_карточек
+export const recentPatientHistory = pgTable("recent_patient_history", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	userId: uuid("user_id").notNull(),
+	patientId: uuid("patient_id").notNull().references(() => patients.id),
+	patientName: text("patient_name").notNull(),
+	phone: text("phone"),
+	lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #47 — crm::конструктор_типов_задач_без_привязки_к_визиту
+export const customCrmTaskTypes = pgTable("custom_crm_task_types", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	typeCode: text("type_code").notNull(),
+	typeLabel: text("type_label").notNull(),
+	colorHex: text("color_hex").default("#3b82f6").notNull(),
+	requiresPatientBinding: boolean("requires_patient_binding").default(true).notNull(),
+	defaultSlaHours: integer("default_sla_hours").default(24).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #50 — crm::прямая_отправка_планов_лечения_и_счетов_на_email
+export const crmEmailDispatchLogs = pgTable("crm_email_dispatch_logs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	recipientEmail: text("recipient_email").notNull(),
+	documentType: text("document_type").notNull(),
+	documentTitle: text("document_title").notNull(),
+	dispatchStatus: text("dispatch_status").default("sent").notNull(),
+	sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #56 — пациенты::целевые_причины_отмены_приемов_клиника_vs_пациент
+export const cancellationReasonsTwoLevel = pgTable("cancellation_reasons_two_level", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	category: text("category").notNull(),
+	reasonCode: text("reason_code").notNull(),
+	reasonTitle: text("reason_title").notNull(),
+	requiresNote: boolean("requires_note").default(false).notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #58 — финансы::закрепение_денег_за_врачами_или_услугами
+export const advanceDepositTaggings = pgTable("advance_deposit_taggings", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	depositAmountRub: numeric("deposit_amount_rub", { precision: 12, scale: 2 }).notNull(),
+	taggedTargetType: text("tagged_target_type").notNull(),
+	taggedTargetName: text("tagged_target_name").notNull(),
+	allocationStatus: text("allocation_status").default("pinned").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #52 — план_лечения::конструктор_планов_лечения_2_0
+export const treatmentPlanLockTokens = pgTable("treatment_plan_lock_tokens", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	treatmentPlanId: uuid("treatment_plan_id").notNull(),
+	lockedByDoctorName: text("locked_by_doctor_name").notNull(),
+	lockToken: text("lock_token").notNull(),
+	autoSaveDraftJson: text("auto_save_draft_json").notNull(),
+	isActiveLock: boolean("is_active_lock").default(true).notNull(),
+	lockedAt: timestamp("locked_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #53 — финансы::отправка_электронных_кассовых_чеков_на_email_или_смс
+export const digitalReceiptDispatches = pgTable("digital_receipt_dispatches", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	paymentId: uuid("payment_id").notNull(),
+	patientName: text("patient_name").notNull(),
+	dispatchChannel: text("dispatch_channel").default("email").notNull(),
+	targetDestination: text("target_destination").notNull(),
+	fiscalReceiptNumber: text("fiscal_receipt_number").notNull(),
+	receiptAmountRub: numeric("receipt_amount_rub", { precision: 12, scale: 2 }).notNull(),
+	paperPrintSkipped: boolean("paper_print_skipped").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #55 — пациенты::вкладка_приемы_рабочий_стол_администратора
+export const patientServiceLineages = pgTable("patient_service_lineages", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	leadSource: text("lead_source").notNull(),
+	rescheduleCount: integer("reschedule_count").default(0).notNull(),
+	waitlistEntryId: uuid("waitlist_entry_id"),
+	finalVisitId: uuid("final_visit_id"),
+	lifecycleStage: text("lifecycle_stage").default("completed").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #61 — интеграции::конструктор_лендингов_flexbe_и_сопоставление_полей
+export const landingFieldMappings = pgTable("landing_field_mappings", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	landingProvider: text("landing_provider").default("flexbe").notNull(),
+	formName: text("form_name").notNull(),
+	incomingFieldKey: text("incoming_field_key").notNull(),
+	mappedCrmTarget: text("mapped_crm_target").notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #63 — финансы::автоматическое_указание_меры_количества_в_kkm
+export const kkmItemQuantityUnits = pgTable("kkm_item_quantity_units", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	serviceCode: text("service_code").notNull(),
+	serviceTitle: text("service_title").notNull(),
+	quantityUnitCode: integer("quantity_unit_code").default(0).notNull(),
+	quantityUnitLabel: text("quantity_unit_label").default("шт").notNull(),
+	itemPaymentType: text("item_payment_type").default("full_payment").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
