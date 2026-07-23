@@ -7,6 +7,7 @@ import { PaymentCapture } from "./PaymentCapture";
 import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
 import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
 import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
+import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
@@ -242,6 +243,7 @@ export function FinanceView({
       <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
 
       <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <PricelistDoctorPayrollsWidget />
         <AdvanceDepositTaggingsWidget />
         <DigitalReceiptDispatchesWidget />
         <KkmItemQuantityUnitsWidget />

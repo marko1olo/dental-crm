@@ -11243,10 +11243,29 @@ html.dark .emk-tab-button.active,
 .clinical-rule-card,
 .finance-list,
 .service-catalog-strip article {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
+  color: var(--ink, #0f172a);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-width: 0;
+}
+
+.plan-scenarios h2,
+.plan-scenarios h3,
+.payment-capture h2,
+.payment-capture h3 {
+  color: var(--ink, #0f172a);
+}
+
+html.dark .plan-scenarios h2,
+html.dark .plan-scenarios h3,
+html.dark .payment-capture h2,
+html.dark .payment-capture h3,
+[data-theme="dark"] .plan-scenarios h2,
+[data-theme="dark"] .plan-scenarios h3,
+[data-theme="dark"] .payment-capture h2,
+[data-theme="dark"] .payment-capture h3 {
+  color: #f8fafc !important;
 }
 
 .finance-summary-grid article {
