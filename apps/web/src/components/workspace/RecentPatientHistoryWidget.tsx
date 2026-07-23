@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Clock, UserCheck, ChevronRight } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface RecentPatientItem {
 	id: string;
@@ -10,13 +12,15 @@ interface RecentPatientItem {
 	lastViewedAt: string;
 }
 
-export const RecentPatientHistoryWidget: React.FC = () => {
+export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }> = ({ compactDropdown = false }) => {
+	const { auth, selectPatient } = useAppLogicContext();
 	const [patients, setPatients] = useState<RecentPatientItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [isOpen, setIsOpen] = useState<boolean>(false);
 
-	useEffect(() => {
+	const fetchRecent = () => {
 		fetch("/api/hr/recent-patients", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -27,48 +31,163 @@ export const RecentPatientHistoryWidget: React.FC = () => {
 				console.error("[RecentPatientHistoryWidget fetch error]:", err);
 				setLoading(false);
 			});
+	};
+
+	useEffect(() => {
+		fetchRecent();
 	}, []);
+
+	const handleOpenPatient = (patId: string) => {
+		if (selectPatient) {
+			selectPatient(patId);
+		}
+		window.location.hash = "#patients";
+		setIsOpen(false);
+	};
+
+	if (compactDropdown) {
+		return (
+			<details
+				className="workspace-role-switcher recent-patients-header-dropdown"
+				data-testid="recent-patient-history-header-widget"
+				open={isOpen}
+				onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
+				style={{ position: "relative" }}
+			>
+				<summary title="История 10 последних просмотренных карточек">
+					<Clock size={16} aria-hidden="true" style={{ color: "var(--brand-500)" }} />
+					<span>Недавние</span>
+					<strong style={{ fontSize: "12px", background: "var(--brand-50)", color: "var(--brand-700)", padding: "2px 6px", borderRadius: "10px" }}>
+						{patients.length}
+					</strong>
+				</summary>
+				<div
+					className="role-switcher-options"
+					style={{
+						position: "absolute",
+						top: "100%",
+						right: 0,
+						width: "320px",
+						maxHeight: "380px",
+						overflowY: "auto",
+						background: "var(--paper)",
+						border: "1px solid var(--line)",
+						borderRadius: "12px",
+						boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+						padding: "8px",
+						zIndex: 100
+					}}
+				>
+					<div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)", fontSize: "12px", fontWeight: 700, color: "var(--muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+						<span>ОТКРЫТЫЕ РАНЕЕ КАРТОЧКИ</span>
+						<span style={{ fontSize: "10px", color: "var(--slate-400)" }}>ТОП 10</span>
+					</div>
+
+					{loading ? (
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "var(--muted)" }}>Загрузка...</div>
+					) : patients.length === 0 ? (
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "var(--muted)" }}>История просмотров пуста</div>
+					) : (
+						patients.map((pat) => (
+							<button
+								key={pat.id}
+								type="button"
+								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									width: "100%",
+									padding: "8px 12px",
+									borderRadius: "8px",
+									border: "none",
+									background: "transparent",
+									cursor: "pointer",
+									textAlign: "left",
+									transition: "background 0.15s ease"
+								}}
+								className="hover-surface"
+							>
+								<div>
+									<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>{pat.patientName}</div>
+									<div style={{ fontSize: "11px", color: "var(--slate-500)" }}>{pat.phone}</div>
+								</div>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+									<span style={{ fontSize: "10px", color: "var(--muted)", background: "var(--surface-100)", padding: "2px 6px", borderRadius: "4px" }}>
+										{new Date(pat.lastViewedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+									</span>
+									<ChevronRight size={14} style={{ color: "var(--slate-400)" }} />
+								</div>
+							</button>
+						))
+					)}
+				</div>
+			</details>
+		);
+	}
 
 	return (
 		<div
 			data-testid="recent-patient-history-widget"
-			className="p-4 bg-slate-900 border border-blue-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			style={{
+				padding: "16px",
+				background: "var(--paper)",
+				border: "1px solid var(--line)",
+				borderRadius: "12px",
+				marginTop: "16px"
+			}}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
-				<div className="flex items-center space-x-2">
-					<span className="text-xl">🕒</span>
-					<h3 className="font-semibold text-blue-400">
-						Быстрое Переключение: История 10 Последних Просмотренных Карточек Пациентов
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", borderBottom: "1px solid var(--line)", paddingBottom: "8px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+					<Clock size={18} style={{ color: "var(--brand-500)" }} />
+					<h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", margin: 0 }}>
+						Быстрый переход: Недавно просмотренные карточки пациентов
 					</h3>
 				</div>
-				<span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/40">
-					Header Quick Nav
+				<span style={{ fontSize: "11px", background: "var(--brand-50)", color: "var(--brand-700)", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>
+					CRM Quick Nav
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка последних карточек...</div>
+				<div style={{ fontSize: "13px", color: "var(--muted)", padding: "12px 0" }}>Загрузка...</div>
+			) : patients.length === 0 ? (
+				<div style={{ fontSize: "13px", color: "var(--muted)", padding: "12px 0" }}>Нет недавних карточек</div>
 			) : (
-				<div className="space-y-3">
+				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "10px" }}>
 					{patients.map((pat) => (
 						<div
 							key={pat.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex items-center justify-between"
+							style={{
+								padding: "10px 14px",
+								background: "var(--surface-50)",
+								border: "1px solid var(--line)",
+								borderRadius: "8px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between"
+							}}
 						>
 							<div>
-								<div className="text-sm font-bold text-slate-200">{pat.patientName}</div>
-								<div className="text-xs text-slate-400 mt-0.5">
-									Тел: <span className="font-mono text-slate-300">{pat.phone}</span>
-								</div>
+								<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>{pat.patientName}</div>
+								<div style={{ fontSize: "11px", color: "var(--muted)" }}>{pat.phone}</div>
 							</div>
-							<div className="flex items-center space-x-2">
-								<span className="text-xs text-blue-300 bg-blue-950 px-2 py-0.5 rounded border border-blue-800 font-mono">
-									{new Date(pat.lastViewedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-								</span>
-								<button className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded font-semibold transition">
-									Открыть ЭМК
-								</button>
-							</div>
+							<button
+								type="button"
+								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
+								style={{
+									fontSize: "12px",
+									background: "var(--brand-500)",
+									color: "#fff",
+									border: "none",
+									borderRadius: "6px",
+									padding: "6px 10px",
+									fontWeight: 600,
+									cursor: "pointer"
+								}}
+							>
+								Открыть
+							</button>
 						</div>
 					))}
 				</div>
@@ -76,3 +195,4 @@ export const RecentPatientHistoryWidget: React.FC = () => {
 		</div>
 	);
 };
+

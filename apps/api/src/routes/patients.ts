@@ -202,4 +202,31 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       return sendPatientNotFound(reply);
     }
   });
+
+  // COMPETITOR FEATURE #4: пациенты::хронологическая_история_коммуникаций
+  app.get("/api/patients/:patientId/communication-timelines", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
+    const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
+    return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
+  });
+
+  // COMPETITOR FEATURE #20: пациенты::причины_списания_в_архив_и_запрет_записи
+  app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
+    const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+    return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId));
+  });
 }
+

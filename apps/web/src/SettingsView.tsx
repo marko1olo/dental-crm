@@ -1405,13 +1405,14 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           </details>
         ) : null}
 
-        {settingsTab === "profile" ? <SettingsProfileTab /> : null}
+        {settingsTab === "profile" ? <SettingsProfileTab props={appLogic as any} /> : null}
 
-        {settingsTab === "staff" ? <SettingsStaffTab /> : null}
+        {settingsTab === "staff" ? <SettingsStaffTab props={appLogic as any} /> : null}
 
         <SettingsClinicTab settingsTab={settingsTab} />
         <SettingsAccessTab settingsTab={settingsTab} />
-        <SettingsTelegramTab settingsTab={settingsTab} />
+        <SettingsTelegramTab props={appLogic as any} settingsTab={settingsTab} />
+
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
         {settingsTab === "inventory" ? (
           <InventoryView

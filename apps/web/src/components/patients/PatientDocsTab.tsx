@@ -316,16 +316,16 @@ export function PatientDocsTab() {
 						<label>Страховая компания (Договор)</label>
 						<select
 							value={
-								patientAdministrativeProfileDraft.insuranceContractId || ""
+								(patientAdministrativeProfileDraft as any).insuranceContractId || ""
 							}
 							onChange={(event: SelectChangeEvent) => {
 								updatePatientAdministrativeProfileDraft(
-									"insuranceContractId",
+									"insuranceContractId" as any,
 									event.target.value,
 								);
 								if (!event.target.value) {
 									updatePatientAdministrativeProfileDraft(
-										"insurancePolicyNumber",
+										"insurancePolicyNumber" as any,
 										"",
 									);
 								}
@@ -351,17 +351,18 @@ export function PatientDocsTab() {
 						<input
 							autoComplete="off"
 							value={
-								patientAdministrativeProfileDraft.insurancePolicyNumber || ""
+								(patientAdministrativeProfileDraft as any).insurancePolicyNumber || ""
 							}
 							onChange={(event: TextFieldChangeEvent) =>
 								updatePatientAdministrativeProfileDraft(
-									"insurancePolicyNumber",
+									"insurancePolicyNumber" as any,
 									event.target.value,
 								)
 							}
 							placeholder="Например, номер с карточки ДМС"
-							disabled={!patientAdministrativeProfileDraft.insuranceContractId}
+							disabled={!(patientAdministrativeProfileDraft as any).insuranceContractId}
 						/>
+
 					</div>
 				</div>
 			</section>

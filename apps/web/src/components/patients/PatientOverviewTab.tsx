@@ -16,6 +16,10 @@ import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
+import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
+import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+
+
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -315,7 +319,17 @@ export function PatientOverviewTab() {
 					{selectedPatientId && workspaceFlags.hasTasks && (
 						<PatientTaskTicketsWidget patientId={selectedPatientId} />
 					)}
+
+					{selectedPatientId && (
+						<PatientCommunicationTimelineWidget patientId={selectedPatientId} />
+					)}
+
+					{selectedPatientId && (
+						<PatientArchiveAndBlacklistWidget patientId={selectedPatientId} />
+					)}
 				</div>
+
+
 			</div>
 		</>
 	);

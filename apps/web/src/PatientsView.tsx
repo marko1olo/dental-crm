@@ -13,13 +13,13 @@ import { PatientTaskTicketsWidget } from "./components/patients/PatientTaskTicke
 import { PatientReclamationsWidget } from "./components/patients/PatientReclamationsWidget";
 import { OrthodonticProgressWidget } from "./components/patients/OrthodonticProgressWidget";
 import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
-import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 type PatientAdministrativeProfileSaveState = "idle" | "saving" | "saved" | "error";
 
-type PatientCoreDraft = {
+export type PatientCoreDraft = {
   fullName: string;
   birthDate: string;
   phone: string;
@@ -27,18 +27,18 @@ type PatientCoreDraft = {
   notes: string;
 };
 
-type PatientAdministrativeProfileDraft = {
+export type PatientAdministrativeProfileDraft = {
   [K in Exclude<keyof PatientAdministrativeProfile, "preferredAppointmentWeekdays">]: string;
 } & {
   preferredAppointmentWeekdays: number[];
 };
 
-type WeekdayOption = {
+export type WeekdayOption = {
   label: string;
   value: number;
 };
 
-type PatientsViewProps = {
+export type PatientsViewProps = {
   createPatient: () => void | Promise<void>;
   filteredPatients: Patient[];
   money: (amountRub: number) => string;
@@ -56,7 +56,8 @@ type PatientsViewProps = {
   weekdayOptions: WeekdayOption[];
 };
 
-type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+
 
 export function PatientsView(props: PatientsViewProps) {
   const {
@@ -617,9 +618,9 @@ export function PatientsView(props: PatientsViewProps) {
                     <PatientTaskTicketsWidget patientId={selectedPatient.id} />
                     <PatientReclamationsWidget patientId={selectedPatient.id} />
                     <OrthodonticProgressWidget patientId={selectedPatient.id} />
-                    <PatientServiceLineagesWidget />
-                    <RecentPatientHistoryWidget />
+                    <PatientServiceLineagesWidget patientId={selectedPatient.id} />
                   </div>
+
                 </div>
               ) : null}
               </div>

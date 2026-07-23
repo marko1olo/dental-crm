@@ -104,7 +104,8 @@ export function SettingsMessengersTab({
 				aria-labelledby="messenger-tab-telegram"
 				hidden={activeMessenger !== "telegram"}
 			>
-				<SettingsTelegramTab settingsTab="telegram" />
+				<SettingsTelegramTab props={props} settingsTab="telegram" />
+
 			</div>
 
 			<div

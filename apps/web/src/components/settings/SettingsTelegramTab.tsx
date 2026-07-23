@@ -2,6 +2,8 @@ import React from "react";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { Bot, ShieldCheck, Copy, Download, RefreshCw, Send, CheckCircle2, Image as ImageIcon, ExternalLink, FileCheck2, CreditCard, CalendarDays, ClipboardCheck, Users } from "lucide-react";
 import { DenteTelegramFeature } from "@dental/shared";
+import { PatientPortal } from "../PatientPortal";
+
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
@@ -154,7 +156,10 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
 
   if (settingsTab !== "telegram") return null;
 
+  const [showPatientPortalPreview, setShowPatientPortalPreview] = React.useState(false);
+
   const typedTelegramPostVisitCheckupDelayFields = telegramPostVisitCheckupDelayFields as any[];
+
   const typedTelegramVisualCardFields = telegramVisualCardFields as any[];
   const typedTelegramFeatureHelp = telegramFeatureHelp as Record<DenteTelegramFeature, string>;
   const getTypedTelegramInlineButtonRows = (replyMarkup: Record<string, unknown> | null) => {
@@ -571,17 +576,81 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
                   </label>
                   <label>
                     Портал пациента
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://portal.example"
-                      value={telegramPatientPortalBaseUrlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramPatientPortalBaseUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <input
+                        type="url"
+                        inputMode="url"
+                        placeholder="https://portal.example"
+                        value={telegramPatientPortalBaseUrlDraft}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          setTelegramPatientPortalBaseUrlDraft(event.target.value);
+                          markTelegramSettingsDirty();
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        style={{ whiteSpace: "nowrap" }}
+                        onClick={() => setShowPatientPortalPreview(true)}
+                      >
+                        <ExternalLink size={14} /> Предпросмотр
+                      </button>
+                    </div>
                   </label>
+
+                  {showPatientPortalPreview && (
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.7)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                        padding: "20px"
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: "var(--paper)",
+                          borderRadius: "16px",
+                          width: "100%",
+                          maxWidth: "480px",
+                          maxHeight: "90vh",
+                          overflowY: "auto",
+                          position: "relative",
+                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom: "1px solid var(--line)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
+                          }}
+                        >
+                          <strong style={{ fontSize: "14px", color: "var(--ink)" }}>Превью Портала Пациента</strong>
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => setShowPatientPortalPreview(false)}
+                          >
+                            Закрыть
+                          </button>
+                        </div>
+                        <div style={{ padding: "16px" }}>
+                          <PatientPortal />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <label>
                     Картинка приветствия
                     <input
