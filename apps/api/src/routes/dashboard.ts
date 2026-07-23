@@ -22,7 +22,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			);
 			return reply
 				.code(500)
-				.send({ error: "DatabaseError", details: e.message });
+				.send({ error: "DatabaseError" });
 		}
 	});
 }

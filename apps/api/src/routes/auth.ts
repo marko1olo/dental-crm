@@ -127,7 +127,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				return reply.code(500).send({
 					error: "DatabaseError",
 					message: "Database connection failed",
-					details: String(dbErr),
 				});
 			}
 
