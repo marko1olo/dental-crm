@@ -1298,7 +1298,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </div>
                   <label>
                     Основание обращения
-                    <textarea value={paidContractCareReason} onChange={(event) => setPaidContractCareReason(event.target.value)} placeholder={dashboard?.activeVisit.complaint ?? "жалоба, диагноз или плановый повод"} rows={2} />
+                    <textarea value={paidContractCareReason} onChange={(event) => setPaidContractCareReason(event.target.value)} placeholder={dashboard?.activeVisit?.complaint ?? "жалоба, диагноз или плановый повод"} rows={2} />
                     <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
                       {["Кариес", "Пульпит", "Острая боль", "Плановый осмотр", "Профгигиена", "Жалобы отсутствуют"].map(chip => (
                         <button
@@ -1320,7 +1320,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={paidContractServiceScope}
                       onChange={(event) => setPaidContractServiceScope(event.target.value)}
-                      placeholder={dashboard?.activeVisit.treatmentPlan || dashboard?.activeVisit.doctorSummary || "перечень согласованных платных услуг"}
+                      placeholder={dashboard?.activeVisit?.treatmentPlan || dashboard?.activeVisit?.doctorSummary || "перечень согласованных платных услуг"}
                       rows={3}
                     />
                   </label>
@@ -1449,7 +1449,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={completedActServicesSummary}
                       onChange={(event) => setCompletedActServicesSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.doctorSummary || dashboard?.activeVisit.treatmentPlan || "что фактически оказано"}
+                      placeholder={dashboard?.activeVisit?.doctorSummary || dashboard?.activeVisit?.treatmentPlan || "что фактически оказано"}
                       rows={3}
                     />
                   </label>
@@ -2161,7 +2161,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={intakeChiefComplaint}
                       onChange={(event) => setIntakeChiefComplaint(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "со слов пациента"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "со слов пациента"}
                       rows={2}
                     />
                   </label>
@@ -2394,7 +2394,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={informedConsentDiagnosisOrIndication}
                       onChange={(event) => setInformedConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показание к вмешательству"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к вмешательству"}
                       rows={2}
                     />
                   </label>
@@ -2516,7 +2516,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={procedureConsentDiagnosisOrIndication}
                       onChange={(event) => setProcedureConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показание к процедуре"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к процедуре"}
                       rows={2}
                     />
                   </label>
@@ -2606,7 +2606,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentPlanClinicalReason}
                       onChange={(event) => setTreatmentPlanClinicalReason(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint || "жалоба, запрос пациента или причина планирования"}
+                      placeholder={dashboard?.activeVisit?.complaint || "жалоба, запрос пациента или причина планирования"}
                       rows={2}
                     />
                   </label>
@@ -2615,7 +2615,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentPlanDiagnosisSummary}
                       onChange={(event) => setTreatmentPlanDiagnosisSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "диагноз, предварительное заключение, данные осмотра"}
+                      placeholder={dashboard?.activeVisit?.diagnosis || dashboard?.activeVisit?.complaint || "диагноз, предварительное заключение, данные осмотра"}
                       rows={2}
                     />
                   </label>
@@ -2735,7 +2735,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentAcceptanceDiagnosisSummary}
                       onChange={(event) => setTreatmentAcceptanceDiagnosisSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "диагноз, показание, жалобы и клиническая причина"}
+                      placeholder={dashboard?.activeVisit?.diagnosis || dashboard?.activeVisit?.complaint || "диагноз, показание, жалобы и клиническая причина"}
                       rows={2}
                     />
                   </label>
@@ -2881,7 +2881,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         markPostVisitManualEdited();
                         setPostVisitProcedureName(event.target.value);
                       }}
-                      placeholder={dashboard?.activeVisit.treatmentPlan || "что выполнено на приеме"}
+                      placeholder={dashboard?.activeVisit?.treatmentPlan || "что выполнено на приеме"}
                       rows={2}
                     />
                   </label>
@@ -3434,7 +3434,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "метки подписанных визитов, по одной в строке"}
+                      placeholder={dashboard?.activeVisit?.id ?? "метки подписанных визитов, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3574,7 +3574,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractComplaintAndAnamnesis}
                       onChange={(event) => setRecordExtractComplaintAndAnamnesis(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.complaint, dashboard?.activeVisit.anamnesis) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.complaint, dashboard?.activeVisit?.anamnesis) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3583,7 +3583,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractObjectiveStatus}
                       onChange={(event) => setRecordExtractObjectiveStatus(event.target.value)}
-                      placeholder={dashboard?.activeVisit.objectiveStatus ?? "из подписанной записи визита"}
+                      placeholder={dashboard?.activeVisit?.objectiveStatus ?? "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3592,7 +3592,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractDiagnosis}
                       onChange={(event) => setRecordExtractDiagnosis(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis ?? "только после врачебной проверки"}
+                      placeholder={dashboard?.activeVisit?.diagnosis ?? "только после врачебной проверки"}
                       rows={2}
                     />
                   </label>
@@ -3602,7 +3602,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractTreatmentProvided}
                       onChange={(event) => setRecordExtractTreatmentProvided(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.doctorSummary, dashboard?.activeVisit.treatmentPlan) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.doctorSummary, dashboard?.activeVisit?.treatmentPlan) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3682,7 +3682,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "метки визитов или номера записей, по одной в строке"}
+                      placeholder={dashboard?.activeVisit?.id ?? "метки визитов или номера записей, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3691,7 +3691,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractComplaintAndAnamnesis}
                       onChange={(event) => setRecordExtractComplaintAndAnamnesis(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.complaint, dashboard?.activeVisit.anamnesis) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.complaint, dashboard?.activeVisit?.anamnesis) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3700,7 +3700,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractObjectiveStatus}
                       onChange={(event) => setRecordExtractObjectiveStatus(event.target.value)}
-                      placeholder={dashboard?.activeVisit.objectiveStatus ?? "из подписанной записи визита"}
+                      placeholder={dashboard?.activeVisit?.objectiveStatus ?? "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3709,7 +3709,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractDiagnosis}
                       onChange={(event) => setRecordExtractDiagnosis(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis ?? "только после врачебной проверки"}
+                      placeholder={dashboard?.activeVisit?.diagnosis ?? "только после врачебной проверки"}
                       rows={2}
                     />
                     <div className="quick-chips-row" style={{ flexWrap: 'wrap', marginTop: '4px' }}>
@@ -3731,7 +3731,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractTreatmentProvided}
                       onChange={(event) => setRecordExtractTreatmentProvided(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.doctorSummary, dashboard?.activeVisit.treatmentPlan) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.doctorSummary, dashboard?.activeVisit?.treatmentPlan) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -4215,7 +4215,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={refusalClinicalIndication}
                       onChange={(event) => setRefusalClinicalIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показания и причина рекомендации врача"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показания и причина рекомендации врача"}
                       rows={2}
                     />
                   </label>

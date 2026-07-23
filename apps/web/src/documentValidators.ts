@@ -717,7 +717,7 @@ export function validateInformedConsent(
     informedConsentToothOrArea.trim() || inferredTreatmentArea || "";
   const effectiveIndication =
     informedConsentDiagnosisOrIndication.trim() ||
-    dashboard?.activeVisit.complaint ||
+    dashboard?.activeVisit?.complaint ||
     "";
   const effectiveDoctor =
     informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
@@ -791,7 +791,7 @@ export function validateProcedureSpecificConsentPacket(
     procedureConsentToothOrArea.trim() || inferredTreatmentArea || "";
   const effectiveIndication =
     procedureConsentDiagnosisOrIndication.trim() ||
-    dashboard?.activeVisit.complaint ||
+    dashboard?.activeVisit?.complaint ||
     "";
   const effectiveDoctor =
     procedureConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
@@ -950,8 +950,8 @@ export function validateTreatmentPlanAcceptance(
     ) ??
     requiredDocumentField(
       treatmentAcceptanceDiagnosisSummary.trim() ||
-        dashboard?.activeVisit.diagnosis ||
-        dashboard?.activeVisit.complaint ||
+        dashboard?.activeVisit?.diagnosis ||
+        dashboard?.activeVisit?.complaint ||
         "",
       "согласование плана, диагноз или основание",
     ) ??
@@ -1362,7 +1362,7 @@ export function validateMedicalRecordExtract(
   return (
     requiredDocumentField(recordExtractPeriodStart, "выписка, период с") ??
     requiredDocumentField(recordExtractPeriodEnd, "выписка, период по") ??
-    (sourceVisitIds.length || dashboard?.activeVisit.id
+    (sourceVisitIds.length || dashboard?.activeVisit?.id
       ? null
       : "Добавьте источник медицинской записи для выписки.") ??
     requiredDocumentField(
