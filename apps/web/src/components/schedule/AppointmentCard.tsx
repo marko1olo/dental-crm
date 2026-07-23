@@ -64,11 +64,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
   const appointmentSuggestions = visibleScheduleSuggestions.filter(s => s.appointmentId === appointment.id);
   const readiness = appointmentReadinessById.get(appointment.id);
-  const appointmentDoctor = dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId);
+  const appointmentDoctor = (dashboard.clinicSettings?.staff ?? []).find((member) => member.id === appointment.doctorUserId);
   const appointmentAssistant = appointment.assistantUserId
-    ? dashboard.clinicSettings.staff.find((member) => member.id === appointment.assistantUserId)
+    ? (dashboard.clinicSettings?.staff ?? []).find((member) => member.id === appointment.assistantUserId)
     : null;
-  const appointmentChair = dashboard.clinicSettings.chairs.find((chair) => chair.id === appointment.chairId);
+  const appointmentChair = (dashboard.clinicSettings?.chairs ?? []).find((chair) => chair.id === appointment.chairId);
   const appointmentSaveMissingId = `appointment-save-missing-${appointment.id}`;
   const appointmentEditorId = `appointment-editor-${appointment.id}`;
   const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
@@ -81,7 +81,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
       
       <div className="timeline-content">
         <p style={{ display: 'none' }}>{appointment.reason}</p>
-        <article className={`appointment-card ${readiness ? 'readiness-' + readiness.state : ""}`} style={{ padding: '16px', background: 'white', border: '1px solid var(--slate-200)', borderRadius: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <article className={`appointment-card ${readiness ? 'readiness-' + readiness.state : ""}`} style={{ padding: '16px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', borderRadius: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--slate-100)', paddingBottom: '8px', marginBottom: '4px' }}>
         <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {formatTime(appointment.startsAt)}
@@ -103,8 +103,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
               onClick={(e) => { e.stopPropagation(); openScheduleSuggestion(suggestion.section); }}
               style={{ 
                 cursor: 'pointer', 
-                background: suggestion.priority === 'urgent' ? '#fee2e2' : '#fef3c7',
-                color: suggestion.priority === 'urgent' ? '#991b1b' : '#92400e',
+                background: suggestion.priority === 'urgent' ? 'var(--error-bg, #fee2e2)' : 'var(--warning-bg, #fef3c7)',
+                color: suggestion.priority === 'urgent' ? 'var(--error-color, #991b1b)' : 'var(--warning-color, #92400e)',
                 border: `1px solid ${suggestion.priority === 'urgent' ? '#fca5a5' : '#fcd34d'}`
               }}
               title={suggestion.detail}
@@ -188,7 +188,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
-              {useManualSelects || dashboard.patients.length > 20 ? (
+              {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={appointmentDraft.patientId || ''}
                   onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
@@ -197,13 +197,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                 >
                   <option value="">-- Выберите пациента --</option>
-                  {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                  {(dashboard.patients ?? []).filter(p => p.status === 'active').map(p => (
                     <option key={p.id} value={p.id}>{p.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.patients
+                  {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
                       <button
@@ -229,13 +229,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите врача --</option>
-                  {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                  {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
                     <option key={m.id} value={m.id}>{m.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.clinicSettings.staff
+                  {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
                       <button
@@ -256,7 +256,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.staff
+                {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
                     <button
@@ -276,7 +276,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.chairs
+                {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
                     <button

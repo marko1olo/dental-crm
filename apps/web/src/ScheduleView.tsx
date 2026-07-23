@@ -166,7 +166,7 @@ export function ScheduleView(props: ScheduleViewProps) {
     return [
       !draft.patientId ? "выберите пациента" : null,
       !draft.doctorUserId ? "выберите врача" : null,
-      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
+      dashboard.clinicSettings?.profile?.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
       !draft.chairId ? "выберите кресло" : null,
       !draft.startsAt.trim() ? "укажите начало приема" : null,
       draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
@@ -465,7 +465,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                 const missingSteps = [
                   !draft.patientId ? 'выберите пациента' : null,
                   !draft.doctorUserId ? 'выберите врача' : null,
-                  dashboard.clinicSettings.profile.mode !== 'solo_doctor' && dashboard.clinicSettings.staff.some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
+                  dashboard.clinicSettings?.profile?.mode !== 'solo_doctor' && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
                   !draft.chairId ? 'выберите кресло' : null,
                   !draft.startsAt.trim() ? 'укажите начало приема' : null,
                   draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? 'проверьте дату начала' : null,

@@ -51,7 +51,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   const newAppointmentMissingSteps = [
     !newAppointmentDraft.patientId ? "выберите пациента" : null,
     !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
-    dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
+    dashboard.clinicSettings.profile.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
     !newAppointmentDraft.chairId ? "выберите кресло" : null,
     !newAppointmentDraft.startsAt.trim() ? "укажите начало приема" : null,
     newAppointmentDraft.startsAt.trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "проверьте дату начала" : null,
@@ -81,7 +81,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
         >
           <option value="">-- Выберите пациента --</option>
-          {dashboard.patients.map(p => (
+          {(dashboard.patients ?? []).map(p => (
             <option key={p.id} value={p.id}>{p.fullName}</option>
           ))}
         </select>
@@ -90,7 +90,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('doctorUserId', e.target.value)}
         >
           <option value="">-- Выберите врача --</option>
-          {dashboard.clinicSettings.staff.map(m => (
+          {(dashboard.clinicSettings?.staff ?? []).map(m => (
             <option key={m.id} value={m.id}>{m.fullName}</option>
           ))}
         </select>
@@ -100,7 +100,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         >
           <option value="">-- Выберите ассистента --</option>
           <option value="">-- Нет ассистента --</option>
-          {dashboard.clinicSettings.staff.map(m => (
+          {(dashboard.clinicSettings?.staff ?? []).map(m => (
             <option key={m.id} value={m.id}>{m.fullName}</option>
           ))}
         </select>
@@ -109,7 +109,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('chairId', e.target.value)}
         >
           <option value="">-- Выберите кресло --</option>
-          {dashboard.clinicSettings.chairs.map(c => (
+          {(dashboard.clinicSettings?.chairs ?? []).map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
@@ -283,20 +283,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px' }}>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
-              {useManualSelects || dashboard.patients.length > 20 ? (
+              {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={newAppointmentDraft.patientId || ''}
                   onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите пациента --</option>
-                  {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                  {(dashboard.patients ?? []).filter(p => p.status === 'active').map(p => (
                     <option key={p.id} value={p.id}>{p.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.patients
+                  {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
                       <button
@@ -322,13 +322,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите врача --</option>
-                  {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                  {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
                     <option key={m.id} value={m.id}>{m.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.clinicSettings.staff
+                  {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
                       <button
@@ -349,7 +349,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.staff
+                {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
                     <button
@@ -369,7 +369,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.chairs
+                {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
                     <button
