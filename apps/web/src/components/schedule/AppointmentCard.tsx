@@ -9,7 +9,7 @@ export type AppointmentCardProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   appointmentLabels: Record<Appointment["status"], string>;
-  appointmentDraft: any;
+  appointmentDraft: Record<string, unknown>;
   appointmentSaveState: string;
   appointmentSaveError: string | null;
   appointmentDirty: boolean;
@@ -23,7 +23,7 @@ export type AppointmentCardProps = {
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   openAppointmentEditor: (appointment: Appointment) => void;
   closeAppointmentEditor: (appointmentId: string) => void;
-  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: any) => void;
+  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: unknown) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
   normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -308,6 +308,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
                     </button>
                 ))}
               </div>
+              {appointmentHasOpenVisit && (
+                <div id={appointmentHandoffNoteId} className="status-blocker-note appointment-handoff-note" style={{ fontSize: '12px', color: 'var(--amber-700)', marginTop: '4px' }}>
+                  Статус приема заблокирован: по этому приему открыт активный визит. Завершите или отмените визит в рабочем месте врача (закройте прием перед закрывающим статусом записи).
+                </div>
+              )}
             </div>
           </div>
           <label className="form-span-2">

@@ -12,10 +12,10 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type NewAppointmentFormProps = {
   dashboard: Dashboard;
   appointmentLabels: Record<Appointment["status"], string>;
-  newAppointmentDraft: any;
+  newAppointmentDraft: Record<string, unknown>;
   newAppointmentSaveState: string;
   newAppointmentError: string | null;
-  updateNewAppointmentDraft: (key: string, value: any) => void;
+  updateNewAppointmentDraft: (key: string, value: unknown) => void;
   createAppointmentFromDraft: () => Promise<boolean>;
   resetNewAppointmentDraft: () => void;
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -43,11 +43,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
-  const [smartParsedData, setSmartParsedData] = useState<any>(null);
+  const [smartParsedData, setSmartParsedData] = useState<unknown>(null);
   const [showHints, setShowHints] = useState(false);
 
-  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
-  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt);
+  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt as string);
+  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt as string);
   const newAppointmentMissingSteps = [
     !newAppointmentDraft.patientId ? "выберите пациента" : null,
     !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
@@ -115,7 +115,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         </select>
         <select
           value={newAppointmentDraft.status || ''}
-          onChange={(e) => updateNewAppointmentDraft('status', e.target.value as any)}
+          onChange={(e) => updateNewAppointmentDraft('status', e.target.value)}
         >
           {Object.keys(appointmentLabels).map(status => (
             <option key={status} value={status}>{appointmentLabels[status as Appointment["status"]]}</option>

@@ -2,8 +2,20 @@ import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
 import type { Appointment, CreateAppointmentInput, UpdateAppointmentInput } from "@dental/shared";
+import {
+  createAppointment as createAppointmentInMemory,
+  updateAppointment as updateAppointmentInMemory,
+  appointments as inMemoryAppointments
+} from "../sampleData.js";
+
+function useInMemory() {
+  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput): Promise<Appointment> {
+  if (useInMemory()) {
+    return createAppointmentInMemory(input);
+  }
   const startsAtMs = Date.parse(input.startsAt);
   const endsAtMs = Date.parse(input.endsAt);
   if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {
@@ -41,6 +53,9 @@ export async function createAppointmentInDb(organizationId: string, input: Creat
 }
 
 export async function updateAppointmentInDb(organizationId: string, appointmentId: string, input: UpdateAppointmentInput): Promise<Appointment> {
+  if (useInMemory()) {
+    return updateAppointmentInMemory(appointmentId, input);
+  }
   const [existing] = await db.select().from(schema.appointments).where(and(eq(schema.appointments.id, appointmentId), eq(schema.appointments.organizationId, organizationId))).limit(1);
   if (!existing) throw new Error("Запись не найдена");
 
@@ -84,6 +99,9 @@ export async function updateAppointmentInDb(organizationId: string, appointmentI
 }
 
 export async function getAppointmentByIdInDb(organizationId: string, id: string) {
+  if (useInMemory()) {
+    return inMemoryAppointments.find((a) => a.id === id) ?? null;
+  }
   const [res] = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), eq(schema.appointments.id, id))).limit(1);
   return res || null;
 }

@@ -441,7 +441,7 @@ export function ScheduleView(props: ScheduleViewProps) {
               newAppointmentDraft={newAppointmentDraft}
               newAppointmentSaveState={newAppointmentSaveState}
               newAppointmentError={newAppointmentError}
-              updateNewAppointmentDraft={updateNewAppointmentDraft as any}
+              updateNewAppointmentDraft={updateNewAppointmentDraft}
               createAppointmentFromDraft={createAppointmentFromDraft}
               resetNewAppointmentDraft={resetNewAppointmentDraft}
               toDateTimeLocalValue={toDateTimeLocalValue}
@@ -456,7 +456,9 @@ export function ScheduleView(props: ScheduleViewProps) {
                 const error = appointmentScheduleErrors[appointment.id] || null;
                 const dirty = appointmentScheduleDirtyIds.has(appointment.id);
                 const isEditing = editingAppointmentId === appointment.id;
-                const hasOpenVisit = dashboard.activeVisit && dashboard.activeVisit.appointmentId === appointment.id;
+                const appointmentHasOpenVisit = appointment.id === dashboard.activeVisit.appointmentId && dashboard.activeVisit.status === "draft";
+                const appointmentActiveVisitStatusLocked = appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status);
+                const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);
                 const startsAtMs = Date.parse(draft.startsAt);
                 const endsAtMs = Date.parse(draft.endsAt);
                 
@@ -488,8 +490,8 @@ export function ScheduleView(props: ScheduleViewProps) {
                     appointmentSaveError={error}
                     appointmentDirty={dirty}
                     appointmentEditing={isEditing}
-                    appointmentHasOpenVisit={Boolean(hasOpenVisit)}
-                    appointmentActiveVisitStatusLocked={Boolean(hasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status))}
+                    appointmentHasOpenVisit={Boolean(appointmentHasOpenVisit)}
+                    appointmentActiveVisitStatusLocked={Boolean(appointmentActiveVisitStatusLocked)}
                     appointmentMissingSteps={missingSteps as string[]}
                     appointmentReadyToSave={readyToSave}
                     openScheduleSuggestion={openScheduleSuggestion}
@@ -497,7 +499,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                     patientName={patientName}
                     openAppointmentEditor={openAppointmentEditor}
                     closeAppointmentEditor={closeAppointmentEditor}
-                    updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
+                    updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
                     saveAppointmentSchedule={saveAppointmentSchedule}
                     normalizedAppointmentStatus={normalizedAppointmentStatus}
                     toDateTimeLocalValue={toDateTimeLocalValue}
@@ -543,7 +545,7 @@ export function ScheduleView(props: ScheduleViewProps) {
             <WaitlistDrawer
               isOpen={isWaitlistOpen}
               onClose={() => setIsWaitlistOpen(false)}
-              updateNewAppointmentDraft={updateNewAppointmentDraft as any}
+              updateNewAppointmentDraft={updateNewAppointmentDraft}
               focusNewAppointmentEditor={focusNewAppointmentEditor}
               dashboard={dashboard}
             />

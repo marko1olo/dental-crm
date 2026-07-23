@@ -16283,3 +16283,11 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: 1fr auto !important; 
   min-height: 80px !important; 
 }
+
+@media (max-width: 768px) {
+.schedule-shift-summary-grid,
+  .schedule-filter-strip {
+    grid-template-columns: 1fr;
+  }
+}
+

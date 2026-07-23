@@ -73,7 +73,7 @@ function classifyAppointmentRejection(error: unknown): AppointmentRejectionReaso
   if (message.includes("Нельзя закрыть") || message.includes("Нельзя менять пациента")) return "active_visit_locked";
   if (message.includes("нужно выбрать") || message.includes("нужен активный пациент")) return "resource_missing";
   if (message.includes("уже есть запись") || message.includes("уже занято")) return "resource_overlap";
-  if (message.startsWith("Запись вне расписания")) return "outside_operational_hours";
+  if (message.includes("Запись вне расписания") || message.includes("вне расписания") || message.includes("вне работы")) return "outside_operational_hours";
   return "mutation_rejected";
 }
 

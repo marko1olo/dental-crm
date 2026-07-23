@@ -2,9 +2,17 @@ import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq } from "drizzle-orm";
 import type { Dashboard } from "@dental/shared";
+import { buildDashboard as buildDashboardInMemory } from "../sampleData.js";
+
+function useInMemory() {
+  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 // Temporary naive mapper to replace sampleData buildDashboard
 export async function getDashboardFromDb(organizationId: string): Promise<Dashboard> {
+  if (useInMemory()) {
+    return buildDashboardInMemory();
+  }
   let org: any = null;
   let users: any[] = [];
   let patients: any[] = [];
