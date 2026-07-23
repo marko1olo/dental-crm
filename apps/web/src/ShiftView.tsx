@@ -8,6 +8,11 @@ import { CustomExaminationFormCatalogsWidget } from "./components/clinical/Custo
 import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
 import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
 import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
+import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
+import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanStagesWidget";
+import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
+import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
+import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
 
 export { PatientCockpit } from "./components/workspace/shift/PatientCockpit";
 
@@ -40,8 +45,14 @@ export function ShiftView() {
 				<TreatmentPlanPrintOdontogramWidget />
 				<EgiszMultipleDiagnosesWidget />
 				<Mkb10AutoDirectoriesWidget />
+				<NonDentalExaminationFormsWidget />
+				<TreatmentPlanStagesWidget />
+				<ScheduleTimeReservationsWidget />
+				<DiagnocatAiFindingsWidget />
+				<ExtendedOdontogramStatesWidget />
 			</div>
 		</motion.div>
 	);
 }
+
 

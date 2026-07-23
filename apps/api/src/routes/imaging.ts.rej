@@ -1,0 +1,9 @@
+diff a/apps/api/src/routes/imaging.ts b/apps/api/src/routes/imaging.ts	(rejected hunks)
+@@ -99,6 +99,7 @@ import {
+ 	saveDicomWorkbenchBundleRequestSchema,
+ 	saveImagingViewerSessionRequestSchema,
+ 	splitLine,
++	type Patient,
+ } from "@dental/shared";
+ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+ import {

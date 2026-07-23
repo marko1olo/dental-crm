@@ -1,0 +1,15 @@
+diff a/apps/api/temp-auth-routes.ts b/apps/api/temp-auth-routes.ts	(rejected hunks)
+@@ -1,3 +1,4 @@
++import crypto from 'node:crypto';
+ // ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
+ app.post(
+ 	"/api/auth/register",
+@@ -94,7 +95,7 @@ app.post(
+ 			.where(and(eq(users.email, loginEmail), eq(users.isActive, true)))
+ 			.limit(1);
+ 		if (!user || !user.passwordHash) {
+-			await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
++			await new Promise((r) => setTimeout(r, 200 + crypto.randomInt(0, 100)));
+ 			return reply
+ 				.code(401)
+ 				.send({ error: "AuthError", message: "Неверный email или пароль." });
