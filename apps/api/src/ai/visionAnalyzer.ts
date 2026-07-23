@@ -289,7 +289,6 @@ async function runCascade(
       }
 
       try {
-        console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${apiKey.slice(0, 10)}...`);
         const text = await callVisionModel(slot, apiKey, prompt, imageBase64, extraUserText);
 
         if (text.length >= minLength) {
@@ -374,7 +373,6 @@ export async function analyzeImagingStudy(imageBase64: string): Promise<{
       .jpeg({ quality: 85 })
       .toBuffer();
     processedBase64 = `data:image/jpeg;base64,${enhancedBuffer.toString("base64")}`;
-    console.log("[visionAnalyzer] Image successfully enhanced via sharp (CLAHE + Sharpen)");
   } catch (err) {
     console.warn("[visionAnalyzer] Image enhancement with sharp failed, falling back to original image", err);
   }
