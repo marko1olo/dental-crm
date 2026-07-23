@@ -493,5 +493,3 @@ export async function registerWhatsappRoutes(
 	});
 }
 
-// Silence unused import warning for patients (used in foreign key definition)
-void patients;
