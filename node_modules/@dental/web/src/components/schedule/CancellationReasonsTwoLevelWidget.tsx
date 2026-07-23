@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
 
 interface CancellationReasonItem {
 	id: string;
@@ -13,132 +12,38 @@ interface CancellationReasonItem {
 }
 
 export const CancellationReasonsTwoLevelWidget: React.FC = () => {
-	const { auth } = useAppLogicContext();
 	const [reasons, setReasons] = useState<CancellationReasonItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/cancellation-reasons-two-level", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setReasons(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[CancellationReasonsTwoLevelWidget fetch error]:", err);
-				setLoading(false);
-			});
+			.catch(() => setLoading(false));
 	}, []);
 
 	return (
-		<div
-			data-testid="cancellation-reasons-two-level-widget"
-			style={{
-				padding: "16px",
-				backgroundColor: "var(--paper, #ffffff)",
-				border: "1px solid var(--line, #e2e8f0)",
-				borderRadius: "12px",
-				color: "var(--ink, #0f172a)",
-				boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-				margin: "16px 0",
-			}}
-		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: "12px",
-					borderBottom: "1px solid var(--line, #e2e8f0)",
-					paddingBottom: "8px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<span style={{ fontSize: "20px" }}>🚫</span>
-					<h3 style={{ margin: 0, fontWeight: 600, color: "var(--ink, #0f172a)" }}>
-						Двухуровневые причины отмены приёмов (Клиника vs Пациент)
-					</h3>
-				</div>
-				<span
-					style={{
-						fontSize: "12px",
-						backgroundColor: "var(--surface-100, #f1f5f9)",
-						color: "var(--ink-muted, #64748b)",
-						padding: "2px 8px",
-						borderRadius: "4px",
-						border: "1px solid var(--line, #e2e8f0)",
-					}}
-				>
-					Cancellation Classification
-				</span>
-			</div>
-
+		<div className="cancellation-reasons-widget p-3 border rounded-md bg-card text-card-foreground shadow-sm my-2">
+			<h4 className="text-sm font-semibold mb-2">Двухуровневые причины отмены</h4>
 			{loading ? (
-				<div style={{ color: "var(--ink-muted, #64748b)", fontSize: "14px", padding: "16px 0" }}>
-					Загрузка причин отмен...
-				</div>
+				<p className="text-xs text-muted-foreground">Загрузка причин...</p>
+			) : reasons.length === 0 ? (
+				<p className="text-xs text-muted-foreground">Причины отмены не настроены</p>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-					{reasons.map((item) => (
-						<div
-							key={item.id}
-							style={{
-								padding: "12px",
-								backgroundColor: "var(--surface-50, #f8fafc)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "8px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: "8px",
-							}}
-						>
-							<div>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<span
-										style={{
-											fontSize: "11px",
-											textTransform: "uppercase",
-											fontFamily: "monospace",
-											fontWeight: "bold",
-											backgroundColor: item.category === "clinic" ? "#fef2f2" : "#f0f9ff",
-											color: item.category === "clinic" ? "#dc2626" : "#0284c7",
-											padding: "2px 6px",
-											borderRadius: "4px",
-											border: `1px solid ${item.category === "clinic" ? "#fca5a5" : "#7dd3fc"}`,
-										}}
-									>
-										{item.category === "clinic" ? "Клиника" : "Пациент"}
-									</span>
-									<span style={{ fontSize: "14px", fontWeight: "bold" }}>{item.reasonTitle}</span>
-								</div>
-								<div style={{ fontSize: "12px", color: "var(--ink-muted, #64748b)", marginTop: "4px" }}>
-									Код причины: <code>{item.reasonCode}</code>
-								</div>
-							</div>
-							<div>
-								{item.requiresNote && (
-									<span
-										style={{
-											fontSize: "12px",
-											backgroundColor: "#fffbeb",
-											color: "#b45309",
-											padding: "2px 8px",
-											borderRadius: "4px",
-											border: "1px solid #fde68a",
-										}}
-									>
-										Требуется комментарий
-									</span>
-								)}
-							</div>
-						</div>
+				<ul className="space-y-1 max-h-32 overflow-y-auto text-xs">
+					{reasons.map((r) => (
+						<li key={r.id} className="flex justify-between border-b pb-1">
+							<span>{r.reasonTitle} ({r.category})</span>
+							<span className="text-muted-foreground">{r.reasonCode}</span>
+						</li>
 					))}
-				</div>
+				</ul>
 			)}
 		</div>
 	);
 };
-

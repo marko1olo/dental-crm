@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
 
 interface ReservationItem {
 	id: string;
@@ -15,132 +14,38 @@ interface ReservationItem {
 }
 
 export const ScheduleTimeReservationsWidget: React.FC = () => {
-	const { auth } = useAppLogicContext();
 	const [reservations, setReservations] = useState<ReservationItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/time-reservations", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setReservations(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[ScheduleTimeReservationsWidget fetch error]:", err);
-				setLoading(false);
-			});
+			.catch(() => setLoading(false));
 	}, []);
 
 	return (
-		<div
-			data-testid="schedule-time-reservations-widget"
-			style={{
-				padding: "16px",
-				backgroundColor: "var(--paper, #ffffff)",
-				border: "1px solid var(--line, #e2e8f0)",
-				borderRadius: "12px",
-				color: "var(--ink, #0f172a)",
-				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-				margin: "16px 0",
-			}}
-		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: "12px",
-					borderBottom: "1px solid var(--line, #e2e8f0)",
-					paddingBottom: "8px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<span style={{ fontSize: "20px" }}>⏱️</span>
-					<h3 style={{ margin: 0, fontWeight: 600, color: "var(--ink, #0f172a)" }}>
-						Резервирование времени в сетке расписания (Обед / Тех. перерыв)
-					</h3>
-				</div>
-				<span
-					style={{
-						fontSize: "12px",
-						backgroundColor: "var(--surface-100, #f1f5f9)",
-						color: "var(--ink-muted, #64748b)",
-						padding: "2px 8px",
-						borderRadius: "4px",
-						border: "1px solid var(--line, #e2e8f0)",
-					}}
-				>
-					Штриховка и Блокировка Слотов
-				</span>
-			</div>
-
+		<div className="time-reservations-widget p-3 border rounded-md bg-card text-card-foreground shadow-sm my-2">
+			<h4 className="text-sm font-semibold mb-2">Бронирование времени и штриховка</h4>
 			{loading ? (
-				<div style={{ color: "var(--ink-muted, #64748b)", fontSize: "14px", padding: "16px 0" }}>
-					Загрузка технологических резервов...
-				</div>
+				<p className="text-xs text-muted-foreground">Загрузка броней...</p>
+			) : reservations.length === 0 ? (
+				<p className="text-xs text-muted-foreground">Нет активных броней</p>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+				<ul className="space-y-1 max-h-32 overflow-y-auto text-xs">
 					{reservations.map((res) => (
-						<div
-							key={res.id}
-							style={{
-								padding: "12px",
-								backgroundColor: "var(--surface-50, #f8fafc)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "8px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: "8px",
-							}}
-						>
-							<div>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<span style={{ fontSize: "14px", fontWeight: "bold" }}>{res.chairName}</span>
-									<span
-										style={{
-											fontSize: "12px",
-											backgroundColor: "#fef2f2",
-											color: "#991b1b",
-											padding: "2px 8px",
-											borderRadius: "4px",
-											fontFamily: "monospace",
-											fontWeight: "bold",
-											border: "1px solid #fecdd3",
-										}}
-									>
-										{res.startTime} - {res.endTime}
-									</span>
-								</div>
-								<div style={{ fontSize: "12px", color: "var(--ink-muted, #64748b)", marginTop: "4px" }}>
-									{res.note}
-								</div>
-							</div>
-							<div>
-								{res.bookingLocked && (
-									<span
-										style={{
-											fontSize: "12px",
-											backgroundColor: "#fef2f2",
-											color: "#dc2626",
-											padding: "2px 8px",
-											borderRadius: "4px",
-											border: "1px solid #fca5a5",
-											fontWeight: 600,
-										}}
-									>
-										🔒 Блокировка записи
-									</span>
-								)}
-							</div>
-						</div>
+						<li key={res.id} className="flex justify-between border-b pb-1">
+							<span>{res.chairName}: {res.reservationType} ({res.startTime}-{res.endTime})</span>
+							<span className="text-muted-foreground">{res.note}</span>
+						</li>
 					))}
-				</div>
+				</ul>
 			)}
 		</div>
 	);
 };
-

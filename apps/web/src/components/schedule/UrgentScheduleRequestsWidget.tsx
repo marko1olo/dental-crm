@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useAppLogicContext } from "../../AppLogicContext.js";
-
 
 interface UrgentRequestItem {
 	id: string;
@@ -15,130 +13,38 @@ interface UrgentRequestItem {
 }
 
 export const UrgentScheduleRequestsWidget: React.FC = () => {
-	const { auth } = useAppLogicContext();
 	const [requests, setRequests] = useState<UrgentRequestItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/urgent-schedule-requests", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setRequests(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[UrgentScheduleRequestsWidget fetch error]:", err);
-				setLoading(false);
-			});
+			.catch(() => setLoading(false));
 	}, []);
 
 	return (
-		<div
-			data-testid="urgent-schedule-requests-widget"
-			style={{
-				padding: "16px",
-				backgroundColor: "var(--paper, #ffffff)",
-				border: "1px solid rgba(244, 63, 94, 0.3)",
-				borderRadius: "12px",
-				color: "var(--ink, #0f172a)",
-				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-				margin: "16px 0",
-			}}
-		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: "12px",
-					borderBottom: "1px solid var(--line, #e2e8f0)",
-					paddingBottom: "8px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<span style={{ fontSize: "20px" }}>🚨</span>
-					<h3 style={{ margin: 0, fontWeight: 600, color: "#e11d48" }}>
-						Срочные обращения (Острая боль / Срочные переносы)
-					</h3>
-				</div>
-				<span
-					style={{
-						fontSize: "12px",
-						backgroundColor: "rgba(244, 63, 94, 0.1)",
-						color: "#e11d48",
-						padding: "2px 8px",
-						borderRadius: "4px",
-						border: "1px solid rgba(244, 63, 94, 0.2)",
-					}}
-				>
-					Urgent Requests
-				</span>
-			</div>
-
+		<div className="urgent-requests-widget p-3 border rounded-md bg-card text-card-foreground shadow-sm my-2">
+			<h4 className="text-sm font-semibold mb-2">Острая боль / Срочные записи</h4>
 			{loading ? (
-				<div style={{ color: "var(--ink-muted, #64748b)", fontSize: "14px", padding: "16px 0" }}>
-					Загрузка срочных обращений...
-				</div>
+				<p className="text-xs text-muted-foreground">Загрузка срочных заявок...</p>
+			) : requests.length === 0 ? (
+				<p className="text-xs text-muted-foreground">Нет срочных заявок</p>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-					{requests.map((item) => (
-						<div
-							key={item.id}
-							style={{
-								padding: "12px",
-								backgroundColor: "var(--surface-50, #f8fafc)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "8px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: "8px",
-							}}
-						>
-							<div>
-								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-									<span style={{ fontSize: "14px", fontWeight: "bold" }}>{item.patientName}</span>
-									<span
-										style={{
-											fontSize: "11px",
-											backgroundColor: "#ffe4e6",
-											color: "#9f1239",
-											padding: "2px 6px",
-											borderRadius: "4px",
-											fontWeight: "bold",
-											textTransform: "uppercase",
-										}}
-									>
-										{item.requestType}
-									</span>
-								</div>
-								<div style={{ fontSize: "12px", color: "var(--ink-muted, #64748b)", marginTop: "4px" }}>
-									Врач: <strong>{item.doctorName}</strong> · Желаемое время:{" "}
-									<strong style={{ color: "#e11d48" }}>{item.preferredSlotTime}</strong>
-								</div>
-							</div>
-							<div>
-								<span
-									style={{
-										fontSize: "12px",
-										backgroundColor: "#fff1f2",
-										color: "#be123c",
-										padding: "4px 8px",
-										borderRadius: "4px",
-										border: "1px solid #fecdd3",
-										fontWeight: "bold",
-									}}
-								>
-									🔥 ТРЕБУЕТ РЕАКЦИИ
-								</span>
-							</div>
-						</div>
+				<ul className="space-y-1 max-h-32 overflow-y-auto text-xs">
+					{requests.map((req) => (
+						<li key={req.id} className="flex justify-between border-b pb-1">
+							<span>{req.patientName} — {req.requestType} ({req.urgencyLevel})</span>
+							<span className="text-muted-foreground">{req.preferredSlotTime}</span>
+						</li>
 					))}
-				</div>
+				</ul>
 			)}
 		</div>
 	);
 };
-

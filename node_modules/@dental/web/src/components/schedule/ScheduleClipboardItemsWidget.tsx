@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
 
 interface ClipboardItem {
 	id: string;
@@ -14,130 +13,38 @@ interface ClipboardItem {
 }
 
 export const ScheduleClipboardItemsWidget: React.FC = () => {
-	const { auth } = useAppLogicContext();
 	const [items, setItems] = useState<ClipboardItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/clipboard-items", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setItems(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[ScheduleClipboardItemsWidget fetch error]:", err);
-				setLoading(false);
-			});
+			.catch(() => setLoading(false));
 	}, []);
 
 	return (
-		<div
-			data-testid="schedule-clipboard-items-widget"
-			style={{
-				padding: "16px",
-				backgroundColor: "var(--paper, #ffffff)",
-				border: "1px solid rgba(139, 92, 246, 0.3)",
-				borderRadius: "12px",
-				color: "var(--ink, #0f172a)",
-				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-				margin: "16px 0",
-			}}
-		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: "12px",
-					borderBottom: "1px solid var(--line, #e2e8f0)",
-					paddingBottom: "8px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<span style={{ fontSize: "20px" }}>📋</span>
-					<h3 style={{ margin: 0, fontWeight: 600, color: "#7c3aed" }}>
-						Плавающий буфер расписания (Быстрый перенос 1 кликом)
-					</h3>
-				</div>
-				<span
-					style={{
-						fontSize: "12px",
-						backgroundColor: "rgba(139, 92, 246, 0.1)",
-						color: "#7c3aed",
-						padding: "2px 8px",
-						borderRadius: "4px",
-						border: "1px solid rgba(139, 92, 246, 0.2)",
-					}}
-				>
-					Appointment Clipboard
-				</span>
-			</div>
-
+		<div className="schedule-clipboard-widget p-3 border rounded-md bg-card text-card-foreground shadow-sm my-2">
+			<h4 className="text-sm font-semibold mb-2">Буфер обмена расписания</h4>
 			{loading ? (
-				<div style={{ color: "var(--ink-muted, #64748b)", fontSize: "14px", padding: "16px 0" }}>
-					Загрузка буфера переноса...
-				</div>
+				<p className="text-xs text-muted-foreground">Загрузка элементов...</p>
+			) : items.length === 0 ? (
+				<p className="text-xs text-muted-foreground">Буфер обмена пуст</p>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-					{items.map((item) => (
-						<div
-							key={item.id}
-							style={{
-								padding: "12px",
-								backgroundColor: "var(--surface-50, #f8fafc)",
-								border: "1px solid var(--line, #e2e8f0)",
-								borderRadius: "8px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: "8px",
-							}}
-						>
-							<div>
-								<div style={{ fontSize: "14px", fontWeight: "bold" }}>{item.patientName}</div>
-								<div style={{ fontSize: "12px", color: "var(--ink-muted, #64748b)", marginTop: "2px" }}>
-									Врач: <strong style={{ color: "#7c3aed" }}>{item.doctorName}</strong> | Услуга:{" "}
-									{item.serviceTitle} ({item.durationMinutes} мин)
-								</div>
-							</div>
-							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-								<span
-									style={{
-										fontSize: "11px",
-										backgroundColor: "#f3e8ff",
-										color: "#6b21a8",
-										padding: "2px 6px",
-										borderRadius: "4px",
-										fontWeight: "bold",
-										textTransform: "uppercase",
-									}}
-								>
-									{item.clipboardStatus}
-								</span>
-								<button
-									type="button"
-									style={{
-										fontSize: "12px",
-										backgroundColor: "var(--brand-500, #0284c7)",
-										color: "#ffffff",
-										border: "none",
-										padding: "4px 12px",
-										borderRadius: "6px",
-										fontWeight: 600,
-										cursor: "pointer",
-									}}
-								>
-									Вставить в слот
-								</button>
-							</div>
-						</div>
+				<ul className="space-y-1 max-h-32 overflow-y-auto text-xs">
+					{items.map((it) => (
+						<li key={it.id} className="flex justify-between border-b pb-1">
+							<span>{it.patientName} — {it.serviceTitle}</span>
+							<span className="text-muted-foreground">{it.durationMinutes} мин</span>
+						</li>
 					))}
-				</div>
+				</ul>
 			)}
 		</div>
 	);
 };
-
