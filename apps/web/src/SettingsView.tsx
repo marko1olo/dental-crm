@@ -341,7 +341,6 @@ export interface SettingsViewProps {
 }
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
-  const appLogicContext = useAppLogicContext();
   const {
     activePatient,
     activeSettingsTabButtonRef,
@@ -848,6 +847,22 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     weekdayOptions,
     workspaceScopeLabels,
   } = useAppLogicContext();
+  // Collect all destructured variables into a single props bag for legacy sub-tab components
+  const settingsProps: Record<string, any> = {
+    staffRoleLabels, dashboard, activePatient, activeStaffUser, activeWorkspaceProfile,
+    addChair, addStaffMember, clinicProfileDraft, clinicProfileSaveState, updateClinicProfileDraft,
+    toggleClinicWorkingDay, toggleStaffWorkingDay, toggleChairWorkingDay, weekdayOptions,
+    newChairName, newChairHasMicroscope, newChairHasSurgeryKit, newChairHasXraySensor,
+    setNewChairName, setNewChairHasMicroscope, setNewChairHasSurgeryKit, setNewChairHasXraySensor,
+    newStaffName, newStaffRole, newStaffSpecialty, setNewStaffName, setNewStaffRole, setNewStaffSpecialty,
+    uiLanguage, uiLanguageOptions, normalizeUiLanguageInput,
+    telegramModeDraft, telegramBotUsernameDraft, telegramModeLabels, telegramModeHints,
+    createTelegramLinkCode, telegramLinkCode, telegramLinkCodes, telegramLinkCodeStatusLabels,
+    telegramChatLinks, telegramChatLinkLedger, markTelegramSettingsDirty,
+    loadTelegramControlPlane, copyTelegramTextToClipboard, unlockTelegramAdminSession,
+    telegramAdminSecretDraft, telegramAdminSecretSession, adminSecretReady: false,
+    normalizedTelegramBotMode, normalizedTelegramPrivacyMode, normalizedTelegramLinkSubjectType,
+  };
   const {
     clinicMode,
     setClinicMode,
@@ -1406,13 +1421,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           </details>
         ) : null}
 
-        {settingsTab === "profile" ? <SettingsProfileTab props={appLogicContext as any} /> : null}
+        {settingsTab === "profile" ? <SettingsProfileTab props={settingsProps} /> : null}
 
-        {settingsTab === "staff" ? <SettingsStaffTab props={appLogicContext as any} /> : null}
+        {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
         <SettingsClinicTab settingsTab={settingsTab} />
         <SettingsAccessTab settingsTab={settingsTab} />
-        <SettingsTelegramTab props={appLogicContext as any} settingsTab={settingsTab} />
+        <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} />
 
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
         {settingsTab === "inventory" ? (

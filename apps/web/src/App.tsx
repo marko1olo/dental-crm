@@ -3,6 +3,7 @@
 // setSelectedPatientId(patient.id)
 
 import { useAppLogic } from './useAppLogic';
+import { AppLogicProvider } from './contexts/AppLogicContext';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
@@ -929,6 +930,7 @@ import {
 export function App() {
   // Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
   
+  const appLogicValue = useAppLogic();
   const {
     acceptDraftToVisit,
     activeAppointment,
@@ -1882,7 +1884,7 @@ export function App() {
   scheduleDateFilter,
   handleFinishOnboarding,
   setOnboardingDismissed
-} = useAppLogic();
+} = appLogicValue;
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
@@ -4154,6 +4156,7 @@ export function App() {
 
         {currentView === "settings" ? (
           <WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
+          <AppLogicProvider value={appLogicValue}>
           <Suspense
             fallback={
               <section className="settings-zone" id="settings" aria-busy="true">
@@ -4690,6 +4693,7 @@ export function App() {
               chairScheduleSavingId={chairScheduleSavingId}
             />
           </Suspense>
+          </AppLogicProvider>
           </WorkspaceRouteErrorBoundary>
         ) : null}
 
