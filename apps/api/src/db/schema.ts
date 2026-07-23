@@ -1164,6 +1164,19 @@ export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #61 — кадры::зачисление_повторной_записи_врачу_или_администратору
+export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	rebookedBy: text("rebooked_by").notNull(),
+	timeDeltaMinutes: integer("time_delta_minutes").notNull(),
+	creditedRole: text("credited_role").notNull(),
+	appointmentDate: text("appointment_date").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 
