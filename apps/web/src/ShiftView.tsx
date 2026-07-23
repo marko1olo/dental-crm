@@ -13,6 +13,11 @@ import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanS
 import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
 import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
 import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
+import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
+import { RebookingConversionRulesWidget } from "./components/analytics/RebookingConversionRulesWidget";
+import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
+import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
+import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
 
 export { PatientCockpit } from "./components/workspace/shift/PatientCockpit";
 
@@ -50,9 +55,15 @@ export function ShiftView() {
 				<ScheduleTimeReservationsWidget />
 				<DiagnocatAiFindingsWidget />
 				<ExtendedOdontogramStatesWidget />
+				<ScheduleClipboardItemsWidget />
+				<RebookingConversionRulesWidget />
+				<SingleSessionEnforcementsWidget />
+				<DadataGeocodedAddressesWidget />
+				<PricelistDoctorPayrollsWidget />
 			</div>
 		</motion.div>
 	);
 }
+
 
 
