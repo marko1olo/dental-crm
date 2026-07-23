@@ -1902,12 +1902,19 @@ export function App() {
   useEffect(() => {
     if (clinicAuthed && !dashboard) {
       void loadDashboard().catch((e) => {
-        // Token expired or invalid - force re-login
-        console.warn("[Dente] Persisted clinic token invalid, forcing re-login:", e);
-        localStorage.removeItem("dente_clinic_token");
-        localStorage.removeItem("dente_staff_token");
-        setClinicAuthed(false);
-        setStaffAuthed(false);
+        // Only force re-login on explicit 401 auth failure, not network/db errors
+        const statusCode = (e as any)?.statusCode ?? (e as any)?.status ?? 0;
+        const is401 = statusCode === 401 || (e instanceof Error && (e.message.includes("401") || e.message.includes("Unauthorized")));
+        if (is401) {
+          console.warn("[Dente] Clinic token invalid (401), forcing re-login:", e);
+          localStorage.removeItem("dente_clinic_token");
+          localStorage.removeItem("dente_staff_token");
+          setClinicAuthed(false);
+          setStaffAuthed(false);
+        } else {
+          // Network/DB error: keep session, fallback dashboard already set by loadDashboard
+          console.warn("[Dente] Dashboard load failed (network/db), keeping session with fallback:", e);
+        }
       });
     }
     // Restore staff user profile from token on page refresh
