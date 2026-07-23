@@ -891,7 +891,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
       : "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
   const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
   const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
+  const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
   const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
   const typedChairs = dashboard.clinicSettings.chairs as Chair[];
   const typedWeekdayOptions = weekdayOptions as WeekdayOption[];

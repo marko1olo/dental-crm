@@ -2748,7 +2748,11 @@ export function useAppLogic(): any {
 				],
 				appointments: [],
 				documents: [],
-				imagingStudies: []
+				imagingStudies: [],
+				shiftIntelligence: { roleQueues: [], urgentRequests: [], shiftStats: {} },
+				auditEvents: [],
+				importBatches: [],
+				speechProviders: []
 			};
 			setDashboard(fallbackDashboard);
 			setAccessUnlockRequired(false);
