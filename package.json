@@ -137,7 +137,8 @@
 		"db:generate": "npm run db:generate -w @dental/api",
 		"db:migrate": "npm run db:migrate -w @dental/api",
 		"smoke:persistent-state-save": "node scripts/smoke-persistent-state-save.mjs",
-		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs"
+		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs",
+		"smoke:wave16": "npx tsx scripts/test-edge-cases-wave16.mjs"
 	},
 	"devDependencies": {
 		"@types/node": "^26.0.0",
