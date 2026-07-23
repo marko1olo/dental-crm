@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyWebsocket from "@fastify/websocket";
 import Fastify from "fastify";
 import { ZodError } from "zod";
@@ -274,6 +275,10 @@ export async function createDenteApiApp(
 
 	await app.register(fastifyMultipart, {
 		limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+	});
+
+	await app.register(fastifyRateLimit, {
+		global: false,
 	});
 
 	app.get(
