@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
 	DocumentIssueSignatureAttestation,
@@ -22,12 +23,12 @@ function documentSnapshotPath(documentId: string): string {
 	return path.join(dir, `${documentId}.html`);
 }
 
-export function writeIssuedDocumentSnapshot(
+export async function writeIssuedDocumentSnapshot(
 	documentId: string,
 	html: string,
-): { sha256: string; snapshotPath: string; createdAt: string } {
+): Promise<{ sha256: string; snapshotPath: string; createdAt: string }> {
 	const file = documentSnapshotPath(documentId);
-	writeFileSync(file, html, "utf8");
+	await writeFile(file, html, "utf8");
 	return {
 		sha256: createHash("sha256").update(html, "utf8").digest("hex"),
 		snapshotPath: file,
@@ -208,7 +209,7 @@ export async function issueGeneratedDocumentInDb(
 	if (existing.status === "issued") return mapDocument(existing);
 
 	const snapshot = options.snapshotHtml
-		? writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml)
+		? await writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml)
 		: null;
 
 	const [updated] = await db
