@@ -19,7 +19,7 @@ function workspaceRouteErrorDetail(error: unknown): string {
     return "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
   }
 
-  return "Раздел остановлен до перезагрузки, чтобы не показывать неполные данные.";
+  return error instanceof Error ? `[Error] ${error.message}\n${error.stack || ''}` : String(error);
 }
 
 function requestDenteStaleWorkspaceRefresh(): void {

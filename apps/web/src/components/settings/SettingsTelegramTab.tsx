@@ -489,7 +489,7 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                     <h3>Безопасные сценарии</h3>
                     <p>Это не рекламная рассылка и не канал медицинских документов. Только уведомления и портальные ссылки.</p>
                   </div>
-                  <span className="status-pill status-confirmed">{typedTelegramFeaturePlan?.enabledFeatures.length ?? 0}</span>
+                  <span className="status-pill status-confirmed">{typedTelegramFeaturePlan?.enabledFeatures?.length ?? 0}</span>
                 </div>
                 <div className="telegram-token-row">
                   {(typedTelegramFeaturePlan?.patientSafeActions ?? []).slice(0, 6).map((action) => (
@@ -1120,23 +1120,23 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                     ) : null}
                   </div>
                 ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length > 0 && filteredTelegramOutboxItems.length === 0 ? (
+                {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) > 0 && (filteredTelegramOutboxItems?.length ?? 0) === 0 ? (
                   <p className="telegram-empty-state">По выбранным фильтрам задач нет.</p>
                 ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length === 0 ? (
+                {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) === 0 ? (
                   <p className="telegram-empty-state">Нет Telegram-задач в текущей очереди связи.</p>
                 ) : null}
               </div>
-              {typedTelegramOutbox?.warnings.length ? (
+              {typedTelegramOutbox?.warnings?.length ? (
                 <div className="telegram-warning-strip compact">
-                  {typedTelegramOutbox.warnings.map((warning) => (
+                  {(typedTelegramOutbox.warnings ?? []).map((warning) => (
                     <span key={warning}>{telegramHumanMessage(warning)}</span>
                   ))}
                 </div>
               ) : null}
             </article>
 
-            {typedTelegramStatus?.warnings.length || typedTelegramStatus?.nextActions.length ? (
+            {typedTelegramStatus?.warnings?.length || typedTelegramStatus?.nextActions?.length ? (
               <div className="telegram-warning-strip">
                 {[...(typedTelegramStatus?.warnings ?? []), ...(typedTelegramStatus?.nextActions ?? [])].map((item) => (
                   <span key={item}>{telegramHumanMessage(item)}</span>

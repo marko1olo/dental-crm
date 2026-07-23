@@ -134,7 +134,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
     clinicModeLabels,
     staffRoleLabels,
     specialtyLabels
-  } = props;
+  } = p;
 
   if (settingsTab !== "clinic") return null;
 
@@ -178,7 +178,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                   onClick={() => changeClinicMode(mode)}
                 >
                   <strong>{clinicModeLabels?.[mode]?.title}</strong>
-                  <span>{clinicModeLabels[mode].detail}</span>
+                  <span>{clinicModeLabels?.[mode]?.detail}</span>
                 </button>
               ))}
             </div>
@@ -199,7 +199,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                 <p className="eyebrow">Открытые роли</p>
                 {typedRoleQueues.map((queue) => (
                   <span key={queue.role}>
-                    {staffRoleLabels[queue.role]}: {queue.openItems}
+                    {staffRoleLabels?.[queue.role] ?? queue.role}: {queue.openItems}
                   </span>
                 ))}
               </div>
@@ -213,7 +213,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                 </div>
                 <div className="legal-readiness-badge">
                   <strong>{legalReadinessPercent}%</strong>
-                  <span>{legalMissingFields.length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
+                  <span>{(legalMissingFields ?? []).length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
                 </div>
               </div>
 
@@ -518,7 +518,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                 </div>
                 {newStaffRole === "doctor" || newStaffRole === "assistant" ? (
                   <div className="specialty-strip staff-specialty-picker" aria-label="Специальность нового сотрудника">
-                    {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
+                    {(Object.keys(specialtyLabels || {}) as DentalSpecialty[]).map((specialty) => (
                       <button
                         className={newStaffSpecialty === specialty ? "active" : ""}
                         key={specialty}
@@ -526,7 +526,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                         aria-pressed={newStaffSpecialty === specialty}
                         onClick={() => setNewStaffSpecialty(specialty)}
                       >
-                        {specialtyLabels[specialty]}
+                        {specialtyLabels?.[specialty] ?? specialty}
                       </button>
                     ))}
                   </div>

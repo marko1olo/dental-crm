@@ -2048,7 +2048,7 @@ export function App() {
             {onboardingStep === "intro" ? (
               <div className="onboarding-panel" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 <div>
-                  <h3 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}>Режим запуска приложения</h3>
+                  <h3 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px", color: "#111827" }}>Режим запуска приложения</h3>
                   <p style={{ color: "#4b5563" }}>
                     Выберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.
                   </p>

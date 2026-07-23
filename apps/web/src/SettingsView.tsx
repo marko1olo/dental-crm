@@ -1423,17 +1423,17 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
-        <SettingsClinicTab settingsTab={settingsTab} />
-        <SettingsAccessTab settingsTab={settingsTab} />
-        <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} />
+        {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "access" ? <SettingsAccessTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
 
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
         {settingsTab === "inventory" ? (
           <InventoryView
-            organizationId={dashboard.clinicSettings.profile.organizationId}
+            organizationId={dashboard?.clinicSettings?.profile?.organizationId ?? ""}
           />
         ) : null}
-        <SettingsMessengersTab settingsTab={settingsTab} />
+        {settingsTab === "messengers" ? <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 
         {settingsTab === "rules" ? <SettingsRulesTab /> : null}
@@ -1454,8 +1454,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <SettingsReportingTab />
         ) : null}
 
-        <SettingsImportsTab />
-        <SettingsAuditTab />
+        {settingsTab === "imports" ? <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "audit" ? <SettingsAuditTab props={settingsProps} settingsTab={settingsTab} /> : null}
 
         <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
           <DadataGeocodedAddressesWidget />
