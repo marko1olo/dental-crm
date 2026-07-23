@@ -250,7 +250,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
   return (
           <div className="panel schedule-panel" id="schedule">
-            <button style={{ display: 'none' }} type="button">Создать запись</button>
             <div className="panel-heading">
               <h2>Расписание приемов</h2>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
