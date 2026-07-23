@@ -10,7 +10,7 @@ type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
-export function SettingsTelegramTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
+export function SettingsTelegramTab({ props, settingsTab }: { props?: any, settingsTab: string }) {
   const {
     dashboard,
     createTelegramLinkCode,

@@ -40,7 +40,7 @@ interface LabOrder {
 
 export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const { auth, dashboard } = useAppLogicContext();
-	const liveStatus = useAppStore((state) => state.labOrderStatuses[patientId]);
+	const liveStatus = useAppStore((state) => (state as any).labOrderStatuses?.[patientId]);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 

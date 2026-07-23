@@ -9,7 +9,7 @@ export type AppointmentCardProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   appointmentLabels: Record<Appointment["status"], string>;
-  appointmentDraft: Record<string, unknown>;
+  appointmentDraft: Record<string, any>;
   appointmentSaveState: string;
   appointmentSaveError: string | null;
   appointmentDirty: boolean;
@@ -23,7 +23,7 @@ export type AppointmentCardProps = {
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   openAppointmentEditor: (appointment: Appointment) => void;
   closeAppointmentEditor: (appointmentId: string) => void;
-  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: unknown) => void;
+  updateAppointmentScheduleDraft: (appointmentId: string, key: any, value: any) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
   normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -161,7 +161,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             Начало
             <input
               type="datetime-local"
-              value={toDateTimeLocalValue(appointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+              value={toDateTimeLocalValue(appointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
               onChange={(event: TextFieldChangeEvent) =>
                 updateAppointmentScheduleDraft(
                   appointment.id,
@@ -175,7 +175,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             Окончание
             <input
               type="datetime-local"
-              value={toDateTimeLocalValue(appointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+              value={toDateTimeLocalValue(appointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
               onChange={(event: TextFieldChangeEvent) =>
                 updateAppointmentScheduleDraft(
                   appointment.id,
@@ -317,14 +317,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
           </div>
           <label className="form-span-2">
             Причина
-            <input value={appointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
+            <input value={String(appointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
               {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = appointmentDraft.reason.trim();
+                    const currentVal = String(appointmentDraft.reason || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateAppointmentScheduleDraft(appointment.id, "reason", newVal);
                   }}
@@ -339,14 +339,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
           </label>
           <label className="form-span-2">
             Комментарий
-            <textarea value={appointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
+            <textarea value={String(appointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+              {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = appointmentDraft.comment.trim();
+                    const currentVal = String(appointmentDraft.comment || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateAppointmentScheduleDraft(appointment.id, "comment", newVal);
                   }}

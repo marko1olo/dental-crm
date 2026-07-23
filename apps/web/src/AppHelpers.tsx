@@ -319,6 +319,9 @@ import {
   type TelegramPostVisitCheckupDelayKey
 } from "./workspaceStaticOptions";
 
+export { imagingSourceLabels } from "./imagingUiLabels";
+export { pricelistSourceKindLabels } from "./pricelistUiMeta";
+
 import {
   appointmentLabels,
   clinicalRuleActionLabels,

@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type PropsWithChildren } from "react";
 
-export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing";
+export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing" | "analytics";
 
 type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
   label: string;

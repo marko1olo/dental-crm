@@ -8041,6 +8041,7 @@ export type ImagingViewerState = any;
 export type ImagingViewerSaveState = any;
 export type MprProjection = any;
 export type MprWindowPreset = any;
+export type VisitFlowResult = any;
 
 export * from "./utils/strings.js";
 export * from "./utils/dates.js";

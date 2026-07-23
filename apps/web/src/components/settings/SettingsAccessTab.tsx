@@ -6,7 +6,7 @@ import { StaffRole } from "@dental/shared";
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
-export function SettingsAccessTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
+export function SettingsAccessTab({ props, settingsTab }: { props?: Record<string, any>, settingsTab: string }) {
   const {
     dashboard,
     activeWorkspaceProfile,

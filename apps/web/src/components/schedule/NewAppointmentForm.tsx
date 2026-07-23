@@ -12,10 +12,10 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type NewAppointmentFormProps = {
   dashboard: Dashboard;
   appointmentLabels: Record<Appointment["status"], string>;
-  newAppointmentDraft: Record<string, unknown>;
+  newAppointmentDraft: Record<string, any>;
   newAppointmentSaveState: string;
   newAppointmentError: string | null;
-  updateNewAppointmentDraft: (key: string, value: unknown) => void;
+  updateNewAppointmentDraft: (key: any, value: any) => void;
   createAppointmentFromDraft: () => Promise<boolean>;
   resetNewAppointmentDraft: () => void;
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -53,10 +53,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
     !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
     dashboard.clinicSettings.profile.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
     !newAppointmentDraft.chairId ? "выберите кресло" : null,
-    !newAppointmentDraft.startsAt.trim() ? "укажите начало приема" : null,
-    newAppointmentDraft.startsAt.trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "проверьте дату начала" : null,
-    !newAppointmentDraft.endsAt.trim() ? "укажите окончание приема" : null,
-    newAppointmentDraft.endsAt.trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "проверьте дату окончания" : null,
+    !String(newAppointmentDraft.startsAt || '').trim() ? "Укажите начало приема" : null,
+    String(newAppointmentDraft.startsAt || '').trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "Проверьте время начала" : null,
+    !String(newAppointmentDraft.endsAt || '').trim() ? "Укажите окончание приема" : null,
+    String(newAppointmentDraft.endsAt || '').trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "Проверьте время окончания" : null,
     Number.isFinite(newAppointmentStartsAtMs) && Number.isFinite(newAppointmentEndsAtMs) && newAppointmentEndsAtMs <= newAppointmentStartsAtMs
       ? "окончание должно быть позже начала"
       : null
@@ -68,12 +68,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       <div className="appointment-create-editor" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' }}>
         <input
           type="datetime-local"
-          value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+          value={toDateTimeLocalValue(newAppointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />
         <input
           type="datetime-local"
-          value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+          value={toDateTimeLocalValue(newAppointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />
         <select
@@ -403,21 +403,19 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </div>
           </div>
           <label className="form-span-2">
-            Причина записи
-            <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
+            Причина приема
+            <input value={String(newAppointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
+              {["Первичный", "Пульпит", "Кариес", "Осмотр", "Пломба", "Гигиена", "Коронка"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = newAppointmentDraft.reason.trim();
+                    const currentVal = String(newAppointmentDraft.reason || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateNewAppointmentDraft("reason", newVal);
                   }}
                   className="quick-chip quick-chip--sm"
-                  
-                  
                 >
                   + {chip}
                 </button>
@@ -426,14 +424,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </label>
           <label className="form-span-2">
             Комментарий
-            <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
+            <textarea value={String(newAppointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+              {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = newAppointmentDraft.comment.trim();
+                    const currentVal = String(newAppointmentDraft.comment || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateNewAppointmentDraft("comment", newVal);
                   }}
