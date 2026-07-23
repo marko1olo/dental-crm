@@ -4046,7 +4046,7 @@ export function useAppLogic(): any {
 		if (!dashboard) return;
 		setStaffScheduleDrafts((current: any) => {
 			const next: Record<string, StaffScheduleDraft> = {};
-			dashboard?.clinicSettings?.staff.forEach((member) => {
+			(dashboard?.clinicSettings?.staff ?? []).forEach((member) => {
 				next[member.id] =
 					current[member.id] ??
 					staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
@@ -4059,7 +4059,7 @@ export function useAppLogic(): any {
 		if (!dashboard) return;
 		setChairScheduleDrafts((current: any) => {
 			const next: Record<string, StaffScheduleDraft> = {};
-			dashboard?.clinicSettings?.chairs.forEach((chair) => {
+			(dashboard?.clinicSettings?.chairs ?? []).forEach((chair) => {
 				next[chair.id] =
 					current[chair.id] ??
 					staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
@@ -6796,7 +6796,7 @@ export function useAppLogic(): any {
 		const visibleSpecialties = new Set<DentalSpecialty>();
 		const reasonSpecialty = inferSpecialtyFromText(activeAppointment?.reason);
 
-		activeDoctor?.specialties.forEach((specialty) =>
+		(activeDoctor?.specialties ?? []).forEach((specialty) =>
 			visibleSpecialties.add(specialty),
 		);
 		if (activeChair?.specialization)

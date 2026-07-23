@@ -2771,7 +2771,7 @@ export function App() {
                       <p>Сразу задайте рабочие дни и часы. Изменения автосохраняются и остаются выбранными, пока вы их не поменяете.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.staff
+                      {(dashboard.clinicSettings?.staff ?? [])
                         .filter((member) => member.role === "doctor" || member.role === "assistant")
                         .map((member) => {
                           const scheduleDraft = staffScheduleDrafts[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
@@ -2849,7 +2849,7 @@ export function App() {
                       <p>Кабинет может работать иначе, чем врач. Это сразу учитывается в записи и конфликтных слотах.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.chairs
+                      {(dashboard.clinicSettings?.chairs ?? [])
                         .filter((chair) => chair.active)
                         .map((chair) => {
                           const scheduleDraft = chairScheduleDrafts[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
@@ -3365,13 +3365,13 @@ export function App() {
                 <div>
                   <h3>Проверка перед работой</h3>
                   <p>
-                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
-                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
+                    Профиль клиники: {legalReadinessPercent}%. Команда: {(dashboard.clinicSettings?.staff?.length ?? 0)}. Кабинеты:{" "}
+                    {(dashboard.clinicSettings?.chairs?.length ?? 0)}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
                     {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
                   </p>
                 </div>
                 <div className="onboarding-readiness-grid">
-                  <span>{clinicModeLabels[dashboard.clinicSettings.profile?.mode].title}</span>
+                  <span>{dashboard.clinicSettings?.profile?.mode && clinicModeLabels[dashboard.clinicSettings.profile.mode] ? clinicModeLabels[dashboard.clinicSettings.profile.mode].title : "Клиника"}</span>
                   <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
                   <span>{specialtyLabels[selectedSpecialty]}</span>
                   <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
