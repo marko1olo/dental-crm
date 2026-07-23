@@ -4391,8 +4391,9 @@ export function newAppointmentDraftFromDashboard(
   const startsAtLocal = defaultAppointmentStartLocal(profile);
   const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile.defaultVisitMinutes || 45, timezone);
   const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
-  const specialtyMatches = (specialties: DentalSpecialty[]) =>
-    selectedSpecialty === "universal" || specialties.includes(selectedSpecialty) || specialties.includes("universal");
+  const specialtyMatches = (specialties?: DentalSpecialty[]) =>
+    selectedSpecialty === "universal" ||
+    (Array.isArray(specialties) && (specialties.includes(selectedSpecialty) || specialties.includes("universal")));
   const savedDoctor = preferences.scheduleDefaultDoctorUserId
     ? dashboard.clinicSettings.staff.find(
         (member) =>
