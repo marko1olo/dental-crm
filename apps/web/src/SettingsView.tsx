@@ -1424,7 +1424,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
         {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
-        {settingsTab === "access" ? <SettingsAccessTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "access" ? <SettingsAccessTab {...({ props: settingsProps, settingsTab } as any)} /> : null}
         {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
 
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
