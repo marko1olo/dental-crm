@@ -90,9 +90,9 @@ export async function registerAiRoutes(app: FastifyInstance) {
       return;
     const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
     if (!parsedInput.success) {
-      console.error(
-        "SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:",
-        parsedInput.error.format(),
+      request.log.error(
+        { err: parsedInput.error.format() },
+        "SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation",
       );
       return reply.code(400).send({
         error: "AiRecognitionValidationError",
@@ -463,7 +463,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
         },
       });
     } catch (err: any) {
-      console.error("PredictNoShowError", err);
+      request.log.error(err, "PredictNoShowError");
       return reply.code(500).send({ error: "PredictNoShowError" });
     }
   });
