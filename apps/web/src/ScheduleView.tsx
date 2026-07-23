@@ -17,6 +17,7 @@ import { CancellationReasonsTwoLevelWidget } from "./components/schedule/Cancell
 import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
 import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 
 
 type AppointmentScheduleDraft = {
@@ -153,6 +154,7 @@ export function ScheduleView(props: ScheduleViewProps) {
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [useManualSelects, setUseManualSelects] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
 
 
@@ -520,6 +522,9 @@ export function ScheduleView(props: ScheduleViewProps) {
                     <button className="text-button" type="button" onClick={resetScheduleFilters}>
                       Сбросить фильтры
                     </button>
+                    <button className="secondary-button" type="button" onClick={() => setIsWaitlistOpen(true)}>
+                      📋 Лист ожидания
+                    </button>
                     <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
                       <Plus aria-hidden="true" /> Новая запись
                     </button>
@@ -535,6 +540,13 @@ export function ScheduleView(props: ScheduleViewProps) {
               <ScheduleTimeReservationsWidget />
             </div>
 
+            <WaitlistDrawer
+              isOpen={isWaitlistOpen}
+              onClose={() => setIsWaitlistOpen(false)}
+              updateNewAppointmentDraft={updateNewAppointmentDraft as any}
+              focusNewAppointmentEditor={focusNewAppointmentEditor}
+              dashboard={dashboard}
+            />
           </div>
       );
 }

@@ -22,15 +22,28 @@ interface Props {
 	onClose: () => void;
 	updateNewAppointmentDraft: (key: any, value: any) => void;
 	focusNewAppointmentEditor: () => void;
+	dashboard?: any;
+	auth?: any;
 }
 
-export function WaitlistDrawer({
-	isOpen,
-	onClose,
-	updateNewAppointmentDraft,
-	focusNewAppointmentEditor,
-}: Props) {
-	const { auth, dashboard } = useAppLogicContext();
+export function WaitlistDrawer(props: Props) {
+	const {
+		isOpen,
+		onClose,
+		updateNewAppointmentDraft,
+		focusNewAppointmentEditor,
+		dashboard: propDashboard,
+		auth: propAuth
+	} = props;
+
+	let ctx: any = null;
+	try {
+		ctx = useAppLogicContext();
+	} catch (e) {
+		ctx = null;
+	}
+	const dashboard = propDashboard || ctx?.dashboard;
+	const auth = propAuth || ctx?.auth;
 	const [items, setItems] = useState<WaitlistItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -51,7 +64,7 @@ export function WaitlistDrawer({
 		try {
 			setIsLoading(true);
 			const res = await fetch("/api/waitlist", {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: auth?.denteClinicalReadHeaders ? auth.denteClinicalReadHeaders() : {},
 			});
 			if (res.ok) {
 				const data = await res.json();
