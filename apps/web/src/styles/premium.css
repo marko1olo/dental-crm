@@ -82,18 +82,30 @@
 }
 
 /* Unified Zone Containers Styling */
-.patients-zone,
-.schedule-zone,
-.documents-zone,
+.workspace,
+.patients-panel,
+.schedule-panel,
+.documents-panel,
 .settings-zone,
 .visit-zone,
 .imaging-zone,
 .marketing-zone,
 .shift-zone,
 .finance-zone,
+.patients-zone,
+.schedule-zone,
+.documents-zone,
 .workspace-section,
 .protocol-settings,
-.rule-form {
+.rule-form,
+.patient-list,
+.patient-row,
+.patients-header,
+.patients-search-box,
+.smart-create-group,
+.quick-create-guidance,
+.card-body,
+.panel-body {
 	background: var(--glass-panel) !important;
 	backdrop-filter: var(--glass-blur) saturate(180%) !important;
 	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
