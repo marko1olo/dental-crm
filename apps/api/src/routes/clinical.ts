@@ -258,7 +258,7 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #61: интеграции::конструктор_лендингов_flexbe_и_сопоставление_полей
+	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
 	app.get("/api/integrations/landing-field-mappings", async (request, reply) => {
 		const rawOrgId = request.headers["x-organization-id"];
 		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
@@ -266,6 +266,34 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getLandingFieldMappingsFromDb } = await import("../db/landingFieldMappingsQuery.js");
 		return reply.status(200).send(await getLandingFieldMappingsFromDb(orgId));
 	});
+
+	// COMPETITOR FEATURE #47: crm::пользовательские_типы_задач_для_администраторов
+	app.get("/api/crm/custom-crm-task-types", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getCustomCrmTaskTypesFromDb } = await import("../db/customCrmTaskTypesQuery.js");
+		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #55: интеграции::продокторов_синхронизация_отзывов
+	app.get("/api/integrations/prodoctorov-sync", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getProdoctorovSyncExportsFromDb } = await import("../db/prodoctorovSyncExportsQuery.js");
+		return reply.status(200).send(await getProdoctorovSyncExportsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #58: пациенты::геокодинг_адресов_через_dadata
+	app.get("/api/integrations/dadata-geocoded-addresses", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getDadataGeocodedAddressesFromDb } = await import("../db/dadataGeocodedAddressesQuery.js");
+		return reply.status(200).send(await getDadataGeocodedAddressesFromDb(orgId));
+	});
+
 
 	// COMPETITOR FEATURE #63: финансы::автоматическое_указание_меры_количества_в_kkm
 	app.get("/api/finance/kkm-item-quantity-units", async (request, reply) => {

@@ -1176,6 +1176,31 @@ export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #55 — интеграции::продокторов_синхронизация_отзывов
+export const prodoctorovSyncExports = pgTable("prodoctorov_sync_exports", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	priceListSyncStatus: text("price_list_sync_status").default("synced").notNull(),
+	availableSlotsCount: integer("available_slots_count").default(120).notNull(),
+	medflexClubBadge: boolean("medflex_club_badge").default(true).notNull(),
+	lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).notNull().defaultNow(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #58 — пациенты::геокодинг_адресов_через_dadata
+export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	rawAddress: text("raw_address").notNull(),
+	fiasId: text("fias_id").notNull(),
+	qcGeo: integer("qc_geo").default(0).notNull(),
+	geoLat: text("geo_lat").notNull(),
+	geoLon: text("geo_lon").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 

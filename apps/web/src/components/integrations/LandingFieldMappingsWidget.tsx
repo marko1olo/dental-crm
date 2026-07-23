@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { auth } from "../../AppHelpers";
 
-interface FieldMappingItem {
+interface MappingItem {
 	id: string;
 	organizationId: string;
-	landingProvider: string;
-	formName: string;
-	incomingFieldKey: string;
-	mappedCrmTarget: string;
-	isActive: boolean;
+	landingPageTitle: string;
+	webhookUrlSnippet: string;
+	mappedFieldsCount: number;
+	lastSubmissionAt: string;
 	createdAt: string;
 }
 
 export const LandingFieldMappingsWidget: React.FC = () => {
-	const [mappings, setMappings] = useState<FieldMappingItem[]>([]);
+	const [mappings, setMappings] = useState<MappingItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/integrations/landing-field-mappings", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth.denteClinicalReadHeaders(),
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -33,43 +33,51 @@ export const LandingFieldMappingsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="landing-field-mappings-widget"
-			className="p-4 bg-slate-900 border border-emerald-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">🌐</span>
-					<h3 className="font-semibold text-emerald-400">
-						Интеграция Лендингов (Flexbe / Tilda): Настраиваемый маппинг полей формы
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						Маппинг Полей Лендингов и Лид-Форм (Flexbe / Tilda / VK / Custom)
 					</h3>
 				</div>
-				<span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-					Flexbe Field Mapper
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					Landing Webhook Mapper
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка маппинга полей лендингов...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+					Загрузка маппингов лендингов...
+				</div>
+			) : mappings.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+					Сопоставления полей лендингов не настроены.
+				</div>
 			) : (
 				<div className="space-y-3">
 					{mappings.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
 						>
 							<div>
 								<div className="flex items-center space-x-2">
-									<span className="text-xs uppercase font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 font-bold">
-										{item.landingProvider}
+									<span className="text-sm font-bold">{item.landingPageTitle}</span>
+									<span className="text-xs font-mono text-emerald-600 dark:text-emerald-300 font-semibold">
+										({item.mappedFieldsCount} полей)
 									</span>
-									<span className="text-sm font-bold text-slate-200">{item.formName}</span>
 								</div>
-								<div className="text-xs text-slate-400 mt-1">
-									Поле лендинга: <span className="font-mono text-emerald-300">{item.incomingFieldKey}</span> → Поле CRM: <span className="font-mono text-slate-200">{item.mappedCrmTarget}</span>
+								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
+									Webhook: <code className="text-slate-700 dark:text-slate-300 font-mono">{item.webhookUrlSnippet}</code>
 								</div>
 							</div>
-							<div className="flex items-center space-x-2">
-								<span className="text-xs bg-slate-950 text-emerald-300 px-2 py-1 rounded border border-emerald-800 font-mono">
-									✓ Активно
+							<div className="flex items-center space-x-2 text-xs">
+								<span className="px-2 py-0.5 rounded border font-bold bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									✓ Активен
 								</span>
 							</div>
 						</div>
