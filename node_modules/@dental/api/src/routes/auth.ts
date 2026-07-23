@@ -5,7 +5,13 @@ import { db } from "../db/client.js";
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
 import { configuredClinicalAccessSecret } from "../accessGuard.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
-export const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+export const TOKEN_SECRET = () => {
+  const secret = process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret();
+  if (!secret) {
+    throw new Error("AUTH_TOKEN_SECRET environment variable is not defined");
+  }
+  return secret;
+};
 
 interface ClinicLoginBody {
   email?: string;
