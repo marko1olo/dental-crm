@@ -13,7 +13,15 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 	const dashboard = props?.dashboard ?? ctx?.dashboard;
 	const workspaceFlags = useWorkspaceProfile();
 
-	if (!activePatient?.id) return null;
+	if (!activePatient?.id) {
+		return (
+			<div style={{ textAlign: "center", padding: "48px 24px", color: "var(--muted)" }}>
+				<div style={{ fontSize: "36px", marginBottom: "12px" }}>🦷</div>
+				<h4 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)" }}>Пациент не выбран</h4>
+				<p style={{ fontSize: "0.875rem", margin: 0 }}>Выберите пациента, чтобы открыть одонтограмму.</p>
+			</div>
+		);
+	}
 
 	return (
 		<div

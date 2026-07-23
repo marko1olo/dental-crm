@@ -246,15 +246,15 @@ export function VisitEmkTab() {
 								</div>
 								<p>{draft.quality.nextAction}</p>
 								<div className="visit-draft-signal-row">
-									{draft.quality.detectedToothCodes
+									{(draft.quality.detectedToothCodes ?? [])
 										.slice(0, 6)
 										.map((toothCode) => (
 											<span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
 										))}
-									{draft.quality.signals.slice(0, 7).map((signal) => (
+									{(draft.quality.signals ?? []).slice(0, 7).map((signal) => (
 										<span key={signal}>{visitDraftSignalLabel(signal)}</span>
 									))}
-									{draft.quality.missingCriticalFields
+									{(draft.quality.missingCriticalFields ?? [])
 										.slice(0, 5)
 										.map((field) => (
 											<small key={field}>
@@ -269,14 +269,14 @@ export function VisitEmkTab() {
 							<ShieldCheck aria-hidden="true" />
 							<p>
 								{draft
-									? draft.warnings.join(" ")
+									? (draft.warnings ?? []).join(" ")
 									: isVisitNoteDirty
 										? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
 										: pendingVisitSaveCount
 											? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
 											: lastVisitSaveReceipt
 												? visitSaveReceiptText(lastVisitSaveReceipt)
-												: dashboard.activeVisit?.doctorSummary}
+												: dashboard?.activeVisit?.doctorSummary}
 							</p>
 							{pendingVisitSaveCount ? (
 								<button
@@ -331,7 +331,7 @@ export function VisitEmkTab() {
 											color: "var(--amber-800)",
 										}}
 									>
-										{visitNoteAcceptMissingSteps.map((step) => (
+										{(visitNoteAcceptMissingSteps ?? []).map((step) => (
 											<li key={step}>{step}</li>
 										))}
 									</ul>

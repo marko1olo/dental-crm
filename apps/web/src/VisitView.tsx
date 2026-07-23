@@ -228,9 +228,9 @@ export function VisitView(props: VisitViewProps) {
           <div className="panel-heading">
             <h2>Текущий прием</h2>
           </div>
-          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--color-text-muted, #6b7280)' }}>
+          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--muted)' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦷</div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text, #111827)', marginBottom: '8px' }}>Пациент не выбран</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>Пациент не выбран</h3>
             <p style={{ fontSize: '0.875rem' }}>Выберите пациента в разделе «Пациенты»<br />или создайте запись в «Записях», чтобы начать приём.</p>
           </div>
         </div>

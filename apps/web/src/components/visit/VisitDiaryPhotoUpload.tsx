@@ -87,7 +87,7 @@ export const VisitDiaryPhotoUpload: React.FC<VisitDiaryPhotoUploadProps> = ({
 					<Camera className="w-3 h-3 text-rose-400" /> Вложения (Фотографии)
 				</span>
 				{!isLocked && diaryId && (
-					<label className="cursor-pointer text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-zinc-700">
+					<label className="cursor-pointer text-xs flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-slate-200 dark:border-zinc-700">
 						<Paperclip className="w-3 h-3" />
 						{isUploading ? "Сжатие..." : "Прикрепить фото"}
 						<input
@@ -100,14 +100,14 @@ export const VisitDiaryPhotoUpload: React.FC<VisitDiaryPhotoUploadProps> = ({
 					</label>
 				)}
 			</label>
-			{attachments.length > 0 ? (
+			{(attachments ?? []).length > 0 ? (
 				<div className="flex gap-3 overflow-x-auto pb-2">
-					{attachments.map((att) => (
+					{(attachments ?? []).map((att) => (
 						<div key={att.id} className="relative group shrink-0">
 							<img
 								src={att.url}
 								alt={att.name}
-								className="h-20 w-20 object-cover rounded-lg border border-zinc-700 shadow-sm"
+								className="h-20 w-20 object-cover rounded-lg border border-slate-200 dark:border-zinc-700 shadow-sm"
 							/>
 							<a
 								href={att.url}
@@ -123,7 +123,7 @@ export const VisitDiaryPhotoUpload: React.FC<VisitDiaryPhotoUploadProps> = ({
 					))}
 				</div>
 			) : (
-				<div className="text-sm text-zinc-500 py-3 px-4 bg-zinc-900/50 border border-zinc-800 rounded-xl border-dashed flex items-center justify-center">
+				<div className="text-sm text-slate-500 dark:text-zinc-500 py-3 px-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-xl border-dashed flex items-center justify-center">
 					{diaryId
 						? "Нет прикрепленных файлов"
 						: "Сохраните дневник, чтобы прикрепить фото"}
