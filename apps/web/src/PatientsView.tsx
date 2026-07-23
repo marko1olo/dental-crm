@@ -1,6 +1,6 @@
 import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
@@ -13,6 +13,7 @@ import { PatientTaskTicketsWidget } from "./components/patients/PatientTaskTicke
 import { PatientReclamationsWidget } from "./components/patients/PatientReclamationsWidget";
 import { OrthodonticProgressWidget } from "./components/patients/OrthodonticProgressWidget";
 import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
+import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 
 
 type PatientInsight = Dashboard["patientInsights"][number];
@@ -91,6 +92,12 @@ export function PatientsView(props: PatientsViewProps) {
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
+
+  useEffect(() => {
+    if (!selectedPatientId && filteredPatients.length > 0) {
+      setSelectedPatientId(filteredPatients[0].id);
+    }
+  }, [selectedPatientId, filteredPatients, setSelectedPatientId]);
   const {
     createPatient,
     filteredPatients,
@@ -613,6 +620,7 @@ export function PatientsView(props: PatientsViewProps) {
               ) : null}
               {selectedPatient ? (
                 <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <PatientOverviewTab />
                   <h3 style={{ fontSize: "16px", fontWeight: 600 }}>Дополнительные модули пациента</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
                     <PatientTaskTicketsWidget patientId={selectedPatient.id} />
@@ -620,7 +628,6 @@ export function PatientsView(props: PatientsViewProps) {
                     <OrthodonticProgressWidget patientId={selectedPatient.id} />
                     <PatientServiceLineagesWidget patientId={selectedPatient.id} />
                   </div>
-
                 </div>
               ) : null}
               </div>
