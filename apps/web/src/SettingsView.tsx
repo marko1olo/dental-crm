@@ -22,6 +22,7 @@ onClick={unlockTelegramAdminSession}
 typedRecognitionJob.warnings.map((warning) => (
                       <span key={warning}>{aiRecognitionWarningText(warning)}</span>
 */
+import { useState, useEffect } from "react";
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -1196,6 +1197,16 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     );
   };
 
+  const [ramWatchdogs, setRamWatchdogs] = useState<any[]>([]);
+  const [mergeQueues, setMergeQueues] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/system/ram-watchdogs", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
+      .then((r) => r.json()).then((d) => setRamWatchdogs(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/crm/patient-duplicate-merge-queues", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
+      .then((r) => r.json()).then((d) => setMergeQueues(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
   return (
     <motion.section
       className="settings-zone glass-panel"
@@ -1210,6 +1221,19 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <p className="eyebrow">Настройки</p>
           <h2>Настройки клиники</h2>
         </div>
+
+        {/* Real Feature Integrations in Settings Header */}
+        {ramWatchdogs.length > 0 && (
+          <div data-testid="system-ram-watchdog-indicator" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            🖥️ Нагрузка ОЗУ ({ramWatchdogs[0].clientHostName}): <strong>{ramWatchdogs[0].usedRamMb} MB / {ramWatchdogs[0].totalRamMb} MB</strong> ({ramWatchdogs[0].warningLevel})
+          </div>
+        )}
+
+        {mergeQueues.length > 0 && (
+          <div data-testid="duplicate-merge-queue-panel" style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            👥 Очередь дубликатов: <strong>{mergeQueues[0].primaryPatientName}</strong> ↔ {mergeQueues[0].duplicatePatientName} ({mergeQueues[0].similarityScorePercent}% совпадения)
+          </div>
+        )}
         <div className="settings-heading-actions">
           <span>Не показывается врачу в рабочей смене</span>
           <button
