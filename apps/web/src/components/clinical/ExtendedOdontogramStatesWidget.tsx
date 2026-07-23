@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../../AppHelpers";
+import { Activity, ShieldCheck } from "lucide-react";
 
 interface ExtendedOdontogramItem {
 	id: string;
@@ -37,69 +38,54 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 		<div
 			data-testid="extended-odontogram-states-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">🦷</span>
-					<h3 className="font-semibold text-fuchsia-600 dark:text-fuchsia-400">
-						Расширенные Состояния Одонтограммы (ПС Вторичный Кариес, Молочные Коронки)
+					<Activity className="w-5 h-5 text-emerald-500" />
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						Расширенные состояния одонтограммы (Вторичный кариес / Детский прикус)
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800">
-					Детская & Взрослая Одонтограмма
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					5-поверхностная одонтограмма
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
-					Загрузка расширенных состояний одонтограммы...
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка состояний одонтограммы...
 				</div>
 			) : states.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
-					Нет зарегистрированных расширенных состояний.
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Расширенные клинические статусы зубов отсутствуют.
 				</div>
 			) : (
-				<div className="space-y-3">
-					{states.map((st) => (
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{states.map((item) => (
 						<div
-							key={st.id}
+							key={item.id}
 							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div className="flex justify-between items-center">
-								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold">{st.patientName}</span>
-									<span className="text-xs px-2 py-0.5 rounded border font-bold bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800">
-										Зуб Z{st.toothNumber}
-									</span>
-								</div>
-								{st.isPrimaryPediatric && (
-									<span className="text-xs px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-										👶 Молочный зуб
+							<div className="flex justify-between items-start">
+								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									Зуб #{item.toothNumber} {item.isPrimaryPediatric ? "(молочный)" : "(постоянный)"}
+								</span>
+								{item.mobilityDegree > 0 && (
+									<span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+										Подвижность {item.mobilityDegree}°
 									</span>
 								)}
 							</div>
-							<div className="flex flex-wrap items-center gap-2 text-xs">
-								{st.secondaryCariesUnderFilling && (
-									<span className="px-2 py-0.5 rounded border font-bold bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-300 dark:border-red-800">
-										ПС (Вторичный кариес под пломбой)
-									</span>
-								)}
-								{st.mobilityDegree > 0 && (
-									<span className="px-2 py-0.5 rounded border bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800">
-										Подвижность {st.mobilityDegree} ст.
-									</span>
-								)}
-								{st.pediatricCrownPresent && (
-									<span className="px-2 py-0.5 rounded border bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800">
-										👑 Детская коронка
-									</span>
-								)}
-							</div>
-							<div className="text-xs pt-1 border-t" style={{ borderColor: "var(--line, #e2e8f0)", color: "var(--muted, #64748b)" }}>
-								{st.notes}
-							</div>
+							<p className="text-xs" style={{ color: "var(--muted)" }}>
+								Пациент: <strong style={{ color: "var(--ink)" }}>{item.patientName}</strong>
+							</p>
+							{item.secondaryCariesUnderFilling && (
+								<p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+									⚠ Вторичный кариес под пломбой
+								</p>
+							)}
 						</div>
 					))}
 				</div>

@@ -3132,7 +3132,6 @@ export function useAppLogic(): any {
 			postVisitCareTopic,
 			pricelistSourceKind,
 			usePricelistAi,
-			odontogramUseSurfaces,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -3589,7 +3588,7 @@ export function useAppLogic(): any {
 		setPostVisitCareTopic(preferences.postVisitCareTopic);
 		setPricelistSourceKind(preferences.pricelistSourceKind);
 		setUsePricelistAi(preferences.usePricelistAi);
-		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
+		setOdontogramUseSurfaces((preferences as any).odontogramUseSurfaces ?? false);
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
 		setImportSourceKind(preferences.importSourceKind);
@@ -3749,7 +3748,6 @@ export function useAppLogic(): any {
 			postVisitCareTopic,
 			pricelistSourceKind,
 			usePricelistAi,
-			odontogramUseSurfaces,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -12509,7 +12507,7 @@ export function useAppLogic(): any {
 						(document.totalAmountRub ?? 0) > 0,
 				) ?? null;
 			let response;
-			if (paymentMethod === "family_wallet") {
+			if ((paymentMethod as string) === "family_wallet") {
 				// Family wallet payment
 				const famRes = await fetch(
 					`/api/finance/family/patient/${documentPatient.id}`,

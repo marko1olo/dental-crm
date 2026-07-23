@@ -136,7 +136,7 @@ export function FinanceView({
   setPaymentTaxDeductionCode,
   staffRoleLabels,
   treatmentStatusLabels
-}: FinanceViewProps) {
+}: any = {}) {
   const focusPaymentCapture = () => {
     const amountInput = document.getElementById("payment-amount-input") as HTMLInputElement | null;
     const paymentCapture = document.getElementById("payment-capture");

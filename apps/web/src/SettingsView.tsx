@@ -338,6 +338,7 @@ import { useSettingsDerivations } from "./useSettingsDerivations";
 
 export interface SettingsViewProps {
   activeStaffUser?: any;
+  [key: string]: any;
 }
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
@@ -904,24 +905,24 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     settingsTab === "telegram"
       ? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
       : "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-  const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
+  const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
+  const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
   const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
-  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
-  const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
-  const typedUiLanguageOptions = uiLanguageOptions as Array<{
+  const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
+  const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
+  const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
+  const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
     value: string;
     label: string;
     detail: string;
   }>;
   const typedTelegramLinkStaffOptions =
-    telegramLinkStaffOptions as StaffMember[];
+    (telegramLinkStaffOptions ?? []) as StaffMember[];
 
   const typedImagingConnectorCards =
-    imagingConnectorCards as ImagingConnectorCard[];
+    (imagingConnectorCards ?? []) as ImagingConnectorCard[];
   const typedImagingViewerCapabilities =
-    imagingViewerCapabilities as ImagingViewerCapability[];
+    (imagingViewerCapabilities ?? []) as ImagingViewerCapability[];
   const typedCtPlanningImplantPlan =
     ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
   const typedCtPlanningActiveQuickActionId =
@@ -930,10 +931,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
       : null;
   const typedImagingViewerActiveTool =
     imagingViewerActiveTool as ImagingViewerTool;
-  const typedIntegrationPresets = dashboard.clinicSettings
-    .integrationPresets as IntegrationPreset[];
-  const typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
-  const typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
+  const typedIntegrationPresets = (dashboard?.clinicSettings?.integrationPresets ?? []) as IntegrationPreset[];
+  const typedSpeechProviders = (dashboard?.speechProviders ?? []) as SpeechProvider[];
+  const typedRecognitionPresets = (recognitionPresets ?? []) as RecognitionPreset[];
   const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
   const typedSpeechRecordingRecovery =
     speechRecordingRecovery as SpeechRecordingRecoveryList | null;
@@ -941,24 +941,24 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
   const typedSmartImportPreview =
     smartImportPreview as SmartImportPreviewResponse | null;
-  const typedImagingSourceChoices = imagingSourceChoices as ImagingSourceKind[];
+  const typedImagingSourceChoices = (imagingSourceChoices ?? []) as ImagingSourceKind[];
   const typedImagingImportPreview =
     imagingImportPreview as ImagingImportPreviewResponse | null;
   const typedBrowserContinuityChecks =
-    browserContinuityChecks as BrowserContinuityCheck[];
+    (browserContinuityChecks ?? []) as BrowserContinuityCheck[];
   const typedLocalBridgeReadiness =
     localBridgeReadiness as LocalBridgeReadinessResponse | null;
   const typedLocalBridgeUsePlans =
     localBridgeUsePlans as LocalBridgeUsePlansResponse | null;
   const typedPersistenceIntegrity =
     persistenceIntegrity as PersistenceIntegrityReport | null;
-  const typedImportBatches = dashboard.importBatches as ImportBatch[];
-  const typedAuditEvents = dashboard.auditEvents as AuditEvent[];
+  const typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
+  const typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
   const typedImportSourceKinds = Object.keys(
-    importSourceLabels,
+    importSourceLabels ?? {},
   ) as ImportSourceKind[];
   const typedDocumentIngestionTargets = Object.keys(
-    ingestionTargetLabels,
+    ingestionTargetLabels ?? {},
   ) as DocumentIngestionTarget[];
   const typedDocumentIngestion =
     documentIngestion as DocumentIngestionResponse | null;
@@ -966,10 +966,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const typedImportPreview = importPreview as ImportPreviewResponse | null;
   const typedActiveWorkspaceProfile =
     activeWorkspaceProfile as WorkspaceProfile | null;
-  const typedWorkspaceProfiles = dashboard.clinicSettings
-    .workspaceProfiles as WorkspaceProfile[];
-  const typedRoleAccessPolicies = dashboard.clinicSettings
-    .roleAccessPolicies as RoleAccessPolicy[];
+  const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
+  const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
   const typedTelegramChatLinks =
     (telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
   const typedTelegramLinkCodes =

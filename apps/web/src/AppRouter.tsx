@@ -215,7 +215,7 @@ export function AppRouter() {
 					{currentView === "analytics" ? (
 						<WorkspaceRouteErrorBoundary
 							view="analytics"
-							label={viewLabels.analytics}
+							label="Аналитика"
 							panelClassName="panel analytics-panel"
 							panelId="analytics"
 						>

@@ -69,6 +69,9 @@ export interface VisitStore {
   isDraftAccepting: boolean;
   setIsDraftAccepting: (val: boolean | ((prev: boolean) => boolean)) => void;
 
+  visitFlowResult: any;
+  setVisitFlowResult: (val: any | ((prev: any) => any)) => void;
+
   isPendingVisitSyncing: boolean;
   setIsPendingVisitSyncing: (val: boolean | ((prev: boolean) => boolean)) => void;
 
@@ -171,6 +174,9 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   isDraftAccepting: false,
   setIsDraftAccepting: (val) => set((state) => ({ isDraftAccepting: typeof val === "function" ? val(state.isDraftAccepting) : val })),
+
+  visitFlowResult: null,
+  setVisitFlowResult: (val) => set((state) => ({ visitFlowResult: typeof val === "function" ? val(state.visitFlowResult) : val })),
 
   isPendingVisitSyncing: false,
   setIsPendingVisitSyncing: (val) => set((state) => ({ isPendingVisitSyncing: typeof val === "function" ? val(state.isPendingVisitSyncing) : val })),

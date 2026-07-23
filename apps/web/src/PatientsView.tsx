@@ -56,7 +56,11 @@ export type PatientsViewProps = {
 export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 
-export function PatientsView(props: PatientsViewProps) {
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
+  const logicContext = useAppLogicContext();
+  const props = { ...logicContext, ...rawProps } as any;
   const {
     selectedPatientId,
     patientCoreDraft,

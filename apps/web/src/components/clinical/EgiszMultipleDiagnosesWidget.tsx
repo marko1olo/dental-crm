@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../../AppHelpers";
+import { Stethoscope, CheckCircle2 } from "lucide-react";
 
 interface EgiszDiagnosisItem {
 	id: string;
@@ -35,52 +36,50 @@ export const EgiszMultipleDiagnosesWidget: React.FC = () => {
 		<div
 			data-testid="egisz-multiple-diagnoses-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">🩺</span>
-					<h3 className="font-semibold text-teal-600 dark:text-teal-400">
-						Передача в ЕГИСЗ Нескольких Диагнозов (Основной + Сопутствующие)
+					<Stethoscope className="w-5 h-5 text-indigo-500" />
+					<h3 className="font-semibold text-indigo-600 dark:text-indigo-400">
+						Множественные диагнозы ЕГИСЗ (МКБ-10 / СЭМД)
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
-					CDA R2 СЭМД
+				<span className="text-xs px-2 py-0.5 rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
+					Валидация СЭМД CDA R2
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
 					Загрузка диагнозов ЕГИСЗ...
 				</div>
 			) : diagnoses.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
-					Нет диагнозов для передачи в ЕГИСЗ.
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Записи сопутствующих диагнозов отсутствуют.
 				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					{diagnoses.map((diag) => (
 						<div
 							key={diag.id}
 							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-bold">{diag.patientName}</span>
-								<span className="text-xs px-2 py-0.5 rounded border font-mono bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
+							<div className="flex justify-between items-start">
+								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
+									МКБ {diag.mainDiagnosisMkb}
+								</span>
+								<span className="text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
 									{diag.cdaValidationStatus}
 								</span>
 							</div>
-							<div className="text-xs space-y-1">
-								<div>
-									<span style={{ color: "var(--muted, #64748b)" }}>Основной диагноз: </span>
-									<span className="font-bold text-teal-600 dark:text-teal-300">{diag.mainDiagnosisMkb}</span> — {diag.mainDiagnosisName}
-								</div>
-								<div>
-									<span style={{ color: "var(--muted, #64748b)" }}>Сопутствующие: </span>
-									<span className="font-medium">{diag.accompanyingDiagnosesMkb}</span>
-								</div>
-							</div>
+							<h4 className="text-sm font-medium leading-snug">{diag.mainDiagnosisName}</h4>
+							{diag.accompanyingDiagnosesMkb && (
+								<p className="text-xs" style={{ color: "var(--muted)" }}>
+									Сопутствующие: <strong>{diag.accompanyingDiagnosesMkb}</strong>
+								</p>
+							)}
 						</div>
 					))}
 				</div>

@@ -11,13 +11,8 @@ const workspaceViewPreloaders: Partial<
 	settings: () => import("./SettingsView"),
 	marketing: () => import("./MarketingView"),
 	shift: () => import("./ShiftView"),
-	leads: () => import("./components/leads/LeadsKanbanView"),
 	imaging: () => import("./ImagingView"),
 	visit: () => import("./VisitView"),
-	analytics: () => import("./pages/AnalyticsDashboardView"),
-	inventory: () => import("./components/InventoryView"),
-	scanner: () => import("./ScannerView"),
-	inbox: () => import("./components/OmnichannelInboxView"),
 };
 
 const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {

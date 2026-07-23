@@ -1,4 +1,4 @@
-import type { VisitFlowResult } from "@dental/shared";
+type VisitFlowResult = any;
 import type React from "react";
 import "./VisitFlowProgress.css";
 

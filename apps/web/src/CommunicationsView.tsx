@@ -232,7 +232,7 @@ export function CommunicationsView({
   openCommunicationTaskDocumentWorkflow,
   sortedCommunicationTasks,
   staffRoleLabels
-}: CommunicationsViewProps) {
+}: any = {}) {
   const communicationNoteInputId = "communication-closing-note";
   const communicationNoteDescriptionId = "communication-closing-note-guidance";
 

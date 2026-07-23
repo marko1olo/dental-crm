@@ -74,7 +74,11 @@ type ScheduleViewProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
 };
 
-export function ScheduleView(props: ScheduleViewProps) {
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
+  const logicContext = useAppLogicContext();
+  const props = { ...logicContext, ...rawProps } as any;
   const {
     scheduleDoctorFilterId,
     scheduleAssistantFilterId,

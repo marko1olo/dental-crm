@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../../AppHelpers";
+import { FileText, CheckCircle2 } from "lucide-react";
 
 interface FormCatalogItem {
 	id: string;
@@ -35,26 +36,26 @@ export const CustomExaminationFormCatalogsWidget: React.FC = () => {
 		<div
 			data-testid="custom-examination-form-catalogs-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">📋</span>
+					<FileText className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
-						Пользовательские Справочники Бланков Осмотра (Форма 043/у)
+						Поликлинические справочники осмотра (Форма 043/у)
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
-					Минздрав 043/у Унификация
+					Приказ 043/у Минздрава
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
-					Загрузка справочников бланков...
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка справочников осмотра...
 				</div>
 			) : catalogs.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
 					Нет настраиваемых бланков осмотра.
 				</div>
 			) : (
@@ -63,7 +64,7 @@ export const CustomExaminationFormCatalogsWidget: React.FC = () => {
 						<div
 							key={cat.id}
 							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
@@ -74,11 +75,11 @@ export const CustomExaminationFormCatalogsWidget: React.FC = () => {
 								</span>
 							</div>
 							<h4 className="text-sm font-medium leading-snug">{cat.formTitle}</h4>
-							<div className="text-xs flex items-center justify-between pt-1 border-t" style={{ borderColor: "var(--line, #e2e8f0)", color: "var(--muted, #64748b)" }}>
-								<span>Кастомных полей: <strong style={{ color: "var(--ink, #0f172a)" }}>{cat.customFieldCount}</strong></span>
+							<div className="text-xs flex items-center justify-between pt-1 border-t" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
+								<span>Полей протокола: <strong style={{ color: "var(--ink)" }}>{cat.customFieldCount}</strong></span>
 								{cat.egiszUnified && (
 									<span className="text-emerald-600 dark:text-emerald-400 text-[11px] flex items-center gap-1">
-										✓ ЕГИСЗ CDA R2
+										<CheckCircle2 className="w-3 h-3 inline" /> ЕГИСЗ CDA R2
 									</span>
 								)}
 							</div>
