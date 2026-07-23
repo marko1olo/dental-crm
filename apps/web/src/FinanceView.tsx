@@ -7,6 +7,7 @@ import { PaymentCapture } from "./PaymentCapture";
 import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
 import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
 import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
+import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -244,6 +245,9 @@ export function FinanceView({
         <AdvanceDepositTaggingsWidget />
         <DigitalReceiptDispatchesWidget />
         <KkmItemQuantityUnitsWidget />
+        {documentPatient?.id ? (
+          <FamilyWalletPanel patientId={documentPatient.id} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
+        ) : null}
       </div>
     </div>
   );
