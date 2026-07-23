@@ -50,9 +50,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     {
       config: {
         rateLimit: {
-          max: 5,
+          max: 100,
           timeWindow: "1 minute",
         },
+
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {

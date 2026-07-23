@@ -1044,5 +1044,34 @@ export const alternativeTreatmentPlans = pgTable("alternative_treatment_plans", 
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #48 — расписание::буфер_обмена_в_расписании_для_быстрого_переноса
+
+export const scheduleClipboardItems = pgTable("schedule_clipboard_items", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	appointmentId: uuid("appointment_id").notNull(),
+	patientName: text("patient_name").notNull(),
+	doctorName: text("doctor_name").notNull(),
+	serviceTitle: text("service_title").notNull(),
+	durationMinutes: integer("duration_minutes").default(30).notNull(),
+	clipboardStatus: text("clipboard_status").default("copied").notNull(),
+	copiedAt: timestamp("copied_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #37 — расписание::резервирование_времени_в_сетке
+export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	chairName: text("chair_name").notNull(),
+	reservationType: text("reservation_type").default("maintenance").notNull(),
+	startTime: text("start_time").notNull(),
+	endTime: text("end_time").notNull(),
+	bookingLocked: boolean("booking_locked").default(true).notNull(),
+	hatchingStyle: text("hatching_style").default("diagonal_red").notNull(),
+	note: text("note").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 

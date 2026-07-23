@@ -16,6 +16,8 @@ import { QuickAppointmentConfirmationsWidget } from "./components/communications
 import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
 import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
 import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -526,11 +528,13 @@ export function ScheduleView(props: ScheduleViewProps) {
               ) : null}
             </div>
             <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "16px" }}>
+              <UrgentScheduleRequestsWidget />
               <QuickAppointmentConfirmationsWidget />
               <CancellationReasonsTwoLevelWidget />
               <ScheduleClipboardItemsWidget />
               <ScheduleTimeReservationsWidget />
             </div>
+
           </div>
       );
 }

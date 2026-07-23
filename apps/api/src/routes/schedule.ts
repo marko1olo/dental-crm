@@ -159,6 +159,7 @@ import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointments
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
+
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
     if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
@@ -207,3 +208,4 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
   app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
   app.put("/api/schedule/appointments/:appointmentId", updateAppointmentHandler);
 }
+

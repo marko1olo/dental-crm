@@ -12,6 +12,8 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
   let documents: any[] = [];
   let imagingStudies: any[] = [];
   let chairs: any[] = [];
+  let serviceCatalog: any[] = [];
+  let clinicalRules: any[] = [];
 
   try {
     const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, organizationId)).limit(1);
@@ -23,7 +25,10 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
       documents = await db.select().from(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, organizationId)).catch(() => []);
       imagingStudies = await db.select().from(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, organizationId)).catch(() => []);
       chairs = await db.select().from(schema.chairs).where(eq(schema.chairs.organizationId, organizationId)).catch(() => []);
+      serviceCatalog = await db.select().from(schema.services).where(eq(schema.services.organizationId, organizationId)).catch(() => []);
+      clinicalRules = await db.select().from(schema.clinicalRules).where(eq(schema.clinicalRules.organizationId, organizationId)).catch(() => []);
     }
+
   } catch (e) {
     console.warn("[DashboardQuery] Database query fallback triggered:", e);
   }

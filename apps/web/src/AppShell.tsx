@@ -26,11 +26,12 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
   state: AppShellErrorBoundaryState = { hasError: false, detail: "" };
 
   static getDerivedStateFromError(error: unknown): AppShellErrorBoundaryState {
-    return { hasError: true, detail: appShellErrorDetail(error) };
+    const detail = error instanceof Error ? (error.stack || error.message) : String(error);
+    return { hasError: true, detail };
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
-    console.error("DENTE boot failed", error, errorInfo.componentStack);
+    console.error("DENTE boot failed full stack", error, errorInfo.componentStack);
   }
 
   render() {
@@ -39,7 +40,7 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
         <main className="boot-state boot-state-error" role="alert" aria-live="assertive">
           <h1>DENTE</h1>
           <p>Не удалось открыть рабочее место клиники.</p>
-          <small>{this.state.detail}</small>
+          <small id="error-stack-detail" style={{ whiteSpace: "pre-wrap", textAlign: "left" }}>{this.state.detail}</small>
           <button type="button" onClick={requestDenteStaleAppRefresh}>
             Обновить рабочее место
           </button>
