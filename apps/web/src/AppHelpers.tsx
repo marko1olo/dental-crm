@@ -2581,11 +2581,11 @@ export const emptyVisitNoteForm: VisitNoteForm = {
 
 export function visitNoteFormFromVisit(visit: Dashboard["activeVisit"]): VisitNoteForm {
   return {
-    complaint: visit.complaint ?? "",
-    anamnesis: visit.anamnesis ?? "",
-    objectiveStatus: visit.objectiveStatus ?? "",
-    diagnosis: visit.diagnosis ?? "",
-    treatmentPlan: visit.treatmentPlan ?? ""
+    complaint: visit?.complaint ?? "",
+    anamnesis: visit?.anamnesis ?? "",
+    objectiveStatus: visit?.objectiveStatus ?? "",
+    diagnosis: visit?.diagnosis ?? "",
+    treatmentPlan: visit?.treatmentPlan ?? ""
   };
 }
 
@@ -5922,3 +5922,21 @@ export function settingsTabFromHash(): SettingsTab {
 }
 
 export const initialUiPreferences = {} as any;
+
+export const auth = {
+  denteClinicalReadHeaders: (customHeaders: Record<string, string> = {}, adminSecret?: string): Record<string, string> => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("dente_clinic_token") || "" : "";
+    const headers: Record<string, string> = { ...customHeaders };
+    if (token) headers["x-dente-clinic-token"] = token;
+    if (adminSecret) headers["x-dente-admin-secret"] = adminSecret;
+    return headers;
+  },
+  denteClinicalMutationHeaders: (customHeaders: Record<string, string> = {}, adminSecret?: string): Record<string, string> => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("dente_clinic_token") || "" : "";
+    const headers: Record<string, string> = { "Content-Type": "application/json", ...customHeaders };
+    if (token) headers["x-dente-clinic-token"] = token;
+    if (adminSecret) headers["x-dente-admin-secret"] = adminSecret;
+    return headers;
+  }
+};
+
