@@ -21,6 +21,7 @@ import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalRece
 import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
 import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
 import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
+import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -435,6 +436,7 @@ export function PatientCockpit({
             <PatientServiceLineagesWidget />
             <LandingFieldMappingsWidget />
             <KkmItemQuantityUnitsWidget />
+            <UisOmniMessengerQueuesWidget />
           </div>
         </section>
     </>

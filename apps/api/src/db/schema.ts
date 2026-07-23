@@ -967,3 +967,16 @@ export const kkmItemQuantityUnits = pgTable("kkm_item_quantity_units", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #59 — коммуникации::мультимессенджер_uis_omni
+export const uisOmniMessengerQueues = pgTable("uis_omni_messenger_queues", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	channelProvider: text("channel_provider").default("whatsapp_waba").notNull(),
+	messageBody: text("message_body").notNull(),
+	dispatchStatus: text("dispatch_status").default("queued").notNull(),
+	scheduledDelaySeconds: integer("scheduled_delay_seconds").default(60).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+

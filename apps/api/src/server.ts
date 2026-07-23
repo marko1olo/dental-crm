@@ -137,7 +137,15 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
     }
   });
 
-  const webOrigins = (process.env.WEB_ORIGIN ?? "http://127.0.0.1:5173")
+  let rawWebOrigin = process.env.WEB_ORIGIN;
+  if (!rawWebOrigin) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("WEB_ORIGIN environment variable is required in production");
+    }
+    rawWebOrigin = "http://127.0.0.1:5173";
+  }
+
+  const webOrigins = rawWebOrigin
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean)
