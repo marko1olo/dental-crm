@@ -15395,6 +15395,30 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--slate-100, #f1f5f9);
 }
 
+html.dark .settings-grid label,
+html.dark .clinic-profile-form-grid label,
+html.dark .rule-form-grid label,
+html.dark .weekday-toggle-row,
+[data-theme="dark"] .settings-grid label,
+[data-theme="dark"] .clinic-profile-form-grid label,
+[data-theme="dark"] .rule-form-grid label,
+[data-theme="dark"] .weekday-toggle-row {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--ink, #f8fafc);
+}
+
+html.dark .clinic-profile-form-grid input,
+html.dark .clinic-profile-form-grid select,
+html.dark .clinic-profile-form-grid textarea,
+[data-theme="dark"] .clinic-profile-form-grid input,
+[data-theme="dark"] .clinic-profile-form-grid select,
+[data-theme="dark"] .clinic-profile-form-grid textarea {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
 .weekday-toggle-row {
   background: var(--slate-50, #f8fafc);
   padding: 12px;
