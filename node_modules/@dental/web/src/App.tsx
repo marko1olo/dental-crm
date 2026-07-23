@@ -7,6 +7,7 @@ import { AppLogicProvider } from './contexts/AppLogicContext';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
+import { IncomingCallToast } from './components/IncomingCallToast';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
 
@@ -4729,6 +4730,7 @@ export function App() {
           }} 
           onNavigate={(view) => setCurrentView(view as any)} 
         />
+        <IncomingCallToast />
       </section>
     </main>
   );
