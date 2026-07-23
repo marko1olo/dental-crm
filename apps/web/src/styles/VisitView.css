@@ -95,19 +95,50 @@
 .clinical-rules-toggle {
   margin: .75rem 0;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line, #e2e8f0);
   overflow: hidden;
 }
 .clinical-rules-toggle > summary {
   padding: .75rem 1rem;
-  background: #f8fafc;
-  font-size: .85rem; font-weight: 700; color: #475569;
+  background: var(--paper, #f8fafc);
+  font-size: .85rem; font-weight: 700; color: var(--ink, #475569);
   cursor: pointer; user-select: none; outline: none;
   list-style: none;
   transition: background .15s;
 }
-.clinical-rules-toggle > summary:hover { background: #f1f5f9; }
+.clinical-rules-toggle > summary:hover { background: var(--paper-strong, #f1f5f9); }
 .clinical-rules-toggle > summary::-webkit-details-marker { display: none; }
+
+[data-theme="dark"] ._ccm-panel {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+[data-theme="dark"] ._ccm-center {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] ._ccm-h {
+  color: var(--ink);
+  border-bottom-color: var(--line);
+}
+[data-theme="dark"] ._ccm-btn {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: var(--line);
+  color: var(--ink);
+}
+[data-theme="dark"] ._ccm-btn:hover {
+  background: rgba(51, 65, 85, 0.9);
+}
+[data-theme="dark"] .clinical-rules-toggle {
+  border-color: var(--line);
+}
+[data-theme="dark"] .clinical-rules-toggle > summary {
+  background: var(--glass-panel, rgba(30, 41, 59, 0.5));
+  color: var(--ink);
+}
+[data-theme="dark"] .clinical-rules-toggle > summary:hover {
+  background: rgba(51, 65, 85, 0.7);
+}
 /* Skeleton Loader and Pulse Animations for Dictation */
 @keyframes pulse-record {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }

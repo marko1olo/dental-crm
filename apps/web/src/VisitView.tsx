@@ -320,8 +320,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             )}
 
             
-            <details className="clinical-rules-toggle" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
-              <summary style={{ padding: '0.75rem 1rem', background: '#f8fafc', fontSize: '0.85rem', fontWeight: 700, color: '#475569', cursor: 'pointer', outline: 'none' }}>
+            <details className="clinical-rules-toggle" style={{ border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
+              <summary style={{ padding: '0.75rem 1rem', background: 'var(--paper)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--ink)', cursor: 'pointer', outline: 'none' }}>
                 🧭 Шаги приема и статус: {visitPrimaryAction.label}
               </summary>
               <div style={{ marginTop: '1rem', padding: '0 1rem 1rem 1rem' }}>

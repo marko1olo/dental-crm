@@ -9853,6 +9853,12 @@ img {
   text-align: left;
 }
 
+[data-theme="dark"] .dictation-action-guidance {
+  background: rgba(15, 118, 110, 0.2);
+  border-color: rgba(45, 212, 191, 0.3);
+  color: #5eead4;
+}
+
 .visit-draft-missing {
   background: #fff8ef;
   border: 1px solid #e7c68e;
@@ -9863,6 +9869,12 @@ img {
   gap: 6px;
   padding: 10px 12px;
   text-align: left;
+}
+
+[data-theme="dark"] .visit-draft-missing {
+  background: rgba(180, 83, 9, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
 }
 
 .visit-draft-missing strong {
