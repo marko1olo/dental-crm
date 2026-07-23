@@ -97,7 +97,7 @@ function extractTime(text: string): string | null {
   }
   
   // Fix explicit word matching 'в 10 утра'
-  m = text.match(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*час|утра|дня|вечера)?(?!\s*\d)/i);
+  m = text.match(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:час|утра|дня|вечера))?(?!\s*\d)/i);
   if (m) {
     let h = parseInt(m[1] as string, 10);
     if (isNaN(h)) h = parseWordNumber(m[1] as string) || 0;
