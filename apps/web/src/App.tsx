@@ -1877,8 +1877,6 @@ export function App() {
   setClinicalAdminSecretDraft,
   loadDashboard,
   operatorWorkflowFailureMessage,
-  handleSelectDemoMode,
-  handleSelectZeroMode,
   setSelectedPatientId,
   setScheduleDateFilter,
   scheduleDateFilter,
@@ -2054,7 +2052,7 @@ export function App() {
                     onClick={async () => {
                       setResetting(true);
                       setOnboardingDismissed(true);
-                      await handleSelectDemoMode();
+                      await loadDashboard({});
                       setResetting(false);
                     }}
                     disabled={resetting}
@@ -2082,7 +2080,7 @@ export function App() {
                     type="button"
                     onClick={async () => {
                       setResetting(true);
-                      await handleSelectZeroMode();
+                      await loadDashboard({});
                       setResetting(false);
                     }}
                     disabled={resetting}
