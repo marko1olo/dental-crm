@@ -16383,4 +16383,29 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
   color: var(--text-color, #f8fafc) !important;
 }
 
+/* --- Communications Dark Mode Theme Harmony --- */
+[data-theme="dark"] .communications-summary-grid article,
+.dark .communications-summary-grid article,
+body.dark-mode .communications-summary-grid article,
+[data-theme="dark"] .communication-note-row,
+.dark .communication-note-row,
+body.dark-mode .communication-note-row,
+[data-theme="dark"] .communication-task,
+.dark .communication-task,
+body.dark-mode .communication-task,
+[data-theme="dark"] .communication-side section,
+.dark .communication-side section,
+body.dark-mode .communication-side section,
+[data-theme="dark"] .template-list article,
+.dark .template-list article,
+body.dark-mode .template-list article,
+[data-theme="dark"] .communication-empty-state,
+.dark .communication-empty-state,
+body.dark-mode .communication-empty-state {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+
 

@@ -246,24 +246,24 @@ export function CommunicationsView({
       </div>
 
       <div className="communications-summary-grid" aria-label="Сводка связи">
-        <article className={dashboard.communicationSummary.urgentTasks ? "communication-urgent" : ""}>
+        <article className={dashboard?.communicationSummary?.urgentTasks ? "communication-urgent" : ""}>
           <span>Открыто</span>
-          <strong>{dashboard.communicationSummary.openTasks}</strong>
-          <p>{ruCount(dashboard.communicationSummary.urgentTasks, ["срочная", "срочные", "срочных"])}</p>
+          <strong>{dashboard?.communicationSummary?.openTasks ?? 0}</strong>
+          <p>{ruCount(dashboard?.communicationSummary?.urgentTasks ?? 0, ["срочная", "срочные", "срочных"])}</p>
         </article>
         <article>
           <span>Сегодня</span>
-          <strong>{dashboard.communicationSummary.dueToday}</strong>
-          <p>{ruCount(dashboard.communicationSummary.overdue, ["просрочена", "просрочены", "просрочено"])}</p>
+          <strong>{dashboard?.communicationSummary?.dueToday ?? 0}</strong>
+          <p>{ruCount(dashboard?.communicationSummary?.overdue ?? 0, ["просрочена", "просрочены", "просрочено"])}</p>
         </article>
         <article>
           <span>Подтверждения</span>
-          <strong>{dashboard.communicationSummary.appointmentConfirmations}</strong>
+          <strong>{dashboard?.communicationSummary?.appointmentConfirmations ?? 0}</strong>
           <p>записи и первичные визиты</p>
         </article>
         <article>
           <span>После приема</span>
-          <strong>{dashboard.communicationSummary.postVisitInstructions}</strong>
+          <strong>{dashboard?.communicationSummary?.postVisitInstructions ?? 0}</strong>
           <p>инструкции пациентам</p>
         </article>
       </div>
@@ -315,8 +315,8 @@ export function CommunicationsView({
 
       <div className="communication-layout">
         <section className="communication-task-list" aria-label="Очередь связи">
-          {sortedCommunicationTasks.length ? (
-            sortedCommunicationTasks.map((task) => (
+          {(sortedCommunicationTasks ?? []).length ? (
+            (sortedCommunicationTasks ?? []).map((task) => (
               <CommunicationTaskCard
                 communicationChannelLabels={communicationChannelLabels}
                 communicationDocumentTaskActionLabels={communicationDocumentTaskActionLabels}
@@ -352,10 +352,10 @@ export function CommunicationsView({
           <section>
             <div className="panel-heading">
               <h3>Шаблоны</h3>
-              <span className="status-pill status-arrived">{dashboard.communicationTemplates.length}</span>
+              <span className="status-pill status-arrived">{(dashboard?.communicationTemplates ?? []).length}</span>
             </div>
             <div className="template-list">
-              {dashboard.communicationTemplates.map((template) => (
+              {(dashboard?.communicationTemplates ?? []).map((template) => (
                 <CommunicationTemplateRow
                   communicationChannelLabels={communicationChannelLabels}
                   key={template.id}
@@ -369,10 +369,10 @@ export function CommunicationsView({
           <section>
             <div className="panel-heading">
               <h3>Журнал</h3>
-              <span className="status-pill status-confirmed">{dashboard.communicationEvents.length}</span>
+              <span className="status-pill status-confirmed">{(dashboard?.communicationEvents ?? []).length}</span>
             </div>
             <div className="template-list">
-              {dashboard.communicationEvents.map((event) => (
+              {(dashboard?.communicationEvents ?? []).map((event) => (
                 <CommunicationEventRow
                   communicationChannelLabels={communicationChannelLabels}
                   communicationStatusLabels={communicationStatusLabels}
