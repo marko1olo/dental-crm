@@ -93,11 +93,6 @@ export function PatientsView(props: PatientsViewProps) {
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
 
-  useEffect(() => {
-    if (!selectedPatientId && filteredPatients.length > 0) {
-      setSelectedPatientId(filteredPatients[0].id);
-    }
-  }, [selectedPatientId, filteredPatients, setSelectedPatientId]);
   const {
     createPatient,
     filteredPatients,
@@ -115,6 +110,12 @@ export function PatientsView(props: PatientsViewProps) {
     updatePatientCoreDraft,
     weekdayOptions
   } = props;
+
+  useEffect(() => {
+    if (!selectedPatientId && filteredPatients.length > 0) {
+      setSelectedPatientId(filteredPatients[0].id);
+    }
+  }, [selectedPatientId, filteredPatients, setSelectedPatientId]);
 
   const patientNameReady = newPatientName.trim().length > 0;
   const patientCreatePhoneIssue = newPatientPhone.trim().length > 0 && newPatientPhone.replace(/\D/g, "").length < 5;

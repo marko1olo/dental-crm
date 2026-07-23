@@ -2757,6 +2757,7 @@ export function useAppLogic(): any {
 				speechProviders: []
 			};
 			setDashboard(fallbackDashboard);
+			usePatientStore.getState().setSelectedPatientId("pat-1");
 			setAccessUnlockRequired(false);
 			setAccessUnlockMessage("");
 		}
