@@ -979,4 +979,70 @@ export const uisOmniMessengerQueues = pgTable("uis_omni_messenger_queues", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// =====================================================
+// WAVE 12 — COMPETITOR PARITY SCHEMA TABLES
+// =====================================================
+
+// #6 — маркетинг::фильтр_потерянных_пациентов_в_отчете
+export const lostPatientsFilters = pgTable("lost_patients_filters", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	phone: text("phone").notNull(),
+	daysSinceLastVisit: integer("days_since_last_visit").default(90).notNull(),
+	hasFutureAppointment: boolean("has_future_appointment").default(false).notNull(),
+	hasActiveCrmTask: boolean("has_active_crm_task").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #9 — коммуникации::подтверждение_приема_при_обработке_обращения
+export const quickAppointmentConfirmations = pgTable("quick_appointment_confirmations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	appointmentId: uuid("appointment_id").notNull(),
+	confirmedByStaffName: text("confirmed_by_staff_name").notNull(),
+	channelUsed: text("channel_used").default("call").notNull(),
+	confirmedAt: timestamp("confirmed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #21 — расписание::виджет_срочные_обращения_под_календарем
+export const urgentScheduleRequests = pgTable("urgent_schedule_requests", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	requestType: text("request_type").notNull(),
+	urgencyLevel: text("urgency_level").default("high").notNull(),
+	doctorName: text("doctor_name").notNull(),
+	preferredSlotTime: text("preferred_slot_time").notNull(),
+	isResolved: boolean("is_resolved").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #23 — аналитика::отчет_эффективность_подтверждения_приемов
+export const confirmationPerformanceReports = pgTable("confirmation_performance_reports", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	staffName: text("staff_name").notNull(),
+	totalCallsMade: integer("total_calls_made").default(0).notNull(),
+	confirmedAppointmentsCount: integer("confirmed_appointments_count").default(0).notNull(),
+	rescheduledCount: integer("rescheduled_count").default(0).notNull(),
+	conversionRatePercent: numeric("conversion_rate_percent", { precision: 5, scale: 2 }).default("0.00").notNull(),
+	reportPeriod: text("report_period").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #43 — план_лечения::альтернативные_планы_лечения
+export const alternativeTreatmentPlans = pgTable("alternative_treatment_plans", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	variantName: text("variant_name").notNull(),
+	totalCostRub: numeric("total_cost_rub", { precision: 12, scale: 2 }).notNull(),
+	isSelectedVariant: boolean("is_selected_variant").default(false).notNull(),
+	autoArchived: boolean("auto_archived").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 

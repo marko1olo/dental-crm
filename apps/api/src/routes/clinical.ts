@@ -264,6 +264,52 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getUisOmniMessengerQueuesFromDb } = await import("../db/uisOmniMessengerQueuesQuery.js");
 		return reply.status(200).send(await getUisOmniMessengerQueuesFromDb(orgId));
 	});
+
+	// COMPETITOR FEATURE #6: маркетинг::фильтр_потерянных_пациентов_в_отчете
+	app.get("/api/analytics/lost-patients-filters", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getLostPatientsFiltersFromDb } = await import("../db/lostPatientsFiltersQuery.js");
+		return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #9: коммуникации::подтверждение_приема_при_обработке_обращения
+	app.get("/api/communications/quick-appointment-confirmations", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getQuickAppointmentConfirmationsFromDb } = await import("../db/quickAppointmentConfirmationsQuery.js");
+		return reply.status(200).send(await getQuickAppointmentConfirmationsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #21: расписание::виджет_срочные_обращения_под_календарем
+	app.get("/api/schedule/urgent-schedule-requests", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getUrgentScheduleRequestsFromDb } = await import("../db/urgentScheduleRequestsQuery.js");
+		return reply.status(200).send(await getUrgentScheduleRequestsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #23: аналитика::отчет_эффективность_подтверждения_приемов
+	app.get("/api/analytics/confirmation-performance-reports", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getConfirmationPerformanceReportsFromDb } = await import("../db/confirmationPerformanceReportsQuery.js");
+		return reply.status(200).send(await getConfirmationPerformanceReportsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #43: план_лечения::альтернативные_планы_лечения
+	app.get("/api/documents/alternative-treatment-plans", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getAlternativeTreatmentPlansFromDb } = await import("../db/alternativeTreatmentPlansQuery.js");
+		return reply.status(200).send(await getAlternativeTreatmentPlansFromDb(orgId));
+	});
 }
+
 
 

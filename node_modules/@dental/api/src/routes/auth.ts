@@ -42,7 +42,17 @@ export async function requireClinicToken(request: FastifyRequest, reply: Fastify
 export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── Clinic Workspace Login ───────────────────────────────────────────────────
-  app.post("/api/auth/clinic/login", async (request: FastifyRequest, reply: FastifyReply) => {
+  app.post(
+    "/api/auth/clinic/login",
+    {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "1 minute",
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
     const { email, password } = (request.body as ClinicLoginBody) ?? {};
 
     if (!email || !password) {

@@ -22,6 +22,11 @@ import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLin
 import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
 import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
 import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
+import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
+import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
+import { AlternativeTreatmentPlansWidget } from "./components/documents/AlternativeTreatmentPlansWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -437,6 +442,11 @@ export function PatientCockpit({
             <LandingFieldMappingsWidget />
             <KkmItemQuantityUnitsWidget />
             <UisOmniMessengerQueuesWidget />
+            <LostPatientsFiltersWidget />
+            <QuickAppointmentConfirmationsWidget />
+            <UrgentScheduleRequestsWidget />
+            <ConfirmationPerformanceReportsWidget />
+            <AlternativeTreatmentPlansWidget />
           </div>
         </section>
     </>
