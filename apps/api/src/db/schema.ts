@@ -1103,6 +1103,67 @@ export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// =====================================================
+// WAVE 14 — COMPETITOR PARITY SCHEMA TABLES
+// =====================================================
+
+// #1 — коммуникации::смс_от_uis
+export const uisSmsChatQuotas = pgTable("uis_sms_chat_quotas", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	dailyQuotaLimit: integer("daily_quota_limit").default(300).notNull(),
+	sentTodayCount: integer("sent_today_count").default(0).notNull(),
+	isQuotaExceeded: boolean("is_quota_exceeded").default(false).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #2 — коммуникации::массовое_подтверждение_приемов_смс_uis
+export const uisMassAppointmentConfirmations = pgTable("uis_mass_appointment_confirmations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	targetDate: text("target_date").notNull(),
+	totalAppointmentsCount: integer("total_appointments_count").default(0).notNull(),
+	confirmedViaSmsCount: integer("confirmed_via_sms_count").default(0).notNull(),
+	dispatchChannel: text("dispatch_channel").default("uis_sms").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #3 — коммуникации::справочник_шаблонов_сообщений_тегов
+export const messageTemplateCatalogs = pgTable("message_template_catalogs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	templateName: text("template_name").notNull(),
+	channelType: text("channel_type").default("sms").notNull(),
+	bodyText: text("body_text").notNull(),
+	dynamicTags: text("dynamic_tags").notNull(),
+	isDefault: boolean("is_default").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #5 — документы::калькулятор_ндфл_с_блокировкой
+export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	taxCode: text("tax_code").default("code_1").notNull(),
+	totalEligibleRub: numeric("total_eligible_rub", { precision: 12, scale: 2 }).notNull(),
+	hasAnomalyWarning: boolean("has_anomaly_warning").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #11 — коммуникации::отправка_файлов_и_эмодзи_в_мессенджеры
+export const messengerFileAttachments = pgTable("messenger_file_attachments", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	fileName: text("file_name").notNull(),
+	fileType: text("file_type").default("pdf").notNull(),
+	targetMessenger: text("target_messenger").default("telegram").notNull(),
+	deliveryStatus: text("delivery_status").default("sent").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 

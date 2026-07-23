@@ -32,6 +32,11 @@ import { ExternalScheduleActionLogsWidget } from "./components/schedule/External
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { YandexCalendarSyncsWidget } from "./components/integrations/YandexCalendarSyncsWidget";
 import { SystemRamWatchdogsWidget } from "./components/system/SystemRamWatchdogsWidget";
+import { UisSmsChatQuotasWidget } from "./components/communications/UisSmsChatQuotasWidget";
+import { UisMassAppointmentConfirmationsWidget } from "./components/communications/UisMassAppointmentConfirmationsWidget";
+import { MessageTemplateCatalogsWidget } from "./components/communications/MessageTemplateCatalogsWidget";
+import { NdflTaxCalculatorsWidget } from "./components/documents/NdflTaxCalculatorsWidget";
+import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -457,6 +462,11 @@ export function PatientCockpit({
             <PatientDuplicateMergeQueuesWidget />
             <YandexCalendarSyncsWidget />
             <SystemRamWatchdogsWidget />
+            <UisSmsChatQuotasWidget />
+            <UisMassAppointmentConfirmationsWidget />
+            <MessageTemplateCatalogsWidget />
+            <NdflTaxCalculatorsWidget />
+            <MessengerFileAttachmentsWidget />
           </div>
         </section>
     </>

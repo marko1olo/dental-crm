@@ -354,7 +354,53 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getSystemRamWatchdogsFromDb } = await import("../db/systemRamWatchdogsQuery.js");
 		return reply.status(200).send(await getSystemRamWatchdogsFromDb(orgId));
 	});
+
+	// COMPETITOR FEATURE #1: коммуникации::смс_от_uis
+	app.get("/api/communications/uis-sms-chat-quotas", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getUisSmsChatQuotasFromDb } = await import("../db/uisSmsChatQuotasQuery.js");
+		return reply.status(200).send(await getUisSmsChatQuotasFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #2: коммуникации::массовое_подтверждение_приемов_смс_uis
+	app.get("/api/communications/uis-mass-appointment-confirmations", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getUisMassAppointmentConfirmationsFromDb } = await import("../db/uisMassAppointmentConfirmationsQuery.js");
+		return reply.status(200).send(await getUisMassAppointmentConfirmationsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #3: коммуникации::справочник_шаблонов_сообщений_тегов
+	app.get("/api/communications/message-template-catalogs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getMessageTemplateCatalogsFromDb } = await import("../db/messageTemplateCatalogsQuery.js");
+		return reply.status(200).send(await getMessageTemplateCatalogsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #5: документы::калькулятор_ндфл_с_блокировкой
+	app.get("/api/documents/ndfl-tax-calculators", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getNdflTaxCalculatorsFromDb } = await import("../db/ndflTaxCalculatorsQuery.js");
+		return reply.status(200).send(await getNdflTaxCalculatorsFromDb(orgId));
+	});
+
+	// COMPETITOR FEATURE #11: коммуникации::отправка_файлов_и_эмодзи_в_мессенджеры
+	app.get("/api/communications/messenger-file-attachments", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getMessengerFileAttachmentsFromDb } = await import("../db/messengerFileAttachmentsQuery.js");
+		return reply.status(200).send(await getMessengerFileAttachmentsFromDb(orgId));
+	});
 }
+
 
 
 
