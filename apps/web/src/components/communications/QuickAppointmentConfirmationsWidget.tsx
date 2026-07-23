@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../../AppHelpers";
+import { CheckCircle, PhoneCall } from "lucide-react";
 
 interface QuickConfirmItem {
 	id: string;
@@ -34,47 +35,48 @@ export const QuickAppointmentConfirmationsWidget: React.FC = () => {
 		<div
 			data-testid="quick-appointment-confirmations-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">📞</span>
+					<CheckCircle className="w-5 h-5 text-emerald-500" />
 					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
-						Быстрое Подтверждение Приёма при Обработке Обращения (из модального окна звонка/чата)
+						Быстрое подтверждение визитов администратором
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-					Quick Confirm Call
+					Подтверждения 1-Click
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
-					Загрузка подтверждений...
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка быстрых подтверждений...
 				</div>
 			) : items.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
-					Нет оперативных подтверждений приёмов.
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Быстрых подтверждений записей пока нет.
 				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					{items.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							className="p-3 rounded-lg border space-y-2"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div>
-								<div className="text-sm font-bold">{item.patientName}</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
-									Подтвердил: <span className="text-emerald-600 dark:text-emerald-300 font-semibold">{item.confirmedByStaffName}</span> · Канал: {item.channelUsed}
-								</div>
-							</div>
-							<div className="flex items-center space-x-2 text-xs">
-								<span className="px-2.5 py-1 rounded border font-bold bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-									✓ Подтверждено из окна звонка
+							<div className="flex justify-between items-start">
+								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									Канал: {item.channelUsed}
+								</span>
+								<span className="text-xs text-slate-500 dark:text-slate-400">
+									Запись #{item.appointmentId.slice(0, 6)}
 								</span>
 							</div>
+							<h4 className="text-sm font-medium leading-snug">{item.patientName}</h4>
+							<p className="text-xs" style={{ color: "var(--muted)" }}>
+								Подтвердил: <strong style={{ color: "var(--ink)" }}>{item.confirmedByStaffName}</strong>
+							</p>
 						</div>
 					))}
 				</div>
