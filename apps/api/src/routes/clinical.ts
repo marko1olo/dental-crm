@@ -276,6 +276,16 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getKkmItemQuantityUnitsFromDb(orgId));
 	});
 
+	// COMPETITOR FEATURE #62: финансы::отображение_суммы_начислений_врачам_в_прайс_листе
+	app.get("/api/finance/pricelist-doctor-payrolls", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getPricelistDoctorPayrollsFromDb } = await import("../db/pricelistDoctorPayrollsQuery.js");
+		return reply.status(200).send(await getPricelistDoctorPayrollsFromDb(orgId));
+	});
+
+
 	// COMPETITOR FEATURE #59: коммуникации::мультимессенджер_uis_omni
 	app.get("/api/communications/uis-omni-messenger-queues", async (request, reply) => {
 		const rawOrgId = request.headers["x-organization-id"];

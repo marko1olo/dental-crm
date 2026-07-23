@@ -1151,6 +1151,20 @@ export const treatmentPlanStages = pgTable("treatment_plan_stages", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// #62 — финансы::отображение_суммы_начислений_врачам_в_прайс_листе
+export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	serviceCode: text("service_code").notNull(),
+	serviceName: text("service_name").notNull(),
+	priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
+	doctorPayrollPercent: numeric("doctor_payroll_percent", { precision: 4, scale: 2 }).default("25.00").notNull(),
+	doctorPayrollRub: numeric("doctor_payroll_rub", { precision: 10, scale: 2 }).notNull(),
+	clinicMarginRub: numeric("clinic_margin_rub", { precision: 10, scale: 2 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
 
 
 

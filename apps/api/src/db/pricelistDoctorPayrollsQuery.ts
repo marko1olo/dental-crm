@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { pricelistDoctorPayrolls } from "./schema.js";
 
 async function ensurePricelistDoctorPayrollsTable() {
 	try {
-		await db.execute(`
+		await db.execute(sql`
 			CREATE TABLE IF NOT EXISTS "pricelist_doctor_payrolls" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,

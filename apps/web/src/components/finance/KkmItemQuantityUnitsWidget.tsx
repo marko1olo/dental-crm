@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { auth } from "../../AppHelpers";
 
 interface KkmUnitItem {
 	id: string;
 	organizationId: string;
-	serviceCode: string;
 	serviceTitle: string;
-	quantityUnitCode: number;
-	quantityUnitLabel: string;
-	itemPaymentType: string;
+	unitType: string;
+	unitCodeOfd: string;
+	fractionalQuantityAllowed: boolean;
 	createdAt: string;
 }
 
@@ -17,7 +17,7 @@ export const KkmItemQuantityUnitsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/finance/kkm-item-quantity-units", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth.denteClinicalReadHeaders(),
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -33,38 +33,46 @@ export const KkmItemQuantityUnitsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="kkm-item-quantity-units-widget"
-			className="p-4 bg-slate-900 border border-cyan-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">📊</span>
-					<h3 className="font-semibold text-cyan-400">
-						Автоматическая Передача Меры Количества в ККМ (54-ФЗ)
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						Автоматическое Указание Меры Количества в ККМ (шт, услуга, процедура)
 					</h3>
 				</div>
-				<span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-					54-FZ Unit Measure
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					OFD Unit Standard
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка мер количества ККМ...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+					Загрузка единиц измерения ККМ...
+				</div>
+			) : units.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+					Единицы измерения ККМ не заданы.
+				</div>
 			) : (
 				<div className="space-y-3">
 					{units.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
 						>
 							<div>
-								<div className="text-sm font-bold text-slate-200">{item.serviceTitle}</div>
-								<div className="text-xs text-slate-400 mt-1">
-									Код услуги: <span className="font-mono text-cyan-300">{item.serviceCode}</span>
+								<div className="text-sm font-bold">{item.serviceTitle}</div>
+								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
+									Мера количества: <span className="font-bold text-emerald-600 dark:text-emerald-300">{item.unitType}</span> (Код ОФД: {item.unitCodeOfd})
 								</div>
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
-								<span className="bg-cyan-950 text-cyan-300 px-2 py-1 rounded border border-cyan-800 font-mono">
-									Ед. изм: {item.quantityUnitLabel} (Код {item.quantityUnitCode})
+								<span className="px-2 py-0.5 rounded border font-mono bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									{item.fractionalQuantityAllowed ? "Дробные разрешены" : "Только целые"}
 								</span>
 							</div>
 						</div>
