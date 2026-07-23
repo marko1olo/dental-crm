@@ -14,6 +14,7 @@
 		"lint": "npm run typecheck",
 		"smoke:all": "node scripts/run-smoke-suite.mjs",
 		"smoke:wave6": "node scripts/test-edge-cases-wave6.mjs",
+		"smoke:wave7": "node scripts/test-edge-cases-wave7.mjs",
 		"smoke:mobile": "node scripts/smoke-mobile-overflow.mjs",
 		"smoke:mobile-overflow": "node scripts/smoke-mobile-overflow.mjs",
 		"smoke:web-render-gating-source": "node scripts/smoke-web-render-gating-source.mjs",

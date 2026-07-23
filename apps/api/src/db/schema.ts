@@ -2447,3 +2447,77 @@ export const mkb10AutoDirectories = pgTable("mkb10_auto_directories", {
 	lastVersionDate: text("last_version_date").default("2026-01-01").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// =====================================================
+// WAVE 7 — COMPETITOR PARITY FEATURES (#31, #34, #37, #39, #40)
+// =====================================================
+
+// #31 — прием::случаи_обслуживания_без_выбора_зубов
+export const nonDentalExaminationForms = pgTable("non_dental_examination_forms", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	specialtyType: text("specialty_type").default("ENT").notNull(),
+	formName: text("form_name").notNull(),
+	patientName: text("patient_name").notNull(),
+	complaints: text("complaints").notNull(),
+	objectiveStatus: text("objective_status").notNull(),
+	diagnosisMkb: text("diagnosis_mkb").notNull(),
+	recommendations: text("recommendations").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #34 — план_лечения::управление_этапами_и_автоархивация
+export const treatmentPlanStagesAutoArchive = pgTable("treatment_plan_stages_auto_archive", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	planTitle: text("plan_title").notNull(),
+	stageOrder: integer("stage_order").default(1).notNull(),
+	stageName: text("stage_name").notNull(),
+	completionPercentage: integer("completion_percentage").default(0).notNull(),
+	autoArchived: boolean("auto_archived").default(false).notNull(),
+	archivedAt: timestamp("archived_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #37 — расписание::резервирование_времени_в_сетке
+export const scheduleTimeReservations = pgTable("schedule_time_reservations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	chairName: text("chair_name").notNull(),
+	reservationType: text("reservation_type").default("maintenance").notNull(),
+	startTime: text("start_time").notNull(),
+	endTime: text("end_time").notNull(),
+	bookingLocked: boolean("booking_locked").default(true).notNull(),
+	hatchingStyle: text("hatching_style").default("diagonal_red").notNull(),
+	note: text("note").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #39 — интеграции::diagnocat_ии_анализ_снимков_и_автоформула
+export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	studyType: text("study_type").default("CBCT").notNull(),
+	aiConfidenceScore: text("ai_confidence_score").default("0.95").notNull(),
+	detectedPathologiesJson: text("detected_pathologies_json").notNull(),
+	importedToOdontogram: boolean("imported_to_odontogram").default(false).notNull(),
+	importedAt: timestamp("imported_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
+export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	toothNumber: integer("tooth_number").notNull(),
+	isPrimaryPediatric: boolean("is_primary_pediatric").default(false).notNull(),
+	secondaryCariesUnderFilling: boolean("secondary_caries_under_filling").default(false).notNull(),
+	mobilityDegree: integer("mobility_degree").default(0).notNull(),
+	pediatricCrownPresent: boolean("pediatric_crown_present").default(false).notNull(),
+	notes: text("notes").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+

@@ -1352,5 +1352,18 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
 		const items = await getTreatmentPlanPrintOdontogramsFromDb(orgId);
 		return reply.status(200).send(items);
 	});
+
+	// COMPETITOR FEATURE #34: план_лечения::управление_этапами_и_автоархивация
+	app.get("/api/documents/treatment-plan-stages", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getTreatmentPlanStagesFromDb } = await import("../db/treatmentPlanStagesAutoArchiveQuery.js");
+		const items = await getTreatmentPlanStagesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
 

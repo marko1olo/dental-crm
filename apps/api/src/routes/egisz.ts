@@ -249,5 +249,30 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		const items = await getMkb10AutoDirectoriesFromDb(orgId);
 		return reply.status(200).send(items);
 	});
+
+	// COMPETITOR FEATURE #37: расписание::резервирование_времени_в_сетке
+	app.get("/api/schedule/time-reservations", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getScheduleTimeReservationsFromDb } = await import("../db/scheduleTimeReservationsQuery.js");
+		const items = await getScheduleTimeReservationsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #39: интеграции::diagnocat_ии_анализ_снимков_и_автоформула
+	app.get("/api/integrations/diagnocat-findings", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getDiagnocatAiFindingsFromDb } = await import("../db/diagnocatAiFindingsQuery.js");
+		const items = await getDiagnocatAiFindingsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
 
