@@ -10249,13 +10249,46 @@ img {
 }
 
 .visit-note-panel {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 12px;
   margin-bottom: 14px;
   padding: 12px;
+}
+
+html.dark .visit-note-panel,
+[data-theme="dark"] .visit-note-panel {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-note-panel h3,
+html.dark .visit-note-panel h4,
+html.dark .visit-note-panel strong,
+[data-theme="dark"] .visit-note-panel h3,
+[data-theme="dark"] .visit-note-panel h4,
+[data-theme="dark"] .visit-note-panel strong {
+  color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .emk-tabs-container,
+[data-theme="dark"] .emk-tabs-container {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .emk-tab-button,
+[data-theme="dark"] .emk-tab-button {
+  color: var(--muted, #94a3b8) !important;
+}
+
+html.dark .emk-tab-button.active,
+[data-theme="dark"] .emk-tab-button.active {
+  background: var(--primary-strong, #0d9488) !important;
+  color: #ffffff !important;
 }
 
 .visit-note-head {

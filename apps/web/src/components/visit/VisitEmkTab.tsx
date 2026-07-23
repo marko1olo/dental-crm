@@ -8,13 +8,12 @@ import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldL
 import { specialtyLabels } from "../../workspaceUiLabels";
 
 export function VisitEmkTab() {
-	const appLogic = useAppLogicContext();
+	const appLogic = (useAppLogicContext() || {}) as any;
 	const {
 		activeEmkTab,
 		setActiveEmkTab,
-		visitNoteForm,
+		visitNoteForm = {},
 		updateVisitNoteField,
-		draft: rawDraft,
 		isVisitNoteDirty,
 		pendingVisitSaveCount,
 		lastVisitSaveReceipt,
@@ -27,11 +26,11 @@ export function VisitEmkTab() {
 		visitNoteActionLabel,
 		visitNoteStatusLabel,
 		visitFlowResult,
-		visitNoteFieldDefinitions,
+		visitNoteFieldDefinitions = [],
 		visitNoteAcceptMissingSteps
 	} = appLogic;
 
-	// Note: draft is aliased from visitDraft in appLogic
+	const noteForm = visitNoteForm;
 	const draft = appLogic.visitDraft;
 
 		const emkTabs = [
@@ -43,10 +42,11 @@ export function VisitEmkTab() {
 		{ id: "treatmentPlan", label: "Лечение" },
 	];
 
-		const visibleFields =
+	const allFields = Array.isArray(visitNoteFieldDefinitions) ? visitNoteFieldDefinitions : [];
+	const visibleFields =
 		activeEmkTab === "all"
-			? visitNoteFieldDefinitions
-			: visitNoteFieldDefinitions.filter((f) => f.key === activeEmkTab);
+			? allFields
+			: allFields.filter((f: any) => f.key === activeEmkTab);
 
 	return (
 				<section
@@ -75,7 +75,7 @@ export function VisitEmkTab() {
 							{emkTabs.map((tab) => {
 								const isFilled =
 									tab.id !== "all" &&
-									String(visitNoteForm[tab.id] ?? "").trim().length > 0;
+									String(noteForm[tab.id] ?? "").trim().length > 0;
 								return (
 									<button
 										key={tab.id}

@@ -2,15 +2,19 @@ import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function VisitSpecialtyFocus() {
+	const context = useAppLogicContext() || {};
 	const {
 		activeDoctor,
 		activeChair,
 		selectedSpecialty,
 		setSelectedSpecialty,
 		setSelectedProtocolId,
-		specialtyLabels,
-		visibleVisitSpecialtyFocusOptions,
-	} = useAppLogicContext();
+		specialtyLabels = {},
+		visibleVisitSpecialtyFocusOptions = [],
+	} = context as any;
+
+	const currentSpecialtyLabel = (selectedSpecialty && specialtyLabels[selectedSpecialty]) || "Терапия";
+	const focusOptions = Array.isArray(visibleVisitSpecialtyFocusOptions) ? visibleVisitSpecialtyFocusOptions : [];
 
 	return (
 		<section
@@ -19,22 +23,22 @@ export function VisitSpecialtyFocus() {
 		>
 			<div>
 				<p className="eyebrow">Фокус врача</p>
-				<h3>{specialtyLabels[selectedSpecialty]}</h3>
+				<h3>{currentSpecialtyLabel}</h3>
 				<p>
-					{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} ·{" "}
+					{activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} ·{" "}
 					{activeChair?.name ?? "кресло"}
 				</p>
 			</div>
 			<div className="specialty-focus-options">
-				{visibleVisitSpecialtyFocusOptions.map((option) => (
+				{focusOptions.map((option: any) => (
 					<button
 						className={selectedSpecialty === option.specialty ? "active" : ""}
 						type="button"
 						key={option.specialty}
 						aria-pressed={selectedSpecialty === option.specialty}
 						onClick={() => {
-							setSelectedSpecialty(option.specialty);
-							setSelectedProtocolId(null);
+							if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
+							if (setSelectedProtocolId) setSelectedProtocolId(null);
 						}}
 					>
 						<strong>{option.title}</strong>

@@ -18,6 +18,9 @@ import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAi
 import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitDictation } from "./components/visit/VisitDictation";
+import { VisitEmkTab } from "./components/visit/VisitEmkTab";
+import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -307,6 +310,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </button>
             </div>
 
+            {visitSubViewTab === "emk" && (
+              <div style={{ margin: "16px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <VisitSpecialtyFocus />
+                <VisitDictation />
+                <VisitEmkTab />
+              </div>
+            )}
+
             {visitSubViewTab === "odontogram" && (
               <div style={{ margin: "16px 0" }}>
                 <VisitOdontogramTab activePatient={activePatient} activeAppointment={activeAppointment} dashboard={dashboard} />
@@ -471,10 +482,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   <div style={{
                     marginTop: '8px', 
                     padding: '12px', 
-                    background: '#f8fafc', 
-                    color: '#64748b', 
+                    background: 'var(--surface-100)', 
+                    color: 'var(--slate-500)', 
                     borderRadius: '8px',
-                    border: '1px dashed #cbd5e1',
+                    border: '1px dashed var(--line)',
                     fontStyle: 'italic',
                     fontSize: '14px',
                     display: 'flex',
