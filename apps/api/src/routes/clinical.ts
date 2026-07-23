@@ -184,4 +184,17 @@ app.post("/api/clinical/post-op-care", async (request, reply) => {
 
 		return reply.send({ success: true });
 	});
+
+	// COMPETITOR FEATURE #19: прием::пользовательские_справочники_бланков_форма_043у
+	app.get("/api/clinical/custom-examination-form-catalogs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getCustomExaminationFormCatalogsFromDb } = await import("../db/customExaminationFormCatalogsQuery.js");
+		const items = await getCustomExaminationFormCatalogsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+

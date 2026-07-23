@@ -3,6 +3,12 @@ import { ActivePatientHero } from "./components/workspace/shift/ActivePatientHer
 import { TodaySchedule } from "./components/workspace/shift/TodaySchedule";
 import { RoleFocusStrip } from "./components/workspace/shift/RoleFocusStrip";
 import { ShiftIntelligence } from "./components/workspace/shift/ShiftIntelligence";
+import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
+import { CustomExaminationFormCatalogsWidget } from "./components/clinical/CustomExaminationFormCatalogsWidget";
+import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
+import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
+import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
+
 export { PatientCockpit } from "./components/workspace/shift/PatientCockpit";
 
 export function ShiftView() {
@@ -29,7 +35,13 @@ export function ShiftView() {
 			>
 				<RoleFocusStrip />
 				<ShiftIntelligence />
+				<ProdoctorovSyncWidget />
+				<CustomExaminationFormCatalogsWidget />
+				<TreatmentPlanPrintOdontogramWidget />
+				<EgiszMultipleDiagnosesWidget />
+				<Mkb10AutoDirectoriesWidget />
 			</div>
 		</motion.div>
 	);
 }
+

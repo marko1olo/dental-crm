@@ -1340,4 +1340,17 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
 	await registerAuditFacts(app);
 	await registerPdf(app);
 	await registerHtml(app);
+
+	// COMPETITOR FEATURE #22: документы::зубная_формула_на_печати_плана_лечения
+	app.get("/api/documents/treatment-plan-print-odontogram", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getTreatmentPlanPrintOdontogramsFromDb } = await import("../db/treatmentPlanPrintOdontogramsQuery.js");
+		const items = await getTreatmentPlanPrintOdontogramsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+

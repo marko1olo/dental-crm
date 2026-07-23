@@ -213,4 +213,41 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			.then((res) => res.map((r) => r.egisz_logs));
 		return reply.send({ logs });
 	});
+
+	// COMPETITOR FEATURE #17: интеграции::продокторов_выгрузка_прейскуранта_и_запись
+	app.get("/api/integrations/prodoctorov-sync", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getProdoctorovSyncExportsFromDb } = await import("../db/prodoctorovSyncExportsQuery.js");
+		const items = await getProdoctorovSyncExportsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #30: прием::передача_в_егисз_нескольких_диагнозов
+	app.get("/api/egisz/multiple-diagnoses", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getEgiszMultipleDiagnosesFromDb } = await import("../db/egiszMultipleDiagnosesQuery.js");
+		const items = await getEgiszMultipleDiagnosesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #32: интеграции::мкб10_автообновляемый_справочник_и_связи
+	app.get("/api/integrations/mkb10-auto-directories", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getMkb10AutoDirectoriesFromDb } = await import("../db/mkb10AutoDirectoriesQuery.js");
+		const items = await getMkb10AutoDirectoriesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
