@@ -30,7 +30,10 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../accessGuard.js";
-import { getAppointmentByIdInDb } from "../db/appointmentsQuery.js";
+import {
+	getAppointmentByIdInDb,
+	getAppointmentsByIdsInDb,
+} from "../db/appointmentsQuery.js";
 import {
 	createGeneratedDocumentInDb,
 	getDocumentById,
@@ -41,7 +44,7 @@ import {
 	storeTaxXmlSnapshotInDb,
 	voidGeneratedDocumentInDb,
 } from "../db/documentQuery.js";
-import { getVisitByIdInDb } from "../db/visitsQuery.js";
+import { getVisitByIdInDb, getVisitsByIdsInDb } from "../db/visitsQuery.js";
 
 import {
 	paidAmountRubForDocument,
@@ -1015,19 +1018,51 @@ export async function signedMedicalSourceVisitsAreValid(
 	const periodEnd = comparableDocumentChainDate(periodEndRaw);
 	if (!documentChainDateRangeIsChronological(periodStartRaw, periodEndRaw))
 		return false;
-	for (const visitId of sourceVisitIds) {
-		const visit = await getVisitByIdInDb(document.organizationId, visitId);
-		if (
-			!visit ||
-			visit.patientId !== document.patientId ||
-			visit.status !== "signed"
-		)
-			return false;
 
-		const visitDate = await medicalRecordExtractVisitDate(
-			document.organizationId,
-			visitId,
-		);
+	if (sourceVisitIds.length === 0) return true;
+
+	const visits = await getVisitsByIdsInDb(document.organizationId, sourceVisitIds);
+	const visitMap = new Map(visits.map((v) => [v.id, v]));
+
+	// Validate visits and collect appointment IDs
+	const appointmentIdsToFetch = new Set<string>();
+	for (const visitId of sourceVisitIds) {
+		const visit = visitMap.get(visitId);
+		if (!visit || visit.patientId !== document.patientId || visit.status !== "signed")
+			return false;
+		if (visit.appointmentId) {
+			appointmentIdsToFetch.add(visit.appointmentId);
+		}
+	}
+
+	// Fetch appointments in bulk
+	const appointments =
+		appointmentIdsToFetch.size > 0
+			? await getAppointmentsByIdsInDb(document.organizationId, Array.from(appointmentIdsToFetch))
+			: [];
+	const appointmentMap = new Map(appointments.map((a) => [a.id, a]));
+
+	for (const visitId of sourceVisitIds) {
+		const visit = visitMap.get(visitId);
+		if (!visit) continue;
+
+		const appointment = visit.appointmentId ? appointmentMap.get(visit.appointmentId) : null;
+
+		const visitDate =
+			comparableDocumentChainDate(
+				appointment?.startsAt
+					? typeof appointment.startsAt === "string"
+						? appointment.startsAt
+						: appointment.startsAt.toISOString()
+					: null,
+			) ??
+			comparableDocumentChainDate(
+				typeof visit.updatedAt === "string" ? visit.updatedAt : visit.updatedAt.toISOString(),
+			) ??
+			comparableDocumentChainDate(
+				typeof visit.createdAt === "string" ? visit.createdAt : visit.createdAt.toISOString(),
+			);
+
 		if (visitDate === null) return false;
 		if (periodStart !== null && visitDate < periodStart) return false;
 		if (periodEnd !== null && visitDate > periodEnd) return false;

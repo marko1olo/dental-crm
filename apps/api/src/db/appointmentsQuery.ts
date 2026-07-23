@@ -3,7 +3,7 @@ import type {
 	CreateAppointmentInput,
 	UpdateAppointmentInput,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -650,4 +650,17 @@ async function assertAppointmentCanBeScheduled(
 		}
 		throw new Error("Кресло уже занято другой записью в это время");
 	}
+}
+
+export async function getAppointmentsByIdsInDb(organizationId: string, ids: readonly string[]) {
+	if (ids.length === 0) return [];
+	return await db
+		.select()
+		.from(schema.appointments)
+		.where(
+			and(
+				eq(schema.appointments.organizationId, organizationId),
+				inArray(schema.appointments.id, ids as string[]),
+			),
+		);
 }
