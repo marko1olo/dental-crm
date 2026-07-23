@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../../AppHelpers";
+import { Layers, CheckCircle2 } from "lucide-react";
 
 interface StageItem {
 	id: string;
@@ -37,57 +38,48 @@ export const TreatmentPlanStagesWidget: React.FC = () => {
 		<div
 			data-testid="treatment-plan-stages-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">📊</span>
-					<h3 className="font-semibold text-amber-600 dark:text-amber-400">
-						Управление Этапами Планов Лечения & Авто-Архивация (100% Готовность)
+					<Layers className="w-5 h-5 text-emerald-500" />
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						Этапы выполнения плана лечения и автоархивация
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-					Drag-and-Drop Stages
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					Пошаговое лечение
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
-					Загрузка этапов планов лечения...
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка этапов плана лечения...
 				</div>
 			) : stages.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
-					Нет этапов планов лечения.
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Этапы комплексного плана лечения отсутствуют.
 				</div>
 			) : (
-				<div className="space-y-3">
-					{stages.map((stg) => (
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{stages.map((stage) => (
 						<div
-							key={stg.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							key={stage.id}
+							className="p-3 rounded-lg border space-y-2"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-xs font-bold px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-										#{stg.stageOrder}
-									</span>
-									<span className="text-sm font-semibold">{stg.stageName}</span>
-								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
-									Пациент: <span style={{ color: "var(--ink, #0f172a)" }}>{stg.patientName}</span> | План: {stg.planTitle}
-								</div>
+							<div className="flex justify-between items-start">
+								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									Этап #{stage.stageOrder}: {stage.stageName}
+								</span>
+								<span className="text-xs px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 font-medium">
+									{stage.completionPercentage}% завершено
+								</span>
 							</div>
-							<div className="flex items-center space-x-3">
-								<div className="text-xs font-bold text-amber-600 dark:text-amber-300">
-									{stg.completionPercentage}% завершено
-								</div>
-								{stg.autoArchived && (
-									<span className="text-xs px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-										✓ Авто-архивирован
-									</span>
-								)}
-							</div>
+							<h4 className="text-sm font-medium leading-snug">{stage.planTitle}</h4>
+							<p className="text-xs" style={{ color: "var(--muted)" }}>
+								Пациент: <strong style={{ color: "var(--ink)" }}>{stage.patientName}</strong>
+							</p>
 						</div>
 					))}
 				</div>

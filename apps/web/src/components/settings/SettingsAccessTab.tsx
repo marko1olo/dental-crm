@@ -6,16 +6,22 @@ import { StaffRole } from "@dental/shared";
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
-export function SettingsAccessTab({ props, settingsTab }: { props?: Record<string, any>, settingsTab: string }) {
+export interface SettingsAccessTabProps {
+  props?: any;
+  settingsTab: string;
+  [key: string]: any;
+}
+
+export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTabProps) {
   const {
     dashboard,
     activeWorkspaceProfile,
-    workspaceScopeLabels,
-    staffRoleLabels,
-    clinicModeLabels,
-    policyAuditEventLabels
-  } = props;
-  const viewLabels = workspaceViewLabels as Record<string, string>;
+    workspaceScopeLabels = {},
+    staffRoleLabels = {},
+    clinicModeLabels = {},
+    policyAuditEventLabels = {}
+  } = props || {};
+  const viewLabels = (workspaceViewLabels || {}) as Record<string, string>;
 
   // Hooks MUST be called before any conditional returns (React Rules of Hooks)
   const [inviteEmail, setInviteEmail] = useState('');
@@ -159,25 +165,25 @@ export function SettingsAccessTab({ props, settingsTab }: { props?: Record<strin
                   <div className="access-column-row">
                     <div>
                       <strong>Запись</strong>
-                      {policy.canWrite.map((section) => (
-                        <span key={section}>{viewLabels[section]}</span>
+                      {(policy.canWrite ?? []).map((section: string) => (
+                        <span key={section}>{viewLabels[section] ?? section}</span>
                       ))}
                     </div>
                     <div>
                       <strong>Ограничено</strong>
-                      {policy.restricted.length ? (
-                        policy.restricted.map((section) => <span key={section}>{viewLabels[section]}</span>)
+                      {(policy.restricted ?? []).length ? (
+                        (policy.restricted ?? []).map((section: string) => <span key={section}>{viewLabels[section] ?? section}</span>)
                       ) : (
                         <span>нет</span>
                       )}
                     </div>
                   </div>
                   <ul>
-                    {policy.requiresApprovalFor.slice(0, 3).map((item) => (
+                    {(policy.requiresApprovalFor ?? []).slice(0, 3).map((item: string) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
-                  <small>Аудит: {policy.auditEvents.map((event) => policyAuditEventLabels[event] ?? event).join(", ")}</small>
+                  <small>Аудит: {(policy.auditEvents ?? []).map((event: string) => policyAuditEventLabels[event] ?? event).join(", ")}</small>
                 </article>
               ))}
             </div>
