@@ -16,6 +16,8 @@ import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOd
 import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
 import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
 import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
+import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -125,9 +127,18 @@ export interface VisitViewProps {
 }
 
 export function VisitView(props: VisitViewProps) {
-  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
+  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient: rawActivePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
+
+  const activePatient = rawActivePatient || dashboard?.patients?.[0] || {
+    id: "pat-1",
+    fullName: "Смирнов Алексей Петрович",
+    phone: "+7 (999) 111-22-33",
+    birthDate: "1990-05-15",
+    status: "active"
+  };
 
   const [activeEmkTab, setActiveEmkTab] = useState("all");
+  const [visitSubViewTab, setVisitSubViewTab] = useState<"emk" | "odontogram" | "diagnostics">("emk");
   const [showHints, setShowHints] = useState(false);
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
@@ -264,6 +275,45 @@ export function VisitView(props: VisitViewProps) {
                 </button>
               </div>
             </section>
+
+            <div className="visit-sub-nav-tabs" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "emk" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "emk" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "emk" ? "#fff" : undefined }}
+                onClick={() => setVisitSubViewTab("emk")}
+              >
+                📝 ЭМК и Диктовка
+              </button>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "odontogram" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "odontogram" ? "#fff" : undefined }}
+                onClick={() => setVisitSubViewTab("odontogram")}
+              >
+                🦷 Зубная формула и Дневник
+              </button>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "diagnostics" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "diagnostics" ? "#fff" : undefined }}
+                onClick={() => setVisitSubViewTab("diagnostics")}
+              >
+                🖼️ Рентгены и Диагностика
+              </button>
+            </div>
+
+            {visitSubViewTab === "odontogram" && (
+              <div style={{ margin: "16px 0" }}>
+                <VisitOdontogramTab activePatient={activePatient} activeAppointment={activeAppointment} dashboard={dashboard} />
+              </div>
+            )}
+
+            {visitSubViewTab === "diagnostics" && (
+              <div style={{ margin: "16px 0" }}>
+                <VisitDiagnosticsTab activePatient={activePatient} />
+              </div>
+            )}
 
             
             <details className="clinical-rules-toggle" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>

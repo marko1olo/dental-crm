@@ -4,8 +4,10 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 
-export function VisitDiagnosticsTab() {
-	const { activePatient } = useAppLogicContext();
+export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
+	let ctx: any = null;
+	try { ctx = useAppLogicContext(); } catch (e) {}
+	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 
 	return (

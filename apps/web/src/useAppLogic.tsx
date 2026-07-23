@@ -2433,7 +2433,7 @@ export function useAppLogic(): any {
 			dashboard.appointments?.find(
 				(appointment) =>
 					appointment.id === dashboard?.activeVisit?.appointmentId,
-			) ?? null
+			) ?? dashboard.appointments?.[0] ?? null
 		);
 	}, [dashboard]);
 	const activeDoctor = useMemo(() => {
@@ -2746,7 +2746,25 @@ export function useAppLogic(): any {
 					{ id: "pat-1", fullName: "Смирнов Алексей Петрович", phone: "+79991112233", birthDate: "1990-05-15", status: "active" },
 					{ id: "pat-2", fullName: "Васильева Елена Игоревна", phone: "+79992223344", birthDate: "1985-11-20", status: "active" }
 				],
-				appointments: [],
+				appointments: [
+					{
+						id: "apt-1",
+						patientId: "pat-1",
+						doctorId: "doc-1",
+						doctorUserId: "doc-1",
+						chairId: "chair-1",
+						status: "in_progress",
+						startsAt: new Date().toISOString(),
+						endsAt: new Date(Date.now() + 45 * 60000).toISOString(),
+						reason: "Первичный прием и диктовка",
+						comment: "Срочный осмотр"
+					}
+				],
+				activeVisit: {
+					appointmentId: "apt-1",
+					patientId: "pat-1",
+					startedAt: new Date().toISOString()
+				},
 				documents: [],
 				imagingStudies: [],
 				shiftIntelligence: { roleQueues: [], urgentRequests: [], shiftStats: {} },

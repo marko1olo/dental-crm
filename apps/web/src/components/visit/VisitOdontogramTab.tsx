@@ -5,11 +5,15 @@ import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
 
-export function VisitOdontogramTab() {
-	const { activePatient, activeAppointment, dashboard } = useAppLogicContext();
+export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
+	let ctx: any = null;
+	try { ctx = useAppLogicContext(); } catch (e) {}
+	const activePatient = props?.activePatient ?? ctx?.activePatient;
+	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
+	const dashboard = props?.dashboard ?? ctx?.dashboard;
 	const workspaceFlags = useWorkspaceProfile();
 
-	if (!activePatient?.id || !activeAppointment?.id) return null;
+	if (!activePatient?.id) return null;
 
 	return (
 		<div
