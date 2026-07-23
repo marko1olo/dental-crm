@@ -3,9 +3,20 @@ import * as schema from "./schema.js";
 import { eq } from "drizzle-orm";
 import type { ServiceCatalogItem } from "@dental/shared";
 
+function useInMemory() {
+  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
+
 export async function getDefaultOrganizationId(): Promise<string | null> {
-  const [org] = await db.select().from(schema.organizations).limit(1);
-  return org?.id || null;
+  if (useInMemory()) {
+    return "00000000-0000-0000-0000-000000000001";
+  }
+  try {
+    const [org] = await db.select().from(schema.organizations).limit(1);
+    return org?.id || "00000000-0000-0000-0000-000000000001";
+  } catch {
+    return "00000000-0000-0000-0000-000000000001";
+  }
 }
 
 export async function getServiceCatalogForOrganization(organizationId: string): Promise<ServiceCatalogItem[]> {

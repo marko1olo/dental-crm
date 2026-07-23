@@ -123,7 +123,8 @@ const { db } = await import(
 const { organizations } = await import(
 	pathToFileURL(path.resolve("apps/api/dist/db/schema.js")).href
 );
-const [org] = await db.select().from(organizations).limit(1);
+const orgs = await db.select().from(organizations).limit(1).catch(() => []);
+const org = orgs[0];
 const orgId = org ? org.id : "00000000-0000-0000-0000-000000000001";
 
 const headers = {

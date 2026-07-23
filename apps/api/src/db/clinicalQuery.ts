@@ -11,6 +11,16 @@ import type {
   UpdateClinicalRuleInput
 } from "@dental/shared";
 import { getDefaultOrganizationId } from "./pricelistQuery.js";
+import {
+  clinicalRules as inMemoryClinicalRules,
+  createClinicalRule as createClinicalRuleInMemory,
+  updateClinicalRule as updateClinicalRuleInMemory,
+  evaluateClinicalRules as evaluateClinicalRulesInMemory
+} from "../sampleData.js";
+
+function useInMemory() {
+  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 function parseJsonArray(jsonString: string | null | undefined): string[] {
   if (!jsonString) return [];
@@ -44,11 +54,17 @@ function mapClinicalRule(record: typeof schema.clinicalRules.$inferSelect): Clin
 }
 
 export async function getClinicalRules(organizationId: string): Promise<ClinicalRule[]> {
+  if (useInMemory()) {
+    return inMemoryClinicalRules;
+  }
   const records = await db.select().from(schema.clinicalRules).where(eq(schema.clinicalRules.organizationId, organizationId));
   return records.map(mapClinicalRule);
 }
 
 export async function getClinicalRuleById(organizationId: string, ruleId: string): Promise<ClinicalRule | null> {
+  if (useInMemory()) {
+    return inMemoryClinicalRules.find((r) => r.id === ruleId) ?? null;
+  }
   const [record] = await db
     .select()
     .from(schema.clinicalRules)
@@ -131,6 +147,9 @@ export async function evaluateClinicalRulesInDb(organizationId: string, input: C
 }
 
 export async function createClinicalRuleInDb(organizationId: string, input: CreateClinicalRuleInput): Promise<ClinicalRule> {
+  if (useInMemory()) {
+    return createClinicalRuleInMemory(input);
+  }
   const [record] = await db
     .insert(schema.clinicalRules)
     .values({
@@ -160,6 +179,9 @@ export async function createClinicalRuleInDb(organizationId: string, input: Crea
 }
 
 export async function updateClinicalRuleInDb(organizationId: string, input: UpdateClinicalRuleInput): Promise<ClinicalRule> {
+  if (useInMemory()) {
+    return updateClinicalRuleInMemory(input);
+  }
   const existing = await getClinicalRuleById(organizationId, input.id);
   if (!existing) {
     throw new Error("Правило не найдено");
