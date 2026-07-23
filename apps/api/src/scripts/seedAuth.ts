@@ -17,7 +17,7 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import * as schema from "../db/schema.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 
@@ -108,15 +108,18 @@ async function seedAuth() {
   }
 
   // ── 2. Upsert users with PIN codes ───────────────────────────────────────
+  const staffIds = DEMO_STAFF.map(s => s.id);
+  const existingUsersData = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(inArray(schema.users.id, staffIds));
+  const existingUsersMap = new Map(existingUsersData.map(u => [u.id, u]));
+
   for (const staff of DEMO_STAFF) {
     const pin = staff.isAdmin ? adminPin : staffPin;
     const pinCodeHash = hashCredential(pin);
 
-    const [existingUser] = await db
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.id, staff.id))
-      .limit(1);
+    const existingUser = existingUsersMap.get(staff.id);
 
     // For the owner, we will set both the adminPin and the clinicPassword, 
     // so they can login directly via UserLogin (Personal Mode)
