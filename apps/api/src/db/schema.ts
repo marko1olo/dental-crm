@@ -2521,3 +2521,72 @@ export const extendedOdontogramStates = pgTable("extended_odontogram_states", {
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// =====================================================
+// WAVE 8 — COMPETITOR PARITY FEATURES (#48, #54, #57, #60, #62)
+// =====================================================
+
+// #48 — расписание::буфер_обмена_в_расписании_для_быстрого_переноса
+export const scheduleClipboardItems = pgTable("schedule_clipboard_items", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	appointmentId: uuid("appointment_id").notNull(),
+	patientName: text("patient_name").notNull(),
+	doctorName: text("doctor_name").notNull(),
+	serviceTitle: text("service_title").notNull(),
+	durationMinutes: integer("duration_minutes").default(30).notNull(),
+	clipboardStatus: text("clipboard_status").default("copied").notNull(),
+	copiedAt: timestamp("copied_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #54 — кадры::справедливое_распределение_конверсии_повторной_записи
+export const rebookingConversionRules = pgTable("rebooking_conversion_rules", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	rebookedBy: text("rebooked_by").notNull(),
+	timeDeltaMinutes: integer("time_delta_minutes").notNull(),
+	creditedRole: text("credited_role").notNull(),
+	appointmentDate: text("appointment_date").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #57 — кадры::блокировка_параллельного_входа_под_одной_учетной_записью
+export const singleSessionEnforcements = pgTable("single_session_enforcements", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	userId: uuid("user_id").notNull(),
+	userLogin: text("user_login").notNull(),
+	activeSessionToken: text("active_session_token").notNull(),
+	clientIp: text("client_ip").notNull(),
+	userAgent: text("user_agent").notNull(),
+	ejectedPreviousSession: boolean("ejected_previous_session").default(false).notNull(),
+	lastActiveAt: timestamp("last_active_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #60 — интеграции::геокодирование_адресов_через_dadata
+export const dadataGeocodedAddresses = pgTable("dadata_geocoded_addresses", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientName: text("patient_name").notNull(),
+	rawAddress: text("raw_address").notNull(),
+	fiasId: text("fias_id").notNull(),
+	qcGeo: integer("qc_geo").default(0).notNull(),
+	geoLat: text("geo_lat").notNull(),
+	geoLon: text("geo_lon").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// #62 — финансы::отображение_суммы_начислений_врачам_в_прайс_листе
+export const pricelistDoctorPayrolls = pgTable("pricelist_doctor_payrolls", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	serviceCode: text("service_code").notNull(),
+	serviceName: text("service_name").notNull(),
+	priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
+	doctorPayrollPercent: numeric("doctor_payroll_percent", { precision: 4, scale: 2 }).default("25.00").notNull(),
+	doctorPayrollRub: numeric("doctor_payroll_rub", { precision: 10, scale: 2 }).notNull(),
+	clinicMarginRub: numeric("clinic_margin_rub", { precision: 10, scale: 2 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+

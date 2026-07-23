@@ -32,6 +32,7 @@ import {
 	X,
 	ZoomIn,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type ToothStatus, usePatientStore } from "../../store/patientStore";
@@ -944,7 +945,7 @@ export function VisiographAnalyzer() {
 														color: "var(--text)",
 													}}
 													dangerouslySetInnerHTML={{
-														__html: renderMarkdown(section.content),
+														__html: DOMPurify.sanitize(renderMarkdown(section.content)),
 													}}
 												/>
 											)}

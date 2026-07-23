@@ -273,6 +273,43 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		const items = await getDiagnocatAiFindingsFromDb(orgId);
 		return reply.status(200).send(items);
 	});
+
+	// COMPETITOR FEATURE #48: расписание::буфер_обмена_в_расписании_для_быстрого_переноса
+	app.get("/api/schedule/clipboard-items", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getScheduleClipboardItemsFromDb } = await import("../db/scheduleClipboardItemsQuery.js");
+		const items = await getScheduleClipboardItemsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #57: кадры::блокировка_параллельного_входа_под_одной_учетной_записью
+	app.get("/api/system/single-session-enforcements", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getSingleSessionEnforcementsFromDb } = await import("../db/singleSessionEnforcementsQuery.js");
+		const items = await getSingleSessionEnforcementsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #60: интеграции::геокодирование_адресов_через_dadata
+	app.get("/api/integrations/dadata-addresses", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getDadataGeocodedAddressesFromDb } = await import("../db/dadataGeocodedAddressesQuery.js");
+		const items = await getDadataGeocodedAddressesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
 
 

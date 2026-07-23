@@ -220,6 +220,19 @@ app.post("/api/clinical/post-op-care", async (request, reply) => {
 		const items = await getExtendedOdontogramStatesFromDb(orgId);
 		return reply.status(200).send(items);
 	});
+
+	// COMPETITOR FEATURE #54: кадры::справедливое_распределение_конверсии_повторной_записи
+	app.get("/api/hr/rebooking-conversion-rules", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getRebookingConversionRulesFromDb } = await import("../db/rebookingConversionRulesQuery.js");
+		const items = await getRebookingConversionRulesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
 
 
