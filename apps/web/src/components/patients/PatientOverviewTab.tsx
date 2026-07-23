@@ -201,6 +201,8 @@ export function PatientOverviewTab() {
 							border: "1px solid var(--line)",
 							fontSize: "14px",
 							resize: "vertical",
+							background: "var(--paper)",
+							color: "var(--ink)",
 						}}
 					/>
 					<div className="patients-chips-row">
