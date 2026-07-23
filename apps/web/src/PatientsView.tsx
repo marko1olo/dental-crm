@@ -536,7 +536,7 @@ export function PatientsView(props: PatientsViewProps) {
                   <span>Удобные дни записи</span>
                   <div className="weekday-toggle-row" role="group" aria-label="Удобные дни записи пациента">
                     {weekdayOptions.map((day) => {
-                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
+                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays?.includes(day.value) ?? false;
                       return (
                         <button
                           aria-pressed={weekdaySelected}
