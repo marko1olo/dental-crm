@@ -415,7 +415,7 @@ export function PatientCockpit({
               <CreditCard aria-hidden="true" />
               <div>
                 <h3>Оплаты</h3>
-                <p className="tile-meta">{money(dashboard.billingSummary.totalPaidRub)} · долг {money(dashboard.billingSummary.totalDueRub)}</p>
+                <p className="tile-meta">{money(dashboard.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard.billingSummary?.totalDueRub ?? 0)}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "communications"; }} style={{ cursor: "pointer" }}>

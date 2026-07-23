@@ -2750,6 +2750,8 @@ export function useAppLogic(): any {
 				documents: [],
 				imagingStudies: [],
 				shiftIntelligence: { roleQueues: [], urgentRequests: [], shiftStats: {} },
+				billingSummary: { totalPaidRub: 0, totalDueRub: 0 },
+				patientInsights: [],
 				auditEvents: [],
 				importBatches: [],
 				speechProviders: []
