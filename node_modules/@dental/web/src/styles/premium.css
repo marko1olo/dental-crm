@@ -137,6 +137,43 @@ h1, h2, h3, h4, h5, h6,
 	color: var(--text-primary) !important;
 }
 
+/* Universal Theme Protection against Inline Hardcoded Colors */
+[style*="background: #ffffff"],
+[style*="background:#ffffff"],
+[style*="background: #fff"],
+[style*="background:#fff"],
+[style*="background: #f8fafc"],
+[style*="background:#f8fafc"],
+[style*="background: #f9fafb"],
+[style*="background:#f9fafb"],
+[style*="background: #f0fdfa"],
+[style*="background:#f0fdfa"],
+[style*="background: white"],
+[style*="background:white"],
+[style*="backgroundColor: #ffffff"],
+[style*="backgroundColor:#ffffff"],
+[style*="backgroundColor: #fff"],
+[style*="backgroundColor:#fff"],
+[style*="backgroundColor: #f8fafc"],
+[style*="backgroundColor:#f8fafc"] {
+	background-color: var(--paper-strong) !important;
+	color: var(--text-primary) !important;
+	border-color: var(--glass-border) !important;
+}
+
+[style*="color: #111827"],
+[style*="color:#111827"],
+[style*="color: #1e293b"],
+[style*="color:#1e293b"],
+[style*="color: #0f172a"],
+[style*="color:#0f172a"],
+[style*="color: #4b5563"],
+[style*="color:#4b5563"],
+[style*="color: #6b7280"],
+[style*="color:#6b7280"] {
+	color: var(--text-primary) !important;
+}
+
 /* Base Body Background with Mesh Gradients */
 body {
 	background-color: var(--bg-app) !important;
