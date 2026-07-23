@@ -18,6 +18,11 @@ import { RebookingConversionRulesWidget } from "./components/analytics/Rebooking
 import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
 import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
 import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
+import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
+import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
+import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
+import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
 
 export { PatientCockpit } from "./components/workspace/shift/PatientCockpit";
 
@@ -60,6 +65,11 @@ export function ShiftView() {
 				<SingleSessionEnforcementsWidget />
 				<DadataGeocodedAddressesWidget />
 				<PricelistDoctorPayrollsWidget />
+				<RecentPatientHistoryWidget />
+				<CustomCrmTaskTypesWidget />
+				<CrmEmailDispatchLogsWidget />
+				<CancellationReasonsTwoLevelWidget />
+				<AdvanceDepositTaggingsWidget />
 			</div>
 		</motion.div>
 	);

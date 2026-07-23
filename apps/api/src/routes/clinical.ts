@@ -232,7 +232,68 @@ app.post("/api/clinical/post-op-care", async (request, reply) => {
 		const items = await getRebookingConversionRulesFromDb(orgId);
 		return reply.status(200).send(items);
 	});
+
+	// COMPETITOR FEATURE #46: рабочее_место::история_последних_просмотренных_карточек
+	app.get("/api/hr/recent-patients", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getRecentPatientHistoryFromDb } = await import("../db/recentPatientHistoryQuery.js");
+		const items = await getRecentPatientHistoryFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #47: crm::конструктор_типов_задач_без_привязки_к_визиту
+	app.get("/api/crm/custom-task-types", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getCustomCrmTaskTypesFromDb } = await import("../db/customCrmTaskTypesQuery.js");
+		const items = await getCustomCrmTaskTypesFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #50: crm::прямая_отправка_планов_лечения_и_счетов_на_email
+	app.get("/api/communications/email-dispatch-logs", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getCrmEmailDispatchLogsFromDb } = await import("../db/crmEmailDispatchLogsQuery.js");
+		const items = await getCrmEmailDispatchLogsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #56: расписание::двухуровневые_причины_отмены_клиника_пациент
+	app.get("/api/schedule/cancellation-reasons-two-level", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getCancellationReasonsTwoLevelFromDb } = await import("../db/cancellationReasonsTwoLevelQuery.js");
+		const items = await getCancellationReasonsTwoLevelFromDb(orgId);
+		return reply.status(200).send(items);
+	});
+
+	// COMPETITOR FEATURE #58: финансы::принудительное_закрепление_авансов_за_врачами_и_услугами
+	app.get("/api/finance/advance-deposit-taggings", async (request, reply) => {
+		const rawOrgId = request.headers["x-organization-id"];
+		if (rawOrgId === "") {
+			return reply.status(400).send({ error: "Invalid organization ID: header cannot be empty string" });
+		}
+		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { getAdvanceDepositTaggingsFromDb } = await import("../db/advanceDepositTaggingsQuery.js");
+		const items = await getAdvanceDepositTaggingsFromDb(orgId);
+		return reply.status(200).send(items);
+	});
 }
+
 
 
 
