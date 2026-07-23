@@ -741,7 +741,8 @@ export function PayrollView() {
 																		</tr>
 																	</thead>
 																	<tbody>
-																		{doctor.payouts
+																		{(doctor.payouts ?? [])
+																			.slice()
 																			.sort(
 																				(a, b) =>
 																					new Date(b.date).getTime() -

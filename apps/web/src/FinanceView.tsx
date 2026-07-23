@@ -159,19 +159,19 @@ export function FinanceView({
       </div>
 
       <FinancePlanningOverview
-        activePaymentsCount={activePayments.length}
+        activePaymentsCount={(activePayments ?? []).length}
         billingSummary={billingSummary}
         money={money}
         onGoToVisit={onGoToVisit}
         priorityLabels={scenarioPriorityLabels}
-        scenarios={activeTreatmentPlanScenarios}
+        scenarios={activeTreatmentPlanScenarios ?? []}
         strategyLabels={scenarioStrategyLabels}
       />
 
       <ClinicalRulePanel
         actionLabels={clinicalRuleActionLabels}
         context="finance"
-        evaluations={clinicalRuleEvaluations}
+        evaluations={clinicalRuleEvaluations ?? []}
         serviceTitle={serviceTitle}
         severityLabels={clinicalRuleSeverityLabels}
         staffRoleLabels={staffRoleLabels}
@@ -226,20 +226,20 @@ export function FinanceView({
 
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
-        documents={dashboard.documents}
+        documents={dashboard?.documents ?? []}
         formatDateTime={formatDateTime}
         money={money}
         onFocusPaymentCapture={focusPaymentCapture}
         onGoToVisit={onGoToVisit}
         paymentFiscalReceiptLabel={paymentFiscalReceiptLabel}
         paymentMethodLabels={paymentMethodLabels}
-        payments={activePayments}
-        serviceCatalog={dashboard.serviceCatalog}
-        treatmentItems={activeTreatmentPlanItems}
+        payments={activePayments ?? []}
+        serviceCatalog={dashboard?.serviceCatalog ?? []}
+        treatmentItems={activeTreatmentPlanItems ?? []}
         treatmentStatusLabels={treatmentStatusLabels}
       />
 
-      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard.serviceCatalog} />
+      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
 
       <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
         <AdvanceDepositTaggingsWidget />

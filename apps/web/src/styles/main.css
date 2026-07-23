@@ -16407,5 +16407,46 @@ body.dark-mode .communication-empty-state {
   color: var(--text-color, #f8fafc) !important;
 }
 
+/* --- Finance Dark Mode Theme Harmony --- */
+[data-theme="dark"] .finance-summary-grid article,
+.dark .finance-summary-grid article,
+body.dark-mode .finance-summary-grid article,
+[data-theme="dark"] .payment-capture,
+.dark .payment-capture,
+body.dark-mode .payment-capture,
+[data-theme="dark"] .plan-scenarios,
+.dark .plan-scenarios,
+body.dark-mode .plan-scenarios,
+[data-theme="dark"] .plan-scenario,
+.dark .plan-scenario,
+body.dark-mode .plan-scenario,
+[data-theme="dark"] .clinical-rule-panel,
+.dark .clinical-rule-panel,
+body.dark-mode .clinical-rule-panel,
+[data-theme="dark"] .clinical-rule-card,
+.dark .clinical-rule-card,
+body.dark-mode .clinical-rule-card,
+[data-theme="dark"] .finance-list,
+.dark .finance-list,
+body.dark-mode .finance-list,
+[data-theme="dark"] .service-catalog-strip article,
+.dark .service-catalog-strip article,
+body.dark-mode .service-catalog-strip article,
+[data-theme="dark"] .payment-capture-detail-section,
+.dark .payment-capture-detail-section,
+body.dark-mode .payment-capture-detail-section {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+[data-theme="dark"] .finance-due,
+.dark .finance-due,
+body.dark-mode .finance-due {
+  background: rgba(163, 79, 50, 0.2) !important;
+  border-color: rgba(163, 79, 50, 0.5) !important;
+}
+
+
 
 

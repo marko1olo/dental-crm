@@ -144,7 +144,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						Семейный Кошелек: {family.name}
 					</h3>
 					<p className="family-wallet-subtitle">
-						Единый счет для семьи ({family.members.length} чел.)
+						Единый счет для семьи ({(family.members ?? []).length} чел.)
 					</p>
 				</div>
 				<div className="family-wallet-balance-container">
