@@ -4,6 +4,7 @@ import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucid
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
 import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
 import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
+import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
 import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
@@ -387,6 +388,7 @@ export function CommunicationsView({
       </div>
 
       <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <QuickAppointmentConfirmationsWidget />
         <CrmEmailDispatchLogsWidget />
         <UisOmniMessengerQueuesWidget />
         <ProdoctorovSyncWidget />

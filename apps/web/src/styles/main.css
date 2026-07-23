@@ -11834,7 +11834,8 @@ html.dark .emk-tab-button.active,
 .communication-task,
 .communication-side section,
 .template-list article {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
+  color: var(--ink, #0f172a);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-width: 0;
@@ -12039,9 +12040,18 @@ html.dark .emk-tab-button.active,
   margin-bottom: 0;
 }
 
-.communication-side h3 {
+.communication-side section h3,
+.communication-side .panel-heading h3 {
+  color: var(--ink, #0f172a) !important;
   font-size: 16px;
   margin: 0;
+}
+
+html.dark .communication-side section h3,
+html.dark .communication-side .panel-heading h3,
+[data-theme="dark"] .communication-side section h3,
+[data-theme="dark"] .communication-side .panel-heading h3 {
+  color: #f8fafc !important;
 }
 
 .template-list article {
@@ -16575,5 +16585,13 @@ body.dark-mode .finance-due {
 }
 
 
-
+/* Dark mode: document manual override details (DocumentsView) */
+html.dark .document-manual-override,
+[data-theme="dark"] .document-manual-override,
+.dark .document-manual-override,
+body.dark-mode .document-manual-override {
+  background: var(--glass-panel) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
 
