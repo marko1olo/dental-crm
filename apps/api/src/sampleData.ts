@@ -318,6 +318,8 @@ aiEnableRecommendations: true,
 aiEnableDocuments: true,
 };
 
+
+export const staffMembersMap = new Map<string, StaffMember>();
 export const staffMembers: StaffMember[] = [
 	{
 		id: "e44d32ca-7777-4c00-a001-c88f01b92e21",
@@ -385,6 +387,8 @@ export const staffMembers: StaffMember[] = [
 	},
 ];
 
+
+export const chairsMap = new Map<string, Chair>();
 export const chairs: Chair[] = [
 	{
 		id: chairId,
@@ -401,6 +405,8 @@ export const chairs: Chair[] = [
 	},
 ];
 
+
+export const patientsMap = new Map<string, Patient>();
 export const patients: Patient[] = [
 	{
 		id: marinaPatientId,
@@ -12502,4 +12508,15 @@ export function createImagingStudy(input: {
 		reason: `${study.title} добавлен в карту пациента.`,
 	});
 	return study;
+}
+
+
+for (const p of patients) {
+	patientsMap.set(`${p.organizationId}:${p.id}`, p);
+}
+for (const s of staffMembers) {
+	staffMembersMap.set(`${s.organizationId}:${s.id}`, s);
+}
+for (const c of chairs) {
+	chairsMap.set(`${c.organizationId}:${c.id}`, c);
 }

@@ -344,10 +344,8 @@ async function getPatientById(
 
 	if (!patient && process.env.DENTAL_STATE_PERSISTENCE === "off") {
 		try {
-			const { patients } = await import("../sampleData.js");
-			const found = patients.find(
-				(p) => p.id === patientId && p.organizationId === organizationId,
-			);
+			const { patientsMap } = await import("../sampleData.js");
+			const found = patientsMap.get(`${organizationId}:${patientId}`);
 			if (found) return found;
 		} catch (e) {
 			// Ignore
@@ -374,10 +372,8 @@ async function getStaffMemberById(
 
 	if (!user && process.env.DENTAL_STATE_PERSISTENCE === "off") {
 		try {
-			const { staffMembers } = await import("../sampleData.js");
-			const found = staffMembers.find(
-				(s) => s.id === staffId && s.organizationId === organizationId,
-			);
+			const { staffMembersMap } = await import("../sampleData.js");
+			const found = staffMembersMap.get(`${organizationId}:${staffId}`);
 			if (found) return found;
 		} catch (e) {
 			// Ignore
@@ -404,10 +400,8 @@ async function getChairById(
 
 	if (!chair && process.env.DENTAL_STATE_PERSISTENCE === "off") {
 		try {
-			const { chairs } = await import("../sampleData.js");
-			const found = chairs.find(
-				(c) => c.id === chairId && c.organizationId === organizationId,
-			);
+			const { chairsMap } = await import("../sampleData.js");
+			const found = chairsMap.get(`${organizationId}:${chairId}`);
 			if (found) return found;
 		} catch (e) {
 			// Ignore
