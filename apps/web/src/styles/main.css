@@ -6085,6 +6085,12 @@ img {
   padding: 12px;
 }
 
+[data-theme="dark"] .mode-readiness > div,
+[data-theme="dark"] .clinic-legal-form {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
 .mode-readiness strong {
   color: var(--teal-dark);
   font-size: 26px;
@@ -6093,11 +6099,16 @@ img {
 
 .mode-readiness span {
   background: #eef8f5;
-  border-radius: 999px;
-  color: var(--teal-dark);
+  border-radius: 9999px;
+  color: #1a564c;
   font-size: 12px;
-  font-weight: 850;
-  padding: 6px 8px;
+  font-weight: 700;
+  padding: 2px 9px;
+}
+
+[data-theme="dark"] .mode-readiness span {
+  background: rgba(15, 118, 110, 0.2);
+  color: #5eead4;
 }
 
 .clinic-config-grid {
@@ -14252,6 +14263,31 @@ input:focus, select:focus, textarea:focus {
 .settings-advanced-block[open] .settings-advanced-chevron { transform: rotate(180deg); }
 .settings-advanced-block[open] .settings-advanced-toggle {
   border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+[data-theme="dark"] .settings-advanced-block {
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .settings-advanced-toggle {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
+  color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .settings-advanced-toggle:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+[data-theme="dark"] .settings-advanced-label {
+  color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .settings-advanced-hint {
+  color: var(--muted, #94a3b8) !important;
+}
+
+[data-theme="dark"] .settings-advanced-form {
+  background: rgba(15, 23, 42, 0.85) !important;
 }
 .settings-advanced-form {
   padding: 1.25rem 1.1rem 1rem;
