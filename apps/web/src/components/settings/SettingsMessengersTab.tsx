@@ -16,8 +16,10 @@ interface StaffOption {
 type MessengerTabId = "telegram" | "whatsapp" | "max";
 
 export function SettingsMessengersTab({
+	props,
 	settingsTab,
 }: {
+	props?: any;
 	settingsTab: string;
 }) {
 	const appLogic = useAppLogicContext();
