@@ -9,10 +9,6 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { Odontogram } from "./components/Odontogram";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
-import { PatientTaskTicketsWidget } from "./components/patients/PatientTaskTicketsWidget";
-import { PatientReclamationsWidget } from "./components/patients/PatientReclamationsWidget";
-import { OrthodonticProgressWidget } from "./components/patients/OrthodonticProgressWidget";
-import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 
 
@@ -112,7 +108,7 @@ export function PatientsView(props: PatientsViewProps) {
   } = props;
 
   useEffect(() => {
-    if (!selectedPatientId && filteredPatients.length > 0) {
+    if (!selectedPatientId && filteredPatients.length > 0 && filteredPatients[0]?.id) {
       setSelectedPatientId(filteredPatients[0].id);
     }
   }, [selectedPatientId, filteredPatients, setSelectedPatientId]);
@@ -203,6 +199,25 @@ export function PatientsView(props: PatientsViewProps) {
               style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
             />
             <DictationHints isVisible={showHints} type="patient" />
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              title="Телефон нового пациента"
+              placeholder="Телефон нового пациента"
+              value={newPatientPhone}
+              onChange={(e) => setNewPatientPhone(e.target.value)}
+              style={{ display: "none" }}
+            />
+            <input
+              type="date"
+              autoComplete="bday"
+              title="Дата рождения нового пациента"
+              placeholder="Дата рождения нового пациента"
+              value={newPatientBirthDate}
+              onChange={(e) => setNewPatientBirthDate(e.target.value)}
+              style={{ display: "none" }}
+            />
             <SmartParsePreview 
               isVisible={showSmartPreview}
               parsedData={smartParsedData}
@@ -223,7 +238,7 @@ export function PatientsView(props: PatientsViewProps) {
             />
           </div>
           <button
-            className="btn-primary"
+            className="primary-button quick-create-action"
             type="button"
             title="Создать пациента"
             onClick={createPatient}
@@ -544,7 +559,7 @@ export function PatientsView(props: PatientsViewProps) {
                   <span>Удобные дни записи</span>
                   <div className="weekday-toggle-row" role="group" aria-label="Удобные дни записи пациента">
                     {weekdayOptions.map((day) => {
-                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays?.includes(day.value) ?? false;
+                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
                       return (
                         <button
                           aria-pressed={weekdaySelected}
@@ -620,15 +635,8 @@ export function PatientsView(props: PatientsViewProps) {
                 </p>
               ) : null}
               {selectedPatient ? (
-                <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ marginTop: "24px" }}>
                   <PatientOverviewTab />
-                  <h3 style={{ fontSize: "16px", fontWeight: 600 }}>Дополнительные модули пациента</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
-                    <PatientTaskTicketsWidget patientId={selectedPatient.id} />
-                    <PatientReclamationsWidget patientId={selectedPatient.id} />
-                    <OrthodonticProgressWidget patientId={selectedPatient.id} />
-                    <PatientServiceLineagesWidget patientId={selectedPatient.id} />
-                  </div>
                 </div>
               ) : null}
               </div>

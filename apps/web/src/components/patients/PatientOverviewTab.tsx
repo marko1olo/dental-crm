@@ -18,6 +18,7 @@ import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
+import { PatientServiceLineagesWidget } from "../crm/PatientServiceLineagesWidget";
 
 
 
@@ -301,6 +302,10 @@ export function PatientOverviewTab() {
 							patientId={selectedPatientId}
 							dashboard={dashboard}
 						/>
+					)}
+
+					{selectedPatientId && (
+						<PatientServiceLineagesWidget patientId={selectedPatientId} />
 					)}
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>

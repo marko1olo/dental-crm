@@ -104,6 +104,7 @@ import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
 import {
   getPatientsFromDb,
+  getPatientByIdFromDb,
   createPatientInDb,
   updatePatientInDb,
   updatePatientAdministrativeProfileInDb
@@ -169,6 +170,10 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     }
     
     try {
+      const dbPatients = await getPatientsFromDb(orgId);
+      const duplicate = findPatientDuplicate(dbPatients, input, params.patientId);
+      if (duplicate) return sendPatientDuplicate(reply);
+
       const patient = await updatePatientInDb(orgId, params.patientId, input);
       if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
@@ -194,6 +199,18 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     }
     
     try {
+      const existingPatient = await getPatientByIdFromDb(orgId, params.patientId);
+      if (!existingPatient) return sendPatientNotFound(reply);
+      const existingProfile = (existingPatient.administrativeProfile as any) ?? {};
+      const mergedProfile = { ...existingProfile, ...input };
+
+      if (hasIncompleteRepresentativeIdentity(mergedProfile)) {
+        return reply.code(400).send({
+          error: "PatientValidationError",
+          message: patientRepresentativeValidationMessage,
+        });
+      }
+
       const patient = await updatePatientAdministrativeProfileInDb(orgId, params.patientId, input);
       if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
