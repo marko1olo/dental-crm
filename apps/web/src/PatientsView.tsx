@@ -610,13 +610,13 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientAdministrativeSaveGuidance}
                 </p>
               ) : null}
-              {patient ? (
+              {selectedPatient ? (
                 <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <h3 style={{ fontSize: "16px", fontWeight: 600 }}>Дополнительные модули пациента</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
-                    <PatientTaskTicketsWidget patientId={patient.id} />
-                    <PatientReclamationsWidget patientId={patient.id} />
-                    <OrthodonticProgressWidget patientId={patient.id} />
+                    <PatientTaskTicketsWidget patientId={selectedPatient.id} />
+                    <PatientReclamationsWidget patientId={selectedPatient.id} />
+                    <OrthodonticProgressWidget patientId={selectedPatient.id} />
                     <PatientServiceLineagesWidget />
                     <RecentPatientHistoryWidget />
                   </div>
