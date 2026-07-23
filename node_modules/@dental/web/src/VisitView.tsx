@@ -10,6 +10,12 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { CustomExaminationFormCatalogsWidget } from "./components/clinical/CustomExaminationFormCatalogsWidget";
+import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
+import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
+import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
+import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
+import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -1350,5 +1356,13 @@ export function VisitView(props: VisitViewProps) {
               </>
             , document.body);
           })()}
+        <div style={{ marginTop: "32px", marginBottom: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px", padding: "0 16px" }}>
+          <CustomExaminationFormCatalogsWidget />
+          <EgiszMultipleDiagnosesWidget />
+          <ExtendedOdontogramStatesWidget />
+          <NonDentalExaminationFormsWidget />
+          <DiagnocatAiFindingsWidget />
+          <Mkb10AutoDirectoriesWidget />
+        </div>
 </>;
 }

@@ -12,6 +12,10 @@ import { smartBookingParser } from "./lib/smartBookingParser";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
+import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
+import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
+import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -521,9 +525,14 @@ export function ScheduleView(props: ScheduleViewProps) {
                 </article>
               ) : null}
             </div>
+            <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "16px" }}>
+              <QuickAppointmentConfirmationsWidget />
+              <CancellationReasonsTwoLevelWidget />
+              <ScheduleClipboardItemsWidget />
+              <ScheduleTimeReservationsWidget />
+            </div>
           </div>
-
-          );
+      );
 }
 
 /*

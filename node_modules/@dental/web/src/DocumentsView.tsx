@@ -1,6 +1,9 @@
 import { CheckCircle2, FileText } from "lucide-react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
+import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
+import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
+import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanStagesWidget";
 import {
   documentFactoryGroups,
   documentKindMetadata as sharedDocumentKindMetadata,
@@ -5007,7 +5010,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                 );
               })}
             </div>
+            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+              <TreatmentPlanLockTokensWidget />
+              <TreatmentPlanPrintOdontogramWidget />
+              <TreatmentPlanStagesWidget />
+            </div>
           </div>
-
-          );
+      );
 }

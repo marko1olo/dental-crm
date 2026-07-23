@@ -23,6 +23,8 @@ typedRecognitionJob.warnings.map((warning) => (
                       <span key={warning}>{aiRecognitionWarningText(warning)}</span>
 */
 import { useState, useEffect } from "react";
+import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
+import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -1439,6 +1441,11 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         <SettingsImportsTab />
         <SettingsAuditTab />
+
+        <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+          <DadataGeocodedAddressesWidget />
+          <SingleSessionEnforcementsWidget />
+        </div>
       </div>
     </motion.section>
   );

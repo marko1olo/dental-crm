@@ -14,6 +14,10 @@ import {
   MapPin,
   Globe
 } from "lucide-react";
+import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
+import { RebookingConversionRulesWidget } from "./components/analytics/RebookingConversionRulesWidget";
+import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
+import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
 
 type MarketingStats = {
   yandex: { rating: number; reviews: number };
@@ -379,6 +383,13 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           </div>
         </div>
       ) : null}
+
+      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <LostPatientsFiltersWidget />
+        <RebookingConversionRulesWidget />
+        <LandingFieldMappingsWidget />
+        <CustomCrmTaskTypesWidget />
+      </div>
     </section>
   );
 }

@@ -16,17 +16,8 @@ import {
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
-import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
-import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
-import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
-import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
-import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
-import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
-import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
-import { AlternativeTreatmentPlansWidget } from "./components/documents/AlternativeTreatmentPlansWidget";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -296,8 +287,15 @@ export function ShiftView({
                       <p>Врачей и кресел пока нет в настройках.</p>
                     )}
                   </article>
+                  <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
+                    <ConfirmationPerformanceReportsWidget />
+                  </div>
                 </>
               )}
+
+              <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
+                <UrgentScheduleRequestsWidget />
+              </div>
 
               <div className="role-queue-header-row">
                 <h3>Задачи по ролям</h3>
@@ -435,19 +433,7 @@ export function PatientCockpit({
               </div>
             </article>
           </div>
-          <div style={{ marginTop: "16px" }}>
-            <TreatmentPlanLockTokensWidget />
-            <DigitalReceiptDispatchesWidget />
-            <PatientServiceLineagesWidget />
-            <LandingFieldMappingsWidget />
-            <KkmItemQuantityUnitsWidget />
-            <UisOmniMessengerQueuesWidget />
-            <LostPatientsFiltersWidget />
-            <QuickAppointmentConfirmationsWidget />
-            <UrgentScheduleRequestsWidget />
-            <ConfirmationPerformanceReportsWidget />
-            <AlternativeTreatmentPlansWidget />
-          </div>
+          {/* ConfirmationPerformanceReportsWidget is shown inside the analytics panel in ShiftView above */}
         </section>
     </>
   );

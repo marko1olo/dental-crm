@@ -9,6 +9,11 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { Odontogram } from "./components/Odontogram";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { PatientTaskTicketsWidget } from "./components/patients/PatientTaskTicketsWidget";
+import { PatientReclamationsWidget } from "./components/patients/PatientReclamationsWidget";
+import { OrthodonticProgressWidget } from "./components/patients/OrthodonticProgressWidget";
+import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
+import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -604,6 +609,18 @@ export function PatientsView(props: PatientsViewProps) {
                 <p className="patient-save-guidance" id={patientAdministrativeSaveGuidanceId} role="status" aria-live="polite">
                   {patientAdministrativeSaveGuidance}
                 </p>
+              ) : null}
+              {patient ? (
+                <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 600 }}>Дополнительные модули пациента</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+                    <PatientTaskTicketsWidget patientId={patient.id} />
+                    <PatientReclamationsWidget patientId={patient.id} />
+                    <OrthodonticProgressWidget patientId={patient.id} />
+                    <PatientServiceLineagesWidget />
+                    <RecentPatientHistoryWidget />
+                  </div>
+                </div>
               ) : null}
               </div>
             </details>

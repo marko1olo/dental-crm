@@ -4,6 +4,9 @@ import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
+import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
+import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
+import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -236,6 +239,12 @@ export function FinanceView({
       />
 
       <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard.serviceCatalog} />
+
+      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <AdvanceDepositTaggingsWidget />
+        <DigitalReceiptDispatchesWidget />
+        <KkmItemQuantityUnitsWidget />
+      </div>
     </div>
   );
 }

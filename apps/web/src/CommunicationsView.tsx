@@ -2,6 +2,9 @@ import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useState } from "react";
 import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
+import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
+import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
+import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -381,6 +384,12 @@ export function CommunicationsView({
             </div>
           </section>
         </aside>
+      </div>
+
+      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <CrmEmailDispatchLogsWidget />
+        <UisOmniMessengerQueuesWidget />
+        <ProdoctorovSyncWidget />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { AppLoadingState } from "./AppBootState";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
 
 type Payout = {
 	id: string;
@@ -836,6 +837,10 @@ export function PayrollView() {
 				до начисления комиссии врачу, защищая маржинальность клиники.
 				<br />
 				Нажмите на строку врача, чтобы увидеть детализацию по каждому визиту.
+			</div>
+
+			<div style={{ marginTop: "24px" }}>
+				<PricelistDoctorPayrollsWidget />
 			</div>
 		</motion.div>
 	);
