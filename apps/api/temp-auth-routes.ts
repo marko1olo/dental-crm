@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 // ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
 app.post(
 	"/api/auth/register",
@@ -88,7 +89,7 @@ app.post(
 			.where(and(eq(users.email, loginEmail), eq(users.isActive, true)))
 			.limit(1);
 		if (!user || !user.passwordHash) {
-			await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
+			await new Promise((r) => setTimeout(r, 200 + randomInt(100)));
 			return reply
 				.code(401)
 				.send({ error: "AuthError", message: "Неверный email или пароль." });
