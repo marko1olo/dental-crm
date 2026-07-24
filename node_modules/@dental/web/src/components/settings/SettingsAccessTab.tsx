@@ -3,6 +3,7 @@ import { UserCheck, ShieldCheck, Mail, Link as LinkIcon, Check } from "lucide-re
 import { showToast } from "../GlobalToast";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { StaffRole } from "@dental/shared";
+import { SingleSessionEnforcementsWidget } from "./SingleSessionEnforcementsWidget";
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
@@ -187,6 +188,7 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
                 </article>
               ))}
             </div>
+            <SingleSessionEnforcementsWidget />
           </section>
   );
 }

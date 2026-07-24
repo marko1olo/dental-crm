@@ -14,6 +14,7 @@ import { CustomExaminationFormCatalogsWidget } from "./components/clinical/Custo
 import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
 import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
 import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
+import { VisitExaminationPhotoLinksWidget } from "./components/clinical/VisitExaminationPhotoLinksWidget";
 import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
 import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
@@ -1442,6 +1443,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
           <EgiszMultipleDiagnosesWidget />
           <ExtendedOdontogramStatesWidget />
           <NonDentalExaminationFormsWidget />
+          <VisitExaminationPhotoLinksWidget />
           <DiagnocatAiFindingsWidget />
           <Mkb10AutoDirectoriesWidget />
         </div>
