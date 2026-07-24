@@ -220,54 +220,21 @@ export function OrthodonticProgressWidget({
 						exit={{ opacity: 0, x: 10 }}
 						style={{ display: "flex", flexDirection: "column", gap: "12px" }}
 					>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginBottom: "8px",
-							}}
-						>
-							<span
-								style={{
-									fontSize: "14px",
-									fontWeight: 600,
-									color: "var(--ink)",
-								}}
-							>
+						<div className="flex justify-between items-center mb-2">
+							<span className="text-sm font-semibold text-slate-900 dark:text-white">
 								Настройка трекера (глубокий JSONB)
 							</span>
 							<button
 								type="button"
 								onClick={() => setIsEditing(false)}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--muted)",
-									cursor: "pointer",
-									padding: 0,
-								}}
+								className="bg-transparent border-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0"
 							>
 								<X size={18} />
 							</button>
 						</div>
 
-						<div
-							style={{
-								display: "grid",
-								gridTemplateColumns: "1fr 1fr",
-								gap: "12px",
-							}}
-						>
-							<label
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: "6px",
-									fontSize: "12px",
-									color: "var(--muted)",
-								}}
-							>
+						<div className="grid grid-cols-2 gap-3">
+							<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
 								Текущая каппа
 								<input
 									type="number"
@@ -277,25 +244,10 @@ export function OrthodonticProgressWidget({
 									onChange={(e) =>
 										setFormCurrent(Math.max(1, Number(e.target.value)))
 									}
-									style={{
-										padding: "8px 12px",
-										borderRadius: "8px",
-										background: "var(--paper-soft)",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-										fontSize: "14px",
-									}}
+									className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none"
 								/>
 							</label>
-							<label
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: "6px",
-									fontSize: "12px",
-									color: "var(--muted)",
-								}}
-							>
+							<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
 								Всего капп
 								<input
 									type="number"
@@ -304,41 +256,18 @@ export function OrthodonticProgressWidget({
 									onChange={(e) =>
 										setFormTotal(Math.max(1, Number(e.target.value)))
 									}
-									style={{
-										padding: "8px 12px",
-										borderRadius: "8px",
-										background: "var(--paper-soft)",
-										border: "1px solid var(--line)",
-										color: "var(--ink)",
-										fontSize: "14px",
-									}}
+									className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none"
 								/>
 							</label>
 						</div>
 
-						<label
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "6px",
-								fontSize: "12px",
-								color: "var(--muted)",
-							}}
-						>
+						<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
 							Дата начала
 							<input
 								type="date"
 								value={formStart}
 								onChange={(e) => setFormStart(e.target.value)}
-								style={{
-									padding: "8px 12px",
-									borderRadius: "8px",
-									background: "var(--paper-soft)",
-									border: "1px solid var(--line)",
-									color: "var(--ink)",
-									fontSize: "14px",
-									width: "100%",
-								}}
+								className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm w-full outline-none"
 							/>
 						</label>
 
@@ -452,169 +381,62 @@ export function OrthodonticProgressWidget({
 								</button>
 							</div>
 						) : (
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: "16px",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										alignItems: "flex-start",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "10px",
-										}}
-									>
-										<div
-											style={{
-												width: 40,
-												height: 40,
-												borderRadius: "10px",
-												background: "var(--teal-light)",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												color: "var(--teal-dark)",
-											}}
-										>
+							<div className="flex flex-col gap-4">
+								<div className="flex justify-between items-start">
+									<div className="flex items-center gap-2.5">
+										<div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950 flex items-center justify-center text-teal-600 dark:text-teal-400">
 											<Smile size={20} />
 										</div>
 										<div>
-											<h4
-												style={{
-													margin: 0,
-													fontSize: "15px",
-													fontWeight: 600,
-													color: "var(--ink)",
-												}}
-											>
+											<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
 												Элайнеры
 											</h4>
-											<span
-												style={{
-													fontSize: "12px",
-													color: "var(--muted)",
-													display: "flex",
-													alignItems: "center",
-													gap: "4px",
-												}}
-											>
+											<span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
 												<Calendar size={12} /> с {formatDate(ortho.startDate)}
 											</span>
 										</div>
 									</div>
 									<button
 										onClick={handleStartEdit}
-										style={{
-											background: "var(--paper-soft)",
-											border: "1px solid var(--line)",
-											color: "var(--ink)",
-											padding: "6px 12px",
-											borderRadius: "6px",
-											fontSize: "12px",
-											fontWeight: 600,
-											cursor: "pointer",
-										}}
+										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer"
 									>
 										Изменить
 									</button>
 								</div>
 
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "8px",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "flex-end",
-										}}
-									>
-										<span
-											style={{
-												fontSize: "28px",
-												fontWeight: 700,
-												color: "var(--ink)",
-												lineHeight: 1,
-											}}
-										>
+								<div className="flex flex-col gap-2">
+									<div className="flex justify-between items-end">
+										<span className="text-3xl font-bold text-slate-900 dark:text-white leading-none">
 											{currentAligner}{" "}
-											<span
-												style={{
-													fontSize: "16px",
-													fontWeight: 500,
-													color: "var(--muted)",
-												}}
-											>
+											<span className="text-base font-medium text-slate-500 dark:text-slate-400">
 												/ {totalAligners}
 											</span>
 										</span>
-										<span
-											style={{
-												fontSize: "13px",
-												fontWeight: 600,
-												color: "var(--teal)",
-											}}
-										>
+										<span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
 											{progressPercent}%
 										</span>
 									</div>
 
-									<div
-										style={{
-											height: "8px",
-											background: "var(--paper-soft)",
-											borderRadius: "4px",
-											overflow: "hidden",
-										}}
-									>
+									<div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
 										<motion.div
 											initial={{ width: 0 }}
 											animate={{ width: `${progressPercent}%` }}
 											transition={{ duration: 1, ease: "easeOut" }}
-											style={{
-												height: "100%",
-												background: "var(--teal)",
-												borderRadius: "4px",
-											}}
+											className="h-full bg-teal-500 rounded-full"
 										/>
 									</div>
 								</div>
 
 								{weeksRemaining > 0 ? (
-									<p
-										style={{
-											margin: 0,
-											fontSize: "13px",
-											color: "var(--muted)",
-										}}
-									>
+									<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
 										Осталось примерно{" "}
-										<strong style={{ color: "var(--ink)" }}>
+										<strong className="text-slate-900 dark:text-white">
 											{weeksRemaining}
 										</strong>{" "}
 										капп до завершения этапа.
 									</p>
 								) : (
-									<p
-										style={{
-											margin: 0,
-											fontSize: "13px",
-											color: "var(--green)",
-										}}
-									>
+									<p className="m-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
 										🎉 Все каппы пройдены! Запланируйте контрольный осмотр.
 									</p>
 								)}
