@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { Activity, ShieldCheck } from "lucide-react";
 
 interface ExtendedOdontogramItem {
@@ -16,6 +16,7 @@ interface ExtendedOdontogramItem {
 }
 
 export const ExtendedOdontogramStatesWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [states, setStates] = useState<ExtendedOdontogramItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
@@ -32,7 +33,7 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 				console.error("[ExtendedOdontogramStatesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div

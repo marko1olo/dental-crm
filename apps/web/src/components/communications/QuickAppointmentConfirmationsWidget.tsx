@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { CheckCircle, PhoneCall } from "lucide-react";
 
 interface QuickConfirmItem {
@@ -13,6 +13,7 @@ interface QuickConfirmItem {
 }
 
 export const QuickAppointmentConfirmationsWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [items, setItems] = useState<QuickConfirmItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
@@ -29,7 +30,7 @@ export const QuickAppointmentConfirmationsWidget: React.FC = () => {
 				console.error("[QuickAppointmentConfirmationsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div

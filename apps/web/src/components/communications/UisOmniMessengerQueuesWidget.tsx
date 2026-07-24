@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { MessageSquare, Clock } from "lucide-react";
 
 interface OmniQueueItem {
@@ -14,6 +14,7 @@ interface OmniQueueItem {
 }
 
 export const UisOmniMessengerQueuesWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [queues, setQueues] = useState<OmniQueueItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
@@ -30,7 +31,7 @@ export const UisOmniMessengerQueuesWidget: React.FC = () => {
 				console.error("[UisOmniMessengerQueuesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div

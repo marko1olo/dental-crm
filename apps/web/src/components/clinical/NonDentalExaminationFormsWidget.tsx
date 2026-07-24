@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { ClipboardList } from "lucide-react";
 
 interface NonDentalFormItem {
@@ -16,6 +16,7 @@ interface NonDentalFormItem {
 }
 
 export const NonDentalExaminationFormsWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [forms, setForms] = useState<NonDentalFormItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
@@ -32,7 +33,7 @@ export const NonDentalExaminationFormsWidget: React.FC = () => {
 				console.error("[NonDentalExaminationFormsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div

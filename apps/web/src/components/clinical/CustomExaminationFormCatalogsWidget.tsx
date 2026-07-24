@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { FileText, CheckCircle2 } from "lucide-react";
 
 interface FormCatalogItem {
@@ -14,6 +14,7 @@ interface FormCatalogItem {
 }
 
 export const CustomExaminationFormCatalogsWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [catalogs, setCatalogs] = useState<FormCatalogItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
@@ -30,7 +31,7 @@ export const CustomExaminationFormCatalogsWidget: React.FC = () => {
 				console.error("[CustomExaminationFormCatalogsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
