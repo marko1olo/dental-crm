@@ -13,8 +13,7 @@
 	padding: 16px;
 	opacity: 0.1;
 	transition: opacity 0.2s ease-out;
-	pointer-events: none;
-	color: var(--accent-100);
+	color: currentColor;
 }
 
 .family-wallet-panel:hover .family-wallet-bg-icon {
