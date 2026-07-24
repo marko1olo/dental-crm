@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { Mail, CheckCircle2 } from "lucide-react";
 
 interface EmailLogItem {
@@ -14,12 +14,14 @@ interface EmailLogItem {
 }
 
 export const CrmEmailDispatchLogsWidget: React.FC = () => {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
 	const [logs, setLogs] = useState<EmailLogItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/communications/email-dispatch-logs", {
-			headers: auth.denteClinicalReadHeaders(),
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -30,7 +32,7 @@ export const CrmEmailDispatchLogsWidget: React.FC = () => {
 				console.error("[CrmEmailDispatchLogsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
@@ -40,44 +42,41 @@ export const CrmEmailDispatchLogsWidget: React.FC = () => {
 		>
 			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<Mail className="w-5 h-5 text-purple-500" />
-					<h3 className="font-semibold text-purple-600 dark:text-purple-400">
-						Журнал отправки планов лечения и счетов по Email из CRM
+					<Mail className="w-5 h-5 text-sky-500" />
+					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
+						Логи отправки документов пациентам по E-mail
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800">
-					PDF & Invoice Mailer
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
+					E-mail рассылки
 				</span>
 			</div>
 
 			{loading ? (
 				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
-					Загрузка журнала отправки Email...
+					Загрузка логов отправки...
 				</div>
 			) : logs.length === 0 ? (
 				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
-					Записи об отправке писем по Email отсутствуют.
+					Логи отправки e-mail сообщений отсутствуют.
 				</div>
 			) : (
-				<div className="space-y-3">
-					{logs.map((item) => (
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{logs.map((log) => (
 						<div
-							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							key={log.id}
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
 							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold">{item.patientName}</span>
-									<span className="text-xs font-mono text-purple-600 dark:text-purple-300">({item.recipientEmail})</span>
-								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-									Документ: {item.documentTitle}
-								</div>
+							<div className="flex items-center justify-between">
+								<span className="font-bold text-sm">{log.patientName}</span>
+								<span className="text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1 font-mono">
+									<CheckCircle2 className="w-3 h-3" /> {log.dispatchStatus}
+								</span>
 							</div>
-							<span className="px-2 py-1 text-xs rounded border font-bold uppercase bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-								{item.dispatchStatus}
-							</span>
+							<div className="text-xs" style={{ color: "var(--muted)" }}>
+								Документ: <span style={{ color: "var(--ink)" }}>{log.documentTitle}</span> ({log.recipientEmail})
+							</div>
 						</div>
 					))}
 				</div>
