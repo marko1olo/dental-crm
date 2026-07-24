@@ -156,61 +156,21 @@ export function PatientReclamationsWidget({
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
-				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
-				style={{
-					borderStyle: "dashed",
-				}}
+				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 			>
-				<div
-					className="panel-heading"
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						padding: "16px 20px",
-						background: "transparent",
-						margin: 0,
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "10px",
-							color: "var(--slate-500)",
-						}}
-					>
-						<div
-							style={{
-								width: 32,
-								height: 32,
-								borderRadius: 8,
-								background: "var(--surface-100)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
+				<div className="panel-heading flex justify-between items-center p-4 bg-transparent m-0">
+					<div className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400">
+						<div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
 							<ShieldAlert size={16} />
 						</div>
-						<h3 style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>
+						<h3 className="text-sm font-semibold m-0 text-slate-900 dark:text-white">
 							Рекламации и осложнения отсутствуют
 						</h3>
 					</div>
 					<button
 						type="button"
 						onClick={() => setIsAdding(true)}
-						style={{
-							background: "var(--surface-100)",
-							color: "var(--slate-700)",
-							border: "1px solid var(--border-300)",
-							borderRadius: "8px",
-							padding: "6px 12px",
-							fontSize: "13px",
-							fontWeight: 600,
-							cursor: "pointer",
-							transition: "all 0.2s",
-						}}
+						className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
 					>
 						+ Фиксировать
 					</button>
@@ -224,58 +184,16 @@ export function PatientReclamationsWidget({
 			data-testid="patient-reclamations-widget"
 			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 		>
-			<div
-				className="panel-heading"
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					padding: "16px 20px",
-					background: "var(--rose-50)",
-					borderBottom: "1px solid var(--rose-200)",
-					margin: 0,
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-					<div
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 8,
-							background: "var(--rose-100)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							color: "var(--rose-600)",
-						}}
-					>
+			<div className="panel-heading flex justify-between items-center p-4 bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900 m-0">
+				<div className="flex items-center gap-2.5">
+					<div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
 						<AlertOctagon size={16} />
 					</div>
 					<div>
-						<h3
-							style={{
-								fontSize: "15px",
-								fontWeight: 600,
-								color: "var(--rose-800)",
-								margin: 0,
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
+						<h3 className="text-sm font-semibold text-rose-900 dark:text-rose-300 m-0 flex items-center gap-2">
 							Рекламации и инциденты
 							{reviewCount > 0 && (
-								<span
-									style={{
-										background: "var(--rose-600)",
-										color: "#fff",
-										padding: "2px 8px",
-										borderRadius: "12px",
-										fontSize: "11px",
-										fontWeight: 700,
-										boxShadow: "0 0 0 2px var(--rose-50)",
-									}}
-								>
+								<span className="bg-rose-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold shadow">
 									{reviewCount} открыт.
 								</span>
 							)}
@@ -285,27 +203,17 @@ export function PatientReclamationsWidget({
 				<button
 					type="button"
 					onClick={() => setIsAdding(!isAdding)}
-					style={{
-						background: isAdding ? "var(--rose-200)" : "var(--rose-600)",
-						color: isAdding ? "var(--rose-900)" : "#fff",
-						border: "none",
-						borderRadius: "8px",
-						padding: "6px 12px",
-						fontSize: "13px",
-						fontWeight: 600,
-						cursor: "pointer",
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						transition: "all 0.2s",
-						boxShadow: isAdding ? "none" : "0 2px 4px rgba(225, 29, 72, 0.2)",
-					}}
+					className={`border-0 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+						isAdding
+							? "bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-100"
+							: "bg-rose-600 text-white shadow-sm hover:bg-rose-700"
+					}`}
 				>
 					<Plus size={16} /> {isAdding ? "Отмена" : "Добавить"}
 				</button>
 			</div>
 
-			<div style={{ padding: "20px", background: "var(--paper)" }}>
+			<div className="p-5 bg-white dark:bg-slate-900">
 				<AnimatePresence>
 					{isAdding && (
 						<motion.form
@@ -313,30 +221,15 @@ export function PatientReclamationsWidget({
 							animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
 							exit={{ opacity: 0, height: 0, marginBottom: 0 }}
 							onSubmit={handleAdd}
-							style={{
-								background: "var(--rose-50)",
-								padding: "20px",
-								borderRadius: "12px",
-								border: "1px dashed var(--rose-300)",
-								overflow: "hidden",
-							}}
+							className="bg-rose-50 dark:bg-rose-950/30 p-5 rounded-xl border border-dashed border-rose-300 dark:border-rose-800 overflow-hidden"
 						>
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr",
-									gap: "16px",
-								}}
-							>
+							<div className="grid grid-cols-1 gap-4">
 								<div className="smart-field">
 									<select
 										value={doctorId}
 										onChange={(e) => setDoctorId(e.target.value)}
 										required
-										style={{
-											background: "var(--paper)",
-											border: "1px solid var(--rose-200)",
-										}}
+										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-slate-900 dark:text-white outline-none"
 									>
 										<option value="" disabled>
 											Выберите лечащего врача
@@ -347,7 +240,7 @@ export function PatientReclamationsWidget({
 											</option>
 										))}
 									</select>
-									<label style={{ color: "var(--rose-700)" }}>
+									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
 										Врач (автор работы)
 									</label>
 								</div>
@@ -358,15 +251,9 @@ export function PatientReclamationsWidget({
 										onChange={(e) => setNewComplicationDetails(e.target.value)}
 										placeholder=" "
 										required
-										style={{
-											resize: "vertical",
-											minHeight: "80px",
-											padding: "12px 16px",
-											background: "var(--paper)",
-											border: "1px solid var(--rose-200)",
-										}}
+										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label style={{ color: "var(--rose-700)" }}>
+									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
 										Суть жалобы или осложнения
 									</label>
 								</div>
@@ -376,44 +263,25 @@ export function PatientReclamationsWidget({
 										value={newProposedAction}
 										onChange={(e) => setNewProposedAction(e.target.value)}
 										placeholder=" "
-										style={{
-											resize: "vertical",
-											minHeight: "60px",
-											padding: "12px 16px",
-											background: "var(--paper)",
-											border: "1px solid var(--rose-200)",
-										}}
+										className="w-full p-3 rounded-lg min-h-[60px] bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label style={{ color: "var(--rose-700)" }}>
+									<label className="text-xs text-rose-700 dark:text-rose-400 font-medium">
 										Предложенное решение (гарантия, возврат, переделка)
 									</label>
 								</div>
 							</div>
 
-							<div
-								style={{
-									display: "flex",
-									gap: "12px",
-									justifyContent: "flex-end",
-									marginTop: "20px",
-								}}
-							>
+							<div className="flex gap-3 justify-end mt-5">
 								<button
 									type="button"
-									className="ghost-button"
+									className="ghost-button text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
 									onClick={() => setIsAdding(false)}
-									style={{ color: "var(--rose-700)" }}
 								>
 									Отмена
 								</button>
 								<button
 									type="submit"
-									className="primary-button"
-									style={{
-										background: "var(--rose-600)",
-										color: "#fff",
-										border: "none",
-									}}
+									className="primary-button bg-rose-600 hover:bg-rose-700 text-white border-0 px-4 py-2 rounded-lg font-semibold cursor-pointer"
 								>
 									Зафиксировать в карту
 								</button>
@@ -422,7 +290,7 @@ export function PatientReclamationsWidget({
 					)}
 				</AnimatePresence>
 
-				<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+				<div className="flex flex-col gap-3">
 					<AnimatePresence>
 						{reclamations.map((rec) => {
 							const isUnderReview = rec.status === "under_review";
@@ -434,76 +302,37 @@ export function PatientReclamationsWidget({
 									initial={{ opacity: 0, y: 10 }}
 									animate={{ opacity: 1, y: 0 }}
 									exit={{ opacity: 0, scale: 0.95 }}
-									style={{
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "16px",
-										padding: "16px",
-										background: isUnderReview ? "var(--paper)" : "var(--surface-50)",
-										border: "1px solid",
-										borderColor: isUnderReview
-											? "var(--rose-200)"
-											: "var(--line)",
-										borderRadius: "12px",
-										opacity: isUnderReview ? 1 : 0.6,
-										transition: "all 0.2s ease",
-										position: "relative",
-										boxShadow: isUnderReview
-											? "0 4px 12px rgba(225, 29, 72, 0.05)"
-											: "none",
-									}}
+									className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
+										isUnderReview
+											? "bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 shadow-sm opacity-100"
+											: "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 opacity-70"
+									}`}
 								>
 									<div
-										style={{
-											width: "4px",
-											height: "40px",
-											background: isUnderReview
-												? "var(--rose-500)"
-												: "var(--emerald)",
-											borderRadius: 4,
-											marginTop: 4,
-										}}
+										className={`w-1 h-10 rounded-full mt-1 ${
+											isUnderReview ? "bg-rose-500" : "bg-emerald-500"
+										}`}
 									/>
 
-									<div style={{ flex: 1, minWidth: 0 }}>
-										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "flex-start",
-												marginBottom: "8px",
-											}}
-										>
+									<div className="flex-1 min-w-0">
+										<div className="flex justify-between items-start mb-2">
 											<div
-												style={{
-													fontWeight: 600,
-													fontSize: "15px",
-													color: isUnderReview
-														? "var(--rose-900)"
-														: "var(--ink)",
-												}}
+												className={`font-semibold text-sm ${
+													isUnderReview
+														? "text-rose-950 dark:text-rose-200"
+														: "text-slate-900 dark:text-white"
+												}`}
 											>
 												{rec.complicationDetails}
 											</div>
-											<div style={{ display: "flex", gap: "8px" }}>
+											<div className="flex gap-2">
 												<button
 													onClick={() => handleToggleStatus(rec.id, rec.status)}
-													style={{
-														background: isUnderReview
-															? "var(--emerald)"
-															: "var(--surface-200)",
-														color: isUnderReview ? "#fff" : "var(--ink)",
-														border: "none",
-														padding: "6px 12px",
-														borderRadius: "6px",
-														fontSize: "12px",
-														fontWeight: 600,
-														cursor: "pointer",
-														display: "flex",
-														alignItems: "center",
-														gap: "6px",
-														transition: "all 0.2s",
-													}}
+													className={`border-0 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+														isUnderReview
+															? "bg-emerald-600 hover:bg-emerald-700 text-white"
+															: "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+													}`}
 													title={
 														isUnderReview
 															? "Отметить как урегулированную"
@@ -520,16 +349,7 @@ export function PatientReclamationsWidget({
 												</button>
 												<button
 													onClick={() => handleDelete(rec.id)}
-													style={{
-														background: "var(--surface-100)",
-														border: "none",
-														padding: "6px 8px",
-														cursor: "pointer",
-														color: "var(--slate-400)",
-														borderRadius: "6px",
-														transition: "all 0.2s ease",
-													}}
-													className="hover-red"
+													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-1.5 rounded-md cursor-pointer transition-colors"
 													title="Удалить безвозвратно"
 												>
 													<Trash2 size={16} />
@@ -538,85 +358,28 @@ export function PatientReclamationsWidget({
 										</div>
 
 										{rec.proposedAction && (
-											<div
-												style={{
-													fontSize: "13px",
-													color: "var(--slate-700)",
-													marginBottom: "12px",
-													lineHeight: 1.5,
-													background: "var(--surface-50)",
-													padding: "10px 14px",
-													borderRadius: "8px",
-													borderLeft: "2px solid var(--border-300)",
-												}}
-											>
-												<strong
-													style={{
-														display: "block",
-														marginBottom: 4,
-														color: "var(--ink)",
-													}}
-												>
+											<div className="text-xs text-slate-700 dark:text-slate-300 mb-3 leading-relaxed bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border-l-2 border-slate-300 dark:border-slate-700">
+												<strong className="block mb-1 text-slate-900 dark:text-white">
 													Предложенное решение:
 												</strong>
 												{rec.proposedAction}
 											</div>
 										)}
 
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "16px",
-												flexWrap: "wrap",
-												marginTop: "12px",
-											}}
-										>
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "6px",
-													fontSize: "12px",
-													color: "var(--muted)",
-													fontWeight: 500,
-												}}
-											>
+										<div className="flex items-center gap-4 flex-wrap mt-3 text-xs text-slate-500 dark:text-slate-400">
+											<div className="flex items-center gap-1.5 font-medium">
 												<Stethoscope size={14} />
-												<span
-													style={{
-														color: "var(--ink)",
-														background: "var(--surface-100)",
-														padding: "4px 8px",
-														borderRadius: "4px",
-													}}
-												>
+												<span className="text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
 													{doctor?.fullName || "Неизвестный врач"}
 												</span>
 											</div>
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "4px",
-													fontSize: "12px",
-													color: "var(--slate-400)",
-												}}
-											>
+											<div className="flex items-center gap-1 text-slate-400">
 												<Calendar size={14} />
 												Зафиксировано:{" "}
 												{new Date(rec.createdAt).toLocaleDateString("ru-RU")}
 											</div>
 											{rec.resolvedAt && (
-												<div
-													style={{
-														display: "flex",
-														alignItems: "center",
-														gap: "4px",
-														fontSize: "12px",
-														color: "var(--emerald)",
-													}}
-												>
+												<div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
 													<CheckCircle2 size={14} />
 													Урегулировано:{" "}
 													{new Date(rec.resolvedAt).toLocaleDateString("ru-RU")}

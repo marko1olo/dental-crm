@@ -137,57 +137,16 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 			data-testid="patient-task-tickets-widget"
 			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 		>
-			<div
-				className="panel-heading"
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					padding: "16px 20px",
-					background: "var(--surface-50)",
-					borderBottom: "1px solid var(--line)",
-					margin: 0,
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-					<div
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 8,
-							background: "var(--brand-100)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							color: "var(--brand-600)",
-						}}
-					>
+			<div className="panel-heading flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 m-0">
+				<div className="flex items-center gap-2.5">
+					<div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600 dark:text-sky-400">
 						<Clock size={16} />
 					</div>
 					<div>
-						<h3
-							style={{
-								fontSize: "15px",
-								fontWeight: 600,
-								color: "var(--ink)",
-								margin: 0,
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
+						<h3 className="text-sm font-semibold text-slate-900 dark:text-white m-0 flex items-center gap-2">
 							Задачи по пациенту
 							{pendingCount > 0 && (
-								<span
-									style={{
-										background: "var(--brand-500)",
-										color: "#fff",
-										padding: "2px 8px",
-										borderRadius: "12px",
-										fontSize: "11px",
-										fontWeight: 700,
-									}}
-								>
+								<span className="bg-sky-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold">
 									{pendingCount} активн.
 								</span>
 							)}
@@ -197,26 +156,17 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				<button
 					type="button"
 					onClick={() => setIsAdding(!isAdding)}
-					style={{
-						background: isAdding ? "var(--surface-200)" : "var(--brand-50)",
-						color: isAdding ? "var(--ink)" : "var(--brand-600)",
-						border: "none",
-						borderRadius: "8px",
-						padding: "6px 12px",
-						fontSize: "13px",
-						fontWeight: 600,
-						cursor: "pointer",
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						transition: "all 0.2s",
-					}}
+					className={`border-0 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all ${
+						isAdding
+							? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+							: "bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900"
+					}`}
 				>
 					<Plus size={16} /> {isAdding ? "Отмена" : "Создать"}
 				</button>
 			</div>
 
-			<div style={{ padding: "20px" }}>
+			<div className="p-5 bg-white dark:bg-slate-900">
 				<AnimatePresence>
 					{isAdding && (
 						<motion.form
@@ -224,21 +174,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 							animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
 							exit={{ opacity: 0, height: 0, marginBottom: 0 }}
 							onSubmit={handleAdd}
-							style={{
-								background: "var(--surface-100)",
-								padding: "16px",
-								borderRadius: "12px",
-								border: "1px solid var(--border-300)",
-								overflow: "hidden",
-							}}
+							className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
 						>
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr",
-									gap: "12px",
-								}}
-							>
+							<div className="grid grid-cols-1 gap-3">
 								<div className="smart-field">
 									<input
 										value={newTitle}
@@ -246,12 +184,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										placeholder=" "
 										required
 										autoFocus
-										style={{
-											background: "var(--paper)",
-											border: "1px solid var(--line)",
-										}}
+										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
 									/>
-									<label>Название задачи</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">Название задачи</label>
 								</div>
 
 								<div className="smart-field">
@@ -259,10 +194,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										value={assignedToId}
 										onChange={(e) => setAssignedToId(e.target.value)}
 										required
-										style={{
-											background: "var(--paper)",
-											border: "1px solid var(--line)",
-										}}
+										className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
 									>
 										<option value="" disabled>
 											Выберите ответственного сотрудника
@@ -273,7 +205,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 											</option>
 										))}
 									</select>
-									<label>Кому назначена</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">Кому назначена</label>
 								</div>
 
 								<div className="smart-field">
@@ -281,34 +213,21 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										value={newDescription}
 										onChange={(e) => setNewDescription(e.target.value)}
 										placeholder=" "
-										style={{
-											resize: "vertical",
-											minHeight: "80px",
-											padding: "12px 16px",
-											background: "var(--paper)",
-											border: "1px solid var(--line)",
-										}}
+										className="w-full p-3 rounded-lg min-h-[80px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none resize-y"
 									/>
-									<label>Описание и комментарии (опционально)</label>
+									<label className="text-xs text-slate-500 dark:text-slate-400">Описание и комментарии (опционально)</label>
 								</div>
 							</div>
 
-							<div
-								style={{
-									display: "flex",
-									gap: "8px",
-									justifyContent: "flex-end",
-									marginTop: "16px",
-								}}
-							>
+							<div className="flex gap-2 justify-end mt-4">
 								<button
 									type="button"
-									className="ghost-button"
+									className="ghost-button text-slate-600 dark:text-slate-300 hover:underline cursor-pointer"
 									onClick={() => setIsAdding(false)}
 								>
 									Отмена
 								</button>
-								<button type="submit" className="primary-button">
+								<button type="submit" className="primary-button bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg font-semibold cursor-pointer">
 									Создать задачу
 								</button>
 							</div>
@@ -317,27 +236,18 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				</AnimatePresence>
 
 				{!isLoading && tickets.length === 0 && !isAdding && (
-					<div
-						style={{
-							padding: "32px",
-							textAlign: "center",
-							color: "var(--muted)",
-							background: "var(--surface-50)",
-							borderRadius: "12px",
-							border: "1px dashed var(--line)",
-						}}
-					>
-						<Clock size={32} style={{ margin: "0 auto 12px", opacity: 0.5 }} />
-						<p style={{ margin: 0, fontSize: "14px", fontWeight: 500 }}>
+					<div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+						<Clock size={32} className="mx-auto mb-3 opacity-50" />
+						<p className="m-0 text-sm font-medium text-slate-900 dark:text-white">
 							Нет активных задач по пациенту
 						</p>
-						<p style={{ margin: "4px 0 0", fontSize: "13px" }}>
+						<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
 							Задачи помогают администраторам и врачам не забыть о важных делах.
 						</p>
 					</div>
 				)}
 
-				<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+				<div className="flex flex-col gap-2.5">
 					<AnimatePresence>
 						{tickets.map((ticket) => {
 							const isPending = ticket.status === "pending";
@@ -351,37 +261,17 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 									initial={{ opacity: 0, y: 10 }}
 									animate={{ opacity: 1, y: 0 }}
 									exit={{ opacity: 0, scale: 0.95 }}
-									style={{
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "16px",
-										padding: "16px",
-										background: isPending
-											? "var(--paper)"
-											: "var(--surface-50)",
-										border: "1px solid",
-										borderColor: isPending ? "var(--line)" : "transparent",
-										borderRadius: "12px",
-										opacity: isPending ? 1 : 0.6,
-										transition: "all 0.2s ease",
-										position: "relative",
-										boxShadow: isPending
-											? "0 2px 8px rgba(0,0,0,0.02)"
-											: "none",
-									}}
+									className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
+										isPending
+											? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm opacity-100"
+											: "bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-60"
+									}`}
 								>
 									<button
 										onClick={() => handleToggleStatus(ticket.id, ticket.status)}
-										style={{
-											background: "none",
-											border: "none",
-											padding: 0,
-											cursor: "pointer",
-											color: isPending ? "var(--slate-400)" : "var(--emerald)",
-											transition: "color 0.2s ease, transform 0.1s ease",
-											display: "flex",
-											marginTop: "2px",
-										}}
+										className={`bg-transparent border-0 p-0 cursor-pointer transition-colors flex mt-0.5 ${
+											isPending ? "text-slate-400 dark:text-slate-500 hover:text-sky-600" : "text-emerald-500"
+										}`}
 										title={
 											isPending
 												? "Отметить как выполненную"
@@ -395,75 +285,31 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										)}
 									</button>
 
-									<div style={{ flex: 1, minWidth: 0 }}>
+									<div className="flex-1 min-w-0">
 										<div
-											style={{
-												fontWeight: 600,
-												fontSize: "15px",
-												color: "var(--ink)",
-												textDecoration: isPending ? "none" : "line-through",
-												marginBottom: ticket.description ? "6px" : "8px",
-											}}
+											className={`font-semibold text-sm ${
+												isPending
+													? "text-slate-900 dark:text-white"
+													: "line-through text-slate-500 dark:text-slate-400"
+											} ${ticket.description ? "mb-1.5" : "mb-2"}`}
 										>
 											{ticket.title}
 										</div>
 
 										{ticket.description && (
-											<div
-												style={{
-													fontSize: "13px",
-													color: "var(--slate-600)",
-													marginBottom: "10px",
-													lineHeight: 1.5,
-													background: "var(--surface-50)",
-													padding: "8px 12px",
-													borderRadius: "6px",
-													borderLeft: "2px solid var(--border-300)",
-												}}
-											>
+											<div className="text-xs text-slate-600 dark:text-slate-300 mb-2.5 leading-relaxed bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-md border-l-2 border-slate-300 dark:border-slate-700">
 												{ticket.description}
 											</div>
 										)}
 
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "16px",
-												flexWrap: "wrap",
-											}}
-										>
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "4px",
-													fontSize: "12px",
-													color: "var(--muted)",
-													fontWeight: 500,
-												}}
-											>
+										<div className="flex items-center gap-4 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+											<div className="flex items-center gap-1 font-medium">
 												<User size={14} />
-												<span
-													style={{
-														color: "var(--brand-700)",
-														background: "var(--brand-50)",
-														padding: "2px 8px",
-														borderRadius: "4px",
-													}}
-												>
+												<span className="text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded">
 													{assignee?.fullName || "Неизвестный сотрудник"}
 												</span>
 											</div>
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: "4px",
-													fontSize: "12px",
-													color: "var(--slate-400)",
-												}}
-											>
+											<div className="flex items-center gap-1 text-slate-400">
 												<Calendar size={14} />
 												{new Date(ticket.createdAt).toLocaleDateString("ru-RU")}
 											</div>
@@ -472,16 +318,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 									<button
 										onClick={() => handleDelete(ticket.id)}
-										style={{
-											background: "var(--surface-100)",
-											border: "none",
-											padding: "8px",
-											cursor: "pointer",
-											color: "var(--slate-400)",
-											borderRadius: "8px",
-											transition: "all 0.2s ease",
-										}}
-										className="hover-red"
+										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 rounded-lg cursor-pointer transition-colors"
 										title="Удалить задачу"
 									>
 										<Trash2 size={16} />
