@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { ShieldAlert, UserCheck } from "lucide-react";
 
 interface SessionItem {
@@ -15,13 +15,16 @@ interface SessionItem {
 }
 
 export const SingleSessionEnforcementsWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [sessions, setSessions] = useState<SessionItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/system/single-session-enforcements", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/system/single-session-enforcements", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setSessions(Array.isArray(data) ? data : []);
