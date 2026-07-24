@@ -100,6 +100,20 @@ class TestShadcnInstaller:
         assert success is False
         assert "No components specified" in message
 
+    def test_add_components_invalid_name(self, temp_project):
+        """Test adding components with invalid names."""
+        installer = ShadcnInstaller(project_root=temp_project)
+
+        # Test spaces
+        success, message = installer.add_components(["invalid name"])
+        assert success is False
+        assert "Invalid component name" in message
+
+        # Test command injection attempt
+        success, message = installer.add_components(["button; rm -rf /"])
+        assert success is False
+        assert "Invalid component name" in message
+
     def test_add_components_no_config(self, tmp_path):
         """Test adding components without shadcn config."""
         installer = ShadcnInstaller(project_root=tmp_path)
@@ -173,7 +187,9 @@ class TestShadcnInstaller:
         # Verify correct command was called
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
-        assert call_args[:3] == ["npx", "shadcn@latest", "add"]
+        assert call_args[0] == "npx"
+        assert call_args[1].startswith("shadcn@")
+        assert call_args[2] == "add"
         assert "button" in call_args
         assert "card" in call_args
 

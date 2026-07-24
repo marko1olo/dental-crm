@@ -9,7 +9,6 @@ with detailed descriptions, concepts, and brand guidelines.
 
 import argparse
 import json
-import os
 import sys
 import base64
 from pathlib import Path

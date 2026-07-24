@@ -75,7 +75,6 @@ export function usePatientLogic({
 		return (
 			findPatient(dashboard.patients, dashboard?.activeVisit?.patientId) ??
 			dashboard?.patients?.find((patient) => patient.status === "active") ??
-			dashboard?.patients?.[0] ??
 			null
 		);
 	}, [dashboard]);

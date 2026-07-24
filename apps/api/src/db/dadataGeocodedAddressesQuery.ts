@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { dadataGeocodedAddresses } from "./schema.js";
 
 async function ensureDadataGeocodedAddressesTable() {
 	try {
-		await db.execute(sql`
+		await db.execute(`
 			CREATE TABLE IF NOT EXISTS "dadata_geocoded_addresses" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,

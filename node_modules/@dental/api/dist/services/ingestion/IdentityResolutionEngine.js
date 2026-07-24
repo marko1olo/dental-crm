@@ -17,7 +17,8 @@ export class IdentityResolutionEngine {
                 const cost = a[i - 1] === b[j - 1] ? 0 : 1;
                 matrix[i][j] = Math.min(matrix[i - 1][j] + 1, // deletion
                 matrix[i][j - 1] + 1, // insertion
-                matrix[i - 1][j - 1] + cost);
+                matrix[i - 1][j - 1] + cost // substitution
+                );
             }
         }
         return matrix[a.length][b.length];
@@ -29,14 +30,14 @@ export class IdentityResolutionEngine {
     static normalizePhone(phone) {
         if (!phone)
             return null;
-        let cleaned = phone.replace(/\D/g, "");
-        if (cleaned.length === 11 && cleaned.startsWith("8")) {
-            cleaned = "7" + cleaned.substring(1);
+        let cleaned = phone.replace(/\D/g, '');
+        if (cleaned.length === 11 && cleaned.startsWith('8')) {
+            cleaned = '7' + cleaned.substring(1);
         }
         if (cleaned.length === 10) {
-            cleaned = "7" + cleaned;
+            cleaned = '7' + cleaned;
         }
-        return "+" + cleaned;
+        return '+' + cleaned;
     }
     /**
      * Normalizes a name string for comparison.
@@ -44,8 +45,8 @@ export class IdentityResolutionEngine {
      */
     static normalizeName(name) {
         if (!name)
-            return "";
-        return name.toLowerCase().trim().replace(/\s+/g, " ");
+            return '';
+        return name.toLowerCase().trim().replace(/\s+/g, ' ');
     }
     /**
      * Compares two patient records and returns a confidence score between 0.0 and 1.0.
@@ -53,8 +54,8 @@ export class IdentityResolutionEngine {
     static calculateConfidenceScore(incoming, existing) {
         let score = 0;
         // 1. Phone Match (E.164)
-        const phoneInc = IdentityResolutionEngine.normalizePhone(incoming.phone);
-        const phoneEx = IdentityResolutionEngine.normalizePhone(existing.phone);
+        const phoneInc = this.normalizePhone(incoming.phone);
+        const phoneEx = this.normalizePhone(existing.phone);
         let phoneMatch = false;
         if (phoneInc && phoneEx && phoneInc === phoneEx) {
             score += 0.4;
@@ -65,10 +66,10 @@ export class IdentityResolutionEngine {
             score -= 0.1;
         }
         // 2. Name Match
-        const nameInc = IdentityResolutionEngine.normalizeName(incoming.fullName);
-        const nameEx = IdentityResolutionEngine.normalizeName(existing.fullName);
+        const nameInc = this.normalizeName(incoming.fullName);
+        const nameEx = this.normalizeName(existing.fullName);
         const maxLen = Math.max(nameInc.length, nameEx.length);
-        const dist = IdentityResolutionEngine.levenshteinDistance(nameInc, nameEx);
+        const dist = this.levenshteinDistance(nameInc, nameEx);
         const nameSimilarity = maxLen === 0 ? 0 : (maxLen - dist) / maxLen;
         // We weight name similarity by 0.4
         score += nameSimilarity * 0.4;
@@ -94,9 +95,9 @@ export class IdentityResolutionEngine {
      */
     static getResolutionAction(score) {
         if (score >= 0.85)
-            return "AUTO_MERGE";
+            return 'AUTO_MERGE';
         if (score >= 0.65)
-            return "MANUAL_REVIEW";
-        return "CREATE_NEW";
+            return 'MANUAL_REVIEW';
+        return 'CREATE_NEW';
     }
 }

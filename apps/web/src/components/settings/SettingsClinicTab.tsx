@@ -66,8 +66,7 @@ function StaffCredentialsEditor({ member, saveCredentials }: { member: any, save
   );
 }
 
-export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<string, any>, settingsTab?: string }) {
-  const p = props || {};
+export function SettingsClinicTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
   const {
     dashboard,
     changeClinicMode,
@@ -134,22 +133,22 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
     clinicModeLabels,
     staffRoleLabels,
     specialtyLabels
-  } = p;
+  } = props;
 
   if (settingsTab !== "clinic") return null;
 
-  const typedClinicModes = Object.keys(clinicModeLabels || {}) as ClinicMode[];
-  const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
-  const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
+  const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
+  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
+  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
   
-  const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
-  const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{ value: string; label: string; detail: string }>;
+  const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
+  const typedUiLanguageOptions = uiLanguageOptions as Array<{ value: string; label: string; detail: string }>;
   const selectedUiLanguageOption = typedUiLanguageOptions.find((o) => o.value === uiLanguage) || typedUiLanguageOptions[0] || { detail: '' };
 
   const typedClinicPublicLookupSuggestions = clinicPublicLookup?.suggestions ?? [];
   const typedClinicPublicLookupTargets = clinicPublicLookup?.publicLookupTargets ?? [];
-  const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
-  const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
+  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
+  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
   const staffCreationRoles: StaffRole[] = ["doctor", "administrator", "assistant", "manager"];
 
   return (
@@ -157,28 +156,28 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
             <div className="clinic-config-head">
               <div>
                 <p className="eyebrow">Аккаунт клиники</p>
-                <h2>{dashboard?.clinicSettings?.profile?.clinicName ?? "Демо Клиника DENTE"}</h2>
+                <h2>{dashboard.clinicSettings.profile.clinicName}</h2>
                 <p>
-                  {dashboard?.clinicSettings?.profile?.legalName ?? "ООО Демо Клиника"} · {dashboard?.clinicSettings?.profile?.address ?? ""} ·{" "}
-                  {dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
+                  {dashboard.clinicSettings.profile.legalName} · {dashboard.clinicSettings.profile.address} ·{" "}
+                  {dashboard.clinicSettings.profile.timezone}
                 </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-                <span>{dashboard?.clinicSettings?.profile?.mode ? clinicModeLabels?.[dashboard.clinicSettings.profile.mode]?.title : "Стандартный"}</span>
+                <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
               </div>
             </div>
 
             <div className="mode-grid" aria-label="Режим продукта">
               {typedClinicModes.map((mode) => (
                 <button
-                  className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
+                  className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
                   key={mode}
                   type="button"
-                  aria-pressed={dashboard?.clinicSettings?.profile?.mode === mode}
+                  aria-pressed={dashboard.clinicSettings.profile.mode === mode}
                   onClick={() => changeClinicMode(mode)}
                 >
-                  <strong>{clinicModeLabels?.[mode]?.title}</strong>
-                  <span>{clinicModeLabels?.[mode]?.detail}</span>
+                  <strong>{clinicModeLabels[mode].title}</strong>
+                  <span>{clinicModeLabels[mode].detail}</span>
                 </button>
               ))}
             </div>
@@ -192,14 +191,14 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
             <div className="mode-readiness">
               <div>
                 <p className="eyebrow">Готовность режима</p>
-                <strong>{dashboard?.shiftIntelligence?.modeFit?.fitScore ?? 100}%</strong>
-                <span>{dashboard?.shiftIntelligence?.modeFit?.lowFrictionNextStep ?? "Готово"}</span>
+                <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
+                <span>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</span>
               </div>
               <div>
                 <p className="eyebrow">Открытые роли</p>
                 {typedRoleQueues.map((queue) => (
                   <span key={queue.role}>
-                    {staffRoleLabels?.[queue.role] ?? queue.role}: {queue.openItems}
+                    {staffRoleLabels[queue.role]}: {queue.openItems}
                   </span>
                 ))}
               </div>
@@ -213,7 +212,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                 </div>
                 <div className="legal-readiness-badge">
                   <strong>{legalReadinessPercent}%</strong>
-                  <span>{(legalMissingFields ?? []).length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
+                  <span>{legalMissingFields.length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
                 </div>
               </div>
 
@@ -232,7 +231,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                   <input value={clinicProfileDraft.address} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)} />
                 </label>
                 <div className="form-span-2">
-                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
+                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {[
                       { value: "solo_doctor", label: "Частный кабинет (без ассистента)" },
@@ -244,8 +243,8 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                         className={`quick-chip ${clinicProfileDraft.mode === option.value ? 'active' : ''}`}
                         onClick={() => updateClinicProfileDraft("mode", option.value)}
                         style={{
-                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--surface-100, var(--paper-soft))',
-                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--ink)',
+                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--slate-100)',
+                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--slate-700)',
                           padding: "8px 16px",
                           borderRadius: "20px",
                           border: "none",
@@ -518,7 +517,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                 </div>
                 {newStaffRole === "doctor" || newStaffRole === "assistant" ? (
                   <div className="specialty-strip staff-specialty-picker" aria-label="Специальность нового сотрудника">
-                    {(Object.keys(specialtyLabels || {}) as DentalSpecialty[]).map((specialty) => (
+                    {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
                       <button
                         className={newStaffSpecialty === specialty ? "active" : ""}
                         key={specialty}
@@ -526,7 +525,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                         aria-pressed={newStaffSpecialty === specialty}
                         onClick={() => setNewStaffSpecialty(specialty)}
                       >
-                        {specialtyLabels?.[specialty] ?? specialty}
+                        {specialtyLabels[specialty]}
                       </button>
                     ))}
                   </div>

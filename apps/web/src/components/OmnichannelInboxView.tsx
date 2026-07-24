@@ -112,10 +112,7 @@ function NewChatModal({
 					`/api/communications/patients/search?q=${encodeURIComponent(query.trim())}`,
 					{ headers: authHeaders() },
 				);
-				if (res.ok) {
-					const data = await res.json();
-					setResults(Array.isArray(data) ? data : []);
-				}
+				if (res.ok) setResults(await res.json());
 			} finally {
 				setSearching(false);
 			}
@@ -917,7 +914,7 @@ export function OmnichannelInboxView() {
 							<div
 								style={{
 									height: 64,
-									background: "var(--glass-panel)",
+									background: "rgba(255,255,255,0.85)",
 									backdropFilter: "blur(12px)",
 									borderBottom: "1px solid var(--line)",
 									padding: "0 20px",

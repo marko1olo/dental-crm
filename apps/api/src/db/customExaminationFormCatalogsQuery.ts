@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { customExaminationFormCatalogs } from "./schema.js";
 
 async function ensureCustomExaminationFormCatalogsTable() {
 	try {
-		await db.execute(sql`
+		await db.execute(`
 			CREATE TABLE IF NOT EXISTS "custom_examination_form_catalogs" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
@@ -20,7 +20,6 @@ async function ensureCustomExaminationFormCatalogsTable() {
 		console.warn("[ensureCustomExaminationFormCatalogsTable warning]:", err);
 	}
 }
-
 
 export async function getCustomExaminationFormCatalogsFromDb(orgId: string) {
 	try {

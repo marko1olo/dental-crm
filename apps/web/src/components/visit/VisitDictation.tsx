@@ -118,7 +118,7 @@ export function VisitDictation() {
 				className="dictation-quick-row"
 				aria-label="Быстрые фразы для диктовки"
 			>
-				{(Array.isArray(dictationQuickPhrases) ? dictationQuickPhrases : []).map((phrase: any) => (
+				{dictationQuickPhrases.map((phrase: any) => (
 					<button
 						type="button"
 						key={phrase.label}
@@ -416,7 +416,7 @@ export function VisitDictation() {
 					>
 						<strong>Чтобы собрать черновик, осталось:</strong>
 						<ul>
-							{(Array.isArray(visitDraftBuildMissingSteps) ? visitDraftBuildMissingSteps : []).map((step: any) => (
+							{visitDraftBuildMissingSteps.map((step) => (
 								<li key={step}>{step}</li>
 							))}
 						</ul>

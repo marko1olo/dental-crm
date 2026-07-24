@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { customCrmTaskTypes } from "./schema.js";
 
 async function ensureCustomCrmTaskTypesTable() {
 	try {
-		await db.execute(sql`
+		await db.execute(`
 			CREATE TABLE IF NOT EXISTS "custom_crm_task_types" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,

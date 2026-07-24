@@ -15,7 +15,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      showToast("Заполните Email и пароль клиники", "warning");
+      showToast("Заполните все поля", "warning");
       return;
     }
 
@@ -29,15 +29,15 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Ошибка входа клиники");
+        throw new Error(data.message || "Ошибка входа");
       }
 
       localStorage.setItem("dente_clinic_token", data.clinicToken);
-      showToast("Вход в рабочее пространство выполнен", "success");
+      showToast("Вход в рабочее пространство клиники успешен", "success");
       onLoginSuccess(data.clinicProfile);
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || "Неверный логин или пароль клиники", "error");
+      showToast(err.message || "Неверные учетные данные клиники", "error");
     } finally {
       setLoading(false);
     }
@@ -49,34 +49,33 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
       <div className="auth-glow auth-glow--right"></div>
 
       <div className="auth-modal animate-fade-in-up">
+        
         <div className="auth-header-center">
           <div className="auth-logo-box">
             <Shield size={32} />
           </div>
           <h2 className="auth-logo-title">DENTE CRM-MIS</h2>
-          <p className="auth-logo-subtitle">Авторизация терминала клиники</p>
+          <p className="auth-logo-subtitle">Активация кабинета</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-form-group">
             <label className="auth-label">
-              <Building size={12} className="auth-icon-inline" /> Email клиники
+              <Building size={12} className="auth-icon-inline" /> Логин / Email клиники
             </label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="clinic@example.com"
               className="auth-input"
               disabled={loading}
-              autoComplete="email"
-              autoFocus
             />
           </div>
 
           <div className="auth-form-group">
             <label className="auth-label">
-              <KeyRound size={12} className="auth-icon-inline" /> Пароль
+              <KeyRound size={12} className="auth-icon-inline" /> Мастер-пароль
             </label>
             <div className="auth-input-wrapper">
               <input
@@ -86,14 +85,11 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
                 placeholder="••••••••"
                 className="auth-input auth-input--with-icon"
                 disabled={loading}
-                autoComplete="current-password"
               />
               <button
                 type="button"
+                onClick={() => setShowPassword(!showPassword)}
                 className="auth-input-icon-btn"
-                onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -109,15 +105,19 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
               <div className="auth-spinner"></div>
             ) : (
               <>
-                Войти в клинику <ArrowRight size={16} />
+                Вход в кабинет <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
         <div className="auth-footer-hints auth-footer-hints--border">
-          Пароль по умолчанию для демо-клиники: <code>admin123</code>
+          <p>
+            Авторизация требуется для загрузки расписания и шифрования данных.<br />
+            Демо-доступ: <code>clinic@example.com</code> / <code>dente2026</code>
+          </p>
         </div>
+
       </div>
     </div>
   );

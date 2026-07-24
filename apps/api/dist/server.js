@@ -10,6 +10,7 @@ import { registerCommunicationRoutes } from "./routes/communications.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
+import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -19,11 +20,16 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
-import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
+import { registerTelegramRoutes, registerTelegramWebhookRoutes } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerOdontogramRoutes } from "./routes/odontogram.js";
+import registerSchedulerSync from "./routes/schedulerSync.js";
+import registerHandoff from "./routes/handoff.js";
+import registerSurgicalRoutes from "./routes/surgical.js";
+import { setupWebsockets } from "./websocket.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
@@ -32,6 +38,7 @@ import { getProxyAgent } from "./speech/keyPool.js";
 import { startWatchdog } from "./watchdog.js";
 loadAdditionalServerEnv();
 startWatchdog();
+// startNotificationWorker();
 async function checkProxyPortDirectly(proxyUrlString) {
     return new Promise((resolve) => {
         try {
@@ -126,14 +133,7 @@ export async function createDenteApiApp(options = {}) {
             level: process.env.NODE_ENV === "production" ? "info" : "debug"
         }
     });
-    let rawWebOrigin = process.env.WEB_ORIGIN;
-    if (!rawWebOrigin) {
-        if (process.env.NODE_ENV === "production") {
-            throw new Error("WEB_ORIGIN environment variable is required in production");
-        }
-        rawWebOrigin = "http://127.0.0.1:5173";
-    }
-    const webOrigins = rawWebOrigin
+    const webOrigins = (process.env.WEB_ORIGIN ?? "http://127.0.0.1:5173")
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean)
@@ -154,6 +154,7 @@ export async function createDenteApiApp(options = {}) {
     await app.register(cors, {
         origin: webOrigins
     });
+    await setupWebsockets(app);
     app.setErrorHandler((error, _request, reply) => {
         import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", (error?.stack || error?.message || String(error)) + "\nCAUSE: " + (error?.cause || "") + "\n"));
         if (isZodValidationError(error)) {
@@ -194,6 +195,7 @@ export async function createDenteApiApp(options = {}) {
     await registerDashboardRoutes(app);
     await registerDocumentRoutes(app);
     await registerImagingRoutes(app);
+    await registerImagingPlanningRoutes(app);
     await registerIngestionRoutes(app);
     await registerImportRoutes(app);
     await registerPatientRoutes(app);
@@ -209,10 +211,16 @@ export async function createDenteApiApp(options = {}) {
     await registerDicomwebRoutes(app);
     await registerXrayRoutes(app);
     await registerAuthRoutes(app);
+    await registerOdontogramRoutes(app);
+    await registerSchedulerSync(app);
+    await registerHandoff(app);
+    await registerSurgicalRoutes(app);
     if (options.startTelegramWorker !== false) {
-        const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
+        // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
+        // const recallWorkerTimer = startRecallWorker();
         app.addHook("onClose", async () => {
-            telegramOutboxDueWorker.stop();
+            // telegramOutboxDueWorker.stop();
+            // clearInterval(recallWorkerTimer);
         });
     }
     return app;

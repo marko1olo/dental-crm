@@ -88,7 +88,7 @@ function extractTime(text: string): string | null {
   }
   
   // Fix 'полпервого' / 'пол первого'
-  m = text.match(/(пол(?:овин[аеу])?\s*|четверть\s+)([а-яё]+)/i);
+  m = text.match(/(пол(?:овин[аеу])?[\s\-]*|четверть\s+)([а-яё]+)/i);
   if (m) {
     const isQuarter = m[1].includes("четверть");
     const word = (m[2] as string).substring(0, 3);

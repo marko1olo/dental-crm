@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type PropsWithChildren } from "react";
 
-export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing" | "analytics";
+export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing";
 
 type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
   label: string;
@@ -19,7 +19,7 @@ function workspaceRouteErrorDetail(error: unknown): string {
     return "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
   }
 
-  return error instanceof Error ? `[Error] ${error.message}\n${error.stack || ''}` : String(error);
+  return "Раздел остановлен до перезагрузки, чтобы не показывать неполные данные.";
 }
 
 function requestDenteStaleWorkspaceRefresh(): void {

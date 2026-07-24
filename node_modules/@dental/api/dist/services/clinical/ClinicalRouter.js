@@ -31,7 +31,7 @@ export class ClinicalRouter {
             taskType: nextTaskType,
             title: nextTaskTitle,
             description: nextTaskDesc,
-            status: "pending",
+            status: "pending"
         };
         console.log(`[ClinicalRouter] Created handoff task: ${newTask.title}`);
         return newTask;

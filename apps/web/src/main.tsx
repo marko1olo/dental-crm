@@ -4,7 +4,6 @@ import { AppShell } from "./AppShell";
 import "./styles/main.css";
 import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";
-import "./styles/premium.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

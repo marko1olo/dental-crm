@@ -4,11 +4,6 @@ import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
-import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
-import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
-import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
-import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
-import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -137,7 +132,7 @@ export function FinanceView({
   setPaymentTaxDeductionCode,
   staffRoleLabels,
   treatmentStatusLabels
-}: any = {}) {
+}: FinanceViewProps) {
   const focusPaymentCapture = () => {
     const amountInput = document.getElementById("payment-amount-input") as HTMLInputElement | null;
     const paymentCapture = document.getElementById("payment-capture");
@@ -160,19 +155,19 @@ export function FinanceView({
       </div>
 
       <FinancePlanningOverview
-        activePaymentsCount={(activePayments ?? []).length}
+        activePaymentsCount={activePayments.length}
         billingSummary={billingSummary}
         money={money}
         onGoToVisit={onGoToVisit}
         priorityLabels={scenarioPriorityLabels}
-        scenarios={activeTreatmentPlanScenarios ?? []}
+        scenarios={activeTreatmentPlanScenarios}
         strategyLabels={scenarioStrategyLabels}
       />
 
       <ClinicalRulePanel
         actionLabels={clinicalRuleActionLabels}
         context="finance"
-        evaluations={clinicalRuleEvaluations ?? []}
+        evaluations={clinicalRuleEvaluations}
         serviceTitle={serviceTitle}
         severityLabels={clinicalRuleSeverityLabels}
         staffRoleLabels={staffRoleLabels}
@@ -227,30 +222,20 @@ export function FinanceView({
 
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
-        documents={dashboard?.documents ?? []}
+        documents={dashboard.documents}
         formatDateTime={formatDateTime}
         money={money}
         onFocusPaymentCapture={focusPaymentCapture}
         onGoToVisit={onGoToVisit}
         paymentFiscalReceiptLabel={paymentFiscalReceiptLabel}
         paymentMethodLabels={paymentMethodLabels}
-        payments={activePayments ?? []}
-        serviceCatalog={dashboard?.serviceCatalog ?? []}
-        treatmentItems={activeTreatmentPlanItems ?? []}
+        payments={activePayments}
+        serviceCatalog={dashboard.serviceCatalog}
+        treatmentItems={activeTreatmentPlanItems}
         treatmentStatusLabels={treatmentStatusLabels}
       />
 
-      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
-
-      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
-        <PricelistDoctorPayrollsWidget />
-        <AdvanceDepositTaggingsWidget />
-        <DigitalReceiptDispatchesWidget />
-        <KkmItemQuantityUnitsWidget />
-        {documentPatient?.id ? (
-          <FamilyWalletPanel patientId={documentPatient.id} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
-        ) : null}
-      </div>
+      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard.serviceCatalog} />
     </div>
   );
 }

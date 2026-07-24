@@ -14,9 +14,9 @@ import {
 	type SpeechTranscriptionResponse,
 	type SpeechTranscriptPolishResponse,
 	type VisitDraftAutosaveResponse,
+	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-type VisitFlowResult = any;
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
@@ -762,17 +762,16 @@ export function useVisitLogic({
 			if (assembledTranscript) {
 				visitDraftUserEditedRef.current = true;
 				setTranscript((current: any) => {
-					const safeCurrent = typeof current === "string" ? current : "";
-					const normalizedCurrent = safeCurrent.replace(/\s+/g, " ").trim();
+					const normalizedCurrent = current.replace(/\s+/g, " ").trim();
 					const normalizedAssembled = assembledTranscript
 						.replace(/\s+/g, " ")
 						.trim();
 					if (
 						!normalizedAssembled ||
-						(normalizedCurrent && normalizedCurrent.includes(normalizedAssembled))
+						normalizedCurrent.includes(normalizedAssembled)
 					)
-						return safeCurrent;
-					return [safeCurrent.trim(), assembledTranscript]
+						return current;
+					return [current.trim(), assembledTranscript]
 						.filter(Boolean)
 						.join("\n");
 				});

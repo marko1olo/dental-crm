@@ -1,5 +1,5 @@
 import { db } from "./apps/api/src/db/client.js";
-import { organizations, biAnalyticsSnapshots, payments, treatmentScenarios, appointments, users, visitDiaries } from "./apps/api/src/db/schema.js";
+import { organizations } from "./apps/api/src/db/schema.js";
 import { computeBiAnalyticsSnapshots } from "./apps/api/src/services/biAnalyticsWorker.js";
 import { randomUUID } from "node:crypto";
 

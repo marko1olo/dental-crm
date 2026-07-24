@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { egiszMultipleDiagnoses } from "./schema.js";
 
 async function ensureEgiszMultipleDiagnosesTable() {
 	try {
-		await db.execute(sql`
+		await db.execute(`
 			CREATE TABLE IF NOT EXISTS "egisz_multiple_diagnoses" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
@@ -20,7 +20,6 @@ async function ensureEgiszMultipleDiagnosesTable() {
 		console.warn("[ensureEgiszMultipleDiagnosesTable warning]:", err);
 	}
 }
-
 
 export async function getEgiszMultipleDiagnosesFromDb(orgId: string) {
 	try {

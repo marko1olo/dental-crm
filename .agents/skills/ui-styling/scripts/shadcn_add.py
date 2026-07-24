@@ -8,6 +8,7 @@ Wraps shadcn CLI for programmatic component installation.
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -94,6 +95,11 @@ class ShadcnInstaller:
         if not components:
             return False, "No components specified"
 
+        # Validate component names to prevent command injection
+        for component in components:
+            if not re.match(r"^[a-zA-Z0-9\-]+$", component):
+                return False, f"Invalid component name: {component}. Only alphanumeric characters and hyphens are allowed."
+
         if not self.check_shadcn_config():
             return (
                 False,
@@ -123,7 +129,7 @@ class ShadcnInstaller:
 
         # Execute command
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 cmd,
                 cwd=self.project_root,
                 capture_output=True,
@@ -169,7 +175,7 @@ class ShadcnInstaller:
             return True, f"Would run: {' '.join(cmd)}"
 
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603
                 cmd,
                 cwd=self.project_root,
                 capture_output=True,

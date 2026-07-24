@@ -1,11 +1,11 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
-import { treatmentPlanStages } from "./schema.js";
+import { treatmentPlanStagesAutoArchive } from "./schema.js";
 
-async function ensureTreatmentPlanStagesTable() {
+async function ensureTreatmentPlanStagesAutoArchiveTable() {
 	try {
-		await db.execute(sql`
-			CREATE TABLE IF NOT EXISTS "treatment_plan_stages" (
+		await db.execute(`
+			CREATE TABLE IF NOT EXISTS "treatment_plan_stages_auto_archive" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
 				"patient_name" text NOT NULL,
@@ -19,17 +19,17 @@ async function ensureTreatmentPlanStagesTable() {
 			);
 		`);
 	} catch (err) {
-		console.warn("[ensureTreatmentPlanStagesTable warning]:", err);
+		console.warn("[ensureTreatmentPlanStagesAutoArchiveTable warning]:", err);
 	}
 }
 
 export async function getTreatmentPlanStagesFromDb(orgId: string) {
 	try {
-		await ensureTreatmentPlanStagesTable();
+		await ensureTreatmentPlanStagesAutoArchiveTable();
 		const rows = await db
 			.select()
-			.from(treatmentPlanStages)
-			.where(eq(treatmentPlanStages.organizationId, orgId));
+			.from(treatmentPlanStagesAutoArchive)
+			.where(eq(treatmentPlanStagesAutoArchive.organizationId, orgId));
 
 		if (rows && rows.length > 0) return rows;
 	} catch (err) {

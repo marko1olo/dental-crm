@@ -11,8 +11,13 @@ const workspaceViewPreloaders: Partial<
 	settings: () => import("./SettingsView"),
 	marketing: () => import("./MarketingView"),
 	shift: () => import("./ShiftView"),
+	leads: () => import("./components/leads/LeadsKanbanView"),
 	imaging: () => import("./ImagingView"),
 	visit: () => import("./VisitView"),
+	analytics: () => import("./pages/AnalyticsDashboardView"),
+	inventory: () => import("./components/InventoryView"),
+	scanner: () => import("./ScannerView"),
+	inbox: () => import("./components/OmnichannelInboxView"),
 };
 
 const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
@@ -52,11 +57,18 @@ function shouldPreloadWorkspaceRoutes(intent: WorkspacePreloadIntent): boolean {
 	if (!connection) return true;
 	if (connection.saveData) return false;
 	const effectiveType = connection.effectiveType?.toLowerCase() ?? "";
-	if (intent === "idle" && (effectiveType === "slow-2g" || effectiveType === "2g")) return false;
+	if (
+		intent === "idle" &&
+		(effectiveType === "slow-2g" || effectiveType === "2g")
+	)
+		return false;
 	return true;
 }
 
-export function preloadWorkspaceView(view: AppView, intent: WorkspacePreloadIntent = "explicit") {
+export function preloadWorkspaceView(
+	view: AppView,
+	intent: WorkspacePreloadIntent = "explicit",
+) {
 	if (!shouldPreloadWorkspaceRoutes(intent)) return;
 	void workspaceViewPreloaders[view]?.();
 }
@@ -70,7 +82,9 @@ export function scheduleIdleWorkspacePreload(
 	if (!preloadViews.length) return undefined;
 	const idleWindow = window as IdlePreloadWindow;
 	const preloadLikelyRoutes = () => {
-		preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"));
+		preloadViews.forEach((view) => {
+			preloadWorkspaceView(view, "idle");
+		});
 	};
 	if (idleWindow.requestIdleCallback) {
 		const idleHandle = idleWindow.requestIdleCallback(preloadLikelyRoutes, {

@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./client.js";
 import { nonDentalExaminationForms } from "./schema.js";
 
 async function ensureNonDentalExaminationFormsTable() {
 	try {
-		await db.execute(sql`
+		await db.execute(`
 			CREATE TABLE IF NOT EXISTS "non_dental_examination_forms" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,
@@ -22,7 +22,6 @@ async function ensureNonDentalExaminationFormsTable() {
 		console.warn("[ensureNonDentalExaminationFormsTable warning]:", err);
 	}
 }
-
 
 export async function getNonDentalExaminationFormsFromDb(orgId: string) {
 	try {

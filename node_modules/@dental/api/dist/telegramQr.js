@@ -28,8 +28,7 @@ function reedSolomonGenerator(degree) {
         for (let coefficient = 0; coefficient < generator.length; coefficient += 1) {
             const current = generator[coefficient] ?? 0;
             next[coefficient] = (next[coefficient] ?? 0) ^ current;
-            next[coefficient + 1] =
-                (next[coefficient + 1] ?? 0) ^ gfMultiply(current, gfExp[index] ?? 0);
+            next[coefficient + 1] = (next[coefficient + 1] ?? 0) ^ gfMultiply(current, gfExp[index] ?? 0);
         }
         generator = next;
     }
@@ -44,8 +43,7 @@ function reedSolomonRemainder(data, degree) {
             continue;
         for (let generatorIndex = 0; generatorIndex < generator.length; generatorIndex += 1) {
             result[index + generatorIndex] =
-                (result[index + generatorIndex] ?? 0) ^
-                    gfMultiply(generator[generatorIndex] ?? 0, factor);
+                (result[index + generatorIndex] ?? 0) ^ gfMultiply(generator[generatorIndex] ?? 0, factor);
         }
     }
     return result.slice(data.length);
@@ -84,7 +82,7 @@ function byteModeCodewords(text) {
 function blankMatrix() {
     return {
         modules: Array.from({ length: QR_SIZE }, () => new Array(QR_SIZE).fill(false)),
-        reserved: Array.from({ length: QR_SIZE }, () => new Array(QR_SIZE).fill(false)),
+        reserved: Array.from({ length: QR_SIZE }, () => new Array(QR_SIZE).fill(false))
     };
 }
 function setFunctionModule(modules, reserved, x, y, isDark) {
@@ -100,11 +98,7 @@ function drawFinder(modules, reserved, left, top) {
             const yy = top + y;
             const inside = x >= 0 && x <= 6 && y >= 0 && y <= 6;
             const dark = inside &&
-                (x === 0 ||
-                    x === 6 ||
-                    y === 0 ||
-                    y === 6 ||
-                    (x >= 2 && x <= 4 && y >= 2 && y <= 4));
+                (x === 0 || x === 6 || y === 0 || y === 6 || (x >= 2 && x <= 4 && y >= 2 && y <= 4));
             setFunctionModule(modules, reserved, xx, yy, dark);
         }
     }
@@ -192,7 +186,7 @@ function drawData(modules, reserved, codewords) {
                 const xx = x - dx;
                 if (reserved[y]?.[xx])
                     continue;
-                let bit = bitIndex < bits.length ? (bits[bitIndex] ?? 0) : 0;
+                let bit = bitIndex < bits.length ? bits[bitIndex] ?? 0 : 0;
                 bitIndex += 1;
                 if ((xx + y) % 2 === 0)
                     bit = bit === 1 ? 0 : 1;

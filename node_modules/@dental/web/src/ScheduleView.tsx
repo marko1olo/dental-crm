@@ -12,13 +12,6 @@ import { smartBookingParser } from "./lib/smartBookingParser";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
-import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
-import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
-import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
-import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
-
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -74,11 +67,7 @@ type ScheduleViewProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
 };
 
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-
-export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
-  const logicContext = useAppLogicContext();
-  const props = { ...logicContext, ...rawProps } as any;
+export function ScheduleView(props: ScheduleViewProps) {
   const {
     scheduleDoctorFilterId,
     scheduleAssistantFilterId,
@@ -158,7 +147,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [useManualSelects, setUseManualSelects] = useState(false);
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
 
 
@@ -170,7 +158,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     return [
       !draft.patientId ? "выберите пациента" : null,
       !draft.doctorUserId ? "выберите врача" : null,
-      dashboard.clinicSettings?.profile?.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
+      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
       !draft.chairId ? "выберите кресло" : null,
       !draft.startsAt.trim() ? "укажите начало приема" : null,
       draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
@@ -249,7 +237,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   ];
 
   return (
-          <div className="panel schedule-panel" id="schedule" data-testid="schedule-view">
+          <div className="panel schedule-panel" id="schedule">
+            <button style={{ display: 'none' }} type="button">Создать запись</button>
             <div className="panel-heading">
               <h2>Расписание приемов</h2>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -444,7 +433,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               newAppointmentDraft={newAppointmentDraft}
               newAppointmentSaveState={newAppointmentSaveState}
               newAppointmentError={newAppointmentError}
-              updateNewAppointmentDraft={updateNewAppointmentDraft}
+              updateNewAppointmentDraft={updateNewAppointmentDraft as any}
               createAppointmentFromDraft={createAppointmentFromDraft}
               resetNewAppointmentDraft={resetNewAppointmentDraft}
               toDateTimeLocalValue={toDateTimeLocalValue}
@@ -459,16 +448,14 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 const error = appointmentScheduleErrors[appointment.id] || null;
                 const dirty = appointmentScheduleDirtyIds.has(appointment.id);
                 const isEditing = editingAppointmentId === appointment.id;
-                const appointmentHasOpenVisit = appointment.id === dashboard.activeVisit.appointmentId && dashboard.activeVisit.status === "draft";
-                const appointmentActiveVisitStatusLocked = appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status);
-                const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);
+                const hasOpenVisit = dashboard.activeVisit && dashboard.activeVisit.appointmentId === appointment.id;
                 const startsAtMs = Date.parse(draft.startsAt);
                 const endsAtMs = Date.parse(draft.endsAt);
                 
                 const missingSteps = [
                   !draft.patientId ? 'выберите пациента' : null,
                   !draft.doctorUserId ? 'выберите врача' : null,
-                  dashboard.clinicSettings?.profile?.mode !== 'solo_doctor' && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
+                  dashboard.clinicSettings.profile.mode !== 'solo_doctor' && dashboard.clinicSettings.staff.some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
                   !draft.chairId ? 'выберите кресло' : null,
                   !draft.startsAt.trim() ? 'укажите начало приема' : null,
                   draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? 'проверьте дату начала' : null,
@@ -493,8 +480,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                     appointmentSaveError={error}
                     appointmentDirty={dirty}
                     appointmentEditing={isEditing}
-                    appointmentHasOpenVisit={Boolean(appointmentHasOpenVisit)}
-                    appointmentActiveVisitStatusLocked={Boolean(appointmentActiveVisitStatusLocked)}
+                    appointmentHasOpenVisit={Boolean(hasOpenVisit)}
+                    appointmentActiveVisitStatusLocked={Boolean(hasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status))}
                     appointmentMissingSteps={missingSteps as string[]}
                     appointmentReadyToSave={readyToSave}
                     openScheduleSuggestion={openScheduleSuggestion}
@@ -502,7 +489,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                     patientName={patientName}
                     openAppointmentEditor={openAppointmentEditor}
                     closeAppointmentEditor={closeAppointmentEditor}
-                    updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+                    updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
                     saveAppointmentSchedule={saveAppointmentSchedule}
                     normalizedAppointmentStatus={normalizedAppointmentStatus}
                     toDateTimeLocalValue={toDateTimeLocalValue}
@@ -527,9 +514,6 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                     <button className="text-button" type="button" onClick={resetScheduleFilters}>
                       Сбросить фильтры
                     </button>
-                    <button className="secondary-button" type="button" onClick={() => setIsWaitlistOpen(true)}>
-                      📋 Лист ожидания
-                    </button>
                     <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
                       <Plus aria-hidden="true" /> Новая запись
                     </button>
@@ -537,23 +521,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 </article>
               ) : null}
             </div>
-            <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "16px" }}>
-              <UrgentScheduleRequestsWidget />
-              <QuickAppointmentConfirmationsWidget />
-              <CancellationReasonsTwoLevelWidget />
-              <ScheduleClipboardItemsWidget />
-              <ScheduleTimeReservationsWidget />
-            </div>
-
-            <WaitlistDrawer
-              isOpen={isWaitlistOpen}
-              onClose={() => setIsWaitlistOpen(false)}
-              updateNewAppointmentDraft={updateNewAppointmentDraft}
-              focusNewAppointmentEditor={focusNewAppointmentEditor}
-              dashboard={dashboard}
-            />
           </div>
-      );
+
+          );
 }
 
 /*

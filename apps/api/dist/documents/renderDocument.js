@@ -29,13 +29,12 @@ function documentStatusBanner(document) {
     return `<div class="document-status-banner status-${document.status}">${escapeHtml(textByStatus[document.status])}</div>`;
 }
 const unresolvedPlaceholderPatterns = [
-    "заполнить",
-    "________",
-    "указать врачом",
-    "указать по",
-    "не указана",
-    "не указан"
-].map((pattern) => repairMojibakeText(pattern));
+    "{ ",
+    " { ",
+    " {_",
+    "_} ",
+    " }"
+];
 export function documentHasUnresolvedPlaceholders(html) {
     if (html.includes("[[{") || html.includes("}]]"))
         return true;

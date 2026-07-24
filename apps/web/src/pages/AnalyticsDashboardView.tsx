@@ -16,7 +16,6 @@ import {
 } from "recharts";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
-import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
 import "./AnalyticsDashboardView.css";
 
 interface Kpis {
@@ -289,7 +288,7 @@ export function AnalyticsDashboardView() {
 								лечения
 							</h3>
 							<div className="widget-chart-container">
-								{Array.isArray(data?.planFunnelJson) && data.planFunnelJson.filter((x) => x.value > 0).length > 0 ? (
+								{data.planFunnelJson && data.planFunnelJson.filter((x) => x.value > 0).length > 0 ? (
 									<ResponsiveContainer width="100%" height="100%">
 										<ComposedChart
 											data={data.planFunnelJson}
@@ -349,7 +348,7 @@ export function AnalyticsDashboardView() {
 								кресел
 							</h3>
 							<div className="widget-chart-container">
-								{Array.isArray(data?.chairUtilizationJson) &&
+								{data.chairUtilizationJson &&
 								data.chairUtilizationJson.filter((x) => x.value > 0).length > 0 ? (
 									<ResponsiveContainer width="100%" height="100%">
 										<RadialBarChart
@@ -401,7 +400,7 @@ export function AnalyticsDashboardView() {
 								<Users className="w-5 h-5 text-purple-500" /> Эффективность врачей
 							</h3>
 							<div className="widget-chart-container" style={{ overflowY: "auto" }}>
-								{Array.isArray(data?.doctorProfitabilityJson) &&
+								{data.doctorProfitabilityJson &&
 								data.doctorProfitabilityJson.filter((x) => x.revenue > 0).length > 0 ? (
 									<table className="analytics-leaderboard-table">
 										<thead>
@@ -413,7 +412,7 @@ export function AnalyticsDashboardView() {
 											</tr>
 										</thead>
 										<tbody>
-											{(data.doctorProfitabilityJson ?? []).map((doc, idx) => (
+											{data.doctorProfitabilityJson.map((doc, idx) => (
 												<tr key={idx}>
 													<td>{doc.name}</td>
 													<td>{formatRub(doc.revenue)}</td>
@@ -444,9 +443,6 @@ export function AnalyticsDashboardView() {
 								)}
 							</div>
 						</article>
-					</div>
-					<div style={{ marginTop: "24px" }}>
-						<ConfirmationPerformanceReportsWidget />
 					</div>
 				</>
 			)}

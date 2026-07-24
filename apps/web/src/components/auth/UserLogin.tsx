@@ -17,7 +17,7 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      showToast('Заполните Email и пароль', 'warning');
+      showToast('Заполните все поля', 'warning');
       return;
     }
 
@@ -39,7 +39,7 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
         data.user
       );
     } catch (err: any) {
-      showToast(err.message || 'Неверный Email или пароль', 'error');
+      showToast(err.message || 'Неверный email или пароль', 'error');
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
         <div className="auth-header-center">
           <div className="auth-logo-box"><Shield size={32} /></div>
           <h2 className="auth-logo-title">DENTE CRM-MIS</h2>
-          <p className="auth-logo-subtitle">Вход в личный кабинет врача</p>
+          <p className="auth-logo-subtitle">Вход для сотрудников</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -100,13 +100,12 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
         </form>
 
         <div className="auth-footer-hints auth-footer-hints--border">
-          <button type="button" onClick={onSwitchToRegister} className="auth-link-btn">
-            Зарегистрировать клинику
-          </button>
-          {" · "}
-          <button type="button" onClick={onSwitchToClinicMode} className="auth-link-btn">
-            Общий терминал клиники
-          </button>
+          <p>Нет аккаунта? <button type="button" onClick={onSwitchToRegister} className="auth-link-btn">Зарегистрировать клинику</button></p>
+          <p style={{ marginTop: '10px' }}>
+            <button type="button" onClick={onSwitchToClinicMode} className="auth-link-btn--muted auth-link-btn">
+              <Building size={13} /> Режим общего ПК клиники
+            </button>
+          </p>
         </div>
       </div>
     </div>
