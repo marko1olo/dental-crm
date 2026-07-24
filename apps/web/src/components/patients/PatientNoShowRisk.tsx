@@ -170,7 +170,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							Факторы риска:
 						</span>
 
-						{riskData.factors.pastNoShows > 0 && (
+						{(riskData?.factors?.pastNoShows ?? 0) > 0 && (
 							<div
 								style={{
 									padding: "10px 12px",
@@ -191,7 +191,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							</div>
 						)}
 
-						{riskData.factors.pastCancellations > 0 && (
+						{(riskData?.factors?.pastCancellations ?? 0) > 0 && (
 							<div
 								style={{
 									padding: "10px 12px",
@@ -212,7 +212,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							</div>
 						)}
 
-						{riskData.factors.hasDebt && (
+						{Boolean(riskData?.factors?.hasDebt) && (
 							<div
 								style={{
 									padding: "10px 12px",
@@ -224,17 +224,17 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 								<span
 									style={{
 										fontSize: "13px",
-										color: "#d97706",
+										color: "var(--amber, #d97706)",
 										fontWeight: 500,
 									}}
 								>
-									Задолженность: {formatRub(riskData.factors.totalDebtRub || 0)}
+									Задолженность: {formatRub(riskData?.factors?.totalDebtRub || 0)}
 								</span>
 							</div>
 						)}
 
-						{(riskData.factors.openTreatmentItems || 0) > 3 &&
-							(riskData.factors.completedTreatmentItems || 0) === 0 && (
+						{(riskData?.factors?.openTreatmentItems || 0) > 3 &&
+							(riskData?.factors?.completedTreatmentItems || 0) === 0 && (
 								<div
 									style={{
 										padding: "10px 12px",
@@ -246,17 +246,17 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 									<span
 										style={{
 											fontSize: "13px",
-											color: "#d97706",
+											color: "var(--amber, #d97706)",
 											fontWeight: 500,
 										}}
 									>
 										Много незакрытых позиций плана (
-										{riskData.factors.openTreatmentItems})
+										{riskData?.factors?.openTreatmentItems})
 									</span>
 								</div>
 							)}
 
-						{(riskData.factors.totalVisits || 0) > 5 && (
+						{(riskData?.factors?.totalVisits || 0) > 5 && (
 							<div
 								style={{
 									padding: "10px 12px",
@@ -272,14 +272,14 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 										fontWeight: 500,
 									}}
 								>
-									Лояльный пациент: {riskData.factors.totalVisits} визитов
+									Лояльный пациент: {riskData?.factors?.totalVisits || 0} визитов
 								</span>
 							</div>
 						)}
 
-						{!riskData.factors.hasDebt &&
-							riskData.factors.pastCancellations === 0 &&
-							(riskData.factors.pastNoShows || 0) === 0 && (
+						{!riskData?.factors?.hasDebt &&
+							(riskData?.factors?.pastCancellations || 0) === 0 &&
+							(riskData?.factors?.pastNoShows || 0) === 0 && (
 								<div
 									style={{
 										padding: "10px 12px",
