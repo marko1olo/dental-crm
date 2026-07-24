@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { RefreshCw, CheckCircle2 } from "lucide-react";
 
 interface ProdoctorovSyncItem {
 	id: string;
@@ -12,12 +13,14 @@ interface ProdoctorovSyncItem {
 }
 
 export const ProdoctorovSyncWidget: React.FC = () => {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
 	const [items, setItems] = useState<ProdoctorovSyncItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/integrations/prodoctorov-sync", {
-			headers: auth.denteClinicalReadHeaders(),
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -28,57 +31,50 @@ export const ProdoctorovSyncWidget: React.FC = () => {
 				console.error("[ProdoctorovSyncWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
 			data-testid="prodoctorov-sync-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">🩺</span>
-					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
-						Интеграция с ПроДокторов и MedFlex: Синхронизация Отзывов и Слотов
+					<RefreshCw className="w-5 h-5 text-sky-500" />
+					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
+						Синхронизация с ПроДокторов и MedFlex
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-					ProDoctorov & MedFlex Sync
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
+					MedFlex API
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
-					Загрузка статуса интеграции ПроДокторов...
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка статуса синхронизации...
 				</div>
 			) : items.length === 0 ? (
-				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
-					Интеграция с ПроДокторов не подключена.
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Логи синхронизации ПроДокторов отсутствуют.
 				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					{items.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold text-slate-900 dark:text-white">Синхронизация Прайс-Листа и Записи</span>
-									{item.medflexClubBadge && (
-										<span className="text-xs px-2 py-0.5 rounded border font-bold bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-											★ MedFlex Club
-										</span>
-									)}
-								</div>
-								<div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
-									Свободных слотов в выгрузке: <strong className="text-slate-900 dark:text-white">{item.availableSlotsCount}</strong>
-								</div>
-							</div>
-							<div className="flex items-center space-x-2 text-xs">
-								<span className="px-2 py-0.5 rounded border font-bold uppercase bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
-									✓ {item.priceListSyncStatus}
+							<div className="flex items-center justify-between">
+								<span className="font-bold text-sm">Свободных слотов: {item.availableSlotsCount}</span>
+								<span className="text-xs font-mono text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1">
+									<CheckCircle2 className="w-3 h-3" /> {item.priceListSyncStatus}
 								</span>
+							</div>
+							<div className="text-xs" style={{ color: "var(--muted)" }}>
+								MedFlex Club: <span style={{ color: "var(--ink)" }}>{item.medflexClubBadge ? "Активен" : "Неактивен"}</span>
 							</div>
 						</div>
 					))}
