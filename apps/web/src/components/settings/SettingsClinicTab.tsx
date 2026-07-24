@@ -232,7 +232,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                   <input value={clinicProfileDraft.address} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)} />
                 </label>
                 <div className="form-span-2">
-                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
+                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     {[
                       { value: "solo_doctor", label: "Частный кабинет (без ассистента)" },
@@ -244,8 +244,8 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                         className={`quick-chip ${clinicProfileDraft.mode === option.value ? 'active' : ''}`}
                         onClick={() => updateClinicProfileDraft("mode", option.value)}
                         style={{
-                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--slate-100)',
-                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--slate-700)',
+                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--surface-100, var(--paper-soft))',
+                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--ink)',
                           padding: "8px 16px",
                           borderRadius: "20px",
                           border: "none",
