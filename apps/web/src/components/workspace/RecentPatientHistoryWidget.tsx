@@ -62,69 +62,42 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 				onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
 				style={{ position: "relative" }}
 			>
-				<summary title="История 10 последних просмотренных карточек">
-					<Clock size={16} aria-hidden="true" style={{ color: "var(--brand-500)" }} />
+				<summary title="История 10 последних просмотренных карточек" className="cursor-pointer flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+					<Clock size={16} aria-hidden="true" className="text-sky-500" />
 					<span>Недавние</span>
-					<strong style={{ fontSize: "12px", background: "var(--brand-50)", color: "var(--brand-700)", padding: "2px 6px", borderRadius: "10px" }}>
+					<strong className="text-xs bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 rounded-full font-bold">
 						{patients.length}
 					</strong>
 				</summary>
 				<div
-					className="role-switcher-options"
-					style={{
-						position: "absolute",
-						top: "100%",
-						right: 0,
-						width: "320px",
-						maxHeight: "380px",
-						overflowY: "auto",
-						background: "var(--paper)",
-						border: "1px solid var(--line)",
-						borderRadius: "12px",
-						boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-						padding: "8px",
-						zIndex: 100
-					}}
+					className="role-switcher-options absolute top-full right-0 w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2 z-50 text-slate-900 dark:text-slate-100"
 				>
-					<div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)", fontSize: "12px", fontWeight: 700, color: "var(--muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+					<div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 flex justify-between items-center">
 						<span>ОТКРЫТЫЕ РАНЕЕ КАРТОЧКИ</span>
-						<span style={{ fontSize: "10px", color: "var(--slate-400)" }}>ТОП 10</span>
+						<span className="text-[10px] text-slate-400">ТОП 10</span>
 					</div>
 
 					{loading ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "var(--muted)" }}>Загрузка...</div>
+						<div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">Загрузка...</div>
 					) : patients.length === 0 ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "var(--muted)" }}>История просмотров пуста</div>
+						<div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">История просмотров пуста</div>
 					) : (
 						patients.map((pat) => (
 							<button
 								key={pat.id}
 								type="button"
 								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "space-between",
-									width: "100%",
-									padding: "8px 12px",
-									borderRadius: "8px",
-									border: "none",
-									background: "transparent",
-									cursor: "pointer",
-									textAlign: "left",
-									transition: "background 0.15s ease"
-								}}
-								className="hover-surface"
+								className="flex items-center justify-between w-full px-3 py-2 rounded-lg border-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors cursor-pointer"
 							>
 								<div>
-									<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>{pat.patientName}</div>
-									<div style={{ fontSize: "11px", color: "var(--slate-500)" }}>{pat.phone}</div>
+									<div className="text-xs font-semibold text-slate-900 dark:text-slate-100">{pat.patientName}</div>
+									<div className="text-[11px] text-slate-500 dark:text-slate-400">{pat.phone}</div>
 								</div>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-									<span style={{ fontSize: "10px", color: "var(--muted)", background: "var(--surface-100)", padding: "2px 6px", borderRadius: "4px" }}>
+								<div className="flex items-center gap-1.5">
+									<span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
 										{new Date(pat.lastViewedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
 									</span>
-									<ChevronRight size={14} style={{ color: "var(--slate-400)" }} />
+									<ChevronRight size={14} className="text-slate-400" />
 								</div>
 							</button>
 						))
@@ -137,62 +110,39 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 	return (
 		<div
 			data-testid="recent-patient-history-widget"
-			style={{
-				padding: "16px",
-				background: "var(--paper)",
-				border: "1px solid var(--line)",
-				borderRadius: "12px",
-				marginTop: "16px"
-			}}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", borderBottom: "1px solid var(--line)", paddingBottom: "8px" }}>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-					<Clock size={18} style={{ color: "var(--brand-500)" }} />
-					<h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", margin: 0 }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+				<div className="flex items-center space-x-2">
+					<Clock className="w-5 h-5 text-sky-500" />
+					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
 						Быстрый переход: Недавно просмотренные карточки пациентов
 					</h3>
 				</div>
-				<span style={{ fontSize: "11px", background: "var(--brand-50)", color: "var(--brand-700)", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
 					CRM Quick Nav
 				</span>
 			</div>
 
 			{loading ? (
-				<div style={{ fontSize: "13px", color: "var(--muted)", padding: "12px 0" }}>Загрузка...</div>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">Загрузка...</div>
 			) : patients.length === 0 ? (
-				<div style={{ fontSize: "13px", color: "var(--muted)", padding: "12px 0" }}>Нет недавних карточек</div>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">Нет недавних карточек</div>
 			) : (
-				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "10px" }}>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 					{patients.map((pat) => (
 						<div
 							key={pat.id}
-							style={{
-								padding: "10px 14px",
-								background: "var(--surface-50)",
-								border: "1px solid var(--line)",
-								borderRadius: "8px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between"
-							}}
+							className="p-3 rounded-lg border flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
-								<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>{pat.patientName}</div>
-								<div style={{ fontSize: "11px", color: "var(--muted)" }}>{pat.phone}</div>
+								<div className="text-sm font-bold text-slate-900 dark:text-white">{pat.patientName}</div>
+								<div className="text-xs text-slate-500 dark:text-slate-400">{pat.phone}</div>
 							</div>
 							<button
 								type="button"
 								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
-								style={{
-									fontSize: "12px",
-									background: "var(--brand-500)",
-									color: "#fff",
-									border: "none",
-									borderRadius: "6px",
-									padding: "6px 10px",
-									fontWeight: 600,
-									cursor: "pointer"
-								}}
+								className="text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer transition-colors"
 							>
 								Открыть
 							</button>

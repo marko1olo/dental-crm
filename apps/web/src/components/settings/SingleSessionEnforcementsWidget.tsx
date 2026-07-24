@@ -39,27 +39,26 @@ export const SingleSessionEnforcementsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="single-session-enforcements-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<ShieldAlert className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
 						Контроль единственного параллельного входа (Single Session Enforcement)
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
 					Безопасность сессий
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка активных сессий...
 				</div>
 			) : sessions.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Активных параллельных сессий не обнаружено.
 				</div>
 			) : (
@@ -67,15 +66,14 @@ export const SingleSessionEnforcementsWidget: React.FC = () => {
 					{sessions.map((sess) => (
 						<div
 							key={sess.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
 								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold">{sess.userLogin}</span>
+									<span className="text-sm font-bold text-slate-900 dark:text-white">{sess.userLogin}</span>
 									<span className="text-xs text-sky-600 dark:text-sky-300 font-mono font-bold">IP: {sess.clientIp}</span>
 								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+								<div className="text-xs mt-1 text-slate-600 dark:text-slate-400">
 									Токен сессии: <span className="font-mono text-slate-700 dark:text-slate-300">{sess.activeSessionToken}</span>
 								</div>
 							</div>
