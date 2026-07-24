@@ -87,21 +87,8 @@ export default function HelpHUD() {
 						</ul>
 					</div>
 
-					<div
-						className="help-hud-tours"
-						style={{
-							marginTop: "24px",
-							borderTop: "1px solid var(--line)",
-							paddingTop: "20px",
-						}}
-					>
-						<h4
-							style={{
-								margin: "0 0 16px 0",
-								fontSize: "1.05rem",
-								color: "var(--ink)",
-							}}
-						>
+					<div className="help-hud-tours mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
+						<h4 className="m-0 mb-4 text-base font-semibold text-slate-900 dark:text-white">
 							Интерактивное обучение
 						</h4>
 						<div className="tour-selection-grid">

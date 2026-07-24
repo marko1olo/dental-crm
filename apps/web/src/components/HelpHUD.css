@@ -169,9 +169,9 @@ kbd {
 }
 
 .tour-select-btn {
-	background: var(--paper-soft) !important;
-	border: 1px solid var(--line) !important;
-	color: var(--ink) !important;
+	background: var(--paper-soft, #f8fafc) !important;
+	border: 1px solid var(--line, #e2e8f0) !important;
+	color: var(--ink, #0f172a) !important;
 	padding: 10px 14px !important;
 	border-radius: 10px !important;
 	font-size: 0.9rem !important;
@@ -185,9 +185,22 @@ kbd {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
 }
 
+.theme-dark .tour-select-btn,
+.dark .tour-select-btn {
+	background: #334155 !important;
+	border-color: #475569 !important;
+	color: #f8fafc !important;
+}
+
 .tour-select-btn:hover {
-	background: var(--paper-strong) !important;
-	border-color: var(--teal) !important;
+	background: var(--paper-strong, #f1f5f9) !important;
+	border-color: var(--teal, #0d9488) !important;
 	transform: translateY(-1px) !important;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-dark .tour-select-btn:hover,
+.dark .tour-select-btn:hover {
+	background: #475569 !important;
+	border-color: #14b8a6 !important;
 }
