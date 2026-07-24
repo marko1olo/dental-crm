@@ -140,24 +140,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: 5, scale: 0.95 }}
 							transition={{ duration: 0.15 }}
-							style={{
-								position: "absolute",
-								top: "100%",
-								left: 0,
-								marginTop: "4px",
-								background: "var(--paper)",
-								border: "1px solid var(--border-300)",
-								borderRadius: "8px",
-								boxShadow:
-									"0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-								padding: "4px",
-								zIndex: 100,
-								minWidth: "160px",
-								display: "flex",
-								flexDirection: "column",
-								gap: "2px",
-							}}
-							className="dark:bg-slate-900 dark:border-slate-800"
+							className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl p-1 z-50 min-w-[160px] flex flex-col gap-0.5"
 						>
 							{(
 								Object.entries(LOYALTY_CONFIG) as [
@@ -169,41 +152,18 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									key={tierKey}
 									type="button"
 									onClick={() => handleSetTier(tierKey)}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										padding: "8px 12px",
-										borderRadius: "6px",
-										background:
-											currentTier === tierKey
-												? "var(--surface-100)"
-												: "transparent",
-										border: "none",
-										cursor: "pointer",
-										textAlign: "left",
-										fontSize: "13px",
-										fontWeight: currentTier === tierKey ? 600 : 500,
-										color: "var(--ink)",
-									}}
-									onMouseEnter={(e) => {
-										if (currentTier !== tierKey)
-											e.currentTarget.style.background = "var(--surface-50)";
-									}}
-									onMouseLeave={(e) => {
-										if (currentTier !== tierKey)
-											e.currentTarget.style.background = "transparent";
-									}}
+									className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs border-0 cursor-pointer text-left transition-colors ${
+										currentTier === tierKey
+											? "bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-white"
+											: "bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 font-medium"
+									}`}
 								>
 									<Crown size={14} color={config.color} />
-									<span style={{ flex: 1 }}>{config.label}</span>
+									<span className="flex-1">{config.label}</span>
 									{config.discountPct > 0 && (
 										<span
-											style={{
-												color: config.color,
-												fontSize: "11px",
-												fontWeight: 700,
-											}}
+											style={{ color: config.color }}
+											className="text-[11px] font-bold"
 										>
 											-{config.discountPct}%
 										</span>

@@ -72,30 +72,14 @@ export function PatientOverviewTab() {
 
 	return (
 		<div data-testid="patient-overview-tab">
-			<div className="panel-heading compact-heading patients-no-border-mb-8">
-				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-					<span
-						style={{
-							fontSize: "14px",
-							fontWeight: 600,
-							color: "var(--ink)",
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-						}}
-					>
+			<div className="panel-heading compact-heading patients-no-border-mb-8 flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+				<div className="flex gap-3 items-center">
+					<span className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
 						Карточка пациента
 						{dashboard?.activeVisit?.patientId === selectedPatientId && (
 							<span
 								title="Пациент сейчас находится в клинике (Активный приём)"
-								style={{
-									width: "8px",
-									height: "8px",
-									borderRadius: "50%",
-									backgroundColor: "var(--emerald)",
-									display: "inline-block",
-									boxShadow: "0 0 8px var(--emerald)",
-								}}
+								className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-[0_0_8px_#10b981]"
 							/>
 						)}
 					</span>
@@ -174,15 +158,9 @@ export function PatientOverviewTab() {
 						placeholder="patient@example.ru"
 					/>
 				</label>
-				<div className="form-span-2 patients-flex-col-gap-4">
-					<div className="patients-flex-between">
-						<span
-							style={{
-								fontSize: "13px",
-								fontWeight: 600,
-								color: "var(--muted)",
-							}}
-						>
+				<div className="form-span-2 flex flex-col gap-2">
+					<div className="flex justify-between items-center">
+						<span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
 							Заметки для команды
 						</span>
 						<SmartMicrophoneButton
@@ -197,18 +175,9 @@ export function PatientOverviewTab() {
 						value={patientCoreDraft?.notes ?? ""}
 						onChange={(e) => updatePatientCoreDraft("notes", e.target.value)}
 						placeholder="важное для связи, приема и документов"
-						style={{
-							width: "100%",
-							padding: "8px 12px",
-							borderRadius: "8px",
-							border: "1px solid var(--line)",
-							fontSize: "14px",
-							resize: "vertical",
-							background: "var(--paper)",
-							color: "var(--ink)",
-						}}
+						className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm resize-y bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
 					/>
-					<div className="patients-chips-row">
+					<div className="flex flex-wrap gap-1.5 mt-1">
 						{[
 							"Очень тревожный",
 							"Сложный пациент",
@@ -231,15 +200,7 @@ export function PatientOverviewTab() {
 										: chipLower;
 									updatePatientCoreDraft("notes", newVal);
 								}}
-								style={{
-									padding: "4px 10px",
-									fontSize: "12px",
-									background: "var(--glass-panel, rgba(30, 41, 59, 0.5))",
-									border: "1px solid var(--line, rgba(255, 255, 255, 0.1))",
-									borderRadius: "12px",
-									cursor: "pointer",
-									color: "var(--ink)",
-								}}
+								className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full cursor-pointer text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
 							>
 								+ {chip}
 							</button>
