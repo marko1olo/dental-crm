@@ -32,7 +32,7 @@ export const ExternalScheduleActionLogsWidget: React.FC = () => {
 				console.error("[ExternalScheduleActionLogsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
