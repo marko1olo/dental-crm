@@ -25,7 +25,7 @@ export const PatientServiceLineagesWidget: React.FC<{ patientId?: string }> = ({
 			: "/api/crm/patient-service-lineages";
 
 		fetch(url, {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth.denteClinicalReadHeaders(),
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -36,7 +36,7 @@ export const PatientServiceLineagesWidget: React.FC<{ patientId?: string }> = ({
 				console.error("[PatientServiceLineagesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, [patientId]);
+	}, [patientId, auth]);
 
 	return (
 		<div
