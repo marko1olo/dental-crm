@@ -31,7 +31,7 @@ export const VisitExaminationPhotoLinksWidget: React.FC = () => {
 				console.error("[VisitExaminationPhotoLinksWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
