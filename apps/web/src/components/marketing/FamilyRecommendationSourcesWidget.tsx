@@ -31,7 +31,7 @@ export const FamilyRecommendationSourcesWidget: React.FC = () => {
 				console.error("[FamilyRecommendationSourcesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div

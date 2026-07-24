@@ -34,7 +34,7 @@ export const SingleSessionEnforcementsWidget: React.FC = () => {
 				console.error("[SingleSessionEnforcementsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
