@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../AppHelpers";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
 
 interface EgiszMonitorProps {
 	patientId: string;
@@ -17,6 +17,9 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 	patientId,
 	visitId,
 }) => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
+
 	const [status, setStatus] = useState<
 		"Pending" | "Sent" | "Error" | "Accepted"
 	>("Pending");
@@ -28,9 +31,10 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 
 	const fetchStatus = async () => {
 		try {
-			const res = await fetch(`/api/egisz/logs/${patientId}`, {
-				headers: denteAdminSecretRequestHeaders(),
-			});
+			const headers = authContext
+				? authContext.denteClinicalReadHeaders()
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+			const res = await fetch(`/api/egisz/logs/${patientId}`, { headers });
 			if (res.ok) {
 				const data = await res.json();
 				const latest =
@@ -56,18 +60,19 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 
 	useEffect(() => {
 		fetchStatus();
-	}, [patientId, visitId]);
+	}, [patientId, visitId, authContext]);
 
 	const handleSend = async () => {
 		setIsLoading(true);
 		setErrorDetails(null);
 		setXmlPreview(null);
 		try {
+			const headers = authContext
+				? authContext.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001", "Content-Type": "application/json" };
 			const res = await fetch(`/api/egisz/send`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
+				headers,
 				body: JSON.stringify({ patientId, visitId }),
 			});
 			const data = await res.json();
@@ -95,23 +100,16 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 			data-testid="egisz-monitor-panel"
 			className="panel mt-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 flex flex-col gap-3 shadow-sm"
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
 					{status === "Accepted" ? (
-						<ShieldCheck size={24} color="var(--teal)" />
+						<ShieldCheck size={24} className="text-emerald-500" />
 					) : status === "Error" ? (
-						<AlertTriangle size={24} color="var(--rust)" />
+						<AlertTriangle size={24} className="text-rose-500" />
 					) : (
 						<RefreshCcw
 							size={24}
-							color="var(--brand-500)"
-							className={isLoading ? "animate-spin" : ""}
+							className={`text-sky-500 ${isLoading ? "animate-spin" : ""}`}
 						/>
 					)}
 					<div>
@@ -137,14 +135,11 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 					type="button"
 					onClick={handleSend}
 					disabled={isLoading || status === "Accepted"}
-					className={status === "Error" ? "secondary-button" : "primary-button"}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "8px",
-						fontSize: "12px",
-						padding: "8px 16px",
-					}}
+					className={`flex items-center gap-2 text-xs px-4 py-2 rounded-lg font-medium cursor-pointer disabled:opacity-50 ${
+						status === "Error"
+							? "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700"
+							: "bg-sky-600 hover:bg-sky-700 text-white"
+					}`}
 				>
 					{status === "Error" ? "Повторить выгрузку" : "Отправить в ЕГИСЗ"}
 					{status === "Accepted" && <CheckCircle2 size={16} />}
@@ -163,3 +158,4 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 		</div>
 	);
 };
+
