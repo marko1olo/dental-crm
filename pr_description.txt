@@ -1,8 +1,0 @@
-🎯 **What:** Added tests for the `motionPreference` module in `apps/web/src/motionPreference.ts`, focusing on `motionSafeScrollBehavior` as well as covering `prefersReducedMotion` and `motionSafeScrollIntoView`.
-
-📊 **Coverage:** The new test suite covers:
-- The behavior of `prefersReducedMotion` with and without a valid `window.matchMedia` object, and with matching/non-matching queries.
-- The `motionSafeScrollBehavior` fallback to "auto" when reduced motion is preferred, and "smooth" otherwise.
-- The correct options object passing in `motionSafeScrollIntoView` (including merging with additional options) and edge cases with null/undefined targets.
-
-✨ **Result:** Improved test coverage and reliability for scroll behavior logic in the web frontend, helping to prevent regressions related to accessibility settings.
