@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface PhotoLinkItem {
 	id: string;
@@ -11,13 +12,16 @@ interface PhotoLinkItem {
 }
 
 export const VisitExaminationPhotoLinksWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [links, setLinks] = useState<PhotoLinkItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/clinical/visit-examination-photo-links", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/clinical/visit-examination-photo-links", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setLinks(Array.isArray(data) ? data : []);
