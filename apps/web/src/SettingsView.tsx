@@ -1240,7 +1240,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {/* Real Feature Integrations in Settings Header */}
         {ramWatchdogs.length > 0 && (
-          <div data-testid="system-ram-watchdog-indicator" style={{ background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <div data-testid="system-ram-watchdog-indicator" style={{ background: 'var(--surface-100)', border: '1px solid var(--line)', color: 'var(--ink)', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             🖥️ Нагрузка ОЗУ ({ramWatchdogs[0].clientHostName}): <strong>{ramWatchdogs[0].usedRamMb} MB / {ramWatchdogs[0].totalRamMb} MB</strong> ({ramWatchdogs[0].warningLevel})
           </div>
         )}

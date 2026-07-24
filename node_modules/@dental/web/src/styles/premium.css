@@ -46,37 +46,57 @@
 	);
 }
 
-[data-theme="light"] {
-	--bg-app: #f4f4f6;
-	--glass-panel: rgba(255, 255, 255, 0.65);
-	--glass-border: rgba(255, 255, 255, 0.9);
+[data-theme="light"],
+html.light {
+	--bg-app: #f8fafc;
+	--glass-panel: rgba(255, 255, 255, 0.95);
+	--glass-border: rgba(226, 232, 240, 0.9);
 	--glass-shadow:
-		0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
-	--glass-blur: blur(30px);
-	--teal-glow: 0 0 30px rgba(13, 148, 136, 0.15);
+		0 10px 25px -5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+	--glass-blur: blur(20px);
+	--teal-glow: 0 0 20px rgba(13, 148, 136, 0.15);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(13, 148, 136, 0.08),
-		rgba(13, 148, 136, 0.02)
+		rgba(13, 148, 136, 0.12),
+		rgba(13, 148, 136, 0.04)
 	);
-	--active-item-border: rgba(13, 148, 136, 0.5);
+	--active-item-border: rgba(13, 148, 136, 0.4);
 
 	--text-primary: #0f172a;
-	--text-secondary: #64748b;
+	--text-secondary: #475569;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f8fafc;
+	--ink: #0f172a;
+	--muted: #64748b;
+	--line: #e2e8f0;
+	--line-strong: #cbd5e1;
+
+	--slate-50: #f8fafc;
+	--slate-100: #f1f5f9;
+	--slate-200: #e2e8f0;
+	--slate-300: #cbd5e1;
+	--slate-400: #94a3b8;
+	--slate-500: #64748b;
+	--slate-600: #475569;
+	--slate-700: #334155;
+	--slate-800: #1e293b;
+	--slate-900: #0f172a;
 
 	--mesh-bg-1: radial-gradient(
 		circle at 0% 0%,
-		rgba(13, 148, 136, 0.08) 0px,
+		rgba(13, 148, 136, 0.05) 0px,
 		transparent 50%
 	);
 	--mesh-bg-2: radial-gradient(
 		circle at 100% 100%,
-		rgba(59, 130, 246, 0.05) 0px,
+		rgba(59, 130, 246, 0.04) 0px,
 		transparent 50%
 	);
 	--mesh-bg-3: radial-gradient(
 		circle at 50% 50%,
-		rgba(139, 92, 246, 0.03) 0px,
+		rgba(241, 245, 249, 0.8) 0px,
 		transparent 50%
 	);
 }
@@ -106,27 +126,27 @@
 .quick-create-guidance,
 .card-body,
 .panel-body {
-	background: var(--glass-panel) !important;
-	backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	-webkit-backdrop-filter: var(--glass-blur) saturate(180%) !important;
-	border: 1px solid var(--glass-border) !important;
-	box-shadow: var(--glass-shadow) !important;
-	border-radius: 16px !important;
-	color: var(--text-primary) !important;
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
+	color: var(--text-primary);
 }
 
 /* Form Elements Theme Integration */
 input,
 select,
 textarea {
-	background-color: var(--paper-strong) !important;
-	color: var(--text-primary) !important;
-	border: 1px solid var(--glass-border) !important;
+	background-color: var(--paper-strong);
+	color: var(--text-primary);
+	border: 1px solid var(--glass-border);
 }
 
 input::placeholder,
 textarea::placeholder {
-	color: var(--text-secondary) !important;
+	color: var(--text-secondary);
 	opacity: 0.7;
 }
 
@@ -134,44 +154,7 @@ textarea::placeholder {
 h1, h2, h3, h4, h5, h6,
 .panel-heading h2,
 .settings-heading h2 {
-	color: var(--text-primary) !important;
-}
-
-/* Universal Theme Protection against Inline Hardcoded Colors */
-[style*="background: #ffffff"],
-[style*="background:#ffffff"],
-[style*="background: #fff"],
-[style*="background:#fff"],
-[style*="background: #f8fafc"],
-[style*="background:#f8fafc"],
-[style*="background: #f9fafb"],
-[style*="background:#f9fafb"],
-[style*="background: #f0fdfa"],
-[style*="background:#f0fdfa"],
-[style*="background: white"],
-[style*="background:white"],
-[style*="backgroundColor: #ffffff"],
-[style*="backgroundColor:#ffffff"],
-[style*="backgroundColor: #fff"],
-[style*="backgroundColor:#fff"],
-[style*="backgroundColor: #f8fafc"],
-[style*="backgroundColor:#f8fafc"] {
-	background-color: var(--paper-strong) !important;
-	color: var(--text-primary) !important;
-	border-color: var(--glass-border) !important;
-}
-
-[style*="color: #111827"],
-[style*="color:#111827"],
-[style*="color: #1e293b"],
-[style*="color:#1e293b"],
-[style*="color: #0f172a"],
-[style*="color:#0f172a"],
-[style*="color: #4b5563"],
-[style*="color:#4b5563"],
-[style*="color: #6b7280"],
-[style*="color:#6b7280"] {
-	color: var(--text-primary) !important;
+	color: var(--text-primary);
 }
 
 /* Base Body Background with Mesh Gradients */

@@ -1,20 +1,31 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
+import { buildClinicSettings as getClinicSettingsInMemory, updateClinicProfile as updateClinicProfileInMemory, createStaffMember as createStaffMemberInMemory, updateStaffWorkingHours as updateStaffWorkingHoursInMemory, createChair as createChairInMemory, updateChairWorkingHours as updateChairWorkingHoursInMemory, updateClinicMode as updateClinicModeInMemory } from "../sampleData.js";
+function useInMemory() {
+    return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 // Dummy fallback for legacy UI preferences if multiple users exist
 export async function getUiPreferencesFromDb(organizationId) {
+    if (useInMemory())
+        return null;
     const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
     if (!user || !user.uiPreferences)
         return null;
     return user.uiPreferences;
 }
 export async function saveUiPreferencesInDb(organizationId, prefs) {
+    if (useInMemory())
+        return;
     const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
     if (!user)
         throw new Error("No users found to save preferences to.");
     await db.update(schema.users).set({ uiPreferences: prefs }).where(eq(schema.users.id, user.id));
 }
 export async function getClinicSettingsFromDb(organizationId) {
+    if (useInMemory()) {
+        return getClinicSettingsInMemory();
+    }
     const [org] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, organizationId)).limit(1);
     if (!org)
         throw new Error("Organization not found");
@@ -94,9 +105,13 @@ export async function getClinicSettingsFromDb(organizationId) {
     };
 }
 export async function updateClinicModeInDb(organizationId, mode) {
+    if (useInMemory())
+        return updateClinicModeInMemory(mode);
     await db.update(schema.organizations).set({ clinicMode: mode }).where(eq(schema.organizations.id, organizationId));
 }
 export async function updateClinicProfileInDb(organizationId, input) {
+    if (useInMemory())
+        return updateClinicProfileInMemory(input);
     const updateData = { updatedAt: new Date() };
     if (input.legalName !== undefined)
         updateData.name = input.legalName;
@@ -139,6 +154,8 @@ export async function updateClinicProfileInDb(organizationId, input) {
     }
 }
 export async function createStaffMemberInDb(organizationId, input) {
+    if (useInMemory())
+        return createStaffMemberInMemory(input);
     await db.insert(schema.users).values({
         organizationId,
         fullName: input.fullName,
@@ -150,12 +167,18 @@ export async function createStaffMemberInDb(organizationId, input) {
     });
 }
 export async function updateStaffWorkingHoursInDb(organizationId, staffId, workingHours) {
+    if (useInMemory())
+        return updateStaffWorkingHoursInMemory(staffId, workingHours);
     await db.update(schema.users).set({ workingHours }).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 export async function updateStaffCredentialsInDb(organizationId, staffId, updates) {
+    if (useInMemory())
+        return;
     await db.update(schema.users).set(updates).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 export async function createChairInDb(organizationId, input) {
+    if (useInMemory())
+        return createChairInMemory(input);
     const [clinic] = await db.select().from(schema.clinics).where(eq(schema.clinics.organizationId, organizationId)).limit(1);
     if (!clinic)
         throw new Error("Clinic not found");
@@ -168,5 +191,7 @@ export async function createChairInDb(organizationId, input) {
     });
 }
 export async function updateChairWorkingHoursInDb(organizationId, chairId, workingHours) {
+    if (useInMemory())
+        return updateChairWorkingHoursInMemory(chairId, workingHours);
     await db.update(schema.chairs).set({ workingHours }).where(and(eq(schema.chairs.id, chairId), eq(schema.chairs.organizationId, organizationId)));
 }

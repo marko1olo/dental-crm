@@ -354,7 +354,7 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
           </div>
         </div>
         
-        <div style={{ display: "flex", justifyContent: "space-between", background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-200)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-200)" }}>
           <div>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Сумма лечения</div>
             <div style={{ fontSize: "16px", fontWeight: 600 }}>{totalAmount.toLocaleString('ru-RU')} ₽</div>

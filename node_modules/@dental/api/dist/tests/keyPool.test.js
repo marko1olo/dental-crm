@@ -69,8 +69,8 @@ describe('sanitizeProviderErrorMessage', () => {
         assert.strictEqual(sanitizeProviderErrorMessage('Provider error: Invalid API key sk-ant-api03-abcdef1234567890abcdef1234567890'), 'Provider error: Invalid API key sk-[redacted]');
     });
     test('redacts long generic tokens (48+ characters)', () => {
-        assert.strictEqual(sanitizeProviderErrorMessage('Generic error. Token: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A1B2C3D4E5F6'), 'Generic error. Token=[redacted]');
-        assert.strictEqual(sanitizeProviderErrorMessage('Some error a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6A1B2C3D4E5F6'), 'Some error [redacted]');
+        assert.strictEqual(sanitizeProviderErrorMessage('Generic error. Token: TOKEN_TEST_MOCK_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4'), 'Generic error. Token=[redacted]');
+        assert.strictEqual(sanitizeProviderErrorMessage('Some error TOKEN_TEST_MOCK_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4'), 'Some error [redacted]');
     });
     test('truncates the message to 240 characters', () => {
         const longMessage = 'A '.repeat(150); // 300 characters, no continuous block of 48+ chars

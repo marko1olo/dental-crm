@@ -233,7 +233,7 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
   });
 
-  // COMPETITOR FEATURE #20: пациенты::причины_списания_в_архив_и_запрет_записи
+  // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
   app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
@@ -241,9 +241,33 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     const payload = verifyToken(clinicToken, TOKEN_SECRET());
     if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
     const orgId = payload.organizationId as string;
+    const { patientId } = request.params as { patientId: string };
 
     const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
-    return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId));
+    return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId));
+  });
+
+  app.post("/api/patients/:patientId/archive-status", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+    const { patientId } = request.params as { patientId: string };
+    
+    // Parse the body
+    const body = request.body as any;
+    if (!body || typeof body.isBlacklisted !== 'boolean') {
+        return reply.code(400).send({ error: "ValidationError", message: "isBlacklisted boolean is required" });
+    }
+
+    const { setPatientArchiveStatusInDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+    const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
+    const patient = await getPatientByIdFromDb(orgId, patientId);
+    if (!patient) return reply.code(404).send({ error: "PatientNotFound" });
+
+    await setPatientArchiveStatusInDb(orgId, patientId, body.isBlacklisted, patient.fullName);
+    return reply.status(200).send({ success: true, isBlacklisted: body.isBlacklisted });
   });
 }
-

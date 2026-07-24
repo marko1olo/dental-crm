@@ -13,7 +13,7 @@ export async function writeClinicalAuditLog(input) {
             entityType: input.entityType,
             entityId: input.entityId,
             ipAddress: input.ipAddress ?? null,
-            userAgent: input.userAgent ?? null
+            userAgent: input.userAgent ?? null,
         });
     }
     catch (err) {
@@ -25,7 +25,9 @@ export async function writeClinicalAuditLog(input) {
  * Convenience wrapper: extracts IP and UserAgent from the Fastify request automatically.
  */
 export async function auditFromRequest(request, payload) {
-    const ip = request.headers["x-forwarded-for"]?.split(",")[0]?.trim() ??
+    const ip = request.headers["x-forwarded-for"]
+        ?.split(",")[0]
+        ?.trim() ??
         request.ip ??
         null;
     const ua = request.headers["user-agent"] ?? null;

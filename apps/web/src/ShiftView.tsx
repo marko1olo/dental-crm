@@ -385,13 +385,13 @@ export function PatientCockpit({
                   <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: activePatientInsight.riskLevel === 'high' ? '#b91c1c' : activePatientInsight.riskLevel === 'medium' ? '#b45309' : '#475569' }}>
                     {patientInsightRiskLabels[activePatientInsight.riskLevel as keyof typeof patientInsightRiskLabels]}
                   </span>
-                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{activePatientInsight.nextBestAction}</strong>
+                  <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{activePatientInsight.nextBestAction}</strong>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '12px', fontWeight: 500 }}>
-                  {activePatientInsight.balanceDueRub ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
-                  {activePatientInsight.openTasks > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
-                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
-                  {activePatientInsight.recallDueAt ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                  {activePatientInsight.balanceDueRub ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
+                  {activePatientInsight.openTasks > 0 ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
+                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
+                  {activePatientInsight.recallDueAt ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
               </div>
             ) : null}

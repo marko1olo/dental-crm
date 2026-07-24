@@ -1,10 +1,9 @@
-import { describe, test, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import child_process from "node:child_process";
-import { it } from "node:test";
 import cp from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
+import { afterEach, beforeEach, describe, it, mock, test, } from "node:test";
 import { ensureSshTunnel, stopSshTunnel } from "../tunnel.js";
 describe("ensureSshTunnel", () => {
     let spawnMock;
@@ -101,7 +100,7 @@ describe("ensureSshTunnel", () => {
                             {
                                 process.env.SSH_KEY_PATH = "valid-key";
                                 process.env.SSH_HOST = "host";
-                                let callCount = 0;
+                                const callCount = 0;
                                 const serverMock = {
                                     once: mock.fn((event, cb) => {
                                         if (callCount === 0) {
@@ -116,130 +115,129 @@ describe("ensureSshTunnel", () => {
                                             return serverMock;
                                         }
                                     }),
-                                    listen: mock.fn(() => {
-                                        callCount++;
-                                    }),
-                                    close: mock.fn(),
-                                    mock, : .method(net, "createServer", () => serverMock),
-                                    mock, : .method(fs, "existsSync", () => true),
-                                    const: spawnMock = {
-                                        unref: mock.fn(),
-                                        kill: mock.fn(),
-                                        mock, : .method(cp, "spawn", () => spawnMock),
-                                        const: res = await ensureSshTunnel(),
-                                        assert, : .strictEqual(res, true),
-                                        assert, : .strictEqual(spawnMock.kill.mock.calls.length, 1),
-                                        it(, async) { }
-                                    }()
+                                    listen: mock.fn(() => callCount++)
                                 };
-                                {
-                                    process.env.SSH_KEY_PATH = "valid-key";
-                                    process.env.SSH_HOST = "host";
-                                    const serverMock = {
-                                        once: mock.fn((event, cb) => {
-                                            // Port is always free
-                                            if (event === "listening")
-                                                cb();
-                                            return serverMock;
-                                        }),
-                                        listen: mock.fn(),
-                                        close: mock.fn(),
-                                        mock, : .method(net, "createServer", () => serverMock),
-                                        mock, : .method(fs, "existsSync", () => true),
-                                        const: spawnMock = {
-                                            unref: mock.fn(),
-                                            kill: mock.fn(),
-                                            mock, : .method(cp, "spawn", () => spawnMock),
-                                            const: res = await ensureSshTunnel(),
-                                            assert, : .strictEqual(res, false),
-                                            it(, async) { }
-                                        }()
-                                    };
-                                    {
+                            }
+                        }
+                    }),
+                        close;
+                    mock.fn();
+                    mock.method(net, "createServer", () => serverMock);
+                    mock.method(fs, "existsSync", () => true);
+                    const spawnMock = {
+                        unref: mock.fn(),
+                        kill: mock.fn(),
+                        mock, : .method(cp, "spawn", () => spawnMock),
+                        const: res = await ensureSshTunnel(),
+                        assert, : .strictEqual(res, true),
+                        assert, : .strictEqual(spawnMock.kill.mock.calls.length, 1),
+                        it(, async) { }
+                    }();
+                    {
+                        process.env.SSH_KEY_PATH = "valid-key";
+                        process.env.SSH_HOST = "host";
+                        const serverMock = {
+                            once: mock.fn((event, cb) => {
+                                // Port is always free
+                                if (event === "listening")
+                                    cb();
+                                return serverMock;
+                            }),
+                            listen: mock.fn(),
+                            close: mock.fn(),
+                            mock, : .method(net, "createServer", () => serverMock),
+                            mock, : .method(fs, "existsSync", () => true),
+                            const: spawnMock = {
+                                unref: mock.fn(),
+                                kill: mock.fn(),
+                                mock, : .method(cp, "spawn", () => spawnMock),
+                                const: res = await ensureSshTunnel(),
+                                assert, : .strictEqual(res, false),
+                                it(, async) { }
+                            }()
+                        };
+                        {
+                            process.env.SSH_KEY_PATH = "valid-key";
+                            process.env.SSH_HOST = "host";
+                            const serverMock = {
+                                once: mock.fn((event, cb) => {
+                                    if (event === "listening")
+                                        cb(); // Port free
+                                    return serverMock;
+                                }),
+                                listen: mock.fn(),
+                                close: mock.fn(),
+                                mock, : .method(net, "createServer", () => serverMock),
+                                mock, : .method(fs, "existsSync", () => true),
+                                mock, : .method(cp, "spawn", () => {
+                                    throw new Error("spawn failed");
+                                    const res = await ensureSshTunnel();
+                                    assert.strictEqual(res, false);
+                                    it("should ignore errors during stopSshTunnel", async () => {
                                         process.env.SSH_KEY_PATH = "valid-key";
                                         process.env.SSH_HOST = "host";
+                                        const callCount = 0;
                                         const serverMock = {
                                             once: mock.fn((event, cb) => {
-                                                if (event === "listening")
-                                                    cb(); // Port free
-                                                return serverMock;
+                                                if (callCount === 0) {
+                                                    if (event === "listening")
+                                                        cb();
+                                                }
+                                                else {
+                                                    if (event === "error")
+                                                        cb();
+                                                    return serverMock;
+                                                }
                                             }),
-                                            listen: mock.fn(),
+                                            listen: mock.fn(() => callCount++),
                                             close: mock.fn(),
                                             mock, : .method(net, "createServer", () => serverMock),
                                             mock, : .method(fs, "existsSync", () => true),
-                                            mock, : .method(cp, "spawn", () => {
-                                                throw new Error("spawn failed");
-                                                const res = await ensureSshTunnel();
-                                                assert.strictEqual(res, false);
-                                                it("should ignore errors during stopSshTunnel", async () => {
-                                                    process.env.SSH_KEY_PATH = "valid-key";
-                                                    process.env.SSH_HOST = "host";
-                                                    let callCount = 0;
-                                                    const serverMock = {
-                                                        once: mock.fn((event, cb) => {
-                                                            if (callCount === 0) {
-                                                                if (event === "listening")
-                                                                    cb();
-                                                            }
-                                                            else {
-                                                                if (event === "error")
-                                                                    cb();
-                                                                return serverMock;
-                                                            }
-                                                        }),
-                                                        listen: mock.fn(() => callCount++),
-                                                        close: mock.fn(),
-                                                        mock, : .method(net, "createServer", () => serverMock),
-                                                        mock, : .method(fs, "existsSync", () => true),
-                                                        const: spawnMock = {
-                                                            unref: mock.fn(),
-                                                            kill: mock.fn(() => {
-                                                                throw new Error("kill failed");
-                                                            }),
-                                                            mock, : .method(cp, "spawn", () => spawnMock),
-                                                            const: res = await ensureSshTunnel(),
-                                                            assert, : .strictEqual(res, true),
-                                                            assert, : .strictEqual(spawnMock.kill.mock.calls.length, 1),
-                                                            import: { test, describe, afterEach, mock }, from, "node:test": ,
-                                                            const: originalEnv = { ...process.env },
-                                                            // Restore environment variables without replacing the process.env object itself
-                                                            for(, key, of, Object) { }, : .keys(process.env)
-                                                        }
-                                                    };
-                                                });
-                                                {
-                                                    if (!(key in originalEnv)) {
-                                                        delete process.env[key];
-                                                        for (const [key, value] of Object.entries(originalEnv)) {
-                                                            process.env[key] = value;
-                                                            test("should catch and log error if child_process.spawn throws", async () => {
-                                                                // We want to test the missing error test for SSH tunnel child process
-                                                                mock.method(net, "createServer", () => ({
-                                                                    once: (evt, cb) => {
-                                                                        if (evt === "listening")
-                                                                            cb();
-                                                                        close: () => { };
-                                                                    }
-                                                                }));
-                                                                const consoleErrorMock = mock.method(console, "error", () => { });
-                                                                process.env.SSH_KEY_PATH = "/dummy/key";
-                                                                process.env.SSH_HOST = "user@localhost";
-                                                                // Verify that the error was caught and logged
-                                                                assert.strictEqual(consoleErrorMock.mock.calls.length, 1);
-                                                                assert.strictEqual(consoleErrorMock.mock.calls[0].arguments[0], "[SSH Tunnel] Failed to launch SSH tunnel:");
-                                                                assert.strictEqual(consoleErrorMock.mock.calls[0].arguments[1].message, "Simulated spawn error");
-                                                            });
-                                                        }
-                                                    }
-                                                }
-                                            })
+                                            const: spawnMock = {
+                                                unref: mock.fn(),
+                                                kill: mock.fn(() => {
+                                                    throw new Error("kill failed");
+                                                }),
+                                                mock, : .method(cp, "spawn", () => spawnMock),
+                                                const: res = await ensureSshTunnel(),
+                                                assert, : .strictEqual(res, true),
+                                                assert, : .strictEqual(spawnMock.kill.mock.calls.length, 1),
+                                                import: { test, describe, afterEach, mock }, from, "node:test": ,
+                                                const: originalEnv = { ...process.env },
+                                                // Restore environment variables without replacing the process.env object itself
+                                                for(, key, of, Object) { }, : .keys(process.env)
+                                            }
                                         };
+                                    });
+                                    {
+                                        if (!(key in originalEnv)) {
+                                            delete process.env[key];
+                                            for (const [key, value] of Object.entries(originalEnv)) {
+                                                process.env[key] = value;
+                                                test("should catch and log error if child_process.spawn throws", async () => {
+                                                    // We want to test the missing error test for SSH tunnel child process
+                                                    mock.method(net, "createServer", () => ({
+                                                        once: (evt, cb) => {
+                                                            if (evt === "listening")
+                                                                cb();
+                                                            close: () => { };
+                                                        }
+                                                    }));
+                                                    const consoleErrorMock = mock.method(console, "error", () => { });
+                                                    process.env.SSH_KEY_PATH = "/dummy/key";
+                                                    process.env.SSH_HOST = "user@localhost";
+                                                    // Verify that the error was caught and logged
+                                                    assert.strictEqual(consoleErrorMock.mock.calls.length, 1);
+                                                    assert.strictEqual(consoleErrorMock.mock.calls[0].arguments[0], "[SSH Tunnel] Failed to launch SSH tunnel:");
+                                                    assert.strictEqual(consoleErrorMock.mock.calls[0].arguments[1].message, "Simulated spawn error");
+                                                });
+                                            }
+                                        }
                                     }
-                                }
-                            }
+                                })
+                            };
                         }
-                    });
+                    }
                 });
             });
         });

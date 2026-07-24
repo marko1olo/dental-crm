@@ -2,13 +2,15 @@ import React from "react";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { Bot, ShieldCheck, Copy, Download, RefreshCw, Send, CheckCircle2, Image as ImageIcon, ExternalLink, FileCheck2, CreditCard, CalendarDays, ClipboardCheck, Users } from "lucide-react";
 import { DenteTelegramFeature } from "@dental/shared";
+import { PatientPortal } from "../PatientPortal";
+
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
-export function SettingsTelegramTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
+export function SettingsTelegramTab({ props, settingsTab }: { props?: any, settingsTab: string }) {
   const {
     dashboard,
     createTelegramLinkCode,
@@ -154,7 +156,10 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
 
   if (settingsTab !== "telegram") return null;
 
+  const [showPatientPortalPreview, setShowPatientPortalPreview] = React.useState(false);
+
   const typedTelegramPostVisitCheckupDelayFields = telegramPostVisitCheckupDelayFields as any[];
+
   const typedTelegramVisualCardFields = telegramVisualCardFields as any[];
   const typedTelegramFeatureHelp = telegramFeatureHelp as Record<DenteTelegramFeature, string>;
   const getTypedTelegramInlineButtonRows = (replyMarkup: Record<string, unknown> | null) => {
@@ -484,7 +489,7 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
                     <h3>Безопасные сценарии</h3>
                     <p>Это не рекламная рассылка и не канал медицинских документов. Только уведомления и портальные ссылки.</p>
                   </div>
-                  <span className="status-pill status-confirmed">{typedTelegramFeaturePlan?.enabledFeatures.length ?? 0}</span>
+                  <span className="status-pill status-confirmed">{typedTelegramFeaturePlan?.enabledFeatures?.length ?? 0}</span>
                 </div>
                 <div className="telegram-token-row">
                   {(typedTelegramFeaturePlan?.patientSafeActions ?? []).slice(0, 6).map((action) => (
@@ -571,17 +576,81 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
                   </label>
                   <label>
                     Портал пациента
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://portal.example"
-                      value={telegramPatientPortalBaseUrlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramPatientPortalBaseUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <input
+                        type="url"
+                        inputMode="url"
+                        placeholder="https://portal.example"
+                        value={telegramPatientPortalBaseUrlDraft}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          setTelegramPatientPortalBaseUrlDraft(event.target.value);
+                          markTelegramSettingsDirty();
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        style={{ whiteSpace: "nowrap" }}
+                        onClick={() => setShowPatientPortalPreview(true)}
+                      >
+                        <ExternalLink size={14} /> Предпросмотр
+                      </button>
+                    </div>
                   </label>
+
+                  {showPatientPortalPreview && (
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.7)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                        padding: "20px"
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: "var(--paper)",
+                          borderRadius: "16px",
+                          width: "100%",
+                          maxWidth: "480px",
+                          maxHeight: "90vh",
+                          overflowY: "auto",
+                          position: "relative",
+                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom: "1px solid var(--line)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
+                          }}
+                        >
+                          <strong style={{ fontSize: "14px", color: "var(--ink)" }}>Превью Портала Пациента</strong>
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => setShowPatientPortalPreview(false)}
+                          >
+                            Закрыть
+                          </button>
+                        </div>
+                        <div style={{ padding: "16px" }}>
+                          <PatientPortal />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <label>
                     Картинка приветствия
                     <input
@@ -1051,23 +1120,23 @@ export function SettingsTelegramTab({ props, settingsTab }: { props: Record<stri
                     ) : null}
                   </div>
                 ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length > 0 && filteredTelegramOutboxItems.length === 0 ? (
+                {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) > 0 && (filteredTelegramOutboxItems?.length ?? 0) === 0 ? (
                   <p className="telegram-empty-state">По выбранным фильтрам задач нет.</p>
                 ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length === 0 ? (
+                {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) === 0 ? (
                   <p className="telegram-empty-state">Нет Telegram-задач в текущей очереди связи.</p>
                 ) : null}
               </div>
-              {typedTelegramOutbox?.warnings.length ? (
+              {typedTelegramOutbox?.warnings?.length ? (
                 <div className="telegram-warning-strip compact">
-                  {typedTelegramOutbox.warnings.map((warning) => (
+                  {(typedTelegramOutbox.warnings ?? []).map((warning) => (
                     <span key={warning}>{telegramHumanMessage(warning)}</span>
                   ))}
                 </div>
               ) : null}
             </article>
 
-            {typedTelegramStatus?.warnings.length || typedTelegramStatus?.nextActions.length ? (
+            {typedTelegramStatus?.warnings?.length || typedTelegramStatus?.nextActions?.length ? (
               <div className="telegram-warning-strip">
                 {[...(typedTelegramStatus?.warnings ?? []), ...(typedTelegramStatus?.nextActions ?? [])].map((item) => (
                   <span key={item}>{telegramHumanMessage(item)}</span>

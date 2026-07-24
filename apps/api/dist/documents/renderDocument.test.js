@@ -1,5 +1,5 @@
-import { test, describe } from "node:test";
 import assert from "node:assert";
+import { describe, test } from "node:test";
 import { documentHasUnresolvedPlaceholders } from "./renderDocument.js";
 describe("documentHasUnresolvedPlaceholders", () => {
     test("returns false for HTML without placeholders", () => {
@@ -7,13 +7,7 @@ describe("documentHasUnresolvedPlaceholders", () => {
         assert.strictEqual(documentHasUnresolvedPlaceholders(html), false);
     });
     test("returns true for various unresolved placeholders", () => {
-        const placeholders = [
-            "{ ",
-            " { ",
-            " {_",
-            "_} ",
-            " }"
-        ];
+        const placeholders = ["{ ", " { ", " {_", "_} ", " }"];
         for (const text of placeholders) {
             const html = `<p>${text}</p>`;
             assert.strictEqual(documentHasUnresolvedPlaceholders(html), true, `Expected to return true for text containing: ${text}`);

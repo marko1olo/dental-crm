@@ -254,8 +254,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const rawOrgId = request.headers["x-organization-id"];
 		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
 		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
+		const { patientId } = request.query as { patientId?: string };
 		const { getPatientServiceLineagesFromDb } = await import("../db/patientServiceLineagesQuery.js");
-		return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId));
+		return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId, patientId));
 	});
 
 	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм

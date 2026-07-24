@@ -1,6 +1,10 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
+import { clinicalRules as inMemoryClinicalRules, createClinicalRule as createClinicalRuleInMemory, updateClinicalRule as updateClinicalRuleInMemory } from "../sampleData.js";
+function useInMemory() {
+    return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 function parseJsonArray(jsonString) {
     if (!jsonString)
         return [];
@@ -33,10 +37,16 @@ function mapClinicalRule(record) {
     };
 }
 export async function getClinicalRules(organizationId) {
+    if (useInMemory()) {
+        return inMemoryClinicalRules;
+    }
     const records = await db.select().from(schema.clinicalRules).where(eq(schema.clinicalRules.organizationId, organizationId));
     return records.map(mapClinicalRule);
 }
 export async function getClinicalRuleById(organizationId, ruleId) {
+    if (useInMemory()) {
+        return inMemoryClinicalRules.find((r) => r.id === ruleId) ?? null;
+    }
     const [record] = await db
         .select()
         .from(schema.clinicalRules)
@@ -108,6 +118,9 @@ export async function evaluateClinicalRulesInDb(organizationId, input) {
     };
 }
 export async function createClinicalRuleInDb(organizationId, input) {
+    if (useInMemory()) {
+        return createClinicalRuleInMemory(input);
+    }
     const [record] = await db
         .insert(schema.clinicalRules)
         .values({
@@ -134,6 +147,9 @@ export async function createClinicalRuleInDb(organizationId, input) {
     return mapClinicalRule(record);
 }
 export async function updateClinicalRuleInDb(organizationId, input) {
+    if (useInMemory()) {
+        return updateClinicalRuleInMemory(input);
+    }
     const existing = await getClinicalRuleById(organizationId, input.id);
     if (!existing) {
         throw new Error("Правило не найдено");

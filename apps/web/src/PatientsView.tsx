@@ -78,7 +78,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
-  const [smartParsedData, setSmartParsedData] = useState<Record<string, string | undefined> | null>(null);
+  const [smartParsedData, setSmartParsedData] = useState<ReturnType<typeof parsePatientDictationLocal> | null>(null);
   const [showHints, setShowHints] = useState(false);
 
   const {

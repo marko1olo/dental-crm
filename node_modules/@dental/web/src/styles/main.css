@@ -33,44 +33,154 @@
   
   --nav: #0f172a; /* Slate 900 for sidebar in light mode */
   --nav-active: #1e293b;
+
+  /* Slate palette tokens (light defaults) */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Surface tokens */
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+
+  /* Brand tokens */
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+
+  /* Status tokens */
+  --success-color: #15803d;
+  --warning-color: #d97706;
+  --error-color: #b91c1c;
   
   --shadow-premium: 0 10px 40px -10px rgba(15, 118, 110, 0.12), 0 1px 3px rgba(15, 118, 110, 0.05);
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f8fafc;
-    background: #020617;
+:root[data-theme="dark"],
+html.dark,
+[data-theme="dark"] {
+  color: #f8fafc;
+  background: #020617;
+
+  /* DARK THEME (Sleek Off-Black) */
+  --paper: #0f172a; /* Slate 900 */
+  --paper-strong: #1e293b; /* Slate 800 */
+  --paper-soft: #020617; /* Slate 950 */
+  --ink: #f8fafc; /* Slate 50 */
+  --muted: #94a3b8; /* Slate 400 */
+  --line: rgba(204, 251, 241, 0.15); /* Soft teal line */
+  --line-strong: rgba(204, 251, 241, 0.3);
   
-    /* DARK THEME (Sleek Off-Black) */
-    --paper: #0f172a; /* Slate 900 */
-    --paper-strong: #1e293b; /* Slate 800 */
-    --paper-soft: #020617; /* Slate 950 */
-    --ink: #f8fafc; /* Slate 50 */
-    --muted: #94a3b8; /* Slate 400 */
-    --line: rgba(204, 251, 241, 0.15); /* Soft teal line */
-    --line-strong: rgba(204, 251, 241, 0.3);
-    
-    --teal: #2dd4bf; /* Lighter teal for dark mode */
-    --teal-dark: #14b8a6;
-    --teal-soft: rgba(45, 212, 191, 0.15);
-    --teal-glow: rgba(45, 212, 191, 0.2);
-    --teal-surface: rgba(45, 212, 191, 0.1);
-    
-    --rust: #ef4444;
-    --rust-soft: rgba(239, 68, 68, 0.15);
-    --amber: #f59e0b;
-    --amber-soft: rgba(245, 158, 11, 0.15);
-    --red: #f87171;
-    --green: #4ade80;
-    
-    --nav: #020617; /* Very dark slate for sidebar */
-    --nav-active: #0f172a;
-    
-    --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
+  --teal: #2dd4bf; /* Lighter teal for dark mode */
+  --teal-dark: #14b8a6;
+  --teal-soft: rgba(45, 212, 191, 0.15);
+  --teal-glow: rgba(45, 212, 191, 0.2);
+  --teal-surface: rgba(45, 212, 191, 0.1);
+  
+  --rust: #ef4444;
+  --rust-soft: rgba(239, 68, 68, 0.15);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --red: #f87171;
+  --green: #4ade80;
+  
+  --nav: #020617; /* Very dark slate for sidebar */
+  --nav-active: #0f172a;
+
+  /* Slate palette tokens for dark mode */
+  --slate-50: #1e293b;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+  --slate-950: #ffffff;
+
+  /* Surface tokens */
+  --surface-50: #1e293b;
+  --surface-100: #334155;
+
+  /* Brand tokens */
+  --brand-500: #38bdf8;
+  --brand-600: #0ea5e9;
+
+  /* Status tokens */
+  --success-color: #4ade80;
+  --warning-color: #fbbf24;
+  --error-color: #f87171;
+  
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"],
+html.light,
+[data-theme="light"] {
+  color: #111827;
+  background: #f8fafc;
+
+  /* LIGHT THEME (Clean & Bright) */
+  --paper: #ffffff;
+  --paper-strong: #ffffff;
+  --paper-soft: #f8fafc;
+  --ink: #111827;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  
+  --teal: #0d9488;
+  --teal-dark: #0f766e;
+  --teal-soft: #ccfbf1;
+  --teal-glow: rgba(13, 148, 136, 0.25);
+  --teal-surface: rgba(204, 251, 241, 0.5);
+  
+  --rust: #b91c1c;
+  --rust-soft: #fee2e2;
+  --amber: #d97706;
+  --amber-soft: #fef3c7;
+  --red: #ef4444;
+  --green: #15803d;
+  
+  --nav: #0f172a;
+  --nav-active: #1e293b;
+
+  /* Slate palette tokens for light mode */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Surface tokens */
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+
+  /* Brand tokens */
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+
+  /* Status tokens */
+  --success-color: #15803d;
+  --warning-color: #d97706;
+  --error-color: #b91c1c;
 }
 
 
@@ -6033,6 +6143,12 @@ img {
   padding: 12px;
 }
 
+[data-theme="dark"] .mode-readiness > div,
+[data-theme="dark"] .clinic-legal-form {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
 .mode-readiness strong {
   color: var(--teal-dark);
   font-size: 26px;
@@ -6041,11 +6157,16 @@ img {
 
 .mode-readiness span {
   background: #eef8f5;
-  border-radius: 999px;
-  color: var(--teal-dark);
+  border-radius: 9999px;
+  color: #1a564c;
   font-size: 12px;
-  font-weight: 850;
-  padding: 6px 8px;
+  font-weight: 700;
+  padding: 2px 9px;
+}
+
+[data-theme="dark"] .mode-readiness span {
+  background: rgba(15, 118, 110, 0.2);
+  color: #5eead4;
 }
 
 .clinic-config-grid {
@@ -8873,13 +8994,18 @@ img {
 }
 
 .patient-admin-panel {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 12px;
   margin-top: 12px;
   padding: 12px;
+}
+
+[data-theme="dark"] .patient-admin-panel {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
 }
 
 .patient-doc-heading {
@@ -9796,6 +9922,12 @@ img {
   text-align: left;
 }
 
+[data-theme="dark"] .dictation-action-guidance {
+  background: rgba(15, 118, 110, 0.2);
+  border-color: rgba(45, 212, 191, 0.3);
+  color: #5eead4;
+}
+
 .visit-draft-missing {
   background: #fff8ef;
   border: 1px solid #e7c68e;
@@ -9806,6 +9938,12 @@ img {
   gap: 6px;
   padding: 10px 12px;
   text-align: left;
+}
+
+[data-theme="dark"] .visit-draft-missing {
+  background: rgba(180, 83, 9, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
 }
 
 .visit-draft-missing strong {
@@ -10169,13 +10307,46 @@ img {
 }
 
 .visit-note-panel {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 12px;
   margin-bottom: 14px;
   padding: 12px;
+}
+
+html.dark .visit-note-panel,
+[data-theme="dark"] .visit-note-panel {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .visit-note-panel h3,
+html.dark .visit-note-panel h4,
+html.dark .visit-note-panel strong,
+[data-theme="dark"] .visit-note-panel h3,
+[data-theme="dark"] .visit-note-panel h4,
+[data-theme="dark"] .visit-note-panel strong {
+  color: var(--ink, #f8fafc) !important;
+}
+
+html.dark .emk-tabs-container,
+[data-theme="dark"] .emk-tabs-container {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .emk-tab-button,
+[data-theme="dark"] .emk-tab-button {
+  color: var(--muted, #94a3b8) !important;
+}
+
+html.dark .emk-tab-button.active,
+[data-theme="dark"] .emk-tab-button.active {
+  background: var(--primary-strong, #0d9488) !important;
+  color: #ffffff !important;
 }
 
 .visit-note-head {
@@ -10462,7 +10633,7 @@ img {
 }
 
 .document-factory-group {
-  background: #fbfefd;
+  background: var(--paper-soft, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10474,7 +10645,7 @@ img {
 .document-factory-tax-year,
 .document-factory-tax-payer {
   align-items: center;
-  background: #f4fbf8;
+  background: var(--paper-soft, #f4fbf8);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--muted);
@@ -10487,7 +10658,7 @@ img {
 
 .document-factory-tax-year input,
 .document-factory-tax-payer select {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   color: var(--ink);
@@ -10505,7 +10676,7 @@ img {
 }
 
 .document-factory-tax-payments {
-  background: #f8fcfb;
+  background: var(--paper-soft, #f8fcfb);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10554,7 +10725,7 @@ img {
 
 .tax-payment-selection-item {
   align-items: flex-start;
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10590,6 +10761,16 @@ img {
   font-size: 11px;
 }
 
+.document-factory-selected-kind {
+  background: var(--paper-soft, #f4fbf8);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
 .document-factory-selected-kind label {
   color: var(--muted);
   display: grid;
@@ -10599,12 +10780,23 @@ img {
   min-width: 0;
 }
 
+.document-factory-selected-kind select {
+  background: var(--paper, #fff);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 0 9px;
+}
+
 .document-factory-selected-kind .primary-button {
   min-height: 36px;
 }
 
 .document-source-card {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10727,7 +10919,7 @@ img {
 }
 
 .document-row-guidance {
-  color: #5b716f;
+  color: var(--muted);
   display: block;
   font-size: 12px;
   font-weight: 760;
@@ -10745,7 +10937,7 @@ img {
 }
 
 .document-payload-card {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10831,18 +11023,18 @@ img {
 }
 
 .document-payload-actions .document-action-guidance {
-  background: #eef7f5;
-  border: 1px solid rgba(16, 118, 103, 0.22);
+  background: var(--paper-soft, #eef7f5);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  color: #0f5f56;
+  color: var(--teal-dark, #0f5f56);
   padding: 6px 8px;
 }
 
 .document-open-guidance {
-  background: #f4fbf8;
-  border: 1px solid rgba(16, 118, 103, 0.18);
+  background: var(--paper-soft, #f4fbf8);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  color: #315f59;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
   margin: -4px 0 10px;
@@ -10850,7 +11042,7 @@ img {
 }
 
 .document-create-guidance {
-  color: #315f59;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -11130,10 +11322,29 @@ img {
 .clinical-rule-card,
 .finance-list,
 .service-catalog-strip article {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
+  color: var(--ink, #0f172a);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-width: 0;
+}
+
+.plan-scenarios h2,
+.plan-scenarios h3,
+.payment-capture h2,
+.payment-capture h3 {
+  color: var(--ink, #0f172a);
+}
+
+html.dark .plan-scenarios h2,
+html.dark .plan-scenarios h3,
+html.dark .payment-capture h2,
+html.dark .payment-capture h3,
+[data-theme="dark"] .plan-scenarios h2,
+[data-theme="dark"] .plan-scenarios h3,
+[data-theme="dark"] .payment-capture h2,
+[data-theme="dark"] .payment-capture h3 {
+  color: #f8fafc !important;
 }
 
 .finance-summary-grid article {
@@ -11721,7 +11932,8 @@ img {
 .communication-task,
 .communication-side section,
 .template-list article {
-  background: #fbfefd;
+  background: var(--paper, #fbfefd);
+  color: var(--ink, #0f172a);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-width: 0;
@@ -11926,9 +12138,18 @@ img {
   margin-bottom: 0;
 }
 
-.communication-side h3 {
+.communication-side section h3,
+.communication-side .panel-heading h3 {
+  color: var(--ink, #0f172a) !important;
   font-size: 16px;
   margin: 0;
+}
+
+html.dark .communication-side section h3,
+html.dark .communication-side .panel-heading h3,
+[data-theme="dark"] .communication-side section h3,
+[data-theme="dark"] .communication-side .panel-heading h3 {
+  color: #f8fafc !important;
 }
 
 .template-list article {
@@ -12286,6 +12507,23 @@ img {
   color: #4e463f;
   font-size: 13px;
   margin: 0;
+}
+
+[data-theme="dark"] .compliance-bar {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .compliance-bar summary {
+  color: var(--teal-light, #2dd4bf);
+}
+
+[data-theme="dark"] .compliance-bar summary::after {
+  color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .compliance-bar p {
+  color: var(--ink, #f8fafc);
 }
 
 @media (max-width: 1180px) {
@@ -14167,6 +14405,31 @@ input:focus, select:focus, textarea:focus {
 .settings-advanced-block[open] .settings-advanced-toggle {
   border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
+
+[data-theme="dark"] .settings-advanced-block {
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .settings-advanced-toggle {
+  background: var(--glass-panel, rgba(15, 23, 42, 0.7)) !important;
+  color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .settings-advanced-toggle:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+[data-theme="dark"] .settings-advanced-label {
+  color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .settings-advanced-hint {
+  color: var(--muted, #94a3b8) !important;
+}
+
+[data-theme="dark"] .settings-advanced-form {
+  background: rgba(15, 23, 42, 0.85) !important;
+}
 .settings-advanced-form {
   padding: 1.25rem 1.1rem 1rem;
   animation: accordion-open 0.22s ease both;
@@ -15309,6 +15572,30 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--slate-100, #f1f5f9);
 }
 
+html.dark .settings-grid label,
+html.dark .clinic-profile-form-grid label,
+html.dark .rule-form-grid label,
+html.dark .weekday-toggle-row,
+[data-theme="dark"] .settings-grid label,
+[data-theme="dark"] .clinic-profile-form-grid label,
+[data-theme="dark"] .rule-form-grid label,
+[data-theme="dark"] .weekday-toggle-row {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--ink, #f8fafc);
+}
+
+html.dark .clinic-profile-form-grid input,
+html.dark .clinic-profile-form-grid select,
+html.dark .clinic-profile-form-grid textarea,
+[data-theme="dark"] .clinic-profile-form-grid input,
+[data-theme="dark"] .clinic-profile-form-grid select,
+[data-theme="dark"] .clinic-profile-form-grid textarea {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
 .weekday-toggle-row {
   background: var(--slate-50, #f8fafc);
   padding: 12px;
@@ -16283,3 +16570,126 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: 1fr auto !important; 
   min-height: 80px !important; 
 }
+
+@media (max-width: 768px) {
+.schedule-shift-summary-grid,
+  .schedule-filter-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Schedule Dark Mode Theme Harmony --- */
+[data-theme="dark"] .schedule-shift-summary,
+.dark .schedule-shift-summary,
+body.dark-mode .schedule-shift-summary {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+[data-theme="dark"] .schedule-shift-summary-grid article,
+.dark .schedule-shift-summary-grid article,
+body.dark-mode .schedule-shift-summary-grid article {
+  background: var(--surface, #0f172a) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+[data-theme="dark"] .schedule-filter-strip,
+.dark .schedule-filter-strip,
+body.dark-mode .schedule-filter-strip {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+[data-theme="dark"] .schedule-secret-collapsible,
+.dark .schedule-secret-collapsible,
+body.dark-mode .schedule-secret-collapsible {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+[data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
+.dark .schedule-secret-collapsible .schedule-admin-unlock,
+body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
+  background: var(--surface, #0f172a) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+/* --- Communications Dark Mode Theme Harmony --- */
+[data-theme="dark"] .communications-summary-grid article,
+.dark .communications-summary-grid article,
+body.dark-mode .communications-summary-grid article,
+[data-theme="dark"] .communication-note-row,
+.dark .communication-note-row,
+body.dark-mode .communication-note-row,
+[data-theme="dark"] .communication-task,
+.dark .communication-task,
+body.dark-mode .communication-task,
+[data-theme="dark"] .communication-side section,
+.dark .communication-side section,
+body.dark-mode .communication-side section,
+[data-theme="dark"] .template-list article,
+.dark .template-list article,
+body.dark-mode .template-list article,
+[data-theme="dark"] .communication-empty-state,
+.dark .communication-empty-state,
+body.dark-mode .communication-empty-state {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+/* --- Finance Dark Mode Theme Harmony --- */
+[data-theme="dark"] .finance-summary-grid article,
+.dark .finance-summary-grid article,
+body.dark-mode .finance-summary-grid article,
+[data-theme="dark"] .payment-capture,
+.dark .payment-capture,
+body.dark-mode .payment-capture,
+[data-theme="dark"] .plan-scenarios,
+.dark .plan-scenarios,
+body.dark-mode .plan-scenarios,
+[data-theme="dark"] .plan-scenario,
+.dark .plan-scenario,
+body.dark-mode .plan-scenario,
+[data-theme="dark"] .clinical-rule-panel,
+.dark .clinical-rule-panel,
+body.dark-mode .clinical-rule-panel,
+[data-theme="dark"] .clinical-rule-card,
+.dark .clinical-rule-card,
+body.dark-mode .clinical-rule-card,
+[data-theme="dark"] .finance-list,
+.dark .finance-list,
+body.dark-mode .finance-list,
+[data-theme="dark"] .service-catalog-strip article,
+.dark .service-catalog-strip article,
+body.dark-mode .service-catalog-strip article,
+[data-theme="dark"] .payment-capture-detail-section,
+.dark .payment-capture-detail-section,
+body.dark-mode .payment-capture-detail-section {
+  background: var(--surface-alt, #1e293b) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-color, #f8fafc) !important;
+}
+
+[data-theme="dark"] .finance-due,
+.dark .finance-due,
+body.dark-mode .finance-due {
+  background: rgba(163, 79, 50, 0.2) !important;
+  border-color: rgba(163, 79, 50, 0.5) !important;
+}
+
+
+/* Dark mode: document manual override details (DocumentsView) */
+html.dark .document-manual-override,
+[data-theme="dark"] .document-manual-override,
+.dark .document-manual-override,
+body.dark-mode .document-manual-override {
+  background: var(--glass-panel) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+

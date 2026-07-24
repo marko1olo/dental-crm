@@ -9,7 +9,7 @@ export type AppointmentCardProps = {
   visibleScheduleSuggestions: ScheduleSuggestion[];
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   appointmentLabels: Record<Appointment["status"], string>;
-  appointmentDraft: any;
+  appointmentDraft: Record<string, any>;
   appointmentSaveState: string;
   appointmentSaveError: string | null;
   appointmentDirty: boolean;
@@ -23,7 +23,7 @@ export type AppointmentCardProps = {
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   openAppointmentEditor: (appointment: Appointment) => void;
   closeAppointmentEditor: (appointmentId: string) => void;
-  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: any) => void;
+  updateAppointmentScheduleDraft: (appointmentId: string, key: any, value: any) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
   normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -64,11 +64,11 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
   const appointmentSuggestions = visibleScheduleSuggestions.filter(s => s.appointmentId === appointment.id);
   const readiness = appointmentReadinessById.get(appointment.id);
-  const appointmentDoctor = dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId);
+  const appointmentDoctor = (dashboard.clinicSettings?.staff ?? []).find((member) => member.id === appointment.doctorUserId);
   const appointmentAssistant = appointment.assistantUserId
-    ? dashboard.clinicSettings.staff.find((member) => member.id === appointment.assistantUserId)
+    ? (dashboard.clinicSettings?.staff ?? []).find((member) => member.id === appointment.assistantUserId)
     : null;
-  const appointmentChair = dashboard.clinicSettings.chairs.find((chair) => chair.id === appointment.chairId);
+  const appointmentChair = (dashboard.clinicSettings?.chairs ?? []).find((chair) => chair.id === appointment.chairId);
   const appointmentSaveMissingId = `appointment-save-missing-${appointment.id}`;
   const appointmentEditorId = `appointment-editor-${appointment.id}`;
   const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
@@ -81,11 +81,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
       
       <div className="timeline-content">
         <p style={{ display: 'none' }}>{appointment.reason}</p>
-        <article className={`appointment-card ${readiness ? 'readiness-' + readiness.state : ""}`} style={{ padding: '16px', background: 'white', border: '1px solid var(--slate-200)', borderRadius: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-      <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--slate-100)', paddingBottom: '8px', marginBottom: '4px' }}>
-        <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <article
+          data-testid="appointment-card"
+          className={`appointment-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-3 shadow-sm ${readiness ? 'readiness-' + readiness.state : ""}`}
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        >
+      <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '8px', marginBottom: '4px' }}>
+        <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {formatTime(appointment.startsAt)}
-          <span style={{ fontWeight: 400, color: 'var(--slate-500)' }}>{formatTime(appointment.endsAt)}</span>
+          <span style={{ fontWeight: 400, color: 'var(--muted)' }}>{formatTime(appointment.endsAt)}</span>
         </div>
         <span className={`appointment-card-status status-pill status-${appointment.status}`}>
           {appointmentLabels[appointment.status]}
@@ -94,7 +98,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
       </div>
 
       <div className="appointment-card-body">
-        <h3>{appointmentPatientName}</h3>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{appointmentPatientName}</h3>
         <div className="chip-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
           {appointmentSuggestions.map((suggestion) => (
             <span 
@@ -103,9 +107,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
               onClick={(e) => { e.stopPropagation(); openScheduleSuggestion(suggestion.section); }}
               style={{ 
                 cursor: 'pointer', 
-                background: suggestion.priority === 'urgent' ? '#fee2e2' : '#fef3c7',
-                color: suggestion.priority === 'urgent' ? '#991b1b' : '#92400e',
-                border: `1px solid ${suggestion.priority === 'urgent' ? '#fca5a5' : '#fcd34d'}`
+                background: suggestion.priority === 'urgent' ? 'var(--rust-soft)' : 'var(--amber-soft)',
+                color: suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)',
+                border: `1px solid ${suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)'}`
               }}
               title={suggestion.detail}
             >
@@ -161,7 +165,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             Начало
             <input
               type="datetime-local"
-              value={toDateTimeLocalValue(appointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+              value={toDateTimeLocalValue(appointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
               onChange={(event: TextFieldChangeEvent) =>
                 updateAppointmentScheduleDraft(
                   appointment.id,
@@ -175,7 +179,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             Окончание
             <input
               type="datetime-local"
-              value={toDateTimeLocalValue(appointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+              value={toDateTimeLocalValue(appointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
               onChange={(event: TextFieldChangeEvent) =>
                 updateAppointmentScheduleDraft(
                   appointment.id,
@@ -188,7 +192,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
-              {useManualSelects || dashboard.patients.length > 20 ? (
+              {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={appointmentDraft.patientId || ''}
                   onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
@@ -197,13 +201,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                 >
                   <option value="">-- Выберите пациента --</option>
-                  {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                  {(dashboard.patients ?? []).filter(p => p.status === 'active').map(p => (
                     <option key={p.id} value={p.id}>{p.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.patients
+                  {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
                       <button
@@ -229,13 +233,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите врача --</option>
-                  {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                  {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
                     <option key={m.id} value={m.id}>{m.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.clinicSettings.staff
+                  {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
                       <button
@@ -256,7 +260,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.staff
+                {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
                     <button
@@ -276,7 +280,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.chairs
+                {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
                     <button
@@ -308,18 +312,23 @@ export function AppointmentCard(props: AppointmentCardProps) {
                     </button>
                 ))}
               </div>
+              {appointmentHasOpenVisit && (
+                <div id={appointmentHandoffNoteId} className="status-blocker-note appointment-handoff-note" style={{ fontSize: '12px', color: 'var(--amber-700)', marginTop: '4px' }}>
+                  Статус приема заблокирован: по этому приему открыт активный визит. Завершите или отмените визит в рабочем месте врача (закройте прием перед закрывающим статусом записи).
+                </div>
+              )}
             </div>
           </div>
           <label className="form-span-2">
             Причина
-            <input value={appointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
+            <input value={String(appointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
               {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = appointmentDraft.reason.trim();
+                    const currentVal = String(appointmentDraft.reason || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateAppointmentScheduleDraft(appointment.id, "reason", newVal);
                   }}
@@ -334,14 +343,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
           </label>
           <label className="form-span-2">
             Комментарий
-            <textarea value={appointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
+            <textarea value={String(appointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+              {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = appointmentDraft.comment.trim();
+                    const currentVal = String(appointmentDraft.comment || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateAppointmentScheduleDraft(appointment.id, "comment", newVal);
                   }}

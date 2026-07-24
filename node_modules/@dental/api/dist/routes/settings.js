@@ -40,7 +40,7 @@ function settingsDomainMessage(error) {
 function hasActiveScheduleConflict(message) {
     return message.includes("активная запись") || message.includes("активные записи");
 }
-export function clinicProfileMutationRejection(reply, error) {
+function clinicProfileMutationRejection(reply, error) {
     const message = settingsDomainMessage(error);
     if (message.includes("часовой пояс")) {
         return reply.code(409).send({
@@ -139,6 +139,9 @@ async function requireSettingsAccess(request, reply) {
             });
             return null;
         }
+    }
+    if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+        return "00000000-0000-0000-0000-000000000001";
     }
     // Find default organization (MVP assumes single org)
     const [org] = await db.select().from(schema.organizations).limit(1);

@@ -1,5 +1,5 @@
-import { test, describe, afterEach, mock } from "node:test";
 import assert from "node:assert";
+import { afterEach, describe, mock, test } from "node:test";
 import { buildPatientImportIntake } from "./imports.js";
 describe("buildPatientImportIntake", () => {
     afterEach(() => {
@@ -9,7 +9,7 @@ describe("buildPatientImportIntake", () => {
         const input = {
             sourceName: "test-source",
             sourceKind: "free_text",
-            rawText: "Иванов Иван Иванович 89001234567 01.01.1990 жалоба на боль"
+            rawText: "Иванов Иван Иванович 89001234567 01.01.1990 жалоба на боль",
         };
         const result = buildPatientImportIntake(input);
         assert.strictEqual(result.sourceName, "test-source");
@@ -23,7 +23,7 @@ describe("buildPatientImportIntake", () => {
         const input = {
             sourceName: "ocr-source",
             sourceKind: "image_ocr",
-            rawText: "Петров Петр 89111234567"
+            rawText: "Петров Петр 89111234567",
         };
         const result = buildPatientImportIntake(input);
         assert.strictEqual(result.recognitionNotes.length, 3);
@@ -33,7 +33,7 @@ describe("buildPatientImportIntake", () => {
         const input = {
             sourceName: "voice-source",
             sourceKind: "voice_dictation",
-            rawText: "Смирнова Анна 89221234567"
+            rawText: "Смирнова Анна 89221234567",
         };
         const result = buildPatientImportIntake(input);
         assert.strictEqual(result.recognitionNotes.length, 3);
@@ -43,7 +43,7 @@ describe("buildPatientImportIntake", () => {
         const input = {
             sourceName: "empty-source",
             sourceKind: "free_text",
-            rawText: "   \n\r\n   "
+            rawText: "   \n\r\n   ",
         };
         const result = buildPatientImportIntake(input);
         assert.strictEqual(result.preview.totalRows, 0);

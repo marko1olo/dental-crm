@@ -1,90 +1,142 @@
+import { db } from "./client.js";
+import * as schema from "./schema.js";
+import { eq } from "drizzle-orm";
+import { buildDashboard as buildDashboardInMemory } from "../sampleData.js";
+function useInMemory() {
+    return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
+// Temporary naive mapper to replace sampleData buildDashboard
 export async function getDashboardFromDb(organizationId) {
-    const orgId = "00000000-0000-0000-0000-000000000000";
+    if (useInMemory()) {
+        return buildDashboardInMemory();
+    }
+    let org = null;
+    let users = [];
+    let patients = [];
+    let appointments = [];
+    let documents = [];
+    let imagingStudies = [];
+    let chairs = [];
+    let serviceCatalog = [];
+    let clinicalRules = [];
+    try {
+        const result = await db.select().from(schema.organizations).where(eq(schema.organizations.id, organizationId)).limit(1);
+        org = result[0];
+        if (org) {
+            users = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).catch(() => []);
+            patients = await db.select().from(schema.patients).where(eq(schema.patients.organizationId, organizationId)).catch(() => []);
+            appointments = await db.select().from(schema.appointments).where(eq(schema.appointments.organizationId, organizationId)).catch(() => []);
+            documents = await db.select().from(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, organizationId)).catch(() => []);
+            imagingStudies = await db.select().from(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, organizationId)).catch(() => []);
+            chairs = await db.select().from(schema.chairs).where(eq(schema.chairs.organizationId, organizationId)).catch(() => []);
+            serviceCatalog = await db.select().from(schema.services).where(eq(schema.services.organizationId, organizationId)).catch(() => []);
+            clinicalRules = await db.select().from(schema.clinicalRules).where(eq(schema.clinicalRules.organizationId, organizationId)).catch(() => []);
+        }
+    }
+    catch (e) {
+        console.warn("[DashboardQuery] Database query fallback triggered:", e);
+    }
+    const effectiveOrgId = org?.id ?? organizationId;
+    const effectiveOrgName = org?.name ?? "Демо Клиника DENTE";
+    // Default skeleton matching the expected structure
     return {
-        clinicName: "DENTE Demo Clinic",
+        clinicName: effectiveOrgName,
         todayIso: new Date().toISOString().split("T")[0],
         clinicSettings: {
             profile: {
-                organizationId: orgId,
-                clinicName: "DENTE Demo Clinic",
-                legalName: "DENTE LLC",
+                id: effectiveOrgId,
+                organizationId: effectiveOrgId,
+                clinicName: effectiveOrgName,
+                legalName: effectiveOrgName,
                 inn: "1234567890",
-                address: "Demo St 1",
-                phone: "+79990000000",
+                taxId: "",
+                licenseNumber: "",
+                address: "Default Address",
+                phone: "+70000000000",
+                timezone: "Europe/Samara",
                 mode: "one_chair",
-                timezone: "Europe/Moscow",
-                defaultVisitMinutes: 60,
+                defaultVisitMinutes: 45,
                 scheduleDefaults: {
+                    workingDays: [1, 2, 3, 4, 5],
                     workdayStart: "09:00",
-                    workdayEnd: "18:00",
-                    workingDays: [1, 2, 3, 4, 5, 6],
+                    workdayEnd: "20:00",
                     appointmentBufferMinutes: 15
                 },
                 networkEnabled: false,
                 egiszEnabled: false,
                 updatedAt: new Date().toISOString()
             },
+            staff: users.map(u => ({
+                id: u.id,
+                organizationId: u.organizationId,
+                fullName: u.fullName,
+                role: u.role,
+                phone: u.phone,
+                email: u.email,
+                active: u.isActive,
+                specialties: [],
+                canSignMedicalRecords: u.role === "doctor",
+                canManageMoney: u.role === "owner" || u.role === "administrator",
+                canManageImports: u.role === "owner" || u.role === "administrator",
+                color: "#1e293b",
+                createdAt: u.createdAt.toISOString(),
+                updatedAt: u.createdAt.toISOString()
+            })),
+            chairs: chairs.map(c => ({
+                id: c.id,
+                organizationId: c.organizationId,
+                name: c.name,
+                room: "",
+                specialization: "therapist",
+                active: c.isActive,
+                hasXraySensor: false,
+                hasMicroscope: false,
+                hasSurgeryKit: false,
+                notes: null,
+                workingHours: null
+            })),
             integrationPresets: [],
-            chairs: [],
             workspaceProfiles: [],
             roleAccessPolicies: [],
             modeHints: [],
-            staff: [{
-                    id: "00000000-0000-0000-0000-000000000001",
-                    organizationId: orgId,
-                    fullName: "Dr. Demo",
-                    role: "owner",
-                    specialties: ["therapist"],
-                    phone: "+79991234567",
-                    email: "dr@demo.com",
-                    active: true,
-                    canSignMedicalRecords: true,
-                    canManageMoney: true,
-                    canManageImports: true,
-                    color: "#ffffff",
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }]
+            soloDoctorMode: false
         },
-        patients: [
-            {
-                id: "00000000-0000-0000-0000-000000000002",
-                organizationId: orgId,
-                fullName: "Demo Patient",
-                status: "active",
-                birthDate: "1990-01-01",
-                phone: "+79991234567",
-                email: "pat@demo.com",
-                notes: "Demo",
-                administrativeProfile: null,
-                balanceRub: 0,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            }
-        ],
-        appointments: [
-            {
-                id: "00000000-0000-0000-0000-000000000003",
-                organizationId: orgId,
-                patientId: "00000000-0000-0000-0000-000000000002",
-                chairId: "00000000-0000-0000-0000-000000000004",
-                doctorUserId: "00000000-0000-0000-0000-000000000001",
-                startsAt: new Date().toISOString(),
-                endsAt: new Date(Date.now() + 3600000).toISOString(),
-                status: "planned",
-                reason: "Checkup",
-                comment: ""
-            }
-        ],
-        documents: [],
-        imagingStudies: [],
-        serviceCatalog: [],
-        clinicalRules: [],
+        // 
+        patients: patients.map(p => ({
+            id: p.id,
+            organizationId: p.organizationId,
+            status: p.status,
+            fullName: p.fullName,
+            birthDate: p.birthDate,
+            phone: p.phone,
+            email: p.email,
+            notes: p.notes,
+            administrativeProfile: p.administrativeProfile,
+            createdAt: p.createdAt.toISOString(),
+            updatedAt: p.updatedAt.toISOString()
+        })),
+        patientInsights: [],
+        recommendedActions: [],
+        appointments: appointments.map(a => ({
+            id: a.id,
+            organizationId: a.organizationId,
+            patientId: a.patientId,
+            doctorUserId: a.doctorUserId,
+            assistantUserId: a.assistantUserId,
+            chairId: a.chairId,
+            status: a.status,
+            startsAt: a.startsAt.toISOString(),
+            endsAt: a.endsAt.toISOString(),
+            reason: a.reason,
+            comment: a.comment
+        })),
+        appointmentReadiness: [],
+        scheduleSuggestions: [],
         activeVisit: {
-            id: "00000000-0000-0000-0000-000000000005",
-            organizationId: orgId,
-            patientId: "00000000-0000-0000-0000-000000000002",
-            appointmentId: "00000000-0000-0000-0000-000000000003",
+            id: "00000000-0000-0000-0000-000000000000",
+            organizationId: organizationId,
+            patientId: "00000000-0000-0000-0000-000000000000",
+            appointmentId: null,
             status: "draft",
             revision: 1,
             complaint: null,
@@ -97,30 +149,136 @@ export async function getDashboardFromDb(organizationId) {
             updatedAt: new Date().toISOString()
         },
         visitCloseChecklist: {
-            visitId: "00000000-0000-0000-0000-000000000005", readyToSign: false, score: 0, nextAction: "review", blockingItems: 0, items: []
+            visitId: "00000000-0000-0000-0000-000000000000",
+            readyToSign: false,
+            score: 0,
+            nextAction: "review",
+            blockingItems: 0,
+            items: []
         },
         shiftIntelligence: {
-            modeFit: { mode: "one_chair", title: "Test", fitScore: 100, blockers: [], upgrades: [], lowFrictionNextStep: "ready" },
-            doctorLoads: [], assistantLoads: [], chairLoads: [], roleQueues: [], scheduleWarnings: []
+            modeFit: {
+                mode: "one_chair",
+                title: "Один кабинет",
+                fitScore: 100,
+                blockers: [],
+                upgrades: [],
+                lowFrictionNextStep: "ready"
+            },
+            doctorLoads: [],
+            assistantLoads: [],
+            chairLoads: [],
+            roleQueues: [],
+            scheduleWarnings: []
         },
-        clinicalRuleSummary: { activeRules: 0, evaluatedRules: 0, unresolved: 0, blockers: 0, warnings: 0, requiredServices: 0, coveredRules: 0 },
-        billingSummary: { totalPlannedRub: 0, totalDiscountRub: 0, totalPaidRub: 0, totalDueRub: 0, taxDeductionEligibleRub: 0, draftDocumentAmountRub: 0, openTreatmentItems: 0, unpaidDocuments: 0 },
-        communicationSummary: { openTasks: 0, urgentTasks: 0, dueToday: 0, overdue: 0, completedToday: 0, appointmentConfirmations: 0, paymentReminders: 0, postVisitInstructions: 0 },
-        payments: [],
-        auditEvents: [],
-        complianceWarnings: [],
-        communicationTasks: [],
-        patientInsights: [],
-        recommendedActions: [],
-        appointmentReadiness: [],
-        scheduleSuggestions: [],
         protocolTemplates: [],
         treatmentPlanItems: [],
         treatmentPlanScenarios: [],
         clinicalRuleEvaluations: [],
+        clinicalRuleSummary: {
+            activeRules: 0,
+            evaluatedRules: 0,
+            unresolved: 0,
+            blockers: 0,
+            warnings: 0,
+            requiredServices: 0,
+            coveredRules: 0
+        },
+        payments: [],
+        billingSummary: {
+            totalPlannedRub: 0,
+            totalDiscountRub: 0,
+            totalPaidRub: 0,
+            totalDueRub: 0,
+            taxDeductionEligibleRub: 0,
+            draftDocumentAmountRub: 0,
+            openTreatmentItems: 0,
+            unpaidDocuments: 0
+        },
         communicationTemplates: [],
         communicationEvents: [],
+        communicationSummary: {
+            openTasks: 0,
+            urgentTasks: 0,
+            dueToday: 0,
+            overdue: 0,
+            completedToday: 0,
+            appointmentConfirmations: 0,
+            paymentReminders: 0,
+            postVisitInstructions: 0
+        },
         importBatches: [],
-        speechProviders: []
+        speechProviders: [],
+        auditEvents: [],
+        complianceWarnings: [],
+        documents: documents.map(d => ({
+            id: d.id,
+            organizationId: d.organizationId,
+            patientId: d.patientId,
+            kind: d.kind,
+            status: d.status,
+            payload: d.payloadJson ? JSON.parse(d.payloadJson) : {},
+            schemaVersion: 1,
+            createdAt: d.createdAt.toISOString(),
+            updatedAt: d.createdAt.toISOString()
+        })),
+        imagingStudies: imagingStudies.map(s => ({
+            id: s.id,
+            organizationId: s.organizationId,
+            patientId: s.patientId,
+            visitId: s.visitId,
+            kind: s.kind,
+            status: s.status,
+            sourceKind: s.sourceKind,
+            acquiredAt: s.createdAt.toISOString(),
+            capturedAt: s.createdAt.toISOString(),
+            studyDescription: s.title,
+            title: s.title,
+            reviewerUserId: null,
+            sourceName: "",
+            toothCode: null,
+            region: null,
+            aiSummary: null,
+            previewUrl: undefined,
+            viewerUrl: undefined,
+            createdAt: s.createdAt.toISOString(),
+            updatedAt: s.createdAt.toISOString()
+        })),
+        serviceCatalog: serviceCatalog.map(s => ({
+            id: s.id,
+            organizationId: s.organizationId,
+            code: s.code,
+            title: s.title,
+            category: s.category,
+            specialty: s.specialty,
+            basePriceRub: s.basePriceRub,
+            priceRub: s.priceRub,
+            durationMinutes: s.durationMinutes,
+            taxDeductible: s.taxDeductible,
+            taxDeductionCode: s.taxDeductionCode,
+            aliases: [],
+            active: s.isActive
+        })),
+        clinicalRules: clinicalRules.map(r => ({
+            id: r.id,
+            organizationId: r.organizationId,
+            title: r.title,
+            category: r.category,
+            specialty: r.specialty,
+            action: r.action,
+            severity: r.severity,
+            ownerRole: r.ownerRole,
+            triggerServiceIds: JSON.parse(r.triggerServiceIdsJson || "[]"),
+            requiredServiceIds: JSON.parse(r.requiredServiceIdsJson || "[]"),
+            requiresCompletedServiceIds: JSON.parse(r.requiresCompletedServiceIdsJson || "[]"),
+            blockedServiceIds: JSON.parse(r.blockedServiceIdsJson || "[]"),
+            condition: r.condition,
+            warningText: r.warningText,
+            patientText: r.patientText,
+            active: r.isActive,
+            createdAt: r.createdAt.toISOString(),
+            updatedAt: r.updatedAt.toISOString()
+        })),
+        communicationTasks: []
     };
 }

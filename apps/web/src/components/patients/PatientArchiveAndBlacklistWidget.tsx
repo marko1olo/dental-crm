@@ -7,7 +7,7 @@ export interface ArchiveReasonItem {
 	id: string;
 	organizationId: string;
 	reasonName: string;
-	isBlacklisted: boolean;
+	isBookingBlocked: boolean;
 	allowRebooking: boolean;
 	notes?: string | null;
 	createdAt: string;
@@ -30,6 +30,11 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			.then((data) => {
 				const list = Array.isArray(data) ? data : [];
 				setReasons(list);
+				if (list.length > 0) {
+				    setIsBlacklisted(list[0].isBookingBlocked);
+				} else {
+				    setIsBlacklisted(false);
+				}
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -39,14 +44,31 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	}, [patientId, auth]);
 
 	const handleApplyStatus = () => {
-		setIsBlacklisted(!isBlacklisted);
-		setConfirmModalOpen(false);
-		showToast(
-			!isBlacklisted
-				? "Пациент внесен в черный список. Запись на прием заблокирована."
-				: "Пациент восстановлен из черного списка.",
-			!isBlacklisted ? "warning" : "success"
-		);
+	    const newStatus = !isBlacklisted;
+		fetch(`/api/patients/${patientId}/archive-status`, {
+		    method: 'POST',
+			headers: auth ? {
+			    ...auth.denteClinicalMutationHeaders(),
+			    "Content-Type": "application/json"
+			} : { 
+			    "x-organization-id": "00000000-0000-0000-0000-000000000001",
+			    "Content-Type": "application/json"
+			},
+			body: JSON.stringify({ isBlacklisted: newStatus })
+		})
+		.then(res => res.json())
+		.then(data => {
+		    if (data.success || data.isBlacklisted !== undefined) {
+		        setIsBlacklisted(newStatus);
+        		setConfirmModalOpen(false);
+        		showToast(
+        			newStatus
+        				? "Пациент добавлен в черный список. Запись на прием заблокирована."
+        				: "Разблокировано. Пациент восстановлен из черного списка.",
+        			newStatus ? "warning" : "success"
+        		);
+		    }
+		});
 	};
 
 	return (
@@ -63,7 +85,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 				<div className="flex items-center space-x-2">
 					<ShieldAlert className={`w-5 h-5 ${isBlacklisted ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`} />
 					<h3 className="font-semibold text-sm">
-						Архивация и Черный список пациента
+						Блокировка записи и черный список
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700">
@@ -73,20 +95,20 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 
 			<div className="space-y-3">
 				<p className="text-xs" style={{ color: "var(--muted)" }}>
-					Управление блокировкой записей пациента и архивацией карточки в базе клиники.
+					Управление блокировкой записи на прием и внесением пациента в черный список.
 				</p>
 				<div className="flex items-center space-x-2">
 					<button
 						type="button"
 						onClick={() => setConfirmModalOpen(true)}
-						title={isBlacklisted ? "Снять ограничение на запись" : "Заблокировать запись пациента в клинике"}
+						title={isBlacklisted ? "Снять блокировку записи" : "Заблокировать запись и добавить в ЧС"}
 						className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
 							isBlacklisted
 								? "bg-emerald-600 hover:bg-emerald-700 text-white"
 								: "bg-rose-600 hover:bg-rose-700 text-white"
 						}`}
 					>
-						{isBlacklisted ? "Восстановить из черного списка" : "Внести в черный список"}
+						{isBlacklisted ? "Восстановить из черного списка" : "Добавить в черный список"}
 					</button>
 				</div>
 			</div>
@@ -95,27 +117,27 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 				<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-slate-800 dark:border-rose-800 space-y-2">
 					<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-300 font-bold text-xs">
 						<AlertTriangle className="w-4 h-4" />
-						<span>Подтверждение смены статуса</span>
+						<span>Подтверждение действия</span>
 					</div>
 					<p className="text-xs text-rose-700 dark:text-rose-300">
 						{!isBlacklisted
-							? "Вы действительно хотите внести пациента в черный список? Администратор не сможет записать пациента на визит."
-							: "Вы хотите снять ограничение на запись пациента?"}
+							? "Вы собираетесь добавить пациента в черный список. Запись на прием будет заблокирована для этого пациента во всех клиниках сети."
+							: "Вы уверены, что хотите разблокировать этого пациента?"}
 					</p>
 					<div className="flex space-x-2 pt-1">
 						<button
 							type="button"
 							onClick={handleApplyStatus}
-							title="Подтвердить операцию"
-							className="px-2.5 py-1 rounded bg-rose-600 text-white text-xs font-bold"
+							title="Подтвердить действие"
+							className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
 						>
 							Подтвердить
 						</button>
 						<button
 							type="button"
 							onClick={() => setConfirmModalOpen(false)}
-							title="Закрыть без изменений"
-							className="px-2.5 py-1 rounded bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-xs"
+							title="Отмена действия"
+							className="px-2.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-xs transition-colors"
 						>
 							Отмена
 						</button>

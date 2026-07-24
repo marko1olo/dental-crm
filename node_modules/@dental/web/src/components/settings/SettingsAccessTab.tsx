@@ -6,16 +6,22 @@ import { StaffRole } from "@dental/shared";
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
-export function SettingsAccessTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
+export interface SettingsAccessTabProps {
+  props?: any;
+  settingsTab: string;
+  [key: string]: any;
+}
+
+export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTabProps) {
   const {
     dashboard,
     activeWorkspaceProfile,
-    workspaceScopeLabels,
-    staffRoleLabels,
-    clinicModeLabels,
-    policyAuditEventLabels
-  } = props;
-  const viewLabels = workspaceViewLabels as Record<string, string>;
+    workspaceScopeLabels = {},
+    staffRoleLabels = {},
+    clinicModeLabels = {},
+    policyAuditEventLabels = {}
+  } = props || {};
+  const viewLabels = (workspaceViewLabels || {}) as Record<string, string>;
 
   // Hooks MUST be called before any conditional returns (React Rules of Hooks)
   const [inviteEmail, setInviteEmail] = useState('');
@@ -80,18 +86,18 @@ export function SettingsAccessTab({ props, settingsTab }: { props: Record<string
 
             <article className="active-workspace-card" style={{ marginTop: '24px', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '18px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={18} /> Пригласить сотрудника</h3>
+                <h3 style={{ fontSize: '18px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={18} /> Пригласить сотрудника</h3>
                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Сгенерируйте уникальную ссылку для регистрации нового врача, ассистента или администратора.</p>
               </div>
               <form onSubmit={handleGenerateInvite} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <input type="email" placeholder="email@example.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', flex: '1', minWidth: '200px' }} />
-                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', minWidth: '150px' }}>
+                <input type="email" placeholder="email@example.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', color: 'var(--ink)', flex: '1', minWidth: '200px' }} />
+                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', color: 'var(--ink)', minWidth: '150px' }}>
                   <option value="doctor">Врач</option>
                   <option value="admin">Администратор</option>
                   <option value="assistant">Ассистент</option>
                   <option value="owner">Владелец</option>
                 </select>
-                <button type="submit" disabled={loading} style={{ padding: '8px 16px', borderRadius: '6px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                <button type="submit" disabled={loading} style={{ padding: '8px 16px', borderRadius: '6px', background: 'var(--primary-strong)', color: 'var(--primary-on, #fff)', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
                   {loading ? 'Создание...' : 'Сгенерировать'}
                 </button>
               </form>
@@ -99,7 +105,7 @@ export function SettingsAccessTab({ props, settingsTab }: { props: Record<string
               {inviteLink && (
                 <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed rgba(59, 130, 246, 0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all', fontSize: '13px' }}>{inviteLink}</span>
-                  <button onClick={handleCopy} style={{ marginLeft: '12px', padding: '6px 12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button onClick={handleCopy} style={{ marginLeft: '12px', padding: '6px 12px', background: 'var(--glass-panel)', border: 'none', borderRadius: '4px', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {copied ? <><Check size={14} /> Скопировано</> : <><LinkIcon size={14} /> Копировать</>}
                   </button>
                 </div>
@@ -159,25 +165,25 @@ export function SettingsAccessTab({ props, settingsTab }: { props: Record<string
                   <div className="access-column-row">
                     <div>
                       <strong>Запись</strong>
-                      {policy.canWrite.map((section) => (
-                        <span key={section}>{viewLabels[section]}</span>
+                      {(policy.canWrite ?? []).map((section: string) => (
+                        <span key={section}>{viewLabels[section] ?? section}</span>
                       ))}
                     </div>
                     <div>
                       <strong>Ограничено</strong>
-                      {policy.restricted.length ? (
-                        policy.restricted.map((section) => <span key={section}>{viewLabels[section]}</span>)
+                      {(policy.restricted ?? []).length ? (
+                        (policy.restricted ?? []).map((section: string) => <span key={section}>{viewLabels[section] ?? section}</span>)
                       ) : (
                         <span>нет</span>
                       )}
                     </div>
                   </div>
                   <ul>
-                    {policy.requiresApprovalFor.slice(0, 3).map((item) => (
+                    {(policy.requiresApprovalFor ?? []).slice(0, 3).map((item: string) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
-                  <small>Аудит: {policy.auditEvents.map((event) => policyAuditEventLabels[event] ?? event).join(", ")}</small>
+                  <small>Аудит: {(policy.auditEvents ?? []).map((event: string) => policyAuditEventLabels[event] ?? event).join(", ")}</small>
                 </article>
               ))}
             </div>

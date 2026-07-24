@@ -1,22 +1,22 @@
-import { test, describe, mock, afterEach } from 'node:test';
-import assert from 'node:assert';
-import { sendTelegramTextMessage } from '../telegramTransport.js';
-describe('sendTelegramTextMessage', () => {
+import assert from "node:assert";
+import { afterEach, describe, mock, test } from "node:test";
+import { sendTelegramTextMessage } from "../telegramTransport.js";
+describe("sendTelegramTextMessage", () => {
     const originalFetch = globalThis.fetch;
     afterEach(() => {
         globalThis.fetch = originalFetch;
         mock.restoreAll();
     });
     const baseInput = {
-        botToken: 'fake_bot_token',
-        chatId: 'fake_chat_id',
-        text: 'Hello, World!'
+        botToken: "fake_bot_token",
+        chatId: "fake_chat_id",
+        text: "Hello, World!",
     };
-    test('handles successful response', async () => {
+    test("handles successful response", async () => {
         globalThis.fetch = mock.fn(async () => {
             return new Response(JSON.stringify({ result: { message_id: 12345 } }), {
                 status: 200,
-                headers: { 'content-type': 'application/json' }
+                headers: { "content-type": "application/json" },
             });
         });
         const result = await sendTelegramTextMessage(baseInput);
@@ -25,14 +25,14 @@ describe('sendTelegramTextMessage', () => {
             telegramMessageId: 12345,
             retryAfterSeconds: null,
             errorCode: null,
-            errorClass: null
+            errorClass: null,
         });
     });
-    test('handles rate limit error (429) with retry_after', async () => {
+    test("handles rate limit error (429) with retry_after", async () => {
         globalThis.fetch = mock.fn(async () => {
             return new Response(JSON.stringify({ parameters: { retry_after: 42 } }), {
                 status: 429,
-                headers: { 'content-type': 'application/json' }
+                headers: { "content-type": "application/json" },
             });
         });
         const result = await sendTelegramTextMessage(baseInput);
@@ -41,14 +41,14 @@ describe('sendTelegramTextMessage', () => {
             telegramMessageId: null,
             retryAfterSeconds: 42,
             errorCode: 429,
-            errorClass: 'rate_limited'
+            errorClass: "rate_limited",
         });
     });
-    test('handles auth error (401)', async () => {
+    test("handles auth error (401)", async () => {
         globalThis.fetch = mock.fn(async () => {
             return new Response(JSON.stringify({}), {
                 status: 401,
-                headers: { 'content-type': 'application/json' }
+                headers: { "content-type": "application/json" },
             });
         });
         const result = await sendTelegramTextMessage(baseInput);
@@ -57,12 +57,12 @@ describe('sendTelegramTextMessage', () => {
             telegramMessageId: null,
             retryAfterSeconds: null,
             errorCode: 401,
-            errorClass: 'auth'
+            errorClass: "auth",
         });
     });
-    test('handles timeout error (AbortError)', async () => {
+    test("handles timeout error (AbortError)", async () => {
         globalThis.fetch = mock.fn(async () => {
-            const error = new DOMException('The operation was aborted', 'AbortError');
+            const error = new DOMException("The operation was aborted", "AbortError");
             throw error;
         });
         const result = await sendTelegramTextMessage(baseInput);
@@ -71,12 +71,12 @@ describe('sendTelegramTextMessage', () => {
             telegramMessageId: null,
             retryAfterSeconds: null,
             errorCode: null,
-            errorClass: 'timeout'
+            errorClass: "timeout",
         });
     });
-    test('handles generic network error', async () => {
+    test("handles generic network error", async () => {
         globalThis.fetch = mock.fn(async () => {
-            throw new Error('Network failure');
+            throw new Error("Network failure");
         });
         const result = await sendTelegramTextMessage(baseInput);
         assert.deepStrictEqual(result, {
@@ -84,7 +84,7 @@ describe('sendTelegramTextMessage', () => {
             telegramMessageId: null,
             retryAfterSeconds: null,
             errorCode: null,
-            errorClass: 'network'
+            errorClass: "network",
         });
     });
 });

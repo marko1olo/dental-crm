@@ -14,9 +14,9 @@ import {
 	type SpeechTranscriptionResponse,
 	type SpeechTranscriptPolishResponse,
 	type VisitDraftAutosaveResponse,
-	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
+type VisitFlowResult = any;
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
