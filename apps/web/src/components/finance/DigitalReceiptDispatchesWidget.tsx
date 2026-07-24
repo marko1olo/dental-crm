@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { Send, CheckCircle2 } from "lucide-react";
 
 interface ReceiptDispatchItem {
@@ -15,13 +15,16 @@ interface ReceiptDispatchItem {
 }
 
 export const DigitalReceiptDispatchesWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [dispatches, setDispatches] = useState<ReceiptDispatchItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/finance/digital-receipt-dispatches", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/finance/digital-receipt-dispatches", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setDispatches(Array.isArray(data) ? data : []);
@@ -31,7 +34,7 @@ export const DigitalReceiptDispatchesWidget: React.FC = () => {
 				console.error("[DigitalReceiptDispatchesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div

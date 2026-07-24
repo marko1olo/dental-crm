@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { Wallet, CheckCircle2 } from "lucide-react";
 
 interface DepositTaggingItem {
@@ -14,13 +14,16 @@ interface DepositTaggingItem {
 }
 
 export const AdvanceDepositTaggingsWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [taggings, setTaggings] = useState<DepositTaggingItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/finance/advance-deposit-taggings", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/finance/advance-deposit-taggings", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setTaggings(Array.isArray(data) ? data : []);
@@ -30,7 +33,7 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 				console.error("[AdvanceDepositTaggingsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
