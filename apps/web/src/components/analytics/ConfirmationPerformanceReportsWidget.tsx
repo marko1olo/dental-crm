@@ -33,7 +33,7 @@ export const ConfirmationPerformanceReportsWidget: React.FC = () => {
 				console.error("[ConfirmationPerformanceReportsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div

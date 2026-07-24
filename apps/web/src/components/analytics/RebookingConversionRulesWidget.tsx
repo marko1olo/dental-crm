@@ -32,7 +32,7 @@ export const RebookingConversionRulesWidget: React.FC = () => {
 				console.error("[RebookingConversionRulesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div

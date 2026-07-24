@@ -32,7 +32,7 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 				console.error("[LostPatientsFiltersWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
