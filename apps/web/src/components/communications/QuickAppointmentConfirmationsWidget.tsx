@@ -39,7 +39,7 @@ export const QuickAppointmentConfirmationsWidget: React.FC = () => {
 			className="p-4 rounded-xl border my-4 shadow-sm"
 			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }} title="Лог оперативного подтверждения предстоящих визитов пациентов администратором клиники">
 				<div className="flex items-center space-x-2">
 					<CheckCircle className="w-5 h-5 text-emerald-500" />
 					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">

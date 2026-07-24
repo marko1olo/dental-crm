@@ -238,10 +238,10 @@ export function CommunicationsView({
   const communicationNoteDescriptionId = "communication-closing-note-guidance";
 
   return (
-    <div className="panel communications-panel" id="communications">
+    <div className="panel communications-panel" id="communications" data-testid="communications-view">
       <div className="panel-heading">
-        <h2>Связь с пациентами</h2>
-        <button className="text-button" type="button" onClick={onGoToSchedule}>
+        <h2 title="Центр коммуникаций с пациентами: подтверждения визитов, рассылки, чаты и звонки">Связь с пациентами</h2>
+        <button className="text-button" type="button" onClick={onGoToSchedule} title="Перейти к сетке расписания">
           Расписание
         </button>
       </div>
@@ -269,7 +269,7 @@ export function CommunicationsView({
         </article>
       </div>
 
-      <div className="communication-note-row" style={{ background: 'var(--paper)', padding: '16px', borderRadius: '12px', border: '1px solid var(--slate-200)', marginBottom: '20px', boxShadow: '0 2px 4px rgba(15,23,42,0.02)' }}>
+      <div className="communication-note-row bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-5 shadow-sm">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', display: 'block' }}>

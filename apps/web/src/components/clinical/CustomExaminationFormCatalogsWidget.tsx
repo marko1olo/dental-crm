@@ -14,13 +14,14 @@ interface FormCatalogItem {
 }
 
 export const CustomExaminationFormCatalogsWidget: React.FC = () => {
-	const { auth } = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
 	const [catalogs, setCatalogs] = useState<FormCatalogItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/clinical/custom-examination-form-catalogs", {
-			headers: auth.denteClinicalReadHeaders(),
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -43,46 +44,38 @@ export const CustomExaminationFormCatalogsWidget: React.FC = () => {
 				<div className="flex items-center space-x-2">
 					<FileText className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
-						Поликлинические справочники осмотра (Форма 043/у)
+						Конструктор пользовательских форм осмотра врача
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
-					Приказ 043/у Минздрава
+					Каталог бланков
 				</span>
 			</div>
 
 			{loading ? (
 				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
-					Загрузка справочников осмотра...
+					Загрузка шаблонов форм...
 				</div>
 			) : catalogs.length === 0 ? (
 				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
-					Нет настраиваемых бланков осмотра.
+					Пользовательские шаблоны форм осмотра отсутствуют.
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-					{catalogs.map((cat) => (
+					{catalogs.map((item) => (
 						<div
-							key={cat.id}
-							className="p-3 rounded-lg border space-y-2"
+							key={item.id}
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
 							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div className="flex justify-between items-start">
-								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
-									{cat.formCode}
-								</span>
-								<span className="text-xs px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-									{cat.status}
+							<div className="flex items-center justify-between">
+								<span className="font-bold text-sm">{item.formTitle}</span>
+								<span className="text-xs font-mono text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1">
+									<CheckCircle2 className="w-3 h-3" /> {item.formCode}
 								</span>
 							</div>
-							<h4 className="text-sm font-medium leading-snug">{cat.formTitle}</h4>
-							<div className="text-xs flex items-center justify-between pt-1 border-t" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
-								<span>Полей протокола: <strong style={{ color: "var(--ink)" }}>{cat.customFieldCount}</strong></span>
-								{cat.egiszUnified && (
-									<span className="text-emerald-600 dark:text-emerald-400 text-[11px] flex items-center gap-1">
-										<CheckCircle2 className="w-3 h-3 inline" /> ЕГИСЗ CDA R2
-									</span>
-								)}
+							<div className="text-xs" style={{ color: "var(--muted)" }}>
+								Кастомных полей: <span style={{ color: "var(--ink)" }}>{item.customFieldCount}</span> · ЕГИСЗ унификация
 							</div>
 						</div>
 					))}
