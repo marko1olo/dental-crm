@@ -131,32 +131,32 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	);
 	const PrintPreviewContent = (
 		<div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm print-layer">
-			<div className="bg-zinc-50/40 text-black w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[92vh] print-content">
-				<div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl no-print">
-					<h3 className="font-bold flex items-center gap-2 text-gray-800">
-						<Printer className="w-5 h-5" /> Медицинская карта (Форма 043/у)
+			<div className="bg-white dark:bg-slate-900 text-black dark:text-slate-100 w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[92vh] print-content border border-gray-200 dark:border-slate-800">
+				<div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/80 rounded-t-xl no-print">
+					<h3 className="font-bold flex items-center gap-2 text-gray-800 dark:text-slate-100">
+						<Printer className="w-5 h-5 text-blue-500" /> Медицинская карта (Форма 043/у)
 					</h3>
 					<button
 						onClick={() => setShowPreview(false)}
-						className="text-gray-500 hover:text-black flex items-center gap-1 text-sm"
+						className="text-gray-500 dark:text-slate-400 hover:text-black dark:hover:text-white flex items-center gap-1 text-sm transition-colors"
 					>
 						<X className="w-4 h-4" /> Закрыть
 					</button>
 				</div>
 
 				<div className="p-8 overflow-y-auto" id="print-043">
-					<div className="text-center mb-6 border-b-2 border-black pb-4">
+					<div className="text-center mb-6 border-b-2 border-black dark:border-slate-700 pb-4">
 						<h1 className="text-xl font-bold uppercase">
 							Медицинская карта стоматологического больного
 						</h1>
-						<p className="text-sm text-gray-600">
+						<p className="text-sm text-gray-600 dark:text-slate-400">
 							Форма № 043/у (Приказ МЗ РФ № 834н)
 						</p>
 					</div>
 
 					{isLocked && diaryHash && (
 						<div
-							className="mb-6 mt-4 p-4 bg-green-50 border border-green-300 rounded text-xs text-green-800 font-mono break-all page-break-avoid"
+							className="mb-6 mt-4 p-4 bg-green-50 dark:bg-emerald-950/60 border border-green-300 dark:border-emerald-800 rounded text-xs text-green-800 dark:text-emerald-300 font-mono break-all page-break-avoid"
 							style={{ clear: "both", display: "block", position: "relative" }}
 						>
 							<strong>ЭЦП (SHA-256):</strong> {diaryHash}
@@ -164,7 +164,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							<strong>Подписан:</strong>{" "}
 							{lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : "—"}
 							{revisionCount > 0 && (
-								<span className="ml-3 text-orange-700">
+								<span className="ml-3 text-orange-700 dark:text-amber-400">
 									{" "}
 									⚠ Ревизий: {revisionCount}
 								</span>
@@ -174,7 +174,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 					<div className="space-y-5">
 						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
+							<h4 className="font-bold border-b border-gray-300 dark:border-slate-800 mb-2">
 								S — Жалобы и анамнез (Subjective)
 							</h4>
 							<p className="text-sm whitespace-pre-wrap">
@@ -182,7 +182,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</p>
 						</div>
 						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
+							<h4 className="font-bold border-b border-gray-300 dark:border-slate-800 mb-2">
 								O — Объективный статус (Status Localis)
 							</h4>
 							<p className="text-sm whitespace-pre-wrap">
@@ -190,7 +190,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</p>
 						</div>
 						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
+							<h4 className="font-bold border-b border-gray-300 dark:border-slate-800 mb-2">
 								A — Диагноз (Assessment)
 							</h4>
 							<p className="text-sm">
@@ -202,7 +202,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							</p>
 						</div>
 						<div className="page-break-avoid">
-							<h4 className="font-bold border-b border-gray-300 mb-2">
+							<h4 className="font-bold border-b border-gray-300 dark:border-slate-800 mb-2">
 								P — Лечение и план (Plan)
 							</h4>
 							<p className="text-sm whitespace-pre-wrap">
@@ -211,22 +211,22 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</div>
 					</div>
 
-					<div className="mt-10 pt-6 border-t border-gray-300 flex justify-between text-sm page-break-avoid">
+					<div className="mt-10 pt-6 border-t border-gray-300 dark:border-slate-800 flex justify-between text-sm page-break-avoid">
 						<div>Подпись врача: ___________________</div>
 						<div>Дата: {new Date().toLocaleDateString("ru-RU")}</div>
 					</div>
 				</div>
 
-				<div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end rounded-b-xl no-print gap-3">
+				<div className="p-4 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/80 flex justify-end rounded-b-xl no-print gap-3">
 					<button
 						onClick={() => setShowPreview(false)}
-						className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+						className="px-4 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
 					>
 						Закрыть
 					</button>
 					<button
 						onClick={() => window.print()}
-						className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow flex items-center gap-2 text-sm"
+						className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow flex items-center gap-2 text-sm transition-colors"
 					>
 						<Printer className="w-4 h-4" /> Напечатать
 					</button>
