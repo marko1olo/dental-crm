@@ -35,10 +35,9 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="advance-deposit-taggings-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Целевые авансовые депозиты пациентов с жесткой привязкой к врачу, услуге или плану лечения">
 				<div className="flex items-center space-x-2">
 					<Wallet className="w-5 h-5 text-emerald-500" />
 					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">

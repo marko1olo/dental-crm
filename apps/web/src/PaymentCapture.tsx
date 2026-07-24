@@ -493,7 +493,7 @@ export function PaymentCapture({
   };
 
   return (
-    <div className="payment-capture" id="payment-capture">
+    <div className="payment-capture bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4" id="payment-capture">
       {feedback ? (
         <div className="payment-capture-feedback" role="status" aria-live="polite">
           {feedback}

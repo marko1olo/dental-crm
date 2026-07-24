@@ -34,10 +34,9 @@ export const KkmItemQuantityUnitsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="kkm-item-quantity-units-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Настройки кодов единиц измерения позиций чека ОФД для соблюдения стандартов ФФД 1.2">
 				<div className="flex items-center space-x-2">
 					<ShoppingCart className="w-5 h-5 text-indigo-500" />
 					<h3 className="font-semibold text-indigo-600 dark:text-indigo-400">
