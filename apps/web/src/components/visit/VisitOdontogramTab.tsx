@@ -15,10 +15,10 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 
 	if (!activePatient?.id) {
 		return (
-			<div style={{ textAlign: "center", padding: "48px 24px", color: "var(--muted)" }}>
-				<div style={{ fontSize: "36px", marginBottom: "12px" }}>🦷</div>
-				<h4 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)" }}>Пациент не выбран</h4>
-				<p style={{ fontSize: "0.875rem", margin: 0 }}>Выберите пациента, чтобы открыть одонтограмму.</p>
+			<div className="text-center py-12 px-6 text-slate-500 dark:text-slate-400">
+				<div className="text-4xl mb-3">🦷</div>
+				<h4 className="text-base font-semibold text-slate-900 dark:text-white">Пациент не выбран</h4>
+				<p className="text-sm m-0">Выберите пациента, чтобы открыть одонтограмму.</p>
 			</div>
 		);
 	}

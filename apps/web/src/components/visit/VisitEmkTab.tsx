@@ -210,21 +210,7 @@ export function VisitEmkTab() {
 											onChange={(event) =>
 												updateVisitNoteField(field.key, event.target.value)
 											}
-											style={{
-												minHeight: "80px",
-												borderRadius: "8px",
-												padding: "0.6rem",
-												border: "1px solid var(--slate-300)",
-												resize: "vertical",
-												width: "100%",
-												outline: "none",
-											}}
-											onFocus={(e) =>
-												(e.target.style.borderColor = "var(--brand-400)")
-											}
-											onBlur={(e) =>
-												(e.target.style.borderColor = "var(--slate-300)")
-											}
+											className="min-h-[80px] rounded-lg p-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-y w-full outline-none focus:border-sky-500"
 										/>
 									</div>
 								);
@@ -304,34 +290,15 @@ export function VisitEmkTab() {
 							) : null}
 							{(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
 								<div
-									className="visit-note-missing"
+									className="visit-note-missing mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60"
 									id="visit-note-missing"
 									role="status"
 									aria-live="polite"
-									style={{
-										marginTop: "1rem",
-										background: "var(--amber-50)",
-										padding: "1rem",
-										borderRadius: "8px",
-										border: "1px solid var(--amber-200)",
-									}}
 								>
-									<strong
-										style={{
-											display: "block",
-											marginBottom: "0.5rem",
-											color: "var(--amber-900)",
-										}}
-									>
+									<strong className="block mb-2 text-amber-900 dark:text-amber-200 text-xs font-semibold">
 										Чтобы сохранить запись приема, осталось:
 									</strong>
-									<ul
-										style={{
-											margin: 0,
-											paddingLeft: "1.5rem",
-											color: "var(--amber-800)",
-										}}
-									>
+									<ul className="m-0 pl-5 text-xs text-amber-800 dark:text-amber-300 space-y-1">
 										{(visitNoteAcceptMissingSteps ?? []).map((step) => (
 											<li key={step}>{step}</li>
 										))}
