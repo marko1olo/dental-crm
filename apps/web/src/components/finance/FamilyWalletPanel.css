@@ -1,13 +1,5 @@
 .family-wallet-panel {
-	background-color: var(--surface-100);
-	border: 1px solid var(--border-300);
-	border-radius: 12px;
-	padding: 20px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-	position: relative;
-	overflow: hidden;
-	margin-top: 16px;
-	transition: box-shadow 0.2s ease-out;
+	@apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-5 shadow-sm relative overflow-hidden mt-4 transition-shadow duration-200;
 }
 
 .family-wallet-panel:hover {
@@ -38,19 +30,11 @@
 }
 
 .family-wallet-title-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 1.125rem;
-	font-weight: 700;
-	color: var(--text-800);
-	margin: 0;
+	@apply flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white m-0;
 }
 
 .family-wallet-subtitle {
-	font-size: 0.875rem;
-	color: var(--text-500);
-	margin-top: 4px;
+	@apply text-sm text-slate-500 dark:text-slate-400 mt-1;
 }
 
 .family-wallet-balance-container {
@@ -58,24 +42,12 @@
 }
 
 .family-wallet-balance {
-	font-size: 1.875rem;
-	font-family: monospace;
-	font-weight: 900;
-	color: var(--green-600);
-	letter-spacing: -0.025em;
+	@apply text-3xl font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-tight;
 	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .family-wallet-balance-label {
-	font-size: 0.75rem;
-	color: var(--text-500);
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
-	margin-top: 2px;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 4px;
+	@apply text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5 flex items-center justify-end gap-1;
 }
 
 .family-wallet-actions {
@@ -99,30 +71,15 @@
 }
 
 .family-wallet-input-label {
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--text-500);
-	font-weight: 600;
+	@apply text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold;
 }
 
 .family-wallet-input {
-	width: 100%;
-	background-color: var(--surface-50);
-	border: 1px solid var(--border-300);
-	border-radius: 8px;
-	padding: 12px;
-	color: var(--text-900);
-	outline: none;
-	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-	transition:
-		border-color 0.2s ease-out,
-		box-shadow 0.2s ease-out;
+	@apply w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white outline-none transition-all;
 }
 
 .family-wallet-input:focus {
-	border-color: var(--accent-100);
-	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	@apply border-sky-500 ring-2 ring-sky-500/20;
 }
 
 .family-wallet-btn-container {
@@ -131,37 +88,9 @@
 }
 
 .family-wallet-btn {
-	height: 46px;
-	padding: 0 24px;
-	background-color: var(--accent-100);
-	color: white;
-	border: none;
-	border-radius: 8px;
-	font-weight: 500;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	transition:
-		background-color 0.2s ease-out,
-		opacity 0.2s ease-out;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	cursor: pointer;
-}
-
-.family-wallet-btn:hover:not(:disabled) {
-	background-color: var(--accent-200);
-}
-
-.family-wallet-btn:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+	@apply h-[46px] px-6 bg-sky-600 hover:bg-sky-700 text-white border-0 rounded-lg font-medium shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .family-wallet-loading {
-	color: var(--text-500);
-	font-size: 0.875rem;
-	padding: 16px;
-	display: flex;
-	align-items: center;
-	gap: 8px;
+	@apply text-slate-500 dark:text-slate-400 text-sm p-4 flex items-center gap-2;
 }
