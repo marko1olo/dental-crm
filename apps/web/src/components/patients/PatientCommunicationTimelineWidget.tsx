@@ -52,7 +52,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 						Хронологическая история коммуникаций
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-slate-800 dark:text-sky-300 dark:border-sky-700">
 					IDENT Parity #4
 				</span>
 			</div>

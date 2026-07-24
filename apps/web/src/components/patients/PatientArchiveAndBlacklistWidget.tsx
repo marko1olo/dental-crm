@@ -54,19 +54,19 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			data-testid="patient-archive-blacklist-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm transition-all duration-200"
 			style={{
-				background: isBlacklisted ? "var(--rose-50, #fff1f2)" : "var(--paper)",
-				borderColor: isBlacklisted ? "var(--rose-300, #fca5a5)" : "var(--line)",
+				background: isBlacklisted ? "var(--rose-50, var(--surface-100))" : "var(--paper)",
+				borderColor: isBlacklisted ? "var(--rose-300, var(--line))" : "var(--line)",
 				color: "var(--ink)",
 			}}
 		>
 			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<ShieldAlert className={`w-5 h-5 ${isBlacklisted ? "text-rose-600" : "text-amber-500"}`} />
+					<ShieldAlert className={`w-5 h-5 ${isBlacklisted ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`} />
 					<h3 className="font-semibold text-sm">
 						Архивация и Черный список пациента
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700">
 					IDENT Parity #20
 				</span>
 			</div>
@@ -79,6 +79,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 					<button
 						type="button"
 						onClick={() => setConfirmModalOpen(true)}
+						title={isBlacklisted ? "Снять ограничение на запись" : "Заблокировать запись пациента в клинике"}
 						className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
 							isBlacklisted
 								? "bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -91,8 +92,8 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			</div>
 
 			{confirmModalOpen && (
-				<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-rose-950 dark:border-rose-800 space-y-2">
-					<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-200 font-bold text-xs">
+				<div className="mt-3 p-3 rounded-lg border bg-rose-50 border-rose-200 dark:bg-slate-800 dark:border-rose-800 space-y-2">
+					<div className="flex items-center space-x-2 text-rose-800 dark:text-rose-300 font-bold text-xs">
 						<AlertTriangle className="w-4 h-4" />
 						<span>Подтверждение смены статуса</span>
 					</div>
@@ -105,6 +106,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 						<button
 							type="button"
 							onClick={handleApplyStatus}
+							title="Подтвердить операцию"
 							className="px-2.5 py-1 rounded bg-rose-600 text-white text-xs font-bold"
 						>
 							Подтвердить
@@ -112,7 +114,8 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 						<button
 							type="button"
 							onClick={() => setConfirmModalOpen(false)}
-							className="px-2.5 py-1 rounded bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-xs"
+							title="Закрыть без изменений"
+							className="px-2.5 py-1 rounded bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-xs"
 						>
 							Отмена
 						</button>
