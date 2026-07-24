@@ -281,10 +281,10 @@ export function CommunicationsView({
       <div className="communication-note-row bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-5 shadow-sm">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
-            <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', display: 'block' }}>
+            <label htmlFor={communicationNoteInputId} className="text-sm font-semibold text-slate-900 dark:text-white block">
               Заметка закрытия
             </label>
-            <span id={communicationNoteDescriptionId} style={{ fontSize: '12px', color: 'var(--slate-500)' }}>Задача закрывается с событием и попадает в аудит.</span>
+            <span id={communicationNoteDescriptionId} className="text-xs text-slate-500 dark:text-slate-400">Задача закрывается с событием и попадает в аудит.</span>
           </div>
           <SmartMicrophoneButton
             context="general"
@@ -302,16 +302,15 @@ export function CommunicationsView({
           aria-describedby={communicationNoteDescriptionId}
           placeholder="Нажмите для ввода или надиктуйте результат связи..."
           rows={2}
-          style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical', marginBottom: '12px' }}
+          className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm resize-y mb-3 outline-none focus:border-sky-500"
         />
-        <div className="quick-chips-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--slate-400)', alignSelf: 'center', marginRight: '4px' }}>Шаблоны:</span>
+        <div className="quick-chips-row flex-wrap gap-2">
+          <span className="text-xs text-slate-400 self-center mr-1">Шаблоны:</span>
           {["Недозвон", "Обещал оплатить", "Подумает", "Перезвонить позже", "Запрос документов"].map((chip) => (
             <button
               key={chip}
               type="button"
-              className="quick-chip quick-chip--sm"
-              style={{ background: 'var(--slate-100)', color: 'var(--slate-700)', border: '1px solid var(--slate-200)', borderRadius: '16px', padding: '4px 10px', fontSize: '12px' }}
+              className="quick-chip quick-chip--sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 py-1 text-xs cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               onClick={() => {
                 const prev = communicationNote || "";
                 onCommunicationNoteChange(prev ? `${prev}, ${chip.toLowerCase()}` : chip);
