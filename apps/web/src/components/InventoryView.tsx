@@ -69,9 +69,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		totalItems,
 	} = inventory;
 
-	const paperBg = "var(--paper)";
-	const paperSoftBg = "var(--paper-soft)";
-	const borderColor = "var(--line)";
+	const paperBg = "bg-white dark:bg-slate-900";
+	const paperSoftBg = "bg-slate-50 dark:bg-slate-800/80";
+	const borderColor = "border-slate-200 dark:border-slate-800";
 
 	const renderRulesTab = () => {
 		const serviceCatalog = dashboard?.serviceCatalog || [];
@@ -351,22 +351,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				}}
 			>
 				<div>
-					<h1
-						style={{
-							fontSize: 24,
-							fontWeight: 700,
-							margin: 0,
-							display: "flex",
-							alignItems: "center",
-							gap: 12,
-							color: "var(--ink)",
-						}}
-					>
-						<Package color="var(--teal)" size={28} /> Склад материалов
+					<h1 className="text-2xl font-bold m-0 flex items-center gap-3 text-slate-900 dark:text-white">
+						<Package className="text-emerald-500" size={28} /> Склад материалов
 					</h1>
-					<p
-						style={{ color: "var(--muted)", margin: "4px 0 0 0", fontSize: 14 }}
-					>
+					<p className="text-slate-500 dark:text-slate-400 mt-1 mb-0 text-sm">
 						Учёт расходников, приход и списание
 					</p>
 				</div>
