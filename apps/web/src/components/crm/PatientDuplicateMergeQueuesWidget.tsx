@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface MergeQueueItem {
 	id: string;
@@ -11,12 +12,13 @@ interface MergeQueueItem {
 }
 
 export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [queues, setQueues] = useState<MergeQueueItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/crm/patient-duplicate-merge-queues", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -27,7 +29,7 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 				console.error("[PatientDuplicateMergeQueuesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
