@@ -55,9 +55,10 @@ export function PatientOverviewTab() {
 
 	useEffect(() => {
 		if (selectedPatientId) {
-			fetch(`/api/finance/family/patient/${selectedPatientId}`, {
-				headers: denteAdminSecretRequestHeaders(),
-			})
+			const headers = appLogic?.auth
+				? appLogic.auth.denteClinicalReadHeaders()
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+			fetch(`/api/finance/family/patient/${selectedPatientId}`, { headers })
 				.then((res) => {
 					if (!res.ok) throw new Error("No family");
 					return res.json();
@@ -67,7 +68,7 @@ export function PatientOverviewTab() {
 		} else {
 			setFamilyData(null);
 		}
-	}, [selectedPatientId]);
+	}, [selectedPatientId, appLogic]);
 
 	return (
 		<div data-testid="patient-overview-tab">
@@ -282,9 +283,10 @@ export function PatientOverviewTab() {
 						familyData={familyData}
 						onFamilyDataChanged={() => {
 							if (selectedPatientId) {
-								fetch(`/api/finance/family/patient/${selectedPatientId}`, {
-									headers: denteAdminSecretRequestHeaders(),
-								})
+								const headers = appLogic?.auth
+									? appLogic.auth.denteClinicalReadHeaders()
+									: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+								fetch(`/api/finance/family/patient/${selectedPatientId}`, { headers })
 									.then((res) => {
 										if (!res.ok) throw new Error("No family");
 										return res.json();
