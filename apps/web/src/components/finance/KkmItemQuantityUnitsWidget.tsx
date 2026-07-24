@@ -49,11 +49,11 @@ export const KkmItemQuantityUnitsWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка единиц измерения ККТ...
 				</div>
 			) : units.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Настройки единиц измерения позиций ККМ отсутствуют.
 				</div>
 			) : (
@@ -61,8 +61,7 @@ export const KkmItemQuantityUnitsWidget: React.FC = () => {
 					{units.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border space-y-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">

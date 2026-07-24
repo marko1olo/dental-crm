@@ -54,11 +54,11 @@ export const PricelistDoctorPayrollsWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка расчета зарплат прайс-листа...
 				</div>
 			) : payrolls.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Ставки зарплат по услугам прайс-листа не назначены.
 				</div>
 			) : (
@@ -66,8 +66,7 @@ export const PricelistDoctorPayrollsWidget: React.FC = () => {
 					{payrolls.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border space-y-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
@@ -78,9 +77,9 @@ export const PricelistDoctorPayrollsWidget: React.FC = () => {
 								</span>
 							</div>
 							<h4 className="text-sm font-medium leading-snug">{item.serviceName}</h4>
-							<div className="text-xs flex items-center justify-between pt-1 border-t" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
-								<span>Цена: <strong>{Number(item.priceRub).toLocaleString("ru-RU")} ₽</strong></span>
-								<span>Маржа клиники: <strong>{Number(item.clinicMarginRub).toLocaleString("ru-RU")} ₽</strong></span>
+							<div className="text-xs flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+								<span>Цена: <strong className="text-slate-900 dark:text-slate-200">{Number(item.priceRub).toLocaleString("ru-RU")} ₽</strong></span>
+								<span>Маржа клиники: <strong className="text-slate-900 dark:text-slate-200">{Number(item.clinicMarginRub).toLocaleString("ru-RU")} ₽</strong></span>
 							</div>
 						</div>
 					))}

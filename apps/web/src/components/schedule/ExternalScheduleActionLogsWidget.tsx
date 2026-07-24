@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface ExternalLogItem {
 	id: string;
@@ -12,13 +13,16 @@ interface ExternalLogItem {
 }
 
 export const ExternalScheduleActionLogsWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [logs, setLogs] = useState<ExternalLogItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/schedule/external-schedule-action-logs", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/schedule/external-schedule-action-logs", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setLogs(Array.isArray(data) ? data : []);
