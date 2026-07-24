@@ -10,10 +10,10 @@ const LOYALTY_CONFIG: Record<
 	LoyaltyTier,
 	{ label: string; discountPct: number; color: string }
 > = {
-	none: { label: "Базовый", discountPct: 0, color: "var(--slate-500)" },
-	silver: { label: "Серебро", discountPct: 5, color: "var(--slate-500)" },
-	gold: { label: "Золото", discountPct: 10, color: "var(--amber)" },
-	platinum: { label: "Платинум", discountPct: 15, color: "var(--indigo)" },
+	none: { label: "Базовый", discountPct: 0, color: "#64748b" },
+	silver: { label: "Серебро", discountPct: 5, color: "#94a3b8" },
+	gold: { label: "Золото", discountPct: 10, color: "#f59e0b" },
+	platinum: { label: "Платинум", discountPct: 15, color: "#6366f1" },
 };
 
 export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {

@@ -393,6 +393,7 @@ const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ def
 const ShiftView = lazy(() => import("./ShiftView").then((module) => ({ default: module.ShiftView })));
 const PatientCockpit = lazy(() => import("./ShiftView").then((module) => ({ default: module.PatientCockpit })));
 const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
+const AnalyticsDashboardView = lazy(() => import("./pages/AnalyticsDashboardView").then((module) => ({ default: module.AnalyticsDashboardView })));
 
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
@@ -3676,7 +3677,7 @@ export function App() {
 
 
 
-        {["schedule", "patients", "visit", "documents", "finance", "communications"].includes(currentView) ? (
+        {["schedule", "patients", "visit", "documents", "finance", "analytics", "communications"].includes(currentView) ? (
         <section className="work-grid page-grid">
           {currentView === "schedule" ? (
           <WorkspaceRouteErrorBoundary view="schedule" label={viewLabels.schedule} panelClassName="panel schedule-panel" panelId="schedule">
@@ -4141,6 +4142,22 @@ export function App() {
                 staffRoleLabels={staffRoleLabels}
               />
             </Suspense>
+            </WorkspaceRouteErrorBoundary>
+          ) : null}
+          {currentView === "analytics" ? (
+            <WorkspaceRouteErrorBoundary view="analytics" label="Аналитика" panelClassName="panel analytics-panel" panelId="analytics">
+              <Suspense
+                fallback={
+                  <div className="panel analytics-panel" id="analytics" aria-busy="true">
+                    <div className="panel-heading">
+                      <h2>Executive BI Analytics</h2>
+                      <span className="status-pill status-planned">Загрузка...</span>
+                    </div>
+                  </div>
+                }
+              >
+                <AnalyticsDashboardView />
+              </Suspense>
             </WorkspaceRouteErrorBoundary>
           ) : null}
         </section>
