@@ -95,24 +95,16 @@ export function AnalyticsDashboardView() {
 	if (!isActive) return null;
 
 	return (
-		<div className="analytics-dashboard" aria-label="Аналитика клиники">
+		<div className="analytics-dashboard bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
 			<header
-				className="analytics-header"
-				style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+				className="analytics-header mb-6 pb-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"
 			>
-				<h2 style={{ margin: 0 }}>Аналитика клиники</h2>
+				<h2 className="text-xl font-bold text-slate-900 dark:text-slate-100" title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
 				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
-					style={{
-						padding: "6px 12px",
-						borderRadius: "8px",
-						backgroundColor: "var(--bg-elevated, #18181b)",
-						color: "var(--fg-primary, #e4e4e7)",
-						border: "1px solid var(--border, #27272a)",
-						outline: "none",
-						fontSize: "14px",
-					}}
+					title="Фильтр периода аналитических отчетов"
+					className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 outline-none text-sm"
 				>
 					{DATE_RANGES.map((r) => (
 						<option key={r.value} value={r.value}>

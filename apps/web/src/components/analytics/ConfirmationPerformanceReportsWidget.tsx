@@ -37,7 +37,7 @@ export const ConfirmationPerformanceReportsWidget: React.FC = () => {
 			data-testid="confirmation-performance-reports-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Отчет по конверсии подтверждения визитов колл-центром и администраторами клиники">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">📊</span>
 					<h3 className="font-semibold text-blue-600 dark:text-blue-400">
