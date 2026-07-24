@@ -54,7 +54,7 @@ export const UrgentScheduleRequestsWidget: React.FC = () => {
 							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
 						>
 							<span className="font-semibold">{req.patientName} — {req.requestType} ({req.urgencyLevel})</span>
-							<span className="text-xs font-mono" style={{ color: "var(--muted)" }}>{req.preferredSlotTime}</span>
+							<span className="text-xs font-mono text-slate-500 dark:text-slate-400">{req.preferredSlotTime}</span>
 						</li>
 					))}
 				</ul>

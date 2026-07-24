@@ -256,7 +256,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       </div>
 
       {showCreateForm && (
-        <div className="appointment-editor" style={{ marginBottom: '24px', padding: '16px', background: 'var(--paper)', borderRadius: '12px', border: '1px solid var(--slate-200)' }}>
+        <div className="appointment-editor mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
             <label>
               Начало
