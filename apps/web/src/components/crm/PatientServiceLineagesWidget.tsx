@@ -25,7 +25,7 @@ export const PatientServiceLineagesWidget: React.FC<{ patientId?: string }> = ({
 			: "/api/crm/patient-service-lineages";
 
 		fetch(url, {
-			headers: auth.denteClinicalReadHeaders(),
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
