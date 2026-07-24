@@ -34,17 +34,9 @@ export const CustomCrmTaskTypesWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="custom-crm-task-types-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{
-				background: "var(--paper, #ffffff)",
-				color: "var(--ink, #0f172a)",
-				borderColor: "var(--line, #e2e8f0)",
-			}}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
 		>
-			<div
-				className="flex items-center justify-between mb-3 pb-2 border-b"
-				style={{ borderColor: "var(--line, #e2e8f0)" }}
-			>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">📋</span>
 					<h3 className="font-semibold text-blue-600 dark:text-blue-400">
@@ -57,11 +49,11 @@ export const CustomCrmTaskTypesWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка типов задач CRM...
 				</div>
 			) : taskTypes.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Типы задач CRM пока не настроены. Используются системные пресеты.
 				</div>
 			) : (
@@ -69,11 +61,7 @@ export const CustomCrmTaskTypesWidget: React.FC = () => {
 					{taskTypes.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{
-								background: "var(--surface-50, #f8fafc)",
-								borderColor: "var(--line, #e2e8f0)",
-							}}
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
 								<div className="flex items-center space-x-2">
@@ -81,12 +69,12 @@ export const CustomCrmTaskTypesWidget: React.FC = () => {
 										className="w-3 h-3 rounded-full inline-block"
 										style={{ backgroundColor: item.colorHex || "#3b82f6" }}
 									/>
-									<span className="text-sm font-bold">{item.typeLabel}</span>
-									<span className="text-xs font-mono text-slate-500">({item.typeCode})</span>
+									<span className="text-sm font-bold text-slate-900 dark:text-white">{item.typeLabel}</span>
+									<span className="text-xs font-mono text-slate-500 dark:text-slate-400">({item.typeCode})</span>
 								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
+								<div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
 									SLA на выполнение:{" "}
-									<strong style={{ color: "var(--ink, #0f172a)" }}>
+									<strong className="text-slate-900 dark:text-white">
 										{item.defaultSlaHours} ч.
 									</strong>{" "}
 									•{" "}
