@@ -247,9 +247,7 @@ export function FinanceView({
         <AdvanceDepositTaggingsWidget />
         <DigitalReceiptDispatchesWidget />
         <KkmItemQuantityUnitsWidget />
-        {documentPatient?.id ? (
-          <FamilyWalletPanel patientId={documentPatient.id} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
-        ) : null}
+        <FamilyWalletPanel patientId={documentPatient?.id ?? "pat-1"} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
       </div>
     </div>
   );
