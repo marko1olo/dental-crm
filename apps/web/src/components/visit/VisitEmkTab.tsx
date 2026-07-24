@@ -206,7 +206,7 @@ export function VisitEmkTab() {
 											</div>
 										)}
 										<textarea
-											value={visitNoteForm[field.key]}
+											value={visitNoteForm[field.key] ?? ""}
 											onChange={(event) =>
 												updateVisitNoteField(field.key, event.target.value)
 											}
@@ -238,11 +238,11 @@ export function VisitEmkTab() {
 							>
 								<div>
 									<strong>
-										{visitDraftQualityLabels[draft.quality.level]}
+										{(visitDraftQualityLabels && visitDraftQualityLabels[draft.quality.level]) || draft.quality.level}
 									</strong>
 									<span>
 										{Math.round(draft.quality.confidence * 100)}% ·{" "}
-										{specialtyLabels[draft.quality.specialty]}
+										{(specialtyLabels && specialtyLabels[draft.quality.specialty]) || draft.quality.specialty}
 									</span>
 								</div>
 								<p>{draft.quality.nextAction}</p>
