@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface CollaborativeStateItem {
 	id: string;
@@ -11,13 +12,16 @@ interface CollaborativeStateItem {
 }
 
 export const CollaborativeChatProcessingStatesWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [states, setStates] = useState<CollaborativeStateItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/communications/collaborative-chat-processing-states", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/communications/collaborative-chat-processing-states", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setStates(Array.isArray(data) ? data : []);
@@ -27,7 +31,7 @@ export const CollaborativeChatProcessingStatesWidget: React.FC = () => {
 				console.error("[CollaborativeChatProcessingStatesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div

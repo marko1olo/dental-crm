@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface InheritChannelItem {
 	id: string;
@@ -11,13 +12,16 @@ interface InheritChannelItem {
 }
 
 export const AppointmentChannelInheritancesWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [items, setItems] = useState<InheritChannelItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/communications/appointment-channel-inheritances", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/communications/appointment-channel-inheritances", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setItems(Array.isArray(data) ? data : []);
@@ -27,7 +31,7 @@ export const AppointmentChannelInheritancesWidget: React.FC = () => {
 				console.error("[AppointmentChannelInheritancesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
