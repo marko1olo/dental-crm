@@ -1,5 +1,11 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
+import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
+import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
+import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
+import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { Plus, ShieldCheck, Bot, Mic } from "lucide-react";
@@ -524,10 +530,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 </article>
               ) : null}
             </div>
-          </div>
 
-          );
+            {/* Schedule Utilities & Widgets Panel */}
+            <div className="schedule-widgets-container mt-6 space-y-4">
+              <UrgentScheduleRequestsWidget />
+              <ScheduleClipboardItemsWidget />
+              <ScheduleTimeReservationsWidget />
+              <CancellationReasonsTwoLevelWidget />
+              <ExternalScheduleActionLogsWidget />
+            </div>
+    </div>
+  );
 }
+
+
 
 /*
 onClick={unlockScheduleAdminSession}
