@@ -1,20 +1,20 @@
-﻿.payout-dashboard {
-	background: var(--surface);
+.payout-dashboard {
+	background: var(--paper, #ffffff);
 	border-radius: 12px;
-	border: 1px solid var(--border);
+	border: 1px solid var(--line, rgba(63, 63, 70, 0.2));
 	padding: 20px;
-	color: var(--text-primary);
+	color: var(--ink, #111827);
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 	margin-top: 20px;
 }
 
 .payout-header h2 {
 	margin: 0;
 	font-size: 1.2rem;
-	color: var(--accent);
+	color: var(--teal-dark, #0d9488);
 }
 
 .payout-table-wrapper {
@@ -30,18 +30,19 @@
 .payout-table th,
 .payout-table td {
 	padding: 12px;
-	border-bottom: 1px solid var(--border);
+	border-bottom: 1px solid var(--line, rgba(82, 82, 91, 0.15));
 }
 
 .payout-table th {
-	background: var(--surface-hover);
+	background: var(--paper-soft, #f8fafc);
 	font-weight: 600;
 	font-size: 0.9rem;
-	color: var(--text-secondary);
+	color: var(--muted, #6b7280);
 }
 
 .payout-table td {
 	font-size: 0.95rem;
+	color: var(--ink, #111827);
 }
 
 .payout-table td.cost {
