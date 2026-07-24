@@ -204,7 +204,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   ))}
                 </select>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
@@ -236,7 +236,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   ))}
                 </select>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
@@ -257,7 +257,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Ассистент</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
@@ -277,7 +277,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Кресло</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
@@ -296,7 +296,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Статус</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
                     <button
                       key={status}
@@ -320,7 +320,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <label className="form-span-2">
             Причина
             <input value={String(appointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
                 <button
                   key={chip}
@@ -331,8 +331,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
                     updateAppointmentScheduleDraft(appointment.id, "reason", newVal);
                   }}
                   className="quick-chip quick-chip--sm"
-                  
-                  
                 >
                   + {chip}
                 </button>
@@ -342,7 +340,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <label className="form-span-2">
             Комментарий
             <textarea value={String(appointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
@@ -353,8 +351,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
                     updateAppointmentScheduleDraft(appointment.id, "comment", newVal);
                   }}
                   className="quick-chip quick-chip--sm"
-                  
-                  
                 >
                   + {chip}
                 </button>

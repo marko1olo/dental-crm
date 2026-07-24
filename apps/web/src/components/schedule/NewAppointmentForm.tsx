@@ -121,7 +121,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <option key={status} value={status}>{appointmentLabels[status as Appointment["status"]]}</option>
           ))}
         </select>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div className="flex flex-col gap-1">
           <input
             type="text"
             placeholder="Услуга / Причина (например: Кариес, Осмотр)"
@@ -161,7 +161,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <Bot size={18} className="text-sky-600 dark:text-sky-400" />
           <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400">Умное бронирование голосом или текстом (AI)</h4>
         </div>
-        <div style={{ position: 'relative', flex: 1 }}>
+        <div className="relative flex-1">
           <input
             type="text"
             value={smartInputText}
@@ -218,8 +218,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             onClose={() => setShowSmartPreview(false)}
           />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="flex justify-between items-center">
+          <div className="flex gap-3 items-center">
             <button
               type="button"
               onClick={() => setShowCreateForm((v) => !v)}
@@ -234,7 +234,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               </label>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="flex gap-2 items-center">
             {newAppointmentReadyToCreate ? (
               <span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400">✓ Готово к созданию</span>
             ) : (
@@ -248,7 +248,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
               className="primary-button px-4 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center disabled:opacity-50 cursor-pointer"
             >
-              <Plus size={16} aria-hidden="true" style={{ marginRight: '6px' }} /> Создать запись
+              <Plus size={16} aria-hidden="true" className="mr-1.5" /> Создать запись
             </button>
           </div>
         </div>
@@ -256,7 +256,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
       {showCreateForm && (
         <div className="appointment-editor mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
             <label>
               Начало
               <input
@@ -279,7 +279,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </label>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px' }}>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 mb-4">
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Пациент</span>
               {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
@@ -294,7 +294,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                   ))}
                 </select>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
@@ -326,7 +326,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                   ))}
                 </select>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
@@ -347,7 +347,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Ассистент</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
@@ -367,7 +367,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Кресло</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
@@ -386,7 +386,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Статус</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="flex flex-wrap gap-1.5">
                 {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
                     <button
                       key={status}
@@ -404,7 +404,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <label className="form-span-2">
             Причина приема
             <input value={String(newAppointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {["Первичный", "Пульпит", "Кариес", "Осмотр", "Пломба", "Гигиена", "Коронка"].map(chip => (
                 <button
                   key={chip}
@@ -424,7 +424,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <label className="form-span-2">
             Комментарий
             <textarea value={String(newAppointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
               {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
@@ -435,8 +435,6 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                     updateNewAppointmentDraft("comment", newVal);
                   }}
                   className="quick-chip quick-chip--sm"
-                  
-                  
                 >
                   + {chip}
                 </button>
