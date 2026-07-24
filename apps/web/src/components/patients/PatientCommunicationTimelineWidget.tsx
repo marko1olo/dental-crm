@@ -38,31 +38,26 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 	return (
 		<div
 			data-testid="patient-communication-timeline-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{
-				background: "var(--paper)",
-				borderColor: "var(--line)",
-				color: "var(--ink)",
-			}}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<MessageSquare className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sm">
 						Хронологическая история коммуникаций
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-slate-800 dark:text-sky-300 dark:border-sky-700">
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
 					IDENT Parity #4
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-xs py-3" style={{ color: "var(--muted)" }}>
+				<div className="text-xs py-3 text-slate-500 dark:text-slate-400">
 					Загрузка истории коммуникаций...
 				</div>
 			) : events.length === 0 ? (
-				<div className="p-4 text-center rounded-lg border border-dashed text-xs" style={{ background: "var(--glass-panel)", borderColor: "var(--line)", color: "var(--muted)" }}>
+				<div className="p-4 text-center rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400">
 					Записи звонков и сообщений с пациентом отсутствуют.
 				</div>
 			) : (
@@ -70,8 +65,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 					{events.map((ev) => (
 						<div
 							key={ev.id}
-							className="p-3 rounded-lg border flex items-center justify-between gap-2 text-xs"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border flex items-center justify-between gap-2 text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex items-center space-x-2">
 								{ev.channelType === "CALL" ? (
@@ -82,8 +76,8 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 									<Send className="w-4 h-4 text-sky-500" />
 								)}
 								<div>
-									<div className="font-bold">{ev.summary}</div>
-									<div style={{ color: "var(--muted)" }}>Сотрудник: {ev.staffName}</div>
+									<div className="font-bold text-slate-900 dark:text-white">{ev.summary}</div>
+									<div className="text-slate-500 dark:text-slate-400">Сотрудник: {ev.staffName}</div>
 								</div>
 							</div>
 							<span className="font-mono text-slate-400">{ev.timestamp}</span>

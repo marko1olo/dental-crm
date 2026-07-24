@@ -132,102 +132,37 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			data-testid="patient-family-card"
 			className="panel mb-5 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<h3
-				className="panel-heading compact-heading"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-					marginBottom: "16px",
-					border: "none",
-					padding: 0,
-				}}
-			>
-				<Users size={16} color="var(--brand-500)" />
-				<span style={{ fontSize: "14px", fontWeight: 600 }}>
+			<h3 className="flex items-center gap-2 mb-4 p-0 border-none">
+				<Users size={16} className="text-sky-500" />
+				<span className="text-sm font-semibold text-slate-900 dark:text-white">
 					{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
 				</span>
 			</h3>
 
 			{familyData ? (
 				<>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							background: "var(--surface-100)",
-							padding: "12px",
-							borderRadius: "8px",
-							border: "1px solid var(--line)",
-							marginBottom: "16px",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "13px",
-								color: "var(--slate-500)",
-								fontWeight: 500,
-							}}
-						>
+					<div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
+						<span className="text-xs font-medium text-slate-600 dark:text-slate-400">
 							Баланс семьи:
 						</span>
-						<span
-							style={{
-								fontSize: "16px",
-								fontWeight: 700,
-								color: "var(--brand-600)",
-							}}
-						>
+						<span className="text-base font-bold text-sky-600 dark:text-sky-400">
 							{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
-					<div className="patients-flex-col-gap-8">
-						<span
-							style={{
-								fontSize: "12px",
-								color: "var(--slate-500)",
-								fontWeight: 600,
-								textTransform: "uppercase",
-								letterSpacing: "0.5px",
-							}}
-						>
+					<div className="flex flex-col gap-2">
+						<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 							Участники:
 						</span>
 						{familyData.members?.map((m: any) => (
 							<div
 								key={m.id}
-								style={{
-									padding: "10px 12px",
-									background: "var(--surface-100)",
-									border: "1px solid var(--line)",
-									borderRadius: "8px",
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-								}}
+								className="p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg flex justify-between items-center"
 							>
-								<span
-									style={{
-										color:
-											m.id === patientId ? "var(--ink)" : "var(--slate-500)",
-										fontWeight: m.id === patientId ? 600 : 500,
-										fontSize: "13px",
-									}}
-								>
+								<span className={`text-xs ${m.id === patientId ? "font-semibold text-slate-900 dark:text-white" : "font-medium text-slate-600 dark:text-slate-400"}`}>
 									{m.fullName}
 								</span>
 								{m.id === familyData.headPatientId && (
-									<span
-										style={{
-											fontSize: "11px",
-											background: "var(--brand-100)",
-											color: "var(--brand-700)",
-											padding: "2px 6px",
-											borderRadius: "4px",
-											fontWeight: 600,
-										}}
-									>
+									<span className="text-[11px] bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 rounded font-semibold">
 										Глава
 									</span>
 								)}
@@ -236,15 +171,8 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					</div>
 				</>
 			) : (
-				<div style={{ marginTop: "12px" }}>
-					<p
-						style={{
-							fontSize: "13px",
-							color: "var(--slate-500)",
-							marginBottom: "16px",
-							lineHeight: "1.4",
-						}}
-					>
+				<div className="mt-3">
+					<p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
 						Пациент не состоит в семейной группе. Вы можете создать новую семью
 						или привязать его к существующей.
 					</p>
