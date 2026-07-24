@@ -86,10 +86,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
           className={`appointment-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-3 shadow-sm ${readiness ? 'readiness-' + readiness.state : ""}`}
           style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         >
-      <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '8px', marginBottom: '4px' }}>
-        <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center">
+        <div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
           {formatTime(appointment.startsAt)}
-          <span style={{ fontWeight: 400, color: 'var(--muted)' }}>{formatTime(appointment.endsAt)}</span>
+          <span className="font-normal text-slate-500 dark:text-slate-400">{formatTime(appointment.endsAt)}</span>
         </div>
         <span className={`appointment-card-status status-pill status-${appointment.status}`}>
           {appointmentLabels[appointment.status]}
@@ -103,14 +103,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
           {appointmentSuggestions.map((suggestion) => (
             <span 
               key={suggestion.id} 
-              className={`chip chip-suggestion priority-${suggestion.priority}`} 
+              className={`chip chip-suggestion priority-${suggestion.priority} cursor-pointer px-2 py-0.5 rounded border text-xs font-semibold ${
+                suggestion.priority === 'urgent'
+                  ? 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800'
+                  : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+              }`} 
               onClick={(e) => { e.stopPropagation(); openScheduleSuggestion(suggestion.section); }}
-              style={{ 
-                cursor: 'pointer', 
-                background: suggestion.priority === 'urgent' ? 'var(--rust-soft)' : 'var(--amber-soft)',
-                color: suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)',
-                border: `1px solid ${suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)'}`
-              }}
               title={suggestion.detail}
             >
               ⚠️ {suggestion.title}
@@ -139,12 +137,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
       </div>
 
       {appointmentHasOpenVisit ? (
-        <p className="appointment-handoff-note" id={appointmentHandoffNoteId} style={{ fontSize: '12px', color: 'var(--amber)', background: 'var(--amber-50)', padding: '6px', borderRadius: '4px', marginTop: '4px' }}>
+        <p className="appointment-handoff-note text-xs text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 p-2 rounded-md mt-1" id={appointmentHandoffNoteId}>
           Пациент и закрывающий статус этой записи меняются только после закрытия приема.
         </p>
       ) : null}
 
-      <div className="appointment-card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--slate-50)' }}>
+      <div className="appointment-card-footer flex justify-end mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
         <button
           className="secondary-button appointment-edit-button"
           type="button"

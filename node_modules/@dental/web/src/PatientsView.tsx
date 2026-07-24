@@ -12,6 +12,10 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
+import { BulkImageOperationLogsWidget } from "./components/crm/BulkImageOperationLogsWidget";
+import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
+import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
+import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type PatientInsight = Dashboard["patientInsights"][number];
@@ -603,6 +607,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
         <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
           <PatientArchiveReasonsAndBlacklistsWidget />
           <PatientCommunicationTimelinesWidget />
+          <BulkImageOperationLogsWidget />
+          <CustomCrmTaskTypesWidget />
+          <PatientDuplicateMergeQueuesWidget />
+          <PatientServiceLineagesWidget />
         </div>
       </div>
     </div>

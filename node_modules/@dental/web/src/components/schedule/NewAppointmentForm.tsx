@@ -156,11 +156,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </button>
         </div>
       </div>
-      <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '12px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bot size={18} color="var(--brand-600)" />
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
+      <div className="smart-ai-booking mb-3 border border-sky-300 dark:border-sky-800 rounded-xl p-3 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-sm text-slate-900 dark:text-slate-100">
+        <div className="flex items-center gap-2">
+          <Bot size={18} className="text-sky-600 dark:text-sky-400" />
+          <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400">Умное бронирование голосом или текстом (AI)</h4>
+        </div>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input
             type="text"
             value={smartInputText}
             placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
@@ -176,7 +178,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 setShowHints(false);
               }
             }}
-            style={{ width: '100%', padding: '12px 48px 12px 16px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '15px', outline: 'none' }}
+            className="w-full p-3 pr-12 rounded-lg border border-slate-300 dark:border-slate-700 text-base outline-none bg-white dark:bg-slate-800"
           />
           <SmartMicrophoneButton
             context="schedule"
@@ -216,7 +218,6 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             onClose={() => setShowSmartPreview(false)}
           />
         </div>
-        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
@@ -236,18 +237,17 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {newAppointmentReadyToCreate ? (
-              <span className="save-state save-state-idle" style={{ color: 'var(--teal)' }}>✓ Готово к созданию</span>
+              <span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400">✓ Готово к созданию</span>
             ) : (
-              <span className="save-state save-state-idle" style={{ color: 'var(--amber)' }}>Заполните поля</span>
+              <span className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400">Заполните поля</span>
             )}
             <button
-              className="primary-button"
               type="button"
               onClick={() => void createAppointmentFromDraft()}
               disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
               aria-busy={newAppointmentSaveState === "saving" || undefined}
               aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
-              style={{ padding: '6px 16px', minHeight: '32px' }}
+              className="primary-button px-4 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center disabled:opacity-50 cursor-pointer"
             >
               <Plus size={16} aria-hidden="true" style={{ marginRight: '6px' }} /> Создать запись
             </button>
