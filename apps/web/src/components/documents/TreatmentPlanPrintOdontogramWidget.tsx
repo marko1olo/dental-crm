@@ -35,27 +35,26 @@ export const TreatmentPlanPrintOdontogramWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="treatment-plan-print-odontogram-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<Printer className="w-5 h-5 text-indigo-500" />
 					<h3 className="font-semibold text-indigo-600 dark:text-indigo-400">
 						Печатная форма плана лечения с Зубной Формулой
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800 font-medium">
 					Печать для пациента
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка печатных форм планов лечения...
 				</div>
 			) : items.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Печатные формы планов лечения с одонтограммой отсутствуют.
 				</div>
 			) : (
@@ -63,8 +62,7 @@ export const TreatmentPlanPrintOdontogramWidget: React.FC = () => {
 					{items.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border space-y-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
@@ -76,11 +74,11 @@ export const TreatmentPlanPrintOdontogramWidget: React.FC = () => {
 									</span>
 								)}
 							</div>
-							<p className="text-xs" style={{ color: "var(--muted)" }}>
-								Пациент: <strong style={{ color: "var(--ink)" }}>{item.patientName}</strong>
+							<p className="text-xs text-slate-600 dark:text-slate-400">
+								Пациент: <strong className="text-slate-900 dark:text-slate-200">{item.patientName}</strong>
 							</p>
 							{item.toothFormulaSnippet && (
-								<p className="text-xs font-mono" style={{ color: "var(--muted)" }}>
+								<p className="text-xs font-mono text-slate-500 dark:text-slate-400">
 									Формула: {item.toothFormulaSnippet}
 								</p>
 							)}

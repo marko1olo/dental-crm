@@ -41,28 +41,28 @@ export function RoleFocusStrip() {
 				className="role-focus-meta flex flex-wrap gap-2 justify-start mt-2"
 				aria-label="Доступы текущей роли"
 			>
-				<span className="bg-[var(--paper)] text-[var(--ink)] px-2 py-1 rounded-full text-xs font-bold border border-[var(--line-strong)]">
+				<span className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700">
 					{activeRoleQueue?.openItems ?? 0} открыто
 				</span>
 				{activeRolePolicy ? (
-					<span className="bg-[var(--paper)] text-[var(--ink)] px-2 py-1 rounded-full text-xs font-bold border border-[var(--line-strong)]">
+					<span className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700">
 						Старт: {viewLabels[activeRolePolicy.defaultSection]}
 					</span>
 				) : null}
 				{activeRoleWritableSections.slice(0, 3).map((section: any) => (
 					<span
 						key={section}
-						className="bg-[var(--paper)] text-[var(--ink)] px-2 py-1 rounded-full text-xs font-bold border border-[var(--line-strong)]"
+						className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700"
 					>
 						пишет: {viewLabels[section]}
 					</span>
 				))}
 				{activeRoleRestrictedSections?.[0] ? (
-					<span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-xs">
+					<span className="bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-md text-xs font-semibold">
 						{activeRoleRestrictedSections[0]} недоступна
 					</span>
 				) : (
-					<span className="bg-green-500/20 text-green-500 px-2 py-1 rounded-md text-xs">
+					<span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-md text-xs font-semibold">
 						Доступ открыт
 					</span>
 				)}

@@ -37,27 +37,26 @@ export const TreatmentPlanStagesWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="treatment-plan-stages-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<Layers className="w-5 h-5 text-emerald-500" />
 					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
 						Этапы выполнения плана лечения и автоархивация
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 font-medium">
 					Пошаговое лечение
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка этапов плана лечения...
 				</div>
 			) : stages.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Этапы комплексного плана лечения отсутствуют.
 				</div>
 			) : (
@@ -65,8 +64,7 @@ export const TreatmentPlanStagesWidget: React.FC = () => {
 					{stages.map((stage) => (
 						<div
 							key={stage.id}
-							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border space-y-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
@@ -77,8 +75,8 @@ export const TreatmentPlanStagesWidget: React.FC = () => {
 								</span>
 							</div>
 							<h4 className="text-sm font-medium leading-snug">{stage.planTitle}</h4>
-							<p className="text-xs" style={{ color: "var(--muted)" }}>
-								Пациент: <strong style={{ color: "var(--ink)" }}>{stage.patientName}</strong>
+							<p className="text-xs text-slate-600 dark:text-slate-400">
+								Пациент: <strong className="text-slate-900 dark:text-slate-200">{stage.patientName}</strong>
 							</p>
 						</div>
 					))}
