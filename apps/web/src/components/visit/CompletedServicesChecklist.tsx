@@ -50,7 +50,7 @@ export const CompletedServicesChecklist: React.FC = () => {
 	if (planItems.length === 0) {
 		return (
 			<div data-testid="completed-services-checklist" className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3">
-				<p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
+				<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
 					В согласуемом плане лечения пока нет открытых позиций для отметки выполненных услуг.
 				</p>
 			</div>
@@ -59,10 +59,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 
 	return (
 		<div data-testid="completed-services-checklist" className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3">
-			<h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--ink)" }} title="Быстрая отметка выполненных манипуляций для автоматического расчета начислений врачу и списывания материалов">
+			<h4 className="m-0 mb-2 text-sm font-semibold text-slate-900 dark:text-white" title="Быстрая отметка выполненных манипуляций для автоматического расчета начислений врачу и списывания материалов">
 				Отметка выполненных услуг по плану
 			</h4>
-			<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+			<div className="flex flex-col gap-1.5">
 				{planItems.map((item: any) => {
 					const isCompleted = completedServices.some(
 						(cs: any) =>
@@ -70,11 +70,12 @@ export const CompletedServicesChecklist: React.FC = () => {
 							cs.toothCode === (item.toothNumber ? String(item.toothNumber) : null),
 					);
 					return (
-						<label key={`${item.priceId}-${item.toothNumber}`} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
+						<label key={`${item.priceId}-${item.toothNumber}`} className="flex items-center gap-2 cursor-pointer text-xs text-slate-800 dark:text-slate-200">
 							<input
 								type="checkbox"
 								checked={isCompleted}
 								onChange={() => handleToggle(item)}
+								className="rounded border-slate-300 dark:border-slate-700"
 							/>
 							<span>
 								{item.title || item.priceId} {item.toothNumber ? `(зуб ${item.toothNumber})` : ""}

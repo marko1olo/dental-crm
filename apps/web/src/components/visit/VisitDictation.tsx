@@ -69,26 +69,23 @@ export function VisitDictation() {
 					<div className="skeleton-wave"></div>
 				</div>
 			)}
-			<div className="dictation-header">
+			<div className="dictation-header flex items-center gap-3">
 				<Mic
 					aria-hidden="true"
-					className={isServerVoiceRecording ? "recording-icon-pulse" : ""}
-					style={{
-						color: isServerVoiceRecording ? "var(--red-500)" : undefined,
-					}}
+					className={isServerVoiceRecording ? "recording-icon-pulse text-red-500" : "text-sky-500"}
 				/>
 				<div>
-					<h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+					<h3 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
 						Диктовка врача
 						{speechTranscriptionBusy && (
-							<span className="transcribing-badge-pulse">
+							<span className="transcribing-badge-pulse text-xs bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-2 py-0.5 rounded font-medium">
 								Обработка голоса...
 							</span>
 						)}
 					</h3>
-					<p>
+					<p className="text-xs text-slate-600 dark:text-slate-400">
 						Черновик, требует подтверждения врача.{" "}
-						<span style={{ color: "var(--slate-500)", fontSize: "0.9em" }}>
+						<span className="text-slate-500 dark:text-slate-400 text-xs">
 							{serverDraftSyncState === "saving" || pendingVisitSaveCount > 0
 								? "Синхронизация..."
 								: !isOnline
@@ -100,14 +97,7 @@ export function VisitDictation() {
 											: "Автосохранение включено"}
 						</span>
 						{speechStatusNote ? (
-							<span
-								style={{
-									display: "inline-block",
-									marginLeft: "8px",
-									color: "var(--rust)",
-									fontSize: "0.9em",
-								}}
-							>
+							<span className="inline-block ml-2 text-amber-600 dark:text-amber-400 text-xs">
 								{speechStatusNote}
 							</span>
 						) : null}
@@ -176,21 +166,7 @@ export function VisitDictation() {
 				</div>
 
 				{isServerVoiceRecording && (
-					<div
-						style={{
-							marginTop: "8px",
-							padding: "12px",
-							background: "var(--paper)",
-							color: "#64748b",
-							borderRadius: "8px",
-							border: "1px dashed #cbd5e1",
-							fontStyle: "italic",
-							fontSize: "14px",
-							display: "flex",
-							alignItems: "center",
-							gap: "12px",
-						}}
-					>
+					<div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 italic text-sm flex items-center gap-3">
 						<div
 							style={{
 								display: "flex",
@@ -355,14 +331,7 @@ export function VisitDictation() {
 					className="advanced-dictation-actions"
 					style={{ display: "inline-block" }}
 				>
-					<summary
-						style={{
-							cursor: "pointer",
-							fontSize: "14px",
-							color: "var(--slate-500)",
-							padding: "8px",
-						}}
-					>
+					<summary className="cursor-pointer text-sm text-slate-500 dark:text-slate-400 p-2">
 						Дополнительно
 					</summary>
 					<div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
