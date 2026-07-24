@@ -1,7 +1,31 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { medicalRecordCopyRequestDatesAreValid } from './documents.js';
+import fsPromises from 'node:fs/promises';
+import { medicalRecordCopyRequestDatesAreValid, renderIssuedHtmlToPdf } from './documents.js';
 import type { MedicalRecordCopyRequestPayload } from '@dental/shared';
+
+describe('renderIssuedHtmlToPdf try-catch fall-through error handling', () => {
+  test('returns error when exception is thrown inside the try block', async (t) => {
+    // Mock mkdtemp and writeFile to succeed so we enter the try block smoothly and avoid real I/O
+    t.mock.method(fsPromises, 'mkdtemp', async () => '/mock/tmp/dir');
+    t.mock.method(fsPromises, 'writeFile', async () => {});
+
+    // Mock rm to ensure the finally block does not perform real I/O operations
+    t.mock.method(fsPromises, 'rm', async () => {});
+
+    // Since readFile's errors are swallowed by readValidPdfFile, we force an error directly in the try block
+    t.mock.method(global, 'setTimeout', () => {
+      throw new Error('mocked try block error');
+    });
+
+    const result = await renderIssuedHtmlToPdf('<html></html>');
+
+    assert.deepStrictEqual(result, {
+      ok: false,
+      error: "PDF-экспорт не завершился. Проверьте права на временную папку сервера и браузер для печати документов."
+    });
+  });
+});
 
 describe('medicalRecordCopyRequestDatesAreValid', () => {
   test('returns true when all dates are valid and chronological', () => {

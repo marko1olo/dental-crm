@@ -21,7 +21,7 @@ import {
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 
 
-export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings", "marketing"] as const;
+export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
 
 export const viewLabels: Record<AppView, string> = {
@@ -32,6 +32,7 @@ export const viewLabels: Record<AppView, string> = {
   visit: "Прием",
   documents: "Документы",
   finance: "Оплаты",
+  analytics: "Аналитика",
   communications: "Связь",
   settings: "Настройки",
   marketing: "Маркетинг/SEO"
@@ -45,6 +46,7 @@ export const viewHints: Record<AppView, string> = {
   visit: "прием и диктовка",
   documents: "договоры и справки",
   finance: "оплаты и долги",
+  analytics: "отчеты и воронки",
   communications: "сообщения и задачи",
   settings: "клиника, импорт и доступы",
   marketing: "продвижение и отзывы"
@@ -59,6 +61,7 @@ function SidebarIcon({ section }: { section: AppView }) {
   if (section === "visit") return <ClipboardList aria-hidden="true" />;
   if (section === "documents") return <FileText aria-hidden="true" />;
   if (section === "finance") return <CreditCard aria-hidden="true" />;
+  if (section === "analytics") return <Sparkles aria-hidden="true" />;
   if (section === "communications") return <MessageSquare aria-hidden="true" />;
   if (section === "settings") return <Database aria-hidden="true" />;
   if (section === "marketing") return <Sparkles aria-hidden="true" />;
@@ -72,6 +75,7 @@ export function ActionIcon({ section }: { section: AppView }) {
   if (section === "visit") return <ClipboardCheck aria-hidden="true" />;
   if (section === "documents") return <FileCheck2 aria-hidden="true" />;
   if (section === "finance") return <ReceiptText aria-hidden="true" />;
+  if (section === "analytics") return <Sparkles aria-hidden="true" />;
   if (section === "communications") return <MessageSquare aria-hidden="true" />;
   if (section === "settings") return <Database aria-hidden="true" />;
   return <Sparkles aria-hidden="true" />;
@@ -79,16 +83,16 @@ export function ActionIcon({ section }: { section: AppView }) {
 
 export function getFilteredAppViews(role: StaffRole): AppView[] {
   if (role === "doctor") {
-    return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"];
+    return ["shift", "schedule", "patients", "imaging", "visit", "documents", "analytics", "communications"];
   }
   if (role === "assistant") {
     return ["shift", "schedule", "patients", "imaging", "documents", "communications"];
   }
   if (role === "administrator") {
-    return ["schedule", "patients", "documents", "finance", "communications", "settings"];
+    return ["schedule", "patients", "documents", "finance", "analytics", "communications", "settings"];
   }
   if (role === "manager") {
-    return ["schedule", "patients", "finance", "communications", "settings"];
+    return ["schedule", "patients", "finance", "analytics", "communications", "settings"];
   }
   if (role === "owner") {
     return Array.from(appViews);
