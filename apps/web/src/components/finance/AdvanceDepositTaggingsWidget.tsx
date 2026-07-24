@@ -50,11 +50,11 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка целевых авансов...
 				</div>
 			) : taggings.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Авансовые платежи с привязкой к целевым услугам отсутствуют.
 				</div>
 			) : (
@@ -62,8 +62,7 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 					{taggings.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
 								<div className="flex items-center space-x-2">
@@ -72,8 +71,8 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 										+{Number(item.depositAmountRub).toLocaleString("ru-RU")} ₽
 									</span>
 								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-									Цель: <strong>{item.taggedTargetName}</strong> ({item.taggedTargetType})
+								<div className="text-xs mt-1 text-slate-600 dark:text-slate-400">
+									Цель: <strong className="text-slate-900 dark:text-slate-200">{item.taggedTargetName}</strong> ({item.taggedTargetType})
 								</div>
 							</div>
 							<span className="px-2 py-1 text-xs rounded border font-bold uppercase bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">

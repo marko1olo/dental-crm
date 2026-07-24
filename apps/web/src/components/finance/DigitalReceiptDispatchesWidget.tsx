@@ -51,11 +51,11 @@ export const DigitalReceiptDispatchesWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка отправленных чеков ОФД...
 				</div>
 			) : dispatches.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Записи об электронной отправке чеков отсутствуют.
 				</div>
 			) : (
@@ -63,8 +63,7 @@ export const DigitalReceiptDispatchesWidget: React.FC = () => {
 					{dispatches.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border space-y-2"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border space-y-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex justify-between items-start">
 								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
@@ -74,8 +73,8 @@ export const DigitalReceiptDispatchesWidget: React.FC = () => {
 									{item.fiscalStatus}
 								</span>
 							</div>
-							<p className="text-xs" style={{ color: "var(--muted)" }}>
-								Пациент: <strong style={{ color: "var(--ink)" }}>{item.patientName}</strong> ({item.recipientContact})
+							<p className="text-xs text-slate-600 dark:text-slate-400">
+								Пациент: <strong className="text-slate-900 dark:text-slate-200">{item.patientName}</strong> ({item.recipientContact})
 							</p>
 						</div>
 					))}
