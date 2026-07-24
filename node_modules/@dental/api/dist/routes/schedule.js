@@ -44,7 +44,7 @@ function classifyAppointmentRejection(error) {
         return "resource_missing";
     if (message.includes("уже есть запись") || message.includes("уже занято"))
         return "resource_overlap";
-    if (message.startsWith("Запись вне расписания"))
+    if (message.includes("Запись вне расписания") || message.includes("вне расписания") || message.includes("вне работы"))
         return "outside_operational_hours";
     return "mutation_rejected";
 }

@@ -7,7 +7,6 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { showToast } from "../GlobalToast";
 
 export type PatientNoShowRiskProps = {
 	patientId: string | null;
@@ -79,231 +78,78 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	const getRiskIcon = (level: string) => {
 		switch (level) {
 			case "high":
-				return <ShieldAlert size={16} color="#EF4444" />;
+				return <ShieldAlert size={16} className="text-red-500" />;
 			case "medium":
-				return <AlertTriangle size={16} color="#F59E0B" />;
+				return <AlertTriangle size={16} className="text-amber-500" />;
 			case "low":
-				return <CheckCircle size={16} color="#10B981" />;
+				return <CheckCircle size={16} className="text-emerald-500" />;
 			default:
-				return <BrainCircuit size={16} color="#6B7280" />;
+				return <BrainCircuit size={16} className="text-slate-400" />;
 		}
 	};
 
 	const formatRub = (n: number) => n.toLocaleString("ru-RU") + " ₽";
 
 	return (
-		<div className="panel" style={{ marginBottom: "20px" }}>
+		<div
+			data-testid="patient-no-show-risk"
+			className="panel p-4 rounded-xl border mb-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+		>
 			<h3
-				className="panel-heading compact-heading"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-					marginBottom: "16px",
-					border: "none",
-					padding: 0,
-				}}
+				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800"
+				title="Машинный расчет риска отмены записи пациента"
 			>
-				<BrainCircuit size={16} color="var(--brand-500)" />
-				<span style={{ fontSize: "14px", fontWeight: 600 }}>
-					AI-Прогноз неявки
+				<BrainCircuit size={18} className="text-emerald-600 dark:text-emerald-400" />
+				<span className="text-sm font-semibold">
+					AI-Прогноз неявки на приём
 				</span>
 			</h3>
 
 			{loading ? (
-				<div className="patients-glass-muted" style={{ fontSize: "13px" }}>
+				<div className="text-xs text-slate-500 dark:text-slate-400 py-3">
 					Анализ данных пациента...
 				</div>
 			) : riskData ? (
 				<div>
 					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							marginBottom: "12px",
-							background: "var(--surface-100)",
-							padding: "12px",
-							borderRadius: "8px",
-							border: "1px solid var(--line)",
-						}}
+						className="flex justify-between items-center mb-3 p-3 rounded-lg border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<div className="flex items-center gap-2">
 							{getRiskIcon(riskData.riskLevel)}
 							<span
-								style={{
-									fontSize: "14px",
-									fontWeight: 600,
-									color: getRiskColor(riskData.riskLevel),
-								}}
+								className="text-sm font-semibold"
+								style={{ color: getRiskColor(riskData.riskLevel) }}
 							>
 								{getRiskLabel(riskData.riskLevel)}
 							</span>
 						</div>
 						<div
-							style={{
-								background: "var(--brand-100)",
-								color: "var(--brand-700)",
-								padding: "4px 8px",
-								borderRadius: "6px",
-								fontSize: "12px",
-								fontWeight: 700,
-							}}
+							className="px-2 py-1 rounded text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border border-blue-200 dark:border-blue-800"
 						>
-							Score: {riskData.riskScore}/100
+							{Math.round((riskData.noShowProbability || 0) * 100)}% вероятности
 						</div>
 					</div>
 
-					<div
-						className="patients-flex-col-gap-8"
-						style={{ marginTop: "16px" }}
-					>
-						<span
-							style={{
-								fontSize: "12px",
-								color: "var(--slate-500)",
-								fontWeight: 600,
-								textTransform: "uppercase",
-								letterSpacing: "0.5px",
-							}}
-						>
-							Факторы риска:
-						</span>
+					{riskData.factors && riskData.factors.length > 0 && (
+						<div className="mt-3">
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300">Факторы риска:</span>
+							<ul className="mt-1 space-y-1 text-xs text-slate-600 dark:text-slate-400 pl-4 list-disc">
+								{riskData.factors.map((factor: string, idx: number) => (
+									<li key={idx}>{factor}</li>
+								))}
+							</ul>
+						</div>
+					)}
 
-						{riskData.factors.pastNoShows > 0 && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(239,68,68,0.07)",
-									borderRadius: "8px",
-									border: "1px solid rgba(239,68,68,0.2)",
-								}}
-							>
-								<span
-									style={{
-										fontSize: "13px",
-										color: "var(--rust)",
-										fontWeight: 500,
-									}}
-								>
-									Неявки без предупреждения: {riskData.factors.pastNoShows}
-								</span>
-							</div>
-						)}
-
-						{riskData.factors.pastCancellations > 0 && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(239,68,68,0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(239,68,68,0.15)",
-								}}
-							>
-								<span
-									style={{
-										fontSize: "13px",
-										color: "var(--rust)",
-										fontWeight: 500,
-									}}
-								>
-									Отмены записей: {riskData.factors.pastCancellations}
-								</span>
-							</div>
-						)}
-
-						{riskData.factors.hasDebt && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(245,158,11,0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(245,158,11,0.2)",
-								}}
-							>
-								<span
-									style={{
-										fontSize: "13px",
-										color: "#d97706",
-										fontWeight: 500,
-									}}
-								>
-									Задолженность: {formatRub(riskData.factors.totalDebtRub || 0)}
-								</span>
-							</div>
-						)}
-
-						{(riskData.factors.openTreatmentItems || 0) > 3 &&
-							(riskData.factors.completedTreatmentItems || 0) === 0 && (
-								<div
-									style={{
-										padding: "10px 12px",
-										background: "rgba(245,158,11,0.05)",
-										borderRadius: "8px",
-										border: "1px solid rgba(245,158,11,0.15)",
-									}}
-								>
-									<span
-										style={{
-											fontSize: "13px",
-											color: "#d97706",
-											fontWeight: 500,
-										}}
-									>
-										Много незакрытых позиций плана (
-										{riskData.factors.openTreatmentItems})
-									</span>
-								</div>
-							)}
-
-						{(riskData.factors.totalVisits || 0) > 5 && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(16,185,129,0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(16,185,129,0.15)",
-								}}
-							>
-								<span
-									style={{
-										fontSize: "13px",
-										color: "var(--teal)",
-										fontWeight: 500,
-									}}
-								>
-									Лояльный пациент: {riskData.factors.totalVisits} визитов
-								</span>
-							</div>
-						)}
-
-						{!riskData.factors.hasDebt &&
-							riskData.factors.pastCancellations === 0 &&
-							(riskData.factors.pastNoShows || 0) === 0 && (
-								<div
-									style={{
-										padding: "10px 12px",
-										background: "rgba(16,185,129,0.05)",
-										borderRadius: "8px",
-										border: "1px solid rgba(16,185,129,0.2)",
-									}}
-								>
-									<span
-										style={{
-											fontSize: "13px",
-											color: "var(--teal)",
-											fontWeight: 500,
-										}}
-									>
-										Отрицательные факторы отсутствуют
-									</span>
-								</div>
-							)}
-					</div>
+					{riskData.recommendedAction && (
+						<div className="mt-3 p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-800 dark:text-emerald-200">
+							<strong>Рекомендуемое действие:</strong> {riskData.recommendedAction}
+						</div>
+					)}
 				</div>
 			) : (
-				<div className="patients-glass-muted" style={{ fontSize: "13px" }}>
-					Нет данных для прогноза
+				<div className="text-xs text-slate-500 dark:text-slate-400 py-2">
+					Нажмите для расчёта вероятности отмены записи.
 				</div>
 			)}
 		</div>

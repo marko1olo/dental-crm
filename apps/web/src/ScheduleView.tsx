@@ -237,17 +237,16 @@ export function ScheduleView(props: ScheduleViewProps) {
   ];
 
   return (
-          <div className="panel schedule-panel" id="schedule">
-            <button style={{ display: 'none' }} type="button">Создать запись</button>
-            <div className="panel-heading">
-              <h2>Расписание приемов</h2>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setShowShiftAnalytics(!showShiftAnalytics)}
-                  style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
-                >
+    <div className="panel schedule-panel" id="schedule" data-testid="schedule-view">
+      <div className="panel-heading">
+        <h2>Расписание приемов</h2>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setShowShiftAnalytics(!showShiftAnalytics)}
+            style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
+          >
                   {showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
                 </button>
                 <button

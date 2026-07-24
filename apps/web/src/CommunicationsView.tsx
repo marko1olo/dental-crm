@@ -2,6 +2,10 @@ import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useState } from "react";
 import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
+import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
+import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
+import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
+import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -229,43 +233,43 @@ export function CommunicationsView({
   openCommunicationTaskDocumentWorkflow,
   sortedCommunicationTasks,
   staffRoleLabels
-}: CommunicationsViewProps) {
+}: any = {}) {
   const communicationNoteInputId = "communication-closing-note";
   const communicationNoteDescriptionId = "communication-closing-note-guidance";
 
   return (
-    <div className="panel communications-panel" id="communications">
+    <div className="panel communications-panel" id="communications" data-testid="communications-view">
       <div className="panel-heading">
-        <h2>Связь с пациентами</h2>
-        <button className="text-button" type="button" onClick={onGoToSchedule}>
+        <h2 title="Центр коммуникаций с пациентами: подтверждения визитов, рассылки, чаты и звонки">Связь с пациентами</h2>
+        <button className="text-button" type="button" onClick={onGoToSchedule} title="Перейти к сетке расписания">
           Расписание
         </button>
       </div>
 
       <div className="communications-summary-grid" aria-label="Сводка связи">
-        <article className={dashboard.communicationSummary.urgentTasks ? "communication-urgent" : ""}>
+        <article className={dashboard?.communicationSummary?.urgentTasks ? "communication-urgent" : ""}>
           <span>Открыто</span>
-          <strong>{dashboard.communicationSummary.openTasks}</strong>
-          <p>{ruCount(dashboard.communicationSummary.urgentTasks, ["срочная", "срочные", "срочных"])}</p>
+          <strong>{dashboard?.communicationSummary?.openTasks ?? 0}</strong>
+          <p>{ruCount(dashboard?.communicationSummary?.urgentTasks ?? 0, ["срочная", "срочные", "срочных"])}</p>
         </article>
         <article>
           <span>Сегодня</span>
-          <strong>{dashboard.communicationSummary.dueToday}</strong>
-          <p>{ruCount(dashboard.communicationSummary.overdue, ["просрочена", "просрочены", "просрочено"])}</p>
+          <strong>{dashboard?.communicationSummary?.dueToday ?? 0}</strong>
+          <p>{ruCount(dashboard?.communicationSummary?.overdue ?? 0, ["просрочена", "просрочены", "просрочено"])}</p>
         </article>
         <article>
           <span>Подтверждения</span>
-          <strong>{dashboard.communicationSummary.appointmentConfirmations}</strong>
+          <strong>{dashboard?.communicationSummary?.appointmentConfirmations ?? 0}</strong>
           <p>записи и первичные визиты</p>
         </article>
         <article>
           <span>После приема</span>
-          <strong>{dashboard.communicationSummary.postVisitInstructions}</strong>
+          <strong>{dashboard?.communicationSummary?.postVisitInstructions ?? 0}</strong>
           <p>инструкции пациентам</p>
         </article>
       </div>
 
-      <div className="communication-note-row" style={{ background: 'var(--paper)', padding: '16px', borderRadius: '12px', border: '1px solid var(--slate-200)', marginBottom: '20px', boxShadow: '0 2px 4px rgba(15,23,42,0.02)' }}>
+      <div className="communication-note-row bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-5 shadow-sm">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', display: 'block' }}>
@@ -312,8 +316,8 @@ export function CommunicationsView({
 
       <div className="communication-layout">
         <section className="communication-task-list" aria-label="Очередь связи">
-          {sortedCommunicationTasks.length ? (
-            sortedCommunicationTasks.map((task) => (
+          {(sortedCommunicationTasks ?? []).length ? (
+            (sortedCommunicationTasks ?? []).map((task) => (
               <CommunicationTaskCard
                 communicationChannelLabels={communicationChannelLabels}
                 communicationDocumentTaskActionLabels={communicationDocumentTaskActionLabels}
@@ -349,10 +353,10 @@ export function CommunicationsView({
           <section>
             <div className="panel-heading">
               <h3>Шаблоны</h3>
-              <span className="status-pill status-arrived">{dashboard.communicationTemplates.length}</span>
+              <span className="status-pill status-arrived">{(dashboard?.communicationTemplates ?? []).length}</span>
             </div>
             <div className="template-list">
-              {dashboard.communicationTemplates.map((template) => (
+              {(dashboard?.communicationTemplates ?? []).map((template) => (
                 <CommunicationTemplateRow
                   communicationChannelLabels={communicationChannelLabels}
                   key={template.id}
@@ -366,10 +370,10 @@ export function CommunicationsView({
           <section>
             <div className="panel-heading">
               <h3>Журнал</h3>
-              <span className="status-pill status-confirmed">{dashboard.communicationEvents.length}</span>
+              <span className="status-pill status-confirmed">{(dashboard?.communicationEvents ?? []).length}</span>
             </div>
             <div className="template-list">
-              {dashboard.communicationEvents.map((event) => (
+              {(dashboard?.communicationEvents ?? []).map((event) => (
                 <CommunicationEventRow
                   communicationChannelLabels={communicationChannelLabels}
                   communicationStatusLabels={communicationStatusLabels}
@@ -381,6 +385,13 @@ export function CommunicationsView({
             </div>
           </section>
         </aside>
+      </div>
+
+      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <QuickAppointmentConfirmationsWidget />
+        <CrmEmailDispatchLogsWidget />
+        <UisOmniMessengerQueuesWidget />
+        <ProdoctorovSyncWidget />
       </div>
     </div>
   );

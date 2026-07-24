@@ -16,17 +16,8 @@ import {
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
-import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
-import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
-import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
-import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
-import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
-import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
-import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
-import { AlternativeTreatmentPlansWidget } from "./components/documents/AlternativeTreatmentPlansWidget";
+import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
@@ -138,7 +129,7 @@ export function ShiftView({
               {doctorTodayAppointments.length > 0 ? (
                 <div className="today-schedule-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto", paddingRight: "4px" }}>
                   {doctorTodayAppointments.map((app: any) => {
-                    const patient = dashboard.patients.find((p: any) => p.id === app.patientId);
+                    const patient = (dashboard?.patients ?? []).find((p: any) => p.id === app.patientId);
                     const isCurrent = activePatient && activePatient.id === app.patientId;
                     
                     const timeStart = new Date(app.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
@@ -163,8 +154,8 @@ export function ShiftView({
                           justifyContent: "space-between", 
                           alignItems: "flex-start", 
                           padding: "12px", 
-                          background: isCurrent ? "var(--teal-50, #f0fdfa)" : "var(--white, #fff)", 
-                          border: isCurrent ? "1px solid var(--teal-200, #99f6e4)" : "1px solid var(--slate-200, #e2e8f0)", 
+                          background: isCurrent ? "var(--teal-50, #f0fdfa)" : "var(--paper)", 
+                          border: isCurrent ? "1px solid var(--teal-200, #99f6e4)" : "1px solid var(--glass-border)", 
                           borderRadius: "8px",
                           cursor: "pointer",
                           transition: "all 0.2s ease"
@@ -177,13 +168,13 @@ export function ShiftView({
                         }}
                       >
                         <div className="today-schedule-item-info" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span className="today-schedule-time" style={{ fontSize: "12px", fontWeight: 600, color: "var(--slate-500, #64748b)" }}>
+                          <span className="today-schedule-time" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
                             {timeStart} – {timeEnd}
                           </span>
-                          <strong className="today-schedule-name" style={{ fontSize: "14px", color: "var(--slate-900, #0f172a)" }}>
+                          <strong className="today-schedule-name" style={{ fontSize: "14px", color: "var(--ink)" }}>
                             {patient ? patient.fullName : "Неизвестный пациент"}
                           </strong>
-                          <span className="today-schedule-reason" style={{ fontSize: "13px", color: "var(--slate-600, #475569)" }}>
+                          <span className="today-schedule-reason" style={{ fontSize: "13px", color: "var(--muted)" }}>
                             {app.reason || "плановый осмотр"}
                           </span>
                         </div>
@@ -193,8 +184,8 @@ export function ShiftView({
                           textTransform: "uppercase",
                           padding: "4px 8px",
                           borderRadius: "4px",
-                          background: app.status === "in_treatment" ? "#dcfce7" : app.status === "planned" ? "#f1f5f9" : "#fef3c7",
-                          color: app.status === "in_treatment" ? "#166534" : app.status === "planned" ? "#475569" : "#b45309"
+                          background: app.status === "in_treatment" ? "#dcfce7" : app.status === "planned" ? "var(--slate-100)" : "#fef3c7",
+                          color: app.status === "in_treatment" ? "#166534" : app.status === "planned" ? "var(--ink)" : "#b45309"
                         }}>
                           {statusLabels[app.status] || app.status}
                         </span>
@@ -218,18 +209,18 @@ export function ShiftView({
               <div>
                 <UserCheck aria-hidden="true" />
                 <div>
-                  <p className="eyebrow">Фокус: {staffRoleLabels[selectedWorkspaceRole]}</p>
+                  <p className="eyebrow">Фокус: {staffRoleLabels?.[selectedWorkspaceRole] ?? selectedWorkspaceRole}</p>
                   <h2>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Рабочая очередь"}</h2>
-                  <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "Открыть смену и проверить очередь"}</p>
+                  <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor?.[0] ?? "Открыть смену и проверить очередь"}</p>
                 </div>
               </div>
               <div className="role-focus-meta flex flex-wrap gap-2 justify-start mt-2" aria-label="Доступы текущей роли">
-                <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">{activeRoleQueue?.openItems ?? 0} открыто</span>
-                {activeRolePolicy ? <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">Старт: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
-                {activeRoleWritableSections.slice(0, 3).map((section: any) => (
-                  <span key={section} className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">пишет: {viewLabels[section]}</span>
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700">{activeRoleQueue?.openItems ?? 0} открыто</span>
+                {activeRolePolicy ? <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700">Старт: {viewLabels?.[activeRolePolicy.defaultSection] ?? activeRolePolicy.defaultSection}</span> : null}
+                {(activeRoleWritableSections ?? []).slice(0, 3).map((section: any) => (
+                  <span key={section} className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700">пишет: {viewLabels?.[section] ?? section}</span>
                 ))}
-                {activeRoleRestrictedSections[0] ? <span className="bg-rose-50 text-rose-700 px-2 py-1 rounded-full text-xs font-bold border border-rose-200">ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
+                {activeRoleRestrictedSections?.[0] ? <span className="bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-2 py-1 rounded-full text-xs font-bold border border-rose-200 dark:border-rose-800">ограничено: {viewLabels?.[activeRoleRestrictedSections[0]] ?? activeRoleRestrictedSections[0]}</span> : null}
               </div>
             </section>
 
@@ -253,15 +244,15 @@ export function ShiftView({
                       <Building2 aria-hidden="true" />
                       <div>
                         <p className="eyebrow">Режим клиники</p>
-                        <h2>{dashboard.shiftIntelligence.modeFit.title}</h2>
+                        <h2>{dashboard?.shiftIntelligence?.modeFit?.title ?? "По умолчанию"}</h2>
                       </div>
-                      <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
+                      <strong>{dashboard?.shiftIntelligence?.modeFit?.fitScore ?? 0}%</strong>
                     </div>
-                    <p>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</p>
+                    <p>{dashboard?.shiftIntelligence?.modeFit?.lowFrictionNextStep ?? ""}</p>
                     <div className="mode-fit-list">
-                      {(dashboard.shiftIntelligence.modeFit.blockers.length
-                        ? dashboard.shiftIntelligence.modeFit.blockers
-                        : dashboard.shiftIntelligence.modeFit.upgrades
+                      {(((dashboard?.shiftIntelligence?.modeFit?.blockers ?? []).length
+                        ? dashboard?.shiftIntelligence?.modeFit?.blockers
+                        : dashboard?.shiftIntelligence?.modeFit?.upgrades) ?? []
                       ).map((item: any) => (
                         <span key={item}>{item}</span>
                       ))}
@@ -287,7 +278,7 @@ export function ShiftView({
                           <span style={{ width: `${Math.min(100, mostLoadedResource.utilizationPercent)}%` }} />
                         </div>
                         <div className="mode-fit-list">
-                          {mostLoadedResource.flags.slice(0, 3).map((flag: any) => (
+                          {(mostLoadedResource?.flags ?? []).slice(0, 3).map((flag: any) => (
                             <span key={flag}>{flag}</span>
                           ))}
                         </div>
@@ -296,12 +287,19 @@ export function ShiftView({
                       <p>Врачей и кресел пока нет в настройках.</p>
                     )}
                   </article>
+                  <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
+                    <ConfirmationPerformanceReportsWidget />
+                  </div>
                 </>
               )}
 
+              <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
+                <UrgentScheduleRequestsWidget />
+              </div>
+
               <div className="role-queue-header-row">
                 <h3>Задачи по ролям</h3>
-                {dashboard.shiftIntelligence.roleQueues.length > 1 && (
+                {(dashboard?.shiftIntelligence?.roleQueues ?? []).length > 1 && (
                   <button
                     className="text-button toggle-queues-btn"
                     type="button"
@@ -313,18 +311,18 @@ export function ShiftView({
               </div>
 
               <div className="role-queue-grid">
-                {dashboard.shiftIntelligence.roleQueues
+                {(dashboard?.shiftIntelligence?.roleQueues ?? [])
                   .filter((q: any) => q.role === activeQueueRole || showOtherQueues)
                   .map((queue: any) => (
                     <article className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`} key={queue.role}>
                       <div>
                         <UserCheck aria-hidden="true" />
-                        <span>{staffRoleLabels[queue.role]}</span>
+                        <span>{staffRoleLabels?.[queue.role] ?? queue.role}</span>
                       </div>
                       <h3>{queue.title}</h3>
                       <p>{queue.nextAction}</p>
                       <strong>{queue.openItems}</strong>
-                      <small>{queue.blockedBy[0] ?? queue.automationHint}</small>
+                      <small>{queue.blockedBy?.[0] ?? queue.automationHint}</small>
                     </article>
                   ))}
               </div>
@@ -387,13 +385,13 @@ export function PatientCockpit({
                   <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: activePatientInsight.riskLevel === 'high' ? '#b91c1c' : activePatientInsight.riskLevel === 'medium' ? '#b45309' : '#475569' }}>
                     {patientInsightRiskLabels[activePatientInsight.riskLevel as keyof typeof patientInsightRiskLabels]}
                   </span>
-                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{activePatientInsight.nextBestAction}</strong>
+                  <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>{activePatientInsight.nextBestAction}</strong>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '12px', fontWeight: 500 }}>
-                  {activePatientInsight.balanceDueRub ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
-                  {activePatientInsight.openTasks > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
-                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
-                  {activePatientInsight.recallDueAt ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                  {activePatientInsight.balanceDueRub ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
+                  {activePatientInsight.openTasks > 0 ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
+                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
+                  {activePatientInsight.recallDueAt ? <span style={{ background: 'var(--surface-100)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--line)', color: 'var(--ink)' }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
               </div>
             ) : null}
@@ -417,7 +415,7 @@ export function PatientCockpit({
               <CreditCard aria-hidden="true" />
               <div>
                 <h3>Оплаты</h3>
-                <p className="tile-meta">{money(dashboard.billingSummary.totalPaidRub)} · долг {money(dashboard.billingSummary.totalDueRub)}</p>
+                <p className="tile-meta">{money(dashboard.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard.billingSummary?.totalDueRub ?? 0)}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "communications"; }} style={{ cursor: "pointer" }}>
@@ -435,19 +433,7 @@ export function PatientCockpit({
               </div>
             </article>
           </div>
-          <div style={{ marginTop: "16px" }}>
-            <TreatmentPlanLockTokensWidget />
-            <DigitalReceiptDispatchesWidget />
-            <PatientServiceLineagesWidget />
-            <LandingFieldMappingsWidget />
-            <KkmItemQuantityUnitsWidget />
-            <UisOmniMessengerQueuesWidget />
-            <LostPatientsFiltersWidget />
-            <QuickAppointmentConfirmationsWidget />
-            <UrgentScheduleRequestsWidget />
-            <ConfirmationPerformanceReportsWidget />
-            <AlternativeTreatmentPlansWidget />
-          </div>
+          {/* ConfirmationPerformanceReportsWidget is shown inside the analytics panel in ShiftView above */}
         </section>
     </>
   );

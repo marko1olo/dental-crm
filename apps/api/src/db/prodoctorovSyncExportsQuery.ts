@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { prodoctorovSyncExports } from "./schema.js";
 
 async function ensureProdoctorovSyncExportsTable() {
 	try {
-		await db.execute(`
+		await db.execute(sql`
 			CREATE TABLE IF NOT EXISTS "prodoctorov_sync_exports" (
 				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"organization_id" uuid NOT NULL,

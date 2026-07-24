@@ -280,16 +280,16 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="absolute left-0 top-full mt-2 w-[400px] bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50"
+          className="absolute left-0 top-full mt-2 w-[400px] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50"
         >
-          <div className="bg-slate-50 border-b border-slate-100 p-3 flex justify-between items-center">
-            <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/60 p-3 flex justify-between items-center">
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
               <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Результат распознавания
             </h4>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -298,14 +298,14 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           
           <div className="p-4">
             {aiError && (
-              <div className="bg-red-50 text-red-700 p-2 rounded mb-3 text-xs flex items-center gap-1">
+              <div className="bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 p-2 rounded mb-3 text-xs flex items-center gap-1 border border-red-200 dark:border-red-800">
                 <AlertTriangle size={14} /> {aiError}
               </div>
             )}
             {renderContent()}
           </div>
 
-          <div className="bg-slate-50 p-3 border-t border-slate-100 flex gap-2">
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-3 border-t border-slate-100 dark:border-slate-700/60 flex gap-2">
             <button
               onClick={() => onApply(internalData)}
               disabled={isAiLoading}
@@ -319,7 +319,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
             <button
               onClick={handleAiParse}
               disabled={isAiLoading}
-              className="flex-1 bg-purple-100 hover:bg-purple-200 disabled:opacity-50 text-purple-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
+              className="flex-1 bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/80 dark:hover:bg-purple-900 dark:text-purple-300 text-purple-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors flex justify-center items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -329,7 +329,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
             <button
               onClick={onManual}
               disabled={isAiLoading}
-              className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 text-slate-700 font-medium text-sm py-2 px-3 rounded-lg transition-colors"
+              className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-medium text-sm py-2 px-3 rounded-lg transition-colors"
             >
               Вручную
             </button>

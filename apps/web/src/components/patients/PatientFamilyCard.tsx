@@ -128,7 +128,10 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	};
 
 	return (
-		<div className="panel" style={{ marginBottom: "20px" }}>
+		<div
+			data-testid="patient-family-card"
+			className="panel mb-5 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+		>
 			<h3
 				className="panel-heading compact-heading"
 				style={{

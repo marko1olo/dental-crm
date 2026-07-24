@@ -19,9 +19,6 @@ export function useShortDictation(
   
   const dashboard = useAppStore((state) => state.dashboard);
   const speechGatewayStatus = useAppStore((state) => state.speechGatewayStatus as SpeechGatewayStatus | null);
-  
-  // Note: isOnline is not in AppStore according to previous logs, we'll use navigator.onLine
-  const isOnline = navigator.onLine;
 
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
@@ -33,7 +30,7 @@ export function useShortDictation(
   const startBrowserNative = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      showToast("Голосовой ввод не поддерживается в этом браузере.", "error");
+      showToast("Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ СЂРµС‡Рё РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ РІ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ.", "error");
       return;
     }
 
@@ -51,7 +48,7 @@ export function useShortDictation(
     
     recognition.onerror = (e: any) => {
       if (e.error !== "no-speech") {
-        showToast("Ошибка распознавания: " + e.error, "error");
+        showToast("РћС€РёР±РєР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ: " + e.error, "error");
       }
       setIsRecording(false);
     };
@@ -106,17 +103,17 @@ export function useShortDictation(
       const payload = await response.json();
       
       if (!response.ok || payload.chunk?.status === "failed") {
-        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "Ошибка сервера");
+        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°");
       }
 
       if (payload.chunk?.transcript) {
         onResult(payload.chunk.transcript);
       } else {
-        showToast("Не удалось распознать речь", "warning");
+        showToast("РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїРѕР·РЅР°С‚СЊ СЂРµС‡СЊ", "warning");
       }
     } catch (err: any) {
       console.error("Server STT Error:", err);
-      showToast("Сбой сервера распознавания. Попробуйте еще раз.", "error");
+      showToast("РЎР±РѕР№ СЃРµСЂРІРµСЂР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ. РџРµСЂРµРєР»СЋС‡Р°РµРј РЅР° РІРІРѕРґ С‚РµРєСЃС‚РѕРј.", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -178,4 +175,3 @@ export function useShortDictation(
     toggleRecording
   };
 }
-

@@ -73,7 +73,7 @@ function classifyAppointmentRejection(error: unknown): AppointmentRejectionReaso
   if (message.includes("Нельзя закрыть") || message.includes("Нельзя менять пациента")) return "active_visit_locked";
   if (message.includes("нужно выбрать") || message.includes("нужен активный пациент")) return "resource_missing";
   if (message.includes("уже есть запись") || message.includes("уже занято")) return "resource_overlap";
-  if (message.startsWith("Запись вне расписания")) return "outside_operational_hours";
+  if (message.includes("Запись вне расписания") || message.includes("вне расписания") || message.includes("вне работы")) return "outside_operational_hours";
   return "mutation_rejected";
 }
 
@@ -159,6 +159,7 @@ import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointments
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
+
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
     if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
@@ -207,3 +208,4 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
   app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
   app.put("/api/schedule/appointments/:appointmentId", updateAppointmentHandler);
 }
+

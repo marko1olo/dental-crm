@@ -327,8 +327,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 									<button
 										onClick={() => openEditModal(contract)}
 										style={{
-											background: "rgba(245,158,11,0.1)",
-											color: "#d97706",
+											background: "rgba(245,158,11,0.15)",
+											color: "var(--amber, #d97706)",
 											border: "none",
 											width: 34,
 											height: 34,
@@ -345,8 +345,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 									<button
 										onClick={() => handleDeactivate(contract)}
 										style={{
-											background: "rgba(239,68,68,0.1)",
-											color: "var(--tomato)",
+											background: "rgba(239,68,68,0.15)",
+											color: "var(--tomato, #ef4444)",
 											border: "none",
 											width: 34,
 											height: 34,

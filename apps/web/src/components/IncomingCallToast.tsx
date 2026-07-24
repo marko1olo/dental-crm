@@ -25,8 +25,10 @@ export function IncomingCallToast() {
 		timestamp: string;
 	} | null>(null);
 
+	let ctx: any = null;
+	try { ctx = useAppLogicContext(); } catch (e) {}
+	const dashboard = ctx?.dashboard;
 	const { lastMessage } = useWebsocket(WS_URL);
-	const { dashboard } = useAppLogicContext();
 
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);

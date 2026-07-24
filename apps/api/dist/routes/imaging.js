@@ -5843,5 +5843,3 @@ export async function commitImagingImport(orgId, input) {
     });
 }
 // smoke-test-marker: await zipEntryPrefix(zip.fileHandle, entry, input.maxHeaderBytes)
-import { registerImagingPlanningRoutes } from "./imaging_planning.js";
-export async function initImagingPlanningRoutes(app) { await registerImagingPlanningRoutes(app); }

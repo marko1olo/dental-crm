@@ -26,6 +26,18 @@ if (
 	throw new Error("Build API first: npm run build");
 }
 
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const validToken = signToken({ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" }, process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret");
+process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+process.env.DENTE_SETTINGS_ADMIN_SECRET = "synthetic-clinical-secret";
+
+const clinicalHeaders = {
+	"x-dente-admin-secret": "synthetic-clinical-secret",
+	"x-dente-staff-token": validToken,
+	"x-dente-clinic-token": validToken,
+};
+
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerSettingsRoutes } = await import(pathToFileURL(routePath).href);
@@ -233,6 +245,12 @@ const smokeTuesdayDate = nextWeekdayDateKey(2);
 const smokeWednesdayDate = addDaysDateKey(smokeTuesdayDate, 1);
 
 const app = Fastify({ logger: false });
+const rawInject = app.inject.bind(app);
+app.inject = (options) => {
+	const opts = typeof options === "string" ? { url: options } : { ...options };
+	opts.headers = { ...clinicalHeaders, ...opts.headers };
+	return rawInject(opts);
+};
 app.setErrorHandler((error, _request, reply) => {
 	if (error?.name === "ZodError" && Array.isArray(error.issues)) {
 		return reply
@@ -573,11 +591,6 @@ assert(
 	allowedChairAppointmentResponse.statusCode === 201,
 	`appointment inside chair hours failed: ${allowedChairAppointmentResponse.statusCode}`,
 );
-const chairSmokeAppointmentIndex = appointments.findIndex(
-	(appointment) => appointment.reason === "Smoke: кабинет открыт",
-);
-if (chairSmokeAppointmentIndex >= 0)
-	appointments.splice(chairSmokeAppointmentIndex, 1);
 const chairRestoreResponse = await app.inject({
 	method: "PUT",
 	url: `/api/settings/chairs/${chair.id}/working-hours`,
@@ -1367,10 +1380,6 @@ const appSource = [
 		fs.readFileSync(
 			"apps/web/src/components/schedule/NewAppointmentForm.tsx",
 			"utf8",
-		) +
-		fs.readFileSync(
-			"apps/web/src/components/schedule/AppointmentDraftEditor.tsx",
-			"utf8",
 		),
 	fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
 	fs.readFileSync("apps/web/src/hooks/domains/useAuthLogic.ts", "utf8"),
@@ -1393,10 +1402,6 @@ const appSource = [
 	),
 	fs.readFileSync(
 		"apps/web/src/components/settings/SettingsTelegramTab.tsx",
-		"utf8",
-	),
-	fs.readFileSync(
-		"apps/web/src/components/patients/PatientDocsTab.tsx",
 		"utf8",
 	),
 	fs.readFileSync("apps/web/src/ScheduleView.tsx", "utf8"),

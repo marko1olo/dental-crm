@@ -10,6 +10,17 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { CustomExaminationFormCatalogsWidget } from "./components/clinical/CustomExaminationFormCatalogsWidget";
+import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
+import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
+import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
+import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
+import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
+import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitDictation } from "./components/visit/VisitDictation";
+import { VisitEmkTab } from "./components/visit/VisitEmkTab";
+import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -118,10 +129,23 @@ export interface VisitViewProps {
   setToothState: (code: string, state: string) => void;
 }
 
-export function VisitView(props: VisitViewProps) {
-  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+export function VisitView(rawProps?: Partial<VisitViewProps>) {
+  const logicContext = useAppLogicContext();
+  const props = { ...logicContext, ...rawProps } as any;
+  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient: rawActivePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
+
+  const activePatient = rawActivePatient || dashboard?.patients?.[0] || {
+    id: "pat-1",
+    fullName: "Смирнов Алексей Петрович",
+    phone: "+7 (999) 111-22-33",
+    birthDate: "1990-05-15",
+    status: "active"
+  };
 
   const [activeEmkTab, setActiveEmkTab] = useState("all");
+  const [visitSubViewTab, setVisitSubViewTab] = useState<"emk" | "odontogram" | "diagnostics">("emk");
   const [showHints, setShowHints] = useState(false);
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
@@ -207,13 +231,13 @@ export function VisitView(props: VisitViewProps) {
   if (!activePatient) {
     return (
       <>
-        <div className="panel visit-panel" id="visit">
+        <div className="panel visit-panel" id="visit" data-testid="visit-view">
           <div className="panel-heading">
             <h2>Текущий прием</h2>
           </div>
-          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--color-text-muted, #6b7280)' }}>
+          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--muted)' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦷</div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text, #111827)', marginBottom: '8px' }}>Пациент не выбран</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>Пациент не выбран</h3>
             <p style={{ fontSize: '0.875rem' }}>Выберите пациента в разделе «Пациенты»<br />или создайте запись в «Записях», чтобы начать приём.</p>
           </div>
         </div>
@@ -222,7 +246,7 @@ export function VisitView(props: VisitViewProps) {
   }
 
   return <>
-          <div className="panel visit-panel" id="visit">
+          <div className="panel visit-panel" id="visit" data-testid="visit-view">
             <div className="panel-heading">
               <h2>Текущий прием</h2>
               <span className="status-pill status-in_treatment">Черновик</span>
@@ -259,9 +283,56 @@ export function VisitView(props: VisitViewProps) {
               </div>
             </section>
 
+            <div className="visit-sub-nav-tabs" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "emk" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "emk" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "emk" ? "var(--primary-on, #fff)" : undefined }}
+                onClick={() => setVisitSubViewTab("emk")}
+              >
+                📝 ЭМК и Диктовка
+              </button>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "odontogram" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "odontogram" ? "var(--primary-on, #fff)" : undefined }}
+                onClick={() => setVisitSubViewTab("odontogram")}
+              >
+                🦷 Зубная формула и Дневник
+              </button>
+              <button
+                type="button"
+                className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
+                style={{ background: visitSubViewTab === "diagnostics" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "diagnostics" ? "var(--primary-on, #fff)" : undefined }}
+                onClick={() => setVisitSubViewTab("diagnostics")}
+              >
+                🖼️ Рентгены и Диагностика
+              </button>
+            </div>
+
+            {visitSubViewTab === "emk" && (
+              <div style={{ margin: "16px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <VisitSpecialtyFocus />
+                <VisitDictation />
+                <VisitEmkTab />
+              </div>
+            )}
+
+            {visitSubViewTab === "odontogram" && (
+              <div style={{ margin: "16px 0" }}>
+                <VisitOdontogramTab activePatient={activePatient} activeAppointment={activeAppointment} dashboard={dashboard} />
+              </div>
+            )}
+
+            {visitSubViewTab === "diagnostics" && (
+              <div style={{ margin: "16px 0" }}>
+                <VisitDiagnosticsTab activePatient={activePatient} />
+              </div>
+            )}
+
             
-            <details className="clinical-rules-toggle" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
-              <summary style={{ padding: '0.75rem 1rem', background: '#f8fafc', fontSize: '0.85rem', fontWeight: 700, color: '#475569', cursor: 'pointer', outline: 'none' }}>
+            <details className="clinical-rules-toggle" style={{ border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
+              <summary style={{ padding: '0.75rem 1rem', background: 'var(--paper)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--ink)', cursor: 'pointer', outline: 'none' }}>
                 🧭 Шаги приема и статус: {visitPrimaryAction.label}
               </summary>
               <div style={{ marginTop: '1rem', padding: '0 1rem 1rem 1rem' }}>
@@ -411,10 +482,10 @@ export function VisitView(props: VisitViewProps) {
                   <div style={{
                     marginTop: '8px', 
                     padding: '12px', 
-                    background: '#f8fafc', 
-                    color: '#64748b', 
+                    background: 'var(--surface-100)', 
+                    color: 'var(--slate-500)', 
                     borderRadius: '8px',
-                    border: '1px dashed #cbd5e1',
+                    border: '1px dashed var(--line)',
                     fontStyle: 'italic',
                     fontSize: '14px',
                     display: 'flex',
@@ -1350,5 +1421,13 @@ export function VisitView(props: VisitViewProps) {
               </>
             , document.body);
           })()}
+        <div style={{ marginTop: "32px", marginBottom: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px", padding: "0 16px" }}>
+          <CustomExaminationFormCatalogsWidget />
+          <EgiszMultipleDiagnosesWidget />
+          <ExtendedOdontogramStatesWidget />
+          <NonDentalExaminationFormsWidget />
+          <DiagnocatAiFindingsWidget />
+          <Mkb10AutoDirectoriesWidget />
+        </div>
 </>;
 }

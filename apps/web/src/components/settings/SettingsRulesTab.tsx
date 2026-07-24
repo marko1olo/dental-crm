@@ -19,6 +19,7 @@ import "./SettingsRulesTab.css";
 import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { CustomCrmTaskTypesWidget } from "../crm/CustomCrmTaskTypesWidget";
 
 const clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
@@ -566,6 +567,8 @@ export function SettingsRulesTab() {
 					))}
 				</div>
 			</section>
+
+			<CustomCrmTaskTypesWidget />
 		</div>
 	);
 }

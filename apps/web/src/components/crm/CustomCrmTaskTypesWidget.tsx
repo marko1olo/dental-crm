@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { Tag, CheckCircle2 } from "lucide-react";
 
-interface CrmTaskTypeItem {
+interface TaskTypeItem {
 	id: string;
 	organizationId: string;
 	typeCode: string;
@@ -12,12 +14,14 @@ interface CrmTaskTypeItem {
 }
 
 export const CustomCrmTaskTypesWidget: React.FC = () => {
-	const [taskTypes, setTaskTypes] = useState<CrmTaskTypeItem[]>([]);
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const [taskTypes, setTaskTypes] = useState<TaskTypeItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/crm/custom-task-types", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		fetch("/api/crm/custom-crm-task-types", {
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -28,53 +32,50 @@ export const CustomCrmTaskTypesWidget: React.FC = () => {
 				console.error("[CustomCrmTaskTypesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
 			data-testid="custom-crm-task-types-widget"
-			className="p-4 bg-slate-900 border border-amber-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">🏷️</span>
-					<h3 className="font-semibold text-amber-400">
-						Конструктор Пользовательских Типов Задач CRM (без привязки к визиту)
+					<Tag className="w-5 h-5 text-indigo-500" />
+					<h3 className="font-semibold text-indigo-600 dark:text-indigo-400">
+						Кастомные типы задач CRM (Звонки, Напоминания, Запись на осмотр)
 					</h3>
 				</div>
-				<span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-					CRM Custom Task Catalog
+				<span className="text-xs px-2 py-0.5 rounded border bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
+					Конструктор задач
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка типов задач CRM...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка типов задач...
+				</div>
+			) : taskTypes.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Кастомные типы задач CRM отсутствуют.
+				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					{taskTypes.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex items-center justify-between"
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div className="flex items-center space-x-3">
-								<span
-									className="w-3 h-3 rounded-full inline-block"
-									style={{ backgroundColor: item.colorHex }}
-								></span>
-								<div>
-									<div className="text-sm font-bold text-slate-200">{item.typeLabel}</div>
-									<div className="text-xs text-slate-400 font-mono mt-0.5">Код: {item.typeCode}</div>
-								</div>
-							</div>
-							<div className="flex items-center space-x-2 text-xs">
-								<span className="bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800 font-mono">
-									SLA: {item.defaultSlaHours}ч
+							<div className="flex items-center justify-between">
+								<span className="font-bold text-sm" style={{ color: item.colorHex || "var(--ink)" }}>{item.typeLabel}</span>
+								<span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1">
+									<CheckCircle2 className="w-3 h-3" /> {item.typeCode}
 								</span>
-								{item.requiresPatientBinding && (
-									<span className="bg-slate-950 text-slate-300 px-2 py-0.5 rounded border border-slate-800">
-										Привязка к пациенту
-									</span>
-								)}
+							</div>
+							<div className="text-xs" style={{ color: "var(--muted)" }}>
+								SLA: <span style={{ color: "var(--ink)" }}>{item.defaultSlaHours}ч</span> · Привязка к пациенту: {item.requiresPatientBinding ? "Да" : "Нет"}
 							</div>
 						</div>
 					))}

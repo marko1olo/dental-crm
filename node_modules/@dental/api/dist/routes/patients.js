@@ -67,7 +67,7 @@ function hasIncompleteRepresentativeIdentity(value) {
 }
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
-import { getPatientsFromDb, createPatientInDb, updatePatientInDb, updatePatientAdministrativeProfileInDb } from "../db/patientsQuery.js";
+import { getPatientsFromDb, getPatientByIdFromDb, createPatientInDb, updatePatientInDb, updatePatientAdministrativeProfileInDb } from "../db/patientsQuery.js";
 export async function registerPatientRoutes(app) {
     app.get("/api/patients", async (request, reply) => {
         const clinicHeader = request.headers["x-dente-clinic-token"];
@@ -130,6 +130,10 @@ export async function registerPatientRoutes(app) {
             return reply.code(400).send({ error: "PatientValidationError", message: patientUpdateValidationMessage });
         }
         try {
+            const dbPatients = await getPatientsFromDb(orgId);
+            const duplicate = findPatientDuplicate(dbPatients, input, params.patientId);
+            if (duplicate)
+                return sendPatientDuplicate(reply);
             const patient = await updatePatientInDb(orgId, params.patientId, input);
             if (!patient)
                 return sendPatientNotFound(reply);
@@ -157,6 +161,17 @@ export async function registerPatientRoutes(app) {
             return reply.code(400).send({ error: "PatientValidationError", message: patientAdministrativeValidationMessage });
         }
         try {
+            const existingPatient = await getPatientByIdFromDb(orgId, params.patientId);
+            if (!existingPatient)
+                return sendPatientNotFound(reply);
+            const existingProfile = existingPatient.administrativeProfile ?? {};
+            const mergedProfile = { ...existingProfile, ...input };
+            if (hasIncompleteRepresentativeIdentity(mergedProfile)) {
+                return reply.code(400).send({
+                    error: "PatientValidationError",
+                    message: patientRepresentativeValidationMessage,
+                });
+            }
             const patient = await updatePatientAdministrativeProfileInDb(orgId, params.patientId, input);
             if (!patient)
                 return sendPatientNotFound(reply);
@@ -166,5 +181,31 @@ export async function registerPatientRoutes(app) {
             console.error("[Patients] Update profile error:", e);
             return sendPatientNotFound(reply);
         }
+    });
+    // COMPETITOR FEATURE #4: пациенты::хронологическая_история_коммуникаций
+    app.get("/api/patients/:patientId/communication-timelines", async (request, reply) => {
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+        const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+        if (!clinicToken)
+            return reply.code(401).send({ error: "AuthRequired" });
+        const payload = verifyToken(clinicToken, TOKEN_SECRET());
+        if (!payload || !payload.organizationId)
+            return reply.code(401).send({ error: "AuthExpired" });
+        const orgId = payload.organizationId;
+        const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
+        return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
+    });
+    // COMPETITOR FEATURE #20: пациенты::причины_списания_в_архив_и_запрет_записи
+    app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+        const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+        if (!clinicToken)
+            return reply.code(401).send({ error: "AuthRequired" });
+        const payload = verifyToken(clinicToken, TOKEN_SECRET());
+        if (!payload || !payload.organizationId)
+            return reply.code(401).send({ error: "AuthExpired" });
+        const orgId = payload.organizationId;
+        const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+        return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId));
     });
 }

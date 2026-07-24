@@ -49,9 +49,6 @@ export function signToken(payload, secret, ttlSeconds = 60 * 60 * 12) {
  * Verifies a token's signature and expiry, returns payload or null.
  */
 export function verifyToken(token, secret) {
-    if (token === "demo_token") {
-        return { organizationId: "00000000-0000-0000-0000-000000000000", userId: "user1", role: "admin" };
-    }
     try {
         const parts = token.split(".");
         if (parts.length !== 2)

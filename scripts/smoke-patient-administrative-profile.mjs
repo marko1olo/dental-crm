@@ -15,6 +15,17 @@ process.env.DENTAL_STATE_BACKUPS = "2";
 delete process.env.DENTAL_STATE_PERSISTENCE;
 
 const routePath = path.resolve("apps/api/dist/routes/patients.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const validToken = signToken({ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" }, process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret");
+
+process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+
+const clinicalHeaders = {
+	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-staff-token": validToken,
+	"x-dente-clinic-token": validToken,
+};
 const rendererPath = path.resolve("apps/api/dist/documents/renderDocument.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 
@@ -122,6 +133,7 @@ try {
 	const listResponse = await app.inject({
 		method: "GET",
 		url: "/api/patients",
+		headers: clinicalHeaders,
 	});
 	assert(
 		listResponse.statusCode === 200,
@@ -133,6 +145,7 @@ try {
 	const incompleteRepresentativeResponse = await app.inject({
 		method: "PUT",
 		url: `/api/patients/${patient.id}/administrative-profile`,
+		headers: clinicalHeaders,
 		payload: { legalRepresentativePhone: "+7 900 000-00-01" },
 	});
 	assert(
@@ -160,6 +173,7 @@ try {
 	const coreUpdateResponse = await app.inject({
 		method: "PUT",
 		url: `/api/patients/${patient.id}`,
+		headers: clinicalHeaders,
 		payload: {
 			fullName: "Тестовый Пациент Документов",
 			birthDate: "1988-04-21",
@@ -193,6 +207,7 @@ try {
 	const saveResponse = await app.inject({
 		method: "PUT",
 		url: `/api/patients/${patient.id}/administrative-profile`,
+		headers: clinicalHeaders,
 		payload: profilePayload,
 	});
 	assert(
@@ -224,6 +239,7 @@ try {
 	const partialSaveResponse = await app.inject({
 		method: "PUT",
 		url: `/api/patients/${patient.id}/administrative-profile`,
+		headers: clinicalHeaders,
 		payload: { legalRepresentativePhone: "+7 900 222-33-44" },
 	});
 	assert(

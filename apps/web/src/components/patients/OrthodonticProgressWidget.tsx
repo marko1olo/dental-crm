@@ -205,17 +205,10 @@ export function OrthodonticProgressWidget({
 
 	return (
 		<motion.div
-			className="ortho-progress-widget"
+			data-testid="orthodontic-progress-widget"
+			className="ortho-progress-widget bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mt-4 shadow-sm"
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
-			style={{
-				background: "var(--paper)",
-				borderRadius: "16px",
-				padding: "20px",
-				border: "1px solid var(--line)",
-				marginTop: "16px",
-				boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-			}}
 		>
 			<AnimatePresence mode="wait">
 				{isEditing ? (

@@ -10,6 +10,7 @@ interface SmartMicrophoneButtonProps {
   onResult: (text: string) => void;
   style?: React.CSSProperties;
   className?: string;
+  sterileMode?: boolean;
 }
 
 export function SmartMicrophoneButton({ context, onResult, style, className }: SmartMicrophoneButtonProps) {

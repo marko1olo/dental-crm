@@ -18,6 +18,8 @@ import {
   Users,
   Lock
 } from "lucide-react";
+import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
@@ -199,8 +201,10 @@ export function WorkspaceTopbar({
             ))}
           </div>
         </details>
+        <RecentPatientHistoryWidget compactDropdown />
       </div>
       <div className="top-actions">
+
         {showAdministrationTopActions ? (
           <a
             className="icon-button"

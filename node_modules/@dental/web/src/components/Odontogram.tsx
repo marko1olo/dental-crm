@@ -169,10 +169,10 @@ export function Odontogram() {
 
   return (
     <div style={{
-      background: '#ffffff',
+      background: 'var(--paper)',
       borderRadius: '16px',
       padding: '32px 24px',
-      border: '1px solid #e2e8f0',
+      border: '1px solid var(--line)',
       boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
       display: 'flex',
       flexDirection: 'column',
@@ -182,7 +182,7 @@ export function Odontogram() {
       marginBottom: '16px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-         <h3 style={{ margin: 0, color: '#1e293b', fontSize: '20px', fontWeight: 700 }}>Зубная формула</h3>
+         <h3 style={{ margin: 0, color: 'var(--ink)', fontSize: '20px', fontWeight: 700 }}>Зубная формула</h3>
          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             {STATUS_OPTIONS.map(s => (
                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#475569' }}>

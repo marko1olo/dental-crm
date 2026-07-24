@@ -1,24 +1,23 @@
 import { readFileSync } from "node:fs";
 
-const appSource =
+const appSource = (
 	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
-const scheduleSource =
+	readFileSync("apps/web/src/useAppLogic.tsx", "utf8") +
+	"\n" +
+	readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8")
+).replace(/\r\n/g, "\n");
+const scheduleSource = (
 	readFileSync("apps/web/src/ScheduleView.tsx", "utf8") +
 	"\n" +
 	readFileSync("apps/web/src/components/schedule/AppointmentCard.tsx", "utf8") +
 	"\n" +
 	readFileSync(
-		"apps/web/src/components/schedule/AppointmentDraftEditor.tsx",
-		"utf8",
-	) +
-	"\n" +
-	readFileSync(
 		"apps/web/src/components/schedule/NewAppointmentForm.tsx",
 		"utf8",
-	);
-const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
+	)
+).replace(/\r\n/g, "\n");
+const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8").replace(/\r\n/g, "\n");
 
 function requireIn(source, needle, message) {
 	if (!source.includes(needle)) throw new Error(message);

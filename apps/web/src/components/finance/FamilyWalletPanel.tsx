@@ -132,7 +132,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	if (!family) return null; // Not in a family group
 
 	return (
-		<div className="family-wallet-panel">
+		<div className="family-wallet-panel" data-testid="family-wallet-panel">
 			<div className="family-wallet-bg-icon">
 				<Users size={96} />
 			</div>
@@ -144,7 +144,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						Семейный Кошелек: {family.name}
 					</h3>
 					<p className="family-wallet-subtitle">
-						Единый счет для семьи ({family.members.length} чел.)
+						Единый счет для семьи ({(family.members ?? []).length} чел.)
 					</p>
 				</div>
 				<div className="family-wallet-balance-container">

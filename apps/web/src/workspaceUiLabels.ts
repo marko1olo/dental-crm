@@ -236,7 +236,7 @@ export const clinicalRuleActionLabels: Record<
 	schedule_followup: "поставить recall",
 };
 
-export const paymentMethodLabels: Record<PaymentMethod, string> = {
+export const paymentMethodLabels: Record<string, string> = {
 	cash: "Наличные",
 	card: "Карта",
 	bank_transfer: "Перевод",

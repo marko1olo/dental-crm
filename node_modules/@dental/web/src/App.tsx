@@ -3,9 +3,11 @@
 // setSelectedPatientId(patient.id)
 
 import { useAppLogic } from './useAppLogic';
+import { AppLogicProvider } from './contexts/AppLogicContext';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
+import { IncomingCallToast } from './components/IncomingCallToast';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
 
@@ -929,6 +931,7 @@ import {
 export function App() {
   // Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
   
+  const appLogicValue = useAppLogic();
   const {
     acceptDraftToVisit,
     activeAppointment,
@@ -1875,13 +1878,12 @@ export function App() {
   setClinicalAdminSecretDraft,
   loadDashboard,
   operatorWorkflowFailureMessage,
-  handleSelectDemoMode,
-  handleSelectZeroMode,
   setSelectedPatientId,
   setScheduleDateFilter,
   scheduleDateFilter,
-  handleFinishOnboarding
-} = useAppLogic();
+  handleFinishOnboarding,
+  setOnboardingDismissed
+} = appLogicValue;
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
@@ -1901,12 +1903,19 @@ export function App() {
   useEffect(() => {
     if (clinicAuthed && !dashboard) {
       void loadDashboard().catch((e) => {
-        // Token expired or invalid - force re-login
-        console.warn("[Dente] Persisted clinic token invalid, forcing re-login:", e);
-        localStorage.removeItem("dente_clinic_token");
-        localStorage.removeItem("dente_staff_token");
-        setClinicAuthed(false);
-        setStaffAuthed(false);
+        // Only force re-login on explicit 401 auth failure, not network/db errors
+        const statusCode = (e as any)?.statusCode ?? (e as any)?.status ?? 0;
+        const is401 = statusCode === 401 || (e instanceof Error && (e.message.includes("401") || e.message.includes("Unauthorized")));
+        if (is401) {
+          console.warn("[Dente] Clinic token invalid (401), forcing re-login:", e);
+          localStorage.removeItem("dente_clinic_token");
+          localStorage.removeItem("dente_staff_token");
+          setClinicAuthed(false);
+          setStaffAuthed(false);
+        } else {
+          // Network/DB error: keep session, fallback dashboard already set by loadDashboard
+          console.warn("[Dente] Dashboard load failed (network/db), keeping session with fallback:", e);
+        }
       });
     }
     // Restore staff user profile from token on page refresh
@@ -1959,6 +1968,11 @@ export function App() {
     setShowStaffPinPad(true);
   };
 
+  const isLocalOnboardingDismissed = typeof window !== "undefined" && (
+    window.localStorage.getItem("dental-crm:onboarding:v1")?.includes('"dismissed":true') ||
+    window.localStorage.getItem("dente_ui_preferences_v1")?.includes('"onboardingDismissed":true')
+  );
+
   // Show clinic login gate if not authed
   if (!clinicAuthed) {
     return <AuthHub onSuccess={(cp, up) => {
@@ -1990,7 +2004,7 @@ export function App() {
   }
 
 
-  if (!onboardingDismissed) {
+  if (!onboardingDismissed && !isLocalOnboardingDismissed) {
     return (
       <main className="app-shell onboarding-fullscreen" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: "40px 20px", background: "linear-gradient(135deg, #0d9488 0%, #111827 100%)", overflowY: "auto" }}>
         <section className="workspace onboarding-only-workspace" id="workspace-content" style={{ maxWidth: "800px", width: "100%", margin: "auto", padding: "0", background: "none", boxShadow: "none" }}>
@@ -2034,7 +2048,7 @@ export function App() {
             {onboardingStep === "intro" ? (
               <div className="onboarding-panel" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 <div>
-                  <h3 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}>Режим запуска приложения</h3>
+                  <h3 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px", color: "#111827" }}>Режим запуска приложения</h3>
                   <p style={{ color: "#4b5563" }}>
                     Выберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.
                   </p>
@@ -2045,7 +2059,8 @@ export function App() {
                     type="button"
                     onClick={async () => {
                       setResetting(true);
-                      await handleSelectDemoMode();
+                      setOnboardingDismissed(true);
+                      await loadDashboard({});
                       setResetting(false);
                     }}
                     disabled={resetting}
@@ -2073,7 +2088,7 @@ export function App() {
                     type="button"
                     onClick={async () => {
                       setResetting(true);
-                      await handleSelectZeroMode();
+                      await loadDashboard({});
                       setResetting(false);
                     }}
                     disabled={resetting}
@@ -2756,7 +2771,7 @@ export function App() {
                       <p>Сразу задайте рабочие дни и часы. Изменения автосохраняются и остаются выбранными, пока вы их не поменяете.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.staff
+                      {(dashboard.clinicSettings?.staff ?? [])
                         .filter((member) => member.role === "doctor" || member.role === "assistant")
                         .map((member) => {
                           const scheduleDraft = staffScheduleDrafts[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
@@ -2834,7 +2849,7 @@ export function App() {
                       <p>Кабинет может работать иначе, чем врач. Это сразу учитывается в записи и конфликтных слотах.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.chairs
+                      {(dashboard.clinicSettings?.chairs ?? [])
                         .filter((chair) => chair.active)
                         .map((chair) => {
                           const scheduleDraft = chairScheduleDrafts[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
@@ -3350,13 +3365,13 @@ export function App() {
                 <div>
                   <h3>Проверка перед работой</h3>
                   <p>
-                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
-                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
+                    Профиль клиники: {legalReadinessPercent}%. Команда: {(dashboard.clinicSettings?.staff?.length ?? 0)}. Кабинеты:{" "}
+                    {(dashboard.clinicSettings?.chairs?.length ?? 0)}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
                     {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
                   </p>
                 </div>
                 <div className="onboarding-readiness-grid">
-                  <span>{clinicModeLabels[dashboard.clinicSettings.profile?.mode].title}</span>
+                  <span>{dashboard.clinicSettings?.profile?.mode && clinicModeLabels[dashboard.clinicSettings.profile.mode] ? clinicModeLabels[dashboard.clinicSettings.profile.mode].title : "Клиника"}</span>
                   <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
                   <span>{specialtyLabels[selectedSpecialty]}</span>
                   <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
@@ -4147,6 +4162,7 @@ export function App() {
 
         {currentView === "settings" ? (
           <WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
+          <AppLogicProvider value={appLogicValue}>
           <Suspense
             fallback={
               <section className="settings-zone" id="settings" aria-busy="true">
@@ -4683,6 +4699,7 @@ export function App() {
               chairScheduleSavingId={chairScheduleSavingId}
             />
           </Suspense>
+          </AppLogicProvider>
           </WorkspaceRouteErrorBoundary>
         ) : null}
 
@@ -4713,6 +4730,7 @@ export function App() {
           }} 
           onNavigate={(view) => setCurrentView(view as any)} 
         />
+        <IncomingCallToast />
       </section>
     </main>
   );

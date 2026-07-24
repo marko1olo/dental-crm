@@ -22,6 +22,9 @@ onClick={unlockTelegramAdminSession}
 typedRecognitionJob.warnings.map((warning) => (
                       <span key={warning}>{aiRecognitionWarningText(warning)}</span>
 */
+import { useState, useEffect } from "react";
+import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
+import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -335,6 +338,7 @@ import { useSettingsDerivations } from "./useSettingsDerivations";
 
 export interface SettingsViewProps {
   activeStaffUser?: any;
+  [key: string]: any;
 }
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
@@ -844,6 +848,22 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     weekdayOptions,
     workspaceScopeLabels,
   } = useAppLogicContext();
+  // Collect all destructured variables into a single props bag for legacy sub-tab components
+  const settingsProps: Record<string, any> = {
+    staffRoleLabels, dashboard, activePatient, activeStaffUser, activeWorkspaceProfile,
+    addChair, addStaffMember, clinicProfileDraft, clinicProfileSaveState, updateClinicProfileDraft,
+    toggleClinicWorkingDay, toggleStaffWorkingDay, toggleChairWorkingDay, weekdayOptions,
+    newChairName, newChairHasMicroscope, newChairHasSurgeryKit, newChairHasXraySensor,
+    setNewChairName, setNewChairHasMicroscope, setNewChairHasSurgeryKit, setNewChairHasXraySensor,
+    newStaffName, newStaffRole, newStaffSpecialty, setNewStaffName, setNewStaffRole, setNewStaffSpecialty,
+    uiLanguage, uiLanguageOptions, normalizeUiLanguageInput,
+    telegramModeDraft, telegramBotUsernameDraft, telegramModeLabels, telegramModeHints,
+    createTelegramLinkCode, telegramLinkCode, telegramLinkCodes, telegramLinkCodeStatusLabels,
+    telegramChatLinks, telegramChatLinkLedger, markTelegramSettingsDirty,
+    loadTelegramControlPlane, copyTelegramTextToClipboard, unlockTelegramAdminSession,
+    telegramAdminSecretDraft, telegramAdminSecretSession, adminSecretReady: false,
+    normalizedTelegramBotMode, normalizedTelegramPrivacyMode, normalizedTelegramLinkSubjectType,
+  };
   const {
     clinicMode,
     setClinicMode,
@@ -885,24 +905,24 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     settingsTab === "telegram"
       ? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
       : "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-  const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
-  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
-  const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
-  const typedUiLanguageOptions = uiLanguageOptions as Array<{
+  const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
+  const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
+  const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
+  const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
+  const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
+  const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
+  const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
     value: string;
     label: string;
     detail: string;
   }>;
   const typedTelegramLinkStaffOptions =
-    telegramLinkStaffOptions as StaffMember[];
+    (telegramLinkStaffOptions ?? []) as StaffMember[];
 
   const typedImagingConnectorCards =
-    imagingConnectorCards as ImagingConnectorCard[];
+    (imagingConnectorCards ?? []) as ImagingConnectorCard[];
   const typedImagingViewerCapabilities =
-    imagingViewerCapabilities as ImagingViewerCapability[];
+    (imagingViewerCapabilities ?? []) as ImagingViewerCapability[];
   const typedCtPlanningImplantPlan =
     ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
   const typedCtPlanningActiveQuickActionId =
@@ -911,10 +931,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
       : null;
   const typedImagingViewerActiveTool =
     imagingViewerActiveTool as ImagingViewerTool;
-  const typedIntegrationPresets = dashboard.clinicSettings
-    .integrationPresets as IntegrationPreset[];
-  const typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
-  const typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
+  const typedIntegrationPresets = (dashboard?.clinicSettings?.integrationPresets ?? []) as IntegrationPreset[];
+  const typedSpeechProviders = (dashboard?.speechProviders ?? []) as SpeechProvider[];
+  const typedRecognitionPresets = (recognitionPresets ?? []) as RecognitionPreset[];
   const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
   const typedSpeechRecordingRecovery =
     speechRecordingRecovery as SpeechRecordingRecoveryList | null;
@@ -922,24 +941,24 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
   const typedSmartImportPreview =
     smartImportPreview as SmartImportPreviewResponse | null;
-  const typedImagingSourceChoices = imagingSourceChoices as ImagingSourceKind[];
+  const typedImagingSourceChoices = (imagingSourceChoices ?? []) as ImagingSourceKind[];
   const typedImagingImportPreview =
     imagingImportPreview as ImagingImportPreviewResponse | null;
   const typedBrowserContinuityChecks =
-    browserContinuityChecks as BrowserContinuityCheck[];
+    (browserContinuityChecks ?? []) as BrowserContinuityCheck[];
   const typedLocalBridgeReadiness =
     localBridgeReadiness as LocalBridgeReadinessResponse | null;
   const typedLocalBridgeUsePlans =
     localBridgeUsePlans as LocalBridgeUsePlansResponse | null;
   const typedPersistenceIntegrity =
     persistenceIntegrity as PersistenceIntegrityReport | null;
-  const typedImportBatches = dashboard.importBatches as ImportBatch[];
-  const typedAuditEvents = dashboard.auditEvents as AuditEvent[];
+  const typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
+  const typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
   const typedImportSourceKinds = Object.keys(
-    importSourceLabels,
+    importSourceLabels ?? {},
   ) as ImportSourceKind[];
   const typedDocumentIngestionTargets = Object.keys(
-    ingestionTargetLabels,
+    ingestionTargetLabels ?? {},
   ) as DocumentIngestionTarget[];
   const typedDocumentIngestion =
     documentIngestion as DocumentIngestionResponse | null;
@@ -947,10 +966,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const typedImportPreview = importPreview as ImportPreviewResponse | null;
   const typedActiveWorkspaceProfile =
     activeWorkspaceProfile as WorkspaceProfile | null;
-  const typedWorkspaceProfiles = dashboard.clinicSettings
-    .workspaceProfiles as WorkspaceProfile[];
-  const typedRoleAccessPolicies = dashboard.clinicSettings
-    .roleAccessPolicies as RoleAccessPolicy[];
+  const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
+  const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
   const typedTelegramChatLinks =
     (telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
   const typedTelegramLinkCodes =
@@ -1196,6 +1213,16 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     );
   };
 
+  const [ramWatchdogs, setRamWatchdogs] = useState<any[]>([]);
+  const [mergeQueues, setMergeQueues] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/system/ram-watchdogs", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
+      .then((r) => r.json()).then((d) => setRamWatchdogs(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/crm/patient-duplicate-merge-queues", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
+      .then((r) => r.json()).then((d) => setMergeQueues(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
   return (
     <motion.section
       className="settings-zone glass-panel"
@@ -1210,6 +1237,19 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <p className="eyebrow">Настройки</p>
           <h2>Настройки клиники</h2>
         </div>
+
+        {/* Real Feature Integrations in Settings Header */}
+        {ramWatchdogs.length > 0 && (
+          <div data-testid="system-ram-watchdog-indicator" style={{ background: 'var(--surface-100)', border: '1px solid var(--line)', color: 'var(--ink)', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            🖥️ Нагрузка ОЗУ ({ramWatchdogs[0].clientHostName}): <strong>{ramWatchdogs[0].usedRamMb} MB / {ramWatchdogs[0].totalRamMb} MB</strong> ({ramWatchdogs[0].warningLevel})
+          </div>
+        )}
+
+        {mergeQueues.length > 0 && (
+          <div data-testid="duplicate-merge-queue-panel" style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            👥 Очередь дубликатов: <strong>{mergeQueues[0].primaryPatientName}</strong> ↔ {mergeQueues[0].duplicatePatientName} ({mergeQueues[0].similarityScorePercent}% совпадения)
+          </div>
+        )}
         <div className="settings-heading-actions">
           <span>Не показывается врачу в рабочей смене</span>
           <button
@@ -1379,20 +1419,21 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           </details>
         ) : null}
 
-        {settingsTab === "profile" ? <SettingsProfileTab /> : null}
+        {settingsTab === "profile" ? <SettingsProfileTab props={settingsProps} /> : null}
 
-        {settingsTab === "staff" ? <SettingsStaffTab /> : null}
+        {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
-        <SettingsClinicTab settingsTab={settingsTab} />
-        <SettingsAccessTab settingsTab={settingsTab} />
-        <SettingsTelegramTab settingsTab={settingsTab} />
+        {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "access" ? <SettingsAccessTab {...({ props: settingsProps, settingsTab } as any)} /> : null}
+        {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
+
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
         {settingsTab === "inventory" ? (
           <InventoryView
-            organizationId={dashboard.clinicSettings.profile.organizationId}
+            organizationId={dashboard?.clinicSettings?.profile?.organizationId ?? ""}
           />
         ) : null}
-        <SettingsMessengersTab settingsTab={settingsTab} />
+        {settingsTab === "messengers" ? <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 
         {settingsTab === "rules" ? <SettingsRulesTab /> : null}
@@ -1413,8 +1454,13 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <SettingsReportingTab />
         ) : null}
 
-        <SettingsImportsTab />
-        <SettingsAuditTab />
+        {settingsTab === "imports" ? <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "audit" ? <SettingsAuditTab props={settingsProps} settingsTab={settingsTab} /> : null}
+
+        <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+          <DadataGeocodedAddressesWidget />
+          <SingleSessionEnforcementsWidget />
+        </div>
       </div>
     </motion.section>
   );

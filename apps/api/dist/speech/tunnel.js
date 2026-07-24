@@ -1,5 +1,5 @@
-import child_process from "node:child_process";
-import fs from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import net from "node:net";
 let tunnelProcess = null;
 const SOCKS_PORT = 1080;
@@ -35,7 +35,7 @@ export async function ensureSshTunnel() {
         return true;
     }
     // 2. Проверяем наличие приватного ключа
-    if (!fs.existsSync(sshKey)) {
+    if (!existsSync(sshKey)) {
         console.warn(`[SSH Tunnel] SSH key not found at ${sshKey}. Cannot start tunnel.`);
         return false;
     }
@@ -50,7 +50,7 @@ export async function ensureSshTunnel() {
             "-i", sshKey,
             sshHost
         ];
-        tunnelProcess = child_process.spawn("ssh", cmdArgs, {
+        tunnelProcess = spawn("ssh", cmdArgs, {
             detached: true,
             stdio: "ignore"
         });

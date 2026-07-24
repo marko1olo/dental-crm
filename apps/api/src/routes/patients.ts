@@ -104,6 +104,7 @@ import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
 import {
   getPatientsFromDb,
+  getPatientByIdFromDb,
   createPatientInDb,
   updatePatientInDb,
   updatePatientAdministrativeProfileInDb
@@ -169,6 +170,10 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     }
     
     try {
+      const dbPatients = await getPatientsFromDb(orgId);
+      const duplicate = findPatientDuplicate(dbPatients, input, params.patientId);
+      if (duplicate) return sendPatientDuplicate(reply);
+
       const patient = await updatePatientInDb(orgId, params.patientId, input);
       if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
@@ -194,6 +199,18 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     }
     
     try {
+      const existingPatient = await getPatientByIdFromDb(orgId, params.patientId);
+      if (!existingPatient) return sendPatientNotFound(reply);
+      const existingProfile = (existingPatient.administrativeProfile as any) ?? {};
+      const mergedProfile = { ...existingProfile, ...input };
+
+      if (hasIncompleteRepresentativeIdentity(mergedProfile)) {
+        return reply.code(400).send({
+          error: "PatientValidationError",
+          message: patientRepresentativeValidationMessage,
+        });
+      }
+
       const patient = await updatePatientAdministrativeProfileInDb(orgId, params.patientId, input);
       if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
@@ -201,5 +218,56 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       console.error("[Patients] Update profile error:", e);
       return sendPatientNotFound(reply);
     }
+  });
+
+  // COMPETITOR FEATURE #4: пациенты::хронологическая_история_коммуникаций
+  app.get("/api/patients/:patientId/communication-timelines", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
+    const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
+    return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
+  });
+
+  // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
+  app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+    const { patientId } = request.params as { patientId: string };
+
+    const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+    return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId));
+  });
+
+  app.post("/api/patients/:patientId/archive-status", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+    const { patientId } = request.params as { patientId: string };
+    
+    // Parse the body
+    const body = request.body as any;
+    if (!body || typeof body.isBlacklisted !== 'boolean') {
+        return reply.code(400).send({ error: "ValidationError", message: "isBlacklisted boolean is required" });
+    }
+
+    const { setPatientArchiveStatusInDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+    const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
+    const patient = await getPatientByIdFromDb(orgId, patientId);
+    if (!patient) return reply.code(404).send({ error: "PatientNotFound" });
+
+    await setPatientArchiveStatusInDb(orgId, patientId, body.isBlacklisted, patient.fullName);
+    return reply.status(200).send({ success: true, isBlacklisted: body.isBlacklisted });
   });
 }

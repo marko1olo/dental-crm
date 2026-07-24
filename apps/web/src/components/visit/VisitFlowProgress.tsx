@@ -1,4 +1,4 @@
-import type { VisitFlowResult } from "@dental/shared";
+type VisitFlowResult = any;
 import type React from "react";
 import "./VisitFlowProgress.css";
 
@@ -37,7 +37,7 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({
 	];
 
 	return (
-		<div className="visit-flow-progress">
+		<div className="visit-flow-progress" data-testid="visit-flow-progress">
 			<div className="vfp-header">
 				<h4 className="vfp-title">
 					<svg

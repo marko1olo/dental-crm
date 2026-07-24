@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { inflateRawSync } from "node:zlib";
-import { documentIngestionResponseSchema } from "@dental/shared";
+import { documentIngestionResponseSchema, } from "@dental/shared";
 const maxExtractedTextChars = 280_000;
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
 const utf16LeDecoder = new TextDecoder("utf-16le", { fatal: false });
@@ -8,7 +8,7 @@ const utf16BeDecoder = new TextDecoder("utf-16be", { fatal: false });
 function decodeBase64(value) {
     if (!value?.trim())
         return Buffer.alloc(0);
-    const clean = value.includes(",") ? value.split(",").pop() ?? "" : value;
+    const clean = value.includes(",") ? (value.split(",").pop() ?? "") : value;
     return Buffer.from(clean, "base64");
 }
 function normalizeText(value) {
@@ -27,7 +27,10 @@ function decodeText(buffer) {
     if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
         return normalizeText(utf16BeDecoder.decode(buffer.subarray(2)));
     }
-    if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    if (buffer.length >= 3 &&
+        buffer[0] === 0xef &&
+        buffer[1] === 0xbb &&
+        buffer[2] === 0xbf) {
         return normalizeText(textDecoder.decode(buffer.subarray(3)));
     }
     return normalizeText(textDecoder.decode(buffer));
@@ -36,7 +39,11 @@ function extensionOf(fileName) {
     return fileName.split(".").pop()?.toLowerCase() ?? "";
 }
 function fingerprintText(value) {
-    return createHash("sha256").update(value).digest("hex").slice(0, 12).toUpperCase();
+    return createHash("sha256")
+        .update(value)
+        .digest("hex")
+        .slice(0, 12)
+        .toUpperCase();
 }
 function safeFileLabel(fileName, prefix) {
     const extension = extensionOf(fileName).replace(/[^a-z0-9]/g, "");
@@ -44,7 +51,16 @@ function safeFileLabel(fileName, prefix) {
     return `${prefix} #${fingerprintText(fileName)}${suffix}`;
 }
 function isLegacyDatabaseExtension(ext) {
-    return ["fdb", "gdb", "mdb", "accdb", "sqlite", "sqlite3", "db", "dbf"].includes(ext);
+    return [
+        "fdb",
+        "gdb",
+        "mdb",
+        "accdb",
+        "sqlite",
+        "sqlite3",
+        "db",
+        "dbf",
+    ].includes(ext);
 }
 function isLegacyDumpExtension(ext) {
     return ["bak", "dump", "sql", "backup"].includes(ext);
@@ -85,9 +101,11 @@ function detectKind(fileName, mimeType, buffer, rawText) {
         return "ods";
     if (ext === "odp")
         return "odp";
-    if (ext === "zip" || buffer.subarray(0, 4).toString("latin1") === "PK\u0003\u0004")
+    if (ext === "zip" ||
+        buffer.subarray(0, 4).toString("latin1") === "PK\u0003\u0004")
         return "zip";
-    if (["jpg", "jpeg", "png", "webp", "tif", "tiff", "bmp"].includes(ext) || mimeType?.startsWith("image/"))
+    if (["jpg", "jpeg", "png", "webp", "tif", "tiff", "bmp"].includes(ext) ||
+        mimeType?.startsWith("image/"))
         return "image";
     if (mimeType?.includes("spreadsheet"))
         return "xlsx";
@@ -113,10 +131,14 @@ function legacyFileFormatLabel(fileName, kind) {
         return "SQL-дамп";
     if (ext === "bak" || ext === "dump" || ext === "backup")
         return "резервная копия базы";
-    return kind === "legacy_database" ? "старая база" : "резервная копия старой базы";
+    return kind === "legacy_database"
+        ? "старая база"
+        : "резервная копия старой базы";
 }
 function legacyKindLabel(kind) {
-    return kind === "legacy_database" ? "старая база" : "резервная копия старой базы";
+    return kind === "legacy_database"
+        ? "старая база"
+        : "резервная копия старой базы";
 }
 function legacyStagingManifest(input) {
     const safeLabel = safeFileLabel(input.fileName, "Источник миграции");
@@ -127,7 +149,7 @@ function legacyStagingManifest(input) {
         `Размер источника: ${input.byteSize} байт`,
         "Маршрут переноса: локальный модуль только для чтения -> проверочный список таблиц -> предварительный просмотр умного импорта",
         "Что подготовить: отдельную копию или резервную копию, версию старой МИС, учетку только для чтения при необходимости, словарь таблиц, 10 контрольных карт пациентов",
-        "Ограничение: файл базы, имена, телефоны, даты рождения и пиксели снимков не отправляются во внешние поисковые сервисы"
+        "Ограничение: файл базы, имена, телефоны, даты рождения и пиксели снимков не отправляются во внешние поисковые сервисы",
     ].join("\n");
 }
 function xmlDecode(value) {
@@ -193,7 +215,10 @@ function readZipEntries(buffer) {
         const extraLength = buffer.readUInt16LE(cursor + 30);
         const commentLength = buffer.readUInt16LE(cursor + 32);
         const localOffset = buffer.readUInt32LE(cursor + 42);
-        const name = buffer.subarray(cursor + 46, cursor + 46 + fileNameLength).toString("utf8").replace(/\\/g, "/");
+        const name = buffer
+            .subarray(cursor + 46, cursor + 46 + fileNameLength)
+            .toString("utf8")
+            .replace(/\\/g, "/");
         if (buffer.readUInt32LE(localOffset) !== 0x04034b50) {
             warnings.push(`zip_local_header_missing:${safeFileLabel(name, "Файл архива")}`);
             cursor += 46 + fileNameLength + extraLength + commentLength;
@@ -237,7 +262,9 @@ function extractDocx(buffer) {
         text: parts.join("\n\n"),
         tableCount,
         warnings: zip.warnings,
-        parserNotes: ["DOCX разобран встроенным извлечением текста из OpenXML ZIP."]
+        parserNotes: [
+            "DOCX разобран встроенным извлечением текста из OpenXML ZIP.",
+        ],
     };
 }
 function sharedStrings(entries) {
@@ -255,7 +282,7 @@ function extractCellValue(cellXml, shared) {
     const rawValue = cellXml.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? "";
     if (type === "s") {
         const index = Number(rawValue);
-        return Number.isInteger(index) ? shared[index] ?? "" : "";
+        return Number.isInteger(index) ? (shared[index] ?? "") : "";
     }
     return xmlDecode(rawValue);
 }
@@ -279,7 +306,9 @@ function extractXlsx(buffer) {
         text: sheetTexts.filter(Boolean).join("\n\n"),
         tableCount: sheets.length,
         warnings: zip.warnings,
-        parserNotes: ["XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются."]
+        parserNotes: [
+            "XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются.",
+        ],
     };
 }
 function extractPptx(buffer) {
@@ -289,19 +318,23 @@ function extractPptx(buffer) {
         text: parts.join("\n\n"),
         tableCount: 0,
         warnings: zip.warnings,
-        parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."]
+        parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."],
     };
 }
 function extractOpenDocument(buffer, kind) {
     const zip = readZipEntries(buffer);
     const content = zip.entries.find((entry) => /(?:^|\/)content\.xml$/.test(entry.name));
     const text = content ? stripXmlTags(decodeText(content.data)) : "";
-    const tableCount = content ? (decodeText(content.data).match(/<table:table\b/g) ?? []).length : 0;
+    const tableCount = content
+        ? (decodeText(content.data).match(/<table:table\b/g) ?? []).length
+        : 0;
     return {
         text,
         tableCount,
         warnings: zip.warnings,
-        parserNotes: [`${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`]
+        parserNotes: [
+            `${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`,
+        ],
     };
 }
 function extractPdfLiteralText(source) {
@@ -343,13 +376,13 @@ function extractPdf(buffer) {
         ...extractPdfLiteralText(utf8Source),
         ...extractPdfLiteralText(latinSource),
         ...extractPdfHexText(utf8Source),
-        ...extractPdfHexText(latinSource)
+        ...extractPdfHexText(latinSource),
     ]));
     const plainText = utf8Source
         .replace(/<[0-9A-Fa-f\s]{8,}>/g, " ")
         .replace(/[^\x09\x0A\x0D\x20-\x7E\p{L}\p{N}\p{Sc}]+/gu, " ")
         .match(/[\p{L}\p{N}][\p{L}\p{N}\s.,;:+\-()/%\p{Sc}]{8,}/gu);
-    const fallbackText = literalText.length ? [] : plainText ?? [];
+    const fallbackText = literalText.length ? [] : (plainText ?? []);
     const text = normalizeText([...literalText, ...fallbackText].join("\n"));
     const warnings = ["pdf_best_effort_no_ocr"];
     if (!text)
@@ -358,7 +391,9 @@ function extractPdf(buffer) {
         text,
         tableCount: 0,
         warnings,
-        parserNotes: ["PDF разобран встроенным извлечением текста; сканы все равно требуют распознавания изображения."]
+        parserNotes: [
+            "PDF разобран встроенным извлечением текста; сканы все равно требуют распознавания изображения.",
+        ],
     };
 }
 function countRows(text) {
@@ -380,18 +415,23 @@ function extractByKind(kind, buffer) {
             text: decodeText(buffer),
             tableCount: 0,
             warnings: [],
-            parserNotes: [`${kind.toUpperCase()} decoded as text.`]
+            parserNotes: [`${kind.toUpperCase()} decoded as text.`],
         };
     }
     if (kind === "html") {
-        return { text: stripHtml(decodeText(buffer)), tableCount: 0, warnings: [], parserNotes: ["HTML tags stripped."] };
+        return {
+            text: stripHtml(decodeText(buffer)),
+            tableCount: 0,
+            warnings: [],
+            parserNotes: ["HTML tags stripped."],
+        };
     }
     if (kind === "rtf") {
         return {
             text: stripRtf(decodeText(buffer)),
             tableCount: 0,
             warnings: [],
-            parserNotes: ["RTF controls stripped with built-in parser."]
+            parserNotes: ["RTF controls stripped with built-in parser."],
         };
     }
     if (kind === "pdf")
@@ -408,7 +448,7 @@ function extractByKind(kind, buffer) {
         text: "",
         tableCount: 0,
         warnings: [`unsupported_archive_entry_kind:${kind}`],
-        parserNotes: []
+        parserNotes: [],
     };
 }
 function extractZipArchive(buffer, archiveName) {
@@ -417,7 +457,7 @@ function extractZipArchive(buffer, archiveName) {
     const safeArchiveName = safeFileLabel(archiveName, "Архив");
     const parserNotes = [
         "ZIP-архив разобран только для чтения; текст и таблицы извлечены, бинарные снимки показаны как строки списка файлов.",
-        "Имена файлов внутри архива скрыты безопасными метками перед показом предпросмотра."
+        "Имена файлов внутри архива скрыты безопасными метками перед показом предпросмотра.",
     ];
     const extractedFiles = [];
     const textParts = [];
@@ -441,7 +481,7 @@ function extractZipArchive(buffer, archiveName) {
                 rowCount: 0,
                 tableCount: 0,
                 textPreview: "",
-                warnings: ["nested_archive_skipped"]
+                warnings: ["nested_archive_skipped"],
             });
             continue;
         }
@@ -454,7 +494,7 @@ function extractZipArchive(buffer, archiveName) {
                 rowCount: 1,
                 tableCount: 0,
                 textPreview: manifestLine,
-                warnings: ["binary_file_listed_as_manifest_reference"]
+                warnings: ["binary_file_listed_as_manifest_reference"],
             });
             continue;
         }
@@ -468,7 +508,7 @@ function extractZipArchive(buffer, archiveName) {
             rowCount: countRows(text),
             tableCount: extracted.tableCount || (looksTabular(text) ? 1 : 0),
             textPreview: text.slice(0, 420),
-            warnings: extracted.warnings
+            warnings: extracted.warnings,
         });
         if (text)
             textParts.push(`--- ${safeEntryName} ---\n${text}`);
@@ -480,12 +520,17 @@ function extractZipArchive(buffer, archiveName) {
         tableCount,
         warnings,
         parserNotes,
-        extractedFiles
+        extractedFiles,
     };
 }
 function looksTabular(text) {
-    const lines = text.split(/\r?\n/).filter((line) => line.trim()).slice(0, 30);
-    return lines.some((line) => line.includes("\t") || line.split(";").length >= 3 || line.split(",").length >= 4);
+    const lines = text
+        .split(/\r?\n/)
+        .filter((line) => line.trim())
+        .slice(0, 30);
+    return lines.some((line) => line.includes("\t") ||
+        line.split(";").length >= 3 ||
+        line.split(",").length >= 4);
 }
 function hasAnyHint(text, hints) {
     const lower = text.toLowerCase();
@@ -515,7 +560,8 @@ function collectSignals(kind, text, warnings) {
     if (/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(text))
         signals.push("похоже на дату");
     const hasDentalServiceSignal = /(?:корон|имплант|реставрац|брекет|элайн|гигиен|канал|пломб|винир|абатмент|мембран|костн)/i.test(text);
-    if (/(?:руб|₽|р\.|price|стоимость)/i.test(text) || (hasDentalServiceSignal && /\b\d{3,7}\b/.test(text))) {
+    if (/(?:руб|₽|р\.|price|стоимость)/i.test(text) ||
+        (hasDentalServiceSignal && /\b\d{3,7}\b/.test(text))) {
         signals.push("похоже на цену");
     }
     if (/\b(?:rvg|opg|cbct|dicom|dcm|jpg|png)\b|(?:оптг|кт|трг|рентген|сним)/i.test(text))
@@ -524,7 +570,10 @@ function collectSignals(kind, text, warnings) {
         signals.push("похоже на услуги");
     if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(text))
         signals.push("похоже на документ");
-    if (normalized.includes(".xlsx") || normalized.includes(".csv") || normalized.includes(".docx") || normalized.includes(".pdf")) {
+    if (normalized.includes(".xlsx") ||
+        normalized.includes(".csv") ||
+        normalized.includes(".docx") ||
+        normalized.includes(".pdf")) {
         signals.push("есть ссылки на файлы");
     }
     if (/legacy|migration|старая|мис|backup|dump|firebird|access|sqlite|pacs|dicomweb/i.test(text)) {
@@ -544,7 +593,7 @@ function routesFor(kind, text, target) {
         "dicom",
         ".dcm",
         ".jpg",
-        ".png"
+        ".png",
     ]);
     const hasPricelistHint = /\b\d{4,6}\b/.test(text) ||
         hasAnyHint(text, [
@@ -559,7 +608,7 @@ function routesFor(kind, text, target) {
             "zircon",
             "crown",
             "implant",
-            "aligner"
+            "aligner",
         ]);
     const legacySource = kind === "legacy_database" || kind === "legacy_dump";
     const routes = [
@@ -572,7 +621,7 @@ function routesFor(kind, text, target) {
                 ? "Старая база или резервная копия превращены в проверочный список; запись возможна только после локального разбора только для чтения и предварительного просмотра."
                 : hasText
                     ? "Может разделить смешанные строки пациентов и снимков перед записью."
-                    : "Текст пока не извлечен."
+                    : "Текст пока не извлечен.",
         },
         {
             target: "patients",
@@ -583,7 +632,7 @@ function routesFor(kind, text, target) {
                 ? "Старую базу нельзя напрямую писать как пациентов; сначала нужен локальный разбор только для чтения."
                 : tabular
                     ? "Похоже на таблицу или экспорт."
-                    : "Свободный текст можно нормализовать в строки пациентов."
+                    : "Свободный текст можно нормализовать в строки пациентов.",
         },
         {
             target: "imaging",
@@ -592,22 +641,22 @@ function routesFor(kind, text, target) {
             enabled: hasText && hasImagingHint && !legacySource,
             reason: legacySource
                 ? "Сначала извлечь пути к снимкам из старой базы в проверочный список; не сканировать бинарную базу как снимки."
-                : "Доступно, когда найдены пути к файлам или признаки снимков."
+                : "Доступно, когда найдены пути к файлам или признаки снимков.",
         },
         {
             target: "pricelist",
             title: "Разбор прайс-листа",
             endpoint: "/api/pricelist/analyze",
             enabled: hasText && hasPricelistHint,
-            reason: "Доступно, когда найдены цены или названия стоматологических услуг."
+            reason: "Доступно, когда найдены цены или названия стоматологических услуг.",
         },
         {
             target: "plain_text",
             title: "Проверка обычного текста",
             endpoint: "",
             enabled: hasText,
-            reason: "Безопасно для ручной проверки и переноса."
-        }
+            reason: "Безопасно для ручной проверки и переноса.",
+        },
     ];
     if (kind === "image") {
         routes.forEach((route) => {
@@ -629,8 +678,12 @@ function routesFor(kind, text, target) {
 function qualityFor(kind, text, target, routes, warnings) {
     const signals = collectSignals(kind, text, warnings);
     const enabledRoutes = routes.filter((route) => route.enabled);
-    const selectedRoute = enabledRoutes.find((route) => route.target === target) ?? enabledRoutes[0] ?? routes[0];
-    const suggestedTarget = selectedRoute?.enabled ? selectedRoute.target : target;
+    const selectedRoute = enabledRoutes.find((route) => route.target === target) ??
+        enabledRoutes[0] ??
+        routes[0];
+    const suggestedTarget = selectedRoute?.enabled
+        ? selectedRoute.target
+        : target;
     const hasText = Boolean(text.trim());
     if (kind === "legacy_database" || kind === "legacy_dump") {
         return {
@@ -638,7 +691,7 @@ function qualityFor(kind, text, target, routes, warnings) {
             confidence: 0.86,
             suggestedTarget: "smart_import",
             signals,
-            nextAction: "Открыть предварительный просмотр умного импорта по проверочному списку. Реальные таблицы старой базы разбирать только локальным модулем только для чтения, затем сверить 10 контрольных карт."
+            nextAction: "Открыть предварительный просмотр умного импорта по проверочному списку. Реальные таблицы старой базы разбирать только локальным модулем только для чтения, затем сверить 10 контрольных карт.",
         };
     }
     if (kind === "image" && target === "pricelist") {
@@ -647,16 +700,17 @@ function qualityFor(kind, text, target, routes, warnings) {
             confidence: 0.72,
             suggestedTarget: "pricelist",
             signals,
-            nextAction: "Сохраните сжатое изображение и запустите распознавание прайса; не записывайте данные без проверки структуры."
+            nextAction: "Сохраните сжатое изображение и запустите распознавание прайса; не записывайте данные без проверки структуры.",
         };
     }
-    if (kind === "image" || warnings.includes("pdf_text_not_extracted_may_be_scanned")) {
+    if (kind === "image" ||
+        warnings.includes("pdf_text_not_extracted_may_be_scanned")) {
         return {
             extractionQuality: "ocr_required",
             confidence: 0.64,
             suggestedTarget,
             signals,
-            nextAction: "Сначала запустите распознавание изображения; локальный извлекатель не может прочитать файл как структурированный текст."
+            nextAction: "Сначала запустите распознавание изображения; локальный извлекатель не может прочитать файл как структурированный текст.",
         };
     }
     if (!hasText) {
@@ -665,7 +719,7 @@ function qualityFor(kind, text, target, routes, warnings) {
             confidence: 0.2,
             suggestedTarget,
             signals,
-            nextAction: "Конвертируйте файл или используйте распознавание изображения перед импортом. Из этого результата ничего нельзя записывать."
+            nextAction: "Конвертируйте файл или используйте распознавание изображения перед импортом. Из этого результата ничего нельзя записывать.",
         };
     }
     const routeConfidence = selectedRoute?.enabled ? 0.28 : 0;
@@ -679,7 +733,7 @@ function qualityFor(kind, text, target, routes, warnings) {
         signals,
         nextAction: selectedRoute?.enabled && confidence >= 0.68
             ? "Откройте предложенный предпросмотр и проверьте строки перед записью."
-            : "Проверьте извлеченный текст и выберите маршрут вручную; уверенности недостаточно для автоматического шага."
+            : "Проверьте извлеченный текст и выберите маршрут вручную; уверенности недостаточно для автоматического шага.",
     };
 }
 export function extractDocument(input) {
@@ -700,7 +754,22 @@ export function extractDocument(input) {
             warnings.push(...extracted.warnings);
             parserNotes.push(...extracted.parserNotes);
         }
-        else if (["txt", "csv", "tsv", "json", "xml", "html", "rtf", "pdf", "docx", "xlsx", "pptx", "odt", "ods", "odp"].includes(kind)) {
+        else if ([
+            "txt",
+            "csv",
+            "tsv",
+            "json",
+            "xml",
+            "html",
+            "rtf",
+            "pdf",
+            "docx",
+            "xlsx",
+            "pptx",
+            "odt",
+            "ods",
+            "odp",
+        ].includes(kind)) {
             const extracted = extractByKind(kind, buffer);
             text = extracted.text;
             tableCount = extracted.tableCount;
@@ -712,7 +781,11 @@ export function extractDocument(input) {
             parserNotes.push("Получено изображение; перед текстовым импортом нужен поток распознавания изображения.");
         }
         else if (kind === "legacy_database" || kind === "legacy_dump") {
-            text = legacyStagingManifest({ fileName: input.fileName, kind, byteSize: buffer.length });
+            text = legacyStagingManifest({
+                fileName: input.fileName,
+                kind,
+                byteSize: buffer.length,
+            });
             warnings.push("legacy_source_staging_manifest_only");
             parserNotes.push("Получена старая база или резервная копия; бинарное содержимое не расшифровывалось и не возвращалось.");
             parserNotes.push("Используйте локальный модуль только для чтения, чтобы выгрузить пациентов, визиты, платежи и ссылки на снимки в проверяемые списки.");
@@ -745,6 +818,8 @@ export function extractDocument(input) {
         routes,
         quality: qualityFor(kind, text, input.target, routes, uniqueWarnings),
         warnings: uniqueWarnings,
-        parserNotes: parserNotes.length ? parserNotes : ["Input text accepted without binary extraction."]
+        parserNotes: parserNotes.length
+            ? parserNotes
+            : ["Input text accepted without binary extraction."],
     });
 }

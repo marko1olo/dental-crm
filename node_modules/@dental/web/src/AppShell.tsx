@@ -1,8 +1,7 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
-
-const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
 import { GlobalToast } from "./components/GlobalToast";
 
+const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
 
 type AppShellErrorBoundaryState = {
   hasError: boolean;
@@ -30,7 +29,9 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
-    console.error("DENTE boot failed", error, errorInfo.componentStack);
+    if (!import.meta.env.PROD) {
+      console.error("DENTE boot failed full stack", error, errorInfo.componentStack);
+    }
   }
 
   render() {
@@ -39,7 +40,7 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
         <main className="boot-state boot-state-error" role="alert" aria-live="assertive">
           <h1>DENTE</h1>
           <p>Не удалось открыть рабочее место клиники.</p>
-          <small>{this.state.detail}</small>
+          <p>{this.state.detail}</p>
           <button type="button" onClick={requestDenteStaleAppRefresh}>
             Обновить рабочее место
           </button>
@@ -68,4 +69,3 @@ export function AppShell() {
     </AppShellErrorBoundary>
   );
 }
-

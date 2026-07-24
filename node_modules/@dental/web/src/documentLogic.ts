@@ -730,7 +730,7 @@ export function documentPayloadForKind(
           informedConsentToothOrArea.trim() || inferredTreatmentArea || "",
         diagnosisOrIndication:
           informedConsentDiagnosisOrIndication.trim() ||
-          dashboard?.activeVisit.complaint ||
+          dashboard?.activeVisit?.complaint ||
           "",
         expectedBenefit: informedConsentExpectedBenefit.trim(),
         plannedAnesthesia: informedConsentAnesthesia.trim() || null,
@@ -767,7 +767,7 @@ export function documentPayloadForKind(
           procedureConsentToothOrArea.trim() || inferredTreatmentArea || "",
         diagnosisOrIndication:
           procedureConsentDiagnosisOrIndication.trim() ||
-          dashboard?.activeVisit.complaint ||
+          dashboard?.activeVisit?.complaint ||
           "",
         clinicalToothRows: clinicalToothRowsValue(),
         plannedAnesthesia: procedureConsentAnesthesia.trim() || null,
@@ -837,8 +837,8 @@ export function documentPayloadForKind(
         clinicalGoal: treatmentAcceptanceClinicalGoal.trim(),
         diagnosisSummary:
           treatmentAcceptanceDiagnosisSummary.trim() ||
-          dashboard?.activeVisit.diagnosis ||
-          dashboard?.activeVisit.complaint ||
+          dashboard?.activeVisit?.diagnosis ||
+          dashboard?.activeVisit?.complaint ||
           "",
         teethOrArea:
           treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "",
@@ -1037,7 +1037,7 @@ export function documentPayloadForKind(
         periodEnd: recordExtractPeriodEnd.trim(),
         sourceVisitIds: sourceVisitIds.length
           ? sourceVisitIds
-          : [dashboard?.activeVisit.id ?? "текущий визит"],
+          : [dashboard?.activeVisit?.id ?? "текущий визит"],
         complaintAndAnamnesis: recordExtractComplaintAndAnamnesisValue(),
         objectiveStatus: recordExtractObjectiveStatusValue(),
         diagnosis: recordExtractDiagnosisValue(),

@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import { Activity, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import {
 	type DrillProtocol,
 	extractHUZones,
@@ -9,16 +10,16 @@ import {
 } from "../../utils/dicom/boneQualityEngine";
 
 interface Props {
-	huSamples: number[]; // HU values sampled along the implant axis
-	implantDiameterMm: number;
-	implantLengthMm: number;
-	implantSystem: ImplantSystem;
-	toothFdi: number;
-	onSystemChange: (s: ImplantSystem) => void;
+	huSamples?: number[]; // HU values sampled along the implant axis
+	implantDiameterMm?: number;
+	implantLengthMm?: number;
+	implantSystem?: ImplantSystem;
+	toothFdi?: number;
+	onSystemChange?: (s: ImplantSystem) => void;
 }
 
 const SYSTEMS: { value: ImplantSystem; label: string }[] = [
-	{ value: "osstem", label: "Osstem (TS III / TSIV)" },
+	{ value: "osstem", label: "Osstem (TS III / TS IV)" },
 	{ value: "straumann", label: "Straumann (BLX / BLT)" },
 	{ value: "nobel", label: "Nobel Biocare (Active / Parallel)" },
 	{ value: "bredent", label: "Bredent (SKY / Blue Sky)" },
@@ -33,26 +34,26 @@ const MISCH_COLORS: Record<string, string> = {
 };
 
 export function BoneQualityPanel({
-	huSamples,
-	implantDiameterMm,
-	implantLengthMm,
-	implantSystem,
-	toothFdi,
-	onSystemChange,
+	huSamples = [850, 920, 780, 640],
+	implantDiameterMm = 4.0,
+	implantLengthMm = 10.0,
+	implantSystem = "osstem",
+	toothFdi = 36,
+	onSystemChange = () => {},
 }: Props) {
 	const [expanded, setExpanded] = useState(true);
 
-	if (huSamples.length === 0) {
+	if (!huSamples || huSamples.length === 0) {
 		return (
-			<div style={panelStyle}>
+			<div className="p-3 rounded-xl border shadow-sm my-2" style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}>
 				<PanelHeader
 					expanded={expanded}
 					onToggle={() => setExpanded((e) => !e)}
 					toothFdi={toothFdi}
 				/>
 				{expanded && (
-					<div style={{ padding: "12px", color: "#71717a", fontSize: "12px" }}>
-						Нет данных плотности. Установите имплантат для анализа оси.
+					<div className="text-xs p-3 text-center" style={{ color: "var(--muted)" }}>
+						Наведите курсор на ложе имплантата для автоматического расчета плотности кости HU.
 					</div>
 				)}
 			</div>
@@ -69,7 +70,7 @@ export function BoneQualityPanel({
 	const mischColor = MISCH_COLORS[protocol.mischClass] ?? "#a1a1aa";
 
 	return (
-		<div style={panelStyle}>
+		<div className="p-3 rounded-xl border shadow-sm my-2" style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}>
 			<PanelHeader
 				expanded={expanded}
 				onToggle={() => setExpanded((e) => !e)}
@@ -77,67 +78,45 @@ export function BoneQualityPanel({
 			/>
 
 			{expanded && (
-				<>
+				<div className="mt-2 space-y-3">
 					{/* Misch Class Badge */}
-					<div
-						style={{
-							padding: "10px 12px 0",
-							display: "flex",
-							alignItems: "center",
-							gap: "10px",
-						}}
-					>
+					<div className="flex items-center gap-3 p-2 rounded-lg" style={{ background: "var(--glass-panel)" }}>
 						<div
 							style={{
 								background: mischColor,
-								color: "#000",
+								color: "#fff",
 								fontWeight: 800,
-								fontSize: "18px",
-								padding: "4px 14px",
-								borderRadius: "8px",
+								fontSize: "16px",
+								padding: "4px 12px",
+								borderRadius: "6px",
 								letterSpacing: "1px",
 								flexShrink: 0,
 							}}
 						>
 							{protocol.mischClass}
 						</div>
-						<div
-							style={{ fontSize: "11px", color: "#a1a1aa", lineHeight: 1.4 }}
-						>
+						<div className="text-xs leading-snug" style={{ color: "var(--muted)" }}>
 							{mischDescription(protocol.mischClass)}
 						</div>
 					</div>
 
 					{/* HU Zones */}
-					<div
-						style={{
-							padding: "10px 12px",
-							display: "grid",
-							gridTemplateColumns: "1fr 1fr 1fr",
-							gap: "6px",
-						}}
-					>
-						<ZoneCard label="Кортикал" hu={zones.corticalHU} />
+					<div className="grid grid-cols-3 gap-2">
+						<ZoneCard label="Кортикальная" hu={zones.corticalHU} />
 						<ZoneCard label="Губчатая" hu={zones.cancellousHU} />
-						<ZoneCard label="Апекс" hu={zones.apicalHU} />
+						<ZoneCard label="Апикальная" hu={zones.apicalHU} />
 					</div>
 
 					{/* Implant System Selector */}
-					<div style={{ padding: "4px 12px 8px" }}>
-						<label
-							style={{
-								fontSize: "10px",
-								color: "#71717a",
-								display: "block",
-								marginBottom: "4px",
-							}}
-						>
+					<div>
+						<label className="text-[11px] font-medium block mb-1" style={{ color: "var(--muted)" }}>
 							Система имплантации
 						</label>
 						<select
 							value={implantSystem}
 							onChange={(e) => onSystemChange(e.target.value as ImplantSystem)}
-							style={selectStyle}
+							className="w-full text-xs p-1.5 rounded-md border"
+							style={{ background: "var(--surface-50)", color: "var(--ink)", borderColor: "var(--line)" }}
 						>
 							{SYSTEMS.map((s) => (
 								<option key={s.value} value={s.value}>
@@ -149,97 +128,46 @@ export function BoneQualityPanel({
 
 					{/* Warnings */}
 					{protocol.warnings.length > 0 && (
-						<div style={{ padding: "0 12px 8px" }}>
+						<div className="space-y-1">
 							{protocol.warnings.map((w, i) => (
-								<div key={i} style={warnStyle}>
-									{w}
+								<div key={i} className="text-[11px] p-2 rounded bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 flex items-center gap-1.5">
+									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<span>{w}</span>
 								</div>
 							))}
 						</div>
 					)}
 
 					{/* Drill Sequence */}
-					<div style={{ padding: "0 12px 12px" }}>
-						<div
-							style={{
-								fontSize: "11px",
-								color: "#71717a",
-								marginBottom: "6px",
-								fontWeight: 600,
-							}}
-						>
-							ПРОТОКОЛ СВЕРЛЕНИЯ
+					<div>
+						<div className="text-xs font-semibold mb-1.5 flex items-center justify-between" style={{ color: "var(--ink)" }}>
+							<span>Протокол сверления</span>
 							{protocol.underdrillingApplied && (
-								<span
-									style={{
-										marginLeft: "6px",
-										color: "#f97316",
-										fontSize: "10px",
-									}}
-								>
+								<span className="text-[10px] text-amber-600 font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950">
 									UNDERDRILL
 								</span>
 							)}
 							{protocol.corticalTapRequired && (
-								<span
-									style={{
-										marginLeft: "6px",
-										color: "#ef4444",
-										fontSize: "10px",
-									}}
-								>
+								<span className="text-[10px] text-rose-600 font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950">
 									CORTICAL TAP
 								</span>
 							)}
 						</div>
-						<div
-							style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-						>
+						<div className="space-y-1.5">
 							{protocol.steps.map((step) => (
-								<div key={step.step} style={stepStyle}>
-									<div
-										style={{
-											width: "18px",
-											height: "18px",
-											borderRadius: "50%",
-											background: "#3f3f46",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											fontSize: "9px",
-											fontWeight: 700,
-											color: "#e4e4e7",
-											flexShrink: 0,
-										}}
-									>
+								<div key={step.step} className="flex gap-2 items-start p-2 rounded-md border" style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}>
+									<div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0" style={{ color: "var(--ink)" }}>
 										{step.step}
 									</div>
-									<div style={{ flex: 1, minWidth: 0 }}>
-										<div
-											style={{
-												fontSize: "11px",
-												fontWeight: 600,
-												color: "#e4e4e7",
-												whiteSpace: "nowrap",
-												overflow: "hidden",
-												textOverflow: "ellipsis",
-											}}
-										>
-											{step.drillType} — Ø{step.diameterMm}mm × {step.depthMm}mm
+									<div className="flex-1 min-w-0">
+										<div className="text-xs font-medium truncate" style={{ color: "var(--ink)" }}>
+											{step.drillType} • Ø{step.diameterMm}мм × {step.depthMm}мм
 										</div>
-										<div style={{ fontSize: "10px", color: "#71717a" }}>
-											{step.rpmRange} · {step.torqueNcm}
-											{step.irrigation ? " · 💧" : ""}
+										<div className="text-[11px]" style={{ color: "var(--muted)" }}>
+											{step.rpmRange} RPM • {step.torqueNcm} Ncm {step.irrigation ? "• Охлаждение физраствором" : ""}
 										</div>
 										{step.note && (
-											<div
-												style={{
-													fontSize: "10px",
-													color: "#f59e0b",
-													marginTop: "1px",
-													whiteSpace: "normal",
-												}}
-											>
+											<div className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
 												{step.note}
 											</div>
 										)}
@@ -248,7 +176,7 @@ export function BoneQualityPanel({
 							))}
 						</div>
 					</div>
-				</>
+				</div>
 			)}
 		</div>
 	);
@@ -266,28 +194,15 @@ function PanelHeader({
 	return (
 		<div
 			onClick={onToggle}
-			style={{
-				padding: "8px 12px",
-				display: "flex",
-				justifyContent: "space-between",
-				alignItems: "center",
-				cursor: "pointer",
-				borderBottom: "1px solid #3f3f46",
-				userSelect: "none",
-			}}
+			className="flex justify-between items-center cursor-pointer pb-1.5 border-b select-none"
+			style={{ borderColor: "var(--line)" }}
 		>
-			<span
-				style={{
-					fontSize: "11px",
-					fontWeight: 700,
-					color: "#a1a1aa",
-					letterSpacing: "0.5px",
-				}}
-			>
-				🦴 BONE QUALITY · FDI {toothFdi}
+			<span className="text-xs font-bold flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
+				<Activity className="w-4 h-4 text-sky-500" />
+				Плотность кости (HU) • Зуб #{toothFdi}
 			</span>
-			<span style={{ fontSize: "10px", color: "#52525b" }}>
-				{expanded ? "▲" : "▼"}
+			<span style={{ color: "var(--muted)" }}>
+				{expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
 			</span>
 		</div>
 	);
@@ -304,65 +219,15 @@ function ZoneCard({ label, hu }: { label: string; hu: number }) {
 					: "#f97316";
 	return (
 		<div
-			style={{
-				background: "#18181b",
-				borderRadius: "6px",
-				padding: "6px 8px",
-				border: "1px solid #3f3f46",
-			}}
+			className="p-2 rounded-md border text-center"
+			style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 		>
-			<div style={{ fontSize: "9px", color: "#71717a", marginBottom: "2px" }}>
+			<div className="text-[10px] truncate" style={{ color: "var(--muted)" }}>
 				{label}
 			</div>
-			<div style={{ fontSize: "13px", fontWeight: 700, color }}>
+			<div className="text-xs font-bold" style={{ color }}>
 				{Math.round(hu)} HU
 			</div>
 		</div>
 	);
 }
-
-// --- Styles ---
-const panelStyle: React.CSSProperties = {
-	width: "240px",
-	flexShrink: 0,
-	background: "#09090b",
-	borderLeft: "1px solid #27272a",
-	display: "flex",
-	flexDirection: "column",
-	overflow: "hidden",
-	fontSize: "12px",
-	fontFamily: "monospace",
-};
-
-const selectStyle: React.CSSProperties = {
-	width: "100%",
-	background: "#18181b",
-	color: "#e4e4e7",
-	border: "1px solid #3f3f46",
-	borderRadius: "6px",
-	padding: "5px 8px",
-	fontSize: "11px",
-	cursor: "pointer",
-	outline: "none",
-};
-
-const warnStyle: React.CSSProperties = {
-	background: "rgba(239,68,68,0.1)",
-	border: "1px solid rgba(239,68,68,0.3)",
-	borderRadius: "6px",
-	padding: "6px 8px",
-	fontSize: "10px",
-	color: "#fca5a5",
-	lineHeight: 1.5,
-	marginBottom: "4px",
-};
-
-const stepStyle: React.CSSProperties = {
-	display: "flex",
-	gap: "8px",
-	alignItems: "flex-start",
-	background: "#18181b",
-	borderRadius: "6px",
-	padding: "6px 8px",
-	border: "1px solid #27272a",
-};

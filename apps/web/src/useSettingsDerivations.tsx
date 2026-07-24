@@ -1370,24 +1370,24 @@ export function useSettingsDerivations() {
 		settingsTab === "telegram"
 			? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
 			: "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-	const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-	const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-	const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
-	const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-	const typedChairs = dashboard.clinicSettings.chairs as Chair[];
-	const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
-	const typedUiLanguageOptions = uiLanguageOptions as Array<{
+	const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
+	const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
+	const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
+	const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
+	const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
+	const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
+	const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
 		value: string;
 		label: string;
 		detail: string;
 	}>;
 	const typedTelegramLinkStaffOptions =
-		telegramLinkStaffOptions as StaffMember[];
+		(telegramLinkStaffOptions ?? []) as StaffMember[];
 
 	const typedImagingConnectorCards =
-		imagingConnectorCards as ImagingConnectorCard[];
+		(imagingConnectorCards ?? []) as ImagingConnectorCard[];
 	const typedImagingViewerCapabilities =
-		imagingViewerCapabilities as ImagingViewerCapability[];
+		(imagingViewerCapabilities ?? []) as ImagingViewerCapability[];
 	const typedCtPlanningImplantPlan =
 		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
 	const typedCtPlanningActiveQuickActionId =
@@ -1396,10 +1396,9 @@ export function useSettingsDerivations() {
 			: null;
 	const typedImagingViewerActiveTool =
 		imagingViewerActiveTool as ImagingViewerTool;
-	const typedIntegrationPresets = dashboard.clinicSettings
-		.integrationPresets as IntegrationPreset[];
-	const typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
-	const typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
+	const typedIntegrationPresets = (dashboard?.clinicSettings?.integrationPresets ?? []) as IntegrationPreset[];
+	const typedSpeechProviders = (dashboard?.speechProviders ?? []) as SpeechProvider[];
+	const typedRecognitionPresets = (recognitionPresets ?? []) as RecognitionPreset[];
 	const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
 	const typedSpeechRecordingRecovery =
 		speechRecordingRecovery as SpeechRecordingRecoveryList | null;
@@ -1407,24 +1406,24 @@ export function useSettingsDerivations() {
 		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedSmartImportPreview =
 		smartImportPreview as SmartImportPreviewResponse | null;
-	const typedImagingSourceChoices = imagingSourceChoices as ImagingSourceKind[];
+	const typedImagingSourceChoices = (imagingSourceChoices ?? []) as ImagingSourceKind[];
 	const typedImagingImportPreview =
 		imagingImportPreview as ImagingImportPreviewResponse | null;
 	const typedBrowserContinuityChecks =
-		browserContinuityChecks as BrowserContinuityCheck[];
+		(browserContinuityChecks ?? []) as BrowserContinuityCheck[];
 	const typedLocalBridgeReadiness =
 		localBridgeReadiness as LocalBridgeReadinessResponse | null;
 	const typedLocalBridgeUsePlans =
 		localBridgeUsePlans as LocalBridgeUsePlansResponse | null;
 	const typedPersistenceIntegrity =
 		persistenceIntegrity as PersistenceIntegrityReport | null;
-	const typedImportBatches = dashboard.importBatches as ImportBatch[];
-	const typedAuditEvents = dashboard.auditEvents as AuditEvent[];
+	const typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
+	const typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
 	const typedImportSourceKinds = Object.keys(
-		importSourceLabels,
+		importSourceLabels ?? {},
 	) as ImportSourceKind[];
 	const typedDocumentIngestionTargets = Object.keys(
-		ingestionTargetLabels,
+		ingestionTargetLabels ?? {},
 	) as DocumentIngestionTarget[];
 	const typedDocumentIngestion =
 		documentIngestion as DocumentIngestionResponse | null;
@@ -1432,10 +1431,8 @@ export function useSettingsDerivations() {
 	const typedImportPreview = importPreview as ImportPreviewResponse | null;
 	const typedActiveWorkspaceProfile =
 		activeWorkspaceProfile as WorkspaceProfile | null;
-	const typedWorkspaceProfiles = dashboard.clinicSettings
-		.workspaceProfiles as WorkspaceProfile[];
-	const typedRoleAccessPolicies = dashboard.clinicSettings
-		.roleAccessPolicies as RoleAccessPolicy[];
+	const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
+	const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 	const typedTelegramChatLinks =
 		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
 	const typedTelegramLinkCodes =
@@ -1445,7 +1442,7 @@ export function useSettingsDerivations() {
 	const typedTelegramOutbox =
 		telegramOutbox as DenteTelegramOutboxResponse | null;
 	const typedVisibleTelegramOutboxItems =
-		visibleTelegramOutboxItems as DenteTelegramOutboxItem[];
+		(visibleTelegramOutboxItems ?? []) as DenteTelegramOutboxItem[];
 	const telegramOutboxRemainingCount = typedTelegramOutbox
 		? Math.max(
 				0,
@@ -1455,9 +1452,9 @@ export function useSettingsDerivations() {
 		: hiddenTelegramOutboxItemCount;
 	const typedTelegramStatus = telegramStatus as DenteTelegramBotStatus | null;
 	const typedTelegramOutboxStatusFilterOptions =
-		telegramOutboxStatusFilterOptions as string[];
+		(telegramOutboxStatusFilterOptions ?? []) as string[];
 	const typedTelegramOutboxTemplateFilterOptions =
-		telegramOutboxTemplateFilterOptions as string[];
+		(telegramOutboxTemplateFilterOptions ?? []) as string[];
 	const typedTelegramInlineButtonKindLabels =
 		telegramInlineButtonKindLabels as Record<string, string>;
 	const typedTelegramFeaturePlan =
@@ -1507,8 +1504,8 @@ export function useSettingsDerivations() {
 	const clinicLookupSuggestionFieldEntries = (
 		fields: Record<string, unknown>,
 	) =>
-		Object.entries(fields).filter(([key, value]) => {
-			if (!Object.hasOwn(clinicPublicLookupFieldLabels, key)) return false;
+		Object.entries(fields || {}).filter(([key, value]) => {
+			if (!Object.hasOwn(clinicPublicLookupFieldLabels || {}, key)) return false;
 			if (value === null || typeof value === "undefined") return false;
 			return String(value).trim().length > 0;
 		});
@@ -1639,18 +1636,18 @@ export function useSettingsDerivations() {
 	const typedDicomFolderWorkupPlan =
 		dicomFolderWorkupPlan as DicomFolderWorkupPlanResponse | null;
 	const typedCbctWorkbenchTools = (
-		typedCbctWorkbenchSeries?.mprReadiness.tools.length
+		typedCbctWorkbenchSeries?.mprReadiness?.tools?.length
 			? cbctWorkbenchTools
 			: ["window_level", "pan", "zoom", "external_open"]
 	) as DicomMprTool[];
 	const typedCbctMprBlockers =
-		typedCbctWorkbenchSeries?.mprReadiness.blockers ?? [];
+		typedCbctWorkbenchSeries?.mprReadiness?.blockers ?? [];
 	const typedCbctMprWarnings =
-		typedCbctWorkbenchSeries?.mprReadiness.warnings ?? [];
+		typedCbctWorkbenchSeries?.mprReadiness?.warnings ?? [];
 	const typedCbctResourceSafetyCaps =
-		typedCbctWorkbenchSeries?.mprReadiness.resourcePolicy.safetyCaps ?? [];
+		typedCbctWorkbenchSeries?.mprReadiness?.resourcePolicy?.safetyCaps ?? [];
 	const mprControlsReady = Boolean(
-		typedCbctWorkbenchSeries?.mprReadiness.canOpenMpr,
+		typedCbctWorkbenchSeries?.mprReadiness?.canOpenMpr,
 	);
 	const mprSliceMaxIndex = Math.max(
 		0,
@@ -1865,13 +1862,10 @@ export function useSettingsDerivations() {
 		typedMigrationAutopilot?.clinicLookup ?? null;
 	const typedMigrationAutopilotSteps = (typedMigrationAutopilot?.steps ??
 		[]) as MigrationAutopilotStep[];
-	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket
-		.lanes ?? []) as MigrationAutopilotPacketLane[];
-	const typedMigrationHandoffChecklist = (typedMigrationAutopilot
-		?.operatorPacket.handoffChecklist ??
-		[]) as MigrationAutopilotHandoffChecklistItem[];
+	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket?.lanes ?? []) as MigrationAutopilotPacketLane[];
+	const typedMigrationHandoffChecklist = (typedMigrationAutopilot?.operatorPacket?.handoffChecklist ?? []) as MigrationAutopilotHandoffChecklistItem[];
 	const migrationDryRunSummary =
-		typedMigrationAutopilot?.operatorPacket.dryRun ?? null;
+		typedMigrationAutopilot?.operatorPacket?.dryRun ?? null;
 	const migrationTriageItems = [...typedMigrationHandoffChecklist]
 		.filter((item) => item.blocking || item.status !== "ready_for_preview")
 		.sort((left, right) => {
@@ -1903,7 +1897,7 @@ export function useSettingsDerivations() {
 	const typedClinicPublicLookupTargets =
 		typedClinicPublicLookup?.publicLookupTargets ?? [];
 	const migrationOperatorScriptSteps =
-		typedMigrationAutopilot?.operatorPacket.operatorScript.steps ?? [];
+		typedMigrationAutopilot?.operatorPacket?.operatorScript?.steps ?? [];
 	const migrationPrimaryOperatorStep =
 		migrationOperatorScriptSteps.find(
 			(step) =>
@@ -2018,7 +2012,7 @@ export function useSettingsDerivations() {
 						? "active"
 						: "pending_review",
 			detail: typedMigrationAutopilot
-				? `${Math.round(typedMigrationAutopilot.operatorPacket.score * 100)}% готовности`
+				? `${Math.round((typedMigrationAutopilot.operatorPacket?.score ?? 0) * 100)}% готовности`
 				: typedMigrationSourceWorkup
 					? "План источника открыт"
 					: isMigrationAutopilotLoading || isMigrationSourceWorkupLoading
@@ -2251,23 +2245,23 @@ export function useSettingsDerivations() {
 			</details>
 		);
 	};
-	const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<
+	const typedClinicalRuleActionLabels = (clinicalRuleActionLabels || {}) as Record<
 		ClinicalRuleAction,
 		string
 	>;
 	const typedClinicalRuleActions = Object.keys(
 		typedClinicalRuleActionLabels,
 	) as ClinicalRuleAction[];
-	const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<
+	const typedClinicalRuleSeverityLabels = (clinicalRuleSeverityLabels || {}) as Record<
 		ClinicalRuleSeverity,
 		string
 	>;
 	const typedClinicalRuleSeverities = Object.keys(
 		typedClinicalRuleSeverityLabels,
 	) as ClinicalRuleSeverity[];
-	const typedClinicalRules = dashboard.clinicalRules as ClinicalRule[];
-	const typedServiceCatalog = dashboard.serviceCatalog as ServiceCatalogItem[];
-	const typedServiceCategoryLabels = serviceCategoryLabels as Record<
+	const typedClinicalRules = (dashboard?.clinicalRules || []) as ClinicalRule[];
+	const typedServiceCatalog = (dashboard?.serviceCatalog || []) as ServiceCatalogItem[];
+	const typedServiceCategoryLabels = (serviceCategoryLabels || {}) as Record<
 		ServiceCategory,
 		string
 	>;

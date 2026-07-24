@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { auth } from "../../AppHelpers";
+import { Calculator } from "lucide-react";
 
 interface PricelistPayrollItem {
 	id: string;
@@ -13,16 +15,16 @@ interface PricelistPayrollItem {
 }
 
 export const PricelistDoctorPayrollsWidget: React.FC = () => {
-	const [items, setItems] = useState<PricelistPayrollItem[]>([]);
+	const [payrolls, setPayrolls] = useState<PricelistPayrollItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/finance/pricelist-payrolls", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		fetch("/api/finance/pricelist-doctor-payrolls", {
+			headers: auth.denteClinicalReadHeaders(),
 		})
 			.then((res) => res.json())
 			.then((data) => {
-				setItems(Array.isArray(data) ? data : []);
+				setPayrolls(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -34,47 +36,49 @@ export const PricelistDoctorPayrollsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="pricelist-doctor-payrolls-widget"
-			className="p-4 bg-slate-900 border border-emerald-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">💰</span>
-					<h3 className="font-semibold text-emerald-400">
-						Отображение ЗП Врача и Маржинальности Клиники в Прейскуранте
+					<Calculator className="w-5 h-5 text-emerald-500" />
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						Расчет зарплат врачей по услугам Прайс-Листа
 					</h3>
 				</div>
-				<span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-					Прейскурант & Сдельщина
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					Процент & Ставки врачей
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка расчета сдельной ЗП из прейскуранта...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка расчета зарплат прайс-листа...
+				</div>
+			) : payrolls.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Ставки зарплат по услугам прайс-листа не назначены.
+				</div>
 			) : (
-				<div className="space-y-3">
-					{items.map((item) => (
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{payrolls.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="p-3 rounded-lg border space-y-2"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-xs bg-slate-950 text-slate-300 px-1.5 py-0.5 rounded border border-slate-800 font-mono">
-										{item.serviceCode}
-									</span>
-									<span className="text-sm font-bold text-slate-200">{item.serviceName}</span>
-								</div>
-								<div className="text-xs text-slate-400 mt-1">
-									Цена: <strong className="text-slate-200">{Number(item.priceRub).toLocaleString()} ₽</strong>
-								</div>
+							<div className="flex justify-between items-start">
+								<span className="text-xs font-bold px-2 py-0.5 rounded border bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+									{item.serviceCode}
+								</span>
+								<span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+									Врачу: {item.doctorPayrollPercent}% ({Number(item.doctorPayrollRub).toLocaleString("ru-RU")} ₽)
+								</span>
 							</div>
-							<div className="flex items-center space-x-3 text-xs">
-								<div className="bg-emerald-950 text-emerald-300 px-2 py-1 rounded border border-emerald-800 font-bold">
-									ЗП Врача ({item.doctorPayrollPercent}%): {Number(item.doctorPayrollRub).toLocaleString()} ₽
-								</div>
-								<div className="bg-slate-950 text-slate-300 px-2 py-1 rounded border border-slate-800 font-semibold">
-									Маржа Клиники: {Number(item.clinicMarginRub).toLocaleString()} ₽
-								</div>
+							<h4 className="text-sm font-medium leading-snug">{item.serviceName}</h4>
+							<div className="text-xs flex items-center justify-between pt-1 border-t" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
+								<span>Цена: <strong>{Number(item.priceRub).toLocaleString("ru-RU")} ₽</strong></span>
+								<span>Маржа клиники: <strong>{Number(item.clinicMarginRub).toLocaleString("ru-RU")} ₽</strong></span>
 							</div>
 						</div>
 					))}

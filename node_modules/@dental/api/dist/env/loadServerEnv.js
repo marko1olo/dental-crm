@@ -11,7 +11,7 @@ const mergeableKeyListEnvNames = new Set([
     "AZURE_SPEECH_KEYS",
     "GOOGLE_API_KEYS",
     "HUGGINGFACE_API_TOKENS",
-    "HF_TOKENS"
+    "HF_TOKENS",
 ]);
 function splitEnvFileList(value) {
     if (!value?.trim())
@@ -60,14 +60,14 @@ function baseEnvFiles() {
         path.resolve(process.cwd(), ".env.local"),
         path.resolve(process.cwd(), ".env"),
         path.resolve(process.cwd(), "..", "..", ".env.local"),
-        path.resolve(process.cwd(), "..", "..", ".env")
+        path.resolve(process.cwd(), "..", "..", ".env"),
     ];
 }
 function explicitEnvFiles() {
     return [
         process.env.DENTAL_ENV_FILE,
         process.env.DENTAL_SPEECH_ENV_FILE,
-        ...splitEnvFileList(process.env.DENTAL_EXTRA_ENV_FILES)
+        ...splitEnvFileList(process.env.DENTAL_EXTRA_ENV_FILES),
     ]
         .filter((item) => Boolean(item?.trim()))
         .map(normalizeEnvPath);

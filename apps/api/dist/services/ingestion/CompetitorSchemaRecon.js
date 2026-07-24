@@ -10,16 +10,16 @@ export class CompetitorSchemaRecon {
                         firstName: "FName",
                         lastName: "LName",
                         birthDate: "Birthdate",
-                        phone: "HmPhone"
-                    }
+                        phone: "HmPhone",
+                    },
                 },
                 visits: {
                     tableName: "appointment",
                     columns: {
                         id: "AptNum",
                         patientId: "PatNum",
-                        dateTime: "AptDateTime"
-                    }
+                        dateTime: "AptDateTime",
+                    },
                 },
                 procedures: {
                     tableName: "procedurelog",
@@ -28,10 +28,10 @@ export class CompetitorSchemaRecon {
                         patientId: "PatNum",
                         date: "ProcDate",
                         amount: "ProcFee",
-                        tooth: "ToothNum"
-                    }
-                }
-            }
+                        tooth: "ToothNum",
+                    },
+                },
+            },
         },
         {
             systemName: "Dentrix",
@@ -43,16 +43,16 @@ export class CompetitorSchemaRecon {
                         firstName: "FirstName",
                         lastName: "LastName",
                         birthDate: "Birthdate",
-                        phone: "Phone"
-                    }
+                        phone: "Phone",
+                    },
                 },
                 visits: {
                     tableName: "Appt",
                     columns: {
                         id: "ApptID",
                         patientId: "PatID",
-                        dateTime: "StartDateTime"
-                    }
+                        dateTime: "StartDateTime",
+                    },
                 },
                 procedures: {
                     tableName: "Ledger",
@@ -61,18 +61,18 @@ export class CompetitorSchemaRecon {
                         patientId: "PatID",
                         date: "Date",
                         amount: "Amount",
-                        tooth: "ToothRange"
-                    }
-                }
-            }
-        }
+                        tooth: "ToothRange",
+                    },
+                },
+            },
+        },
     ];
     /**
      * Attempts to match extracted table names and column names to a known competitor schema.
      */
     static matchSchema(extractedTables) {
-        const tableNames = Object.keys(extractedTables).map(t => t.toLowerCase());
-        for (const template of this.templates) {
+        const tableNames = Object.keys(extractedTables).map((t) => t.toLowerCase());
+        for (const template of CompetitorSchemaRecon.templates) {
             const pTable = template.tables.patients.tableName.toLowerCase();
             const vTable = template.tables.visits.tableName.toLowerCase();
             if (tableNames.includes(pTable) && tableNames.includes(vTable)) {

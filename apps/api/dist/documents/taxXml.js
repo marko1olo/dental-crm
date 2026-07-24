@@ -1,5 +1,5 @@
-import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
+import { taxPaymentsForDocumentScope } from "./taxPaymentSnapshot.js";
 const KND_1151156_PRINT_FORM_CODE = "1151156";
 const FNS_MEDICAL_EXPENSE_XML_KND = "1184043";
 const FNS_MEDICAL_EXPENSE_XML_VERSION = "5.01";
@@ -35,7 +35,10 @@ function validateSingleTagPair(issues, xmlText, openNeedle, closeNeedle, code, n
     const openCount = countOccurrences(xmlText, openNeedle);
     const closeCount = countOccurrences(xmlText, closeNeedle);
     if (openCount !== 1 || closeCount !== 1) {
-        issues.push({ code, message: `${name}: ожидалась одна открывающая и одна закрывающая метка.` });
+        issues.push({
+            code,
+            message: `${name}: ожидалась одна открывающая и одна закрывающая метка.`,
+        });
     }
 }
 function validateKnd1151156XmlDraft(xmlText, expected) {
@@ -57,10 +60,11 @@ function validateKnd1151156XmlDraft(xmlText, expected) {
     validateSingleTagPair(issues, xmlText, "<Документ ", "</Документ>", "document-balance", "Документ");
     validateSingleTagPair(issues, xmlText, "<СведРасхУсл ", "</СведРасхУсл>", "expense-balance", "СведРасхУсл");
     const noticeNumber = xmlText.match(/НомерСвед="([^"]+)"/u)?.[1] ?? "";
-    if (!/^\d+$/.test(noticeNumber) || noticeNumber.length > FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH) {
+    if (!/^\d+$/.test(noticeNumber) ||
+        noticeNumber.length > FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH) {
         issues.push({
             code: "notice-number-format",
-            message: `НомерСвед должен быть числом длиной до ${FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH} знаков.`
+            message: `НомерСвед должен быть числом длиной до ${FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH} знаков.`,
         });
     }
     const expectedCode1 = `СуммаКод1="${money(expected.sumCode1)}"`;
@@ -69,27 +73,42 @@ function validateKnd1151156XmlDraft(xmlText, expected) {
         pushMissingPreflightIssue(issues, xmlText, expectedCode1, "sum-code-1", "сумма по коду услуги 1 не совпадает с платежами");
     }
     else if (xmlText.includes("СуммаКод1=")) {
-        issues.push({ code: "sum-code-1-extra", message: "СуммаКод1 не должна выгружаться при нулевой сумме." });
+        issues.push({
+            code: "sum-code-1-extra",
+            message: "СуммаКод1 не должна выгружаться при нулевой сумме.",
+        });
     }
     if (expected.sumCode2 > 0) {
         pushMissingPreflightIssue(issues, xmlText, expectedCode2, "sum-code-2", "сумма по коду услуги 2 не совпадает с платежами");
     }
     else if (xmlText.includes("СуммаКод2=")) {
-        issues.push({ code: "sum-code-2-extra", message: "СуммаКод2 не должна выгружаться при нулевой сумме." });
+        issues.push({
+            code: "sum-code-2-extra",
+            message: "СуммаКод2 не должна выгружаться при нулевой сумме.",
+        });
     }
     if (expected.requiresPatient) {
         pushMissingPreflightIssue(issues, xmlText, "<Пациент", "patient-node", "для разного налогоплательщика и пациента нужен блок Пациент");
     }
     else if (xmlText.includes("<Пациент")) {
-        issues.push({ code: "patient-node-extra", message: "блок Пациент не должен выгружаться, когда плательщик и пациент совпадают." });
+        issues.push({
+            code: "patient-node-extra",
+            message: "блок Пациент не должен выгружаться, когда плательщик и пациент совпадают.",
+        });
     }
     for (const token of ["undefined", "NaN", "Infinity", "[object Object]"]) {
         if (xmlText.includes(token)) {
-            issues.push({ code: "invalid-token", message: `XML содержит техническое значение ${token}.` });
+            issues.push({
+                code: "invalid-token",
+                message: `XML содержит техническое значение ${token}.`,
+            });
         }
     }
     if (/[ÃÂ]/u.test(xmlText)) {
-        issues.push({ code: "mojibake", message: "XML содержит признаки битой кодировки." });
+        issues.push({
+            code: "mojibake",
+            message: "XML содержит признаки битой кодировки.",
+        });
     }
     return issues;
 }
@@ -105,17 +124,23 @@ function compactDocumentNumber(document) {
     const idDigits = document.id.replace(/\D+/g, "");
     const numericHash = Array.from(document.id).reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) % 1_000_000_000, 17);
     const sequenceLength = Math.max(1, FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH - year.length);
-    const sequence = (idDigits || String(numericHash)).slice(0, sequenceLength).padStart(sequenceLength, "0");
+    const sequence = (idDigits || String(numericHash))
+        .slice(0, sequenceLength)
+        .padStart(sequenceLength, "0");
     return (`${year}${sequence}`.replace(/\D+/g, "") || "1").slice(0, FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH);
 }
 function taxPaymentsForDocument(document, payments) {
     return taxPaymentsForDocumentScope(document, payments);
 }
 function taxPaymentCode(payment) {
-    return payment.taxDeductionCode === "1" || payment.taxDeductionCode === "2" ? payment.taxDeductionCode : null;
+    return payment.taxDeductionCode === "1" || payment.taxDeductionCode === "2"
+        ? payment.taxDeductionCode
+        : null;
 }
 function taxPaymentSum(payments, code) {
-    return payments.filter((payment) => taxPaymentCode(payment) === code).reduce((total, payment) => total + payment.amountRub, 0);
+    return payments
+        .filter((payment) => taxPaymentCode(payment) === code)
+        .reduce((total, payment) => total + payment.amountRub, 0);
 }
 function money(value) {
     return Math.max(0, value).toFixed(2);
@@ -127,20 +152,29 @@ function isoToRuDate(value) {
     const parsed = value ? new Date(value) : new Date();
     if (Number.isNaN(parsed.getTime()))
         return null;
-    return parsed.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return parsed.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
 }
 function nameParts(fullName) {
-    const parts = repairMojibakeText(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    const parts = repairMojibakeText(fullName ?? "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
     if (parts.length < 2)
         return null;
     return {
         lastName: parts[0],
         firstName: parts[1],
-        middleName: parts.slice(2).join(" ")
+        middleName: parts.slice(2).join(" "),
     };
 }
 function fioXml(parts) {
-    const middleName = parts.middleName ? ` Отчество="${xml(parts.middleName)}"` : "";
+    const middleName = parts.middleName
+        ? ` Отчество="${xml(parts.middleName)}"`
+        : "";
     return `<ФИО Фамилия="${xml(parts.lastName)}" Имя="${xml(parts.firstName)}"${middleName}/>`;
 }
 function identityDocumentKindCode(value) {
@@ -165,7 +199,9 @@ function identityDocumentNumber(value) {
     const serialNumber = normalized.match(/(?:сер(?:ия)?\.?\s*)?([A-Za-zА-Яа-я0-9-]{1,12})\s*(?:№|N|номер)?\s*([A-Za-zА-Яа-я0-9-]{3,12})/u);
     if (!serialNumber)
         return null;
-    const joined = `${serialNumber[1]} ${serialNumber[2]}`.replace(/\s+/g, " ").trim();
+    const joined = `${serialNumber[1]} ${serialNumber[2]}`
+        .replace(/\s+/g, " ")
+        .trim();
     return joined.length <= 25 ? joined : joined.slice(0, 25);
 }
 function identityDocumentIssuedAt(value) {
@@ -187,14 +223,26 @@ function identityDocumentXml(value) {
 function taxPersonIdentifierXml(inn, identityDocument) {
     const cleanInn = digits(inn);
     if (cleanInn) {
-        return cleanInn.length === 12 ? { innAttribute: ` ИНН="${xml(cleanInn)}"`, identityXml: "" } : null;
+        return cleanInn.length === 12
+            ? { innAttribute: ` ИНН="${xml(cleanInn)}"`, identityXml: "" }
+            : null;
     }
     const identityXml = identityDocumentXml(identityDocument);
     return identityXml ? { innAttribute: "", identityXml } : null;
 }
 function normalizedRelationship(value) {
-    const normalized = repairMojibakeText(value ?? "").trim().toLocaleLowerCase("ru-RU");
-    return ["self", "patient", "me", "пациент", "сам пациент", "сама пациентка", "налогоплательщик"].includes(normalized)
+    const normalized = repairMojibakeText(value ?? "")
+        .trim()
+        .toLocaleLowerCase("ru-RU");
+    return [
+        "self",
+        "patient",
+        "me",
+        "пациент",
+        "сам пациент",
+        "сама пациентка",
+        "налогоплательщик",
+    ].includes(normalized)
         ? "self"
         : "other";
 }
@@ -238,44 +286,85 @@ function requireTaxOfficeCode(value) {
 }
 export function buildKnd1151156Xml(document, patient, context) {
     if (document.kind !== "tax_deduction_certificate") {
-        return { ok: false, statusCode: 409, error: "XML КНД 1151156 доступен только для справки об оплате медицинских услуг с 2024 года." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "XML КНД 1151156 доступен только для справки об оплате медицинских услуг с 2024 года.",
+        };
     }
     if (!document.taxYear || document.taxYear < 2024) {
-        return { ok: false, statusCode: 409, error: "XML КНД 1151156 требует налоговый год 2024 или позже." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "XML КНД 1151156 требует налоговый год 2024 или позже.",
+        };
     }
     const taxOfficeCode = requireTaxOfficeCode(context.taxOfficeCode);
     if (!taxOfficeCode) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 укажите в серверных настройках 4-значный код налогового органа." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 укажите в серверных настройках 4-значный код налогового органа.",
+        };
     }
     const clinic = clinicXml(context.clinicProfile);
     const signer = signerXml(context.clinicProfile);
     if (!clinic || !signer) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 нужен корректный ИНН клиники/ИП и ФИО подписанта." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 нужен корректный ИНН клиники/ИП и ФИО подписанта.",
+        };
     }
     const taxPayments = taxPaymentsForDocument(document, context.payments);
     if (!taxPayments.length) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 нужен хотя бы один оплаченный платеж за выбранный год." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 нужен хотя бы один оплаченный платеж за выбранный год.",
+        };
     }
     if (taxPayments.some((payment) => !taxPaymentCode(payment))) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 каждый платеж должен иметь код услуги 1 или 2." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 каждый платеж должен иметь код услуги 1 или 2.",
+        };
     }
     const payerPayment = taxPayments[0];
     const payer = payerPersonXml(payerPayment);
     if (!payer) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности налогоплательщика с датой выдачи." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности налогоплательщика с датой выдачи.",
+        };
     }
-    const samePatientFlag = normalizedRelationship(payerPayment.payerRelationship) === "self" ? "1" : "0";
+    const samePatientFlag = normalizedRelationship(payerPayment.payerRelationship) === "self"
+        ? "1"
+        : "0";
     const patientXml = samePatientFlag === "0" ? patientPersonXml(patient) : null;
     if (samePatientFlag === "0" && !patientXml) {
-        return { ok: false, statusCode: 409, error: "Если налогоплательщик и пациент разные, для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности пациента с датой выдачи." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Если налогоплательщик и пациент разные, для XML КНД 1151156 нужны ФИО, дата рождения и 12-значный ИНН либо документ личности пациента с датой выдачи.",
+        };
     }
     const sumCode1 = taxPaymentSum(taxPayments, "1");
     const sumCode2 = taxPaymentSum(taxPayments, "2");
-    const sumAttrs = [sumCode1 > 0 ? `СуммаКод1="${money(sumCode1)}"` : null, sumCode2 > 0 ? `СуммаКод2="${money(sumCode2)}"` : null]
+    const sumAttrs = [
+        sumCode1 > 0 ? `СуммаКод1="${money(sumCode1)}"` : null,
+        sumCode2 > 0 ? `СуммаКод2="${money(sumCode2)}"` : null,
+    ]
         .filter(Boolean)
         .join(" ");
     if (!sumAttrs) {
-        return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 нужна сумма расходов по коду услуги 1 или 2." };
+        return {
+            ok: false,
+            statusCode: 409,
+            error: "Для XML КНД 1151156 нужна сумма расходов по коду услуги 1 или 2.",
+        };
     }
     const documentDate = isoToRuDate(document.issuedAt || new Date().toISOString());
     const documentNumber = compactDocumentNumber(document);
@@ -300,7 +389,7 @@ export function buildKnd1151156Xml(document, patient, context) {
         samePatientFlag,
         sumCode1,
         sumCode2,
-        requiresPatient: samePatientFlag === "0"
+        requiresPatient: samePatientFlag === "0",
     });
     if (preflightIssues.length) {
         return {
@@ -308,7 +397,7 @@ export function buildKnd1151156Xml(document, patient, context) {
             statusCode: 409,
             error: `XML КНД 1151156 не прошел внутреннюю структурную предпроверку DENTE: ${preflightIssues
                 .map((issue) => `${issue.code}: ${issue.message}`)
-                .join("; ")}`
+                .join("; ")}`,
         };
     }
     return {
@@ -317,7 +406,7 @@ export function buildKnd1151156Xml(document, patient, context) {
         xml: xmlText,
         warnings: [
             `Внутренняя структурная предпроверка DENTE пройдена: корень, КНД ${FNS_MEDICAL_EXPENSE_XML_KND}, ВерсФорм ${FNS_MEDICAL_EXPENSE_XML_VERSION}, НомерСвед, флаг пациента и суммы согласованы. Это не заменяет официальную XSD/ЭДО-проверку.`,
-            `XML draft собран по структуре приказа ФНС ${FNS_MEDICAL_EXPENSE_ORDER}; это не подписанный ТКС-пакет. Перед отправкой выполните операторскую XSD-проверку и подпись КЭП.`
-        ]
+            `XML draft собран по структуре приказа ФНС ${FNS_MEDICAL_EXPENSE_ORDER}; это не подписанный ТКС-пакет. Перед отправкой выполните операторскую XSD-проверку и подпись КЭП.`,
+        ],
     };
 }

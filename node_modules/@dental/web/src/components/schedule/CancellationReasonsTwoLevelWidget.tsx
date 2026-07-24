@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { AlertTriangle, Filter } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface CancellationReasonItem {
 	id: string;
@@ -12,69 +14,49 @@ interface CancellationReasonItem {
 }
 
 export const CancellationReasonsTwoLevelWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [reasons, setReasons] = useState<CancellationReasonItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/cancellation-reasons-two-level", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setReasons(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[CancellationReasonsTwoLevelWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, []);
+			.catch(() => setLoading(false));
+	}, [auth]);
 
 	return (
 		<div
 			data-testid="cancellation-reasons-two-level-widget"
-			className="p-4 bg-slate-900 border border-red-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
-				<div className="flex items-center space-x-2">
-					<span className="text-xl">🚫</span>
-					<h3 className="font-semibold text-red-400">
-						Двухуровневые Причины Отмены Приёмов (Клиника vs Пациент)
-					</h3>
-				</div>
-				<span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded border border-red-500/40">
-					Cancellation Classification
-				</span>
+			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800" title="Категоризация причин отмены приёма: инициатива клиники vs инициатива пациента">
+				<Filter className="w-4 h-4 text-rose-500" />
+				<h4 className="text-sm font-semibold">Двухуровневые причины отмены визитов (Клиника vs Пациент)</h4>
 			</div>
-
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка причин отмен...</div>
-			) : (
-				<div className="space-y-3">
-					{reasons.map((item) => (
-						<div
-							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-xs uppercase font-mono font-bold bg-red-950 text-red-300 px-2 py-0.5 rounded border border-red-800">
-										{item.category}
-									</span>
-									<span className="text-sm font-bold text-slate-200">{item.reasonTitle}</span>
-								</div>
-								<div className="text-xs text-slate-400 mt-1">Код причины: {item.reasonCode}</div>
-							</div>
-							<div className="flex items-center space-x-2">
-								{item.requiresNote && (
-									<span className="text-xs bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-800">
-										Требуется комментарий
-									</span>
-								)}
-							</div>
-						</div>
-					))}
+				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка причин отмены...</p>
+			) : reasons.length === 0 ? (
+				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+					Причины отмены визитов используются системные по умолчанию.
 				</div>
+			) : (
+				<ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+					{reasons.map((r) => (
+						<li
+							key={r.id}
+							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+						>
+							<span className="font-semibold">{r.reasonTitle} ({r.category})</span>
+							<span className="text-xs font-mono text-slate-500 dark:text-slate-400">{r.reasonCode}</span>
+						</li>
+					))}
+				</ul>
 			)}
 		</div>
 	);

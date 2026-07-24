@@ -1,14 +1,17 @@
 import fs from "fs";
 import path from "path";
 import { performance } from "perf_hooks";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 function readPersistedPayloadSync(filePath) {
     if (!fs.existsSync(filePath))
         return { payload: null, error: "state_file_missing" };
     try {
-        return { payload: JSON.parse(fs.readFileSync(filePath, "utf8")), error: null };
+        return {
+            payload: JSON.parse(fs.readFileSync(filePath, "utf8")),
+            error: null,
+        };
     }
     catch {
         return { payload: null, error: "state_file_unreadable" };
@@ -26,7 +29,7 @@ async function readPersistedPayloadAsync(filePath) {
     }
 }
 function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 async function runBenchmark() {
     const testFilePath = path.join(__dirname, "test-state.json");

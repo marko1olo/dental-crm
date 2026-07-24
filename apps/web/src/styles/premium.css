@@ -5,31 +5,38 @@
 
 :root,
 [data-theme="dark"] {
-	--bg-app: #030305;
-	--glass-panel: rgba(15, 15, 20, 0.45);
-	--glass-border: rgba(255, 255, 255, 0.05);
+	--bg-app: #07090e;
+	--glass-panel: rgba(15, 23, 42, 0.75);
+	--glass-border: rgba(255, 255, 255, 0.08);
 	--glass-shadow:
-		0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--glass-blur: blur(40px);
+		0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--glass-blur: blur(30px);
 	--teal-glow: 0 0 30px rgba(45, 212, 191, 0.25);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(45, 212, 191, 0.15),
-		rgba(13, 148, 136, 0.05)
+		rgba(45, 212, 191, 0.2),
+		rgba(13, 148, 136, 0.08)
 	);
-	--active-item-border: rgba(45, 212, 191, 0.4);
+	--active-item-border: rgba(45, 212, 191, 0.5);
 
-	--text-primary: #ffffff;
+	--text-primary: #f8fafc;
 	--text-secondary: #94a3b8;
+
+	--paper: #0f172a;
+	--paper-strong: #1e293b;
+	--paper-soft: #0b1120;
+	--ink: #f8fafc;
+	--muted: #94a3b8;
+	--line: rgba(255, 255, 255, 0.1);
 
 	--mesh-bg-1: radial-gradient(
 		circle at 10% 20%,
-		rgba(13, 148, 136, 0.12) 0px,
+		rgba(13, 148, 136, 0.15) 0px,
 		transparent 40%
 	);
 	--mesh-bg-2: radial-gradient(
 		circle at 90% 80%,
-		rgba(59, 130, 246, 0.08) 0px,
+		rgba(59, 130, 246, 0.1) 0px,
 		transparent 40%
 	);
 	--mesh-bg-3: radial-gradient(
@@ -39,39 +46,115 @@
 	);
 }
 
-[data-theme="light"] {
-	--bg-app: #f4f4f6;
-	--glass-panel: rgba(255, 255, 255, 0.65);
-	--glass-border: rgba(255, 255, 255, 0.9);
+[data-theme="light"],
+html.light {
+	--bg-app: #f8fafc;
+	--glass-panel: rgba(255, 255, 255, 0.95);
+	--glass-border: rgba(226, 232, 240, 0.9);
 	--glass-shadow:
-		0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
-	--glass-blur: blur(30px);
-	--teal-glow: 0 0 30px rgba(13, 148, 136, 0.15);
+		0 10px 25px -5px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+	--glass-blur: blur(20px);
+	--teal-glow: 0 0 20px rgba(13, 148, 136, 0.15);
 	--active-item-bg: linear-gradient(
 		135deg,
-		rgba(13, 148, 136, 0.08),
-		rgba(13, 148, 136, 0.02)
+		rgba(13, 148, 136, 0.12),
+		rgba(13, 148, 136, 0.04)
 	);
-	--active-item-border: rgba(13, 148, 136, 0.5);
+	--active-item-border: rgba(13, 148, 136, 0.4);
 
 	--text-primary: #0f172a;
-	--text-secondary: #64748b;
+	--text-secondary: #475569;
+
+	--paper: #ffffff;
+	--paper-strong: #ffffff;
+	--paper-soft: #f8fafc;
+	--ink: #0f172a;
+	--muted: #64748b;
+	--line: #e2e8f0;
+	--line-strong: #cbd5e1;
+
+	--slate-50: #f8fafc;
+	--slate-100: #f1f5f9;
+	--slate-200: #e2e8f0;
+	--slate-300: #cbd5e1;
+	--slate-400: #94a3b8;
+	--slate-500: #64748b;
+	--slate-600: #475569;
+	--slate-700: #334155;
+	--slate-800: #1e293b;
+	--slate-900: #0f172a;
 
 	--mesh-bg-1: radial-gradient(
 		circle at 0% 0%,
-		rgba(13, 148, 136, 0.08) 0px,
+		rgba(13, 148, 136, 0.05) 0px,
 		transparent 50%
 	);
 	--mesh-bg-2: radial-gradient(
 		circle at 100% 100%,
-		rgba(59, 130, 246, 0.05) 0px,
+		rgba(59, 130, 246, 0.04) 0px,
 		transparent 50%
 	);
 	--mesh-bg-3: radial-gradient(
 		circle at 50% 50%,
-		rgba(139, 92, 246, 0.03) 0px,
+		rgba(241, 245, 249, 0.8) 0px,
 		transparent 50%
 	);
+}
+
+/* Unified Zone Containers Styling */
+.workspace,
+.patients-panel,
+.schedule-panel,
+.documents-panel,
+.settings-zone,
+.visit-zone,
+.imaging-zone,
+.marketing-zone,
+.shift-zone,
+.finance-zone,
+.patients-zone,
+.schedule-zone,
+.documents-zone,
+.workspace-section,
+.protocol-settings,
+.rule-form,
+.patient-list,
+.patient-row,
+.patients-header,
+.patients-search-box,
+.smart-create-group,
+.quick-create-guidance,
+.card-body,
+.panel-body {
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
+	color: var(--text-primary);
+}
+
+/* Form Elements Theme Integration */
+input,
+select,
+textarea {
+	background-color: var(--paper-strong);
+	color: var(--text-primary);
+	border: 1px solid var(--glass-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--text-secondary);
+	opacity: 0.7;
+}
+
+/* Universal Text & Heading Harmonization */
+h1, h2, h3, h4, h5, h6,
+.panel-heading h2,
+.settings-heading h2 {
+	color: var(--text-primary);
 }
 
 /* Base Body Background with Mesh Gradients */
@@ -207,6 +290,7 @@ article {
 	border: 1px solid var(--glass-border) !important;
 	box-shadow: var(--glass-shadow) !important;
 	border-radius: 16px !important;
+	color: var(--text-primary) !important;
 	transition:
 		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
 		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;

@@ -1,6 +1,9 @@
 import { CheckCircle2, FileText } from "lucide-react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
+import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
+import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
+import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanStagesWidget";
 import {
   documentFactoryGroups,
   documentKindMetadata as sharedDocumentKindMetadata,
@@ -1260,7 +1263,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Договор платных медицинских услуг</h3>
                     <p>Фиксация номера, сроков, состава услуг, стоимости, порядка оплаты и обязательных уведомлений пациента до лечения.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1295,7 +1298,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </div>
                   <label>
                     Основание обращения
-                    <textarea value={paidContractCareReason} onChange={(event) => setPaidContractCareReason(event.target.value)} placeholder={dashboard?.activeVisit.complaint ?? "жалоба, диагноз или плановый повод"} rows={2} />
+                    <textarea value={paidContractCareReason} onChange={(event) => setPaidContractCareReason(event.target.value)} placeholder={dashboard?.activeVisit?.complaint ?? "жалоба, диагноз или плановый повод"} rows={2} />
                     <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
                       {["Кариес", "Пульпит", "Острая боль", "Плановый осмотр", "Профгигиена", "Жалобы отсутствуют"].map(chip => (
                         <button
@@ -1317,7 +1320,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={paidContractServiceScope}
                       onChange={(event) => setPaidContractServiceScope(event.target.value)}
-                      placeholder={dashboard?.activeVisit.treatmentPlan || dashboard?.activeVisit.doctorSummary || "перечень согласованных платных услуг"}
+                      placeholder={dashboard?.activeVisit?.treatmentPlan || dashboard?.activeVisit?.doctorSummary || "перечень согласованных платных услуг"}
                       rows={3}
                     />
                   </label>
@@ -1387,7 +1390,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Акт выполненных работ</h3>
                     <p>Финальное подтверждение фактически оказанных услуг, оплаты, чеков и претензий пациента.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1446,7 +1449,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={completedActServicesSummary}
                       onChange={(event) => setCompletedActServicesSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.doctorSummary || dashboard?.activeVisit.treatmentPlan || "что фактически оказано"}
+                      placeholder={dashboard?.activeVisit?.doctorSummary || dashboard?.activeVisit?.treatmentPlan || "что фактически оказано"}
                       rows={3}
                     />
                   </label>
@@ -1527,7 +1530,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Смета лечения</h3>
                     <p>Предварительный расчет с составом услуг, сроком действия, исключениями и правилами изменения цены.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1679,7 +1682,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Счет на оплату</h3>
                     <p>Реквизиты, плательщик, срок оплаты и состав услуг. Счет не заменяет кассовый чек.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1762,7 +1765,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Платежная квитанция</h3>
                     <p>Явный набор оплаченных платежей, данные плательщика и фискальные чеки без скрытого захвата лишних оплат.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1904,7 +1907,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>График рассрочки и оплат</h3>
                     <p>Внутренний график сроков и сумм к договору или плану лечения без подмены банковского кредита.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -1980,7 +1983,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласие законного представителя</h3>
                     <p>Проверка личности, полномочий и согласия на конкретное вмешательство несовершеннолетнего.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -2072,7 +2075,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Гарантийная памятка</h3>
                     <p>Условия контроля, гарантийный срок, обязанности пациента и признаки для срочной связи.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2150,7 +2153,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Анкета пациента</h3>
                     <p>Жалоба, аллергии, лекарства, хронические заболевания и риски до приема.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2158,7 +2161,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={intakeChiefComplaint}
                       onChange={(event) => setIntakeChiefComplaint(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "со слов пациента"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "со слов пациента"}
                       rows={2}
                     />
                   </label>
@@ -2248,7 +2251,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Заявление на налоговую справку</h3>
                     <p>Заявитель, ИНН, документ, родство, год и способ выдачи без ручных правок в HTML.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2361,7 +2364,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Информированное согласие</h3>
                     <p>Конкретное вмешательство, область, показание, риски, альтернативы и рекомендации без пустого шаблона.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2391,7 +2394,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={informedConsentDiagnosisOrIndication}
                       onChange={(event) => setInformedConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показание к вмешательству"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к вмешательству"}
                       rows={2}
                     />
                   </label>
@@ -2464,7 +2467,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Процедурное согласие</h3>
                     <p>Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -2513,7 +2516,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={procedureConsentDiagnosisOrIndication}
                       onChange={(event) => setProcedureConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показание к процедуре"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к процедуре"}
                       rows={2}
                     />
                   </label>
@@ -2595,7 +2598,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>План лечения</h3>
                     <p>Клиническая логика, этапы, альтернативы, риски и контроль до отдельного согласия на вмешательство.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2603,7 +2606,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentPlanClinicalReason}
                       onChange={(event) => setTreatmentPlanClinicalReason(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint || "жалоба, запрос пациента или причина планирования"}
+                      placeholder={dashboard?.activeVisit?.complaint || "жалоба, запрос пациента или причина планирования"}
                       rows={2}
                     />
                   </label>
@@ -2612,7 +2615,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentPlanDiagnosisSummary}
                       onChange={(event) => setTreatmentPlanDiagnosisSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "диагноз, предварительное заключение, данные осмотра"}
+                      placeholder={dashboard?.activeVisit?.diagnosis || dashboard?.activeVisit?.complaint || "диагноз, предварительное заключение, данные осмотра"}
                       rows={2}
                     />
                   </label>
@@ -2706,7 +2709,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласование плана лечения</h3>
                     <p>Фиксирует выбранный вариант, этапы, сумму, срок действия сметы, альтернативы, риски и подтверждения пациента.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -2732,7 +2735,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={treatmentAcceptanceDiagnosisSummary}
                       onChange={(event) => setTreatmentAcceptanceDiagnosisSummary(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "диагноз, показание, жалобы и клиническая причина"}
+                      placeholder={dashboard?.activeVisit?.diagnosis || dashboard?.activeVisit?.complaint || "диагноз, показание, жалобы и клиническая причина"}
                       rows={2}
                     />
                   </label>
@@ -2826,7 +2829,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Рекомендации после приема</h3>
                     <p>Структурированная памятка для пациента и короткий текст для Telegram-бота клиники.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -2878,7 +2881,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         markPostVisitManualEdited();
                         setPostVisitProcedureName(event.target.value);
                       }}
-                      placeholder={dashboard?.activeVisit.treatmentPlan || "что выполнено на приеме"}
+                      placeholder={dashboard?.activeVisit?.treatmentPlan || "что выполнено на приеме"}
                       rows={2}
                     />
                   </label>
@@ -3028,7 +3031,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Журнал анестезии</h3>
                     <p>Перед созданием: метод, препарат, зона, доза и реакция.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -3109,7 +3112,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Назначение препаратов</h3>
                     <p>Один понятный блок назначения без догадок в документе.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
@@ -3152,7 +3155,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Заявка в лабораторию</h3>
                     <p>Работа, зона, материал, цвет, источник данных и срок.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
@@ -3195,7 +3198,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Фото, видео и снимки</h3>
                     <p>Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -3289,7 +3292,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Направление на снимок</h3>
                     <p>Вид исследования, область, клинический вопрос, показание и ограничения до рентгена или КЛКТ.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
@@ -3399,7 +3402,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Официальная учетная форма по приказу Минздрава N 274н: только карточка пациента, профиль клиники и подписанные записи.</p>
                     <p className="document-payload-note">Черновик этой карты сохраняется локально для выбранного пациента и визита до изменения или выпуска документа.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -3431,7 +3434,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "метки подписанных визитов, по одной в строке"}
+                      placeholder={dashboard?.activeVisit?.id ?? "метки подписанных визитов, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3571,7 +3574,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractComplaintAndAnamnesis}
                       onChange={(event) => setRecordExtractComplaintAndAnamnesis(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.complaint, dashboard?.activeVisit.anamnesis) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.complaint, dashboard?.activeVisit?.anamnesis) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3580,7 +3583,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractObjectiveStatus}
                       onChange={(event) => setRecordExtractObjectiveStatus(event.target.value)}
-                      placeholder={dashboard?.activeVisit.objectiveStatus ?? "из подписанной записи визита"}
+                      placeholder={dashboard?.activeVisit?.objectiveStatus ?? "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3589,7 +3592,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractDiagnosis}
                       onChange={(event) => setRecordExtractDiagnosis(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis ?? "только после врачебной проверки"}
+                      placeholder={dashboard?.activeVisit?.diagnosis ?? "только после врачебной проверки"}
                       rows={2}
                     />
                   </label>
@@ -3599,7 +3602,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractTreatmentProvided}
                       onChange={(event) => setRecordExtractTreatmentProvided(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.doctorSummary, dashboard?.activeVisit.treatmentPlan) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.doctorSummary, dashboard?.activeVisit?.treatmentPlan) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3661,7 +3664,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Выписка из карты</h3>
                     <p>Только сведения из подписанной медзаписи: период, диагноз, лечение, рекомендации и получатель.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -3679,7 +3682,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "метки визитов или номера записей, по одной в строке"}
+                      placeholder={dashboard?.activeVisit?.id ?? "метки визитов или номера записей, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3688,7 +3691,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractComplaintAndAnamnesis}
                       onChange={(event) => setRecordExtractComplaintAndAnamnesis(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.complaint, dashboard?.activeVisit.anamnesis) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.complaint, dashboard?.activeVisit?.anamnesis) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3697,7 +3700,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractObjectiveStatus}
                       onChange={(event) => setRecordExtractObjectiveStatus(event.target.value)}
-                      placeholder={dashboard?.activeVisit.objectiveStatus ?? "из подписанной записи визита"}
+                      placeholder={dashboard?.activeVisit?.objectiveStatus ?? "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3706,7 +3709,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractDiagnosis}
                       onChange={(event) => setRecordExtractDiagnosis(event.target.value)}
-                      placeholder={dashboard?.activeVisit.diagnosis ?? "только после врачебной проверки"}
+                      placeholder={dashboard?.activeVisit?.diagnosis ?? "только после врачебной проверки"}
                       rows={2}
                     />
                     <div className="quick-chips-row" style={{ flexWrap: 'wrap', marginTop: '4px' }}>
@@ -3728,7 +3731,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractTreatmentProvided}
                       onChange={(event) => setRecordExtractTreatmentProvided(event.target.value)}
-                      placeholder={compactDocumentText(dashboard?.activeVisit.doctorSummary, dashboard?.activeVisit.treatmentPlan) || "из подписанной записи визита"}
+                      placeholder={compactDocumentText(dashboard?.activeVisit?.doctorSummary, dashboard?.activeVisit?.treatmentPlan) || "из подписанной записи визита"}
                       rows={3}
                     />
                   </label>
@@ -3796,7 +3799,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Запрос копий меддокументов</h3>
                     <p>Состав, период, формат, получатель, полномочия и контакт выдачи без пустых полей.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -3914,7 +3917,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Справка о посещении</h3>
                     <p>Фиксирует только факт и время приема без диагноза, лечения, снимков и стоимости.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -3992,7 +3995,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Выдача меддокументов</h3>
                     <p>Только по конкретному уже выданному запросу пациента или представителя.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -4092,7 +4095,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласие на ПДн</h3>
                     <p>Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
@@ -4196,7 +4199,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Отказ от вмешательства</h3>
                     <p>Что предложено, почему нужно, какие риски объяснены и когда срочно обращаться.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -4212,7 +4215,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={refusalClinicalIndication}
                       onChange={(event) => setRefusalClinicalIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit.complaint ?? "показания и причина рекомендации врача"}
+                      placeholder={dashboard?.activeVisit?.complaint ?? "показания и причина рекомендации врача"}
                       rows={2}
                     />
                   </label>
@@ -4313,7 +4316,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Возврат или коррекция</h3>
                     <p>Сумма, действие, чек, получатель и решение ответственного.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
     <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
@@ -5007,7 +5010,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                 );
               })}
             </div>
+            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+              <TreatmentPlanLockTokensWidget />
+              <TreatmentPlanPrintOdontogramWidget />
+              <TreatmentPlanStagesWidget />
+            </div>
           </div>
-
-          );
+      );
 }

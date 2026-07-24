@@ -12,10 +12,10 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type NewAppointmentFormProps = {
   dashboard: Dashboard;
   appointmentLabels: Record<Appointment["status"], string>;
-  newAppointmentDraft: any;
+  newAppointmentDraft: Record<string, any>;
   newAppointmentSaveState: string;
   newAppointmentError: string | null;
-  updateNewAppointmentDraft: (key: string, value: any) => void;
+  updateNewAppointmentDraft: (key: any, value: any) => void;
   createAppointmentFromDraft: () => Promise<boolean>;
   resetNewAppointmentDraft: () => void;
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -43,20 +43,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
-  const [smartParsedData, setSmartParsedData] = useState<any>(null);
+  const [smartParsedData, setSmartParsedData] = useState<unknown>(null);
   const [showHints, setShowHints] = useState(false);
 
-  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
-  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt);
+  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt as string);
+  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt as string);
   const newAppointmentMissingSteps = [
     !newAppointmentDraft.patientId ? "выберите пациента" : null,
     !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
-    dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
+    dashboard.clinicSettings.profile.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
     !newAppointmentDraft.chairId ? "выберите кресло" : null,
-    !newAppointmentDraft.startsAt.trim() ? "укажите начало приема" : null,
-    newAppointmentDraft.startsAt.trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "проверьте дату начала" : null,
-    !newAppointmentDraft.endsAt.trim() ? "укажите окончание приема" : null,
-    newAppointmentDraft.endsAt.trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "проверьте дату окончания" : null,
+    !String(newAppointmentDraft.startsAt || '').trim() ? "Укажите начало приема" : null,
+    String(newAppointmentDraft.startsAt || '').trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "Проверьте время начала" : null,
+    !String(newAppointmentDraft.endsAt || '').trim() ? "Укажите окончание приема" : null,
+    String(newAppointmentDraft.endsAt || '').trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "Проверьте время окончания" : null,
     Number.isFinite(newAppointmentStartsAtMs) && Number.isFinite(newAppointmentEndsAtMs) && newAppointmentEndsAtMs <= newAppointmentStartsAtMs
       ? "окончание должно быть позже начала"
       : null
@@ -68,12 +68,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       <div className="appointment-create-editor" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' }}>
         <input
           type="datetime-local"
-          value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+          value={toDateTimeLocalValue(newAppointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />
         <input
           type="datetime-local"
-          value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+          value={toDateTimeLocalValue(newAppointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />
         <select
@@ -81,7 +81,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
         >
           <option value="">-- Выберите пациента --</option>
-          {dashboard.patients.map(p => (
+          {(dashboard.patients ?? []).map(p => (
             <option key={p.id} value={p.id}>{p.fullName}</option>
           ))}
         </select>
@@ -90,7 +90,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('doctorUserId', e.target.value)}
         >
           <option value="">-- Выберите врача --</option>
-          {dashboard.clinicSettings.staff.map(m => (
+          {(dashboard.clinicSettings?.staff ?? []).map(m => (
             <option key={m.id} value={m.id}>{m.fullName}</option>
           ))}
         </select>
@@ -100,7 +100,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         >
           <option value="">-- Выберите ассистента --</option>
           <option value="">-- Нет ассистента --</option>
-          {dashboard.clinicSettings.staff.map(m => (
+          {(dashboard.clinicSettings?.staff ?? []).map(m => (
             <option key={m.id} value={m.id}>{m.fullName}</option>
           ))}
         </select>
@@ -109,13 +109,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           onChange={(e) => updateNewAppointmentDraft('chairId', e.target.value)}
         >
           <option value="">-- Выберите кресло --</option>
-          {dashboard.clinicSettings.chairs.map(c => (
+          {(dashboard.clinicSettings?.chairs ?? []).map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
         <select
           value={newAppointmentDraft.status || ''}
-          onChange={(e) => updateNewAppointmentDraft('status', e.target.value as any)}
+          onChange={(e) => updateNewAppointmentDraft('status', e.target.value)}
         >
           {Object.keys(appointmentLabels).map(status => (
             <option key={status} value={status}>{appointmentLabels[status as Appointment["status"]]}</option>
@@ -283,20 +283,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px' }}>
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
-              {useManualSelects || dashboard.patients.length > 20 ? (
+              {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={newAppointmentDraft.patientId || ''}
                   onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите пациента --</option>
-                  {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                  {(dashboard.patients ?? []).filter(p => p.status === 'active').map(p => (
                     <option key={p.id} value={p.id}>{p.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.patients
+                  {(dashboard.patients ?? [])
                     .filter((patient) => patient.status === "active")
                     .map((patient) => (
                       <button
@@ -322,13 +322,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                   style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
                 >
                   <option value="">-- Выберите врача --</option>
-                  {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                  {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
                     <option key={m.id} value={m.id}>{m.fullName}</option>
                   ))}
                 </select>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {dashboard.clinicSettings.staff
+                  {(dashboard.clinicSettings?.staff ?? [])
                     .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
                     .map((member) => (
                       <button
@@ -349,7 +349,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.staff
+                {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
                   .map((member) => (
                     <button
@@ -369,7 +369,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <div>
               <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {dashboard.clinicSettings.chairs
+                {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
                   .map((chair) => (
                     <button
@@ -403,21 +403,19 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </div>
           </div>
           <label className="form-span-2">
-            Причина записи
-            <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
+            Причина приема
+            <input value={String(newAppointmentDraft.reason || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
+              {["Первичный", "Пульпит", "Кариес", "Осмотр", "Пломба", "Гигиена", "Коронка"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = newAppointmentDraft.reason.trim();
+                    const currentVal = String(newAppointmentDraft.reason || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateNewAppointmentDraft("reason", newVal);
                   }}
                   className="quick-chip quick-chip--sm"
-                  
-                  
                 >
                   + {chip}
                 </button>
@@ -426,14 +424,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </label>
           <label className="form-span-2">
             Комментарий
-            <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
+            <textarea value={String(newAppointmentDraft.comment || "")} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-              {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+              {["Первичный", "Боль", "Осмотр", "Консультация", "Снимки"].map(chip => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => {
-                    const currentVal = newAppointmentDraft.comment.trim();
+                    const currentVal = String(newAppointmentDraft.comment || "").trim();
                     const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                     updateNewAppointmentDraft("comment", newVal);
                   }}

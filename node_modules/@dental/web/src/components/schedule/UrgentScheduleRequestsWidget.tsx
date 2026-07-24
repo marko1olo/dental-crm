@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { AlertCircle } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface UrgentRequestItem {
 	id: string;
@@ -13,69 +15,49 @@ interface UrgentRequestItem {
 }
 
 export const UrgentScheduleRequestsWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [requests, setRequests] = useState<UrgentRequestItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/urgent-schedule-requests", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setRequests(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[UrgentScheduleRequestsWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, []);
+			.catch(() => setLoading(false));
+	}, [auth]);
 
 	return (
 		<div
 			data-testid="urgent-schedule-requests-widget"
-			className="p-4 bg-slate-900 border border-rose-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
-				<div className="flex items-center space-x-2">
-					<span className="text-xl">🚨</span>
-					<h3 className="font-semibold text-rose-400">
-						Виджет «Срочные Обращения» Под Календарём Расписания (острая боль / срочные переносы)
-					</h3>
-				</div>
-				<span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/40">
-					Urgent Requests Strip
-				</span>
+			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800">
+				<AlertCircle className="w-4 h-4 text-red-500" />
+				<h4 className="text-sm font-semibold">Срочные обращения и забор окон «Острая боль»</h4>
 			</div>
-
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка срочных обращений...</div>
-			) : (
-				<div className="space-y-3">
-					{requests.map((item) => (
-						<div
-							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-						>
-							<div>
-								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold text-slate-200">{item.patientName}</span>
-									<span className="text-xs bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-800 font-bold uppercase">
-										{item.requestType}
-									</span>
-								</div>
-								<div className="text-xs text-slate-400 mt-1">
-									Врач: <span className="text-slate-200 font-semibold">{item.doctorName}</span> · Желаемое время: <span className="text-rose-300 font-bold">{item.preferredSlotTime}</span>
-								</div>
-							</div>
-							<div className="flex items-center space-x-2 text-xs">
-								<span className="bg-rose-950 text-rose-300 px-2.5 py-1 rounded border border-rose-800 font-bold">
-									🔥 ТРЕБУЕТ РЕАКЦИИ
-								</span>
-							</div>
-						</div>
-					))}
+				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка срочных заявок...</p>
+			) : requests.length === 0 ? (
+				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+					Срочные обращения острой боли отсутствуют. Окна резерва готовы для планового приёма.
 				</div>
+			) : (
+				<ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+					{requests.map((req) => (
+						<li
+							key={req.id}
+							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+						>
+							<span className="font-semibold">{req.patientName} — {req.requestType} ({req.urgencyLevel})</span>
+							<span className="text-xs font-mono" style={{ color: "var(--muted)" }}>{req.preferredSlotTime}</span>
+						</li>
+					))}
+				</ul>
 			)}
 		</div>
 	);

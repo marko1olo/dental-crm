@@ -50,15 +50,7 @@ export function AuthArtBackground() {
 		return null; // Let the fallback mesh gradient handle the background
 	}
 
-	// Calculate a scrim based on dominant color to ensure readability
-	// We want to darken light images slightly and give a very dark overlay to dark images
-	// This ensures both dark mode and light mode forms are legible.
-	const hex = selectedArt.dominantColor;
-	const r = parseInt(hex.slice(1, 3), 16);
-	const g = parseInt(hex.slice(3, 5), 16);
-	const b = parseInt(hex.slice(5, 7), 16);
-	const isLight = (r * 299 + g * 587 + b * 114) / 1000 > 128;
-	const overlayAlpha = isLight ? 0.3 : 0.6; // Darker overlay for dark images to contrast light forms, lighter for light images
+	const overlayAlpha = 0.2; // Subtle scrim so background image stays crisp & clearly visible
 
 	return (
 		<div
@@ -84,11 +76,18 @@ export function AuthArtBackground() {
 					backgroundImage: `url(${selectedArt.lqip})`,
 					backgroundSize: "cover",
 					backgroundPosition: "center",
-					filter: "blur(20px)",
-					transform: "scale(1.1)", // prevent blurry edges
 				}}
 			/>
-			<picture>
+			<picture
+				style={{
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					display: "block",
+				}}
+			>
 				{selectedArt.avif && <source srcSet={`/auth-art/${selectedArt.avif}`} type="image/avif" />}
 				{selectedArt.webp && <source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />}
 				<img
@@ -101,7 +100,8 @@ export function AuthArtBackground() {
 						objectFit: "cover",
 						objectPosition: "center",
 						opacity: loaded ? 1 : 0,
-						transition: "opacity 1.5s ease-in-out",
+						transition: "opacity 0.8s ease-in-out",
+						display: "block",
 					}}
 				/>
 			</picture>
@@ -114,7 +114,6 @@ export function AuthArtBackground() {
 					right: 0,
 					bottom: 0,
 					backgroundColor: `rgba(0,0,0,${overlayAlpha})`,
-					mixBlendMode: "multiply",
 				}}
 			/>
 		</div>

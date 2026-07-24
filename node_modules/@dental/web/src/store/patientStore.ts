@@ -53,6 +53,10 @@ export interface PatientStore {
 
   newRulePatientText: string;
   setNewRulePatientText: (val: string | ((prev: string) => string)) => void;
+
+  pendingPlanSuggestions: any[];
+  addPendingPlanSuggestion: (suggestion: any) => void;
+  clearPendingPlanSuggestions: () => void;
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
@@ -96,4 +100,8 @@ export const usePatientStore = create<PatientStore>((set) => ({
 
   newRulePatientText: "Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.",
   setNewRulePatientText: (val) => set((state) => ({ newRulePatientText: typeof val === "function" ? val(state.newRulePatientText) : val })),
+
+  pendingPlanSuggestions: [],
+  addPendingPlanSuggestion: (suggestion) => set((state) => ({ pendingPlanSuggestions: [...state.pendingPlanSuggestions, suggestion] })),
+  clearPendingPlanSuggestions: () => set({ pendingPlanSuggestions: [] }),
 }));

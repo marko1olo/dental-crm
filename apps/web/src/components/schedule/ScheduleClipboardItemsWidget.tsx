@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Clipboard, Scissors } from "lucide-react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface ClipboardItem {
 	id: string;
@@ -13,67 +15,49 @@ interface ClipboardItem {
 }
 
 export const ScheduleClipboardItemsWidget: React.FC = () => {
+	const { auth } = useAppLogicContext();
 	const [items, setItems] = useState<ClipboardItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		fetch("/api/schedule/clipboard-items", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
 				setItems(Array.isArray(data) ? data : []);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[ScheduleClipboardItemsWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, []);
+			.catch(() => setLoading(false));
+	}, [auth]);
 
 	return (
 		<div
-			data-testid="schedule-clipboard-items-widget"
-			className="p-4 bg-slate-900 border border-violet-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			data-testid="schedule-clipboard-widget"
+			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
-				<div className="flex items-center space-x-2">
-					<span className="text-xl">📋</span>
-					<h3 className="font-semibold text-violet-400">
-						Плавающий Буфер Расписания (Быстрый Перенос Записей 1 Кликом)
-					</h3>
-				</div>
-				<span className="text-xs bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded border border-violet-500/40">
-					Appointment Clipboard
-				</span>
+			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800" title="Временный буфер для переноса записей между креслами и днями сетки расписания">
+				<Scissors className="w-4 h-4 text-sky-500" />
+				<h4 className="text-sm font-semibold">Буфер обмена переноса записей расписания</h4>
 			</div>
-
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка буфера переноса...</div>
-			) : (
-				<div className="space-y-3">
-					{items.map((item) => (
-						<div
-							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-						>
-							<div>
-								<div className="text-sm font-bold text-slate-200">{item.patientName}</div>
-								<div className="text-xs text-slate-400 mt-0.5">
-									Врач: <span className="text-violet-300">{item.doctorName}</span> | Услуга: {item.serviceTitle} ({item.durationMinutes} мин)
-								</div>
-							</div>
-							<div className="flex items-center space-x-2">
-								<span className="text-xs bg-violet-950 text-violet-300 px-2 py-0.5 rounded border border-violet-800 font-bold uppercase">
-									{item.clipboardStatus}
-								</span>
-								<button className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3 py-1 rounded font-semibold transition">
-									Вставить в слот
-								</button>
-							</div>
-						</div>
-					))}
+				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка элемента буфера...</p>
+			) : items.length === 0 ? (
+				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+					Буфер переноса визитов пуст. Из клика по визиту вы можете скопировать запись для быстрого вклеивания.
 				</div>
+			) : (
+				<ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+					{items.map((it) => (
+						<li
+							key={it.id}
+							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+						>
+							<span className="font-semibold">{it.patientName} — {it.serviceTitle}</span>
+							<span className="text-xs font-mono text-slate-500 dark:text-slate-400">{it.durationMinutes} мин</span>
+						</li>
+					))}
+				</ul>
 			)}
 		</div>
 	);

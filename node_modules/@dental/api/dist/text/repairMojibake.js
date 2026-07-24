@@ -25,7 +25,7 @@ const cp1252SpecialBytes = new Map([
     [0x203a, 0x9b],
     [0x0153, 0x9c],
     [0x017e, 0x9e],
-    [0x0178, 0x9f]
+    [0x0178, 0x9f],
 ]);
 function likelyMojibake(value) {
     return /(?:Ã.|Â.|Ð.|Ñ.|â.)/.test(value);
@@ -61,7 +61,8 @@ export function repairMojibakeText(value) {
         const decoded = Buffer.from(bytes).toString("utf8");
         if (decoded &&
             !decoded.includes("\uFFFD") &&
-            (cyrillicCount(decoded) > cyrillicCount(value) || mojibakeMarkerCount(decoded) < mojibakeMarkerCount(value))) {
+            (cyrillicCount(decoded) > cyrillicCount(value) ||
+                mojibakeMarkerCount(decoded) < mojibakeMarkerCount(value))) {
             return decoded;
         }
     }
@@ -76,7 +77,8 @@ export function repairMojibakeText(value) {
         const decoded = Buffer.from(partBytes).toString("utf8");
         if (!decoded || decoded.includes("\uFFFD"))
             return part;
-        if (cyrillicCount(decoded) <= cyrillicCount(part) && mojibakeMarkerCount(decoded) >= mojibakeMarkerCount(part))
+        if (cyrillicCount(decoded) <= cyrillicCount(part) &&
+            mojibakeMarkerCount(decoded) >= mojibakeMarkerCount(part))
             return part;
         return decoded;
     })
@@ -95,7 +97,10 @@ export function repairMojibakeDeep(value) {
         return value.map((item) => repairMojibakeDeep(item));
     }
     if (value && typeof value === "object") {
-        return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, repairMojibakeDeep(entry)]));
+        return Object.fromEntries(Object.entries(value).map(([key, entry]) => [
+            key,
+            repairMojibakeDeep(entry),
+        ]));
     }
     return value;
 }

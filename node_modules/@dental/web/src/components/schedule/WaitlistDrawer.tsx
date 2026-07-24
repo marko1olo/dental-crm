@@ -22,15 +22,28 @@ interface Props {
 	onClose: () => void;
 	updateNewAppointmentDraft: (key: any, value: any) => void;
 	focusNewAppointmentEditor: () => void;
+	dashboard?: any;
+	auth?: any;
 }
 
-export function WaitlistDrawer({
-	isOpen,
-	onClose,
-	updateNewAppointmentDraft,
-	focusNewAppointmentEditor,
-}: Props) {
-	const { auth, dashboard } = useAppLogicContext();
+export function WaitlistDrawer(props: Props) {
+	const {
+		isOpen,
+		onClose,
+		updateNewAppointmentDraft,
+		focusNewAppointmentEditor,
+		dashboard: propDashboard,
+		auth: propAuth
+	} = props;
+
+	let ctx: any = null;
+	try {
+		ctx = useAppLogicContext();
+	} catch (e) {
+		ctx = null;
+	}
+	const dashboard = propDashboard || ctx?.dashboard;
+	const auth = propAuth || ctx?.auth;
 	const [items, setItems] = useState<WaitlistItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -41,17 +54,17 @@ export function WaitlistDrawer({
 		"medium",
 	);
 
-	const staff = dashboard?.clinicSettings?.staff || [];
+	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = staff.filter(
 		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
 	);
-	const patientsList = dashboard?.patients || [];
+	const patientsList = dashboard?.patients ?? [];
 
 	const fetchWaitlist = async () => {
 		try {
 			setIsLoading(true);
 			const res = await fetch("/api/waitlist", {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: auth?.denteClinicalReadHeaders ? auth.denteClinicalReadHeaders() : {},
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -160,7 +173,7 @@ export function WaitlistDrawer({
 	const priorityColors = {
 		high: "bg-red-500/20 text-red-400 border border-red-500/30",
 		medium: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-		low: "bg-slate-500/20 text-slate-400 border border-slate-500/30",
+		low: "bg-slate-500/20 text-slate-500 dark:text-slate-400 border border-slate-500/30",
 	};
 
 	const priorityLabels = {
@@ -174,10 +187,10 @@ export function WaitlistDrawer({
 			<div className="fixed bottom-4 right-4 z-50">
 				<button
 					onClick={() => setIsMinimized(false)}
-					className="bg-[#1e293b] border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-slate-800 transition-colors"
+					className="bg-slate-50 dark:bg-slate-800 border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-white dark:hover:bg-slate-800 transition-colors"
 				>
 					<Calendar className="w-5 h-5 text-teal-400" />
-					<span className="text-slate-100 font-medium">
+					<span className="text-slate-900 dark:text-slate-100 font-medium">
 						Лист ожидания (Свернут)
 					</span>
 				</button>
@@ -186,11 +199,11 @@ export function WaitlistDrawer({
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" data-testid="waitlist-drawer">
 			<div className="absolute inset-0" onClick={onClose} />
-			<div className="relative w-full max-w-md h-full bg-[#1e293b] border-l border-slate-700/80 shadow-2xl flex flex-col z-10 text-slate-100 animate-slide-in">
+			<div className="relative w-full max-w-md h-full bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-10 text-slate-900 dark:text-slate-100 animate-slide-in">
 				{/* Header */}
-				<div className="p-6 border-b border-slate-700/60 flex items-center justify-between">
+				<div className="p-6 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Calendar className="w-5 h-5 text-teal-400" />
 						<h3 className="text-lg font-semibold tracking-wide">
@@ -200,7 +213,7 @@ export function WaitlistDrawer({
 					<div className="flex items-center gap-1">
 						<button
 							onClick={() => setIsMinimized(true)}
-							className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+							className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
 							title="Свернуть окно"
 						>
 							<svg
@@ -219,7 +232,8 @@ export function WaitlistDrawer({
 						</button>
 						<button
 							onClick={onClose}
-							className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+							aria-label="Закрыть"
+							className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
 						>
 							<X className="w-5 h-5" />
 						</button>
@@ -231,21 +245,21 @@ export function WaitlistDrawer({
 					{/* Add to Waitlist Form */}
 					<form
 						onSubmit={handleAdd}
-						className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/40 space-y-4"
+						className="bg-white dark:bg-slate-800/40 rounded-xl p-4 border border-slate-200 dark:border-slate-700/40 space-y-4"
 					>
-						<h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+						<h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
 							<UserPlus className="w-4 h-4 text-teal-400" />
 							Добавить в очередь
 						</h4>
 
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">
+							<label className="text-xs text-slate-500 dark:text-slate-400 font-medium">
 								Пациент *
 							</label>
 							<select
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
-								className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+								className="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 								required
 							>
 								<option value="">-- Выберите пациента --</option>
@@ -258,13 +272,13 @@ export function WaitlistDrawer({
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">
+							<label className="text-xs text-slate-500 dark:text-slate-400 font-medium">
 								Желаемый врач
 							</label>
 							<select
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
-								className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+								className="w-full bg-slate-50 dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-500"
 							>
 								<option value="">-- Любой врач --</option>
 								{doctors.map((d: any) => (
@@ -276,7 +290,7 @@ export function WaitlistDrawer({
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">
+							<label className="text-xs text-slate-500 dark:text-slate-400 font-medium">
 								Приоритет
 							</label>
 							<div className="flex gap-2">
@@ -292,7 +306,7 @@ export function WaitlistDrawer({
 													: p === "medium"
 														? "bg-amber-500/20 border-amber-500 text-amber-400"
 														: "bg-slate-500/25 border-slate-400 text-slate-200"
-												: "bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200"
+												: "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
 										}`}
 									>
 										{priorityLabels[p]}
@@ -311,16 +325,16 @@ export function WaitlistDrawer({
 
 					{/* Waitlist queue */}
 					<div className="space-y-3">
-						<h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+						<h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
 							Пациенты в очереди ({items.length})
 						</h4>
 
 						{isLoading && items.length === 0 ? (
-							<div className="text-center py-8 text-slate-400 text-sm">
+							<div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
 								Загрузка...
 							</div>
 						) : items.length === 0 ? (
-							<div className="text-center py-8 text-slate-400 text-sm border border-dashed border-slate-700/80 rounded-xl">
+							<div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm border border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl">
 								Очередь ожидания пуста
 							</div>
 						) : (
@@ -336,15 +350,15 @@ export function WaitlistDrawer({
 											);
 											e.dataTransfer.effectAllowed = "copy";
 										}}
-										className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 hover:border-teal-500/50 cursor-grab active:cursor-grabbing transition-colors"
+										className="bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 hover:border-teal-500/50 cursor-grab active:cursor-grabbing transition-colors"
 									>
 										<div className="flex justify-between items-start">
 											<div>
-												<h5 className="font-semibold text-sm text-slate-100">
+												<h5 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
 													{item.patientName || "Неизвестный пациент"}
 												</h5>
 												{item.patientPhone && (
-													<p className="text-xs text-slate-400 mt-0.5">
+													<p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
 														{item.patientPhone}
 													</p>
 												)}
@@ -357,8 +371,8 @@ export function WaitlistDrawer({
 										</div>
 
 										{item.preferredDoctorName && (
-											<div className="text-xs text-slate-400 flex gap-1">
-												<span className="font-medium text-slate-500">
+											<div className="text-xs text-slate-500 dark:text-slate-400 flex gap-1">
+												<span className="font-medium text-slate-600 dark:text-slate-500">
 													Врач:
 												</span>
 												<span>{item.preferredDoctorName}</span>

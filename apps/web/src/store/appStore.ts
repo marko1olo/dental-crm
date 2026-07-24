@@ -136,6 +136,8 @@ interface AppStore {
   setLastLocalSavedAt: (val: any) => void;
   isOnline: any;
   setIsOnline: (val: any) => void;
+  odontogramUseSurfaces: any;
+  setOdontogramUseSurfaces: (val: any) => void;
   speechGatewayStatus: any;
   setSpeechGatewayStatus: (val: any) => void;
   speechGatewayHealthReport: any;
@@ -223,6 +225,8 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set) => ({
+  odontogramUseSurfaces: false,
+  setOdontogramUseSurfaces: (val) => set({ odontogramUseSurfaces: val }),
   isOmnibarOpen: false,
   setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
   uiPreferencesHydrated: false,

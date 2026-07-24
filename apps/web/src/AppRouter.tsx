@@ -10,6 +10,7 @@ import { DocumentsView } from "./DocumentsView";
 import { FinanceView } from "./FinanceView";
 import { MarketingView } from "./MarketingView";
 import { PatientsView } from "./PatientsView";
+import { PayrollView } from "./PayrollView";
 import { AnalyticsDashboardView } from "./pages/AnalyticsDashboardView";
 import { ScannerView } from "./ScannerView";
 import { ScheduleView } from "./ScheduleView";
@@ -215,7 +216,7 @@ export function AppRouter() {
 					{currentView === "analytics" ? (
 						<WorkspaceRouteErrorBoundary
 							view="analytics"
-							label={viewLabels.analytics}
+							label="Аналитика"
 							panelClassName="panel analytics-panel"
 							panelId="analytics"
 						>
@@ -316,6 +317,11 @@ export function AppRouter() {
 			{currentView === "inventory" ? (
 				<Suspense fallback={<AppLoadingState message="Загрузка склада" />}>
 					<InventoryView organizationId={activeWorkspaceProfile.id} />
+				</Suspense>
+			) : null}
+			{currentView === "payroll" ? (
+				<Suspense fallback={<AppLoadingState message="Загрузка зарплат" />}>
+					<PayrollView />
 				</Suspense>
 			) : null}
 			{currentView === "leads" ? (

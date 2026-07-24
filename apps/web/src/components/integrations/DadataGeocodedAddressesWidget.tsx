@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { MapPin, CheckCircle2 } from "lucide-react";
 
-interface DadataAddressItem {
+interface AddressItem {
 	id: string;
 	organizationId: string;
 	patientName: string;
@@ -13,12 +15,14 @@ interface DadataAddressItem {
 }
 
 export const DadataGeocodedAddressesWidget: React.FC = () => {
-	const [addresses, setAddresses] = useState<DadataAddressItem[]>([]);
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const [addresses, setAddresses] = useState<AddressItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/integrations/dadata-addresses", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		fetch("/api/integrations/dadata-geocoded-addresses", {
+			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
 		})
 			.then((res) => res.json())
 			.then((data) => {
@@ -29,43 +33,50 @@ export const DadataGeocodedAddressesWidget: React.FC = () => {
 				console.error("[DadataGeocodedAddressesWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [auth]);
 
 	return (
 		<div
 			data-testid="dadata-geocoded-addresses-widget"
-			className="p-4 bg-slate-900 border border-teal-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl border my-4 shadow-sm"
+			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">📍</span>
-					<h3 className="font-semibold text-teal-400">
-						Геокодирование Адресов и Проверка ФИАС (DaData API)
+					<MapPin className="w-5 h-5 text-emerald-500" />
+					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
+						DaData Геокодирование и проверка ФИАС адресов пациентов
 					</h3>
 				</div>
-				<span className="text-xs bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded border border-teal-500/40">
-					DaData FIAS / GPS
+				<span className="text-xs px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+					DaData API
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка распознанных адресов...</div>
+				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+					Загрузка стандартизированных адресов...
+				</div>
+			) : addresses.length === 0 ? (
+				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+					Геокодированные адреса пациентов отсутствуют.
+				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 					{addresses.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg space-y-1.5"
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
+							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
 						>
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-bold text-slate-200">{item.patientName}</span>
-								<span className="text-xs bg-teal-950 text-teal-300 px-2 py-0.5 rounded border border-teal-800 font-mono">
-									GPS: {item.geoLat}, {item.geoLon}
+							<div className="flex items-center justify-between">
+								<span className="font-bold text-sm">{item.patientName}</span>
+								<span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+									<CheckCircle2 className="w-3 h-3" /> QC Geo: {item.qcGeo}
 								</span>
 							</div>
-							<div className="text-xs text-slate-300 font-medium">{item.rawAddress}</div>
-							<div className="text-[11px] text-slate-400 font-mono pt-1 border-t border-slate-700/40">
-								ФИАС ID: <span className="text-teal-300">{item.fiasId}</span> (Точность: {item.qcGeo === 0 ? "100% Точный адрес" : "Приблизительно"})
+							<div className="text-xs" style={{ color: "var(--muted)" }}>
+								Адрес: <span style={{ color: "var(--ink)" }}>{item.rawAddress}</span> (ФИАС: {item.fiasId})
 							</div>
 						</div>
 					))}

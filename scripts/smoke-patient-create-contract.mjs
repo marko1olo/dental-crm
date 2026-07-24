@@ -42,12 +42,18 @@ function validationErrorHandler(error, _request, reply) {
 	return reply.send(error);
 }
 
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const validToken = signToken({ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" }, process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret");
+
 const app = Fastify({ logger: false });
 app.setErrorHandler(validationErrorHandler);
 await registerPatientRoutes(app);
 
 const clinicalHeaders = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-staff-token": validToken,
+	"x-dente-clinic-token": validToken,
 };
 const originalPatientCount = patients.length;
 const seededDuplicateSource =

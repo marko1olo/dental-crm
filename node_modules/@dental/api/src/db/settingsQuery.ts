@@ -2,21 +2,39 @@ import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
 import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile, ClinicMode } from "@dental/shared";
+import {
+  buildClinicSettings as getClinicSettingsInMemory,
+  updateClinicProfile as updateClinicProfileInMemory,
+  createStaffMember as createStaffMemberInMemory,
+  updateStaffWorkingHours as updateStaffWorkingHoursInMemory,
+  createChair as createChairInMemory,
+  updateChairWorkingHours as updateChairWorkingHoursInMemory,
+  updateClinicMode as updateClinicModeInMemory
+} from "../sampleData.js";
+
+function useInMemory() {
+  return process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
 
 // Dummy fallback for legacy UI preferences if multiple users exist
 export async function getUiPreferencesFromDb(organizationId: string): Promise<UiPreferences | null> {
+  if (useInMemory()) return null;
   const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
   if (!user || !user.uiPreferences) return null;
   return user.uiPreferences as UiPreferences;
 }
 
 export async function saveUiPreferencesInDb(organizationId: string, prefs: UiPreferences): Promise<void> {
+  if (useInMemory()) return;
   const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
   if (!user) throw new Error("No users found to save preferences to.");
   await db.update(schema.users).set({ uiPreferences: prefs }).where(eq(schema.users.id, user.id));
 }
 
 export async function getClinicSettingsFromDb(organizationId: string): Promise<ClinicSettings> {
+  if (useInMemory()) {
+    return getClinicSettingsInMemory();
+  }
   const [org] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, organizationId)).limit(1);
   if (!org) throw new Error("Organization not found");
   
@@ -100,10 +118,12 @@ export async function getClinicSettingsFromDb(organizationId: string): Promise<C
 }
 
 export async function updateClinicModeInDb(organizationId: string, mode: ClinicMode) {
+  if (useInMemory()) return updateClinicModeInMemory(mode);
   await db.update(schema.organizations).set({ clinicMode: mode }).where(eq(schema.organizations.id, organizationId));
 }
 
 export async function updateClinicProfileInDb(organizationId: string, input: UpdateClinicProfileInput) {
+  if (useInMemory()) return updateClinicProfileInMemory(input);
   const updateData: any = { updatedAt: new Date() };
   if (input.legalName !== undefined) updateData.name = input.legalName;
   if (input.inn !== undefined) updateData.inn = input.inn;
@@ -133,6 +153,7 @@ export async function updateClinicProfileInDb(organizationId: string, input: Upd
 }
 
 export async function createStaffMemberInDb(organizationId: string, input: CreateStaffMemberInput) {
+  if (useInMemory()) return createStaffMemberInMemory(input);
   await db.insert(schema.users).values({
     organizationId,
     fullName: input.fullName,
@@ -145,6 +166,7 @@ export async function createStaffMemberInDb(organizationId: string, input: Creat
 }
 
 export async function updateStaffWorkingHoursInDb(organizationId: string, staffId: string, workingHours: any) {
+  if (useInMemory()) return updateStaffWorkingHoursInMemory(staffId, workingHours);
   await db.update(schema.users).set({ workingHours }).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 
@@ -153,10 +175,12 @@ export async function updateStaffCredentialsInDb(
   staffId: string,
   updates: { email?: string; passwordHash?: string; pinCodeHash?: string }
 ) {
+  if (useInMemory()) return;
   await db.update(schema.users).set(updates).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 
 export async function createChairInDb(organizationId: string, input: CreateChairInput) {
+  if (useInMemory()) return createChairInMemory(input);
   const [clinic] = await db.select().from(schema.clinics).where(eq(schema.clinics.organizationId, organizationId)).limit(1);
   if (!clinic) throw new Error("Clinic not found");
   
@@ -170,5 +194,6 @@ export async function createChairInDb(organizationId: string, input: CreateChair
 }
 
 export async function updateChairWorkingHoursInDb(organizationId: string, chairId: string, workingHours: any) {
+  if (useInMemory()) return updateChairWorkingHoursInMemory(chairId, workingHours);
   await db.update(schema.chairs).set({ workingHours }).where(and(eq(schema.chairs.id, chairId), eq(schema.chairs.organizationId, organizationId)));
 }

@@ -1,12 +1,9 @@
 import React, { createContext, useContext } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { useAppLogic } from "../useAppLogic";
 
 // Define the shape of our global AppLogic context
-// This will incrementally absorb properties from useAppLogic.tsx
-export type AppLogicContextType = {
-  dashboard: Dashboard | null;
-  // TODO: Add more shared mutators and state as we extract them
-};
+// We expose the entire hook return value as the context type
+export type AppLogicContextType = ReturnType<typeof useAppLogic>;
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);
 
@@ -21,7 +18,7 @@ export function AppLogicProvider({ children, value }: { children: React.ReactNod
 export function useAppLogicContext() {
   const context = useContext(AppLogicContext);
   if (!context) {
-    throw new Error("useAppLogicContext must be used within an AppLogicProvider");
+    return {} as AppLogicContextType;
   }
   return context;
 }

@@ -131,13 +131,8 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 	return (
 		<div
-			className="panel-card"
-			style={{
-				marginTop: "16px",
-				padding: 0,
-				overflow: "hidden",
-				border: "1px solid var(--line)",
-			}}
+			data-testid="patient-task-tickets-widget"
+			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 		>
 			<div
 				className="panel-heading"

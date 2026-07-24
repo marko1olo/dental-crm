@@ -45,7 +45,7 @@ export function FinancePlanningOverview({
 
   return (
     <>
-      <div className="finance-summary-grid" aria-label="Финансовая сводка">
+      <div className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4" aria-label="Финансовая сводка" data-testid="finance-planning">
         <article>
           <span>План лечения</span>
           <strong>{money(billingSummary.totalPlannedRub)}</strong>
@@ -72,9 +72,9 @@ export function FinancePlanningOverview({
         <div className="panel-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3>Варианты плана</h3>
-            <span className="status-pill status-confirmed">{scenarios.length}</span>
+            <span className="status-pill status-confirmed">{(scenarios ?? []).length}</span>
           </div>
-          {scenarios.length > 0 && (
+          {(scenarios ?? []).length > 0 && (
             <button
               type="button"
               className="text-button"
@@ -84,15 +84,15 @@ export function FinancePlanningOverview({
               {showScenarios ? (
                 <>Скрыть <ChevronUp size={16} /></>
               ) : (
-                <>Показать {scenarios.length} варианта <ChevronDown size={16} /></>
+                <>Показать {(scenarios ?? []).length} варианта <ChevronDown size={16} /></>
               )}
             </button>
           )}
         </div>
-        {scenarios.length ? (
+        {(scenarios ?? []).length ? (
           showScenarios && (
             <div className="plan-scenario-grid">
-              {scenarios.map((scenario) => (
+              {(scenarios ?? []).map((scenario) => (
                 <article className={`plan-scenario priority-${scenario.priority}`} key={scenario.id}>
                   <div className="scenario-header">
                     <span>{strategyLabels[scenario.strategy]} · {priorityLabels[scenario.priority]}</span>
@@ -101,10 +101,10 @@ export function FinancePlanningOverview({
                   <h3>{scenario.title}</h3>
                   <p>
                     {scenario.visitCount} виз. · {scenario.durationMonths ? `${scenario.durationMonths} мес.` : "сегодня"} ·{" "}
-                    {scenario.includedServiceIds.length} услуг
+                    {(scenario.includedServiceIds ?? []).length} услуг
                   </p>
                   <div className="scenario-phase-list">
-                    {scenario.phases.map((phase) => (
+                    {(scenario.phases ?? []).map((phase) => (
                       <div key={`${scenario.id}-${phase.title}`}>
                         <span>{phase.title} · {phase.window}</span>
                         <strong>{money(phase.amountRub)}</strong>
@@ -113,9 +113,9 @@ export function FinancePlanningOverview({
                     ))}
                   </div>
                   <div className="scenario-notes">
-                    <p><strong>Плюс:</strong> {scenario.pros[0]}</p>
-                    <p><strong>Компромисс:</strong> {scenario.tradeoffs[0]}</p>
-                    {scenario.clinicalWarnings[0] ? <small>{scenario.clinicalWarnings[0]}</small> : null}
+                    <p><strong>Плюс:</strong> {scenario.pros?.[0] ?? ""}</p>
+                    <p><strong>Компромисс:</strong> {scenario.tradeoffs?.[0] ?? ""}</p>
+                    {scenario.clinicalWarnings?.[0] ? <small>{scenario.clinicalWarnings[0]}</small> : null}
                   </div>
                 </article>
               ))}
@@ -136,7 +136,7 @@ export function FinancePlanningOverview({
 }
 
 export function ServiceCatalogStrip({ categoryLabels, money, onGoToPrices, services }: ServiceCatalogStripProps) {
-  const visibleServices = services.slice(0, 6);
+  const visibleServices = (services ?? []).slice(0, 6);
 
   return (
     <div className="service-catalog-strip" aria-label="Каталог услуг">
