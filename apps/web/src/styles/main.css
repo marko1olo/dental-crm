@@ -65,64 +65,122 @@
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f8fafc;
-    background: #020617;
+:root[data-theme="dark"],
+html.dark,
+[data-theme="dark"] {
+  color: #f8fafc;
+  background: #020617;
+
+  /* DARK THEME (Sleek Off-Black) */
+  --paper: #0f172a; /* Slate 900 */
+  --paper-strong: #1e293b; /* Slate 800 */
+  --paper-soft: #020617; /* Slate 950 */
+  --ink: #f8fafc; /* Slate 50 */
+  --muted: #94a3b8; /* Slate 400 */
+  --line: rgba(204, 251, 241, 0.15); /* Soft teal line */
+  --line-strong: rgba(204, 251, 241, 0.3);
   
-    /* DARK THEME (Sleek Off-Black) */
-    --paper: #0f172a; /* Slate 900 */
-    --paper-strong: #1e293b; /* Slate 800 */
-    --paper-soft: #020617; /* Slate 950 */
-    --ink: #f8fafc; /* Slate 50 */
-    --muted: #94a3b8; /* Slate 400 */
-    --line: rgba(204, 251, 241, 0.15); /* Soft teal line */
-    --line-strong: rgba(204, 251, 241, 0.3);
-    
-    --teal: #2dd4bf; /* Lighter teal for dark mode */
-    --teal-dark: #14b8a6;
-    --teal-soft: rgba(45, 212, 191, 0.15);
-    --teal-glow: rgba(45, 212, 191, 0.2);
-    --teal-surface: rgba(45, 212, 191, 0.1);
-    
-    --rust: #ef4444;
-    --rust-soft: rgba(239, 68, 68, 0.15);
-    --amber: #f59e0b;
-    --amber-soft: rgba(245, 158, 11, 0.15);
-    --red: #f87171;
-    --green: #4ade80;
-    
-    --nav: #020617; /* Very dark slate for sidebar */
-    --nav-active: #0f172a;
+  --teal: #2dd4bf; /* Lighter teal for dark mode */
+  --teal-dark: #14b8a6;
+  --teal-soft: rgba(45, 212, 191, 0.15);
+  --teal-glow: rgba(45, 212, 191, 0.2);
+  --teal-surface: rgba(45, 212, 191, 0.1);
+  
+  --rust: #ef4444;
+  --rust-soft: rgba(239, 68, 68, 0.15);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --red: #f87171;
+  --green: #4ade80;
+  
+  --nav: #020617; /* Very dark slate for sidebar */
+  --nav-active: #0f172a;
 
-    /* Slate palette tokens (dark overrides — invert the intent) */
-    --slate-50: #1e293b;
-    --slate-100: #1e293b;
-    --slate-200: #334155;
-    --slate-300: #475569;
-    --slate-400: #64748b;
-    --slate-500: #94a3b8;
-    --slate-600: #cbd5e1;
-    --slate-700: #e2e8f0;
-    --slate-800: #f1f5f9;
-    --slate-900: #f8fafc;
-    --slate-950: #ffffff;
+  /* Slate palette tokens for dark mode */
+  --slate-50: #1e293b;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+  --slate-950: #ffffff;
 
-    /* Surface tokens (dark: use paper-strong shades) */
-    --surface-50: #1e293b;
-    --surface-100: #334155;
+  /* Surface tokens */
+  --surface-50: #1e293b;
+  --surface-100: #334155;
 
-    /* Brand tokens */
-    --brand-500: #38bdf8;
-    --brand-600: #0ea5e9;
+  /* Brand tokens */
+  --brand-500: #38bdf8;
+  --brand-600: #0ea5e9;
 
-    /* Status tokens */
-    --success-color: #4ade80;
-    --warning-color: #fbbf24;
-    --error-color: #f87171;
-    
-    --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
+  /* Status tokens */
+  --success-color: #4ade80;
+  --warning-color: #fbbf24;
+  --error-color: #f87171;
+  
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"],
+html.light,
+[data-theme="light"] {
+  color: #111827;
+  background: #f8fafc;
+
+  /* LIGHT THEME (Clean & Bright) */
+  --paper: #ffffff;
+  --paper-strong: #ffffff;
+  --paper-soft: #f8fafc;
+  --ink: #111827;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  
+  --teal: #0d9488;
+  --teal-dark: #0f766e;
+  --teal-soft: #ccfbf1;
+  --teal-glow: rgba(13, 148, 136, 0.25);
+  --teal-surface: rgba(204, 251, 241, 0.5);
+  
+  --rust: #b91c1c;
+  --rust-soft: #fee2e2;
+  --amber: #d97706;
+  --amber-soft: #fef3c7;
+  --red: #ef4444;
+  --green: #15803d;
+  
+  --nav: #0f172a;
+  --nav-active: #1e293b;
+
+  /* Slate palette tokens for light mode */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  /* Surface tokens */
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+
+  /* Brand tokens */
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+
+  /* Status tokens */
+  --success-color: #15803d;
+  --warning-color: #d97706;
+  --error-color: #b91c1c;
 }
 
 
