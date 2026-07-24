@@ -10575,7 +10575,7 @@ html.dark .emk-tab-button.active,
 }
 
 .document-factory-group {
-  background: #fbfefd;
+  background: var(--paper-soft, #fbfefd);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10587,7 +10587,7 @@ html.dark .emk-tab-button.active,
 .document-factory-tax-year,
 .document-factory-tax-payer {
   align-items: center;
-  background: #f4fbf8;
+  background: var(--paper-soft, #f4fbf8);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--muted);
@@ -10600,7 +10600,7 @@ html.dark .emk-tab-button.active,
 
 .document-factory-tax-year input,
 .document-factory-tax-payer select {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   color: var(--ink);
@@ -10618,7 +10618,7 @@ html.dark .emk-tab-button.active,
 }
 
 .document-factory-tax-payments {
-  background: #f8fcfb;
+  background: var(--paper-soft, #f8fcfb);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10667,7 +10667,7 @@ html.dark .emk-tab-button.active,
 
 .tax-payment-selection-item {
   align-items: flex-start;
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10703,6 +10703,16 @@ html.dark .emk-tab-button.active,
   font-size: 11px;
 }
 
+.document-factory-selected-kind {
+  background: var(--paper-soft, #f4fbf8);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
 .document-factory-selected-kind label {
   color: var(--muted);
   display: grid;
@@ -10712,12 +10722,23 @@ html.dark .emk-tab-button.active,
   min-width: 0;
 }
 
+.document-factory-selected-kind select {
+  background: var(--paper, #fff);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 0 9px;
+}
+
 .document-factory-selected-kind .primary-button {
   min-height: 36px;
 }
 
 .document-source-card {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10840,7 +10861,7 @@ html.dark .emk-tab-button.active,
 }
 
 .document-row-guidance {
-  color: #5b716f;
+  color: var(--muted);
   display: block;
   font-size: 12px;
   font-weight: 760;
@@ -10858,7 +10879,7 @@ html.dark .emk-tab-button.active,
 }
 
 .document-payload-card {
-  background: #fff;
+  background: var(--paper, #fff);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -10944,18 +10965,18 @@ html.dark .emk-tab-button.active,
 }
 
 .document-payload-actions .document-action-guidance {
-  background: #eef7f5;
-  border: 1px solid rgba(16, 118, 103, 0.22);
+  background: var(--paper-soft, #eef7f5);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  color: #0f5f56;
+  color: var(--teal-dark, #0f5f56);
   padding: 6px 8px;
 }
 
 .document-open-guidance {
-  background: #f4fbf8;
-  border: 1px solid rgba(16, 118, 103, 0.18);
+  background: var(--paper-soft, #f4fbf8);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  color: #315f59;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
   margin: -4px 0 10px;
@@ -10963,7 +10984,7 @@ html.dark .emk-tab-button.active,
 }
 
 .document-create-guidance {
-  color: #315f59;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
 }
