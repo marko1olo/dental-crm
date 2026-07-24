@@ -55,23 +55,25 @@ const DATE_RANGES = [
 ];
 
 export function AnalyticsDashboardView() {
-	const isActive = useIsActiveTab("analytics");
-	const { denteClinicalReadHeaders } = useAppLogicContext();
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
+	const getReadHeaders = () =>
+		authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
 	const [data, setData] = useState<AnalyticsData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [dateRange, setDateRange] = useState<string>("all");
 
 	useEffect(() => {
-		if (!isActive) return;
-
 		let mounted = true;
 		const fetchData = async () => {
 			setLoading(true);
 			setError(null);
 			try {
 				const res = await fetch(`/api/analytics/dashboard?range=${dateRange}`, {
-					headers: denteClinicalReadHeaders(),
+					headers: getReadHeaders(),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`);
 				const json = await res.json();
@@ -92,9 +94,7 @@ export function AnalyticsDashboardView() {
 			mounted = false;
 			clearInterval(interval);
 		};
-	}, [isActive, dateRange]);
-
-	if (!isActive) return null;
+	}, [dateRange]);
 
 	return (
 		<div className="analytics-dashboard bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">

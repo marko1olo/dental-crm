@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 
 export function useIsActiveTab(viewName: string): boolean {
-	const [isActive, setIsActive] = useState(false);
+	const [isActive, setIsActive] = useState(() => {
+		if (typeof window === "undefined") return false;
+		const currentHash = window.location.hash.replace(/^#\/?/, "").split("?")[0];
+		return currentHash === viewName || !currentHash;
+	});
 
 	useEffect(() => {
 		const handleHashChange = () => {

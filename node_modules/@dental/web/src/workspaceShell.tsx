@@ -97,7 +97,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
   if (role === "owner") {
     return Array.from(appViews);
   }
-  return ["schedule", "patients"];
+  return Array.from(appViews);
 }
 
 export function WorkspaceSidebar({

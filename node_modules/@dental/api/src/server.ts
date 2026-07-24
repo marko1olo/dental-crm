@@ -24,6 +24,7 @@ import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerAnalyticsRoutes } from "./routes/analytics.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
@@ -227,6 +228,7 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerDicomwebRoutes(app);
   await registerXrayRoutes(app);
   await registerAuthRoutes(app);
+  await registerAnalyticsRoutes(app);
   await workspaceProfileRoutes(app);
 
   if (options.startTelegramWorker !== false) {
