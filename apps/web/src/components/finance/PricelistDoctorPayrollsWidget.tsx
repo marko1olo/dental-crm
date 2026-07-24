@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { Calculator } from "lucide-react";
 
 interface PricelistPayrollItem {
@@ -15,13 +15,16 @@ interface PricelistPayrollItem {
 }
 
 export const PricelistDoctorPayrollsWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [payrolls, setPayrolls] = useState<PricelistPayrollItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/finance/pricelist-doctor-payrolls", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/finance/pricelist-doctor-payrolls", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setPayrolls(Array.isArray(data) ? data : []);
