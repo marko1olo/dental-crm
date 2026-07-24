@@ -32,16 +32,16 @@ export const FamilyRecommendationSourcesWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="family-recommendation-sources-widget"
-			className="p-4 bg-slate-900 border border-fuchsia-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl shadow-sm border my-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2" title="Автоматическое назначение источника маркетинга при добавлении родственников по реферальной программе">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">👨‍👩‍👧‍👦</span>
-					<h3 className="font-semibold text-fuchsia-400">
+					<h3 className="font-semibold text-fuchsia-600 dark:text-fuchsia-400">
 						Автоматический Маркетинговый Источник «Рекомендация Семьи»
 					</h3>
 				</div>
-				<span className="text-xs bg-fuchsia-500/20 text-fuchsia-300 px-2 py-0.5 rounded border border-fuchsia-500/40">
+				<span className="text-xs bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-300 px-2 py-0.5 rounded border dark:border-fuchsia-800">
 					Family Referral AI
 				</span>
 			</div>

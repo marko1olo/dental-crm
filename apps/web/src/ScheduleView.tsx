@@ -189,13 +189,13 @@ export function ScheduleView(props: ScheduleViewProps) {
       motionSafeScrollIntoView(document.getElementById(sectionId), { block: "start" });
     });
   };
-  const highestUtilizationLoad = (loads: ResourceLoad[]) =>
-    loads.reduce<ResourceLoad | null>((highestLoad, load) => {
+  const highestUtilizationLoad = (loads?: ResourceLoad[]) =>
+    (loads || []).reduce<ResourceLoad | null>((highestLoad, load) => {
       if (!highestLoad || load.utilizationPercent > highestLoad.utilizationPercent) return load;
       return highestLoad;
     }, null);
-  const busiestDoctorLoad = highestUtilizationLoad(dashboard.shiftIntelligence.doctorLoads);
-  const busiestChairLoad = highestUtilizationLoad(dashboard.shiftIntelligence.chairLoads);
+  const busiestDoctorLoad = highestUtilizationLoad(dashboard?.shiftIntelligence?.doctorLoads);
+  const busiestChairLoad = highestUtilizationLoad(dashboard?.shiftIntelligence?.chairLoads);
   const activeScheduleFilterCount = [
     scheduleDateFilter.trim(),
     scheduleStatusFilter !== "all" ? scheduleStatusFilter : null
