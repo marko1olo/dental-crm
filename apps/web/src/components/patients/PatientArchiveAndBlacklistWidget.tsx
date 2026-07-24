@@ -93,7 +93,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			</div>
 
 			<div className="space-y-3">
-				<p className="text-xs" style={{ color: "var(--muted)" }}>
+				<p className="text-xs text-slate-500 dark:text-slate-400">
 					Управление блокировкой записи на прием и внесением пациента в черный список.
 				</p>
 				<div className="flex items-center space-x-2">

@@ -275,21 +275,7 @@ export function OrthodonticProgressWidget({
 							<button
 								type="submit"
 								disabled={saving}
-								className="primary-button"
-								style={{
-									flex: 1,
-									background: "var(--teal)",
-									color: "white",
-									borderRadius: "8px",
-									padding: "10px",
-									border: "none",
-									fontWeight: 600,
-									display: "flex",
-									justifyContent: "center",
-									alignItems: "center",
-									gap: "8px",
-									cursor: "pointer",
-								}}
+								className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-colors"
 							>
 								{saving ? (
 									"Сохранение..."
@@ -304,16 +290,7 @@ export function OrthodonticProgressWidget({
 									type="button"
 									disabled={saving}
 									onClick={handleResetWidget}
-									style={{
-										background: "rgba(239, 68, 68, 0.1)",
-										color: "var(--red)",
-										borderRadius: "8px",
-										padding: "10px 16px",
-										border: "1px solid rgba(239, 68, 68, 0.2)",
-										fontWeight: 600,
-										cursor: "pointer",
-										transition: "all 0.2s",
-									}}
+									className="px-4 py-2.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-semibold text-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors"
 								>
 									Удалить
 								</button>
@@ -337,45 +314,16 @@ export function OrthodonticProgressWidget({
 									padding: "16px 0",
 								}}
 							>
-								<div
-									style={{
-										width: 48,
-										height: 48,
-										borderRadius: "50%",
-										background: "var(--paper-soft)",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										color: "var(--muted)",
-										border: "1px solid var(--line)",
-									}}
-								>
+								<div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
 									<Smile size={24} />
 								</div>
-								<p
-									style={{
-										margin: 0,
-										fontSize: "14px",
-										color: "var(--muted)",
-										textAlign: "center",
-									}}
-								>
+								<p className="m-0 text-sm text-slate-500 dark:text-slate-400 text-center">
 									Ортодонтическое лечение не запущено.
 								</p>
 								<button
+									type="button"
 									onClick={handleStartEdit}
-									style={{
-										marginTop: "8px",
-										background: "transparent",
-										border: "1px solid var(--teal)",
-										color: "var(--teal)",
-										padding: "8px 16px",
-										borderRadius: "8px",
-										fontSize: "13px",
-										fontWeight: 600,
-										cursor: "pointer",
-										transition: "all 0.2s ease",
-									}}
+									className="mt-2 bg-transparent border border-teal-500 text-teal-600 dark:text-teal-400 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors"
 								>
 									Добавить орто-трекер (JSONB)
 								</button>
