@@ -91,9 +91,13 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	const formatRub = (n: number) => n.toLocaleString("ru-RU") + " ₽";
 
 	return (
-		<div className="panel p-4 rounded-xl border mb-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+		<div
+			data-testid="patient-no-show-risk"
+			className="panel p-4 rounded-xl border mb-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+		>
 			<h3
 				className="panel-heading compact-heading flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800"
+				title="Машинный расчет риска отмены записи пациента"
 			>
 				<BrainCircuit size={18} className="text-emerald-600 dark:text-emerald-400" />
 				<span className="text-sm font-semibold">

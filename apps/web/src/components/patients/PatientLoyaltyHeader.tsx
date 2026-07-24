@@ -60,7 +60,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 	};
 
 	return (
-		<div style={{ position: "relative" }}>
+		<div style={{ position: "relative" }} data-testid="patient-loyalty-header">
 			<button
 				type="button"
 				onClick={() => setIsOpen(!isOpen)}
@@ -157,6 +157,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 								flexDirection: "column",
 								gap: "2px",
 							}}
+							className="dark:bg-slate-900 dark:border-slate-800"
 						>
 							{(
 								Object.entries(LOYALTY_CONFIG) as [
@@ -183,7 +184,7 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 										textAlign: "left",
 										fontSize: "13px",
 										fontWeight: currentTier === tierKey ? 600 : 500,
-										color: "var(--slate-800)",
+										color: "var(--ink)",
 									}}
 									onMouseEnter={(e) => {
 										if (currentTier !== tierKey)

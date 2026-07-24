@@ -68,7 +68,7 @@ export function PatientOverviewTab() {
 	}, [selectedPatientId]);
 
 	return (
-		<>
+		<div data-testid="patient-overview-tab">
 			<div className="panel-heading compact-heading patients-no-border-mb-8">
 				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
 					<span
@@ -332,6 +332,6 @@ export function PatientOverviewTab() {
 
 
 			</div>
-		</>
+		</div>
 	);
 }

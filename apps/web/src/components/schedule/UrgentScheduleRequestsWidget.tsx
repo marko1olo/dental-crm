@@ -34,17 +34,16 @@ export const UrgentScheduleRequestsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="urgent-schedule-requests-widget"
-			className="p-3 border rounded-xl shadow-sm my-3"
-			style={{ background: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
+			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center space-x-2 mb-2 pb-1 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800">
 				<AlertCircle className="w-4 h-4 text-red-500" />
 				<h4 className="text-sm font-semibold">Срочные обращения и забор окон «Острая боль»</h4>
 			</div>
 			{loading ? (
-				<p className="text-xs" style={{ color: "var(--muted)" }}>Загрузка срочных заявок...</p>
+				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка срочных заявок...</p>
 			) : requests.length === 0 ? (
-				<div className="p-3 text-center rounded-lg border border-dashed text-xs" style={{ background: "var(--surface-50)", borderColor: "var(--line)", color: "var(--muted)" }}>
+				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
 					Срочные обращения острой боли отсутствуют. Окна резерва готовы для планового приёма.
 				</div>
 			) : (
@@ -52,8 +51,7 @@ export const UrgentScheduleRequestsWidget: React.FC = () => {
 					{requests.map((req) => (
 						<li
 							key={req.id}
-							className="flex justify-between items-center p-2 rounded border"
-							style={{ background: "var(--surface-50)", borderColor: "var(--line)" }}
+							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
 						>
 							<span className="font-semibold">{req.patientName} — {req.requestType} ({req.urgencyLevel})</span>
 							<span className="text-xs font-mono" style={{ color: "var(--muted)" }}>{req.preferredSlotTime}</span>

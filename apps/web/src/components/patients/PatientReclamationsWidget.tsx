@@ -152,12 +152,10 @@ export function PatientReclamationsWidget({
 	if (reclamations.length === 0 && !isAdding && !isLoading) {
 		return (
 			<div
-				className="panel-card"
+				data-testid="patient-reclamations-widget"
+				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 				style={{
-					marginTop: "16px",
-					padding: 0,
-					overflow: "hidden",
-					border: "1px dashed var(--border-300)",
+					borderStyle: "dashed",
 				}}
 			>
 				<div
@@ -220,14 +218,8 @@ export function PatientReclamationsWidget({
 
 	return (
 		<div
-			className="panel-card"
-			style={{
-				marginTop: "16px",
-				padding: 0,
-				overflow: "hidden",
-				border: "1px solid var(--rose-200)",
-				boxShadow: "0 4px 12px rgba(225, 29, 72, 0.05)",
-			}}
+			data-testid="patient-reclamations-widget"
+			className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 		>
 			<div
 				className="panel-heading"
@@ -339,7 +331,7 @@ export function PatientReclamationsWidget({
 										onChange={(e) => setDoctorId(e.target.value)}
 										required
 										style={{
-											background: "#fff",
+											background: "var(--paper)",
 											border: "1px solid var(--rose-200)",
 										}}
 									>
@@ -367,7 +359,7 @@ export function PatientReclamationsWidget({
 											resize: "vertical",
 											minHeight: "80px",
 											padding: "12px 16px",
-											background: "#fff",
+											background: "var(--paper)",
 											border: "1px solid var(--rose-200)",
 										}}
 									/>
@@ -385,7 +377,7 @@ export function PatientReclamationsWidget({
 											resize: "vertical",
 											minHeight: "60px",
 											padding: "12px 16px",
-											background: "#fff",
+											background: "var(--paper)",
 											border: "1px solid var(--rose-200)",
 										}}
 									/>
@@ -444,7 +436,7 @@ export function PatientReclamationsWidget({
 										alignItems: "flex-start",
 										gap: "16px",
 										padding: "16px",
-										background: isUnderReview ? "#fff" : "var(--surface-50)",
+										background: isUnderReview ? "var(--paper)" : "var(--surface-50)",
 										border: "1px solid",
 										borderColor: isUnderReview
 											? "var(--rose-200)"
