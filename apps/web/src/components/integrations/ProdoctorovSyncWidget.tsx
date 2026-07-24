@@ -33,10 +33,9 @@ export const ProdoctorovSyncWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="prodoctorov-sync-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", borderColor: "var(--line, #e2e8f0)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line, #e2e8f0)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">🩺</span>
 					<h3 className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -49,11 +48,11 @@ export const ProdoctorovSyncWidget: React.FC = () => {
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка статуса интеграции ПроДокторов...
 				</div>
 			) : items.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted, #64748b)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Интеграция с ПроДокторов не подключена.
 				</div>
 			) : (
@@ -61,20 +60,19 @@ export const ProdoctorovSyncWidget: React.FC = () => {
 					{items.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-							style={{ background: "var(--surface-50, #f8fafc)", borderColor: "var(--line, #e2e8f0)" }}
+							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
 								<div className="flex items-center space-x-2">
-									<span className="text-sm font-bold">Синхронизация Прайс-Листа и Записи</span>
+									<span className="text-sm font-bold text-slate-900 dark:text-white">Синхронизация Прайс-Листа и Записи</span>
 									{item.medflexClubBadge && (
 										<span className="text-xs px-2 py-0.5 rounded border font-bold bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
 											★ MedFlex Club
 										</span>
 									)}
 								</div>
-								<div className="text-xs mt-1" style={{ color: "var(--muted, #64748b)" }}>
-									Свободных слотов в выгрузке: <strong style={{ color: "var(--ink, #0f172a)" }}>{item.availableSlotsCount}</strong>
+								<div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
+									Свободных слотов в выгрузке: <strong className="text-slate-900 dark:text-white">{item.availableSlotsCount}</strong>
 								</div>
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
