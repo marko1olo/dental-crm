@@ -74,22 +74,21 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	return (
 		<div
 			data-testid="patient-archive-blacklist-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm transition-all duration-200"
-			style={{
-				background: isBlacklisted ? "var(--rose-50, var(--surface-100))" : "var(--paper)",
-				borderColor: isBlacklisted ? "var(--rose-300, var(--line))" : "var(--line)",
-				color: "var(--ink)",
-			}}
+			className={`p-4 rounded-xl border my-4 shadow-sm transition-all duration-200 text-slate-900 dark:text-slate-100 ${
+				isBlacklisted
+					? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800"
+					: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+			}`}
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<ShieldAlert className={`w-5 h-5 ${isBlacklisted ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`} />
 					<h3 className="font-semibold text-sm">
 						Блокировка записи и черный список
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700">
-					IDENT Parity #20
+				<span className="text-xs px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700 font-medium">
+					Специфика IDENT #20
 				</span>
 			</div>
 
