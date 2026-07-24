@@ -193,36 +193,15 @@ export const InsuranceContractsPanel: React.FC = () => {
 	];
 
 	return (
-		<div style={{ padding: "8px 0" }}>
+		<div className="py-2 text-slate-900 dark:text-slate-100">
 			{/* Header */}
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "flex-start",
-					marginBottom: 24,
-					flexWrap: "wrap",
-					gap: 12,
-				}}
-			>
+			<div className="flex justify-between items-start mb-6 flex-wrap gap-3">
 				<div>
-					<h2
-						style={{
-							margin: 0,
-							fontSize: 20,
-							fontWeight: 700,
-							color: "var(--ink)",
-							display: "flex",
-							alignItems: "center",
-							gap: 10,
-						}}
-					>
-						<ShieldCheck size={22} color="var(--teal)" />
+					<h2 className="m-0 text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+						<ShieldCheck size={22} className="text-emerald-500" />
 						Договоры ДМС
 					</h2>
-					<p
-						style={{ margin: "6px 0 0 0", color: "var(--muted)", fontSize: 14 }}
-					>
+					<p className="mt-1.5 mb-0 text-sm text-slate-500 dark:text-slate-400">
 						Страховые компании и покрытие по категориям услуг. Используются в
 						Сравнительном конструкторе смет.
 					</p>
@@ -234,90 +213,41 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 			{/* Contracts list */}
 			{isLoading ? (
-				<div
-					style={{
-						padding: 48,
-						textAlign: "center",
-						color: "var(--muted)",
-					}}
-				>
+				<div className="p-12 text-center text-slate-500 dark:text-slate-400">
 					Загрузка договоров...
 				</div>
 			) : contracts.length === 0 ? (
-				<div
-					style={{
-						border: `2px dashed ${borderColor}`,
-						borderRadius: 16,
-						padding: 48,
-						textAlign: "center",
-						color: "var(--muted)",
-					}}
-				>
+				<div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
 					<ShieldCheck
 						size={40}
 						strokeWidth={1}
-						style={{ opacity: 0.3, marginBottom: 12 }}
+						className="opacity-40 mb-3 mx-auto"
 					/>
-					<p style={{ margin: 0, fontSize: 15 }}>Договоров ДМС нет.</p>
-					<p style={{ margin: "6px 0 0 0", fontSize: 13 }}>
+					<p className="m-0 text-base">Договоров ДМС нет.</p>
+					<p className="mt-1.5 mb-0 text-xs text-slate-400">
 						Добавьте договор страховой компании, чтобы применять его в
 						планировщике смет.
 					</p>
 				</div>
 			) : (
-				<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+				<div className="flex flex-col gap-3">
 					{contracts.map((contract) => (
 						<div
 							key={contract.id}
-							style={{
-								background: paperBg,
-								border: `1px solid ${borderColor}`,
-								borderRadius: 16,
-								padding: "20px 24px",
-								display: "flex",
-								flexDirection: "column",
-								gap: 16,
-							}}
+							className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow-sm"
 						>
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "flex-start",
-									flexWrap: "wrap",
-									gap: 12,
-								}}
-							>
+							<div className="flex justify-between items-start flex-wrap gap-3">
 								<div>
-									<h3
-										style={{
-											margin: 0,
-											fontSize: 16,
-											fontWeight: 600,
-											color: "var(--ink)",
-										}}
-									>
+									<h3 className="m-0 text-base font-semibold text-slate-900 dark:text-white">
 										{contract.companyName}
 									</h3>
 									{contract.policyNumberMask && (
-										<p
-											style={{
-												margin: "4px 0 0 0",
-												fontSize: 12,
-												color: "var(--muted)",
-											}}
-										>
+										<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
 											Маска полиса: {contract.policyNumberMask}
 										</p>
 									)}
 									{contract.annualLimitRub != null && (
-										<p
-											style={{
-												margin: "4px 0 0 0",
-												fontSize: 12,
-												color: "var(--muted)",
-											}}
-										>
+										<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
 											Годовой лимит:{" "}
 											{contract.annualLimitRub.toLocaleString("ru-RU")} ₽
 										</p>
@@ -364,13 +294,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 							</div>
 
 							{/* Coverage grid */}
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-									gap: 10,
-								}}
-							>
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 								{[
 									{ label: "Терапия", val: contract.coverageTherapyPct },
 									{ label: "Хирургия", val: contract.coverageSurgeryPct },
@@ -379,48 +303,19 @@ export const InsuranceContractsPanel: React.FC = () => {
 								].map(({ label, val }) => (
 									<div
 										key={label}
-										style={{
-											background: paperSoftBg,
-											borderRadius: 10,
-											padding: "10px 14px",
-										}}
+										className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3"
 									>
-										<div
-											style={{
-												fontSize: 11,
-												color: "var(--muted)",
-												marginBottom: 4,
-											}}
-										>
+										<div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1">
 											{label}
 										</div>
-										<div
-											style={{
-												fontSize: 20,
-												fontWeight: 700,
-												color: val > 0 ? "var(--teal)" : "var(--muted)",
-											}}
-										>
+										<div className={`text-xl font-bold ${val > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}>
 											{val}%
 										</div>
 										{/* Visual bar */}
-										<div
-											style={{
-												height: 4,
-												borderRadius: 2,
-												background: borderColor,
-												marginTop: 6,
-												overflow: "hidden",
-											}}
-										>
+										<div className="h-1 rounded bg-slate-200 dark:bg-slate-700 mt-1.5 overflow-hidden">
 											<div
-												style={{
-													width: `${val}%`,
-													height: "100%",
-													background: val > 0 ? "var(--teal)" : "transparent",
-													borderRadius: 2,
-													transition: "width 0.3s",
-												}}
+												className={`h-full rounded transition-all duration-300 ${val > 0 ? "bg-emerald-500" : "bg-transparent"}`}
+												style={{ width: `${val}%` }}
 											/>
 										</div>
 									</div>
