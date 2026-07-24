@@ -24,7 +24,10 @@ typedRecognitionJob.warnings.map((warning) => (
 */
 import { useState, useEffect } from "react";
 import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
+import { EgiszBlankPermissionsWidget } from "./components/integrations/EgiszBlankPermissionsWidget";
+import { YandexCalendarSyncsWidget } from "./components/integrations/YandexCalendarSyncsWidget";
 import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
+
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -1460,6 +1463,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
           <DadataGeocodedAddressesWidget />
+          <EgiszBlankPermissionsWidget />
+          <YandexCalendarSyncsWidget />
           <SingleSessionEnforcementsWidget />
         </div>
       </div>

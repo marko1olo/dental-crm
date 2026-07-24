@@ -37,39 +37,43 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 			<div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2" title="Настройки попольных разрешений и правил выгрузки документов бланков клиники в систему ЕГИСЗ">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">🛡️</span>
-					<h3 className="font-semibold text-cyan-600 dark:text-cyan-400">
-						Справочник Бланков: Попольное Управление Разрешениями Выгрузки в ЕГИСЗ
+					<h3 className="font-semibold text-cyan-700 dark:text-cyan-400">
+						Справочник бланков: попольное управление разрешениями ЕГИСЗ
 					</h3>
 				</div>
-				<span className="text-xs bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 px-2 py-0.5 rounded border dark:border-cyan-800">
-					EGISZ Blank Rules
+				<span className="text-xs bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800 px-2 py-0.5 rounded font-medium">
+					Правила ЕГИСЗ
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-slate-400 text-sm py-4">Загрузка правил ЕГИСЗ...</div>
+				<div className="text-slate-500 dark:text-slate-400 text-sm py-4">Загрузка правил ЕГИСЗ...</div>
+			) : permissions.length === 0 ? (
+				<div className="text-slate-500 dark:text-slate-400 text-sm py-3 text-center">
+					Правила выгрузки бланков ЕГИСЗ не настроены
+				</div>
 			) : (
 				<div className="space-y-3">
 					{permissions.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 bg-slate-800/70 border border-slate-700/50 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+							className="p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2"
 						>
 							<div>
-								<div className="text-sm font-bold text-slate-200">
-									{item.formCode} — <span className="text-cyan-300 font-semibold">{item.fieldName}</span>
+								<div className="text-sm font-bold text-slate-900 dark:text-slate-200">
+									{item.formCode} — <span className="text-cyan-700 dark:text-cyan-300 font-semibold">{item.fieldName}</span>
 								</div>
-								<div className="text-xs text-slate-400 mt-1">
+								<div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
 									Учет отказа пациента: {item.patientOptOutRespect ? "Включен" : "Выключен"}
 								</div>
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
 								{item.isExportAllowed ? (
-									<span className="bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800 font-mono">
+									<span className="bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800 px-2.5 py-1 rounded font-mono">
 										✓ Выгрузка разрешена
 									</span>
 								) : (
-									<span className="bg-rose-950 text-rose-300 px-2.5 py-1 rounded border border-rose-800 font-mono">
+									<span className="bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800 px-2.5 py-1 rounded font-mono">
 										⛔ Выгрузка запрещена
 									</span>
 								)}
@@ -81,3 +85,4 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 		</div>
 	);
 };
+
