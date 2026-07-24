@@ -189,13 +189,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Пациент</span>
               {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={appointmentDraft.patientId || ''}
                   onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
                   disabled={appointment.id === dashboard.activeVisit.appointmentId}
-                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                  className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
                   aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                 >
                   <option value="">-- Выберите пациента --</option>
@@ -223,12 +223,12 @@ export function AppointmentCard(props: AppointmentCardProps) {
             </div>
 
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Врач</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Врач</span>
               {useManualSelects ? (
                 <select
                   value={appointmentDraft.doctorUserId || ''}
                   onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'doctorUserId', e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                  className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
                 >
                   <option value="">-- Выберите врача --</option>
                   {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
@@ -256,7 +256,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
             {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
@@ -276,7 +276,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             )}
 
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
@@ -295,7 +295,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
             </div>
             
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Статус</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Статус</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
                     <button
@@ -311,7 +311,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                 ))}
               </div>
               {appointmentHasOpenVisit && (
-                <div id={appointmentHandoffNoteId} className="status-blocker-note appointment-handoff-note" style={{ fontSize: '12px', color: 'var(--amber-700)', marginTop: '4px' }}>
+                <div id={appointmentHandoffNoteId} className="status-blocker-note appointment-handoff-note text-xs text-amber-800 dark:text-amber-300 mt-1 font-medium bg-amber-50 dark:bg-amber-950/40 p-2 rounded border border-amber-200 dark:border-amber-900/60">
                   Статус приема заблокирован: по этому приему открыт активный визит. Завершите или отмените визит в рабочем месте врача (закройте прием перед закрывающим статусом записи).
                 </div>
               )}

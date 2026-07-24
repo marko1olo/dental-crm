@@ -221,15 +221,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
-              className="text-button"
               type="button"
               onClick={() => setShowCreateForm((v) => !v)}
-              style={{ fontSize: '13px', color: 'var(--slate-500)', textDecoration: 'underline' }}
+              className="text-xs text-slate-500 dark:text-slate-400 underline bg-transparent border-0 cursor-pointer p-0"
             >
               {showCreateForm ? "Скрыть ручной ввод" : "Показать все поля / Ручной ввод"}
             </button>
             {showCreateForm && (
-              <label style={{ fontSize: '13px', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+              <label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
                 <input type="checkbox" checked={useManualSelects} onChange={(e) => setUseManualSelects(e.target.checked)} />
                 Классические списки
               </label>
@@ -282,12 +281,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px' }}>
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Пациент</span>
               {useManualSelects || (dashboard.patients ?? []).length > 20 ? (
                 <select
                   value={newAppointmentDraft.patientId || ''}
                   onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                  className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
                 >
                   <option value="">-- Выберите пациента --</option>
                   {(dashboard.patients ?? []).filter(p => p.status === 'active').map(p => (
@@ -314,12 +313,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </div>
 
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Врач</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Врач</span>
               {useManualSelects ? (
                 <select
                   value={newAppointmentDraft.doctorUserId || ''}
                   onChange={(e) => updateNewAppointmentDraft('doctorUserId', e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                  className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
                 >
                   <option value="">-- Выберите врача --</option>
                   {(dashboard.clinicSettings?.staff ?? []).filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
@@ -347,7 +346,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
             {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Ассистент</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(dashboard.clinicSettings?.staff ?? [])
                   .filter((member) => member.active && member.role === "assistant")
@@ -367,7 +366,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             )}
 
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Кресло</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(dashboard.clinicSettings?.chairs ?? [])
                   .filter((chair) => chair.active)
@@ -386,7 +385,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </div>
             
             <div>
-              <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Статус</span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Статус</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
                     <button
