@@ -39,27 +39,26 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="extended-odontogram-states-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<Activity className="w-5 h-5 text-teal-500" />
 					<h3 className="font-semibold text-teal-600 dark:text-teal-400">
 						Расширенная одонтограмма: Детский прикус & Вторичный кариес
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800">
-					Детская & Взрослая 3D
+				<span className="text-xs px-2 py-0.5 rounded border bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800 font-medium">
+					Детская &amp; Взрослая 3D
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка расширенных статусов зубной формулы...
 				</div>
 			) : states.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Расширенные статусы зубной формулы отсутствуют.
 				</div>
 			) : (
@@ -67,8 +66,7 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 					{states.map((item) => (
 						<div
 							key={item.id}
-							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex items-center justify-between">
 								<span className="font-bold text-sm">{item.patientName} — Зуб #{item.toothNumber}</span>
@@ -76,8 +74,8 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 									<ShieldCheck className="w-3 h-3" /> {item.isPrimaryPediatric ? "Молочный" : "Постоянный"}
 								</span>
 							</div>
-							<div className="text-xs" style={{ color: "var(--muted)" }}>
-								Подвижность: Grade {item.mobilityDegree} · Вторичный кариес: {item.secondaryCariesUnderFilling ? "Да" : "Нет"}
+							<div className="text-xs text-slate-600 dark:text-slate-400">
+								Подвижность: Grade <span className="font-semibold text-slate-900 dark:text-slate-200">{item.mobilityDegree}</span> · Вторичный кариес: {item.secondaryCariesUnderFilling ? "Да" : "Нет"}
 							</div>
 						</div>
 					))}
