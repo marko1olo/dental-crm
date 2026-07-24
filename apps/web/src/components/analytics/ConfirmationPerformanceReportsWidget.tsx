@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface ReportItem {
 	id: string;
@@ -14,13 +14,16 @@ interface ReportItem {
 }
 
 export const ConfirmationPerformanceReportsWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [reports, setReports] = useState<ReportItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/analytics/confirmation-performance-reports", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/analytics/confirmation-performance-reports", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setReports(Array.isArray(data) ? data : []);
