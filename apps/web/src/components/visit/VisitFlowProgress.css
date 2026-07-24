@@ -1,13 +1,5 @@
 .visit-flow-progress {
-	background: var(--color-slate-50, #f8fafc);
-	border: 1px solid var(--color-slate-200, #e2e8f0);
-	border-radius: 12px;
-	padding: 1.25rem;
-	margin-bottom: 1.5rem;
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	@apply bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 flex flex-col gap-4 shadow-sm;
 }
 
 .vfp-header {
@@ -17,17 +9,11 @@
 }
 
 .vfp-title {
-	margin: 0;
-	font-size: 1.05rem;
-	color: var(--color-slate-800, #1e293b);
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	font-weight: 600;
+	@apply m-0 text-base text-slate-800 dark:text-slate-200 flex items-center gap-2 font-semibold;
 }
 
 .vfp-title svg {
-	color: var(--color-blue-500, #3b82f6);
+	@apply text-sky-500;
 }
 
 .vfp-badge {
@@ -40,41 +26,27 @@
 }
 
 .status-running {
-	background: var(--color-blue-100, #dbeafe);
-	color: var(--color-blue-700, #1d4ed8);
+	@apply bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300;
 }
 
 .status-success {
-	background: var(--color-green-100, #d1fae5);
-	color: var(--color-green-700, #047857);
+	@apply bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300;
 }
 
 .status-partial {
-	background: var(--color-amber-100, #fef3c7);
-	color: var(--color-amber-700, #b45309);
+	@apply bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300;
 }
 
 .status-error {
-	background: var(--color-red-100, #fee2e2);
-	color: var(--color-red-700, #b91c1c);
+	@apply bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300;
 }
 
 .vfp-steps {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 0.75rem;
-	background: white;
-	padding: 1rem;
-	border-radius: 8px;
-	border: 1px solid var(--color-slate-100, #f1f5f9);
+	@apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-100 dark:border-slate-700/60;
 }
 
 .vfp-step {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	font-size: 0.875rem;
-	color: var(--color-slate-600, #475569);
+	@apply flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300;
 }
 
 .vfp-step-label {
@@ -112,13 +84,7 @@
 }
 
 .vfp-step-msg {
-	font-size: 0.75rem;
-	color: var(--color-slate-400, #94a3b8);
-	font-style: italic;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	max-width: 100px;
+	@apply text-xs text-slate-400 dark:text-slate-500 italic truncate max-w-[100px];
 }
 
 .vfp-outputs {
@@ -128,21 +94,11 @@
 }
 
 .vfp-output-card {
-	background: white;
-	padding: 1rem;
-	border-radius: 8px;
-	border: 1px solid var(--color-slate-200, #e2e8f0);
-	font-size: 0.9rem;
-	color: var(--color-slate-700, #334155);
+	@apply bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700/80 text-sm text-slate-700 dark:text-slate-300;
 }
 
 .vfp-output-card strong {
-	display: block;
-	margin-bottom: 0.4rem;
-	color: var(--color-slate-900, #0f172a);
-	font-size: 0.85rem;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
+	@apply block mb-1.5 text-slate-900 dark:text-white text-xs uppercase tracking-wider font-semibold;
 }
 
 .vfp-output-card p {
@@ -157,10 +113,5 @@
 }
 
 .vfp-tag {
-	background: var(--color-slate-100, #f1f5f9);
-	color: var(--color-slate-600, #475569);
-	padding: 0.25rem 0.75rem;
-	border-radius: 6px;
-	font-size: 0.8rem;
-	border: 1px solid var(--color-slate-200, #e2e8f0);
+	@apply bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-md text-xs border border-slate-200 dark:border-slate-600;
 }
