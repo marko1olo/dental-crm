@@ -49,7 +49,7 @@ export const CompletedServicesChecklist: React.FC = () => {
 
 	if (planItems.length === 0) {
 		return (
-			<div className="completed-services-checklist" style={{ padding: "12px", background: "var(--paper)", borderRadius: "8px", border: "1px solid var(--line)" }}>
+			<div data-testid="completed-services-checklist" className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3">
 				<p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
 					В согласуемом плане лечения пока нет открытых позиций для отметки выполненных услуг.
 				</p>
@@ -58,8 +58,10 @@ export const CompletedServicesChecklist: React.FC = () => {
 	}
 
 	return (
-		<div className="completed-services-checklist" style={{ padding: "12px", background: "var(--paper)", borderRadius: "8px", border: "1px solid var(--line)" }}>
-			<h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--ink)" }}>Отметка выполненных услуг по плану</h4>
+		<div data-testid="completed-services-checklist" className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3">
+			<h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--ink)" }} title="Быстрая отметка выполненных манипуляций для автоматического расчета начислений врачу и списывания материалов">
+				Отметка выполненных услуг по плану
+			</h4>
 			<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
 				{planItems.map((item: any) => {
 					const isCompleted = completedServices.some(

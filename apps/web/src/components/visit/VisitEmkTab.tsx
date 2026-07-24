@@ -50,7 +50,8 @@ export function VisitEmkTab() {
 
 	return (
 				<section
-						className="visit-note-panel"
+						data-testid="visit-emk-tab"
+						className="visit-note-panel bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4"
 						aria-label="Черновик электронной медицинской карты"
 					>
 						<div className="visit-note-head">

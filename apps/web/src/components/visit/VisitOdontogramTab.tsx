@@ -25,6 +25,8 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 
 	return (
 		<div
+			data-testid="visit-odontogram-tab"
+			className="visit-odontogram-tab bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl p-4"
 			style={{
 				display: "flex",
 				flexWrap: "wrap",

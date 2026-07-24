@@ -231,7 +231,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   if (!activePatient) {
     return (
       <>
-        <div className="panel visit-panel" id="visit">
+        <div className="panel visit-panel" id="visit" data-testid="visit-view">
           <div className="panel-heading">
             <h2>Текущий прием</h2>
           </div>
@@ -246,7 +246,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   }
 
   return <>
-          <div className="panel visit-panel" id="visit">
+          <div className="panel visit-panel" id="visit" data-testid="visit-view">
             <div className="panel-heading">
               <h2>Текущий прием</h2>
               <span className="status-pill status-in_treatment">Черновик</span>
@@ -287,7 +287,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "emk" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "emk" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "emk" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "emk" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "emk" ? "var(--primary-on, #fff)" : undefined }}
                 onClick={() => setVisitSubViewTab("emk")}
               >
                 📝 ЭМК и Диктовка
@@ -295,7 +295,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "odontogram" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "odontogram" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "odontogram" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "odontogram" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "odontogram" ? "var(--primary-on, #fff)" : undefined }}
                 onClick={() => setVisitSubViewTab("odontogram")}
               >
                 🦷 Зубная формула и Дневник
@@ -303,7 +303,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "diagnostics" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "diagnostics" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "diagnostics" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "diagnostics" ? "var(--primary-on, #fff)" : undefined }}
                 onClick={() => setVisitSubViewTab("diagnostics")}
               >
                 🖼️ Рентгены и Диагностика

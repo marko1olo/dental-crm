@@ -18,7 +18,8 @@ export function VisitSpecialtyFocus() {
 
 	return (
 		<section
-			className="specialty-focus-bar"
+			data-testid="visit-specialty-focus"
+			className="specialty-focus-bar bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4"
 			aria-label="Фокус специальности приема"
 		>
 			<div>
