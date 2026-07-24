@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
 import { RebookingConversionRulesWidget } from "./components/analytics/RebookingConversionRulesWidget";
+import { FamilyRecommendationSourcesWidget } from "./components/marketing/FamilyRecommendationSourcesWidget";
 import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
+
 import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
 
 type MarketingStats = {
@@ -385,6 +387,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
       ) : null}
 
       <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <FamilyRecommendationSourcesWidget />
         <LostPatientsFiltersWidget />
         <RebookingConversionRulesWidget />
         <LandingFieldMappingsWidget />

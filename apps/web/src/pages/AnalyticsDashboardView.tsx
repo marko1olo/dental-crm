@@ -17,6 +17,8 @@ import {
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
+import { LostPatientsFiltersWidget } from "../components/analytics/LostPatientsFiltersWidget";
+import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
 import "./AnalyticsDashboardView.css";
 
 interface Kpis {
@@ -437,8 +439,10 @@ export function AnalyticsDashboardView() {
 							</div>
 						</article>
 					</div>
-					<div style={{ marginTop: "24px" }}>
+					<div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
 						<ConfirmationPerformanceReportsWidget />
+						<LostPatientsFiltersWidget />
+						<RebookingConversionRulesWidget />
 					</div>
 				</>
 			)}

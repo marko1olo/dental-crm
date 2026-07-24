@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface LostPatientItem {
 	id: string;
@@ -13,13 +13,16 @@ interface LostPatientItem {
 }
 
 export const LostPatientsFiltersWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [patients, setPatients] = useState<LostPatientItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/analytics/lost-patients-filters", {
-			headers: auth.denteClinicalReadHeaders(),
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/analytics/lost-patients-filters", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setPatients(Array.isArray(data) ? data : []);
