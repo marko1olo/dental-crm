@@ -37,27 +37,26 @@ export const CrmEmailDispatchLogsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="crm-email-dispatch-logs-widget"
-			className="p-4 rounded-xl border my-4 shadow-sm"
-			style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}
+			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<Mail className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
 						Логи отправки документов пациентам по E-mail
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
+				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
 					E-mail рассылки
 				</span>
 			</div>
 
 			{loading ? (
-				<div className="text-sm py-4" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка логов отправки...
 				</div>
 			) : logs.length === 0 ? (
-				<div className="text-sm py-3 text-center" style={{ color: "var(--muted)" }}>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Логи отправки e-mail сообщений отсутствуют.
 				</div>
 			) : (
@@ -65,17 +64,16 @@ export const CrmEmailDispatchLogsWidget: React.FC = () => {
 					{logs.map((log) => (
 						<div
 							key={log.id}
-							className="p-3 rounded-lg border flex flex-col justify-between gap-1"
-							style={{ background: "var(--glass-panel)", borderColor: "var(--line)" }}
+							className="p-3 rounded-lg border flex flex-col justify-between gap-1 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex items-center justify-between">
-								<span className="font-bold text-sm">{log.patientName}</span>
+								<span className="font-bold text-sm text-slate-900 dark:text-white">{log.patientName}</span>
 								<span className="text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1 font-mono">
 									<CheckCircle2 className="w-3 h-3" /> {log.dispatchStatus}
 								</span>
 							</div>
-							<div className="text-xs" style={{ color: "var(--muted)" }}>
-								Документ: <span style={{ color: "var(--ink)" }}>{log.documentTitle}</span> ({log.recipientEmail})
+							<div className="text-xs text-slate-600 dark:text-slate-400">
+								Документ: <span className="font-semibold text-slate-900 dark:text-slate-200">{log.documentTitle}</span> ({log.recipientEmail})
 							</div>
 						</div>
 					))}
