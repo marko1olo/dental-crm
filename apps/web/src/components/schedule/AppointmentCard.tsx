@@ -81,11 +81,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
       
       <div className="timeline-content">
         <p style={{ display: 'none' }}>{appointment.reason}</p>
-        <article className={`appointment-card ${readiness ? 'readiness-' + readiness.state : ""}`} style={{ padding: '16px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', borderRadius: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-      <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--slate-100)', paddingBottom: '8px', marginBottom: '4px' }}>
-        <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <article
+          data-testid="appointment-card"
+          className={`appointment-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-3 shadow-sm ${readiness ? 'readiness-' + readiness.state : ""}`}
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        >
+      <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '8px', marginBottom: '4px' }}>
+        <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {formatTime(appointment.startsAt)}
-          <span style={{ fontWeight: 400, color: 'var(--slate-500)' }}>{formatTime(appointment.endsAt)}</span>
+          <span style={{ fontWeight: 400, color: 'var(--muted)' }}>{formatTime(appointment.endsAt)}</span>
         </div>
         <span className={`appointment-card-status status-pill status-${appointment.status}`}>
           {appointmentLabels[appointment.status]}
@@ -94,7 +98,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
       </div>
 
       <div className="appointment-card-body">
-        <h3>{appointmentPatientName}</h3>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{appointmentPatientName}</h3>
         <div className="chip-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
           {appointmentSuggestions.map((suggestion) => (
             <span 
@@ -103,9 +107,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
               onClick={(e) => { e.stopPropagation(); openScheduleSuggestion(suggestion.section); }}
               style={{ 
                 cursor: 'pointer', 
-                background: suggestion.priority === 'urgent' ? 'var(--error-bg, #fee2e2)' : 'var(--warning-bg, #fef3c7)',
-                color: suggestion.priority === 'urgent' ? 'var(--error-color, #991b1b)' : 'var(--warning-color, #92400e)',
-                border: `1px solid ${suggestion.priority === 'urgent' ? '#fca5a5' : '#fcd34d'}`
+                background: suggestion.priority === 'urgent' ? 'var(--rust-soft)' : 'var(--amber-soft)',
+                color: suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)',
+                border: `1px solid ${suggestion.priority === 'urgent' ? 'var(--rust)' : 'var(--amber)'}`
               }}
               title={suggestion.detail}
             >

@@ -35,17 +35,16 @@ export const ScheduleTimeReservationsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="schedule-time-reservations-widget"
-			className="p-3 border rounded-xl shadow-sm my-3"
-			style={{ background: "var(--paper)", borderColor: "var(--line)", color: "var(--ink)" }}
+			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center space-x-2 mb-2 pb-1 border-b" style={{ borderColor: "var(--line)" }}>
+			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800" title="Технические блокировки времени (обед, проветривание, санобработка) в сетке расписания">
 				<Bookmark className="w-4 h-4 text-amber-500" />
 				<h4 className="text-sm font-semibold">Бронирование времени и штриховка сетки</h4>
 			</div>
 			{loading ? (
-				<p className="text-xs" style={{ color: "var(--muted)" }}>Загрузка броней...</p>
+				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка броней...</p>
 			) : reservations.length === 0 ? (
-				<div className="p-3 text-center rounded-lg border border-dashed text-xs" style={{ background: "var(--surface-50)", borderColor: "var(--line)", color: "var(--muted)" }}>
+				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
 					Активные технические брони кресел отсутствуют.
 				</div>
 			) : (
@@ -53,11 +52,10 @@ export const ScheduleTimeReservationsWidget: React.FC = () => {
 					{reservations.map((res) => (
 						<li
 							key={res.id}
-							className="flex justify-between items-center p-2 rounded border"
-							style={{ background: "var(--surface-50)", borderColor: "var(--line)" }}
+							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
 						>
 							<span className="font-semibold">{res.chairName}: {res.reservationType} ({res.startTime}-{res.endTime})</span>
-							<span className="text-xs" style={{ color: "var(--muted)" }}>{res.note}</span>
+							<span className="text-xs text-slate-500 dark:text-slate-400">{res.note}</span>
 						</li>
 					))}
 				</ul>

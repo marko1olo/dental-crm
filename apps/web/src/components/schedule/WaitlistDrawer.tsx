@@ -199,9 +199,9 @@ export function WaitlistDrawer(props: Props) {
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" data-testid="waitlist-drawer">
 			<div className="absolute inset-0" onClick={onClose} />
-			<div className="relative w-full max-w-md h-full bg-slate-50 dark:bg-[#1e293b] border-l border-slate-200 dark:border-slate-700/80 shadow-2xl flex flex-col z-10 text-slate-900 dark:text-slate-100 animate-slide-in">
+			<div className="relative w-full max-w-md h-full bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-10 text-slate-900 dark:text-slate-100 animate-slide-in">
 				{/* Header */}
 				<div className="p-6 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
 					<div className="flex items-center gap-3">
