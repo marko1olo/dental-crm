@@ -43,6 +43,14 @@ import { postVisitCarePresets } from "../postVisitCareData";
 
 const initialUiPreferences = loadUiPreferences();
 
+function createSetter(set: any, key: string) {
+  return (val: any) =>
+    set((state: any) => ({
+      [key]: typeof val === "function" ? val(state[key]) : val,
+    }));
+}
+
+
 export interface DocumentState {
   paymentAmount: string;
   paymentMethod: PaymentMethod;
@@ -1614,213 +1622,59 @@ export interface DocumentState {
 
 const createDocumentSlice = (set: any) => ({
   documentCreateSavingKind: null,
-  setDocumentCreateSavingKind: (val) =>
-    set((state) => ({
-      documentCreateSavingKind:
-        typeof val === "function"
-          ? (val as any)(state.documentCreateSavingKind)
-          : val,
-    })),
+  setDocumentCreateSavingKind: createSetter(set, "documentCreateSavingKind"),
   documentStatusSavingId: null,
-  setDocumentStatusSavingId: (val) =>
-    set((state) => ({
-      documentStatusSavingId:
-        typeof val === "function"
-          ? (val as any)(state.documentStatusSavingId)
-          : val,
-    })),
+  setDocumentStatusSavingId: createSetter(set, "documentStatusSavingId"),
   selectedTaxPaymentIds: [],
-  setSelectedTaxPaymentIds: (val) =>
-    set((state) => ({
-      selectedTaxPaymentIds:
-        typeof val === "function"
-          ? (val as any)(state.selectedTaxPaymentIds)
-          : val,
-    })),
+  setSelectedTaxPaymentIds: createSetter(set, "selectedTaxPaymentIds"),
   selectedPaymentReceiptIds: [],
-  setSelectedPaymentReceiptIds: (val) =>
-    set((state) => ({
-      selectedPaymentReceiptIds:
-        typeof val === "function"
-          ? (val as any)(state.selectedPaymentReceiptIds)
-          : val,
-    })),
+  setSelectedPaymentReceiptIds: createSetter(set, "selectedPaymentReceiptIds"),
   documentIssueConfirmationId: null,
-  setDocumentIssueConfirmationId: (val) =>
-    set((state) => ({
-      documentIssueConfirmationId:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueConfirmationId)
-          : val,
-    })),
+  setDocumentIssueConfirmationId: createSetter(set, "documentIssueConfirmationId"),
   documentIssueSignatureMode: initialUiPreferences.documentIssueSignatureMode,
-  setDocumentIssueSignatureMode: (val) =>
-    set((state) => ({
-      documentIssueSignatureMode:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueSignatureMode)
-          : val,
-    })),
+  setDocumentIssueSignatureMode: createSetter(set, "documentIssueSignatureMode"),
   documentIssueSignedAt: currentLocalDateTimeInputValue,
-  setDocumentIssueSignedAt: (val) =>
-    set((state) => ({
-      documentIssueSignedAt:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueSignedAt)
-          : val,
-    })),
+  setDocumentIssueSignedAt: createSetter(set, "documentIssueSignedAt"),
   documentIssueRecipientFullName: "",
-  setDocumentIssueRecipientFullName: (val) =>
-    set((state) => ({
-      documentIssueRecipientFullName:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueRecipientFullName)
-          : val,
-    })),
+  setDocumentIssueRecipientFullName: createSetter(set, "documentIssueRecipientFullName"),
   documentIssueRecipientRole: "пациент/законный представитель",
-  setDocumentIssueRecipientRole: (val) =>
-    set((state) => ({
-      documentIssueRecipientRole:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueRecipientRole)
-          : val,
-    })),
+  setDocumentIssueRecipientRole: createSetter(set, "documentIssueRecipientRole"),
   documentIssueStaffFullName:
     initialUiPreferences.documentIssueStaffFullName || "",
-  setDocumentIssueStaffFullName: (val) =>
-    set((state) => ({
-      documentIssueStaffFullName:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueStaffFullName)
-          : val,
-    })),
+  setDocumentIssueStaffFullName: createSetter(set, "documentIssueStaffFullName"),
   documentIssueStaffRole: initialUiPreferences.documentIssueStaffRole || "",
-  setDocumentIssueStaffRole: (val) =>
-    set((state) => ({
-      documentIssueStaffRole:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueStaffRole)
-          : val,
-    })),
+  setDocumentIssueStaffRole: createSetter(set, "documentIssueStaffRole"),
   documentIssueNote: "",
-  setDocumentIssueNote: (val) =>
-    set((state) => ({
-      documentIssueNote:
-        typeof val === "function" ? (val as any)(state.documentIssueNote) : val,
-    })),
+  setDocumentIssueNote: createSetter(set, "documentIssueNote"),
   documentIssueIdentityChecked: false,
-  setDocumentIssueIdentityChecked: (val) =>
-    set((state) => ({
-      documentIssueIdentityChecked:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueIdentityChecked)
-          : val,
-    })),
+  setDocumentIssueIdentityChecked: createSetter(set, "documentIssueIdentityChecked"),
   documentIssueDocumentOpenedAndChecked: false,
-  setDocumentIssueDocumentOpenedAndChecked: (val) =>
-    set((state) => ({
-      documentIssueDocumentOpenedAndChecked:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueDocumentOpenedAndChecked)
-          : val,
-    })),
+  setDocumentIssueDocumentOpenedAndChecked: createSetter(set, "documentIssueDocumentOpenedAndChecked"),
   documentIssueRecipientSigned: false,
-  setDocumentIssueRecipientSigned: (val) =>
-    set((state) => ({
-      documentIssueRecipientSigned:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueRecipientSigned)
-          : val,
-    })),
+  setDocumentIssueRecipientSigned: createSetter(set, "documentIssueRecipientSigned"),
   documentIssueClinicSigned: false,
-  setDocumentIssueClinicSigned: (val) =>
-    set((state) => ({
-      documentIssueClinicSigned:
-        typeof val === "function"
-          ? (val as any)(state.documentIssueClinicSigned)
-          : val,
-    })),
+  setDocumentIssueClinicSigned: createSetter(set, "documentIssueClinicSigned"),
   documentVoidConfirmationId: null,
-  setDocumentVoidConfirmationId: (val) =>
-    set((state) => ({
-      documentVoidConfirmationId:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidConfirmationId)
-          : val,
-    })),
+  setDocumentVoidConfirmationId: createSetter(set, "documentVoidConfirmationId"),
   documentVoidReasonCode: "draft_error",
-  setDocumentVoidReasonCode: (val) =>
-    set((state) => ({
-      documentVoidReasonCode:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidReasonCode)
-          : val,
-    })),
+  setDocumentVoidReasonCode: createSetter(set, "documentVoidReasonCode"),
   documentVoidReasonText: "",
-  setDocumentVoidReasonText: (val) =>
-    set((state) => ({
-      documentVoidReasonText:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidReasonText)
-          : val,
-    })),
+  setDocumentVoidReasonText: createSetter(set, "documentVoidReasonText"),
   documentVoidStaffFullName:
     initialUiPreferences.documentIssueStaffFullName || "",
-  setDocumentVoidStaffFullName: (val) =>
-    set((state) => ({
-      documentVoidStaffFullName:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidStaffFullName)
-          : val,
-    })),
+  setDocumentVoidStaffFullName: createSetter(set, "documentVoidStaffFullName"),
   documentVoidStaffRole: initialUiPreferences.documentIssueStaffRole || "",
-  setDocumentVoidStaffRole: (val) =>
-    set((state) => ({
-      documentVoidStaffRole:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidStaffRole)
-          : val,
-    })),
+  setDocumentVoidStaffRole: createSetter(set, "documentVoidStaffRole"),
   documentVoidCorrectionDocumentId: "",
-  setDocumentVoidCorrectionDocumentId: (val) =>
-    set((state) => ({
-      documentVoidCorrectionDocumentId:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidCorrectionDocumentId)
-          : val,
-    })),
+  setDocumentVoidCorrectionDocumentId: createSetter(set, "documentVoidCorrectionDocumentId"),
   documentVoidReplacementRequired: false,
-  setDocumentVoidReplacementRequired: (val) =>
-    set((state) => ({
-      documentVoidReplacementRequired:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidReplacementRequired)
-          : val,
-    })),
+  setDocumentVoidReplacementRequired: createSetter(set, "documentVoidReplacementRequired"),
   documentVoidPatientOrPayerNotified: false,
-  setDocumentVoidPatientOrPayerNotified: (val) =>
-    set((state) => ({
-      documentVoidPatientOrPayerNotified:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidPatientOrPayerNotified)
-          : val,
-    })),
+  setDocumentVoidPatientOrPayerNotified: createSetter(set, "documentVoidPatientOrPayerNotified"),
   documentVoidArchivePreserved: false,
-  setDocumentVoidArchivePreserved: (val) =>
-    set((state) => ({
-      documentVoidArchivePreserved:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidArchivePreserved)
-          : val,
-    })),
+  setDocumentVoidArchivePreserved: createSetter(set, "documentVoidArchivePreserved"),
   documentVoidStatusReviewed: false,
-  setDocumentVoidStatusReviewed: (val) =>
-    set((state) => ({
-      documentVoidStatusReviewed:
-        typeof val === "function"
-          ? (val as any)(state.documentVoidStatusReviewed)
-          : val,
-    })),
+  setDocumentVoidStatusReviewed: createSetter(set, "documentVoidStatusReviewed"),
   documentAuditFacts: null,
   selectedDocumentKind: "treatment_plan",
   setSelectedDocumentKind: (val) =>
@@ -1834,136 +1688,42 @@ const createDocumentSlice = (set: any) => ({
       isDocumentIngesting:
         typeof val === "function" ? val(state.isDocumentIngesting) : val,
     })),
-  setDocumentAuditFacts: (val) =>
-    set((state) => ({
-      documentAuditFacts:
-        typeof val === "function"
-          ? (val as any)(state.documentAuditFacts)
-          : val,
-    })),
+  setDocumentAuditFacts: createSetter(set, "documentAuditFacts"),
   documentAuditFactsLoadingId: null,
-  setDocumentAuditFactsLoadingId: (val) =>
-    set((state) => ({
-      documentAuditFactsLoadingId:
-        typeof val === "function"
-          ? (val as any)(state.documentAuditFactsLoadingId)
-          : val,
-    })),
+  setDocumentAuditFactsLoadingId: createSetter(set, "documentAuditFactsLoadingId"),
   documentIngestionTarget: initialUiPreferences.documentIngestionTarget,
-  setDocumentIngestionTarget: (val) =>
-    set((state) => ({
-      documentIngestionTarget:
-        typeof val === "function"
-          ? (val as any)(state.documentIngestionTarget)
-          : val,
-    })),
+  setDocumentIngestionTarget: createSetter(set, "documentIngestionTarget"),
   documentIngestion: null,
-  setDocumentIngestion: (val) =>
-    set((state) => ({
-      documentIngestion:
-        typeof val === "function" ? (val as any)(state.documentIngestion) : val,
-    })),
+  setDocumentIngestion: createSetter(set, "documentIngestion"),
 });
 
 const createTaxSlice = (set: any) => ({
   taxDocumentPayerInn: "",
-  setTaxDocumentPayerInn: (val) =>
-    set((state) => ({
-      taxDocumentPayerInn:
-        typeof val === "function"
-          ? (val as any)(state.taxDocumentPayerInn)
-          : val,
-    })),
+  setTaxDocumentPayerInn: createSetter(set, "taxDocumentPayerInn"),
   taxApplicationTaxpayerFullName: "",
-  setTaxApplicationTaxpayerFullName: (val) =>
-    set((state) => ({
-      taxApplicationTaxpayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationTaxpayerFullName)
-          : val,
-    })),
+  setTaxApplicationTaxpayerFullName: createSetter(set, "taxApplicationTaxpayerFullName"),
   taxApplicationTaxpayerInn: "",
-  setTaxApplicationTaxpayerInn: (val) =>
-    set((state) => ({
-      taxApplicationTaxpayerInn:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationTaxpayerInn)
-          : val,
-    })),
+  setTaxApplicationTaxpayerInn: createSetter(set, "taxApplicationTaxpayerInn"),
   taxApplicationTaxpayerBirthDate: "",
-  setTaxApplicationTaxpayerBirthDate: (val) =>
-    set((state) => ({
-      taxApplicationTaxpayerBirthDate:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationTaxpayerBirthDate)
-          : val,
-    })),
+  setTaxApplicationTaxpayerBirthDate: createSetter(set, "taxApplicationTaxpayerBirthDate"),
   taxApplicationTaxpayerIdentityDocument: "",
-  setTaxApplicationTaxpayerIdentityDocument: (val) =>
-    set((state) => ({
-      taxApplicationTaxpayerIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationTaxpayerIdentityDocument)
-          : val,
-    })),
+  setTaxApplicationTaxpayerIdentityDocument: createSetter(set, "taxApplicationTaxpayerIdentityDocument"),
   taxApplicationRelationship: "self",
-  setTaxApplicationRelationship: (val) =>
-    set((state) => ({
-      taxApplicationRelationship:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationRelationship)
-          : val,
-    })),
+  setTaxApplicationRelationship: createSetter(set, "taxApplicationRelationship"),
   taxApplicationForm: initialUiPreferences.taxApplicationForm,
-  setTaxApplicationForm: (val) =>
-    set((state) => ({
-      taxApplicationForm:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationForm)
-          : val,
-    })),
+  setTaxApplicationForm: createSetter(set, "taxApplicationForm"),
   taxApplicationDeliveryChannel:
     initialUiPreferences.taxApplicationDeliveryChannel,
-  setTaxApplicationDeliveryChannel: (val) =>
-    set((state) => ({
-      taxApplicationDeliveryChannel:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationDeliveryChannel)
-          : val,
-    })),
+  setTaxApplicationDeliveryChannel: createSetter(set, "taxApplicationDeliveryChannel"),
   taxApplicationContact: "",
-  setTaxApplicationContact: (val) =>
-    set((state) => ({
-      taxApplicationContact:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationContact)
-          : val,
-    })),
+  setTaxApplicationContact: createSetter(set, "taxApplicationContact"),
   taxApplicationAuthorityDocument: "",
-  setTaxApplicationAuthorityDocument: (val) =>
-    set((state) => ({
-      taxApplicationAuthorityDocument:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationAuthorityDocument)
-          : val,
-    })),
+  setTaxApplicationAuthorityDocument: createSetter(set, "taxApplicationAuthorityDocument"),
   taxApplicationRequestedAt: (() =>
     toDateTimeLocalValue(new Date().toISOString()))(),
-  setTaxApplicationRequestedAt: (val) =>
-    set((state) => ({
-      taxApplicationRequestedAt:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationRequestedAt)
-          : val,
-    })),
+  setTaxApplicationRequestedAt: createSetter(set, "taxApplicationRequestedAt"),
   taxApplicationDuplicateWarningAccepted: false,
-  setTaxApplicationDuplicateWarningAccepted: (val) =>
-    set((state) => ({
-      taxApplicationDuplicateWarningAccepted:
-        typeof val === "function"
-          ? (val as any)(state.taxApplicationDuplicateWarningAccepted)
-          : val,
-    })),
+  setTaxApplicationDuplicateWarningAccepted: createSetter(set, "taxApplicationDuplicateWarningAccepted"),
   taxDocumentYear:
     initialUiPreferences?.taxDocumentYear ?? new Date().getFullYear(),
   setTaxDocumentYear: (val) =>
@@ -1975,3137 +1735,875 @@ const createTaxSlice = (set: any) => ({
 
 const createIntakeAndConsentSlice = (set: any) => ({
   intakeChiefComplaint: "",
-  setIntakeChiefComplaint: (val) =>
-    set((state) => ({
-      intakeChiefComplaint:
-        typeof val === "function"
-          ? (val as any)(state.intakeChiefComplaint)
-          : val,
-    })),
+  setIntakeChiefComplaint: createSetter(set, "intakeChiefComplaint"),
   intakeAllergyStatus:
     "Аллергии и нежелательные реакции со слов пациента не отмечены.",
-  setIntakeAllergyStatus: (val) =>
-    set((state) => ({
-      intakeAllergyStatus:
-        typeof val === "function"
-          ? (val as any)(state.intakeAllergyStatus)
-          : val,
-    })),
+  setIntakeAllergyStatus: createSetter(set, "intakeAllergyStatus"),
   intakeCurrentMedications:
     "Постоянные препараты со слов пациента не принимает.",
-  setIntakeCurrentMedications: (val) =>
-    set((state) => ({
-      intakeCurrentMedications:
-        typeof val === "function"
-          ? (val as any)(state.intakeCurrentMedications)
-          : val,
-    })),
+  setIntakeCurrentMedications: createSetter(set, "intakeCurrentMedications"),
   intakeChronicConditions: "Хронические заболевания со слов пациента отрицает.",
-  setIntakeChronicConditions: (val) =>
-    set((state) => ({
-      intakeChronicConditions:
-        typeof val === "function"
-          ? (val as any)(state.intakeChronicConditions)
-          : val,
-    })),
+  setIntakeChronicConditions: createSetter(set, "intakeChronicConditions"),
   intakePregnancyStatus: "unknown",
-  setIntakePregnancyStatus: (val) =>
-    set((state) => ({
-      intakePregnancyStatus:
-        typeof val === "function"
-          ? (val as any)(state.intakePregnancyStatus)
-          : val,
-    })),
+  setIntakePregnancyStatus: createSetter(set, "intakePregnancyStatus"),
   intakeAnticoagulants:
     "Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает.",
-  setIntakeAnticoagulants: (val) =>
-    set((state) => ({
-      intakeAnticoagulants:
-        typeof val === "function"
-          ? (val as any)(state.intakeAnticoagulants)
-          : val,
-    })),
+  setIntakeAnticoagulants: createSetter(set, "intakeAnticoagulants"),
   intakeInfectiousRiskNotes: "Инфекционные риски со слов пациента не заявлены.",
-  setIntakeInfectiousRiskNotes: (val) =>
-    set((state) => ({
-      intakeInfectiousRiskNotes:
-        typeof val === "function"
-          ? (val as any)(state.intakeInfectiousRiskNotes)
-          : val,
-    })),
+  setIntakeInfectiousRiskNotes: createSetter(set, "intakeInfectiousRiskNotes"),
   intakeCardioEndocrineNotes:
     "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством.",
-  setIntakeCardioEndocrineNotes: (val) =>
-    set((state) => ({
-      intakeCardioEndocrineNotes:
-        typeof val === "function"
-          ? (val as any)(state.intakeCardioEndocrineNotes)
-          : val,
-    })),
+  setIntakeCardioEndocrineNotes: createSetter(set, "intakeCardioEndocrineNotes"),
   intakeEmergencyContact: "",
-  setIntakeEmergencyContact: (val) =>
-    set((state) => ({
-      intakeEmergencyContact:
-        typeof val === "function"
-          ? (val as any)(state.intakeEmergencyContact)
-          : val,
-    })),
+  setIntakeEmergencyContact: createSetter(set, "intakeEmergencyContact"),
   intakeAdditionalNotes: "",
-  setIntakeAdditionalNotes: (val) =>
-    set((state) => ({
-      intakeAdditionalNotes:
-        typeof val === "function"
-          ? (val as any)(state.intakeAdditionalNotes)
-          : val,
-    })),
+  setIntakeAdditionalNotes: createSetter(set, "intakeAdditionalNotes"),
   intakeAccuracyConfirmed: false,
-  setIntakeAccuracyConfirmed: (val) =>
-    set((state) => ({
-      intakeAccuracyConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.intakeAccuracyConfirmed)
-          : val,
-    })),
+  setIntakeAccuracyConfirmed: createSetter(set, "intakeAccuracyConfirmed"),
   informedConsentIntervention:
     "Стоматологическое вмешательство по согласованному плану",
-  setInformedConsentIntervention: (val) =>
-    set((state) => ({
-      informedConsentIntervention:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentIntervention)
-          : val,
-    })),
+  setInformedConsentIntervention: createSetter(set, "informedConsentIntervention"),
   informedConsentToothOrArea: "",
-  setInformedConsentToothOrArea: (val) =>
-    set((state) => ({
-      informedConsentToothOrArea:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentToothOrArea)
-          : val,
-    })),
+  setInformedConsentToothOrArea: createSetter(set, "informedConsentToothOrArea"),
   informedConsentDiagnosisOrIndication: "",
-  setInformedConsentDiagnosisOrIndication: (val) =>
-    set((state) => ({
-      informedConsentDiagnosisOrIndication:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentDiagnosisOrIndication)
-          : val,
-    })),
+  setInformedConsentDiagnosisOrIndication: createSetter(set, "informedConsentDiagnosisOrIndication"),
   informedConsentExpectedBenefit:
     "снижение боли, восстановление функции, профилактика осложнений и сохранение стоматологического здоровья",
-  setInformedConsentExpectedBenefit: (val) =>
-    set((state) => ({
-      informedConsentExpectedBenefit:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentExpectedBenefit)
-          : val,
-    })),
+  setInformedConsentExpectedBenefit: createSetter(set, "informedConsentExpectedBenefit"),
   informedConsentAnesthesia: "местная анестезия по показаниям",
-  setInformedConsentAnesthesia: (val) =>
-    set((state) => ({
-      informedConsentAnesthesia:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentAnesthesia)
-          : val,
-    })),
+  setInformedConsentAnesthesia: createSetter(set, "informedConsentAnesthesia"),
   informedConsentMaterialNotes: "",
-  setInformedConsentMaterialNotes: (val) =>
-    set((state) => ({
-      informedConsentMaterialNotes:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentMaterialNotes)
-          : val,
-    })),
+  setInformedConsentMaterialNotes: createSetter(set, "informedConsentMaterialNotes"),
   informedConsentTrustedContact:
     "не разрешаю сообщать медицинские сведения третьим лицам",
-  setInformedConsentTrustedContact: (val) =>
-    set((state) => ({
-      informedConsentTrustedContact:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentTrustedContact)
-          : val,
-    })),
+  setInformedConsentTrustedContact: createSetter(set, "informedConsentTrustedContact"),
   informedConsentRisks:
     "боль, отек, кровотечение или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного приема или изменения плана лечения\nограниченный прогноз при исходном состоянии зубов и тканей",
-  setInformedConsentRisks: (val) =>
-    set((state) => ({
-      informedConsentRisks:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentRisks)
-          : val,
-    })),
+  setInformedConsentRisks: createSetter(set, "informedConsentRisks"),
   informedConsentAlternatives:
     "отложить вмешательство и наблюдать состояние\nполучить второе мнение\nвыбрать альтернативный метод лечения при наличии показаний\nотказаться от вмешательства с фиксацией возможных последствий",
-  setInformedConsentAlternatives: (val) =>
-    set((state) => ({
-      informedConsentAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentAlternatives)
-          : val,
-    })),
+  setInformedConsentAlternatives: createSetter(set, "informedConsentAlternatives"),
   informedConsentAftercare:
     "соблюдать рекомендации врача и режим приема препаратов\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при нарастающей боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок",
-  setInformedConsentAftercare: (val) =>
-    set((state) => ({
-      informedConsentAftercare:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentAftercare)
-          : val,
-    })),
+  setInformedConsentAftercare: createSetter(set, "informedConsentAftercare"),
   informedConsentDoctorFullName: "",
-  setInformedConsentDoctorFullName: (val) =>
-    set((state) => ({
-      informedConsentDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentDoctorFullName)
-          : val,
-    })),
+  setInformedConsentDoctorFullName: createSetter(set, "informedConsentDoctorFullName"),
   informedConsentConfirmedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setInformedConsentConfirmedAt: (val) =>
-    set((state) => ({
-      informedConsentConfirmedAt:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentConfirmedAt)
-          : val,
-    })),
+  setInformedConsentConfirmedAt: createSetter(set, "informedConsentConfirmedAt"),
   informedConsentQuestionsAnswered: false,
-  setInformedConsentQuestionsAnswered: (val) =>
-    set((state) => ({
-      informedConsentQuestionsAnswered:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentQuestionsAnswered)
-          : val,
-    })),
+  setInformedConsentQuestionsAnswered: createSetter(set, "informedConsentQuestionsAnswered"),
   informedConsentRisksUnderstood: false,
-  setInformedConsentRisksUnderstood: (val) =>
-    set((state) => ({
-      informedConsentRisksUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentRisksUnderstood)
-          : val,
-    })),
+  setInformedConsentRisksUnderstood: createSetter(set, "informedConsentRisksUnderstood"),
   informedConsentWithdrawUnderstood: false,
-  setInformedConsentWithdrawUnderstood: (val) =>
-    set((state) => ({
-      informedConsentWithdrawUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.informedConsentWithdrawUnderstood)
-          : val,
-    })),
+  setInformedConsentWithdrawUnderstood: createSetter(set, "informedConsentWithdrawUnderstood"),
   procedureConsentProcedureType:
     initialUiPreferences.procedureConsentProcedureType,
-  setProcedureConsentProcedureType: (val) =>
-    set((state) => ({
-      procedureConsentProcedureType:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentProcedureType)
-          : val,
-    })),
+  setProcedureConsentProcedureType: createSetter(set, "procedureConsentProcedureType"),
   procedureConsentProcedureName: "Лечение зуба по согласованному плану",
-  setProcedureConsentProcedureName: (val) =>
-    set((state) => ({
-      procedureConsentProcedureName:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentProcedureName)
-          : val,
-    })),
+  setProcedureConsentProcedureName: createSetter(set, "procedureConsentProcedureName"),
   procedureConsentToothOrArea: "",
-  setProcedureConsentToothOrArea: (val) =>
-    set((state) => ({
-      procedureConsentToothOrArea:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentToothOrArea)
-          : val,
-    })),
+  setProcedureConsentToothOrArea: createSetter(set, "procedureConsentToothOrArea"),
   procedureConsentDiagnosisOrIndication: "",
-  setProcedureConsentDiagnosisOrIndication: (val) =>
-    set((state) => ({
-      procedureConsentDiagnosisOrIndication:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentDiagnosisOrIndication)
-          : val,
-    })),
+  setProcedureConsentDiagnosisOrIndication: createSetter(set, "procedureConsentDiagnosisOrIndication"),
   procedureConsentAnesthesia: "местная анестезия по показаниям",
-  setProcedureConsentAnesthesia: (val) =>
-    set((state) => ({
-      procedureConsentAnesthesia:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentAnesthesia)
-          : val,
-    })),
+  setProcedureConsentAnesthesia: createSetter(set, "procedureConsentAnesthesia"),
   procedureConsentMaterials: "",
-  setProcedureConsentMaterials: (val) =>
-    set((state) => ({
-      procedureConsentMaterials:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentMaterials)
-          : val,
-    })),
+  setProcedureConsentMaterials: createSetter(set, "procedureConsentMaterials"),
   procedureConsentPatientRiskFactors:
     "аллергии, постоянные препараты и хронические заболевания уточнены перед процедурой\nбеременность, антикоагулянты и инфекционные риски уточнены перед процедурой",
-  setProcedureConsentPatientRiskFactors: (val) =>
-    set((state) => ({
-      procedureConsentPatientRiskFactors:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentPatientRiskFactors)
-          : val,
-    })),
+  setProcedureConsentPatientRiskFactors: createSetter(set, "procedureConsentPatientRiskFactors"),
   procedureConsentSpecificRisks:
     "боль, отек, кровоточивость или временный дискомфорт\nнеобходимость повторного приема, коррекции или изменения плана\nаллергическая реакция на препараты или материалы",
-  setProcedureConsentSpecificRisks: (val) =>
-    set((state) => ({
-      procedureConsentSpecificRisks:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentSpecificRisks)
-          : val,
-    })),
+  setProcedureConsentSpecificRisks: createSetter(set, "procedureConsentSpecificRisks"),
   procedureConsentAlternatives:
     "отложить процедуру и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от процедуры с фиксацией возможных последствий",
-  setProcedureConsentAlternatives: (val) =>
-    set((state) => ({
-      procedureConsentAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentAlternatives)
-          : val,
-    })),
+  setProcedureConsentAlternatives: createSetter(set, "procedureConsentAlternatives"),
   procedureConsentAftercare:
     "соблюдать рекомендации врача после процедуры\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок",
-  setProcedureConsentAftercare: (val) =>
-    set((state) => ({
-      procedureConsentAftercare:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentAftercare)
-          : val,
-    })),
+  setProcedureConsentAftercare: createSetter(set, "procedureConsentAftercare"),
   procedureConsentDoctorFullName: "",
-  setProcedureConsentDoctorFullName: (val) =>
-    set((state) => ({
-      procedureConsentDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentDoctorFullName)
-          : val,
-    })),
+  setProcedureConsentDoctorFullName: createSetter(set, "procedureConsentDoctorFullName"),
   procedureConsentConfirmedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setProcedureConsentConfirmedAt: (val) =>
-    set((state) => ({
-      procedureConsentConfirmedAt:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentConfirmedAt)
-          : val,
-    })),
+  setProcedureConsentConfirmedAt: createSetter(set, "procedureConsentConfirmedAt"),
   procedureConsentLocalFormAttached: false,
-  setProcedureConsentLocalFormAttached: (val) =>
-    set((state) => ({
-      procedureConsentLocalFormAttached:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentLocalFormAttached)
-          : val,
-    })),
+  setProcedureConsentLocalFormAttached: createSetter(set, "procedureConsentLocalFormAttached"),
   procedureConsentQuestionsAnswered: false,
-  setProcedureConsentQuestionsAnswered: (val) =>
-    set((state) => ({
-      procedureConsentQuestionsAnswered:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentQuestionsAnswered)
-          : val,
-    })),
+  setProcedureConsentQuestionsAnswered: createSetter(set, "procedureConsentQuestionsAnswered"),
   procedureConsentExactProcedureConfirmed: false,
-  setProcedureConsentExactProcedureConfirmed: (val) =>
-    set((state) => ({
-      procedureConsentExactProcedureConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentExactProcedureConfirmed)
-          : val,
-    })),
+  setProcedureConsentExactProcedureConfirmed: createSetter(set, "procedureConsentExactProcedureConfirmed"),
   procedureConsentRisksUnderstood: false,
-  setProcedureConsentRisksUnderstood: (val) =>
-    set((state) => ({
-      procedureConsentRisksUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.procedureConsentRisksUnderstood)
-          : val,
-    })),
+  setProcedureConsentRisksUnderstood: createSetter(set, "procedureConsentRisksUnderstood"),
   photoVideoLabTransferAllowed: true,
-  setPhotoVideoLabTransferAllowed: (val) =>
-    set((state) => ({
-      photoVideoLabTransferAllowed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoLabTransferAllowed)
-          : val,
-    })),
+  setPhotoVideoLabTransferAllowed: createSetter(set, "photoVideoLabTransferAllowed"),
   photoVideoColleagueConsultationAllowed: true,
-  setPhotoVideoColleagueConsultationAllowed: (val) =>
-    set((state) => ({
-      photoVideoColleagueConsultationAllowed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoColleagueConsultationAllowed)
-          : val,
-    })),
+  setPhotoVideoColleagueConsultationAllowed: createSetter(set, "photoVideoColleagueConsultationAllowed"),
   photoVideoEducationUseAllowed: false,
-  setPhotoVideoEducationUseAllowed: (val) =>
-    set((state) => ({
-      photoVideoEducationUseAllowed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoEducationUseAllowed)
-          : val,
-    })),
+  setPhotoVideoEducationUseAllowed: createSetter(set, "photoVideoEducationUseAllowed"),
   photoVideoMarketingUseAllowed: false,
-  setPhotoVideoMarketingUseAllowed: (val) =>
-    set((state) => ({
-      photoVideoMarketingUseAllowed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoMarketingUseAllowed)
-          : val,
-    })),
+  setPhotoVideoMarketingUseAllowed: createSetter(set, "photoVideoMarketingUseAllowed"),
   photoVideoRecognizablePublicationAllowed: false,
-  setPhotoVideoRecognizablePublicationAllowed: (val) =>
-    set((state) => ({
-      photoVideoRecognizablePublicationAllowed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoRecognizablePublicationAllowed)
-          : val,
-    })),
+  setPhotoVideoRecognizablePublicationAllowed: createSetter(set, "photoVideoRecognizablePublicationAllowed"),
   photoVideoClinicalRecordUseConfirmed: false,
-  setPhotoVideoClinicalRecordUseConfirmed: (val) =>
-    set((state) => ({
-      photoVideoClinicalRecordUseConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoClinicalRecordUseConfirmed)
-          : val,
-    })),
+  setPhotoVideoClinicalRecordUseConfirmed: createSetter(set, "photoVideoClinicalRecordUseConfirmed"),
   photoVideoAnonymizationConfirmed: false,
-  setPhotoVideoAnonymizationConfirmed: (val) =>
-    set((state) => ({
-      photoVideoAnonymizationConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoAnonymizationConfirmed)
-          : val,
-    })),
+  setPhotoVideoAnonymizationConfirmed: createSetter(set, "photoVideoAnonymizationConfirmed"),
   photoVideoMaterials: ["intraoral_photo", "xray", "scan"],
-  setPhotoVideoMaterials: (val) =>
-    set((state) => ({
-      photoVideoMaterials:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoMaterials)
-          : val,
-    })),
+  setPhotoVideoMaterials: createSetter(set, "photoVideoMaterials"),
   photoVideoRevocationChannel:
     "письменное заявление в клинике или защищенное обращение через портал пациента",
-  setPhotoVideoRevocationChannel: (val) =>
-    set((state) => ({
-      photoVideoRevocationChannel:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoRevocationChannel)
-          : val,
-    })),
+  setPhotoVideoRevocationChannel: createSetter(set, "photoVideoRevocationChannel"),
   photoVideoScopeNotes: "",
-  setPhotoVideoScopeNotes: (val) =>
-    set((state) => ({
-      photoVideoScopeNotes:
-        typeof val === "function"
-          ? (val as any)(state.photoVideoScopeNotes)
-          : val,
-    })),
+  setPhotoVideoScopeNotes: createSetter(set, "photoVideoScopeNotes"),
   personalDataCrossBorderAllowed: false,
-  setPersonalDataCrossBorderAllowed: (val) =>
-    set((state) => ({
-      personalDataCrossBorderAllowed:
-        typeof val === "function"
-          ? (val as any)(state.personalDataCrossBorderAllowed)
-          : val,
-    })),
+  setPersonalDataCrossBorderAllowed: createSetter(set, "personalDataCrossBorderAllowed"),
   personalDataAutomatedDecisionAllowed: false,
-  setPersonalDataAutomatedDecisionAllowed: (val) =>
-    set((state) => ({
-      personalDataAutomatedDecisionAllowed:
-        typeof val === "function"
-          ? (val as any)(state.personalDataAutomatedDecisionAllowed)
-          : val,
-    })),
+  setPersonalDataAutomatedDecisionAllowed: createSetter(set, "personalDataAutomatedDecisionAllowed"),
   personalDataConsentGivenAt: new Date().toLocaleString("ru-RU"),
-  setPersonalDataConsentGivenAt: (val) =>
-    set((state) => ({
-      personalDataConsentGivenAt:
-        typeof val === "function"
-          ? (val as any)(state.personalDataConsentGivenAt)
-          : val,
-    })),
+  setPersonalDataConsentGivenAt: createSetter(set, "personalDataConsentGivenAt"),
   personalDataVoluntaryConsentConfirmed: false,
-  setPersonalDataVoluntaryConsentConfirmed: (val) =>
-    set((state) => ({
-      personalDataVoluntaryConsentConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.personalDataVoluntaryConsentConfirmed)
-          : val,
-    })),
+  setPersonalDataVoluntaryConsentConfirmed: createSetter(set, "personalDataVoluntaryConsentConfirmed"),
   personalDataMedicalProcessingAcknowledged: false,
-  setPersonalDataMedicalProcessingAcknowledged: (val) =>
-    set((state) => ({
-      personalDataMedicalProcessingAcknowledged:
-        typeof val === "function"
-          ? (val as any)(state.personalDataMedicalProcessingAcknowledged)
-          : val,
-    })),
+  setPersonalDataMedicalProcessingAcknowledged: createSetter(set, "personalDataMedicalProcessingAcknowledged"),
   refusalIntervention: "",
-  setRefusalIntervention: (val) =>
-    set((state) => ({
-      refusalIntervention:
-        typeof val === "function"
-          ? (val as any)(state.refusalIntervention)
-          : val,
-    })),
+  setRefusalIntervention: createSetter(set, "refusalIntervention"),
   refusalClinicalIndication: "",
-  setRefusalClinicalIndication: (val) =>
-    set((state) => ({
-      refusalClinicalIndication:
-        typeof val === "function"
-          ? (val as any)(state.refusalClinicalIndication)
-          : val,
-    })),
+  setRefusalClinicalIndication: createSetter(set, "refusalClinicalIndication"),
   refusalPatientReason: "",
-  setRefusalPatientReason: (val) =>
-    set((state) => ({
-      refusalPatientReason:
-        typeof val === "function"
-          ? (val as any)(state.refusalPatientReason)
-          : val,
-    })),
+  setRefusalPatientReason: createSetter(set, "refusalPatientReason"),
   refusalDoctorFullName: "",
-  setRefusalDoctorFullName: (val) =>
-    set((state) => ({
-      refusalDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.refusalDoctorFullName)
-          : val,
-    })),
+  setRefusalDoctorFullName: createSetter(set, "refusalDoctorFullName"),
   refusalConfirmedAt: new Date().toLocaleString("ru-RU"),
-  setRefusalConfirmedAt: (val) =>
-    set((state) => ({
-      refusalConfirmedAt:
-        typeof val === "function"
-          ? (val as any)(state.refusalConfirmedAt)
-          : val,
-    })),
+  setRefusalConfirmedAt: createSetter(set, "refusalConfirmedAt"),
   refusalConsequencesUnderstood: false,
-  setRefusalConsequencesUnderstood: (val) =>
-    set((state) => ({
-      refusalConsequencesUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.refusalConsequencesUnderstood)
-          : val,
-    })),
+  setRefusalConsequencesUnderstood: createSetter(set, "refusalConsequencesUnderstood"),
   refusalSecondOpinionOffered: false,
-  setRefusalSecondOpinionOffered: (val) =>
-    set((state) => ({
-      refusalSecondOpinionOffered:
-        typeof val === "function"
-          ? (val as any)(state.refusalSecondOpinionOffered)
-          : val,
-    })),
+  setRefusalSecondOpinionOffered: createSetter(set, "refusalSecondOpinionOffered"),
   refusalEmergencyCareExplained: false,
-  setRefusalEmergencyCareExplained: (val) =>
-    set((state) => ({
-      refusalEmergencyCareExplained:
-        typeof val === "function"
-          ? (val as any)(state.refusalEmergencyCareExplained)
-          : val,
-    })),
+  setRefusalEmergencyCareExplained: createSetter(set, "refusalEmergencyCareExplained"),
   personalDataPurposes:
     "оказание стоматологической медицинской помощи\nведение медицинской карты и медицинской документации\nрасчеты, договоры, акты и налоговые документы\nуведомления о визитах, рекомендациях и готовности документов",
-  setPersonalDataPurposes: (val) =>
-    set((state) => ({
-      personalDataPurposes:
-        typeof val === "function"
-          ? (val as any)(state.personalDataPurposes)
-          : val,
-    })),
+  setPersonalDataPurposes: createSetter(set, "personalDataPurposes"),
   personalDataCategories:
     "ФИО, дата рождения, телефон, email и адреса\nпаспортные данные, ИНН, СНИЛС, полис ОМС или ДМС\nсведения о здоровье, диагнозы, снимки, планы лечения и назначения\nплатежные документы, договоры, акты и налоговые заявления",
-  setPersonalDataCategories: (val) =>
-    set((state) => ({
-      personalDataCategories:
-        typeof val === "function"
-          ? (val as any)(state.personalDataCategories)
-          : val,
-    })),
+  setPersonalDataCategories: createSetter(set, "personalDataCategories"),
   personalDataActions:
     "сбор\nзапись\nсистематизация\nхранение\nуточнение\nиспользование\nпередача по законному основанию\nобезличивание\nудаление после окончания срока хранения",
-  setPersonalDataActions: (val) =>
-    set((state) => ({
-      personalDataActions:
-        typeof val === "function"
-          ? (val as any)(state.personalDataActions)
-          : val,
-    })),
+  setPersonalDataActions: createSetter(set, "personalDataActions"),
   personalDataTransferRules:
     "Передача возможна только зуботехническим лабораториям, платежным и фискальным сервисам, страховым организациям, ИТ-подрядчикам с договором конфиденциальности, государственным органам по закону и пациентскому порталу по защищенному каналу.",
-  setPersonalDataTransferRules: (val) =>
-    set((state) => ({
-      personalDataTransferRules:
-        typeof val === "function"
-          ? (val as any)(state.personalDataTransferRules)
-          : val,
-    })),
+  setPersonalDataTransferRules: createSetter(set, "personalDataTransferRules"),
   personalDataRetentionPeriod:
     "в течение срока оказания помощи и обязательного срока хранения медицинской и бухгалтерской документации",
-  setPersonalDataRetentionPeriod: (val) =>
-    set((state) => ({
-      personalDataRetentionPeriod:
-        typeof val === "function"
-          ? (val as any)(state.personalDataRetentionPeriod)
-          : val,
-    })),
+  setPersonalDataRetentionPeriod: createSetter(set, "personalDataRetentionPeriod"),
   personalDataRevocationChannel:
     "письменное заявление в клинике или защищенное обращение через портал пациента",
-  setPersonalDataRevocationChannel: (val) =>
-    set((state) => ({
-      personalDataRevocationChannel:
-        typeof val === "function"
-          ? (val as any)(state.personalDataRevocationChannel)
-          : val,
-    })),
+  setPersonalDataRevocationChannel: createSetter(set, "personalDataRevocationChannel"),
   refusalExplainedRisks:
     "усиление боли\nраспространение инфекции\nпотеря возможности сохранить зуб или ткани\nнеобходимость экстренного обращения при ухудшении",
-  setRefusalExplainedRisks: (val) =>
-    set((state) => ({
-      refusalExplainedRisks:
-        typeof val === "function"
-          ? (val as any)(state.refusalExplainedRisks)
-          : val,
-    })),
+  setRefusalExplainedRisks: createSetter(set, "refusalExplainedRisks"),
   refusalAlternatives:
     "повторная консультация\nобезболивание и контроль состояния\nвторое мнение профильного врача\nобращение в дежурную стоматологию при ухудшении",
-  setRefusalAlternatives: (val) =>
-    set((state) => ({
-      refusalAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.refusalAlternatives)
-          : val,
-    })),
+  setRefusalAlternatives: createSetter(set, "refusalAlternatives"),
   refusalUrgentWarningSigns:
     "отек лица или шеи\nтемпература\nзатруднение глотания или дыхания\nкровотечение\nнарастающая боль",
-  setRefusalUrgentWarningSigns: (val) =>
-    set((state) => ({
-      refusalUrgentWarningSigns:
-        typeof val === "function"
-          ? (val as any)(state.refusalUrgentWarningSigns)
-          : val,
-    })),
+  setRefusalUrgentWarningSigns: createSetter(set, "refusalUrgentWarningSigns"),
 });
 
 const createFinancialSlice = (set: any) => ({
   paidContractNumber: "",
-  setPaidContractNumber: (val) =>
-    set((state) => ({
-      paidContractNumber:
-        typeof val === "function"
-          ? (val as any)(state.paidContractNumber)
-          : val,
-    })),
+  setPaidContractNumber: createSetter(set, "paidContractNumber"),
   paidContractDate: (() => new Date().toLocaleDateString("ru-RU"))(),
-  setPaidContractDate: (val) =>
-    set((state) => ({
-      paidContractDate:
-        typeof val === "function" ? (val as any)(state.paidContractDate) : val,
-    })),
+  setPaidContractDate: createSetter(set, "paidContractDate"),
   paidContractServiceStart: "",
-  setPaidContractServiceStart: (val) =>
-    set((state) => ({
-      paidContractServiceStart:
-        typeof val === "function"
-          ? (val as any)(state.paidContractServiceStart)
-          : val,
-    })),
+  setPaidContractServiceStart: createSetter(set, "paidContractServiceStart"),
   paidContractServiceEnd:
     "до полного оказания согласованных услуг или подписания акта",
-  setPaidContractServiceEnd: (val) =>
-    set((state) => ({
-      paidContractServiceEnd:
-        typeof val === "function"
-          ? (val as any)(state.paidContractServiceEnd)
-          : val,
-    })),
+  setPaidContractServiceEnd: createSetter(set, "paidContractServiceEnd"),
   paidContractCustomerFullName: "",
-  setPaidContractCustomerFullName: (val) =>
-    set((state) => ({
-      paidContractCustomerFullName:
-        typeof val === "function"
-          ? (val as any)(state.paidContractCustomerFullName)
-          : val,
-    })),
+  setPaidContractCustomerFullName: createSetter(set, "paidContractCustomerFullName"),
   paidContractRepresentativeFullName: "",
-  setPaidContractRepresentativeFullName: (val) =>
-    set((state) => ({
-      paidContractRepresentativeFullName:
-        typeof val === "function"
-          ? (val as any)(state.paidContractRepresentativeFullName)
-          : val,
-    })),
+  setPaidContractRepresentativeFullName: createSetter(set, "paidContractRepresentativeFullName"),
   paidContractCareReason: "",
-  setPaidContractCareReason: (val) =>
-    set((state) => ({
-      paidContractCareReason:
-        typeof val === "function"
-          ? (val as any)(state.paidContractCareReason)
-          : val,
-    })),
+  setPaidContractCareReason: createSetter(set, "paidContractCareReason"),
   paidContractServiceScope: "",
-  setPaidContractServiceScope: (val) =>
-    set((state) => ({
-      paidContractServiceScope:
-        typeof val === "function"
-          ? (val as any)(state.paidContractServiceScope)
-          : val,
-    })),
+  setPaidContractServiceScope: createSetter(set, "paidContractServiceScope"),
   paidContractTotalRub: "",
-  setPaidContractTotalRub: (val) =>
-    set((state) => ({
-      paidContractTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.paidContractTotalRub)
-          : val,
-    })),
+  setPaidContractTotalRub: createSetter(set, "paidContractTotalRub"),
   paidContractPaymentTerms:
     "оплата до или в день оказания услуги с выдачей кассового чека",
-  setPaidContractPaymentTerms: (val) =>
-    set((state) => ({
-      paidContractPaymentTerms:
-        typeof val === "function"
-          ? (val as any)(state.paidContractPaymentTerms)
-          : val,
-    })),
+  setPaidContractPaymentTerms: createSetter(set, "paidContractPaymentTerms"),
   paidContractPriceChangeRules:
     "изменение объема, состава или стоимости платных услуг оформляется до оказания дополнительным соглашением или новым договором",
-  setPaidContractPriceChangeRules: (val) =>
-    set((state) => ({
-      paidContractPriceChangeRules:
-        typeof val === "function"
-          ? (val as any)(state.paidContractPriceChangeRules)
-          : val,
-    })),
+  setPaidContractPriceChangeRules: createSetter(set, "paidContractPriceChangeRules"),
   paidContractFreeCareNotice:
     "пациенту разъяснена возможность получения медицинской помощи в рамках программы государственных гарантий при наличии оснований и маршрутизации",
-  setPaidContractFreeCareNotice: (val) =>
-    set((state) => ({
-      paidContractFreeCareNotice:
-        typeof val === "function"
-          ? (val as any)(state.paidContractFreeCareNotice)
-          : val,
-    })),
+  setPaidContractFreeCareNotice: createSetter(set, "paidContractFreeCareNotice"),
   paidContractRecommendationWarning:
     "несоблюдение назначений, режима лечения и рекомендаций врача может снизить качество услуги, изменить сроки лечения или отрицательно сказаться на состоянии здоровья",
-  setPaidContractRecommendationWarning: (val) =>
-    set((state) => ({
-      paidContractRecommendationWarning:
-        typeof val === "function"
-          ? (val as any)(state.paidContractRecommendationWarning)
-          : val,
-    })),
+  setPaidContractRecommendationWarning: createSetter(set, "paidContractRecommendationWarning"),
   paidContractRefundTerms:
     "при отказе пациента от услуг оплачиваются фактически понесенные исполнителем расходы и фактически оказанные услуги; возврат оформляется по кассовым и бухгалтерским правилам клиники",
-  setPaidContractRefundTerms: (val) =>
-    set((state) => ({
-      paidContractRefundTerms:
-        typeof val === "function"
-          ? (val as any)(state.paidContractRefundTerms)
-          : val,
-    })),
+  setPaidContractRefundTerms: createSetter(set, "paidContractRefundTerms"),
   paidContractWarrantyTerms:
     "гарантийные и претензионные условия действуют по локальным правилам клиники, медицинским показаниям и при соблюдении рекомендаций врача",
-  setPaidContractWarrantyTerms: (val) =>
-    set((state) => ({
-      paidContractWarrantyTerms:
-        typeof val === "function"
-          ? (val as any)(state.paidContractWarrantyTerms)
-          : val,
-    })),
+  setPaidContractWarrantyTerms: createSetter(set, "paidContractWarrantyTerms"),
   paidContractDoctorFullName: "",
-  setPaidContractDoctorFullName: (val) =>
-    set((state) => ({
-      paidContractDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.paidContractDoctorFullName)
-          : val,
-    })),
+  setPaidContractDoctorFullName: createSetter(set, "paidContractDoctorFullName"),
   paidContractSignedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setPaidContractSignedAt: (val) =>
-    set((state) => ({
-      paidContractSignedAt:
-        typeof val === "function"
-          ? (val as any)(state.paidContractSignedAt)
-          : val,
-    })),
+  setPaidContractSignedAt: createSetter(set, "paidContractSignedAt"),
   paidContractClinicInfoConfirmed: false,
-  setPaidContractClinicInfoConfirmed: (val) =>
-    set((state) => ({
-      paidContractClinicInfoConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paidContractClinicInfoConfirmed)
-          : val,
-    })),
+  setPaidContractClinicInfoConfirmed: createSetter(set, "paidContractClinicInfoConfirmed"),
   paidContractServiceListConfirmed: false,
-  setPaidContractServiceListConfirmed: (val) =>
-    set((state) => ({
-      paidContractServiceListConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paidContractServiceListConfirmed)
-          : val,
-    })),
+  setPaidContractServiceListConfirmed: createSetter(set, "paidContractServiceListConfirmed"),
   paidContractPaidBasisConfirmed: false,
-  setPaidContractPaidBasisConfirmed: (val) =>
-    set((state) => ({
-      paidContractPaidBasisConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paidContractPaidBasisConfirmed)
-          : val,
-    })),
+  setPaidContractPaidBasisConfirmed: createSetter(set, "paidContractPaidBasisConfirmed"),
   paidContractWrittenChangesConfirmed: false,
-  setPaidContractWrittenChangesConfirmed: (val) =>
-    set((state) => ({
-      paidContractWrittenChangesConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paidContractWrittenChangesConfirmed)
-          : val,
-    })),
+  setPaidContractWrittenChangesConfirmed: createSetter(set, "paidContractWrittenChangesConfirmed"),
   paymentInvoiceNumber: "",
-  setPaymentInvoiceNumber: (val) =>
-    set((state) => ({
-      paymentInvoiceNumber:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceNumber)
-          : val,
-    })),
+  setPaymentInvoiceNumber: createSetter(set, "paymentInvoiceNumber"),
   paymentInvoiceDate: (() => new Date().toLocaleDateString("ru-RU"))(),
-  setPaymentInvoiceDate: (val) =>
-    set((state) => ({
-      paymentInvoiceDate:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceDate)
-          : val,
-    })),
+  setPaymentInvoiceDate: createSetter(set, "paymentInvoiceDate"),
   paymentInvoicePayerFullName: "",
-  setPaymentInvoicePayerFullName: (val) =>
-    set((state) => ({
-      paymentInvoicePayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoicePayerFullName)
-          : val,
-    })),
+  setPaymentInvoicePayerFullName: createSetter(set, "paymentInvoicePayerFullName"),
   paymentInvoicePayerPhone: "",
-  setPaymentInvoicePayerPhone: (val) =>
-    set((state) => ({
-      paymentInvoicePayerPhone:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoicePayerPhone)
-          : val,
-    })),
+  setPaymentInvoicePayerPhone: createSetter(set, "paymentInvoicePayerPhone"),
   paymentInvoicePayerEmail: "",
-  setPaymentInvoicePayerEmail: (val) =>
-    set((state) => ({
-      paymentInvoicePayerEmail:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoicePayerEmail)
-          : val,
-    })),
+  setPaymentInvoicePayerEmail: createSetter(set, "paymentInvoicePayerEmail"),
   paymentInvoicePurpose:
     "оплата стоматологических услуг по согласованному плану лечения",
-  setPaymentInvoicePurpose: (val) =>
-    set((state) => ({
-      paymentInvoicePurpose:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoicePurpose)
-          : val,
-    })),
+  setPaymentInvoicePurpose: createSetter(set, "paymentInvoicePurpose"),
   paymentInvoiceDueDate: (() => dateInputValuePlusDays(7))(),
-  setPaymentInvoiceDueDate: (val) =>
-    set((state) => ({
-      paymentInvoiceDueDate:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceDueDate)
-          : val,
-    })),
+  setPaymentInvoiceDueDate: createSetter(set, "paymentInvoiceDueDate"),
   paymentInvoicePaymentTerms:
     "оплата до или в день оказания услуги; после оплаты выдается кассовый чек",
-  setPaymentInvoicePaymentTerms: (val) =>
-    set((state) => ({
-      paymentInvoicePaymentTerms:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoicePaymentTerms)
-          : val,
-    })),
+  setPaymentInvoicePaymentTerms: createSetter(set, "paymentInvoicePaymentTerms"),
   paymentInvoiceBankDetails: "",
-  setPaymentInvoiceBankDetails: (val) =>
-    set((state) => ({
-      paymentInvoiceBankDetails:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceBankDetails)
-          : val,
-    })),
+  setPaymentInvoiceBankDetails: createSetter(set, "paymentInvoiceBankDetails"),
   paymentInvoiceQrPayload: "",
-  setPaymentInvoiceQrPayload: (val) =>
-    set((state) => ({
-      paymentInvoiceQrPayload:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceQrPayload)
-          : val,
-    })),
+  setPaymentInvoiceQrPayload: createSetter(set, "paymentInvoiceQrPayload"),
   paymentInvoiceCashlessAllowed: true,
-  setPaymentInvoiceCashlessAllowed: (val) =>
-    set((state) => ({
-      paymentInvoiceCashlessAllowed:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceCashlessAllowed)
-          : val,
-    })),
+  setPaymentInvoiceCashlessAllowed: createSetter(set, "paymentInvoiceCashlessAllowed"),
   paymentInvoiceCashDeskAllowed: true,
-  setPaymentInvoiceCashDeskAllowed: (val) =>
-    set((state) => ({
-      paymentInvoiceCashDeskAllowed:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceCashDeskAllowed)
-          : val,
-    })),
+  setPaymentInvoiceCashDeskAllowed: createSetter(set, "paymentInvoiceCashDeskAllowed"),
   paymentInvoiceRequisitesVerified: false,
-  setPaymentInvoiceRequisitesVerified: (val) =>
-    set((state) => ({
-      paymentInvoiceRequisitesVerified:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceRequisitesVerified)
-          : val,
-    })),
+  setPaymentInvoiceRequisitesVerified: createSetter(set, "paymentInvoiceRequisitesVerified"),
   paymentInvoiceServiceScopeConfirmed: false,
-  setPaymentInvoiceServiceScopeConfirmed: (val) =>
-    set((state) => ({
-      paymentInvoiceServiceScopeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceServiceScopeConfirmed)
-          : val,
-    })),
+  setPaymentInvoiceServiceScopeConfirmed: createSetter(set, "paymentInvoiceServiceScopeConfirmed"),
   paymentInvoiceFiscalNoticeConfirmed: false,
-  setPaymentInvoiceFiscalNoticeConfirmed: (val) =>
-    set((state) => ({
-      paymentInvoiceFiscalNoticeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paymentInvoiceFiscalNoticeConfirmed)
-          : val,
-    })),
+  setPaymentInvoiceFiscalNoticeConfirmed: createSetter(set, "paymentInvoiceFiscalNoticeConfirmed"),
   paymentReceiptNumber: "",
-  setPaymentReceiptNumber: (val) =>
-    set((state) => ({
-      paymentReceiptNumber:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptNumber)
-          : val,
-    })),
+  setPaymentReceiptNumber: createSetter(set, "paymentReceiptNumber"),
   paymentReceiptDate: (() => new Date().toLocaleString("ru-RU"))(),
-  setPaymentReceiptDate: (val) =>
-    set((state) => ({
-      paymentReceiptDate:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptDate)
-          : val,
-    })),
+  setPaymentReceiptDate: createSetter(set, "paymentReceiptDate"),
   paymentReceiptPayerFullName: "",
-  setPaymentReceiptPayerFullName: (val) =>
-    set((state) => ({
-      paymentReceiptPayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerFullName)
-          : val,
-    })),
+  setPaymentReceiptPayerFullName: createSetter(set, "paymentReceiptPayerFullName"),
   paymentReceiptPayerBirthDate: "",
-  setPaymentReceiptPayerBirthDate: (val) =>
-    set((state) => ({
-      paymentReceiptPayerBirthDate:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerBirthDate)
-          : val,
-    })),
+  setPaymentReceiptPayerBirthDate: createSetter(set, "paymentReceiptPayerBirthDate"),
   paymentReceiptPayerInn: "",
-  setPaymentReceiptPayerInn: (val) =>
-    set((state) => ({
-      paymentReceiptPayerInn:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerInn)
-          : val,
-    })),
+  setPaymentReceiptPayerInn: createSetter(set, "paymentReceiptPayerInn"),
   paymentReceiptPayerIdentityDocument: "",
-  setPaymentReceiptPayerIdentityDocument: (val) =>
-    set((state) => ({
-      paymentReceiptPayerIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerIdentityDocument)
-          : val,
-    })),
+  setPaymentReceiptPayerIdentityDocument: createSetter(set, "paymentReceiptPayerIdentityDocument"),
   paymentReceiptPayerRelationship: "",
-  setPaymentReceiptPayerRelationship: (val) =>
-    set((state) => ({
-      paymentReceiptPayerRelationship:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerRelationship)
-          : val,
-    })),
+  setPaymentReceiptPayerRelationship: createSetter(set, "paymentReceiptPayerRelationship"),
   paymentReceiptTaxSupportRequested:
     initialUiPreferences.paymentReceiptTaxSupportRequested,
-  setPaymentReceiptTaxSupportRequested: (val) =>
-    set((state) => ({
-      paymentReceiptTaxSupportRequested:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptTaxSupportRequested)
-          : val,
-    })),
+  setPaymentReceiptTaxSupportRequested: createSetter(set, "paymentReceiptTaxSupportRequested"),
   paymentReceiptPurpose:
     "оплата стоматологических услуг по выбранным фискальным чекам",
-  setPaymentReceiptPurpose: (val) =>
-    set((state) => ({
-      paymentReceiptPurpose:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPurpose)
-          : val,
-    })),
+  setPaymentReceiptPurpose: createSetter(set, "paymentReceiptPurpose"),
   paymentReceiptIssuedBy: "",
-  setPaymentReceiptIssuedBy: (val) =>
-    set((state) => ({
-      paymentReceiptIssuedBy:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptIssuedBy)
-          : val,
-    })),
+  setPaymentReceiptIssuedBy: createSetter(set, "paymentReceiptIssuedBy"),
   paymentReceiptPaymentsVerified: false,
-  setPaymentReceiptPaymentsVerified: (val) =>
-    set((state) => ({
-      paymentReceiptPaymentsVerified:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPaymentsVerified)
-          : val,
-    })),
+  setPaymentReceiptPaymentsVerified: createSetter(set, "paymentReceiptPaymentsVerified"),
   paymentReceiptPayerVerified: false,
-  setPaymentReceiptPayerVerified: (val) =>
-    set((state) => ({
-      paymentReceiptPayerVerified:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptPayerVerified)
-          : val,
-    })),
+  setPaymentReceiptPayerVerified: createSetter(set, "paymentReceiptPayerVerified"),
   paymentReceiptFiscalNoticeConfirmed: false,
-  setPaymentReceiptFiscalNoticeConfirmed: (val) =>
-    set((state) => ({
-      paymentReceiptFiscalNoticeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.paymentReceiptFiscalNoticeConfirmed)
-          : val,
-    })),
+  setPaymentReceiptFiscalNoticeConfirmed: createSetter(set, "paymentReceiptFiscalNoticeConfirmed"),
   installmentScheduleNumber: "",
-  setInstallmentScheduleNumber: (val) =>
-    set((state) => ({
-      installmentScheduleNumber:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleNumber)
-          : val,
-    })),
+  setInstallmentScheduleNumber: createSetter(set, "installmentScheduleNumber"),
   installmentScheduleDate: (() => new Date().toLocaleDateString("ru-RU"))(),
-  setInstallmentScheduleDate: (val) =>
-    set((state) => ({
-      installmentScheduleDate:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleDate)
-          : val,
-    })),
+  setInstallmentScheduleDate: createSetter(set, "installmentScheduleDate"),
   installmentScheduleBaseDocumentTitle: "",
-  setInstallmentScheduleBaseDocumentTitle: (val) =>
-    set((state) => ({
-      installmentScheduleBaseDocumentTitle:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleBaseDocumentTitle)
-          : val,
-    })),
+  setInstallmentScheduleBaseDocumentTitle: createSetter(set, "installmentScheduleBaseDocumentTitle"),
   installmentSchedulePayerFullName: "",
-  setInstallmentSchedulePayerFullName: (val) =>
-    set((state) => ({
-      installmentSchedulePayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.installmentSchedulePayerFullName)
-          : val,
-    })),
+  setInstallmentSchedulePayerFullName: createSetter(set, "installmentSchedulePayerFullName"),
   installmentScheduleTotalRub: "",
-  setInstallmentScheduleTotalRub: (val) =>
-    set((state) => ({
-      installmentScheduleTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleTotalRub)
-          : val,
-    })),
+  setInstallmentScheduleTotalRub: createSetter(set, "installmentScheduleTotalRub"),
   installmentSchedulePrepaidRub: "",
-  setInstallmentSchedulePrepaidRub: (val) =>
-    set((state) => ({
-      installmentSchedulePrepaidRub:
-        typeof val === "function"
-          ? (val as any)(state.installmentSchedulePrepaidRub)
-          : val,
-    })),
+  setInstallmentSchedulePrepaidRub: createSetter(set, "installmentSchedulePrepaidRub"),
   installmentScheduleRows: (() =>
     `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${dateInputValuePlusDays(21)} | 0 | запланировано`)(),
-  setInstallmentScheduleRows: (val) =>
-    set((state) => ({
-      installmentScheduleRows:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleRows)
-          : val,
-    })),
+  setInstallmentScheduleRows: createSetter(set, "installmentScheduleRows"),
   installmentScheduleLatePolicy:
     "при переносе срока администратор фиксирует контакт с пациентом, новый срок и основание переноса до наступления просрочки",
-  setInstallmentScheduleLatePolicy: (val) =>
-    set((state) => ({
-      installmentScheduleLatePolicy:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleLatePolicy)
-          : val,
-    })),
+  setInstallmentScheduleLatePolicy: createSetter(set, "installmentScheduleLatePolicy"),
   installmentSchedulePaymentMethodNotes:
     "оплата в кассе клиники, по ссылке или безналично с выдачей кассового чека после оплаты",
-  setInstallmentSchedulePaymentMethodNotes: (val) =>
-    set((state) => ({
-      installmentSchedulePaymentMethodNotes:
-        typeof val === "function"
-          ? (val as any)(state.installmentSchedulePaymentMethodNotes)
-          : val,
-    })),
+  setInstallmentSchedulePaymentMethodNotes: createSetter(set, "installmentSchedulePaymentMethodNotes"),
   installmentScheduleResponsibleFullName: "",
-  setInstallmentScheduleResponsibleFullName: (val) =>
-    set((state) => ({
-      installmentScheduleResponsibleFullName:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleResponsibleFullName)
-          : val,
-    })),
+  setInstallmentScheduleResponsibleFullName: createSetter(set, "installmentScheduleResponsibleFullName"),
   installmentScheduleAccepted: false,
-  setInstallmentScheduleAccepted: (val) =>
-    set((state) => ({
-      installmentScheduleAccepted:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleAccepted)
-          : val,
-    })),
+  setInstallmentScheduleAccepted: createSetter(set, "installmentScheduleAccepted"),
   installmentScheduleFiscalNoticeConfirmed: false,
-  setInstallmentScheduleFiscalNoticeConfirmed: (val) =>
-    set((state) => ({
-      installmentScheduleFiscalNoticeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleFiscalNoticeConfirmed)
-          : val,
-    })),
+  setInstallmentScheduleFiscalNoticeConfirmed: createSetter(set, "installmentScheduleFiscalNoticeConfirmed"),
   installmentScheduleWrittenChangesConfirmed: false,
-  setInstallmentScheduleWrittenChangesConfirmed: (val) =>
-    set((state) => ({
-      installmentScheduleWrittenChangesConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.installmentScheduleWrittenChangesConfirmed)
-          : val,
-    })),
+  setInstallmentScheduleWrittenChangesConfirmed: createSetter(set, "installmentScheduleWrittenChangesConfirmed"),
   warrantyServiceOrWorkName: "",
-  setWarrantyServiceOrWorkName: (val) =>
-    set((state) => ({
-      warrantyServiceOrWorkName:
-        typeof val === "function"
-          ? (val as any)(state.warrantyServiceOrWorkName)
-          : val,
-    })),
+  setWarrantyServiceOrWorkName: createSetter(set, "warrantyServiceOrWorkName"),
   warrantyCompletedAt: "",
-  setWarrantyCompletedAt: (val) =>
-    set((state) => ({
-      warrantyCompletedAt:
-        typeof val === "function"
-          ? (val as any)(state.warrantyCompletedAt)
-          : val,
-    })),
+  setWarrantyCompletedAt: createSetter(set, "warrantyCompletedAt"),
   warrantyTeethOrArea: "",
-  setWarrantyTeethOrArea: (val) =>
-    set((state) => ({
-      warrantyTeethOrArea:
-        typeof val === "function"
-          ? (val as any)(state.warrantyTeethOrArea)
-          : val,
-    })),
+  setWarrantyTeethOrArea: createSetter(set, "warrantyTeethOrArea"),
   warrantyMaterialsOrSystems: "",
-  setWarrantyMaterialsOrSystems: (val) =>
-    set((state) => ({
-      warrantyMaterialsOrSystems:
-        typeof val === "function"
-          ? (val as any)(state.warrantyMaterialsOrSystems)
-          : val,
-    })),
+  setWarrantyMaterialsOrSystems: createSetter(set, "warrantyMaterialsOrSystems"),
   warrantyPeriod:
     "по локальному гарантийному положению клиники и виду выполненной работы",
-  setWarrantyPeriod: (val) =>
-    set((state) => ({
-      warrantyPeriod:
-        typeof val === "function" ? (val as any)(state.warrantyPeriod) : val,
-    })),
+  setWarrantyPeriod: createSetter(set, "warrantyPeriod"),
   warrantyControlVisitSchedule:
     "контрольный осмотр по назначению врача; профессиональная гигиена по индивидуальному графику",
-  setWarrantyControlVisitSchedule: (val) =>
-    set((state) => ({
-      warrantyControlVisitSchedule:
-        typeof val === "function"
-          ? (val as any)(state.warrantyControlVisitSchedule)
-          : val,
-    })),
+  setWarrantyControlVisitSchedule: createSetter(set, "warrantyControlVisitSchedule"),
   warrantyPatientObligations:
     "соблюдать рекомендации врача и режим после лечения\nприходить на контрольные визиты в согласованные сроки\nподдерживать домашнюю гигиену и профессиональную гигиену\nне выполнять самостоятельную коррекцию конструкции или реставрации",
-  setWarrantyPatientObligations: (val) =>
-    set((state) => ({
-      warrantyPatientObligations:
-        typeof val === "function"
-          ? (val as any)(state.warrantyPatientObligations)
-          : val,
-    })),
+  setWarrantyPatientObligations: createSetter(set, "warrantyPatientObligations"),
   warrantyExcludedRiskFactors:
     "травма, перегрузка, бруксизм или вредные привычки\nновые заболевания или отказ от рекомендованного лечения\nнарушение графика контрольных визитов\nсамостоятельное вмешательство или лечение в другой клинике без согласования",
-  setWarrantyExcludedRiskFactors: (val) =>
-    set((state) => ({
-      warrantyExcludedRiskFactors:
-        typeof val === "function"
-          ? (val as any)(state.warrantyExcludedRiskFactors)
-          : val,
-    })),
+  setWarrantyExcludedRiskFactors: createSetter(set, "warrantyExcludedRiskFactors"),
   warrantyUrgentContactReasons:
     "острая боль или нарастающий отек\nподвижность, скол или выпадение конструкции\nкровотечение, температура или аллергическая реакция\nнарушение прикуса или невозможность пользоваться конструкцией",
-  setWarrantyUrgentContactReasons: (val) =>
-    set((state) => ({
-      warrantyUrgentContactReasons:
-        typeof val === "function"
-          ? (val as any)(state.warrantyUrgentContactReasons)
-          : val,
-    })),
+  setWarrantyUrgentContactReasons: createSetter(set, "warrantyUrgentContactReasons"),
   warrantyLinkedActOrContract: "",
-  setWarrantyLinkedActOrContract: (val) =>
-    set((state) => ({
-      warrantyLinkedActOrContract:
-        typeof val === "function"
-          ? (val as any)(state.warrantyLinkedActOrContract)
-          : val,
-    })),
+  setWarrantyLinkedActOrContract: createSetter(set, "warrantyLinkedActOrContract"),
   warrantyDoctorFullName: "",
-  setWarrantyDoctorFullName: (val) =>
-    set((state) => ({
-      warrantyDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.warrantyDoctorFullName)
-          : val,
-    })),
+  setWarrantyDoctorFullName: createSetter(set, "warrantyDoctorFullName"),
   warrantyIssuedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setWarrantyIssuedAt: (val) =>
-    set((state) => ({
-      warrantyIssuedAt:
-        typeof val === "function" ? (val as any)(state.warrantyIssuedAt) : val,
-    })),
+  setWarrantyIssuedAt: createSetter(set, "warrantyIssuedAt"),
   warrantyPolicyApplied: false,
-  setWarrantyPolicyApplied: (val) =>
-    set((state) => ({
-      warrantyPolicyApplied:
-        typeof val === "function"
-          ? (val as any)(state.warrantyPolicyApplied)
-          : val,
-    })),
+  setWarrantyPolicyApplied: createSetter(set, "warrantyPolicyApplied"),
   warrantyAftercareReceived: false,
-  setWarrantyAftercareReceived: (val) =>
-    set((state) => ({
-      warrantyAftercareReceived:
-        typeof val === "function"
-          ? (val as any)(state.warrantyAftercareReceived)
-          : val,
-    })),
+  setWarrantyAftercareReceived: createSetter(set, "warrantyAftercareReceived"),
   warrantyControlVisitsUnderstood: false,
-  setWarrantyControlVisitsUnderstood: (val) =>
-    set((state) => ({
-      warrantyControlVisitsUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.warrantyControlVisitsUnderstood)
-          : val,
-    })),
+  setWarrantyControlVisitsUnderstood: createSetter(set, "warrantyControlVisitsUnderstood"),
   refundAction: "partial_refund",
-  setRefundAction: (val) =>
-    set((state) => ({
-      refundAction:
-        typeof val === "function" ? (val as any)(state.refundAction) : val,
-    })),
+  setRefundAction: createSetter(set, "refundAction"),
   refundAmountRub: "3800",
-  setRefundAmountRub: (val) =>
-    set((state) => ({
-      refundAmountRub:
-        typeof val === "function" ? (val as any)(state.refundAmountRub) : val,
-    })),
+  setRefundAmountRub: createSetter(set, "refundAmountRub"),
   refundReason: "",
-  setRefundReason: (val) =>
-    set((state) => ({
-      refundReason:
-        typeof val === "function" ? (val as any)(state.refundReason) : val,
-    })),
+  setRefundReason: createSetter(set, "refundReason"),
   refundMethod: "card",
-  setRefundMethod: (val) =>
-    set((state) => ({
-      refundMethod:
-        typeof val === "function" ? (val as any)(state.refundMethod) : val,
-    })),
+  setRefundMethod: createSetter(set, "refundMethod"),
   refundRecipientFullName: "",
-  setRefundRecipientFullName: (val) =>
-    set((state) => ({
-      refundRecipientFullName:
-        typeof val === "function"
-          ? (val as any)(state.refundRecipientFullName)
-          : val,
-    })),
+  setRefundRecipientFullName: createSetter(set, "refundRecipientFullName"),
   refundRecipientIdentityDocument: "",
-  setRefundRecipientIdentityDocument: (val) =>
-    set((state) => ({
-      refundRecipientIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.refundRecipientIdentityDocument)
-          : val,
-    })),
+  setRefundRecipientIdentityDocument: createSetter(set, "refundRecipientIdentityDocument"),
   refundBankDetails: "",
-  setRefundBankDetails: (val) =>
-    set((state) => ({
-      refundBankDetails:
-        typeof val === "function" ? (val as any)(state.refundBankDetails) : val,
-    })),
+  setRefundBankDetails: createSetter(set, "refundBankDetails"),
   refundSelectedPaymentId: "",
-  setRefundSelectedPaymentId: (val) =>
-    set((state) => ({
-      refundSelectedPaymentId:
-        typeof val === "function"
-          ? (val as any)(state.refundSelectedPaymentId)
-          : val,
-    })),
+  setRefundSelectedPaymentId: createSetter(set, "refundSelectedPaymentId"),
   refundOriginalFiscalReceiptNumber: "",
-  setRefundOriginalFiscalReceiptNumber: (val) =>
-    set((state) => ({
-      refundOriginalFiscalReceiptNumber:
-        typeof val === "function"
-          ? (val as any)(state.refundOriginalFiscalReceiptNumber)
-          : val,
-    })),
+  setRefundOriginalFiscalReceiptNumber: createSetter(set, "refundOriginalFiscalReceiptNumber"),
   refundCorrectionFiscalReceiptNumber: "",
-  setRefundCorrectionFiscalReceiptNumber: (val) =>
-    set((state) => ({
-      refundCorrectionFiscalReceiptNumber:
-        typeof val === "function"
-          ? (val as any)(state.refundCorrectionFiscalReceiptNumber)
-          : val,
-    })),
+  setRefundCorrectionFiscalReceiptNumber: createSetter(set, "refundCorrectionFiscalReceiptNumber"),
   refundAccountantDecision: "",
-  setRefundAccountantDecision: (val) =>
-    set((state) => ({
-      refundAccountantDecision:
-        typeof val === "function"
-          ? (val as any)(state.refundAccountantDecision)
-          : val,
-    })),
+  setRefundAccountantDecision: createSetter(set, "refundAccountantDecision"),
   paymentAmount: "3800",
-  setPaymentAmount: (val) =>
-    set((state) => ({
-      paymentAmount:
-        typeof val === "function" ? (val as any)(state.paymentAmount) : val,
-    })),
+  setPaymentAmount: createSetter(set, "paymentAmount"),
   paymentMethod: initialUiPreferences.paymentMethod,
-  setPaymentMethod: (val) =>
-    set((state) => ({
-      paymentMethod:
-        typeof val === "function" ? (val as any)(state.paymentMethod) : val,
-    })),
+  setPaymentMethod: createSetter(set, "paymentMethod"),
   paymentFiscalReceiptNumber: "",
-  setPaymentFiscalReceiptNumber: (val) =>
-    set((state) => ({
-      paymentFiscalReceiptNumber:
-        typeof val === "function"
-          ? (val as any)(state.paymentFiscalReceiptNumber)
-          : val,
-    })),
+  setPaymentFiscalReceiptNumber: createSetter(set, "paymentFiscalReceiptNumber"),
   paymentFiscalReceiptIssuedAt: "",
-  setPaymentFiscalReceiptIssuedAt: (val) =>
-    set((state) => ({
-      paymentFiscalReceiptIssuedAt:
-        typeof val === "function"
-          ? (val as any)(state.paymentFiscalReceiptIssuedAt)
-          : val,
-    })),
+  setPaymentFiscalReceiptIssuedAt: createSetter(set, "paymentFiscalReceiptIssuedAt"),
   paymentFiscalFn: "",
-  setPaymentFiscalFn: (val) =>
-    set((state) => ({
-      paymentFiscalFn:
-        typeof val === "function" ? (val as any)(state.paymentFiscalFn) : val,
-    })),
+  setPaymentFiscalFn: createSetter(set, "paymentFiscalFn"),
   paymentFiscalFd: "",
-  setPaymentFiscalFd: (val) =>
-    set((state) => ({
-      paymentFiscalFd:
-        typeof val === "function" ? (val as any)(state.paymentFiscalFd) : val,
-    })),
+  setPaymentFiscalFd: createSetter(set, "paymentFiscalFd"),
   paymentFiscalFpd: "",
-  setPaymentFiscalFpd: (val) =>
-    set((state) => ({
-      paymentFiscalFpd:
-        typeof val === "function" ? (val as any)(state.paymentFiscalFpd) : val,
-    })),
+  setPaymentFiscalFpd: createSetter(set, "paymentFiscalFpd"),
   paymentFiscalCashierName: "",
-  setPaymentFiscalCashierName: (val) =>
-    set((state) => ({
-      paymentFiscalCashierName:
-        typeof val === "function"
-          ? (val as any)(state.paymentFiscalCashierName)
-          : val,
-    })),
+  setPaymentFiscalCashierName: createSetter(set, "paymentFiscalCashierName"),
   paymentFiscalReceiptUrl: "",
-  setPaymentFiscalReceiptUrl: (val) =>
-    set((state) => ({
-      paymentFiscalReceiptUrl:
-        typeof val === "function"
-          ? (val as any)(state.paymentFiscalReceiptUrl)
-          : val,
-    })),
+  setPaymentFiscalReceiptUrl: createSetter(set, "paymentFiscalReceiptUrl"),
   paymentPayerFullName: "",
-  setPaymentPayerFullName: (val) =>
-    set((state) => ({
-      paymentPayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.paymentPayerFullName)
-          : val,
-    })),
+  setPaymentPayerFullName: createSetter(set, "paymentPayerFullName"),
   paymentPayerInn: "",
-  setPaymentPayerInn: (val) =>
-    set((state) => ({
-      paymentPayerInn:
-        typeof val === "function" ? (val as any)(state.paymentPayerInn) : val,
-    })),
+  setPaymentPayerInn: createSetter(set, "paymentPayerInn"),
   paymentPayerBirthDate: "",
-  setPaymentPayerBirthDate: (val) =>
-    set((state) => ({
-      paymentPayerBirthDate:
-        typeof val === "function"
-          ? (val as any)(state.paymentPayerBirthDate)
-          : val,
-    })),
+  setPaymentPayerBirthDate: createSetter(set, "paymentPayerBirthDate"),
   paymentPayerIdentityDocument: "",
-  setPaymentPayerIdentityDocument: (val) =>
-    set((state) => ({
-      paymentPayerIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.paymentPayerIdentityDocument)
-          : val,
-    })),
+  setPaymentPayerIdentityDocument: createSetter(set, "paymentPayerIdentityDocument"),
   paymentPayerRelationship: "пациент",
-  setPaymentPayerRelationship: (val) =>
-    set((state) => ({
-      paymentPayerRelationship:
-        typeof val === "function"
-          ? (val as any)(state.paymentPayerRelationship)
-          : val,
-    })),
+  setPaymentPayerRelationship: createSetter(set, "paymentPayerRelationship"),
   paymentTaxDeductionCode: "",
-  setPaymentTaxDeductionCode: (val) =>
-    set((state) => ({
-      paymentTaxDeductionCode:
-        typeof val === "function"
-          ? (val as any)(state.paymentTaxDeductionCode)
-          : val,
-    })),
+  setPaymentTaxDeductionCode: createSetter(set, "paymentTaxDeductionCode"),
   paymentFeedback: "",
-  setPaymentFeedback: (val) =>
-    set((state) => ({
-      paymentFeedback:
-        typeof val === "function" ? (val as any)(state.paymentFeedback) : val,
-    })),
+  setPaymentFeedback: createSetter(set, "paymentFeedback"),
 });
 
 const createClinicalSlice = (set: any) => ({
   completedActNumber: "",
-  setCompletedActNumber: (val) =>
-    set((state) => ({
-      completedActNumber:
-        typeof val === "function"
-          ? (val as any)(state.completedActNumber)
-          : val,
-    })),
+  setCompletedActNumber: createSetter(set, "completedActNumber"),
   completedActDate: (() => new Date().toLocaleDateString("ru-RU"))(),
-  setCompletedActDate: (val) =>
-    set((state) => ({
-      completedActDate:
-        typeof val === "function" ? (val as any)(state.completedActDate) : val,
-    })),
+  setCompletedActDate: createSetter(set, "completedActDate"),
   completedActContractNumber: "",
-  setCompletedActContractNumber: (val) =>
-    set((state) => ({
-      completedActContractNumber:
-        typeof val === "function"
-          ? (val as any)(state.completedActContractNumber)
-          : val,
-    })),
+  setCompletedActContractNumber: createSetter(set, "completedActContractNumber"),
   completedActLinkedContractDocumentId: "",
-  setCompletedActLinkedContractDocumentId: (val) =>
-    set((state) => ({
-      completedActLinkedContractDocumentId:
-        typeof val === "function"
-          ? (val as any)(state.completedActLinkedContractDocumentId)
-          : val,
-    })),
+  setCompletedActLinkedContractDocumentId: createSetter(set, "completedActLinkedContractDocumentId"),
   completedActServicePeriodStart: "",
-  setCompletedActServicePeriodStart: (val) =>
-    set((state) => ({
-      completedActServicePeriodStart:
-        typeof val === "function"
-          ? (val as any)(state.completedActServicePeriodStart)
-          : val,
-    })),
+  setCompletedActServicePeriodStart: createSetter(set, "completedActServicePeriodStart"),
   completedActServicePeriodEnd: "",
-  setCompletedActServicePeriodEnd: (val) =>
-    set((state) => ({
-      completedActServicePeriodEnd:
-        typeof val === "function"
-          ? (val as any)(state.completedActServicePeriodEnd)
-          : val,
-    })),
+  setCompletedActServicePeriodEnd: createSetter(set, "completedActServicePeriodEnd"),
   completedActDoctorFullName: "",
-  setCompletedActDoctorFullName: (val) =>
-    set((state) => ({
-      completedActDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.completedActDoctorFullName)
-          : val,
-    })),
+  setCompletedActDoctorFullName: createSetter(set, "completedActDoctorFullName"),
   completedActServicesSummary: "",
-  setCompletedActServicesSummary: (val) =>
-    set((state) => ({
-      completedActServicesSummary:
-        typeof val === "function"
-          ? (val as any)(state.completedActServicesSummary)
-          : val,
-    })),
+  setCompletedActServicesSummary: createSetter(set, "completedActServicesSummary"),
   completedActTotalRub: "",
-  setCompletedActTotalRub: (val) =>
-    set((state) => ({
-      completedActTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.completedActTotalRub)
-          : val,
-    })),
+  setCompletedActTotalRub: createSetter(set, "completedActTotalRub"),
   completedActPaidRub: "",
-  setCompletedActPaidRub: (val) =>
-    set((state) => ({
-      completedActPaidRub:
-        typeof val === "function"
-          ? (val as any)(state.completedActPaidRub)
-          : val,
-    })),
+  setCompletedActPaidRub: createSetter(set, "completedActPaidRub"),
   completedActFiscalReceipts: "",
-  setCompletedActFiscalReceipts: (val) =>
-    set((state) => ({
-      completedActFiscalReceipts:
-        typeof val === "function"
-          ? (val as any)(state.completedActFiscalReceipts)
-          : val,
-    })),
+  setCompletedActFiscalReceipts: createSetter(set, "completedActFiscalReceipts"),
   completedActPatientClaims: "",
-  setCompletedActPatientClaims: (val) =>
-    set((state) => ({
-      completedActPatientClaims:
-        typeof val === "function"
-          ? (val as any)(state.completedActPatientClaims)
-          : val,
-    })),
+  setCompletedActPatientClaims: createSetter(set, "completedActPatientClaims"),
   completedActLinkedContract: false,
-  setCompletedActLinkedContract: (val) =>
-    set((state) => ({
-      completedActLinkedContract:
-        typeof val === "function"
-          ? (val as any)(state.completedActLinkedContract)
-          : val,
-    })),
+  setCompletedActLinkedContract: createSetter(set, "completedActLinkedContract"),
   completedActFinalScopeConfirmed: false,
-  setCompletedActFinalScopeConfirmed: (val) =>
-    set((state) => ({
-      completedActFinalScopeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.completedActFinalScopeConfirmed)
-          : val,
-    })),
+  setCompletedActFinalScopeConfirmed: createSetter(set, "completedActFinalScopeConfirmed"),
   completedActFiscalReceiptsVerified: false,
-  setCompletedActFiscalReceiptsVerified: (val) =>
-    set((state) => ({
-      completedActFiscalReceiptsVerified:
-        typeof val === "function"
-          ? (val as any)(state.completedActFiscalReceiptsVerified)
-          : val,
-    })),
+  setCompletedActFiscalReceiptsVerified: createSetter(set, "completedActFiscalReceiptsVerified"),
   completedActAccepted: false,
-  setCompletedActAccepted: (val) =>
-    set((state) => ({
-      completedActAccepted:
-        typeof val === "function"
-          ? (val as any)(state.completedActAccepted)
-          : val,
-    })),
+  setCompletedActAccepted: createSetter(set, "completedActAccepted"),
   treatmentEstimateNumber: "",
-  setTreatmentEstimateNumber: (val) =>
-    set((state) => ({
-      treatmentEstimateNumber:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateNumber)
-          : val,
-    })),
+  setTreatmentEstimateNumber: createSetter(set, "treatmentEstimateNumber"),
   treatmentEstimateDate: (() => new Date().toLocaleDateString("ru-RU"))(),
-  setTreatmentEstimateDate: (val) =>
-    set((state) => ({
-      treatmentEstimateDate:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateDate)
-          : val,
-    })),
+  setTreatmentEstimateDate: createSetter(set, "treatmentEstimateDate"),
   treatmentEstimatePatientOrPayerFullName: "",
-  setTreatmentEstimatePatientOrPayerFullName: (val) =>
-    set((state) => ({
-      treatmentEstimatePatientOrPayerFullName:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimatePatientOrPayerFullName)
-          : val,
-    })),
+  setTreatmentEstimatePatientOrPayerFullName: createSetter(set, "treatmentEstimatePatientOrPayerFullName"),
   treatmentEstimateTreatmentBasis: "",
-  setTreatmentEstimateTreatmentBasis: (val) =>
-    set((state) => ({
-      treatmentEstimateTreatmentBasis:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateTreatmentBasis)
-          : val,
-    })),
+  setTreatmentEstimateTreatmentBasis: createSetter(set, "treatmentEstimateTreatmentBasis"),
   treatmentEstimateTotalRub: "",
-  setTreatmentEstimateTotalRub: (val) =>
-    set((state) => ({
-      treatmentEstimateTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateTotalRub)
-          : val,
-    })),
+  setTreatmentEstimateTotalRub: createSetter(set, "treatmentEstimateTotalRub"),
   treatmentEstimateValidUntil: "",
-  setTreatmentEstimateValidUntil: (val) =>
-    set((state) => ({
-      treatmentEstimateValidUntil:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateValidUntil)
-          : val,
-    })),
+  setTreatmentEstimateValidUntil: createSetter(set, "treatmentEstimateValidUntil"),
   treatmentEstimatePriceChangeRules:
     "при изменении диагноза, объема вмешательства, материалов, лабораторного этапа или клинических условий стоимость согласуется до оказания дополнительных услуг",
-  setTreatmentEstimatePriceChangeRules: (val) =>
-    set((state) => ({
-      treatmentEstimatePriceChangeRules:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimatePriceChangeRules)
-          : val,
-    })),
+  setTreatmentEstimatePriceChangeRules: createSetter(set, "treatmentEstimatePriceChangeRules"),
   treatmentEstimateExcludedItems:
     "услуги, не указанные в строках сметы\nдополнительная диагностика и лабораторные этапы при новых показаниях\nэкстренная помощь и лечение осложнений, не связанных с текущим планом",
-  setTreatmentEstimateExcludedItems: (val) =>
-    set((state) => ({
-      treatmentEstimateExcludedItems:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateExcludedItems)
-          : val,
-    })),
+  setTreatmentEstimateExcludedItems: createSetter(set, "treatmentEstimateExcludedItems"),
   treatmentEstimatePaymentMilestoneNotes:
     "оплата по этапам лечения или до оказания услуги; после фактической оплаты выдается кассовый чек",
-  setTreatmentEstimatePaymentMilestoneNotes: (val) =>
-    set((state) => ({
-      treatmentEstimatePaymentMilestoneNotes:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimatePaymentMilestoneNotes)
-          : val,
-    })),
+  setTreatmentEstimatePaymentMilestoneNotes: createSetter(set, "treatmentEstimatePaymentMilestoneNotes"),
   treatmentEstimateDoctorFullName: "",
-  setTreatmentEstimateDoctorFullName: (val) =>
-    set((state) => ({
-      treatmentEstimateDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateDoctorFullName)
-          : val,
-    })),
+  setTreatmentEstimateDoctorFullName: createSetter(set, "treatmentEstimateDoctorFullName"),
   treatmentEstimateAdminFullName: "",
-  setTreatmentEstimateAdminFullName: (val) =>
-    set((state) => ({
-      treatmentEstimateAdminFullName:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateAdminFullName)
-          : val,
-    })),
+  setTreatmentEstimateAdminFullName: createSetter(set, "treatmentEstimateAdminFullName"),
   treatmentEstimateSignedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setTreatmentEstimateSignedAt: (val) =>
-    set((state) => ({
-      treatmentEstimateSignedAt:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateSignedAt)
-          : val,
-    })),
+  setTreatmentEstimateSignedAt: createSetter(set, "treatmentEstimateSignedAt"),
   treatmentEstimatePreliminaryConfirmed: false,
-  setTreatmentEstimatePreliminaryConfirmed: (val) =>
-    set((state) => ({
-      treatmentEstimatePreliminaryConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimatePreliminaryConfirmed)
-          : val,
-    })),
+  setTreatmentEstimatePreliminaryConfirmed: createSetter(set, "treatmentEstimatePreliminaryConfirmed"),
   treatmentEstimateScopeConfirmed: false,
-  setTreatmentEstimateScopeConfirmed: (val) =>
-    set((state) => ({
-      treatmentEstimateScopeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateScopeConfirmed)
-          : val,
-    })),
+  setTreatmentEstimateScopeConfirmed: createSetter(set, "treatmentEstimateScopeConfirmed"),
   treatmentEstimateFiscalNoticeConfirmed: false,
-  setTreatmentEstimateFiscalNoticeConfirmed: (val) =>
-    set((state) => ({
-      treatmentEstimateFiscalNoticeConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateFiscalNoticeConfirmed)
-          : val,
-    })),
+  setTreatmentEstimateFiscalNoticeConfirmed: createSetter(set, "treatmentEstimateFiscalNoticeConfirmed"),
   treatmentEstimateChangeRulesConfirmed: false,
-  setTreatmentEstimateChangeRulesConfirmed: (val) =>
-    set((state) => ({
-      treatmentEstimateChangeRulesConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.treatmentEstimateChangeRulesConfirmed)
-          : val,
-    })),
+  setTreatmentEstimateChangeRulesConfirmed: createSetter(set, "treatmentEstimateChangeRulesConfirmed"),
   clinicalToothRowsText: defaultClinicalToothRowsText,
-  setClinicalToothRowsText: (val) =>
-    set((state) => ({
-      clinicalToothRowsText:
-        typeof val === "function"
-          ? (val as any)(state.clinicalToothRowsText)
-          : val,
-    })),
+  setClinicalToothRowsText: createSetter(set, "clinicalToothRowsText"),
   treatmentPlanClinicalReason: "",
-  setTreatmentPlanClinicalReason: (val) =>
-    set((state) => ({
-      treatmentPlanClinicalReason:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanClinicalReason)
-          : val,
-    })),
+  setTreatmentPlanClinicalReason: createSetter(set, "treatmentPlanClinicalReason"),
   treatmentPlanDiagnosisSummary: "",
-  setTreatmentPlanDiagnosisSummary: (val) =>
-    set((state) => ({
-      treatmentPlanDiagnosisSummary:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanDiagnosisSummary)
-          : val,
-    })),
+  setTreatmentPlanDiagnosisSummary: createSetter(set, "treatmentPlanDiagnosisSummary"),
   treatmentPlanTeethOrArea: "",
-  setTreatmentPlanTeethOrArea: (val) =>
-    set((state) => ({
-      treatmentPlanTeethOrArea:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanTeethOrArea)
-          : val,
-    })),
+  setTreatmentPlanTeethOrArea: createSetter(set, "treatmentPlanTeethOrArea"),
   treatmentPlanGoals:
     "устранить жалобы пациента\nвосстановить функцию и герметичность\nснизить риск осложнений и повторного обращения",
-  setTreatmentPlanGoals: (val) =>
-    set((state) => ({
-      treatmentPlanGoals:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanGoals)
-          : val,
-    })),
+  setTreatmentPlanGoals: createSetter(set, "treatmentPlanGoals"),
   treatmentPlanStages:
     "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения | 0\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены | 0",
-  setTreatmentPlanStages: (val) =>
-    set((state) => ({
-      treatmentPlanStages:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanStages)
-          : val,
-    })),
+  setTreatmentPlanStages: createSetter(set, "treatmentPlanStages"),
   treatmentPlanEstimatedTotalRub: "",
-  setTreatmentPlanEstimatedTotalRub: (val) =>
-    set((state) => ({
-      treatmentPlanEstimatedTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanEstimatedTotalRub)
-          : val,
-    })),
+  setTreatmentPlanEstimatedTotalRub: createSetter(set, "treatmentPlanEstimatedTotalRub"),
   treatmentPlanAlternatives:
     "наблюдение без активного лечения\nальтернативный материал или метод лечения\nпоэтапное лечение с переносом части работ\nполучение второго мнения\nотказ от лечения с фиксацией рисков",
-  setTreatmentPlanAlternatives: (val) =>
-    set((state) => ({
-      treatmentPlanAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanAlternatives)
-          : val,
-    })),
+  setTreatmentPlanAlternatives: createSetter(set, "treatmentPlanAlternatives"),
   treatmentPlanRisks:
     "изменение плана при новых клинических данных или снимках\nнеобходимость дополнительного визита, консультации или смежного специалиста\nизменение стоимости при изменении объема, материалов или сроков\nограниченный прогноз при исходном состоянии зубов и тканей",
-  setTreatmentPlanRisks: (val) =>
-    set((state) => ({
-      treatmentPlanRisks:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanRisks)
-          : val,
-    })),
+  setTreatmentPlanRisks: createSetter(set, "treatmentPlanRisks"),
   treatmentPlanPrognosis:
     "прогноз зависит от исходного состояния зубов, тканей, гигиены, выполнения рекомендаций и явки на контрольные визиты",
-  setTreatmentPlanPrognosis: (val) =>
-    set((state) => ({
-      treatmentPlanPrognosis:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanPrognosis)
-          : val,
-    })),
+  setTreatmentPlanPrognosis: createSetter(set, "treatmentPlanPrognosis"),
   treatmentPlanControlPlan:
     "контрольный осмотр после завершения этапа и далее по индивидуальному графику",
-  setTreatmentPlanControlPlan: (val) =>
-    set((state) => ({
-      treatmentPlanControlPlan:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanControlPlan)
-          : val,
-    })),
+  setTreatmentPlanControlPlan: createSetter(set, "treatmentPlanControlPlan"),
   treatmentPlanDoctorFullName: "",
-  setTreatmentPlanDoctorFullName: (val) =>
-    set((state) => ({
-      treatmentPlanDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanDoctorFullName)
-          : val,
-    })),
+  setTreatmentPlanDoctorFullName: createSetter(set, "treatmentPlanDoctorFullName"),
   treatmentPlanPlannedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setTreatmentPlanPlannedAt: (val) =>
-    set((state) => ({
-      treatmentPlanPlannedAt:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanPlannedAt)
-          : val,
-    })),
+  setTreatmentPlanPlannedAt: createSetter(set, "treatmentPlanPlannedAt"),
   treatmentPlanQuestionsAnswered: false,
-  setTreatmentPlanQuestionsAnswered: (val) =>
-    set((state) => ({
-      treatmentPlanQuestionsAnswered:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanQuestionsAnswered)
-          : val,
-    })),
+  setTreatmentPlanQuestionsAnswered: createSetter(set, "treatmentPlanQuestionsAnswered"),
   treatmentPlanSeparateConsentAcknowledged: false,
-  setTreatmentPlanSeparateConsentAcknowledged: (val) =>
-    set((state) => ({
-      treatmentPlanSeparateConsentAcknowledged:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanSeparateConsentAcknowledged)
-          : val,
-    })),
+  setTreatmentPlanSeparateConsentAcknowledged: createSetter(set, "treatmentPlanSeparateConsentAcknowledged"),
   treatmentPlanNewApprovalAcknowledged: false,
-  setTreatmentPlanNewApprovalAcknowledged: (val) =>
-    set((state) => ({
-      treatmentPlanNewApprovalAcknowledged:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanNewApprovalAcknowledged)
-          : val,
-    })),
+  setTreatmentPlanNewApprovalAcknowledged: createSetter(set, "treatmentPlanNewApprovalAcknowledged"),
   treatmentPlanPatientFriendlyExplanation: "",
-  setTreatmentPlanPatientFriendlyExplanation: (val) =>
-    set((state) => ({
-      treatmentPlanPatientFriendlyExplanation:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanPatientFriendlyExplanation)
-          : val,
-    })),
+  setTreatmentPlanPatientFriendlyExplanation: createSetter(set, "treatmentPlanPatientFriendlyExplanation"),
   treatmentPlanPatientHygieneAdvice: "",
-  setTreatmentPlanPatientHygieneAdvice: (val) =>
-    set((state) => ({
-      treatmentPlanPatientHygieneAdvice:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanPatientHygieneAdvice)
-          : val,
-    })),
+  setTreatmentPlanPatientHygieneAdvice: createSetter(set, "treatmentPlanPatientHygieneAdvice"),
   treatmentPlanCustomHygieneTextOverride: "",
-  setTreatmentPlanCustomHygieneTextOverride: (val) =>
-    set((state) => ({
-      treatmentPlanCustomHygieneTextOverride:
-        typeof val === "function"
-          ? (val as any)(state.treatmentPlanCustomHygieneTextOverride)
-          : val,
-    })),
+  setTreatmentPlanCustomHygieneTextOverride: createSetter(set, "treatmentPlanCustomHygieneTextOverride"),
   treatmentAcceptanceVariant: "standard",
-  setTreatmentAcceptanceVariant: (val) =>
-    set((state) => ({
-      treatmentAcceptanceVariant:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceVariant)
-          : val,
-    })),
+  setTreatmentAcceptanceVariant: createSetter(set, "treatmentAcceptanceVariant"),
   treatmentAcceptanceClinicalGoal:
     "санация, восстановление функции и профилактика осложнений",
-  setTreatmentAcceptanceClinicalGoal: (val) =>
-    set((state) => ({
-      treatmentAcceptanceClinicalGoal:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceClinicalGoal)
-          : val,
-    })),
+  setTreatmentAcceptanceClinicalGoal: createSetter(set, "treatmentAcceptanceClinicalGoal"),
   treatmentAcceptanceDiagnosisSummary: "",
-  setTreatmentAcceptanceDiagnosisSummary: (val) =>
-    set((state) => ({
-      treatmentAcceptanceDiagnosisSummary:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceDiagnosisSummary)
-          : val,
-    })),
+  setTreatmentAcceptanceDiagnosisSummary: createSetter(set, "treatmentAcceptanceDiagnosisSummary"),
   treatmentAcceptanceTeethOrArea: "",
-  setTreatmentAcceptanceTeethOrArea: (val) =>
-    set((state) => ({
-      treatmentAcceptanceTeethOrArea:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceTeethOrArea)
-          : val,
-    })),
+  setTreatmentAcceptanceTeethOrArea: createSetter(set, "treatmentAcceptanceTeethOrArea"),
   treatmentAcceptanceStages:
     "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения | 0\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | 0",
-  setTreatmentAcceptanceStages: (val) =>
-    set((state) => ({
-      treatmentAcceptanceStages:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceStages)
-          : val,
-    })),
+  setTreatmentAcceptanceStages: createSetter(set, "treatmentAcceptanceStages"),
   treatmentAcceptanceEstimatedTotalRub: "",
-  setTreatmentAcceptanceEstimatedTotalRub: (val) =>
-    set((state) => ({
-      treatmentAcceptanceEstimatedTotalRub:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceEstimatedTotalRub)
-          : val,
-    })),
+  setTreatmentAcceptanceEstimatedTotalRub: createSetter(set, "treatmentAcceptanceEstimatedTotalRub"),
   treatmentAcceptanceEstimateValidUntil: "",
-  setTreatmentAcceptanceEstimateValidUntil: (val) =>
-    set((state) => ({
-      treatmentAcceptanceEstimateValidUntil:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceEstimateValidUntil)
-          : val,
-    })),
+  setTreatmentAcceptanceEstimateValidUntil: createSetter(set, "treatmentAcceptanceEstimateValidUntil"),
   treatmentAcceptancePaymentTerms:
     "оплата по кассовому чеку до или в день оказания услуг; рассрочка или кредит оформляются отдельным соглашением",
-  setTreatmentAcceptancePaymentTerms: (val) =>
-    set((state) => ({
-      treatmentAcceptancePaymentTerms:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptancePaymentTerms)
-          : val,
-    })),
+  setTreatmentAcceptancePaymentTerms: createSetter(set, "treatmentAcceptancePaymentTerms"),
   treatmentAcceptanceRejectedAlternatives:
     "наблюдение без активного лечения\nперенос лечения\nальтернативный материал или конструкция\nполучение второго мнения",
-  setTreatmentAcceptanceRejectedAlternatives: (val) =>
-    set((state) => ({
-      treatmentAcceptanceRejectedAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceRejectedAlternatives)
-          : val,
-    })),
+  setTreatmentAcceptanceRejectedAlternatives: createSetter(set, "treatmentAcceptanceRejectedAlternatives"),
   treatmentAcceptanceRisks:
     "изменение плана при новых клинических данных или снимках\nизменение стоимости при изменении объема, материалов или сроков\nнеобходимость дополнительных визитов, коррекции или смежного специалиста\nограниченный прогноз при исходном состоянии зубов и тканей",
-  setTreatmentAcceptanceRisks: (val) =>
-    set((state) => ({
-      treatmentAcceptanceRisks:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceRisks)
-          : val,
-    })),
+  setTreatmentAcceptanceRisks: createSetter(set, "treatmentAcceptanceRisks"),
   treatmentAcceptanceWarrantyTerms:
     "контрольные визиты обязательны; гарантийные условия действуют в пределах выбранного плана, соблюдения рекомендаций, гигиены и сроков контрольных посещений",
-  setTreatmentAcceptanceWarrantyTerms: (val) =>
-    set((state) => ({
-      treatmentAcceptanceWarrantyTerms:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceWarrantyTerms)
-          : val,
-    })),
+  setTreatmentAcceptanceWarrantyTerms: createSetter(set, "treatmentAcceptanceWarrantyTerms"),
   treatmentAcceptanceDoctorFullName: "",
-  setTreatmentAcceptanceDoctorFullName: (val) =>
-    set((state) => ({
-      treatmentAcceptanceDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceDoctorFullName)
-          : val,
-    })),
+  setTreatmentAcceptanceDoctorFullName: createSetter(set, "treatmentAcceptanceDoctorFullName"),
   treatmentAcceptanceAcceptedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setTreatmentAcceptanceAcceptedAt: (val) =>
-    set((state) => ({
-      treatmentAcceptanceAcceptedAt:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceAcceptedAt)
-          : val,
-    })),
+  setTreatmentAcceptanceAcceptedAt: createSetter(set, "treatmentAcceptanceAcceptedAt"),
   treatmentAcceptanceQuestionsAnswered: false,
-  setTreatmentAcceptanceQuestionsAnswered: (val) =>
-    set((state) => ({
-      treatmentAcceptanceQuestionsAnswered:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceQuestionsAnswered)
-          : val,
-    })),
+  setTreatmentAcceptanceQuestionsAnswered: createSetter(set, "treatmentAcceptanceQuestionsAnswered"),
   treatmentAcceptanceAlternativesUnderstood: false,
-  setTreatmentAcceptanceAlternativesUnderstood: (val) =>
-    set((state) => ({
-      treatmentAcceptanceAlternativesUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceAlternativesUnderstood)
-          : val,
-    })),
+  setTreatmentAcceptanceAlternativesUnderstood: createSetter(set, "treatmentAcceptanceAlternativesUnderstood"),
   treatmentAcceptanceCostChangeUnderstood: false,
-  setTreatmentAcceptanceCostChangeUnderstood: (val) =>
-    set((state) => ({
-      treatmentAcceptanceCostChangeUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceCostChangeUnderstood)
-          : val,
-    })),
+  setTreatmentAcceptanceCostChangeUnderstood: createSetter(set, "treatmentAcceptanceCostChangeUnderstood"),
   treatmentAcceptanceRevisionAcknowledged: false,
-  setTreatmentAcceptanceRevisionAcknowledged: (val) =>
-    set((state) => ({
-      treatmentAcceptanceRevisionAcknowledged:
-        typeof val === "function"
-          ? (val as any)(state.treatmentAcceptanceRevisionAcknowledged)
-          : val,
-    })),
+  setTreatmentAcceptanceRevisionAcknowledged: createSetter(set, "treatmentAcceptanceRevisionAcknowledged"),
   postVisitCareTopic: initialUiPreferences.postVisitCareTopic,
-  setPostVisitCareTopic: (val) =>
-    set((state) => ({
-      postVisitCareTopic:
-        typeof val === "function"
-          ? (val as any)(state.postVisitCareTopic)
-          : val,
-    })),
+  setPostVisitCareTopic: createSetter(set, "postVisitCareTopic"),
   postVisitProcedureName:
     postVisitCarePresets.filling_restoration.procedureName,
-  setPostVisitProcedureName: (val) =>
-    set((state) => ({
-      postVisitProcedureName:
-        typeof val === "function"
-          ? (val as any)(state.postVisitProcedureName)
-          : val,
-    })),
+  setPostVisitProcedureName: createSetter(set, "postVisitProcedureName"),
   postVisitToothOrArea: "",
-  setPostVisitToothOrArea: (val) =>
-    set((state) => ({
-      postVisitToothOrArea:
-        typeof val === "function"
-          ? (val as any)(state.postVisitToothOrArea)
-          : val,
-    })),
+  setPostVisitToothOrArea: createSetter(set, "postVisitToothOrArea"),
   postVisitPerformedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setPostVisitPerformedAt: (val) =>
-    set((state) => ({
-      postVisitPerformedAt:
-        typeof val === "function"
-          ? (val as any)(state.postVisitPerformedAt)
-          : val,
-    })),
+  setPostVisitPerformedAt: createSetter(set, "postVisitPerformedAt"),
   postVisitDoctorFullName: "",
-  setPostVisitDoctorFullName: (val) =>
-    set((state) => ({
-      postVisitDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.postVisitDoctorFullName)
-          : val,
-    })),
+  setPostVisitDoctorFullName: createSetter(set, "postVisitDoctorFullName"),
   postVisitManualEdited: false,
-  setPostVisitManualEdited: (val) =>
-    set((state) => ({
-      postVisitManualEdited:
-        typeof val === "function"
-          ? (val as any)(state.postVisitManualEdited)
-          : val,
-    })),
+  setPostVisitManualEdited: createSetter(set, "postVisitManualEdited"),
   postVisitPresetFeedback: "",
-  setPostVisitPresetFeedback: (val) =>
-    set((state) => ({
-      postVisitPresetFeedback:
-        typeof val === "function"
-          ? (val as any)(state.postVisitPresetFeedback)
-          : val,
-    })),
+  setPostVisitPresetFeedback: createSetter(set, "postVisitPresetFeedback"),
   postVisitAllowedAfter: postVisitCarePresets.filling_restoration.allowedAfter,
-  setPostVisitAllowedAfter: (val) =>
-    set((state) => ({
-      postVisitAllowedAfter:
-        typeof val === "function"
-          ? (val as any)(state.postVisitAllowedAfter)
-          : val,
-    })),
+  setPostVisitAllowedAfter: createSetter(set, "postVisitAllowedAfter"),
   postVisitRestrictions:
     postVisitCarePresets.filling_restoration.temporaryRestrictions,
-  setPostVisitRestrictions: (val) =>
-    set((state) => ({
-      postVisitRestrictions:
-        typeof val === "function"
-          ? (val as any)(state.postVisitRestrictions)
-          : val,
-    })),
+  setPostVisitRestrictions: createSetter(set, "postVisitRestrictions"),
   postVisitMedicationAndRinsePlan:
     postVisitCarePresets.filling_restoration.medicationAndRinsePlan,
-  setPostVisitMedicationAndRinsePlan: (val) =>
-    set((state) => ({
-      postVisitMedicationAndRinsePlan:
-        typeof val === "function"
-          ? (val as any)(state.postVisitMedicationAndRinsePlan)
-          : val,
-    })),
+  setPostVisitMedicationAndRinsePlan: createSetter(set, "postVisitMedicationAndRinsePlan"),
   postVisitHygieneInstructions:
     postVisitCarePresets.filling_restoration.hygieneInstructions,
-  setPostVisitHygieneInstructions: (val) =>
-    set((state) => ({
-      postVisitHygieneInstructions:
-        typeof val === "function"
-          ? (val as any)(state.postVisitHygieneInstructions)
-          : val,
-    })),
+  setPostVisitHygieneInstructions: createSetter(set, "postVisitHygieneInstructions"),
   postVisitNutritionInstructions:
     postVisitCarePresets.filling_restoration.nutritionInstructions,
-  setPostVisitNutritionInstructions: (val) =>
-    set((state) => ({
-      postVisitNutritionInstructions:
-        typeof val === "function"
-          ? (val as any)(state.postVisitNutritionInstructions)
-          : val,
-    })),
+  setPostVisitNutritionInstructions: createSetter(set, "postVisitNutritionInstructions"),
   postVisitUrgentWarningSigns:
     postVisitCarePresets.filling_restoration.urgentWarningSigns,
-  setPostVisitUrgentWarningSigns: (val) =>
-    set((state) => ({
-      postVisitUrgentWarningSigns:
-        typeof val === "function"
-          ? (val as any)(state.postVisitUrgentWarningSigns)
-          : val,
-    })),
+  setPostVisitUrgentWarningSigns: createSetter(set, "postVisitUrgentWarningSigns"),
   postVisitFollowUpAt:
     postVisitCarePresets.filling_restoration.plannedFollowUpAt,
-  setPostVisitFollowUpAt: (val) =>
-    set((state) => ({
-      postVisitFollowUpAt:
-        typeof val === "function"
-          ? (val as any)(state.postVisitFollowUpAt)
-          : val,
-    })),
+  setPostVisitFollowUpAt: createSetter(set, "postVisitFollowUpAt"),
   postVisitClinicContactInstruction:
     "связаться с клиникой по телефону или через Telegram-бот клиники",
-  setPostVisitClinicContactInstruction: (val) =>
-    set((state) => ({
-      postVisitClinicContactInstruction:
-        typeof val === "function"
-          ? (val as any)(state.postVisitClinicContactInstruction)
-          : val,
-    })),
+  setPostVisitClinicContactInstruction: createSetter(set, "postVisitClinicContactInstruction"),
   postVisitTelegramSummary:
     postVisitCarePresets.filling_restoration.telegramSummary,
-  setPostVisitTelegramSummary: (val) =>
-    set((state) => ({
-      postVisitTelegramSummary:
-        typeof val === "function"
-          ? (val as any)(state.postVisitTelegramSummary)
-          : val,
-    })),
+  setPostVisitTelegramSummary: createSetter(set, "postVisitTelegramSummary"),
   postVisitPrintedCopyReceived: false,
-  setPostVisitPrintedCopyReceived: (val) =>
-    set((state) => ({
-      postVisitPrintedCopyReceived:
-        typeof val === "function"
-          ? (val as any)(state.postVisitPrintedCopyReceived)
-          : val,
-    })),
+  setPostVisitPrintedCopyReceived: createSetter(set, "postVisitPrintedCopyReceived"),
   postVisitUrgentSignsUnderstood: false,
-  setPostVisitUrgentSignsUnderstood: (val) =>
-    set((state) => ({
-      postVisitUrgentSignsUnderstood:
-        typeof val === "function"
-          ? (val as any)(state.postVisitUrgentSignsUnderstood)
-          : val,
-    })),
+  setPostVisitUrgentSignsUnderstood: createSetter(set, "postVisitUrgentSignsUnderstood"),
   postVisitTelegramSafe: false,
-  setPostVisitTelegramSafe: (val) =>
-    set((state) => ({
-      postVisitTelegramSafe:
-        typeof val === "function"
-          ? (val as any)(state.postVisitTelegramSafe)
-          : val,
-    })),
+  setPostVisitTelegramSafe: createSetter(set, "postVisitTelegramSafe"),
   anesthesiaMethod: "Инфильтрационная / проводниковая",
-  setAnesthesiaMethod: (val) =>
-    set((state) => ({
-      anesthesiaMethod:
-        typeof val === "function" ? (val as any)(state.anesthesiaMethod) : val,
-    })),
+  setAnesthesiaMethod: createSetter(set, "anesthesiaMethod"),
   anesthesiaAnesthetic: "Артикаин 4%",
-  setAnesthesiaAnesthetic: (val) =>
-    set((state) => ({
-      anesthesiaAnesthetic:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaAnesthetic)
-          : val,
-    })),
+  setAnesthesiaAnesthetic: createSetter(set, "anesthesiaAnesthetic"),
   anesthesiaVasoconstrictor: "1:100000",
-  setAnesthesiaVasoconstrictor: (val) =>
-    set((state) => ({
-      anesthesiaVasoconstrictor:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaVasoconstrictor)
-          : val,
-    })),
+  setAnesthesiaVasoconstrictor: createSetter(set, "anesthesiaVasoconstrictor"),
   anesthesiaZone: "",
-  setAnesthesiaZone: (val) =>
-    set((state) => ({
-      anesthesiaZone:
-        typeof val === "function" ? (val as any)(state.anesthesiaZone) : val,
-    })),
+  setAnesthesiaZone: createSetter(set, "anesthesiaZone"),
   anesthesiaAllergyStatus:
     "Аллергия на местные анестетики со слов пациента не отмечена.",
-  setAnesthesiaAllergyStatus: (val) =>
-    set((state) => ({
-      anesthesiaAllergyStatus:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaAllergyStatus)
-          : val,
-    })),
+  setAnesthesiaAllergyStatus: createSetter(set, "anesthesiaAllergyStatus"),
   anesthesiaRestrictionNotes: "",
-  setAnesthesiaRestrictionNotes: (val) =>
-    set((state) => ({
-      anesthesiaRestrictionNotes:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaRestrictionNotes)
-          : val,
-    })),
+  setAnesthesiaRestrictionNotes: createSetter(set, "anesthesiaRestrictionNotes"),
   anesthesiaDoseTime: (() =>
     new Date().toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
     }))(),
-  setAnesthesiaDoseTime: (val) =>
-    set((state) => ({
-      anesthesiaDoseTime:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaDoseTime)
-          : val,
-    })),
+  setAnesthesiaDoseTime: createSetter(set, "anesthesiaDoseTime"),
   anesthesiaDoseMl: "1.7",
-  setAnesthesiaDoseMl: (val) =>
-    set((state) => ({
-      anesthesiaDoseMl:
-        typeof val === "function" ? (val as any)(state.anesthesiaDoseMl) : val,
-    })),
+  setAnesthesiaDoseMl: createSetter(set, "anesthesiaDoseMl"),
   anesthesiaReaction: "Без особенностей",
-  setAnesthesiaReaction: (val) =>
-    set((state) => ({
-      anesthesiaReaction:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaReaction)
-          : val,
-    })),
+  setAnesthesiaReaction: createSetter(set, "anesthesiaReaction"),
   anesthesiaRisksExplained: false,
-  setAnesthesiaRisksExplained: (val) =>
-    set((state) => ({
-      anesthesiaRisksExplained:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaRisksExplained)
-          : val,
-    })),
+  setAnesthesiaRisksExplained: createSetter(set, "anesthesiaRisksExplained"),
   anesthesiaAllergyRestrictionsChecked: false,
-  setAnesthesiaAllergyRestrictionsChecked: (val) =>
-    set((state) => ({
-      anesthesiaAllergyRestrictionsChecked:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaAllergyRestrictionsChecked)
-          : val,
-    })),
+  setAnesthesiaAllergyRestrictionsChecked: createSetter(set, "anesthesiaAllergyRestrictionsChecked"),
   anesthesiaConsentConfirmed: false,
-  setAnesthesiaConsentConfirmed: (val) =>
-    set((state) => ({
-      anesthesiaConsentConfirmed:
-        typeof val === "function"
-          ? (val as any)(state.anesthesiaConsentConfirmed)
-          : val,
-    })),
+  setAnesthesiaConsentConfirmed: createSetter(set, "anesthesiaConsentConfirmed"),
   prescriptionMedication: "",
-  setPrescriptionMedication: (val) =>
-    set((state) => ({
-      prescriptionMedication:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionMedication)
-          : val,
-    })),
+  setPrescriptionMedication: createSetter(set, "prescriptionMedication"),
   prescriptionDosage: "",
-  setPrescriptionDosage: (val) =>
-    set((state) => ({
-      prescriptionDosage:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionDosage)
-          : val,
-    })),
+  setPrescriptionDosage: createSetter(set, "prescriptionDosage"),
   prescriptionInstructions: "",
-  setPrescriptionInstructions: (val) =>
-    set((state) => ({
-      prescriptionInstructions:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionInstructions)
-          : val,
-    })),
+  setPrescriptionInstructions: createSetter(set, "prescriptionInstructions"),
   prescriptionDuration: "",
-  setPrescriptionDuration: (val) =>
-    set((state) => ({
-      prescriptionDuration:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionDuration)
-          : val,
-    })),
+  setPrescriptionDuration: createSetter(set, "prescriptionDuration"),
   prescriptionSafetyNotes:
     "Проверить аллергоанамнез до выдачи.\nОбъяснить режим приема, ограничения и действия при нежелательной реакции.",
-  setPrescriptionSafetyNotes: (val) =>
-    set((state) => ({
-      prescriptionSafetyNotes:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionSafetyNotes)
-          : val,
-    })),
+  setPrescriptionSafetyNotes: createSetter(set, "prescriptionSafetyNotes"),
   prescriptionUrgentContactReason:
     "Связаться с клиникой при отеке, сыпи, нарастающей боли, кровотечении или температуре.",
-  setPrescriptionUrgentContactReason: (val) =>
-    set((state) => ({
-      prescriptionUrgentContactReason:
-        typeof val === "function"
-          ? (val as any)(state.prescriptionUrgentContactReason)
-          : val,
-    })),
+  setPrescriptionUrgentContactReason: createSetter(set, "prescriptionUrgentContactReason"),
   labWorkType: "",
-  setLabWorkType: (val) =>
-    set((state) => ({
-      labWorkType:
-        typeof val === "function" ? (val as any)(state.labWorkType) : val,
-    })),
+  setLabWorkType: createSetter(set, "labWorkType"),
   labTeethOrArea: "",
-  setLabTeethOrArea: (val) =>
-    set((state) => ({
-      labTeethOrArea:
-        typeof val === "function" ? (val as any)(state.labTeethOrArea) : val,
-    })),
+  setLabTeethOrArea: createSetter(set, "labTeethOrArea"),
   labMaterial: "",
-  setLabMaterial: (val) =>
-    set((state) => ({
-      labMaterial:
-        typeof val === "function" ? (val as any)(state.labMaterial) : val,
-    })),
+  setLabMaterial: createSetter(set, "labMaterial"),
   labShade: "",
-  setLabShade: (val) =>
-    set((state) => ({
-      labShade: typeof val === "function" ? (val as any)(state.labShade) : val,
-    })),
+  setLabShade: createSetter(set, "labShade"),
   labSource: "",
-  setLabSource: (val) =>
-    set((state) => ({
-      labSource:
-        typeof val === "function" ? (val as any)(state.labSource) : val,
-    })),
+  setLabSource: createSetter(set, "labSource"),
   labDeadline: "",
-  setLabDeadline: (val) =>
-    set((state) => ({
-      labDeadline:
-        typeof val === "function" ? (val as any)(state.labDeadline) : val,
-    })),
+  setLabDeadline: createSetter(set, "labDeadline"),
   labTechnicianNotes: "",
-  setLabTechnicianNotes: (val) =>
-    set((state) => ({
-      labTechnicianNotes:
-        typeof val === "function"
-          ? (val as any)(state.labTechnicianNotes)
-          : val,
-    })),
+  setLabTechnicianNotes: createSetter(set, "labTechnicianNotes"),
   xrayStudyType: "cbct",
-  setXrayStudyType: (val) =>
-    set((state) => ({
-      xrayStudyType:
-        typeof val === "function" ? (val as any)(state.xrayStudyType) : val,
-    })),
+  setXrayStudyType: createSetter(set, "xrayStudyType"),
   xrayArea: "",
-  setXrayArea: (val) =>
-    set((state) => ({
-      xrayArea: typeof val === "function" ? (val as any)(state.xrayArea) : val,
-    })),
+  setXrayArea: createSetter(set, "xrayArea"),
   xrayClinicalQuestion: "",
-  setXrayClinicalQuestion: (val) =>
-    set((state) => ({
-      xrayClinicalQuestion:
-        typeof val === "function"
-          ? (val as any)(state.xrayClinicalQuestion)
-          : val,
-    })),
+  setXrayClinicalQuestion: createSetter(set, "xrayClinicalQuestion"),
   xrayIndication: "",
-  setXrayIndication: (val) =>
-    set((state) => ({
-      xrayIndication:
-        typeof val === "function" ? (val as any)(state.xrayIndication) : val,
-    })),
+  setXrayIndication: createSetter(set, "xrayIndication"),
   xrayPregnancyStatus: "unknown",
-  setXrayPregnancyStatus: (val) =>
-    set((state) => ({
-      xrayPregnancyStatus:
-        typeof val === "function"
-          ? (val as any)(state.xrayPregnancyStatus)
-          : val,
-    })),
+  setXrayPregnancyStatus: createSetter(set, "xrayPregnancyStatus"),
   xraySafetyNotes:
     "Перед исследованием уточнить беременность, ограничения и необходимость средств защиты.",
-  setXraySafetyNotes: (val) =>
-    set((state) => ({
-      xraySafetyNotes:
-        typeof val === "function" ? (val as any)(state.xraySafetyNotes) : val,
-    })),
+  setXraySafetyNotes: createSetter(set, "xraySafetyNotes"),
   xrayPriority: "routine",
-  setXrayPriority: (val) =>
-    set((state) => ({
-      xrayPriority:
-        typeof val === "function" ? (val as any)(state.xrayPriority) : val,
-    })),
+  setXrayPriority: createSetter(set, "xrayPriority"),
   xrayIncludeDicomExport: true,
-  setXrayIncludeDicomExport: (val) =>
-    set((state) => ({
-      xrayIncludeDicomExport:
-        typeof val === "function"
-          ? (val as any)(state.xrayIncludeDicomExport)
-          : val,
-    })),
+  setXrayIncludeDicomExport: createSetter(set, "xrayIncludeDicomExport"),
   xrayIncludeRadiologistReport: true,
-  setXrayIncludeRadiologistReport: (val) =>
-    set((state) => ({
-      xrayIncludeRadiologistReport:
-        typeof val === "function"
-          ? (val as any)(state.xrayIncludeRadiologistReport)
-          : val,
-    })),
+  setXrayIncludeRadiologistReport: createSetter(set, "xrayIncludeRadiologistReport"),
   xrayRequestedBy: "",
-  setXrayRequestedBy: (val) =>
-    set((state) => ({
-      xrayRequestedBy:
-        typeof val === "function" ? (val as any)(state.xrayRequestedBy) : val,
-    })),
+  setXrayRequestedBy: createSetter(set, "xrayRequestedBy"),
   xrayRecipientClinic: "",
-  setXrayRecipientClinic: (val) =>
-    set((state) => ({
-      xrayRecipientClinic:
-        typeof val === "function"
-          ? (val as any)(state.xrayRecipientClinic)
-          : val,
-    })),
+  setXrayRecipientClinic: createSetter(set, "xrayRecipientClinic"),
   xrayDueDate: "",
-  setXrayDueDate: (val) =>
-    set((state) => ({
-      xrayDueDate:
-        typeof val === "function" ? (val as any)(state.xrayDueDate) : val,
-    })),
+  setXrayDueDate: createSetter(set, "xrayDueDate"),
   outpatient025uMedicalCardNumber: "",
-  setOutpatient025uMedicalCardNumber: (val) =>
-    set((state) => ({
-      outpatient025uMedicalCardNumber:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uMedicalCardNumber)
-          : val,
-    })),
+  setOutpatient025uMedicalCardNumber: createSetter(set, "outpatient025uMedicalCardNumber"),
   outpatient025uOpenedAt: (() => new Date().toISOString().slice(0, 10))(),
-  setOutpatient025uOpenedAt: (val) =>
-    set((state) => ({
-      outpatient025uOpenedAt:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uOpenedAt)
-          : val,
-    })),
+  setOutpatient025uOpenedAt: createSetter(set, "outpatient025uOpenedAt"),
   outpatient025uPatientSexCode: "unknown",
-  setOutpatient025uPatientSexCode: (val) =>
-    set((state) => ({
-      outpatient025uPatientSexCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uPatientSexCode)
-          : val,
-    })),
+  setOutpatient025uPatientSexCode: createSetter(set, "outpatient025uPatientSexCode"),
   outpatient025uCitizenship: "",
-  setOutpatient025uCitizenship: (val) =>
-    set((state) => ({
-      outpatient025uCitizenship:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uCitizenship)
-          : val,
-    })),
+  setOutpatient025uCitizenship: createSetter(set, "outpatient025uCitizenship"),
   outpatient025uRegistrationUrbanRuralCode: "unknown",
-  setOutpatient025uRegistrationUrbanRuralCode: (val) =>
-    set((state) => ({
-      outpatient025uRegistrationUrbanRuralCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uRegistrationUrbanRuralCode)
-          : val,
-    })),
+  setOutpatient025uRegistrationUrbanRuralCode: createSetter(set, "outpatient025uRegistrationUrbanRuralCode"),
   outpatient025uStayUrbanRuralCode: "unknown",
-  setOutpatient025uStayUrbanRuralCode: (val) =>
-    set((state) => ({
-      outpatient025uStayUrbanRuralCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uStayUrbanRuralCode)
-          : val,
-    })),
+  setOutpatient025uStayUrbanRuralCode: createSetter(set, "outpatient025uStayUrbanRuralCode"),
   outpatient025uOmsIssuedAt: "",
-  setOutpatient025uOmsIssuedAt: (val) =>
-    set((state) => ({
-      outpatient025uOmsIssuedAt:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uOmsIssuedAt)
-          : val,
-    })),
+  setOutpatient025uOmsIssuedAt: createSetter(set, "outpatient025uOmsIssuedAt"),
   outpatient025uInsurerName: "",
-  setOutpatient025uInsurerName: (val) =>
-    set((state) => ({
-      outpatient025uInsurerName:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uInsurerName)
-          : val,
-    })),
+  setOutpatient025uInsurerName: createSetter(set, "outpatient025uInsurerName"),
   outpatient025uSocialSupportCode: "",
-  setOutpatient025uSocialSupportCode: (val) =>
-    set((state) => ({
-      outpatient025uSocialSupportCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uSocialSupportCode)
-          : val,
-    })),
+  setOutpatient025uSocialSupportCode: createSetter(set, "outpatient025uSocialSupportCode"),
   outpatient025uHealthStatusDisclosureContact: "",
-  setOutpatient025uHealthStatusDisclosureContact: (val) =>
-    set((state) => ({
-      outpatient025uHealthStatusDisclosureContact:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uHealthStatusDisclosureContact)
-          : val,
-    })),
+  setOutpatient025uHealthStatusDisclosureContact: createSetter(set, "outpatient025uHealthStatusDisclosureContact"),
 
   outpatient025uEmploymentCode: "",
-  setOutpatient025uEmploymentCode: (val) =>
-    set((state) => ({
-      outpatient025uEmploymentCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uEmploymentCode)
-          : val,
-    })),
+  setOutpatient025uEmploymentCode: createSetter(set, "outpatient025uEmploymentCode"),
   outpatient025uDisabilityGroup: "",
-  setOutpatient025uDisabilityGroup: (val) =>
-    set((state) => ({
-      outpatient025uDisabilityGroup:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uDisabilityGroup)
-          : val,
-    })),
+  setOutpatient025uDisabilityGroup: createSetter(set, "outpatient025uDisabilityGroup"),
   outpatient025uWorkOrStudyPlace: "",
-  setOutpatient025uWorkOrStudyPlace: (val) =>
-    set((state) => ({
-      outpatient025uWorkOrStudyPlace:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uWorkOrStudyPlace)
-          : val,
-    })),
+  setOutpatient025uWorkOrStudyPlace: createSetter(set, "outpatient025uWorkOrStudyPlace"),
   outpatient025uPalliativeCareNeedCode: "",
-  setOutpatient025uPalliativeCareNeedCode: (val) =>
-    set((state) => ({
-      outpatient025uPalliativeCareNeedCode:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uPalliativeCareNeedCode)
-          : val,
-    })),
+  setOutpatient025uPalliativeCareNeedCode: createSetter(set, "outpatient025uPalliativeCareNeedCode"),
   outpatient025uBloodGroup: "",
-  setOutpatient025uBloodGroup: (val) =>
-    set((state) => ({
-      outpatient025uBloodGroup:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uBloodGroup)
-          : val,
-    })),
+  setOutpatient025uBloodGroup: createSetter(set, "outpatient025uBloodGroup"),
   outpatient025uRhFactor: "",
-  setOutpatient025uRhFactor: (val) =>
-    set((state) => ({
-      outpatient025uRhFactor:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uRhFactor)
-          : val,
-    })),
+  setOutpatient025uRhFactor: createSetter(set, "outpatient025uRhFactor"),
   outpatient025uKellK1: "",
-  setOutpatient025uKellK1: (val) =>
-    set((state) => ({
-      outpatient025uKellK1:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uKellK1)
-          : val,
-    })),
+  setOutpatient025uKellK1: createSetter(set, "outpatient025uKellK1"),
   outpatient025uOtherBloodData: "",
-  setOutpatient025uOtherBloodData: (val) =>
-    set((state) => ({
-      outpatient025uOtherBloodData:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uOtherBloodData)
-          : val,
-    })),
+  setOutpatient025uOtherBloodData: createSetter(set, "outpatient025uOtherBloodData"),
   outpatient025uAllergyHistory: "",
-  setOutpatient025uAllergyHistory: (val) =>
-    set((state) => ({
-      outpatient025uAllergyHistory:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uAllergyHistory)
-          : val,
-    })),
+  setOutpatient025uAllergyHistory: createSetter(set, "outpatient025uAllergyHistory"),
   outpatient025uFinalEpicrisis: "",
-  setOutpatient025uFinalEpicrisis: (val) =>
-    set((state) => ({
-      outpatient025uFinalEpicrisis:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uFinalEpicrisis)
-          : val,
-    })),
+  setOutpatient025uFinalEpicrisis: createSetter(set, "outpatient025uFinalEpicrisis"),
   outpatient025uOfficialForm274nChecked: false,
-  setOutpatient025uOfficialForm274nChecked: (val) =>
-    set((state) => ({
-      outpatient025uOfficialForm274nChecked:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uOfficialForm274nChecked)
-          : val,
-    })),
+  setOutpatient025uOfficialForm274nChecked: createSetter(set, "outpatient025uOfficialForm274nChecked"),
   outpatient025uThirdPartyDataChecked: false,
-  setOutpatient025uThirdPartyDataChecked: (val) =>
-    set((state) => ({
-      outpatient025uThirdPartyDataChecked:
-        typeof val === "function"
-          ? (val as any)(state.outpatient025uThirdPartyDataChecked)
-          : val,
-    })),
+  setOutpatient025uThirdPartyDataChecked: createSetter(set, "outpatient025uThirdPartyDataChecked"),
 });
 
 const createMiscSlice = (set: any) => ({
   minorRepresentativeFullName: "",
-  setMinorRepresentativeFullName: (val) =>
-    set((state) => ({
-      minorRepresentativeFullName:
-        typeof val === "function"
-          ? (val as any)(state.minorRepresentativeFullName)
-          : val,
-    })),
+  setMinorRepresentativeFullName: createSetter(set, "minorRepresentativeFullName"),
   minorRepresentativeRelationship: "",
-  setMinorRepresentativeRelationship: (val) =>
-    set((state) => ({
-      minorRepresentativeRelationship:
-        typeof val === "function"
-          ? (val as any)(state.minorRepresentativeRelationship)
-          : val,
-    })),
+  setMinorRepresentativeRelationship: createSetter(set, "minorRepresentativeRelationship"),
   minorRepresentativeIdentityDocument: "",
-  setMinorRepresentativeIdentityDocument: (val) =>
-    set((state) => ({
-      minorRepresentativeIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.minorRepresentativeIdentityDocument)
-          : val,
-    })),
+  setMinorRepresentativeIdentityDocument: createSetter(set, "minorRepresentativeIdentityDocument"),
   minorRepresentativeAuthorityDocument: "",
-  setMinorRepresentativeAuthorityDocument: (val) =>
-    set((state) => ({
-      minorRepresentativeAuthorityDocument:
-        typeof val === "function"
-          ? (val as any)(state.minorRepresentativeAuthorityDocument)
-          : val,
-    })),
+  setMinorRepresentativeAuthorityDocument: createSetter(set, "minorRepresentativeAuthorityDocument"),
   minorRepresentativePhone: "",
-  setMinorRepresentativePhone: (val) =>
-    set((state) => ({
-      minorRepresentativePhone:
-        typeof val === "function"
-          ? (val as any)(state.minorRepresentativePhone)
-          : val,
-    })),
+  setMinorRepresentativePhone: createSetter(set, "minorRepresentativePhone"),
   minorConsentPatientFullName: "",
-  setMinorConsentPatientFullName: (val) =>
-    set((state) => ({
-      minorConsentPatientFullName:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentPatientFullName)
-          : val,
-    })),
+  setMinorConsentPatientFullName: createSetter(set, "minorConsentPatientFullName"),
   minorConsentPatientBirthDate: "",
-  setMinorConsentPatientBirthDate: (val) =>
-    set((state) => ({
-      minorConsentPatientBirthDate:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentPatientBirthDate)
-          : val,
-    })),
+  setMinorConsentPatientBirthDate: createSetter(set, "minorConsentPatientBirthDate"),
   minorConsentInterventionScope: "",
-  setMinorConsentInterventionScope: (val) =>
-    set((state) => ({
-      minorConsentInterventionScope:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentInterventionScope)
-          : val,
-    })),
+  setMinorConsentInterventionScope: createSetter(set, "minorConsentInterventionScope"),
   minorConsentDiagnosisOrIndication: "",
-  setMinorConsentDiagnosisOrIndication: (val) =>
-    set((state) => ({
-      minorConsentDiagnosisOrIndication:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentDiagnosisOrIndication)
-          : val,
-    })),
+  setMinorConsentDiagnosisOrIndication: createSetter(set, "minorConsentDiagnosisOrIndication"),
   minorConsentRisks:
     "боль, отек, кровоточивость или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного визита или изменения плана лечения",
-  setMinorConsentRisks: (val) =>
-    set((state) => ({
-      minorConsentRisks:
-        typeof val === "function" ? (val as any)(state.minorConsentRisks) : val,
-    })),
+  setMinorConsentRisks: createSetter(set, "minorConsentRisks"),
   minorConsentAlternatives:
     "отложить вмешательство и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от вмешательства с фиксацией рисков",
-  setMinorConsentAlternatives: (val) =>
-    set((state) => ({
-      minorConsentAlternatives:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentAlternatives)
-          : val,
-    })),
+  setMinorConsentAlternatives: createSetter(set, "minorConsentAlternatives"),
   minorConsentDoctorFullName: "",
-  setMinorConsentDoctorFullName: (val) =>
-    set((state) => ({
-      minorConsentDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentDoctorFullName)
-          : val,
-    })),
+  setMinorConsentDoctorFullName: createSetter(set, "minorConsentDoctorFullName"),
   minorConsentSignedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setMinorConsentSignedAt: (val) =>
-    set((state) => ({
-      minorConsentSignedAt:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentSignedAt)
-          : val,
-    })),
+  setMinorConsentSignedAt: createSetter(set, "minorConsentSignedAt"),
   minorConsentIdentityVerified: false,
-  setMinorConsentIdentityVerified: (val) =>
-    set((state) => ({
-      minorConsentIdentityVerified:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentIdentityVerified)
-          : val,
-    })),
+  setMinorConsentIdentityVerified: createSetter(set, "minorConsentIdentityVerified"),
   minorConsentAuthorityVerified: false,
-  setMinorConsentAuthorityVerified: (val) =>
-    set((state) => ({
-      minorConsentAuthorityVerified:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentAuthorityVerified)
-          : val,
-    })),
+  setMinorConsentAuthorityVerified: createSetter(set, "minorConsentAuthorityVerified"),
   minorConsentExplained: false,
-  setMinorConsentExplained: (val) =>
-    set((state) => ({
-      minorConsentExplained:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentExplained)
-          : val,
-    })),
+  setMinorConsentExplained: createSetter(set, "minorConsentExplained"),
   minorConsentStored: false,
-  setMinorConsentStored: (val) =>
-    set((state) => ({
-      minorConsentStored:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentStored)
-          : val,
-    })),
+  setMinorConsentStored: createSetter(set, "minorConsentStored"),
   minorConsentAgeExplanation: false,
-  setMinorConsentAgeExplanation: (val) =>
-    set((state) => ({
-      minorConsentAgeExplanation:
-        typeof val === "function"
-          ? (val as any)(state.minorConsentAgeExplanation)
-          : val,
-    })),
+  setMinorConsentAgeExplanation: createSetter(set, "minorConsentAgeExplanation"),
   recordExtractPeriodStart: (() => new Date().toISOString().slice(0, 10))(),
-  setRecordExtractPeriodStart: (val) =>
-    set((state) => ({
-      recordExtractPeriodStart:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractPeriodStart)
-          : val,
-    })),
+  setRecordExtractPeriodStart: createSetter(set, "recordExtractPeriodStart"),
   recordExtractPeriodEnd: (() => new Date().toISOString().slice(0, 10))(),
-  setRecordExtractPeriodEnd: (val) =>
-    set((state) => ({
-      recordExtractPeriodEnd:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractPeriodEnd)
-          : val,
-    })),
+  setRecordExtractPeriodEnd: createSetter(set, "recordExtractPeriodEnd"),
   recordExtractSourceVisitIds: "",
-  setRecordExtractSourceVisitIds: (val) =>
-    set((state) => ({
-      recordExtractSourceVisitIds:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractSourceVisitIds)
-          : val,
-    })),
+  setRecordExtractSourceVisitIds: createSetter(set, "recordExtractSourceVisitIds"),
   recordExtractComplaintAndAnamnesis: "",
-  setRecordExtractComplaintAndAnamnesis: (val) =>
-    set((state) => ({
-      recordExtractComplaintAndAnamnesis:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractComplaintAndAnamnesis)
-          : val,
-    })),
+  setRecordExtractComplaintAndAnamnesis: createSetter(set, "recordExtractComplaintAndAnamnesis"),
   recordExtractObjectiveStatus: "",
-  setRecordExtractObjectiveStatus: (val) =>
-    set((state) => ({
-      recordExtractObjectiveStatus:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractObjectiveStatus)
-          : val,
-    })),
+  setRecordExtractObjectiveStatus: createSetter(set, "recordExtractObjectiveStatus"),
   recordExtractDiagnosis: "",
-  setRecordExtractDiagnosis: (val) =>
-    set((state) => ({
-      recordExtractDiagnosis:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractDiagnosis)
-          : val,
-    })),
+  setRecordExtractDiagnosis: createSetter(set, "recordExtractDiagnosis"),
   recordExtractTreatmentProvided: "",
-  setRecordExtractTreatmentProvided: (val) =>
-    set((state) => ({
-      recordExtractTreatmentProvided:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractTreatmentProvided)
-          : val,
-    })),
+  setRecordExtractTreatmentProvided: createSetter(set, "recordExtractTreatmentProvided"),
   recordExtractRecommendations: "",
-  setRecordExtractRecommendations: (val) =>
-    set((state) => ({
-      recordExtractRecommendations:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractRecommendations)
-          : val,
-    })),
+  setRecordExtractRecommendations: createSetter(set, "recordExtractRecommendations"),
   recordExtractDoctorFullName: "",
-  setRecordExtractDoctorFullName: (val) =>
-    set((state) => ({
-      recordExtractDoctorFullName:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractDoctorFullName)
-          : val,
-    })),
+  setRecordExtractDoctorFullName: createSetter(set, "recordExtractDoctorFullName"),
   recordExtractRecipientFullName: "",
-  setRecordExtractRecipientFullName: (val) =>
-    set((state) => ({
-      recordExtractRecipientFullName:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractRecipientFullName)
-          : val,
-    })),
+  setRecordExtractRecipientFullName: createSetter(set, "recordExtractRecipientFullName"),
   recordExtractRecipientAuthority: "пациент лично",
-  setRecordExtractRecipientAuthority: (val) =>
-    set((state) => ({
-      recordExtractRecipientAuthority:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractRecipientAuthority)
-          : val,
-    })),
+  setRecordExtractRecipientAuthority: createSetter(set, "recordExtractRecipientAuthority"),
   recordExtractIssuedAt: (() => new Date().toLocaleString("ru-RU"))(),
-  setRecordExtractIssuedAt: (val) =>
-    set((state) => ({
-      recordExtractIssuedAt:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractIssuedAt)
-          : val,
-    })),
+  setRecordExtractIssuedAt: createSetter(set, "recordExtractIssuedAt"),
   recordExtractPreparedFromSignedRecords: false,
-  setRecordExtractPreparedFromSignedRecords: (val) =>
-    set((state) => ({
-      recordExtractPreparedFromSignedRecords:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractPreparedFromSignedRecords)
-          : val,
-    })),
+  setRecordExtractPreparedFromSignedRecords: createSetter(set, "recordExtractPreparedFromSignedRecords"),
   recordExtractThirdPartyDataChecked: false,
-  setRecordExtractThirdPartyDataChecked: (val) =>
-    set((state) => ({
-      recordExtractThirdPartyDataChecked:
-        typeof val === "function"
-          ? (val as any)(state.recordExtractThirdPartyDataChecked)
-          : val,
-    })),
+  setRecordExtractThirdPartyDataChecked: createSetter(set, "recordExtractThirdPartyDataChecked"),
   copyRequestDocumentTypes:
     "Выписка из медицинской карты\nКопия снимков или КТ-архив",
-  setCopyRequestDocumentTypes: (val) =>
-    set((state) => ({
-      copyRequestDocumentTypes:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestDocumentTypes)
-          : val,
-    })),
+  setCopyRequestDocumentTypes: createSetter(set, "copyRequestDocumentTypes"),
   copyRequestPeriodStart: "",
-  setCopyRequestPeriodStart: (val) =>
-    set((state) => ({
-      copyRequestPeriodStart:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestPeriodStart)
-          : val,
-    })),
+  setCopyRequestPeriodStart: createSetter(set, "copyRequestPeriodStart"),
   copyRequestPeriodEnd: "",
-  setCopyRequestPeriodEnd: (val) =>
-    set((state) => ({
-      copyRequestPeriodEnd:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestPeriodEnd)
-          : val,
-    })),
+  setCopyRequestPeriodEnd: createSetter(set, "copyRequestPeriodEnd"),
   copyRequestFormat: "pdf",
-  setCopyRequestFormat: (val) =>
-    set((state) => ({
-      copyRequestFormat:
-        typeof val === "function" ? (val as any)(state.copyRequestFormat) : val,
-    })),
+  setCopyRequestFormat: createSetter(set, "copyRequestFormat"),
   copyRequestRecipientFullName: "",
-  setCopyRequestRecipientFullName: (val) =>
-    set((state) => ({
-      copyRequestRecipientFullName:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestRecipientFullName)
-          : val,
-    })),
+  setCopyRequestRecipientFullName: createSetter(set, "copyRequestRecipientFullName"),
   copyRequestRecipientIdentityDocument: "",
-  setCopyRequestRecipientIdentityDocument: (val) =>
-    set((state) => ({
-      copyRequestRecipientIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestRecipientIdentityDocument)
-          : val,
-    })),
+  setCopyRequestRecipientIdentityDocument: createSetter(set, "copyRequestRecipientIdentityDocument"),
   copyRequestRecipientAuthority: "пациент лично",
-  setCopyRequestRecipientAuthority: (val) =>
-    set((state) => ({
-      copyRequestRecipientAuthority:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestRecipientAuthority)
-          : val,
-    })),
+  setCopyRequestRecipientAuthority: createSetter(set, "copyRequestRecipientAuthority"),
   copyRequestRepresentativeAuthorityDocument: "",
-  setCopyRequestRepresentativeAuthorityDocument: (val) =>
-    set((state) => ({
-      copyRequestRepresentativeAuthorityDocument:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestRepresentativeAuthorityDocument)
-          : val,
-    })),
+  setCopyRequestRepresentativeAuthorityDocument: createSetter(set, "copyRequestRepresentativeAuthorityDocument"),
   copyRequestRequestedAt: new Date().toLocaleString("ru-RU"),
-  setCopyRequestRequestedAt: (val) =>
-    set((state) => ({
-      copyRequestRequestedAt:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestRequestedAt)
-          : val,
-    })),
+  setCopyRequestRequestedAt: createSetter(set, "copyRequestRequestedAt"),
   copyRequestContactForDelivery: "",
-  setCopyRequestContactForDelivery: (val) =>
-    set((state) => ({
-      copyRequestContactForDelivery:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestContactForDelivery)
-          : val,
-    })),
+  setCopyRequestContactForDelivery: createSetter(set, "copyRequestContactForDelivery"),
   copyRequestSpecialInstructions: "",
-  setCopyRequestSpecialInstructions: (val) =>
-    set((state) => ({
-      copyRequestSpecialInstructions:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestSpecialInstructions)
-          : val,
-    })),
+  setCopyRequestSpecialInstructions: createSetter(set, "copyRequestSpecialInstructions"),
   copyRequestIncludeDicomSourceData: true,
-  setCopyRequestIncludeDicomSourceData: (val) =>
-    set((state) => ({
-      copyRequestIncludeDicomSourceData:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestIncludeDicomSourceData)
-          : val,
-    })),
+  setCopyRequestIncludeDicomSourceData: createSetter(set, "copyRequestIncludeDicomSourceData"),
   copyRequestIdentityVerified: false,
-  setCopyRequestIdentityVerified: (val) =>
-    set((state) => ({
-      copyRequestIdentityVerified:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestIdentityVerified)
-          : val,
-    })),
+  setCopyRequestIdentityVerified: createSetter(set, "copyRequestIdentityVerified"),
   copyRequestThirdPartyDataChecked: false,
-  setCopyRequestThirdPartyDataChecked: (val) =>
-    set((state) => ({
-      copyRequestThirdPartyDataChecked:
-        typeof val === "function"
-          ? (val as any)(state.copyRequestThirdPartyDataChecked)
-          : val,
-    })),
+  setCopyRequestThirdPartyDataChecked: createSetter(set, "copyRequestThirdPartyDataChecked"),
   attendanceStartedAt: "",
-  setAttendanceStartedAt: (val) =>
-    set((state) => ({
-      attendanceStartedAt:
-        typeof val === "function"
-          ? (val as any)(state.attendanceStartedAt)
-          : val,
-    })),
+  setAttendanceStartedAt: createSetter(set, "attendanceStartedAt"),
   attendanceEndedAt: "",
-  setAttendanceEndedAt: (val) =>
-    set((state) => ({
-      attendanceEndedAt:
-        typeof val === "function" ? (val as any)(state.attendanceEndedAt) : val,
-    })),
+  setAttendanceEndedAt: createSetter(set, "attendanceEndedAt"),
   attendancePurpose: "для предъявления по месту требования",
-  setAttendancePurpose: (val) =>
-    set((state) => ({
-      attendancePurpose:
-        typeof val === "function" ? (val as any)(state.attendancePurpose) : val,
-    })),
+  setAttendancePurpose: createSetter(set, "attendancePurpose"),
   attendanceRecipientOrganization: "",
-  setAttendanceRecipientOrganization: (val) =>
-    set((state) => ({
-      attendanceRecipientOrganization:
-        typeof val === "function"
-          ? (val as any)(state.attendanceRecipientOrganization)
-          : val,
-    })),
+  setAttendanceRecipientOrganization: createSetter(set, "attendanceRecipientOrganization"),
   attendanceIssuedAt: new Date().toLocaleString("ru-RU"),
-  setAttendanceIssuedAt: (val) =>
-    set((state) => ({
-      attendanceIssuedAt:
-        typeof val === "function"
-          ? (val as any)(state.attendanceIssuedAt)
-          : val,
-    })),
+  setAttendanceIssuedAt: createSetter(set, "attendanceIssuedAt"),
   attendanceSignedByFullName: "",
-  setAttendanceSignedByFullName: (val) =>
-    set((state) => ({
-      attendanceSignedByFullName:
-        typeof val === "function"
-          ? (val as any)(state.attendanceSignedByFullName)
-          : val,
-    })),
+  setAttendanceSignedByFullName: createSetter(set, "attendanceSignedByFullName"),
   attendanceSignedByRole: "врач/администратор",
-  setAttendanceSignedByRole: (val) =>
-    set((state) => ({
-      attendanceSignedByRole:
-        typeof val === "function"
-          ? (val as any)(state.attendanceSignedByRole)
-          : val,
-    })),
+  setAttendanceSignedByRole: createSetter(set, "attendanceSignedByRole"),
   attendanceDiagnosisDisclosureExcluded: false,
-  setAttendanceDiagnosisDisclosureExcluded: (val) =>
-    set((state) => ({
-      attendanceDiagnosisDisclosureExcluded:
-        typeof val === "function"
-          ? (val as any)(state.attendanceDiagnosisDisclosureExcluded)
-          : val,
-    })),
+  setAttendanceDiagnosisDisclosureExcluded: createSetter(set, "attendanceDiagnosisDisclosureExcluded"),
   attendanceNotSickLeaveAcknowledged: false,
-  setAttendanceNotSickLeaveAcknowledged: (val) =>
-    set((state) => ({
-      attendanceNotSickLeaveAcknowledged:
-        typeof val === "function"
-          ? (val as any)(state.attendanceNotSickLeaveAcknowledged)
-          : val,
-    })),
+  setAttendanceNotSickLeaveAcknowledged: createSetter(set, "attendanceNotSickLeaveAcknowledged"),
   releaseRecipientFullName: "",
-  setReleaseRecipientFullName: (val) =>
-    set((state) => ({
-      releaseRecipientFullName:
-        typeof val === "function"
-          ? (val as any)(state.releaseRecipientFullName)
-          : val,
-    })),
+  setReleaseRecipientFullName: createSetter(set, "releaseRecipientFullName"),
   releaseRecipientIdentityDocument: "",
-  setReleaseRecipientIdentityDocument: (val) =>
-    set((state) => ({
-      releaseRecipientIdentityDocument:
-        typeof val === "function"
-          ? (val as any)(state.releaseRecipientIdentityDocument)
-          : val,
-    })),
+  setReleaseRecipientIdentityDocument: createSetter(set, "releaseRecipientIdentityDocument"),
   releaseRecipientAuthority: "пациент лично",
-  setReleaseRecipientAuthority: (val) =>
-    set((state) => ({
-      releaseRecipientAuthority:
-        typeof val === "function"
-          ? (val as any)(state.releaseRecipientAuthority)
-          : val,
-    })),
+  setReleaseRecipientAuthority: createSetter(set, "releaseRecipientAuthority"),
   releaseSourceRequestDocumentId: "",
-  setReleaseSourceRequestDocumentId: (val) =>
-    set((state) => ({
-      releaseSourceRequestDocumentId:
-        typeof val === "function"
-          ? (val as any)(state.releaseSourceRequestDocumentId)
-          : val,
-    })),
+  setReleaseSourceRequestDocumentId: createSetter(set, "releaseSourceRequestDocumentId"),
   releaseChannel: "paper",
-  setReleaseChannel: (val) =>
-    set((state) => ({
-      releaseChannel:
-        typeof val === "function" ? (val as any)(state.releaseChannel) : val,
-    })),
+  setReleaseChannel: createSetter(set, "releaseChannel"),
   releaseDocumentTypes:
     "Выписка из медицинской карты\nКопия снимков или КТ-архив",
-  setReleaseDocumentTypes: (val) =>
-    set((state) => ({
-      releaseDocumentTypes:
-        typeof val === "function"
-          ? (val as any)(state.releaseDocumentTypes)
-          : val,
-    })),
+  setReleaseDocumentTypes: createSetter(set, "releaseDocumentTypes"),
   releasePeriodStart: "",
-  setReleasePeriodStart: (val) =>
-    set((state) => ({
-      releasePeriodStart:
-        typeof val === "function"
-          ? (val as any)(state.releasePeriodStart)
-          : val,
-    })),
+  setReleasePeriodStart: createSetter(set, "releasePeriodStart"),
   releasePeriodEnd: "",
-  setReleasePeriodEnd: (val) =>
-    set((state) => ({
-      releasePeriodEnd:
-        typeof val === "function" ? (val as any)(state.releasePeriodEnd) : val,
-    })),
+  setReleasePeriodEnd: createSetter(set, "releasePeriodEnd"),
   releaseDeliveredAt: new Date().toLocaleString("ru-RU"),
-  setReleaseDeliveredAt: (val) =>
-    set((state) => ({
-      releaseDeliveredAt:
-        typeof val === "function"
-          ? (val as any)(state.releaseDeliveredAt)
-          : val,
-    })),
+  setReleaseDeliveredAt: createSetter(set, "releaseDeliveredAt"),
   releaseAccessExpiresAt: "",
-  setReleaseAccessExpiresAt: (val) =>
-    set((state) => ({
-      releaseAccessExpiresAt:
-        typeof val === "function"
-          ? (val as any)(state.releaseAccessExpiresAt)
-          : val,
-    })),
+  setReleaseAccessExpiresAt: createSetter(set, "releaseAccessExpiresAt"),
   releaseThirdPartyDataChecked: false,
-  setReleaseThirdPartyDataChecked: (val) =>
-    set((state) => ({
-      releaseThirdPartyDataChecked:
-        typeof val === "function"
-          ? (val as any)(state.releaseThirdPartyDataChecked)
-          : val,
-    })),
+  setReleaseThirdPartyDataChecked: createSetter(set, "releaseThirdPartyDataChecked"),
 });
 
 export const useDocumentStore = create<DocumentState>(

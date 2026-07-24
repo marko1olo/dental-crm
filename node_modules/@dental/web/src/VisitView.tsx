@@ -144,6 +144,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     status: "active"
   };
 
+  const safeVisitPrimaryAction = visitPrimaryAction || {
+    label: "Сохранить прием",
+    detail: "Готово к сохранению в историю",
+    disabled: false,
+    kind: "save",
+    onClick: () => {}
+  };
+  const safeVisitWorkflowSteps = Array.isArray(visitWorkflowSteps) ? visitWorkflowSteps : [];
+  const safeVisitSafetyCards = Array.isArray(visitSafetyCards) ? visitSafetyCards : [];
+  const safeSpecialtyLabels = specialtyLabels || { universal: "Универсальный прием" };
+
   const [activeEmkTab, setActiveEmkTab] = useState("all");
   const [visitSubViewTab, setVisitSubViewTab] = useState<"emk" | "odontogram" | "diagnostics">("emk");
   const [showHints, setShowHints] = useState(false);
@@ -214,9 +225,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     { id: "treatmentPlan", label: "Лечение" }
   ];
 
+  const fieldDefs = Array.isArray(visitNoteFieldDefinitions) ? visitNoteFieldDefinitions : [];
   const visibleFields = activeEmkTab === "all"
-    ? visitNoteFieldDefinitions
-    : visitNoteFieldDefinitions.filter((f) => f.key === activeEmkTab);
+    ? fieldDefs
+    : fieldDefs.filter((f: any) => f.key === activeEmkTab);
+
+  const safeVisitWarnings = Array.isArray(visitWarnings) ? visitWarnings : [];
+  const safeImagingStudies = Array.isArray(activeImagingStudies) ? activeImagingStudies : [];
+  const safeUsableDocuments = Array.isArray(activeUsableDocuments) ? activeUsableDocuments : [];
 
   const handleToothClick = (code: string, currentState: string) => {
     if (activeStampRef.current !== null) {
@@ -264,13 +280,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </div>
               </div>
               <div className="visit-focus-status">
-                <span className={visitWarnings.length ? "" : "ready"}>
-                  {visitWarnings.length ? `${visitWarnings.length} предупр.` : "спокойно"}
+                <span className={safeVisitWarnings.length ? "" : "ready"}>
+                  {safeVisitWarnings.length ? `${safeVisitWarnings.length} предупр.` : "спокойно"}
                 </span>
                 <strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
                 <p>
                   {visitCloseChecklist ? `${visitCloseChecklist.score}% готовности` : "статус закрытия не рассчитан"} ·{" "}
-                  предупреждения не останавливают прием · {activeImagingStudies.length} снимка · {activeUsableDocuments.length} документа
+                  предупреждения не останавливают прием · {safeImagingStudies.length} снимка · {safeUsableDocuments.length} документа
                 </p>
               </div>
               <div className="visit-focus-actions">
@@ -333,33 +349,33 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             
             <details className="clinical-rules-toggle" style={{ border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
               <summary style={{ padding: '0.75rem 1rem', background: 'var(--paper)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--ink)', cursor: 'pointer', outline: 'none' }}>
-                🧭 Шаги приема и статус: {visitPrimaryAction.label}
+                🧭 Шаги приема и статус: {safeVisitPrimaryAction.label}
               </summary>
               <div style={{ marginTop: '1rem', padding: '0 1rem 1rem 1rem' }}>
                 <section className="visit-next-step" data-testid="visit-next-step-panel" aria-label="Следующий шаг приема">
               <div className="visit-next-step-main">
                 <div>
                   <p className="eyebrow">Сейчас сделать</p>
-                  <h3>{visitPrimaryAction.label}</h3>
-                  <p id="visit-primary-action-detail">{visitPrimaryAction.detail}</p>
+                  <h3>{safeVisitPrimaryAction.label}</h3>
+                  <p id="visit-primary-action-detail">{safeVisitPrimaryAction.detail}</p>
                 </div>
                 <button
                   className="primary-button visit-primary-action"
                   type="button"
-                  onClick={visitPrimaryAction.onClick}
-                  disabled={visitPrimaryAction.disabled}
+                  onClick={safeVisitPrimaryAction.onClick}
+                  disabled={safeVisitPrimaryAction.disabled}
                   aria-describedby="visit-primary-action-detail"
                   data-testid="visit-primary-action"
                 >
-                  {visitPrimaryAction.kind === "dictation" ? <Mic aria-hidden="true" /> : null}
-                  {visitPrimaryAction.kind === "draft" ? <Bot aria-hidden="true" /> : null}
-                  {visitPrimaryAction.kind === "save" || visitPrimaryAction.kind === "close" ? <Check aria-hidden="true" /> : null}
-                  {visitPrimaryAction.kind === "review" ? <AlertTriangle aria-hidden="true" /> : null}
-                  {visitPrimaryAction.label}
+                  {safeVisitPrimaryAction.kind === "dictation" ? <Mic aria-hidden="true" /> : null}
+                  {safeVisitPrimaryAction.kind === "draft" ? <Bot aria-hidden="true" /> : null}
+                  {safeVisitPrimaryAction.kind === "save" || safeVisitPrimaryAction.kind === "close" ? <Check aria-hidden="true" /> : null}
+                  {safeVisitPrimaryAction.kind === "review" ? <AlertTriangle aria-hidden="true" /> : null}
+                  {safeVisitPrimaryAction.label}
                 </button>
               </div>
               <div className="visit-progress-strip" data-testid="visit-progress-strip" aria-label="Прогресс приема">
-                {visitWorkflowSteps.map((step, index) => (
+                {safeVisitWorkflowSteps.map((step: any, index: number) => (
                   <article className={`visit-progress-step step-${step.state}`} key={step.key}>
                     <span>{index + 1}</span>
                     <div>
@@ -377,7 +393,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
               <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Инженерный статус (локальное сохранение, связь с сервером)</summary>
               <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
-                {visitSafetyCards.map((item: any) => (
+                {safeVisitSafetyCards.map((item: any) => (
                   <article className={`safety-${item.state}`} key={item.key} style={{ flex: '1 1 200px' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
                     <strong style={{ display: 'block', margin: '4px 0' }}>{item.value}</strong>
@@ -390,19 +406,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
               <div>
                 <p className="eyebrow">Фокус врача</p>
-                <h3>{specialtyLabels[selectedSpecialty]}</h3>
-                <p>{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
+                <h3>{safeSpecialtyLabels[selectedSpecialty] || selectedSpecialty || "Прием"}</h3>
+                <p>{activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
               </div>
               <div className="specialty-focus-options">
-                {visibleVisitSpecialtyFocusOptions.map((option) => (
+                {(Array.isArray(visibleVisitSpecialtyFocusOptions) ? visibleVisitSpecialtyFocusOptions : []).map((option: any) => (
                   <button
                     className={selectedSpecialty === option.specialty ? "active" : ""}
                     type="button"
                     key={option.specialty}
                     aria-pressed={selectedSpecialty === option.specialty}
                     onClick={() => {
-                      setSelectedSpecialty(option.specialty);
-                      setSelectedProtocolId(null);
+                      if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
+                      if (setSelectedProtocolId) setSelectedProtocolId(null);
                     }}
                   >
                     <strong>{option.title}</strong>
@@ -432,8 +448,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                     <span style={{ color: 'var(--slate-500)', fontSize: '0.9em' }}>
                       {serverDraftSyncState === "saving" || pendingVisitSaveCount > 0 ? "Синхронизация..." 
                         : !isOnline ? "Офлайн (сохранено локально)"
-                        : lastServerDraftSavedAt ? `Сохранено ${formatTime(lastServerDraftSavedAt)}`
-                        : lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}`
+                        : lastServerDraftSavedAt ? `Сохранено ${formatTime ? formatTime(lastServerDraftSavedAt) : lastServerDraftSavedAt}`
+                        : lastLocalSavedAt ? `Локально сохранено ${formatTime ? formatTime(lastLocalSavedAt) : lastLocalSavedAt}`
                         : "Автосохранение включено"}
                     </span>
                     {speechStatusNote ? <span style={{ display: 'inline-block', marginLeft: '8px', color: 'var(--rust)', fontSize: '0.9em' }}>{speechStatusNote}</span> : null}
@@ -441,8 +457,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </div>
               </div>
               <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">
-                {dictationQuickPhrases.map((phrase: any) => (
-                  <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
+                {(Array.isArray(dictationQuickPhrases) ? dictationQuickPhrases : []).map((phrase: any) => (
+                  <button type="button" key={phrase.label} onClick={() => appendToTranscript && appendToTranscript(phrase.text)}>
                     {phrase.label}
                   </button>
                 ))}
@@ -628,7 +644,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   <div className="visit-draft-missing" id="visit-draft-missing" role="status" aria-live="polite">
                     <strong>Чтобы собрать черновик, осталось:</strong>
                     <ul>
-                      {visitDraftBuildMissingSteps.map((step) => (
+                      {(visitDraftBuildMissingSteps || []).map((step: any) => (
                         <li key={step}>{step}</li>
                       ))}
                     </ul>
@@ -1076,7 +1092,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite" style={{ marginTop: '1rem', background: 'var(--amber-50)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--amber-200)' }}>
                     <strong style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--amber-900)' }}>Чтобы сохранить запись приема, осталось:</strong>
                     <ul style={{ margin: 0, paddingLeft: '1.5rem', color: 'var(--amber-800)' }}>
-                      {visitNoteAcceptMissingSteps.map((step) => (
+                      {(visitNoteAcceptMissingSteps || []).map((step: any) => (
                         <li key={step}>{step}</li>
                       ))}
                     </ul>
@@ -1091,28 +1107,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   <h3>Шаблон приема</h3>
                   <p>{selectedProtocolTemplate?.title ?? "Выберите специальность и шаблон"}</p>
                 </div>
-                <span>{selectedProtocolTemplate ? specialtyLabels[selectedProtocolTemplate.specialty] : dashboard.protocolTemplates.length}</span>
+                <span>{selectedProtocolTemplate ? (safeSpecialtyLabels[selectedProtocolTemplate.specialty] || selectedProtocolTemplate.specialty) : (dashboard?.protocolTemplates?.length ?? 0)}</span>
               </summary>
               <div className="protocol-head">
                 <div>
                   <h3>Шаблон приема</h3>
                   <p>Выбор специальности меняет протокол, снимки, документы и предупреждения.</p>
                 </div>
-                <span>{dashboard.protocolTemplates.length}</span>
+                <span>{dashboard?.protocolTemplates?.length ?? 0}</span>
               </div>
               <div className="specialty-strip">
-                {specialtiesWithTemplates.map((specialty) => (
+                {(specialtiesWithTemplates || []).map((specialty: any) => (
                   <button
                     className={selectedSpecialty === specialty ? "active" : ""}
                     key={specialty}
                     type="button"
                     aria-pressed={selectedSpecialty === specialty}
                     onClick={() => {
-                      setSelectedSpecialty(specialty);
-                      setSelectedProtocolId(null);
+                      if (setSelectedSpecialty) setSelectedSpecialty(specialty);
+                      if (setSelectedProtocolId) setSelectedProtocolId(null);
                     }}
                   >
-                    {specialtyLabels[specialty]}
+                    {safeSpecialtyLabels[specialty] || specialty}
                   </button>
                 ))}
               </div>
@@ -1122,24 +1138,24 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                     <strong>{selectedProtocolTemplate.title}</strong>
                     <p>
                       {selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
-                      {selectedProtocolTemplate.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}
+                      {(selectedProtocolTemplate.suggestedImaging || []).map((kind: any) => (imagingKindLabels && imagingKindLabels[kind]) || kind).join(", ")}
                     </p>
                   </div>
                   <div className="protocol-template-list">
-                    {specialtyProtocolTemplates.map((template) => (
+                    {(specialtyProtocolTemplates || []).map((template: any) => (
                       <button
                         className={selectedProtocolTemplate.id === template.id ? "active" : ""}
                         key={template.id}
                         type="button"
                         aria-pressed={selectedProtocolTemplate.id === template.id}
-                        onClick={() => setSelectedProtocolId(template.id)}
+                        onClick={() => setSelectedProtocolId && setSelectedProtocolId(template.id)}
                       >
                         {template.visitReason}
                       </button>
                     ))}
                   </div>
                   <ul>
-                    {selectedProtocolTemplate.safetyWarnings.map((warning) => (
+                    {(selectedProtocolTemplate.safetyWarnings || []).map((warning: any) => (
                       <li key={warning}>{warning}</li>
                     ))}
                   </ul>
@@ -1162,7 +1178,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   actionLabels={clinicalRuleActionLabels}
                   context="visit"
                   // evaluations={activeVisitClinicalRuleEvaluations}
-                  evaluations={dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? activeVisitClinicalRuleEvaluations.filter((e: any) => e.ownerRole !== "assistant") : activeVisitClinicalRuleEvaluations}
+                  evaluations={dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? (activeVisitClinicalRuleEvaluations || []).filter((e: any) => e.ownerRole !== "assistant") : (activeVisitClinicalRuleEvaluations || [])}
                   serviceTitle={serviceTitle}
                   severityLabels={clinicalRuleSeverityLabels}
                   staffRoleLabels={staffRoleLabels}

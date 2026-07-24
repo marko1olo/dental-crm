@@ -32,16 +32,16 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="egisz-blank-permissions-widget"
-			className="p-4 bg-slate-900 border border-cyan-500/30 rounded-xl text-slate-100 shadow-xl my-4"
+			className="p-4 rounded-xl shadow-sm border my-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+			<div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2" title="Настройки попольных разрешений и правил выгрузки документов бланков клиники в систему ЕГИСЗ">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">🛡️</span>
-					<h3 className="font-semibold text-cyan-400">
+					<h3 className="font-semibold text-cyan-600 dark:text-cyan-400">
 						Справочник Бланков: Попольное Управление Разрешениями Выгрузки в ЕГИСЗ
 					</h3>
 				</div>
-				<span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
+				<span className="text-xs bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 px-2 py-0.5 rounded border dark:border-cyan-800">
 					EGISZ Blank Rules
 				</span>
 			</div>

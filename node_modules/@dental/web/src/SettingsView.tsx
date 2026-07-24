@@ -1225,17 +1225,18 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
   return (
     <motion.section
-      className="settings-zone glass-panel"
+      className="settings-zone glass-panel bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       id="settings"
       aria-label="Настройки и перенос данных"
+      data-testid="settings-view"
     >
       <div className="settings-heading">
         <div>
-          <p className="eyebrow">Настройки</p>
-          <h2>Настройки клиники</h2>
+          <p className="eyebrow text-slate-500 dark:text-slate-400">Настройки</p>
+          <h2 title="Раздел административных настроек: управление персоналом, прайс-листом, интеграцией с ЕГИСЗ/ОФД и бланками">Настройки клиники</h2>
         </div>
 
         {/* Real Feature Integrations in Settings Header */}

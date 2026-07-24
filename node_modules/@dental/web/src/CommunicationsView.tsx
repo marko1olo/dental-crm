@@ -6,6 +6,15 @@ import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmail
 import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
 import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
 import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
+import { AppointmentChannelInheritancesWidget } from "./components/communications/AppointmentChannelInheritancesWidget";
+import { ChatMessageDispatchStatusesWidget } from "./components/communications/ChatMessageDispatchStatusesWidget";
+import { CollaborativeChatProcessingStatesWidget } from "./components/communications/CollaborativeChatProcessingStatesWidget";
+import { MessageTemplateCatalogsWidget } from "./components/communications/MessageTemplateCatalogsWidget";
+import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
+import { PreviousChatDialogHistoriesWidget } from "./components/communications/PreviousChatDialogHistoriesWidget";
+import { UisCallSpeechTranscriptsWidget } from "./components/communications/UisCallSpeechTranscriptsWidget";
+import { UisMassAppointmentConfirmationsWidget } from "./components/communications/UisMassAppointmentConfirmationsWidget";
+import { UisSmsChatQuotasWidget } from "./components/communications/UisSmsChatQuotasWidget";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -392,6 +401,15 @@ export function CommunicationsView({
         <CrmEmailDispatchLogsWidget />
         <UisOmniMessengerQueuesWidget />
         <ProdoctorovSyncWidget />
+        <AppointmentChannelInheritancesWidget />
+        <ChatMessageDispatchStatusesWidget />
+        <CollaborativeChatProcessingStatesWidget />
+        <MessageTemplateCatalogsWidget />
+        <MessengerFileAttachmentsWidget />
+        <PreviousChatDialogHistoriesWidget />
+        <UisCallSpeechTranscriptsWidget />
+        <UisMassAppointmentConfirmationsWidget />
+        <UisSmsChatQuotasWidget />
       </div>
     </div>
   );
