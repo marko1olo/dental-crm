@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-07-04T20:29:46.631Z",
+  "savedAt": "2026-07-24T08:24:13.577Z",
   "health": {
     "google_speech:1052877dcb25": {
       "cooldownUntil": 1782683317588,
@@ -9,6 +9,14 @@
       "lastUsedAt": 1782682717588,
       "lastStatusCode": 403,
       "lastError": "403 Forbidden"
+    },
+    "google_speech:26987e457b44": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "successes": 1,
+      "lastUsedAt": 1784881453577,
+      "lastStatusCode": null,
+      "lastError": null
     },
     "google_speech:3e0ef4ad3f5a": {
       "cooldownUntil": 1783088351438,
