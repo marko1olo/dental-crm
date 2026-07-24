@@ -121,10 +121,7 @@ export function AnalyticsDashboardView() {
 			)}
 
 			{!loading && error && (
-				<div
-					className="analytics-empty-state"
-					style={{ color: "var(--red, #ef4444)" }}
-				>
+				<div className="analytics-empty-state text-rose-600 dark:text-rose-400 p-4 text-center text-sm">
 					{error}
 				</div>
 			)}
@@ -486,14 +483,7 @@ function KpiCard({
 				{icon}
 				{label}
 			</div>
-			<div
-				style={{
-					fontSize: 22,
-					fontWeight: 700,
-					color: "var(--fg-primary, #e4e4e7)",
-					letterSpacing: "-0.5px",
-				}}
-			>
+			<div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
 				{value}
 			</div>
 		</div>
