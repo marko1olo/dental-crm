@@ -14,7 +14,7 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
   const [errorShake, setErrorShake] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const activeStaff = staffMembers.filter(m => m.active);
+  const activeStaff = Array.isArray(staffMembers) ? staffMembers.filter(m => m?.active ?? true) : [];
 
   const handleKeyPress = (num: string) => {
     if (loading || pin.length >= 4) return;
@@ -80,29 +80,35 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
           </div>
 
           <div className="auth-staff-grid">
-            {activeStaff.map((staff) => {
-              const isSelected = selectedUser?.id === staff.id;
-              const initials = staff.fullName ? staff.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '??';
-              return (
-                <button
-                  key={staff.id}
-                  type="button"
-                  className={`auth-staff-card ${isSelected ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedUser(staff);
-                    setPin('');
-                  }}
-                >
-                  <div className="auth-staff-avatar bg-indigo-600">
-                    {initials}
-                  </div>
-                  <div className="auth-staff-info">
-                    <div className="auth-staff-name">{staff.fullName}</div>
-                    <div className="auth-staff-role">{staff.role}</div>
-                  </div>
-                </button>
-              );
-            })}
+            {activeStaff.length === 0 ? (
+              <div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
+                Список сотрудников загружается или пуст. Добавьте персонал в разделе Настройки → Кадры.
+              </div>
+            ) : (
+              activeStaff.map((staff) => {
+                const isSelected = selectedUser?.id === staff.id;
+                const initials = staff.fullName ? staff.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '??';
+                return (
+                  <button
+                    key={staff.id}
+                    type="button"
+                    className={`auth-staff-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedUser(staff);
+                      setPin('');
+                    }}
+                  >
+                    <div className="auth-staff-avatar bg-indigo-600">
+                      {initials}
+                    </div>
+                    <div className="auth-staff-info">
+                      <div className="auth-staff-name">{staff.fullName}</div>
+                      <div className="auth-staff-role">{staff.role}</div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
 
           <div className="auth-footer-actions">
