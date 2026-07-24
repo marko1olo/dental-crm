@@ -8,6 +8,25 @@ function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
+function safeParseJsonArray(jsonString: string | null | undefined): string[] {
+  if (!jsonString) return [];
+  try {
+    const parsed = JSON.parse(jsonString);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function safeParseJsonObject<T>(jsonString: string | null | undefined, fallback: T): T {
+  if (!jsonString) return fallback;
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return fallback;
+  }
+}
+
 // Temporary naive mapper to replace sampleData buildDashboard
 export async function getDashboardFromDb(organizationId: string): Promise<Dashboard> {
   if (useInMemory()) {
@@ -223,7 +242,7 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
       patientId: d.patientId,
       kind: d.kind as any,
       status: d.status as any,
-      payload: d.payloadJson ? JSON.parse(d.payloadJson) : {},
+      payload: safeParseJsonObject(d.payloadJson, {}),
       schemaVersion: 1,
       createdAt: d.createdAt.toISOString(),
       updatedAt: d.createdAt.toISOString()
@@ -274,10 +293,10 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
       action: r.action,
       severity: r.severity,
       ownerRole: r.ownerRole as any,
-      triggerServiceIds: JSON.parse(r.triggerServiceIdsJson || "[]"),
-      requiredServiceIds: JSON.parse(r.requiredServiceIdsJson || "[]"),
-      requiresCompletedServiceIds: JSON.parse(r.requiresCompletedServiceIdsJson || "[]"),
-      blockedServiceIds: JSON.parse(r.blockedServiceIdsJson || "[]"),
+      triggerServiceIds: safeParseJsonArray(r.triggerServiceIdsJson),
+      requiredServiceIds: safeParseJsonArray(r.requiredServiceIdsJson),
+      requiresCompletedServiceIds: safeParseJsonArray(r.requiresCompletedServiceIdsJson),
+      blockedServiceIds: safeParseJsonArray(r.blockedServiceIdsJson),
       condition: r.condition,
       warningText: r.warningText,
       patientText: r.patientText,
