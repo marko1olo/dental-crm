@@ -20,6 +20,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const [isAdding, setIsAdding] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
+	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { "x-organization-id": "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
+
 	const [newTitle, setNewTitle] = useState("");
 	const [newDescription, setNewDescription] = useState("");
 	const [assignedToId, setAssignedToId] = useState("");
@@ -28,7 +31,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		setIsLoading(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}/tickets`, {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: getReadHeaders(),
 			});
 			if (res.ok) setTickets(await res.json());
 		} catch (e) {
@@ -48,7 +51,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		try {
 			const res = await fetch(`/api/patients/${patientId}/tickets`, {
 				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
+				headers: getMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({

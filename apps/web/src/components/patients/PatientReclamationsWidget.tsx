@@ -25,6 +25,9 @@ export function PatientReclamationsWidget({
 	const [isAdding, setIsAdding] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
+	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { "x-organization-id": "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
+
 	const [newComplicationDetails, setNewComplicationDetails] = useState("");
 	const [newProposedAction, setNewProposedAction] = useState("");
 	const [doctorId, setDoctorId] = useState("");
@@ -33,7 +36,7 @@ export function PatientReclamationsWidget({
 		setIsLoading(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}/reclamations`, {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: getReadHeaders(),
 			});
 			if (res.ok) setReclamations(await res.json());
 		} catch (e) {
@@ -53,7 +56,7 @@ export function PatientReclamationsWidget({
 		try {
 			const res = await fetch(`/api/patients/${patientId}/reclamations`, {
 				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
+				headers: getMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -92,7 +95,7 @@ export function PatientReclamationsWidget({
 				`/api/patients/${patientId}/reclamations/${recId}`,
 				{
 					method: "PUT",
-					headers: auth.denteClinicalMutationHeaders({
+					headers: getMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({ status: newStatus }),
@@ -127,7 +130,7 @@ export function PatientReclamationsWidget({
 				`/api/patients/${patientId}/reclamations/${recId}`,
 				{
 					method: "DELETE",
-					headers: auth.denteClinicalMutationHeaders(),
+					headers: getMutationHeaders(),
 				},
 			);
 			if (res.ok) {
