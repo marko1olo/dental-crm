@@ -208,12 +208,12 @@ export const PublicBookingWidget: React.FC = () => {
 
 	if (isSuccess) {
 		return (
-			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6 text-center">
+			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950 p-6 text-center text-slate-900 dark:text-slate-100">
 				<CheckCircle2 className="text-green-500 w-16 h-16 mb-4" />
-				<h2 className="text-2xl font-bold text-gray-900 mb-2">
+				<h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">
 					Вы успешно записаны!
 				</h2>
-				<p className="text-gray-600 mb-6">
+				<p className="text-gray-600 dark:text-slate-400 mb-6">
 					Мы свяжемся с вами по указанному номеру для подтверждения.
 				</p>
 				<button
@@ -228,8 +228,8 @@ export const PublicBookingWidget: React.FC = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-			<div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden w-full max-w-md">
+		<div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-4">
+			<div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden w-full max-w-md">
 				<div className="bg-blue-600 text-white p-6">
 					<h1 className="text-2xl font-bold">Онлайн-запись</h1>
 					<p className="text-blue-100 mt-1 opacity-90">
@@ -240,19 +240,19 @@ export const PublicBookingWidget: React.FC = () => {
 				<div className="p-6">
 					{step === 1 && (
 						<div className="space-y-4">
-							<h3 className="font-semibold text-gray-900 mb-2">
+							<h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-2">
 								Выберите специалиста
 							</h3>
 							{loadError && (
 								<div
 									role="alert"
-									className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3"
+									className="text-sm text-red-600 bg-red-50 dark:bg-red-950/60 border border-red-100 dark:border-red-900 rounded-lg p-3"
 								>
 									{loadError}
 								</div>
 							)}
 							{doctorsLoading && (
-								<div className="text-gray-500 text-center py-4">
+								<div className="text-gray-500 dark:text-slate-400 text-center py-4">
 									Загрузка врачей…
 								</div>
 							)}
@@ -265,28 +265,28 @@ export const PublicBookingWidget: React.FC = () => {
 											setSelectedDoctorId(doctor.id);
 											setStep(2);
 										}}
-										className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+										className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors text-left"
 									>
 										<div className="flex items-center gap-3">
-											<div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+											<div className="w-10 h-10 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-gray-500 dark:text-slate-400">
 												<UserCircle size={24} />
 											</div>
 											<div>
-												<div className="font-medium text-gray-900">
+												<div className="font-medium text-gray-900 dark:text-slate-100">
 													{doctor.fullName}
 												</div>
-												<div className="text-sm text-gray-500">
+												<div className="text-sm text-gray-500 dark:text-slate-400">
 													{doctor.specialties?.length
 														? doctor.specialties.join(", ")
 														: "Врач-стоматолог"}
 												</div>
 											</div>
 										</div>
-										<ChevronRight className="text-gray-400" size={20} />
+										<ChevronRight className="text-gray-400 dark:text-slate-500" size={20} />
 									</button>
 								))}
 								{!doctorsLoading && !loadError && doctors.length === 0 && (
-									<div className="text-gray-500 text-center py-4">
+									<div className="text-gray-500 dark:text-slate-400 text-center py-4">
 										Нет доступных врачей
 									</div>
 								)}
@@ -300,13 +300,13 @@ export const PublicBookingWidget: React.FC = () => {
 								<button
 									type="button"
 									onClick={() => setStep(1)}
-									className="text-sm text-blue-600 font-medium mb-4 flex items-center gap-1 hover:underline"
+									className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-4 flex items-center gap-1 hover:underline"
 								>
 									&larr; Назад к выбору врача
 								</button>
 								<label
 									htmlFor="booking-date"
-									className="block text-sm font-medium text-gray-700 mb-2"
+									className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
 								>
 									Выберите дату
 								</label>
@@ -316,22 +316,22 @@ export const PublicBookingWidget: React.FC = () => {
 									value={selectedDate}
 									min={new Date().toISOString().split("T")[0]}
 									onChange={(e) => setSelectedDate(e.target.value)}
-									className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+									className="w-full p-3 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
 								/>
 							</div>
 
 							<div>
-								<div className="block text-sm font-medium text-gray-700 mb-2">
+								<div className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
 									Доступное время
 								</div>
 								{slotsLoading ? (
-									<div className="text-center text-gray-400 py-4 text-sm">
+									<div className="text-center text-gray-400 dark:text-slate-500 py-4 text-sm">
 										Загрузка свободного времени…
 									</div>
 								) : loadError ? (
 									<div
 										role="alert"
-										className="text-center text-red-600 py-4 border rounded-lg border-dashed border-red-200 bg-red-50 text-sm"
+										className="text-center text-red-600 dark:text-red-400 py-4 border rounded-lg border-dashed border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60 text-sm"
 									>
 										{loadError}
 									</div>
@@ -345,13 +345,13 @@ export const PublicBookingWidget: React.FC = () => {
 													setSelectedSlot(slot);
 													setStep(3);
 												}}
-												className="p-2 text-center rounded-lg border border-gray-200 font-medium text-gray-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors"
+												className="p-2 text-center rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 font-medium text-gray-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors"
 											>
 												{slot.time}
 											</button>
 										))}
 										{slots.length === 0 && (
-											<div className="col-span-3 text-center text-gray-500 py-4 border rounded-lg border-dashed">
+											<div className="col-span-3 text-center text-gray-500 dark:text-slate-400 py-4 border rounded-lg border-dashed border-gray-200 dark:border-slate-800">
 												Нет свободных мест
 											</div>
 										)}
@@ -363,15 +363,15 @@ export const PublicBookingWidget: React.FC = () => {
 
 					{step === 3 && (
 						<form onSubmit={handleSubmit} className="space-y-5">
-							<div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+							<div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-slate-800">
 								<button
 									type="button"
 									onClick={() => setStep(2)}
-									className="text-sm text-blue-600 font-medium flex items-center gap-1 hover:underline"
+									className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 hover:underline"
 								>
 									&larr; Назад
 								</button>
-								<div className="text-sm text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-md">
+								<div className="text-sm text-gray-500 dark:text-slate-400 font-medium bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
 									{new Date(selectedDate).toLocaleDateString("ru-RU")} в{" "}
 									{selectedSlot?.time}
 								</div>
@@ -380,7 +380,7 @@ export const PublicBookingWidget: React.FC = () => {
 							<div>
 								<label
 									htmlFor="booking-name"
-									className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"
+									className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center gap-1"
 								>
 									<User size={16} /> ФИО
 								</label>
@@ -391,14 +391,14 @@ export const PublicBookingWidget: React.FC = () => {
 									placeholder="Иванов Иван Иванович"
 									value={patientName}
 									onChange={(e) => setPatientName(e.target.value)}
-									className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+									className="w-full p-3 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
 								/>
 							</div>
 
 							<div>
 								<label
 									htmlFor="booking-phone"
-									className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"
+									className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center gap-1"
 								>
 									<Phone size={16} /> Телефон
 								</label>
@@ -409,14 +409,14 @@ export const PublicBookingWidget: React.FC = () => {
 									placeholder="+7 (999) 000-00-00"
 									value={patientPhone}
 									onChange={(e) => setPatientPhone(e.target.value)}
-									className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+									className="w-full p-3 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
 								/>
 							</div>
 
 							<div>
 								<label
 									htmlFor="booking-comment"
-									className="block text-sm font-medium text-gray-700 mb-1"
+									className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
 								>
 									Комментарий (необязательно)
 								</label>
@@ -426,14 +426,14 @@ export const PublicBookingWidget: React.FC = () => {
 									rows={2}
 									value={comment}
 									onChange={(e) => setComment(e.target.value)}
-									className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
+									className="w-full p-3 border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none"
 								/>
 							</div>
 
 							{submitError && (
 								<div
 									role="alert"
-									className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+									className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60 px-4 py-3 text-sm text-red-700 dark:text-red-300"
 								>
 									{submitError}
 								</div>
