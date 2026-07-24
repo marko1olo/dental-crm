@@ -92,14 +92,8 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 
 	return (
 		<div
-			className="panel"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "12px",
-				marginTop: "16px",
-				padding: "16px",
-			}}
+			data-testid="egisz-monitor-panel"
+			className="panel mt-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 flex flex-col gap-3 shadow-sm"
 		>
 			<div
 				style={{
@@ -121,29 +115,16 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 						/>
 					)}
 					<div>
-						<h3
-							style={{
-								margin: 0,
-								fontSize: "14px",
-								fontWeight: 600,
-								color: "var(--ink)",
-							}}
-						>
+						<h3 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
 							Интеграция с ЕГИСЗ (РЭМД)
 						</h3>
-						<p
-							style={{
-								margin: "4px 0 0 0",
-								fontSize: "12px",
-								color: "var(--slate-500)",
-							}}
-						>
+						<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
 							{status === "Accepted" && transactionId ? (
-								<span style={{ color: "var(--teal)" }}>
+								<span className="text-emerald-600 dark:text-emerald-400 font-medium">
 									Успешно выгружено СЭМД. Транзакция: {transactionId}
 								</span>
 							) : status === "Error" ? (
-								<span style={{ color: "var(--rust)" }}>
+								<span className="text-rose-600 dark:text-rose-400 font-medium">
 									Ошибка: {errorDetails}
 								</span>
 							) : (
@@ -170,34 +151,11 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 				</button>
 			</div>
 			{xmlPreview && (
-				<div
-					style={{
-						marginTop: "8px",
-						padding: "12px",
-						background: "var(--slate-50)",
-						borderRadius: "8px",
-						border: "1px solid var(--slate-200)",
-					}}
-				>
-					<p
-						style={{
-							margin: "0 0 8px 0",
-							fontSize: "12px",
-							fontWeight: 600,
-							color: "var(--slate-600)",
-						}}
-					>
+				<div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700">
+					<p className="m-0 mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
 						Сгенерированный CDA XML (Предпросмотр)
 					</p>
-					<pre
-						style={{
-							margin: 0,
-							fontSize: "11px",
-							color: "var(--ink)",
-							overflowX: "auto",
-							whiteSpace: "pre-wrap",
-						}}
-					>
+					<pre className="m-0 text-[11px] text-slate-900 dark:text-slate-100 overflow-x-auto whitespace-pre-wrap font-mono">
 						{xmlPreview}
 					</pre>
 				</div>
