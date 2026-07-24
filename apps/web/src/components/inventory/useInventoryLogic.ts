@@ -18,7 +18,16 @@ export interface InventoryItem {
 export function useInventoryLogic(organizationId: string) {
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const { auth, dashboard } = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const dashboard = appLogic?.dashboard;
+
+	const getHeaders = (extra?: Record<string, string>) => {
+		if (auth && typeof auth.denteClinicalReadHeaders === "function") {
+			return auth.denteClinicalReadHeaders(extra);
+		}
+		return { "x-organization-id": organizationId || "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
+	};
 
 	// Barcode Scanner State
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
@@ -44,7 +53,7 @@ export function useInventoryLogic(organizationId: string) {
 			const res = await fetch(
 				`/api/inventory/${organizationId}/rules/${serviceId}`,
 				{
-					headers: auth.denteClinicalReadHeaders(),
+					headers: getHeaders(),
 				},
 			);
 			if (res.ok) {
@@ -136,7 +145,7 @@ export function useInventoryLogic(organizationId: string) {
 		try {
 			const res = await fetch(`/api/inventory/${organizationId}/rules`, {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
+				headers: getHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -172,7 +181,7 @@ export function useInventoryLogic(organizationId: string) {
 						`/api/inventory/${organizationId}/rules/${ruleId}`,
 						{
 							method: "DELETE",
-							headers: auth.denteClinicalReadHeaders(),
+							headers: getHeaders(),
 						},
 					);
 
@@ -222,7 +231,7 @@ export function useInventoryLogic(organizationId: string) {
 		try {
 			setIsLoading(true);
 			const res = await fetch(`/api/inventory/${organizationId}`, {
-				headers: auth.denteClinicalReadHeaders(),
+				headers: getHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -279,7 +288,7 @@ export function useInventoryLogic(organizationId: string) {
 					`/api/inventory/${organizationId}/${editingItem.id}`,
 					{
 						method: "PUT",
-						headers: auth.denteClinicalReadHeaders({
+						headers: getHeaders({
 							"Content-Type": "application/json",
 						}),
 						body: JSON.stringify({
@@ -301,7 +310,7 @@ export function useInventoryLogic(organizationId: string) {
 			} else {
 				const res = await fetch(`/api/inventory/${organizationId}`, {
 					method: "POST",
-					headers: auth.denteClinicalReadHeaders({
+					headers: getHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -339,7 +348,7 @@ export function useInventoryLogic(organizationId: string) {
 						`/api/inventory/${organizationId}/${itemId}`,
 						{
 							method: "DELETE",
-							headers: auth.denteClinicalReadHeaders(),
+							headers: getHeaders(),
 						},
 					);
 					if (res.ok) {
@@ -370,7 +379,7 @@ export function useInventoryLogic(organizationId: string) {
 				`/api/inventory/${organizationId}/${adjustingItem.id}/stock`,
 				{
 					method: "PATCH",
-					headers: auth.denteClinicalReadHeaders({
+					headers: getHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({ adjustment }),
@@ -379,14 +388,10 @@ export function useInventoryLogic(organizationId: string) {
 			if (res.ok) {
 				setAdjustingItem(null);
 				setAdjustAmount("");
+				showToast("Остаток изменён", "success");
 				fetchItems();
-				showToast(
-					adjustType === "in" ? "Приход оформлен" : "Списание оформлено",
-					"success",
-				);
 			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast((err as any)?.error || "Ошибка изменения остатков", "error");
+				showToast("Ошибка изменения остатка", "error");
 			}
 		} catch (e) {
 			console.error(e);
@@ -397,30 +402,61 @@ export function useInventoryLogic(organizationId: string) {
 	const filteredItems = useMemo(() => {
 		if (!searchQuery.trim()) return items;
 		const q = searchQuery.toLowerCase();
-		return items.filter((i) => i.name.toLowerCase().includes(q));
+		return items.filter(
+			(i) =>
+				i.name.toLowerCase().includes(q) ||
+				(i.sku && i.sku.toLowerCase().includes(q)) ||
+				(i.barcode && i.barcode.toLowerCase().includes(q)),
+		);
 	}, [items, searchQuery]);
 
-	const totalValue = useMemo(
-		() =>
-			items.reduce(
-				(acc, i) => acc + i.stockQuantity * (Number(i.unitCostRub) || 0),
-				0,
-			),
-		[items],
-	);
-	const lowStockCount = useMemo(
-		() => items.filter((i) => i.stockQuantity <= i.criticalThreshold).length,
-		[items],
-	);
-	const totalItems = items.length;
+	const criticalItemsCount = useMemo(() => {
+		return items.filter((i) => i.stockQuantity <= i.criticalThreshold).length;
+	}, [items]);
+
+	const totalValue = useMemo(() => {
+		return items.reduce((acc, item) => {
+			const cost = parseFloat(item.unitCostRub || "0") || 0;
+			return acc + item.stockQuantity * cost;
+		}, 0);
+	}, [items]);
 
 	return {
 		items,
+		filteredItems,
 		isLoading,
 		auth,
 		dashboard,
+		searchQuery,
+		setSearchQuery,
+		showModal,
+		setShowModal,
+		editingItem,
+		setEditingItem,
+		formData,
+		setFormData,
+		fetchItems,
+		fetchRules,
+		openAddModal,
+		openEditModal,
+		handleSaveItem,
+		handleDeleteItem,
+		adjustingItem,
+		setAdjustingItem,
+		adjustAmount,
+		setAdjustAmount,
+		adjustType,
+		setAdjustType,
+		handleAdjustStock,
+		criticalItemsCount,
+		lowStockCount: criticalItemsCount,
+		totalValue,
+		totalItems: items.length,
+		confirmDialog,
+		setConfirmDialog,
 		scannedBarcode,
 		isScannerActive,
+		setIsScannerActive,
 		activeSubTab,
 		setActiveSubTab,
 		selectedServiceId,
@@ -431,34 +467,8 @@ export function useInventoryLogic(organizationId: string) {
 		setSelectedInventoryItemId,
 		quantityToDeduct,
 		setQuantityToDeduct,
-		fetchRules,
 		handleAddRule,
 		handleDeleteRule,
-		searchQuery,
-		setSearchQuery,
-		showModal,
-		setShowModal,
-		editingItem,
-		setEditingItem,
-		formData,
-		setFormData,
-		confirmDialog,
-		setConfirmDialog,
-		adjustingItem,
-		setAdjustingItem,
-		adjustAmount,
-		setAdjustAmount,
-		adjustType,
-		setAdjustType,
-		fetchItems,
-		openAddModal,
-		openEditModal,
-		handleSaveItem,
-		handleDeleteItem,
-		handleAdjustStock,
-		filteredItems,
-		totalValue,
-		lowStockCount,
-		totalItems,
+		servicesList: dashboard?.prices || [],
 	};
 }
