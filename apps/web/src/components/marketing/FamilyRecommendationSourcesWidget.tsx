@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface FamilySourceItem {
 	id: string;
@@ -11,13 +12,16 @@ interface FamilySourceItem {
 }
 
 export const FamilyRecommendationSourcesWidget: React.FC = () => {
+	const appLogic = (useAppLogicContext() || {}) as any;
+	const authContext = appLogic?.auth;
 	const [items, setItems] = useState<FamilySourceItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		fetch("/api/marketing/family-recommendation-sources", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+		const headers = authContext
+			? authContext.denteClinicalReadHeaders()
+			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+		fetch("/api/marketing/family-recommendation-sources", { headers })
 			.then((res) => res.json())
 			.then((data) => {
 				setItems(Array.isArray(data) ? data : []);
