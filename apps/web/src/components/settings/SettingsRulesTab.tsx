@@ -553,8 +553,7 @@ export function SettingsRulesTab() {
 									)}
 								</button>
 								<button
-									className="icon-button"
-									style={{ color: "var(--danger-color)" }}
+									className="icon-button text-rose-500 hover:text-rose-600 dark:text-rose-400"
 									type="button"
 									onClick={() => removeClinicalRule(rule.id)}
 									disabled={isClinicalRuleSaving}
