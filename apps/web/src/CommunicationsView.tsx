@@ -13,6 +13,7 @@ import { MessageTemplateCatalogsWidget } from "./components/communications/Messa
 import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
 import { PreviousChatDialogHistoriesWidget } from "./components/communications/PreviousChatDialogHistoriesWidget";
 import { UisCallSpeechTranscriptsWidget } from "./components/communications/UisCallSpeechTranscriptsWidget";
+import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
 import { UisMassAppointmentConfirmationsWidget } from "./components/communications/UisMassAppointmentConfirmationsWidget";
 import { UisSmsChatQuotasWidget } from "./components/communications/UisSmsChatQuotasWidget";
 
@@ -408,6 +409,7 @@ export function CommunicationsView({
         <PreviousChatDialogHistoriesWidget />
         <UisCallSpeechTranscriptsWidget />
         <UisMassAppointmentConfirmationsWidget />
+        <ConfirmationPerformanceReportsWidget />
         <UisSmsChatQuotasWidget />
       </div>
     </div>
