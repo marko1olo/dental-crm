@@ -582,13 +582,13 @@ type FinancialServicePayloadLine = {
 };
 
 function expectedFinancialLineTotal(line: FinancialServicePayloadLine): number {
-	return Math.max(0, line.quantity * line.unitPriceRub - line.discountRub);
+	return Math.max(0, Math.round((line.quantity * line.unitPriceRub - line.discountRub) * 100) / 100);
 }
 
 function financialLinesTotal(
 	lines: readonly FinancialServicePayloadLine[],
 ): number {
-	return lines.reduce((total, line) => total + line.totalRub, 0);
+	return Math.round(lines.reduce((total, line) => total + line.totalRub, 0) * 100) / 100;
 }
 
 function financialServiceLinesMismatchReason(
@@ -597,7 +597,7 @@ function financialServiceLinesMismatchReason(
 ): string | null {
 	for (const [index, line] of lines.entries()) {
 		const expectedTotalRub = expectedFinancialLineTotal(line);
-		if (line.totalRub !== expectedTotalRub) {
+		if (Math.abs(line.totalRub - expectedTotalRub) > 0.01) {
 			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${expectedTotalRub} руб. по количеству, цене и скидке; передано ${line.totalRub} руб.`;
 		}
 	}
@@ -610,7 +610,8 @@ function financialServiceLinesGrandTotalMismatchReason(
 	documentLabel: string,
 ): string | null {
 	const linesTotalRub = financialLinesTotal(lines);
-	if (linesTotalRub !== totalAmountRub) {
+	const targetRub = Math.round(totalAmountRub * 100) / 100;
+	if (Math.abs(linesTotalRub - targetRub) > 0.01) {
 		return `${documentLabel}: общий итог ${totalAmountRub} руб. не совпадает с суммой строк ${linesTotalRub} руб.`;
 	}
 	return null;

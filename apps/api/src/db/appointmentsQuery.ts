@@ -26,10 +26,11 @@ export async function createAppointmentInDb(organizationId: string, input: Creat
   const candidateStarts = new Date(startsAtMs);
   const candidateEnds = new Date(endsAtMs);
 
-  if (input.status !== "cancelled") {
+  if (input.status !== "cancelled" && input.status !== "no_show") {
     const conditions: SQL[] = [
       eq(schema.appointments.organizationId, organizationId),
       ne(schema.appointments.status, "cancelled"),
+      ne(schema.appointments.status, "no_show"),
       lt(schema.appointments.startsAt, candidateEnds),
       gt(schema.appointments.endsAt, candidateStarts),
     ];
@@ -104,11 +105,12 @@ export async function updateAppointmentInDb(organizationId: string, appointmentI
   const newChairId = input.chairId ?? existing.chairId;
   const newDoctorUserId = input.doctorUserId ?? existing.doctorUserId;
 
-  if (newStatus !== "cancelled") {
+  if (newStatus !== "cancelled" && newStatus !== "no_show") {
     const conditions: SQL[] = [
       eq(schema.appointments.organizationId, organizationId),
       ne(schema.appointments.id, appointmentId),
       ne(schema.appointments.status, "cancelled"),
+      ne(schema.appointments.status, "no_show"),
       lt(schema.appointments.startsAt, candidateEnds),
       gt(schema.appointments.endsAt, candidateStarts),
     ];
