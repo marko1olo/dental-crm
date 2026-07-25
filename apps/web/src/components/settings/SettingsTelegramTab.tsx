@@ -291,8 +291,8 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                 </div>
                 <div className="telegram-link-controls">
                   <div className="settings-field">
-                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Кого подключаем</span>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <span className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Кого подключаем</span>
+                    <div className="flex gap-2 flex-wrap mb-2">
                       {[
                         { value: "patient", label: "Активный пациент" },
                         { value: "staff", label: "Сотрудник клиники" }
@@ -300,13 +300,16 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                         <button
                           key={option.value}
                           type="button"
-                          className={`quick-chip ${telegramLinkSubjectType === option.value ? 'active' : ''}`}
                           onClick={() => {
                             setTelegramLinkSubjectType(normalizedTelegramLinkSubjectType(option.value));
                             setTelegramLinkCode(null);
                             setTelegramLinkActionState(null);
                           }}
-                          style={{ background: telegramLinkSubjectType === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramLinkSubjectType === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                            telegramLinkSubjectType === option.value 
+                              ? 'bg-sky-600 text-white border-sky-600' 
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
                         >
                           {option.label}
                         </button>
@@ -503,8 +506,8 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                 </div>
                 <div className="telegram-settings-form">
                   <div className="settings-field">
-                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим бота</span>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                    <span className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Режим бота</span>
+                    <div className="flex gap-2 flex-wrap mb-1">
                       {[
                         { value: "shared_dente_bot", label: telegramModeLabels.shared_dente_bot },
                         { value: "disabled", label: telegramModeLabels.disabled },
@@ -513,12 +516,15 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                         <button
                           key={option.value}
                           type="button"
-                          className={`quick-chip ${telegramModeDraft === option.value ? 'active' : ''}`}
                           onClick={() => {
                             setTelegramModeDraft(normalizedTelegramBotMode(option.value));
                             markTelegramSettingsDirty();
                           }}
-                          style={{ background: telegramModeDraft === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramModeDraft === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                            telegramModeDraft === option.value 
+                              ? 'bg-sky-600 text-white border-sky-600' 
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
                         >
                           {option.label}
                         </button>
