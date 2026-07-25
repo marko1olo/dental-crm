@@ -31,7 +31,7 @@ export const BulkImageOperationLogsWidget: React.FC = () => {
 				console.error("[BulkImageOperationLogsWidget fetch error]:", err);
 				setLoading(false);
 			});
-	}, []);
+	}, [authContext]);
 
 	return (
 		<div
