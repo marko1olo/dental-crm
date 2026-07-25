@@ -133,67 +133,68 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 
       <div className="settings-cards-grid">
         {/* Список сотрудников */}
-        <article className="settings-card" style={{ gridColumn: "1 / -1" }}>
+        <article className="settings-card col-span-full">
           <div className="settings-card-header">
             <h4>Активный персонал</h4>
           </div>
-          <div className="staff-grid" style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {staff.map((member: any) => (
-              <div key={member.id} className="staff-grid-cell" style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "16px", minHeight: "140px", display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: member.color || "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 18 }}>
-                    {member.fullName.charAt(0)}
+              <div key={member.id} className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 min-h-[140px] flex flex-col justify-between shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white" 
+                    style={{ backgroundColor: member.color || "#3b82f6" }}
+                  >
+                    {member.fullName ? member.fullName.charAt(0) : "S"}
                   </div>
                   <div>
-                    <h5 style={{ margin: 0, fontSize: 15 }}>{member.fullName}</h5>
-                    <span style={{ fontSize: 12, opacity: 0.7 }}>
+                    <h5 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">{member.fullName}</h5>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       {staffRoleLabels ? staffRoleLabels[member.role] : member.role}
                     </span>
                   </div>
                 </div>
                 
-                <div style={{ marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
                   {editingPinForId === member.id ? (
-                    <form onSubmit={(e) => handleUpdatePin(e, member.id)} style={{ display: "flex", gap: "8px" }}>
+                    <form onSubmit={(e) => handleUpdatePin(e, member.id)} className="flex gap-2">
                       <input 
                         type="password" 
                         maxLength={4}
                         placeholder="PIN" 
                         value={newPin}
                         onChange={(e) => setNewPin(e.target.value)}
-                        style={{ width: "80px", textAlign: "center" }}
+                        className="w-20 text-center px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         autoFocus
                       />
-                      <button type="submit" className="primary-button" disabled={loading} style={{ padding: "4px 12px" }}>ОК</button>
-                      <button type="button" className="secondary-button" onClick={() => setEditingPinForId(null)} style={{ padding: "4px 12px" }}>Отмена</button>
+                      <button type="submit" className="primary-button px-3 py-1 text-xs" disabled={loading}>ОК</button>
+                      <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPinForId(null)}>Отмена</button>
                     </form>
                   ) : editingPasswordForId === member.id ? (
-                    <form onSubmit={(e) => handleUpdatePassword(e, member.id)} style={{ display: "flex", gap: "8px" }}>
+                    <form onSubmit={(e) => handleUpdatePassword(e, member.id)} className="flex gap-2">
                       <input 
                         type="password" 
                         placeholder="Пароль" 
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        style={{ width: "100%", padding: "4px 8px" }}
+                        className="w-full px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         autoFocus
                       />
-                      <button type="submit" className="primary-button" disabled={loading} style={{ padding: "4px 12px" }}>ОК</button>
-                      <button type="button" className="secondary-button" onClick={() => setEditingPasswordForId(null)} style={{ padding: "4px 12px" }}>Отмена</button>
+                      <button type="submit" className="primary-button px-3 py-1 text-xs" disabled={loading}>ОК</button>
+                      <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPasswordForId(null)}>Отмена</button>
                     </form>
                   ) : (
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div className="flex gap-2">
                       <button 
-                        className="secondary-button" 
+                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer" 
                         onClick={() => { setEditingPinForId(member.id); setEditingPasswordForId(null); setNewPin(""); }}
-                        style={{ flex: 1, justifyContent: "center", padding: "4px 8px" }}
                         title="Назначить PIN-код для планшета"
                       >
                         <KeyRound size={14} /> PIN
                       </button>
                       <button 
-                        className="secondary-button" 
+                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer" 
                         onClick={() => { setEditingPasswordForId(member.id); setEditingPinForId(null); setNewPassword(""); }}
-                        style={{ flex: 1, justifyContent: "center", padding: "4px 8px" }}
                         title="Назначить пароль для входа"
                       >
                         <ShieldCheck size={14} /> Пароль
