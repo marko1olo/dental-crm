@@ -269,7 +269,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					if (tItems.length > 0) {
 						await tx
 							.update(treatmentItems)
-							.set({ status: "completed" as any })
+							.set({ status: "completed" })
 							.where(eq(treatmentItems.visitId, existing.visitId));
 
 						for (const item of tItems) {
@@ -294,15 +294,15 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 									}
 									await tx
 										.update(inventoryItems)
-										.set({ stockQuantity: currentStock - qtyToDeduct })
+										.set({ stockQuantity: String(currentStock - qtyToDeduct) })
 										.where(eq(inventoryItems.id, inv.id));
 
 									await tx.insert(inventoryTransactions).values({
 										organizationId: orgId,
 										visitId: existing.visitId,
 										inventoryItemId: inv.id,
-										quantityChanged: -qtyToDeduct,
-										unitCostRub: inv.unitCostRub,
+										quantityChanged: String(-qtyToDeduct),
+										unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
 										transactionType: "auto_deduct",
 										userId: userId,
 									});

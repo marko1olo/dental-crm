@@ -1401,13 +1401,13 @@ export const inventoryItems = pgTable("inventory_items", {
   unit: text("unit").notNull().default("шт"),
   currentQty: numeric("current_qty", { precision: 10, scale: 3 }).notNull().default("0"),
   // alias — some routes call it stockQuantity
-  stockQuantity: real("stock_quantity"),
+  stockQuantity: numeric("stock_quantity", { precision: 10, scale: 3 }).default("0"),
   minQty: numeric("min_qty", { precision: 10, scale: 3 }).notNull().default("0"),
   // alias used in inventory routes
-  criticalThreshold: real("critical_threshold"),
+  criticalThreshold: numeric("critical_threshold", { precision: 10, scale: 3 }).default("0"),
   pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
   // alias — some routes call it unitCostRub
-  unitCostRub: real("unit_cost_rub"),
+  unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }).default("0"),
   notes: text("notes"),
   sku: text("sku"),
   barcode: text("barcode"),
@@ -1424,10 +1424,10 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   inventoryItemId: uuid("inventory_item_id"),
   visitId: uuid("visit_id"),
   transactionType: text("transaction_type").notNull().default("receipt"),
-  qty: real("qty"),
+  qty: numeric("qty", { precision: 10, scale: 3 }),
   // alias — some routes call it quantityChanged
-  quantityChanged: real("quantity_changed"),
-  unitCostRub: real("unit_cost_rub"),
+  quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
+  unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
   userId: uuid("user_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1532,9 +1532,9 @@ export const procedureMaterialRules = pgTable("procedure_material_rules", {
   // alias used by diary.ts
   inventoryItemId: uuid("inventory_item_id"),
   materialName: text("material_name"),
-  requiredQty: real("required_qty").notNull().default(1),
+  requiredQty: numeric("required_qty", { precision: 12, scale: 4 }).notNull().default("1.0000"),
   // alias used by diary.ts for deduction logic
-  quantityToDeduct: real("quantity_to_deduct").notNull().default(1),
+  quantityToDeduct: numeric("quantity_to_deduct", { precision: 12, scale: 4 }).notNull().default("1.0000"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

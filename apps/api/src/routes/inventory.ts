@@ -387,7 +387,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const [updated] = await db
 				.update(procedureMaterialRules)
 				.set({
-					quantityToDeduct: Math.max(1, quantityToDeduct),
+					quantityToDeduct: String(Math.max(1, quantityToDeduct)),
 				})
 				.where(eq(procedureMaterialRules.id, existing.id))
 				.returning();
@@ -399,7 +399,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.values({
 				serviceId,
 				inventoryItemId,
-				quantityToDeduct: Math.max(1, quantityToDeduct),
+				quantityToDeduct: String(Math.max(1, quantityToDeduct)),
 			})
 			.returning();
 

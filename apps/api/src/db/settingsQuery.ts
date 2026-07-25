@@ -16,16 +16,20 @@ function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
-// Dummy fallback for legacy UI preferences if multiple users exist
+const memoryUiPreferences = new Map<string, UiPreferences>();
+
 export async function getUiPreferencesFromDb(organizationId: string): Promise<UiPreferences | null> {
-  if (useInMemory()) return null;
+  if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
   const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
   if (!user || !user.uiPreferences) return null;
   return user.uiPreferences as UiPreferences;
 }
 
 export async function saveUiPreferencesInDb(organizationId: string, prefs: UiPreferences): Promise<void> {
-  if (useInMemory()) return;
+  if (useInMemory()) {
+    memoryUiPreferences.set(organizationId, prefs);
+    return;
+  }
   const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
   if (!user) throw new Error("No users found to save preferences to.");
   await db.update(schema.users).set({ uiPreferences: prefs }).where(eq(schema.users.id, user.id));

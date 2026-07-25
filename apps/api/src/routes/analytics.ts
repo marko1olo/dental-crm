@@ -24,7 +24,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			reply,
 			"analytics dashboard",
 		);
-		if (!orgId) return;
+		if (!orgId || typeof orgId !== "string") return;
 
 		try {
 			const { range } = request.query as { range?: string };
@@ -86,7 +86,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const allDocs = await db
 				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
-				.where(eq(users.organizationId, orgId as any));
+				.where(eq(users.organizationId, orgId));
 			const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
 
 			const doctorProfitabilityJson = docProfRes
@@ -117,7 +117,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const allChairs = await db
 				.select({ id: chairs.id, name: chairs.name })
 				.from(chairs)
-				.where(eq(chairs.organizationId, orgId as any));
+				.where(eq(chairs.organizationId, orgId));
 			const chairMap = new Map(allChairs.map((c) => [c.id, c.name]));
 
 			const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
@@ -144,7 +144,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.innerJoin(patients, eq(payments.patientId, patients.id))
 				.where(
 					and(
-						eq(patients.organizationId, orgId as any),
+						eq(patients.organizationId, orgId),
 						gte(patients.createdAt, ltvStartDate),
 					),
 				)
