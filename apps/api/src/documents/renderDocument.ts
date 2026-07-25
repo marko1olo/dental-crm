@@ -94,8 +94,8 @@ export function documentHasUnresolvedPlaceholders(html: string): boolean {
   return unresolvedPlaceholderPatterns.some((pattern) => normalized.includes(pattern));
 }
 
-function row(label: string, value: string) {
-  return `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`;
+function row(label: string, value: string | null | undefined) {
+  return `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value ?? "")}</td></tr>`;
 }
 
 function cell(value: string | null | undefined) {
@@ -1734,9 +1734,9 @@ function treatmentPlan(document: GeneratedDocument) {
       ${row("Диагноз / клиническое основание", payload.diagnosisSummary)}
       ${row("Зубы / область", payload.teethOrArea)}
       ${row("Ориентировочная стоимость", rub(payload.estimatedTotalRub))}
-      ${row("Прогноз и ограничения", payload.prognosisAndLimits)}
-      ${row("Контрольный план", payload.controlPlan)}
-      ${row("Врач", payload.doctorFullName)}
+      ${row("Прогноз и ограничения", payload.prognosisAndLimits ?? "")}
+      ${row("Контрольный план", payload.controlPlan ?? "")}
+      ${row("Врач", payload.doctorFullName ?? "")}
       ${row("Дата подготовки плана", payload.plannedAt)}
     </table>
     <h2>Клиническая детализация по зубам и сегментам</h2>

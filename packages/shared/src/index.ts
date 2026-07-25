@@ -8048,15 +8048,98 @@ export const migrationAutopilotResponseSchema = z.object({
 });
 export type MigrationAutopilotResponse = z.infer<typeof migrationAutopilotResponseSchema>;
 
-export type LocalImagingFolderDraft = any;
-export type BrowserPickedImagingFolderPreview = any;
-export type BrowserImagingScanProgress = any;
-export type ImagingViewerState = any;
-export type ImagingViewerSaveState = any;
-export type MprProjection = any;
-export type MprWindowPreset = any;
-export type VisitFlowRequest = any;
-export type VisitFlowResult = any;
+export const mprProjectionSchema = z.enum(["axial", "coronal", "sagittal", "panoramic", "3d_reconstruction"]);
+export type MprProjection = z.infer<typeof mprProjectionSchema>;
+
+export const mprWindowPresetSchema = z.enum(["bone", "soft_tissue", "teeth", "custom"]);
+export type MprWindowPreset = z.infer<typeof mprWindowPresetSchema>;
+
+export const imagingViewerStateSchema = z.object({
+  zoom: z.number().default(1),
+  panX: z.number().default(0),
+  panY: z.number().default(0),
+  brightness: z.number().default(100),
+  contrast: z.number().default(100),
+  inverted: z.boolean().default(false),
+  projection: mprProjectionSchema.default("axial"),
+  preset: mprWindowPresetSchema.default("bone")
+});
+export type ImagingViewerState = z.infer<typeof imagingViewerStateSchema>;
+
+export const imagingViewerSaveStateSchema = z.object({
+  studyId: z.string(),
+  state: imagingViewerStateSchema,
+  savedAt: z.string()
+});
+export type ImagingViewerSaveState = z.infer<typeof imagingViewerSaveStateSchema>;
+
+export const localImagingFolderDraftSchema = z.object({
+  folderPath: z.string(),
+  patientName: z.string().nullable().optional(),
+  patientPhone: z.string().nullable().optional(),
+  fileCount: z.number().int().nonnegative(),
+  detectedKind: z.string().nullable().optional()
+});
+export type LocalImagingFolderDraft = z.infer<typeof localImagingFolderDraftSchema>;
+
+export const browserPickedImagingFolderPreviewSchema = z.object({
+  folderName: z.string(),
+  totalFiles: z.number().int().nonnegative(),
+  readyFiles: z.number().int().nonnegative(),
+  warningFiles: z.number().int().nonnegative(),
+  blockedFiles: z.number().int().nonnegative()
+});
+export type BrowserPickedImagingFolderPreview = z.infer<typeof browserPickedImagingFolderPreviewSchema>;
+
+export const browserImagingScanProgressSchema = z.object({
+  phase: z.enum(["scanning", "parsing", "completed", "error"]),
+  scannedFiles: z.number().int().nonnegative(),
+  totalFiles: z.number().int().nonnegative(),
+  errorMessage: z.string().optional()
+});
+export type BrowserImagingScanProgress = z.infer<typeof browserImagingScanProgressSchema>;
+
+export const visitFlowStepStatusSchema = z.enum(["pending", "running", "success", "skipped", "error"]);
+export type VisitFlowStepStatus = z.infer<typeof visitFlowStepStatusSchema>;
+
+export const visitFlowStepResultSchema = z.object({
+  status: visitFlowStepStatusSchema,
+  message: z.string().nullable(),
+  data: z.unknown().nullable()
+});
+export type VisitFlowStepResult = z.infer<typeof visitFlowStepResultSchema>;
+
+export const visitFlowRequestSchema = z.object({
+  patientId: z.string().uuid().optional(),
+  visitId: z.string().uuid().optional(),
+  transcript: z.string(),
+  specialty: dentalSpecialtySchema.optional(),
+  doctorFullName: z.string().nullable().optional(),
+  completedServices: z.array(z.object({
+    serviceId: z.string(),
+    title: z.string(),
+    quantity: z.number(),
+    priceRub: z.number(),
+    toothCode: z.string().nullable().optional()
+  })).optional(),
+  orchestratorConfig: z.object({
+    enablePlan: z.boolean().optional(),
+    enableRecommendations: z.boolean().optional(),
+    enableDocuments: z.boolean().optional()
+  }).optional(),
+  planPayload: treatmentPlanPayloadSchema.optional(),
+  recommendationsPayload: postVisitRecommendationsPayloadSchema.optional()
+});
+export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
+
+export const visitFlowResultSchema = z.object({
+  draft: visitFlowStepResultSchema,
+  plan: visitFlowStepResultSchema,
+  recommendations: visitFlowStepResultSchema,
+  documents: visitFlowStepResultSchema,
+  overallStatus: z.enum(["success", "partial", "error"])
+});
+export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;
 
 export * from "./utils/strings.js";
 export * from "./utils/dates.js";
