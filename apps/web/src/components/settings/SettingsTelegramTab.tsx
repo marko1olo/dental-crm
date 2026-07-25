@@ -605,43 +605,10 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                   </label>
 
                   {showPatientPortalPreview && (
-                    <div
-                      style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: "rgba(0, 0, 0, 0.7)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 1000,
-                        padding: "20px"
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: "var(--paper)",
-                          borderRadius: "16px",
-                          width: "100%",
-                          maxWidth: "480px",
-                          maxHeight: "90vh",
-                          overflowY: "auto",
-                          position: "relative",
-                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
-                        }}
-                      >
-                        <div
-                          style={{
-                            padding: "12px 16px",
-                            borderBottom: "1px solid var(--line)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center"
-                          }}
-                        >
-                          <strong style={{ fontSize: "14px", color: "var(--ink)" }}>Превью Портала Пациента</strong>
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl relative">
+                        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                          <strong className="text-sm font-semibold text-slate-900 dark:text-white">Превью Портала Пациента</strong>
                           <button
                             type="button"
                             className="ghost-button"
