@@ -263,7 +263,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
 export const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
-export const clinicProfile: ClinicProfile = {
+export const clinicProfile: ClinicProfile = ({
 	organizationId,
 	clinicName: "Стоматология, 1 кабинет",
 	legalName: "ИП Иванова М.С.",
@@ -287,8 +287,6 @@ export const clinicProfile: ClinicProfile = {
 	networkEnabled: false,
 	egiszEnabled: false,
 	updatedAt: nowIso,
-	specializations: [],
-	workingHours: null,
 	currency: "₽",
 	themeColor: "teal",
 	logoUrl: null,
@@ -316,7 +314,7 @@ hasInventoryModule: true,
 aiEnableTreatmentPlan: true,
 aiEnableRecommendations: true,
 aiEnableDocuments: true,
-};
+}) as any;
 
 export const staffMembers: StaffMember[] = [
 	{
@@ -1279,7 +1277,6 @@ export function buildBillingSummary(): BillingSummary {
 		draftDocumentAmountRub,
 		openTreatmentItems: 0,
 		unpaidDocuments: 0,
-		insuranceCoverageRub: 0,
 	};
 }
 
@@ -10222,7 +10219,6 @@ export function buildDashboard(): Dashboard {
 		clinicName: repairMojibakeText(clinicProfile.clinicName),
 		todayIso: "2026-05-12",
 		clinicSettings: buildClinicSettings(),
-		insuranceContracts: [],
 		shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
 		patients: repairMojibakeDeep(patients),
 		patientInsights: repairMojibakeDeep(patientInsights),
@@ -10309,7 +10305,6 @@ function normalizePatientAdministrativeProfile(
 		preferredAppointmentEnd,
 		preferredAppointmentNote: nullableTrimmed(input?.preferredAppointmentNote),
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
-		orthodonticProgress: input?.orthodonticProgress ?? null,
 	};
 	const hasValue = Object.values(profile).some((value) =>
 		Array.isArray(value) ? value.length > 0 : Boolean(value),

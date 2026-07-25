@@ -204,7 +204,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				.insert(patients)
 				.values({
 					organizationId,
-					fullName: lead.name,
+					fullName: lead.name || lead.patientName || "Пациент",
 					phone: lead.phone,
 					status: "active",
 				})

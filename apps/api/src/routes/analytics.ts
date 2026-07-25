@@ -40,6 +40,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				startDate = new Date(new Date().getFullYear(), 0, 1);
 			}
 
+			const withDate = (orgCol: any, dateCol?: any) =>
+				startDate ? and(eq(orgCol, orgId), gte(dateCol, startDate)) : eq(orgCol, orgId);
+
 			// 1. Appointment Funnel (Planned, Confirmed, Completed, Cancelled)
 			const apptRes = await db
 				.select({
@@ -47,12 +50,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					count: sql<number>`count(*)`,
 				})
 				.from(appointments)
-				.where(
-					and(
-						eq(appointments.organizationId, orgId),
-						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
-					),
-				)
+				.where(withDate(appointments.organizationId, appointments.startsAt))
 				.groupBy(appointments.status);
 
 			const apptCounts = { planned: 0, confirmed: 0, completed: 0, cancelled: 0 };
@@ -82,18 +80,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.from(payments)
 				.leftJoin(visits, eq(payments.visitId, visits.id))
 				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						...(startDate ? [gte(payments.createdAt, startDate)] : []),
-					),
-				)
+				.where(withDate(payments.organizationId, payments.createdAt))
 				.groupBy(appointments.doctorUserId);
 
 			const allDocs = await db
 				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
-				.where(eq(users.organizationId, orgId));
+				.where(eq(users.organizationId, orgId as any));
 			const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
 
 			const doctorProfitabilityJson = docProfRes
@@ -118,18 +111,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					count: sql<number>`count(*)`,
 				})
 				.from(appointments)
-				.where(
-					and(
-						eq(appointments.organizationId, orgId),
-						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
-					),
-				)
+				.where(withDate(appointments.organizationId, appointments.startsAt))
 				.groupBy(appointments.chairId);
 
 			const allChairs = await db
 				.select({ id: chairs.id, name: chairs.name })
 				.from(chairs)
-				.where(eq(chairs.organizationId, orgId));
+				.where(eq(chairs.organizationId, orgId as any));
 			const chairMap = new Map(allChairs.map((c) => [c.id, c.name]));
 
 			const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
@@ -156,7 +144,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.innerJoin(patients, eq(payments.patientId, patients.id))
 				.where(
 					and(
-						eq(patients.organizationId, orgId),
+						eq(patients.organizationId, orgId as any),
 						gte(patients.createdAt, ltvStartDate),
 					),
 				)
@@ -197,32 +185,17 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const [patientCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(patients)
-				.where(
-					and(
-						eq(patients.organizationId, orgId),
-						...(startDate ? [gte(patients.createdAt, startDate)] : []),
-					),
-				);
+				.where(withDate(patients.organizationId, patients.createdAt));
 
 			const [revenueRow] = await db
 				.select({ total: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
 				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						...(startDate ? [gte(payments.createdAt, startDate)] : []),
-					),
-				);
+				.where(withDate(payments.organizationId, payments.createdAt));
 
 			const [apptCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(appointments)
-				.where(
-					and(
-						eq(appointments.organizationId, orgId),
-						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
-					),
-				);
+				.where(withDate(appointments.organizationId, appointments.startsAt));
 
 			const data = {
 				kpis: {

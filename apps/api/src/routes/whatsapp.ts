@@ -143,13 +143,13 @@ export async function registerWhatsappRoutes(
 			phoneNumberId: config.phoneNumberId ?? null,
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookVerifyToken: config.webhookVerifyToken ?? null,
-			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, []),
-			staffRouting: parseJsonSafe(config.staffRoutingJson, {
+			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson as any, []),
+			staffRouting: parseJsonSafe(config.staffRoutingJson as any, {
 				defaultUserId: null,
 				rules: [],
 			}),
 			isActive: config.isActive,
-			updatedAt: config.updatedAt.toISOString(),
+			updatedAt: (config.updatedAt ?? config.createdAt).toISOString(),
 		};
 	});
 

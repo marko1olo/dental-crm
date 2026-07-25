@@ -225,7 +225,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				organizationId,
 				name: data.name,
 				headPatientId: data.headPatientId || null,
-				balance: "0.00",
+				balance: 0,
 			})
 			.returning()) as any;
 		const family = result[0];

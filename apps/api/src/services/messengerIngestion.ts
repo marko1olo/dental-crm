@@ -33,7 +33,7 @@ export async function processInboundEvents(): Promise<void> {
 			// Attempt to resolve patient
 			let resolvedPatient: any = null;
 
-			if (channel === "whatsapp") {
+			if (channel === "whatsapp" && externalChatId) {
 				const rawPhone = externalChatId.replace(/\D/g, "");
 				if (rawPhone.length >= 10) {
 					const phoneSuffix = rawPhone.slice(-10);

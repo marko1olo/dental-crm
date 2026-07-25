@@ -294,14 +294,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 									}
 									await tx
 										.update(inventoryItems)
-										.set({ stockQuantity: String(currentStock - qtyToDeduct) })
+										.set({ stockQuantity: currentStock - qtyToDeduct })
 										.where(eq(inventoryItems.id, inv.id));
 
 									await tx.insert(inventoryTransactions).values({
 										organizationId: orgId,
 										visitId: existing.visitId,
 										inventoryItemId: inv.id,
-										quantityChanged: String(-qtyToDeduct),
+										quantityChanged: -qtyToDeduct,
 										unitCostRub: inv.unitCostRub,
 										transactionType: "auto_deduct",
 										userId: userId,
@@ -405,8 +405,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			revisionReason?: string;
 		};
 
-		// Insert forensic revision record with PREVIOUS content
 		await db.insert(visitDiaryRevisions).values({
+			organizationId: orgId,
 			diaryId: existing.id,
 			previousAnamnesis: existing.anamnesis,
 			previousStatusLocalis: existing.statusLocalis,

@@ -590,7 +590,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
                 specialty: "therapist",
                 serviceCategory: "consultation",
 
-                commissionPct: s.percentage ? Number(s.percentage) : 25,
+                commissionPct: (s.percentage ? Number(s.percentage) : 25).toString(),
               });
             }
           }

@@ -204,6 +204,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				.insert(toothStates)
 				.values(
 					toothNumbers.map((toothNumber) => ({
+						organizationId,
 						patientId,
 						toothNumber,
 						state: parsed.data.state,
@@ -330,6 +331,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						const [created] = await tx
 							.insert(treatmentPlans)
 							.values({
+								organizationId,
 								patientId,
 								name: input.name,
 								totalPrice: totalPrice.toString(),

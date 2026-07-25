@@ -83,7 +83,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				organizationId,
 				name: name.trim(),
 				criticalThreshold: Math.max(0, criticalThreshold),
-				unitCostRub: Math.max(0, unitCostRub).toString(),
+				unitCostRub: Math.max(0, unitCostRub),
 				stockQuantity: Math.max(0, stockQuantity),
 				sku: sku?.trim() || null,
 				barcode: barcode?.trim() || null,
@@ -132,8 +132,9 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		if (!item) return reply.status(404).send({ error: "Item not found" });
 
 		// Clamp to 0: cannot have negative stock
-		const actualAdjustment = Math.max(-item.stockQuantity, adjustment);
-		const newStock = item.stockQuantity + actualAdjustment;
+		const currentStock = Number(item.stockQuantity ?? 0);
+		const actualAdjustment = Math.max(-currentStock, adjustment);
+		const newStock = currentStock + actualAdjustment;
 
 		const [updated] = await db
 			.update(inventoryItems)
