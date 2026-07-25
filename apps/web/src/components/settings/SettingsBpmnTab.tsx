@@ -139,10 +139,7 @@ export function SettingsBpmnTab() {
 						style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-							<div
-								className="profile-section-icon"
-								style={{ background: "rgba(99, 102, 241, 0.1)", color: "rgb(99, 102, 241)" }}
-							>
+							<div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
 								<GitMerge size={24} />
 							</div>
 							<div className="profile-section-title">
