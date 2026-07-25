@@ -276,6 +276,10 @@ export const patients = pgTable("patients", {
   version: integer("version").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxPatientsOrgCreated: index("idx_patients_org_created").on(table.organizationId, table.createdAt)
+  };
 });
 
 export const patientConsents = pgTable("patient_consents", {
@@ -300,6 +304,10 @@ export const appointments = pgTable("appointments", {
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   reason: text("reason"),
   comment: text("comment")
+}, (table) => {
+  return {
+    idxAppointmentsOrgTime: index("idx_appointments_org_time").on(table.organizationId, table.startsAt, table.endsAt)
+  };
 });
 
 export const visits = pgTable("visits", {
@@ -428,6 +436,10 @@ export const payments = pgTable("payments", {
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxPaymentsOrgPaidAt: index("idx_payments_org_paid_at").on(table.organizationId, table.paidAt)
+  };
 });
 
 export const generatedDocuments = pgTable("generated_documents", {
@@ -709,6 +721,10 @@ export const auditEvents = pgTable("audit_events", {
   action: text("action").notNull(),
   reason: text("reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxAuditOrgCreated: index("idx_audit_org_created").on(table.organizationId, table.createdAt)
+  };
 });
 
 export const aiJobs = pgTable("ai_jobs", {
