@@ -85,29 +85,52 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
               </div>
             </div>
 
-            <article className="active-workspace-card" style={{ marginTop: '24px', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '18px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={18} /> Пригласить сотрудника</h3>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Сгенерируйте уникальную ссылку для регистрации нового врача, ассистента или администратора.</p>
+            <article className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 mt-6 shadow-sm">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Mail size={18} className="text-sky-500" /> Пригласить сотрудника
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  Сгенерируйте уникальную ссылку для регистрации нового врача, ассистента или администратора.
+                </p>
               </div>
-              <form onSubmit={handleGenerateInvite} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <input type="email" placeholder="email@example.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', color: 'var(--ink)', flex: '1', minWidth: '200px' }} />
-                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--glass-panel)', border: '1px solid var(--glass-border)', color: 'var(--ink)', minWidth: '150px' }}>
+              <form onSubmit={handleGenerateInvite} className="flex gap-3 items-center flex-wrap">
+                <input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={inviteEmail}
+                  onChange={e => setInviteEmail(e.target.value)}
+                  disabled={loading}
+                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+                <select
+                  value={inviteRole}
+                  onChange={e => setInviteRole(e.target.value)}
+                  disabled={loading}
+                  className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                >
                   <option value="doctor">Врач</option>
                   <option value="admin">Администратор</option>
                   <option value="assistant">Ассистент</option>
                   <option value="owner">Владелец</option>
                 </select>
-                <button type="submit" disabled={loading} style={{ padding: '8px 16px', borderRadius: '6px', background: 'var(--primary-strong)', color: 'var(--primary-on, #fff)', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
                   {loading ? 'Создание...' : 'Сгенерировать'}
                 </button>
               </form>
               
               {inviteLink && (
-                <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed rgba(59, 130, 246, 0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all', fontSize: '13px' }}>{inviteLink}</span>
-                  <button onClick={handleCopy} style={{ marginLeft: '12px', padding: '6px 12px', background: 'var(--glass-panel)', border: 'none', borderRadius: '4px', color: 'var(--ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {copied ? <><Check size={14} /> Скопировано</> : <><LinkIcon size={14} /> Копировать</>}
+                <div className="mt-4 p-3 bg-sky-50 dark:bg-sky-950/40 border border-dashed border-sky-300 dark:border-sky-700 rounded-lg flex items-center justify-between">
+                  <span className="text-sky-700 dark:text-sky-300 font-mono text-xs break-all">{inviteLink}</span>
+                  <button
+                    onClick={handleCopy}
+                    className="ml-3 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-slate-700 dark:text-slate-200 text-xs font-medium cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 shrink-0"
+                  >
+                    {copied ? <><Check size={14} className="text-emerald-500" /> Скопировано</> : <><LinkIcon size={14} /> Копировать</>}
                   </button>
                 </div>
               )}

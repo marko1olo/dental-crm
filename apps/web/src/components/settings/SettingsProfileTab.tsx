@@ -131,22 +131,20 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 
   if (profileLoading) {
     return (
-      <div className="settings-tab-pane">
-        <div className="settings-empty-state">
-          <div className="spinner" style={{ width: 32, height: 32, border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "#818cf8", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-          <p style={{ color: "var(--slate-400, #94a3b8)", marginTop: 12 }}>Загрузка профиля...</p>
-        </div>
+      <div className="settings-tab-pane p-6 flex flex-col items-center justify-center text-center">
+        <div className="animate-spin h-8 w-8 text-sky-500 border-2 border-slate-300 dark:border-slate-700 border-t-sky-500 rounded-full" />
+        <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm font-medium">Загрузка профиля...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="settings-tab-pane">
-        <div className="settings-empty-state">
-          <AlertTriangle size={32} color="#f87171" />
-          <p style={{ color: "#f87171", marginTop: 8 }}>Профиль не найден. Войдите через PIN или перезайдите в систему.</p>
-        </div>
+      <div className="settings-tab-pane p-6 flex flex-col items-center justify-center text-center">
+        <AlertTriangle size={32} className="text-rose-500" />
+        <p className="text-rose-500 dark:text-rose-400 mt-2 text-sm font-medium">
+          Профиль не найден. Войдите через PIN или перезайдите в систему.
+        </p>
       </div>
     );
   }
