@@ -197,11 +197,25 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientAdministrativeValidationMessage });
     }
-    
+
+    const sanitizeDigitsAndSpaces = (val?: string | null, maxLen: number = 80) => {
+      if (val === undefined) return undefined;
+      if (val === null) return null;
+      const cleaned = val.trim().replace(/[^\d\s\-\.]/g, "");
+      return cleaned.length > maxLen ? cleaned.slice(0, maxLen) : cleaned;
+    };
+
+    if (input.snils !== undefined && input.snils !== null) {
+      input.snils = sanitizeDigitsAndSpaces(input.snils, 20);
+    }
+    if (input.identityDocument !== undefined && input.identityDocument !== null) {
+      input.identityDocument = input.identityDocument.trim().slice(0, 240);
+    }
+
     try {
       const existingPatient = await getPatientByIdFromDb(orgId, params.patientId);
       if (!existingPatient) return sendPatientNotFound(reply);
-      const existingProfile = (existingPatient.administrativeProfile as any) ?? {};
+      const existingProfile = (existingPatient.administrativeProfile as Record<string, unknown>) ?? {};
       const mergedProfile = { ...existingProfile, ...input };
 
       if (hasIncompleteRepresentativeIdentity(mergedProfile)) {

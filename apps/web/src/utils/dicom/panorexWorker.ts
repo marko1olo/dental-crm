@@ -124,5 +124,8 @@ export const createPanorexWorker = () => {
   `;
 
 	const blob = new Blob([workerCode], { type: "application/javascript" });
-	return new Worker(URL.createObjectURL(blob));
+	const objectUrl = URL.createObjectURL(blob);
+	const worker = new Worker(objectUrl);
+	URL.revokeObjectURL(objectUrl);
+	return worker;
 };
