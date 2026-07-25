@@ -10,5 +10,14 @@
 		"noEmitOnError": false
 	},
 	"include": ["src"],
-	"exclude": ["src/tests", "src/**/*.test.ts", "src/scripts", "src/services"]
+	"exclude": [
+		"src/tests",
+		"src/**/*.test.ts",
+		"src/**/*.bench.ts",
+		"src/scripts",
+		"src/services",
+		"src/sampleData.ts",
+		"src/sampleData_opt.ts",
+		"src/telegram/legacyMocks.ts"
+	]
 }

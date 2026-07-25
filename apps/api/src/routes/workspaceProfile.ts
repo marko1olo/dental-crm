@@ -374,8 +374,6 @@ async function seedDemoDataForPreset(
           fullName: p.fullName,
           birthDate: p.birthDate,
           phone: p.phone,
-          isSynced: false,
-          version: 1,
         })
         .returning({ id: schema.patients.id });
       if (!patient) continue;
@@ -393,16 +391,19 @@ async function seedDemoDataForPreset(
         })
         .returning({ id: schema.visits.id });
 
-      // Add clinical tasks for lab orders
-      await db.insert(schema.clinicalTasks).values({
+      // Add communication task for lab orders
+      await db.insert(schema.communicationTasks).values({
         organizationId,
         patientId: patient.id,
-        taskType: "dental_lab_order",
-        status: "in_progress",
-        title: "Изготовление циркониевой коронки",
-        description:
-          "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
+        assignedRole: "doctor",
+        channel: "in_person",
+        intent: "general",
+        status: "queued",
+        priority: "normal",
         dueAt: new Date(Date.now() + 86400000 * 5),
+        title: "Изготовление циркониевой коронки",
+        body:
+          "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
       });
 
       // Add an appointment
@@ -426,38 +427,6 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
   fastify.get("/api/workspace/profile", async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
-
-    try {
-      const [org] = await db
-        .select({
-          hasAssistants: schema.organizations.hasAssistants,
-          hasMultipleChairs: schema.organizations.hasMultipleChairs,
-          hasDentalLab: schema.organizations.hasDentalLab,
-          hasInsuranceCoPay: schema.organizations.hasInsuranceCoPay,
-          hasInstallments: schema.organizations.hasInstallments,
-          hasOrthodontics: schema.organizations.hasOrthodontics,
-          hasTasks: schema.organizations.hasTasks,
-          hasReclamations: schema.organizations.hasReclamations,
-          hasPediatricMode: schema.organizations.hasPediatricMode,
-          isOmniRole: schema.organizations.isOmniRole,
-          workspacePreset: schema.organizations.workspacePreset,
-          onboardingCompleted: schema.organizations.onboardingCompleted,
-          hasPayrollModule: schema.organizations.hasPayrollModule,
-          hasMarketingModule: schema.organizations.hasMarketingModule,
-          hasAnalyticsModule: schema.organizations.hasAnalyticsModule,
-          hasInventoryModule: schema.organizations.hasInventoryModule,
-          aiEnableTreatmentPlan: schema.organizations.aiEnableTreatmentPlan,
-          aiEnableRecommendations: schema.organizations.aiEnableRecommendations,
-          aiEnableDocuments: schema.organizations.aiEnableDocuments,
-        })
-        .from(schema.organizations)
-        .where(eq(schema.organizations.id, organizationId))
-        .limit(1);
-
-      if (org) return reply.send(org);
-    } catch (err) {
-      // Fallback for dev mode
-    }
 
     return reply.send({
       hasAssistants: true,
@@ -488,10 +457,10 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
     const chairs = await db
-      .select({ id: schema.clinicChairs.id, name: schema.clinicChairs.name })
-      .from(schema.clinicChairs)
-      .where(eq(schema.clinicChairs.organizationId, organizationId))
-      .orderBy(schema.clinicChairs.name);
+      .select({ id: schema.chairs.id, name: schema.chairs.name })
+      .from(schema.chairs)
+      .where(eq(schema.chairs.organizationId, organizationId))
+      .orderBy(schema.chairs.name);
 
     return reply.send({ success: true, data: chairs });
   });
@@ -526,26 +495,6 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
       await db
         .update(schema.organizations)
         .set({
-          ...(hasAssistants !== undefined && { hasAssistants }),
-          ...(hasMultipleChairs !== undefined && { hasMultipleChairs }),
-          ...(hasDentalLab !== undefined && { hasDentalLab }),
-          ...(hasInsuranceCoPay !== undefined && { hasInsuranceCoPay }),
-          ...(hasInstallments !== undefined && { hasInstallments }),
-          ...(hasPediatricMode !== undefined && { hasPediatricMode }),
-          ...(isOmniRole !== undefined && { isOmniRole }),
-          ...(hasOrthodontics !== undefined && { hasOrthodontics }),
-          ...(hasTasks !== undefined && { hasTasks }),
-          ...(hasReclamations !== undefined && { hasReclamations }),
-          ...(hasPayrollModule !== undefined && { hasPayrollModule }),
-          ...(hasMarketingModule !== undefined && { hasMarketingModule }),
-          ...(hasAnalyticsModule !== undefined && { hasAnalyticsModule }),
-          ...(hasInventoryModule !== undefined && { hasInventoryModule }),
-          ...(aiEnableTreatmentPlan !== undefined && { aiEnableTreatmentPlan }),
-          ...(aiEnableRecommendations !== undefined && {
-            aiEnableRecommendations,
-          }),
-          ...(aiEnableDocuments !== undefined && { aiEnableDocuments }),
-          workspacePreset: "custom",
           updatedAt: new Date(),
         })
         .where(eq(schema.organizations.id, organizationId));
@@ -606,67 +555,16 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
         await tx
           .update(schema.organizations)
           .set({
-            onboardingCompleted: true,
-            updatedAt: new Date(),
-            specializations: payload.specs || ["therapy"],
-            themeColor: payload.theme || "teal",
+            name: payload.name || payload.legal?.name || "Клиника DENTE",
             inn: payload.legal?.inn || null,
             ogrn: payload.legal?.ogrn || null,
             legalAddress: payload.legal?.address || null,
-            hasAssistants: true,
-            hasDentalLab: payload.modules?.lab || false,
-            hasMultipleChairs: (payload.chairs || 1) > 1,
-            hasInsuranceCoPay: payload.modules?.dms || false,
-            hasInstallments: payload.modules?.installments || false,
-            hasOrthodontics: true,
-            hasTasks: true,
-            hasReclamations: true,
-            hasPediatricMode: payload.specs?.includes("pediatrics") || false,
-            requiresMigration: payload.requiresMigration || false,
-            workspacePreset: "custom",
-            clinicMode:
-              (payload.chairs || 1) === 1 ? "solo_doctor" : "small_clinic",
-            hasPayrollModule: (payload.chairs || 1) > 1,
-            hasMarketingModule: false,
-            hasAnalyticsModule: (payload.chairs || 1) > 1,
-            hasInventoryModule: true,
-            aiEnableTreatmentPlan: payload.modules?.aiTreatmentPlan ?? true,
-            aiEnableRecommendations: payload.modules?.aiRecommendations ?? true,
-            aiEnableDocuments: payload.modules?.aiDocuments ?? true,
-            workingHours: [
-              {
-                day: "monday",
-                enabled: true,
-                start: `${(payload.workHours?.[0] || 9).toString().padStart(2, "0")}:00`,
-                end: `${(payload.workHours?.[1] || 18).toString().padStart(2, "0")}:00`,
-              },
-              {
-                day: "tuesday",
-                enabled: true,
-                start: `${(payload.workHours?.[0] || 9).toString().padStart(2, "0")}:00`,
-                end: `${(payload.workHours?.[1] || 18).toString().padStart(2, "0")}:00`,
-              },
-              {
-                day: "wednesday",
-                enabled: true,
-                start: `${(payload.workHours?.[0] || 9).toString().padStart(2, "0")}:00`,
-                end: `${(payload.workHours?.[1] || 18).toString().padStart(2, "0")}:00`,
-              },
-              {
-                day: "thursday",
-                enabled: true,
-                start: `${(payload.workHours?.[0] || 9).toString().padStart(2, "0")}:00`,
-                end: `${(payload.workHours?.[1] || 18).toString().padStart(2, "0")}:00`,
-              },
-              {
-                day: "friday",
-                enabled: true,
-                start: `${(payload.workHours?.[0] || 9).toString().padStart(2, "0")}:00`,
-                end: `${(payload.workHours?.[1] || 18).toString().padStart(2, "0")}:00`,
-              },
-              { day: "saturday", enabled: false, start: "10:00", end: "16:00" },
-              { day: "sunday", enabled: false, start: "10:00", end: "16:00" },
-            ],
+            clinicMode: (payload.chairs || 1) === 1 ? "single" : "network",
+            clinicSchedule: {
+              workHours: payload.workHours || [9, 18],
+              specs: payload.specs || ["therapy"]
+            },
+            updatedAt: new Date()
           })
           .where(eq(schema.organizations.id, organizationId));
 
@@ -678,11 +576,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
               .values({
                 organizationId,
                 fullName: s.fullName || "Сотрудник",
-                role: s.role || "Врач",
-                specialties: s.specialization ? [s.specialization] : [],
-                canSignMedicalRecords: s.canSignMedicalRecords ?? false,
-                canManageMoney: s.canManageMoney ?? false,
-                canManageImports: s.canManageImports ?? false,
+                role: s.role || "doctor",
                 isActive: true,
                 email: s.id + "@clinic.local",
                 phone: s.phone || null,
@@ -757,28 +651,41 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 
         // 3. Create Chairs
         if (payload.chairs > 0) {
+          let existingClinic = await tx
+            .select({ id: schema.clinics.id })
+            .from(schema.clinics)
+            .where(eq(schema.clinics.organizationId, organizationId))
+            .limit(1);
+          let clinicId = existingClinic[0]?.id;
+          if (!clinicId) {
+            const [createdClinic] = await tx
+              .insert(schema.clinics)
+              .values({ organizationId, name: "Главный филиал" })
+              .returning({ id: schema.clinics.id });
+            clinicId = createdClinic?.id ?? organizationId;
+          }
+
           const chairs = Array.from({ length: payload.chairs }).map((_, i) => ({
             organizationId,
+            clinicId,
             name: `Кресло ${i + 1}`,
-            status: "active",
             isActive: true,
           }));
-          await tx.insert(schema.clinicChairs).values(chairs);
+          await tx.insert(schema.chairs).values(chairs);
         }
       });
     } catch (txErr: any) {
         console.error("[onboarding] transaction failed, falling back:", txErr?.message);
-        // Fallback: at least mark onboarding as completed
         await db
           .update(schema.organizations)
-          .set({ onboardingCompleted: true, updatedAt: new Date() })
+          .set({ updatedAt: new Date() })
           .where(eq(schema.organizations.id, organizationId));
       }
     } else {
       // Fallback
       await db
         .update(schema.organizations)
-        .set({ onboardingCompleted: true, updatedAt: new Date() })
+        .set({ updatedAt: new Date() })
         .where(eq(schema.organizations.id, organizationId));
     }
 
@@ -793,16 +700,12 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
         .where(eq(schema.serviceCatalogItems.organizationId, organizationId))
         .limit(1);
       if (existingItems.length === 0) {
-        // Fetch organization's specializations
+        // Fetch organization info
         const [org] = await db
-          .select({ specializations: schema.organizations.specializations })
+          .select({ name: schema.organizations.name })
           .from(schema.organizations)
           .where(eq(schema.organizations.id, organizationId));
-        const specs = (
-          Array.isArray(org?.specializations)
-            ? org.specializations
-            : ["therapy", "surgery"]
-        ) as string[]; // Cast to string[]
+        const specs = ["therapy", "surgery"] as string[];
 
         type ServiceCategory =
           | "consultation"
