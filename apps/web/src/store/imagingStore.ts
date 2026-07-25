@@ -1,6 +1,4 @@
 import type {
-	BrowserImagingScanProgress,
-	BrowserPickedImagingFolderPreview,
 	DicomFirstFramePreviewResponse,
 	DicomFolderSeriesPreviewResponse,
 	DicomFolderWorkupPlanResponse,
@@ -20,17 +18,19 @@ import type {
 	ImagingStudyKind,
 	ImagingViewerAnnotation,
 	ImagingViewerImplantPlan,
-	ImagingViewerSaveState,
 	ImagingViewerSessionResponse,
 	ImagingViewerState,
 	ImagingViewerTool,
-	LocalImagingFolderDraft,
 	LocalImagingOrganizerResponse,
 	MprProjection,
 	MprWindowPreset,
 } from "@dental/shared";
 import { create } from "zustand";
 import {
+	type BrowserImagingScanProgress,
+	type BrowserPickedImagingFolderPreview,
+	type ImagingViewerSaveState,
+	type LocalImagingFolderDraft,
 	defaultDicomFirstFrameViewerState,
 	defaultImagingViewerState,
 	initialUiPreferences,

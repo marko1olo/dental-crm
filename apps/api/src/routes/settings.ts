@@ -32,7 +32,7 @@ import {
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
 
 type SettingsPayloadSchema<T> = {
-  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false; error?: { format: () => unknown } };
 };
 
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -70,7 +70,7 @@ const chairWorkingHoursRejectedMessage =
 function parseSettingsPayload<T>(schema: SettingsPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
-    console.error("SMOKE TEST DEBUG: parseSettingsPayload failed validation:", (parsed as any).error?.format());
+    console.error("SMOKE TEST DEBUG: parseSettingsPayload failed validation:", parsed.error?.format());
     return null;
   }
   return parsed.data;
@@ -279,7 +279,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "SettingsRouteValidationError", message: "ID сотрудника обязателен." });
     }
     
-    const { email, password, pinCode } = (request.body as any) ?? {};
+    const { email, password, pinCode } = (request.body as { email?: string; password?: string; pinCode?: string }) ?? {};
     if (!email && !password && !pinCode) {
       return reply.code(400).send({ error: "SettingsValidationError", message: "Не переданы данные для обновления." });
     }
@@ -292,7 +292,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     try {
       await updateStaffCredentialsInDb(orgId, params.staffId, updates);
       return reply.code(200).send({ ok: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return reply.code(500).send({ error: "InternalError", message: "Не удалось обновить доступы." });
     }
   });

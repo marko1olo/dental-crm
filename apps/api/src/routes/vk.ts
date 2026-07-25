@@ -1,16 +1,26 @@
-import { ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
+type VkWebhookBody = {
+	type?: string;
+	object?: {
+		message?: {
+			from_id?: number | string;
+			text?: string;
+		};
+	};
+};
+
 export async function registerVkRoutes(server: FastifyInstance) {
 	server.post<{
 		Params: { organizationId: string };
-		Body: any;
+		Body: VkWebhookBody;
 	}>("/api/public/:organizationId/vk/webhook", async (request, reply) => {
 		const { organizationId } = request.params;
-		const body = request.body as any;
+		const body = (request.body || {}) as VkWebhookBody;
 
 		// VK Callback API Server Confirmation
 		if (body.type === "confirmation") {
@@ -24,17 +34,22 @@ export async function registerVkRoutes(server: FastifyInstance) {
 
 			if (!vkId) return { success: true };
 
-			let patient: any = null;
+			let patient: typeof patients.$inferSelect | null = null;
 			const searchResult = await db
 				.select()
 				.from(patients)
-				.where(ilike(patients.notes, `%VK:${vkId}%`))
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						ilike(patients.notes, `%VK:${vkId}%`)
+					)
+				)
 				.limit(1);
 
 			if (searchResult.length > 0) {
-				patient = searchResult[0];
+				patient = searchResult[0] || null;
 			} else {
-				const insertedPatients = (await db
+				const insertedPatients = await db
 					.insert(patients)
 					.values({
 						organizationId,
@@ -42,9 +57,11 @@ export async function registerVkRoutes(server: FastifyInstance) {
 						notes: `Создан автоматически из ВКонтакте. VK:${vkId}`,
 						status: "active",
 					})
-					.returning()) as any;
-				patient = insertedPatients[0];
+					.returning();
+				patient = insertedPatients[0] || null;
 			}
+
+			if (!patient) return { success: false };
 
 			const [newEvent] = await db.insert(communicationEvents).values({
 				organizationId,

@@ -7,11 +7,11 @@
  */
 
 import { eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
-function resolveOrganizationId(req: any): string {
+function resolveOrganizationId(req: FastifyRequest): string {
   const headerId = req.headers["x-organization-id"];
   if (headerId && typeof headerId === "string") return headerId;
   return "00000000-0000-0000-0000-000000000001";
@@ -542,7 +542,15 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
-    const payload = req.body as any;
+    const payload = (req.body || {}) as {
+      name?: string;
+      legal?: { name?: string; inn?: string; ogrn?: string; address?: string };
+      chairs?: number;
+      workHours?: [number, number];
+      specs?: string[];
+      staff?: Array<{ id?: string; fullName?: string; role?: string; phone?: string; percentage?: number; commissionRatePct?: number }>;
+      chairsList?: Array<{ name?: string; roomNumber?: string }>;
+    };
 
     if (
       payload &&
@@ -650,7 +658,8 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
         }
 
         // 3. Create Chairs
-        if (payload.chairs > 0) {
+        const chairsCount = payload.chairs ?? 0;
+        if (chairsCount > 0) {
           let existingClinic = await tx
             .select({ id: schema.clinics.id })
             .from(schema.clinics)
@@ -665,7 +674,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
             clinicId = createdClinic?.id ?? organizationId;
           }
 
-          const chairs = Array.from({ length: payload.chairs }).map((_, i) => ({
+          const chairs = Array.from({ length: chairsCount }).map((_, i) => ({
             organizationId,
             clinicId,
             name: `Кресло ${i + 1}`,

@@ -15,7 +15,7 @@ import type {
 export type MprProjection = DicomMprProjection;
 export type MprWindowPreset = Extract<
 	ImagingViewerWindowPreset,
-	"bone" | "soft_tissue" | "implant" | "custom"
+	"bone" | "soft_tissue" | "implant" | "teeth" | "custom"
 >;
 export type MprClinicalPreset = {
 	id: "implant" | "endo" | "sinus_opg" | "mandibular_canal" | "tmj" | "airway";
@@ -238,6 +238,8 @@ export const mprProjectionOrientationLabels: Record<MprProjection, string> = {
 	panoramic_reconstruction: "по зубной дуге",
 	three_d_volume: "3D-объем",
 	mip: "самые плотные структуры",
+	panoramic: "панорамный снимок",
+	"3d_reconstruction": "3D-реконструкция",
 };
 
 export const mprProjectionLabels: Record<MprProjection, string> = {
@@ -248,6 +250,8 @@ export const mprProjectionLabels: Record<MprProjection, string> = {
 	panoramic_reconstruction: "Панорама",
 	three_d_volume: "3D",
 	mip: "Проекция плотности",
+	panoramic: "Панорамный вид",
+	"3d_reconstruction": "3D Вид",
 };
 
 export const mprSeriesRequiredProjectionLabel =
@@ -258,6 +262,7 @@ export const mprWindowPresetLabels: Record<MprWindowPreset, string> = {
 	bone: "Кость",
 	soft_tissue: "Мягкие ткани",
 	implant: "Имплант",
+	teeth: "Зубы",
 	custom: "Своя",
 };
 

@@ -3902,7 +3902,9 @@ export const dicomMprProjectionSchema = z.enum([
     "oblique",
     "panoramic_reconstruction",
     "three_d_volume",
-    "mip"
+    "mip",
+    "panoramic",
+    "3d_reconstruction"
 ]);
 export const dicomMprToolSchema = z.enum([
     "window_level",
@@ -4279,6 +4281,7 @@ export const imagingViewerWindowPresetSchema = z.enum([
     "caries",
     "perio",
     "photo",
+    "teeth",
     "custom"
 ]);
 export const imagingViewerToolSchema = z.enum([
@@ -6426,6 +6429,7 @@ export const uiPreferencesSchema = z.object({
     onboardingDismissedAt: z.string().nullable().default(null),
     onboardingStep: onboardingStepSchema.default("intro"),
     onboardingDraftMode: z.boolean().default(false),
+    odontogramUseSurfaces: z.boolean().default(false),
     savedAt: z.string().default("")
 });
 export const uiPreferencesInputSchema = uiPreferencesSchema.omit({ version: true, savedAt: true }).extend({
@@ -6951,6 +6955,90 @@ export const migrationAutopilotResponseSchema = z.object({
     warnings: z.array(z.string()),
     privacyWarnings: z.array(z.string()),
     nextAction: z.string()
+});
+export const mprProjectionSchema = z.enum([
+    "axial",
+    "coronal",
+    "sagittal",
+    "panoramic",
+    "3d_reconstruction",
+    "oblique",
+    "panoramic_reconstruction",
+    "three_d_volume",
+    "mip"
+]);
+export const mprWindowPresetSchema = z.enum(["bone", "soft_tissue", "teeth", "implant", "custom"]);
+export const imagingViewerStateSchema = z.object({
+    zoom: z.number().default(1),
+    panX: z.number().default(0),
+    panY: z.number().default(0),
+    brightness: z.number().default(100),
+    contrast: z.number().default(100),
+    inverted: z.boolean().default(false),
+    rotationDeg: z.number().default(0),
+    flipHorizontal: z.boolean().default(false),
+    projection: mprProjectionSchema.default("axial"),
+    preset: mprWindowPresetSchema.default("bone")
+});
+export const imagingViewerSaveSessionPayloadSchema = z.object({
+    studyId: z.string(),
+    state: imagingViewerStateSchema,
+    savedAt: z.string()
+});
+export const imagingViewerSaveStateSchema = imagingViewerSaveSessionPayloadSchema;
+export const sharedLocalImagingFolderDraftSchema = z.object({
+    folderPath: z.string(),
+    patientName: z.string().nullable().optional(),
+    patientPhone: z.string().nullable().optional(),
+    fileCount: z.number().int().nonnegative(),
+    detectedKind: z.string().nullable().optional()
+});
+export const sharedBrowserPickedImagingFolderPreviewSchema = z.object({
+    folderName: z.string(),
+    totalFiles: z.number().int().nonnegative(),
+    readyFiles: z.number().int().nonnegative(),
+    warningFiles: z.number().int().nonnegative(),
+    blockedFiles: z.number().int().nonnegative()
+});
+export const sharedBrowserImagingScanProgressSchema = z.object({
+    phase: z.enum(["scanning", "parsing", "completed", "error"]),
+    scannedFiles: z.number().int().nonnegative(),
+    totalFiles: z.number().int().nonnegative(),
+    errorMessage: z.string().optional()
+});
+export const visitFlowStepStatusSchema = z.enum(["pending", "running", "success", "skipped", "error"]);
+export const visitFlowStepResultSchema = z.object({
+    status: visitFlowStepStatusSchema,
+    message: z.string().nullable(),
+    data: z.unknown().nullable()
+});
+export const visitFlowRequestSchema = z.object({
+    patientId: z.string().uuid().optional(),
+    visitId: z.string().uuid().optional(),
+    transcript: z.string(),
+    specialty: dentalSpecialtySchema.optional(),
+    doctorFullName: z.string().nullable().optional(),
+    completedServices: z.array(z.object({
+        serviceId: z.string(),
+        title: z.string(),
+        quantity: z.number(),
+        priceRub: z.number(),
+        toothCode: z.string().nullable().optional()
+    })).optional(),
+    orchestratorConfig: z.object({
+        enablePlan: z.boolean().optional(),
+        enableRecommendations: z.boolean().optional(),
+        enableDocuments: z.boolean().optional()
+    }).optional(),
+    planPayload: treatmentPlanPayloadSchema.optional(),
+    recommendationsPayload: postVisitRecommendationsPayloadSchema.optional()
+});
+export const visitFlowResultSchema = z.object({
+    draft: visitFlowStepResultSchema,
+    plan: visitFlowStepResultSchema,
+    recommendations: visitFlowStepResultSchema,
+    documents: visitFlowStepResultSchema,
+    overallStatus: z.enum(["success", "partial", "error"])
 });
 export * from "./utils/strings.js";
 export * from "./utils/dates.js";

@@ -389,6 +389,10 @@ export type ImagingViewerState = {
   brightness: number;
   contrast: number;
   zoom: number;
+  panX: number;
+  panY: number;
+  projection: MprProjection;
+  preset: MprWindowPreset;
 };
 
 export type ImagingViewerPlan = {
@@ -421,7 +425,11 @@ export const defaultImagingViewerState: ImagingViewerState = {
   inverted: false,
   brightness: 1,
   contrast: 1.08,
-  zoom: 1
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  projection: "axial",
+  preset: "bone"
 };
 
 export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
@@ -430,7 +438,11 @@ export const defaultDicomFirstFrameViewerState: ImagingViewerState = {
   inverted: false,
   brightness: 1,
   contrast: 1,
-  zoom: 1
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  projection: "axial",
+  preset: "bone"
 };
 
 export type ImagingViewerLocalDraft = {
@@ -1405,12 +1417,14 @@ export function isMprProjection(value: unknown): value is MprProjection {
     value === "oblique" ||
     value === "panoramic_reconstruction" ||
     value === "three_d_volume" ||
-    value === "mip"
+    value === "mip" ||
+    value === "panoramic" ||
+    value === "3d_reconstruction"
   );
 }
 
 export function isMprWindowPreset(value: unknown): value is MprWindowPreset {
-  return value === "bone" || value === "soft_tissue" || value === "implant" || value === "custom";
+  return value === "bone" || value === "soft_tissue" || value === "implant" || value === "custom" || value === "teeth";
 }
 
 export function resolveMprWorkbenchProjection(value: unknown, availableProjections: MprProjection[]): MprProjection {
@@ -2785,6 +2799,7 @@ export type UiPreferences = {
   postVisitCareTopic: PostVisitCareTopic;
   pricelistSourceKind: PricelistSourceKind;
   usePricelistAi: boolean;
+  odontogramUseSurfaces: boolean;
   recognitionKind: AiJobKind;
   recognitionTarget: AiRecognitionTarget;
   importSourceKind: ImportSourceKind;
@@ -3482,6 +3497,7 @@ export const defaultUiPreferences: UiPreferences = {
   postVisitCareTopic: "filling_restoration",
   pricelistSourceKind: "spreadsheet_copy",
   usePricelistAi: false,
+  odontogramUseSurfaces: false,
   recognitionKind: "voice_transcription",
   recognitionTarget: "visit_note",
   importSourceKind: "csv_text",
@@ -3891,6 +3907,7 @@ export function normalizeUiPreferencesPayload(parsed: unknown): UiPreferences | 
       isPricelistSourceKind
     ),
     usePricelistAi: pickUiPreference(source, "usePricelistAi", defaultUiPreferences.usePricelistAi, isBooleanPreference),
+    odontogramUseSurfaces: pickUiPreference(source, "odontogramUseSurfaces", defaultUiPreferences.odontogramUseSurfaces, isBooleanPreference),
     recognitionKind: pickUiPreference(source, "recognitionKind", defaultUiPreferences.recognitionKind, isAiJobKind),
     recognitionTarget: pickUiPreference(source, "recognitionTarget", defaultUiPreferences.recognitionTarget, isAiRecognitionTarget),
     importSourceKind: pickUiPreference(source, "importSourceKind", defaultUiPreferences.importSourceKind, isImportSourceKind),
@@ -4662,7 +4679,8 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
     preferredAppointmentStart: "",
     preferredAppointmentEnd: "",
     preferredAppointmentNote: "",
-    dataProcessingBasisNote: ""
+    dataProcessingBasisNote: "",
+    orthodonticProgress: ""
   };
 }
 
@@ -4684,7 +4702,8 @@ export function patientAdministrativeProfileDraftFromPatient(patient: Patient | 
     preferredAppointmentStart: profile?.preferredAppointmentStart ?? "",
     preferredAppointmentEnd: profile?.preferredAppointmentEnd ?? "",
     preferredAppointmentNote: profile?.preferredAppointmentNote ?? "",
-    dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? ""
+    dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? "",
+    orthodonticProgress: profile?.orthodonticProgress ?? ""
   };
 }
 

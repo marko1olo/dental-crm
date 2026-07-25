@@ -4508,7 +4508,9 @@ export const dicomMprProjectionSchema = z.enum([
   "oblique",
   "panoramic_reconstruction",
   "three_d_volume",
-  "mip"
+  "mip",
+  "panoramic",
+  "3d_reconstruction"
 ]);
 export type DicomMprProjection = z.infer<typeof dicomMprProjectionSchema>;
 
@@ -4965,6 +4967,7 @@ export const imagingViewerWindowPresetSchema = z.enum([
   "caries",
   "perio",
   "photo",
+  "teeth",
   "custom"
 ]);
 export type ImagingViewerWindowPreset = z.infer<typeof imagingViewerWindowPresetSchema>;
@@ -7425,6 +7428,7 @@ export const uiPreferencesSchema = z.object({
   onboardingDismissedAt: z.string().nullable().default(null),
   onboardingStep: onboardingStepSchema.default("intro"),
   onboardingDraftMode: z.boolean().default(false),
+  odontogramUseSurfaces: z.boolean().default(false),
   savedAt: z.string().default("")
 });
 export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
@@ -8048,10 +8052,20 @@ export const migrationAutopilotResponseSchema = z.object({
 });
 export type MigrationAutopilotResponse = z.infer<typeof migrationAutopilotResponseSchema>;
 
-export const mprProjectionSchema = z.enum(["axial", "coronal", "sagittal", "panoramic", "3d_reconstruction"]);
+export const mprProjectionSchema = z.enum([
+  "axial",
+  "coronal",
+  "sagittal",
+  "panoramic",
+  "3d_reconstruction",
+  "oblique",
+  "panoramic_reconstruction",
+  "three_d_volume",
+  "mip"
+]);
 export type MprProjection = z.infer<typeof mprProjectionSchema>;
 
-export const mprWindowPresetSchema = z.enum(["bone", "soft_tissue", "teeth", "custom"]);
+export const mprWindowPresetSchema = z.enum(["bone", "soft_tissue", "teeth", "implant", "custom"]);
 export type MprWindowPreset = z.infer<typeof mprWindowPresetSchema>;
 
 export const imagingViewerStateSchema = z.object({
@@ -8061,43 +8075,46 @@ export const imagingViewerStateSchema = z.object({
   brightness: z.number().default(100),
   contrast: z.number().default(100),
   inverted: z.boolean().default(false),
+  rotationDeg: z.number().default(0),
+  flipHorizontal: z.boolean().default(false),
   projection: mprProjectionSchema.default("axial"),
   preset: mprWindowPresetSchema.default("bone")
 });
 export type ImagingViewerState = z.infer<typeof imagingViewerStateSchema>;
 
-export const imagingViewerSaveStateSchema = z.object({
+export const imagingViewerSaveSessionPayloadSchema = z.object({
   studyId: z.string(),
   state: imagingViewerStateSchema,
   savedAt: z.string()
 });
-export type ImagingViewerSaveState = z.infer<typeof imagingViewerSaveStateSchema>;
+export type ImagingViewerSaveSessionPayload = z.infer<typeof imagingViewerSaveSessionPayloadSchema>;
+export const imagingViewerSaveStateSchema = imagingViewerSaveSessionPayloadSchema;
 
-export const localImagingFolderDraftSchema = z.object({
+export const sharedLocalImagingFolderDraftSchema = z.object({
   folderPath: z.string(),
   patientName: z.string().nullable().optional(),
   patientPhone: z.string().nullable().optional(),
   fileCount: z.number().int().nonnegative(),
   detectedKind: z.string().nullable().optional()
 });
-export type LocalImagingFolderDraft = z.infer<typeof localImagingFolderDraftSchema>;
+export type SharedLocalImagingFolderDraft = z.infer<typeof sharedLocalImagingFolderDraftSchema>;
 
-export const browserPickedImagingFolderPreviewSchema = z.object({
+export const sharedBrowserPickedImagingFolderPreviewSchema = z.object({
   folderName: z.string(),
   totalFiles: z.number().int().nonnegative(),
   readyFiles: z.number().int().nonnegative(),
   warningFiles: z.number().int().nonnegative(),
   blockedFiles: z.number().int().nonnegative()
 });
-export type BrowserPickedImagingFolderPreview = z.infer<typeof browserPickedImagingFolderPreviewSchema>;
+export type SharedBrowserPickedImagingFolderPreview = z.infer<typeof sharedBrowserPickedImagingFolderPreviewSchema>;
 
-export const browserImagingScanProgressSchema = z.object({
+export const sharedBrowserImagingScanProgressSchema = z.object({
   phase: z.enum(["scanning", "parsing", "completed", "error"]),
   scannedFiles: z.number().int().nonnegative(),
   totalFiles: z.number().int().nonnegative(),
   errorMessage: z.string().optional()
 });
-export type BrowserImagingScanProgress = z.infer<typeof browserImagingScanProgressSchema>;
+export type SharedBrowserImagingScanProgress = z.infer<typeof sharedBrowserImagingScanProgressSchema>;
 
 export const visitFlowStepStatusSchema = z.enum(["pending", "running", "success", "skipped", "error"]);
 export type VisitFlowStepStatus = z.infer<typeof visitFlowStepStatusSchema>;

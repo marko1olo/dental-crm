@@ -28,7 +28,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			// Пытаемся найти пациента по номеру телефона
 			// Убираем всё лишнее из номера, оставляя только цифры для поиска
 			const rawPhone = from.replace(/\D/g, "");
-			let patient: any = null;
+			let patient: typeof patients.$inferSelect | null = null;
 
 			if (rawPhone.length >= 10) {
 				// Ищем по последним 10 цифрам, строго в пределах этой организации,
@@ -81,7 +81,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 		}
 
 		const rawPhone = from.replace(/\D/g, "");
-		let patient: any = null;
+		let patient: typeof patients.$inferSelect | null = null;
 
 		if (rawPhone.length >= 10) {
 			const phoneSuffix = rawPhone.slice(-10);
@@ -100,7 +100,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 
 		if (!patient) {
 			// Создаем лида, если пришла SMS с неизвестного номера
-			const insertedPatients = (await db
+			const insertedPatients = await db
 				.insert(patients)
 				.values({
 					organizationId,
@@ -109,9 +109,11 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					notes: `Лид из SMS`,
 					status: "active",
 				})
-				.returning()) as any;
-			patient = insertedPatients[0];
+				.returning();
+			patient = insertedPatients[0] || null;
 		}
+
+		if (!patient) return { success: false };
 
 		// Сохраняем входящее SMS в Inbox
 		const { communicationEvents } = await import("../db/schema.js");

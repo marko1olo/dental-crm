@@ -2343,7 +2343,7 @@ export function useAppLogic(): any {
 	const activeOrganizationId =
 		dashboard?.clinicSettings?.profile?.organizationId ?? null;
 	const isOmniRoleMode =
-		dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
+		(dashboard?.clinicSettings?.profile as { isOmniRole?: boolean } | undefined)?.isOmniRole ?? false;
 
 	const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
 		useState<DicomFirstFramePreviewRequestContext | null>(null);
@@ -2695,8 +2695,8 @@ export function useAppLogic(): any {
 				);
 				throw new WorkflowResponseError(message, response.status);
 			}
-			const payload = await response.json();
-			setDashboard(payload as any);
+			const payload = (await response.json()) as Dashboard;
+			setDashboard(payload);
 			setAccessUnlockRequired(false);
 			setAccessUnlockMessage("");
 		} catch (err) {
@@ -3132,6 +3132,7 @@ export function useAppLogic(): any {
 			postVisitCareTopic,
 			pricelistSourceKind,
 			usePricelistAi,
+			odontogramUseSurfaces,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -3588,7 +3589,7 @@ export function useAppLogic(): any {
 		setPostVisitCareTopic(preferences.postVisitCareTopic);
 		setPricelistSourceKind(preferences.pricelistSourceKind);
 		setUsePricelistAi(preferences.usePricelistAi);
-		setOdontogramUseSurfaces((preferences as any).odontogramUseSurfaces ?? false);
+		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
 		setImportSourceKind(preferences.importSourceKind);
@@ -3721,52 +3722,7 @@ export function useAppLogic(): any {
 
 	useEffect(() => {
 		if (!uiPreferencesHydrated) return undefined;
-		const savedPreferences = saveUiPreferences({
-			uiLanguage,
-			selectedWorkspaceRole,
-			selectedSpecialty,
-			selectedProtocolId,
-			selectedPatientId,
-			scheduleDoctorFilterId,
-			scheduleAssistantFilterId,
-			scheduleChairFilterId,
-			scheduleDefaultDoctorUserId,
-			scheduleDefaultAssistantUserId,
-			scheduleDefaultChairId,
-			scheduleStatusFilter,
-			scheduleDateFilter,
-			paymentMethod,
-			taxDocumentYear,
-			selectedDocumentKind,
-			taxApplicationForm,
-			taxApplicationDeliveryChannel,
-			paymentReceiptTaxSupportRequested,
-			documentIssueSignatureMode,
-			documentIssueStaffFullName,
-			documentIssueStaffRole,
-			procedureConsentProcedureType,
-			postVisitCareTopic,
-			pricelistSourceKind,
-			usePricelistAi,
-			recognitionKind,
-			recognitionTarget,
-			importSourceKind,
-			documentIngestionTarget,
-			imagingImportSourceKind,
-			smartImportMode,
-			imagingKindFilter,
-			dicomWebEndpointUrl,
-			ohifBaseUrl,
-			telegramBotConfigId: telegramBotConfigId.trim(),
-			telegramLinkSubjectType,
-			telegramLinkStaffId: telegramLinkStaffId || null,
-			telegramOutboxStatusFilter,
-			telegramOutboxTemplateFilter,
-			onboardingDismissed,
-			onboardingDismissedAt,
-			onboardingStep,
-			onboardingDraftMode,
-		});
+		const savedPreferences = saveUiPreferences(currentUiPreferencesInput());
 		if (!savedPreferences) {
 			setUiPreferencesSyncError(
 				"Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.",
@@ -6498,6 +6454,12 @@ export function useAppLogic(): any {
 			brightness: sessionState.brightness,
 			contrast: sessionState.contrast,
 			zoom: sessionState.zoom,
+			panX: sessionState.panX ?? 0,
+			panY: sessionState.panY ?? 0,
+			projection: sessionState.projection ?? "axial",
+			preset: isMprWindowPreset(sessionState.windowPreset)
+				? sessionState.windowPreset
+				: "bone",
 		});
 		setMprProjection(
 			resolveMprWorkbenchProjection(
@@ -6510,13 +6472,9 @@ export function useAppLogic(): any {
 		setMprSliceIndex(
 			clampMprSliceIndex(sessionState.sliceIndex ?? 0, mprSliceMaxIndex),
 		);
-		if (
-			sessionState.windowPreset === "bone" ||
-			sessionState.windowPreset === "soft_tissue" ||
-			sessionState.windowPreset === "implant" ||
-			sessionState.windowPreset === "custom"
-		) {
-			setMprWindowPreset(sessionState.windowPreset);
+		const preset = sessionState.windowPreset;
+		if (isMprWindowPreset(preset)) {
+			setMprWindowPreset(preset);
 		}
 		setMprCrosshairEnabled(sessionState.crosshair);
 		setMprLinkedPlanesEnabled(sessionState.linkedPlanes);
@@ -11788,8 +11746,8 @@ export function useAppLogic(): any {
 					objectiveData: recordExtractObjectiveStatusValue(),
 					primaryDiagnosis: recordExtractDiagnosisValue(),
 					primaryDiagnosisIcd10: null,
-					complications: dashboard?.activeVisit?.diary?.complications ?? null,
-					comorbidities: dashboard?.activeVisit?.diary?.comorbidities ?? null,
+					complications: null,
+					comorbidities: null,
 					externalCause: null,
 					healthGroup: null,
 					dispensaryObservation: null,
@@ -12526,7 +12484,7 @@ export function useAppLogic(): any {
 					}),
 					body: JSON.stringify({
 						organizationId:
-							dashboard?.clinicSettings?.profile?.id ||
+							dashboard?.clinicSettings?.profile?.organizationId ||
 							dashboard?.activeVisit?.organizationId ||
 							"00000000-0000-0000-0000-000000000000",
 						patientId: documentPatient.id,

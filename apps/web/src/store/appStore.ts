@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Dashboard } from "@dental/shared";
 import { loadUiPreferences, defaultUiPreferences } from "../AppHelpers";
 
 interface AppStore {
@@ -6,8 +7,8 @@ interface AppStore {
   setOmnibarOpen: (val: boolean) => void;
   uiPreferencesHydrated: any;
   setUiPreferencesHydrated: (val: any) => void;
-  dashboard: any;
-  setDashboard: (val: any) => void;
+  dashboard: Dashboard | null;
+  setDashboard: (val: Dashboard | null | ((current: Dashboard | null) => Dashboard | null)) => void;
   accessUnlockRequired: any;
   setAccessUnlockRequired: (val: any) => void;
   accessUnlockMessage: any;
