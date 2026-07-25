@@ -209,7 +209,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.set({
 				name: name.trim(),
 				criticalThreshold: Math.max(0, criticalThreshold),
-				unitCostRub: Math.max(0, unitCostRub).toString(),
+				unitCostRub: Math.max(0, unitCostRub),
 				updatedAt: new Date(),
 			})
 			.where(

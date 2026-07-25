@@ -12,7 +12,7 @@ function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
-export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput): Promise<Appointment> {
+export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput, tx?: any): Promise<Appointment> {
   if (useInMemory()) {
     return createAppointmentInMemory(input);
   }
@@ -22,7 +22,8 @@ export async function createAppointmentInDb(organizationId: string, input: Creat
     throw new Error("Время окончания должно быть позже времени начала");
   }
 
-  const [created] = await db.insert(schema.appointments).values({
+  const executor = tx || db;
+  const [created] = await executor.insert(schema.appointments).values({
     organizationId,
     patientId: input.patientId,
     doctorUserId: input.doctorUserId,

@@ -392,7 +392,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				const newBalance = currentBalance - payload.amountRub;
 				await tx
 					.update(familyGroups)
-					.set({ balance: newBalance.toFixed(2), organizationId })
+					.set({ balance: Math.round(newBalance), organizationId })
 					.where(eq(familyGroups.id, family.id));
 
 				// 3. Create Payment Record

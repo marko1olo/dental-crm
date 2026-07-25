@@ -87,7 +87,7 @@ export const clinicalRuleAction = pgEnum("clinical_rule_action", [
 ]);
 export const paymentMethod = pgEnum("payment_method", ["cash", "card", "bank_transfer", "online", "insurance", "other"]);
 export const paymentStatus = pgEnum("payment_status", ["planned", "paid", "refunded", "voided"]);
-export const communicationChannel = pgEnum("communication_channel", ["phone", "sms", "whatsapp", "telegram", "email", "in_person"]);
+export const communicationChannel = pgEnum("communication_channel", ["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]);
 export const communicationIntent = pgEnum("communication_intent", [
   "appointment_confirmation",
   "payment_reminder",
@@ -233,6 +233,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
+  specialties: jsonb("specialties"),
   uiPreferences: jsonb("ui_preferences"),
   workingHours: jsonb("working_hours"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -1241,7 +1242,7 @@ export const labOrders = pgTable("lab_orders", {
   clinicalNotes: text("clinical_notes"),
   labComments: text("lab_comments"),
   attachedImageUrl: text("attached_image_url"),
-  priceRub: numeric("price_rub", { precision: 10, scale: 2 }),
+  priceRub: integer("price_rub"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1252,10 +1253,33 @@ export const treatmentPlans = pgTable("treatment_plans", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   doctorId: uuid("doctor_id"),
-  title: text("title").notNull(),
+  title: text("title").notNull().default(""),
+  // alias — some routes call it name
+  name: text("name").notNull().default("План лечения"),
   status: text("status").notNull().default("draft"),
   totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
+  // alias — some routes call it totalPrice
+  totalPrice: numeric("total_price", { precision: 12, scale: 2 }),
+  patientSignature: text("patient_signature"),
+  isSynced: boolean("is_synced").notNull().default(false),
+  version: integer("version").notNull().default(1),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// treatment plan items new (items inside treatment plan)
+export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id),
+  planId: uuid("plan_id").notNull(),
+  toothNumber: integer("tooth_number"),
+  priceId: text("price_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
+  discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
+  phase: integer("phase").notNull().default(1),
+  isBundle: boolean("is_bundle").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1264,8 +1288,16 @@ export const visitTemplates = pgTable("visit_templates", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   title: text("title").notNull(),
+  category: text("category"),
   specialty: text("specialty").notNull().default("universal"),
+  prefilledAnamnesis: text("prefilled_anamnesis"),
+  prefilledObjective: text("prefilled_objective"),
+  prefilledTreatment: text("prefilled_treatment"),
+  defaultIcd10: text("default_icd10"),
+  defaultIcd10Label: text("default_icd10_label"),
+  suggestedProcedureIds: jsonb("suggested_procedure_ids"),
   templateJson: jsonb("template_json"),
+  isBuiltIn: boolean("is_built_in").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1277,6 +1309,7 @@ export const visitDiaries = pgTable("visit_diaries", {
   patientId: uuid("patient_id"),
   draftAuthorId: uuid("draft_author_id"),
   authorId: uuid("author_id"),
+  doctorId: uuid("doctor_id"),
   // clinical structured sections
   anamnesis: text("anamnesis"),
   statusLocalis: text("status_localis"),
@@ -1332,6 +1365,7 @@ export const toothStates = pgTable("tooth_states", {
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   toothNumber: integer("tooth_number").notNull(),
   state: text("state").notNull().default("healthy"),
+  surfaces: jsonb("surfaces"),
   notes: text("notes"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1364,10 +1398,10 @@ export const inventoryItems = pgTable("inventory_items", {
   stockQuantity: numeric("stock_quantity", { precision: 10, scale: 3 }).notNull().default("0"),
   minQty: numeric("min_qty", { precision: 10, scale: 3 }).notNull().default("0"),
   // alias used in inventory routes
-  criticalThreshold: numeric("critical_threshold", { precision: 10, scale: 3 }),
+  criticalThreshold: real("critical_threshold"),
   pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
   // alias — some routes call it unitCostRub
-  unitCostRub: numeric("unit_cost_rub", { precision: 10, scale: 2 }),
+  unitCostRub: real("unit_cost_rub"),
   notes: text("notes"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1416,6 +1450,7 @@ export const appointmentWaitlists = pgTable("appointment_waitlists", {
   priorityLevel: text("priority_level").notNull().default("medium"),
   preferredTimeRanges: jsonb("preferred_time_ranges"),
   status: text("status").notNull().default("waiting"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1481,17 +1516,17 @@ export const crmLeads = pgTable("crm_leads", {
 // procedure material rules (material requirements per procedure)
 export const procedureMaterialRules = pgTable("procedure_material_rules", {
   id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  serviceCode: text("service_code").notNull(),
+  organizationId: uuid("organization_id").references(() => organizations.id),
+  serviceCode: text("service_code"),
   // FK to serviceCatalogItems (optional — some rules are code-only)
   serviceId: uuid("service_id"),
   materialItemId: uuid("material_item_id"),
   // alias used by diary.ts
   inventoryItemId: uuid("inventory_item_id"),
-  materialName: text("material_name").notNull(),
-  requiredQty: numeric("required_qty", { precision: 8, scale: 3 }).notNull().default("1"),
+  materialName: text("material_name"),
+  requiredQty: real("required_qty").notNull().default(1),
   // alias used by diary.ts for deduction logic
-  quantityToDeduct: numeric("quantity_to_deduct", { precision: 8, scale: 3 }).notNull().default("1"),
+  quantityToDeduct: real("quantity_to_deduct").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1499,13 +1534,17 @@ export const procedureMaterialRules = pgTable("procedure_material_rules", {
 export const sterilizationLogs = pgTable("sterilization_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  deviceName: text("device_name").notNull(),
-  cycleNumber: integer("cycle_number").notNull(),
+  deviceName: text("device_name").notNull().default("Автоклав 1"),
+  autoclaveId: text("autoclave_id"),
+  cycleNumber: integer("cycle_number").notNull().default(1),
   temperatureCelsius: numeric("temperature_celsius", { precision: 5, scale: 1 }),
   pressureBar: numeric("pressure_bar", { precision: 4, scale: 2 }),
   itemsDescription: text("items_description"),
   operatorId: uuid("operator_id"),
+  barcode: text("barcode"),
+  status: text("status").notNull().default("passed"),
   passedIndicator: boolean("passed_indicator").notNull().default(true),
+  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1736,9 +1775,12 @@ export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
 export const patientArchiveReasonsAndBlacklists = pgTable("patient_archive_reasons_and_blacklists", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  patientId: uuid("patient_id"),
+  patientName: text("patient_name"),
   archiveReason: text("archive_reason"),
   isBlacklisted: boolean("is_blacklisted").notNull().default(false),
+  isBookingBlocked: boolean("is_booking_blocked").notNull().default(true),
+  warningBadge: text("warning_badge").notNull().default("Черный список"),
   blacklistReason: text("blacklist_reason"),
   archivedBy: uuid("archived_by"),
   archivedAt: timestamp("archived_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1812,8 +1854,13 @@ export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   botId: text("bot_id"),
   maxBotToken: text("max_bot_token"),
-  isEnabled: boolean("is_enabled").notNull().default(false),
+  tokenSecretRef: text("token_secret_ref"),
   webhookUrl: text("webhook_url"),
+  enabledFeaturesJson: jsonb("enabled_features_json"),
+  staffRoutingJson: jsonb("staff_routing_json"),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

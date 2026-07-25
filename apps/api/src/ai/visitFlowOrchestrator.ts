@@ -55,8 +55,8 @@ function extractPlanPayload(
 		estimatedTotalRub: plannedStages.reduce((sum, stage) => sum + (stage.estimatedAmountRub || 0), 0),
 		alternatives: [],
 		risksAndLimitations: [],
-		prognosisAndLimits: null,
-		controlPlan: null,
+		prognosisAndLimits: null as any,
+		controlPlan: null as any,
 		doctorFullName: request.doctorFullName || null, // No fallback to "Лечащий врач"
 		plannedAt: new Date().toISOString(),
 		patientQuestionsAnswered: true,

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import { patientArchiveReasonsAndBlacklists } from "./schema.js";
 
@@ -20,7 +20,7 @@ async function ensurePatientArchiveReasonsAndBlacklistsTable() {
 	}
 }
 
-export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string) {
+export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string, _patientId?: string) {
 	try {
 		await ensurePatientArchiveReasonsAndBlacklistsTable();
 		const rows = await db
@@ -44,4 +44,31 @@ export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string)
 			createdAt: new Date().toISOString(),
 		},
 	];
+}
+
+export async function setPatientArchiveStatusInDb(
+	orgId: string,
+	patientId: string,
+	isBlacklisted: boolean,
+	patientName?: string,
+) {
+	await ensurePatientArchiveReasonsAndBlacklistsTable();
+	if (isBlacklisted) {
+		await db.insert(patientArchiveReasonsAndBlacklists).values({
+			organizationId: orgId,
+			patientName: patientName || "Пациент",
+			archiveReason: "Внесен в черный список администратором",
+			isBookingBlocked: true,
+			warningBadge: "⛔ ЧЕРНЫЙ СПИСОК (Запрет записи)",
+		});
+	} else {
+		await db
+			.delete(patientArchiveReasonsAndBlacklists)
+			.where(
+				and(
+					eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
+					eq(patientArchiveReasonsAndBlacklists.patientName, patientName || ""),
+				),
+			);
+	}
 }

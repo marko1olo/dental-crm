@@ -96,7 +96,7 @@ function serializeTreatmentPlan(
 		totalPrice: numeric(plan.totalPrice),
 		patientSignature: plan.patientSignature ?? null,
 		createdAt: plan.createdAt.toISOString(),
-		updatedAt: plan.updatedAt.toISOString(),
+		updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
 		items: items.map((item) => {
 			const { priceId, name } = splitStoredPriceId(item.priceId);
 			return {

@@ -52,12 +52,16 @@ function maskToken(raw: string): string {
 	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
 }
 
-function parseJsonSafe<T>(value: string, fallback: T): T {
-	try {
-		return JSON.parse(value) as T;
-	} catch {
-		return fallback;
+function parseJsonSafe<T>(value: unknown, fallback: T): T {
+	if (!value) return fallback;
+	if (typeof value === "string") {
+		try {
+			return JSON.parse(value) as T;
+		} catch {
+			return fallback;
+		}
 	}
+	return value as T;
 }
 
 export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
@@ -105,7 +109,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				rules: [],
 			}),
 			isActive: config.isActive,
-			updatedAt: config.updatedAt.toISOString(),
+			updatedAt: (config.updatedAt ?? new Date()).toISOString(),
 		};
 	});
 

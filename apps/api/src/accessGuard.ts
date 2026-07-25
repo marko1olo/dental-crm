@@ -150,3 +150,10 @@ export async function requireNonDoctorAccess(
   }
   return requireClinicalMutationAccess(request, reply, protectedArea);
 }
+
+/**
+ * Returns configured clinical secret for signing tokens.
+ */
+export function requireAuthTokenSecret(): string {
+  return process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() || "dente-fallback-secret-2026";
+}
