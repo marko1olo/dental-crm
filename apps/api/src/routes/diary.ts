@@ -232,7 +232,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 
 		const diaryHash = computeDiaryHash(
 			existing.visitId,
-			existing.patientId,
+			existing.patientId ?? "",
 			existing.anamnesis,
 			existing.statusLocalis,
 			existing.treatmentDescription,
@@ -279,6 +279,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 								.from(procedureMaterialRules)
 								.where(eq(procedureMaterialRules.serviceId, item.serviceId));
 							for (const rule of rules) {
+								if (!rule.inventoryItemId) continue;
 								const [inv] = await tx
 									.select()
 									.from(inventoryItems)
@@ -286,20 +287,21 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 									.for("update");
 								if (inv) {
 									const qtyToDeduct =
-										Number(rule.quantityToDeduct) * Number(item.quantity);
-									if (inv.stockQuantity < qtyToDeduct) {
+										Number(rule.quantityToDeduct || 1) * Number(item.quantity || 1);
+									const currentStock = Number(inv.stockQuantity || inv.currentQty || 0);
+									if (currentStock < qtyToDeduct) {
 										throw new Error(`Недостаточно материалов: ${inv.name}`);
 									}
 									await tx
 										.update(inventoryItems)
-										.set({ stockQuantity: inv.stockQuantity - qtyToDeduct })
+										.set({ stockQuantity: String(currentStock - qtyToDeduct) })
 										.where(eq(inventoryItems.id, inv.id));
 
 									await tx.insert(inventoryTransactions).values({
 										organizationId: orgId,
 										visitId: existing.visitId,
 										inventoryItemId: inv.id,
-										quantityChanged: -qtyToDeduct,
+										quantityChanged: String(-qtyToDeduct),
 										unitCostRub: inv.unitCostRub,
 										transactionType: "auto_deduct",
 										userId: userId,
@@ -329,8 +331,8 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 							userId: userId,
 							specialty: "universal",
 							serviceCategory: "therapy",
-							commissionPct: 30.0,
-							materialCostDeductionPct: 100.0,
+							commissionPct: "30.00",
+							materialCostDeductionPct: "100.00",
 							isActive: true,
 						});
 					}
@@ -416,7 +418,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		// Update the diary (unlock for new content, then re-lock immediately)
 		const newHash = computeDiaryHash(
 			existing.visitId,
-			existing.patientId,
+			existing.patientId ?? "",
 			body.anamnesis ?? existing.anamnesis,
 			body.statusLocalis ?? existing.statusLocalis,
 			body.treatmentDescription ?? existing.treatmentDescription,

@@ -1297,6 +1297,8 @@ export const visitDiaries = pgTable("visit_diaries", {
   instrumentTrayBarcode: text("instrument_tray_barcode"),
   // optimistic concurrency version counter
   version: integer("version").notNull().default(1),
+  // UKEP digital signature hash/blob attached on signing
+  cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1341,11 +1343,11 @@ export const insuranceContracts = pgTable("insurance_contracts", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   companyName: text("company_name").notNull(),
   policyNumberMask: text("policy_number_mask"),
-  coverageTherapyPct: numeric("coverage_therapy_pct", { precision: 5, scale: 2 }).notNull().default("0"),
-  coverageSurgeryPct: numeric("coverage_surgery_pct", { precision: 5, scale: 2 }).notNull().default("0"),
-  coverageOrthoPct: numeric("coverage_ortho_pct", { precision: 5, scale: 2 }).notNull().default("0"),
-  coverageHygienePct: numeric("coverage_hygiene_pct", { precision: 5, scale: 2 }).notNull().default("0"),
-  annualLimitRub: numeric("annual_limit_rub", { precision: 12, scale: 2 }),
+  coverageTherapyPct: real("coverage_therapy_pct").notNull().default(0),
+  coverageSurgeryPct: real("coverage_surgery_pct").notNull().default(0),
+  coverageOrthoPct: real("coverage_ortho_pct").notNull().default(0),
+  coverageHygienePct: real("coverage_hygiene_pct").notNull().default(0),
+  annualLimitRub: integer("annual_limit_rub"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1361,6 +1363,8 @@ export const inventoryItems = pgTable("inventory_items", {
   // alias — some routes call it stockQuantity
   stockQuantity: numeric("stock_quantity", { precision: 10, scale: 3 }).notNull().default("0"),
   minQty: numeric("min_qty", { precision: 10, scale: 3 }).notNull().default("0"),
+  // alias used in inventory routes
+  criticalThreshold: numeric("critical_threshold", { precision: 10, scale: 3 }),
   pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
   // alias — some routes call it unitCostRub
   unitCostRub: numeric("unit_cost_rub", { precision: 10, scale: 2 }),
@@ -1373,9 +1377,15 @@ export const inventoryItems = pgTable("inventory_items", {
 export const inventoryTransactions = pgTable("inventory_transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  itemId: uuid("item_id").notNull().references(() => inventoryItems.id),
+  itemId: uuid("item_id"),
+  // alias — some routes call it inventoryItemId
+  inventoryItemId: uuid("inventory_item_id"),
+  visitId: uuid("visit_id"),
   transactionType: text("transaction_type").notNull().default("receipt"),
-  qty: numeric("qty", { precision: 10, scale: 3 }).notNull(),
+  qty: numeric("qty", { precision: 10, scale: 3 }),
+  // alias — some routes call it quantityChanged
+  quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
+  unitCostRub: numeric("unit_cost_rub", { precision: 10, scale: 2 }),
   userId: uuid("user_id"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1424,11 +1434,15 @@ export const clinicChairs = pgTable("clinic_chairs", {
 export const doctorCommissions = pgTable("doctor_commissions", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  doctorId: uuid("doctor_id").notNull(),
+  doctorId: uuid("doctor_id"),
   // alias — some routes reference it as userId (user FK instead of staff FK)
   userId: uuid("user_id"),
+  specialty: text("specialty").default("universal"),
   serviceCategory: text("service_category"),
   commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 }).notNull().default("25"),
+  commissionPct: numeric("commission_pct", { precision: 5, scale: 2 }).notNull().default("25"),
+  materialCostDeductionPct: numeric("material_cost_deduction_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  isActive: boolean("is_active").notNull().default(true),
   effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1453,6 +1467,8 @@ export const familyGroups = pgTable("family_groups", {
 export const crmLeads = pgTable("crm_leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  // alias — some routes call it name, some patientName
+  name: text("name"),
   patientName: text("patient_name").notNull(),
   phone: text("phone"),
   source: text("source"),
@@ -1509,11 +1525,16 @@ export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
 export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id"),
   actorUserId: uuid("actor_user_id"),
+  userId: uuid("user_id"),
   actorLogin: text("actor_login"),
-  eventType: text("event_type").notNull(),
+  eventType: text("event_type"),
+  action: text("action"),
   resourceType: text("resource_type"),
+  entityType: text("entity_type"),
   resourceId: uuid("resource_id"),
+  entityId: uuid("entity_id"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   meta: jsonb("meta"),
@@ -1531,8 +1552,11 @@ export const patientCtPlannings = pgTable("patient_ct_plannings", {
   implantPositions: jsonb("implant_positions"),
   // Spline / curve planning points for surgical guide
   splinePointsJson: jsonb("spline_points_json"),
+  nervePointsJson: jsonb("nerve_points_json"),
+  implantsJson: jsonb("implants_json"),
   planStatus: text("plan_status").notNull().default("draft"),
   notes: text("notes"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1675,7 +1699,10 @@ export const messengerInboundEvents = pgTable("messenger_inbound_events", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   channel: text("channel").notNull().default("telegram"),
   externalId: text("external_id"),
+  externalChatId: text("external_chat_id"),
   chatId: uuid("chat_id"),
+  patientId: uuid("patient_id"),
+  messageText: text("message_text"),
   rawPayload: jsonb("raw_payload"),
   processedAt: timestamp("processed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1783,6 +1810,7 @@ export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
 export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  botId: text("bot_id"),
   maxBotToken: text("max_bot_token"),
   isEnabled: boolean("is_enabled").notNull().default(false),
   webhookUrl: text("webhook_url"),
@@ -1796,7 +1824,13 @@ export const denteWhatsappBotConfigs = pgTable("dente_whatsapp_bot_configs", {
   wabaAccountId: text("waba_account_id"),
   phoneNumberId: text("phone_number_id"),
   accessToken: text("access_token"),
+  // Secret ref used for token rotation (Vault / env var name)
+  tokenSecretRef: text("token_secret_ref"),
+  // Webhook verification token for Meta WABA challenge
+  webhookVerifyToken: text("webhook_verify_token"),
   isEnabled: boolean("is_enabled").notNull().default(false),
+  // Alias — some routes use isActive instead of isEnabled
+  isActive: boolean("is_active").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

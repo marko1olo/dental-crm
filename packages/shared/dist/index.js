@@ -1200,6 +1200,17 @@ export const clinicProfileSchema = z.object({
     scheduleDefaults: clinicScheduleDefaultsSchema,
     networkEnabled: z.boolean(),
     egiszEnabled: z.boolean(),
+    specializations: z.array(z.string()).optional(),
+    workingHours: z.any().nullable().optional(),
+    currency: z.string().optional(),
+    themeColor: z.string().nullable().optional(),
+    logoUrl: z.string().nullable().optional(),
+    stampUrl: z.string().nullable().optional(),
+    hasAssistants: z.boolean().optional(),
+    hasMultipleChairs: z.boolean().optional(),
+    hasDentalLab: z.boolean().optional(),
+    hasInsuranceCoPay: z.boolean().optional(),
+    hasInstallments: z.boolean().optional(),
     updatedAt: z.string()
 });
 export const staffMemberSchema = z.object({
@@ -1662,7 +1673,8 @@ export const billingSummarySchema = z.object({
     taxDeductionEligibleRub: z.number().int().nonnegative(),
     draftDocumentAmountRub: z.number().int().nonnegative(),
     openTreatmentItems: z.number().int().nonnegative(),
-    unpaidDocuments: z.number().int().nonnegative()
+    unpaidDocuments: z.number().int().nonnegative(),
+    insuranceCoverageRub: z.number().int().nonnegative().optional()
 });
 export const communicationTemplateSchema = z.object({
     id: z.string(),
@@ -2103,7 +2115,8 @@ const patientAdministrativeProfileBaseSchema = z.object({
     preferredAppointmentStart: clockTimeSchema.nullable().default(null),
     preferredAppointmentEnd: clockTimeSchema.nullable().default(null),
     preferredAppointmentNote: patientAdministrativeTextSchema,
-    dataProcessingBasisNote: patientAdministrativeTextSchema
+    dataProcessingBasisNote: patientAdministrativeTextSchema,
+    orthodonticProgress: patientAdministrativeTextSchema
 });
 export const patientAdministrativeProfileSchema = patientAdministrativeProfileBaseSchema.superRefine((value, context) => {
     if (value.preferredAppointmentStart &&
@@ -3087,9 +3100,9 @@ export const treatmentPlanPayloadSchema = z.object({
     estimatedTotalRub: z.number().int().nonnegative(),
     alternatives: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
     risksAndLimitations: z.array(z.string().trim().min(1).max(300)).min(1).max(16),
-    prognosisAndLimits: z.string().trim().min(1).max(900),
-    controlPlan: z.string().trim().min(1).max(700),
-    doctorFullName: z.string().trim().min(1).max(240),
+    prognosisAndLimits: z.string().trim().max(900).nullable().optional(),
+    controlPlan: z.string().trim().max(700).nullable().optional(),
+    doctorFullName: z.string().trim().max(240).nullable().optional(),
     plannedAt: documentDateLikeStringSchema,
     patientQuestionsAnswered: z.literal(true),
     planRequiresSeparateConsent: z.literal(true),
@@ -3599,7 +3612,8 @@ export const dashboardSchema = z.object({
     importBatches: z.array(importBatchSchema),
     speechProviders: z.array(speechProviderSchema),
     auditEvents: z.array(auditEventSchema),
-    complianceWarnings: z.array(z.string())
+    complianceWarnings: z.array(z.string()),
+    insuranceContracts: z.array(z.any()).optional()
 });
 export const createPatientSchema = z.object({
     fullName: z.string().trim().min(1).max(240),

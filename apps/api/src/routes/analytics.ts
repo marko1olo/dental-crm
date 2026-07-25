@@ -41,18 +41,18 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			}
 
 			// 1. Appointment Funnel (Planned, Confirmed, Completed, Cancelled)
-			const apptWhere = [eq(appointments.organizationId, orgId)];
-			if (startDate) {
-				apptWhere.push(gte(appointments.startsAt, startDate));
-			}
-
 			const apptRes = await db
 				.select({
 					status: appointments.status,
 					count: sql<number>`count(*)`,
 				})
 				.from(appointments)
-				.where(and(...apptWhere))
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
+					),
+				)
 				.groupBy(appointments.status);
 
 			const apptCounts = { planned: 0, confirmed: 0, completed: 0, cancelled: 0 };
@@ -74,11 +74,6 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			].filter((x) => x.value > 0);
 
 			// 2. Doctor Profitability — payments grouped by doctorUserId
-			const docProfWhere = [eq(payments.organizationId, orgId)];
-			if (startDate) {
-				docProfWhere.push(gte(payments.createdAt, startDate));
-			}
-
 			const docProfRes = await db
 				.select({
 					doctorId: appointments.doctorUserId,
@@ -87,7 +82,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.from(payments)
 				.leftJoin(visits, eq(payments.visitId, visits.id))
 				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.where(and(...docProfWhere))
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						...(startDate ? [gte(payments.createdAt, startDate)] : []),
+					),
+				)
 				.groupBy(appointments.doctorUserId);
 
 			const allDocs = await db
@@ -112,18 +112,18 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.sort((a, b) => b.revenue - a.revenue);
 
 			// 3. Chair Utilization
-			const chairUtilWhere = [eq(appointments.organizationId, orgId)];
-			if (startDate) {
-				chairUtilWhere.push(gte(appointments.startsAt, startDate));
-			}
-
 			const chairUtilRes = await db
 				.select({
 					chairId: appointments.chairId,
 					count: sql<number>`count(*)`,
 				})
 				.from(appointments)
-				.where(and(...chairUtilWhere))
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
+					),
+				)
 				.groupBy(appointments.chairId);
 
 			const allChairs = await db
@@ -194,27 +194,35 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					};
 				});
 
-			// 5. Summary KPIs
-			const totalPatientsWhere = [eq(patients.organizationId, orgId)];
-			if (startDate) totalPatientsWhere.push(gte(patients.createdAt, startDate));
 			const [patientCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(patients)
-				.where(and(...totalPatientsWhere));
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						...(startDate ? [gte(patients.createdAt, startDate)] : []),
+					),
+				);
 
-			const totalRevenueWhere = [eq(payments.organizationId, orgId)];
-			if (startDate) totalRevenueWhere.push(gte(payments.createdAt, startDate));
 			const [revenueRow] = await db
 				.select({ total: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
 				.from(payments)
-				.where(and(...totalRevenueWhere));
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						...(startDate ? [gte(payments.createdAt, startDate)] : []),
+					),
+				);
 
-			const totalApptsWhere = [eq(appointments.organizationId, orgId)];
-			if (startDate) totalApptsWhere.push(gte(appointments.startsAt, startDate));
 			const [apptCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(appointments)
-				.where(and(...totalApptsWhere));
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						...(startDate ? [gte(appointments.startsAt, startDate)] : []),
+					),
+				);
 
 			const data = {
 				kpis: {
