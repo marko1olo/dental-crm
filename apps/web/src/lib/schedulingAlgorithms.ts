@@ -1,5 +1,4 @@
-﻿// @ts-nocheck
-import { Dashboard, Appointment, StaffMember, Chair, StaffWorkingDay } from "@dental/shared";
+﻿import { Dashboard, StaffMember, Chair, StaffWorkingDay } from "@dental/shared";
 
 interface ResourceRequirements {
   doctorId: string;
@@ -19,6 +18,9 @@ export interface Slot {
 
 function timeToMinutes(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
+  if (hours === undefined || minutes === undefined || Number.isNaN(hours) || Number.isNaN(minutes)) {
+    throw new Error(`Invalid time string: "${timeStr}" (expected HH:MM)`);
+  }
   return hours * 60 + minutes;
 }
 
@@ -75,7 +77,7 @@ export function findAvailableSlots(dashboard: Dashboard, req: ResourceRequiremen
 
     const currentDay = new Date(startDate);
     currentDay.setDate(currentDay.getDate() + dayOffset);
-    const dateStr = currentDay.toISOString().split('T')[0];
+    const dateStr = currentDay.toISOString().split('T')[0] ?? "";
     const weekday = getDayOfWeekIndex(dateStr);
 
     const docWH = getWorkingHoursForDay(doctor, weekday);
@@ -130,7 +132,10 @@ export function findAvailableSlots(dashboard: Dashboard, req: ResourceRequiremen
         if (slotStartMs < appEndMs && slotEndMs > appStartMs) {
           hasCollision = true;
           // Optimization: skip to the end of the colliding appointment
-          time = Math.max(time, timeToMinutes(app.endsAt.split('T')[1].substring(0, 5)) - 15); // -15 because the loop adds 15
+          const appEndTime = app.endsAt.split('T')[1]?.substring(0, 5);
+          if (appEndTime) {
+            time = Math.max(time, timeToMinutes(appEndTime) - 15); // -15 because the loop adds 15
+          }
           break;
         }
       }

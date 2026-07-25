@@ -1,4 +1,3 @@
-// @ts-nocheck
 
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -67,7 +66,9 @@ export const unifiedPdfGenerator = {
 		let currentY = 65;
 
 		for (let i = 0; i < views.length; i++) {
-			const el = document.getElementById(views[i].id);
+			const view = views[i];
+			if (!view) continue;
+			const el = document.getElementById(view.id);
 			if (el) {
 				try {
 					const canvas = await html2canvas(el, {
@@ -84,14 +85,14 @@ export const unifiedPdfGenerator = {
 					const h = (canvas.height * w) / canvas.width;
 
 					doc.setFontSize(10);
-					doc.text(views[i].label, x, currentY);
+					doc.text(view.label, x, currentY);
 					doc.addImage(imgData, "JPEG", x, currentY + 3, w, h);
 
 					if (isRightColumn) {
 						currentY += h + 15;
 					}
 				} catch (e) {
-					console.error(`Failed to capture ${views[i].id}`, e);
+					console.error(`Failed to capture ${view.id}`, e);
 				}
 			}
 		}

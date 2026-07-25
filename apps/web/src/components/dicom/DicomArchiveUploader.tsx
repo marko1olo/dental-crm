@@ -186,7 +186,6 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
       <input
         id="dicom-folder-input"
         type="file"
-        // @ts-ignore
         webkitdirectory="true"
         directory="true"
         multiple
