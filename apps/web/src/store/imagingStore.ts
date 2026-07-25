@@ -26,6 +26,7 @@ import type {
 	MprWindowPreset,
 } from "@dental/shared";
 import { create } from "zustand";
+import { resolveUpdater } from "./updater";
 import {
 	type BrowserImagingScanProgress,
 	type BrowserPickedImagingFolderPreview,
@@ -445,456 +446,342 @@ export const useImagingStore = create<ImagingStore>((set) => ({
 	setImagingImportText: (val) =>
 		set((state) => ({
 			imagingImportText:
-				typeof val === "function" ? (val as any)(state.imagingImportText) : val,
+				resolveUpdater(val, state.imagingImportText),
 		})),
 	setImagingImportSourceKind: (val) =>
 		set((state) => ({
 			imagingImportSourceKind:
-				typeof val === "function"
-					? (val as any)(state.imagingImportSourceKind)
-					: val,
+				resolveUpdater(val, state.imagingImportSourceKind),
 		})),
 	setLocalImagingFolderDraft: (val) =>
 		set((state) => ({
 			localImagingFolderDraft:
-				typeof val === "function"
-					? (val as any)(state.localImagingFolderDraft)
-					: val,
+				resolveUpdater(val, state.localImagingFolderDraft),
 		})),
 	setImagingFolderPath: (val) =>
 		set((state) => ({
 			imagingFolderPath:
-				typeof val === "function" ? (val as any)(state.imagingFolderPath) : val,
+				resolveUpdater(val, state.imagingFolderPath),
 		})),
 	setBrowserPickedImagingFolder: (val) =>
 		set((state) => ({
 			browserPickedImagingFolder:
-				typeof val === "function"
-					? (val as any)(state.browserPickedImagingFolder)
-					: val,
+				resolveUpdater(val, state.browserPickedImagingFolder),
 		})),
 	setBrowserImagingScanProgress: (val) =>
 		set((state) => ({
 			browserImagingScanProgress:
-				typeof val === "function"
-					? (val as any)(state.browserImagingScanProgress)
-					: val,
+				resolveUpdater(val, state.browserImagingScanProgress),
 		})),
 	setBrowserDirectoryPickerAvailable: (val) =>
 		set((state) => ({
 			browserDirectoryPickerAvailable:
-				typeof val === "function"
-					? (val as any)(state.browserDirectoryPickerAvailable)
-					: val,
+				resolveUpdater(val, state.browserDirectoryPickerAvailable),
 		})),
 	setImagingImportPreview: (val) =>
 		set((state) => ({
 			imagingImportPreview:
-				typeof val === "function"
-					? (val as any)(state.imagingImportPreview)
-					: val,
+				resolveUpdater(val, state.imagingImportPreview),
 		})),
 	setImagingImportCommit: (val) =>
 		set((state) => ({
 			imagingImportCommit:
-				typeof val === "function"
-					? (val as any)(state.imagingImportCommit)
-					: val,
+				resolveUpdater(val, state.imagingImportCommit),
 		})),
 	setImagingFolderScan: (val) =>
 		set((state) => ({
 			imagingFolderScan:
-				typeof val === "function" ? (val as any)(state.imagingFolderScan) : val,
+				resolveUpdater(val, state.imagingFolderScan),
 		})),
 	setDicomLocalFolderDiscovery: (val) =>
 		set((state) => ({
 			dicomLocalFolderDiscovery:
-				typeof val === "function"
-					? (val as any)(state.dicomLocalFolderDiscovery)
-					: val,
+				resolveUpdater(val, state.dicomLocalFolderDiscovery),
 		})),
 	setLocalImagingOrganizer: (val) =>
 		set((state) => ({
 			localImagingOrganizer:
-				typeof val === "function"
-					? (val as any)(state.localImagingOrganizer)
-					: val,
+				resolveUpdater(val, state.localImagingOrganizer),
 		})),
 	setDicomSeriesPreview: (val) =>
 		set((state) => ({
 			dicomSeriesPreview:
-				typeof val === "function"
-					? (val as any)(state.dicomSeriesPreview)
-					: val,
+				resolveUpdater(val, state.dicomSeriesPreview),
 		})),
 	setDicomFolderSeriesScan: (val) =>
 		set((state) => ({
 			dicomFolderSeriesScan:
-				typeof val === "function"
-					? (val as any)(state.dicomFolderSeriesScan)
-					: val,
+				resolveUpdater(val, state.dicomFolderSeriesScan),
 		})),
 	setDicomFolderWorkupPlan: (val) =>
 		set((state) => ({
 			dicomFolderWorkupPlan:
-				typeof val === "function"
-					? (val as any)(state.dicomFolderWorkupPlan)
-					: val,
+				resolveUpdater(val, state.dicomFolderWorkupPlan),
 		})),
 	setDicomFirstFramePreview: (val) =>
 		set((state) => ({
 			dicomFirstFramePreview:
-				typeof val === "function"
-					? (val as any)(state.dicomFirstFramePreview)
-					: val,
+				resolveUpdater(val, state.dicomFirstFramePreview),
 		})),
 	setDicomFirstFrameViewerState: (val) =>
 		set((state) => ({
 			dicomFirstFrameViewerState:
-				typeof val === "function"
-					? (val as any)(state.dicomFirstFrameViewerState)
-					: val,
+				resolveUpdater(val, state.dicomFirstFrameViewerState),
 		})),
 	setDicomWebEndpointUrl: (val) =>
 		set((state) => ({
 			dicomWebEndpointUrl:
-				typeof val === "function"
-					? (val as any)(state.dicomWebEndpointUrl)
-					: val,
+				resolveUpdater(val, state.dicomWebEndpointUrl),
 		})),
 	setDicomWebCheck: (val) =>
 		set((state) => ({
 			dicomWebCheck:
-				typeof val === "function" ? (val as any)(state.dicomWebCheck) : val,
+				resolveUpdater(val, state.dicomWebCheck),
 		})),
 	setDicomViewerLaunchManifest: (val) =>
 		set((state) => ({
 			dicomViewerLaunchManifest:
-				typeof val === "function"
-					? (val as any)(state.dicomViewerLaunchManifest)
-					: val,
+				resolveUpdater(val, state.dicomViewerLaunchManifest),
 		})),
 	setDicomViewerToolStateBundle: (val) =>
 		set((state) => ({
 			dicomViewerToolStateBundle:
-				typeof val === "function"
-					? (val as any)(state.dicomViewerToolStateBundle)
-					: val,
+				resolveUpdater(val, state.dicomViewerToolStateBundle),
 		})),
 	setDicomViewerWorkbenchManifest: (val) =>
 		set((state) => ({
 			dicomViewerWorkbenchManifest:
-				typeof val === "function"
-					? (val as any)(state.dicomViewerWorkbenchManifest)
-					: val,
+				resolveUpdater(val, state.dicomViewerWorkbenchManifest),
 		})),
 	setDicomWorkbenchLocalSavedAt: (val) =>
 		set((state) => ({
 			dicomWorkbenchLocalSavedAt:
-				typeof val === "function"
-					? (val as any)(state.dicomWorkbenchLocalSavedAt)
-					: val,
+				resolveUpdater(val, state.dicomWorkbenchLocalSavedAt),
 		})),
 	setDicomWorkbenchServerBundle: (val) =>
 		set((state) => ({
 			dicomWorkbenchServerBundle:
-				typeof val === "function"
-					? (val as any)(state.dicomWorkbenchServerBundle)
-					: val,
+				resolveUpdater(val, state.dicomWorkbenchServerBundle),
 		})),
 	setDicomWorkbenchServerBundles: (val) =>
 		set((state) => ({
 			dicomWorkbenchServerBundles:
-				typeof val === "function"
-					? (val as any)(state.dicomWorkbenchServerBundles)
-					: val,
+				resolveUpdater(val, state.dicomWorkbenchServerBundles),
 		})),
 	setDicomWorkstationReadiness: (val) =>
 		set((state) => ({
 			dicomWorkstationReadiness:
-				typeof val === "function"
-					? (val as any)(state.dicomWorkstationReadiness)
-					: val,
+				resolveUpdater(val, state.dicomWorkstationReadiness),
 		})),
 	setDicomRenderCachePlan: (val) =>
 		set((state) => ({
 			dicomRenderCachePlan:
-				typeof val === "function"
-					? (val as any)(state.dicomRenderCachePlan)
-					: val,
+				resolveUpdater(val, state.dicomRenderCachePlan),
 		})),
 	setSelectedImagingStudyId: (val) =>
 		set((state) => ({
 			selectedImagingStudyId:
-				typeof val === "function"
-					? (val as any)(state.selectedImagingStudyId)
-					: val,
+				resolveUpdater(val, state.selectedImagingStudyId),
 		})),
 	setImagingKindFilter: (val) =>
 		set((state) => ({
 			imagingKindFilter:
-				typeof val === "function" ? (val as any)(state.imagingKindFilter) : val,
+				resolveUpdater(val, state.imagingKindFilter),
 		})),
 	setImagingViewerState: (val) =>
 		set((state) => ({
 			imagingViewerState:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerState)
-					: val,
+				resolveUpdater(val, state.imagingViewerState),
 		})),
 	setImagingViewerActiveTool: (val) =>
 		set((state) => ({
 			imagingViewerActiveTool:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerActiveTool)
-					: val,
+				resolveUpdater(val, state.imagingViewerActiveTool),
 		})),
 	setCtPlanningActiveQuickActionId: (val) =>
 		set((state) => ({
 			ctPlanningActiveQuickActionId:
-				typeof val === "function"
-					? (val as any)(state.ctPlanningActiveQuickActionId)
-					: val,
+				resolveUpdater(val, state.ctPlanningActiveQuickActionId),
 		})),
 	setCtPlanningImplantPlan: (val) =>
 		set((state) => ({
 			ctPlanningImplantPlan:
-				typeof val === "function"
-					? (val as any)(state.ctPlanningImplantPlan)
-					: val,
+				resolveUpdater(val, state.ctPlanningImplantPlan),
 		})),
 	setImagingViewerAnnotations: (val) =>
 		set((state) => ({
 			imagingViewerAnnotations:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerAnnotations)
-					: val,
+				resolveUpdater(val, state.imagingViewerAnnotations),
 		})),
 	setImagingViewerNote: (val) =>
 		set((state) => ({
 			imagingViewerNote:
-				typeof val === "function" ? (val as any)(state.imagingViewerNote) : val,
+				resolveUpdater(val, state.imagingViewerNote),
 		})),
 	setImagingViewerSession: (val) =>
 		set((state) => ({
 			imagingViewerSession:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerSession)
-					: val,
+				resolveUpdater(val, state.imagingViewerSession),
 		})),
 	setImagingViewerSaveState: (val) =>
 		set((state) => ({
 			imagingViewerSaveState:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerSaveState)
-					: val,
+				resolveUpdater(val, state.imagingViewerSaveState),
 		})),
 	setImagingViewerLocalSavedAt: (val) =>
 		set((state) => ({
 			imagingViewerLocalSavedAt:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerLocalSavedAt)
-					: val,
+				resolveUpdater(val, state.imagingViewerLocalSavedAt),
 		})),
 	setImagingViewerSaveError: (val) =>
 		set((state) => ({
 			imagingViewerSaveError:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerSaveError)
-					: val,
+				resolveUpdater(val, state.imagingViewerSaveError),
 		})),
 	setImagingViewerSessionReady: (val) =>
 		set((state) => ({
 			imagingViewerSessionReady:
-				typeof val === "function"
-					? (val as any)(state.imagingViewerSessionReady)
-					: val,
+				resolveUpdater(val, state.imagingViewerSessionReady),
 		})),
 	setMprProjection: (val) =>
 		set((state) => ({
 			mprProjection:
-				typeof val === "function" ? (val as any)(state.mprProjection) : val,
+				resolveUpdater(val, state.mprProjection),
 		})),
 	setMprAxisDeg: (val) =>
 		set((state) => ({
 			mprAxisDeg:
-				typeof val === "function" ? (val as any)(state.mprAxisDeg) : val,
+				resolveUpdater(val, state.mprAxisDeg),
 		})),
 	setMprSlabMm: (val) =>
 		set((state) => ({
 			mprSlabMm:
-				typeof val === "function" ? (val as any)(state.mprSlabMm) : val,
+				resolveUpdater(val, state.mprSlabMm),
 		})),
 	setMprSliceIndex: (val) =>
 		set((state) => ({
 			mprSliceIndex:
-				typeof val === "function" ? (val as any)(state.mprSliceIndex) : val,
+				resolveUpdater(val, state.mprSliceIndex),
 		})),
 	setMprWindowPreset: (val) =>
 		set((state) => ({
 			mprWindowPreset:
-				typeof val === "function" ? (val as any)(state.mprWindowPreset) : val,
+				resolveUpdater(val, state.mprWindowPreset),
 		})),
 	setMprCrosshairEnabled: (val) =>
 		set((state) => ({
 			mprCrosshairEnabled:
-				typeof val === "function"
-					? (val as any)(state.mprCrosshairEnabled)
-					: val,
+				resolveUpdater(val, state.mprCrosshairEnabled),
 		})),
 	setMprLinkedPlanesEnabled: (val) =>
 		set((state) => ({
 			mprLinkedPlanesEnabled:
-				typeof val === "function"
-					? (val as any)(state.mprLinkedPlanesEnabled)
-					: val,
+				resolveUpdater(val, state.mprLinkedPlanesEnabled),
 		})),
 	setMprWorkbenchLocalSavedAt: (val) =>
 		set((state) => ({
 			mprWorkbenchLocalSavedAt:
-				typeof val === "function"
-					? (val as any)(state.mprWorkbenchLocalSavedAt)
-					: val,
+				resolveUpdater(val, state.mprWorkbenchLocalSavedAt),
 		})),
 	setMprWorkbenchDraftRestored: (val) =>
 		set((state) => ({
 			mprWorkbenchDraftRestored:
-				typeof val === "function"
-					? (val as any)(state.mprWorkbenchDraftRestored)
-					: val,
+				resolveUpdater(val, state.mprWorkbenchDraftRestored),
 		})),
 	setIsImagingImportLoading: (val) =>
 		set((state) => ({
 			isImagingImportLoading:
-				typeof val === "function"
-					? (val as any)(state.isImagingImportLoading)
-					: val,
+				resolveUpdater(val, state.isImagingImportLoading),
 		})),
 	setIsImagingImportCommitting: (val) =>
 		set((state) => ({
 			isImagingImportCommitting:
-				typeof val === "function"
-					? (val as any)(state.isImagingImportCommitting)
-					: val,
+				resolveUpdater(val, state.isImagingImportCommitting),
 		})),
 	setImagingCreateSavingKind: (val) =>
 		set((state) => ({
 			imagingCreateSavingKind:
-				typeof val === "function"
-					? (val as any)(state.imagingCreateSavingKind)
-					: val,
+				resolveUpdater(val, state.imagingCreateSavingKind),
 		})),
 	setIsImagingFolderScanning: (val) =>
 		set((state) => ({
 			isImagingFolderScanning:
-				typeof val === "function"
-					? (val as any)(state.isImagingFolderScanning)
-					: val,
+				resolveUpdater(val, state.isImagingFolderScanning),
 		})),
 	setIsDicomLocalDiscovering: (val) =>
 		set((state) => ({
 			isDicomLocalDiscovering:
-				typeof val === "function"
-					? (val as any)(state.isDicomLocalDiscovering)
-					: val,
+				resolveUpdater(val, state.isDicomLocalDiscovering),
 		})),
 	setIsLocalImagingOrganizing: (val) =>
 		set((state) => ({
 			isLocalImagingOrganizing:
-				typeof val === "function"
-					? (val as any)(state.isLocalImagingOrganizing)
-					: val,
+				resolveUpdater(val, state.isLocalImagingOrganizing),
 		})),
 	setIsDicomSeriesPreviewLoading: (val) =>
 		set((state) => ({
 			isDicomSeriesPreviewLoading:
-				typeof val === "function"
-					? (val as any)(state.isDicomSeriesPreviewLoading)
-					: val,
+				resolveUpdater(val, state.isDicomSeriesPreviewLoading),
 		})),
 	setIsDicomWebChecking: (val) =>
 		set((state) => ({
 			isDicomWebChecking:
-				typeof val === "function"
-					? (val as any)(state.isDicomWebChecking)
-					: val,
+				resolveUpdater(val, state.isDicomWebChecking),
 		})),
 	setIsDicomManifestBuilding: (val) =>
 		set((state) => ({
 			isDicomManifestBuilding:
-				typeof val === "function"
-					? (val as any)(state.isDicomManifestBuilding)
-					: val,
+				resolveUpdater(val, state.isDicomManifestBuilding),
 		})),
 	setIsDicomToolStateBuilding: (val) =>
 		set((state) => ({
 			isDicomToolStateBuilding:
-				typeof val === "function"
-					? (val as any)(state.isDicomToolStateBuilding)
-					: val,
+				resolveUpdater(val, state.isDicomToolStateBuilding),
 		})),
 	setIsDicomWorkbenchBuilding: (val) =>
 		set((state) => ({
 			isDicomWorkbenchBuilding:
-				typeof val === "function"
-					? (val as any)(state.isDicomWorkbenchBuilding)
-					: val,
+				resolveUpdater(val, state.isDicomWorkbenchBuilding),
 		})),
 	setIsDicomWorkbenchServerSaving: (val) =>
 		set((state) => ({
 			isDicomWorkbenchServerSaving:
-				typeof val === "function"
-					? (val as any)(state.isDicomWorkbenchServerSaving)
-					: val,
+				resolveUpdater(val, state.isDicomWorkbenchServerSaving),
 		})),
 	setIsDicomWorkbenchReconnecting: (val) =>
 		set((state) => ({
 			isDicomWorkbenchReconnecting:
-				typeof val === "function"
-					? (val as any)(state.isDicomWorkbenchReconnecting)
-					: val,
+				resolveUpdater(val, state.isDicomWorkbenchReconnecting),
 		})),
 	setIsDicomWorkstationChecking: (val) =>
 		set((state) => ({
 			isDicomWorkstationChecking:
-				typeof val === "function"
-					? (val as any)(state.isDicomWorkstationChecking)
-					: val,
+				resolveUpdater(val, state.isDicomWorkstationChecking),
 		})),
 	setIsDicomRenderCachePlanning: (val) =>
 		set((state) => ({
 			isDicomRenderCachePlanning:
-				typeof val === "function"
-					? (val as any)(state.isDicomRenderCachePlanning)
-					: val,
+				resolveUpdater(val, state.isDicomRenderCachePlanning),
 		})),
 	setIsDicomFolderWorkupPlanning: (val) =>
 		set((state) => ({
 			isDicomFolderWorkupPlanning:
-				typeof val === "function"
-					? (val as any)(state.isDicomFolderWorkupPlanning)
-					: val,
+				resolveUpdater(val, state.isDicomFolderWorkupPlanning),
 		})),
 	setIsDicomFirstFramePreviewing: (val) =>
 		set((state) => ({
 			isDicomFirstFramePreviewing:
-				typeof val === "function"
-					? (val as any)(state.isDicomFirstFramePreviewing)
-					: val,
+				resolveUpdater(val, state.isDicomFirstFramePreviewing),
 		})),
 	setIsBrowserImagingFolderPicking: (val) =>
 		set((state) => ({
 			isBrowserImagingFolderPicking:
-				typeof val === "function"
-					? (val as any)(state.isBrowserImagingFolderPicking)
-					: val,
+				resolveUpdater(val, state.isBrowserImagingFolderPicking),
 		})),
 	setIsLocalDicomOperationActive: (val) =>
 		set((state) => ({
 			isLocalDicomOperationActive:
-				typeof val === "function"
-					? (val as any)(state.isLocalDicomOperationActive)
-					: val,
+				resolveUpdater(val, state.isLocalDicomOperationActive),
 		})),
 	reset: () =>
 		set({

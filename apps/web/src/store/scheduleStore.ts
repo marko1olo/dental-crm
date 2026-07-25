@@ -1,4 +1,5 @@
 import type { Appointment } from "@dental/shared";
+import { resolveUpdater } from "./updater";
 import { create } from "zustand";
 
 import {
@@ -166,155 +167,111 @@ export const useScheduleStore = create<ScheduleStore>((set) => ({
 	setScheduleDoctorFilterId: (val) =>
 		set((state) => ({
 			scheduleDoctorFilterId:
-				typeof val === "function"
-					? (val as any)(state.scheduleDoctorFilterId)
-					: val,
+				resolveUpdater(val, state.scheduleDoctorFilterId),
 		})),
 	setScheduleAssistantFilterId: (val) =>
 		set((state) => ({
 			scheduleAssistantFilterId:
-				typeof val === "function"
-					? (val as any)(state.scheduleAssistantFilterId)
-					: val,
+				resolveUpdater(val, state.scheduleAssistantFilterId),
 		})),
 	setScheduleChairFilterId: (val) =>
 		set((state) => ({
 			scheduleChairFilterId:
-				typeof val === "function"
-					? (val as any)(state.scheduleChairFilterId)
-					: val,
+				resolveUpdater(val, state.scheduleChairFilterId),
 		})),
 	setScheduleDefaultDoctorUserId: (val) =>
 		set((state) => ({
 			scheduleDefaultDoctorUserId:
-				typeof val === "function"
-					? (val as any)(state.scheduleDefaultDoctorUserId)
-					: val,
+				resolveUpdater(val, state.scheduleDefaultDoctorUserId),
 		})),
 	setScheduleDefaultAssistantUserId: (val) =>
 		set((state) => ({
 			scheduleDefaultAssistantUserId:
-				typeof val === "function"
-					? (val as any)(state.scheduleDefaultAssistantUserId)
-					: val,
+				resolveUpdater(val, state.scheduleDefaultAssistantUserId),
 		})),
 	setScheduleDefaultChairId: (val) =>
 		set((state) => ({
 			scheduleDefaultChairId:
-				typeof val === "function"
-					? (val as any)(state.scheduleDefaultChairId)
-					: val,
+				resolveUpdater(val, state.scheduleDefaultChairId),
 		})),
 	setScheduleStatusFilter: (val) =>
 		set((state) => ({
 			scheduleStatusFilter:
-				typeof val === "function"
-					? (val as any)(state.scheduleStatusFilter)
-					: val,
+				resolveUpdater(val, state.scheduleStatusFilter),
 		})),
 	setScheduleDateFilter: (val) =>
 		set((state) => ({
 			scheduleDateFilter:
-				typeof val === "function"
-					? (val as any)(state.scheduleDateFilter)
-					: val,
+				resolveUpdater(val, state.scheduleDateFilter),
 		})),
 	setStaffScheduleDrafts: (val) =>
 		set((state) => ({
 			staffScheduleDrafts:
-				typeof val === "function"
-					? (val as any)(state.staffScheduleDrafts)
-					: val,
+				resolveUpdater(val, state.staffScheduleDrafts),
 		})),
 	setStaffScheduleSavingId: (val) =>
 		set((state) => ({
 			staffScheduleSavingId:
-				typeof val === "function"
-					? (val as any)(state.staffScheduleSavingId)
-					: val,
+				resolveUpdater(val, state.staffScheduleSavingId),
 		})),
 	setStaffScheduleDirtyIds: (val) =>
 		set((state) => ({
 			staffScheduleDirtyIds:
-				typeof val === "function"
-					? (val as any)(state.staffScheduleDirtyIds)
-					: val,
+				resolveUpdater(val, state.staffScheduleDirtyIds),
 		})),
 	setStaffScheduleSaveStates: (val) =>
 		set((state) => ({
 			staffScheduleSaveStates:
-				typeof val === "function"
-					? (val as any)(state.staffScheduleSaveStates)
-					: val,
+				resolveUpdater(val, state.staffScheduleSaveStates),
 		})),
 	setChairScheduleDrafts: (val) =>
 		set((state) => ({
 			chairScheduleDrafts:
-				typeof val === "function"
-					? (val as any)(state.chairScheduleDrafts)
-					: val,
+				resolveUpdater(val, state.chairScheduleDrafts),
 		})),
 	setChairScheduleSavingId: (val) =>
 		set((state) => ({
 			chairScheduleSavingId:
-				typeof val === "function"
-					? (val as any)(state.chairScheduleSavingId)
-					: val,
+				resolveUpdater(val, state.chairScheduleSavingId),
 		})),
 	setChairScheduleDirtyIds: (val) =>
 		set((state) => ({
 			chairScheduleDirtyIds:
-				typeof val === "function"
-					? (val as any)(state.chairScheduleDirtyIds)
-					: val,
+				resolveUpdater(val, state.chairScheduleDirtyIds),
 		})),
 	setChairScheduleSaveStates: (val) =>
 		set((state) => ({
 			chairScheduleSaveStates:
-				typeof val === "function"
-					? (val as any)(state.chairScheduleSaveStates)
-					: val,
+				resolveUpdater(val, state.chairScheduleSaveStates),
 		})),
 	setAppointmentScheduleDrafts: (val) =>
 		set((state) => ({
 			appointmentScheduleDrafts:
-				typeof val === "function"
-					? (val as any)(state.appointmentScheduleDrafts)
-					: val,
+				resolveUpdater(val, state.appointmentScheduleDrafts),
 		})),
 	setAppointmentScheduleDirtyIds: (val) =>
 		set((state) => ({
 			appointmentScheduleDirtyIds:
-				typeof val === "function"
-					? (val as any)(state.appointmentScheduleDirtyIds)
-					: val,
+				resolveUpdater(val, state.appointmentScheduleDirtyIds),
 		})),
 	setAppointmentScheduleSaveStates: (val) =>
 		set((state) => ({
 			appointmentScheduleSaveStates:
-				typeof val === "function"
-					? (val as any)(state.appointmentScheduleSaveStates)
-					: val,
+				resolveUpdater(val, state.appointmentScheduleSaveStates),
 		})),
 	setAppointmentScheduleErrors: (val) =>
 		set((state) => ({
 			appointmentScheduleErrors:
-				typeof val === "function"
-					? (val as any)(state.appointmentScheduleErrors)
-					: val,
+				resolveUpdater(val, state.appointmentScheduleErrors),
 		})),
 	setNewAppointmentDraft: (val) =>
 		set((state) => ({
 			newAppointmentDraft:
-				typeof val === "function"
-					? (val as any)(state.newAppointmentDraft)
-					: val,
+				resolveUpdater(val, state.newAppointmentDraft),
 		})),
 	setNewAppointmentSaveState: (val) =>
 		set((state) => ({
 			newAppointmentSaveState:
-				typeof val === "function"
-					? (val as any)(state.newAppointmentSaveState)
-					: val,
+				resolveUpdater(val, state.newAppointmentSaveState),
 		})),
 }));
