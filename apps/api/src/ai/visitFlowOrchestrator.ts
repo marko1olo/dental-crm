@@ -1,11 +1,10 @@
 import {
+	type VisitFlowRequest,
+	type VisitFlowResult,
 	type VisitNoteDraft,
 	type TreatmentPlanPayload,
 	type PostVisitRecommendationsPayload,
 } from "@dental/shared";
-
-export type VisitFlowRequest = any;
-export type VisitFlowResult = any;
 import { buildVisitDraftFromTranscript } from "./visitDraft.js";
 import { personalizeTreatmentPlan } from "./treatmentPlanPersonalize.js";
 import { personalizePostVisitRecommendations } from "./postVisitPersonalize.js";

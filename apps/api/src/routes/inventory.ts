@@ -82,9 +82,9 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.values({
 				organizationId,
 				name: name.trim(),
-				criticalThreshold: Math.max(0, criticalThreshold),
-				unitCostRub: Math.max(0, unitCostRub),
-				stockQuantity: Math.max(0, stockQuantity),
+				criticalThreshold: String(Math.max(0, criticalThreshold)),
+				unitCostRub: String(Math.max(0, unitCostRub)),
+				stockQuantity: String(Math.max(0, stockQuantity)),
 				sku: sku?.trim() || null,
 				barcode: barcode?.trim() || null,
 			})
@@ -138,7 +138,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		const [updated] = await db
 			.update(inventoryItems)
-			.set({ stockQuantity: newStock, updatedAt: new Date() })
+			.set({ stockQuantity: String(newStock), updatedAt: new Date() })
 			.where(
 				and(
 					eq(inventoryItems.id, itemId),
@@ -153,7 +153,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			await db.insert(inventoryTransactions).values({
 				organizationId,
 				inventoryItemId: itemId,
-				quantityChanged: actualAdjustment,
+				quantityChanged: String(actualAdjustment),
 				unitCostRub: updated.unitCostRub,
 				transactionType: "manual_adjust",
 				userId: userContext?.id ?? null,
@@ -209,8 +209,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.update(inventoryItems)
 			.set({
 				name: name.trim(),
-				criticalThreshold: Math.max(0, criticalThreshold),
-				unitCostRub: Math.max(0, unitCostRub),
+				criticalThreshold: String(Math.max(0, criticalThreshold)),
+				unitCostRub: String(Math.max(0, unitCostRub)),
 				updatedAt: new Date(),
 			})
 			.where(

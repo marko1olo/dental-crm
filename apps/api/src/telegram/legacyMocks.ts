@@ -10305,6 +10305,7 @@ function normalizePatientAdministrativeProfile(
 		preferredAppointmentEnd,
 		preferredAppointmentNote: nullableTrimmed(input?.preferredAppointmentNote),
 		dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
+		orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
 	};
 	const hasValue = Object.values(profile).some((value) =>
 		Array.isArray(value) ? value.length > 0 : Boolean(value),
