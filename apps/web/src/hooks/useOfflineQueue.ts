@@ -81,7 +81,10 @@ export function useOfflineQueue() {
 				try {
 					const res = await fetch(item.url, {
 						method: item.method,
-						headers: item.headers,
+						headers: {
+							...item.headers,
+							"X-Idempotency-Key": item.id,
+						},
 						body: item.body,
 					});
 					if (res.ok) {

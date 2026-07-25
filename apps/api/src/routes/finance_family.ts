@@ -22,6 +22,13 @@ const familyPaymentSchema = z.object({
 	visitId: z.string().uuid().optional(),
 });
 
+class FamilyFinanceError extends Error {
+	constructor(message: string, public statusCode: number) {
+		super(message);
+		this.name = "FamilyFinanceError";
+	}
+}
+
 async function familyGroupForOrganization(
 	familyGroupId: string,
 	organizationId: string,
@@ -354,10 +361,9 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 						),
 					)
 					.limit(1);
+
 				if (!patient || patient.familyGroupId !== payload.familyGroupId) {
-					const err = new Error("Пациент не найден в семейной группе клиники");
-					(err as any).statusCode = 404;
-					throw err;
+					throw new FamilyFinanceError("Пациент не найден в семейной группе клиники", 404);
 				}
 
 				// 1. Get Family Group & Lock it
@@ -376,16 +382,12 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.limit(1)
 					.for("update");
 				if (!family) {
-					const err = new Error("Семейная группа не найдена");
-					(err as any).statusCode = 404;
-					throw err;
+					throw new FamilyFinanceError("Семейная группа не найдена", 404);
 				}
 
 				const currentBalance = Number(family.balance ?? 0);
 				if (currentBalance < payload.amountRub) {
-					const err = new Error("Недостаточно средств на семейном балансе");
-					(err as any).statusCode = 402;
-					throw err;
+					throw new FamilyFinanceError("Недостаточно средств на семейном балансе", 402);
 				}
 
 				// 2. Deduct Balance

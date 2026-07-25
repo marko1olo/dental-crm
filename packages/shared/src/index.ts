@@ -1810,7 +1810,8 @@ export const clinicalRuleEvaluationInputSchema = z.object({
   patientId: z.string().uuid(),
   scenarioId: z.string().nullable().optional(),
   serviceIds: z.array(z.string()).min(1),
-  completedServiceIds: z.array(z.string()).default([])
+  completedServiceIds: z.array(z.string()).default([]),
+  enforceBlockers: z.boolean().default(false).optional()
 });
 export type ClinicalRuleEvaluationInput = z.infer<typeof clinicalRuleEvaluationInputSchema>;
 

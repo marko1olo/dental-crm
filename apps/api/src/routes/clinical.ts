@@ -36,7 +36,20 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     if (!orgId) {
       return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
     }
-    return clinicalRuleEvaluationResponseSchema.parse(await evaluateClinicalRulesInDb(orgId, input));
+    const evaluation = await evaluateClinicalRulesInDb(orgId, input);
+    const blockingRule = evaluation.evaluations.find(
+      (e) => !e.resolved && e.severity === "blocker"
+    );
+    if (blockingRule && input.enforceBlockers) {
+      return reply.code(400).send({
+        code: "ClinicalRuleBlocker",
+        error: "ClinicalRuleBlocker",
+        message: `Клиническое противопоказание: ${blockingRule.message}`,
+        ruleId: blockingRule.ruleId,
+        evaluation: blockingRule,
+      });
+    }
+    return clinicalRuleEvaluationResponseSchema.parse(evaluation);
   });
 
   app.post("/api/clinical/rules", async (request, reply) => {
