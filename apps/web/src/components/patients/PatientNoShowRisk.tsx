@@ -49,16 +49,16 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 
 	if (!patientId) return null;
 
-	const getRiskColor = (level: string) => {
+	const getRiskClass = (level: string) => {
 		switch (level) {
 			case "high":
-				return "#EF4444";
+				return "text-red-600 dark:text-red-400";
 			case "medium":
-				return "#F59E0B";
+				return "text-amber-600 dark:text-amber-400";
 			case "low":
-				return "#10B981";
+				return "text-emerald-600 dark:text-emerald-400";
 			default:
-				return "#6B7280";
+				return "text-slate-600 dark:text-slate-400";
 		}
 	};
 
@@ -117,8 +117,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 						<div className="flex items-center gap-2">
 							{getRiskIcon(riskData.riskLevel)}
 							<span
-								className="text-sm font-semibold"
-								style={{ color: getRiskColor(riskData.riskLevel) }}
+								className={`text-sm font-semibold ${getRiskClass(riskData.riskLevel)}`}
 							>
 								{getRiskLabel(riskData.riskLevel)}
 							</span>
