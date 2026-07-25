@@ -270,6 +270,8 @@ export const patients = pgTable("patients", {
   email: text("email"),
   notes: text("notes"),
   administrativeProfile: jsonb("administrative_profile").$type<PatientAdministrativeProfile | null>(),
+  familyGroupId: uuid("family_group_id"),
+  isSynced: boolean("is_synced").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
@@ -451,6 +453,10 @@ export const generatedDocuments = pgTable("generated_documents", {
   issuedByUserId: uuid("issued_by_user_id").references(() => users.id),
   voidedAt: timestamp("voided_at", { withTimezone: true }),
   voidedByUserId: uuid("voided_by_user_id").references(() => users.id),
+  // Ink / canvas signature captured in browser (base64 SVG or PNG data-URL)
+  signatureSvg: text("signature_svg"),
+  // UKEP / GOST-2012 detached PKCS#7 CMS signature blob (base64)
+  cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => {
   return {
@@ -1263,13 +1269,35 @@ export const visitTemplates = pgTable("visit_templates", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// visit diaries (long-form notes per visit)
+// visit diaries (full clinical diary with structured fields)
 export const visitDiaries = pgTable("visit_diaries", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   visitId: uuid("visit_id").notNull(),
+  patientId: uuid("patient_id"),
+  draftAuthorId: uuid("draft_author_id"),
   authorId: uuid("author_id"),
-  content: text("content").notNull(),
+  // clinical structured sections
+  anamnesis: text("anamnesis"),
+  statusLocalis: text("status_localis"),
+  diagnosisIcd10: text("diagnosis_icd10"),
+  diagnosisTooth: text("diagnosis_tooth"),
+  treatmentDescription: text("treatment_description"),
+  complications: text("complications"),
+  comorbidities: text("comorbidities"),
+  // legacy free-text content fallback
+  content: text("content").notNull().default(""),
+  // signing / locking
+  isLocked: boolean("is_locked").notNull().default(false),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  lockedByUserId: uuid("locked_by_user_id"),
+  coSignedByUserId: uuid("co_signed_by_user_id"),
+  diaryHash: text("diary_hash"),
+  // instrument tracking
+  instrumentTrayBarcode: text("instrument_tray_barcode"),
+  // optimistic concurrency version counter
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1280,6 +1308,7 @@ export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
   diaryId: uuid("diary_id").notNull(),
   revisedContent: text("revised_content").notNull(),
   revisedBy: uuid("revised_by"),
+  revisedAt: timestamp("revised_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1329,9 +1358,14 @@ export const inventoryItems = pgTable("inventory_items", {
   category: text("category").notNull().default("material"),
   unit: text("unit").notNull().default("шт"),
   currentQty: numeric("current_qty", { precision: 10, scale: 3 }).notNull().default("0"),
+  // alias — some routes call it stockQuantity
+  stockQuantity: numeric("stock_quantity", { precision: 10, scale: 3 }).notNull().default("0"),
   minQty: numeric("min_qty", { precision: 10, scale: 3 }).notNull().default("0"),
   pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
+  // alias — some routes call it unitCostRub
+  unitCostRub: numeric("unit_cost_rub", { precision: 10, scale: 2 }),
   notes: text("notes"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1391,6 +1425,8 @@ export const doctorCommissions = pgTable("doctor_commissions", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   doctorId: uuid("doctor_id").notNull(),
+  // alias — some routes reference it as userId (user FK instead of staff FK)
+  userId: uuid("user_id"),
   serviceCategory: text("service_category"),
   commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 }).notNull().default("25"),
   effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull().defaultNow(),
@@ -1400,10 +1436,17 @@ export const doctorCommissions = pgTable("doctor_commissions", {
 // family groups (linked family accounts)
 export const familyGroups = pgTable("family_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  groupName: text("group_name").notNull(),
+  organizationId: uuid("organization_id"),
+  // Primary identifiers — 'name' is the display name, 'groupName' kept for compat
+  name: text("name"),
+  groupName: text("group_name").notNull().default(""),
+  // The head (primary) patient of the family; the billing wallet is tied here
+  headPatientId: uuid("head_patient_id"),
   primaryPatientId: uuid("primary_patient_id"),
+  // Family wallet balance in whole rubles
+  balance: integer("balance").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 // CRM leads (incoming lead tracking)
@@ -1424,9 +1467,15 @@ export const procedureMaterialRules = pgTable("procedure_material_rules", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   serviceCode: text("service_code").notNull(),
+  // FK to serviceCatalogItems (optional — some rules are code-only)
+  serviceId: uuid("service_id"),
   materialItemId: uuid("material_item_id"),
+  // alias used by diary.ts
+  inventoryItemId: uuid("inventory_item_id"),
   materialName: text("material_name").notNull(),
   requiredQty: numeric("required_qty", { precision: 8, scale: 3 }).notNull().default("1"),
+  // alias used by diary.ts for deduction logic
+  quantityToDeduct: numeric("quantity_to_deduct", { precision: 8, scale: 3 }).notNull().default("1"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1477,7 +1526,11 @@ export const patientCtPlannings = pgTable("patient_ct_plannings", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   imagingStudyId: uuid("imaging_study_id"),
+  // DICOM study instance UID for linking to imaging
+  studyInstanceUid: text("study_instance_uid"),
   implantPositions: jsonb("implant_positions"),
+  // Spline / curve planning points for surgical guide
+  splinePointsJson: jsonb("spline_points_json"),
   planStatus: text("plan_status").notNull().default("draft"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1762,4 +1815,33 @@ export const services = pgTable("services", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// protocol templates (visit protocol / clinical workflow templates)
+export const protocolTemplates = pgTable("protocol_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  specialty: dentalSpecialty("specialty").notNull().default("universal"),
+  title: text("title").notNull(),
+  visitReason: text("visit_reason").notNull().default(""),
+  defaultDurationMinutes: integer("default_duration_minutes").notNull().default(30),
+  complaintPrompt: text("complaint_prompt").notNull().default(""),
+  objectiveTemplate: text("objective_template").notNull().default(""),
+  diagnosisHints: jsonb("diagnosis_hints"),
+  treatmentPlanTemplate: text("treatment_plan_template").notNull().default(""),
+  requiredDocuments: jsonb("required_documents"),
+  suggestedImaging: jsonb("suggested_imaging"),
+  safetyWarnings: jsonb("safety_warnings"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// UIS mass appointment confirmations (bulk SMS confirmation campaigns)
+export const uisMassAppointmentConfirmations = pgTable("uis_mass_appointment_confirmations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  targetDate: text("target_date").notNull(),
+  totalAppointmentsCount: integer("total_appointments_count").notNull().default(0),
+  confirmedViaSmsCount: integer("confirmed_via_sms_count").notNull().default(0),
+  dispatchChannel: text("dispatch_channel").notNull().default("uis_sms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
