@@ -135,11 +135,13 @@ export function ShiftView({
                     const timeStart = new Date(app.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
                     const timeEnd = new Date(app.endsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
+                    const statusKey = String(app.status || "").toLowerCase();
                     const statusLabels: Record<string, string> = {
                       planned: "запланирован",
                       confirmed: "подтвержден",
                       arrived: "ожидает",
                       in_treatment: "на приеме",
+                      in_progress: "на приеме",
                       completed: "завершен",
                       cancelled: "отменен",
                       no_show: "не пришел"
@@ -154,8 +156,8 @@ export function ShiftView({
                           justifyContent: "space-between", 
                           alignItems: "flex-start", 
                           padding: "12px", 
-                          background: isCurrent ? "var(--teal-50, #f0fdfa)" : "var(--paper)", 
-                          border: isCurrent ? "1px solid var(--teal-200, #99f6e4)" : "1px solid var(--glass-border)", 
+                          background: isCurrent ? "rgba(20, 184, 166, 0.15)" : "var(--paper)", 
+                          border: isCurrent ? "1px solid var(--teal)" : "1px solid var(--glass-border)", 
                           borderRadius: "8px",
                           cursor: "pointer",
                           transition: "all 0.2s ease"
@@ -171,7 +173,7 @@ export function ShiftView({
                           <span className="today-schedule-time" style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
                             {timeStart} – {timeEnd}
                           </span>
-                          <strong className="today-schedule-name" style={{ fontSize: "14px", color: "var(--ink)" }}>
+                          <strong className="today-schedule-name" style={{ fontSize: "14px", color: "var(--ink)", fontWeight: 700 }}>
                             {patient ? patient.fullName : "Неизвестный пациент"}
                           </strong>
                           <span className="today-schedule-reason" style={{ fontSize: "13px", color: "var(--muted)" }}>
@@ -184,10 +186,10 @@ export function ShiftView({
                           textTransform: "uppercase",
                           padding: "4px 8px",
                           borderRadius: "4px",
-                          background: app.status === "in_treatment" ? "#dcfce7" : app.status === "planned" ? "var(--slate-100)" : "#fef3c7",
-                          color: app.status === "in_treatment" ? "#166534" : app.status === "planned" ? "var(--ink)" : "#b45309"
+                          background: (statusKey === "in_treatment" || statusKey === "in_progress") ? "rgba(34, 197, 94, 0.2)" : statusKey === "planned" ? "var(--slate-100)" : "rgba(234, 179, 8, 0.2)",
+                          color: (statusKey === "in_treatment" || statusKey === "in_progress") ? "#15803d" : statusKey === "planned" ? "var(--ink)" : "#b45309"
                         }}>
-                          {statusLabels[app.status] || app.status}
+                          {statusLabels[statusKey] || app.status}
                         </span>
                       </div>
                     );
