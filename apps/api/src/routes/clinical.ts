@@ -368,24 +368,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		const { getAlternativeTreatmentPlansFromDb } = await import("../db/alternativeTreatmentPlansQuery.js");
 		return reply.status(200).send(await getAlternativeTreatmentPlansFromDb(orgId));
 	});
-
-	// COMPETITOR FEATURE #39: клинический_осмотр::расширенные_статусы_одонтограммы
-	app.get("/api/clinical/extended-odontogram-states", async (request, reply) => {
-		const rawOrgId = request.headers["x-organization-id"];
-		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
-		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
-		const { getExtendedOdontogramStatesFromDb } = await import("../db/extendedOdontogramStatesQuery.js");
-		return reply.status(200).send(await getExtendedOdontogramStatesFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE #40: клинический_осмотр::нестоматологические_формы_осмотра
-	app.get("/api/clinical/non-dental-examination-forms", async (request, reply) => {
-		const rawOrgId = request.headers["x-organization-id"];
-		if (rawOrgId === "") return reply.status(400).send({ error: "Invalid organization ID" });
-		const orgId = (rawOrgId as string) || "00000000-0000-0000-0000-000000000001";
-		const { getNonDentalExaminationFormsFromDb } = await import("../db/nonDentalExaminationFormsQuery.js");
-		return reply.status(200).send(await getNonDentalExaminationFormsFromDb(orgId));
-	});
 }
 
 
