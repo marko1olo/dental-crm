@@ -24,7 +24,9 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 				if (!isEmpty && ctx) {
 					try {
 						imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-					} catch (e) {}
+					} catch {
+						// getImageData throws on tainted/zero-size canvas; preserve empty signature
+					}
 				}
 
 				canvas.width = width;

@@ -43,7 +43,9 @@ export function useOnboardingLogic(
     try {
       const draft = localStorage.getItem(LS_KEY);
       if (draft) return JSON.parse(draft);
-    } catch (e) {}
+    } catch (e) {
+      console.warn("[Onboarding] Failed to parse saved draft from localStorage:", e);
+    }
     return null;
   });
 

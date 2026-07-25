@@ -40,7 +40,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
     try {
       const saved = localStorage.getItem("dental_crm_mkt_seo_keys");
       if (saved) return JSON.parse(saved);
-    } catch(e) {}
+    } catch (e) {
+      console.warn("[Marketing] Failed to parse saved SEO keys from localStorage:", e);
+    }
     return [
       "лечение кариеса", "безболезненное удаление", "стоматология", 
       "профессиональная гигиена", "имплантация зубов"
@@ -71,7 +73,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
     try {
       const saved = localStorage.getItem("dental_crm_mkt_stats");
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch (e) {
+      console.warn("[Marketing] Failed to parse saved stats from localStorage:", e);
+    }
     return DEFAULT_STATS;
   });
 

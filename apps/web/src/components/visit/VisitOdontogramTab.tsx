@@ -7,7 +7,7 @@ import { VisitDiaryEditor } from "../VisitDiaryEditor";
 
 export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointment?: any; dashboard?: any }) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch (e) {}
+	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const activeAppointment = props?.activeAppointment ?? ctx?.activeAppointment;
 	const dashboard = props?.dashboard ?? ctx?.dashboard;

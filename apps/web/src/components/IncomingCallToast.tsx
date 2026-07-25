@@ -26,7 +26,7 @@ export function IncomingCallToast() {
 	} | null>(null);
 
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch (e) {}
+	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider (e.g. isolated preview): degrade to prop/null */ }
 	const dashboard = ctx?.dashboard;
 	const { lastMessage } = useWebsocket(WS_URL);
 

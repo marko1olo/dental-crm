@@ -6,7 +6,7 @@ import { LabOrdersPanel } from "../schedule/LabOrdersPanel";
 
 export function VisitDiagnosticsTab(props?: { activePatient?: any }) {
 	let ctx: any = null;
-	try { ctx = useAppLogicContext(); } catch (e) {}
+	try { ctx = useAppLogicContext(); } catch { /* rendered outside AppLogic provider: fall back to props */ }
 	const activePatient = props?.activePatient ?? ctx?.activePatient;
 	const workspaceFlags = useWorkspaceProfile();
 
