@@ -1215,9 +1215,551 @@ export const singleSessionEnforcements = pgTable("single_session_enforcements", 
 
 
 
+// ─────────────────────────────────────────────────────────────
+// Missing table definitions — referenced by query files
+// ─────────────────────────────────────────────────────────────
 
+// lab orders (dental laboratory work)
+export const labOrders = pgTable("lab_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  doctorId: uuid("doctor_id"),
+  doctorName: text("doctor_name"),
+  secureToken: text("secure_token").notNull().unique(),
+  toothFdi: text("tooth_fdi"),
+  material: text("material"),
+  colorVita: text("color_vita"),
+  status: text("status").notNull().default("draft"),
+  dueDate: timestamp("due_date", { withTimezone: true }),
+  clinicalNotes: text("clinical_notes"),
+  labComments: text("lab_comments"),
+  attachedImageUrl: text("attached_image_url"),
+  priceRub: numeric("price_rub", { precision: 10, scale: 2 }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
+// treatment plans (multi-stage treatment planning)
+export const treatmentPlans = pgTable("treatment_plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  doctorId: uuid("doctor_id"),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("draft"),
+  totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
+// visit templates (protocol templates for visits)
+export const visitTemplates = pgTable("visit_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  title: text("title").notNull(),
+  specialty: text("specialty").notNull().default("universal"),
+  templateJson: jsonb("template_json"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
+// visit diaries (long-form notes per visit)
+export const visitDiaries = pgTable("visit_diaries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  visitId: uuid("visit_id").notNull(),
+  authorId: uuid("author_id"),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// visit diary revisions (audit trail for diary edits)
+export const visitDiaryRevisions = pgTable("visit_diary_revisions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  diaryId: uuid("diary_id").notNull(),
+  revisedContent: text("revised_content").notNull(),
+  revisedBy: uuid("revised_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// visit examination photo links (links to uploaded exam photos)
+export const visitExaminationPhotoLinks = pgTable("visit_examination_photo_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  visitId: uuid("visit_id").notNull(),
+  patientId: uuid("patient_id"),
+  photoUrl: text("photo_url").notNull(),
+  caption: text("caption"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// tooth states (per-tooth status for odontogram)
+export const toothStates = pgTable("tooth_states", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  toothNumber: integer("tooth_number").notNull(),
+  state: text("state").notNull().default("healthy"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// insurance contracts (DMS / voluntary health insurance)
+export const insuranceContracts = pgTable("insurance_contracts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  companyName: text("company_name").notNull(),
+  policyNumberMask: text("policy_number_mask"),
+  coverageTherapyPct: numeric("coverage_therapy_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  coverageSurgeryPct: numeric("coverage_surgery_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  coverageOrthoPct: numeric("coverage_ortho_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  coverageHygienePct: numeric("coverage_hygiene_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  annualLimitRub: numeric("annual_limit_rub", { precision: 12, scale: 2 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// inventory items (clinic supplies and materials)
+export const inventoryItems = pgTable("inventory_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  name: text("name").notNull(),
+  category: text("category").notNull().default("material"),
+  unit: text("unit").notNull().default("шт"),
+  currentQty: numeric("current_qty", { precision: 10, scale: 3 }).notNull().default("0"),
+  minQty: numeric("min_qty", { precision: 10, scale: 3 }).notNull().default("0"),
+  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// inventory transactions (stock movements)
+export const inventoryTransactions = pgTable("inventory_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  itemId: uuid("item_id").notNull().references(() => inventoryItems.id),
+  transactionType: text("transaction_type").notNull().default("receipt"),
+  qty: numeric("qty", { precision: 10, scale: 3 }).notNull(),
+  userId: uuid("user_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// patient invoices (billing invoices sent to patients)
+export const patientInvoices = pgTable("patient_invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  visitId: uuid("visit_id"),
+  totalRub: numeric("total_rub", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull().default("draft"),
+  issuedAt: timestamp("issued_at", { withTimezone: true }),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// appointment waitlists (patient waiting queue)
+export const appointmentWaitlists = pgTable("appointment_waitlists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  patientName: text("patient_name"),
+  patientPhone: text("patient_phone"),
+  preferredDoctorId: uuid("preferred_doctor_id"),
+  preferredDoctorName: text("preferred_doctor_name"),
+  priorityLevel: text("priority_level").notNull().default("medium"),
+  preferredTimeRanges: jsonb("preferred_time_ranges"),
+  status: text("status").notNull().default("waiting"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// clinic chairs (treatment chairs / workstations)
+export const clinicChairs = pgTable("clinic_chairs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  name: text("name").notNull(),
+  color: text("color"),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// doctor commissions (payroll commission rates)
+export const doctorCommissions = pgTable("doctor_commissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  doctorId: uuid("doctor_id").notNull(),
+  serviceCategory: text("service_category"),
+  commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 }).notNull().default("25"),
+  effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// family groups (linked family accounts)
+export const familyGroups = pgTable("family_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  groupName: text("group_name").notNull(),
+  primaryPatientId: uuid("primary_patient_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// CRM leads (incoming lead tracking)
+export const crmLeads = pgTable("crm_leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientName: text("patient_name").notNull(),
+  phone: text("phone"),
+  source: text("source"),
+  status: text("status").notNull().default("new"),
+  assignedDoctorId: uuid("assigned_doctor_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// procedure material rules (material requirements per procedure)
+export const procedureMaterialRules = pgTable("procedure_material_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  serviceCode: text("service_code").notNull(),
+  materialItemId: uuid("material_item_id"),
+  materialName: text("material_name").notNull(),
+  requiredQty: numeric("required_qty", { precision: 8, scale: 3 }).notNull().default("1"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// sterilization logs (autoclave / sterilization records)
+export const sterilizationLogs = pgTable("sterilization_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  deviceName: text("device_name").notNull(),
+  cycleNumber: integer("cycle_number").notNull(),
+  temperatureCelsius: numeric("temperature_celsius", { precision: 5, scale: 1 }),
+  pressureBar: numeric("pressure_bar", { precision: 4, scale: 2 }),
+  itemsDescription: text("items_description"),
+  operatorId: uuid("operator_id"),
+  passedIndicator: boolean("passed_indicator").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// system RAM watchdogs (server health monitoring)
+export const systemRamWatchdogs = pgTable("system_ram_watchdogs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  heapUsedMb: numeric("heap_used_mb", { precision: 8, scale: 2 }),
+  heapTotalMb: numeric("heap_total_mb", { precision: 8, scale: 2 }),
+  rssMb: numeric("rss_mb", { precision: 8, scale: 2 }),
+  externalMb: numeric("external_mb", { precision: 8, scale: 2 }),
+  gcCount: integer("gc_count"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// clinical audit logs (HIPAA-style access audit trail)
+export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  actorUserId: uuid("actor_user_id"),
+  actorLogin: text("actor_login"),
+  eventType: text("event_type").notNull(),
+  resourceType: text("resource_type"),
+  resourceId: uuid("resource_id"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  meta: jsonb("meta"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// patient CT plannings (CBCT implant planning)
+export const patientCtPlannings = pgTable("patient_ct_plannings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  imagingStudyId: uuid("imaging_study_id"),
+  implantPositions: jsonb("implant_positions"),
+  planStatus: text("plan_status").notNull().default("draft"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// patient duplicate merge queues (deduplication workflow)
+export const patientDuplicateMergeQueues = pgTable("patient_duplicate_merge_queues", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  sourcePatientId: uuid("source_patient_id").notNull(),
+  targetPatientId: uuid("target_patient_id").notNull(),
+  matchScore: numeric("match_score", { precision: 5, scale: 4 }),
+  status: text("status").notNull().default("pending"),
+  resolvedBy: uuid("resolved_by"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// appointment channel inheritances (messenger channel routing)
+export const appointmentChannelInheritances = pgTable("appointment_channel_inheritances", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  chatId: uuid("chat_id").notNull(),
+  patientName: text("patient_name").notNull(),
+  inheritedChannel: text("inherited_channel").notNull().default("whatsapp"),
+  isAutoApplied: boolean("is_auto_applied").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// bulk image operation logs (batch DICOM operations)
+export const bulkImageOperationLogs = pgTable("bulk_image_operation_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  operationType: text("operation_type").notNull(),
+  studyIds: jsonb("study_ids"),
+  requestedBy: uuid("requested_by"),
+  status: text("status").notNull().default("completed"),
+  errorDetails: jsonb("error_details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// chat message dispatch statuses (outbound message delivery)
+export const chatMessageDispatchStatuses = pgTable("chat_message_dispatch_statuses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  chatId: uuid("chat_id"),
+  messageId: text("message_id"),
+  channel: text("channel").notNull().default("telegram"),
+  status: text("status").notNull().default("sent"),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  failReason: text("fail_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// collaborative chat processing states (concurrent agent sync)
+export const collaborativeChatProcessingStates = pgTable("collaborative_chat_processing_states", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  chatId: uuid("chat_id").notNull(),
+  processingAgent: text("processing_agent"),
+  lockAcquiredAt: timestamp("lock_acquired_at", { withTimezone: true }),
+  lockExpiresAt: timestamp("lock_expires_at", { withTimezone: true }),
+  lastProcessedAt: timestamp("last_processed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// diagnocat AI findings (AI-based radiograph analysis)
+export const diagnocatAiFindings = pgTable("diagnocat_ai_findings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  imagingStudyId: uuid("imaging_study_id"),
+  patientId: uuid("patient_id"),
+  findingsJson: jsonb("findings_json"),
+  confidenceScore: numeric("confidence_score", { precision: 4, scale: 3 }),
+  reviewedBy: uuid("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// egisz blank permissions (EGISZ REMD form access control)
+export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  doctorId: uuid("doctor_id").notNull(),
+  blankCode: text("blank_code").notNull(),
+  blankTitle: text("blank_title").notNull(),
+  isAllowed: boolean("is_allowed").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// external schedule action logs (Zabota2.0 / LoyalMed AI booking)
+export const externalScheduleActionLogs = pgTable("external_schedule_action_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  externalProvider: text("external_provider").notNull(),
+  actionType: text("action_type").notNull(),
+  patientName: text("patient_name").notNull(),
+  appointmentSlot: text("appointment_slot").notNull(),
+  status: text("status").notNull().default("success"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// family recommendation sources (family referral attribution)
+export const familyRecommendationSources = pgTable("family_recommendation_sources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  familyGroupName: text("family_group_name").notNull(),
+  newMemberName: text("new_member_name").notNull(),
+  referrerMemberName: text("referrer_member_name").notNull(),
+  assignedMarketingSource: text("assigned_marketing_source").notNull().default("Рекомендация семьи"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// message template catalogs (reusable SMS/Telegram templates)
+export const messageTemplateCatalogs = pgTable("message_template_catalogs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  title: text("title").notNull(),
+  channel: text("channel").notNull().default("telegram"),
+  intent: text("intent").notNull().default("general"),
+  templateText: text("template_text").notNull(),
+  variables: jsonb("variables"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// messenger file attachments (files sent through chat)
+export const messengerFileAttachments = pgTable("messenger_file_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  chatId: uuid("chat_id"),
+  fileUrl: text("file_url").notNull(),
+  fileType: text("file_type").notNull().default("document"),
+  fileSizeBytes: integer("file_size_bytes"),
+  uploadedBy: uuid("uploaded_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// messenger inbound events (raw incoming webhook events)
+export const messengerInboundEvents = pgTable("messenger_inbound_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  channel: text("channel").notNull().default("telegram"),
+  externalId: text("external_id"),
+  chatId: uuid("chat_id"),
+  rawPayload: jsonb("raw_payload"),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// MKB-10 auto directories (ICD-10 diagnosis quick-select)
+export const mkb10AutoDirectories = pgTable("mkb10_auto_directories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  specialty: text("specialty").notNull().default("universal"),
+  code: text("code").notNull(),
+  title: text("title").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// NDFL tax calculators (personal income tax deduction calc)
+export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id"),
+  taxYear: integer("tax_year").notNull(),
+  totalMedExpensesRub: numeric("total_med_expenses_rub", { precision: 12, scale: 2 }),
+  deductionAmountRub: numeric("deduction_amount_rub", { precision: 12, scale: 2 }),
+  ndflReturnRub: numeric("ndfl_return_rub", { precision: 12, scale: 2 }),
+  calculatedAt: timestamp("calculated_at", { withTimezone: true }).defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// patient archive reasons and blacklists
+export const patientArchiveReasonsAndBlacklists = pgTable("patient_archive_reasons_and_blacklists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  archiveReason: text("archive_reason"),
+  isBlacklisted: boolean("is_blacklisted").notNull().default(false),
+  blacklistReason: text("blacklist_reason"),
+  archivedBy: uuid("archived_by"),
+  archivedAt: timestamp("archived_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// patient communication timelines (full comm history per patient)
+export const patientCommunicationTimelines = pgTable("patient_communication_timelines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  channel: text("channel").notNull(),
+  direction: text("direction").notNull().default("outbound"),
+  intent: text("intent"),
+  message: text("message"),
+  status: text("status").notNull().default("delivered"),
+  operatorId: uuid("operator_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// previous chat dialog histories (chat context for AI)
+export const previousChatDialogHistories = pgTable("previous_chat_dialog_histories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  chatId: uuid("chat_id").notNull(),
+  role: text("role").notNull().default("user"),
+  content: text("content").notNull(),
+  tokensUsed: integer("tokens_used"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// UIS call speech transcripts (telephony / callcenter transcripts)
+export const uisCallSpeechTranscripts = pgTable("uis_call_speech_transcripts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  callId: text("call_id").notNull(),
+  patientPhone: text("patient_phone"),
+  durationSeconds: integer("duration_seconds"),
+  transcript: text("transcript"),
+  sentiment: text("sentiment"),
+  aiSummary: text("ai_summary"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// UIS SMS chat quotas (SMS quota management)
+export const uisSmsChatQuotas = pgTable("uis_sms_chat_quotas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  monthYear: text("month_year").notNull(),
+  smsSentCount: integer("sms_sent_count").notNull().default(0),
+  smsQuotaLimit: integer("sms_quota_limit").notNull().default(1000),
+  costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Yandex calendar syncs (Yandex Calendar integration)
+export const yandexCalendarSyncs = pgTable("yandex_calendar_syncs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  doctorId: uuid("doctor_id").notNull(),
+  yandexCalendarId: text("yandex_calendar_id"),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+  syncStatus: text("sync_status").notNull().default("pending"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Dente Max bot configs (MAX messenger bot settings)
+export const denteMaxBotConfigs = pgTable("dente_max_bot_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  maxBotToken: text("max_bot_token"),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  webhookUrl: text("webhook_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Dente WhatsApp bot configs (WABA / WhatsApp settings)
+export const denteWhatsappBotConfigs = pgTable("dente_whatsapp_bot_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  wabaAccountId: text("waba_account_id"),
+  phoneNumberId: text("phone_number_id"),
+  accessToken: text("access_token"),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// services (clinic price list / service catalog)
+export const services = pgTable("services", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  title: text("title").notNull(),
+  code: text("code"),
+  category: serviceCategory("category").notNull().default("therapy"),
+  specialty: dentalSpecialty("specialty").notNull().default("universal"),
+  basePriceRub: numeric("base_price_rub", { precision: 10, scale: 2 }).notNull().default("0"),
+  durationMinutes: integer("duration_minutes").notNull().default(30),
+  taxDeductible: boolean("tax_deductible").notNull().default(true),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 
