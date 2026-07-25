@@ -762,15 +762,23 @@ async function parseManifestLine(orgId: string, line: string, rowNumber: number,
   };
 }
 
-export async function parseImagingManifest(orgId: string, input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
-  const lines = input.rawText
+export async function parseImagingManifest(
+  orgIdOrInput: { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string } | string,
+  maybeInput?: { sourceName?: string; sourceKind?: ImagingSourceKind; rawText?: string } | string
+) {
+  const orgId = typeof orgIdOrInput === "string" && maybeInput ? orgIdOrInput : "default";
+  const input = typeof orgIdOrInput === "object" ? orgIdOrInput : (maybeInput ?? orgIdOrInput);
+  const rawText = typeof input === "string" ? input : (input?.rawText ?? "");
+  const sourceName = typeof input === "string" ? "Manifest" : (input?.sourceName ?? "Manifest");
+  const sourceKind = typeof input === "string" ? "folder_watch" : (input?.sourceKind ?? "folder_watch");
+  const lines = rawText
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
   if (!lines.length) {
     return imagingImportPreviewResponseSchema.parse({
-      sourceName: input.sourceName,
-      sourceKind: input.sourceKind,
+      sourceName,
+      sourceKind,
       totalRows: 0,
       readyRows: 0,
       warningRows: 0,
@@ -784,12 +792,12 @@ export async function parseImagingManifest(orgId: string, input: { sourceName: s
   const headers = splitLine(lines[0] ?? "", delimiter).map((cell) => headerAliases[normalizeHeader(cell)] ?? null);
   const hasHeader = headers.some(Boolean);
   const rows: ImagingImportPreviewRow[] = await Promise.all((hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
-    if (!hasHeader) return await parseManifestLine(orgId, line, index + 1, input.sourceKind, input.sourceName);
+    if (!hasHeader) return await parseManifestLine(orgId, line, index + 1, sourceKind, sourceName);
     const cells = splitLine(line, delimiter);
     const draft: Partial<ImagingImportPreviewRow> = {
       rowNumber: index + 2,
-      sourceKind: input.sourceKind,
-      sourceName: input.sourceName,
+      sourceKind: sourceKind,
+      sourceName: sourceName,
       warnings: []
     };
     headers.forEach((field, cellIndex) => {
@@ -802,7 +810,7 @@ export async function parseImagingManifest(orgId: string, input: { sourceName: s
     });
     const patient = await matchPatient(orgId, draft.patientName ?? null, draft.phone ?? null);
     const kind = draft.kind ?? detectKind(draft.filePath ?? "");
-    const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", input.sourceKind);
+    const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", sourceKind);
     const warnings: string[] = [];
     if (!patient) warnings.push("Пациент не найден, нужно сопоставление");
     if (!kind) warnings.push("Тип снимка не распознан");
@@ -820,15 +828,15 @@ export async function parseImagingManifest(orgId: string, input: { sourceName: s
       capturedAt: draft.capturedAt ?? null,
       filePath: draft.filePath ?? null,
       sourceKind: source,
-      sourceName: draft.sourceName ?? input.sourceName,
+      sourceName: draft.sourceName ?? sourceName,
       status: blocked ? "blocked" : patient ? "ready" : "warning",
       warnings
     };
   }));
 
   return imagingImportPreviewResponseSchema.parse({
-    sourceName: input.sourceName,
-    sourceKind: input.sourceKind,
+    sourceName,
+    sourceKind,
     totalRows: rows.length,
     readyRows: rows.filter((row) => row.status === "ready").length,
     warningRows: rows.filter((row) => row.status === "warning").length,
