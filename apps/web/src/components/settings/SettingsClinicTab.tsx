@@ -720,6 +720,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                               type="time"
                               value={scheduleDraft.start}
                               onChange={(event: InputChangeEvent) => updateChairScheduleDraft(chair.id, { start: event.target.value })}
+                              className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                             />
                           </label>
                           <label>
@@ -728,12 +729,13 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                               type="time"
                               value={scheduleDraft.end}
                               onChange={(event: InputChangeEvent) => updateChairScheduleDraft(chair.id, { end: event.target.value })}
+                              className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                             />
                           </label>
                           <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
                             {typedWeekdayOptions.map((day: any) => (
                               <button
-                                className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
+                                className={`focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.05] ${scheduleDraft.workingDays.includes(day.value) ? "active" : ""}`}
                                 key={day.value}
                                 type="button"
                                 aria-pressed={scheduleDraft.workingDays.includes(day.value)}
