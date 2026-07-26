@@ -133,10 +133,10 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
   };
 
   return (
-    <section className="settings-zone marketing-zone bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4" id="marketing" aria-label="Маркетинг/SEO" data-testid="marketing-view">
+    <section className="settings-zone marketing-zone panel" style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px" }} id="marketing" aria-label="Маркетинг/SEO" data-testid="marketing-view">
       <div className="panel-heading settings-heading mb-4">
         <h2 title="Маркетинг и привлечение: работа с отзывами на геосервисах, продвижение и воронка сарафанного радио">Маркетинг / SEO</h2>
-        <span className="status-pill px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+        <span className="status-pill status-confirmed">
           активен
         </span>
       </div>
@@ -334,7 +334,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
       {/* SEO KEYS TAB */}
       {activeTab === "keys" ? (
         
-        <div className="marketing-panel bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4">
+        <div className="marketing-panel" style={{ background: "var(--paper-soft)", border: "1px solid var(--line)", borderRadius: "12px", padding: "16px" }}>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
             Эти ключи автоматически передаются ИИ для вставки в ответы на отзывы. Они помогают продвижению клиники в поиске.
           </p>
@@ -363,7 +363,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
 
       {/* INSTRUCTIONS TAB */}
       {activeTab === "stats" ? (
-        <div className="marketing-panel bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4">
+        <div className="marketing-panel" style={{ background: "var(--paper-soft)", border: "1px solid var(--line)", borderRadius: "12px", padding: "16px" }}>
           <h3 style={{ marginTop: 0 }}>Инструкция по работе с отзывами</h3>
           <ol className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed pl-5 space-y-1">
             <li>Откройте страницу клиники на <strong>Яндекс.Картах</strong> или <strong>2ГИС</strong></li>
@@ -390,7 +390,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
         </div>
       ) : null}
 
-      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
         <FamilyRecommendationSourcesWidget />
         <LostPatientsFiltersWidget />
         <RebookingConversionRulesWidget />
