@@ -63,18 +63,23 @@ export function IncomingCallToast() {
 	const noShowRisk = patient?.noShowRisk;
 
 	return (
-		<div className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-teal-500 bg-[#1e293b] text-slate-100 shadow-2xl p-5 border border-slate-700/80 animate-slide-in">
+		<div 
+			className="fixed bottom-6 right-6 z-[999999] flex w-96 flex-col gap-3 rounded-xl border-l-4 border-[var(--teal-500,#14b8a6)] bg-[var(--paper,#1e293b)] text-[var(--ink,#f8fafc)] shadow-2xl p-5 border border-[var(--line,#334155)] animate-slide-in"
+			role="dialog"
+			aria-label="Уведомление о входящем звонке"
+		>
 			{/* Header */}
 			<div className="flex items-start justify-between">
-				<div className="flex items-center gap-2 text-teal-400">
+				<div className="flex items-center gap-2 text-[var(--teal-500,#14b8a6)]">
 					<PhoneIncoming size={18} className="animate-pulse" />
 					<span className="text-xs font-bold uppercase tracking-wider">
 						Входящий звонок
 					</span>
 				</div>
 				<button
+					type="button"
 					onClick={() => setIncomingCall(null)}
-					className="text-slate-400 hover:text-slate-200 transition-colors"
+					className="text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] rounded-md p-1"
 					aria-label="Закрыть уведомление"
 				>
 					<X size={16} />
@@ -83,12 +88,12 @@ export function IncomingCallToast() {
 
 			{/* Caller Info */}
 			<div>
-				<div className="text-lg font-bold text-slate-100 mb-0.5">
+				<div className="text-lg font-bold text-[var(--ink,#f8fafc)] mb-0.5">
 					{incomingCall.phone}
 				</div>
-				<div className="flex items-center gap-1.5 text-sm text-slate-400">
-					<User size={14} className="text-slate-500" />
-					<span className="font-semibold text-slate-300">
+				<div className="flex items-center gap-1.5 text-sm text-[var(--muted,#94a3b8)]">
+					<User size={14} className="text-[var(--muted,#94a3b8)]" />
+					<span className="font-semibold text-[var(--ink,#f8fafc)]">
 						{incomingCall.patientId
 							? incomingCall.patientName
 							: "Неизвестный номер"}
@@ -97,15 +102,15 @@ export function IncomingCallToast() {
 			</div>
 
 			{/* Telephony Script & Reminders */}
-			<div className="mt-2 bg-slate-800/60 rounded-lg p-3 border border-slate-700/40 space-y-2 text-xs">
-				<div className="flex items-center gap-1.5 text-teal-400 font-semibold mb-1">
+			<div className="mt-2 bg-[var(--paper-soft,rgba(30,41,59,0.6))] rounded-lg p-3 border border-[var(--line,rgba(51,65,85,0.4))] space-y-2 text-xs">
+				<div className="flex items-center gap-1.5 text-[var(--teal-500,#14b8a6)] font-semibold mb-1">
 					<BookOpen size={13} />
 					<span>Скрипт разговора / Памятка:</span>
 				</div>
 
-				<ul className="space-y-1.5 text-slate-300 list-none pl-0">
+				<ul className="space-y-1.5 text-[var(--ink,#f8fafc)] list-none pl-0">
 					<li className="flex items-start gap-1">
-						<span className="text-teal-500 font-bold">•</span>
+						<span className="text-[var(--teal-500,#14b8a6)] font-bold">•</span>
 						<span>
 							Уточните причину обращения (острая боль, осмотр, плановое лечение)
 						</span>
@@ -113,7 +118,7 @@ export function IncomingCallToast() {
 
 					{/* Dynamic Alerts */}
 					{!incomingCall.patientId && (
-						<li className="flex items-start gap-1 text-amber-400 bg-amber-500/10 p-1.5 rounded border border-amber-500/20 mt-1">
+						<li className="flex items-start gap-1 text-[var(--warn-500,#f59e0b)] bg-[rgba(245,158,11,0.1)] p-1.5 rounded border border-[rgba(245,158,11,0.2)] mt-1">
 							<AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
 							<span>
 								Новый пациент. Предложите акцию на первичную консультацию!
@@ -122,8 +127,8 @@ export function IncomingCallToast() {
 					)}
 
 					{incomingCall.patientId && !hasDms && (
-						<li className="flex items-start gap-1 text-teal-400">
-							<span className="text-teal-500 font-bold">•</span>
+						<li className="flex items-start gap-1 text-[var(--teal-500,#14b8a6)]">
+							<span className="text-[var(--teal-500,#14b8a6)] font-bold">•</span>
 							<span>
 								Уточните наличие полиса ДМС (клиника работает со страховыми)
 							</span>
@@ -131,15 +136,15 @@ export function IncomingCallToast() {
 					)}
 
 					{incomingCall.patientId && noShowRisk && (
-						<li className="flex items-start gap-1 text-red-400 bg-red-500/10 p-1.5 rounded border border-red-500/20 mt-1">
+						<li className="flex items-start gap-1 text-[var(--danger,#ef4444)] bg-[rgba(239,68,68,0.1)] p-1.5 rounded border border-[rgba(239,68,68,0.2)] mt-1">
 							<ShieldAlert size={12} className="mt-0.5 flex-shrink-0" />
 							<span>Пациент из зоны риска отмен. Подтвердите явку дважды!</span>
 						</li>
 					)}
 
 					{incomingCall.patientId && hasNotes && (
-						<li className="flex items-start gap-1 text-slate-300 italic border-t border-slate-700/40 pt-1.5 mt-1.5">
-							<span className="font-semibold text-slate-400 not-italic">
+						<li className="flex items-start gap-1 text-[var(--ink,#f8fafc)] italic border-t border-[var(--line,#334155)] pt-1.5 mt-1.5">
+							<span className="font-semibold text-[var(--muted,#94a3b8)] not-italic">
 								Заметка:
 							</span>
 							<span>"{patient.notes}"</span>
@@ -152,19 +157,21 @@ export function IncomingCallToast() {
 			<div className="flex gap-2 mt-2">
 				{incomingCall.patientId ? (
 					<button
+						type="button"
 						onClick={() => {
 							setSelectedPatientId(incomingCall.patientId);
 							setCurrentView("patients");
 							setIncomingCall(null);
 						}}
-						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-[#1e293b] text-center transition-colors shadow-md shadow-teal-500/10"
+						aria-label="Открыть карту пациента"
+						className="flex-1 rounded-lg bg-[var(--brand-500,#0f766e)] hover:bg-[var(--brand-600,#0e7490)] active:scale-[0.98] px-3 py-2 text-xs font-bold text-white text-center transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
 					>
 						Открыть карту пациента
 					</button>
 				) : (
 					<button
+						type="button"
 						onClick={() => {
-							// Open new patient form or patient view
 							setCurrentView("patients");
 							setIncomingCall(null);
 							showToast(
@@ -172,7 +179,8 @@ export function IncomingCallToast() {
 								"info",
 							);
 						}}
-						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-[#1e293b] text-center transition-colors shadow-md shadow-teal-500/10"
+						aria-label="Зарегистрировать нового пациента"
+						className="flex-1 rounded-lg bg-[var(--brand-500,#0f766e)] hover:bg-[var(--brand-600,#0e7490)] active:scale-[0.98] px-3 py-2 text-xs font-bold text-white text-center transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
 					>
 						Зарегистрировать
 					</button>
