@@ -40,6 +40,17 @@ export interface VisitStore {
   visitAiDiagnosesByCode: Record<string, string>;
   
   setToothState: (code: string, state: ToothState) => void;
+  /**
+   * Полный сброс карты зубов и ИИ-диагнозов.
+   *
+   * БЫЛО: комментарий выше обещал «Resets on new visit load», но
+   * setVisitToothStateByCode не вызывался НИ ИЗ ОДНОГО места, а setToothState
+   * и applyAiToothCodes только добавляют значения. Из-за этого отметки зубов
+   * пациента А оставались на экране при открытии пациента Б, и, что хуже,
+   * applyAiToothCodes отказывался перезаписывать «не idle» значения — то есть
+   * находка ИИ по зубу пациента Б молча игнорировалась в пользу данных пациента А.
+   */
+  resetVisitToothState: () => void;
   applyAiToothCodes: (detectedCodes: string[], primaryState?: ToothState, detectedToothStates?: Record<string, ToothState>, aiDiagnoses?: Record<string, string>) => void;
 
   lastServerDraftSavedAt: string | null;
@@ -119,6 +130,7 @@ export const useVisitStore = create<VisitStore>((set) => ({
   visitAiDiagnosesByCode: {},
   
   setToothState: (code, state) => set((prev) => ({ visitToothStateByCode: { ...prev.visitToothStateByCode, [code]: state } })),
+  resetVisitToothState: () => set({ visitToothStateByCode: {}, visitAiDiagnosesByCode: {} }),
   applyAiToothCodes: (detectedCodes, primaryState = "planned", detectedToothStates, aiDiagnoses) => set((prev) => {
     const next = { ...prev.visitToothStateByCode };
     const nextDiagnoses = { ...prev.visitAiDiagnosesByCode };

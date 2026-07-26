@@ -398,9 +398,11 @@ export function DocumentsView(props: DocumentsViewProps) {
     isDocumentIngesting,
     setIsDocumentIngesting,
   } = useDocumentStore();
-  const {
-    
-  } = useDocumentStore();
+  // БЫЛО: здесь стояла ТРЕТЬЯ подписка на весь стор документов, не
+  // извлекавшая НИ ОДНОГО поля: `const { } = useDocumentStore();`.
+  // Zustand без селектора уведомляет подписчика о любом изменении, поэтому
+  // каждое нажатие клавиши в любом поле документа перерисовывало этот
+  // компонент (287 КБ разметки) лишний раз — просто впустую.
   const {
     anesthesiaAllergyRestrictionsChecked,
     anesthesiaAllergyStatus,

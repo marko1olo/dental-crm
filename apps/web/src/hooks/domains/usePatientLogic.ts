@@ -180,6 +180,10 @@ export function usePatientLogic({
 		patientCoreDraftRef.current = patientCoreDraft;
 	}, [patientCoreDraft]);
 
+	// Отложенное сохранение профиля: флаг нужен, чтобы при размонтировании или
+	// смене пациента не потерять уже введённые данные.
+	const pendingProfileSaveRef = useRef(false);
+
 	useEffect(() => {
 		if (
 			!selectedPatient ||
@@ -190,9 +194,23 @@ export function usePatientLogic({
 			return undefined;
 		}
 		const saveTimer = window.setTimeout(() => {
+			pendingProfileSaveRef.current = false;
 			void savePatientAdministrativeProfile();
 		}, 1400);
-		return () => window.clearTimeout(saveTimer);
+		pendingProfileSaveRef.current = true;
+		return () => {
+			window.clearTimeout(saveTimer);
+			// БЫЛО: очистка просто отменяла таймер. React выполняет её ПЕРЕД
+			// применением нового эффекта, поэтому переключение на другого
+			// пациента в течение 1,4 секунды после правки отменяло сохранение,
+			// а следующий эффект перезаписывал черновик данными нового пациента.
+			// Введённый ИНН или паспорт исчезали молча, без предупреждения.
+			// Теперь незавершённое сохранение доводится до конца.
+			if (pendingProfileSaveRef.current) {
+				pendingProfileSaveRef.current = false;
+				void savePatientAdministrativeProfile();
+			}
+		};
 	}, [
 		selectedPatient?.id,
 		patientAdministrativeProfileDirty,

@@ -1968,9 +1968,10 @@ async function handleWebhook(request, reply) {
     }));
 }
 export async function registerTelegramWebhookRoutes(app) {
-    app.post("/api/telegram/webhook", handleWebhook);
-    app.post("/api/telegram/webhook/:organizationId/:botConfigId", handleWebhook);
-    app.post("/api/telegram/webhook/:organizationId", handleWebhook);
+    const options = { bodyLimit: 256 * 1024 };
+    app.post("/api/telegram/webhook", options, handleWebhook);
+    app.post("/api/telegram/webhook/:organizationId/:botConfigId", options, handleWebhook);
+    app.post("/api/telegram/webhook/:organizationId", options, handleWebhook);
 }
 function registerTelegramStatusRoutes(app, telegramControlPlaneRouteOptions) {
     app.get("/api/telegram/status", telegramControlPlaneRouteOptions, async () => buildStatus());

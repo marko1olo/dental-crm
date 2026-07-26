@@ -4231,8 +4231,15 @@ export function normalizeClockTime(value: string, fallback: string): string {
 }
 
 export function normalizeWorkingDaysDraft(value: readonly number[] | undefined): number[] {
-  const days = Array.from(new Set((value ?? defaultWorkingDays).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)));
-  return days.length ? days : defaultWorkingDays;
+  // БЫЛО: пустой массив приравнивался к "не задано" и подменялся на Пн–Пт.
+  // Администратор снимал все галочки, чтобы отправить врача в отпуск или вывести
+  // кресло из строя, — галочки возвращались на Пн–Пт и сохранялись в базу.
+  // Отсутствующий врач оставался доступным для записи.
+  // Теперь Пн–Пт подставляются только когда значение вообще не задано.
+  if (value === undefined || value === null) return [...defaultWorkingDays];
+  return Array.from(new Set(value.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))).sort(
+    (left, right) => left - right
+  );
 }
 
 export function normalizeOptionalWorkingDaysDraft(value: readonly number[] | undefined): number[] {
@@ -5122,7 +5129,21 @@ export function openSpeechChunkDb(): Promise<IDBDatabase> {
     };
     request.onsuccess = () => {
       const db = request.result;
-      db.onversionchange = () => db.close();
+      // БЫЛО: при смене версии соединение закрывалось, но КЭШ промиса оставался
+      // указывать на закрытый дескриптор. Сценарий: открыта вторая вкладка после
+      // обновления версии хранилища — первая закрывала своё соединение, а все
+      // последующие db.transaction(...) бросали InvalidStateError. Сохранение
+      // приёма падало на запасной путь в localStorage, который к тому моменту
+      // уже очищен, и очередь неотправленных записей приёма перезаписывалась
+      // пустой — при том, что интерфейс сообщал «сохранено локально».
+      // Сбрасываем кэш, чтобы следующий вызов открыл соединение заново.
+      db.onversionchange = () => {
+        speechChunkDbPromise = null;
+        db.close();
+      };
+      db.onclose = () => {
+        speechChunkDbPromise = null;
+      };
       try {
         assertSpeechChunkDbStores(db);
         resolve(db);

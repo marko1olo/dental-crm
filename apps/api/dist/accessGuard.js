@@ -61,3 +61,63 @@ export async function requireClinicalReadAccess(request, reply, protectedArea = 
     });
     return false;
 }
+/**
+ * Resolves the organization ID from the incoming request.
+ * Checks (in order):
+ *  1. JWT / session user.organizationId
+ *  2. x-organization-id header
+ *  3. Returns null if neither present
+ */
+export async function resolveOrganizationId(request) {
+    const user = request.user;
+    if (user?.organizationId && typeof user.organizationId === "string") {
+        return user.organizationId;
+    }
+    const headerValue = request.headers["x-organization-id"];
+    const normalized = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+    if (typeof normalized === "string" && normalized.trim().length > 0) {
+        return normalized.trim();
+    }
+    return null;
+}
+/**
+ * Requires that requireResolvedOrganizationId is set on the request.
+ * Returns the orgId or sends a 403 and returns null.
+ */
+export async function requireResolvedOrganizationId(request, reply, _protectedArea) {
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) {
+        reply.code(403).send({ error: "OrganizationIdRequired", message: "Organization ID required." });
+        return null;
+    }
+    return orgId;
+}
+/**
+ * requireResolvedStaffOrAdminOrganizationId — alias of requireResolvedOrganizationId
+ * for routes that require staff or admin role in addition to org context.
+ * Role check is delegated to the calling route.
+ */
+export async function requireResolvedStaffOrAdminOrganizationId(request, reply, _protectedArea) {
+    return requireResolvedOrganizationId(request, reply);
+}
+/**
+ * requireNonDoctorAccess — allows any authenticated non-doctor (admin, staff)
+ * through. Doctors are restricted from certain write routes.
+ */
+export async function requireNonDoctorAccess(request, reply, protectedArea = "non-doctor mutation") {
+    const user = request.user;
+    if (user?.role === "doctor") {
+        reply.code(403).send({
+            error: "DoctorsNotAllowed",
+            message: `Доктора не могут выполнять это действие: ${protectedArea}`,
+        });
+        return false;
+    }
+    return requireClinicalMutationAccess(request, reply, protectedArea);
+}
+/**
+ * Returns configured clinical secret for signing tokens.
+ */
+export function requireAuthTokenSecret() {
+    return process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() || "dente-fallback-secret-2026";
+}

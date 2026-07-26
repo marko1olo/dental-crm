@@ -1,11 +1,11 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne, lt, gt, or } from "drizzle-orm";
 import { createAppointment as createAppointmentInMemory, updateAppointment as updateAppointmentInMemory, appointments as inMemoryAppointments } from "../sampleData.js";
 function useInMemory() {
     return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
-export async function createAppointmentInDb(organizationId, input) {
+export async function createAppointmentInDb(organizationId, input, tx) {
     if (useInMemory()) {
         return createAppointmentInMemory(input);
     }
@@ -14,15 +14,42 @@ export async function createAppointmentInDb(organizationId, input) {
     if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {
         throw new Error("Время окончания должно быть позже времени начала");
     }
-    const [created] = await db.insert(schema.appointments).values({
+    const executor = tx || db;
+    const candidateStarts = new Date(startsAtMs);
+    const candidateEnds = new Date(endsAtMs);
+    if (input.status !== "cancelled" && input.status !== "no_show") {
+        const conditions = [
+            eq(schema.appointments.organizationId, organizationId),
+            ne(schema.appointments.status, "cancelled"),
+            ne(schema.appointments.status, "no_show"),
+            lt(schema.appointments.startsAt, candidateEnds),
+            gt(schema.appointments.endsAt, candidateStarts),
+        ];
+        const matchConditions = [];
+        if (input.chairId)
+            matchConditions.push(eq(schema.appointments.chairId, input.chairId));
+        if (input.doctorUserId)
+            matchConditions.push(eq(schema.appointments.doctorUserId, input.doctorUserId));
+        if (matchConditions.length > 0) {
+            const overlapping = await executor.select().from(schema.appointments).where(and(...conditions, or(...matchConditions))).limit(1);
+            if (overlapping.length > 0 && overlapping[0]) {
+                const ov = overlapping[0];
+                if (input.doctorUserId && ov.doctorUserId === input.doctorUserId) {
+                    throw new Error("У врача уже есть запись в это время");
+                }
+                throw new Error("Кресло уже занято другой записью в это время");
+            }
+        }
+    }
+    const [created] = await executor.insert(schema.appointments).values({
         organizationId,
         patientId: input.patientId,
         doctorUserId: input.doctorUserId,
         assistantUserId: input.assistantUserId ?? null,
         chairId: input.chairId,
         status: input.status,
-        startsAt: new Date(input.startsAt),
-        endsAt: new Date(input.endsAt),
+        startsAt: candidateStarts,
+        endsAt: candidateEnds,
         reason: input.reason || null,
         comment: input.comment || null
     }).returning();
@@ -55,6 +82,36 @@ export async function updateAppointmentInDb(organizationId, appointmentId, input
     const endsAtMs = Date.parse(endsAtRaw);
     if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {
         throw new Error("Время окончания должно быть позже времени начала");
+    }
+    const candidateStarts = new Date(startsAtMs);
+    const candidateEnds = new Date(endsAtMs);
+    const newStatus = input.status ?? existing.status;
+    const newChairId = input.chairId ?? existing.chairId;
+    const newDoctorUserId = input.doctorUserId ?? existing.doctorUserId;
+    if (newStatus !== "cancelled" && newStatus !== "no_show") {
+        const conditions = [
+            eq(schema.appointments.organizationId, organizationId),
+            ne(schema.appointments.id, appointmentId),
+            ne(schema.appointments.status, "cancelled"),
+            ne(schema.appointments.status, "no_show"),
+            lt(schema.appointments.startsAt, candidateEnds),
+            gt(schema.appointments.endsAt, candidateStarts),
+        ];
+        const matchConditions = [];
+        if (newChairId)
+            matchConditions.push(eq(schema.appointments.chairId, newChairId));
+        if (newDoctorUserId)
+            matchConditions.push(eq(schema.appointments.doctorUserId, newDoctorUserId));
+        if (matchConditions.length > 0) {
+            const overlapping = await db.select().from(schema.appointments).where(and(...conditions, or(...matchConditions))).limit(1);
+            if (overlapping.length > 0 && overlapping[0]) {
+                const ov = overlapping[0];
+                if (newDoctorUserId && ov.doctorUserId === newDoctorUserId) {
+                    throw new Error("У врача уже есть запись в это время");
+                }
+                throw new Error("Кресло уже занято другой записью в это время");
+            }
+        }
     }
     const [updated] = await db.update(schema.appointments).set({
         patientId: input.patientId ?? existing.patientId,

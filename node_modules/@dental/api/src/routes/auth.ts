@@ -3,12 +3,44 @@ import crypto from "crypto";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
-import { configuredClinicalAccessSecret } from "../accessGuard.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
-export const TOKEN_SECRET = () => {
-  const secret = process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_jwt_secret_demo";
-  return secret;
-};
+import { authTokenSecret } from "../security/authSecret.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { resetRateLimit } from "../security/rateLimit.js";
+import { ADMIN_ROLES, getRequestIdentity } from "../security/identity.js";
+
+/**
+ * Секрет подписи токенов. Раньше здесь стоял публичный фолбэк
+ * "dente_jwt_secret_demo": зная его, кто угодно мог выпустить себе токен с
+ * произвольным organizationId и получить доступ к данным любой клиники.
+ */
+export const TOKEN_SECRET = () => authTokenSecret();
+
+/**
+ * Демо-вход (clinic@example.com / doctor@clinic.com) — это бэкдор в исходниках.
+ * Теперь он выключен по умолчанию и включается только явным флагом в dev.
+ */
+function demoLoginAllowed(): boolean {
+  // Вне production демо-вход работает без всякой настройки .env.
+  // Отключить явно: DENTE_ALLOW_DEMO_LOGIN=0. В production — никогда.
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.DENTE_ALLOW_DEMO_LOGIN !== "0";
+}
+
+/**
+ * Ключ первичной настройки для смены чужих учётных данных.
+ * Раньше имел публичный дефолт "dente_admin_setup_key" — любой мог сбросить
+ * пароль любой клиники и PIN любого сотрудника. Теперь без переменной окружения
+ * эти маршруты просто недоступны (fail closed).
+ */
+function configuredAdminSetupKey(): string | null {
+  return process.env.ADMIN_SETUP_KEY?.trim() || null;
+}
+
+/** Постоянная задержка, чтобы неуспешный вход не выдавал существование учётки по таймингу. */
+async function authFailureDelay(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+}
 
 interface ClinicLoginBody {
   email?: string;
@@ -50,7 +82,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     {
       config: {
         rateLimit: {
-          max: 100,
+          max: 5,
           timeWindow: "1 minute",
         },
 
@@ -74,25 +106,33 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       console.error("[AUTH_DB_ERROR]", dbErr);
     }
 
+    const isDemoClinicLogin =
+      demoLoginAllowed() && loginId === "clinic@example.com" && password === "dente2026";
+
     if (!org) {
-      if (loginId === "clinic@example.com" && password === "dente2026") {
+      if (isDemoClinicLogin) {
         org = {
           id: "00000000-0000-0000-0000-000000000001",
           name: "Демо Клиника DENTE",
           passwordHash: null
         };
       } else {
-        await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
+        await authFailureDelay();
         return reply.code(401).send({ error: "AuthError", message: "Неверный логин или пароль клиники." });
       }
     }
 
+    // FAIL CLOSED: организация без пароля больше не пускает с любым паролем.
+    // Раньше отсутствие passwordHash означало "подойдёт что угодно".
     const storedHash = org.passwordHash;
-    const isMatch = storedHash ? verifyCredential(password, storedHash) : (loginId === "clinic@example.com" && password === "dente2026");
+    const isMatch = storedHash ? verifyCredential(password, storedHash) : isDemoClinicLogin;
 
     if (!isMatch) {
+      await authFailureDelay();
       return reply.code(401).send({ error: "AuthError", message: "Неверный логин или пароль клиники." });
     }
+
+    resetRateLimit(request);
 
     const token = signToken(
       { organizationId: org.id, clinicName: org.name },
@@ -141,16 +181,21 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!user) {
-      await new Promise((r) => setTimeout(r, 150 + Math.random() * 100));
-      return reply.code(404).send({ error: "UserNotFound", message: "Сотрудник не найден или заблокирован." });
+      await authFailureDelay();
+      // Единый ответ для "нет сотрудника" и "неверный PIN": иначе endpoint
+      // работает как оракул существования сотрудников организации.
+      return reply.code(401).send({ error: "AuthError", message: "Неверный PIN-код." });
     }
 
     const storedPinHash = user.pinCodeHash;
     const isMatch = storedPinHash ? verifyCredential(pinCode, storedPinHash) : false;
 
     if (!isMatch) {
+      await authFailureDelay();
       return reply.code(401).send({ error: "AuthError", message: "Неверный PIN-код." });
     }
+
+    resetRateLimit(request);
 
     const staffToken = signToken(
       { userId: user.id, fullName: user.fullName, role: user.role, organizationId: orgId },
@@ -209,31 +254,106 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   // ─── Admin: Set/Reset Clinic Password ────────────────────────────────────────
+  // БЫЛО: любой запрос с публичным дефолтным ключом "dente_admin_setup_key" мог
+  // сбросить пароль ЛЮБОЙ организации по её UUID (полный захват всех клиник).
+  // СТАЛО: нужен либо владелец/админ с валидным токеном своей организации,
+  // либо настроенный ADMIN_SETUP_KEY (сравнение timing-safe). Без переменной
+  // окружения ключевой путь недоступен вовсе.
   app.post("/api/auth/clinic/set-password", async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as { organizationId: string; newPassword: string; adminKey: string };
-    const adminKey = process.env.ADMIN_SETUP_KEY ?? "dente_admin_setup_key";
+    const body = (request.body as { organizationId?: string; newPassword?: string; adminKey?: string }) ?? {};
+    if (!body.newPassword || String(body.newPassword).length < 8) {
+      return reply.code(400).send({ error: "ValidationError", message: "Новый пароль должен быть не короче 8 символов." });
+    }
 
-    if (body.adminKey !== adminKey) {
-      return reply.code(403).send({ error: "Forbidden", message: "Неверный admin key." });
+    const identity = getRequestIdentity(request);
+    const isOrgAdmin =
+      !!identity.organizationId &&
+      !!identity.userId &&
+      ADMIN_ROLES.some((role) => role === (identity.role ?? "").toLowerCase());
+
+    const setupKey = configuredAdminSetupKey();
+    const hasValidSetupKey = !!setupKey && timingSafeSecretEqual(body.adminKey ?? null, setupKey);
+
+    if (!isOrgAdmin && !hasValidSetupKey) {
+      await authFailureDelay();
+      return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены пароля клиники." });
+    }
+
+    // Администратор организации может менять пароль ТОЛЬКО своей организации.
+    const targetOrganizationId = isOrgAdmin ? identity.organizationId! : body.organizationId;
+    if (!targetOrganizationId) {
+      return reply.code(400).send({ error: "ValidationError", message: "Не указана организация." });
+    }
+    if (isOrgAdmin && body.organizationId && body.organizationId !== identity.organizationId) {
+      return reply.code(403).send({ error: "Forbidden", message: "Нельзя менять пароль чужой организации." });
     }
 
     const hash = hashCredential(body.newPassword);
-    await db.update(organizations).set({ passwordHash: hash }).where(eq(organizations.id, body.organizationId));
+    await db.update(organizations).set({ passwordHash: hash }).where(eq(organizations.id, targetOrganizationId));
+
+    await db.insert(auditEvents).values({
+      organizationId: targetOrganizationId,
+      actorUserId: identity.userId ?? null,
+      entityType: "organization",
+      entityId: targetOrganizationId,
+      action: "clinic_password_reset",
+      reason: isOrgAdmin ? "Смена пароля клиники администратором" : "Смена пароля клиники ключом установки"
+    });
 
     return reply.send({ ok: true, message: "Пароль клиники обновлён." });
   });
 
   // ─── Admin: Set Staff PIN ─────────────────────────────────────────────────────
+  // БЫЛО: публичный дефолтный ключ + произвольный userId без проверки организации.
+  // СТАЛО: только владелец/админ своей организации (или настроенный ADMIN_SETUP_KEY),
+  // и целевой сотрудник обязан принадлежать той же организации.
   app.post("/api/auth/staff/set-pin", async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as { userId: string; newPin: string; adminKey: string };
-    const adminKey = process.env.ADMIN_SETUP_KEY ?? "dente_admin_setup_key";
+    const body = (request.body as { userId?: string; newPin?: string; adminKey?: string }) ?? {};
+    if (!body.userId) {
+      return reply.code(400).send({ error: "ValidationError", message: "Не указан сотрудник." });
+    }
+    if (!body.newPin || !/^\d{4,12}$/.test(String(body.newPin))) {
+      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
+    }
 
-    if (body.adminKey !== adminKey) {
-      return reply.code(403).send({ error: "Forbidden", message: "Неверный admin key." });
+    const identity = getRequestIdentity(request);
+    const isOrgAdmin =
+      !!identity.organizationId &&
+      !!identity.userId &&
+      ADMIN_ROLES.some((role) => role === (identity.role ?? "").toLowerCase());
+
+    const setupKey = configuredAdminSetupKey();
+    const hasValidSetupKey = !!setupKey && timingSafeSecretEqual(body.adminKey ?? null, setupKey);
+
+    if (!isOrgAdmin && !hasValidSetupKey) {
+      await authFailureDelay();
+      return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены PIN сотрудника." });
+    }
+
+    if (isOrgAdmin) {
+      const [target] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.id, body.userId), eq(users.organizationId, identity.organizationId!)))
+        .limit(1);
+      if (!target) {
+        return reply.code(404).send({ error: "UserNotFound", message: "Сотрудник не найден в вашей организации." });
+      }
     }
 
     const hash = hashCredential(body.newPin);
     await db.update(users).set({ pinCodeHash: hash }).where(eq(users.id, body.userId));
+
+    if (identity.organizationId) {
+      await db.insert(auditEvents).values({
+        organizationId: identity.organizationId,
+        actorUserId: identity.userId ?? null,
+        entityType: "user",
+        entityId: body.userId,
+        action: "staff_pin_reset",
+        reason: "Смена PIN-кода сотрудника"
+      });
+    }
 
     return reply.send({ ok: true, message: "PIN сотрудника обновлён." });
   });
@@ -245,6 +365,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (!clinicName || !email || !password) {
       return reply.code(400).send({ error: "ValidationError", message: "Укажите название клиники, логин и пароль." });
+    }
+    if (String(password).length < 8) {
+      return reply.code(400).send({ error: "ValidationError", message: "Пароль должен быть не короче 8 символов." });
+    }
+    if (ownerPin !== undefined && !/^\d{4,12}$/.test(String(ownerPin))) {
+      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
     }
 
     const loginId = email.toLowerCase().trim();
@@ -266,10 +392,17 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(500).send({ error: "InternalError", message: "Не удалось создать организацию." });
     }
 
-    // Create owner user if specified
+    // Create owner user if specified.
+    // БЫЛО: без ownerPin автоматически ставился PIN "0000" — предсказуемый вход
+    // владельца в каждой новой клинике. СТАЛО: генерируется случайный PIN и
+    // возвращается один раз в ответе, чтобы владелец сразу его сменил.
     let owner: any = null;
+    let generatedOwnerPin: string | null = null;
     if (ownerName) {
-      const pinHash = ownerPin ? hashCredential(ownerPin) : hashCredential("0000");
+      if (!ownerPin) {
+        generatedOwnerPin = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+      }
+      const pinHash = hashCredential(ownerPin ?? generatedOwnerPin!);
       const [ownerUser] = await db
         .insert(users)
         .values({ organizationId: org.id, fullName: ownerName, role: "owner", pinCodeHash: pinHash, isActive: true })
@@ -287,14 +420,22 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       ok: true,
       clinicToken: token,
       organizationId: org.id,
-      ownerUserId: owner?.id ?? null
+      ownerUserId: owner?.id ?? null,
+      // Показывается ровно один раз, в базе хранится только хеш.
+      generatedOwnerPin
     });
   });
   // ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
   app.post('/api/auth/register', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { clinicName, ownerName, email, password } = (request.body as any) ?? {};
+    const { clinicName, ownerName, email, password, ownerPin } = (request.body as any) ?? {};
     if (!clinicName || !ownerName || !email || !password) {
       return reply.code(400).send({ error: 'ValidationError', message: 'Заполните все поля.' });
+    }
+    if (String(password).length < 8) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'Пароль должен быть не короче 8 символов.' });
+    }
+    if (ownerPin !== undefined && !/^\d{4,12}$/.test(String(ownerPin))) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
     }
     const loginId = email.toLowerCase().trim();
     const [existingOrg] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.loginId, loginId)).limit(1);
@@ -303,8 +444,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, loginId)).limit(1);
     if (existingUser) return reply.code(409).send({ error: 'Conflict', message: 'Пользователь с таким email уже существует.' });
 
+    // БЫЛО: PIN владельца всегда '0000' — предсказуемый вход в любую свежую клинику.
     const passwordHash = hashCredential(password);
-    const pinCodeHash = hashCredential('0000');
+    const generatedOwnerPin = ownerPin ? null : String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+    const pinCodeHash = hashCredential(ownerPin ?? generatedOwnerPin!);
 
     const [org] = await db.insert(organizations).values({ name: clinicName, loginId, passwordHash, email: loginId }).returning();
     if (!org) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать организацию.' });
@@ -319,9 +462,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }).returning();
     if (!user) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать профиль владельца.' });
 
+    resetRateLimit(request);
+
     const clinicToken = signToken({ organizationId: org.id, clinicName: org.name }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     const token = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: org.id }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
-    return reply.code(201).send({ ok: true, clinicToken, staffToken: token, organizationId: org.id, userId: user.id });
+    return reply.code(201).send({ ok: true, clinicToken, staffToken: token, organizationId: org.id, userId: user.id, generatedOwnerPin });
   });
 
   // ─── SaaS User Login (Direct user login) ─────────────────────────────────────
@@ -338,8 +483,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       console.warn("[AUTH_USER_DB_WARN]", e);
     }
 
+    // БЫЛО: жёстко зашитые doctor@clinic.com / admin@clinic.ru пускали в систему
+    // без пароля, а строка `user.passwordHash ? verify(...) : true` означала,
+    // что ЛЮБОЙ пользователь без хеша пароля входит с любым паролем.
+    const isDemoUserLogin =
+      demoLoginAllowed() && (loginEmail === 'doctor@clinic.com' || loginEmail === 'admin@clinic.ru');
+
     if (!user) {
-      if (loginEmail === 'doctor@clinic.com' || loginEmail === 'admin@clinic.ru') {
+      if (isDemoUserLogin) {
         user = {
           id: '00000000-0000-0000-0000-000000000002',
           organizationId: '00000000-0000-0000-0000-000000000001',
@@ -349,15 +500,28 @@ export async function registerAuthRoutes(app: FastifyInstance) {
           passwordHash: null
         };
       } else {
-        await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
+        await authFailureDelay();
         return reply.code(401).send({ error: 'AuthError', message: 'Неверный email или пароль.' });
       }
     }
 
-    const isMatch = user.passwordHash ? verifyCredential(password, user.passwordHash) : true;
-    if (!isMatch) return reply.code(401).send({ error: 'AuthError', message: 'Неверный email или пароль.' });
+    // FAIL CLOSED: нет хеша пароля — вход запрещён (кроме явного демо-режима).
+    const isMatch = user.passwordHash ? verifyCredential(password, user.passwordHash) : isDemoUserLogin;
+    if (!isMatch) {
+      await authFailureDelay();
+      return reply.code(401).send({ error: 'AuthError', message: 'Неверный email или пароль.' });
+    }
 
-    const clinicToken = signToken({ organizationId: user.organizationId, clinicName: 'Демо Клиника DENTE' }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
+    resetRateLimit(request);
+
+    const [userOrg] = await db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, user.organizationId))
+      .limit(1)
+      .catch(() => [] as Array<{ name: string }>);
+
+    const clinicToken = signToken({ organizationId: user.organizationId, clinicName: userOrg?.name ?? 'Клиника' }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: user.organizationId }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, fullName: user.fullName, role: user.role, email: user.email } });
   });
@@ -393,10 +557,27 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   app.post('/api/auth/invites/accept', async (request: FastifyRequest, reply: FastifyReply) => {
     const { token, fullName, password, pinCode } = (request.body as any) ?? {};
     if (!token || !fullName || !password || !pinCode) return reply.code(400).send({ error: 'ValidationError', message: 'Заполните все поля.' });
-    
+    if (String(password).length < 8) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'Пароль должен быть не короче 8 символов.' });
+    }
+    if (!/^\d{4,12}$/.test(String(pinCode))) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
+    }
+
     const [invite] = await db.select().from(userInvitations).where(and(eq(userInvitations.inviteToken, token), eq(userInvitations.status, 'pending'))).limit(1);
     if (!invite || new Date() > invite.expiresAt) return reply.code(400).send({ error: 'InvalidToken', message: 'Приглашение недействительно или истекло.' });
-    
+
+    // Приглашение одноразовое: помечаем принятым ДО создания пользователя, чтобы
+    // параллельные запросы с одной ссылкой не создали несколько учётных записей.
+    const claimed = await db
+      .update(userInvitations)
+      .set({ status: 'accepted' })
+      .where(and(eq(userInvitations.id, invite.id), eq(userInvitations.status, 'pending')))
+      .returning({ id: userInvitations.id });
+    if (!claimed.length) {
+      return reply.code(400).send({ error: 'InvalidToken', message: 'Приглашение уже использовано.' });
+    }
+
     const passwordHash = hashCredential(password);
     const pinCodeHash = hashCredential(pinCode);
     
@@ -409,10 +590,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       pinCodeHash,
       isActive: true
     }).returning();
-    if (!user) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать пользователя.' });
-    
-    await db.update(userInvitations).set({ status: 'accepted' }).where(eq(userInvitations.id, invite.id));
-    
+    if (!user) {
+      // Откатываем пометку, чтобы приглашение не сгорело из-за сбоя вставки.
+      await db.update(userInvitations).set({ status: 'pending' }).where(eq(userInvitations.id, invite.id));
+      return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать пользователя.' });
+    }
+
     const [org] = await db.select({ name: organizations.name }).from(organizations).where(eq(organizations.id, user.organizationId)).limit(1);
     const clinicToken = signToken({ organizationId: user.organizationId, clinicName: org?.name ?? 'Clinic' }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: user.organizationId }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
@@ -454,6 +637,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
     if (!oldPassword || !newPassword) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый пароль.' });
+    if (String(newPassword).length < 8) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'Новый пароль должен быть не короче 8 символов.' });
+    }
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.passwordHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или пароль не установлен.' });
@@ -477,6 +663,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
     if (!oldPin || !newPin) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый PIN-код.' });
+    if (!/^\d{4,12}$/.test(String(newPin))) {
+      return reply.code(400).send({ error: 'ValidationError', message: 'PIN должен состоять из 4–12 цифр.' });
+    }
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.pinCodeHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или PIN не установлен.' });

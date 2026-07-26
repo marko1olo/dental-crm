@@ -24,6 +24,9 @@ import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerAnalyticsRoutes } from "./routes/analytics.js";
+import { registerAuditRoutes } from "./routes/audit.js";
+import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
@@ -154,6 +157,12 @@ export async function createDenteApiApp(options = {}) {
     await app.register(cors, {
         origin: webOrigins
     });
+    app.addHook("onRequest", async (_request, reply) => {
+        reply.header("X-Content-Type-Options", "nosniff");
+        reply.header("X-Frame-Options", "DENY");
+        reply.header("X-XSS-Protection", "1; mode=block");
+        reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    });
     app.setErrorHandler((error, _request, reply) => {
         import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", (error?.stack || error?.message || String(error)) + "\nCAUSE: " + (error?.cause || "") + "\n"));
         if (isZodValidationError(error)) {
@@ -209,6 +218,9 @@ export async function createDenteApiApp(options = {}) {
     await registerDicomwebRoutes(app);
     await registerXrayRoutes(app);
     await registerAuthRoutes(app);
+    await registerAnalyticsRoutes(app);
+    await registerAuditRoutes(app);
+    await workspaceProfileRoutes(app);
     if (options.startTelegramWorker !== false) {
         const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
         app.addHook("onClose", async () => {
@@ -226,6 +238,23 @@ export async function startDenteApiServer() {
     const port = Number(process.env.API_PORT ?? 4100);
     try {
         await app.listen({ host, port });
+        const gracefulShutdown = async (signal) => {
+            app.log.info(`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`);
+            try {
+                await app.close();
+                const { pool } = await import("./db/client.js");
+                if (pool)
+                    await pool.end();
+                app.log.info("[Shutdown] Dente API server closed cleanly.");
+                process.exit(0);
+            }
+            catch (err) {
+                app.log.error(err, "[Shutdown] Error during server shutdown:");
+                process.exit(1);
+            }
+        };
+        process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+        process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     }
     catch (error) {
         app.log.error(error);

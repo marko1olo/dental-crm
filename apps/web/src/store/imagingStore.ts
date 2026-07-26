@@ -34,9 +34,15 @@ import {
 	type LocalImagingFolderDraft,
 	defaultDicomFirstFrameViewerState,
 	defaultImagingViewerState,
-	initialUiPreferences,
+	defaultUiPreferences,
 	loadUiPreferences,
 } from "../AppHelpers";
+
+// БЫЛО: настройки брались из initialUiPreferences — заглушки `{} as any` в
+// AppHelpers. Все поля были undefined, поэтому фильтр снимков сравнивался с
+// undefined и раздел «Снимки» открывался ПУСТЫМ, хотя исследования есть.
+// Остальные сторы считают начальные настройки локально — делаем так же.
+const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
 export interface ImagingStore {
 	imagingImportText: any;

@@ -1,8 +1,21 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { requireOrganizationId } from "../security/identity.js";
 import { requireClinicalReadAccess } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { eq } from "drizzle-orm";
+
+/**
+ * Демонстрационные заглушки с ВЫМЫШЛЕННЫМИ ФИО пациентов и диагнозами раньше
+ * возвращались всегда, когда в БД не было строк. В медицинской системе это
+ * опасно: врач видел несуществующего пациента с диагнозом как реальную запись
+ * (и это нарушало правило "Zero Mocks" из AGENTS.md). Теперь заглушки отдаются
+ * только при явном DENTE_ALLOW_DEMO_FIXTURES=1 и вне production.
+ */
+function demoFixturesAllowed(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.DENTE_ALLOW_DEMO_FIXTURES !== "0";
+}
 
 export default async function registerEgiszRoutes(app: FastifyInstance) {
 	app.get("/api/clinical/egisz-status-stub", async () => ({
@@ -45,8 +58,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	app.get("/api/egisz/multiple-diagnoses", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "egisz multiple diagnoses read"))) return;
 		try {
-			const orgHeader = request.headers["x-organization-id"];
-			const orgId = typeof orgHeader === "string" ? orgHeader : "00000000-0000-0000-0000-000000000001";
+			// Организация из подписанного токена, а не из заголовка клиента:
+			// иначе любой мог прочитать данные чужой клиники по её UUID.
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
 			const items = await db
 				.select()
 				.from(schema.egiszMultipleDiagnoses)
@@ -60,6 +75,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			console.warn("[EgiszRoutes] DB query fallback for egiszMultipleDiagnoses:", e);
 		}
 
+		if (!demoFixturesAllowed()) return reply.send([]);
 		return reply.send([
 			{
 				id: "diag-001",
@@ -87,8 +103,10 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 	app.get("/api/clinical/custom-examination-form-catalogs", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "custom form catalogs read"))) return;
 		try {
-			const orgHeader = request.headers["x-organization-id"];
-			const orgId = typeof orgHeader === "string" ? orgHeader : "00000000-0000-0000-0000-000000000001";
+			// Организация из подписанного токена, а не из заголовка клиента:
+			// иначе любой мог прочитать данные чужой клиники по её UUID.
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
 			const items = await db
 				.select()
 				.from(schema.customExaminationFormCatalogs)
@@ -102,6 +120,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			console.warn("[EgiszRoutes] DB query fallback for customExaminationFormCatalogs:", e);
 		}
 
+		if (!demoFixturesAllowed()) return reply.send([]);
 		return reply.send([
 			{
 				id: "cat-001",

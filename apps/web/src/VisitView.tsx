@@ -137,13 +137,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   const props = { ...logicContext, ...rawProps } as any;
   const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient: rawActivePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
 
-  const activePatient = rawActivePatient || dashboard?.patients?.[0] || {
-    id: "pat-1",
-    fullName: "Смирнов Алексей Петрович",
-    phone: "+7 (999) 111-22-33",
-    birthDate: "1990-05-15",
-    status: "active"
-  };
+  // БЫЛО: если пациент не выбран, подставлялся ПЕРВЫЙ пациент клиники, а если
+  // и его нет — вымышленный «Смирнов Алексей Петрович». Врач открывал «Текущий
+  // приём», видел в шапке реального, но постороннего пациента, и диктовал приём,
+  // считая, что запись идёт этому человеку, — тогда как сохранение уходило
+  // в dashboard.activeVisit, то есть совсем другому пациенту.
+  // Проверка «if (!activePatient)» ниже из-за этого была недостижима.
+  const activePatient = rawActivePatient ?? null;
 
   const safeVisitPrimaryAction = visitPrimaryAction || {
     label: "Сохранить прием",
@@ -429,7 +429,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </div>
             </section>
 
-            <div className="dictation-box" style={{ position: 'relative' }}>
+            <div className="dictation-box" data-recording={isServerVoiceRecording} style={{ position: 'relative' }}>
               {speechTranscriptionBusy && (
                 <div className="dictation-overlay-skeleton">
                   <div className="skeleton-wave"></div>
@@ -789,6 +789,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                               className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
+                              data-tooth-state={state === "idle" ? undefined : state}
                             >
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none" }}>
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
@@ -831,6 +832,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                               className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
+                              data-tooth-state={state === "idle" ? undefined : state}
                             >
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none" }}>
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
@@ -884,6 +886,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                               className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
+                              data-tooth-state={state === "idle" ? undefined : state}
                             >
                               <span className="tooth-code">{code}</span>
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "scaleY(-1)" }}>
@@ -926,6 +929,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                               className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
+                              data-tooth-state={state === "idle" ? undefined : state}
                             >
                               <span className="tooth-code">{code}</span>
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "scaleY(-1)" }}>
@@ -1071,7 +1075,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                         ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
                         : lastVisitSaveReceipt
                           ? visitSaveReceiptText(lastVisitSaveReceipt)
-                          : dashboard.activeVisit.doctorSummary}
+                          : (dashboard?.activeVisit?.doctorSummary ?? "")}
                 </p>
                 {pendingVisitSaveCount ? (
                   <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>

@@ -174,8 +174,10 @@ export async function registerSettingsRoutes(app) {
         if (!input) {
             return reply.code(400).send({ error: "SettingsValidationError", message: uiPreferencesValidationMessage });
         }
-        await saveUiPreferencesInDb(orgId, { ...input, version: 1, savedAt: input.savedAt ?? new Date().toISOString() });
-        return uiPreferencesSchema.parse({ ...input, version: 1 });
+        const savedAt = input.savedAt ?? new Date().toISOString();
+        const updated = { ...input, version: 1, savedAt };
+        await saveUiPreferencesInDb(orgId, updated);
+        return uiPreferencesSchema.parse(updated);
     });
     app.post("/api/settings/clinic/mode", async (request, reply) => {
         const orgId = await requireSettingsAccess(request, reply);

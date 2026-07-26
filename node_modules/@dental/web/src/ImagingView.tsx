@@ -239,7 +239,7 @@ export function ImagingView(props: ImagingViewProps) {
                     data-testid="imaging-browser-local-folder-input"
                     type="file"
                     multiple
-                    style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
+                    style={{ display: "none" }}
                     onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
                   />
                   <input
@@ -247,7 +247,7 @@ export function ImagingView(props: ImagingViewProps) {
                     data-testid="imaging-browser-local-files-input"
                     type="file"
                     multiple
-                    style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
+                    style={{ display: "none" }}
                     accept={browserImagingFileInputAccept}
                     onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
                   />

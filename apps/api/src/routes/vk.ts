@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { verifyWebhookSecret } from "../security/webhookAuth.js";
 
 type VkWebhookBody = {
 	type?: string;
@@ -19,12 +20,29 @@ export async function registerVkRoutes(server: FastifyInstance) {
 		Params: { organizationId: string };
 		Body: VkWebhookBody;
 	}>("/api/public/:organizationId/vk/webhook", async (request, reply) => {
+		// БЫЛО: вебхук принимал любой POST без проверки — посторонний мог
+		// создавать пациентов и вбрасывать сообщения в чужую клинику.
+		if (!verifyWebhookSecret(request, reply, {
+			channel: "vk",
+			secretEnvNames: ["VK_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+			extraHeaderNames: ["x-vk-secret"],
+		})) return reply;
+
 		const { organizationId } = request.params;
 		const body = (request.body || {}) as VkWebhookBody;
 
 		// VK Callback API Server Confirmation
 		if (body.type === "confirmation") {
-			return process.env.VK_CONFIRMATION_TOKEN || "8a12b45f";
+			// БЫЛО: публичный дефолт "8a12b45f" — кто угодно мог подтвердить
+			// чужой сервер приёма событий VK.
+			const confirmationToken = process.env.VK_CONFIRMATION_TOKEN?.trim();
+			if (!confirmationToken) {
+				return reply.code(503).send({
+					error: "VkConfirmationTokenMissing",
+					message: "Не задан VK_CONFIRMATION_TOKEN в окружении сервера.",
+				});
+			}
+			return confirmationToken;
 		}
 
 		// VK New Message Event

@@ -1,0 +1,54 @@
+/* DENTE redesign compatibility layer scoped to the live workspace. */
+:root, [data-theme="light"] {
+  font-family: "Golos Text", Inter, ui-sans-serif, system-ui, sans-serif;
+  --bg: #f0f5f3; --elev: #fff; --ink-2: #3f544f; --teal-2: #0f766e; --on-teal: #fff;
+  --teal-ring: rgba(13,148,136,.3); --ok-bg: #dcfce7; --ok-fg: #15803d;
+  --warn-bg: #fef3c7; --warn-fg: #a16207; --bad-bg: #fee2e2; --bad-fg: #b91c1c;
+  --info-bg: #e0f2fe; --info-fg: #0369a1; --side-bg: #fff;
+  --shadow-1: 0 1px 2px rgba(13,31,27,.05); --shadow-2: 0 16px 40px -16px rgba(15,118,110,.22);
+}
+[data-theme="dark"], html.dark {
+  --bg:#0a1211; --paper:#101a19; --paper-strong:#15211f; --paper-soft:#0d1615; --elev:#15211f;
+  --ink:#e9f2ef; --ink-2:#b9c9c4; --muted:#7e948e; --line:rgba(150,180,172,.14); --line-strong:rgba(150,180,172,.28);
+  --teal:#2dd4bf; --teal-dark:#14b8a6; --teal-2:#5eead4; --on-teal:#04211c; --teal-soft:rgba(45,212,191,.16); --teal-surface:rgba(45,212,191,.08); --teal-ring:rgba(45,212,191,.35);
+  --ok-bg:rgba(74,222,128,.14); --ok-fg:#4ade80; --warn-bg:rgba(251,191,36,.14); --warn-fg:#fbbf24; --bad-bg:rgba(248,113,113,.15); --bad-fg:#f87171; --info-bg:rgba(56,189,248,.14); --info-fg:#38bdf8; --side-bg:#0c1514;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 20px 48px -16px rgba(0,0,0,.55);
+}
+[data-theme="night"] {
+  --bg:#141110; --paper:#1c1714; --paper-strong:#231d19; --paper-soft:#171310; --elev:#231d19; --ink:#f1e8dd; --ink-2:#cdbfae; --muted:#98897a; --line:rgba(220,195,160,.13); --line-strong:rgba(220,195,160,.26);
+  --teal:#e0a458; --teal-dark:#cf9146; --teal-2:#ecb872; --on-teal:#231505; --teal-soft:rgba(224,164,88,.18); --teal-surface:rgba(224,164,88,.08); --teal-ring:rgba(224,164,88,.35);
+  --ok-bg:rgba(163,190,110,.16); --ok-fg:#b5c98a; --warn-bg:rgba(232,180,90,.16); --warn-fg:#e8b45a; --bad-bg:rgba(240,144,109,.17); --bad-fg:#f0906d; --info-bg:rgba(212,180,131,.15); --info-fg:#d4b483; --side-bg:#18130f;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 20px 48px -16px rgba(0,0,0,.6);
+}
+.dente-redesign { background:var(--bg); color:var(--ink); }
+.dente-redesign .sidebar { width:252px; background:var(--side-bg); border-right:1px solid var(--line); transition:width .25s cubic-bezier(.4,0,.2,1),padding .25s; }
+.dente-redesign[data-collapsed="true"] { grid-template-columns:76px minmax(0,1fr); }
+.dente-redesign[data-collapsed="true"] .sidebar { width:76px; padding-inline:12px; }
+.dente-redesign[data-collapsed="true"] .nav-copy,.dente-redesign[data-collapsed="true"] .brand-mark span,.dente-redesign[data-collapsed="true"] .theme-switcher { display:none; }
+.dente-redesign[data-collapsed="true"] .nav-item,.dente-redesign[data-collapsed="true"] .brand-mark { justify-content:center; }
+.dente-redesign .sidebar-footer { display:grid; gap:8px; margin-top:auto; }
+.dente-redesign .theme-switcher { display:flex; gap:2px; padding:3px; background:var(--paper-soft); border:1px solid var(--line); border-radius:10px; }
+.dente-redesign .theme-switcher button { flex:1; min-width:0; border:0; border-radius:7px; padding:5px 3px; color:var(--muted); background:transparent; font-size:10px; font-weight:700; }
+.dente-redesign .theme-switcher button[aria-pressed="true"] { background:var(--teal-soft); color:var(--teal-2); }
+.dente-redesign[data-collapsed="true"] .sidebar-collapse-button svg { transform:rotate(180deg); }
+.dente-redesign .topbar { min-height:61px; background:var(--paper); border-bottom:1px solid var(--line); }
+.dente-redesign .topbar-context { display:flex; align-items:center; gap:12px; min-width:0; }
+.dente-redesign .topbar h1 { font-size:18px; font-weight:700; }
+.dente-redesign .topbar .eyebrow,.dente-redesign .workspace-role-switcher summary,.dente-redesign .recent-widget { white-space:nowrap; }
+.dente-redesign .primary-button { background:linear-gradient(180deg,var(--teal),var(--teal-2)); color:var(--on-teal); }
+.dente-redesign .top-lock-button { color:var(--bad-fg) !important; }
+.dente-redesign .panel,.dente-redesign .now-card,.dente-redesign .today-schedule-box,.dente-redesign .patient-summary-card,.dente-redesign .role-focus-strip,.dente-redesign .shift-intelligence,.dente-redesign .dictation-box,.dente-redesign .tooth-map,.dente-redesign .visit-note-panel,.dente-redesign .visit-focus-bar { border-color:var(--line); border-radius:14px; box-shadow:var(--shadow-1); }
+.dente-redesign .status-pill.status-confirmed { background:var(--info-bg); color:var(--info-fg); }
+.dente-redesign .status-pill.status-arrived { background:var(--warn-bg); color:var(--warn-fg); }
+.dente-redesign .status-pill.status-in_treatment { background:var(--ok-bg); color:var(--ok-fg); }
+.dente-redesign .status-pill.status-cancelled,.dente-redesign .status-pill.status-no_show { background:var(--bad-bg); color:var(--bad-fg); }
+.dente-redesign .today-schedule-time { font-variant-numeric:tabular-nums; }
+.dente-redesign .today-schedule-item.current-active { background:var(--teal-surface) !important; border-color:var(--teal-ring) !important; border-left:3px solid var(--teal) !important; }
+.dente-redesign .clickable-card:hover,.dente-redesign .role-queue-card:hover { border-color:var(--teal-ring); box-shadow:var(--shadow-2); transform:translateY(-2px); }
+.dente-redesign .dictation-box textarea { background:var(--paper-soft); border-color:var(--line-strong); color:var(--ink); }
+.dente-redesign .tooth-map { overflow-x:auto; }
+@media (max-width:1140px) { .dente-redesign .sidebar { width:76px; padding-inline:12px; } .dente-redesign .nav-copy,.dente-redesign .brand-mark span { display:none; } .dente-redesign .nav-item,.dente-redesign .brand-mark { justify-content:center; } .dente-redesign .recent-widget,.dente-redesign .compact-top-button { display:none; } }
+@media (max-width:840px) { .dente-redesign .sidebar { display:none; } .dente-redesign .topbar { padding-inline:14px; flex-wrap:wrap; } .dente-redesign .topbar h1 { font-size:16px; } .dente-redesign .workspace { padding-bottom:100px !important; } }
+@media (prefers-reduced-motion:reduce) { .dente-redesign *,.dente-redesign *::before,.dente-redesign *::after { animation:none !important; transition:none !important; } }
+.dnt-bottom-nav { display:none; }
+@media (max-width:840px) { .dnt-bottom-nav { display:flex; position:fixed; inset:auto 0 0; z-index:30; gap:2px; justify-content:space-around; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); } .dnt-bottom-nav a { display:flex; flex:1; min-width:0; max-width:76px; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; border-radius:10px; color:var(--muted); font-size:10.5px; font-weight:600; } .dnt-bottom-nav a.active { color:var(--teal-2); background:var(--teal-soft); } }

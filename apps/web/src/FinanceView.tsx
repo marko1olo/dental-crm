@@ -31,6 +31,7 @@ type FinanceViewProps = {
   formatDateTime: (value: string) => string;
   isPaymentSaving: boolean;
   money: (value: number | null) => string;
+  onCreateDocument?: (kind: string) => void;
   onGoToDocuments: () => void;
   onGoToPrices: () => void;
   onGoToVisit: () => void;
@@ -92,6 +93,7 @@ export function FinanceView({
   formatDateTime = (val: string) => val || "",
   isPaymentSaving = false,
   money = (val: number | null) => typeof val === "number" ? `${val.toLocaleString("ru-RU")} ₽` : "0 ₽",
+  onCreateDocument,
   onGoToDocuments = () => {},
   onGoToPrices = () => {},
   onGoToVisit = () => {},
@@ -227,6 +229,7 @@ export function FinanceView({
 
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
+        onCreateDocument={onCreateDocument}
         documents={dashboard?.documents ?? []}
         formatDateTime={formatDateTime}
         money={money}

@@ -586,15 +586,20 @@ async function parseManifestLine(orgId, line, rowNumber, sourceKind, sourceName)
         warnings
     };
 }
-export async function parseImagingManifest(orgId, input) {
-    const lines = input.rawText
+export async function parseImagingManifest(orgIdOrInput, maybeInput) {
+    const orgId = typeof orgIdOrInput === "string" && maybeInput ? orgIdOrInput : "default";
+    const input = typeof orgIdOrInput === "object" ? orgIdOrInput : (maybeInput ?? orgIdOrInput);
+    const rawText = typeof input === "string" ? input : (input?.rawText ?? "");
+    const sourceName = typeof input === "string" ? "Manifest" : (input?.sourceName ?? "Manifest");
+    const sourceKind = typeof input === "string" ? "folder_watch" : (input?.sourceKind ?? "folder_watch");
+    const lines = rawText
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean);
     if (!lines.length) {
         return imagingImportPreviewResponseSchema.parse({
-            sourceName: input.sourceName,
-            sourceKind: input.sourceKind,
+            sourceName,
+            sourceKind,
             totalRows: 0,
             readyRows: 0,
             warningRows: 0,
@@ -608,12 +613,12 @@ export async function parseImagingManifest(orgId, input) {
     const hasHeader = headers.some(Boolean);
     const rows = await Promise.all((hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
         if (!hasHeader)
-            return await parseManifestLine(orgId, line, index + 1, input.sourceKind, input.sourceName);
+            return await parseManifestLine(orgId, line, index + 1, sourceKind, sourceName);
         const cells = splitLine(line, delimiter);
         const draft = {
             rowNumber: index + 2,
-            sourceKind: input.sourceKind,
-            sourceName: input.sourceName,
+            sourceKind: sourceKind,
+            sourceName: sourceName,
             warnings: []
         };
         headers.forEach((field, cellIndex) => {
@@ -631,7 +636,7 @@ export async function parseImagingManifest(orgId, input) {
         });
         const patient = await matchPatient(orgId, draft.patientName ?? null, draft.phone ?? null);
         const kind = draft.kind ?? detectKind(draft.filePath ?? "");
-        const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", input.sourceKind);
+        const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", sourceKind);
         const warnings = [];
         if (!patient)
             warnings.push("Пациент не найден, нужно сопоставление");
@@ -652,14 +657,14 @@ export async function parseImagingManifest(orgId, input) {
             capturedAt: draft.capturedAt ?? null,
             filePath: draft.filePath ?? null,
             sourceKind: source,
-            sourceName: draft.sourceName ?? input.sourceName,
+            sourceName: draft.sourceName ?? sourceName,
             status: blocked ? "blocked" : patient ? "ready" : "warning",
             warnings
         };
     }));
     return imagingImportPreviewResponseSchema.parse({
-        sourceName: input.sourceName,
-        sourceKind: input.sourceKind,
+        sourceName,
+        sourceKind,
         totalRows: rows.length,
         readyRows: rows.filter((row) => row.status === "ready").length,
         warningRows: rows.filter((row) => row.status === "warning").length,

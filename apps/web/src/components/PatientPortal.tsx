@@ -60,18 +60,15 @@ const OTPInput: React.FC<OTPInputProps> = ({ onComplete }) => {
 			// Auto-advance
 			if (idx < OTP_LENGTH - 1) {
 				focus(idx + 1);
-			} else {
-				// Last digit filled — read all after state settles
-				setTimeout(() => {
-					setDigits((prev) => {
-						const code = prev.join("");
-						if (code.length === OTP_LENGTH) onComplete(code);
-						return prev;
-					});
-				}, 0);
 			}
+			// БЫЛО: здесь стоял setTimeout ВНУТРИ обновления состояния, который
+			// тоже вызывал onComplete. Вместе с эффектом ниже и обработчиком
+			// вставки один ввод кода отправлял на сервер ТРИ запроса проверки.
+			// Портал ограничен 10 запросами в минуту на IP, поэтому в клинике
+			// за одним внешним адресом четвёртый пациент получал 429 на
+			// правильный код с первой попытки. Отправку оставляем только в эффекте.
 		},
-		[onComplete],
+		[],
 	);
 
 	const handlePaste = useCallback(
@@ -93,19 +90,24 @@ const OTPInput: React.FC<OTPInputProps> = ({ onComplete }) => {
 
 			const nextFocus = Math.min(startIdx + pasted.length, OTP_LENGTH - 1);
 			focus(nextFocus);
-			if (pasted.length === OTP_LENGTH) {
-				setTimeout(() => onComplete(pasted), 50);
-			}
+			// onComplete не вызываем: заполненные цифры подхватит эффект ниже.
 		},
-		[onComplete],
+		[],
 	);
 
-	// Fire onComplete when digits are fully filled (handles last-digit path too)
+	// Единственная точка отправки кода. Ref защищает от повторной отправки того же
+	// кода при перерисовке и от двойного вызова в StrictMode.
+	const submittedCodeRef = useRef<string | null>(null);
 	useEffect(() => {
 		const code = digits.join("");
-		if (code.length === OTP_LENGTH && !digits.includes("")) {
-			onComplete(code);
+		if (code.length !== OTP_LENGTH || digits.includes("")) {
+			// Код изменился — разрешаем отправку следующего.
+			if (code.length < OTP_LENGTH) submittedCodeRef.current = null;
+			return;
 		}
+		if (submittedCodeRef.current === code) return;
+		submittedCodeRef.current = code;
+		onComplete(code);
 	}, [digits, onComplete]);
 
 	return (
@@ -224,16 +226,42 @@ export const PatientPortal: React.FC = () => {
 		}
 	}, [viewingDoc]);
 
+	const [isSendingOtp, setIsSendingOtp] = useState(false);
+	const [otpSendError, setOtpSendError] = useState<string | null>(null);
+
 	const handleSendOtp = useCallback(async () => {
-		if (phone.replace(/\D/g, "").length >= 10) {
-			setStep("otp");
-			await fetch("/api/portal/auth/send-otp", {
+		if (phone.replace(/\D/g, "").length < 10) {
+			setOtpSendError("Введите номер телефона полностью.");
+			return;
+		}
+		if (isSendingOtp) return;
+
+		// БЫЛО: setStep("otp") выполнялся ДО запроса, ответ не проверялся, ошибки
+		// не перехватывались, кнопка не блокировалась. При 429 или 500 пациент
+		// видел «Код отправлен» и ждал СМС, которого никто не отправлял.
+		setIsSendingOtp(true);
+		setOtpSendError(null);
+		try {
+			const response = await fetch("/api/portal/auth/send-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ phone }),
 			});
+			if (!response.ok) {
+				setOtpSendError(
+					response.status === 429
+						? "Слишком много попыток. Подождите минуту и попробуйте снова."
+						: "Не удалось отправить код. Попробуйте позже или обратитесь в клинику.",
+				);
+				return;
+			}
+			setStep("otp");
+		} catch {
+			setOtpSendError("Нет связи с клиникой. Проверьте интернет и повторите.");
+		} finally {
+			setIsSendingOtp(false);
 		}
-	}, [phone]);
+	}, [phone, isSendingOtp]);
 
 	const handleOTPComplete = useCallback(
 		async (code: string) => {
@@ -276,9 +304,17 @@ export const PatientPortal: React.FC = () => {
 								onChange={(e) => setPhone(e.target.value)}
 								className="auth-phone-input"
 								onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+								disabled={isSendingOtp}
 							/>
-							<button onClick={handleSendOtp} className="auth-primary-btn">
-								Получить СМС-код
+							{/* Ошибка отправки показывается пациенту, а не молчаливо
+							    проглатывается: раньше при сбое он ждал СМС, которого не было. */}
+							{otpSendError && <p className="auth-error">{otpSendError}</p>}
+							<button
+								onClick={handleSendOtp}
+								className="auth-primary-btn"
+								disabled={isSendingOtp}
+							>
+								{isSendingOtp ? "Отправляем..." : "Получить СМС-код"}
 							</button>
 						</div>
 					) : (

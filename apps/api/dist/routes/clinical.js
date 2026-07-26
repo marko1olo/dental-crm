@@ -22,7 +22,18 @@ export async function registerClinicalRoutes(app) {
         if (!orgId) {
             return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
         }
-        return clinicalRuleEvaluationResponseSchema.parse(await evaluateClinicalRulesInDb(orgId, input));
+        const evaluation = await evaluateClinicalRulesInDb(orgId, input);
+        const blockingRule = evaluation.evaluations.find((e) => !e.resolved && e.severity === "blocker");
+        if (blockingRule && input.enforceBlockers) {
+            return reply.code(400).send({
+                code: "ClinicalRuleBlocker",
+                error: "ClinicalRuleBlocker",
+                message: `Клиническое противопоказание: ${blockingRule.message}`,
+                ruleId: blockingRule.ruleId,
+                evaluation: blockingRule,
+            });
+        }
+        return clinicalRuleEvaluationResponseSchema.parse(evaluation);
     });
     app.post("/api/clinical/rules", async (request, reply) => {
         if (!(await requireClinicalMutationAccess(request, reply, "clinical rule create")))
@@ -105,15 +116,6 @@ export async function registerClinicalRoutes(app) {
         const orgId = rawOrgId || "00000000-0000-0000-0000-000000000001";
         const { getExtendedOdontogramStatesFromDb } = await import("../db/extendedOdontogramStatesQuery.js");
         return reply.status(200).send(await getExtendedOdontogramStatesFromDb(orgId));
-    });
-    // COMPETITOR FEATURE: прием::несколько_диагнозов_егисз
-    app.get("/api/egisz/multiple-diagnoses", async (request, reply) => {
-        const rawOrgId = request.headers["x-organization-id"];
-        if (rawOrgId === "")
-            return reply.status(400).send({ error: "Invalid organization ID" });
-        const orgId = rawOrgId || "00000000-0000-0000-0000-000000000001";
-        const { getEgiszMultipleDiagnosesFromDb } = await import("../db/egiszMultipleDiagnosesQuery.js");
-        return reply.status(200).send(await getEgiszMultipleDiagnosesFromDb(orgId));
     });
     // COMPETITOR FEATURE #48: расписание::буфер_обмена_в_расписании_для_быстрого_переноса
     app.get("/api/schedule/clipboard-items", async (request, reply) => {
@@ -238,8 +240,9 @@ export async function registerClinicalRoutes(app) {
         if (rawOrgId === "")
             return reply.status(400).send({ error: "Invalid organization ID" });
         const orgId = rawOrgId || "00000000-0000-0000-0000-000000000001";
+        const { patientId } = request.query;
         const { getPatientServiceLineagesFromDb } = await import("../db/patientServiceLineagesQuery.js");
-        return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId));
+        return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId, patientId));
     });
     // COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
     app.get("/api/integrations/landing-field-mappings", async (request, reply) => {

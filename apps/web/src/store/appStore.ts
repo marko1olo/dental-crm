@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Dashboard } from "@dental/shared";
-import { loadUiPreferences, defaultUiPreferences } from "../AppHelpers";
+import { loadUiPreferences, defaultUiPreferences, settingsTabFromHash, viewFromHash } from "../AppHelpers";
 
 interface AppStore {
   isOmnibarOpen: boolean;
@@ -246,9 +246,13 @@ export const useAppStore = create<AppStore>((set) => ({
   setClinicProfileSaveState: (val) => set({ clinicProfileSaveState: val }),
   clinicProfileDirty: false,
   setClinicProfileDirty: (val) => set({ clinicProfileDirty: val }),
-  currentView: (() => null)(),
+  // БЫЛО: null. На первом же рендере проверка доступных ролей видела null,
+  // считала раздел запрещённым и принудительно переписывала адрес на #shift.
+  // Из-за этого любая прямая ссылка — #imaging, #settings/telegram — всегда
+  // открывала «Смену», и поделиться ссылкой на раздел было невозможно.
+  currentView: viewFromHash(),
   setCurrentView: (val) => set({ currentView: val }),
-  settingsTab: (() => null)(),
+  settingsTab: settingsTabFromHash(),
   setSettingsTab: (val) => set({ settingsTab: val }),
   selectedWorkspaceRole: (loadUiPreferences() ?? defaultUiPreferences).selectedWorkspaceRole,
   setSelectedWorkspaceRole: (val) => set({ selectedWorkspaceRole: val }),

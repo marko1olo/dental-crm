@@ -208,6 +208,37 @@ body {
 	opacity: 0.9 !important;
 }
 
+/* Light Mode Overrides for active nav item to ensure maximum high contrast */
+:root[data-theme="light"] .nav-item.active,
+html.light .nav-item.active,
+[data-theme="light"] .nav-item.active {
+	background: #ccfbf1 !important;
+	border: 1px solid #0d9488 !important;
+	color: #0f172a !important;
+	text-shadow: none !important;
+}
+
+:root[data-theme="light"] .nav-item.active .nav-label,
+html.light .nav-item.active .nav-label,
+[data-theme="light"] .nav-item.active .nav-label {
+	color: #0f172a !important;
+	font-weight: 800 !important;
+}
+
+:root[data-theme="light"] .nav-item.active svg,
+html.light .nav-item.active svg,
+[data-theme="light"] .nav-item.active svg {
+	color: #0f766e !important;
+}
+
+:root[data-theme="light"] .nav-item.active .nav-copy small,
+html.light .nav-item.active .nav-copy small,
+[data-theme="light"] .nav-item.active .nav-copy small {
+	color: #0f766e !important;
+	font-weight: 700 !important;
+	opacity: 1 !important;
+}
+
 .nav-copy small {
 	color: var(--text-secondary) !important;
 }

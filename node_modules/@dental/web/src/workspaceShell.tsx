@@ -16,9 +16,10 @@ import {
   Sparkles,
   Stethoscope,
   Users,
-  Lock
-} from "lucide-react";
+  Lock,
+  ChevronsLeft} from "lucide-react";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+import { useThemeStore, type ThemeMode } from "./store/themeStore";
 
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
@@ -103,16 +104,20 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 export function WorkspaceSidebar({
   currentView,
   onViewIntent,
-  role
+  role,
+  collapsed,
+  onToggleCollapsed
 }: {
   currentView: AppView;
   onViewIntent?: WorkspaceViewIntentHandler;
   role: StaffRole;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const allowedViews = getFilteredAppViews(role);
 
   return (
-    <aside className="sidebar" aria-label="Навигация">
+    <aside className="sidebar" aria-label="Навигация" data-collapsed={collapsed}>
       <div className="brand-mark">
         <Stethoscope aria-hidden="true" />
         <span>DENTE</span>
@@ -140,7 +145,46 @@ export function WorkspaceSidebar({
           ) : null
         )}
       </nav>
+      <div className="sidebar-footer">
+        <ThemeSwitcher />
+        <button
+          className="icon-button sidebar-collapse-button"
+          type="button"
+          aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
+          title={collapsed ? "Развернуть меню" : "Свернуть меню"}
+          aria-pressed={collapsed}
+          onClick={onToggleCollapsed}
+        >
+          <ChevronsLeft aria-hidden="true" />
+        </button>
+      </div>
     </aside>
+  );
+}
+
+function ThemeSwitcher() {
+  const themeMode = useThemeStore((state) => state.themeMode);
+  const setThemeMode = useThemeStore((state) => state.setThemeMode);
+  const options: Array<{ mode: ThemeMode; label: string }> = [
+    { mode: "light", label: "День" },
+    { mode: "dark", label: "Тьма" },
+    { mode: "night", label: "Ночь" }
+  ];
+
+  return (
+    <div className="theme-switcher" aria-label="Тема интерфейcа">
+      {options.map((option) => (
+        <button
+          key={option.mode}
+          type="button"
+          aria-pressed={themeMode === option.mode}
+          title={option.label}
+          onClick={() => setThemeMode(option.mode)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -177,11 +221,20 @@ export function WorkspaceTopbar({
   todayIso,
   onLockSession
 }: WorkspaceTopbarProps) {
+  const formattedDate = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    weekday: "long"
+  }).format(new Date(`${todayIso}T12:00:00`));
+
   return (
     <header className="topbar">
-      <div>
-        <p className="eyebrow">{todayIso}</p>
-        <h1>{clinicName}</h1>
+      <div className="topbar-context">
+        <div className="topbar-clinic">
+          <p className="eyebrow">{formattedDate.replace(" г.", "").replace(",", " ·")}</p>
+          <h1>{clinicName}</h1>
+        </div>
         <details className="workspace-role-switcher" aria-label="Рабочий режим">
           <summary>
             <span>Роль</span>
@@ -248,7 +301,6 @@ export function WorkspaceTopbar({
             type="button"
             title="Заблокировать сессию"
             onClick={onLockSession}
-            style={{ color: "#ef4444" }}
           >
             <Lock aria-hidden="true" size={20} />
           </button>

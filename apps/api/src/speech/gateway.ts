@@ -70,9 +70,28 @@ function isHallucinatedTranscript(text: string): { hallucinated: boolean; reason
   if (!trimmed) return { hallucinated: false, reason: "" };
 
   // Check blacklist
+  //
+  // БЫЛО: подстрочное сравнение по ВСЕЙ расшифровке. Врач заканчивал
+  // полутораминутную диктовку словами «...спасибо за внимание» — одно попадание
+  // обнуляло весь корректный текст фрагмента. Галлюцинация Whisper на тишине
+  // это ОТДЕЛЬНАЯ короткая фраза, а не вкрапление в осмысленную речь.
+  // Сравниваем по полному совпадению нормализованного текста (без концевой
+  // пунктуации), что ловит галлюцинации и не режет реальную диктовку.
+  const normalized = trimmed.toLowerCase().replace(/[.!?,;:\s]+$/g, "").trim();
   for (const entry of HALLUCINATION_BLACKLIST) {
     if (typeof entry === "string") {
-      if (trimmed.toLowerCase().includes(entry.toLowerCase())) {
+      const normalizedEntry = entry.toLowerCase().replace(/[.!?,;:\s]+$/g, "").trim();
+      // Ловим два случая:
+      //  • полное совпадение («Продолжение следует»);
+      //  • фраза в начале с коротким «хвостом» — типичная подпись Whisper
+      //    вида «Субтитры создавал DimaTorzok» или «Спасибо за просмотр!..».
+      // Порог хвоста 24 символа выбран так, чтобы отличить подпись от реальной
+      // речи: «Продолжение следует после снятия слепков — второй этап...» имеет
+      // осмысленное продолжение длиннее порога и остаётся в тексте приёма.
+      const isExact = normalized === normalizedEntry;
+      const isDominant =
+        normalized.startsWith(normalizedEntry) && normalized.length <= normalizedEntry.length + 24;
+      if (isExact || isDominant) {
         return { hallucinated: true, reason: `Blacklisted phrase: "${entry}"` };
       }
     } else {
@@ -1778,10 +1797,23 @@ export async function transcribeSpeechChunk(input: SpeechChunkUploadInput): Prom
         if (providerResult.text) {
           const hallucinationCheck = isHallucinatedTranscript(providerResult.text);
           if (hallucinationCheck.hallucinated) {
-            // Hallucination means the chunk had no real speech (silence/noise).
-            // No point forwarding to next provider — silently discard.
-            responseStatus = "transcribed";
-            transcript = "";
+            // Фрагмент распознан как галлюцинация на тишине/шуме.
+            //
+            // БЫЛО: статус ставился "transcribed" с пустым текстом. Из-за этого
+            // ветка восстановления ниже не срабатывала, и УЖЕ ИМЕЮЩИЙСЯ
+            // локальный текст браузера тоже выбрасывался. Причина при этом
+            // вычислялась, но никуда не попадала: сборщик записи не помечал
+            // пропуск, и в заметке приёма молча исчезал кусок без следа.
+            warnings.push(
+              `Фрагмент распознан как шум и не добавлен в текст (${hallucinationCheck.reason}).`,
+            );
+            if (localTranscript) {
+              transcript = localTranscript;
+              responseStatus = "fallback_text";
+            } else {
+              transcript = "";
+              responseStatus = "transcribed";
+            }
             break;
           } else {
             transcript = providerResult.text;

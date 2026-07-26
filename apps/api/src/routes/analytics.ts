@@ -30,12 +30,18 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const { range } = request.query as { range?: string };
 			let startDate: Date | undefined;
 
-			if (range === "last_month") {
-				startDate = new Date();
-				startDate.setMonth(startDate.getMonth() - 1);
-			} else if (range === "last_3_months") {
-				startDate = new Date();
-				startDate.setMonth(startDate.getMonth() - 3);
+			// БЫЛО: setMonth(getMonth() - 1) на 31-м числе перескакивал через месяц.
+			// 31 марта → "31 февраля" → 3 марта: отчёт "за прошлый месяц" охватывал
+			// 28 дней вместо 31 и молча терял конец февраля. Сначала ставим 1-е число.
+			const monthsBack = range === "last_month" ? 1 : range === "last_3_months" ? 3 : 0;
+			if (monthsBack > 0) {
+				const now = new Date();
+				startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, now.getDate());
+				if (startDate.getDate() !== now.getDate()) {
+					// День не существует в целевом месяце (31 → 30/28): берём его последний день.
+					startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 0);
+				}
+				startDate.setHours(0, 0, 0, 0);
 			} else if (range === "this_year") {
 				startDate = new Date(new Date().getFullYear(), 0, 1);
 			}
@@ -80,7 +86,10 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.from(payments)
 				.leftJoin(visits, eq(payments.visitId, visits.id))
 				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.where(withDate(payments.organizationId, payments.createdAt))
+				// БЫЛО: суммировались ВСЕ платежи, включая planned (деньги ещё не
+				// получены), refunded и voided. Клиника видела выручку в разы больше
+				// фактической. Фронтенд (useAppLogic) считает правильно — только "paid".
+				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")))
 				.groupBy(appointments.doctorUserId);
 
 			const allDocs = await db
@@ -97,8 +106,12 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 							? (docMap.get(r.doctorId) || "Врач клиники")
 							: "Общая касса",
 						revenue,
-						margin: Math.round(revenue * 0.35),
-						completionRate: 85,
+						// БЫЛО: margin = 35% от выручки и completionRate = 85 — константы,
+						// выдаваемые за расчёт. Пока в БД нет данных о себестоимости
+						// материалов и проценте врача, возвращаем null: интерфейс покажет
+						// прочерк вместо правдоподобного, но выдуманного числа.
+						margin: null as number | null,
+						completionRate: null as number | null,
 					};
 				})
 				.filter((x) => x.revenue > 0)
@@ -146,6 +159,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					and(
 						eq(patients.organizationId, orgId),
 						gte(patients.createdAt, ltvStartDate),
+						// Только фактически полученные деньги (см. комментарий выше).
+						eq(payments.status, "paid"),
 					),
 				)
 				.groupBy(
@@ -163,7 +178,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				}
 				const bucket = cohortMap.get(cm)!;
 				const rev = Number(row.totalRevenue);
-				bucket.m1.push(Math.round(rev * 0.4));
+				// БЫЛО: "выручка первого месяца" = 40% от общей — константа, а не расчёт.
+				// Пока платежи не разделены по месяцам от даты регистрации пациента,
+				// показываем только фактическую суммарную выручку когорты.
 				bucket.m12.push(rev);
 			}
 
@@ -175,9 +192,9 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					const label = RU_MONTHS[monthIdx] ?? key;
 					const avg = (arr: number[]) =>
 						arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+					void m1;
 					return {
 						cohort: label,
-						"Month 1": avg(m1),
 						"Month 12": avg(m12),
 					};
 				});
@@ -190,7 +207,16 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const [revenueRow] = await db
 				.select({ total: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
 				.from(payments)
-				.where(withDate(payments.organizationId, payments.createdAt));
+				// Только фактически полученные деньги (см. комментарий выше).
+				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")));
+
+			// Средний чек считается на ПЛАТИВШИХ пациентов. Раньше делили выручку
+			// периода на число пациентов, ЗАРЕГИСТРИРОВАННЫХ в этом периоде: при
+			// 10 новых пациентах и выручке со старых средний чек улетал в космос.
+			const [payingPatientRow] = await db
+				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
+				.from(payments)
+				.where(and(withDate(payments.organizationId, payments.createdAt), eq(payments.status, "paid")));
 
 			const [apptCountRow] = await db
 				.select({ count: sql<number>`count(*)` })
@@ -203,58 +229,41 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					totalRevenue: Number(revenueRow?.total ?? 0),
 					totalAppointments: Number(apptCountRow?.count ?? 0),
 					avgRevenuePerPatient:
-						Number(patientCountRow?.count ?? 0) > 0
+						Number(payingPatientRow?.count ?? 0) > 0
 							? Math.round(
 									Number(revenueRow?.total ?? 0) /
-										Number(patientCountRow?.count ?? 0),
+										Number(payingPatientRow?.count ?? 0),
 								)
 							: 0,
 				},
-				cohortLtvJson: cohortLtvJson.length
-					? cohortLtvJson
-					: [
-							{ cohort: "Июл", "Month 1": 15000, "Month 12": 45000 },
-							{ cohort: "Авг", "Month 1": 18000, "Month 12": 52000 },
-						],
-				planFunnelJson: planFunnelJson.length
-					? planFunnelJson
-					: [
-							{ name: "Запланированы", value: 12, fill: "#a1a1aa" },
-							{ name: "Подтверждены", value: 24, fill: "#3b82f6" },
-							{ name: "Завершены", value: 48, fill: "#10b981" },
-						],
-				chairUtilizationJson: chairUtilizationJson.length
-					? chairUtilizationJson
-					: [
-							{ name: "Кресло 1 (Терапия)", value: 42, fill: "#8b5cf6" },
-							{ name: "Кресло 2 (Хирургия)", value: 28, fill: "#ec4899" },
-						],
-				doctorProfitabilityJson: doctorProfitabilityJson.length
-					? doctorProfitabilityJson
-					: [
-							{ name: "Иванов И.И.", revenue: 240000, margin: 84000, completionRate: 92 },
-							{ name: "Петрова А.С.", revenue: 180000, margin: 63000, completionRate: 88 },
-						],
+				// БЫЛО: при пустом результате подставлялись выдуманные данные —
+				// "Иванов И.И. — 240 000 ₽", "Кресло 1 — 42%" и т.п. Новая клиника
+				// видела чужие показатели как свои и принимала по ним решения.
+				// Пустой массив честнее: интерфейс покажет "нет данных за период".
+				cohortLtvJson,
+				planFunnelJson,
+				chairUtilizationJson,
+				doctorProfitabilityJson,
+				// Явный признак пустого периода, чтобы интерфейс отличал "нет данных"
+				// от "все показатели равны нулю".
+				isEmpty:
+					!cohortLtvJson.length &&
+					!planFunnelJson.length &&
+					!chairUtilizationJson.length &&
+					!doctorProfitabilityJson.length,
 			};
 
 			return { success: true, data };
 		} catch (e) {
-			console.error("Failed to generate analytics", e);
-			return {
-				success: true,
-				data: {
-					kpis: {
-						totalPatients: 0,
-						totalRevenue: 0,
-						totalAppointments: 0,
-						avgRevenuePerPatient: 0,
-					},
-					cohortLtvJson: [],
-					planFunnelJson: [],
-					chairUtilizationJson: [],
-					doctorProfitabilityJson: [],
-				},
-			};
+			// БЫЛО: при ошибке БД возвращался success:true с нулями — руководитель
+			// видел "выручка 0 ₽" и считал, что клиника ничего не заработала,
+			// вместо того чтобы узнать о сбое. Теперь ошибка видна честно.
+			request.log.error({ err: e }, "Не удалось построить аналитику");
+			return reply.code(503).send({
+				success: false,
+				error: "AnalyticsUnavailable",
+				message: "Не удалось построить аналитику. Данные не потеряны, повторите позже.",
+			});
 		}
 	});
 }

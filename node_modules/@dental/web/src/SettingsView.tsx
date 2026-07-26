@@ -1220,10 +1220,14 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const [mergeQueues, setMergeQueues] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/system/ram-watchdogs", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
-      .then((r) => r.json()).then((d) => setRamWatchdogs(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch("/api/crm/patient-duplicate-merge-queues", { headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" } })
-      .then((r) => r.json()).then((d) => setMergeQueues(Array.isArray(d) ? d : [])).catch(() => {});
+    // БЫЛО: сюда передавался жёстко зашитый UUID демо-организации в заголовке
+    // x-organization-id — при работе реальной клиники это тянуло чужие данные,
+    // а на сервере такой заголовок вообще принимался без аутентификации.
+    // Токен кабинета теперь подставляется автоматически (lib/apiAuthFetch.ts).
+    fetch("/api/system/ram-watchdogs")
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setRamWatchdogs(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch("/api/crm/patient-duplicate-merge-queues")
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setMergeQueues(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   return (

@@ -160,6 +160,20 @@ export async function registerPatientRoutes(app) {
         if (!input) {
             return reply.code(400).send({ error: "PatientValidationError", message: patientAdministrativeValidationMessage });
         }
+        const sanitizeDigitsAndSpaces = (val, maxLen = 80) => {
+            if (val === undefined)
+                return undefined;
+            if (val === null)
+                return null;
+            const cleaned = val.trim().replace(/[^\d\s\-\.]/g, "");
+            return cleaned.length > maxLen ? cleaned.slice(0, maxLen) : cleaned;
+        };
+        if (input.snils !== undefined && input.snils !== null) {
+            input.snils = sanitizeDigitsAndSpaces(input.snils, 20);
+        }
+        if (input.identityDocument !== undefined && input.identityDocument !== null) {
+            input.identityDocument = input.identityDocument.trim().slice(0, 240);
+        }
         try {
             const existingPatient = await getPatientByIdFromDb(orgId, params.patientId);
             if (!existingPatient)
@@ -195,7 +209,7 @@ export async function registerPatientRoutes(app) {
         const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
         return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
     });
-    // COMPETITOR FEATURE #20: пациенты::причины_списания_в_архив_и_запрет_записи
+    // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
     app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
         const clinicHeader = request.headers["x-dente-clinic-token"];
         const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
@@ -205,7 +219,31 @@ export async function registerPatientRoutes(app) {
         if (!payload || !payload.organizationId)
             return reply.code(401).send({ error: "AuthExpired" });
         const orgId = payload.organizationId;
+        const { patientId } = request.params;
         const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
-        return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId));
+        return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId));
+    });
+    app.post("/api/patients/:patientId/archive-status", async (request, reply) => {
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+        const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+        if (!clinicToken)
+            return reply.code(401).send({ error: "AuthRequired" });
+        const payload = verifyToken(clinicToken, TOKEN_SECRET());
+        if (!payload || !payload.organizationId)
+            return reply.code(401).send({ error: "AuthExpired" });
+        const orgId = payload.organizationId;
+        const { patientId } = request.params;
+        // Parse the body
+        const body = request.body;
+        if (!body || typeof body.isBlacklisted !== 'boolean') {
+            return reply.code(400).send({ error: "ValidationError", message: "isBlacklisted boolean is required" });
+        }
+        const { setPatientArchiveStatusInDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+        const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
+        const patient = await getPatientByIdFromDb(orgId, patientId);
+        if (!patient)
+            return reply.code(404).send({ error: "PatientNotFound" });
+        await setPatientArchiveStatusInDb(orgId, patientId, body.isBlacklisted, patient.fullName);
+        return reply.status(200).send({ success: true, isBlacklisted: body.isBlacklisted });
     });
 }

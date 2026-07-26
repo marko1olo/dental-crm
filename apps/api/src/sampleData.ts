@@ -543,6 +543,23 @@ export const documents: GeneratedDocument[] = [
 ];
 
 export const serviceCatalogMap = new Map<string, ServiceCatalogItem>();
+
+/**
+ * Услуга по идентификатору. Обращения к прайсу шли то через индекс, то линейным
+ * поиском по массиву — из-за этого одна и та же услуга в разных местах могла
+ * находиться и не находиться. Здесь единая точка: индекс, а при промахе —
+ * поиск по массиву с достройкой индекса.
+ */
+export function getServiceCatalogItem(
+	serviceId: string,
+): ServiceCatalogItem | undefined {
+	const indexed = serviceCatalogMap.get(serviceId);
+	if (indexed !== undefined) return indexed;
+	const found = serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+	if (found) serviceCatalogMap.set(serviceId, found);
+	return found;
+}
+
 export const serviceCatalog: ServiceCatalogItem[] = [
 	{
 		id: "svc-consult-primary",
@@ -1244,9 +1261,7 @@ export function buildBillingSummary(): BillingSummary {
 		totalPlannedRub += lineTotal;
 		totalDiscountRub += item.discountRub;
 
-		const service =
-			serviceCatalogMap.get(item.serviceId) ||
-			serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+		const service = getServiceCatalogItem(item.serviceId);
 		if (service?.taxDeductible) {
 			taxDeductionEligibleRub += lineTotal;
 		}
@@ -1763,6 +1778,24 @@ export function buildCommunicationSummary(): CommunicationSummary {
 	};
 }
 
+/**
+ * Группировка строк по пациенту за один проход. Используется там, где раньше
+ * для каждого пациента заново фильтровался весь массив.
+ */
+function groupByPatientId<T extends { patientId?: string | null }>(
+	rows: readonly T[],
+): Map<string, T[]> {
+	const grouped = new Map<string, T[]>();
+	for (const row of rows) {
+		const patientId = row.patientId;
+		if (!patientId) continue;
+		const bucket = grouped.get(patientId);
+		if (bucket) bucket.push(row);
+		else grouped.set(patientId, [row]);
+	}
+	return grouped;
+}
+
 function buildPatientInsights(): PatientInsight[] {
 	const requiredDocuments: Array<
 		PatientInsight["missingDocumentKinds"][number]
@@ -1772,26 +1805,28 @@ function buildPatientInsights(): PatientInsight[] {
 		"completed_works_act",
 	];
 
+	// БЫЛО: на каждого пациента выполнялось шесть полных проходов по всем
+	// документам, задачам, снимкам, платежам, позициям плана и записям — то есть
+	// O(пациенты × записи). На демо-базе это незаметно, на клинике с несколькими
+	// тысячами пациентов главный экран считался секундами. Группируем один раз.
+	const documentsByPatient = groupByPatientId(documents);
+	const tasksByPatient = groupByPatientId(
+		communicationTasks.filter(isOpenCommunicationTask),
+	);
+	const imagesByPatient = groupByPatientId(imagingStudies);
+	const paymentsByPatient = groupByPatientId(
+		payments.filter((payment) => payment.status === "paid"),
+	);
+	const planItemsByPatient = groupByPatientId(treatmentPlanItems);
+	const appointmentsByPatient = groupByPatientId(appointments);
+
 	return patients.map((patient) => {
-		const patientDocuments = documents.filter(
-			(document) => document.patientId === patient.id,
-		);
-		const patientTasks = communicationTasks.filter(
-			(task) => task.patientId === patient.id && isOpenCommunicationTask(task),
-		);
-		const patientImages = imagingStudies.filter(
-			(study) => study.patientId === patient.id,
-		);
-		const patientPayments = payments.filter(
-			(payment) =>
-				payment.patientId === patient.id && payment.status === "paid",
-		);
-		const patientPlanItems = treatmentPlanItems.filter(
-			(item) => item.patientId === patient.id,
-		);
-		const patientAppointments = appointments.filter(
-			(appointment) => appointment.patientId === patient.id,
-		);
+		const patientDocuments = documentsByPatient.get(patient.id) ?? [];
+		const patientTasks = tasksByPatient.get(patient.id) ?? [];
+		const patientImages = imagesByPatient.get(patient.id) ?? [];
+		const patientPayments = paymentsByPatient.get(patient.id) ?? [];
+		const patientPlanItems = planItemsByPatient.get(patient.id) ?? [];
+		const patientAppointments = appointmentsByPatient.get(patient.id) ?? [];
 		const draftVisit =
 			activeVisit.patientId === patient.id && activeVisit.status === "draft";
 		const missingDocumentKinds = requiredDocuments.filter(
@@ -8660,7 +8695,10 @@ function buildDenteTelegramRecallItems(
 		if (item.organizationId !== organizationScope) return [];
 		if (item.status !== "completed") return [];
 
-		const service = serviceCatalogMap.get(item.serviceId);
+		// БЫЛО: только индекс, без запасного поиска по прайсу. Услуга, добавленная
+		// после построения индекса, не находилась, и напоминание о гигиене
+		// пациенту не уходило вовсе.
+		const service = getServiceCatalogItem(item.serviceId);
 		if (service?.category !== "hygiene") return [];
 
 		const patient = activePatientsMap.get(item.patientId);
@@ -8926,16 +8964,19 @@ function buildDenteTelegramTaxDocumentRequestItems(
 ): DenteTelegramOutboxItem[] {
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
+	// Один индекс активных пациентов вместо линейного поиска на каждый документ.
+	const activePatientIds = new Set(
+		patients
+			.filter((candidate) => candidate.status === "active")
+			.map((candidate) => candidate.id),
+	);
 	return documents.flatMap((document) => {
 		if (document.organizationId !== organizationScope) return [];
 		if (document.kind !== "tax_deduction_application") return [];
 		if (document.status !== "issued") return [];
 		if (!document.payload?.taxDeductionApplication) return [];
-		const patient = patients.find(
-			(candidate) =>
-				candidate.id === document.patientId && candidate.status === "active",
-		);
-		if (!patient) return [];
+		if (!document.patientId) return [];
+		if (!activePatientIds.has(document.patientId)) return [];
 
 		const itemId = taxDocumentRequestOutboxId(document);
 		if (taxDocumentRequestAlreadySent(itemId)) return [];
@@ -11265,26 +11306,30 @@ function speechRecordingRecoveryFromChunks(
 				left.createdAt.localeCompare(right.createdAt),
 		);
 	const assembly = assembleSpeechRecordingFromChunks(recordingId, sortedChunks);
+	// БЫЛО: семь отдельных проходов по массиву фрагментов. Считаем за один.
 	const statusCounts = {
-		transcribed: sortedChunks.filter((chunk) => chunk.status === "transcribed")
-			.length,
-		fallback_text: sortedChunks.filter(
-			(chunk) => chunk.status === "fallback_text",
-		).length,
-		needs_provider_key: sortedChunks.filter(
-			(chunk) => chunk.status === "needs_provider_key",
-		).length,
-		failed: sortedChunks.filter((chunk) => chunk.status === "failed").length,
+		transcribed: 0,
+		fallback_text: 0,
+		needs_provider_key: 0,
+		failed: 0,
 	};
-	const totalDurationMs = sortedChunks.some(
-		(chunk) => chunk.durationMs !== null,
-	)
-		? sortedChunks.reduce((total, chunk) => total + (chunk.durationMs ?? 0), 0)
-		: null;
-	const totalBytes = sortedChunks.reduce(
-		(total, chunk) => total + chunk.byteLength,
-		0,
-	);
+	let hasKnownDuration = false;
+	let durationSumMs = 0;
+	let totalBytes = 0;
+	for (const chunk of sortedChunks) {
+		if (chunk.status === "transcribed") statusCounts.transcribed += 1;
+		else if (chunk.status === "fallback_text") statusCounts.fallback_text += 1;
+		else if (chunk.status === "needs_provider_key")
+			statusCounts.needs_provider_key += 1;
+		else if (chunk.status === "failed") statusCounts.failed += 1;
+
+		if (chunk.durationMs !== null) {
+			hasKnownDuration = true;
+			durationSumMs += chunk.durationMs;
+		}
+		totalBytes += chunk.byteLength;
+	}
+	const totalDurationMs = hasKnownDuration ? durationSumMs : null;
 	const qualityCounts = countSpeechQualities(sortedChunks);
 	const transcriptPreview = assembly.transcript
 		.replace(/\s+/g, " ")

@@ -44,7 +44,7 @@ export function documentHasUnresolvedPlaceholders(html) {
     return unresolvedPlaceholderPatterns.some((pattern) => normalized.includes(pattern));
 }
 function row(label, value) {
-    return `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`;
+    return `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value ?? "")}</td></tr>`;
 }
 function cell(value) {
     return `<td>${escapeHtml(present(value) ?? "")}</td>`;
@@ -1160,6 +1160,7 @@ function paymentMethodForDocument(payment) {
         bank_transfer: "банковский перевод",
         online: "онлайн-оплата",
         insurance: "страховая",
+        family_wallet: "семейный кошелек",
         other: "иной способ"
     };
     return labels[payment.method] ?? payment.method;
@@ -1503,9 +1504,9 @@ function treatmentPlan(document) {
       ${row("Диагноз / клиническое основание", payload.diagnosisSummary)}
       ${row("Зубы / область", payload.teethOrArea)}
       ${row("Ориентировочная стоимость", rub(payload.estimatedTotalRub))}
-      ${row("Прогноз и ограничения", payload.prognosisAndLimits)}
-      ${row("Контрольный план", payload.controlPlan)}
-      ${row("Врач", payload.doctorFullName)}
+      ${row("Прогноз и ограничения", payload.prognosisAndLimits ?? "")}
+      ${row("Контрольный план", payload.controlPlan ?? "")}
+      ${row("Врач", payload.doctorFullName ?? "")}
       ${row("Дата подготовки плана", payload.plannedAt)}
     </table>
     <h2>Клиническая детализация по зубам и сегментам</h2>

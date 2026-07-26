@@ -114,15 +114,27 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
           resolve([file]);
         });
       } else if (item.isDirectory) {
+        // БЫЛО: readEntries вызывался ОДИН раз. По спецификации FileSystem API он
+        // отдаёт не больше ~100 записей за вызов и требует повторных вызовов,
+        // пока не вернёт пустой массив. Папка КЛКТ на 400 срезов загружалась
+        // на 100 файлов, реконструкция строилась по неполной челюсти,
+        // а статус бодро сообщал «Загружено объектов DICOM: 100».
         const dirReader = item.createReader();
-        dirReader.readEntries(async (entries: any[]) => {
-          let files: File[] = [];
-          for (let i = 0; i < entries.length; i++) {
-            const nestedFiles = await traverseFileTree(entries[i], path + item.name + "/");
-            files = files.concat(nestedFiles);
-          }
-          resolve(files);
-        });
+        const files: File[] = [];
+        const readBatch = () => {
+          dirReader.readEntries(async (entries: any[]) => {
+            if (!entries || entries.length === 0) {
+              resolve(files);
+              return;
+            }
+            for (let i = 0; i < entries.length; i++) {
+              const nestedFiles = await traverseFileTree(entries[i], path + item.name + "/");
+              files.push(...nestedFiles);
+            }
+            readBatch();
+          }, () => resolve(files));
+        };
+        readBatch();
       } else {
         resolve([]);
       }
@@ -136,6 +148,12 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
     if (loading) return;
     setLoading(true);
 
+    // БЫЛО: тела обработчика без try/catch. Если processZip падал на битом или
+    // зашифрованном архиве, setLoading(false) в конце не выполнялся: крутилка
+    // висела вечно, статус замирал на «Распаковка ZIP-архива в память...»,
+    // а проверка `if (loading) return` блокировала все следующие попытки.
+    // Загрузчик умирал до перезагрузки страницы, и врач не видел причины.
+    try {
     const items = e.dataTransfer.items;
     let allFiles: File[] = [];
 
@@ -176,8 +194,14 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
         setStatus("Подходящие файлы DICOM не найдены.");
       }
     }
-
-    setLoading(false);
+    } catch (error) {
+      console.error("[DicomArchiveUploader] Ошибка обработки:", error);
+      setStatus(
+        "Не удалось прочитать файлы: архив повреждён, зашифрован или не содержит DICOM. Попробуйте другой архив или распакуйте его вручную.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [loading, onImagesLoaded]);
 
   return (

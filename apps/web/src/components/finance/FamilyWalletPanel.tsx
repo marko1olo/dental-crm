@@ -1,6 +1,6 @@
-import { Activity, ArrowRight, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Activity, ArrowRight, PlusCircle, ShieldCheck, Users, Wallet } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
@@ -34,7 +34,12 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const [family, setFamily] = useState<FamilyGroup | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isPaying, setIsPaying] = useState(false);
+	const [isToppingUp, setIsToppingUp] = useState(false);
+	const [topupAmount, setTopupAmount] = useState<number>(0);
 	const [amount, setAmount] = useState<number>(remainingDebtRub || 0);
+	// Ключ идемпотентности живёт между повторами: без него повторная отправка
+	// после обрыва связи зачислила бы деньги дважды.
+	const topupMutationIdRef = useRef<string | null>(null);
 
 	const fetchFamily = useCallback(async () => {
 		try {
@@ -56,8 +61,32 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	}, [patientId]);
 
 	useEffect(() => {
-		if (patientId) fetchFamily();
-	}, [patientId, fetchFamily]);
+		if (!patientId) return;
+		// БЫЛО: без защиты от гонки. Ответ по пациенту А мог прийти позже ответа
+		// по Б, и списание уходило в семью А со ссылкой на пациента Б.
+		let cancelled = false;
+		setFamily(null);
+		setIsLoading(true);
+		(async () => {
+			try {
+				const res = await fetch(`/api/finance/family/patient/${patientId}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (cancelled) return;
+				setFamily(res.ok ? await res.json() : null);
+			} catch (e) {
+				if (!cancelled) {
+					console.error(e);
+					setFamily(null);
+				}
+			} finally {
+				if (!cancelled) setIsLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [patientId]);
 
 	// Sync balance with WS
 	const wsUrl = (() => {
@@ -119,6 +148,47 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Сетевая ошибка", "error");
 		} finally {
 			setIsPaying(false);
+		}
+	};
+
+	const handleTopup = async () => {
+		if (!family || isToppingUp) return;
+		if (!Number.isInteger(topupAmount) || topupAmount <= 0) {
+			showToast("Введите сумму пополнения целыми рублями", "error");
+			return;
+		}
+		if (!topupMutationIdRef.current) {
+			topupMutationIdRef.current = `family-topup-${crypto.randomUUID()}`;
+		}
+
+		setIsToppingUp(true);
+		try {
+			const res = await fetch("/api/finance/family/topup", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId,
+					familyGroupId: family.id,
+					amountRub: topupAmount,
+					clientMutationId: topupMutationIdRef.current,
+				}),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Не удалось пополнить счёт", "error");
+				return;
+			}
+			// Зачисление прошло — следующее пополнение получит новый ключ.
+			topupMutationIdRef.current = null;
+			showToast(`Семейный счёт пополнен на ${topupAmount.toLocaleString("ru-RU")} ₽`, "success");
+			setTopupAmount(0);
+			fetchFamily();
+		} catch {
+			showToast("Сетевая ошибка", "error");
+		} finally {
+			setIsToppingUp(false);
 		}
 	};
 
@@ -190,6 +260,41 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					>
 						{isPaying ? "Списание..." : "Списать с баланса"}{" "}
 						<ArrowRight size={16} />
+					</button>
+				</div>
+			</div>
+
+			{/* Пополнение. БЫЛО: интерфейса и эндпоинта пополнения не существовало,
+			    баланс мог только уменьшаться — поэтому он всегда оставался нулевым,
+			    и любая оплата с семейного счёта отклонялась как «недостаточно средств». */}
+			<div className="family-wallet-actions">
+				<div className="family-wallet-input-group">
+					<label
+						htmlFor="family-topup-amount"
+						className="family-wallet-input-label"
+					>
+						Пополнить счёт (₽)
+					</label>
+					<input
+						id="family-topup-amount"
+						type="number"
+						min={1}
+						step={1}
+						className="family-wallet-input"
+						value={topupAmount || ""}
+						onChange={(e) => setTopupAmount(Math.trunc(Number(e.target.value)))}
+						placeholder="0"
+						disabled={isToppingUp}
+					/>
+				</div>
+				<div className="family-wallet-btn-container">
+					<button
+						type="button"
+						onClick={handleTopup}
+						disabled={isToppingUp || topupAmount <= 0}
+						className="family-wallet-btn"
+					>
+						{isToppingUp ? "Зачисление..." : "Пополнить"} <PlusCircle size={16} />
 					</button>
 				</div>
 			</div>

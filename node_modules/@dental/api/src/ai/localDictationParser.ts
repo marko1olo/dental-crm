@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ParserContext } from "./dictationParser.js";
 
 export interface ToothUpdate {
@@ -90,8 +89,8 @@ function extractTime(text: string): string | null {
   // Fix 'полпервого' / 'пол первого'
   m = text.match(/(пол(?:овин[аеу])?[\s\-]*|четверть\s+)([а-яё]+)/i);
   if (m) {
-    const isQuarter = m[1].includes("четверть");
-    const word = (m[2] as string).substring(0, 3);
+    const isQuarter = (m[1] ?? "").includes("четверть");
+    const word = (m[2] ?? "").substring(0, 3);
     const hourMap: Record<string, number> = { "пер": 12, "вто": 13, "тре": 14, "чет": 15, "пят": 16, "шес": 17, "сед": 18, "вос": 19, "дев": 20, "дес": 21, "оди": 10, "две": 11 };
     if (hourMap[word]) return `${hourMap[word]}:${isQuarter ? "15" : "30"}`;
   }
@@ -120,7 +119,7 @@ function extractDate(text: string): { dayString?: string, relativeDays?: number,
     if (isNaN(day)) day = parseWordNumber(m[1] as string) || 0;
 
     if (day > 0 && day <= 31) {
-      const monthWord = m[2].substring(0, 5);
+      const monthWord = (m[2] ?? "").substring(0, 5);
       let month = -1;
       for (const [key, val] of Object.entries(MONTHS)) {
         if (key.startsWith(monthWord)) { month = val; break; }
@@ -129,7 +128,7 @@ function extractDate(text: string): { dayString?: string, relativeDays?: number,
         const year = new Date().getFullYear();
         return { dayString: `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` };
       }
-      if ((m[2] as string).startsWith("числ")) {
+      if ((m[2] ?? "").startsWith("числ")) {
         const d = new Date();
         return { dayString: `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}` };
       }
@@ -146,7 +145,7 @@ function extractPatientName(text: string, actionRegexStr: string): string | null
   // Use lookahead to find the name strictly between the action and any temporal/preposition words
   const regex = new RegExp(`(?:${actionRegexStr})\\s+(.*?)(?=\\s+(?:на|в|к|телефон|с|завтра|сегодня|послезавтра)(?:\\s|$)|\\s+\\d|$)`, 'i');
   const match = text.match(regex);
-  if (match && match[1].length > 2) {
+  if (match && match[1] !== undefined && match[1].length > 2) {
     let cleanName = match[1].replace(/^(?:для|запись)\s+/i, '').trim();
     if (cleanName.length > 2) return cleanName;
   }
@@ -182,7 +181,7 @@ function extractCost(text: string): number | null {
 
   const standalone = text.match(/\b([1-9]\d{2,5})\b/);
   if (standalone) {
-    return parseInt(standalone[1], 10);
+    return parseInt(standalone[1] ?? "", 10);
   }
   return null;
 }
@@ -266,8 +265,8 @@ function expandToothRanges(text: string): string[] {
 
   const rangeMatches = [...text.matchAll(/(?:с|от)\s*([1-4][1-8]|[5-8][1-5])\s*(?:по|до)\s*([1-4][1-8]|[5-8][1-5])/gi)];
   for (const m of rangeMatches) {
-    const start = parseInt(m[1]);
-    const end = parseInt(m[2]);
+    const start = parseInt(m[1] ?? "");
+    const end = parseInt(m[2] ?? "");
     if (Math.floor(start/10) === Math.floor(end/10)) {
       const min = Math.min(start, end);
       const max = Math.max(start, end);
@@ -275,12 +274,12 @@ function expandToothRanges(text: string): string[] {
     }
   }
   const individualMatches = [...text.matchAll(TOOTH_REGEX)];
-  for (const m of individualMatches) allTeeth.add(m[1]);
+  for (const m of individualMatches) { if (m[1] !== undefined) allTeeth.add(m[1]); }
 
   const wordMatches = [...text.matchAll(/(?:на|зуб|зубе)\s+([а-яё]+)\s+([а-яё]+)/gi)];
   for (const m of wordMatches) {
     const dec = parseWordNumber(m[1] as string);
-    const unit = parseWordNumber(m[2]);
+    const unit = parseWordNumber(m[2] ?? "");
     if (dec && unit && dec >= 10 && dec <= 80 && unit >= 1 && unit <= 8) {
        allTeeth.add((dec + unit).toString());
     }

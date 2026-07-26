@@ -1,4 +1,5 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
+import { requireOrganizationId } from "../../security/identity.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -23,13 +24,11 @@ import {
 } from "../../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
-import { createGeneratedDocumentInDb } from "../../db/documentQuery.js";
+import { createGeneratedDocumentInDb, getDocumentsByPatientId } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getTreatmentPlanItemsForPatient } from "../../db/clinicalQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 
 import {
@@ -50,7 +49,6 @@ import {
   renderIssuedHtmlToPdf,
   taxSnapshotDocument,
   taxXmlSourceSnapshotSha256,
-  documentRenderContext,
   documentVoidValidationMessage,
   documentIssueValidationMessage,
   buildMedicalDocumentReleaseJournalEntry,
@@ -69,15 +67,19 @@ export async function register(app: FastifyInstance) {
       });
     }
     const input = repairMojibakeDeep(parsedInput.data);
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org"; // fallback for tests
+    // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+    // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+    // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+    // Организация теперь берётся только из проверенного токена (401 иначе).
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
 
     const patient = await getPatientByIdFromDb(orgId, input.patientId);
     const visit = input.visitId ? await getVisitByIdInDb(orgId, input.visitId) : null;
     const patientPayments = await getPaymentsByPatientIdInDb(orgId, input.patientId);
     const patientPlanItems = await getTreatmentPlanItemsForPatient(orgId, input.patientId);
+    // Нужны для контроля суммарных возвратов по одному чеку (см. guards.ts).
+    const patientDocuments = await getDocumentsByPatientId(orgId, input.patientId);
     
     const validation = validateDocumentCreation(input, {
       patient: patient ?? null,
@@ -86,7 +88,7 @@ export async function register(app: FastifyInstance) {
       plannedAmountRub: plannedAmountRubForDocument(input.kind, input, patientPlanItems.map(item => ({ ...item, quantity: Number(item.quantity) }))),
       taxPaymentSelectionError: taxPaymentSelectionErrorForDocument(input, patientPayments),
       paymentReceiptSelectionError: paymentReceiptSelectionErrorForDocument(input, patientPayments),
-      paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, patientPayments)
+      paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, patientPayments, patientDocuments)
     });
     if (!validation.ok) {
       return reply.code(validation.statusCode).send(apiError(validation.error));

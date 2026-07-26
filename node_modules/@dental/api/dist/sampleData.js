@@ -91,7 +91,7 @@ function syncDenteTelegramOutboxDeliveryReceiptsMap() {
 }
 export const denteTelegramLinkCodes = [];
 export const denteTelegramChatLinks = [];
-export const clinicProfile = {
+export const clinicProfile = ({
     organizationId,
     clinicName: "Стоматология, 1 кабинет",
     legalName: "ИП Иванова М.С.",
@@ -115,8 +115,6 @@ export const clinicProfile = {
     networkEnabled: false,
     egiszEnabled: false,
     updatedAt: nowIso,
-    specializations: [],
-    workingHours: null,
     currency: "₽",
     themeColor: "teal",
     logoUrl: null,
@@ -144,7 +142,7 @@ export const clinicProfile = {
     aiEnableTreatmentPlan: true,
     aiEnableRecommendations: true,
     aiEnableDocuments: true,
-};
+});
 export const staffMembers = [
     {
         id: "e44d32ca-7777-4c00-a001-c88f01b92e21",
@@ -1065,7 +1063,6 @@ export function buildBillingSummary() {
         draftDocumentAmountRub,
         openTreatmentItems,
         unpaidDocuments,
-        insuranceCoverageRub: 0,
     };
 }
 function buildVisitNoteChecklistItem() {
@@ -7741,7 +7738,6 @@ export function buildDashboard() {
         clinicName: repairMojibakeText(clinicProfile.clinicName),
         todayIso: "2026-05-12",
         clinicSettings: buildClinicSettings(),
-        insuranceContracts: [],
         shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
         patients: repairMojibakeDeep(patients),
         patientInsights: repairMojibakeDeep(patientInsights),
@@ -7806,7 +7802,7 @@ function normalizePatientAdministrativeProfile(input) {
         preferredAppointmentEnd,
         preferredAppointmentNote: nullableTrimmed(input?.preferredAppointmentNote),
         dataProcessingBasisNote: nullableTrimmed(input?.dataProcessingBasisNote),
-        orthodonticProgress: input?.orthodonticProgress ?? null,
+        orthodonticProgress: nullableTrimmed(input?.orthodonticProgress),
     };
     const hasValue = Object.values(profile).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value));
     return hasValue ? profile : null;

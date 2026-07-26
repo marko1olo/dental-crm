@@ -15,6 +15,7 @@ import { xrayScans } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { requireClinicalReadAccess, requireClinicalMutationAccess } from "../accessGuard.js";
+import { requireOrganizationId } from "../security/identity.js";
 
 // ────────────────────────────────────────────────
 // Schemas
@@ -57,14 +58,13 @@ const xrayScanResponseSchema = z.object({
 // Helpers
 // ────────────────────────────────────────────────
 
-function resolveOrganizationId(request: any): string {
-  // Real production: read from session. For now: env fallback.
-  return (
-    request.session?.organizationId ??
-    process.env.DEFAULT_ORGANIZATION_ID ??
-    "00000000-0000-0000-0000-000000000001"
-  );
-}
+/**
+ * БЫЛО: организация бралась из request.session (никогда не заполняется) либо из
+ * DEFAULT_ORGANIZATION_ID, иначе — жёстко зашитый UUID. В сочетании с запросами
+ * без фильтра по organizationId это позволяло читать и удалять рентген-снимки
+ * ЛЮБОЙ клиники простым перебором id. Теперь организация только из токена, и
+ * каждый запрос к БД дополнительно фильтруется по organizationId.
+ */
 
 function scanToResponse(scan: typeof xrayScans.$inferSelect, includeImage = false) {
   return {
@@ -107,8 +107,10 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       });
     }
 
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
+
     const data = parsed.data;
-    const organizationId = resolveOrganizationId(request);
 
     // Normalize image: ensure data URI format
     const imageDataUri = data.imageBase64.startsWith("data:")
@@ -142,12 +144,15 @@ export async function registerXrayRoutes(app: FastifyInstance) {
   app.post("/api/xray/scans/:id/analyze", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "analyze xray scan"))) return;
 
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
+
     const { id } = request.params as { id: string };
 
     const [scan] = await db
       .select()
       .from(xrayScans)
-      .where(eq(xrayScans.id, id))
+      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
       .limit(1);
 
     if (!scan) {
@@ -166,7 +171,7 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     await db
       .update(xrayScans)
       .set({ status: "analyzing", aiError: null })
-      .where(eq(xrayScans.id, id));
+      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
 
     // Run analysis async — respond immediately with 202 so the UI can poll
     reply.code(202).send({ status: "analyzing", id });
@@ -186,13 +191,13 @@ export async function registerXrayRoutes(app: FastifyInstance) {
             aiAnalyzedAt: new Date(),
             aiError: result.warnings.length > 0 ? result.warnings.join("; ") : null,
           })
-          .where(eq(xrayScans.id, id));
+          .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
       } catch (err: any) {
         console.error("[XRay AI] Analysis failed for scan", id, err?.message);
         await db
           .update(xrayScans)
-          .set({ status: "error", aiError: err?.message ?? "Неизвестная ошибка AI-анализа." })
-          .where(eq(xrayScans.id, id));
+          .set({ status: "error", aiError: "Не удалось выполнить AI-анализ снимка." })
+          .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
       }
     });
   });
@@ -200,6 +205,9 @@ export async function registerXrayRoutes(app: FastifyInstance) {
   // ── GET /api/xray/scans — list scans for patient ────────────────────────
   app.get("/api/xray/scans", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "list xray scans"))) return;
+
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
 
     const { patientId } = request.query as { patientId?: string };
     if (!patientId) {
@@ -209,7 +217,7 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     const scans = await db
       .select()
       .from(xrayScans)
-      .where(eq(xrayScans.patientId, patientId))
+      .where(and(eq(xrayScans.patientId, patientId), eq(xrayScans.organizationId, organizationId)))
       .orderBy(xrayScans.capturedAt);
 
     return scans.map((s) => scanToResponse(s, false));
@@ -219,12 +227,15 @@ export async function registerXrayRoutes(app: FastifyInstance) {
   app.get("/api/xray/scans/:id", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "get xray scan"))) return;
 
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
+
     const { id } = request.params as { id: string };
 
     const [scan] = await db
       .select()
       .from(xrayScans)
-      .where(eq(xrayScans.id, id))
+      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
       .limit(1);
 
     if (!scan) {
@@ -238,9 +249,15 @@ export async function registerXrayRoutes(app: FastifyInstance) {
   app.delete("/api/xray/scans/:id", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "delete xray scan"))) return;
 
+    const organizationId = requireOrganizationId(request, reply);
+    if (!organizationId) return;
+
     const { id } = request.params as { id: string };
 
-    const result = await db.delete(xrayScans).where(eq(xrayScans.id, id)).returning({ id: xrayScans.id });
+    const result = await db
+      .delete(xrayScans)
+      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+      .returning({ id: xrayScans.id });
 
     if (!result.length) {
       return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });

@@ -83,21 +83,33 @@ function formatDate(dateStr: string): string {
 export function PayrollView() {
 	const [payouts, setPayouts] = useState<Payout[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	// Текст ошибки загрузки: без него пустой экран выглядел как отсутствие начислений.
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedMonth, setSelectedMonth] = useState<string>("all");
 	const [expandedDoctorId, setExpandedDoctorId] = useState<string | null>(null);
-	const { auth } = useAppLogicContext();
-	const organizationId = auth.currentOrganizationId();
+	const { auth, dashboard } = useAppLogicContext();
+	// БЫЛО: auth.currentOrganizationId() — такого метода не существует (это
+	// единственное упоминание во всём проекте). Вызов бросал TypeError, а раз
+	// organizationId никогда не становился истинным, fetchPayouts не вызывался,
+	// setIsLoading(false) не выполнялся — и раздел «Зарплаты и комиссии»
+	// показывал крутилку «Сбор финансовых данных» бесконечно.
+	const organizationId = dashboard?.clinicSettings?.profile?.organizationId ?? null;
 
 	useEffect(() => {
 		if (organizationId) {
 			fetchPayouts();
+			return;
 		}
+		// Без организации грузить нечего — но и висеть в загрузке нельзя.
+		setIsLoading(false);
+		setLoadError("Организация не определена: войдите в кабинет клиники заново.");
 	}, [organizationId]);
 
 	const fetchPayouts = async () => {
 		try {
 			setIsLoading(true);
+			setLoadError(null);
 			const res = await fetch("/api/billing/payouts", {
 				headers: auth.denteClinicalReadHeaders(),
 			});
@@ -105,9 +117,22 @@ export function PayrollView() {
 				const data = await res.json();
 				setPayouts(data.payouts || []);
 			} else {
-				console.error("Failed to fetch payouts");
+				// БЫЛО: ошибка уходила только в console.error, payouts оставался
+				// пустым, и раздел показывал «Нет начислений», 0 ₽ ФОТ и 0 ₽ прибыли.
+				// Руководитель не мог отличить «месяц без начислений» от «данные
+				// не загрузились» и принимал решения по нулям.
+				setPayouts([]);
+				setLoadError(
+					res.status === 404
+						? "Раздел зарплат ещё не подключён на сервере: эндпоинт /api/billing/payouts отсутствует. Показанные нули не отражают реальные начисления."
+						: `Не удалось загрузить начисления (код ${res.status}). Показанные нули не отражают реальные начисления.`,
+				);
 			}
 		} catch (e) {
+			setPayouts([]);
+			setLoadError(
+				"Не удалось загрузить начисления: нет связи с сервером. Показанные нули не отражают реальные начисления.",
+			);
 			console.error("Error fetching payouts:", e);
 		} finally {
 			setIsLoading(false);
@@ -235,7 +260,9 @@ export function PayrollView() {
 					type="button"
 					className="secondary-button"
 					onClick={exportCSV}
-					title="Экспорт в CSV"
+					// Пустой CSV из-за сбоя загрузки выглядит как «начислений не было».
+					disabled={Boolean(loadError)}
+					title={loadError ? "Данные не загружены — экспорт недоступен" : "Экспорт в CSV"}
 					style={{
 						display: "flex",
 						alignItems: "center",
@@ -247,6 +274,23 @@ export function PayrollView() {
 					<Download size={14} /> CSV
 				</button>
 			</div>
+			{loadError && (
+				<div
+					role="alert"
+					style={{
+						margin: "12px 0",
+						padding: "12px 14px",
+						borderRadius: "10px",
+						border: "1px solid var(--rust, #c2410c)",
+						background: "rgba(194, 65, 12, 0.08)",
+						color: "var(--rust, #c2410c)",
+						fontSize: "13px",
+						lineHeight: 1.5,
+					}}
+				>
+					{loadError}
+				</div>
+			)}
 
 			{/* Period Selector */}
 			<div

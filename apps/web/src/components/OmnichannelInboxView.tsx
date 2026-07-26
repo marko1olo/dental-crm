@@ -359,6 +359,8 @@ export function OmnichannelInboxView() {
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [inputText, setInputText] = useState("");
+	// Блокировка на время отправки — защита от дублей сообщений пациенту.
+	const [isSending, setIsSending] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeChannelFilter, setActiveChannelFilter] = useState<string>("all");
 	const [showNewChat, setShowNewChat] = useState(false);
@@ -390,6 +392,11 @@ export function OmnichannelInboxView() {
 				});
 			}
 
+			// БЫЛО: fetchChats() вызывался ВНУТРИ обновления состояния (ниже).
+			// Функция-обновитель обязана быть чистой, а React 19 в StrictMode
+			// вызывает её дважды — на каждое сообщение от неизвестного пациента
+			// уходило два запроса списка чатов. Побочный эффект вынесен наружу.
+			let needsChatListReload = false;
 			setChats((prev) => {
 				const updated = [...prev];
 				const idx = updated.findIndex((c) => c.patientId === msg.patientId);
@@ -410,10 +417,11 @@ export function OmnichannelInboxView() {
 						if (item) updated.unshift(item);
 					}
 				} else {
-					fetchChats();
+					needsChatListReload = true;
 				}
 				return updated;
 			});
+			if (needsChatListReload) fetchChats();
 		}
 
 		if (lastMessage?.type === "INBOX_MESSAGES_READ") {
@@ -446,14 +454,23 @@ export function OmnichannelInboxView() {
 
 	useEffect(() => {
 		if (!selectedPatientId) return;
+		// БЫЛО: без флага отмены. Оператор кликал чат А, затем сразу чат Б — если
+		// ответ по А приходил последним, под именем Б показывалась переписка А,
+		// и оператор отвечал в чужой диалог. Это и путаница, и раскрытие
+		// персональных данных. Ответ применяется, только если пациент не сменился.
+		let cancelled = false;
+		// Чужие сообщения не должны оставаться на экране, пока грузятся новые.
+		setMessages([]);
 		const fetchMessages = async () => {
 			try {
 				const res = await fetch(
 					`/api/communications/inbox/${selectedPatientId}`,
 					{ headers: auth.denteClinicalReadHeaders() },
 				);
+				if (cancelled) return;
 				if (res.ok) {
 					const data = await res.json();
+					if (cancelled) return;
 					setMessages(Array.isArray(data) ? data : []);
 					scrollToBottom();
 					// Clear unread count locally
@@ -464,10 +481,13 @@ export function OmnichannelInboxView() {
 					);
 				}
 			} catch (e) {
-				console.error(e);
+				if (!cancelled) console.error(e);
 			}
 		};
 		fetchMessages();
+		return () => {
+			cancelled = true;
+		};
 	}, [selectedPatientId]);
 
 	const scrollToBottom = () => {
@@ -478,11 +498,17 @@ export function OmnichannelInboxView() {
 
 	const handleSend = async (e: React.FormEvent) => {
 		e.preventDefault();
+		// БЫЛО: единственная защита — атрибут disabled по пустому полю, а само поле
+		// очищалось только ПОСЛЕ ответа сервера. На медленной связи оператор
+		// нажимал Enter дважды, и пациент получал одно и то же сообщение два раза
+		// (клиника платила за оба). Блокируем отправку на время запроса.
+		if (isSending) return;
 		if (!inputText.trim() || !selectedPatientId) return;
 
 		const activeChat = chats.find((c) => c.patientId === selectedPatientId);
 		const channelToUse = activeChat?.channel || "whatsapp";
 
+		setIsSending(true);
 		try {
 			const res = await fetch(
 				`/api/communications/inbox/${selectedPatientId}/send`,
@@ -500,7 +526,10 @@ export function OmnichannelInboxView() {
 
 			if (res.ok) {
 				const newMessage = await res.json();
-				setMessages([...messages, newMessage]);
+				// БЫЛО: setMessages([...messages, ...]) — снимок ДО ожидания ответа.
+				// Сообщение пациента, пришедшее по WebSocket во время отправки,
+				// исчезало с экрана. Обновляем функционально.
+				setMessages((prev) => [...prev, newMessage]);
 				setInputText("");
 				scrollToBottom();
 
@@ -528,6 +557,8 @@ export function OmnichannelInboxView() {
 		} catch (err) {
 			console.error(err);
 			showToast("Системная ошибка", "error");
+		} finally {
+			setIsSending(false);
 		}
 	};
 
@@ -1228,7 +1259,7 @@ export function OmnichannelInboxView() {
 									/>
 									<button
 										type="submit"
-										disabled={!inputText.trim()}
+										disabled={isSending || !inputText.trim()}
 										title="Отправить"
 										style={{
 											background: inputText.trim() ? "var(--teal)" : "var(--line)",

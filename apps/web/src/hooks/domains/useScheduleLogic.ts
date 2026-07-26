@@ -597,10 +597,15 @@ export function useScheduleLogic({
 			setError(message);
 			return false;
 		}
-		const isOmni = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
+		// БЫЛО: сюда передавался булев isOmniRole, а функция ждёт РЕЖИМ клиники
+		// ("solo_doctor" и т.п.). И false, и true не равны "solo_doctor", поэтому
+		// требование выбрать ассистента срабатывало всегда. В режиме solo_doctor
+		// поле ассистента при этом принудительно очищается — условие становилось
+		// невыполнимым, и такая клиника не могла сохранить НИ ОДНУ запись:
+		// кнопка «Сохранить» активна, а сохранение молча возвращает ошибку.
 		const missing = appointmentScheduleMissingFields(
 			draft,
-			isOmni,
+			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
 		);
 		if (missing.length) {
@@ -690,10 +695,10 @@ export function useScheduleLogic({
 	function newAppointmentMissingFields(
 		draft: AppointmentScheduleDraft,
 	): string[] {
-		const isOmni = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
+		// См. комментарий выше: нужен режим клиники, а не флаг isOmniRole.
 		return appointmentScheduleMissingFields(
 			draft,
-			isOmni,
+			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
 		);
 	}

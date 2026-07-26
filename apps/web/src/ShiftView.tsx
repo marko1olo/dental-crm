@@ -22,6 +22,17 @@ import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "
 import { workloadStateLabels } from "./workspaceUiLabels";
 import { ActionIcon } from "./workspaceShell";
 
+/** Calendar date in local clinic time. */
+function localCalendarDateString(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function calendarDateOfInstant(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : localCalendarDateString(parsed);
+}
+
 export function ShiftView({
   activePatient,
   activePatientHasCallablePhone,
@@ -48,9 +59,18 @@ export function ShiftView({
   const doctorTodayAppointments = useMemo(() => {
     if (!dashboard || !dashboard.appointments || !activeDoctor) return [];
     return dashboard.appointments
-      .filter((app: any) => app.doctorUserId === activeDoctor.id)
-      .sort((a: any, b: any) => a.startsAt.localeCompare(b.startsAt));
+      .filter((app: any) =>
+        app.doctorUserId === activeDoctor.id &&
+        calendarDateOfInstant(app.startsAt) === (dashboard.todayIso || localCalendarDateString())
+      )
+      .sort((a: any, b: any) => String(a.startsAt).localeCompare(String(b.startsAt)));
   }, [dashboard, activeDoctor]);
+
+  const patientsById = useMemo(() => {
+    const index = new Map<string, any>();
+    for (const patient of dashboard?.patients ?? []) index.set(patient.id, patient);
+    return index;
+  }, [dashboard?.patients]);
 
   const [showDetails, setShowDetails] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -129,7 +149,7 @@ export function ShiftView({
               {doctorTodayAppointments.length > 0 ? (
                 <div className="today-schedule-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto", paddingRight: "4px" }}>
                   {doctorTodayAppointments.map((app: any) => {
-                    const patient = (dashboard?.patients ?? []).find((p: any) => p.id === app.patientId);
+                    const patient = patientsById.get(app.patientId);
                     const isCurrent = activePatient && activePatient.id === app.patientId;
                     
                     const timeStart = new Date(app.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
@@ -180,15 +200,7 @@ export function ShiftView({
                             {app.reason || "плановый осмотр"}
                           </span>
                         </div>
-                        <span style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          background: (statusKey === "in_treatment" || statusKey === "in_progress") ? "rgba(34, 197, 94, 0.2)" : statusKey === "planned" ? "var(--slate-100)" : "rgba(234, 179, 8, 0.2)",
-                          color: (statusKey === "in_treatment" || statusKey === "in_progress") ? "#15803d" : statusKey === "planned" ? "var(--ink)" : "#b45309"
-                        }}>
+                        <span className={`status-pill status-${statusKey}`}>
                           {statusLabels[statusKey] || app.status}
                         </span>
                       </div>

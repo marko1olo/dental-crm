@@ -1,33 +1,27 @@
 import type { FastifyInstance } from "fastify";
-import { dashboardSchema } from "@dental/shared";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
-import { verifyToken } from "../utils/cryptoHelper.js";
-import { configuredClinicalAccessSecret } from "../accessGuard.js";
-
-const TOKEN_SECRET = () => {
-  const secret = process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_jwt_secret_demo";
-  return secret;
-};
+import { requireOrganizationId } from "../security/identity.js";
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
   app.get("/api/dashboard", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    
-    let orgId = "00000000-0000-0000-0000-000000000001";
-    if (clinicToken) {
-      const payload = verifyToken(clinicToken, TOKEN_SECRET());
-      if (payload && payload.organizationId) {
-        orgId = payload.organizationId as string;
-      }
-    }
-    
+    // БЫЛО: без токена orgId молча становился "00000000-...-0001", и любой
+    // анонимный запрос получал финансовую сводку демо-организации. Плюс секрет
+    // подписи имел публичный фолбэк "dente_jwt_secret_demo" — токен можно было
+    // подделать для любой клиники.
+    // СТАЛО: организация только из подписанного токена, иначе 401.
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
+
     try {
-      const dashboard = await getDashboardFromDb(orgId);
-      return dashboard;
-    } catch (e: any) {
-      console.error("[Dashboard] Error fetching from DB:", e.message || String(e));
-      return reply.code(500).send({ error: "DatabaseError", details: e.message });
+      return await getDashboardFromDb(orgId);
+    } catch (error) {
+      // Раньше текст ошибки БД уходил клиенту (details: e.message) — это
+      // раскрывало структуру базы и пути на сервере.
+      request.log.error({ err: error }, "[Dashboard] Ошибка получения данных из БД");
+      return reply.code(500).send({
+        error: "DatabaseError",
+        message: "Не удалось загрузить сводку. Повторите позже."
+      });
     }
   });
 }

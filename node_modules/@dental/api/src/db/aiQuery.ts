@@ -70,9 +70,9 @@ export async function listAiRecognitionJobsFromDb(organizationId: string): Promi
     organizationId: j.organizationId,
     patientId: j.patientId,
     imagingStudyId: j.imagingStudyId,
-    kind: j.kind as any,
-    target: j.target as any,
-    status: j.status as any,
+    kind: j.kind,
+    target: j.target,
+    status: j.status,
     sourceLabel: j.sourceLabel,
     inputText: j.inputText ?? "",
     resultText: j.resultText ?? "",
@@ -109,9 +109,9 @@ export async function createAiRecognitionJobInDb(organizationId: string, input: 
     organizationId: job.organizationId,
     patientId: job.patientId,
     imagingStudyId: job.imagingStudyId,
-    kind: job.kind as any,
-    target: job.target as any,
-    status: job.status as any,
+    kind: job.kind,
+    target: job.target,
+    status: job.status,
     sourceLabel: job.sourceLabel,
     inputText: job.inputText ?? "",
     resultText: job.resultText ?? "",
@@ -129,7 +129,11 @@ export async function createAiRecognitionJobInDb(organizationId: string, input: 
       action: "ai_recognition_prepared",
       reason: `${job.kind} подготовлен для ${job.target}.`
     });
-  } catch (e) {}
+  } catch (e) {
+    // Audit logging must never block AI job creation, but a failure here is a
+    // 152-FZ traceability gap and must be surfaced, not silently swallowed.
+    console.warn("[AiQuery] Failed to record ai_recognition_prepared audit event:", e);
+  }
 
   return aiJob;
 }

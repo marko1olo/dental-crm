@@ -245,8 +245,14 @@ export function paymentRefundCorrectionSelectionErrorForDocument(input, payments
             return "Выбранный исходный платеж для возврата или коррекции относится к другому пациенту.";
         if (input.visitId && payment.visitId !== input.visitId)
             return "Выбранный исходный платеж для возврата или коррекции относится к другому визиту.";
+        if (payment.status === "refunded") {
+            return "По выбранному платежу/чеку уже выполнен полный возврат средств. Повторный возврат заблокирован.";
+        }
         if (payment.status !== "paid" || payment.amountRub <= 0) {
             return "Возврат или коррекцию можно оформить только по проведенному положительному платежу.";
+        }
+        if (payload.amountRub > payment.amountRub) {
+            return `Сумма возврата (${payload.amountRub} руб.) не может превышать сумму исходного чека (${payment.amountRub} руб.).`;
         }
         if (!payment.fiscalReceiptNumber?.trim()) {
             return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";
@@ -371,15 +377,15 @@ function structuredPayloadMissingReason(input) {
     return null;
 }
 function expectedFinancialLineTotal(line) {
-    return Math.max(0, line.quantity * line.unitPriceRub - line.discountRub);
+    return Math.max(0, Math.round((line.quantity * line.unitPriceRub - line.discountRub) * 100) / 100);
 }
 function financialLinesTotal(lines) {
-    return lines.reduce((total, line) => total + line.totalRub, 0);
+    return Math.round(lines.reduce((total, line) => total + line.totalRub, 0) * 100) / 100;
 }
 function financialServiceLinesMismatchReason(lines, documentLabel) {
     for (const [index, line] of lines.entries()) {
         const expectedTotalRub = expectedFinancialLineTotal(line);
-        if (line.totalRub !== expectedTotalRub) {
+        if (Math.abs(line.totalRub - expectedTotalRub) > 0.01) {
             return `${documentLabel}: строка ${index + 1} должна иметь сумму ${expectedTotalRub} руб. по количеству, цене и скидке; передано ${line.totalRub} руб.`;
         }
     }
@@ -387,7 +393,8 @@ function financialServiceLinesMismatchReason(lines, documentLabel) {
 }
 function financialServiceLinesGrandTotalMismatchReason(lines, totalAmountRub, documentLabel) {
     const linesTotalRub = financialLinesTotal(lines);
-    if (linesTotalRub !== totalAmountRub) {
+    const targetRub = Math.round(totalAmountRub * 100) / 100;
+    if (Math.abs(linesTotalRub - targetRub) > 0.01) {
         return `${documentLabel}: общий итог ${totalAmountRub} руб. не совпадает с суммой строк ${linesTotalRub} руб.`;
     }
     return null;

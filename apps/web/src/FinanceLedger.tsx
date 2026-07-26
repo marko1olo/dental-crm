@@ -107,12 +107,16 @@ export function FinanceLedger({
 							{safePayments.length}
 						</span>
 					</div>
-					{safePayments.some((p) => p.taxDeductionCode) && (
+					{/* БЫЛО: кнопка рисовалась всегда, а обработчик был необязательным
+					    и нигде не передавался. Оператор нажимал «Справка ИФНС» при
+					    пациенте у стойки, и не происходило ничего: `?.` молча
+					    проглатывал вызов. Показываем кнопку только когда она работает. */}
+					{onCreateDocument && safePayments.some((p) => p.taxDeductionCode) && (
 						<button
 							className="secondary-button"
 							type="button"
 							title="Сгенерировать справку ИФНС для налогового вычета"
-							onClick={() => onCreateDocument?.("tax_deduction_certificate")}
+							onClick={() => onCreateDocument("tax_deduction_certificate")}
 							style={{ padding: "4px 8px", fontSize: "0.85rem" }}
 						>
 							<FileText size={14} style={{ marginRight: "4px" }} /> Справка ИФНС

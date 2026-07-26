@@ -241,7 +241,7 @@ async function runCascade(slots, prompt, imageBase64, extraUserText, minLength =
                 continue;
             }
             try {
-                console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${apiKey.slice(0, 10)}...`);
+                console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${candidate.fingerprint}`);
                 const text = await callVisionModel(slot, apiKey, prompt, imageBase64, extraUserText);
                 if (text.length >= minLength) {
                     recordProviderKeySuccess(providerId, candidate);
@@ -253,7 +253,7 @@ async function runCascade(slots, prompt, imageBase64, extraUserText, minLength =
                 const statusCode = err?.statusCode ?? 0;
                 recordProviderKeyFailure(providerId, candidate, err);
                 triedFingerprints.add(candidate.fingerprint);
-                console.warn(`[visionAnalyzer] ${slot.provider} key=${apiKey.slice(0, 10)}... failed: ${err.message}`);
+                console.warn(`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${err.message}`);
                 // For rate-limit or auth — try next key after a safety delay to avoid spamming
                 if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
                     await new Promise((resolve) => setTimeout(resolve, 3000));

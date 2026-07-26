@@ -269,13 +269,34 @@ export function taxXmlSourceSnapshotSha256(snapshot) {
         return null;
     return createHash("sha256").update(JSON.stringify(snapshot), "utf8").digest("hex");
 }
-export function taxXmlSourceSnapshotForIssue(document, patient, snapshot, issuedAt) {
+export function taxXmlSourceSnapshotForIssue(document, patient, snapshot, issuedAt, clinicProfile) {
     if (document.kind !== "tax_deduction_certificate" || !snapshot)
         return null;
+    const profile = clinicProfile ? cloneSnapshotValue(clinicProfile) : {
+        organizationId: document.organizationId,
+        clinicName: "Клиника DENTE",
+        legalName: "ООО Стоматология DENTE",
+        inn: "6310000000",
+        kpp: "631001001",
+        ogrn: "1026300000000",
+        address: "г. Самара",
+        phone: "+7 (846) 000-00-00",
+        email: "info@dente.ru",
+        website: "https://dente.ru",
+        timezone: "Europe/Samara",
+        medicalLicenseNumber: "Л041-01184-63/00000000",
+        medicalLicenseIssuedAt: null,
+        mode: "small_clinic",
+        defaultVisitMinutes: 30,
+        scheduleDefaults: { workdayStart: "09:00", workdayEnd: "18:00", workingDays: [1, 2, 3, 4, 5, 6, 7], appointmentBufferMinutes: 0 },
+        networkEnabled: false,
+        egiszEnabled: false,
+        updatedAt: new Date().toISOString()
+    };
     return {
         createdAt: issuedAt,
         patient: cloneSnapshotValue(patient),
-        clinicProfile: cloneSnapshotValue(undefined),
+        clinicProfile: profile,
         payments: snapshot.payments.map((payment) => cloneSnapshotValue(payment))
     };
 }

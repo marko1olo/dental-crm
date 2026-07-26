@@ -23,8 +23,21 @@ export class DigitalSignatureService {
 	private isCryptoProAvailable: boolean = false;
 	private isRutokenAvailable: boolean = false;
 
+	/**
+	 * Промис инициализации.
+	 *
+	 * БЫЛО: конструктор вызывал this.init() без await и без сохранения промиса.
+	 * Экземпляр — модульный синглтон, поэтому диалог ЭЦП, открытый сразу после
+	 * загрузки страницы, обращался к сервису ДО того, как определилось наличие
+	 * плагина: флаги ещё false, список сертификатов приходил пустым, и врач
+	 * видел «сертификаты не найдены». Со второй попытки всё работало.
+	 */
+	private readonly ready: Promise<void>;
+
 	constructor() {
-		this.init();
+		this.ready = this.init().catch((error) => {
+			console.error("[DigitalSignature] Ошибка инициализации:", error);
+		});
 	}
 
 	private async init() {
@@ -50,6 +63,8 @@ export class DigitalSignatureService {
 	}
 
 	async getCertificates(): Promise<CertificateInfo[]> {
+		// Дожидаемся определения доступных провайдеров (см. поле ready).
+		await this.ready;
 		const allCerts: CertificateInfo[] = [];
 
 		// CryptoPro Certificates
@@ -100,6 +115,8 @@ export class DigitalSignatureService {
 		pin?: string,
 		deviceId?: number,
 	): Promise<{ signatureBase64: string; provider: string }> {
+		// Подпись тоже не должна выполняться до окончания инициализации.
+		await this.ready;
 		const isRutoken = deviceId !== undefined || thumbprint.length < 20; // Basic heuristic if deviceId wasn't passed directly but we know it's rutoken
 		const provider = isRutoken ? "rutoken" : "cryptopro";
 

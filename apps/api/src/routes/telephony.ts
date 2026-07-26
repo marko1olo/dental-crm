@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { db } from "../db/client.js";
 import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { verifyWebhookSecret } from "../security/webhookAuth.js";
 
 export const telephonyRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -17,6 +18,14 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			call_id?: string;
 		};
 	}>("/:organizationId/webhook", async (request, reply) => {
+		// БЫЛО: вебхук АТС принимал любой POST — посторонний мог показывать
+		// врачам всплывающие уведомления о фиктивных звонках и заводить
+		// пациентов/лиды в чужой клинике.
+		if (!verifyWebhookSecret(request, reply, {
+			channel: "telephony",
+			secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+		})) return reply;
+
 		const { organizationId } = request.params;
 		const { event, from } = request.body;
 
@@ -104,6 +113,14 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			message: string;
 		};
 	}>("/:organizationId/sms/webhook", async (request, reply) => {
+		// БЫЛО: вебхук АТС принимал любой POST — посторонний мог показывать
+		// врачам всплывающие уведомления о фиктивных звонках и заводить
+		// пациентов/лиды в чужой клинике.
+		if (!verifyWebhookSecret(request, reply, {
+			channel: "telephony",
+			secretEnvNames: ["TELEPHONY_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+		})) return reply;
+
 		const { organizationId } = request.params;
 		const { from, message } = request.body;
 

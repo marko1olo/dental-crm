@@ -28,6 +28,7 @@ import {
 	emptyVisitNoteForm,
 	latestPendingVisitSaveAt,
 	loadPendingSpeechChunks,
+	deletePendingVisitSaveFromIndexedDb,
 	loadPendingVisitSaves,
 	operatorReadableErrorDetail,
 	operatorReadableErrorDetailFromUnknown,
@@ -37,7 +38,6 @@ import {
 	removePendingSpeechChunkById,
 	responseErrorMessage,
 	responseStatusFailureLabel,
-	savePendingVisitSaves,
 	speechGatewayCanUpload,
 	speechQualityLabels,
 	type VisitNoteField,
@@ -610,15 +610,25 @@ export function useVisitLogic({
 				if (outcome.status === "fulfilled") {
 					const { item, result } = outcome.value;
 					remaining = remaining.filter((candidate) => candidate.id !== item.id);
-					if (dashboard?.activeVisit?.id === result.visit.id) {
+					// БЫЛО: сравнение с `dashboard` из замыкания — снимком на момент
+					// НАЧАЛА отправки, а не текущим приёмом. Пока шёл запрос, врач мог
+					// открыть другого пациента: условие проходило по старому приёму,
+					// а applyAcceptedVisitResponse писал в открытый на экране —
+					// пять полей ЭМК пациента Б затирались записью пациента А.
+					const liveVisitId = useAppStore.getState().dashboard?.activeVisit?.id;
+					if (liveVisitId === result.visit.id) {
 						applyAcceptedVisitResponse(result);
 					}
+					// БЫЛО: очередь целиком перезаписывалась снимком `remaining`,
+					// прочитанным до отправки. Если во время отправки в очередь
+					// попадала новая запись приёма, она стиралась безвозвратно —
+					// при том, что интерфейс сообщал «сохранено локально».
+					// Удаляем ровно отправленный элемент, не трогая остальные.
+					await deletePendingVisitSaveFromIndexedDb(item.id).catch(() => {});
 				} else {
 					errors.push(outcome.reason);
 				}
 			}
-
-			await savePendingVisitSaves(remaining, activeOrganizationId);
 
 			if (errors.length > 0) {
 				throw errors[0];
@@ -626,7 +636,6 @@ export function useVisitLogic({
 
 			await refreshPendingVisitSaveState();
 		} catch (syncError) {
-			await savePendingVisitSaves(remaining, activeOrganizationId);
 			await refreshPendingVisitSaveState();
 			if (!options.silent) {
 				setError(
@@ -682,16 +691,28 @@ export function useVisitLogic({
 		return `${result.chunk.recordingId}:${result.chunk.chunkIndex}`;
 	}
 
+	/**
+	 * Относится ли расшифрованный фрагмент речи к ОТКРЫТОМУ сейчас приёму.
+	 *
+	 * БЫЛО: проверка открывалась в обе стороны — «у фрагмента нет visitId» и
+	 * «нет активного приёма» тоже считались совпадением и возвращали true.
+	 * Сценарий: врач диктует приём пациента А при неработающем шлюзе речи,
+	 * фрагменты копятся в офлайн-очереди. Через двадцать минут в кресле пациент Б,
+	 * связь восстанавливается, очередь отправляется — и findings пациента А
+	 * дописываются в диктовку пациента Б. Фрагмент при этом сразу удаляется
+	 * из очереди, то есть восстановить его уже нельзя, а врач подписывает ЭМК
+	 * пациента Б с чужим клиническим текстом.
+	 *
+	 * СТАЛО: неопределённость трактуется как «НЕ совпадает» (fail closed).
+	 * Фрагменты не из приёма (например, диктовка цен) по-прежнему проходят.
+	 */
 	function speechTranscriptionMatchesActiveVisit(
 		result: SpeechTranscriptionResponse,
 	): boolean {
-		if (
-			result.chunk.source !== "visit" ||
-			!result.chunk.visitId ||
-			!dashboard?.activeVisit?.id
-		)
-			return true;
-		return result.chunk.visitId === dashboard?.activeVisit?.id;
+		if (result.chunk.source !== "visit") return true;
+		const activeVisitId = useAppStore.getState().dashboard?.activeVisit?.id;
+		if (!result.chunk.visitId || !activeVisitId) return false;
+		return result.chunk.visitId === activeVisitId;
 	}
 
 	function applySpeechTranscription(result: SpeechTranscriptionResponse) {
@@ -1277,7 +1298,17 @@ export function useVisitLogic({
 	}
 
 	async function uploadSpeechBlob(blob: Blob) {
-		if (!dashboard || blob.size === 0) return;
+		// БЫЛО: обработчик recorder.ondataavailable назначается ОДИН раз при старте
+		// записи и навсегда захватывает значения того рендера. Из-за этого:
+		//  • isOnline оставался false до конца приёма — врач начинал диктовать
+		//    офлайн, связь возвращалась через полминуты, но каждый последующий
+		//    фрагмент всё равно уходил только в локальную очередь и не распознавался;
+		//  • dashboard оставался прежним — при переключении визита во время записи
+		//    фрагменты помечались идентификаторами ПРЕДЫДУЩЕГО пациента.
+		// Читаем актуальные значения из стора на момент прихода фрагмента.
+		const liveDashboard = useAppStore.getState().dashboard ?? dashboard;
+		const liveIsOnline = typeof navigator === "undefined" ? isOnline : navigator.onLine;
+		if (!liveDashboard || blob.size === 0) return;
 		const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
 		if (blob.size > maxChunkBytes) {
 			setSpeechStatusNote(
@@ -1303,8 +1334,9 @@ export function useVisitLogic({
 			durationMs,
 			language: "ru",
 			source: "visit",
-			patientId: dashboard?.activeVisit?.patientId,
-			visitId: dashboard?.activeVisit?.id,
+			// Актуальный визит на момент прихода фрагмента, а не на момент старта записи.
+			patientId: liveDashboard?.activeVisit?.patientId,
+			visitId: liveDashboard?.activeVisit?.id,
 			specialty: selectedSpecialty,
 			clientRecordedAt: new Date().toISOString(),
 		};
@@ -1314,7 +1346,7 @@ export function useVisitLogic({
 		);
 		await refreshPendingSpeechChunkState();
 
-		if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+		if (!liveIsOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
 			setSpeechStatusNote(
 				queuedBeforeUpload
 					? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`

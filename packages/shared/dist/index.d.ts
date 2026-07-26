@@ -333,7 +333,7 @@ export declare const clinicalRuleSeveritySchema: z.ZodEnum<["info", "warning", "
 export type ClinicalRuleSeverity = z.infer<typeof clinicalRuleSeveritySchema>;
 export declare const clinicalRuleActionSchema: z.ZodEnum<["add_required_service", "block_service", "show_warning", "schedule_followup"]>;
 export type ClinicalRuleAction = z.infer<typeof clinicalRuleActionSchema>;
-export declare const paymentMethodSchema: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+export declare const paymentMethodSchema: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export declare const paymentStatusSchema: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
@@ -4694,16 +4694,19 @@ export declare const clinicalRuleEvaluationInputSchema: z.ZodObject<{
     scenarioId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     serviceIds: z.ZodArray<z.ZodString, "many">;
     completedServiceIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    enforceBlockers: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     serviceIds: string[];
     completedServiceIds: string[];
     scenarioId?: string | null | undefined;
+    enforceBlockers?: boolean | undefined;
 }, {
     patientId: string;
     serviceIds: string[];
     scenarioId?: string | null | undefined;
     completedServiceIds?: string[] | undefined;
+    enforceBlockers?: boolean | undefined;
 }>;
 export type ClinicalRuleEvaluationInput = z.infer<typeof clinicalRuleEvaluationInputSchema>;
 export declare const clinicalRuleEvaluationResponseSchema: z.ZodObject<{
@@ -5000,7 +5003,7 @@ export declare const paymentSchema: z.ZodObject<{
     visitId: z.ZodNullable<z.ZodString>;
     documentId: z.ZodNullable<z.ZodString>;
     amountRub: z.ZodNumber;
-    method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+    method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
     status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
     paidAt: z.ZodNullable<z.ZodString>;
     createdAt: z.ZodString;
@@ -5046,7 +5049,7 @@ export declare const paymentSchema: z.ZodObject<{
     createdAt: string;
     amountRub: number;
     documentId: string | null;
-    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     paidAt: string | null;
     note: string | null;
     fiscalReceiptNumber?: string | null | undefined;
@@ -5076,7 +5079,7 @@ export declare const paymentSchema: z.ZodObject<{
     createdAt: string;
     amountRub: number;
     documentId: string | null;
-    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     paidAt: string | null;
     note: string | null;
     fiscalReceiptNumber?: string | null | undefined;
@@ -15878,7 +15881,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
         visitId: z.ZodNullable<z.ZodString>;
         documentId: z.ZodNullable<z.ZodString>;
         amountRub: z.ZodNumber;
-        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
         status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
         paidAt: z.ZodNullable<z.ZodString>;
         createdAt: z.ZodString;
@@ -15924,7 +15927,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -15954,7 +15957,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -15986,7 +15989,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -16023,7 +16026,7 @@ export declare const taxPaymentSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -16649,7 +16652,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         visitId: z.ZodNullable<z.ZodString>;
         documentId: z.ZodNullable<z.ZodString>;
         amountRub: z.ZodNumber;
-        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
         status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
         paidAt: z.ZodNullable<z.ZodString>;
         createdAt: z.ZodString;
@@ -16695,7 +16698,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -16725,7 +16728,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -16757,7 +16760,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -16863,7 +16866,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -17009,7 +17012,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitId: z.ZodNullable<z.ZodString>;
             documentId: z.ZodNullable<z.ZodString>;
             amountRub: z.ZodNumber;
-            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
             status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
             paidAt: z.ZodNullable<z.ZodString>;
             createdAt: z.ZodString;
@@ -17055,7 +17058,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -17085,7 +17088,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -17117,7 +17120,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -17154,7 +17157,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -22022,7 +22025,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             visitId: z.ZodNullable<z.ZodString>;
             documentId: z.ZodNullable<z.ZodString>;
             amountRub: z.ZodNumber;
-            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
             status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
             paidAt: z.ZodNullable<z.ZodString>;
             createdAt: z.ZodString;
@@ -22068,7 +22071,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -22098,7 +22101,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -22130,7 +22133,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -22236,7 +22239,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -22409,7 +22412,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -23220,7 +23223,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -23378,7 +23381,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -24189,7 +24192,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -24397,7 +24400,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitId: z.ZodNullable<z.ZodString>;
             documentId: z.ZodNullable<z.ZodString>;
             amountRub: z.ZodNumber;
-            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
             status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
             paidAt: z.ZodNullable<z.ZodString>;
             createdAt: z.ZodString;
@@ -24443,7 +24446,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -24473,7 +24476,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -24505,7 +24508,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -24542,7 +24545,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -29410,7 +29413,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             visitId: z.ZodNullable<z.ZodString>;
             documentId: z.ZodNullable<z.ZodString>;
             amountRub: z.ZodNumber;
-            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+            method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
             status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
             paidAt: z.ZodNullable<z.ZodString>;
             createdAt: z.ZodString;
@@ -29456,7 +29459,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -29486,7 +29489,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -29518,7 +29521,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -29624,7 +29627,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             createdAt: string;
             amountRub: number;
             documentId: string | null;
-            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+            method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
             paidAt: string | null;
             note: string | null;
             fiscalReceiptNumber?: string | null | undefined;
@@ -31890,7 +31893,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitId: z.ZodNullable<z.ZodString>;
                 documentId: z.ZodNullable<z.ZodString>;
                 amountRub: z.ZodNumber;
-                method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+                method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
                 status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
                 paidAt: z.ZodNullable<z.ZodString>;
                 createdAt: z.ZodString;
@@ -31936,7 +31939,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -31966,7 +31969,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -31998,7 +32001,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -32035,7 +32038,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -36903,7 +36906,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 visitId: z.ZodNullable<z.ZodString>;
                 documentId: z.ZodNullable<z.ZodString>;
                 amountRub: z.ZodNumber;
-                method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+                method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
                 status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
                 paidAt: z.ZodNullable<z.ZodString>;
                 createdAt: z.ZodString;
@@ -36949,7 +36952,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -36979,7 +36982,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -37011,7 +37014,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -37117,7 +37120,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 createdAt: string;
                 amountRub: number;
                 documentId: string | null;
-                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+                method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
                 paidAt: string | null;
                 note: string | null;
                 fiscalReceiptNumber?: string | null | undefined;
@@ -37871,7 +37874,7 @@ export declare const dashboardSchema: z.ZodObject<{
         visitId: z.ZodNullable<z.ZodString>;
         documentId: z.ZodNullable<z.ZodString>;
         amountRub: z.ZodNumber;
-        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>;
+        method: z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>;
         status: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
         paidAt: z.ZodNullable<z.ZodString>;
         createdAt: z.ZodString;
@@ -37917,7 +37920,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -37947,7 +37950,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -38385,7 +38388,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -39048,7 +39051,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         amountRub: number;
         documentId: string | null;
-        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+        method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
         paidAt: string | null;
         note: string | null;
         fiscalReceiptNumber?: string | null | undefined;
@@ -47591,7 +47594,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
     visitId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     documentId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     amountRub: z.ZodNumber;
-    method: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>>;
+    method: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>>;
     fiscalReceiptNumber: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     fiscalReceiptIssuedAt: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodString, string, string>, string, string>>>;
     fiscalReceiptUrl: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -47628,7 +47631,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     patientId: string;
     amountRub: number;
-    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     visitId?: string | null | undefined;
     documentId?: string | null | undefined;
     fiscalReceiptNumber?: string | null | undefined;
@@ -47655,7 +47658,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
     amountRub: number;
     visitId?: string | null | undefined;
     documentId?: string | null | undefined;
-    method?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | undefined;
+    method?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet" | undefined;
     fiscalReceiptNumber?: string | null | undefined;
     fiscalReceiptIssuedAt?: string | null | undefined;
     fiscalReceiptUrl?: string | null | undefined;
@@ -47678,7 +47681,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
 }>, {
     patientId: string;
     amountRub: number;
-    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    method: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     visitId?: string | null | undefined;
     documentId?: string | null | undefined;
     fiscalReceiptNumber?: string | null | undefined;
@@ -47705,7 +47708,7 @@ export declare const createPaymentSchema: z.ZodEffects<z.ZodObject<{
     amountRub: number;
     visitId?: string | null | undefined;
     documentId?: string | null | undefined;
-    method?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | undefined;
+    method?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet" | undefined;
     fiscalReceiptNumber?: string | null | undefined;
     fiscalReceiptIssuedAt?: string | null | undefined;
     fiscalReceiptUrl?: string | null | undefined;
@@ -81558,7 +81561,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     scheduleDefaultChairId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     scheduleStatusFilter: z.ZodDefault<z.ZodUnion<[z.ZodEnum<["planned", "confirmed", "arrived", "in_treatment", "completed", "cancelled", "no_show"]>, z.ZodLiteral<"all">]>>;
     scheduleDateFilter: z.ZodDefault<z.ZodString>;
-    paymentMethod: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>>;
+    paymentMethod: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>>;
     taxDocumentYear: z.ZodDefault<z.ZodNumber>;
     selectedDocumentKind: z.ZodDefault<z.ZodEnum<["paid_medical_services_contract", "completed_works_act", "tax_deduction_certificate", "informed_consent", "procedure_specific_consent_packet", "treatment_plan", "treatment_plan_acceptance", "anesthesia_consent_log", "prescription_medication_order", "personal_data_processing_consent", "minor_legal_representative_consent", "photo_video_consent", "medical_intervention_refusal", "treatment_cost_estimate", "payment_invoice", "payment_receipt", "installment_payment_schedule", "post_visit_recommendations", "outpatient_medical_card_025u", "medical_record_extract", "medical_record_copy_request", "medical_document_release_receipt", "xray_cbct_referral", "lab_work_order", "visit_attendance_certificate", "warranty_service_memo", "payment_refund_correction_request", "tax_deduction_application", "legacy_tax_deduction_certificate", "tax_deduction_registry", "patient_intake_questionnaire"]>>;
     taxApplicationForm: z.ZodDefault<z.ZodEnum<["knd_1151156", "legacy_2021_2023"]>>;
@@ -81608,7 +81611,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     scheduleDefaultChairId: string | null;
     scheduleStatusFilter: "planned" | "confirmed" | "arrived" | "in_treatment" | "completed" | "cancelled" | "no_show" | "all";
     scheduleDateFilter: string;
-    paymentMethod: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    paymentMethod: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     taxDocumentYear: number;
     selectedDocumentKind: "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire";
     taxApplicationForm: "knd_1151156" | "legacy_2021_2023";
@@ -81656,7 +81659,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     scheduleDefaultChairId?: string | null | undefined;
     scheduleStatusFilter?: "planned" | "confirmed" | "arrived" | "in_treatment" | "completed" | "cancelled" | "no_show" | "all" | undefined;
     scheduleDateFilter?: string | undefined;
-    paymentMethod?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | undefined;
+    paymentMethod?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet" | undefined;
     taxDocumentYear?: number | undefined;
     selectedDocumentKind?: "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire" | undefined;
     taxApplicationForm?: "knd_1151156" | "legacy_2021_2023" | undefined;
@@ -81704,7 +81707,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     scheduleDefaultChairId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     scheduleStatusFilter: z.ZodDefault<z.ZodUnion<[z.ZodEnum<["planned", "confirmed", "arrived", "in_treatment", "completed", "cancelled", "no_show"]>, z.ZodLiteral<"all">]>>;
     scheduleDateFilter: z.ZodDefault<z.ZodString>;
-    paymentMethod: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "other"]>>;
+    paymentMethod: z.ZodDefault<z.ZodEnum<["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]>>;
     taxDocumentYear: z.ZodDefault<z.ZodNumber>;
     selectedDocumentKind: z.ZodDefault<z.ZodEnum<["paid_medical_services_contract", "completed_works_act", "tax_deduction_certificate", "informed_consent", "procedure_specific_consent_packet", "treatment_plan", "treatment_plan_acceptance", "anesthesia_consent_log", "prescription_medication_order", "personal_data_processing_consent", "minor_legal_representative_consent", "photo_video_consent", "medical_intervention_refusal", "treatment_cost_estimate", "payment_invoice", "payment_receipt", "installment_payment_schedule", "post_visit_recommendations", "outpatient_medical_card_025u", "medical_record_extract", "medical_record_copy_request", "medical_document_release_receipt", "xray_cbct_referral", "lab_work_order", "visit_attendance_certificate", "warranty_service_memo", "payment_refund_correction_request", "tax_deduction_application", "legacy_tax_deduction_certificate", "tax_deduction_registry", "patient_intake_questionnaire"]>>;
     taxApplicationForm: z.ZodDefault<z.ZodEnum<["knd_1151156", "legacy_2021_2023"]>>;
@@ -81755,7 +81758,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     scheduleDefaultChairId: string | null;
     scheduleStatusFilter: "planned" | "confirmed" | "arrived" | "in_treatment" | "completed" | "cancelled" | "no_show" | "all";
     scheduleDateFilter: string;
-    paymentMethod: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance";
+    paymentMethod: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet";
     taxDocumentYear: number;
     selectedDocumentKind: "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire";
     taxApplicationForm: "knd_1151156" | "legacy_2021_2023";
@@ -81805,7 +81808,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     scheduleDefaultChairId?: string | null | undefined;
     scheduleStatusFilter?: "planned" | "confirmed" | "arrived" | "in_treatment" | "completed" | "cancelled" | "no_show" | "all" | undefined;
     scheduleDateFilter?: string | undefined;
-    paymentMethod?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | undefined;
+    paymentMethod?: "other" | "cash" | "card" | "bank_transfer" | "online" | "insurance" | "family_wallet" | undefined;
     taxDocumentYear?: number | undefined;
     selectedDocumentKind?: "paid_medical_services_contract" | "completed_works_act" | "tax_deduction_certificate" | "informed_consent" | "procedure_specific_consent_packet" | "treatment_plan" | "treatment_plan_acceptance" | "anesthesia_consent_log" | "prescription_medication_order" | "personal_data_processing_consent" | "minor_legal_representative_consent" | "photo_video_consent" | "medical_intervention_refusal" | "treatment_cost_estimate" | "payment_invoice" | "payment_receipt" | "installment_payment_schedule" | "post_visit_recommendations" | "outpatient_medical_card_025u" | "medical_record_extract" | "medical_record_copy_request" | "medical_document_release_receipt" | "xray_cbct_referral" | "lab_work_order" | "visit_attendance_certificate" | "warranty_service_memo" | "payment_refund_correction_request" | "tax_deduction_application" | "legacy_tax_deduction_certificate" | "tax_deduction_registry" | "patient_intake_questionnaire" | undefined;
     taxApplicationForm?: "knd_1151156" | "legacy_2021_2023" | undefined;

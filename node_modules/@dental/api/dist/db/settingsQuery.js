@@ -1,22 +1,53 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
+import { clinicModeSchema, clinicScheduleDefaultsSchema, staffWorkingHoursSchema, staffRoleSchema } from "@dental/shared";
 import { buildClinicSettings as getClinicSettingsInMemory, updateClinicProfile as updateClinicProfileInMemory, createStaffMember as createStaffMemberInMemory, updateStaffWorkingHours as updateStaffWorkingHoursInMemory, createChair as createChairInMemory, updateChairWorkingHours as updateChairWorkingHoursInMemory, updateClinicMode as updateClinicModeInMemory } from "../sampleData.js";
 function useInMemory() {
     return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
-// Dummy fallback for legacy UI preferences if multiple users exist
+// The DB columns are looser than the DTO: clinic_mode is free `text` (legacy rows
+// hold "demo"/"single"/"network"), and clinic_schedule / working_hours are untyped
+// jsonb. Validate at the read boundary through the shared Zod schemas so an invalid
+// stored value falls back to a well-formed default instead of an `as any` lie.
+const DEFAULT_SCHEDULE_DEFAULTS = {
+    workdayStart: "08:00",
+    workdayEnd: "20:00",
+    workingDays: [1, 2, 3, 4, 5],
+    appointmentBufferMinutes: 15,
+};
+function narrowClinicMode(value) {
+    const parsed = clinicModeSchema.safeParse(value);
+    return parsed.success ? parsed.data : "solo_doctor";
+}
+function narrowScheduleDefaults(value) {
+    const parsed = clinicScheduleDefaultsSchema.safeParse(value);
+    return parsed.success ? parsed.data : DEFAULT_SCHEDULE_DEFAULTS;
+}
+function narrowWorkingHours(value) {
+    if (value == null)
+        return null;
+    const parsed = staffWorkingHoursSchema.safeParse(value);
+    return parsed.success ? parsed.data : null;
+}
+function narrowStaffRole(value) {
+    const parsed = staffRoleSchema.safeParse(value);
+    return parsed.success ? parsed.data : "assistant";
+}
+const memoryUiPreferences = new Map();
 export async function getUiPreferencesFromDb(organizationId) {
     if (useInMemory())
-        return null;
+        return memoryUiPreferences.get(organizationId) ?? null;
     const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
     if (!user || !user.uiPreferences)
         return null;
     return user.uiPreferences;
 }
 export async function saveUiPreferencesInDb(organizationId, prefs) {
-    if (useInMemory())
+    if (useInMemory()) {
+        memoryUiPreferences.set(organizationId, prefs);
         return;
+    }
     const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
     if (!user)
         throw new Error("No users found to save preferences to.");
@@ -49,18 +80,10 @@ export async function getClinicSettingsFromDb(organizationId) {
         bankDetails: org.bankDetails || null,
         signatoryName: org.signatoryName || null,
         signatoryTitle: org.signatoryTitle || null,
-        mode: org.clinicMode || "demo",
+        mode: narrowClinicMode(org.clinicMode),
         timezone: clinic?.timezone || "Europe/Samara",
         defaultVisitMinutes: 60,
-        scheduleDefaults: org.clinicSchedule || {
-            monday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            tuesday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            wednesday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            thursday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            friday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            saturday: { isWorking: true, startsAt: "08:00", endsAt: "20:00" },
-            sunday: { isWorking: false, startsAt: "08:00", endsAt: "20:00" }
-        },
+        scheduleDefaults: narrowScheduleDefaults(org.clinicSchedule),
         networkEnabled: false,
         egiszEnabled: false,
         updatedAt: org.updatedAt.toISOString()
@@ -71,7 +94,7 @@ export async function getClinicSettingsFromDb(organizationId) {
             id: s.id,
             organizationId: s.organizationId,
             fullName: s.fullName,
-            role: s.role,
+            role: narrowStaffRole(s.role),
             specialties: ["universal"],
             active: s.isActive,
             canSignMedicalRecords: true,
@@ -80,7 +103,7 @@ export async function getClinicSettingsFromDb(organizationId) {
             color: "#000000",
             phone: s.phone || null,
             email: s.email || null,
-            workingHours: s.workingHours || null,
+            workingHours: narrowWorkingHours(s.workingHours),
             createdAt: s.createdAt.toISOString(),
             updatedAt: s.createdAt.toISOString()
         })),
@@ -95,7 +118,7 @@ export async function getClinicSettingsFromDb(organizationId) {
             hasMicroscope: false,
             hasSurgeryKit: false,
             notes: null,
-            workingHours: c.workingHours || null
+            workingHours: narrowWorkingHours(c.workingHours)
         })),
         integrationPresets: [],
         workspaceProfiles: [],

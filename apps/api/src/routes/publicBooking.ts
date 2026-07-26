@@ -1,4 +1,4 @@
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, lt, notInArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -9,6 +9,16 @@ import {
 	patients,
 	users,
 } from "../db/schema.js";
+
+/**
+ * Статусы записей, которые НЕ занимают время в расписании.
+ *
+ * БЫЛО: запросы занятости не фильтровали статус вообще. Пациент отменял запись
+ * на 10:00, администратор ставил статус "cancelled" — и слот 10:00 у этого врача
+ * больше никогда не появлялся в виджете и отвечал 409 при попытке записи.
+ * Каждая отмена навсегда съедала час рабочего времени.
+ */
+const FREED_APPOINTMENT_STATUSES = ["cancelled", "no_show"] as const;
 
 // --- Abuse protection for the public (unauthenticated) booking surface ---
 // These endpoints are reachable without any token, so they must be rate limited
@@ -85,8 +95,30 @@ function resolveDaySchedule(
 			: null;
 
 	if (!day) {
+		// Онбординг (routes/workspaceProfile.ts) сохраняет расписание в другом
+		// формате: { workHours: [8, 20], workingDays: [1..5] }. Раньше читатель
+		// искал только ключи вида "monday", не находил их НИКОГДА и подставлял
+		// 09:00–18:00 на все семь дней — клиника с графиком 8–20 теряла утренние
+		// и вечерние часы, а по воскресеньям виджет записывал в закрытую клинику.
+		const workHours = schedule?.workHours;
+		if (Array.isArray(workHours) && workHours.length === 2) {
+			const openHour = Number(workHours[0]);
+			const closeHour = Number(workHours[1]);
+			const workingDays = Array.isArray(schedule?.workingDays)
+				? (schedule.workingDays as unknown[]).map((value) => Number(value))
+				: null;
+			if (Number.isFinite(openHour) && Number.isFinite(closeHour) && closeHour > openHour) {
+				return {
+					// Если список рабочих дней не задан, считаем рабочими Пн–Сб,
+					// а воскресенье выходным — это безопаснее, чем «открыто всегда».
+					isWorking: workingDays ? workingDays.includes(weekday) : weekday !== 0,
+					openMinute: Math.round(openHour * 60),
+					closeMinute: Math.round(closeHour * 60),
+				};
+			}
+		}
 		return {
-			isWorking: true,
+			isWorking: weekday !== 0,
 			openMinute: DEFAULT_OPEN_MINUTE,
 			closeMinute: DEFAULT_CLOSE_MINUTE,
 		};
@@ -131,6 +163,39 @@ function timezoneOffsetMinutes(instant: Date, timeZone: string): number {
 	} catch {
 		return 0;
 	}
+}
+
+/**
+ * Обратное преобразование к localWallTimeToUtc: из UTC-момента получаем
+ * настенное время в часовом поясе клиники (день недели, часы, минуты).
+ * Нужно, чтобы проверять попадание записи в рабочие часы именно по местному
+ * времени клиники, а не по времени сервера.
+ */
+function utcToLocalWallTime(
+	instant: Date,
+	timeZone: string,
+): { weekday: number; hours: number; minutes: number } {
+	const offset = timezoneOffsetMinutes(instant, timeZone);
+	const shifted = new Date(instant.getTime() + offset * 60_000);
+	return {
+		weekday: shifted.getUTCDay(),
+		hours: shifted.getUTCHours(),
+		minutes: shifted.getUTCMinutes(),
+	};
+}
+
+/**
+ * Приводит телефон к сравнимому виду: только цифры, российская «8» в начале
+ * заменяется на «7», берутся последние 10 цифр (номер без кода страны).
+ *
+ * БЫЛО: пациент искался по точному совпадению строки телефона. Один и тот же
+ * человек, записавшийся как "+7 999 123-45-67" и как "89991234567", получал
+ * ДВЕ карточки, и его история лечения делилась пополам.
+ */
+function normalizePhoneDigits(phone: string): string {
+	const digits = String(phone ?? "").replace(/\D/g, "");
+	const national = digits.startsWith("8") && digits.length === 11 ? `7${digits.slice(1)}` : digits;
+	return national.length > 10 ? national.slice(-10) : national;
 }
 
 /**
@@ -286,6 +351,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					eq(appointments.doctorUserId, doctorId),
 					gte(appointments.startsAt, dayStartUtc),
 					lt(appointments.startsAt, dayEndUtc),
+					// Отменённые записи и неявки освобождают слот (см. FREED_APPOINTMENT_STATUSES).
+					notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
 				),
 			);
 
@@ -397,87 +464,142 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return reply.status(404).send({ error: "Врач не найден" });
 		}
 
-		// Reject overlaps with the doctor's existing appointments (double-booking).
-		const sameDayApps = await db
-			.select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt })
-			.from(appointments)
-			.where(
-				and(
-					eq(appointments.organizationId, organizationId),
-					eq(appointments.doctorUserId, doctorId),
-					gte(
-						appointments.startsAt,
-						new Date(startDate.getTime() - 24 * 60 * 60_000),
-					),
-					lt(
-						appointments.startsAt,
-						new Date(startDate.getTime() + 24 * 60 * 60_000),
-					),
-				),
-			);
-		const hasConflict = sameDayApps.some((app) => {
-			const appStart = new Date(app.startsAt).getTime();
-			const appEnd = new Date(app.endsAt).getTime();
-			return startDate.getTime() < appEnd && endDate.getTime() > appStart;
-		});
-		if (hasConflict) {
+		// ── Проверка рабочего времени клиники ────────────────────────────────
+		// БЫЛО: /book не проверял расписание вообще. Виджет, оставленный открытым
+		// на ночь (или прямой POST), мог записать пациента на 03:15 воскресенья.
+		const [clinicRow] = await db
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+		const [bookingOrg] = await db
+			.select({ clinicSchedule: organizations.clinicSchedule })
+			.from(organizations)
+			.where(eq(organizations.id, organizationId))
+			.limit(1);
+		const bookingTimeZone = clinicRow?.timezone || DEFAULT_TIMEZONE;
+		const localDate = utcToLocalWallTime(startDate, bookingTimeZone);
+		const bookingDaySchedule = resolveDaySchedule(
+			bookingOrg?.clinicSchedule as unknown,
+			localDate.weekday,
+		);
+
+		if (!bookingDaySchedule.isWorking) {
 			return reply
 				.status(409)
-				.send({ error: "Выбранное время уже занято. Обновите список слотов." });
+				.send({ error: "В этот день клиника не работает. Выберите другую дату." });
 		}
 
-		// Find or create patient
-		let patientId: string;
-		const existingPatients = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					eq(patients.phone, patientPhone),
-				),
-			)
-			.limit(1);
+		const localEnd = utcToLocalWallTime(endDate, bookingTimeZone);
+		const startMinute = localDate.hours * 60 + localDate.minutes;
+		const endMinute = localEnd.hours * 60 + localEnd.minutes;
+		if (
+			startMinute < bookingDaySchedule.openMinute ||
+			endMinute > bookingDaySchedule.closeMinute ||
+			endMinute <= startMinute
+		) {
+			return reply.status(409).send({
+				error: "Выбранное время вне часов работы клиники. Обновите список слотов.",
+			});
+		}
 
-		const existingPatient = existingPatients[0];
-		if (existingPatient) {
-			patientId = existingPatient.id;
-		} else {
-			const newPatient = await db
-				.insert(patients)
-				.values({
-					organizationId,
-					fullName: patientName,
-					phone: patientPhone,
-					status: "active",
-				})
-				.returning({ id: patients.id });
+		// ── Атомарная проверка занятости и создание записи ───────────────────
+		// БЫЛО: SELECT конфликтов и INSERT шли отдельными запросами без транзакции.
+		// Два пациента, нажавшие «Записаться» в одну секунду, оба проходили проверку
+		// и оба записывались на одно время — врач приходил к двум пациентам сразу.
+		// Теперь всё в одной транзакции с блокировкой строки врача: второй запрос
+		// ждёт первого и честно получает 409.
+		try {
+			const result = await db.transaction(async (tx) => {
+				// Блокируем строку врача: сериализует параллельные записи к нему.
+				await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(eq(users.id, doctorId))
+					.limit(1)
+					.for("update");
 
-			const createdPatient = newPatient[0];
-			if (!createdPatient) {
-				return reply.status(500).send({ error: "Failed to create patient" });
+				const sameDayApps = await tx
+					.select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							eq(appointments.doctorUserId, doctorId),
+							gte(
+								appointments.startsAt,
+								new Date(startDate.getTime() - 24 * 60 * 60_000),
+							),
+							lt(
+								appointments.startsAt,
+								new Date(startDate.getTime() + 24 * 60 * 60_000),
+							),
+							// Отменённые записи не блокируют время.
+							notInArray(appointments.status, [...FREED_APPOINTMENT_STATUSES]),
+						),
+					);
+
+				const hasConflict = sameDayApps.some((app) => {
+					const appStart = new Date(app.startsAt).getTime();
+					const appEnd = new Date(app.endsAt).getTime();
+					return startDate.getTime() < appEnd && endDate.getTime() > appStart;
+				});
+				if (hasConflict) return { conflict: true as const };
+
+				// Поиск пациента по нормализованному номеру: раньше сравнивалась
+				// строка как введена, поэтому "+7 999 123-45-67" и "89991234567"
+				// создавали ДВЕ карточки одному человеку и делили его историю пополам.
+				const phoneDigits = normalizePhoneDigits(patientPhone);
+				const candidates = await tx
+					.select({ id: patients.id, phone: patients.phone })
+					.from(patients)
+					.where(eq(patients.organizationId, organizationId));
+				const existingPatient = candidates.find(
+					(candidate) => normalizePhoneDigits(candidate.phone ?? "") === phoneDigits,
+				);
+
+				let patientId: string;
+				if (existingPatient) {
+					patientId = existingPatient.id;
+				} else {
+					const [createdPatient] = await tx
+						.insert(patients)
+						.values({
+							organizationId,
+							fullName: patientName,
+							phone: patientPhone,
+							status: "active",
+						})
+						.returning({ id: patients.id });
+					if (!createdPatient) throw new Error("patient_insert_failed");
+					patientId = createdPatient.id;
+				}
+
+				const [created] = await tx
+					.insert(appointments)
+					.values({
+						organizationId,
+						patientId,
+						doctorUserId: doctorId,
+						status: "planned",
+						startsAt: startDate,
+						endsAt: endDate,
+						comment: comment || "Запись через виджет на сайте",
+					})
+					.returning();
+				if (!created) throw new Error("appointment_insert_failed");
+				return { conflict: false as const, appointment: created };
+			});
+
+			if (result.conflict) {
+				return reply
+					.status(409)
+					.send({ error: "Выбранное время уже занято. Обновите список слотов." });
 			}
-			patientId = createdPatient.id;
+			return { success: true, appointment: result.appointment };
+		} catch (error) {
+			request.log.error({ err: error }, "[publicBooking] Не удалось создать запись");
+			return reply.status(500).send({ error: "Не удалось создать запись. Повторите попытку." });
 		}
-
-		// Create appointment
-		const newAppointment = await db
-			.insert(appointments)
-			.values({
-				organizationId,
-				patientId,
-				doctorUserId: doctorId,
-				status: "planned",
-				startsAt: startDate,
-				endsAt: endDate,
-				comment: comment || "Запись через виджет на сайте",
-			})
-			.returning();
-
-		const appt = newAppointment[0];
-		if (!appt) {
-			return reply.status(500).send({ error: "Failed to create appointment" });
-		}
-		return { success: true, appointment: appt };
 	});
 };

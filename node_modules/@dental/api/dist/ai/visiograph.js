@@ -1,5 +1,4 @@
-import { fetch as undiciFetch } from "undici";
-import { getProviderKeyCandidates, recordProviderKeySuccess, recordProviderKeyFailure } from "../speech/keyPool.js";
+import { fetchWithProviderTimeout, getProviderKeyCandidates, recordProviderKeySuccess, recordProviderKeyFailure } from "../speech/keyPool.js";
 import { visiographSystemPrompt } from "./visiographPrompt.js";
 export async function analyzeVisiographImage(imageBase64) {
     const warnings = [];
@@ -40,26 +39,25 @@ export async function analyzeVisiographImage(imageBase64) {
                         {
                             role: "user",
                             content: [
-                                { type: "text", text: "Проанализируй этот снимок." },
+                                { type: "text", text: "Проанализируй данный снимок." },
                                 { type: "image_url", image_url: { url: imagePayload } }
                             ]
                         }
                     ]
                 };
-                const response = await undiciFetch(endpoint, {
+                const response = await fetchWithProviderTimeout(endpoint, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${candidate.value}`
                     },
-                    body: JSON.stringify(requestBody),
-                    dispatcher: globalThis._dentalProxyAgent || undefined
-                });
+                    body: JSON.stringify(requestBody)
+                }, 45_000);
                 if (!response.ok) {
                     const text = await response.text();
                     throw new Error(`[${model}] API Error ${response.status}: ${text}`);
                 }
-                const data = await response.json();
+                const data = (await response.json());
                 rawContent = data.choices?.[0]?.message?.content || "";
                 if (!rawContent)
                     throw new Error("Empty response from model");
@@ -76,7 +74,8 @@ export async function analyzeVisiographImage(imageBase64) {
             break; // Break providers loop if we got a result
     }
     if (!rawContent) {
-        throw new Error(`Сбой ИИ-анализа: все ключи исчерпаны. Ошибка: ${lastError?.message || "Unknown error"}`);
+        const errDetail = lastError instanceof Error ? lastError.message : "Unknown error";
+        throw new Error(`Ошибка распознавания снимка: AI-провайдер недоступен. Детали: ${errDetail}`);
     }
     // Parse JSON response
     let resultObj = {};
@@ -91,14 +90,14 @@ export async function analyzeVisiographImage(imageBase64) {
                 resultObj = JSON.parse(match[0]);
         }
         catch {
-            warnings.push("Не удалось распарсить JSON блок со статусами зубов из ответа ИИ.");
+            warnings.push("Не удалось распарсить JSON-структуру ответа, возвращен сырой текст ответа.");
         }
     }
     const toothStates = resultObj?.toothStates || {};
     let report = rawContent;
     // Clean up JSON block from the report text if it's there
-    if (report.includes("\`\`\`json")) {
-        report = report.split("\`\`\`json")[0]?.trim() || report;
+    if (report.includes("```json")) {
+        report = report.split("```json")[0]?.trim() || report;
     }
     else if (report.includes("{") && report.includes("toothStates")) {
         report = report.substring(0, report.indexOf("{")).trim();

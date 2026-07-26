@@ -730,7 +730,7 @@ export const clinicalRuleActionSchema = z.enum([
     "show_warning",
     "schedule_followup"
 ]);
-export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "other"]);
+export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]);
 export const paymentStatusSchema = z.enum(["planned", "paid", "refunded", "voided"]);
 export const communicationChannelSchema = z.enum(["phone", "sms", "whatsapp", "telegram", "email", "in_person"]);
 export const communicationIntentSchema = z.enum([
@@ -1568,7 +1568,8 @@ export const clinicalRuleEvaluationInputSchema = z.object({
     patientId: z.string().uuid(),
     scenarioId: z.string().nullable().optional(),
     serviceIds: z.array(z.string()).min(1),
-    completedServiceIds: z.array(z.string()).default([])
+    completedServiceIds: z.array(z.string()).default([]),
+    enforceBlockers: z.boolean().default(false).optional()
 });
 export const clinicalRuleEvaluationResponseSchema = z.object({
     evaluations: z.array(clinicalRuleEvaluationSchema),

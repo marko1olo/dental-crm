@@ -8,11 +8,50 @@ import {
 import { db } from "../db/client.js";
 import {
 	patients,
+	toothStateHistory,
 	toothStates,
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
 import { wsBroker } from "../services/websocketBroker.js";
+
+/**
+ * Создаёт таблицу истории, если миграция ещё не применена.
+ *
+ * Тот же приём, что и в db/patientCommunicationTimelinesQuery.ts: клиника может
+ * обновить код раньше, чем выполнит SQL-миграцию, и запись приёма не должна
+ * из-за этого падать.
+ */
+let toothStateHistoryTableReady = false;
+async function ensureToothStateHistoryTable(): Promise<void> {
+	if (toothStateHistoryTableReady) return;
+	try {
+		await db.execute(sql`
+			CREATE TABLE IF NOT EXISTS "tooth_state_history" (
+				"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+				"organization_id" uuid NOT NULL,
+				"patient_id" uuid NOT NULL,
+				"tooth_number" integer NOT NULL,
+				"previous_state" text,
+				"new_state" text NOT NULL,
+				"previous_surfaces" jsonb,
+				"new_surfaces" jsonb,
+				"changed_by_user_id" uuid,
+				"visit_id" uuid,
+				"reason" text,
+				"changed_at" timestamp with time zone DEFAULT now() NOT NULL
+			);
+		`);
+		await db.execute(sql`
+			CREATE INDEX IF NOT EXISTS "idx_tooth_state_history_patient_tooth"
+				ON "tooth_state_history" ("patient_id", "tooth_number", "changed_at");
+		`);
+		toothStateHistoryTableReady = true;
+	} catch (error) {
+		console.warn("[toothStateHistory] Не удалось подготовить таблицу истории:", error);
+	}
+}
 
 const toothStateValues = [
 	"Caries",
@@ -25,14 +64,44 @@ const toothStateValues = [
 	"Planned_Implant",
 ] as const;
 
+/**
+ * Допустимые номера зубов по двухцифровой системе FDI (ISO 3950).
+ *
+ * БЫЛО: z.number().int().min(11).max(99) — диапазон пропускал 19, 20, 29, 30,
+ * 39, 40, 49, 50, 56–60, 66–70, 76–80 и 86–99. Ни один из них зубом не является.
+ * Опечатка «49» вместо «48» сохранялась, попадала в план лечения со стоимостью,
+ * но не отображалась в одонтограмме: врач видел строку без зуба, а вмешательство
+ * планировалось для несуществующей позиции.
+ */
+const VALID_FDI_TOOTH_NUMBERS = new Set<number>([
+	// Постоянные зубы
+	11, 12, 13, 14, 15, 16, 17, 18,
+	21, 22, 23, 24, 25, 26, 27, 28,
+	31, 32, 33, 34, 35, 36, 37, 38,
+	41, 42, 43, 44, 45, 46, 47, 48,
+	// Молочные зубы
+	51, 52, 53, 54, 55,
+	61, 62, 63, 64, 65,
+	71, 72, 73, 74, 75,
+	81, 82, 83, 84, 85,
+]);
+
+const fdiToothNumberSchema = z
+	.number()
+	.int()
+	.refine((value) => VALID_FDI_TOOTH_NUMBERS.has(value), {
+		message:
+			"Недопустимый номер зуба. Система FDI: 11–18, 21–28, 31–38, 41–48 (постоянные), 51–55, 61–65, 71–75, 81–85 (молочные).",
+	});
+
 const batchToothStateSchema = z.object({
-	toothNumbers: z.array(z.number().int().min(11).max(99)).min(1).max(64),
+	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),
 	state: z.enum(toothStateValues),
 	surfaces: z.array(z.string()).optional(),
 });
 
 const treatmentPlanItemSchema = z.object({
-	toothNumber: z.number().int().min(11).max(99).optional().nullable(),
+	toothNumber: fdiToothNumberSchema.optional().nullable(),
 	priceId: z.string().trim().min(1).max(200),
 	name: z.string().trim().max(500).optional(),
 	quantity: z.number().int().min(1).max(999).default(1),
@@ -187,12 +256,46 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const toothNumbers = [...new Set(parsed.data.toothNumbers)];
+			// Явный тип: схема валидации гарантирует числа, но вывод типов из
+			// zod-схемы с .refine() до этого места не доходит.
+			const toothNumbers: number[] = [...new Set<number>(parsed.data.toothNumbers)];
 			if (toothNumbers.length === 0)
 				return reply.send({ success: true, states: [] });
 
+			await ensureToothStateHistoryTable();
+			// Кто именно меняет состояние — раньше в истории всегда стоял «System».
+			const actorUserId = getRequestIdentity(request).userId;
+
 			const now = new Date();
 			const inserted = await db.transaction(async (tx) => {
+				// БЫЛО: delete + insert без сохранения предыдущего состояния —
+				// история лечения зуба стиралась при каждом изменении.
+				// Сначала читаем текущее состояние, чтобы записать переход.
+				const previousStates = await tx
+					.select({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+					})
+					.from(toothStates)
+					.where(
+						and(
+							eq(toothStates.patientId, patientId),
+							inArray(toothStates.toothNumber, toothNumbers),
+						),
+					);
+				// Тип указан явно: вывод типов из результата запроса здесь
+				// неоднозначен, и обращение к .state/.surfaces могло не пройти
+				// проверку компилятора.
+				type PreviousToothState = {
+					toothNumber: number;
+					state: string;
+					surfaces: unknown;
+				};
+				const previousByTooth = new Map<number, PreviousToothState>(
+					(previousStates as PreviousToothState[]).map((row) => [row.toothNumber, row]),
+				);
+
 				await tx
 					.delete(toothStates)
 					.where(
@@ -201,6 +304,29 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							inArray(toothStates.toothNumber, toothNumbers),
 						),
 					);
+
+				// Историю пишем в ТОЙ ЖЕ транзакции: смена состояния и запись
+				// о ней либо происходят вместе, либо не происходят вовсе.
+				const changedTeeth = toothNumbers.filter((toothNumber) => {
+					const previous = previousByTooth.get(toothNumber);
+					// Повторное сохранение того же состояния историю не засоряет.
+					return !previous || previous.state !== parsed.data.state;
+				});
+				if (changedTeeth.length > 0) {
+					await tx.insert(toothStateHistory).values(
+						changedTeeth.map((toothNumber) => ({
+							organizationId,
+							patientId,
+							toothNumber,
+							previousState: previousByTooth.get(toothNumber)?.state ?? null,
+							newState: parsed.data.state,
+							previousSurfaces: previousByTooth.get(toothNumber)?.surfaces ?? null,
+							newSurfaces: parsed.data.surfaces || null,
+							changedByUserId: actorUserId,
+							changedAt: now,
+						})),
+					);
+				}
 
 				return await tx
 					.insert(toothStates)

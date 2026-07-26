@@ -1,4 +1,5 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
+import { requireOrganizationId } from "../../security/identity.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -9,12 +10,7 @@ import {
 } from "@dental/shared";
 
 import {
-  paidAmountRubForDocument,
-  plannedAmountRubForDocument,
-  paymentRefundCorrectionSelectionErrorForDocument,
-  paymentReceiptSelectionErrorForDocument,
-  taxPaymentSelectionErrorForDocument,
-  validateDocumentCreation
+  paymentRefundCorrectionSelectionErrorForDocument
 } from "../../documents/guards.js";
 
 import {
@@ -42,7 +38,7 @@ import {
   renderIssuedHtmlToPdf,
   taxSnapshotDocument,
   taxXmlSourceSnapshotSha256,
-  documentRenderContext,
+  resolveDocumentRenderContext,
   documentVoidValidationMessage,
   documentIssueValidationMessage,
   buildMedicalDocumentReleaseJournalEntry,
@@ -52,18 +48,18 @@ import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb,
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.post("/api/documents/:id/issue", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "document issue"))) return;
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
+    // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+    // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+    // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+    // Организация теперь берётся только из проверенного токена (401 иначе).
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
     const { id } = request.params as { id: string };
     const existing = await getDocumentById(orgId, id);
     if (!existing) {
@@ -103,7 +99,12 @@ export async function register(app: FastifyInstance) {
     const requestProto = (request.headers["x-forwarded-proto"] as string) ?? "http";
     const origin = `${requestProto}://${requestHost}`;
 
-    const renderContext = { ...documentRenderContext(), origin };
+    // Реальный контекст вместо пустой заглушки: без профиля клиники выдача
+    // договоров и актов отклонялась как «профиль заполнен не полностью».
+    const renderContext = {
+      ...(await resolveDocumentRenderContext(orgId, existing.patientId)),
+      origin,
+    };
     const blockReason = documentIssueBlockReason(issueCandidate, patient, renderContext);
     if (blockReason) {
       return reply.code(409).send(apiError(blockReason));
@@ -111,6 +112,29 @@ export async function register(app: FastifyInstance) {
     const chainBlockReason = await documentIssueChainBlockReason(issueCandidate);
     if (chainBlockReason) {
       return reply.code(409).send(apiError(chainBlockReason));
+    }
+
+    // Контроль суммарных возвратов именно в момент ВЫДАЧИ — здесь деньги реально
+    // покидают кассу. Проверка при создании черновика недостаточна: между
+    // созданием и выдачей мог быть выдан другой возврат по тому же чеку.
+    if (issueCandidate.kind === "payment_refund_correction_request") {
+      const [refundPayments, refundDocuments] = await Promise.all([
+        import("../../db/billingQuery.js").then((m) =>
+          m.getPaymentsByPatientIdInDb(orgId, existing.patientId),
+        ),
+        import("../../db/documentQuery.js").then((m) =>
+          m.getDocumentsByPatientId(orgId, existing.patientId),
+        ),
+      ]);
+      const refundLimitError = paymentRefundCorrectionSelectionErrorForDocument(
+        issueCandidate as unknown as Parameters<typeof paymentRefundCorrectionSelectionErrorForDocument>[0],
+        refundPayments,
+        refundDocuments,
+        existing.id,
+      );
+      if (refundLimitError) {
+        return reply.code(409).send(apiError(refundLimitError));
+      }
     }
     const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(issueCandidate, []);
     if (duplicateTaxCertificate) {

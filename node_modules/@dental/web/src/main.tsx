@@ -1,10 +1,18 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppShell } from "./AppShell";
+import { installApiAuthFetch } from "./lib/apiAuthFetch";
 import "./styles/main.css";
 import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";
 import "./styles/premium.css";
+import "./styles/dente-redesign.css";
+
+// Подставляет токены кабинета и сотрудника во все запросы к /api/.
+// Должно выполниться ДО первого рендера: часть экранов запрашивает данные
+// сразу при монтировании. Благодаря этому сервер может требовать токен и
+// больше не доверяет заголовку x-organization-id от клиента.
+installApiAuthFetch();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

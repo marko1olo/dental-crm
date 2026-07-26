@@ -1,4 +1,5 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
+import { requireOrganizationId } from "../../security/identity.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -42,7 +43,7 @@ import {
   renderIssuedHtmlToPdf,
   taxSnapshotDocument,
   taxXmlSourceSnapshotSha256,
-  documentRenderContext,
+  resolveDocumentRenderContext,
   documentVoidValidationMessage,
   documentIssueValidationMessage,
   buildMedicalDocumentReleaseJournalEntry,
@@ -52,8 +53,6 @@ import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb,
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
@@ -61,10 +60,12 @@ export async function register(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { download?: string } }>("/api/documents/:id/html", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "document html"))) return;
     const { id } = request.params as { id: string };
-        const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
+    // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+    // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+    // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+    // Организация теперь берётся только из проверенного токена (401 иначе).
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
     const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
@@ -93,8 +94,18 @@ export async function register(app: FastifyInstance) {
     const requestProto = (request.headers["x-forwarded-proto"] as string) ?? "http";
     const origin = `${requestProto}://${requestHost}`;
 
-    const renderContext = { ...documentRenderContext(), origin };
-    const blockReason = documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document);
+    // Реальный контекст вместо пустой заглушки (см. documents.ts).
+    const renderContext = {
+      ...(await resolveDocumentRenderContext(orgId, document.patientId)),
+      origin,
+    };
+    // БЫЛО: без await у второго операнда. Для чистого черновика левая часть
+    // равна null, и blockReason становился Promise — истинным значением.
+    // Врач нажимал «Печать» и получал 409 «Печатная форма недоступна:
+    // [object Promise]». Печать не работала вообще ни для одного документа.
+    const blockReason =
+      documentIssueBlockReason(document, patient, renderContext) ??
+      (await documentIssueChainBlockReason(document));
     if (blockReason) {
       return reply.code(409).send(apiError(`Печатная форма недоступна: ${blockReason}`));
     }

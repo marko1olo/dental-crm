@@ -25,7 +25,7 @@ function selectedPolishProvider() {
         return "custom";
     return "none";
 }
-function baseUrlForProvider(provider) {
+export function baseUrlForProvider(provider) {
     const explicitBaseUrl = process.env.DENTAL_SPEECH_POLISH_BASE_URL?.trim().replace(/\/+$/, "");
     if (explicitBaseUrl)
         return explicitBaseUrl;
@@ -40,7 +40,7 @@ function baseUrlForProvider(provider) {
 function apiKeyForProvider(_provider) {
     return process.env.DENTAL_SPEECH_POLISH_API_KEY?.trim() || null;
 }
-function keyProviderForPolishProvider(provider) {
+export function keyProviderForPolishProvider(provider) {
     if (provider === "openai")
         return "openai_transcribe";
     if (provider === "groq")
@@ -64,7 +64,7 @@ function modelForProvider(provider) {
         return explicitModel;
     return null;
 }
-function createAIPlanNeuralConfig() {
+export function createAIPlanNeuralConfig() {
     const requested = booleanFromEnv(process.env.DENTAL_AI_NEURAL_DRAFT ?? process.env.DENTAL_SPEECH_NEURAL_POLISH ?? "true");
     const provider = selectedPolishProvider();
     const baseUrl = baseUrlForProvider(provider);

@@ -206,9 +206,18 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     }, null);
   const busiestDoctorLoad = highestUtilizationLoad(dashboard?.shiftIntelligence?.doctorLoads);
   const busiestChairLoad = highestUtilizationLoad(dashboard?.shiftIntelligence?.chairLoads);
+  // БЫЛО: считались только фильтр по дате и по статусу. Администратор нажимал
+  // чип конкретного врача, список падал с 40 записей до 3, а подпись продолжала
+  // сообщать «фильтры не ограничивают» и «показана вся очередь» — и человек
+  // делал вывод, что день пустой, и отказывал пациентам в приёме.
+  // Фильтры по врачу, ассистенту и креслу реально применяются к списку
+  // (см. sortedAppointments в useAppLogic), поэтому они обязаны быть здесь.
   const activeScheduleFilterCount = [
     scheduleDateFilter.trim(),
-    scheduleStatusFilter !== "all" ? scheduleStatusFilter : null
+    scheduleStatusFilter !== "all" ? scheduleStatusFilter : null,
+    scheduleDoctorFilterId,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId
   ].filter((value): value is string => Boolean(value)).length;
   const scheduleFilteredSummary = [
     sortedAppointments.length ? `видно записей: ${sortedAppointments.length}` : "записи скрыты фильтрами",
@@ -348,7 +357,10 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               
               <button
                 type="button"
-                className={`quick-chip ${!scheduleDoctorFilterId && !scheduleChairFilterId ? 'active' : ''}`}
+                /* «Все записи» подсвечивается только когда НИ ОДИН фильтр не активен:
+                   раньше чип оставался активным при фильтре по ассистенту, статусу
+                   или дате, маскируя то, что список сокращён. */
+                className={`quick-chip ${activeScheduleFilterCount === 0 ? 'active' : ''}`}
                 onClick={resetScheduleFilters}
                 
               >

@@ -12,7 +12,12 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 	const [isDrawing, setIsDrawing] = useState(false);
 	const [isEmpty, setIsEmpty] = useState(true);
 
-	// Handle resize to keep canvas responsive without losing data (ideally)
+	// БЫЛО: у эффекта была зависимость [isEmpty]. Первый же штрих менял isEmpty
+	// на false, эффект перезапускался, присваивание canvas.width СБРАСЫВАЛО canvas
+	// и уничтожало начатую линию — короткое касание не оставляло следа вообще.
+	// Теперь размер пересчитывается только при монтировании и при resize окна,
+	// а актуальное «пусто/не пусто» читается из ref, а не из зависимостей.
+	const isEmptyRef = useRef(true);
 	useEffect(() => {
 		const handleResize = () => {
 			if (containerRef.current && canvasRef.current) {
@@ -21,7 +26,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 				// Save old content
 				const ctx = canvas.getContext("2d");
 				let imgData: ImageData | null = null;
-				if (!isEmpty && ctx) {
+				if (!isEmptyRef.current && ctx) {
 					try {
 						imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 					} catch {
@@ -38,12 +43,24 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 					ctx.lineWidth = 3;
 					ctx.strokeStyle = "#0f172a";
 
+					// БЫЛО: при восстановлении содержимого белый фон НЕ перекрашивался.
+					// Присваивание canvas.width обнуляет холст до прозрачного, и в
+					// сохранённом PNG подпись оставалась на прозрачном фоне — на
+					// печатном согласии она рендерилась поверх чёрного прямоугольника.
+					// Фон заливаем всегда, содержимое накладываем сверху.
+					ctx.fillStyle = "#ffffff";
+					ctx.fillRect(0, 0, width, height);
 					if (imgData) {
-						ctx.putImageData(imgData, 0, 0);
-					} else {
-						// Background
-						ctx.fillStyle = "#ffffff";
-						ctx.fillRect(0, 0, width, height);
+						// putImageData затирает пиксели целиком, поэтому переносим
+						// старое изображение через промежуточный холст с наложением.
+						const restoreCanvas = document.createElement("canvas");
+						restoreCanvas.width = imgData.width;
+						restoreCanvas.height = imgData.height;
+						const restoreCtx = restoreCanvas.getContext("2d");
+						if (restoreCtx) {
+							restoreCtx.putImageData(imgData, 0, 0);
+							ctx.drawImage(restoreCanvas, 0, 0);
+						}
 					}
 				}
 			}
@@ -52,7 +69,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		handleResize();
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
-	}, [isEmpty]);
+	}, []);
 
 	// Clean up references and memory on unmount
 	useEffect(() => {
@@ -76,6 +93,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		if (!canvas) return;
 		setIsDrawing(true);
 		setIsEmpty(false);
+		isEmptyRef.current = false;
 
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
@@ -133,12 +151,26 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		ctx.fillStyle = "#ffffff";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		setIsEmpty(true);
+		isEmptyRef.current = true;
 	};
 
 	const handleSave = () => {
 		if (isEmpty || !canvasRef.current) return;
-		const dataUrl = canvasRef.current.toDataURL("image/png");
-		onSign(dataUrl);
+		// Подпись — часть юридического документа: гарантируем непрозрачный белый
+		// фон в итоговом изображении независимо от истории изменений размера.
+		const source = canvasRef.current;
+		const flattened = document.createElement("canvas");
+		flattened.width = source.width;
+		flattened.height = source.height;
+		const flatCtx = flattened.getContext("2d");
+		if (!flatCtx) {
+			onSign(source.toDataURL("image/png"));
+			return;
+		}
+		flatCtx.fillStyle = "#ffffff";
+		flatCtx.fillRect(0, 0, flattened.width, flattened.height);
+		flatCtx.drawImage(source, 0, 0);
+		onSign(flattened.toDataURL("image/png"));
 	};
 
 	return (

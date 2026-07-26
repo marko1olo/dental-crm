@@ -8,6 +8,7 @@
  * Docs: https://business.max.ru (requires business account login)
  */
 import { createHash } from "node:crypto";
+import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -64,9 +65,28 @@ function parseJsonSafe<T>(value: unknown, fallback: T): T {
 	return value as T;
 }
 
+
+/** Точная проверка пути вебхука (без учёта query-строки). */
+function isWebhookPath(url: string): boolean {
+	const pathname = (url.split("?")[0] ?? "").replace(/\/+$/, "");
+	return pathname.endsWith("/webhook");
+}
+
 export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	app.addHook("preHandler", async (request, reply) => {
-		if (request.url.includes("/webhook")) return;
+		// БЫЛО: `if (request.url.includes("/webhook")) return;` полностью
+		// отключало авторизацию для любого URL, содержащего "/webhook" —
+		// включая, например, /api/max/settings?x=/webhook. Теперь путь
+		// вебхука проверяется точно и защищён общим секретом канала.
+		if (isWebhookPath(request.url)) {
+			if (!verifyWebhookSecret(request, reply, {
+				channel: "max",
+				secretEnvNames: ["MAX_WEBHOOK_SECRET", "DENTE_WEBHOOK_SECRET"],
+			})) {
+				return reply;
+			}
+			return;
+		}
 		const allowed = await requireNonDoctorAccess(request, reply);
 		if (!allowed) {
 			return reply;

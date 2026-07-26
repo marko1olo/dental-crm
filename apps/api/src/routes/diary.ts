@@ -142,15 +142,30 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 
 			await db
 				.update(visitDiaries)
+				// БЫЛО: `data.X ?? existing.X` по всем клиническим полям. Пустая
+				// строка — это не undefined, но фронтенд часто не присылает поле
+				// вовсе, и врач НЕ МОГ удалить ошибочно внесённый текст: он стирал
+				// поле, сохранял, а прежняя запись молча возвращалась. Для истории
+				// болезни это опаснее опечатки — в карте остаётся неверный анамнез
+				// или несуществующее осложнение.
+				// Теперь поле переписывается, если оно ПРИСУТСТВУЕТ в запросе
+				// (включая пустую строку), и сохраняется, только если не передано.
 				.set({
-					anamnesis: data.anamnesis ?? existing.anamnesis,
-					statusLocalis: data.statusLocalis ?? existing.statusLocalis,
-					diagnosisIcd10: data.diagnosisIcd10 ?? existing.diagnosisIcd10,
-					diagnosisTooth: data.diagnosisTooth ?? existing.diagnosisTooth,
+					anamnesis: data.anamnesis !== undefined ? data.anamnesis : existing.anamnesis,
+					statusLocalis:
+						data.statusLocalis !== undefined ? data.statusLocalis : existing.statusLocalis,
+					diagnosisIcd10:
+						data.diagnosisIcd10 !== undefined ? data.diagnosisIcd10 : existing.diagnosisIcd10,
+					diagnosisTooth:
+						data.diagnosisTooth !== undefined ? data.diagnosisTooth : existing.diagnosisTooth,
 					treatmentDescription:
-						data.treatmentDescription ?? existing.treatmentDescription,
-					complications: data.complications ?? existing.complications,
-					comorbidities: data.comorbidities ?? existing.comorbidities,
+						data.treatmentDescription !== undefined
+							? data.treatmentDescription
+							: existing.treatmentDescription,
+					complications:
+						data.complications !== undefined ? data.complications : existing.complications,
+					comorbidities:
+						data.comorbidities !== undefined ? data.comorbidities : existing.comorbidities,
 					updatedAt: new Date(),
 					coSignedByUserId: isSigning ? userId : existing.coSignedByUserId,
 					diaryHash: diaryHash ?? existing.diaryHash,
@@ -158,7 +173,9 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					lockedAt: isSigning ? new Date() : existing.lockedAt,
 					lockedByUserId: isSigning ? userId : existing.lockedByUserId,
 					instrumentTrayBarcode:
-						data.instrumentTrayBarcode ?? existing.instrumentTrayBarcode,
+						data.instrumentTrayBarcode !== undefined
+							? data.instrumentTrayBarcode
+							: existing.instrumentTrayBarcode,
 				})
 				.where(
 					and(

@@ -5,13 +5,16 @@ const FNS_MEDICAL_EXPENSE_XML_KND = "1184043";
 const FNS_MEDICAL_EXPENSE_XML_VERSION = "5.01";
 const FNS_MEDICAL_EXPENSE_ORDER = "ЕА-7-11/824@";
 const FNS_MEDICAL_EXPENSE_NOTICE_NUMBER_MAX_LENGTH = 12;
-function xml(value) {
+export function escapeXml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&apos;");
+}
+function xml(value) {
+    return escapeXml(value);
 }
 function countOccurrences(value, needle) {
     if (!needle)

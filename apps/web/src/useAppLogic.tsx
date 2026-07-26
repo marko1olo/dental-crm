@@ -823,7 +823,6 @@ import {
 import { useAppStore } from "./store/appStore";
 import { useDocumentStore } from "./store/documentStore";
 import { useImagingStore } from "./store/imagingStore";
-import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useVisitStore } from "./store/visitStore";
@@ -2290,6 +2289,16 @@ export function useAppLogic(): any {
 	const initialTelegramHandoffTargetRef =
 		useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
 	const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
+	// Ключ идемпотентности платежа. Живёт между повторными нажатиями «Принять
+	// оплату», чтобы сервер распознал повтор и не создал второй платёж.
+	const paymentMutationIdRef = useRef<string | null>(null);
+	// Порядковый номер запроса данных клиники: применяем только последний ответ.
+	const dashboardRequestSeqRef = useRef(0);
+	// Защита от двойного создания сотрудников и кресел (двойной клик по кнопке).
+	const staffCreateInFlightRef = useRef(false);
+	const chairCreateInFlightRef = useRef(false);
+	const [isStaffCreating, setIsStaffCreating] = useState(false);
+	const [isChairCreating, setIsChairCreating] = useState(false);
 	const uiPreferencesServerReadyRef = useRef(false);
 	const uiPreferencesHydratedRef = useRef(false);
 	const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
@@ -2468,6 +2477,7 @@ export function useAppLogic(): any {
 		setVisitNoteForm,
 		visitToothStateByCode,
 		setToothState,
+		resetVisitToothState,
 		applyAiToothCodes,
 		lastServerDraftSavedAt,
 		setLastServerDraftSavedAt,
@@ -2683,6 +2693,15 @@ export function useAppLogic(): any {
 	} = schedule;
 
 	async function loadDashboard(options: { adminSecret?: string } = {}) {
+		// БЫЛО: защиты от гонки не было, а loadDashboard вызывается из 34 мест.
+		// Сценарий: загрузка при открытии экрана ещё идёт, врач сохраняет запись
+		// приёма — сохранение тоже вызывает loadDashboard и получает свежие данные,
+		// но МЕДЛЕННЫЙ первый ответ приходит последним и перезаписывает состояние
+		// данными ДО сохранения. Только что записанный приём исчезал с экрана
+		// до ручного обновления страницы.
+		// Применяем только ответ последнего по времени запроса.
+		const requestId = ++dashboardRequestSeqRef.current;
+		const isStaleResponse = () => requestId !== dashboardRequestSeqRef.current;
 		try {
 			const response = await fetch("/api/dashboard", {
 				cache: "no-store",
@@ -2696,88 +2715,40 @@ export function useAppLogic(): any {
 				throw new WorkflowResponseError(message, response.status);
 			}
 			const payload = (await response.json()) as Dashboard;
+			// Пока ждали ответ, стартовал более свежий запрос — его результат
+			// актуальнее, этот молча игнорируем.
+			if (isStaleResponse()) return;
 			setDashboard(payload);
 			setAccessUnlockRequired(false);
 			setAccessUnlockMessage("");
 		} catch (err) {
-			console.warn("[Dente] loadDashboard fallback triggered:", err);
-			// Fallback mock dashboard payload to ensure UI always loads
-			const fallbackDashboard: any = {
-				clinicName: "Демо Клиника DENTE",
-				todayIso: new Date().toISOString().split("T")[0],
-				clinicSettings: {
-					profile: {
-						id: "00000000-0000-0000-0000-000000000001",
-						organizationId: "00000000-0000-0000-0000-000000000001",
-						clinicName: "Демо Клиника DENTE",
-						legalName: "ООО Демо Клиника",
-						inn: "1234567890",
-						taxId: "",
-						licenseNumber: "",
-						address: "г. Москва, ул. Стоматологическая, д. 10",
-						phone: "+7 (495) 000-00-00",
-						timezone: "Europe/Moscow",
-						mode: "standard",
-						defaultVisitMinutes: 45,
-						scheduleDefaults: {
-							workingDays: [1,2,3,4,5],
-							workdayStart: "09:00",
-							workdayEnd: "20:00",
-							appointmentBufferMinutes: 15
-						},
-						networkEnabled: false,
-						egiszEnabled: false,
-						updatedAt: new Date().toISOString()
-					},
-					staff: [
-						{ id: "doc-1", fullName: "Иванов И.И.", role: "doctor", active: true, email: "doctor@clinic.com" },
-						{ id: "admin-1", fullName: "Петрова А.А.", role: "administrator", active: true, email: "admin@clinic.ru" }
-					],
-					chairs: [
-						{ id: "chair-1", name: "Кабинет 1 (Терапия)", active: true },
-						{ id: "chair-2", name: "Кабинет 2 (Ортопедия)", active: true }
-					],
-					modeHints: [],
-					integrationPresets: [],
-					workspaceProfiles: [],
-					roleAccessPolicies: []
-				},
-				patients: [
-					{ id: "pat-1", fullName: "Смирнов Алексей Петрович", phone: "+79991112233", birthDate: "1990-05-15", status: "active" },
-					{ id: "pat-2", fullName: "Васильева Елена Игоревна", phone: "+79992223344", birthDate: "1985-11-20", status: "active" }
-				],
-				appointments: [
-					{
-						id: "apt-1",
-						patientId: "pat-1",
-						doctorId: "doc-1",
-						doctorUserId: "doc-1",
-						chairId: "chair-1",
-						status: "in_progress",
-						startsAt: new Date().toISOString(),
-						endsAt: new Date(Date.now() + 45 * 60000).toISOString(),
-						reason: "Первичный прием и диктовка",
-						comment: "Срочный осмотр"
-					}
-				],
-				activeVisit: {
-					appointmentId: "apt-1",
-					patientId: "pat-1",
-					startedAt: new Date().toISOString()
-				},
-				documents: [],
-				imagingStudies: [],
-				shiftIntelligence: { roleQueues: [], urgentRequests: [], shiftStats: {} },
-				billingSummary: { totalPaidRub: 0, totalDueRub: 0 },
-				patientInsights: [],
-				auditEvents: [],
-				importBatches: [],
-				speechProviders: []
-			};
-			setDashboard(fallbackDashboard);
-			usePatientStore.getState().setSelectedPatientId("pat-1");
-			setAccessUnlockRequired(false);
-			setAccessUnlockMessage("");
+			if (isStaleResponse()) return;
+			// БЫЛО: любая ошибка загрузки (обрыв сети, 401, 500) подменяла реальные
+			// данные клиники ВЫМЫШЛЕННЫМИ: «Демо Клиника DENTE» и пациент
+			// «Смирнов Алексей Петрович» с id "pat-1", который тут же выбирался
+			// активным. Врач мог диктовать приём в карту несуществующего человека.
+			// Кроме того, catch никогда не пробрасывал ошибку дальше, поэтому
+			// все .catch() у вызывающих (в том числе принудительный релогин при 401)
+			// были мёртвым кодом, и истёкшая сессия не приводила к повторному входу.
+			console.error("[Dente] Не удалось загрузить данные клиники:", err);
+			const isAuthError =
+				err instanceof Error && /401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
+			if (isAuthError) {
+				setAccessUnlockRequired(true);
+				setAccessUnlockMessage("Сессия истекла. Войдите в кабинет клиники заново.");
+			} else {
+				setError(
+					"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
+				);
+			}
+			// Прежнее состояние НЕ затираем: пусть на экране останутся последние
+			// корректные данные, а не подделка.
+			//
+			// Ошибку намеренно НЕ пробрасываем: loadDashboard вызывается из 34 мест,
+			// часть — через `void loadDashboard()`, и бросок превратился бы в
+			// необработанные отклонения промисов. Вместо этого истёкшая сессия
+			// обрабатывается прямо здесь (setAccessUnlockRequired выше) — именно
+			// этого добивались внешние .catch(), которые раньше не срабатывали.
 		}
 		void loadPersistenceHealth({
 			silent: true,
@@ -4421,6 +4392,9 @@ export function useAppLogic(): any {
 		let cancelled = false;
 		visitDraftUserEditedRef.current = false;
 		setLocalAutosaveReady(false);
+		// Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
+		// они переносились на следующего пациента (см. resetVisitToothState).
+		resetVisitToothState();
 		const savedDraft = loadVisitLocalDraft(
 			dashboard?.activeVisit?.id,
 			activeOrganizationId,
@@ -5042,7 +5016,21 @@ export function useAppLogic(): any {
 					else if (category === "hygiene")
 						pct = contract.coverageHygienePct || 0;
 
-					insuranceCoverageRub += treatmentLineTotal(item) * (pct / 100);
+					// БЫЛО: накапливалась сырая дробь. 8 999 ₽ при покрытии 70% дают
+					// 6299.299999999999, из-за чего долг превращался в
+					// 2699.7000000000007 — поле оплаты принимает только целые рубли,
+					// и кнопка «оплатить долг» переставала работать.
+					// Округляем каждую строку отдельно, как это делает страховая.
+					insuranceCoverageRub += Math.round((treatmentLineTotal(item) * pct) / 100);
+				}
+
+				// БЫЛО: annualLimitRub сохранялся в договоре, но нигде не читался.
+				// План на 500 000 ₽ при покрытии 70% и лимите 100 000 ₽ показывал
+				// покрытие 350 000 ₽ — клиника недосчитывалась 250 000 ₽ и узнавала
+				// об этом только при отказе страховой.
+				const annualLimitRub = Number(contract.annualLimitRub ?? 0);
+				if (annualLimitRub > 0) {
+					insuranceCoverageRub = Math.min(insuranceCoverageRub, annualLimitRub);
 				}
 			}
 		}
@@ -5051,9 +5039,11 @@ export function useAppLogic(): any {
 			totalPlannedRub,
 			totalDiscountRub,
 			totalPaidRub,
+			// Долг — целое число рублей: ровно так его принимает поле оплаты
+			// и колонка payments.amount_rub (integer).
 			totalDueRub: Math.max(
 				0,
-				totalPlannedRub - insuranceCoverageRub - totalPaidRub,
+				Math.round(totalPlannedRub - insuranceCoverageRub - totalPaidRub),
 			),
 			taxDeductionEligibleRub,
 			draftDocumentAmountRub,
@@ -7401,7 +7391,17 @@ export function useAppLogic(): any {
 			setError("Введите ФИО сотрудника перед добавлением в команду.");
 			return;
 		}
-		if (!(await saveClinicProfileIfDirty())) return;
+		// БЫЛО: защиты от повторного нажатия не было, а поле имени очищалось
+		// только ПОСЛЕ ответа сервера — двойной клик заводил двух одинаковых
+		// сотрудников. Ref, а не state: значение проверяется синхронно.
+		if (staffCreateInFlightRef.current) return;
+		staffCreateInFlightRef.current = true;
+		setIsStaffCreating(true);
+		if (!(await saveClinicProfileIfDirty())) {
+			staffCreateInFlightRef.current = false;
+			setIsStaffCreating(false);
+			return;
+		}
 		try {
 			const response = await fetch("/api/settings/staff", {
 				method: "POST",
@@ -7434,6 +7434,9 @@ export function useAppLogic(): any {
 			setError(
 				operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError),
 			);
+		} finally {
+			staffCreateInFlightRef.current = false;
+			setIsStaffCreating(false);
 		}
 	}
 
@@ -7443,7 +7446,15 @@ export function useAppLogic(): any {
 			setError("Введите название кресла или кабинета перед добавлением.");
 			return;
 		}
-		if (!(await saveClinicProfileIfDirty())) return;
+		// См. addStaffMember: двойной клик создавал два одинаковых кресла.
+		if (chairCreateInFlightRef.current) return;
+		chairCreateInFlightRef.current = true;
+		setIsChairCreating(true);
+		if (!(await saveClinicProfileIfDirty())) {
+			chairCreateInFlightRef.current = false;
+			setIsChairCreating(false);
+			return;
+		}
 		try {
 			const response = await fetch("/api/settings/chairs", {
 				method: "POST",
@@ -7477,6 +7488,9 @@ export function useAppLogic(): any {
 			setError(
 				operatorWorkflowFailureMessage("Кресло не добавлено", chairError),
 			);
+		} finally {
+			chairCreateInFlightRef.current = false;
+			setIsChairCreating(false);
 		}
 	}
 
@@ -10753,12 +10767,51 @@ export function useAppLogic(): any {
 			}
 			setIsServerVoiceRecording(true);
 		} catch (recordingError) {
+			// БЫЛО: поток микрофона уже получен выше через getUserMedia, но при
+			// ошибке (например, MediaRecorder.start() бросил исключение) дорожки
+			// не останавливались. Интерфейс писал «Микрофон недоступен» и что
+			// запись не идёт, а индикатор микрофона в браузере продолжал гореть.
+			stopSpeechMonitor();
+			try {
+				mediaRecorderRef.current?.stop();
+			} catch {
+				// Рекордер мог не запуститься — это нормально.
+			}
+			mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+			mediaRecorderRef.current = null;
+			mediaStreamRef.current = null;
 			setIsServerVoiceRecording(false);
 			setError(
 				browserCapabilityFailureMessage("Микрофон недоступен", recordingError),
 			);
 		}
 	}
+
+	/**
+	 * Освобождение микрофона при размонтировании.
+	 *
+	 * БЫЛО: остановка происходила только по действию пользователя (recorder.onstop
+	 * и stopServerVoiceRecording). Если врач уходил со страницы приёма или сессия
+	 * блокировалась во время диктовки, таймер каждые 250 мс продолжал запрашивать
+	 * данные и отправлять аудио на сервер, а индикатор микрофона горел до закрытия
+	 * вкладки. AudioContext тоже не закрывался, а браузер держит их ограниченное число.
+	 */
+	useEffect(() => {
+		return () => {
+			stopSpeechMonitor();
+			try {
+				const recorder = mediaRecorderRef.current;
+				if (recorder && recorder.state !== "inactive") recorder.stop();
+			} catch {
+				// Останов на размонтировании — best effort.
+			}
+			mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+			mediaRecorderRef.current = null;
+			mediaStreamRef.current = null;
+		};
+		// Пустой массив зависимостей: очистка должна выполниться ровно один раз,
+		// при размонтировании, с актуальными значениями из ref-ов.
+	}, []);
 
 	function stopServerVoiceRecording() {
 		const recorder = mediaRecorderRef.current;
@@ -12492,11 +12545,25 @@ export function useAppLogic(): any {
 						amountRub,
 						visitId: dashboard?.activeVisit?.id || undefined,
 						documentId: documentForPayment?.id || undefined,
+						// БЫЛО: оплата с семейного кошелька шла вообще без ключа
+						// идемпотентности. Повтор после обрыва связи списывал деньги
+						// с баланса семьи ДВАЖДЫ за одно лечение.
+						clientMutationId: (paymentMutationIdRef.current ||= browserGeneratedId("family-payment")),
 					}),
 				});
 			} else {
 				// Normal payment
-				const paymentClientMutationId = browserGeneratedId("payment");
+				// БЫЛО: browserGeneratedId вызывался ЗДЕСЬ, то есть при каждом нажатии
+				// «Принять оплату» генерировался новый ключ. Серверная защита от
+				// дублей (findPaymentByClientMutationIdInDb) не могла сработать
+				// никогда. Сценарий: платёж 15 000 ₽ дошёл до сервера, ответ пропал
+				// из-за обрыва связи, оператор нажал повторно — в базе два платежа
+				// по 15 000 ₽, касса не сходится. Теперь ключ создаётся один раз на
+				// заполненную форму и сбрасывается только после успеха.
+				if (!paymentMutationIdRef.current) {
+					paymentMutationIdRef.current = browserGeneratedId("payment");
+				}
+				const paymentClientMutationId = paymentMutationIdRef.current;
 				response = await fetch("/api/billing/payments", {
 					method: "POST",
 					headers: auth.denteClinicalMutationHeaders({
@@ -12544,6 +12611,8 @@ export function useAppLogic(): any {
 				setError(await responseErrorMessage(response, "Оплата не записана"));
 				return;
 			}
+			// Платёж принят — следующий платёж должен получить НОВЫЙ ключ.
+			paymentMutationIdRef.current = null;
 			setPaymentAmount("");
 			setPaymentFiscalReceiptNumber("");
 			setPaymentFiscalReceiptIssuedAt("");
@@ -13282,8 +13351,10 @@ export function useAppLogic(): any {
 	const onboardingReadyToFinish = onboardingFirstAppointmentIssues.length === 0;
 	const onboardingDocumentsReady =
 		onboardingDocumentReadinessIssues.length === 0;
-	const newStaffReadyToCreate = newStaffName.trim().length > 0;
-	const newChairReadyToCreate = newChairName.trim().length > 0;
+	// Флаг «готово к созданию» дополнительно учитывает выполняющийся запрос,
+	// поэтому кнопки гаснут сразу после первого нажатия, а не после ответа сервера.
+	const newStaffReadyToCreate = newStaffName.trim().length > 0 && !isStaffCreating;
+	const newChairReadyToCreate = newChairName.trim().length > 0 && !isChairCreating;
 	const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
 	const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance";
 	const onboardingFinishGuidanceId = "onboarding-finish-guidance";
@@ -13794,6 +13865,7 @@ export function useAppLogic(): any {
 		newChairHasXraySensor,
 		newChairName,
 		newChairReadyToCreate,
+		isChairCreating,
 		newRuleAction,
 		newRuleBlockedServiceId,
 		newRuleCategory,
@@ -13807,6 +13879,7 @@ export function useAppLogic(): any {
 		newRuleWarningText,
 		newStaffName,
 		newStaffReadyToCreate,
+		isStaffCreating,
 		newStaffRole,
 		newStaffSpecialty,
 		nextOnboardingStep,

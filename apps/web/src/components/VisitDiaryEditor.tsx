@@ -109,6 +109,27 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		setShowIcdDropdown(false);
 	};
 
+	/**
+	 * Подтверждение введённого кода МКБ-10 по Enter или потере фокуса.
+	 *
+	 * БЫЛО: единственный способ записать код в дневник — клик мышью по строке
+	 * выпадающего списка (onMouseDown). Врач набирал точный код «K04.5»,
+	 * нажимал Tab и сохранял: diagnosisIcd10 оставался ПУСТЫМ, и подписанная
+	 * форма 043/у печаталась с «МКБ-10: —». Юридически подписанная запись
+	 * без кода диагноза.
+	 */
+	const commitIcdInput = () => {
+		const typed = icdSearch.trim();
+		if (!typed) return;
+		const normalized = typed.toUpperCase();
+		// Точное совпадение по коду важнее совпадения по названию.
+		const exact = ICD10_DICTIONARY.find(
+			(item) => item.code.toUpperCase() === normalized,
+		);
+		const candidate = exact ?? filteredIcd[0];
+		if (candidate) handleIcdSelect(candidate.code);
+	};
+
 	const filteredIcd = ICD10_DICTIONARY.filter(
 		(i) =>
 			i.code.toLowerCase().includes(icdSearch.toLowerCase()) ||
@@ -429,6 +450,19 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 											setShowIcdDropdown(true);
 										}}
 										onFocus={() => !isLocked && setShowIcdDropdown(true)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												commitIcdInput();
+											}
+										}}
+										onBlur={() => {
+											// Небольшая задержка, чтобы клик по строке списка успел сработать.
+											window.setTimeout(() => {
+												commitIcdInput();
+												setShowIcdDropdown(false);
+											}, 120);
+										}}
 										placeholder="K02.1 Кариес... или введите название"
 									/>
 									{showIcdDropdown && filteredIcd.length > 0 && (

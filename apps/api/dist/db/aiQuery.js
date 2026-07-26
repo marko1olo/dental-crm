@@ -119,6 +119,10 @@ export async function createAiRecognitionJobInDb(organizationId, input) {
             reason: `${job.kind} подготовлен для ${job.target}.`
         });
     }
-    catch (e) { }
+    catch (e) {
+        // Audit logging must never block AI job creation, but a failure here is a
+        // 152-FZ traceability gap and must be surfaced, not silently swallowed.
+        console.warn("[AiQuery] Failed to record ai_recognition_prepared audit event:", e);
+    }
     return aiJob;
 }

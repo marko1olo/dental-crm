@@ -1,10 +1,10 @@
 import { CreditCard, UserRound, Mic, Bot } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
-import { validateRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
+import { validateRubAmountInput, rubAmountInputMissingStep, normalizeRubAmountInput } from "./rubAmountInput";
 import { textToNumbers } from "./lib/stringUtils";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
@@ -325,9 +325,15 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
   const [months, setMonths] = useState(6);
   const [downPaymentPercent, setDownPaymentPercent] = useState(0);
 
+  // БЫЛО: monthlyPayment = Math.round(remaining / months) без сверки с итогом.
+  // 100 000 ₽ на 6 месяцев → 16 667 × 6 = 100 002 ₽ (пациенту называли на 2 ₽
+  // больше стоимости лечения), 70 000 ₽ на 3 месяца → 69 999 ₽ (счёт не закрыть).
+  // Теперь остаток от деления добирается последним платежом: сумма сходится точно.
   const downPayment = Math.round((totalAmount * downPaymentPercent) / 100);
-  const remaining = totalAmount - downPayment;
-  const monthlyPayment = months > 0 ? Math.round(remaining / months) : 0;
+  const remaining = Math.max(0, totalAmount - downPayment);
+  const monthlyPayment = months > 0 ? Math.floor(remaining / months) : 0;
+  const lastMonthPayment = months > 0 ? remaining - monthlyPayment * (months - 1) : 0;
+  const hasUnevenLastPayment = months > 0 && lastMonthPayment !== monthlyPayment;
 
   return (
     <details className="payment-capture-detail-section" open={isOpen} style={{ marginBottom: "20px" }}>
@@ -366,7 +372,17 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Ежемесячный платеж</div>
             <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rust)" }}>{monthlyPayment.toLocaleString('ru-RU')} ₽</div>
+            {/* Остаток от деления добирается последним месяцем, чтобы сумма
+                платежей в точности равнялась стоимости лечения. */}
+            {hasUnevenLastPayment && (
+              <div style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "2px" }}>
+                последний месяц — {lastMonthPayment.toLocaleString('ru-RU')} ₽
+              </div>
+            )}
           </div>
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "12px" }}>
+          Итого по графику: {(downPayment + monthlyPayment * Math.max(0, months - 1) + lastMonthPayment).toLocaleString('ru-RU')} ₽
         </div>
       </div>
     </details>
@@ -415,6 +431,11 @@ export function PaymentCapture({
 }: PaymentCaptureProps) {
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
+  // Таймер автоскрытия предпросмотра — держим, чтобы отменить при размонтировании.
+  const smartPreviewTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (smartPreviewTimerRef.current) window.clearTimeout(smartPreviewTimerRef.current);
+  }, []);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
   
@@ -429,7 +450,17 @@ export function PaymentCapture({
        
        setSmartParsedData({ isAiTask: false, text: "Успешно распознано: " + text, parsed });
        setShowSmartPreview(true);
-       setTimeout(() => { setShowSmartPreview(false); setSmartInputText(""); }, 2000);
+       // БЫЛО: setTimeout без сохранения идентификатора и без очистки. Через
+       // 2 секунды он безусловно стирал поле голосового ввода — если оператор
+       // за это время начинал печатать вручную, текст пропадал прямо посреди
+       // слова. Плюс таймер срабатывал уже после размонтирования компонента.
+       if (smartPreviewTimerRef.current) window.clearTimeout(smartPreviewTimerRef.current);
+       smartPreviewTimerRef.current = window.setTimeout(() => {
+         smartPreviewTimerRef.current = null;
+         setShowSmartPreview(false);
+         // Поле очищаем ТОЛЬКО если оператор не начал править его вручную.
+         setSmartInputText((current) => (current === text ? "" : current));
+       }, 2000);
     }
   };
   
@@ -571,9 +602,13 @@ export function PaymentCapture({
               <button
                 type="button"
                 className="quick-chip"
-                onClick={() => onAmountChange(String(remainingDebt))}
+                /* БЫЛО: подставлялось сырое число с плавающей точкой, например
+                   2699.7000000000007 (после расчёта страхового покрытия).
+                   Поле принимает только целые рубли, поэтому кнопка «оплатить
+                   долг одним нажатием» просто не работала. Округляем. */
+                onClick={() => onAmountChange(String(Math.round(remainingDebt)))}
               >
-                Долг: {remainingDebt} ₽
+                Долг: {Math.round(remainingDebt).toLocaleString("ru-RU")} ₽
               </button>
             )}
             {[1000, 2000, 3000, 5000].map((val) => (
@@ -643,7 +678,11 @@ export function PaymentCapture({
         taxDefaultsGuidanceId={taxDefaultsGuidanceId}
         taxPayerDetailsOpen={taxPayerDetailsOpen}
       />
-      <InstallmentCalculator totalAmount={parseFloat(amount) || 0} isOpen={false} />
+      {/* БЫЛО: parseFloat("120 000") === 120. Поле суммы явно разрешает пробелы
+          (pattern="[0-9\s]*"), администратор набирает "120 000" — и калькулятор
+          показывал рассрочку на 120 ₽ по 20 ₽ в месяц. Используем тот же
+          нормализатор, что и валидация формы: он снимает пробелы и NBSP. */}
+      <InstallmentCalculator totalAmount={normalizeRubAmountInput(amount) ?? 0} isOpen={false} />
       {!paymentReadyToSubmit ? (
         <div className="payment-capture-missing" id={paymentMissingId} role="status" aria-live="polite">
           <strong>Чтобы принять оплату, осталось:</strong>

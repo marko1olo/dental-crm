@@ -14,6 +14,7 @@ import {
 	readIssuedDocumentSnapshot,
 } from "../db/documentQuery.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 // Patient portal sessions are short-lived; the patient re-authenticates via OTP.
 const PORTAL_TOKEN_TTL_SECONDS = 60 * 60 * 12;
@@ -41,10 +42,21 @@ function isOtpRateLimited(ip: string): boolean {
 }
 
 // MVP OTP behaviour is documented in TELEPHONY_AND_PORTAL.md: no SMS gateway is
-// wired yet, so the accepted code is a fixed value sourced from env (never
-// hardcoded) so it can be tightened per-deployment without a code change.
-function configuredPortalOtpCode(): string {
-	return process.env.PORTAL_MVP_OTP_CODE?.trim() || "0000";
+// wired yet, so the accepted code is a fixed value sourced from env.
+//
+// БЫЛО: при отсутствии PORTAL_MVP_OTP_CODE принимался код "0000" — то есть
+// любой человек, зная номер телефона пациента, входил в его личный кабинет и
+// читал визиты, планы лечения, счета и выданные документы. СТАЛО: без явно
+// заданного кода портал отвечает 503 и никого не пускает (fail closed).
+function configuredPortalOtpCode(): string | null {
+	const code = process.env.PORTAL_MVP_OTP_CODE?.trim();
+	if (process.env.NODE_ENV !== "production") {
+		// Локальная разработка работает без настройки: код по умолчанию 0000.
+		return code || "0000";
+	}
+	// В production код обязателен и не короче 6 символов.
+	if (!code || code.length < 6) return null;
+	return code;
 }
 
 export const portalRoutes: FastifyPluginAsync = async (
@@ -77,7 +89,16 @@ export const portalRoutes: FastifyPluginAsync = async (
 			if (typeof phone !== "string" || typeof code !== "string") {
 				return reply.status(400).send({ error: "Phone and code are required" });
 			}
-			if (code !== configuredPortalOtpCode()) {
+			const expectedCode = configuredPortalOtpCode();
+			if (!expectedCode) {
+				return reply.status(503).send({
+					error: "PortalOtpNotConfigured",
+					message:
+						"Личный кабинет пациента не настроен: администратору нужно задать PORTAL_MVP_OTP_CODE или подключить SMS-шлюз.",
+				});
+			}
+			// Сравнение постоянного времени: посимвольное !== позволяет подбирать код по таймингу.
+			if (!timingSafeSecretEqual(code, expectedCode)) {
 				return reply.status(401).send({ error: "Invalid OTP" });
 			}
 
@@ -86,16 +107,21 @@ export const portalRoutes: FastifyPluginAsync = async (
 				return reply.status(400).send({ error: "Invalid phone" });
 
 			const phoneSuffix = rawPhone.slice(-10);
+			// Берём до двух совпадений: раньше .limit(1) с частичным LIKE молча
+			// выдавал первого попавшегося пациента, чей номер СОДЕРЖИТ эти цифры,
+			// и человек мог войти в чужую медкарту. Неоднозначность — отказ.
 			const searchResult = await db
 				.select()
 				.from(patients)
-				.where(ilike(patients.phone, `%${phoneSuffix}%`))
-				.limit(1);
+				.where(ilike(patients.phone, `%${phoneSuffix}`))
+				.limit(2);
 
-			const patient = searchResult[0];
-			if (!patient) {
-				return reply.status(404).send({ error: "Patient not found in CRM" });
+			if (searchResult.length !== 1) {
+				// Единый ответ и для "нет пациента", и для "несколько совпадений",
+				// чтобы endpoint не работал как справочник существующих номеров.
+				return reply.status(401).send({ error: "Invalid OTP" });
 			}
+			const patient = searchResult[0]!;
 
 			// Signed, expiring session token. Replaces the previous unsigned
 			// base64(`DENTE_TOKEN:<id>`) payload, which any caller could forge to read

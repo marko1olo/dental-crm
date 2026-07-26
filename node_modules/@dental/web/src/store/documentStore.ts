@@ -1633,7 +1633,12 @@ const createDocumentSlice = (set: any) => ({
   setDocumentIssueConfirmationId: createSetter(set, "documentIssueConfirmationId"),
   documentIssueSignatureMode: initialUiPreferences.documentIssueSignatureMode,
   setDocumentIssueSignatureMode: createSetter(set, "documentIssueSignatureMode"),
-  documentIssueSignedAt: currentLocalDateTimeInputValue,
+  // БЫЛО: пропущены скобки — в состояние клалась сама ФУНКЦИЯ, а не строка.
+  // При нажатии «Выдать документ» код делал documentIssueSignedAt.trim() и падал
+  // с TypeError прямо в фазе рендера: приложение уходило в белый экран.
+  // Чек-лист готовности при этом ничего не подсвечивал, потому что
+  // String(функция) — непустая строка.
+  documentIssueSignedAt: currentLocalDateTimeInputValue(),
   setDocumentIssueSignedAt: createSetter(set, "documentIssueSignedAt"),
   documentIssueRecipientFullName: "",
   setDocumentIssueRecipientFullName: createSetter(set, "documentIssueRecipientFullName"),

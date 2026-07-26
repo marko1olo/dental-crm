@@ -167,7 +167,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             <input
               aria-label="Быстрый ввод пациентов"
               autoComplete="name"
-              value={smartInputText}
+              /* БЫЛО: value={smartInputText} — локальная копия. После успешного
+                 создания пациента хранилище очищало newPatientName, а поле
+                 продолжало показывать старое ФИО: кнопка «Создать» оставалась
+                 серой, а подсказка требовала «укажите ФИО пациента», хотя текст
+                 виден. Источник истины теперь один — состояние хранилища. */
+              value={newPatientName}
               onChange={(event: TextFieldChangeEvent) => {
                 setSmartInputText(event.target.value);
                 setNewPatientName(event.target.value);

@@ -31,7 +31,7 @@ import {
   type DenteTelegramUpdateKind,
   type UpdateDenteTelegramBotSettingsInput
 } from "@dental/shared";
-import type { BuildDenteTelegramOutboxOptions, DenteTelegramOutboxRuntimeScope, DenteTelegramOutboxStatusFilter } from "../telegram/legacyMocks.js";
+import type { BuildDenteTelegramOutboxOptions, DenteTelegramOutboxRuntimeScope, DenteTelegramOutboxStatusFilter } from "../sampleData.js";
 import {
   buildDenteTelegramChatLinkList,
   buildDenteTelegramLinkCodeList,
@@ -60,13 +60,13 @@ import {
   revokeDenteTelegramChatLink,
   safeDenteTelegramPublicHttpsUrl,
   updateDenteTelegramBotSettings
-} from "../telegram/legacyMocks.js";
+} from "../sampleData.js";
 import type {
   BuildDenteTelegramChatLinkListOptions,
   BuildDenteTelegramLinkCodeListOptions,
   DenteTelegramChatLinkListStatusFilter,
   DenteTelegramLinkCodeListStatusFilter
-} from "../telegram/legacyMocks.js";
+} from "../sampleData.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
 import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportFailure } from "../telegramTransport.js";
 

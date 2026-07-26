@@ -1,5 +1,11 @@
 @import './auth.css';
 
+@media (max-width: 840px) {
+  .nav-copy small {
+    display: none;
+  }
+}
+
 
 :root {
   /* LIGHT THEME (Premium Aesthetics) */
@@ -16821,4 +16827,3 @@ body.dark-mode .document-manual-override {
   border-color: var(--line) !important;
   color: var(--ink) !important;
 }
-

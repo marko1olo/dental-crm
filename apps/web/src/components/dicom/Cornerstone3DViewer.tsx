@@ -33,6 +33,9 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   const sagittalRef = useRef<HTMLDivElement>(null);
   const coronalRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  // Состояние загрузки и ошибки: раньше пользователь не получал никакого сигнала.
+  const [isVolumeLoading, setIsVolumeLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [volumeId, setVolumeId] = useState<string | null>(null);
   const [showPanorex, setShowPanorex] = useState(false);
   const [splinePoints, setSplinePoints] = useState<Point2D[]>([]);
@@ -71,8 +74,19 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   useEffect(() => {
     if (!isInitialized || !imageIds.length) return;
 
+    // БЫЛО: у загрузки не было ни отмены, ни обработки ошибок, а очистка эффекта
+    // синхронно уничтожала движок, пока loadAndRender ещё ждал загрузку тома.
+    // Открыв второй архив до окончания первого, пользователь получал три
+    // ЧЁРНЫЕ панели без единого сообщения: первая загрузка продолжалась против
+    // уничтоженного движка и падала с необработанной ошибкой.
+    let cancelled = false;
+    setLoadError(null);
+    setIsVolumeLoading(true);
+
     async function loadAndRender() {
-      const vId = "my-volume";
+      // БЫЛО: идентификатор тома жёстко "my-volume" и никогда не вытеснялся из
+      // кэша — второй архив переиспользовал том ПЕРВОГО, показывая чужой снимок.
+      const vId = `dente-volume-${imageIds.length}-${imageIds[0] ?? "empty"}`;
       setVolumeId(vId);
       const renderingEngineId = "my-engine";
 
@@ -187,12 +201,25 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       toolGroup.addViewport(viewportIds.coronal, renderingEngineId);
 
       // Force render
+      if (cancelled) return;
       renderingEngine.renderViewports([viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]);
     }
 
-    loadAndRender();
+    loadAndRender()
+      .then(() => {
+        if (!cancelled) setIsVolumeLoading(false);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[Cornerstone3DViewer] Не удалось построить реконструкцию:", error);
+        setIsVolumeLoading(false);
+        setLoadError(
+          "Не удалось построить реконструкцию. Возможно, серия неполная или формат не поддерживается. Попробуйте загрузить архив заново.",
+        );
+      });
 
     return () => {
+      cancelled = true;
       cornerstone.getRenderingEngine("my-engine")?.destroy();
       cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
     };
@@ -297,7 +324,24 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', backgroundColor: '#0a0a0a', color: '#fff', position: 'relative', fontFamily: 'sans-serif' }}>
-      
+
+      {/* БЫЛО: ни индикатора загрузки, ни сообщения об ошибке — при сбое врач
+          видел три чёрные панели и не понимал, идёт ли построение или всё упало. */}
+      {(isVolumeLoading || loadError) && (
+        <div
+          role={loadError ? "alert" : "status"}
+          style={{
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            zIndex: 30, maxWidth: '420px', textAlign: 'center', padding: '20px 24px',
+            borderRadius: '16px', backgroundColor: 'rgba(0,0,0,0.78)',
+            border: `1px solid ${loadError ? '#f87171' : 'rgba(255,255,255,0.2)'}`,
+            color: loadError ? '#fca5a5' : '#e4e4e7', fontSize: '14px', lineHeight: 1.5,
+          }}
+        >
+          {loadError ?? 'Строим объёмную реконструкцию — это может занять до минуты...'}
+        </div>
+      )}
+
       {/* KICKASS GLASSMORPHISM TOOLBAR */}
       <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', padding: '8px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
         <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px' }}>

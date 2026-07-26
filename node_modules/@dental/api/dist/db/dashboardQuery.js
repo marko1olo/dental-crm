@@ -1,16 +1,37 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq } from "drizzle-orm";
+import { dashboardSchema, staffRoleSchema } from "@dental/shared";
 import { buildDashboard as buildDashboardInMemory } from "../sampleData.js";
 function useInMemory() {
     return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
-// Temporary naive mapper to replace sampleData buildDashboard
+function safeParseJsonArray(jsonString) {
+    if (!jsonString)
+        return [];
+    try {
+        const parsed = JSON.parse(jsonString);
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch {
+        return [];
+    }
+}
+function safeParseJsonObject(jsonString, fallback) {
+    if (!jsonString)
+        return fallback;
+    try {
+        return JSON.parse(jsonString);
+    }
+    catch {
+        return fallback;
+    }
+}
 export async function getDashboardFromDb(organizationId) {
     if (useInMemory()) {
         return buildDashboardInMemory();
     }
-    let org = null;
+    let org = undefined;
     let users = [];
     let patients = [];
     let appointments = [];
@@ -38,8 +59,7 @@ export async function getDashboardFromDb(organizationId) {
     }
     const effectiveOrgId = org?.id ?? organizationId;
     const effectiveOrgName = org?.name ?? "Демо Клиника DENTE";
-    // Default skeleton matching the expected structure
-    return {
+    return dashboardSchema.parse({
         clinicName: effectiveOrgName,
         todayIso: new Date().toISOString().split("T")[0],
         clinicSettings: {
@@ -66,13 +86,13 @@ export async function getDashboardFromDb(organizationId) {
                 egiszEnabled: false,
                 updatedAt: new Date().toISOString()
             },
-            staff: users.map(u => ({
+            staff: users.map((u) => ({
                 id: u.id,
                 organizationId: u.organizationId,
                 fullName: u.fullName,
-                role: u.role,
-                phone: u.phone,
-                email: u.email,
+                role: staffRoleSchema.catch("doctor").parse(u.role),
+                phone: u.phone ?? null,
+                email: u.email ?? null,
                 active: u.isActive,
                 specialties: [],
                 canSignMedicalRecords: u.role === "doctor",
@@ -82,7 +102,7 @@ export async function getDashboardFromDb(organizationId) {
                 createdAt: u.createdAt.toISOString(),
                 updatedAt: u.createdAt.toISOString()
             })),
-            chairs: chairs.map(c => ({
+            chairs: chairs.map((c) => ({
                 id: c.id,
                 organizationId: c.organizationId,
                 name: c.name,
@@ -101,82 +121,121 @@ export async function getDashboardFromDb(organizationId) {
             modeHints: [],
             soloDoctorMode: false
         },
-        // 
-        patients: patients.map(p => ({
+        patients: patients.map((p) => ({
             id: p.id,
             organizationId: p.organizationId,
             status: p.status,
             fullName: p.fullName,
-            birthDate: p.birthDate,
-            phone: p.phone,
-            email: p.email,
-            notes: p.notes,
-            administrativeProfile: p.administrativeProfile,
+            birthDate: p.birthDate ?? null,
+            phone: p.phone ?? null,
+            email: p.email ?? null,
+            notes: p.notes ?? null,
+            administrativeProfile: p.administrativeProfile ?? null,
+            balanceRub: 0,
             createdAt: p.createdAt.toISOString(),
             updatedAt: p.updatedAt.toISOString()
         })),
         patientInsights: [],
         recommendedActions: [],
-        appointments: appointments.map(a => ({
+        appointments: appointments.map((a) => ({
             id: a.id,
             organizationId: a.organizationId,
             patientId: a.patientId,
-            doctorUserId: a.doctorUserId,
-            assistantUserId: a.assistantUserId,
             chairId: a.chairId,
+            doctorId: a.doctorUserId,
             status: a.status,
-            startsAt: a.startsAt.toISOString(),
-            endsAt: a.endsAt.toISOString(),
-            reason: a.reason,
-            comment: a.comment
+            startAt: a.startsAt.toISOString(),
+            endAt: a.endsAt.toISOString(),
+            plannedServiceIds: [],
+            complaint: a.comment ?? "",
+            note: a.comment ?? "",
+            source: "manual",
+            isEmergency: false,
+            confirmationState: "unconfirmed",
+            cdaExportStatus: "not_required",
+            createdAt: a.startsAt.toISOString(),
+            updatedAt: a.endsAt.toISOString()
         })),
-        appointmentReadiness: [],
-        scheduleSuggestions: [],
-        activeVisit: {
-            id: "00000000-0000-0000-0000-000000000000",
-            organizationId: organizationId,
-            patientId: "00000000-0000-0000-0000-000000000000",
-            appointmentId: null,
-            status: "draft",
-            revision: 1,
-            complaint: null,
-            anamnesis: null,
-            objectiveStatus: null,
-            diagnosis: null,
-            treatmentPlan: null,
-            doctorSummary: null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        visitCloseChecklist: {
-            visitId: "00000000-0000-0000-0000-000000000000",
-            readyToSign: false,
-            score: 0,
-            nextAction: "review",
-            blockingItems: 0,
-            items: []
-        },
-        shiftIntelligence: {
-            modeFit: {
-                mode: "one_chair",
-                title: "Один кабинет",
-                fitScore: 100,
-                blockers: [],
-                upgrades: [],
-                lowFrictionNextStep: "ready"
-            },
-            doctorLoads: [],
-            assistantLoads: [],
-            chairLoads: [],
-            roleQueues: [],
-            scheduleWarnings: []
-        },
+        visits: [],
+        treatmentPlans: [],
+        generatedDocuments: documents.map((d) => ({
+            id: d.id,
+            organizationId: d.organizationId,
+            patientId: d.patientId,
+            kind: d.kind,
+            status: d.status,
+            payload: safeParseJsonObject(d.payloadJson, {}),
+            schemaVersion: 1,
+            createdAt: d.createdAt.toISOString(),
+            updatedAt: d.createdAt.toISOString()
+        })),
+        imagingStudies: imagingStudies.map((s) => ({
+            id: s.id,
+            organizationId: s.organizationId,
+            patientId: s.patientId,
+            visitId: s.visitId ?? null,
+            kind: s.kind,
+            status: s.status,
+            sourceKind: s.sourceKind,
+            acquiredAt: s.createdAt.toISOString(),
+            capturedAt: s.createdAt.toISOString(),
+            studyDescription: s.title,
+            title: s.title,
+            reviewerUserId: null,
+            sourceName: "",
+            toothCode: null,
+            region: null,
+            aiSummary: null,
+            previewUrl: null,
+            viewerUrl: null,
+            createdAt: s.createdAt.toISOString(),
+            updatedAt: s.createdAt.toISOString()
+        })),
+        serviceCatalog: serviceCatalog.map((s) => ({
+            id: s.id,
+            organizationId: s.organizationId,
+            code: s.code,
+            title: s.title,
+            category: s.category,
+            specialty: s.specialty,
+            basePriceRub: Number(s.basePriceRub),
+            priceRub: Number(s.basePriceRub),
+            durationMinutes: s.durationMinutes,
+            taxDeductible: s.taxDeductible,
+            taxDeductionCode: null,
+            aliases: [],
+            active: s.active
+        })),
+        clinicalRules: clinicalRules.map((r) => ({
+            id: r.id,
+            organizationId: r.organizationId,
+            title: r.title,
+            category: r.category,
+            specialty: r.specialty,
+            action: r.action,
+            severity: r.severity,
+            ownerRole: r.ownerRole,
+            triggerServiceIds: safeParseJsonArray(r.triggerServiceIdsJson),
+            requiredServiceIds: safeParseJsonArray(r.requiredServiceIdsJson),
+            requiresCompletedServiceIds: safeParseJsonArray(r.requiresCompletedServiceIdsJson),
+            blockedServiceIds: safeParseJsonArray(r.blockedServiceIdsJson),
+            condition: r.condition ?? null,
+            warningText: r.warningText,
+            patientText: r.patientText,
+            active: r.isActive,
+            createdAt: r.createdAt.toISOString(),
+            updatedAt: r.updatedAt.toISOString()
+        })),
+        importBatches: [],
+        speechProviders: [],
+        auditEvents: [],
+        complianceWarnings: [],
         protocolTemplates: [],
         treatmentPlanItems: [],
         treatmentPlanScenarios: [],
         clinicalRuleEvaluations: [],
         clinicalRuleSummary: {
-            activeRules: 0,
+            activeRules: clinicalRules.filter((r) => r.isActive).length,
             evaluatedRules: 0,
             unresolved: 0,
             blockers: 0,
@@ -207,78 +266,21 @@ export async function getDashboardFromDb(organizationId) {
             paymentReminders: 0,
             postVisitInstructions: 0
         },
-        importBatches: [],
-        speechProviders: [],
-        auditEvents: [],
-        complianceWarnings: [],
-        documents: documents.map(d => ({
-            id: d.id,
-            organizationId: d.organizationId,
-            patientId: d.patientId,
-            kind: d.kind,
-            status: d.status,
-            payload: d.payloadJson ? JSON.parse(d.payloadJson) : {},
-            schemaVersion: 1,
-            createdAt: d.createdAt.toISOString(),
-            updatedAt: d.createdAt.toISOString()
-        })),
-        imagingStudies: imagingStudies.map(s => ({
-            id: s.id,
-            organizationId: s.organizationId,
-            patientId: s.patientId,
-            visitId: s.visitId,
-            kind: s.kind,
-            status: s.status,
-            sourceKind: s.sourceKind,
-            acquiredAt: s.createdAt.toISOString(),
-            capturedAt: s.createdAt.toISOString(),
-            studyDescription: s.title,
-            title: s.title,
-            reviewerUserId: null,
-            sourceName: "",
-            toothCode: null,
-            region: null,
-            aiSummary: null,
-            previewUrl: undefined,
-            viewerUrl: undefined,
-            createdAt: s.createdAt.toISOString(),
-            updatedAt: s.createdAt.toISOString()
-        })),
-        serviceCatalog: serviceCatalog.map(s => ({
-            id: s.id,
-            organizationId: s.organizationId,
-            code: s.code,
-            title: s.title,
-            category: s.category,
-            specialty: s.specialty,
-            basePriceRub: s.basePriceRub,
-            priceRub: s.priceRub,
-            durationMinutes: s.durationMinutes,
-            taxDeductible: s.taxDeductible,
-            taxDeductionCode: s.taxDeductionCode,
-            aliases: [],
-            active: s.isActive
-        })),
-        clinicalRules: clinicalRules.map(r => ({
-            id: r.id,
-            organizationId: r.organizationId,
-            title: r.title,
-            category: r.category,
-            specialty: r.specialty,
-            action: r.action,
-            severity: r.severity,
-            ownerRole: r.ownerRole,
-            triggerServiceIds: JSON.parse(r.triggerServiceIdsJson || "[]"),
-            requiredServiceIds: JSON.parse(r.requiredServiceIdsJson || "[]"),
-            requiresCompletedServiceIds: JSON.parse(r.requiresCompletedServiceIdsJson || "[]"),
-            blockedServiceIds: JSON.parse(r.blockedServiceIdsJson || "[]"),
-            condition: r.condition,
-            warningText: r.warningText,
-            patientText: r.patientText,
-            active: r.isActive,
-            createdAt: r.createdAt.toISOString(),
-            updatedAt: r.updatedAt.toISOString()
-        })),
+        shiftIntelligence: {
+            modeFit: {
+                mode: "one_chair",
+                title: "Один кабинет",
+                fitScore: 100,
+                blockers: [],
+                upgrades: [],
+                lowFrictionNextStep: "ready"
+            },
+            doctorLoads: [],
+            assistantLoads: [],
+            chairLoads: [],
+            roleQueues: [],
+            scheduleWarnings: []
+        },
         communicationTasks: []
-    };
+    });
 }

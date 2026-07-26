@@ -1,6 +1,38 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
+/**
+ * Canonical default state for a freshly-created imaging viewer session.
+ * Typed as ImagingViewerSessionState so the compiler enforces that every
+ * required field is present and correctly typed (previously this was an
+ * `as any`-masked `{ version, layout, currentTool }` literal that did not
+ * match the schema at all — a persisted-state corruption bug).
+ */
+function createDefaultViewerSessionState() {
+    return {
+        mode: "two_d",
+        activeTool: "pan",
+        activeQuickActionId: null,
+        windowPreset: "bone",
+        windowCenter: null,
+        windowWidth: null,
+        brightness: 1,
+        contrast: 1,
+        inverted: false,
+        rotationDeg: 0,
+        flipHorizontal: false,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        sliceIndex: null,
+        projection: null,
+        axisDeg: 0,
+        slabMm: 1,
+        crosshair: false,
+        linkedPlanes: false,
+        implantPlan: null,
+    };
+}
 function mapImagingStudy(record) {
     return {
         id: record.id,
@@ -114,7 +146,7 @@ export async function getOrCreateImagingViewerSession(organizationId, study) {
         organizationId,
         studyId: study.id,
         patientId: study.patientId,
-        state: { version: 1, layout: "1x1", currentTool: "pan" },
+        state: createDefaultViewerSessionState(),
         annotations: [],
         warnings: []
     }).returning();

@@ -66,7 +66,7 @@ function serializeTreatmentPlan(plan, items) {
         totalPrice: numeric(plan.totalPrice),
         patientSignature: plan.patientSignature ?? null,
         createdAt: plan.createdAt.toISOString(),
-        updatedAt: plan.updatedAt.toISOString(),
+        updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
         items: items.map((item) => {
             const { priceId, name } = splitStoredPriceId(item.priceId);
             return {
@@ -141,25 +141,28 @@ export async function registerOdontogramRoutes(app) {
         const toothNumbers = [...new Set(parsed.data.toothNumbers)];
         if (toothNumbers.length === 0)
             return reply.send({ success: true, states: [] });
-        await db
-            .delete(toothStates)
-            .where(and(eq(toothStates.patientId, patientId), inArray(toothStates.toothNumber, toothNumbers)));
         const now = new Date();
-        const inserted = await db
-            .insert(toothStates)
-            .values(toothNumbers.map((toothNumber) => ({
-            patientId,
-            toothNumber,
-            state: parsed.data.state,
-            surfaces: parsed.data.surfaces || null,
-            updatedAt: now,
-            isSynced: false,
-            version: 1,
-        })))
-            .returning({
-            toothNumber: toothStates.toothNumber,
-            state: toothStates.state,
-            surfaces: toothStates.surfaces,
+        const inserted = await db.transaction(async (tx) => {
+            await tx
+                .delete(toothStates)
+                .where(and(eq(toothStates.patientId, patientId), inArray(toothStates.toothNumber, toothNumbers)));
+            return await tx
+                .insert(toothStates)
+                .values(toothNumbers.map((toothNumber) => ({
+                organizationId,
+                patientId,
+                toothNumber,
+                state: parsed.data.state,
+                surfaces: parsed.data.surfaces || null,
+                updatedAt: now,
+                isSynced: false,
+                version: 1,
+            })))
+                .returning({
+                toothNumber: toothStates.toothNumber,
+                state: toothStates.state,
+                surfaces: toothStates.surfaces,
+            });
         });
         wsBroker.broadcastToOrganization(organizationId, {
             type: "UPDATE_ODONTOGRAM",
@@ -238,6 +241,7 @@ export async function registerOdontogramRoutes(app) {
                     const [created] = await tx
                         .insert(treatmentPlans)
                         .values({
+                        organizationId,
                         patientId,
                         name: input.name,
                         totalPrice: totalPrice.toString(),

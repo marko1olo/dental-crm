@@ -348,7 +348,29 @@ function money(value: number): string {
 function isoToRuDate(value: string | null | undefined): string | null {
 	const explicit = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? "");
 	if (explicit) return `${explicit[3]}.${explicit[2]}.${explicit[1]}`;
-	const parsed = value ? new Date(value) : new Date();
+
+	// БЫЛО: всё, что не ISO, уходило в new Date(), а V8 разбирает "09.05.1970"
+	// как американское месяц/день/год. Пациент 9 мая превращался в 5 сентября,
+	// ФНС не находила налогоплательщика и отказывала в вычете. При дне больше 12
+	// («31.12.1980») получалась Invalid Date, и оператору сообщали, что дата
+	// рождения НЕ УКАЗАНА, хотя она была введена.
+	// Формат ДД.ММ.ГГГГ принимает и валидатор документов (renderDocument.ts),
+	// поэтому такие значения реально доходят сюда из базы.
+	const ruFormatted = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec((value ?? "").trim());
+	if (ruFormatted) {
+		const day = Number(ruFormatted[1]);
+		const month = Number(ruFormatted[2]);
+		if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+			return `${ruFormatted[1]}.${ruFormatted[2]}.${ruFormatted[3]}`;
+		}
+		return null;
+	}
+
+	// БЫЛО: при пустом значении подставлялась ТЕКУЩАЯ дата — в декларацию
+	// уходила сегодняшняя дата вместо даты рождения пациента.
+	if (!value) return null;
+
+	const parsed = new Date(value);
 	if (Number.isNaN(parsed.getTime())) return null;
 	return parsed.toLocaleDateString("ru-RU", {
 		day: "2-digit",

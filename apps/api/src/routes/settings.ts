@@ -1,4 +1,5 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { getRequestIdentity } from "../security/identity.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -189,12 +190,26 @@ async function requireSettingsAccess(request: FastifyRequest, reply: FastifyRepl
     }
   }
 
+  // Организация запроса: сначала подписанный токен. Раньше здесь всегда бралась
+  // ПЕРВАЯ строка таблицы organizations — при нескольких клиниках в одной базе
+  // это означало, что настройки одной клиники правились от имени другой.
+  const tokenOrganizationId = getRequestIdentity(request).organizationId;
+  if (tokenOrganizationId) return tokenOrganizationId;
+
   if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
     return "00000000-0000-0000-0000-000000000001";
   }
 
-  // Find default organization (MVP assumes single org)
-  const [org] = await db.select().from(schema.organizations).limit(1);
+  // Фолбэк для однокликовой установки MVP: единственная организация в базе.
+  const orgs = await db.select({ id: schema.organizations.id }).from(schema.organizations).limit(2);
+  if (orgs.length > 1) {
+    reply.code(401).send({
+      error: "AuthRequired",
+      message: "В базе несколько клиник — войдите в кабинет, чтобы изменить настройки."
+    });
+    return null;
+  }
+  const org = orgs[0];
   if (!org) {
     reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
     return null;

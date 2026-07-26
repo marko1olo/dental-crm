@@ -1,5 +1,6 @@
-import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, type ErrorInfo, type ReactNode, useEffect } from "react";
 import { GlobalToast } from "./components/GlobalToast";
+import { useThemeStore } from "./store/themeStore";
 
 const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
 
@@ -52,9 +53,34 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
   }
 }
 
+function ThemeController() {
+  const themeMode = useThemeStore((state) => state.themeMode);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const resolvedTheme = themeMode === "auto" ? (media.matches ? "dark" : "light") : themeMode;
+      const root = document.documentElement;
+      root.dataset.theme = resolvedTheme;
+      root.classList.toggle("dark", resolvedTheme === "dark");
+      root.classList.toggle("light", resolvedTheme === "light");
+      root.style.colorScheme = resolvedTheme === "light" ? "light" : "dark";
+    };
+
+    applyTheme();
+    if (themeMode !== "auto") return undefined;
+
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [themeMode]);
+
+  return null;
+}
+
 export function AppShell() {
   return (
     <AppShellErrorBoundary>
+      <ThemeController />
       <Suspense
         fallback={
           <main className="boot-state" aria-busy="true">

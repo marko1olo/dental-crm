@@ -102,11 +102,25 @@ function parseJsonSafe<T>(value: string, fallback: T): T {
 	}
 }
 
+
+/** Точная проверка пути вебхука (без учёта query-строки). */
+function isWebhookPath(url: string): boolean {
+	const pathname = (url.split("?")[0] ?? "").replace(/\/+$/, "");
+	return pathname.endsWith("/webhook");
+}
+
 export async function registerWhatsappRoutes(
 	app: FastifyInstance,
 ): Promise<void> {
 	app.addHook("preHandler", async (request, reply) => {
-		if (request.url.includes("/webhook")) return;
+		// БЫЛО: `if (request.url.includes("/webhook")) return;` отключало
+		// авторизацию для ЛЮБОГО URL, содержащего "/webhook" — например
+		// /api/whatsapp/settings?x=/webhook. Теперь путь сверяется точно.
+		// Сами маршруты вебхука аутентифицируются механизмом Meta:
+		// GET — handshake hub.verify_token, POST — HMAC-подпись x-hub-signature-256
+		// (см. isValidWhatsappSignature ниже). Общий секрет здесь применять нельзя:
+		// Meta не умеет отправлять произвольные заголовки.
+		if (isWebhookPath(request.url)) return;
 		const allowed = await requireNonDoctorAccess(request, reply);
 		if (!allowed) {
 			return reply;

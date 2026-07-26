@@ -1398,6 +1398,42 @@ export const toothStates = pgTable("tooth_states", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * История изменений состояния зуба (только добавление, без перезаписи).
+ *
+ * ЗАЧЕМ: таблица tooth_states хранит РОВНО ОДНУ строку на зуб, а обновление
+ * выполняется как delete + insert. Из-за этого история терялась полностью:
+ * зуб 36 проходил путь «кариес → пломба (январь) → пульпит → коронка (август)»,
+ * а во вкладке «История зуба» врач видел одну строку «Статус изменен на: Crown»
+ * с автором «System». Январская пломба исчезала из карты, и ни одно изменение
+ * нельзя было связать с конкретным врачом — при разборе жалобы это критично.
+ *
+ * Записи сюда добавляются в той же транзакции, что и смена состояния.
+ */
+export const toothStateHistory = pgTable("tooth_state_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  toothNumber: integer("tooth_number").notNull(),
+  /** Состояние до изменения; null — если зуб фиксируется впервые. */
+  previousState: text("previous_state"),
+  newState: text("new_state").notNull(),
+  previousSurfaces: jsonb("previous_surfaces"),
+  newSurfaces: jsonb("new_surfaces"),
+  /** Кто внёс изменение. Раньше в истории всегда значился «System». */
+  changedByUserId: uuid("changed_by_user_id"),
+  /** В рамках какого приёма изменено, если он известен. */
+  visitId: uuid("visit_id"),
+  reason: text("reason"),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  patientToothIdx: index("idx_tooth_state_history_patient_tooth").on(
+    table.patientId,
+    table.toothNumber,
+    table.changedAt
+  ),
+}));
+
 // insurance contracts (DMS / voluntary health insurance)
 export const insuranceContracts = pgTable("insurance_contracts", {
   id: uuid("id").primaryKey().defaultRandom(),

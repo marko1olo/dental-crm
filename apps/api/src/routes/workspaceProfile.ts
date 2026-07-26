@@ -10,11 +10,17 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
 
-function resolveOrganizationId(req: FastifyRequest): string {
-  const headerId = req.headers["x-organization-id"];
-  if (headerId && typeof headerId === "string") return headerId;
-  return "00000000-0000-0000-0000-000000000001";
+/**
+ * БЫЛО: организация бралась из заголовка x-organization-id без всякой проверки,
+ * иначе подставлялся жёстко зашитый UUID. Любой анонимный запрос мог прочитать и
+ * ПЕРЕЗАПИСАТЬ настройки рабочего пространства любой клиники, а POST /preset/:name
+ * ещё и засеивал/затирал демо-данные. Теперь организация только из подписанного
+ * токена; при его отсутствии обработчик обязан вернуть 401.
+ */
+function resolveOrganizationId(req: FastifyRequest): string | null {
+  return getRequestIdentity(req).organizationId;
 }
 
 // ————————————————————————————————————————————————————————————————————————————
