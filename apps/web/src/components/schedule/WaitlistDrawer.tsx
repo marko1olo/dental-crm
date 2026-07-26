@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
+import { EmptyState } from "../EmptyState";
 
 interface WaitlistItem {
 	id: string;
@@ -334,9 +335,13 @@ export function WaitlistDrawer(props: Props) {
 								Загрузка...
 							</div>
 						) : items.length === 0 ? (
-							<div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm border border-dashed border-slate-200 dark:border-slate-700/80 rounded-xl">
-								Очередь ожидания пуста
-							</div>
+							<EmptyState
+								icon={<Calendar size={24} />}
+								title="Очередь ожидания пуста"
+								description="Добавьте пациентов в лист ожидания с помощью формы выше."
+								glass={false}
+								style={{ padding: "20px 16px" }}
+							/>
 						) : (
 							<div className="space-y-3">
 								{items.map((item) => (
