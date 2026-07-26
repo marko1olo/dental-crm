@@ -133,7 +133,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
   };
 
   return (
-    <section className="settings-zone marketing-zone panel" style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px" }} id="marketing" aria-label="Маркетинг/SEO" data-testid="marketing-view">
+    <section className="settings-zone marketing-zone panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" id="marketing" aria-label="Маркетинг/SEO" data-testid="marketing-view">
       <div className="panel-heading settings-heading mb-4">
         <h2 title="Маркетинг и привлечение: работа с отзывами на геосервисах, продвижение и воронка сарафанного радио">Маркетинг / SEO</h2>
         <span className="status-pill status-confirmed">
@@ -144,41 +144,41 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
       {/* STATS STRIP */}
       <div className="marketing-stats-strip" aria-label="Рейтинги клиники">
         <article className="marketing-stat-card">
-          <MapPin aria-hidden="true" style={{ color: "#e63946" }} />
+          <MapPin aria-hidden="true" className="text-[var(--danger,#e63946)]" />
           <div>
             <p className="eyebrow">Яндекс.Карты</p>
-            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <input type="number" step="0.1" value={stats.yandex.rating || ''} onChange={e => updateStat('yandex', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
-              <input type="number" value={stats.yandex.reviews || ''} onChange={e => updateStat('yandex', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
+            <div className="marketing-rating flex gap-2 mt-1">
+              <input type="number" step="0.1" value={stats.yandex.rating || ''} onChange={e => updateStat('yandex', 'rating', e.target.value)} placeholder="Оценка" className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
+              <input type="number" value={stats.yandex.reviews || ''} onChange={e => updateStat('yandex', 'reviews', e.target.value)} placeholder="Отзывов" className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
             </div>
           </div>
         </article>
         <article className="marketing-stat-card">
-          <Globe aria-hidden="true" style={{ color: "#2196f3" }} />
+          <Globe aria-hidden="true" className="text-[var(--brand-500,#2196f3)]" />
           <div>
             <p className="eyebrow">2ГИС</p>
-            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <input type="number" step="0.1" value={stats.gis2.rating || ''} onChange={e => updateStat('gis2', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
-              <input type="number" value={stats.gis2.reviews || ''} onChange={e => updateStat('gis2', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
+            <div className="marketing-rating flex gap-2 mt-1">
+              <input type="number" step="0.1" value={stats.gis2.rating || ''} onChange={e => updateStat('gis2', 'rating', e.target.value)} placeholder="Оценка" className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
+              <input type="number" value={stats.gis2.reviews || ''} onChange={e => updateStat('gis2', 'reviews', e.target.value)} placeholder="Отзывов" className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
             </div>
           </div>
         </article>
         <article className="marketing-stat-card">
-          <Search aria-hidden="true" style={{ color: "#0f766e" }} />
+          <Search aria-hidden="true" className="text-[var(--teal-500,#0f766e)]" />
           <div>
             <p className="eyebrow">Google</p>
-            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <input type="number" step="0.1" value={stats.google.rating || ''} onChange={e => updateStat('google', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
-              <input type="number" value={stats.google.reviews || ''} onChange={e => updateStat('google', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
+            <div className="marketing-rating flex gap-2 mt-1">
+              <input type="number" step="0.1" value={stats.google.rating || ''} onChange={e => updateStat('google', 'rating', e.target.value)} placeholder="Оценка" className="w-16 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
+              <input type="number" value={stats.google.reviews || ''} onChange={e => updateStat('google', 'reviews', e.target.value)} placeholder="Отзывов" className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]" />
             </div>
           </div>
         </article>
-        <article className="marketing-stat-card" style={{ gridColumn: "1 / -1" }}>
-          <TrendingUp aria-hidden="true" style={{ color: "#0f766e" }} />
+        <article className="marketing-stat-card col-span-full">
+          <TrendingUp aria-hidden="true" className="text-[var(--teal-500,#0f766e)]" />
           <div>
             <p className="eyebrow">Позиция в поиске</p>
-            <strong style={{ fontSize: 18 }}>Топ-3 по "стоматология"</strong>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <strong className="text-lg font-bold text-[var(--ink)]">Топ-3 по "стоматология"</strong>
+            <p className="text-xs text-[var(--muted,#94a3b8)] mt-1">
               Укажите актуальные данные вручную для отслеживания динамики.
             </p>
           </div>
@@ -390,7 +390,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
         </div>
       ) : null}
 
-      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <FamilyRecommendationSourcesWidget />
         <LostPatientsFiltersWidget />
         <RebookingConversionRulesWidget />
