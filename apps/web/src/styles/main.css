@@ -12732,15 +12732,15 @@ html.dark .communication-side .panel-heading h3,
 
   .nav-item {
     flex: 0 0 auto;
-    min-width: 62px;
+    min-width: 60px;
     height: 52px;
     min-height: 52px;
     flex-direction: column;
-    font-size: 10px;
+    font-size: 10px !important;
     gap: 2px;
     justify-content: center;
-    line-height: 1.05;
-    padding: 4px 6px;
+    align-items: center;
+    padding: 3px 4px;
     text-align: center;
   }
 
@@ -12750,7 +12750,12 @@ html.dark .communication-side .panel-heading h3,
   }
 
   .nav-label {
-    display: block;
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.05 !important;
+    color: inherit !important;
+    max-width: 56px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -12764,9 +12769,20 @@ html.dark .communication-side .panel-heading h3,
     display: none;
   }
 
+  .app-shell,
+  .workspace,
+  .panel,
+  .work-grid,
+  .imaging-layout,
+  .patients-panel,
+  .finance-panel,
+  .visit-panel,
+  .schedule-panel {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+
   .workspace {
     max-width: 100vw;
-    padding: 16px 14px calc(76px + env(safe-area-inset-bottom));
     width: 100%;
   }
 
@@ -16376,6 +16392,29 @@ html.dark .clinic-profile-form-grid textarea,
   border-radius: 4px;
   margin-top: 4px;
   border-left: 3px solid var(--amber, #f59e0b);
+}
+
+[data-theme="dark"] .appointment-handoff-note,
+.dark .appointment-handoff-note,
+html.dark .appointment-handoff-note,
+body.dark-mode .appointment-handoff-note,
+[data-theme="dark"] .status-blocker-note,
+.dark .status-blocker-note,
+html.dark .status-blocker-note,
+body.dark-mode .status-blocker-note {
+  background: rgba(45, 26, 0, 0.75) !important;
+  color: #fde68a !important;
+  border-color: #b45309 !important;
+  border-left-color: #f59e0b !important;
+}
+
+[data-theme="dark"] .handoff-lock,
+.dark .handoff-lock,
+html.dark .handoff-lock,
+body.dark-mode .handoff-lock {
+  background: rgba(45, 26, 0, 0.75) !important;
+  color: #fde68a !important;
+  border-color: #b45309 !important;
 }
 
 .chip-assistant {

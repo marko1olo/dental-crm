@@ -488,7 +488,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                         setShowHints(false);
                       }
                     }}
-                    placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
+                    placeholder={typeof window !== "undefined" && (window.innerWidth <= 860 || 'ontouchstart' in window) ? "Диктуйте или введите текст приема..." : "Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"}
                     style={{ minHeight: '120px', width: '100%', resize: 'vertical' }}
                   />
                   
