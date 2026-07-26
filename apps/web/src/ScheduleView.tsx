@@ -314,7 +314,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               {sortedAppointments.length > 0 ? (
                 <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
               ) : (
-                <span className="status-pill status-cancelled">Нет записей</span>
+                <span className="status-pill status-empty">Нет записей</span>
               )}
               {activeScheduleFilterCount > 0 ? (
                 <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>

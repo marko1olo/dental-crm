@@ -10,7 +10,7 @@ interface DicomArchiveUploaderProps {
 export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<string>("Drag & Drop ZIP Archive or Folder here");
+  const [status, setStatus] = useState<string>("Перетащите ZIP-архив или папку со снимками сюда");
 
   const processFile = async (file: File): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -46,7 +46,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
   };
 
   const processZip = async (zipFile: File) => {
-    setStatus("Extracting ZIP in memory...");
+    setStatus("Распаковка ZIP-архива в память...");
     const buffer = new Uint8Array(await zipFile.arrayBuffer());
     
     return new Promise<void>((resolve, reject) => {
@@ -66,10 +66,10 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
         const processEntry = async (index: number) => {
           if (index >= entries.length) {
             if (imageIds.length > 0) {
-              setStatus(`Loaded ${imageIds.length} DICOM instances.`);
+              setStatus(`Загружено объектов DICOM: ${imageIds.length}`);
               onImagesLoaded(imageIds);
             } else {
-              setStatus("No DICOM files found in ZIP.");
+              setStatus("Файлы DICOM в ZIP-архиве не найдены.");
             }
             resolve();
             return;
@@ -80,7 +80,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
           processedFiles++;
           
           if (processedFiles % 10 === 0) {
-            setStatus(`Processing ZIP: ${processedFiles}/${totalFiles}`);
+            setStatus(`Обработка ZIP: ${processedFiles}/${totalFiles}`);
           }
 
           if (fileData && fileData.length > 132) {
@@ -132,7 +132,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
     const items = e.dataTransfer.items;
     let allFiles: File[] = [];
 
-    setStatus("Reading files from drop...");
+    setStatus("Чтение выбранных файлов...");
 
     if (items && items.length > 0) {
       for (let i = 0; i < items.length; i++) {
@@ -150,11 +150,11 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
     if (allFiles.length === 1 && firstFile && firstFile.name.toLowerCase().endsWith(".zip")) {
       await processZip(firstFile);
     } else {
-      setStatus(`Scanning ${allFiles.length} files...`);
+      setStatus(`Сканирование файлов: ${allFiles.length}...`);
       const validImageIds: string[] = [];
       
       for (let i = 0; i < allFiles.length; i++) {
-        if (i % 10 === 0) setStatus(`Scanning files: ${i}/${allFiles.length}`);
+        if (i % 10 === 0) setStatus(`Сканирование файлов: ${i}/${allFiles.length}`);
         const f = allFiles[i];
         if (f) {
             const imageId = await processFile(f);
@@ -163,10 +163,10 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
       }
 
       if (validImageIds.length > 0) {
-        setStatus(`Loaded ${validImageIds.length} DICOM instances.`);
+        setStatus(`Загружено объектов DICOM: ${validImageIds.length}`);
         onImagesLoaded(validImageIds);
       } else {
-        setStatus("No valid DICOM files found.");
+        setStatus("Подходящие файлы DICOM не найдены.");
       }
     }
 
@@ -180,7 +180,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
       onDrop={onDrop}
       onClick={() => document.getElementById("dicom-folder-input")?.click()}
       className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
-        isDragging ? "border-blue-500 bg-blue-500/10" : "border-neutral-700 bg-neutral-900 hover:bg-neutral-800"
+        isDragging ? "border-teal-500 bg-teal-500/10" : "border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-900 hover:bg-slate-100 dark:hover:bg-neutral-800"
       }`}
     >
       <input
@@ -189,15 +189,15 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
         webkitdirectory="true"
         directory="true"
         multiple
-        className="hidden"
+        style={{ display: "none" }}
         onChange={async (e) => {
           if (loading || !e.target.files) return;
           setLoading(true);
           const allFiles = Array.from(e.target.files);
-          setStatus(`Scanning ${allFiles.length} files...`);
+          setStatus(`Сканирование файлов: ${allFiles.length}...`);
           const validImageIds: string[] = [];
           for (let i = 0; i < allFiles.length; i++) {
-            if (i % 10 === 0) setStatus(`Scanning files: ${i}/${allFiles.length}`);
+            if (i % 10 === 0) setStatus(`Сканирование файлов: ${i}/${allFiles.length}`);
             const f = allFiles[i];
             if (f) {
                 const imageId = await processFile(f);
@@ -205,19 +205,20 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
             }
           }
           if (validImageIds.length > 0) {
-            setStatus(`Loaded ${validImageIds.length} DICOM instances.`);
+            setStatus(`Загружено объектов DICOM: ${validImageIds.length}`);
             onImagesLoaded(validImageIds);
           } else {
-            setStatus("No valid DICOM files found.");
+            setStatus("Подходящие файлы DICOM не найдены.");
           }
           setLoading(false);
           // reset input
           e.target.value = '';
         }}
       />
-      <div className="text-neutral-400 font-medium">{status} (Кликните или перетащите папку)</div>
-      {loading && <div className="mt-2 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
-      <div className="text-xs text-neutral-600 mt-2">Works completely locally. No server upload.</div>
+      <div className="text-slate-700 dark:text-neutral-300 font-medium">{status} (Кликните для выбора или перетащите папку)</div>
+      {loading && <div className="mt-2 w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
+      <div className="text-xs text-slate-500 dark:text-neutral-500 mt-2">Локальная обработка в браузере. Данные не передаются на сторонние сервера.</div>
     </div>
   );
 }
+

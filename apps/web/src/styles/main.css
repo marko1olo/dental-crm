@@ -9273,6 +9273,24 @@ body.dark-mode .onboarding-draft-strip span {
   color: #7d2c25;
 }
 
+.status-neutral,
+.status-empty {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+:root[data-theme="dark"] .status-neutral,
+:root[data-theme="dark"] .status-empty,
+[data-theme="dark"] .status-neutral,
+[data-theme="dark"] .status-empty,
+.dark .status-neutral,
+.dark .status-empty {
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+
 .search-box,
 .quick-create {
   align-items: center;

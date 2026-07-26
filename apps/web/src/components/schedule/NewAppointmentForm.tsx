@@ -156,10 +156,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </button>
         </div>
       </div>
-      <div className="smart-ai-booking mb-3 border border-sky-300 dark:border-sky-800 rounded-xl p-3 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-sm text-slate-900 dark:text-slate-100">
+      <div className="smart-ai-booking mb-3 border border-sky-300 dark:border-sky-800 rounded-xl p-3.5 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-sm text-slate-900 dark:text-slate-100">
         <div className="flex items-center gap-2">
-          <Bot size={18} className="text-sky-600 dark:text-sky-400" />
-          <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400">Умное бронирование голосом или текстом (AI)</h4>
+          <Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
+          <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">Умное бронирование голосом или текстом (AI)</h4>
         </div>
         <div className="relative flex-1">
           <input
@@ -218,7 +218,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             onClose={() => setShowSmartPreview(false)}
           />
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2 pt-1">
           <div className="flex gap-3 items-center">
             <button
               type="button"
@@ -236,9 +236,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </div>
           <div className="flex gap-2 items-center">
             {newAppointmentReadyToCreate ? (
-              <span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400">✓ Готово к созданию</span>
+              <span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs">✓ Готово к созданию</span>
             ) : (
-              <span className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400">Заполните поля</span>
+              <span className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs">Заполните поля</span>
             )}
             <button
               type="button"
@@ -246,9 +246,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
               aria-busy={newAppointmentSaveState === "saving" || undefined}
               aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
-              className="primary-button px-4 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center disabled:opacity-50 cursor-pointer"
+              className="primary-button px-3.5 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center text-xs font-semibold disabled:opacity-50 cursor-pointer"
             >
-              <Plus size={16} aria-hidden="true" className="mr-1.5" /> Создать запись
+              <Plus size={15} aria-hidden="true" className="mr-1" /> Создать запись
             </button>
           </div>
         </div>
