@@ -39,13 +39,17 @@ type Knd1151156XmlPreflightIssue = {
 	message: string;
 };
 
-function xml(value: string | number | null | undefined): string {
+export function escapeXml(value: string | number | null | undefined): string {
 	return String(value ?? "")
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&apos;");
+}
+
+function xml(value: string | number | null | undefined): string {
+	return escapeXml(value);
 }
 
 function countOccurrences(value: string, needle: string): number {

@@ -398,8 +398,14 @@ export function paymentRefundCorrectionSelectionErrorForDocument(
 			return "Выбранный исходный платеж для возврата или коррекции относится к другому пациенту.";
 		if (input.visitId && payment.visitId !== input.visitId)
 			return "Выбранный исходный платеж для возврата или коррекции относится к другому визиту.";
+		if (payment.status === "refunded") {
+			return "По выбранному платежу/чеку уже выполнен полный возврат средств. Повторный возврат заблокирован.";
+		}
 		if (payment.status !== "paid" || payment.amountRub <= 0) {
 			return "Возврат или коррекцию можно оформить только по проведенному положительному платежу.";
+		}
+		if (payload.amountRub > payment.amountRub) {
+			return `Сумма возврата (${payload.amountRub} руб.) не может превышать сумму исходного чека (${payment.amountRub} руб.).`;
 		}
 		if (!payment.fiscalReceiptNumber?.trim()) {
 			return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";
