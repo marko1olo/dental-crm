@@ -1,5 +1,6 @@
 import { CheckCircle2, FileText } from "lucide-react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
+import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
 import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
@@ -1198,9 +1199,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                       })}
                     </div>
                   ) : (
-                    <p className="tax-payment-selection-empty" style={{ margin: "8px 0", fontSize: "13px", color: "var(--muted)" }}>
-                      Нет проведенных чеков за выбранный год и плательщика. Сначала запишите оплату с фискальным чеком и данными плательщика.
-                    </p>
+                    <EmptyState
+                      title="Нет проведенных чеков"
+                      description="Нет проведенных чеков за выбранный год и плательщика. Сначала запишите оплату с фискальным чеком и данными плательщика."
+                      className="my-3 py-6"
+                    />
                   )}
                 </section>
               ) : null}
@@ -1830,9 +1833,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                         })}
                       </div>
                     ) : (
-                      <p className="tax-payment-selection-empty" style={{ margin: "8px 0", fontSize: "13px", color: "var(--muted)" }}>
-                        Нет оплаченных платежей по текущему визиту. Сначала сохраните оплату с фискальным чеком и данными плательщика.
-                      </p>
+                      <EmptyState
+                        title="Нет оплаченных платежей"
+                        description="Нет оплаченных платежей по текущему визиту. Сначала сохраните оплату с фискальным чеком и данными плательщика."
+                        className="my-3 py-6"
+                      />
                     )}
                   </section>
                   <div className="document-payload-row">
@@ -4201,9 +4206,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Отказ от вмешательства</h3>
                     <p>Что предложено, почему нужно, какие риски объяснены и когда срочно обращаться.</p>
                   </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+  <details className="document-manual-override bg-[var(--surface-100,#f8fafc)] p-3 rounded-lg border border-[var(--line,#e2e8f0)] mt-4">
+    <summary className="cursor-pointer font-semibold text-[var(--brand-700,#0f766e)] select-none hover:opacity-80 transition-opacity">✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content mt-4 flex flex-col gap-4">
                   <label>
                     Предложенное вмешательство
                     <input
@@ -4221,51 +4226,51 @@ export function DocumentsView(props: DocumentsViewProps) {
                       rows={2}
                     />
                   </label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Причина отказа со слов пациента</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Причина отказа со слов пациента</span>
                       <SmartMicrophoneButton context="general" onResult={(t) => setRefusalPatientReason(refusalPatientReason ? `${refusalPatientReason}, ${t}` : t)} />
                     </div>
-                    <textarea value={refusalPatientReason} onChange={(event) => setRefusalPatientReason(event.target.value)} rows={2} style={{ marginTop: '0' }} />
-                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                    <textarea value={refusalPatientReason} onChange={(event) => setRefusalPatientReason(event.target.value)} rows={2} className="mt-0" />
+                    <div className="quick-chips-row flex-wrap">
                       {REFUSAL_REASON_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalPatientReason(refusalPatientReason.trim() ? `${refusalPatientReason.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalPatientReason(refusalPatientReason.trim() ? `${refusalPatientReason.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
                       ))}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Разъясненные риски</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Разъясненные риски</span>
                       <SmartMicrophoneButton context="general" onResult={(t) => setRefusalExplainedRisks(refusalExplainedRisks ? `${refusalExplainedRisks}, ${t}` : t)} />
                     </div>
-                    <textarea value={refusalExplainedRisks} onChange={(event) => setRefusalExplainedRisks(event.target.value)} rows={3} style={{ marginTop: '0' }} />
-                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                    <textarea value={refusalExplainedRisks} onChange={(event) => setRefusalExplainedRisks(event.target.value)} rows={3} className="mt-0" />
+                    <div className="quick-chips-row flex-wrap">
                       {REFUSAL_RISK_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalExplainedRisks(refusalExplainedRisks.trim() ? `${refusalExplainedRisks.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalExplainedRisks(refusalExplainedRisks.trim() ? `${refusalExplainedRisks.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
                       ))}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Предложенные альтернативы</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Предложенные альтернативы</span>
                       <SmartMicrophoneButton context="general" onResult={(t) => setRefusalAlternatives(refusalAlternatives ? `${refusalAlternatives}, ${t}` : t)} />
                     </div>
-                    <textarea value={refusalAlternatives} onChange={(event) => setRefusalAlternatives(event.target.value)} rows={3} style={{ marginTop: '0' }} />
-                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                    <textarea value={refusalAlternatives} onChange={(event) => setRefusalAlternatives(event.target.value)} rows={3} className="mt-0" />
+                    <div className="quick-chips-row flex-wrap">
                       {REFUSAL_ALT_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalAlternatives(refusalAlternatives.trim() ? `${refusalAlternatives.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalAlternatives(refusalAlternatives.trim() ? `${refusalAlternatives.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
                       ))}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Тревожные признаки</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Тревожные признаки</span>
                       <SmartMicrophoneButton context="general" onResult={(t) => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns ? `${refusalUrgentWarningSigns}, ${t}` : t)} />
                     </div>
-                    <textarea value={refusalUrgentWarningSigns} onChange={(event) => setRefusalUrgentWarningSigns(event.target.value)} rows={3} style={{ marginTop: '0' }} />
-                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                    <textarea value={refusalUrgentWarningSigns} onChange={(event) => setRefusalUrgentWarningSigns(event.target.value)} rows={3} className="mt-0" />
+                    <div className="quick-chips-row flex-wrap">
                       {REFUSAL_WARNING_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns.trim() ? `${refusalUrgentWarningSigns.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns.trim() ? `${refusalUrgentWarningSigns.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
                       ))}
                     </div>
                   </div>
