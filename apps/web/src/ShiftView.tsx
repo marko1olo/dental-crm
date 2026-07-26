@@ -1,4 +1,5 @@
 import { PatientAvatar } from './components/PatientAvatar';
+import { EmptyState } from './components/EmptyState';
 import {
   AlertTriangle,
   Building2,
@@ -100,15 +101,16 @@ export function ShiftView({
                     </div>
                   </div>
                   <div className="hero-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    <button className="primary-button" type="button" onClick={() => { window.location.hash = "visit"; }}>
+                    <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "visit"; }}>
                       <ClipboardCheck aria-hidden="true" /> Открыть прием
                     </button>
-                    <button className="secondary-button" type="button" onClick={() => { window.location.hash = "imaging"; }}>
+                    <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "imaging"; }}>
                       <ImageIcon aria-hidden="true" /> Снимки
                     </button>
                     <button
-                      className="secondary-button"
+                      className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
                       type="button"
+                      aria-label="Позвонить пациенту"
                       aria-describedby={!activePatientHasCallablePhone ? "shift-call-guidance" : undefined}
                       aria-disabled={!activePatientHasCallablePhone}
                       title={activePatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
@@ -144,9 +146,13 @@ export function ShiftView({
                   ) : null}
                 </>
               ) : (
-                <div style={{ padding: "24px 0", color: "var(--muted)", fontSize: "14px" }}>
-                  Нет активного приема. Выберите пациента или запланируйте запись в расписании.
-                </div>
+                <EmptyState
+                  icon={<ClipboardCheck size={28} />}
+                  title="Нет активного приема"
+                  description="Выберите пациента или запланируйте запись в расписании."
+                  glass={false}
+                  style={{ padding: "20px 16px" }}
+                />
               )}
             </div>
 
@@ -182,7 +188,10 @@ export function ShiftView({
                     return (
                       <div 
                         key={app.id} 
-                        className={`today-schedule-item ${isCurrent ? "current-active" : ""}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Прием: ${patient ? patient.fullName : "Неизвестный пациент"}, ${timeStart} – ${timeEnd}`}
+                        className={`today-schedule-item focus:ring-2 focus:ring-teal-600 focus:outline-none ${isCurrent ? "current-active" : ""}`}
                         style={{ 
                           display: "flex", 
                           justifyContent: "space-between", 
@@ -198,6 +207,13 @@ export function ShiftView({
                         }}
                         onClick={() => {
                           if (patient) {
+                            setSelectedPatientId(patient.id);
+                            window.location.hash = "visit";
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if ((e.key === "Enter" || e.key === " ") && patient) {
+                            e.preventDefault();
                             setSelectedPatientId(patient.id);
                             window.location.hash = "visit";
                           }
@@ -222,9 +238,13 @@ export function ShiftView({
                   })}
                 </div>
               ) : (
-                <p className="today-schedule-empty" style={{ margin: "16px 0 0", color: "var(--muted)", fontSize: "13px" }}>
-                  Сегодня у вас нет запланированных приемов.
-                </p>
+                <EmptyState
+                  icon={<Calendar size={24} />}
+                  title="Приемов нет"
+                  description="Сегодня у вас нет запланированных приемов."
+                  glass={false}
+                  style={{ padding: "20px 16px" }}
+                />
               )}
             </div>
         </section>
@@ -432,35 +452,35 @@ export function PatientCockpit({
           </div>
 
           <div className="patient-feature-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
-            <article className="clickable-card" onClick={() => { window.location.hash = "visit"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть ЭМК и историю" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "visit"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "visit"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
               <History aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>ЭМК / История</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>Приёмы · диагнозы · зубная карта</p>
               </div>
             </article>
-            <article className="clickable-card" onClick={() => { window.location.hash = "documents"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть документы" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "documents"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "documents"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
               <FileText aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Документы</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
               </div>
             </article>
-            <article className="clickable-card" onClick={() => { window.location.hash = "finance"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть оплаты" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "finance"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "finance"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
               <CreditCard aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Оплаты</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{money(dashboard?.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard?.billingSummary?.totalDueRub ?? 0)}</p>
               </div>
             </article>
-            <article className="clickable-card" onClick={() => { window.location.hash = "communications"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть связь и задачи" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "communications"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "communications"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
               <MessageSquare aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Связь</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
               </div>
             </article>
-            <article className="clickable-card" onClick={() => { window.location.hash = "imaging"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть снимки пациента" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "imaging"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "imaging"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
               <ImageIcon aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Снимки</h3>
