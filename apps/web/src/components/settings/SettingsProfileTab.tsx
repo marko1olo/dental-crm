@@ -52,6 +52,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showOldPw, setShowOldPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   // PIN change
@@ -208,7 +209,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   value={oldPassword}
                   onChange={e => setOldPassword(e.target.value)}
                   placeholder="••••••••"
-                  disabled={pwLoading}
+                  disabled={passwordLoading}
                   className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
                 <button type="button" onClick={() => setShowOldPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer flex items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]">
@@ -224,7 +225,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Мин. 8 символов"
-                  disabled={pwLoading}
+                  disabled={passwordLoading}
                   className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
                 <button 
@@ -253,7 +254,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Повторите новый пароль"
-                  disabled={pwLoading}
+                  disabled={passwordLoading}
                   className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
                 <button 
@@ -270,9 +271,9 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
               <button 
                 className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]" 
                 type="submit" 
-                disabled={pwLoading}
+                disabled={passwordLoading}
               >
-                <KeyRound size={15} /> {pwLoading ? "Сохранение..." : "Обновить пароль"}
+                <KeyRound size={15} /> {passwordLoading ? "Сохранение..." : "Обновить пароль"}
               </button>
             </div>
           </form>
@@ -282,7 +283,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
         <section className="settings-section">
           <h3>Защитный PIN-код</h3>
           <p className="section-desc">Для быстрого разблокирования экрана при отсутствии на рабочем месте.</p>
-          <form className="settings-form-grid" onSubmit={handleSavePin}>
+          <form className="settings-form-grid" onSubmit={handleUpdatePin}>
             <label className="form-span-1">
               Новый PIN (4 цифры)
               <input
