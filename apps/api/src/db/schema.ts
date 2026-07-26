@@ -24,6 +24,7 @@ import type {
   ImagingViewerAnnotation,
   ImagingViewerSessionState,
   PatientAdministrativeProfile,
+  StaffRole,
   TaxXmlSnapshot,
   TaxXmlSourceSnapshot
 } from "@dental/shared";
@@ -403,7 +404,7 @@ export const clinicalRules = pgTable("clinical_rules", {
   specialty: dentalSpecialty("specialty").notNull().default("universal"),
   action: clinicalRuleAction("action").notNull(),
   severity: clinicalRuleSeverity("severity").notNull().default("warning"),
-  ownerRole: text("owner_role").notNull(),
+  ownerRole: text("owner_role").$type<StaffRole>().notNull(),
   triggerServiceIdsJson: text("trigger_service_ids_json").notNull().default("[]"),
   requiredServiceIdsJson: text("required_service_ids_json").notNull().default("[]"),
   requiresCompletedServiceIdsJson: text("requires_completed_service_ids_json").notNull().default("[]"),

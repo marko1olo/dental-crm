@@ -1,5 +1,7 @@
 import { generatePanoramicImage, type Point2D } from "./mprMath";
 
+declare function postMessage(message: unknown, transfer?: Transferable[]): void;
+
 self.onmessage = (e: MessageEvent) => {
   const {
     scalarData, // Float32Array | Uint16Array (ideally from a SharedArrayBuffer)
@@ -30,11 +32,13 @@ self.onmessage = (e: MessageEvent) => {
 
     // Zero-copy: transfer the pixel buffer's ownership to the main thread instead
     // of structured-cloning a potentially multi-MB Float32Array across the boundary.
-    self.postMessage(
+    postMessage(
       { success: true, width: result.width, height: result.height, pixels: result.pixels },
-      { transfer: [result.pixels.buffer] }
+      [result.pixels.buffer]
     );
-  } catch (error: any) {
-    self.postMessage({ success: false, error: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    self.postMessage({ success: false, error: message });
   }
 };
+

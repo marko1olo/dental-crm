@@ -167,54 +167,73 @@ export function generatePanoramicImage(
   const width = splinePoints.length;
   const height = Math.abs(Math.floor((zEndWorld - zStartWorld) / zStepWorld));
   const pixels = new Float32Array(width * height);
-  
+
   const normals = thickness > 0 ? calculateNormals(splinePoints) : [];
   // Calculate how many steps we take along the normal (e.g. 0.5mm step)
   const thicknessSteps = Math.max(1, Math.floor(thickness / 0.5));
   const stepSizeNormal = thickness > 0 ? thickness / thicknessSteps : 0;
 
+  // --- Hoist loop-invariant world->index transform out of the per-pixel hot loop. ---
+  // worldToIndex() allocated 6 vec3 (Float32Array(3)) per call and recomputed the
+  // direction basis every pixel, even though origin/direction/spacing are constant
+  // for the whole image. For a WxH panoramic with T thickness steps that is
+  // O(W*H*T) allocations feeding the GC. Here we read the basis once as scalars and
+  // fold spacing division into the dot products so the inner loop is allocation-free.
+  const ox = origin[0], oy = origin[1], oz = origin[2];
+  const invSx = 1 / spacing[0], invSy = 1 / spacing[1], invSz = 1 / spacing[2];
+  const dx0 = direction[0] * invSx, dx1 = direction[1] * invSx, dx2 = direction[2] * invSx;
+  const dy0 = direction[4] * invSy, dy1 = direction[5] * invSy, dy2 = direction[6] * invSy;
+  const dz0 = direction[8] * invSz, dz1 = direction[9] * invSz, dz2 = direction[10] * invSz;
+
+  const zSign = Math.sign(zEndWorld - zStartWorld);
+  const halfThickness = thickness / 2;
+
   for (let y = 0; y < height; y++) {
-    const currentZ = zStartWorld + y * zStepWorld * Math.sign(zEndWorld - zStartWorld);
-    
+    const currentZ = zStartWorld + y * zStepWorld * zSign;
+    const rowOffset = y * width;
+    // Translated Z is constant across the row.
+    const tz = currentZ - oz;
+
     for (let x = 0; x < width; x++) {
       const point = splinePoints[x]!;
-      
+
       if (thickness === 0) {
-        // Single Ray
-        const worldPos = vec3.fromValues(point.x, point.y, currentZ);
-        const indexPos = worldToIndex(worldPos, origin, direction, spacing);
-        const value = trilinearInterpolate(scalarData, dimensions, indexPos[0], indexPos[1], indexPos[2]);
-        pixels[y * width + x] = value;
+        // Single Ray — inline allocation-free world->index projection.
+        const tx = point.x - ox;
+        const ty = point.y - oy;
+        const ix = tx * dx0 + ty * dx1 + tz * dx2;
+        const iy = tx * dy0 + ty * dy1 + tz * dy2;
+        const iz = tx * dz0 + ty * dz1 + tz * dz2;
+        pixels[rowOffset + x] = trilinearInterpolate(scalarData, dimensions, ix, iy, iz);
       } else {
-        // Thick Slab Raycasting along the normal
+        // Thick Slab Raycasting along the normal.
         const normal = normals[x]!;
+        const nx = normal.x, ny = normal.y;
+        const px = point.x, py = point.y;
         let accumulator = blendMode === "mip" ? -Infinity : 0;
-        
-        // Sample from -thickness/2 to +thickness/2
-        const halfThickness = thickness / 2;
-        
+
         for (let s = 0; s <= thicknessSteps; s++) {
           const offset = -halfThickness + s * stepSizeNormal;
-          
-          const sampleX = point.x + normal.x * offset;
-          const sampleY = point.y + normal.y * offset;
-          
-          const worldPos = vec3.fromValues(sampleX, sampleY, currentZ);
-          const indexPos = worldToIndex(worldPos, origin, direction, spacing);
-          const value = trilinearInterpolate(scalarData, dimensions, indexPos[0], indexPos[1], indexPos[2]);
-          
+
+          const tx = (px + nx * offset) - ox;
+          const ty = (py + ny * offset) - oy;
+          const ix = tx * dx0 + ty * dx1 + tz * dx2;
+          const iy = tx * dy0 + ty * dy1 + tz * dy2;
+          const iz = tx * dz0 + ty * dz1 + tz * dz2;
+          const value = trilinearInterpolate(scalarData, dimensions, ix, iy, iz);
+
           if (blendMode === "mip") {
             if (value > accumulator) accumulator = value;
           } else {
             accumulator += value;
           }
         }
-        
+
         if (blendMode === "average") {
           accumulator = accumulator / (thicknessSteps + 1);
         }
-        
-        pixels[y * width + x] = accumulator;
+
+        pixels[rowOffset + x] = accumulator;
       }
     }
   }
@@ -226,25 +245,31 @@ export function generatePanoramicImage(
  * Calculates the shortest distance from a 3D point (implant apex) to a line segment (nerve segment).
  */
 export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
-  const l2 = vec3.squaredDistance(v, w);
-  if (l2 === 0) return vec3.distance(p, v); // v == w case
-  
-  const vw = vec3.create();
-  vec3.subtract(vw, w, v);
-  
-  const pv = vec3.create();
-  vec3.subtract(pv, p, v);
-  
-  // Consider the line extending the segment, parameterized as v + t (w - v).
-  // We find projection of point p onto the line.
-  let t = vec3.dot(pv, vw) / l2;
-  t = Math.max(0, Math.min(1, t)); // clamp to [0, 1] segment bounds
-  
-  const projection = vec3.create();
-  vec3.scale(vw, vw, t);
-  vec3.add(projection, v, vw);
-  
-  return vec3.distance(p, projection);
+  const vx = v[0]!, vy = v[1]!, vz = v[2]!;
+  const wx = w[0]!, wy = w[1]!, wz = w[2]!;
+  const px = p[0]!, py = p[1]!, pz = p[2]!;
+
+  const vwx = wx - vx, vwy = wy - vy, vwz = wz - vz;
+  const l2 = vwx * vwx + vwy * vwy + vwz * vwz;
+
+  if (l2 === 0) {
+    const dx = px - vx, dy = py - vy, dz = pz - vz;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+
+  const pvx = px - vx, pvy = py - vy, pvz = pz - vz;
+  let t = (pvx * vwx + pvy * vwy + pvz * vwz) / l2;
+  t = Math.max(0, Math.min(1, t));
+
+  const projX = vx + t * vwx;
+  const projY = vy + t * vwy;
+  const projZ = vz + t * vwz;
+
+  const dx = px - projX;
+  const dy = py - projY;
+  const dz = pz - projZ;
+
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 /**
