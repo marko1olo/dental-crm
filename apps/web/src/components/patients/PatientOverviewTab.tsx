@@ -175,7 +175,7 @@ export function PatientOverviewTab() {
 						value={patientCoreDraft?.notes ?? ""}
 						onChange={(e) => updatePatientCoreDraft("notes", e.target.value)}
 						placeholder="важное для связи, приема и документов"
-						className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm resize-y bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none"
+						className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm resize-y bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent transition-all"
 					/>
 					<div className="flex flex-wrap gap-1.5 mt-1">
 						{[
@@ -200,7 +200,7 @@ export function PatientOverviewTab() {
 										: chipLower;
 									updatePatientCoreDraft("notes", newVal);
 								}}
-								className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full cursor-pointer text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+								className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full cursor-pointer text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 							>
 								+ {chip}
 							</button>
@@ -210,7 +210,7 @@ export function PatientOverviewTab() {
 			</div>
 			<div className="patient-admin-actions patients-mt-16-flex">
 				<button
-					className="primary-button"
+					className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 					type="button"
 					onClick={savePatientCore}
 					aria-busy={patientCoreSaveState === "saving" || undefined}
