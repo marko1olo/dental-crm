@@ -208,8 +208,6 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   value={oldPassword}
                   onChange={e => setOldPassword(e.target.value)}
                   placeholder="••••••••"
-                  disabled={passwordLoading}
-                  style={{ paddingRight: 44, width: "100%" }}
                   disabled={pwLoading}
                   className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
@@ -278,10 +276,10 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
               </button>
             </div>
           </form>
-        </div>
+        </section>
 
         {/* PIN Security Block */}
-        <div className="settings-section">
+        <section className="settings-section">
           <h3>Защитный PIN-код</h3>
           <p className="section-desc">Для быстрого разблокирования экрана при отсутствии на рабочем месте.</p>
           <form className="settings-form-grid" onSubmit={handleSavePin}>
