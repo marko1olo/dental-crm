@@ -1,44 +1,46 @@
-import { generatePanoramicImage, type Point2D } from "./mprMath";
+/// <reference lib="webworker" />
+import {
+  generatePanoramicImage,
+  type PanoramicWorkerRequest,
+  type PanoramicWorkerResponse,
+} from "./mprMath";
 
-declare function postMessage(message: unknown, transfer?: Transferable[]): void;
+// Scope the worker global explicitly instead of casting `postMessage as any` or
+// re-declaring an ambient `postMessage`. `DedicatedWorkerGlobalScope.postMessage`
+// carries the (message, transfer[]) overload we need for zero-copy transfer,
+// which the ambient `Window.postMessage` type does not.
+const ctx = self as DedicatedWorkerGlobalScope;
 
-self.onmessage = (e: MessageEvent) => {
-  const {
-    scalarData, // Float32Array | Uint16Array (ideally from a SharedArrayBuffer)
-    dimensions,
-    origin,
-    direction,
-    spacing,
-    splinePoints,
-    zStartWorld,
-    zEndWorld,
-    zStepWorld
-  } = e.data;
+ctx.onmessage = (e: MessageEvent<PanoramicWorkerRequest>) => {
+  const req = e.data;
 
   try {
     const result = generatePanoramicImage(
-      scalarData,
-      dimensions,
-      origin,
-      direction,
-      spacing,
-      splinePoints as Point2D[],
-      zStartWorld,
-      zEndWorld,
-      zStepWorld,
-      e.data.thickness || 0,
-      e.data.blendMode || "mip"
+      req.scalarData,
+      req.dimensions,
+      req.origin,
+      req.direction,
+      req.spacing,
+      req.splinePoints,
+      req.zStartWorld,
+      req.zEndWorld,
+      req.zStepWorld,
+      req.thickness,
+      req.blendMode,
     );
 
     // Zero-copy: transfer the pixel buffer's ownership to the main thread instead
     // of structured-cloning a potentially multi-MB Float32Array across the boundary.
-    postMessage(
-      { success: true, width: result.width, height: result.height, pixels: result.pixels },
-      [result.pixels.buffer]
-    );
+    const ok: PanoramicWorkerResponse = {
+      success: true,
+      width: result.width,
+      height: result.height,
+      pixels: result.pixels,
+    };
+    ctx.postMessage(ok, [result.pixels.buffer]);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    self.postMessage({ success: false, error: message });
+    const fail: PanoramicWorkerResponse = { success: false, error: message };
+    ctx.postMessage(fail);
   }
 };
-

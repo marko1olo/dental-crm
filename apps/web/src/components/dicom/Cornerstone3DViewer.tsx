@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import { PanoramicRendererWindow } from "./PanoramicRendererWindow";
+import { PanoramicRendererWindow, type PanoramicVolumeInput } from "./PanoramicRendererWindow";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import dicomParser from "dicom-parser";
 import { vec3, mat4 } from "gl-matrix";
-import { calculateImplantBoneDensity, distancePointToSpline } from "../../mprMath";
+import {
+  calculateImplantBoneDensity,
+  distancePointToSpline,
+  mat3ToMat4Direction,
+  toTransferableScalarData,
+  type Point2D,
+} from "../../mprMath";
 
 export interface ImplantData {
   id: string;
@@ -29,7 +35,8 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [volumeId, setVolumeId] = useState<string | null>(null);
   const [showPanorex, setShowPanorex] = useState(false);
-  const [splinePoints, setSplinePoints] = useState<any[]>([]);
+  const [splinePoints, setSplinePoints] = useState<Point2D[]>([]);
+  const [panorexVolume, setPanorexVolume] = useState<PanoramicVolumeInput | null>(null);
   const [panorexThickness, setPanorexThickness] = useState<number>(0);
   const [blendMode, setBlendMode] = useState<"mip" | "average">("mip");
   const [activeTool, setActiveTool] = useState<string>("Crosshairs");
@@ -192,10 +199,41 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   }, [isInitialized, imageIds]);
 
   const handleGeneratePanorex = () => {
-    // In a real app, we'd query the cornerstoneTools state for SplineROITool annotations
+    // In a real app, we'd query the cornerstoneTools state for SplineROITool
+    // annotations. Until that UI is wired we seed a placeholder curve.
     // const state = cornerstoneTools.annotation.state.getAnnotations(cornerstoneTools.SplineROITool.toolName, element);
-    // Let's simulate we got some points
     setSplinePoints([{ x: 100, y: 100 }, { x: 200, y: 150 }, { x: 300, y: 100 }]);
+
+    // Extract the real voxel slab from the cornerstone volume cache and hand an
+    // OWNED copy to the worker. We never transfer the volume's own scalar buffer
+    // (that would detach and corrupt the cache), so `toTransferableScalarData`
+    // returns a fresh Float32Array/Uint16Array whose buffer is safe to transfer.
+    if (!volumeId) {
+      setPanorexVolume(null);
+      setShowPanorex(true);
+      return;
+    }
+    const volume = cornerstone.cache.getVolume(volumeId);
+    const raw = volume?.voxelManager?.getScalarData();
+    if (!volume || !raw) {
+      // No decoded voxels available yet — open the window in its loading state.
+      setPanorexVolume(null);
+      setShowPanorex(true);
+      return;
+    }
+
+    const [dx, dy, dz] = volume.dimensions;
+    const [ox, oy, oz] = volume.origin;
+    const [sx, sy, sz] = volume.spacing;
+    setPanorexVolume({
+      scalarData: toTransferableScalarData(raw),
+      dimensions: [dx, dy, dz],
+      origin: [ox, oy, oz],
+      // cornerstone exposes a 3x3 Mat3; expand it to the 16-element mat4 layout
+      // the MPR kernel indexes. Pure structural bridge, no cast.
+      direction: mat3ToMat4Direction(volume.direction),
+      spacing: [sx, sy, sz],
+    });
     setShowPanorex(true);
   };
 
@@ -329,9 +367,9 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       </div>
 
       {showPanorex && volumeId && (
-        <PanoramicRendererWindow 
-          volumeId={volumeId} 
-          splinePoints={splinePoints} 
+        <PanoramicRendererWindow
+          volume={panorexVolume}
+          splinePoints={splinePoints}
           onClose={() => setShowPanorex(false)}
           thickness={panorexThickness}
           blendMode={blendMode}
