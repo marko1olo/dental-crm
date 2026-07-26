@@ -97,16 +97,16 @@ export function AnalyticsDashboardView() {
 	}, [dateRange]);
 
 	return (
-		<div className="analytics-dashboard bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
+		<div className="analytics-dashboard panel" style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px" }} aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
 			<header
-				className="analytics-header mb-6 pb-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center"
+				className="analytics-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingBottom: "12px", borderBottom: "1px solid var(--line)" }}
 			>
-				<h2 className="text-xl font-bold text-slate-900 dark:text-slate-100" title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
+				<h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--ink)" }} title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
 				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
 					title="Фильтр периода аналитических отчетов"
-					className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 outline-none text-sm"
+					style={{ padding: "6px 12px", borderRadius: "8px", background: "var(--paper-soft)", color: "var(--ink)", border: "1px solid var(--line)", outline: "none", fontSize: "13px" }}
 				>
 					{DATE_RANGES.map((r) => (
 						<option key={r.value} value={r.value}>
@@ -236,12 +236,12 @@ export function AnalyticsDashboardView() {
 											/>
 											<RechartsTooltip
 												contentStyle={{
-													backgroundColor: "#18181b",
-													borderColor: "#27272a",
+													backgroundColor: "var(--paper)",
+													borderColor: "var(--line)",
 													borderRadius: "8px",
-													color: "#e4e4e7",
+													color: "var(--ink)",
 												}}
-												itemStyle={{ color: "#e4e4e7" }}
+												itemStyle={{ color: "var(--ink)" }}
 												formatter={(val: any) =>
 													val.toLocaleString("ru-RU") + " ₽"
 												}
@@ -310,11 +310,12 @@ export function AnalyticsDashboardView() {
 											/>
 											<RechartsTooltip
 												contentStyle={{
-													backgroundColor: "#18181b",
-													borderColor: "#27272a",
+													backgroundColor: "var(--paper)",
+													borderColor: "var(--line)",
 													borderRadius: "8px",
+													color: "var(--ink)",
 												}}
-												itemStyle={{ color: "#e4e4e7" }}
+												itemStyle={{ color: "var(--ink)" }}
 												formatter={(val: any) =>
 													`${val} планов`
 												}
@@ -369,11 +370,12 @@ export function AnalyticsDashboardView() {
 											/>
 											<RechartsTooltip
 												contentStyle={{
-													backgroundColor: "#18181b",
-													borderColor: "#27272a",
+													backgroundColor: "var(--paper)",
+													borderColor: "var(--line)",
 													borderRadius: "8px",
+													color: "var(--ink)",
 												}}
-												itemStyle={{ color: "#e4e4e7" }}
+												itemStyle={{ color: "var(--ink)" }}
 												formatter={(val: any) => `${val} приёмов`}
 											/>
 										</RadialBarChart>
@@ -436,7 +438,7 @@ export function AnalyticsDashboardView() {
 							</div>
 						</article>
 					</div>
-					<div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+					<div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
 						<ConfirmationPerformanceReportsWidget />
 						<LostPatientsFiltersWidget />
 						<RebookingConversionRulesWidget />
@@ -461,8 +463,8 @@ function KpiCard({
 	return (
 		<div
 			style={{
-				background: "var(--bg-elevated, #18181b)",
-				border: "1px solid var(--border, #27272a)",
+				background: "var(--paper)",
+				border: "1px solid var(--line)",
 				borderRadius: 12,
 				padding: "16px 20px",
 				display: "flex",
@@ -483,7 +485,7 @@ function KpiCard({
 				{icon}
 				{label}
 			</div>
-			<div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+			<div style={{ fontSize: "22px", fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
 				{value}
 			</div>
 		</div>
