@@ -15,6 +15,8 @@ import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useWebsocket } from "../hooks/useWebsocket";
 import { usePatientStore } from "../store/patientStore";
 import { showToast } from "./GlobalToast";
+import { PatientAvatar } from "./PatientAvatar";
+import { EmptyState } from "./EmptyState";
 
 interface ChatMessage {
 	id: string;
@@ -776,73 +778,33 @@ export function OmnichannelInboxView() {
 						</div>
 					</div>
 
-					<div style={{ flex: 1, overflowY: "auto" }}>
+					<div className="flex-1 overflow-y-auto">
 						{filteredChats.length === 0 ? (
-							<div
-								style={{
-									padding: 32,
-									textAlign: "center",
-									color: "var(--muted)",
-									fontSize: 13,
-								}}
-							>
-								Диалогов не найдено
-							</div>
+							<EmptyState
+								title="Диалогов не найдено"
+								description="По текущим фильтрам и поисковому запросу сомнительных или открытых диалогов не обнаружено."
+								className="py-8"
+							/>
 						) : (
 							filteredChats.map((chat) => (
 								<div
 									key={chat.patientId}
 									onClick={() => setSelectedPatientId(chat.patientId)}
-									style={{
-										padding: "12px 16px",
-										cursor: "pointer",
-										borderBottom: "1px solid var(--line)",
-										background:
-											selectedPatientId === chat.patientId
-												? "rgba(14, 165, 233, 0.06)"
-												: "transparent",
-										display: "flex",
-										gap: 10,
-										transition: "background 0.15s",
-									}}
+									className={`p-3 cursor-pointer border-b border-[var(--line)] flex gap-2.5 transition-colors hover:bg-[var(--paper-soft,#f8fafc)] ${
+										selectedPatientId === chat.patientId ? "bg-[var(--teal-soft,rgba(14,165,233,0.06))]" : ""
+									}`}
+									tabIndex={0}
+									role="button"
+									aria-label={`Открыть диалог с ${chat.patientName ?? "пациентом"}`}
 								>
 									{/* Avatar */}
-									<div
-										style={{
-											width: 42,
-											height: 42,
-											borderRadius: "50%",
-											background: "var(--paper-soft)",
-											border: "1px solid var(--line)",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											color: "var(--muted)",
-											flexShrink: 0,
-											position: "relative",
-										}}
-									>
-										<span style={{ fontWeight: 600, fontSize: 15 }}>
-											{chat.patientName ? chat.patientName.charAt(0).toUpperCase() : "?"}
-										</span>
+									<div className="relative flex-shrink-0">
+										<PatientAvatar name={chat.patientName ?? "?"} size="md" />
 										<div
-											style={{
-												position: "absolute",
-												bottom: -2,
-												right: -2,
-												width: 15,
-												height: 15,
-												borderRadius: "50%",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												fontSize: 8,
-												color: "#fff",
-												fontWeight: "bold",
-												background: getChannelColor(chat.channel),
-											}}
+											className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm"
+											style={{ background: getChannelColor(chat.channel) }}
 										>
-											{getChannelLetter(chat.channel)}
+											{chat.channel ? chat.channel.charAt(0).toUpperCase() : "?"}
 										</div>
 									</div>
 
