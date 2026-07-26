@@ -301,7 +301,8 @@ export function ImagingView(props: ImagingViewProps) {
                       display: "flex",
                       flexDirection: "column",
                       gap: "6px",
-                      minWidth: "160px"
+                      minWidth: "160px",
+                      maxWidth: "calc(100vw - 32px)"
                     }}>
                       <button
                         className="secondary-button"
@@ -653,11 +654,11 @@ export function ImagingView(props: ImagingViewProps) {
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  color: 'var(--brand-500)',
+                                  color: 'var(--teal-dark)',
                                   padding: '4px',
                                   borderRadius: '50%'
                                 }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--teal-soft)'; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                               >
                                 <Bot size={16} />
