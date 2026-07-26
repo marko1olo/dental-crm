@@ -345,13 +345,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 </div>
               )}
             </section>
-            <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--slate-100)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--slate-200)', paddingRight: '12px', marginRight: '4px' }}>
+            <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--paper-soft)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--line)', paddingRight: '12px', marginRight: '4px' }}>
                 <input
                   type="date"
                   value={scheduleDateFilter}
                   onChange={(event: TextFieldChangeEvent) => setScheduleDateFilter(event.target.value)}
-                  style={{ border: 'none', background: 'transparent', fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', outline: 'none', cursor: 'pointer' }}
+                  style={{ border: '1px solid var(--line)', borderRadius: '8px', background: 'var(--paper-soft)', padding: '4px 8px', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', outline: 'none', cursor: 'pointer' }}
                 />
               </div>
               
@@ -397,7 +397,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
             </div>
             <details className="schedule-secret-collapsible">
               <summary>🔐 Разблокировать сохранение расписания</summary>
-              <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
+              <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "10px", background: "var(--paper-soft)", border: "1px solid var(--line)", marginTop: "8px" }}>
               {!scheduleAdminSecretSession ? (
                 <>
                   <label className="form-span-2">
@@ -544,7 +544,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
             </div>
 
             {/* Schedule Utilities & Widgets Panel */}
-            <div className="schedule-widgets-container mt-6 space-y-4">
+            <div className="schedule-widgets-container mt-6" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <UrgentScheduleRequestsWidget />
               <ScheduleClipboardItemsWidget />
               <ScheduleTimeReservationsWidget />
