@@ -30,7 +30,9 @@ import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { BoneQualityPanel } from "./components/dicom/BoneQualityPanel";
 import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
 import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { PatientAvatar } from './components/PatientAvatar';
+import { EmptyState } from './components/EmptyState';
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 
 import { useVisitStore, type ToothState } from "./store/visitStore";
@@ -398,16 +400,17 @@ export function ImagingView(props: ImagingViewProps) {
                 </div>
               ) : null}
     
-              <div className="imaging-kind-filter" aria-label="Фильтр типа снимка">
-                <button className={imagingKindFilter === "all" ? "active" : ""} type="button" aria-pressed={imagingKindFilter === "all"} onClick={() => setImagingKindFilter("all")}>
+              <div className="imaging-kind-filter" role="tablist" aria-label="Фильтр типа снимка">
+                <button className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === "all" ? "active" : ""}`} type="button" role="tab" aria-selected={imagingKindFilter === "all"} onClick={() => setImagingKindFilter("all")}>
                   Все
                 </button>
                 {imagingKindOptions.map((kind: any) => (
                   <button
-                    className={imagingKindFilter === kind ? "active" : ""}
+                    className={`focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${imagingKindFilter === kind ? "active" : ""}`}
                     key={kind}
                     type="button"
-                    aria-pressed={imagingKindFilter === kind}
+                    role="tab"
+                    aria-selected={imagingKindFilter === kind}
                     onClick={() => setImagingKindFilter(kind)}
                   >
                     {imagingKindLabels[kind]}
@@ -746,10 +749,13 @@ export function ImagingView(props: ImagingViewProps) {
                     </>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">
-                      <div className="text-center mb-4">
-                        <ImageIcon aria-hidden="true" style={{ fontSize: '3rem', opacity: 0.5 }} />
-                        <p className="text-neutral-400 mt-2">Снимков по текущему пациенту пока нет.</p>
-                      </div>
+                      <EmptyState
+                        icon={<Radio size={36} />}
+                        title="Снимков по пациенту нет"
+                        description="Загрузите архивы DICOM/КТ или выберите снимки из системы."
+                        glass={true}
+                        style={{ margin: "16px 0" }}
+                      />
                       <div className="w-full max-w-2xl">
                         <DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
                       </div>
