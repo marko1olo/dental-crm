@@ -1467,7 +1467,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         {settingsTab === "imports" ? <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "audit" ? <SettingsAuditTab props={settingsProps} settingsTab={settingsTab} /> : null}
 
-        <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <DadataGeocodedAddressesWidget />
           <EgiszBlankPermissionsWidget />
           <YandexCalendarSyncsWidget />
