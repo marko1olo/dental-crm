@@ -29,9 +29,18 @@
   --warn-bg: #fef3c7; --warn-fg: #a16207;
   --bad-bg: #fee2e2; --bad-fg: #b91c1c;
   --info-bg: #e0f2fe; --info-fg: #0369a1;
+  --glass-panel: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(13, 148, 136, 0.12);
+  --glass-shadow: 0 10px 25px -5px rgba(13, 31, 27, 0.05);
+  --glass-blur: blur(12px);
   --shadow-1: 0 1px 2px rgba(13, 31, 27, 0.05);
   --shadow-2: 0 16px 40px -16px rgba(15, 118, 110, 0.22);
+  --shadow-3: 0 24px 60px -12px rgba(13, 31, 27, 0.18);
   --shadow-premium: 0 16px 40px -16px rgba(15, 118, 110, 0.22);
+  --focus-ring: rgba(13, 148, 136, 0.5);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   /* совместимость со старыми именами */
   --rust: var(--bad-fg); --rust-soft: var(--bad-bg);
   --amber: var(--warn-fg); --amber-soft: var(--warn-bg);
@@ -73,9 +82,18 @@
   --bad-bg: rgba(248, 113, 113, 0.15); --bad-fg: #f87171;
   --info-bg: rgba(56, 189, 248, 0.14); --info-fg: #38bdf8;
   --side-bg: #0c1514;
+  --glass-panel: rgba(16, 26, 25, 0.80);
+  --glass-border: rgba(45, 212, 191, 0.15);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(12px);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
+  --shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.75);
   --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
+  --focus-ring: rgba(45, 212, 191, 0.6);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   /* slate & surface compatibility mappings */
   --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
   --slate-200: var(--line); --slate-300: var(--line-strong);
@@ -112,9 +130,18 @@
   --bad-bg: rgba(240, 144, 109, 0.17); --bad-fg: #f0906d;
   --info-bg: rgba(212, 180, 131, 0.15); --info-fg: #d4b483;
   --side-bg: #18130f;
+  --glass-panel: rgba(28, 23, 20, 0.82);
+  --glass-border: rgba(224, 164, 88, 0.18);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --glass-blur: blur(12px);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
+  --shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.80);
   --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
+  --focus-ring: rgba(224, 164, 88, 0.7);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   /* slate & surface compatibility mappings */
   --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
   --slate-200: var(--line); --slate-300: var(--line-strong);
@@ -128,6 +155,33 @@
   --surface-800: var(--paper); --surface-900: var(--paper);
   color: var(--ink);
   background: var(--bg);
+}
+
+/* ---------- BADGE PRIMITIVES ---------- */
+.dnt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  transition: var(--transition-fast, all 0.15s ease);
+  border: 1px solid transparent;
+}
+.dnt-badge--ok { background: var(--ok-bg); color: var(--ok-fg); border-color: rgba(21, 128, 61, 0.15); }
+.dnt-badge--warn { background: var(--warn-bg); color: var(--warn-fg); border-color: rgba(161, 98, 7, 0.15); }
+.dnt-badge--bad { background: var(--bad-bg); color: var(--bad-fg); border-color: rgba(185, 28, 28, 0.15); }
+.dnt-badge--info { background: var(--info-bg); color: var(--info-fg); border-color: rgba(3, 105, 161, 0.15); }
+.dnt-badge--neutral { background: var(--paper-soft); color: var(--ink-2); border-color: var(--line); }
+.dnt-badge--glass {
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-1);
 }
 
 /* ---------- 2. КЛЮЧЕВЫЕ КЕЙФРЕЙМЫ ---------- */
@@ -147,7 +201,12 @@ textarea, input, select { font-family: inherit; }
 textarea:focus, input:focus, select:focus {
   outline: none;
   border-color: var(--teal) !important;
-  box-shadow: 0 0 0 3px var(--teal-surface);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .eyebrow {
@@ -527,9 +586,53 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
 }
 @media (max-width: 840px) {
   .sidebar { display: none; }
-  .topbar { padding: 10px 14px; flex-wrap: wrap; }
-  .topbar h1 { font-size: 16px; }
-  .compact-top-button, .top-lock-button { display: none; }
+  .topbar {
+    padding: 8px 14px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-height: 52px;
+  }
+  .topbar h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .topbar .eyebrow { font-size: 10px; }
+  .topbar-context { gap: 6px !important; flex-wrap: nowrap !important; overflow: hidden; }
+  .topbar-clinic { min-width: 0; flex: 1; overflow: hidden; }
+  .compact-top-button, .top-lock-button, .top-dictation-button { display: none !important; }
+  /* Role switcher on mobile — collapse to compact pill */
+  .workspace-role-switcher {
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+  .workspace-role-switcher > summary {
+    background: var(--teal-surface) !important;
+    color: var(--teal-dark) !important;
+    border-radius: 999px !important;
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border: 1px solid var(--teal-ring) !important;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  [data-theme="dark"] .workspace-role-switcher > summary,
+  [data-theme="night"] .workspace-role-switcher > summary {
+    color: var(--teal) !important;
+  }
+  /* Recent patients dropdown on mobile — hide entirely from topbar */
+  .recent-patients-header-dropdown {
+    display: none !important;
+  }
+  /* top-actions strip */
+  .top-actions {
+    gap: 4px !important;
+    flex-shrink: 0;
+  }
+  .top-actions .primary-button {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
 }
 
 /* Нижняя мобильная навигация — разметка:
@@ -881,4 +984,117 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--teal-surface) !important;
 }
 
+/* ---------- 20. МОБИЛЬНЫЙ ПУСТОЙ СТЕЙТ ПАЦИЕНТА И ПОИСК ---------- */
+@media (max-width: 840px) {
+  /* Рабочее пространство на мобиле: отступы */
+  .app-shell.dente-redesign .workspace {
+    padding: 10px 12px 80px !important;
+  }
+
+  /* Пациенты — принудительно одна колонка (override inline style) */
+  .patients-main-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+  }
+
+  .patient-list {
+    max-height: 42vh;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  /* Правая панель пациента на мобиле — полный экран */
+  .patient-admin-panel {
+    border-radius: 14px !important;
+    padding: 16px !important;
+  }
+
+  /* Пациент не выбран — компактный инфо-стейт */
+  .patient-admin-panel:not(:has([data-testid="patient-overview-tab"])) {
+    background: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    padding: 24px 20px !important;
+    text-align: center;
+  }
+
+  /* Карточка пустого стейта пациента */
+  .patient-empty-state,
+  [data-testid="patient-empty-state"],
+  .no-patient-selected {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px !important;
+    background: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-1);
+    margin: 0 !important;
+    gap: 12px;
+  }
+
+  /* Строка поиска пациентов на мобиле */
+  .patients-search-bar,
+  .patient-search-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    background: var(--paper) !important;
+    border-top: 1px solid var(--line) !important;
+    position: sticky;
+    bottom: 60px;
+    z-index: 20;
+  }
+
+  /* Кнопка создать у поиска */
+  .patient-create-btn,
+  .patients-search-bar .primary-button {
+    background: var(--teal) !important;
+    color: var(--on-teal) !important;
+    border-radius: 10px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: none !important;
+  }
+
+  /* Demo/onboarding banner на мобиле — компактнее */
+  .default-clinic-banner {
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .default-clinic-banner p {
+    font-size: 11px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Грид шифта и пилюли на мобиле — одна колонка */
+  .shift-hero, .dnt-hero {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .shift-queues, .dnt-queues {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .shift-cockpit, .dnt-cockpit {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
 
