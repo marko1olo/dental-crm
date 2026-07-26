@@ -1232,7 +1232,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
   return (
     <motion.section
-      className="settings-zone glass-panel bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4"
+      className="settings-zone panel"
+      style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px" }}
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -1242,7 +1243,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     >
       <div className="settings-heading">
         <div>
-          <p className="eyebrow text-slate-500 dark:text-slate-400">Настройки</p>
+          <p className="eyebrow" style={{ color: "var(--muted)" }}>Настройки</p>
           <h2 title="Раздел административных настроек: управление персоналом, прайс-листом, интеграцией с ЕГИСЗ/ОФД и бланками">Настройки клиники</h2>
         </div>
 
@@ -1274,6 +1275,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         className="settings-tabs"
         role="tablist"
         aria-label="Раздел настроек"
+        style={{ overflowX: "auto", whiteSpace: "nowrap", WebkitOverflowScrolling: "touch" }}
       >
         <div className="settings-tabs-group">
           <span className="settings-tabs-group-header">Мой аккаунт</span>
