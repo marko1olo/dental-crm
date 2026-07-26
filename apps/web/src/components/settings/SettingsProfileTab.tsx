@@ -210,8 +210,10 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   placeholder="••••••••"
                   disabled={passwordLoading}
                   style={{ paddingRight: 44, width: "100%" }}
+                  disabled={pwLoading}
+                  className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
-                <button type="button" onClick={() => setShowOldPw(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex" }}>
+                <button type="button" onClick={() => setShowOldPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer flex items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]">
                   {showOldPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -224,66 +226,67 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Мин. 8 символов"
-                  disabled={passwordLoading}
-                  style={{ paddingRight: 44, width: "100%" }}
+                  disabled={pwLoading}
+                  className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
                 />
-                <button type="button" onClick={() => setShowNewPw(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex" }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewPw(v => !v)} 
+                  aria-label={showNewPw ? "Скрыть новый пароль" : "Показать новый пароль"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer flex items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+                >
                   {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {newPassword && (
-                <div style={{ display: "flex", gap: 4, marginTop: 6, alignItems: "center" }}>
+                <div className="flex gap-1 mt-1.5 items-center">
                   {[1, 2, 3].map(i => (
-                    <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: strength.score >= i ? (strength.score === 1 ? "#ef4444" : strength.score === 2 ? "#f59e0b" : "#10b981") : "rgba(255,255,255,0.08)", transition: "background 0.3s" }} />
+                    <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: strength.score >= i ? (strength.score === 1 ? "var(--danger,#ef4444)" : strength.score === 2 ? "var(--warn-500,#f59e0b)" : "var(--success,#10b981)") : "var(--line,rgba(255,255,255,0.08))", transition: "background 0.3s" }} />
                   ))}
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", minWidth: 45, textAlign: "right" }}>{strength.label}</span>
+                  <span className="text-[10px] text-[var(--muted,#94a3b8)] min-w-[45px] text-right">{strength.label}</span>
                 </div>
               )}
             </label>
             <label className="form-span-1">
               Подтвердите пароль
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={passwordLoading}
-                style={passwordMismatch ? { borderColor: "#f87171" } : {}}
-              />
-              {passwordMismatch && <span style={{ fontSize: 10, color: "#f87171", marginTop: 4 }}>Пароли не совпадают</span>}
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showConfirmPw ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Повторите новый пароль"
+                  disabled={pwLoading}
+                  className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirmPw(v => !v)} 
+                  aria-label={showConfirmPw ? "Скрыть подтверждение пароля" : "Показать подтверждение пароля"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-[var(--muted,#94a3b8)] hover:text-[var(--ink)] cursor-pointer flex items-center p-1 rounded focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+                >
+                  {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </label>
             <div className="form-actions form-span-2">
-              <button className="primary-button" type="submit" disabled={passwordLoading}>
-                <ShieldCheck size={15} /> {passwordLoading ? "Сохранение..." : "Сохранить пароль"}
+              <button 
+                className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]" 
+                type="submit" 
+                disabled={pwLoading}
+              >
+                <KeyRound size={15} /> {pwLoading ? "Сохранение..." : "Обновить пароль"}
               </button>
             </div>
           </form>
-        </section>
+        </div>
 
-        {/* PIN */}
-        <section className="settings-section">
-          <div className="settings-section-header">
-            <Lock aria-hidden="true" size={20} />
-            <h3>Смена PIN-кода</h3>
-          </div>
-          <p className="form-hint" style={{ marginBottom: 16, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            PIN (4 цифры) используется для быстрого входа на общем компьютере клиники.
-          </p>
-          <form onSubmit={handleUpdatePin} className="form-grid">
-            <label className="form-span-2">
-              Текущий PIN
-              <input
-                type="password"
-                value={oldPin}
-                onChange={e => setOldPin(e.target.value.replace(/\D/g, ""))}
-                placeholder="••••"
-                maxLength={4}
-                disabled={pinLoading}
-                style={{ letterSpacing: "6px", textAlign: "center", fontSize: 18, maxWidth: 120 }}
-              />
-            </label>
+        {/* PIN Security Block */}
+        <div className="settings-section">
+          <h3>Защитный PIN-код</h3>
+          <p className="section-desc">Для быстрого разблокирования экрана при отсутствии на рабочем месте.</p>
+          <form className="settings-form-grid" onSubmit={handleSavePin}>
             <label className="form-span-1">
-              Новый PIN
+              Новый PIN (4 цифры)
               <input
                 type="password"
                 value={newPin}
@@ -291,11 +294,11 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                 placeholder="••••"
                 maxLength={4}
                 disabled={pinLoading}
-                style={{ letterSpacing: "6px", textAlign: "center", fontSize: 18 }}
+                className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all text-center tracking-[6px] text-lg"
               />
             </label>
             <label className="form-span-1">
-              Подтверждение
+              Подтвердите PIN
               <input
                 type="password"
                 value={confirmPin}
@@ -303,12 +306,18 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
                 placeholder="••••"
                 maxLength={4}
                 disabled={pinLoading}
-                style={confirmPin && newPin !== confirmPin ? { letterSpacing: "6px", textAlign: "center", fontSize: 18, borderColor: "#f87171" } : { letterSpacing: "6px", textAlign: "center", fontSize: 18 }}
+                className={`focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all text-center tracking-[6px] text-lg ${
+                  confirmPin && newPin !== confirmPin ? "border-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)]" : ""
+                }`}
               />
-              {confirmPin && newPin !== confirmPin && <span style={{ fontSize: 10, color: "#f87171", marginTop: 4 }}>PIN-коды не совпадают</span>}
+              {confirmPin && newPin !== confirmPin && <span className="text-[10px] text-[var(--danger,#ef4444)] mt-1 block">PIN-коды не совпадают</span>}
             </label>
             <div className="form-actions form-span-2">
-              <button className="primary-button" type="submit" disabled={pinLoading}>
+              <button 
+                className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]" 
+                type="submit" 
+                disabled={pinLoading}
+              >
                 <ShieldCheck size={15} /> {pinLoading ? "Сохранение..." : "Сохранить PIN-код"}
               </button>
             </div>
