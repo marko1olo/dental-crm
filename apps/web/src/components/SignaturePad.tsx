@@ -182,22 +182,18 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 				</p>
 			</div>
 
-			<div className="modal-body" style={{ paddingBottom: 0 }}>
+			<div className="modal-body pb-0">
 				<div
 					ref={containerRef}
-					style={{
-						width: "100%",
-						height: "320px",
-						border: "2px dashed var(--odontogram-border)",
-						borderRadius: "12px",
-						position: "relative",
-						overflow: "hidden",
-						touchAction: "none",
-					}}
+					className="relative w-full h-[320px] rounded-xl overflow-hidden border-2 border-dashed border-[var(--odontogram-border)] bg-[var(--paper-soft,#f8fafc)] transition-all hover:border-[var(--teal-500,#14b8a6)]"
+					style={{ touchAction: "none" }}
 				>
 					<canvas
 						ref={canvasRef}
-						style={{ width: "100%", height: "100%", cursor: "crosshair" }}
+						className="w-full h-full cursor-crosshair focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+						tabIndex={0}
+						role="img"
+						aria-label="Поле для графической подписи пациента"
 						onMouseDown={startDrawing}
 						onMouseMove={draw}
 						onMouseUp={stopDrawing}
@@ -209,17 +205,7 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 					/>
 					{isEmpty && (
 						<div
-							style={{
-								position: "absolute",
-								inset: 0,
-								pointerEvents: "none",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								color: "var(--odontogram-ink-muted)",
-								fontSize: "18px",
-								fontWeight: 500,
-							}}
+							className="absolute inset-0 pointer-events-none flex items-center justify-center text-[var(--odontogram-ink-muted,#94a3b8)] text-lg font-medium select-none"
 						>
 							Место для подписи
 						</div>
@@ -227,29 +213,30 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 				</div>
 			</div>
 
-			<div
-				className="modal-footer"
-				style={{ paddingTop: "24px", justifyContent: "space-between" }}
-			>
+			<div className="modal-footer pt-6 flex items-center justify-between">
 				<button
+					type="button"
 					onClick={clear}
-					className="modal-btn secondary"
-					style={{ flex: "none" }}
+					aria-label="Очистить подпись"
+					className="modal-btn secondary flex-none focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
 				>
 					Очистить
 				</button>
-				<div style={{ display: "flex", gap: "12px" }}>
-					<button onClick={onCancel} className="modal-btn secondary">
+				<div className="flex items-center gap-3">
+					<button 
+						type="button" 
+						onClick={onCancel} 
+						aria-label="Отмена"
+						className="modal-btn secondary focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+					>
 						Отмена
 					</button>
 					<button
+						type="button"
 						onClick={handleSave}
 						disabled={isEmpty}
-						className="modal-btn primary"
-						style={{
-							opacity: isEmpty ? 0.5 : 1,
-							cursor: isEmpty ? "not-allowed" : "pointer",
-						}}
+						aria-label="Подписать документ"
+						className="modal-btn primary focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						Подписать
 					</button>
@@ -258,3 +245,4 @@ export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
 		</>
 	);
 }
+
