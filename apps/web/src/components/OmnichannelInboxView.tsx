@@ -799,7 +799,7 @@ export function OmnichannelInboxView() {
 								>
 									{/* Avatar */}
 									<div className="relative flex-shrink-0">
-										<PatientAvatar name={chat.patientName ?? "?"} size="md" />
+										<PatientAvatar fullName={chat.patientName ?? "?"} size={42} />
 										<div
 											className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm"
 											style={{ background: getChannelColor(chat.channel) }}
