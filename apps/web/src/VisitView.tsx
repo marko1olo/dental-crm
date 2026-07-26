@@ -1,4 +1,5 @@
 import { PatientAvatar } from './components/PatientAvatar';
+import { EmptyState } from './components/EmptyState';
 import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
@@ -238,28 +239,26 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
   const handleToothClick = (code: string, currentState: string) => {
     if (activeStampRef.current !== null) {
-      // Quick stamp mode: apply instantly, no popup
       setToothState(code, activeStampRef.current);
     } else {
-      // Default mode: open clinical context modal
       setSelectedToothForMenu({ code, state: currentState });
     }
   };
 
   if (!activePatient) {
     return (
-      <>
-        <div className="panel visit-panel" id="visit" data-testid="visit-view">
-          <div className="panel-heading">
-            <h2>Текущий прием</h2>
-          </div>
-          <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--muted)' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦷</div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>Пациент не выбран</h3>
-            <p style={{ fontSize: '0.875rem' }}>Выберите пациента в разделе «Пациенты»<br />или создайте запись в «Записях», чтобы начать приём.</p>
-          </div>
+      <div className="panel visit-panel" id="visit" data-testid="visit-view">
+        <div className="panel-heading">
+          <h2>Текущий прием</h2>
         </div>
-      </>
+        <EmptyState
+          icon={<ClipboardCheck size={36} />}
+          title="Пациент не выбран"
+          description="Выберите пациента в разделе «Пациенты» или создайте запись в «Записях», чтобы начать приём."
+          glass={true}
+          style={{ margin: "24px 0" }}
+        />
+      </div>
     );
   }
 
@@ -292,19 +291,21 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </p>
               </div>
               <div className="visit-focus-actions">
-                <button className="primary-button" type="button" onClick={() => scrollToVisitArea(".dictation-box")}>
+                <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => scrollToVisitArea(".dictation-box")}>
                   <Mic aria-hidden="true" /> Диктовка
                 </button>
-                <button className="secondary-button" type="button" onClick={openVisitWarningAction}>
+                <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={openVisitWarningAction}>
                   <AlertTriangle aria-hidden="true" /> Риски
                 </button>
               </div>
             </section>
 
-            <div className="visit-sub-nav-tabs" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
+            <div className="visit-sub-nav-tabs" role="tablist" aria-label="Разделы визита" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
               <button
                 type="button"
-                className={`secondary-button ${visitSubViewTab === "emk" ? "active" : ""}`}
+                role="tab"
+                aria-selected={visitSubViewTab === "emk"}
+                className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
                 style={{ background: visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "emk" ? "#fff" : undefined }}
                 onClick={() => setVisitSubViewTab("emk")}
               >
@@ -312,7 +313,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </button>
               <button
                 type="button"
-                className={`secondary-button ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+                role="tab"
+                aria-selected={visitSubViewTab === "odontogram"}
+                className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
                 style={{ background: visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "odontogram" ? "#fff" : undefined }}
                 onClick={() => setVisitSubViewTab("odontogram")}
               >
