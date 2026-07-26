@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertTriangle, Clock, User, ArrowRight } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface UrgentRequestItem {
@@ -16,6 +16,16 @@ interface UrgentRequestItem {
 
 interface UrgentScheduleRequestsWidgetProps {
 	headerExtra?: React.ReactNode;
+}
+
+function formatUrgentRequestsCount(count: number): string {
+	if (count % 10 === 1 && count % 100 !== 11) {
+		return `${count} активное обращение острой боли`;
+	}
+	if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
+		return `${count} активных обращения острой боли`;
+	}
+	return `${count} активных обращений острой боли`;
 }
 
 export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidgetProps> = ({ headerExtra }) => {
@@ -38,33 +48,87 @@ export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidget
 	return (
 		<div
 			data-testid="urgent-schedule-requests-widget"
-			className="p-3.5 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				gap: "12px"
+			}}
 		>
-			<div className="flex flex-row justify-between items-center mb-2 pb-1 border-b border-slate-200 dark:border-slate-800 gap-2">
-				<div className="flex items-center space-x-2 min-w-0">
-					<AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-					<h4 className="text-sm font-semibold truncate">Срочные обращения и забор окон «Острая боль»</h4>
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+					<div style={{ width: "32px", height: "32px", borderRadius: "9px", background: "var(--bad-bg)", color: "var(--bad-fg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+						<AlertTriangle size={16} />
+					</div>
+					<div>
+						<h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>
+							Срочные обращения «Острая боль»
+						</h4>
+						<p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--ink-2)", fontWeight: 500 }}>
+							{requests.length > 0 ? formatUrgentRequestsCount(requests.length) : "Срочных обращений нет. Окна резерва готовы"}
+						</p>
+					</div>
 				</div>
-				{headerExtra && <div className="shrink-0">{headerExtra}</div>}
+				{headerExtra && <div style={{ flexShrink: 0 }}>{headerExtra}</div>}
 			</div>
+
 			{loading ? (
-				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка срочных заявок...</p>
+				<p style={{ fontSize: "12.5px", color: "var(--muted)", margin: "4px 0" }}>Загрузка срочных заявок...</p>
 			) : requests.length === 0 ? (
-				<div className="p-3 text-center rounded-lg border border-dashed text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-					Срочные обращения острой боли отсутствуют. Окна резерва готовы для планового приёма.
+				<div style={{ padding: "12px 14px", borderRadius: "10px", border: "1px dashed var(--line-strong)", background: "var(--paper-soft)", fontSize: "12.5px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "8px" }}>
+					<span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--ok-fg)" }} />
+					<span>Срочных обращений нет. Окна резерва готовы для планового приёма.</span>
 				</div>
 			) : (
-				<ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+				<div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
 					{requests.map((req) => (
-						<li
+						<div
 							key={req.id}
-							className="flex justify-between items-center p-2 rounded border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "12px",
+								padding: "10px 14px",
+								borderRadius: "10px",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--line)",
+								borderLeft: "3px solid var(--bad-fg)",
+								transition: "all 0.15s ease"
+							}}
 						>
-							<span className="font-semibold">{req.patientName} — {req.requestType} ({req.urgencyLevel})</span>
-							<span className="text-xs font-mono text-slate-500 dark:text-slate-400">{req.preferredSlotTime}</span>
-						</li>
+							<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+								<User size={15} style={{ color: "var(--bad-fg)", flexShrink: 0 }} />
+								<div style={{ minWidth: 0 }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+										<strong style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+											{req.patientName}
+										</strong>
+										<span className="status-pill status-cancelled" style={{ fontSize: "10px", padding: "2px 7px" }}>
+											{req.urgencyLevel || "urgent"}
+										</span>
+									</div>
+									<span style={{ fontSize: "12px", color: "var(--muted)" }}>
+										{req.requestType}
+									</span>
+								</div>
+							</div>
+							<div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+								<span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11.5px", fontWeight: 600, color: "var(--ink-2)", fontVariantNumeric: "tabular-nums" }}>
+									<Clock size={12} style={{ color: "var(--muted)" }} />
+									{req.preferredSlotTime}
+								</span>
+								<button
+									className="secondary-button"
+									type="button"
+									style={{ minHeight: "28px", height: "28px", padding: "0 10px", fontSize: "11.5px" }}
+									onClick={() => { window.location.hash = "schedule"; }}
+								>
+									Записать <ArrowRight size={12} />
+								</button>
+							</div>
+						</div>
 					))}
-				</ul>
+				</div>
 			)}
 		</div>
 	);

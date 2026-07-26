@@ -85,6 +85,7 @@ await evaluate(`fetch('/api/auth/login', {
   }));
   return data.ok === true;
 })`);
+await sleep(3000);
 async function waitForWorkspace() {
   for (let i = 0; i < 30; i++) {
     const ready = await evaluate(`Boolean(document.getElementById('workspace-content'))`);
