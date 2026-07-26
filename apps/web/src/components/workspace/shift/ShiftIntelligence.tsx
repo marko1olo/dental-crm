@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { minutesLabel } from "../../../AppHelpers";
 import { workloadStateLabels } from "../../../workspaceUiLabels";
+import { EmptyState } from "../../EmptyState";
 
 export function ShiftIntelligence() {
 	const { dashboard, mostLoadedResource, staffRoleLabels, activeQueueRole } =
@@ -24,7 +25,7 @@ export function ShiftIntelligence() {
 				style={{ gridColumn: "1 / -1" }}
 			>
 				<button
-					className="secondary-button"
+					className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 					type="button"
 					aria-expanded={showAnalytics}
 					onClick={() => setShowAnalytics((v) => !v)}
@@ -118,8 +119,9 @@ export function ShiftIntelligence() {
 				<h3>Задачи по ролям</h3>
 				{(dashboard?.shiftIntelligence?.roleQueues?.length || 0) > 1 && (
 					<button
-						className="text-button toggle-queues-btn"
+						className="text-button toggle-queues-btn focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 						type="button"
+						aria-expanded={showOtherQueues}
 						onClick={() => setShowOtherQueues((v) => !v)}
 					>
 						{showOtherQueues ? "Скрыть другие роли" : "Показать другие роли"}
@@ -140,8 +142,11 @@ export function ShiftIntelligence() {
 
 						return queuesToDisplay.map((queue: any) => (
 							<article
-								className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`}
+								className={`role-queue-card focus:ring-2 focus:ring-teal-600 focus:outline-none ${queue.role === activeQueueRole ? "active" : ""}`}
 								key={queue.role}
+								tabIndex={0}
+								role="region"
+								aria-label={`Очередь задач: ${staffRoleLabels[queue.role] || queue.role}`}
 							>
 								<div>
 									<UserCheck aria-hidden="true" />
@@ -155,9 +160,12 @@ export function ShiftIntelligence() {
 						));
 					})()
 				) : (
-					<p style={{ color: "var(--muted)", fontSize: "14px", padding: "12px 0" }}>
-						Очередей задач не найдено.
-					</p>
+					<EmptyState
+						title="Задач нет"
+						description="Очередей задач по ролям не найдено."
+						glass={false}
+						style={{ padding: "16px" }}
+					/>
 				)}
 			</div>
 		</motion.section>
