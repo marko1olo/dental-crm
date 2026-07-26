@@ -64,13 +64,11 @@ async function shot(name) {
 
 // bootstrap demo session via real login
 await sleep(5000);
-await evaluate(`(async () => {
-  const r = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-organization-id': '1' },
-    body: JSON.stringify({ email: 'doctor@clinic.com', password: 'dente2026' })
-  });
-  const data = await r.json();
+await evaluate(`fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'x-organization-id': '1' },
+  body: JSON.stringify({ email: 'doctor@clinic.com', password: 'dente2026' })
+}).then(r => r.json()).then(data => {
   if (data.clinicToken) localStorage.setItem('dente_clinic_token', data.clinicToken);
   if (data.staffToken) localStorage.setItem('dente_staff_token', data.staffToken);
   localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({
@@ -86,7 +84,7 @@ await evaluate(`(async () => {
     savedAt: new Date().toISOString()
   }));
   return data.ok === true;
-})()`);
+})`);
 async function waitForWorkspace() {
   for (let i = 0; i < 30; i++) {
     const ready = await evaluate(`Boolean(document.getElementById('workspace-content'))`);

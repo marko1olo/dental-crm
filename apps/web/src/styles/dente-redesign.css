@@ -37,12 +37,17 @@
   --amber: var(--warn-fg); --amber-soft: var(--warn-bg);
   --red: var(--bad-fg); --green: var(--ok-fg);
   --success-color: var(--ok-fg); --warning-color: var(--warn-fg); --error-color: var(--bad-fg);
-  /* slate compatibility mappings */
+  /* slate & surface compatibility mappings */
   --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
   --slate-200: var(--line); --slate-300: var(--line-strong);
   --slate-400: var(--muted); --slate-500: var(--muted);
   --slate-600: var(--ink-2); --slate-700: var(--ink-2);
   --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  --surface-50: var(--paper-soft); --surface-100: var(--paper-soft);
+  --surface-200: var(--line); --surface-300: var(--line-strong);
+  --surface-400: var(--muted); --surface-500: var(--muted);
+  --surface-600: var(--ink-2); --surface-700: var(--ink-2);
+  --surface-800: var(--paper); --surface-900: var(--paper);
   color: var(--ink);
   background: var(--bg);
 }
@@ -71,12 +76,17 @@
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
   --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
-  /* slate compatibility mappings */
+  /* slate & surface compatibility mappings */
   --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
   --slate-200: var(--line); --slate-300: var(--line-strong);
   --slate-400: var(--muted); --slate-500: var(--muted);
   --slate-600: var(--ink-2); --slate-700: var(--ink-2);
   --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  --surface-50: var(--paper-soft); --surface-100: var(--paper-soft);
+  --surface-200: var(--line); --surface-300: var(--line-strong);
+  --surface-400: var(--muted); --surface-500: var(--muted);
+  --surface-600: var(--ink-2); --surface-700: var(--ink-2);
+  --surface-800: var(--paper); --surface-900: var(--paper);
   color: var(--ink);
   background: var(--bg);
 }
@@ -105,12 +115,17 @@
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
   --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
-  /* slate compatibility mappings */
+  /* slate & surface compatibility mappings */
   --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
   --slate-200: var(--line); --slate-300: var(--line-strong);
   --slate-400: var(--muted); --slate-500: var(--muted);
   --slate-600: var(--ink-2); --slate-700: var(--ink-2);
   --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  --surface-50: var(--paper-soft); --surface-100: var(--paper-soft);
+  --surface-200: var(--line); --surface-300: var(--line-strong);
+  --surface-400: var(--muted); --surface-500: var(--muted);
+  --surface-600: var(--ink-2); --surface-700: var(--ink-2);
+  --surface-800: var(--paper); --surface-900: var(--paper);
   color: var(--ink);
   background: var(--bg);
 }
@@ -805,6 +820,65 @@ details summary {
 
 details summary:hover {
   color: var(--teal-dark) !important;
+}
+
+/* ---------- 19. ТЕМАТИЧЕСКИЕ И СЕТОЧНЫЕ ПРАВИЛА ДЛЯ ВСЕХ ПАНЕЛЕЙ ---------- */
+.topbar-context {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  flex-wrap: wrap !important;
+}
+
+.topbar-clinic h1 {
+  margin: 0 !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+
+.topbar-clinic .eyebrow {
+  margin: 0 0 2px 0 !important;
+  font-size: 11px !important;
+  color: var(--muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Принудительная нейтрализация жестких Tailwind карт и фона блоков */
+[data-theme="dark"] [class*="bg-sky-"],
+[data-theme="night"] [class*="bg-sky-"] {
+  background-color: var(--teal-surface) !important;
+  color: var(--teal) !important;
+  border-color: var(--teal-ring) !important;
+}
+
+[data-theme="dark"] [class*="text-sky-"],
+[data-theme="night"] [class*="text-sky-"] {
+  color: var(--teal) !important;
+}
+
+/* Единые адаптивные формы и карточки во всех видах */
+.patients-panel, .finance-panel, .documents-panel, .settings-panel, .visit-panel, .schedule-panel {
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+  box-shadow: var(--shadow-1) !important;
+}
+
+input, textarea {
+  background-color: var(--paper-soft) !important;
+  border: 1px solid var(--line-strong) !important;
+  color: var(--ink) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px var(--teal-surface) !important;
 }
 
 

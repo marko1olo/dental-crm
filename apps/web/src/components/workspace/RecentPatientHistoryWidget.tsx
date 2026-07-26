@@ -62,25 +62,26 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 				onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
 				style={{ position: "relative" }}
 			>
-				<summary title="История 10 последних просмотренных карточек" className="cursor-pointer flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-					<Clock size={16} aria-hidden="true" className="text-sky-500" />
+				<summary title="История 10 последних просмотренных карточек" style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: "var(--ink-2)" }}>
+					<Clock size={14} aria-hidden="true" style={{ color: "var(--teal)" }} />
 					<span>Недавние</span>
-					<strong className="text-xs bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 rounded-full font-bold">
+					<strong className="status-pill status-confirmed" style={{ fontSize: "11px", padding: "1px 7px" }}>
 						{patients.length}
 					</strong>
 				</summary>
 				<div
-					className="role-switcher-options absolute top-full right-0 w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2 z-50 text-slate-900 dark:text-slate-100"
+					className="role-switcher-options"
+					style={{ position: "absolute", top: "100%", right: 0, width: "300px", maxHeight: "360px", overflowY: "auto", zIndex: 50 }}
 				>
-					<div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 flex justify-between items-center">
+					<div style={{ padding: "8px 12px", borderBottom: "1px solid var(--line)", fontSize: "11px", fontWeight: 700, color: "var(--muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 						<span>ОТКРЫТЫЕ РАНЕЕ КАРТОЧКИ</span>
-						<span className="text-[10px] text-slate-400">ТОП 10</span>
+						<span style={{ fontSize: "10px", color: "var(--muted)" }}>ТОП 10</span>
 					</div>
 
 					{loading ? (
-						<div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">Загрузка...</div>
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>Загрузка...</div>
 					) : patients.length === 0 ? (
-						<div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">История просмотров пуста</div>
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>История просмотров пуста</div>
 					) : (
 						patients.map((pat) => (
 							<button
