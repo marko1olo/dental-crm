@@ -2839,7 +2839,7 @@ export function useAppLogic(): any {
 			dashboard?.patients?.find((patient) => patient.status === "active")?.id ??
 			null;
 		const doctorIds = new Set(
-			dashboard?.clinicSettings?.staff
+			(dashboard?.clinicSettings?.staff || [])
 				.filter(
 					(member) =>
 						member.active &&

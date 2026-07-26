@@ -4407,16 +4407,19 @@ export function newAppointmentDraftFromDashboard(
     scheduleDefaultChairId?: string | null;
   } = {}
 ): AppointmentScheduleDraft {
-  const profile = dashboard.clinicSettings.profile;
-  const timezone = profile.timezone || "Europe/Samara";
+  const profile = dashboard?.clinicSettings?.profile || ({} as any);
+  const staff = dashboard?.clinicSettings?.staff || [];
+  const chairs = dashboard?.clinicSettings?.chairs || [];
+  const patients = dashboard?.patients || [];
+  const timezone = profile?.timezone || "Europe/Samara";
   const startsAtLocal = defaultAppointmentStartLocal(profile);
-  const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile.defaultVisitMinutes || 45, timezone);
+  const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile?.defaultVisitMinutes || 45, timezone);
   const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
   const specialtyMatches = (specialties?: DentalSpecialty[]) =>
     selectedSpecialty === "universal" ||
     (Array.isArray(specialties) && (specialties.includes(selectedSpecialty) || specialties.includes("universal")));
   const savedDoctor = preferences.scheduleDefaultDoctorUserId
-    ? dashboard.clinicSettings.staff.find(
+    ? staff.find(
         (member) =>
           member.id === preferences.scheduleDefaultDoctorUserId &&
           member.active &&
@@ -4425,30 +4428,30 @@ export function newAppointmentDraftFromDashboard(
     : null;
   const doctor =
     savedDoctor ??
-    dashboard.clinicSettings.staff.find(
+    staff.find(
       (member) => member.active && (member.role === "doctor" || member.role === "owner") && specialtyMatches(member.specialties)
-    ) ?? dashboard.clinicSettings.staff.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
+    ) ?? staff.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
   const savedAssistant =
-    profile.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId
+    profile?.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId
       ? null
-      : dashboard.clinicSettings.staff.find(
+      : staff.find(
           (member) => member.id === preferences.scheduleDefaultAssistantUserId && member.active && member.role === "assistant"
         );
-  const assistant = savedAssistant ?? dashboard.clinicSettings.staff.find((member) => member.active && member.role === "assistant");
+  const assistant = savedAssistant ?? staff.find((member) => member.active && member.role === "assistant");
   const savedChair = preferences.scheduleDefaultChairId
-    ? dashboard.clinicSettings.chairs.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
+    ? chairs.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
     : null;
   const chair =
     savedChair ??
-    dashboard.clinicSettings.chairs.find(
+    chairs.find(
       (candidate) =>
         candidate.active &&
         (!candidate.specialization || selectedSpecialty === "universal" || candidate.specialization === selectedSpecialty)
-    ) ?? dashboard.clinicSettings.chairs.find((candidate) => candidate.active);
+    ) ?? chairs.find((candidate) => candidate.active);
   const selectedPatient = preferences.selectedPatientId
-    ? dashboard.patients.find((candidate) => candidate.id === preferences.selectedPatientId && candidate.status === "active")
+    ? patients.find((candidate) => candidate.id === preferences.selectedPatientId && candidate.status === "active")
     : null;
-  const patient = selectedPatient ?? dashboard.patients.find((candidate) => candidate.status === "active");
+  const patient = selectedPatient ?? patients.find((candidate) => candidate.status === "active");
   return {
     patientId: patient?.id ?? "",
     doctorUserId: doctor?.id ?? "",

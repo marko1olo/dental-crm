@@ -20,40 +20,71 @@ async function run() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  async function ensureWorkspaceLoaded(page, viewId) {
-    await page.goto(`http://127.0.0.1:5173/#${viewId}`, { waitUntil: 'networkidle' }).catch(() => {});
-    await page.evaluate(() => {
-      localStorage.setItem('dente_clinic_token', 'demo_clinic_token');
-      localStorage.setItem('dente_staff_token', 'demo_staff_token');
-      localStorage.removeItem('dental-crm:onboarding:v1');
-      localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ onboardingDismissed: false, showFullOnboardingGuide: false }));
+  async function ensureWorkspaceLoaded(page) {
+    await page.route('**/api/**', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          clinicName: "Демо Клиника DENTE",
+          todayIso: new Date().toISOString().split("T")[0],
+          clinicSettings: {
+            profile: {
+              id: "demo-org",
+              organizationId: "demo-org",
+              clinicName: "Демо Клиника DENTE",
+              legalName: "ООО Демо Клиника",
+              timezone: "Europe/Moscow"
+            },
+            staff: [
+              { id: "s-1", fullName: "Петров Иван Иванович", role: "owner", active: true }
+            ],
+            chairs: [
+              { id: "c-1", name: "Кресло 1", active: true }
+            ]
+          },
+          appointments: [],
+          serviceCatalog: [],
+          treatmentPlanScenarios: [],
+          billingSummary: {
+            totalPlannedRub: 150000,
+            totalPaidRub: 50000,
+            totalDueRub: 100000,
+            unpaidDocuments: 1,
+            taxDeductionEligibleRub: 50000
+          }
+        })
+      });
     });
-    await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
+
+    await page.goto('http://127.0.0.1:5173/#shift', { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.evaluate(() => {
+      localStorage.setItem('dente_clinic_token', 'valid_demo_token');
+      localStorage.setItem('dente_staff_token', 'valid_staff_token');
+      localStorage.removeItem('dental-crm:onboarding:v1');
+      localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ onboardingDismissed: true, showFullOnboardingGuide: false }));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
     await page.waitForTimeout(1000);
+  }
 
-    const errorBtn = await page.$('button:has-text("Обновить рабочее место")');
-    if (errorBtn) {
-      console.log('App shell error detected, reloading...');
-      await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
-      await page.waitForTimeout(1500);
-    }
-
-    const demoBtn = await page.$('button:has-text("Попробовать демо-режим")');
-    if (demoBtn) {
-      console.log('Clicking demo mode setup button...');
-      await demoBtn.click();
-      await page.waitForTimeout(1500);
-    }
+  async function navigateToView(page, viewId) {
+    await page.evaluate((id) => {
+      window.location.hash = id;
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }, viewId);
+    await page.waitForTimeout(800);
   }
 
   // 1. PC Viewport (1280x800)
   console.log("--- Capturing PC Screenshots ---");
   const pcContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const pcPage = await pcContext.newPage();
+  await ensureWorkspaceLoaded(pcPage);
   
   for (const view of views) {
     console.log(`Navigating PC to ${view.name}...`);
-    await ensureWorkspaceLoaded(pcPage, view.id);
+    await navigateToView(pcPage, view.id);
 
     // PC Light Mode
     await pcPage.evaluate(() => {
@@ -83,10 +114,11 @@ async function run() {
   console.log("--- Capturing Mobile Screenshots ---");
   const mobileContext = await browser.newContext({ viewport: { width: 375, height: 812 } });
   const mobilePage = await mobileContext.newPage();
+  await ensureWorkspaceLoaded(mobilePage);
 
   for (const view of views) {
     console.log(`Navigating Mobile to ${view.name}...`);
-    await ensureWorkspaceLoaded(mobilePage, view.id);
+    await navigateToView(mobilePage, view.id);
 
     // Mobile Light Mode
     await mobilePage.evaluate(() => {
