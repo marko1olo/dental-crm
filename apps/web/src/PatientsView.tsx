@@ -1,4 +1,5 @@
 import { PatientAvatar } from './components/PatientAvatar';
+import { EmptyState } from './components/EmptyState';
 import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -268,7 +269,20 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             const insight = patientInsightById.get(patient.id);
             const patientIsSelected = selectedPatient?.id === patient.id;
             return (
-              <article className={`patient-row ${insight ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`} key={patient.id}>
+              <article 
+                className={`patient-row focus:ring-2 focus:ring-teal-600 focus:outline-none ${insight ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`} 
+                key={patient.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Карточка пациента: ${patient.fullName}`}
+                onClick={() => setSelectedPatientId(patient.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedPatientId(patient.id);
+                  }
+                }}
+              >
                 <div>
                   <h3>{patient.fullName}</h3>
                   <p>{patient.phone ?? "Телефон не указан"}</p>
@@ -283,10 +297,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 <button
                   aria-label={`Открыть карточку пациента: ${patient.fullName}`}
                   aria-pressed={patientIsSelected}
-                  className="round-link"
+                  className="round-link focus:ring-2 focus:ring-teal-600 focus:outline-none"
                   type="button"
                   title={`Открыть карточку пациента: ${patient.fullName}`}
-                  onClick={() => setSelectedPatientId(patient.id)}
+                  onClick={(e) => { e.stopPropagation(); setSelectedPatientId(patient.id); }}
                 >
                   <ArrowRight aria-hidden="true" />
                 </button>
@@ -294,13 +308,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             );
           })}
           {filteredPatients.length === 0 ? (
-            <article className="patient-empty-state">
-              <Search aria-hidden="true" />
-              <div>
-                <strong>Пациент не найден</strong>
-                <p>Проверьте ФИО или телефон. Чтобы добавить нового пациента, введите ФИО выше и нажмите «Создать».</p>
-              </div>
-            </article>
+            <EmptyState
+              icon={<Search size={28} />}
+              title="Пациент не найден"
+              description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, введите ФИО выше и нажмите «Создать»."
+              glass={false}
+              style={{ padding: "24px 16px" }}
+            />
           ) : null}
         </div>
 
