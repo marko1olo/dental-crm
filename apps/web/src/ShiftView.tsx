@@ -79,7 +79,7 @@ export function ShiftView({
     <>
 
         <section className="shift-hero" id="shift">
-            <div className="now-card" style={{ padding: "20px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div className="now-card" style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
                 <p className="eyebrow">Сейчас в работе</p>
                 {activePatient ? (
@@ -92,7 +92,7 @@ export function ShiftView({
               {activePatient ? (
                 <>
                   <div className="patient-hero" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
+                    <PatientAvatar fullName={activePatient.fullName} size={44} />
                     <div style={{ minWidth: 0 }}>
                       <h2 style={{ margin: 0, fontSize: "19px", fontWeight: 700, letterSpacing: "-0.01em" }}>{activePatient.fullName}</h2>
                       <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{activePatient.phone ?? "телефон не указан"}</p>
@@ -150,7 +150,7 @@ export function ShiftView({
             </div>
 
             {/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-            <div className="today-schedule-box" style={{ padding: "20px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column" }}>
+            <div className="today-schedule-box" style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                 <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700 }}>
                   <ClipboardCheck size={16} color="var(--teal)" /> Расписание приемов на сегодня
@@ -434,35 +434,35 @@ export function PatientCockpit({
 
           <div className="patient-feature-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
             <article className="clickable-card" onClick={() => { window.location.hash = "visit"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
-              <History aria-hidden="true" size={24} style={{ color: "var(--teal-dark)" }} />
+              <History aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>ЭМК / История</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>Приёмы · диагнозы · зубная карта</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "documents"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
-              <FileText aria-hidden="true" size={24} style={{ color: "var(--teal-dark)" }} />
+              <FileText aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Документы</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "finance"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
-              <CreditCard aria-hidden="true" size={24} style={{ color: "var(--teal-dark)" }} />
+              <CreditCard aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Оплаты</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{money(dashboard?.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard?.billingSummary?.totalDueRub ?? 0)}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "communications"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
-              <MessageSquare aria-hidden="true" size={24} style={{ color: "var(--teal-dark)" }} />
+              <MessageSquare aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Связь</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "imaging"; }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
-              <ImageIcon aria-hidden="true" size={24} style={{ color: "var(--teal-dark)" }} />
+              <ImageIcon aria-hidden="true" size={24} />
               <div>
                 <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Снимки</h3>
                 <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeImagingStudies.length > 0 ? `${activeImagingStudies.length} снимка` : "снимков нет"}</p>
