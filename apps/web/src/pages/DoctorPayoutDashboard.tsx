@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./DoctorPayoutDashboard.css";
 import { denteAdminSecretRequestHeaders } from "../AppHelpers.js";
+import { EmptyState } from "../components/EmptyState.js";
 
 interface Payout {
 	id: string;
@@ -51,28 +52,26 @@ export function DoctorPayoutDashboard() {
 
 	if (isLoading)
 		return (
-			<div className="payout-dashboard">
-				<p style={{ padding: 20, color: "var(--muted)" }}>Загрузка выплат врачам...</p>
+			<div className="payout-dashboard p-6 text-center text-[var(--muted)] text-sm">
+				Загрузка выплат врачам...
 			</div>
 		);
 	if (error)
 		return (
-			<div className="payout-dashboard">
-				<p style={{ padding: 20, color: "var(--danger, #ef4444)" }}>
-					Ошибка загрузки выплат: {error}
-				</p>
+			<div className="payout-dashboard p-6 text-center text-[var(--danger,#e11d48)] text-sm font-semibold">
+				Ошибка загрузки выплат: {error}
 			</div>
 		);
 
 	return (
-		<div className="payout-dashboard p-4 rounded-xl border my-4 shadow-sm" style={{ background: "var(--paper)", color: "var(--ink)", borderColor: "var(--line)" }}>
-			<header className="payout-header mb-3 pb-2 border-b" style={{ borderColor: "var(--line)" }}>
-				<h2 className="text-lg font-bold text-sky-600 dark:text-sky-400">Выплаты врачам и расчет заработной платы</h2>
+		<div className="payout-dashboard p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] my-4 shadow-sm">
+			<header className="payout-header mb-3 pb-2 border-b border-[var(--line)]">
+				<h2 className="text-lg font-bold text-[var(--brand-600,#0e7490)]">Выплаты врачам и расчет заработной платы</h2>
 			</header>
 			<div className="payout-table-wrapper overflow-x-auto">
 				<table className="payout-table w-full text-xs">
 					<thead>
-						<tr className="border-b text-left" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
+						<tr className="border-b border-[var(--line)] text-left text-[var(--muted)]">
 							<th className="p-2">Дата</th>
 							<th className="p-2">ФИО Врача</th>
 							<th className="p-2">Выручка</th>
@@ -84,19 +83,23 @@ export function DoctorPayoutDashboard() {
 					<tbody>
 						{payouts.length === 0 ? (
 							<tr>
-								<td colSpan={6} className="p-4 text-center" style={{ color: "var(--muted)" }}>
-									Записи выплат врачам за выбранный период отсутствуют.
+								<td colSpan={6} className="p-4">
+									<EmptyState 
+										title="Записи отсутствуют" 
+										description="Записи выплат врачам за выбранный период отсутствуют." 
+										className="py-4"
+									/>
 								</td>
 							</tr>
 						) : (
 							payouts.map((p) => (
-								<tr key={p.id} className="border-b" style={{ borderColor: "var(--line)" }}>
+								<tr key={p.id} className="border-b border-[var(--line)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
 									<td className="p-2 font-mono">{p.date}</td>
 									<td className="p-2 font-bold">{p.doctorName}</td>
 									<td className="p-2 font-mono">{fmt(p.revenue)} ₽</td>
 									<td className="p-2 font-mono">{fmt(p.materialCost)} ₽</td>
 									<td className="p-2 font-mono">{p.commissionRate}%</td>
-									<td className="p-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">{fmt(p.netPayout)} ₽</td>
+									<td className="p-2 font-mono font-bold text-[var(--emerald-600,#059669)]">{fmt(p.netPayout)} ₽</td>
 								</tr>
 							))
 						)}
