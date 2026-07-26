@@ -20,7 +20,7 @@ export const AdvanceDepositTaggingsWidget: React.FC = () => {
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		const headers = authContext
+		const headers = typeof authContext?.denteClinicalReadHeaders === "function"
 			? authContext.denteClinicalReadHeaders()
 			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
 		fetch("/api/finance/advance-deposit-taggings", { headers })

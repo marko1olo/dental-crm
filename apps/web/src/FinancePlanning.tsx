@@ -48,22 +48,22 @@ export function FinancePlanningOverview({
       <div className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4" aria-label="Финансовая сводка" data-testid="finance-planning">
         <article>
           <span>План лечения</span>
-          <strong>{money(billingSummary.totalPlannedRub)}</strong>
-          <p>{ruCount(billingSummary.openTreatmentItems, ["открытая позиция", "открытые позиции", "открытых позиций"])}</p>
+          <strong>{money(billingSummary?.totalPlannedRub ?? 0)}</strong>
+          <p>{ruCount(billingSummary?.openTreatmentItems ?? 0, ["открытая позиция", "открытые позиции", "открытых позиций"])}</p>
         </article>
         <article>
           <span>Оплачено</span>
-          <strong>{money(billingSummary.totalPaidRub)}</strong>
+          <strong>{money(billingSummary?.totalPaidRub ?? 0)}</strong>
           <p>{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту</p>
         </article>
-        <article className={billingSummary.totalDueRub > 0 ? "finance-due" : ""}>
+        <article className={(billingSummary?.totalDueRub ?? 0) > 0 ? "finance-due" : ""}>
           <span>Остаток</span>
-          <strong>{money(billingSummary.totalDueRub)}</strong>
-          <p>{ruCount(billingSummary.unpaidDocuments, ["документ", "документа", "документов"])} без оплаты</p>
+          <strong>{money(billingSummary?.totalDueRub ?? 0)}</strong>
+          <p>{ruCount(billingSummary?.unpaidDocuments ?? 0, ["документ", "документа", "документов"])} без оплаты</p>
         </article>
         <article>
           <span>Вычет</span>
-          <strong>{money(billingSummary.taxDeductionEligibleRub)}</strong>
+          <strong>{money(billingSummary?.taxDeductionEligibleRub ?? 0)}</strong>
           <p>медицинские услуги, пригодные для справки</p>
         </article>
       </div>

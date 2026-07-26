@@ -7,12 +7,12 @@ async function run() {
   const browser = await chromium.launch({ headless: true });
   
   const views = [
-    { id: 'shift', name: 'ShiftView', selector: '[data-nav-id="shift"], a[href="#shift"], nav button:nth-child(1)' },
-    { id: 'schedule', name: 'ScheduleView', selector: '[data-nav-id="schedule"], a[href="#schedule"], nav button:nth-child(2)' },
-    { id: 'patients', name: 'PatientsView', selector: '[data-nav-id="patients"], a[href="#patients"], nav button:nth-child(3)' },
-    { id: 'imaging', name: 'ImagingView', selector: '[data-nav-id="imaging"], a[href="#imaging"], nav button:nth-child(4)' },
-    { id: 'visit', name: 'VisitView', selector: '[data-nav-id="visit"], a[href="#visit"], nav button:nth-child(5)' },
-    { id: 'finance', name: 'FinanceView', selector: '[data-nav-id="finance"], a[href="#finance"], nav button:nth-child(7)' }
+    { id: 'shift', name: 'ShiftView' },
+    { id: 'schedule', name: 'ScheduleView' },
+    { id: 'patients', name: 'PatientsView' },
+    { id: 'imaging', name: 'ImagingView' },
+    { id: 'visit', name: 'VisitView' },
+    { id: 'finance', name: 'FinanceView' }
   ];
 
   const outputDir = path.join(__dirname, '..', 'screenshots');
@@ -20,8 +20,8 @@ async function run() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  async function ensureWorkspaceLoaded(page) {
-    await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' }).catch(() => {});
+  async function ensureWorkspaceLoaded(page, viewId) {
+    await page.goto(`http://127.0.0.1:5173/#${viewId}`, { waitUntil: 'networkidle' }).catch(() => {});
     await page.evaluate(() => {
       localStorage.setItem('dente_clinic_token', 'demo_clinic_token');
       localStorage.setItem('dente_staff_token', 'demo_staff_token');
@@ -30,6 +30,13 @@ async function run() {
     });
     await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
     await page.waitForTimeout(1000);
+
+    const errorBtn = await page.$('button:has-text("Обновить рабочее место")');
+    if (errorBtn) {
+      console.log('App shell error detected, reloading...');
+      await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
+      await page.waitForTimeout(1500);
+    }
 
     const demoBtn = await page.$('button:has-text("Попробовать демо-режим")');
     if (demoBtn) {
@@ -43,22 +50,10 @@ async function run() {
   console.log("--- Capturing PC Screenshots ---");
   const pcContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const pcPage = await pcContext.newPage();
-  await ensureWorkspaceLoaded(pcPage);
   
   for (const view of views) {
     console.log(`Navigating PC to ${view.name}...`);
-    // Click sidebar link or fallback to hash set
-    try {
-      const el = await pcPage.$(view.selector);
-      if (el) {
-        await el.click();
-      } else {
-        await pcPage.evaluate((id) => { window.location.hash = id; }, view.id);
-      }
-    } catch {
-      await pcPage.evaluate((id) => { window.location.hash = id; }, view.id);
-    }
-    await pcPage.waitForTimeout(1200);
+    await ensureWorkspaceLoaded(pcPage, view.id);
 
     // PC Light Mode
     await pcPage.evaluate(() => {
@@ -88,21 +83,10 @@ async function run() {
   console.log("--- Capturing Mobile Screenshots ---");
   const mobileContext = await browser.newContext({ viewport: { width: 375, height: 812 } });
   const mobilePage = await mobileContext.newPage();
-  await ensureWorkspaceLoaded(mobilePage);
 
   for (const view of views) {
     console.log(`Navigating Mobile to ${view.name}...`);
-    try {
-      const el = await mobilePage.$(view.selector);
-      if (el) {
-        await el.click();
-      } else {
-        await mobilePage.evaluate((id) => { window.location.hash = id; }, view.id);
-      }
-    } catch {
-      await mobilePage.evaluate((id) => { window.location.hash = id; }, view.id);
-    }
-    await mobilePage.waitForTimeout(1200);
+    await ensureWorkspaceLoaded(mobilePage, view.id);
 
     // Mobile Light Mode
     await mobilePage.evaluate(() => {
