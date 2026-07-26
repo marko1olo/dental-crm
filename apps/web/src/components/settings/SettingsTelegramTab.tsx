@@ -3,6 +3,7 @@ import type { KeyboardEvent, ChangeEvent } from "react";
 import { Bot, ShieldCheck, Copy, Download, RefreshCw, Send, CheckCircle2, Image as ImageIcon, ExternalLink, FileCheck2, CreditCard, CalendarDays, ClipboardCheck, Users } from "lucide-react";
 import { DenteTelegramFeature } from "@dental/shared";
 import { PatientPortal } from "../PatientPortal";
+import { EmptyState } from "../EmptyState";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -459,7 +460,11 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                       ) : null}
                     </div>
                   ) : (
-                    <p className="telegram-empty-state">Связанных Telegram-чатов пока нет. Создайте QR и попросите пациента открыть бота.</p>
+                    <EmptyState
+                      title="Нет связанных чатов"
+                      description="Связанных Telegram-чатов пока нет. Создайте QR и попросите пациента открыть бота."
+                      className="py-6"
+                    />
                   )}
                   <div className="telegram-link-ledger-codes">
                     <span>
@@ -1094,10 +1099,10 @@ export function SettingsTelegramTab({ props, settingsTab }: { props?: any, setti
                   </div>
                 ) : null}
                 {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) > 0 && (filteredTelegramOutboxItems?.length ?? 0) === 0 ? (
-                  <p className="telegram-empty-state">По выбранным фильтрам задач нет.</p>
+                  <EmptyState title="Задач не найдено" description="По выбранным фильтрам Telegram-задач не найдено." className="py-6" />
                 ) : null}
                 {typedTelegramOutbox && (typedTelegramOutbox.items?.length ?? 0) === 0 ? (
-                  <p className="telegram-empty-state">Нет Telegram-задач в текущей очереди связи.</p>
+                  <EmptyState title="Очередь пуста" description="Нет Telegram-задач в текущей очереди связи." className="py-6" />
                 ) : null}
               </div>
               {typedTelegramOutbox?.warnings?.length ? (
