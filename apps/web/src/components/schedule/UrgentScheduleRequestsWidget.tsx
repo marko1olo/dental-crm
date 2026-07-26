@@ -118,12 +118,13 @@ export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidget
 									{req.preferredSlotTime}
 								</span>
 								<button
-									className="secondary-button"
+									className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 									type="button"
+									aria-label={`Записать пациента с острой болью: ${req.patientName}`}
 									style={{ minHeight: "28px", height: "28px", padding: "0 10px", fontSize: "11.5px" }}
 									onClick={() => { window.location.hash = "schedule"; }}
 								>
-									Записать <ArrowRight size={12} />
+									Записать <ArrowRight size={12} aria-hidden="true" />
 								</button>
 							</div>
 						</div>
