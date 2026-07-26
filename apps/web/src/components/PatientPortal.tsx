@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { EmptyState } from "./EmptyState";
 import "./PatientPortal.css";
 
 interface TreatmentStage {
@@ -357,9 +358,12 @@ export const PatientPortal: React.FC = () => {
 				<section className="portal-card visits-card">
 					<h3>Мои приёмы</h3>
 					{(patientData?.visits || []).length === 0 && (
-						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-							У вас пока нет записей.
-						</p>
+						<EmptyState
+							title="Записей пока нет"
+							description="У вас пока нет истории приёмов или запланированных визитов."
+							glass={false}
+							style={{ padding: "20px 16px" }}
+						/>
 					)}
 					{(patientData?.visits || []).map((v: any) => (
 						<div
@@ -417,9 +421,12 @@ export const PatientPortal: React.FC = () => {
 				<section className="portal-card docs-card">
 					<h3>Документы</h3>
 					{(patientData?.documents || []).length === 0 && (
-						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-							Нет выпущенных документов.
-						</p>
+						<EmptyState
+							title="Документов нет"
+							description="Нет выпущенных медицинских документов."
+							glass={false}
+							style={{ padding: "20px 16px" }}
+						/>
 					)}
 					{(patientData?.documents || []).map((doc: any) => (
 						<div key={doc.id} className="doc-item">
