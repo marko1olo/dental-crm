@@ -152,7 +152,7 @@ export function FinanceView({
       <div className="panel-heading">
         <div>
           <h2>Оплаты, план лечения и вычет</h2>
-          <p className="finance-scope-label">
+          <p className="eyebrow finance-scope-label">
             Сводка по пациенту: {documentPatient?.fullName ?? "пациент не выбран"}
           </p>
         </div>
@@ -245,7 +245,7 @@ export function FinanceView({
 
       <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
 
-      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
         <PricelistDoctorPayrollsWidget />
         <AdvanceDepositTaggingsWidget />
         <DigitalReceiptDispatchesWidget />
