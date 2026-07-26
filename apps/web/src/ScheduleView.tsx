@@ -5,6 +5,7 @@ import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTi
 import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
 import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
+import { EmptyState } from "./components/EmptyState";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
@@ -521,25 +522,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 );
               })}
               {sortedAppointments.length === 0 ? (
-                <article className="schedule-empty-state" data-testid="schedule-empty-state" aria-label="Пустое расписание">
-                  <div>
-                    <strong>Нет записей по выбранным фильтрам</strong>
-                    <p role="status" aria-live="polite">
-                      Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или сразу откройте форму новой записи.
-                    </p>
-                  </div>
-                  <div className="schedule-empty-actions">
-                    <button className="secondary-button" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
-                      Сегодня
-                    </button>
-                    <button className="text-button" type="button" onClick={resetScheduleFilters}>
-                      Сбросить фильтры
-                    </button>
-                    <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
-                      <Plus aria-hidden="true" /> Новая запись
-                    </button>
-                  </div>
-                </article>
+                <EmptyState
+                  icon={<Calendar size={32} />}
+                  title="Нет записей по выбранным фильтрам"
+                  description="Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или сразу откройте форму новой записи."
+                  glass={true}
+                  action={
+                    <div className="schedule-empty-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' }}>
+                      <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
+                        Сегодня
+                      </button>
+                      <button className="text-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
+                        Сбросить фильтры
+                      </button>
+                      <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={focusNewAppointmentEditor}>
+                        <Plus aria-hidden="true" /> Новая запись
+                      </button>
+                    </div>
+                  }
+                />
               ) : null}
             </div>
 
