@@ -14,7 +14,11 @@ interface UrgentRequestItem {
 	createdAt: string;
 }
 
-export const UrgentScheduleRequestsWidget: React.FC = () => {
+interface UrgentScheduleRequestsWidgetProps {
+	headerExtra?: React.ReactNode;
+}
+
+export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidgetProps> = ({ headerExtra }) => {
 	const { auth } = useAppLogicContext();
 	const [requests, setRequests] = useState<UrgentRequestItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
@@ -34,11 +38,14 @@ export const UrgentScheduleRequestsWidget: React.FC = () => {
 	return (
 		<div
 			data-testid="urgent-schedule-requests-widget"
-			className="p-3 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+			className="p-3.5 border rounded-xl shadow-sm my-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
 		>
-			<div className="flex items-center space-x-2 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800">
-				<AlertCircle className="w-4 h-4 text-red-500" />
-				<h4 className="text-sm font-semibold">Срочные обращения и забор окон «Острая боль»</h4>
+			<div className="flex flex-row justify-between items-center mb-2 pb-1 border-b border-slate-200 dark:border-slate-800 gap-2">
+				<div className="flex items-center space-x-2 min-w-0">
+					<AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+					<h4 className="text-sm font-semibold truncate">Срочные обращения и забор окон «Острая боль»</h4>
+				</div>
+				{headerExtra && <div className="shrink-0">{headerExtra}</div>}
 			</div>
 			{loading ? (
 				<p className="text-xs text-slate-500 dark:text-slate-400">Загрузка срочных заявок...</p>

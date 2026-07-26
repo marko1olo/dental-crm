@@ -227,16 +227,20 @@ export function ShiftView({
             </section>
 
             <section className="shift-intelligence" aria-label="Операционный контроль смены">
-              <div className="analytics-toggle-container" style={{ gridColumn: "1 / -1" }}>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  aria-expanded={showAnalytics}
-                  onClick={() => setShowAnalytics((v) => !v)}
-                  style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
-                >
-                  {showAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
-                </button>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <UrgentScheduleRequestsWidget
+                  headerExtra={
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      aria-expanded={showAnalytics}
+                      onClick={() => setShowAnalytics((v) => !v)}
+                      style={{ minHeight: "28px", padding: "0 12px", fontSize: "12px" }}
+                    >
+                      {showAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
+                    </button>
+                  }
+                />
               </div>
 
               {showAnalytics && (
@@ -294,10 +298,6 @@ export function ShiftView({
                   </div>
                 </>
               )}
-
-              <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
-                <UrgentScheduleRequestsWidget />
-              </div>
 
               <div className="role-queue-header-row">
                 <h3>Задачи по ролям</h3>
