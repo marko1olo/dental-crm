@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
@@ -10,6 +10,12 @@ import { db } from "../db/client.js";
 import { attachments, patients } from "../db/schema.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+
+type MultipartFilePayload = {
+	filename: string;
+	mimetype: string;
+	file: NodeJS.ReadableStream;
+};
 
 export async function registerFilesRoutes(app: FastifyInstance) {
 	// Ensure uploads directory exists
@@ -36,7 +42,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const data = await (request as any).file();
+		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
 		if (!data) {
 			return reply.code(400).send({ error: "Missing file payload" });
 		}
@@ -99,17 +105,18 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 
 		const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
 		try {
-			const buffer = await fs.readFile(filePath);
+			await fs.access(filePath);
 			reply.header(
 				"Content-Disposition",
 				`attachment; filename="${encodeURIComponent(attachment.fileName)}"`,
 			);
 			reply.type(attachment.mimeType);
-			return reply.send(buffer);
+			return reply.send(createReadStream(filePath));
 		} catch (e) {
 			return reply.code(404).send({ error: "FileNotFoundOnDisk" });
 		}
 	});
+
 	app.get("/api/files/visits/:visitId/attachments", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
@@ -138,7 +145,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 		const { visitId } = request.params as { visitId: string };
 
-		const data = await (request as any).file();
+		const data = await (request as unknown as { file: () => Promise<MultipartFilePayload | undefined> }).file();
 		if (!data) {
 			return reply.code(400).send({ error: "Missing file payload" });
 		}
