@@ -1,12 +1,17 @@
-import { Activity, BarChart3, DollarSign, TrendingUp, Users } from "lucide-react";
+import { Activity, AlertTriangle, ArrowUpRight, BarChart3, Calendar, DollarSign, Filter, PieChart, TrendingUp, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
 	Area,
 	AreaChart,
 	Bar,
+	BarChart,
 	CartesianGrid,
+	Cell,
 	ComposedChart,
 	Legend,
+	Line,
+	Pie,
+	PieChart as RechartsPie,
 	RadialBar,
 	RadialBarChart,
 	Tooltip as RechartsTooltip,
@@ -19,6 +24,7 @@ import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
 import { LostPatientsFiltersWidget } from "../components/analytics/LostPatientsFiltersWidget";
 import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
+import { EmptyState } from "../components/EmptyState.js";
 import "./AnalyticsDashboardView.css";
 
 interface Kpis {
@@ -97,16 +103,15 @@ export function AnalyticsDashboardView() {
 	}, [dateRange]);
 
 	return (
-		<div className="analytics-dashboard panel" style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "14px", padding: "20px" }} aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
-			<header
-				className="analytics-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingBottom: "12px", borderBottom: "1px solid var(--line)" }}
-			>
-				<h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--ink)" }} title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
+		<div className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
+			<header className="analytics-header flex justify-between items-center mb-5 pb-3 border-b border-[var(--line)]">
+				<h2 className="m-0 text-xl font-bold text-[var(--ink)]" title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
 				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
 					title="Фильтр периода аналитических отчетов"
-					style={{ padding: "6px 12px", borderRadius: "8px", background: "var(--paper-soft)", color: "var(--ink)", border: "1px solid var(--line)", outline: "none", fontSize: "13px" }}
+					aria-label="Фильтр периода аналитических отчетов"
+					className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] border border-[var(--line)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all cursor-pointer hover:border-[var(--brand-300)]"
 				>
 					{DATE_RANGES.map((r) => (
 						<option key={r.value} value={r.value}>
@@ -117,13 +122,11 @@ export function AnalyticsDashboardView() {
 			</header>
 
 			{loading && (
-				<div className="analytics-empty-state">Загрузка аналитики...</div>
+				<EmptyState title="Загрузка аналитики" description="Пожалуйста, подождите, идёт формирование показателей..." className="my-6 py-8" />
 			)}
 
 			{!loading && error && (
-				<div className="analytics-empty-state text-rose-600 dark:text-rose-400 p-4 text-center text-sm">
-					{error}
-				</div>
+				<EmptyState title="Ошибка загрузки" description={error} className="my-6 py-8 text-[var(--danger,#e11d48)]" />
 			)}
 
 			{!loading && !error && data && (
@@ -438,7 +441,7 @@ export function AnalyticsDashboardView() {
 							</div>
 						</article>
 					</div>
-					<div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+					<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<ConfirmationPerformanceReportsWidget />
 						<LostPatientsFiltersWidget />
 						<RebookingConversionRulesWidget />
