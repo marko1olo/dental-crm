@@ -29,16 +29,17 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
     if (femaleNames.has(firstName)) return "female";
     if (maleExceptions.has(firstName)) return "male";
     if (firstName.endsWith("а") || firstName.endsWith("я")) return "female";
-  } else if (parts.length === 1) {
+  } else if (parts.length === 1 && parts[0]) {
     const singleName = parts[0].toLowerCase();
     if (femaleNames.has(singleName)) return "female";
     if (maleExceptions.has(singleName)) return "male";
     if (singleName.endsWith("а") || singleName.endsWith("я")) return "female";
   }
   
-  if (parts.length >= 2 && parts[0]) {
-    const lastName = parts[0].toLowerCase();
-    if (!maleExceptions.has(lastName) && (lastName.endsWith("а") || lastName.endsWith("я"))) {
+  const lastName = parts[0];
+  if (parts.length >= 2 && lastName) {
+    const lowerLast = lastName.toLowerCase();
+    if (!maleExceptions.has(lowerLast) && (lowerLast.endsWith("а") || lowerLast.endsWith("я"))) {
       return "female";
     }
   }

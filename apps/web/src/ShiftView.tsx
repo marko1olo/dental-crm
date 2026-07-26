@@ -1,3 +1,4 @@
+import { PatientAvatar } from './components/PatientAvatar';
 import {
   AlertTriangle,
   Building2,
@@ -232,7 +233,7 @@ export function ShiftView({
           <>
             <section className="role-focus-strip" aria-label="Фокус текущей роли" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "14px 18px", borderRadius: "14px", background: "linear-gradient(135deg, var(--teal-surface), transparent 60%), var(--paper)", border: "1px solid var(--line)", boxShadow: "var(--shadow-1)", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: "240px" }}>
-                <div style={{ width: "38px", height: "38px", flexShrink: 0, borderRadius: "11px", background: "var(--teal-soft)", color: "var(--teal-dark)", display: "flex", alignItems: "center", justifyCenter: "center" }}>
+                <div style={{ width: "38px", height: "38px", flexShrink: 0, borderRadius: "11px", background: "var(--teal-soft)", color: "var(--teal-dark)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <UserCheck aria-hidden="true" size={20} style={{ margin: "auto" }} />
                 </div>
                 <div>
@@ -388,9 +389,7 @@ export function PatientCockpit({
           <div className="patient-summary-card" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "20px", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "14px" }}>
             <p className="eyebrow" style={{ margin: 0, fontSize: "11px", fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>Карточка пациента</p>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: "44px", height: "44px", flexShrink: 0, borderRadius: "12px", background: "var(--teal-soft)", color: "var(--teal-dark)", display: "flex", alignItems: "center", justifyCenter: "center", fontSize: "18px", fontWeight: 800 }}>
-                {activePatient.fullName.slice(0, 1)}
-              </div>
+              <PatientAvatar fullName={activePatient.fullName} size={44} />
               <div style={{ minWidth: 0 }}>
                 <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--ink)" }}>{activePatient.fullName}</h2>
                 <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--muted)" }}>карта #{activePatient.id ? activePatient.id.slice(0, 6) : "1042"}</p>
