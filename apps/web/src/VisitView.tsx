@@ -1,3 +1,4 @@
+import { PatientAvatar } from './components/PatientAvatar';
 import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
@@ -252,7 +253,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
           <div className="panel-heading">
             <h2>Текущий прием</h2>
           </div>
-          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--muted)' }}>
+          <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--muted)' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦷</div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>Пациент не выбран</h3>
             <p style={{ fontSize: '0.875rem' }}>Выберите пациента в разделе «Пациенты»<br />или создайте запись в «Записях», чтобы начать приём.</p>
@@ -271,7 +272,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
             <section className="visit-focus-bar" aria-label="Быстрый фокус приема">
               <div className="visit-focus-patient">
-                <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
+                <PatientAvatar fullName={activePatient.fullName} size={44} />
                 <div>
                   <p className="eyebrow">Пациент сейчас</p>
                   <h3>{activePatient.fullName}</h3>
@@ -304,7 +305,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "emk" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "emk" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "emk" ? "var(--primary-on, #fff)" : undefined }}
+                style={{ background: visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "emk" ? "#fff" : undefined }}
                 onClick={() => setVisitSubViewTab("emk")}
               >
                 📝 ЭМК и Диктовка
@@ -312,7 +313,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "odontogram" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "odontogram" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "odontogram" ? "var(--primary-on, #fff)" : undefined }}
+                style={{ background: visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "odontogram" ? "#fff" : undefined }}
                 onClick={() => setVisitSubViewTab("odontogram")}
               >
                 🦷 Зубная формула и Дневник
@@ -320,7 +321,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "diagnostics" ? "var(--primary-strong)" : undefined, color: visitSubViewTab === "diagnostics" ? "var(--primary-on, #fff)" : undefined }}
+                style={{ background: visitSubViewTab === "diagnostics" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "diagnostics" ? "#fff" : undefined }}
                 onClick={() => setVisitSubViewTab("diagnostics")}
               >
                 🖼️ Рентгены и Диагностика
@@ -391,9 +392,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             </details>
 
 
-            <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
+            <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--muted)' }}>
               <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Инженерный статус (локальное сохранение, связь с сервером)</summary>
-              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
+              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--paper-soft)', borderRadius: '8px' }}>
                 {safeVisitSafetyCards.map((item: any) => (
                   <article className={`safety-${item.state}`} key={item.key} style={{ flex: '1 1 200px' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
@@ -446,7 +447,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   </h3>
                   <p>
                     Черновик, требует подтверждения врача.{" "}
-                    <span style={{ color: 'var(--slate-500)', fontSize: '0.9em' }}>
+                    <span style={{ color: 'var(--muted)', fontSize: '0.9em' }}>
                       {serverDraftSyncState === "saving" || pendingVisitSaveCount > 0 ? "Синхронизация..." 
                         : !isOnline ? "Офлайн (сохранено локально)"
                         : lastServerDraftSavedAt ? `Сохранено ${formatTime ? formatTime(lastServerDraftSavedAt) : lastServerDraftSavedAt}`
@@ -499,8 +500,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   <div style={{
                     marginTop: '8px', 
                     padding: '12px', 
-                    background: 'var(--surface-100)', 
-                    color: 'var(--slate-500)', 
+                    background: 'var(--paper-soft)', 
+                    color: 'var(--muted)', 
                     borderRadius: '8px',
                     border: '1px dashed var(--line)',
                     fontStyle: 'italic',
@@ -607,7 +608,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   </button>
                 ) : null}
                 <details className="advanced-dictation-actions" style={{ display: 'inline-block' }}>
-                  <summary style={{ cursor: 'pointer', fontSize: '14px', color: 'var(--slate-500)', padding: '8px' }}>Дополнительно</summary>
+                  <summary style={{ cursor: 'pointer', fontSize: '14px', color: 'var(--muted)', padding: '8px' }}>Дополнительно</summary>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                     {pendingSpeechChunkCount ? (
                       <button
@@ -795,15 +796,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
                                   {state === "missing" ? (
                                     <g>
-                                      <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-                                      <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.root} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.crown} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
                                       <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
                                     </g>
                                   ) : (
                                     <g>
-                                      <path d={geom.root} fill={state === "idle" ? "#f8fafc" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
+                                      <path d={geom.root} fill={state === "idle" ? "var(--paper-soft)" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
                                       {geom.canals && (state === "treatment" || state === "done") && <path d={geom.canals} fill="none" stroke={state === "done" ? "#ec4899" : "#dc2626"} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />}
-                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "#e0f2fe" : state === "treatment" ? "#fee2e2" : state === "watch" ? "#fef3c7" : "#dcfce7"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
+                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "var(--info-bg)" : state === "treatment" ? "var(--bad-bg)" : state === "watch" ? "var(--warn-bg)" : "var(--ok-bg)"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
                                       {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
                                     </g>
                                   )}
@@ -838,15 +839,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
                                   {state === "missing" ? (
                                     <g>
-                                      <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-                                      <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.root} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.crown} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
                                       <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
                                     </g>
                                   ) : (
                                     <g>
-                                      <path d={geom.root} fill={state === "idle" ? "#f8fafc" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
+                                      <path d={geom.root} fill={state === "idle" ? "var(--paper-soft)" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
                                       {geom.canals && (state === "treatment" || state === "done") && <path d={geom.canals} fill="none" stroke={state === "done" ? "#ec4899" : "#dc2626"} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />}
-                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "#e0f2fe" : state === "treatment" ? "#fee2e2" : state === "watch" ? "#fef3c7" : "#dcfce7"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
+                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "var(--info-bg)" : state === "treatment" ? "var(--bad-bg)" : state === "watch" ? "var(--warn-bg)" : "var(--ok-bg)"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
                                       {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
                                     </g>
                                   )}
@@ -893,15 +894,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
                                   {state === "missing" ? (
                                     <g>
-                                      <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-                                      <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.root} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.crown} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
                                       <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
                                     </g>
                                   ) : (
                                     <g>
-                                      <path d={geom.root} fill={state === "idle" ? "#f8fafc" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
+                                      <path d={geom.root} fill={state === "idle" ? "var(--paper-soft)" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
                                       {geom.canals && (state === "treatment" || state === "done") && <path d={geom.canals} fill="none" stroke={state === "done" ? "#ec4899" : "#dc2626"} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />}
-                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "#e0f2fe" : state === "treatment" ? "#fee2e2" : state === "watch" ? "#fef3c7" : "#dcfce7"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
+                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "var(--info-bg)" : state === "treatment" ? "var(--bad-bg)" : state === "watch" ? "var(--warn-bg)" : "var(--ok-bg)"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
                                       {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
                                     </g>
                                   )}
@@ -936,15 +937,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                                 <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
                                   {state === "missing" ? (
                                     <g>
-                                      <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-                                      <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.root} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                                      <path d={geom.crown} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
                                       <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
                                     </g>
                                   ) : (
                                     <g>
-                                      <path d={geom.root} fill={state === "idle" ? "#f8fafc" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
+                                      <path d={geom.root} fill={state === "idle" ? "var(--paper-soft)" : state === "planned" ? "#f0f9ff" : state === "treatment" ? "#fff5f5" : state === "watch" ? "#fffbeb" : "#f0fdf4"} stroke={state === "idle" ? "#cbd5e1" : state === "planned" ? "#38bdf8" : state === "treatment" ? "#f87171" : state === "watch" ? "#fbbf24" : "#4ade80"} strokeWidth="1.5" strokeLinejoin="round" />
                                       {geom.canals && (state === "treatment" || state === "done") && <path d={geom.canals} fill="none" stroke={state === "done" ? "#ec4899" : "#dc2626"} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />}
-                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "#e0f2fe" : state === "treatment" ? "#fee2e2" : state === "watch" ? "#fef3c7" : "#dcfce7"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
+                                      <path d={geom.crown} fill={state === "idle" ? "#fff" : state === "planned" ? "var(--info-bg)" : state === "treatment" ? "var(--bad-bg)" : state === "watch" ? "var(--warn-bg)" : "var(--ok-bg)"} stroke={state === "idle" ? "#94a3b8" : state === "planned" ? "#0284c7" : state === "treatment" ? "#dc2626" : state === "watch" ? "#d97706" : "#166534"} strokeWidth="2.2" strokeLinejoin="round" />
                                       {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
                                     </g>
                                   )}
@@ -1011,7 +1012,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   return (
                     <div key={field.key} className="emk-field-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong style={{ fontSize: '0.85rem', color: '#475569' }}>{field.label}</strong>
+                        <strong style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{field.label}</strong>
                       </div>
                       {chips.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
@@ -1034,9 +1035,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                       <textarea 
                         value={visitNoteForm[field.key]} 
                         onChange={(event) => updateVisitNoteField(field.key, event.target.value)}
-                        style={{ minHeight: '80px', borderRadius: '8px', padding: '0.6rem', border: '1px solid var(--slate-300)', resize: 'vertical', width: '100%', outline: 'none' }}
+                        style={{ minHeight: '80px', borderRadius: '8px', padding: '0.6rem', border: '1px solid var(--line-strong)', resize: 'vertical', width: '100%', outline: 'none' }}
                         onFocus={(e) => e.target.style.borderColor = 'var(--brand-400)'}
-                        onBlur={(e) => e.target.style.borderColor = 'var(--slate-300)'}
+                        onBlur={(e) => e.target.style.borderColor = 'var(--line-strong)'}
                       />
                     </div>
                   );
@@ -1239,16 +1240,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
             // state → fill/stroke colors (same as tooth map)
             const FILL: Record<string, string> = {
-              idle:"#fff", planned:"#e0f2fe", treatment:"#fee2e2",
-              watch:"#fef3c7", done:"#dcfce7", missing:"#f1f5f9"
+              idle:"#fff", planned:"var(--info-bg)", treatment:"var(--bad-bg)",
+              watch:"var(--warn-bg)", done:"var(--ok-bg)", missing:"var(--paper-soft)"
             };
             const STROKE: Record<string, string> = {
               idle:"#94a3b8", planned:"#0284c7", treatment:"#dc2626",
               watch:"#d97706", done:"#166534", missing:"#cbd5e1"
             };
             const ROOT_FILL: Record<string, string> = {
-              idle:"#f8fafc", planned:"#f0f9ff", treatment:"#fff5f5",
-              watch:"#fffbeb", done:"#f0fdf4", missing:"#f1f5f9"
+              idle:"var(--paper-soft)", planned:"#f0f9ff", treatment:"#fff5f5",
+              watch:"#fffbeb", done:"#f0fdf4", missing:"var(--paper-soft)"
             };
             const ROOT_STROKE: Record<string, string> = {
               idle:"#cbd5e1", planned:"#38bdf8", treatment:"#f87171",
@@ -1266,13 +1267,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               >
                 {state === "missing" ? (
                   <g>
-                    <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-                    <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                    <path d={geom.root} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+                    <path d={geom.crown} fill="var(--paper-soft)" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
                     <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
                   </g>
                 ) : (
                   <g>
-                    <path d={geom.root} fill={ROOT_FILL[state] ?? "#f8fafc"} stroke={ROOT_STROKE[state] ?? "#cbd5e1"} strokeWidth="1.5" strokeLinejoin="round" />
+                    <path d={geom.root} fill={ROOT_FILL[state] ?? "var(--paper-soft)"} stroke={ROOT_STROKE[state] ?? "#cbd5e1"} strokeWidth="1.5" strokeLinejoin="round" />
                     {geom.canals && (state === "treatment" || state === "done") && (
                       <path d={geom.canals} fill="none" stroke={state === "done" ? "#ec4899" : "#dc2626"} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
                     )}
