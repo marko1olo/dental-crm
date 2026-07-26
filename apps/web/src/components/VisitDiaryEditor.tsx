@@ -606,7 +606,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</span>
 					<button
 						onClick={() => setShowScanner(true)}
-						className="w-full sm:w-auto px-5 py-2 text-sm text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 border border-blue-500/30 rounded-xl transition-all flex items-center justify-center gap-2"
+						className="w-full sm:w-auto px-5 py-2 text-sm text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 border border-blue-500/30 rounded-xl transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-teal-600 focus:outline-none"
 					>
 						<Activity className="w-4 h-4" />
 						{trayBarcode ? `Лоток: ${trayBarcode}` : "Сканировать Лоток"}
@@ -615,7 +615,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						id="diary-save-btn"
 						onClick={() => doSave(false)}
 						disabled={isSaving}
-						className="w-full sm:w-auto px-5 py-2 text-sm text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all"
+						className="w-full sm:w-auto px-5 py-2 text-sm text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all focus:ring-2 focus:ring-teal-600 focus:outline-none"
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
 					</button>
