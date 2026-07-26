@@ -45,7 +45,14 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
     });
   };
 
+  const MAX_SAFE_FILE_SIZE_BYTES = 1.5 * 1024 * 1024 * 1024; // 1.5 GB
+
   const processZip = async (zipFile: File) => {
+    if (zipFile.size > MAX_SAFE_FILE_SIZE_BYTES) {
+      setStatus("Файл слишком велик для обработки в памяти браузера. Используйте просмотр по срезам.");
+      return;
+    }
+
     setStatus("Распаковка ZIP-архива в память...");
     const buffer = new Uint8Array(await zipFile.arrayBuffer());
     

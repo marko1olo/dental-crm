@@ -257,7 +257,9 @@ export const OdontogramModule = ({
 		toothNumbers: number[],
 		state: ToothState,
 	) => {
+		let previousTeethData: ToothData[] = [];
 		setTeethData((prev) => {
+			previousTeethData = [...prev];
 			const next = [...prev];
 			for (const t of toothNumbers) {
 				const existingIdx = next.findIndex((x) => x.toothNumber === t);
@@ -285,18 +287,31 @@ export const OdontogramModule = ({
 		setMenuConfig(null);
 		setSelectedTeeth([]);
 
-		// Save to API
-		await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
-			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-			}),
-			body: JSON.stringify({
-				toothNumbers,
-				state,
-				surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
-			}),
-		});
+		try {
+			// Save to API
+			const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					toothNumbers,
+					state,
+					surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
+				}),
+			});
+
+			if (!res.ok) {
+				setTeethData(previousTeethData);
+				showToast("Ошибка сохранения одонтограммы. Изменения отменены.", "error");
+				return;
+			}
+		} catch (err) {
+			console.error("[Odontogram Save Batch Error]:", err);
+			setTeethData(previousTeethData);
+			showToast("Сетевой сбой при сохранении зубной формулы. Изменения отменены.", "error");
+			return;
+		}
 
 		// Push suggestion to global state for ComparativePlannerDashboard
 		const { addPendingPlanSuggestion } = usePatientStore.getState();

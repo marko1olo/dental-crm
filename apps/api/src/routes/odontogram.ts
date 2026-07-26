@@ -191,34 +191,37 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			if (toothNumbers.length === 0)
 				return reply.send({ success: true, states: [] });
 
-			await db
-				.delete(toothStates)
-				.where(
-					and(
-						eq(toothStates.patientId, patientId),
-						inArray(toothStates.toothNumber, toothNumbers),
-					),
-				);
 			const now = new Date();
-			const inserted = await db
-				.insert(toothStates)
-				.values(
-					toothNumbers.map((toothNumber) => ({
-						organizationId,
-						patientId,
-						toothNumber,
-						state: parsed.data.state,
-						surfaces: parsed.data.surfaces || null,
-						updatedAt: now,
-						isSynced: false,
-						version: 1,
-					})),
-				)
-				.returning({
-					toothNumber: toothStates.toothNumber,
-					state: toothStates.state,
-					surfaces: toothStates.surfaces,
-				});
+			const inserted = await db.transaction(async (tx) => {
+				await tx
+					.delete(toothStates)
+					.where(
+						and(
+							eq(toothStates.patientId, patientId),
+							inArray(toothStates.toothNumber, toothNumbers),
+						),
+					);
+
+				return await tx
+					.insert(toothStates)
+					.values(
+						toothNumbers.map((toothNumber) => ({
+							organizationId,
+							patientId,
+							toothNumber,
+							state: parsed.data.state,
+							surfaces: parsed.data.surfaces || null,
+							updatedAt: now,
+							isSynced: false,
+							version: 1,
+						})),
+					)
+					.returning({
+						toothNumber: toothStates.toothNumber,
+						state: toothStates.state,
+						surfaces: toothStates.surfaces,
+					});
+			});
 
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "UPDATE_ODONTOGRAM",

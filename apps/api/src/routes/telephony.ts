@@ -29,11 +29,11 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			// Убираем всё лишнее из номера, оставляя только цифры для поиска
 			const rawPhone = from.replace(/\D/g, "");
 			let patient: typeof patients.$inferSelect | null = null;
+			const phoneSuffix = rawPhone.length >= 10 ? rawPhone.slice(-10) : rawPhone;
 
 			if (rawPhone.length >= 10) {
 				// Ищем по последним 10 цифрам, строго в пределах этой организации,
 				// чтобы номер не сматчился с пациентом другой клиники.
-				const phoneSuffix = rawPhone.slice(-10);
 				const searchResult = await db
 					.select()
 					.from(patients)
@@ -45,6 +45,37 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					)
 					.limit(1);
 				patient = searchResult[0] || null;
+			}
+
+			// Если пациент не найден — создаем черновик лида в crmLeads (идемпотентно, без гонки потоков)
+			if (!patient && phoneSuffix.length >= 7) {
+				try {
+					const { crmLeads } = await import("../db/schema.js");
+					const existingLeads = await db
+						.select()
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, organizationId),
+								ilike(crmLeads.phone, `%${phoneSuffix}%`),
+							),
+						)
+						.limit(1);
+
+					if (existingLeads.length === 0) {
+						await db.insert(crmLeads).values({
+							organizationId,
+							name: `Входящий звонок ${from}`,
+							patientName: `Звонок ${from}`,
+							phone: from,
+							source: "telephony",
+							status: "new",
+							notes: "Автоматический черновик лида из входящего звонка АТС",
+						});
+					}
+				} catch (leadErr) {
+					console.warn("[Telephony Idempotent Lead Creation Warning]:", leadErr);
+				}
 			}
 
 			// Броадкастим всем админам этой клиники
