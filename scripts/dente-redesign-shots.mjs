@@ -62,19 +62,53 @@ async function shot(name) {
   console.log(`shot ${name}.png (${Math.round(Buffer.from(data, "base64").length / 1024)}KB)`);
 }
 
-// bootstrap demo session
+// bootstrap demo session via real login
 await sleep(5000);
-await evaluate(`(() => { try { window.localStorage.setItem('x-organization-id','1'); } catch {} return true; })()`);
+await evaluate(`(async () => {
+  const r = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-organization-id': '1' },
+    body: JSON.stringify({ email: 'doctor@clinic.com', password: 'dente2026' })
+  });
+  const data = await r.json();
+  if (data.clinicToken) localStorage.setItem('dente_clinic_token', data.clinicToken);
+  if (data.staffToken) localStorage.setItem('dente_staff_token', data.staffToken);
+  localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({
+    version: 1,
+    savedAt: new Date().toISOString(),
+    onboardingDismissed: true,
+    onboardingDismissedAt: new Date().toISOString(),
+    onboardingDraftMode: true,
+    themeMode: 'light'
+  }));
+  localStorage.setItem('dente_onboarding_dismissed_v1', JSON.stringify({
+    dismissed: true,
+    savedAt: new Date().toISOString()
+  }));
+  return data.ok === true;
+})()`);
+async function waitForWorkspace() {
+  for (let i = 0; i < 30; i++) {
+    const ready = await evaluate(`Boolean(document.getElementById('workspace-content'))`);
+    if (ready) return;
+    await sleep(500);
+  }
+}
+
 await evaluate(`window.location.reload()`);
-await sleep(6000);
+await waitForWorkspace();
+await sleep(3000);
 
 // DESKTOP
 await setViewport(1440, 900, false);
+const allViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"];
+
 for (const theme of ["light", "dark", "night"]) {
   await setTheme(theme);
-  await nav("#shift"); await shot(`desktop_${theme}_shift`);
-  await nav("#schedule"); await shot(`desktop_${theme}_schedule`);
-  await nav("#visit"); await shot(`desktop_${theme}_visit`);
+  for (const v of allViews) {
+    await nav(`#${v}`);
+    await shot(`desktop_${theme}_${v}`);
+  }
 }
 // desktop collapsed sidebar
 await setTheme("light");
@@ -82,13 +116,17 @@ await nav("#shift");
 await evaluate(`(() => { const b = document.querySelector('.sidebar-collapse-button'); if (b) b.click(); return !!b; })()`);
 await sleep(700);
 await shot("desktop_light_shift_collapsed");
+await evaluate(`(() => { const b = document.querySelector('.sidebar-collapse-button'); if (b) b.click(); return !!b; })()`);
+await sleep(700);
 
 // MOBILE
 await setViewport(390, 844, true);
 for (const theme of ["light", "dark"]) {
   await setTheme(theme);
-  await nav("#shift"); await shot(`mobile_${theme}_shift`);
-  await nav("#visit"); await shot(`mobile_${theme}_visit`);
+  for (const v of ["shift", "schedule", "patients", "visit", "documents", "finance", "settings"]) {
+    await nav(`#${v}`);
+    await shot(`mobile_${theme}_${v}`);
+  }
 }
 
 socket.close();

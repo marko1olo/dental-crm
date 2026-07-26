@@ -1,54 +1,810 @@
-/* DENTE redesign compatibility layer scoped to the live workspace. */
+/* ============================================================
+   DENTE REDESIGN LAYER — drop-in
+   Подключение: в конец src/styles/main.css добавить
+     @import './dente-redesign.css';
+   (или импортировать в main.tsx ПОСЛЕ main.css)
+   Шрифт: в index.html добавить Golos Text (см. ВНЕДРЕНИЕ.md §1)
+   Темы: document.documentElement.dataset.theme = 'light'|'dark'|'night'
+   ============================================================ */
+
+/* ---------- 1. ТОКЕНЫ ---------- */
 :root, [data-theme="light"] {
-  font-family: "Golos Text", Inter, ui-sans-serif, system-ui, sans-serif;
-  --bg: #f0f5f3; --elev: #fff; --ink-2: #3f544f; --teal-2: #0f766e; --on-teal: #fff;
-  --teal-ring: rgba(13,148,136,.3); --ok-bg: #dcfce7; --ok-fg: #15803d;
-  --warn-bg: #fef3c7; --warn-fg: #a16207; --bad-bg: #fee2e2; --bad-fg: #b91c1c;
-  --info-bg: #e0f2fe; --info-fg: #0369a1; --side-bg: #fff;
-  --shadow-1: 0 1px 2px rgba(13,31,27,.05); --shadow-2: 0 16px 40px -16px rgba(15,118,110,.22);
+  font-family: 'Golos Text', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --bg: #f0f5f3;
+  --paper: #ffffff;
+  --paper-strong: #ffffff;
+  --paper-soft: #f6faf8;
+  --elev: #ffffff;
+  --ink: #0f1e1b;
+  --ink-2: #3f544f;
+  --muted: #5d746f;
+  --line: #e2eae7;
+  --line-strong: #cbd9d4;
+  --teal: #0d9488; --teal-dark: #0f766e; --teal-2: #0f766e; --on-teal: #ffffff;
+  --teal-soft: #ccfbf1;
+  --teal-surface: rgba(13, 148, 136, 0.07);
+  --teal-glow: rgba(13, 148, 136, 0.30);
+  --teal-ring: rgba(13, 148, 136, 0.30);
+  --ok-bg: #dcfce7; --ok-fg: #15803d;
+  --warn-bg: #fef3c7; --warn-fg: #a16207;
+  --bad-bg: #fee2e2; --bad-fg: #b91c1c;
+  --info-bg: #e0f2fe; --info-fg: #0369a1;
+  --shadow-1: 0 1px 2px rgba(13, 31, 27, 0.05);
+  --shadow-2: 0 16px 40px -16px rgba(15, 118, 110, 0.22);
+  --shadow-premium: 0 16px 40px -16px rgba(15, 118, 110, 0.22);
+  /* совместимость со старыми именами */
+  --rust: var(--bad-fg); --rust-soft: var(--bad-bg);
+  --amber: var(--warn-fg); --amber-soft: var(--warn-bg);
+  --red: var(--bad-fg); --green: var(--ok-fg);
+  --success-color: var(--ok-fg); --warning-color: var(--warn-fg); --error-color: var(--bad-fg);
+  /* slate compatibility mappings */
+  --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
+  --slate-200: var(--line); --slate-300: var(--line-strong);
+  --slate-400: var(--muted); --slate-500: var(--muted);
+  --slate-600: var(--ink-2); --slate-700: var(--ink-2);
+  --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  color: var(--ink);
+  background: var(--bg);
 }
-[data-theme="dark"], html.dark {
-  --bg:#0a1211; --paper:#101a19; --paper-strong:#15211f; --paper-soft:#0d1615; --elev:#15211f;
-  --ink:#e9f2ef; --ink-2:#b9c9c4; --muted:#7e948e; --line:rgba(150,180,172,.14); --line-strong:rgba(150,180,172,.28);
-  --teal:#2dd4bf; --teal-dark:#14b8a6; --teal-2:#5eead4; --on-teal:#04211c; --teal-soft:rgba(45,212,191,.16); --teal-surface:rgba(45,212,191,.08); --teal-ring:rgba(45,212,191,.35);
-  --ok-bg:rgba(74,222,128,.14); --ok-fg:#4ade80; --warn-bg:rgba(251,191,36,.14); --warn-fg:#fbbf24; --bad-bg:rgba(248,113,113,.15); --bad-fg:#f87171; --info-bg:rgba(56,189,248,.14); --info-fg:#38bdf8; --side-bg:#0c1514;
-  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 20px 48px -16px rgba(0,0,0,.55);
+
+[data-theme="dark"] {
+  --bg: #0a1211;
+  --paper: #101a19;
+  --paper-strong: #15211f;
+  --paper-soft: #0d1615;
+  --elev: #15211f;
+  --ink: #e9f2ef;
+  --ink-2: #b9c9c4;
+  --muted: #7e948e;
+  --line: rgba(150, 180, 172, 0.14);
+  --line-strong: rgba(150, 180, 172, 0.28);
+  --teal: #2dd4bf; --teal-dark: #14b8a6; --teal-2: #5eead4; --on-teal: #04211c;
+  --teal-soft: rgba(45, 212, 191, 0.16);
+  --teal-surface: rgba(45, 212, 191, 0.08);
+  --teal-glow: rgba(45, 212, 191, 0.35);
+  --teal-ring: rgba(45, 212, 191, 0.35);
+  --ok-bg: rgba(74, 222, 128, 0.14); --ok-fg: #4ade80;
+  --warn-bg: rgba(251, 191, 36, 0.14); --warn-fg: #fbbf24;
+  --bad-bg: rgba(248, 113, 113, 0.15); --bad-fg: #f87171;
+  --info-bg: rgba(56, 189, 248, 0.14); --info-fg: #38bdf8;
+  --side-bg: #0c1514;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
+  --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.55);
+  /* slate compatibility mappings */
+  --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
+  --slate-200: var(--line); --slate-300: var(--line-strong);
+  --slate-400: var(--muted); --slate-500: var(--muted);
+  --slate-600: var(--ink-2); --slate-700: var(--ink-2);
+  --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  color: var(--ink);
+  background: var(--bg);
 }
+
 [data-theme="night"] {
-  --bg:#141110; --paper:#1c1714; --paper-strong:#231d19; --paper-soft:#171310; --elev:#231d19; --ink:#f1e8dd; --ink-2:#cdbfae; --muted:#98897a; --line:rgba(220,195,160,.13); --line-strong:rgba(220,195,160,.26);
-  --teal:#e0a458; --teal-dark:#cf9146; --teal-2:#ecb872; --on-teal:#231505; --teal-soft:rgba(224,164,88,.18); --teal-surface:rgba(224,164,88,.08); --teal-ring:rgba(224,164,88,.35);
-  --ok-bg:rgba(163,190,110,.16); --ok-fg:#b5c98a; --warn-bg:rgba(232,180,90,.16); --warn-fg:#e8b45a; --bad-bg:rgba(240,144,109,.17); --bad-fg:#f0906d; --info-bg:rgba(212,180,131,.15); --info-fg:#d4b483; --side-bg:#18130f;
-  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 20px 48px -16px rgba(0,0,0,.6);
+  --bg: #141110;
+  --paper: #1c1714;
+  --paper-strong: #231d19;
+  --paper-soft: #171310;
+  --elev: #231d19;
+  --ink: #f1e8dd;
+  --ink-2: #cdbfae;
+  --muted: #98897a;
+  --line: rgba(220, 195, 160, 0.13);
+  --line-strong: rgba(220, 195, 160, 0.26);
+  --teal: #e0a458; --teal-dark: #cf9146; --teal-2: #ecb872; --on-teal: #231505;
+  --teal-soft: rgba(224, 164, 88, 0.18);
+  --teal-surface: rgba(224, 164, 88, 0.08);
+  --teal-glow: rgba(224, 164, 88, 0.35);
+  --teal-ring: rgba(224, 164, 88, 0.35);
+  --ok-bg: rgba(163, 190, 110, 0.16); --ok-fg: #b5c98a;
+  --warn-bg: rgba(232, 180, 90, 0.16); --warn-fg: #e8b45a;
+  --bad-bg: rgba(240, 144, 109, 0.17); --bad-fg: #f0906d;
+  --info-bg: rgba(212, 180, 131, 0.15); --info-fg: #d4b483;
+  --side-bg: #18130f;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
+  --shadow-premium: 0 20px 48px -16px rgba(0, 0, 0, 0.6);
+  /* slate compatibility mappings */
+  --slate-50: var(--paper-soft); --slate-100: var(--paper-soft);
+  --slate-200: var(--line); --slate-300: var(--line-strong);
+  --slate-400: var(--muted); --slate-500: var(--muted);
+  --slate-600: var(--ink-2); --slate-700: var(--ink-2);
+  --slate-800: var(--ink); --slate-900: var(--ink); --slate-950: var(--ink);
+  color: var(--ink);
+  background: var(--bg);
 }
-.dente-redesign { background:var(--bg); color:var(--ink); }
-.dente-redesign .sidebar { width:252px; background:var(--side-bg); border-right:1px solid var(--line); transition:width .25s cubic-bezier(.4,0,.2,1),padding .25s; }
-.dente-redesign[data-collapsed="true"] { grid-template-columns:76px minmax(0,1fr); }
-.dente-redesign[data-collapsed="true"] .sidebar { width:76px; padding-inline:12px; }
-.dente-redesign[data-collapsed="true"] .nav-copy,.dente-redesign[data-collapsed="true"] .brand-mark span,.dente-redesign[data-collapsed="true"] .theme-switcher { display:none; }
-.dente-redesign[data-collapsed="true"] .nav-item,.dente-redesign[data-collapsed="true"] .brand-mark { justify-content:center; }
-.dente-redesign .sidebar-footer { display:grid; gap:8px; margin-top:auto; }
-.dente-redesign .theme-switcher { display:flex; gap:2px; padding:3px; background:var(--paper-soft); border:1px solid var(--line); border-radius:10px; }
-.dente-redesign .theme-switcher button { flex:1; min-width:0; border:0; border-radius:7px; padding:5px 3px; color:var(--muted); background:transparent; font-size:10px; font-weight:700; }
-.dente-redesign .theme-switcher button[aria-pressed="true"] { background:var(--teal-soft); color:var(--teal-2); }
-.dente-redesign[data-collapsed="true"] .sidebar-collapse-button svg { transform:rotate(180deg); }
-.dente-redesign .topbar { min-height:61px; background:var(--paper); border-bottom:1px solid var(--line); }
-.dente-redesign .topbar-context { display:flex; align-items:center; gap:12px; min-width:0; }
-.dente-redesign .topbar h1 { font-size:18px; font-weight:700; }
-.dente-redesign .topbar .eyebrow,.dente-redesign .workspace-role-switcher summary,.dente-redesign .recent-widget { white-space:nowrap; }
-.dente-redesign .primary-button { background:linear-gradient(180deg,var(--teal),var(--teal-2)); color:var(--on-teal); }
-.dente-redesign .top-lock-button { color:var(--bad-fg) !important; }
-.dente-redesign .panel,.dente-redesign .now-card,.dente-redesign .today-schedule-box,.dente-redesign .patient-summary-card,.dente-redesign .role-focus-strip,.dente-redesign .shift-intelligence,.dente-redesign .dictation-box,.dente-redesign .tooth-map,.dente-redesign .visit-note-panel,.dente-redesign .visit-focus-bar { border-color:var(--line); border-radius:14px; box-shadow:var(--shadow-1); }
-.dente-redesign .status-pill.status-confirmed { background:var(--info-bg); color:var(--info-fg); }
-.dente-redesign .status-pill.status-arrived { background:var(--warn-bg); color:var(--warn-fg); }
-.dente-redesign .status-pill.status-in_treatment { background:var(--ok-bg); color:var(--ok-fg); }
-.dente-redesign .status-pill.status-cancelled,.dente-redesign .status-pill.status-no_show { background:var(--bad-bg); color:var(--bad-fg); }
-.dente-redesign .today-schedule-time { font-variant-numeric:tabular-nums; }
-.dente-redesign .today-schedule-item.current-active { background:var(--teal-surface) !important; border-color:var(--teal-ring) !important; border-left:3px solid var(--teal) !important; }
-.dente-redesign .clickable-card:hover,.dente-redesign .role-queue-card:hover { border-color:var(--teal-ring); box-shadow:var(--shadow-2); transform:translateY(-2px); }
-.dente-redesign .dictation-box textarea { background:var(--paper-soft); border-color:var(--line-strong); color:var(--ink); }
-.dente-redesign .tooth-map { overflow-x:auto; }
-@media (max-width:1140px) { .dente-redesign .sidebar { width:76px; padding-inline:12px; } .dente-redesign .nav-copy,.dente-redesign .brand-mark span { display:none; } .dente-redesign .nav-item,.dente-redesign .brand-mark { justify-content:center; } .dente-redesign .recent-widget,.dente-redesign .compact-top-button { display:none; } }
-@media (max-width:840px) { .dente-redesign .sidebar { display:none; } .dente-redesign .topbar { padding-inline:14px; flex-wrap:wrap; } .dente-redesign .topbar h1 { font-size:16px; } .dente-redesign .workspace { padding-bottom:100px !important; } }
-@media (prefers-reduced-motion:reduce) { .dente-redesign *,.dente-redesign *::before,.dente-redesign *::after { animation:none !important; transition:none !important; } }
-.dnt-bottom-nav { display:none; }
-@media (max-width:840px) { .dnt-bottom-nav { display:flex; position:fixed; inset:auto 0 0; z-index:30; gap:2px; justify-content:space-around; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); } .dnt-bottom-nav a { display:flex; flex:1; min-width:0; max-width:76px; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; border-radius:10px; color:var(--muted); font-size:10.5px; font-weight:600; } .dnt-bottom-nav a.active { color:var(--teal-2); background:var(--teal-soft); } }
+
+/* ---------- 2. КЛЮЧЕВЫЕ КЕЙФРЕЙМЫ ---------- */
+@keyframes dntUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes dntPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes dntWave { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
+
+/* ---------- 3. БАЗА ---------- */
+body { background: var(--bg); color: var(--ink); }
+a { color: var(--teal-dark); text-decoration: none; }
+a:hover { color: var(--teal); }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+textarea, input, select { font-family: inherit; }
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* ---------- 4. КНОПКИ ---------- */
+.primary-button {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 36px; padding: 0 16px;
+  border: none; border-radius: 10px;
+  background: linear-gradient(180deg, var(--teal), var(--teal-dark));
+  color: var(--on-teal); font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 16px -6px var(--teal-ring);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.primary-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px -6px var(--teal-ring); }
+.primary-button:active:not(:disabled) { transform: scale(0.97); }
+.primary-button svg { width: 15px; height: 15px; }
+
+.secondary-button {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--paper); color: var(--ink);
+  font-size: 13px; font-weight: 600;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.secondary-button:hover:not(:disabled) { border-color: var(--teal-ring); color: var(--teal-dark); transform: translateY(-1px); }
+.secondary-button.active { background: var(--teal-soft); color: var(--teal-dark); border-color: var(--teal-ring); }
+.secondary-button svg { width: 15px; height: 15px; }
+
+.icon-button {
+  width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--paper); color: var(--ink-2);
+  transition: all 0.15s;
+}
+.icon-button:hover { border-color: var(--teal-ring); color: var(--teal); transform: translateY(-1px); }
+.icon-button svg { width: 16px; height: 16px; }
+.top-lock-button { color: var(--bad-fg) !important; }
+.top-lock-button:hover { border-color: var(--bad-fg) !important; }
+
+.text-button { border: none; background: transparent; color: var(--teal-dark); font-size: 12px; font-weight: 600; padding: 4px 0; }
+.text-button:hover { opacity: 0.75; }
+
+/* ---------- 5. САЙДБАР ---------- */
+.sidebar {
+  width: 252px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  background: var(--side-bg);
+  border-right: 1px solid var(--line);
+  padding: 16px 14px;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s;
+}
+.brand-mark { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; color: var(--ink); }
+.brand-mark svg {
+  width: 32px; height: 32px; padding: 6px; box-sizing: border-box;
+  border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(145deg, var(--teal), var(--teal-dark));
+  color: var(--on-teal);
+  box-shadow: 0 4px 12px -4px var(--teal-ring);
+}
+.brand-mark span { font-weight: 800; font-size: 17px; letter-spacing: 0.06em; }
+
+.sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 10px; border-radius: 10px;
+  color: var(--ink-2); font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item:hover { background: var(--teal-surface); color: var(--ink); }
+.nav-item.active {
+  color: var(--teal-dark); background: var(--teal-soft);
+  box-shadow: inset 3px 0 0 var(--teal); font-weight: 600;
+}
+[data-theme="dark"] .nav-item.active, [data-theme="night"] .nav-item.active { color: var(--teal); }
+.nav-item svg { width: 19px; height: 19px; flex-shrink: 0; }
+.nav-copy { display: flex; flex-direction: column; min-width: 0; }
+.nav-label { font-size: 13.5px; }
+.nav-copy small {
+  font-size: 10.5px; font-weight: 500; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* футер сайдбара & переключатель тем */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.theme-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+  flex: 1;
+}
+.theme-switcher button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 6px;
+  border-radius: 7px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.theme-switcher button:hover {
+  color: var(--ink);
+}
+.theme-switcher button[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--teal-dark);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .theme-switcher button[aria-pressed="true"],
+[data-theme="night"] .theme-switcher button[aria-pressed="true"] {
+  color: var(--teal);
+}
+.sidebar-collapse-button svg {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* сворачивание: data-collapsed="true" на контейнере приложения */
+[data-collapsed="true"] .sidebar { width: 76px; padding: 16px 12px; }
+[data-collapsed="true"] .nav-copy, [data-collapsed="true"] .brand-mark span { display: none; }
+[data-collapsed="true"] .nav-item { justify-content: center; padding: 11px 0; }
+[data-collapsed="true"] .brand-mark { justify-content: center; padding: 4px 0 16px; }
+[data-collapsed="true"] .sidebar-footer { flex-direction: column; gap: 8px; }
+[data-collapsed="true"] .theme-switcher { display: none; }
+[data-collapsed="true"] .sidebar-collapse-button svg { transform: rotate(180deg); }
+
+/* ---------- 6. ТОПБАР ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 24px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.topbar h1 {
+  margin: 1px 0 0; font-size: 18px; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar .eyebrow { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+.top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* ---------- 6.1 РАБОЧЕЕ ПРОСТРАНСТВО & ГРИДЫ ---------- */
+.workspace, .dnt-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 32px !important;
+  max-width: 1560px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shift-hero, .dnt-hero {
+  display: grid !important;
+  grid-template-columns: 1.05fr 0.95fr !important;
+  gap: 16px !important;
+}
+
+.shift-queues, .dnt-queues {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 12px !important;
+}
+
+.shift-cockpit, .dnt-cockpit {
+  display: grid !important;
+  grid-template-columns: 360px 1fr !important;
+  gap: 16px !important;
+  margin-top: 16px !important;
+}
+
+.visit-emk-grid, .dnt-emk {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  margin-top: 16px !important;
+}
+
+@container dnt (max-width: 1140px), @media (max-width: 1140px) {
+  .shift-hero, .dnt-hero, .visit-emk-grid, .dnt-emk { grid-template-columns: 1fr !important; }
+  .shift-queues, .dnt-queues { grid-template-columns: 1fr 1fr !important; }
+  .shift-cockpit, .dnt-cockpit { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 840px) {
+  .shift-hero, .dnt-hero, .shift-queues, .dnt-queues, .shift-cockpit, .dnt-cockpit, .visit-emk-grid, .dnt-emk {
+    grid-template-columns: 1fr !important;
+  }
+  .workspace, .dnt-content { padding: 14px 14px 100px !important; }
+}
+.workspace-role-switcher summary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--paper-soft); color: var(--ink-2);
+  font-size: 12px; font-weight: 500; cursor: pointer; list-style: none;
+  white-space: nowrap; transition: all 0.15s;
+}
+.workspace-role-switcher summary:hover { border-color: var(--teal-ring); color: var(--ink); }
+.workspace-role-switcher summary::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex-shrink: 0;
+}
+.workspace-role-switcher summary strong { color: var(--ink); font-weight: 600; }
+.role-switcher-options {
+  position: absolute; z-index: 40; margin-top: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--elev); border: 1px solid var(--line); border-radius: 12px;
+  padding: 6px; box-shadow: var(--shadow-2); min-width: 180px;
+  animation: dntUp 0.18s ease;
+}
+.role-switcher-options button {
+  text-align: left; padding: 8px 12px; border: none; border-radius: 8px;
+  background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 500;
+}
+.role-switcher-options button:hover { background: var(--teal-surface); color: var(--ink); }
+.role-switcher-options button.active { background: var(--teal-soft); color: var(--teal-dark); font-weight: 600; }
+
+/* ---------- 7. КАРТОЧКИ / ПАНЕЛИ ---------- */
+.panel, .now-card, .today-schedule-box, .patient-summary-card,
+.role-focus-strip, .shift-intelligence, .dictation-box, .tooth-map,
+.visit-note-panel, .visit-focus-bar, .specialty-focus-bar, .visit-next-step {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+}
+.panel-heading h2 { font-size: 15px; font-weight: 700; margin: 0; }
+
+.role-focus-strip {
+  background: linear-gradient(135deg, var(--teal-surface), transparent 60%), var(--paper);
+  color: var(--ink);
+  padding: 16px 20px;
+}
+.role-focus-strip h2 {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 2px 0 4px;
+}
+.role-focus-strip p:not(.eyebrow) {
+  color: var(--ink-2);
+}
+.role-focus-strip .eyebrow {
+  color: var(--muted);
+}
+.role-focus-strip svg {
+  color: var(--teal);
+}
+.role-focus-meta {
+  color: var(--ink-2);
+}
+.role-focus-meta .status-pill {
+  color: var(--ink-2);
+  background: var(--paper-soft);
+  border-color: var(--line);
+}
+
+.clickable-card, .role-queue-card {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 13px;
+  box-shadow: var(--shadow-1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.clickable-card:hover, .role-queue-card:hover {
+  border-color: var(--teal-ring); box-shadow: var(--shadow-2); transform: translateY(-3px);
+}
+.role-queue-card.active { border-color: var(--teal-ring); background: var(--teal-surface); }
+.clickable-card svg {
+  width: 34px; height: 34px; padding: 8px; box-sizing: border-box;
+  border-radius: 10px; background: var(--teal-soft); color: var(--teal-dark);
+}
+[data-theme="dark"] .clickable-card svg, [data-theme="night"] .clickable-card svg { color: var(--teal); }
+.tile-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+/* ---------- 8. СТАТУСНЫЕ ЧИПЫ ---------- */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 11px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; text-transform: none; letter-spacing: 0.01em;
+  background: var(--paper-soft); border: 1px solid var(--line); color: var(--ink-2);
+  white-space: nowrap;
+}
+.status-pill.status-planned { background: var(--paper-soft); color: var(--ink-2); }
+.status-pill.status-confirmed { background: var(--info-bg); color: var(--info-fg); border-color: transparent; }
+.status-pill.status-arrived { background: var(--warn-bg); color: var(--warn-fg); border-color: transparent; }
+.status-pill.status-in_treatment { background: var(--ok-bg); color: var(--ok-fg); border-color: transparent; }
+.status-pill.status-completed { background: var(--teal-soft); color: var(--teal-dark); border-color: transparent; }
+.status-pill.status-cancelled, .status-pill.status-no_show { background: var(--bad-bg); color: var(--bad-fg); border-color: transparent; }
+
+/* ---------- 9. РАСПИСАНИЕ ДНЯ (Смена) ---------- */
+.today-schedule-item {
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  transition: all 0.15s !important;
+}
+.today-schedule-item:hover { border-color: var(--teal-ring) !important; box-shadow: var(--shadow-1); transform: translateY(-1px); }
+.today-schedule-item.current-active {
+  background: var(--teal-surface) !important;
+  border: 1px solid var(--teal-ring) !important;
+  border-left: 3px solid var(--teal) !important;
+}
+.today-schedule-time { font-variant-numeric: tabular-nums; }
+
+/* ---------- 10. АВАТАРЫ ---------- */
+.avatar {
+  width: 48px; height: 48px; border-radius: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, var(--teal), var(--teal-dark));
+  color: var(--on-teal); font-size: 19px; font-weight: 800;
+  box-shadow: 0 8px 18px -8px var(--teal-ring);
+}
+
+/* ---------- 11. ДИКТОВКА ---------- */
+.dictation-box textarea {
+  min-height: 120px; width: 100%; box-sizing: border-box; resize: vertical;
+  padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 11px;
+  background: var(--paper-soft); color: var(--ink);
+  font-size: 13.5px; line-height: 1.55;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.dictation-quick-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.dictation-quick-row button, .quick-chip {
+  padding: 5px 12px; border: 1px dashed var(--line-strong); border-radius: 999px;
+  background: var(--paper-soft); color: var(--ink-2);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.dictation-quick-row button:hover, .quick-chip:hover {
+  border-color: var(--teal); color: var(--teal-dark); background: var(--teal-surface);
+}
+.recording-icon-pulse { animation: dntPulse 1.2s ease infinite; color: var(--bad-fg) !important; }
+.skeleton-wave { animation: dntWave 1s ease-in-out infinite; background: var(--bad-fg); }
+
+/* ---------- 12. ЗУБНАЯ КАРТА (если рендер кнопками с data-tooth-state) ---------- */
+.tooth-map button[data-tooth-state] {
+  width: 36px; height: 46px; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--paper); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  cursor: pointer; transition: all 0.12s;
+}
+.tooth-map button[data-tooth-state]:hover { transform: translateY(-2px); box-shadow: var(--shadow-1); }
+button[data-tooth-state="planned"] { background: var(--info-bg) !important; color: var(--info-fg) !important; border-color: var(--info-fg) !important; }
+button[data-tooth-state="treatment"] { background: var(--bad-bg) !important; color: var(--bad-fg) !important; border-color: var(--bad-fg) !important; }
+button[data-tooth-state="watch"] { background: var(--warn-bg) !important; color: var(--warn-fg) !important; border-color: var(--warn-fg) !important; }
+button[data-tooth-state="done"] { background: var(--ok-bg) !important; color: var(--ok-fg) !important; border-color: var(--ok-fg) !important; }
+button[data-tooth-state="missing"] { background: transparent !important; color: var(--muted) !important; border-style: dashed !important; border-color: var(--line-strong) !important; opacity: 0.55 !important; }
+.stamp-btn.active { background: var(--teal-soft) !important; color: var(--teal-dark) !important; border-color: var(--teal-ring) !important; }
+
+/* ---------- 13. АДАПТИВ ---------- */
+@media (max-width: 1140px) {
+  .sidebar { width: 76px; padding: 16px 12px; }
+  .nav-copy, .brand-mark span { display: none; }
+  .nav-item { justify-content: center; padding: 11px 0; }
+  .brand-mark { justify-content: center; padding: 4px 0 16px; }
+  .compact-top-button, .workspace-role-switcher ~ * .recent-widget { display: none; }
+}
+@media (max-width: 840px) {
+  .sidebar { display: none; }
+  .topbar { padding: 10px 14px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 16px; }
+  .compact-top-button, .top-lock-button { display: none; }
+}
+
+/* Нижняя мобильная навигация — разметка:
+   <nav class="dnt-bottom-nav"> <a class="active">…5 пунктов…</a> </nav> */
+.dnt-bottom-nav { display: none; }
+@media (max-width: 840px) {
+  .dnt-bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    justify-content: space-around; gap: 2px;
+    background: var(--paper); border-top: 1px solid var(--line);
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 24px -12px rgba(0, 0, 0, 0.15);
+  }
+  .dnt-bottom-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 4px; min-width: 0; flex: 1; max-width: 76px;
+    border-radius: 10px; color: var(--muted);
+    font-size: 10.5px; font-weight: 600; transition: color 0.15s;
+  }
+  .dnt-bottom-nav a svg { width: 20px; height: 20px; }
+  .dnt-bottom-nav a.active { color: var(--teal-dark); background: var(--teal-soft); font-weight: 700; }
+  [data-theme="dark"] .dnt-bottom-nav a.active, [data-theme="night"] .dnt-bottom-nav a.active { color: var(--teal); }
+  main, .app-content { padding-bottom: 100px !important; }
+}
+
+/* ---------- 14. ПОЯВЛЕНИЕ СЕКЦИЙ ---------- */
+.panel, .shift-hero > *, .patient-cockpit > * { animation: dntUp 0.45s ease backwards; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- 15. ГЛОБАЛЬНАЯ НЕЙТРАЛИЗАЦИЯ ЖЕСТКИХ TAILWIND КЛАССОВ ---------- */
+[data-theme="dark"] [class*="bg-white"],
+[data-theme="night"] [class*="bg-white"],
+[data-theme="dark"] .bg-white,
+[data-theme="night"] .bg-white {
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] [class*="bg-slate-50"],
+[data-theme="night"] [class*="bg-slate-50"],
+[data-theme="dark"] .bg-slate-50,
+[data-theme="night"] .bg-slate-50,
+[data-theme="dark"] [class*="bg-slate-100"],
+[data-theme="night"] [class*="bg-slate-100"],
+[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--paper-soft) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="light"] [class*="bg-slate-800"],
+[data-theme="light"] [class*="bg-slate-900"],
+[data-theme="light"] .bg-slate-800,
+[data-theme="light"] .bg-slate-900 {
+  background-color: var(--paper-soft) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] [class*="text-slate-900"],
+[data-theme="night"] [class*="text-slate-900"],
+[data-theme="dark"] [class*="text-slate-800"],
+[data-theme="night"] [class*="text-slate-800"],
+[data-theme="dark"] [class*="text-slate-700"],
+[data-theme="night"] [class*="text-slate-700"] {
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] [class*="text-slate-500"],
+[data-theme="night"] [class*="text-slate-500"],
+[data-theme="dark"] [class*="text-slate-400"],
+[data-theme="night"] [class*="text-slate-400"] {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] [class*="border-slate-200"],
+[data-theme="night"] [class*="border-slate-200"],
+[data-theme="dark"] [class*="border-slate-100"],
+[data-theme="night"] [class*="border-slate-100"],
+[data-theme="dark"] [class*="border-slate-300"],
+[data-theme="night"] [class*="border-slate-300"] {
+  border-color: var(--line) !important;
+}
+
+/* ---------- 16. СТРУКТУРИРОВАНИЕ И ЕДИНЫЙ ДИЗАЙН КАРТОЧЕК И СЕТОК ---------- */
+.schedule-widgets-container,
+.dnt-widgets-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)) !important;
+  gap: 16px !important;
+  margin-top: 20px !important;
+}
+
+.panel,
+.section-card,
+[data-testid*="-widget"],
+.schedule-widgets-container > * {
+  background: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+  box-shadow: var(--shadow-1) !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 840px) {
+  .schedule-widgets-container,
+  .dnt-widgets-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---------- 17. БАЗОВЫЙ LAYOUT SHELL, DEMO BANNER И OMNIBAR ---------- */
+.app-shell.dente-redesign {
+  display: flex !important;
+  flex-direction: row !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  background: var(--bg) !important;
+}
+
+.app-shell.dente-redesign .workspace {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  padding: 20px 24px 48px !important;
+  max-width: 1560px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.default-clinic-banner {
+  background: var(--paper) !important;
+  border: 1px solid var(--warn-fg) !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  margin-bottom: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow-1) !important;
+}
+
+.default-clinic-banner .banner-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+}
+
+.default-clinic-banner p {
+  margin: 0 !important;
+  color: var(--ink-2) !important;
+}
+
+.default-clinic-banner .banner-btn {
+  min-height: 32px !important;
+  padding: 0 14px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.omnibar-trigger-btn {
+  position: fixed !important;
+  bottom: 1.5rem !important;
+  right: 1.5rem !important;
+  left: auto !important;
+  z-index: 9998 !important;
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: var(--shadow-2) !important;
+  border-radius: 9999px !important;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.omnibar-trigger-btn:hover {
+  border-color: var(--teal) !important;
+  color: var(--teal-dark) !important;
+  transform: translateY(-2px) !important;
+}
+
+[data-theme="dark"] .omnibar-trigger-btn,
+[data-theme="night"] .omnibar-trigger-btn {
+  background: var(--paper-strong) !important;
+  color: var(--ink) !important;
+  border-color: var(--line-strong) !important;
+}
+
+@media (max-width: 1140px) {
+  .omnibar-trigger-btn {
+    right: 1.5rem !important;
+    left: auto !important;
+  }
+}
+
+@media (max-width: 840px) {
+  .app-shell.dente-redesign {
+    flex-direction: column !important;
+  }
+  .omnibar-trigger-btn {
+    bottom: 4.5rem !important;
+    right: 1rem !important;
+    left: auto !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+  .omnibar-trigger-btn span {
+    display: none !important;
+  }
+  .dnt-bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: var(--paper) !important;
+    border-top: 1px solid var(--line) !important;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (min-width: 841px) {
+  .dnt-bottom-nav {
+    display: none !important;
+  }
+}
+
+/* ---------- 18. ТЕМАТИЧЕСКИЕ ПЕРЕОПРЕДЕЛЕНИЯ ДЛЯ CHIPS, SELECT И DETAILS ---------- */
+.quick-chip.active {
+  background: var(--teal-soft) !important;
+  border-color: var(--teal-ring) !important;
+  color: var(--teal-dark) !important;
+  box-shadow: 0 4px 12px var(--teal-surface) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .quick-chip.active,
+[data-theme="night"] .quick-chip.active {
+  color: var(--teal) !important;
+}
+
+select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235d746f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 36px !important;
+  background-color: var(--paper-soft) !important;
+  border: 1px solid var(--line-strong) !important;
+  color: var(--ink) !important;
+  border-radius: 10px !important;
+}
+
+details.schedule-secret-collapsible,
+details {
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--paper-soft) !important;
+  padding: 10px 14px !important;
+  color: var(--ink) !important;
+}
+
+details summary {
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  user-select: none !important;
+}
+
+details summary:hover {
+  color: var(--teal-dark) !important;
+}
+
+
