@@ -156,7 +156,12 @@ export function FinanceView({
             Сводка по пациенту: {documentPatient?.fullName ?? "пациент не выбран"}
           </p>
         </div>
-        <button className="text-button" type="button" onClick={onGoToDocuments}>
+        <button 
+          className="text-button focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1" 
+          type="button" 
+          onClick={onGoToDocuments}
+          aria-label="Перейти к документам"
+        >
           Документы
         </button>
       </div>
@@ -245,7 +250,7 @@ export function FinanceView({
 
       <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
 
-      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <PricelistDoctorPayrollsWidget />
         <AdvanceDepositTaggingsWidget />
         <DigitalReceiptDispatchesWidget />
