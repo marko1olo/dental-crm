@@ -350,8 +350,11 @@ export function CommunicationsView({
             <EmptyState
               title="Очередь связи пуста"
               description="Когда появятся подтверждения, запросы документов или инструкции после приема, они отобразятся здесь."
-              actionLabel="Открыть расписание"
-              onAction={onGoToSchedule}
+              action={
+                <button className="text-button" type="button" onClick={onGoToSchedule}>
+                  Открыть расписание
+                </button>
+              }
               className="my-4 py-8"
             />
           )}
