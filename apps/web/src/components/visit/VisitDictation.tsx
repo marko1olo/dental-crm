@@ -112,6 +112,7 @@ export function VisitDictation() {
 					<button
 						type="button"
 						key={phrase.label}
+						className="focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 						onClick={() => appendToTranscript(phrase.text)}
 					>
 						{phrase.label}
@@ -123,6 +124,7 @@ export function VisitDictation() {
 					<textarea
 						aria-label="Текст диктовки"
 						value={transcript}
+						className="focus:ring-2 focus:ring-teal-600 focus:outline-none transition-all"
 						onFocus={() => setShowHints(true)}
 						onBlur={(e) => {
 							if (!e.currentTarget.contains(e.relatedTarget)) {
@@ -268,7 +270,7 @@ export function VisitDictation() {
 				/>
 
 				<button
-					className="primary-button"
+					className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 					type="button"
 					onClick={() => {
 						const orchestratorResult =
@@ -294,7 +296,7 @@ export function VisitDictation() {
 				</button>
 
 				<button
-					className="secondary-button"
+					className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 					type="button"
 					onClick={buildDraft}
 					disabled={isDraftLoading || !visitDraftReadyToBuild}
@@ -309,7 +311,7 @@ export function VisitDictation() {
 				<div style={{ flexGrow: 1 }} />
 
 				<button
-					className="secondary-button"
+					className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
 					type="button"
 					onClick={clearTranscriptWithUndo}
 					disabled={!hasVisitTranscriptText}
