@@ -12,7 +12,7 @@ export async function getProtocolTemplatesFromDb(organizationId: string) {
 export async function createProtocolTemplateInDb(
 	organizationId: string,
 	data: {
-		specialty: string;
+		specialty: (typeof schema.protocolTemplates.$inferInsert)["specialty"];
 		title: string;
 		visitReason: string;
 		defaultDurationMinutes: number;
@@ -29,7 +29,7 @@ export async function createProtocolTemplateInDb(
 		.insert(schema.protocolTemplates)
 		.values({
 			organizationId,
-			specialty: data.specialty as any,
+			specialty: data.specialty,
 			title: data.title,
 			visitReason: data.visitReason,
 			defaultDurationMinutes: data.defaultDurationMinutes,

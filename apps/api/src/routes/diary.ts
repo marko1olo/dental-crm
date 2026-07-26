@@ -241,6 +241,30 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		// Forensic lock & Cascading Transaction
 		try {
 			await db.transaction(async (tx) => {
+				// 0. Re-read the diary FOR UPDATE inside the tx and re-check the lock.
+				// The isLocked guard above ran on an unlocked read before the tx (TOCTOU):
+				// two concurrent signers could both pass it, both enter here, and both
+				// deduct inventory — doubling material consumption on visit close. Locking
+				// the row and re-checking serializes them: the second signer blocks until
+				// the first commits, then sees isLocked=true and aborts before any deduction.
+				const [lockedDiary] = await tx
+					.select()
+					.from(visitDiaries)
+					.where(
+						and(
+							eq(visitDiaries.id, id),
+							eq(visitDiaries.organizationId, orgId),
+						),
+					)
+					.limit(1)
+					.for("update");
+				if (!lockedDiary) {
+					throw new Error("NotFound");
+				}
+				if (lockedDiary.isLocked) {
+					throw new Error("AlreadyLocked");
+				}
+
 				// 1. Lock the diary
 				await tx
 					.update(visitDiaries)
@@ -354,6 +378,12 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				lockedAt: new Date().toISOString(),
 			});
 		} catch (err: any) {
+			if (err?.message === "AlreadyLocked") {
+				return reply.code(409).send({ error: "AlreadyLocked" });
+			}
+			if (err?.message === "NotFound") {
+				return reply.code(404).send({ error: "NotFound" });
+			}
 			return reply
 				.code(400)
 				.send({ error: "TransactionFailed", message: err.message });

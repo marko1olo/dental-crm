@@ -812,7 +812,7 @@ export const clinicalRuleActionSchema = z.enum([
 ]);
 export type ClinicalRuleAction = z.infer<typeof clinicalRuleActionSchema>;
 
-export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "other"]);
+export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]);
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 
 export const paymentStatusSchema = z.enum(["planned", "paid", "refunded", "voided"]);

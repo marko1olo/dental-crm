@@ -30,7 +30,7 @@ export async function getVisitDraftAutosaveFromDb(organizationId: string, visitI
       objectiveStatus: visit.objectiveStatus || "",
       diagnosis: visit.diagnosis || "",
       treatmentPlan: visit.treatmentPlan || ""
-    } as any,
+    },
     baseRevision: visit.revision,
     clientDraftId: null,
     clientSavedAt: null,

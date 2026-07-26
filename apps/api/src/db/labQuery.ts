@@ -27,7 +27,7 @@ export async function getLabOrderByToken(token: string) {
 export async function updateLabOrderStatus(token: string, status: string) {
 	const result = await db
 		.update(labOrders)
-		.set({ status: status as any, updatedAt: new Date() })
+		.set({ status: status, updatedAt: new Date() })
 		.where(eq(labOrders.secureToken, token))
 		.returning();
 

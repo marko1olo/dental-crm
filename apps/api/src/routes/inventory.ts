@@ -118,51 +118,64 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.status(400).send({ error: "Invalid adjustment value" });
 		}
 
-		const [item] = await db
-			.select()
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.id, itemId),
-					eq(inventoryItems.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+		// Read-modify-write on stock must be atomic: two concurrent PATCHes would
+		// otherwise both read the same currentStock, compute newStock from the stale
+		// value, and write absolute quantities — losing one adjustment (lost update)
+		// and potentially driving stock negative despite the clamp. Lock the row
+		// FOR UPDATE inside a transaction so the second writer blocks until the first
+		// commits and then re-reads the fresh value.
+		const result = await db.transaction(async (tx) => {
+			const [item] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, itemId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(1)
+				.for("update");
 
-		if (!item) return reply.status(404).send({ error: "Item not found" });
+			if (!item) return { notFound: true as const };
 
-		// Clamp to 0: cannot have negative stock
-		const currentStock = Number(item.stockQuantity ?? 0);
-		const actualAdjustment = Math.max(-currentStock, adjustment);
-		const newStock = currentStock + actualAdjustment;
+			// Clamp to 0: cannot have negative stock
+			const currentStock = Number(item.stockQuantity ?? 0);
+			const actualAdjustment = Math.max(-currentStock, adjustment);
+			const newStock = currentStock + actualAdjustment;
 
-		const [updated] = await db
-			.update(inventoryItems)
-			.set({ stockQuantity: String(newStock), updatedAt: new Date() })
-			.where(
-				and(
-					eq(inventoryItems.id, itemId),
-					eq(inventoryItems.organizationId, organizationId),
-				),
-			)
-			.returning();
-			
-		// Log the transaction
-		if (updated && actualAdjustment !== 0) {
-			const userContext = (request as any).user;
-			await db.insert(inventoryTransactions).values({
-				organizationId,
-				inventoryItemId: itemId,
-				quantityChanged: String(actualAdjustment),
-				unitCostRub: updated.unitCostRub,
-				transactionType: "manual_adjust",
-				userId: userContext?.id ?? null,
-			});
-		}
+			const [updated] = await tx
+				.update(inventoryItems)
+				.set({ stockQuantity: String(newStock), updatedAt: new Date() })
+				.where(
+					and(
+						eq(inventoryItems.id, itemId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.returning();
 
-		if (!updated)
-			return reply.status(500).send({ error: "Failed to update item" });
-		return updated;
+			if (!updated) return { failed: true as const };
+
+			// Log the transaction (same tx: the ledger entry commits atomically with the balance change)
+			if (actualAdjustment !== 0) {
+				const userContext = (request as any).user;
+				await tx.insert(inventoryTransactions).values({
+					organizationId,
+					inventoryItemId: itemId,
+					quantityChanged: String(actualAdjustment),
+					unitCostRub: updated.unitCostRub,
+					transactionType: "manual_adjust",
+					userId: userContext?.id ?? null,
+				});
+			}
+
+			return { updated };
+		});
+
+		if ("notFound" in result) return reply.status(404).send({ error: "Item not found" });
+		if ("failed" in result) return reply.status(500).send({ error: "Failed to update item" });
+		return result.updated;
 	});
 
 	// PUT update inventory item details (staff/admin only)

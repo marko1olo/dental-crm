@@ -3,6 +3,14 @@ import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
 import type { CreatePaymentInput, Payment } from "@dental/shared";
 
+// The DB stores tax_deduction_code as free `text`, but the Payment DTO narrows it
+// to the fiscal codes "1" | "2" | null. Validate at the read boundary instead of
+// asserting with `as any`: any legacy/invalid value collapses to null rather than
+// silently violating the contract.
+function narrowTaxDeductionCode(value: string | null): "1" | "2" | null {
+  return value === "1" || value === "2" ? value : null;
+}
+
 export async function getDefaultOrganizationId(): Promise<string | null> {
   const [org] = await db.select().from(schema.organizations).limit(1);
   return org?.id || null;
@@ -19,22 +27,22 @@ export async function findPaymentByClientMutationIdInDb(organizationId: string, 
     visitId: payment.visitId,
     documentId: payment.documentId,
     amountRub: payment.amountRub,
-    method: payment.method as any,
+    method: payment.method,
     clientMutationId: payment.clientMutationId,
     fiscalReceiptNumber: payment.fiscalReceiptNumber,
     fiscalReceiptIssuedAt: payment.fiscalReceiptIssuedAt,
     fiscalReceiptUrl: payment.fiscalReceiptUrl,
-    fiscalReceipt: payment.fiscalReceipt as any,
+    fiscalReceipt: payment.fiscalReceipt,
     payerFullName: payment.payerFullName,
     payerInn: payment.payerInn,
     payerBirthDate: payment.payerBirthDate,
     payerIdentityDocument: payment.payerIdentityDocument,
     payerRelationship: payment.payerRelationship,
-    taxDeductionCode: payment.taxDeductionCode as any,
+    taxDeductionCode: narrowTaxDeductionCode(payment.taxDeductionCode),
     note: payment.note,
     createdAt: payment.createdAt.toISOString(),
     paidAt: payment.paidAt.toISOString(),
-    status: payment.status as any
+    status: payment.status
   };
 }
 
@@ -100,27 +108,50 @@ export async function createPaymentInDb(organizationId: string, input: CreatePay
       visitId: newPayment.visitId,
       documentId: newPayment.documentId,
       amountRub: newPayment.amountRub,
-      method: newPayment.method as any,
+      method: newPayment.method,
       clientMutationId: newPayment.clientMutationId,
       fiscalReceiptNumber: newPayment.fiscalReceiptNumber,
       fiscalReceiptIssuedAt: newPayment.fiscalReceiptIssuedAt,
       fiscalReceiptUrl: newPayment.fiscalReceiptUrl,
-      fiscalReceipt: newPayment.fiscalReceipt as any,
+      fiscalReceipt: newPayment.fiscalReceipt,
       payerFullName: newPayment.payerFullName,
       payerInn: newPayment.payerInn,
       payerBirthDate: newPayment.payerBirthDate,
       payerIdentityDocument: newPayment.payerIdentityDocument,
       payerRelationship: newPayment.payerRelationship,
-      taxDeductionCode: newPayment.taxDeductionCode as any,
+      taxDeductionCode: narrowTaxDeductionCode(newPayment.taxDeductionCode),
       note: newPayment.note,
       createdAt: newPayment.createdAt.toISOString(),
       paidAt: newPayment.paidAt.toISOString(),
-      status: newPayment.status as any
+      status: newPayment.status
     };
   });
 }
 
-export async function getPaymentsByPatientIdInDb(organizationId: string, patientId: string): Promise<import('@dental/shared').Payment[]> {
+export async function getPaymentsByPatientIdInDb(organizationId: string, patientId: string): Promise<Payment[]> {
   const res = await db.select().from(schema.payments).where(and(eq(schema.payments.organizationId, organizationId), eq(schema.payments.patientId, patientId)));
-  return res.map(p => ({...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString()})) as any;
+  return res.map((p): Payment => ({
+    id: p.id,
+    organizationId: p.organizationId,
+    patientId: p.patientId,
+    visitId: p.visitId,
+    documentId: p.documentId,
+    amountRub: p.amountRub,
+    method: p.method,
+    clientMutationId: p.clientMutationId,
+    fiscalReceiptNumber: p.fiscalReceiptNumber,
+    fiscalReceiptIssuedAt: p.fiscalReceiptIssuedAt,
+    fiscalReceiptUrl: p.fiscalReceiptUrl,
+    fiscalReceipt: p.fiscalReceipt,
+    payerFullName: p.payerFullName,
+    payerInn: p.payerInn,
+    payerBirthDate: p.payerBirthDate,
+    payerIdentityDocument: p.payerIdentityDocument,
+    payerRelationship: p.payerRelationship,
+    taxDeductionCode: narrowTaxDeductionCode(p.taxDeductionCode),
+    note: p.note,
+    createdAt: p.createdAt.toISOString(),
+    paidAt: p.paidAt.toISOString(),
+    status: p.status,
+  }));
 }
