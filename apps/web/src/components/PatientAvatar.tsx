@@ -47,14 +47,42 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
   return "male"; // default
 }
 
-export function PatientAvatar({ fullName, size = 44 }: { fullName?: string, size?: number }) {
+export function getInitials(fullName?: string): string {
+  if (!fullName || !fullName.trim()) return "";
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+export interface PatientAvatarProps {
+  fullName?: string;
+  size?: number;
+  mode?: 'silhouette' | 'initials' | 'auto';
+  border?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  title?: string;
+}
+
+export function PatientAvatar({
+  fullName,
+  size = 44,
+  mode = 'silhouette',
+  border = true,
+  className = '',
+  style,
+  title,
+}: PatientAvatarProps) {
   const gender = guessGender(fullName || "");
   const isUnknown = gender === "unknown";
+  const initials = getInitials(fullName);
+
+  const showInitials = mode === 'initials' || (mode === 'auto' && Boolean(initials));
   
   const femaleSilhouette = (
     <svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor">
       <path d="M50 55c11.046 0 20-8.954 20-20S61.046 15 50 15s-20 8.954-20 20 8.954 20 20 20zm-8 4c-14.359 0-26 11.641-26 26v4h68v-4c0-14.359-11.641-26-26-26H42z" opacity="0.9"/>
-      {/* Прическа */}
       <path d="M50 10c-15 0-25 10-25 25 0 5 2 10 5 14 0-10 10-15 20-15s20 5 20 15c3-4 5-9 5-14 0-15-10-25-25-25z" fill="currentColor"/>
     </svg>
   );
@@ -71,9 +99,11 @@ export function PatientAvatar({ fullName, size = 44 }: { fullName?: string, size
     </svg>
   );
 
+  const fontSize = Math.max(11, Math.round(size * 0.38));
+
   return (
     <div 
-      className="patient-avatar"
+      className={`patient-avatar ${className}`.trim()}
       style={{ 
         width: size, 
         height: size, 
@@ -81,17 +111,27 @@ export function PatientAvatar({ fullName, size = 44 }: { fullName?: string, size
         borderRadius: "12px", 
         background: isUnknown ? "var(--line, rgba(140, 140, 160, 0.15))" : "var(--teal-soft)", 
         color: isUnknown ? "var(--ink-muted, #888)" : "var(--teal-dark)", 
+        border: border ? "1px solid var(--glass-border, var(--line))" : "none",
+        boxShadow: "var(--shadow-1)",
         display: "flex", 
         alignItems: "center", 
         justifyContent: "center",
-        overflow: "hidden"
+        overflow: "hidden",
+        fontWeight: 700,
+        fontSize: `${fontSize}px`,
+        lineHeight: 1,
+        userSelect: "none",
+        ...style
       }}
-      title={fullName || "Пациент не выбран"}
+      title={title || fullName || "Пациент не выбран"}
     >
-      <div style={{ width: "70%", height: "70%", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-        {isUnknown ? neutralSilhouette : (gender === "female" ? femaleSilhouette : maleSilhouette)}
-      </div>
+      {showInitials && initials ? (
+        <span>{initials}</span>
+      ) : (
+        <div style={{ width: "70%", height: "70%", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          {isUnknown ? neutralSilhouette : (gender === "female" ? femaleSilhouette : maleSilhouette)}
+        </div>
+      )}
     </div>
   );
 }
-
