@@ -317,56 +317,36 @@ export function LeadsKanbanView() {
 					gap: 16,
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-					<h2
-						style={{
-							margin: 0,
-							fontSize: 24,
-							fontWeight: 600,
-							color: "var(--ink)",
-							display: "flex",
-							alignItems: "center",
-							gap: 12,
-						}}
-					>
+				<div className="flex items-center gap-4">
+					<h2 className="m-0 text-2xl font-semibold text-[var(--ink)] flex items-center gap-3">
 						Воронка Пациентов
-						<span
-							style={{
-								fontSize: 12,
-								padding: "4px 8px",
-								background: "var(--teal)",
-								color: "#fff",
-								borderRadius: 12,
-							}}
-						>
+						<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--brand-500,#0f766e)] text-white rounded-full uppercase tracking-wider">
 							PRO
 						</span>
 					</h2>
-					<button className="primary-button" onClick={() => openEditModal()}>
+					<button 
+						className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]" 
+						onClick={() => openEditModal()}
+						type="button"
+						aria-label="Создать новый лид"
+					>
 						<Plus size={16} /> Новый лид
 					</button>
 				</div>
 
-				<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-					<div style={{ position: "relative" }}>
+				<div className="flex items-center gap-3">
+					<div className="relative">
 						<Search
 							size={16}
-							color="var(--muted)"
-							style={{ position: "absolute", left: 10, top: 10 }}
+							className="text-[var(--muted,#94a3b8)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
 						/>
 						<input
 							type="text"
 							placeholder="Поиск по имени или телефону..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							style={{
-								padding: "8px 12px 8px 32px",
-								borderRadius: 8,
-								border: `1px solid ${borderColor}`,
-								background: colBg,
-								color: "var(--ink)",
-								minWidth: 240,
-							}}
+							className="pl-9 pr-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all w-64"
+							aria-label="Поиск по имени или телефону"
 						/>
 					</div>
 					<div style={{ position: "relative" }}>
