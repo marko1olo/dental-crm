@@ -88,9 +88,12 @@ async function run() {
 
     // PC Light Mode
     await pcPage.evaluate(() => {
-      document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
       document.documentElement.classList.remove('dark');
-      document.documentElement.removeAttribute('data-theme');
+      document.body.classList.remove('dark-mode', 'dark');
+      document.body.classList.add('light-mode', 'light');
+      document.body.style.backgroundColor = '#f8fafc';
+      document.body.style.color = '#0f172a';
     });
     await pcPage.waitForTimeout(500);
     const pcLightPath = path.join(outputDir, `screen_pc_light_${view.id}.png`);
@@ -99,9 +102,12 @@ async function run() {
 
     // PC Dark Mode
     await pcPage.evaluate(() => {
-      document.body.classList.add('dark-mode');
-      document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
+      document.body.classList.remove('light-mode', 'light');
+      document.body.classList.add('dark-mode', 'dark');
+      document.body.style.backgroundColor = '#0f172a';
+      document.body.style.color = '#f8fafc';
     });
     await pcPage.waitForTimeout(500);
     const pcDarkPath = path.join(outputDir, `screen_pc_dark_${view.id}.png`);
@@ -122,9 +128,12 @@ async function run() {
 
     // Mobile Light Mode
     await mobilePage.evaluate(() => {
-      document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
       document.documentElement.classList.remove('dark');
-      document.documentElement.removeAttribute('data-theme');
+      document.body.classList.remove('dark-mode', 'dark');
+      document.body.classList.add('light-mode', 'light');
+      document.body.style.backgroundColor = '#f8fafc';
+      document.body.style.color = '#0f172a';
     });
     await mobilePage.waitForTimeout(500);
     const mobileLightPath = path.join(outputDir, `screen_mobile_light_${view.id}.png`);
@@ -133,9 +142,12 @@ async function run() {
 
     // Mobile Dark Mode
     await mobilePage.evaluate(() => {
-      document.body.classList.add('dark-mode');
-      document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
+      document.body.classList.remove('light-mode', 'light');
+      document.body.classList.add('dark-mode', 'dark');
+      document.body.style.backgroundColor = '#0f172a';
+      document.body.style.color = '#f8fafc';
     });
     await mobilePage.waitForTimeout(500);
     const mobileDarkPath = path.join(outputDir, `screen_mobile_dark_${view.id}.png`);
@@ -145,7 +157,7 @@ async function run() {
   await mobileContext.close();
 
   await browser.close();
-  console.log("All authenticated workspace screenshots captured successfully.");
+  console.log("All 24 pristine workspace screenshots captured successfully.");
 }
 
 run().catch((err) => {
