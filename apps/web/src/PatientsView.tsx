@@ -1,3 +1,4 @@
+import { PatientAvatar } from './components/PatientAvatar';
 import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -306,7 +307,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
         {/* Right Column: Selected Patient Details & Widgets */}
         <section className="patient-admin-panel" aria-label="Карточка активного пациента">
           <div className="panel-heading compact-heading" style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '8px' }}>
-            <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              {selectedPatient && <PatientAvatar fullName={selectedPatient.fullName} size={36} />}
               <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>
                 {selectedPatient ? selectedPatient.fullName : "Карточка пациента"}
               </span>
@@ -388,12 +390,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                   <button
                     key={chip}
                     type="button"
+                    className="quick-chip"
                     onClick={() => {
                       const currentVal = patientCoreDraft.notes.trim();
                       const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                       updatePatientCoreDraft("notes", newVal);
                     }}
-                    style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '12px', cursor: 'pointer', color: 'var(--ink)' }}
                   >
                     + {chip}
                   </button>
@@ -609,7 +611,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             </div>
           </details>
         </section>
-        <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+        <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
           <PatientArchiveReasonsAndBlacklistsWidget />
           <PatientCommunicationTimelinesWidget />
           <BulkImageOperationLogsWidget />
