@@ -25,32 +25,37 @@ type FinanceLedgerProps = {
 };
 
 export function FinanceLedger({
-	categoryLabels,
-	documents,
-	formatDateTime,
-	money,
-	onFocusPaymentCapture,
-	onGoToVisit,
-	paymentFiscalReceiptLabel,
-	paymentMethodLabels,
-	payments,
-	serviceCatalog,
-	treatmentItems,
-	treatmentStatusLabels,
+	categoryLabels = {} as any,
+	documents = [],
+	formatDateTime = (v: string) => v || "",
+	money = (v: number | null) => `${v ?? 0} ₽`,
+	onFocusPaymentCapture = () => {},
+	onGoToVisit = () => {},
+	paymentFiscalReceiptLabel = () => "",
+	paymentMethodLabels = {} as any,
+	payments = [],
+	serviceCatalog = [],
+	treatmentItems = [],
+	treatmentStatusLabels = {} as any,
 	onCreateDocument,
 }: FinanceLedgerProps) {
+	const safeTreatmentItems = treatmentItems || [];
+	const safePayments = payments || [];
+	const safeCatalog = serviceCatalog || [];
+	const safeDocuments = documents || [];
+
 	return (
 		<div className="finance-split">
 			<section className="finance-list" aria-label="План лечения">
 				<div className="panel-heading">
 					<h3>План лечения</h3>
 					<span className="status-pill status-arrived">
-						{treatmentItems.length}
+						{safeTreatmentItems.length}
 					</span>
 				</div>
-				{treatmentItems.length ? (
-					treatmentItems.map((item) => {
-						const service = serviceCatalog.find(
+				{safeTreatmentItems.length ? (
+					safeTreatmentItems.map((item) => {
+						const service = safeCatalog.find(
 							(catalogItem) => catalogItem.id === item.serviceId,
 						);
 						const total = item.unitPriceRub * item.quantity - item.discountRub;
@@ -99,10 +104,10 @@ export function FinanceLedger({
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 						<h3 style={{ margin: 0 }}>Платежи</h3>
 						<span className="status-pill status-confirmed">
-							{payments.length}
+							{safePayments.length}
 						</span>
 					</div>
-					{payments.some((p) => p.taxDeductionCode) && (
+					{safePayments.some((p) => p.taxDeductionCode) && (
 						<button
 							className="secondary-button"
 							type="button"
@@ -114,15 +119,15 @@ export function FinanceLedger({
 						</button>
 					)}
 				</div>
-				{payments.length ? (
-					payments.map((payment) => (
+				{safePayments.length ? (
+					safePayments.map((payment) => (
 						<article className="finance-row" key={payment.id}>
 							<CreditCard aria-hidden="true" />
 							<div>
 								<h3>{paymentMethodLabels[payment.method]}</h3>
 								<p className="finance-payment-link">
 									{payment.documentId
-										? `Документ: ${documents.find((document) => document.id === payment.documentId)?.title ?? "документ не найден"}`
+										? `Документ: ${safeDocuments.find((document) => document.id === payment.documentId)?.title ?? "документ не найден"}`
 										: "Документ оплаты не привязан"}
 								</p>
 								<p>

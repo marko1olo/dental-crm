@@ -4170,7 +4170,7 @@ export function App() {
             <span>Служебные ограничения</span>
           </summary>
           <div>
-            {dashboard.complianceWarnings.map((warning) => (
+            {(dashboard?.complianceWarnings || []).map((warning) => (
               <p key={warning}>{warning}</p>
             ))}
           </div>

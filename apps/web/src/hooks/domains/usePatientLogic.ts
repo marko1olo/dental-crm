@@ -134,7 +134,7 @@ export function usePatientLogic({
 	const filteredPatients = useMemo(() => {
 		if (!dashboard) return [];
 		const normalizedQuery = query.trim().toLowerCase();
-		if (!normalizedQuery) return dashboard.patients;
+		if (!normalizedQuery) return dashboard.patients || [];
 		return (dashboard.patients || []).filter((patient) => {
 			return `${patient.fullName} ${patient.phone ?? ""}`
 				.toLowerCase()
