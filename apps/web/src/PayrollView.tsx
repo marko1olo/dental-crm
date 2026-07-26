@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppLoadingState } from "./AppBootState";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
+import { EmptyState } from "./components/EmptyState";
 
 type Payout = {
 	id: string;
@@ -292,43 +293,22 @@ export function PayrollView() {
 				</div>
 			)}
 
-			{/* Period Selector */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "12px",
-					marginBottom: "1.25rem",
-					flexWrap: "wrap",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-						color: "var(--foreground-muted)",
-					}}
-				>
+			<div className="flex items-center gap-3 mb-5 flex-wrap">
+				<div className="flex items-center gap-1.5 text-[var(--foreground-muted,#64748b)]">
 					<Calendar size={16} />
-					<span style={{ fontSize: "13px", fontWeight: 600 }}>Период:</span>
+					<span className="text-xs font-semibold">Период:</span>
 				</div>
-				<div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+				<div className="flex gap-1.5 flex-wrap" role="tablist" aria-label="Выбор периода зарплат">
 					<button
 						type="button"
+						role="tab"
+						aria-selected={selectedMonth === "all"}
 						onClick={() => setSelectedMonth("all")}
-						style={{
-							padding: "5px 12px",
-							fontSize: "12px",
-							borderRadius: "6px",
-							border: "1px solid var(--line)",
-							background:
-								selectedMonth === "all" ? "var(--brand-500)" : "var(--paper)",
-							color: selectedMonth === "all" ? "#fff" : "var(--ink)",
-							cursor: "pointer",
-							fontWeight: selectedMonth === "all" ? 700 : 400,
-							transition: "all 0.15s",
-						}}
+						className={`px-3 py-1.5 text-xs rounded-md border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] hover:scale-[1.02] ${
+							selectedMonth === "all"
+								? "bg-[var(--brand-500,#0f766e)] text-white font-bold border-transparent shadow-sm"
+								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-normal border-[var(--line,#e2e8f0)]"
+						}`}
 					>
 						Всё время
 					</button>
@@ -336,19 +316,14 @@ export function PayrollView() {
 						<button
 							type="button"
 							key={m}
+							role="tab"
+							aria-selected={selectedMonth === m}
 							onClick={() => setSelectedMonth(m)}
-							style={{
-								padding: "5px 12px",
-								fontSize: "12px",
-								borderRadius: "6px",
-								border: "1px solid var(--line)",
-								background:
-									selectedMonth === m ? "var(--brand-500)" : "var(--paper)",
-								color: selectedMonth === m ? "#fff" : "var(--ink)",
-								cursor: "pointer",
-								fontWeight: selectedMonth === m ? 700 : 400,
-								transition: "all 0.15s",
-							}}
+							className={`px-3 py-1.5 text-xs rounded-md border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] hover:scale-[1.02] ${
+								selectedMonth === m
+									? "bg-[var(--brand-500,#0f766e)] text-white font-bold border-transparent shadow-sm"
+									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-normal border-[var(--line,#e2e8f0)]"
+							}`}
 						>
 							{monthLabel(m)}
 						</button>
