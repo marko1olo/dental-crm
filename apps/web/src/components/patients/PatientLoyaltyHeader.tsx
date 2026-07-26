@@ -65,6 +65,10 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 				type="button"
 				onClick={() => setIsOpen(!isOpen)}
 				disabled={saving}
+				aria-expanded={isOpen}
+				aria-haspopup="menu"
+				aria-label={`Статус лояльности: ${currentLoyalty.label}`}
+				className="focus:ring-2 focus:ring-teal-600 focus:outline-none"
 				style={{
 					display: "flex",
 					alignItems: "center",
