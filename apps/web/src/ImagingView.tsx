@@ -750,7 +750,7 @@ export function ImagingView(props: ImagingViewProps) {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">
                       <EmptyState
-                        icon={<Radio size={36} />}
+                        icon={<ImageIcon size={36} />}
                         title="Снимков по пациенту нет"
                         description="Загрузите архивы DICOM/КТ или выберите снимки из системы."
                         glass={true}
