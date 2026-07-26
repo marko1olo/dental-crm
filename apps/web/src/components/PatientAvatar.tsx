@@ -50,9 +50,14 @@ export function guessGender(fullName?: string): "male" | "female" | "unknown" {
 export function getInitials(fullName?: string): string {
   if (!fullName || !fullName.trim()) return "";
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
+  const first = parts[0];
+  if (!first) return "";
+  if (parts.length === 1) return first.substring(0, 2).toUpperCase();
+  const second = parts[1];
+  if (!second) return first.substring(0, 2).toUpperCase();
+  const char1 = first.charAt(0);
+  const char2 = second.charAt(0);
+  return (char1 + char2).toUpperCase();
 }
 
 export interface PatientAvatarProps {
