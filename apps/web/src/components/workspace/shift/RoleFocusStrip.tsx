@@ -41,28 +41,29 @@ export function RoleFocusStrip() {
 				className="role-focus-meta flex flex-wrap gap-2 justify-start mt-2"
 				aria-label="Доступы текущей роли"
 			>
-				<span className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700">
+				<span className="status-pill focus:ring-2 focus:ring-teal-600 focus:outline-none" tabIndex={0}>
 					{activeRoleQueue?.openItems ?? 0} открыто
 				</span>
 				{activeRolePolicy ? (
-					<span className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700">
+					<span className="status-pill focus:ring-2 focus:ring-teal-600 focus:outline-none" tabIndex={0}>
 						Старт: {viewLabels[activeRolePolicy.defaultSection]}
 					</span>
 				) : null}
 				{activeRoleWritableSections.slice(0, 3).map((section: any) => (
 					<span
 						key={section}
-						className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded-full text-xs font-bold border border-slate-300 dark:border-slate-700"
+						className="status-pill status-confirmed focus:ring-2 focus:ring-teal-600 focus:outline-none"
+						tabIndex={0}
 					>
 						пишет: {viewLabels[section]}
 					</span>
 				))}
 				{activeRoleRestrictedSections?.[0] ? (
-					<span className="bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-md text-xs font-semibold">
+					<span className="status-pill status-cancelled focus:ring-2 focus:ring-teal-600 focus:outline-none" tabIndex={0}>
 						{activeRoleRestrictedSections[0]} недоступна
 					</span>
 				) : (
-					<span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-md text-xs font-semibold">
+					<span className="status-pill status-confirmed focus:ring-2 focus:ring-teal-600 focus:outline-none" tabIndex={0}>
 						Доступ открыт
 					</span>
 				)}
