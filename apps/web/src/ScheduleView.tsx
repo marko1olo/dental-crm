@@ -9,7 +9,7 @@ import { EmptyState } from "./components/EmptyState";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
-import { Plus, ShieldCheck, Bot, Mic } from "lucide-react";
+import { Plus, ShieldCheck, Bot, Mic, Calendar } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { showToast } from "./components/GlobalToast";
 import type { ChangeEvent, KeyboardEvent } from "react";
