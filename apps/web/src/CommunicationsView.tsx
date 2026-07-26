@@ -2,6 +2,7 @@ import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useState } from "react";
 import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
+import { EmptyState } from "./components/EmptyState";
 import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
 import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
 import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
@@ -279,13 +280,13 @@ export function CommunicationsView({
         </article>
       </div>
 
-      <div className="communication-note-row" style={{ background: "var(--paper)", border: "1px solid var(--line)", color: "var(--ink)", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
+        <div className="flex justify-between items-center mb-3">
           <div>
-            <label htmlFor={communicationNoteInputId} style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)", display: "block" }}>
+            <label htmlFor={communicationNoteInputId} className="text-sm font-semibold text-[var(--ink)] block">
               Заметка закрытия
             </label>
-            <span id={communicationNoteDescriptionId} style={{ fontSize: "12px", color: "var(--muted)" }}>Задача закрывается с событием и попадает в аудит.</span>
+            <span id={communicationNoteDescriptionId} className="text-xs text-[var(--muted)]">Задача закрывается с событием и попадает в аудит.</span>
           </div>
           <SmartMicrophoneButton
             context="general"
@@ -293,7 +294,7 @@ export function CommunicationsView({
               const prev = communicationNote || "";
               onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
             }}
-            style={{ display: "inline-flex", gap: "6px", alignItems: "center", padding: '6px 12px', color: 'var(--teal-dark)', background: 'var(--teal-soft)', border: 'none', borderRadius: '8px', fontWeight: 600 }}
+            className="inline-flex gap-1.5 items-center px-3 py-1.5 text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] border-none rounded-lg font-semibold text-xs hover:opacity-80 transition-opacity"
           />
         </div>
         <textarea
@@ -303,15 +304,15 @@ export function CommunicationsView({
           aria-describedby={communicationNoteDescriptionId}
           placeholder="Нажмите для ввода или надиктуйте результат связи..."
           rows={2}
-          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", fontSize: "14px", resize: "vertical", marginBottom: "12px", outline: "none" }}
+          className="w-full p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm resize-y mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
         />
         <div className="quick-chips-row flex-wrap gap-2">
-          <span style={{ fontSize: "12px", color: "var(--muted)", alignSelf: "center", marginRight: "4px" }}>Шаблоны:</span>
+          <span className="text-xs text-[var(--muted)] self-center mr-1">Шаблоны:</span>
           {["Недозвон", "Обещал оплатить", "Подумает", "Перезвонить позже", "Запрос документов"].map((chip) => (
             <button
               key={chip}
               type="button"
-              className="quick-chip"
+              className="quick-chip focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.02]"
               onClick={() => {
                 const prev = communicationNote || "";
                 onCommunicationNoteChange(prev ? `${prev}, ${chip.toLowerCase()}` : chip);
@@ -346,15 +347,13 @@ export function CommunicationsView({
               />
             ))
           ) : (
-            <article className="communication-empty-state">
-              <MessageSquare aria-hidden="true" />
-              <div>
-                <p>Очередь связи пуста. Когда появятся подтверждения, запросы документов или инструкции после приема, они будут здесь.</p>
-                <button className="text-button" type="button" onClick={onGoToSchedule}>
-                  Открыть расписание
-                </button>
-              </div>
-            </article>
+            <EmptyState
+              title="Очередь связи пуста"
+              description="Когда появятся подтверждения, запросы документов или инструкции после приема, они отобразятся здесь."
+              actionLabel="Открыть расписание"
+              onAction={onGoToSchedule}
+              className="my-4 py-8"
+            />
           )}
         </section>
 
@@ -396,7 +395,7 @@ export function CommunicationsView({
         </aside>
       </div>
 
-      <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <QuickAppointmentConfirmationsWidget />
         <CrmEmailDispatchLogsWidget />
         <UisOmniMessengerQueuesWidget />
