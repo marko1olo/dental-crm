@@ -54,56 +54,70 @@ export async function getDocumentForBilling(organizationId: string, documentId: 
 }
 
 export async function createPaymentInDb(organizationId: string, input: CreatePaymentInput): Promise<Payment> {
-  const [newPayment] = await db.insert(schema.payments).values({
-    organizationId,
-    patientId: input.patientId,
-    visitId: input.visitId || null,
-    documentId: input.documentId || null,
-    amountRub: input.amountRub,
-    method: input.method,
-    fiscalReceiptNumber: input.fiscalReceiptNumber || null,
-    fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
-    fiscalReceiptUrl: input.fiscalReceiptUrl || null,
-    fiscalReceipt: input.fiscalReceipt || null,
-    clientMutationId: input.clientMutationId || null,
-    payerFullName: input.payerFullName || null,
-    payerInn: input.payerInn || null,
-    payerBirthDate: input.payerBirthDate || null,
-    payerIdentityDocument: input.payerIdentityDocument || null,
-    payerRelationship: input.payerRelationship || null,
-    taxDeductionCode: input.taxDeductionCode || null,
-    note: input.note || null,
-    status: "paid"
-  }).returning();
+  return await db.transaction(async (tx) => {
+    // Pessimistic lock on the target patient to prevent concurrent balance race conditions
+    const [lockedPatient] = await tx
+      .select({ id: schema.patients.id })
+      .from(schema.patients)
+      .where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, input.patientId)))
+      .for("update")
+      .limit(1);
 
-  if (!newPayment) {
-    throw new Error("Failed to create payment");
-  }
+    if (!lockedPatient) {
+      throw new Error(`Patient ${input.patientId} not found or locked by another transaction.`);
+    }
 
-  return {
-    id: newPayment.id,
-    organizationId: newPayment.organizationId,
-    patientId: newPayment.patientId,
-    visitId: newPayment.visitId,
-    documentId: newPayment.documentId,
-    amountRub: newPayment.amountRub,
-    method: newPayment.method as any,
-    clientMutationId: newPayment.clientMutationId,
-    fiscalReceiptNumber: newPayment.fiscalReceiptNumber,
-    fiscalReceiptIssuedAt: newPayment.fiscalReceiptIssuedAt,
-    fiscalReceiptUrl: newPayment.fiscalReceiptUrl,
-    fiscalReceipt: newPayment.fiscalReceipt as any,
-    payerFullName: newPayment.payerFullName,
-    payerInn: newPayment.payerInn,
-    payerBirthDate: newPayment.payerBirthDate,
-    payerIdentityDocument: newPayment.payerIdentityDocument,
-    payerRelationship: newPayment.payerRelationship,
-    taxDeductionCode: newPayment.taxDeductionCode as any,
-    note: newPayment.note,
-    createdAt: newPayment.createdAt.toISOString(),
-    paidAt: newPayment.paidAt.toISOString(),
-    status: newPayment.status as any
-  };
+    const [newPayment] = await tx.insert(schema.payments).values({
+      organizationId,
+      patientId: input.patientId,
+      visitId: input.visitId || null,
+      documentId: input.documentId || null,
+      amountRub: input.amountRub,
+      method: input.method,
+      fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+      fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+      fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+      fiscalReceipt: input.fiscalReceipt || null,
+      clientMutationId: input.clientMutationId || null,
+      payerFullName: input.payerFullName || null,
+      payerInn: input.payerInn || null,
+      payerBirthDate: input.payerBirthDate || null,
+      payerIdentityDocument: input.payerIdentityDocument || null,
+      payerRelationship: input.payerRelationship || null,
+      taxDeductionCode: input.taxDeductionCode || null,
+      note: input.note || null,
+      status: "paid"
+    }).returning();
+
+    if (!newPayment) {
+      throw new Error("Failed to create payment");
+    }
+
+    return {
+      id: newPayment.id,
+      organizationId: newPayment.organizationId,
+      patientId: newPayment.patientId,
+      visitId: newPayment.visitId,
+      documentId: newPayment.documentId,
+      amountRub: newPayment.amountRub,
+      method: newPayment.method as any,
+      clientMutationId: newPayment.clientMutationId,
+      fiscalReceiptNumber: newPayment.fiscalReceiptNumber,
+      fiscalReceiptIssuedAt: newPayment.fiscalReceiptIssuedAt,
+      fiscalReceiptUrl: newPayment.fiscalReceiptUrl,
+      fiscalReceipt: newPayment.fiscalReceipt as any,
+      payerFullName: newPayment.payerFullName,
+      payerInn: newPayment.payerInn,
+      payerBirthDate: newPayment.payerBirthDate,
+      payerIdentityDocument: newPayment.payerIdentityDocument,
+      payerRelationship: newPayment.payerRelationship,
+      taxDeductionCode: newPayment.taxDeductionCode as any,
+      note: newPayment.note,
+      createdAt: newPayment.createdAt.toISOString(),
+      paidAt: newPayment.paidAt.toISOString(),
+      status: newPayment.status as any
+    };
+  });
 }
 
 export async function getPaymentsByPatientIdInDb(organizationId: string, patientId: string): Promise<import('@dental/shared').Payment[]> {

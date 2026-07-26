@@ -28,7 +28,12 @@ self.onmessage = (e: MessageEvent) => {
       e.data.blendMode || "mip"
     );
 
-    self.postMessage({ success: true, width: result.width, height: result.height, pixels: result.pixels });
+    // Zero-copy: transfer the pixel buffer's ownership to the main thread instead
+    // of structured-cloning a potentially multi-MB Float32Array across the boundary.
+    self.postMessage(
+      { success: true, width: result.width, height: result.height, pixels: result.pixels },
+      { transfer: [result.pixels.buffer] }
+    );
   } catch (error: any) {
     self.postMessage({ success: false, error: error.message });
   }
