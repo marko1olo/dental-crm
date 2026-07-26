@@ -156,7 +156,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           </button>
         </div>
       </div>
-      <div className="smart-ai-booking mb-3 border border-sky-300 dark:border-sky-800 rounded-xl p-3.5 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-sm text-slate-900 dark:text-slate-100">
+      <div className="smart-ai-booking" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "16px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "var(--shadow-1)", color: "var(--ink)" }}>
         <div className="flex items-center gap-2">
           <Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
           <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">Умное бронирование голосом или текстом (AI)</h4>
@@ -164,6 +164,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         <div className="relative flex-1">
           <input
             type="text"
+            aria-label="Умное бронирование голосом или текстом"
             value={smartInputText}
             placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
             onFocus={() => setShowHints(true)}
@@ -178,7 +179,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 setShowHints(false);
               }
             }}
-            className="w-full p-3 pr-12 rounded-lg border border-slate-300 dark:border-slate-700 text-base outline-none bg-white dark:bg-slate-800"
+            className="w-full p-3 pr-12 rounded-lg border border-slate-300 dark:border-slate-700 text-base outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-600 focus:border-transparent transition-all"
           />
           <SmartMicrophoneButton
             context="schedule"
@@ -223,13 +224,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <button
               type="button"
               onClick={() => setShowCreateForm((v) => !v)}
-              className="text-xs text-slate-500 dark:text-slate-400 underline bg-transparent border-0 cursor-pointer p-0"
+              className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+              style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
             >
               {showCreateForm ? "Скрыть ручной ввод" : "Показать все поля / Ручной ввод"}
             </button>
             {showCreateForm && (
               <label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
-                <input type="checkbox" checked={useManualSelects} onChange={(e) => setUseManualSelects(e.target.checked)} />
+                <input type="checkbox" checked={useManualSelects} onChange={(e) => setUseManualSelects(e.target.checked)} className="focus:ring-2 focus:ring-teal-600 focus:outline-none" />
                 Классические списки
               </label>
             )}
@@ -246,7 +248,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
               aria-busy={newAppointmentSaveState === "saving" || undefined}
               aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
-              className="primary-button px-3.5 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center text-xs font-semibold disabled:opacity-50 cursor-pointer"
+              className="primary-button px-3.5 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center text-xs font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
             >
               <Plus size={15} aria-hidden="true" className="mr-1" /> Создать запись
             </button>
