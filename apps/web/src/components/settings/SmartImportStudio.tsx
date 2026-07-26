@@ -87,6 +87,7 @@ import {
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { EmptyState } from "../EmptyState";
 import type {
 	CtImplantLibraryItem,
 	CtPlanningQuickAction,
@@ -2640,10 +2641,11 @@ export function SmartImportStudio() {
 					</button>
 				</div>
 				{!smartImportInputReady ? (
-					<p className="import-empty-guidance" role="status" aria-live="polite">
-						Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед
-						разбором.
-					</p>
+					<EmptyState
+						title="Ожидание данных"
+						description="Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед разбором."
+						className="my-3 py-4"
+					/>
 				) : null}
 				{!migrationHandoffReportReady ? (
 					<p
