@@ -1198,9 +1198,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                       })}
                     </div>
                   ) : (
-                    <span className="tax-payment-selection-empty">
+                    <p className="tax-payment-selection-empty" style={{ margin: "8px 0", fontSize: "13px", color: "var(--muted)" }}>
                       Нет проведенных чеков за выбранный год и плательщика. Сначала запишите оплату с фискальным чеком и данными плательщика.
-                    </span>
+                    </p>
                   )}
                 </section>
               ) : null}
@@ -1830,9 +1830,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                         })}
                       </div>
                     ) : (
-                      <span className="tax-payment-selection-empty">
+                      <p className="tax-payment-selection-empty" style={{ margin: "8px 0", fontSize: "13px", color: "var(--muted)" }}>
                         Нет оплаченных платежей по текущему визиту. Сначала сохраните оплату с фискальным чеком и данными плательщика.
-                      </span>
+                      </p>
                     )}
                   </section>
                   <div className="document-payload-row">
@@ -4480,10 +4480,16 @@ export function DocumentsView(props: DocumentsViewProps) {
                     {money(documentIssueConfirmation.totalAmountRub)}
                   </p>
                 </div>
-                <ul>
-                  <li>Откройте HTML и проверьте пациента, реквизиты, подписи и основание выдачи.</li>
-                  <li>После выдачи документ попадет в аудит и станет основанием для портала и уведомлений.</li>
-                </ul>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "12px 0", fontSize: "12.5px", color: "var(--ink-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />
+                    <span>Откройте HTML и проверьте пациента, реквизиты, подписи и основание выдачи.</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />
+                    <span>После выдачи документ попадет в аудит и станет основанием для портала и уведомлений.</span>
+                  </div>
+                </div>
                 <div className="document-issue-attestation-grid">
                   <label>
                     <span>Способ подписи</span>
@@ -4584,11 +4590,14 @@ export function DocumentsView(props: DocumentsViewProps) {
                 {!documentIssueAttestationReady && documentIssueMissingSteps.length ? (
                   <div className="document-confirmation-missing" id={documentIssueMissingGuidanceId} role="status" aria-live="polite">
                     <strong>Чтобы выдать документ, осталось:</strong>
-                    <ul>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
                       {documentIssueMissingSteps.map((step) => (
-                        <li key={step}>{step}</li>
+                        <div key={step} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--bad-fg)", background: "var(--bad-bg)", padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--bad-fg)" }}>
+                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--bad-fg)", flexShrink: 0 }} />
+                          <span>{step}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 ) : null}
                 <div className="document-issue-confirmation-actions">
@@ -4619,10 +4628,16 @@ export function DocumentsView(props: DocumentsViewProps) {
                     {documentStatusLabels[documentVoidConfirmation.status]}
                   </p>
                 </div>
-                <ul>
-                  <li>Запись останется в журнале, архивная копия не удаляется.</li>
-                  <li>Для налоговых и медицинских документов укажите, нужна ли замена или исправляющий документ.</li>
-                </ul>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "12px 0", fontSize: "12.5px", color: "var(--ink-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--warn-fg)", flexShrink: 0 }} />
+                    <span>Запись останется в журнале, архивная копия не удаляется.</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--warn-fg)", flexShrink: 0 }} />
+                    <span>Для налоговых и медицинских документов укажите, нужна ли замена или исправляющий документ.</span>
+                  </div>
+                </div>
                 <div className="document-issue-attestation-grid">
                   <label>
                     <span>Причина</span>
@@ -4712,11 +4727,14 @@ export function DocumentsView(props: DocumentsViewProps) {
                 {!documentVoidReady && documentVoidMissingSteps.length ? (
                   <div className="document-confirmation-missing" id={documentVoidMissingGuidanceId} role="status" aria-live="polite">
                     <strong>Чтобы аннулировать документ, осталось:</strong>
-                    <ul>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
                       {documentVoidMissingSteps.map((step) => (
-                        <li key={step}>{step}</li>
+                        <div key={step} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--bad-fg)", background: "var(--bad-bg)", padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--bad-fg)" }}>
+                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--bad-fg)", flexShrink: 0 }} />
+                          <span>{step}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 ) : null}
                 <div className="document-issue-confirmation-actions">
@@ -4854,11 +4872,14 @@ export function DocumentsView(props: DocumentsViewProps) {
                   ) : null}
                 </div>
                 {documentAuditFacts.blockers.length || documentAuditFacts.warnings.length ? (
-                  <ul className="document-audit-facts-notes">
+                  <div className="document-audit-facts-notes" style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "10px" }}>
                     {[...documentAuditFacts.blockers, ...documentAuditFacts.warnings].map((note) => (
-                      <li key={note}>{note}</li>
+                      <div key={note} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "var(--warn-fg)", background: "var(--warn-bg)", padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--warn-fg)" }}>
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--warn-fg)", flexShrink: 0 }} />
+                        <span>{note}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : null}
                 <div className="document-issue-confirmation-actions">
                   <button className="secondary-button" type="button" onClick={() => setDocumentAuditFacts(null)}>
