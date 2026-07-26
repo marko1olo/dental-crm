@@ -83,8 +83,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
         <p style={{ display: 'none' }}>{appointment.reason}</p>
         <article
           data-testid="appointment-card"
-          className={`appointment-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-4 mb-3 shadow-sm ${readiness ? 'readiness-' + readiness.state : ""}`}
-          style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+          role="article"
+          aria-label={`Карточка приема: ${appointmentPatientName}, ${formatTime(appointment.startsAt)} - ${formatTime(appointment.endsAt)}`}
+          className={`appointment-card mode-fit-card glass-panel rounded-xl p-4 mb-3 shadow-sm ${readiness ? 'readiness-' + readiness.state : ""}`}
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--paper)', border: '1px solid var(--line)', color: 'var(--ink)' }}
         >
       <div className="appointment-card-header border-b border-slate-200 dark:border-slate-800 pb-2 mb-1 flex justify-between items-center">
         <div className="appointment-card-time font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -144,7 +146,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
       <div className="appointment-card-footer flex justify-end mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
         <button
-          className="secondary-button appointment-edit-button"
+          className="secondary-button appointment-edit-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
           type="button"
           onClick={() => openAppointmentEditor(appointment)}
           aria-expanded={appointmentEditing}
