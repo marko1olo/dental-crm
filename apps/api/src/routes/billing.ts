@@ -26,6 +26,29 @@ function sendBillingPaymentScopeError(reply: FastifyReply, statusCode: 404 | 409
   });
 }
 
+/**
+ * Нарушение уникальности по ключу идемпотентности оплаты.
+ *
+ * PostgreSQL отдаёт код 23505 и имя ограничения. Проверяем именно имя, а не
+ * любой 23505: конфликт по другому ограничению — это другая ошибка, и её
+ * гасить нельзя.
+ */
+const paymentClientMutationConstraint = "payments_org_client_mutation_unique";
+
+function isDuplicateClientMutationError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: unknown; constraint?: unknown; message?: unknown; cause?: unknown };
+  const code = typeof candidate.code === "string" ? candidate.code : null;
+  const constraint = typeof candidate.constraint === "string" ? candidate.constraint : null;
+  const message = typeof candidate.message === "string" ? candidate.message : "";
+  if (code === "23505" && (constraint === paymentClientMutationConstraint || message.includes(paymentClientMutationConstraint))) {
+    return true;
+  }
+  // Драйвер может обернуть исходную ошибку базы.
+  if (candidate.cause) return isDuplicateClientMutationError(candidate.cause);
+  return false;
+}
+
 function cleanPaymentText(value: string | null | undefined): string | null {
   const clean = value?.trim();
   return clean ? clean : null;
@@ -198,7 +221,39 @@ export async function registerBillingRoutes(app: FastifyInstance) {
       }
       return reply.code(200).send(paymentSchema.parse(existingPayment));
     }
-    const payment = await createPaymentInDb(orgId, paymentInput);
-    return reply.code(201).send(paymentSchema.parse(payment));
+    try {
+      const payment = await createPaymentInDb(orgId, paymentInput);
+      return reply.code(201).send(paymentSchema.parse(payment));
+    } catch (error) {
+      /* Проверка «нет ли уже такой оплаты» выше и вставка здесь — два
+         отдельных запроса вне транзакции. При двойном нажатии на «Принять
+         оплату» оба запроса видят, что платежа нет, и оба вставляют.
+         Деньги при этом в безопасности: в базе есть уникальный индекс
+         payments_org_client_mutation_unique, второй INSERT падает.
+         Но кассир видел HTTP 500 «Сервер не выполнил действие. Повторите
+         позже» при том, что оплата уже прошла. Замерено на живом API,
+         scratch/verify-payment-idempotency.mjs: два одновременных запроса
+         давали 201/500 при одном платеже в базе.
+         Нарушение уникальности по ключу идемпотентности означает ровно то
+         же, что и удачная проверка выше: оплата уже записана. Возвращаем
+         записанную. */
+      if (isDuplicateClientMutationError(error)) {
+        const alreadyStored = await findPaymentByClientMutationIdInDb(orgId, paymentInput.clientMutationId);
+        if (alreadyStored) {
+          if (
+            alreadyStored.patientId !== paymentInput.patientId ||
+            !paymentRetryMatchesExisting(alreadyStored, paymentInput)
+          ) {
+            return sendBillingPaymentScopeError(
+              reply,
+              409,
+              "Клиентская операция уже записала другую оплату. Повтор должен совпадать по сумме, счету, чеку, плательщику и коду вычета."
+            );
+          }
+          return reply.code(200).send(paymentSchema.parse(alreadyStored));
+        }
+      }
+      throw error;
+    }
   });
 }
