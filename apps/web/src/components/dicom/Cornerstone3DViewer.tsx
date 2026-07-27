@@ -12,6 +12,12 @@ import {
   toTransferableScalarData,
   type Point2D,
 } from "../../mprMath";
+import {
+  buildPanoramicArch,
+  panoramicIssueLabels,
+  type DrawnArchAnnotation,
+  type PanoramicIssue,
+} from "./panoramicArch";
 
 export interface ImplantData {
   id: string;
@@ -39,6 +45,10 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   const [volumeId, setVolumeId] = useState<string | null>(null);
   const [showPanorex, setShowPanorex] = useState(false);
   const [splinePoints, setSplinePoints] = useState<Point2D[]>([]);
+  // Почему панорама НЕ построена, и по какой дуге она построена, если построена.
+  // Раньше обоих состояний не было: кнопка всегда рисовала «панораму».
+  const [panorexIssue, setPanorexIssue] = useState<PanoramicIssue | null>(null);
+  const [archSummary, setArchSummary] = useState<{ points: number; lengthMm: number } | null>(null);
   const [panorexVolume, setPanorexVolume] = useState<PanoramicVolumeInput | null>(null);
   const [panorexThickness, setPanorexThickness] = useState<number>(0);
   const [blendMode, setBlendMode] = useState<"mip" | "average">("mip");
@@ -82,6 +92,13 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     let cancelled = false;
     setLoadError(null);
     setIsVolumeLoading(true);
+    // Новая серия — старая развёртка больше ни к чему не относится. Без сброса
+    // поверх нового исследования продолжала висеть панорама предыдущего.
+    setShowPanorex(false);
+    setSplinePoints([]);
+    setPanorexVolume(null);
+    setPanorexIssue(null);
+    setArchSummary(null);
 
     async function loadAndRender() {
       // БЫЛО: идентификатор тома жёстко "my-volume" и никогда не вытеснялся из
@@ -225,33 +242,71 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     };
   }, [isInitialized, imageIds]);
 
+  /** Отказ от построения: окно развёртки не открываем, причину показываем. */
+  const refusePanorex = (reason: PanoramicIssue) => {
+    setPanorexIssue(reason);
+    setArchSummary(null);
+    setSplinePoints([]);
+    setPanorexVolume(null);
+    setShowPanorex(false);
+  };
+
   const handleGeneratePanorex = () => {
-    // In a real app, we'd query the cornerstoneTools state for SplineROITool
-    // annotations. Until that UI is wired we seed a placeholder curve.
-    // const state = cornerstoneTools.annotation.state.getAnnotations(cornerstoneTools.SplineROITool.toolName, element);
-    setSplinePoints([{ x: 100, y: 100 }, { x: 200, y: 150 }, { x: 300, y: 100 }]);
+    // БЫЛО: реконструкция строилась по трём вшитым точкам
+    // [{100,100},{200,150},{300,100}], не имевшим отношения ни к пациенту, ни к
+    // тому, что обвёл врач. На экране появлялась правдоподобная «панорама»,
+    // поэтому подмену нельзя было заметить. Теперь дуга берётся из аннотации
+    // SplineROITool, а если врач ничего не обвёл — не строится ничего.
+    const element = axialRef.current;
+    if (!element) {
+      refusePanorex("read_failed");
+      return;
+    }
+
+    let annotations: readonly DrawnArchAnnotation[];
+    try {
+      // getGroupKey() бросает исключение, если элемент ещё не включён в
+      // cornerstone (том не догрузился). Раньше это уронило бы обработчик клика.
+      annotations =
+        cornerstoneTools.annotation.state.getAnnotations(
+          cornerstoneTools.SplineROITool.toolName,
+          element,
+        ) ?? [];
+    } catch {
+      refusePanorex("read_failed");
+      return;
+    }
+
+    const arch = buildPanoramicArch(annotations);
+    if (arch.status !== "ready") {
+      refusePanorex(arch.reason);
+      return;
+    }
 
     // Extract the real voxel slab from the cornerstone volume cache and hand an
     // OWNED copy to the worker. We never transfer the volume's own scalar buffer
     // (that would detach and corrupt the cache), so `toTransferableScalarData`
     // returns a fresh Float32Array/Uint16Array whose buffer is safe to transfer.
     if (!volumeId) {
-      setPanorexVolume(null);
-      setShowPanorex(true);
+      refusePanorex("volume_not_ready");
       return;
     }
     const volume = cornerstone.cache.getVolume(volumeId);
     const raw = volume?.voxelManager?.getScalarData();
     if (!volume || !raw) {
-      // No decoded voxels available yet — open the window in its loading state.
-      setPanorexVolume(null);
-      setShowPanorex(true);
+      // БЫЛО: окно открывалось с вечным спиннером «Calculating Trilinear
+      // Interpolation...», хотя ничего не считалось и досчитаться не могло —
+      // повторной попытки в коде нет. Честнее не открывать окно вовсе.
+      refusePanorex("volume_not_ready");
       return;
     }
 
     const [dx, dy, dz] = volume.dimensions;
     const [ox, oy, oz] = volume.origin;
     const [sx, sy, sz] = volume.spacing;
+    setPanorexIssue(null);
+    setArchSummary({ points: arch.controlPoints.length, lengthMm: arch.lengthMm });
+    setSplinePoints(arch.curve);
     setPanorexVolume({
       scalarData: toTransferableScalarData(raw),
       dimensions: [dx, dy, dz],
@@ -321,6 +376,18 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     // renderingEngine.getViewport('SAGITTAL').setCamera({ viewUp: N });
     // renderingEngine.render();
   };
+
+  // Одно из двух: причина отказа, либо параметры дуги, по которой панорама
+  // действительно построена. Третьего (выдуманной кривой) больше нет.
+  const panorexBanner: { tone: "issue" | "ready"; text: string } | null =
+    panorexIssue !== null
+      ? { tone: "issue", text: panoramicIssueLabels[panorexIssue] }
+      : archSummary !== null
+        ? {
+            tone: "ready",
+            text: `Панорама построена по обведённой дуге: точек ${archSummary.points}, длина дуги ${archSummary.lengthMm.toFixed(1)} мм.`,
+          }
+        : null;
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', backgroundColor: '#0a0a0a', color: '#fff', position: 'relative', fontFamily: 'sans-serif' }}>
@@ -409,6 +476,24 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
           Развернуть
         </button>
       </div>
+
+      {/* Почему панорамы нет — или по какой именно дуге она построена.
+          Пустое состояние честнее выдуманной кривой: раньше кнопка всегда
+          отдавала «панораму», даже когда врач не обвёл ничего. */}
+      {panorexBanner && (
+        <div
+          role={panorexBanner.tone === "issue" ? "alert" : "status"}
+          aria-live="polite"
+          data-testid="panorex-arch-state"
+          className={`absolute left-1/2 top-24 z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
+            panorexBanner.tone === "issue"
+              ? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
+              : "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
+          }`}
+        >
+          {panorexBanner.text}
+        </div>
+      )}
 
       {showPanorex && volumeId && (
         <PanoramicRendererWindow
