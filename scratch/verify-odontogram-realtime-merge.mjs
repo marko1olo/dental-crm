@@ -118,10 +118,21 @@ try {
 		after.some((l) => l.startsWith("46,")),
 		`видно: ${after.join("; ")}`,
 	);
+	/* БЫЛО: `after.length >= before.length + 1`. Условие молча предполагало,
+	   что у зуба 46 до этого диагноза не было, и тогда новый диагноз даёт +1 к
+	   счётчику. Но 46 входит в базовый набор демо-данных как имплантат, и
+	   стоит другому тесту оставить его диагностированным, как проверка падает
+	   при полностью исправном коде: смена состояния 46 счётчик не меняет.
+	   Считать надо не количество, а сохранность: все ранее диагностированные
+	   зубы, кроме самого 46, обязаны остаться на формуле. */
+	const beforeOther = before.filter((l) => !l.startsWith("46,"));
+	const missing = beforeOther.filter((l) => !after.includes(l));
 	check(
 		"прежние диагнозы НЕ стёрты живым обновлением",
-		after.length >= before.length + 1,
-		`было ${before.length}, стало ${after.length} — ${after.join("; ")}`,
+		missing.length === 0,
+		missing.length
+			? `исчезли: ${missing.join("; ")}`
+			: `все ${beforeOther.length} прежних диагнозов на месте, всего на формуле ${after.length}`,
 	);
 	check("ошибок страницы нет", pageErrors.length === 0, pageErrors.slice(0, 2).join(" | ") || "чисто");
 } finally {

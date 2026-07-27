@@ -23,23 +23,42 @@ export function VisitDiaryPhotoUpload({
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
 	useEffect(() => {
+		/* Сброс идёт до всех проверок и до запроса. Иначе при переходе к
+		   другому приёму в списке остаются снимки предыдущего, и они
+		   выглядят как снимки текущего. Отмена запроса нужна затем, чтобы
+		   поздний ответ по прошлому приёму не перетёр уже загруженный
+		   список текущего. */
+		setAttachments([]);
 		if (!visitId) return;
+
+		const controller = new AbortController();
+		let cancelled = false;
 		const clinicToken = localStorage.getItem("dente_clinic_token");
 		fetch(`/api/files/visits/${visitId}/attachments`, {
 			headers: {
 				"x-dente-clinic-token": clinicToken || "",
 			},
+			signal: controller.signal,
 		})
 			.then((r) => {
 				if (r.ok) return r.json();
 				return null;
 			})
 			.then((data) => {
+				if (cancelled) return;
 				if (data?.files) {
 					setAttachments(data.files);
 				}
 			})
-			.catch(console.error);
+			.catch((error) => {
+				if (cancelled) return;
+				console.error(error);
+			});
+
+		return () => {
+			cancelled = true;
+			controller.abort();
+		};
 	}, [visitId]);
 
 	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

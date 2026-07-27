@@ -218,6 +218,11 @@ export const OdontogramModule = ({
 }) => {
 	const { odontogramUseSurfaces } = useAppLogicContext();
 	const [teethData, setTeethData] = useState<ToothData[]>([]);
+	/* Пока формула не загружена, на экране не должно быть ни чужих данных, ни
+	   правдоподобной пустой формулы без объяснения: и то, и другое врач
+	   принимает за факт. */
+	const [isLoadingTeeth, setIsLoadingTeeth] = useState(true);
+	const [teethLoadFailed, setTeethLoadFailed] = useState(false);
 	const [menuConfig, setMenuConfig] = useState<{
 		toothNumber: number;
 		x: number;
@@ -275,14 +280,41 @@ export const OdontogramModule = ({
 
 	// Load states from API
 	useEffect(() => {
+		/* БЫЛО: запрос уходил, а старая формула оставалась на экране до
+		   ответа. Замерено в браузере: при переключении пациента на карточке
+		   нового три секунды висели диагнозы прошлого — 11 кариес, 26 коронка,
+		   36 пломба, которых у нового пациента нет, — и ни одного признака
+		   загрузки. Врач видит чужую формулу как формулу текущего пациента и
+		   может отметить лечение не на той. Если запрос не удавался, чужая
+		   формула оставалась насовсем.
+		   Сбрасываем состояние синхронно со сменой пациента, показываем
+		   загрузку и отменяем устаревший запрос, чтобы поздний ответ по
+		   прошлому пациенту не перетёр формулу текущего. */
+		setTeethData([]);
+		setTeethLoadFailed(false);
+		setIsLoadingTeeth(true);
+
+		const controller = new AbortController();
+		let cancelled = false;
+
 		fetch(`/api/patients/${patientId}/tooth-states`, {
 			headers: denteAdminSecretRequestHeaders(),
+			signal: controller.signal,
 		})
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => {
-				if (data?.success && data.states) {
+				if (cancelled) return;
+				if (data?.success && Array.isArray(data.states)) {
 					setTeethData(data.states);
+				} else {
+					setTeethLoadFailed(true);
 				}
+				setIsLoadingTeeth(false);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				setTeethLoadFailed(true);
+				setIsLoadingTeeth(false);
 			});
 
 		// Listen to CT Events for auto-implants
@@ -319,6 +351,8 @@ export const OdontogramModule = ({
 		window.addEventListener("keyup", handleKeyUp);
 
 		return () => {
+			cancelled = true;
+			controller.abort();
 			window.removeEventListener(
 				"clinical-implant-placed",
 				handleClinicalCollision,
@@ -533,6 +567,30 @@ export const OdontogramModule = ({
 						<span className="text-sm font-medium">Групповой выбор (Shift)</span>
 					</label>
 				</div>
+				{/* Состояние формулы проговаривается словами. Пустая формула
+				    выглядит как «все зубы здоровы», а это утверждение о пациенте,
+				    которого система в этот момент не знает. */}
+				{(isLoadingTeeth || teethLoadFailed) && (
+					<div
+						role="status"
+						aria-live="polite"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 8,
+							padding: "8px 12px",
+							borderRadius: 8,
+							fontSize: 13,
+							fontWeight: 600,
+							color: teethLoadFailed ? "var(--rust, #b91c1c)" : "var(--ink-2, var(--ink))",
+							background: teethLoadFailed ? "var(--rust-surface, rgba(185, 28, 28, 0.08))" : "var(--paper-soft, transparent)",
+						}}
+					>
+						{teethLoadFailed
+							? "Зубная формула не загрузилась. Данные на схеме неполные — обновите страницу."
+							: "Загружаем формулу пациента…"}
+					</div>
+				)}
 				<ToothChart
 					teethData={teethData}
 					pediatricMode={isPediatricMode}
