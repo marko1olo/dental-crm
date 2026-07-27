@@ -189,7 +189,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
               }
             />
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
+          {/* min(300px, 100%): иначе колонка держит 300px в более узком
+              контейнере и содержимое карточки уезжает за правый край. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Пациент</span>
               {useManualSelects || (dashboard.patients ?? []).length > 20 ? (

@@ -732,7 +732,9 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
 .schedule-widgets-container,
 .dnt-widgets-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)) !important;
+  /* min(420px, 100%): жёсткие 420px не помещаются ни на одном телефоне —
+     колонка оставалась шире контейнера, и карточки обрезались справа. */
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)) !important;
   gap: 16px !important;
   margin-top: 20px !important;
 }

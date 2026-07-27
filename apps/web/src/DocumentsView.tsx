@@ -5038,7 +5038,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                 );
               })}
             </div>
-            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px" }}>
+            {/* min(380px, 100%): иначе колонка держит 380px в контейнере
+                364px, и правый край карточек срезается на телефоне. */}
+            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "16px" }}>
               <TreatmentPlanLockTokensWidget />
               <TreatmentPlanPrintOdontogramWidget />
               <TreatmentPlanStagesWidget />

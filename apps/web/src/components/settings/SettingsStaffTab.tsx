@@ -137,7 +137,9 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
           <div className="settings-card-header">
             <h4>Активный персонал</h4>
           </div>
-          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+          {/* min(280px,100%): иначе колонка шире узкого контейнера и
+              карточки сотрудников обрезаются справа. */}
+          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))]">
             {staff.map((member: any) => (
               <div key={member.id} className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 min-h-[140px] flex flex-col justify-between shadow-sm">
                 <div className="flex items-center gap-3 mb-3">

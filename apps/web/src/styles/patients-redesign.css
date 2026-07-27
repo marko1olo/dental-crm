@@ -110,7 +110,9 @@
 /* Patient List Grid */
 .patient-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min(...): список пациентов открывают с планшета и телефона —
+     колонка обязана ужиматься до ширины контейнера. */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
 }

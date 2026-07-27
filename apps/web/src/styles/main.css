@@ -11027,7 +11027,8 @@ html.dark .emk-tab-button.active,
   display: grid;
   gap: 10px;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  /* min(...): колонка не должна оставаться шире контейнера на телефоне. */
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
 
 .document-payload-card {

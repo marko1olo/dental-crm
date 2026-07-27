@@ -124,7 +124,8 @@
 /* Chair Grid */
 .premium-chair-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	/* min(...): колонка не должна оставаться шире контейнера на телефоне. */
+	grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
 	gap: 20px;
 }
 

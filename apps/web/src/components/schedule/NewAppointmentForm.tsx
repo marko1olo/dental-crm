@@ -289,7 +289,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </label>
           </div>
           
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 mb-4">
+          {/* min(300px,100%): без него колонка не ужимается ниже 300px и
+              поля формы записи срезаются справа на телефоне. */}
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-6 mb-4">
             <div>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Пациент</span>
               {useManualSelects || (dashboard.patients ?? []).length > 20 ? (

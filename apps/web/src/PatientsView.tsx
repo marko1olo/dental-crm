@@ -644,7 +644,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             </div>
           </details>
         </section>
-        <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+        {/* min(280px, 100%): иначе колонка не ужимается ниже 280px и
+            карточки срезаются справа на узком экране. */}
+        <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px" }}>
           <PatientArchiveReasonsAndBlacklistsWidget />
           <PatientCommunicationTimelinesWidget />
           <BulkImageOperationLogsWidget />

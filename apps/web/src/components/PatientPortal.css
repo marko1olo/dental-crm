@@ -222,7 +222,9 @@
 
 .portal-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	/* min(...): портал пациента открывают с телефона — колонка обязана
+	   ужиматься до ширины экрана. */
+	grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 	gap: 24px;
 }
 

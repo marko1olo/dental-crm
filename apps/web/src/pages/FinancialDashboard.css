@@ -22,7 +22,8 @@
 
 .metrics-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	/* min(...): колонка не должна оставаться шире контейнера на телефоне. */
+	grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 	gap: 20px;
 }
 

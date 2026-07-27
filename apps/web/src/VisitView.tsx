@@ -1446,7 +1446,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </>
             , document.body);
           })()}
-        <div style={{ marginTop: "32px", marginBottom: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "16px", padding: "0 16px" }}>
+        {/* min(380px, 100%): без него колонка остаётся 380px даже когда
+            контейнер уже — на телефоне карточки вылезали за правый край и
+            обрезались. Замерено: контейнер 364px, колонка 380px. */}
+        <div style={{ marginTop: "32px", marginBottom: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "16px", padding: "0 16px" }}>
           <CustomExaminationFormCatalogsWidget />
           <EgiszMultipleDiagnosesWidget />
           <ExtendedOdontogramStatesWidget />
