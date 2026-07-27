@@ -1,4 +1,18 @@
-# DENTE / Dental CRM-MIS
+<div align="center">
+
+# 🦷 DENTE — Dental CRM / MIS
+
+**Enterprise scheduling, patient records and clinical imaging for dental practices.**
+
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![DICOM](https://img.shields.io/badge/DICOM-local_slice_rendering-1a7f5a?style=for-the-badge)
+
+</div>
+
+---
 
 > [!IMPORTANT]
 > **AI AGENT INSTRUCTION:** If you are an AI assistant (Cursor, Claude Code, Aider, etc.) editing this codebase, you **MUST** read the [.cursorrules](file:///C:/Clinic_MVP/dental-crm/.cursorrules) and consult the modular developer documentation at [.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) before writing any code.
