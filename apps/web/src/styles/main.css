@@ -1004,7 +1004,8 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .onboarding-panel {
-  background: #fbfefd;
+  /* Было #fbfefd — в тёмной теме панель оставалась белой. */
+  background: var(--paper-strong);
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
