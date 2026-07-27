@@ -110,4 +110,10 @@ DECISION block above (reviewer option (b) DISPUTED with evidence).
 
 ## DONE
 - handoff.md written: .agents/archon/packets/R3-finance-rework/handoff.md
-- Commit 3 (docs) below. Tree clean on every file I touched.
+- Commit 3: 625c2c486667437ad5dbe2e5ab216f21b4846c70 — docs, 7 files, +551 -5
+  (5 R3 packet files + the two corrected C6 records). Index held only those seven.
+- Re-verified at HEAD 625c2c486 (after a foreign commit b4292f74d landed in between):
+  `npm run typecheck -w @dental/web` EXIT=0; own test file 17/17 EXIT=0.
+- Tree clean on every file I touched. Untracked review.md files of OTHER packets
+  (C1-C6, P*, R1, R2) are not mine and were left alone; C6's own review.md — my
+  specification — is still untracked in the repo, the lead may want it committed.
