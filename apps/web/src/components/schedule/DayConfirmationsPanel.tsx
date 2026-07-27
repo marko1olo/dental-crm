@@ -293,14 +293,14 @@ export function DayConfirmationsPanel() {
 															<span className="ops-state ops-state--bad">телефона нет</span>
 														)}
 													</td>
-													<td data-label="Врач">{row.doctorName ?? "—"}</td>
-													<td data-label="Запись">
+													<td data-label="Врач" data-compact="">{row.doctorName ?? "—"}</td>
+													<td data-label="Запись" data-compact="">
 														<span className={`status-pill status-${row.status}`}>
 															{appointmentStatusLabels[row.status] ?? row.status}
 														</span>
 														{row.patientClickedAt ? <span className="ops-note">ответил сам</span> : null}
 													</td>
-													<td data-label="Напоминание">
+													<td data-label="Напоминание" data-compact="">
 														<span className={`ops-state ops-state--${reminder.tone}`}>{reminder.label}</span>
 														{row.reminder.detail ? (
 															// Причина недоставки прямо в строке: администратор должен

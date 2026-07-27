@@ -1,3 +1,16 @@
+/**
+ * ВНИМАНИЕ: МЁРТВЫЙ ФАЙЛ.
+ *
+ * Ни один модуль его не импортирует — проверено поиском по проекту.
+ * Разделы рабочего кабинета отрисовывает App.tsx: там же и переключение
+ * по currentView, и ленивые импорты представлений.
+ *
+ * Я потерял на этом время: две панели, добавленные сюда, выглядели
+ * подключёнными, проходили сборку и типы, но на экране не появлялись.
+ * Выяснилось только на снимке живого приложения. Прежде чем добавлять
+ * что-то в этот файл, убедитесь, что он вообще используется.
+ */
+
 import { ShieldCheck } from "lucide-react";
 import React, { Suspense } from "react";
 import { AppLoadingState } from "./AppBootState";
@@ -12,8 +25,6 @@ import { MarketingView } from "./MarketingView";
 import { PatientsView } from "./PatientsView";
 import { PayrollView } from "./PayrollView";
 import { AnalyticsDashboardView } from "./pages/AnalyticsDashboardView";
-import { ManagerReportsPanel } from "./components/reports/ManagerReportsPanel";
-import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { ScannerView } from "./ScannerView";
 import { ScheduleView } from "./ScheduleView";
 import { SettingsView } from "./SettingsView";
@@ -100,13 +111,6 @@ export function AppRouter() {
 							>
 								<ScheduleView />
 							</Suspense>
-							{/*
-								Утренний обзвон. Подтверждение приёма по ссылке уже работает,
-								но без этого списка администратор не видит результата и
-								обзванивает всех подряд: половину звонков зря, половину
-								нужных пропуская.
-							*/}
-							<DayConfirmationsPanel />
 						</WorkspaceRouteErrorBoundary>
 					) : null}
 
@@ -247,12 +251,6 @@ export function AppRouter() {
 							>
 								<AnalyticsDashboardView />
 							</Suspense>
-							{/*
-								Отчёты руководителю. Экран выше показывает воронку, доли
-								кресел и когорты; того, по чему принимают решения —
-								динамики выручки, доли неявок, дебиторки, — там не было.
-							*/}
-							<ManagerReportsPanel />
 						</WorkspaceRouteErrorBoundary>
 					) : null}
 

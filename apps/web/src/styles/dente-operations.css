@@ -60,6 +60,15 @@
   gap: 12px;
 }
 
+/*
+ * Запас снизу: над содержимым висят плавающие кнопки помощи, микрофона и
+ * поиска. Без запаса они перекрывали последнюю строку — на снимке отчётов
+ * сумма дебиторки оказалась под кнопкой поиска.
+ */
+.ops-panel {
+  padding-bottom: 72px;
+}
+
 .ops-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -317,11 +326,22 @@
   list-style: none;
 }
 
+/*
+ * Дорожка ограничена по ширине. На широком мониторе полоса растягивалась на
+ * тысячу с лишним пикселей, и значение уезжало от подписи так далеко, что
+ * строки переставали сравниваться взглядом.
+ */
 .ops-bar {
   display: grid;
-  grid-template-columns: minmax(78px, auto) 1fr minmax(110px, auto);
+  /*
+   * `justify-content: start` обязателен: без него свободное место на широком
+   * мониторе раздаётся крайним колонкам, подпись отъезжает от дорожки, а
+   * значение улетает к правому краю — строки перестают сравниваться взглядом.
+   */
+  grid-template-columns: minmax(88px, max-content) minmax(0, 520px) minmax(96px, max-content);
+  justify-content: start;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 12.5px;
 }
 
@@ -504,11 +524,49 @@
   padding: 8px 0;
 }
 
+/*
+ * Флажок рисуется вручную: системный с заданными размерами показывался залитым
+ * тёмным квадратом — на снимке светлой темы он читался как чёрная плашка, а не
+ * как переключатель. accent-color красит только отмеченное состояние.
+ */
 .ops-checkbox input {
-  /* Область нажатия под палец, а не под мышь. */
-  width: 18px;
-  height: 18px;
-  accent-color: var(--teal);
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.ops-checkbox input::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+  box-shadow: inset 1em 1em var(--on-teal);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.ops-checkbox input:checked {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.ops-checkbox input:checked::before {
+  transform: scale(1);
+}
+
+.ops-checkbox input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 /* ── Скелет загрузки ─────────────────────────────────────────────────────── */
@@ -600,6 +658,34 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     color: var(--muted);
+  }
+
+  /*
+   * Второстепенные поля не занимают по строке каждое. Семь подписанных строк
+   * давали карточку в 290 пикселей: на планшете помещалась одна, и список
+   * обзвона переставал быть списком. Здесь они текут в одну строку без
+   * подписей — подпись несёт сам значок состояния.
+   */
+  .ops-table tbody td[data-compact] {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    padding: 6px 10px 6px 0;
+    border-bottom: none;
+  }
+
+  .ops-table tbody td[data-compact]::before {
+    content: none;
+  }
+
+  .ops-table tbody td[data-compact] .ops-note {
+    margin: 0 0 0 6px;
+    display: inline;
+  }
+
+  /* Строка со второстепенными полями отделяется от главных чертой. */
+  .ops-table tbody td[data-compact]:first-of-type {
+    padding-left: 12px;
   }
 
   .ops-table .ops-num {

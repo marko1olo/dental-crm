@@ -394,6 +394,17 @@ const ShiftView = lazy(() => import("./ShiftView").then((module) => ({ default: 
 const PatientCockpit = lazy(() => import("./ShiftView").then((module) => ({ default: module.PatientCockpit })));
 const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
 const AnalyticsDashboardView = lazy(() => import("./pages/AnalyticsDashboardView").then((module) => ({ default: module.AnalyticsDashboardView })));
+/*
+ * Панели вставлены сюда, а не в AppRouter.tsx: тот файл никто не импортирует —
+ * это мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
+ * Выяснилось только на снимке живого экрана.
+ */
+const DayConfirmationsPanel = lazy(() =>
+  import("./components/schedule/DayConfirmationsPanel").then((module) => ({ default: module.DayConfirmationsPanel })),
+);
+const ManagerReportsPanel = lazy(() =>
+  import("./components/reports/ManagerReportsPanel").then((module) => ({ default: module.ManagerReportsPanel })),
+);
 
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
@@ -3678,6 +3689,14 @@ export function App() {
                 loadDashboard={loadDashboard}
               />
             </Suspense>
+            {/*
+              Утренний обзвон. Подтверждение приёма по ссылке уже работает, но
+              без этого списка администратор не видит результата и обзванивает
+              всех подряд: половину звонков зря, половину нужных пропуская.
+            */}
+            <Suspense fallback={null}>
+              <DayConfirmationsPanel />
+            </Suspense>
           </WorkspaceRouteErrorBoundary>
           ) : null}
 
@@ -4112,6 +4131,14 @@ export function App() {
                 }
               >
                 <AnalyticsDashboardView />
+              </Suspense>
+              {/*
+                Экран выше показывает воронку, доли кресел и когорты; того, по
+                чему принимают решения — динамики выручки, доли неявок,
+                дебиторки, — там не было.
+              */}
+              <Suspense fallback={null}>
+                <ManagerReportsPanel />
               </Suspense>
             </WorkspaceRouteErrorBoundary>
           ) : null}
