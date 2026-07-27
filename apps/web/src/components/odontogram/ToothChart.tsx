@@ -36,7 +36,21 @@ const BOTTOM_TEETH = [
 const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 
-const FULL_ARCH_WIDTH = 960; // Extra breathing room to prevent any possible subpixel flexbox overflow
+/**
+ * Нижняя граница масштаба. Дуга не влезает в 270px мобильного экрана ни при
+ * каком разумном уменьшении: понадобился бы масштаб около 0.27, зуб стал бы 9px
+ * и попасть по нему пальцем было бы невозможно. Ниже этой границы масштаб не
+ * опускается, а остаток добирается горизонтальной прокруткой — она у контейнера
+ * дуги уже есть.
+ */
+const MIN_ARCH_SCALE = 0.6;
+
+/** "56px" × 0.68 → "38.08px". Нечисловое значение возвращается как есть. */
+function scaleCssPx(value: string, factor: number): string {
+	const parsed = Number.parseFloat(value);
+	if (!Number.isFinite(parsed)) return value;
+	return `${parsed * factor}px`;
+}
 
 const getToothColors = (state: ToothState) => {
 	switch (state) {
@@ -100,8 +114,12 @@ const ToothSVG = ({
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state);
 
-	const scaledWidth = cfg.width;
-	const scaledHeight = cfg.height;
+	// Масштаб идёт в атрибуты width/height, а внутренняя геометрия задана viewBox,
+	// поэтому зуб сжимается целиком и без искажений пропорций. Раньше параметр
+	// scale принимался, но не использовался: дуга всегда занимала свои 1012px, и
+	// на ноутбуке 1024px врач видел половину челюсти.
+	const scaledWidth = scaleCssPx(cfg.width, scale);
+	const scaledHeight = scaleCssPx(cfg.height, scale);
 
 	const isRightSide =
 		(number >= 21 && number <= 28) || (number >= 31 && number <= 38);
@@ -365,6 +383,62 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
+	const [archScale, setArchScale] = useState(1);
+	// Применённый масштаб нужен внутри ResizeObserver, где замыкание на состояние
+	// было бы устаревшим: измеренную ширину ряда делим именно на него.
+	const appliedArchScaleRef = useRef(1);
+
+	const topTeethList = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
+	const bottomTeethList = pediatricMode
+		? PEDIATRIC_BOTTOM_TEETH
+		: BOTTOM_TEETH;
+
+	/**
+	 * Подгоняет дугу под фактическую ширину контейнера.
+	 *
+	 * Смысл одонтограммы — видеть всю полость сразу. Дуга же занимала свою
+	 * собственную ширину независимо от экрана: на 1024px было видно 8 зубов из 16,
+	 * на телефоне 4, остальное приходилось искать горизонтальной прокруткой.
+	 *
+	 * Своя ширина ряда не вычисляется из размеров зубов, а ИЗМЕРЯЕТСЯ: сумма
+	 * cfg.width её недооценивает, потому что ряд шире на обёртки зубов, подписи
+	 * номеров и рамки — с расчётной оценкой дуга всё равно не влезала. Берём
+	 * измеренную ширину при текущем масштабе и делим на него, получая ширину при
+	 * масштабе 1.
+	 *
+	 * Ширина контейнера задана родителем (width: 100% при overflow-x: auto), а не
+	 * содержимым, поэтому уменьшение зубов её не меняет и ResizeObserver не входит
+	 * в самоподдерживающийся цикл.
+	 */
+	useEffect(() => {
+		const element = archContainerRef.current;
+		if (!element) return;
+
+		const recalculate = () => {
+			const available = element.clientWidth;
+			const row = element.querySelector<HTMLElement>(".teeth-row");
+			if (!available || !row) return;
+
+			const applied = appliedArchScaleRef.current;
+			const naturalWidth = row.scrollWidth / applied;
+			if (!Number.isFinite(naturalWidth) || naturalWidth <= 0) return;
+
+			const next = Math.min(
+				1,
+				Math.max(MIN_ARCH_SCALE, available / naturalWidth),
+			);
+			// Порог отсекает дрожание на дробных пикселях при появлении полосы
+			// прокрутки — без него пересчёт не сходился бы.
+			if (Math.abs(applied - next) < 0.005) return;
+			appliedArchScaleRef.current = next;
+			setArchScale(next);
+		};
+
+		recalculate();
+		const observer = new ResizeObserver(recalculate);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [topTeethList, bottomTeethList]);
 
 	const handleToothClick = (
 		e: React.MouseEvent,
@@ -378,8 +452,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const getToothState = (num: number) =>
 		teethData.find((t) => t.toothNumber === num)?.state || "Healthy";
 
-	const topTeeth = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
-	const bottomTeeth = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
+	const topTeeth = topTeethList;
+	const bottomTeeth = bottomTeethList;
 
 	return (
 		<div className="tooth-chart-container" ref={containerRef}>
@@ -421,7 +495,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								<ToothSVG
 									key={num}
 									number={num}
-									scale={1}
+									scale={archScale}
 									state={tData ? tData.state : "Healthy"}
 									surfaces={tData?.surfaces}
 									useSurfaces={useSurfaces}
@@ -444,7 +518,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 								<ToothSVG
 									key={num}
 									number={num}
-									scale={1}
+									scale={archScale}
 									state={tData ? tData.state : "Healthy"}
 									surfaces={tData?.surfaces}
 									useSurfaces={useSurfaces}
