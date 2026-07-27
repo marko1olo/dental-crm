@@ -953,9 +953,22 @@ details summary:hover {
   letter-spacing: 0.08em !important;
 }
 
-/* Принудительная нейтрализация жестких Tailwind карт и фона блоков */
-[data-theme="dark"] [class*="bg-sky-"],
-[data-theme="night"] [class*="bg-sky-"] {
+/* Принудительная нейтрализация жестких Tailwind карт и фона блоков.
+ *
+ * Кнопки исключены. Правило подбирает элементы по подстроке в списке
+ * классов, поэтому `bg-sky-600` и даже `hover:bg-sky-700` заставляли
+ * элемент навсегда получить color: var(--teal). У .primary-button фон —
+ * градиент (background-image), а background-color градиент не
+ * перекрывает: получался бирюзовый текст на бирюзовом градиенте.
+ *
+ * Замерено на «Создать запись» в записях, тёмная тема: color
+ * rgb(45,212,191) на rgb(45,212,191), контраст 1.00, подтверждено по
+ * пикселям (1.27). Кнопка была не видна.
+ *
+ * У .primary-button и .secondary-button есть свои согласованные пары
+ * фон+текст, перекрашивать их не нужно. */
+[data-theme="dark"] [class*="bg-sky-"]:not(.primary-button):not(.secondary-button),
+[data-theme="night"] [class*="bg-sky-"]:not(.primary-button):not(.secondary-button) {
   background-color: var(--teal-surface) !important;
   color: var(--teal) !important;
   border-color: var(--teal-ring) !important;

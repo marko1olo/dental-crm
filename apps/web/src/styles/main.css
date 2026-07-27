@@ -9414,7 +9414,9 @@ body.dark-mode .onboarding-draft-strip span {
 }
 
 .patient-next-action {
-  background: #f7fbf9;
+  /* Было #f7fbf9 при color: var(--ink) — в тёмной теме контраст 1.00,
+     подсказка «Закрыть недостающие документы» не читалась вовсе. */
+  background: var(--srf-chip-soft);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
@@ -10652,7 +10654,10 @@ html.dark .emk-tab-button.active,
 
 .close-task {
   align-items: center;
-  background: #faf7f1;
+  /* Было #faf7f1: в тёмной теме фон оставался светлым, а текст брался из
+     --ink и становился почти белым — «Клинические предупреждения»
+     давали контраст 1.07, то есть были невидимы. */
+  background: var(--srf-check-task);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: inherit;
@@ -10667,7 +10672,9 @@ html.dark .emk-tab-button.active,
 }
 
 .close-task.blocking {
-  background: #fffaf0;
+  /* Было #fffaf0 — та же поломка тёмной темы, «ЭМК заполнена» с
+     контрастом 1.10. */
+  background: var(--srf-check-task-blocking);
   border-color: rgba(184, 120, 31, 0.45);
 }
 
@@ -10948,8 +10955,13 @@ html.dark .emk-tab-button.active,
 }
 
 .document-source-badge.official-form {
-  background: #e5f4ee;
-  border-color: #b9ddcf;
+  /* Было #e5f4ee / #b9ddcf при color: var(--green-dark). Переменной
+     --green-dark не существовало ни в одной таблице стилей, объявление
+     цвета было недействительным, текст наследовался от кнопки и в
+     тёмной теме давал контраст 1.08. Теперь --green-dark объявлен в
+     token-aliases.css как var(--ok-fg). */
+  background: var(--srf-badge-official);
+  border-color: var(--srf-badge-official-line);
   color: var(--green-dark);
 }
 

@@ -11,6 +11,8 @@ import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";
 import "./styles/premium.css";
 import "./styles/dente-redesign.css";
+// Псевдонимы необъявленных переменных и поверхности, зависящие от темы.
+import "./styles/token-aliases.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
