@@ -40,6 +40,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	// Ключ идемпотентности живёт между повторами: без него повторная отправка
 	// после обрыва связи зачислила бы деньги дважды.
 	const topupMutationIdRef = useRef<string | null>(null);
+	// То же самое для списания. Отключённой кнопки недостаточно: она защищает
+	// только от второго клика, но не от повтора после потерянного ответа.
+	const payMutationIdRef = useRef<string | null>(null);
 
 	const fetchFamily = useCallback(async () => {
 		try {
@@ -111,14 +114,33 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const animatedBalance = useCountUp(balanceVal, 1000);
 
 	const handlePay = async () => {
-		if (!family) return;
+		// БЫЛО: только `if (!family) return`. Отключение кнопки через isPaying
+		// происходит после ре-рендера, поэтому два быстрых клика в одном кадре
+		// успевали отправить два запроса.
+		if (!family || isPaying) return;
 		if (amount <= 0) {
 			showToast("Введите сумму", "error");
+			return;
+		}
+		// Журнал платежей хранит целые рубли (payments.amount_rub — integer),
+		// сервер отклоняет дробное с 400. Без этой проверки оператор видел
+		// невнятную ошибку схемы вместо понятного текста.
+		if (!Number.isInteger(amount)) {
+			showToast("Сумма списания указывается целыми рублями", "error");
 			return;
 		}
 		if (amount > balanceVal) {
 			showToast("Недостаточно средств на семейном балансе", "error");
 			return;
+		}
+		// БЫЛО: списание уходило вообще без ключа идемпотентности, хотя
+		// пополнение строкой ниже его уже отправляло. Сценарий потери денег:
+		// оператор нажал «Списать», сервер списал, ответ не дошёл (обрыв связи),
+		// интерфейс показал «Сетевая ошибка», оператор нажал повторно — семья
+		// заплатила дважды за одно лечение. Серверная защита по паре
+		// (organizationId, clientMutationId) есть, но без ключа не срабатывает.
+		if (!payMutationIdRef.current) {
+			payMutationIdRef.current = `family-pay-${crypto.randomUUID()}`;
 		}
 
 		setIsPaying(true);
@@ -132,18 +154,25 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					patientId,
 					familyGroupId: family.id,
 					amountRub: amount,
+					clientMutationId: payMutationIdRef.current,
 				}),
 			});
 
 			if (!res.ok) {
-				const err = await res.json();
+				const err = await res.json().catch(() => ({}) as { message?: string });
 				showToast(err.message || "Ошибка оплаты", "error");
-			} else {
-				showToast("Оплата списана с семейного кошелька", "success");
-				if (onPaymentSuccess) onPaymentSuccess();
-				// UI updates via WS, but we can refetch just in case
-				fetchFamily();
+				return;
 			}
+			// Списание прошло — следующее получит новый ключ.
+			payMutationIdRef.current = null;
+			showToast("Оплата списана с семейного кошелька", "success");
+			// Поле суммы обнуляется, иначе после успешного списания в нём
+			// остаётся та же сумма и кнопка снова активна — приглашение
+			// случайно списать второй раз.
+			setAmount(0);
+			if (onPaymentSuccess) onPaymentSuccess();
+			// UI updates via WS, but we can refetch just in case
+			fetchFamily();
 		} catch (e) {
 			showToast("Сетевая ошибка", "error");
 		} finally {
