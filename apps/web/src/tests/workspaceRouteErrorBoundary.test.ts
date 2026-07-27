@@ -12,7 +12,10 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { workspaceRouteErrorPresentation } from "../workspaceRouteErrorBoundary";
+import {
+  workspaceRouteErrorDetail,
+  workspaceRouteErrorPresentation,
+} from "../workspaceRouteErrorBoundary";
 
 const occurredAt = new Date(Date.UTC(2026, 6, 28, 11, 35, 7));
 
@@ -106,6 +109,21 @@ describe("вид сбоя раздела для сотрудника клини�
 
     assert.equal(presentation.diagnostics, "");
     assert.doesNotMatch(presentation.hint, /imaging/);
+  });
+
+  test("фраза для человека не зависит от режима сборки и не содержит ошибку", () => {
+    // Эта функция — то, что видно всегда, в том числе в production. Ветка с
+    // диагностикой её не касается, поэтому проверяется отдельно от presentation.
+    const detail = workspaceRouteErrorDetail(errorWithStack());
+
+    assert.doesNotMatch(detail, /Error/);
+    assert.doesNotMatch(detail, /\/assets\//);
+    assert.doesNotMatch(detail, /at PatientsView/);
+    assert.doesNotMatch(detail, /organizationId/);
+    assert.equal(detail, workspaceRouteErrorPresentation(errorWithStack(), {
+      includeDiagnostics: true,
+      occurredAt,
+    }).hint);
   });
 
   test("время сбоя выдаётся в обоих режимах и в русском формате", () => {

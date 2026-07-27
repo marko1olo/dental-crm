@@ -46,18 +46,18 @@ export type WorkspaceRouteErrorPresentationOptions = {
   readonly occurredAt: Date;
 };
 
-const workspaceRouteChunkFailureHint =
-  "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
-
 /**
- * Формулировка повторяет соседнюю границу ошибок оболочки (AppShell.tsx), чтобы
- * в одном продукте не было двух разных языков сообщений об ошибке.
+ * Русская фраза для сотрудника клиники. Имя и устройство функции намеренно
+ * повторяют соседнюю границу ошибок оболочки — AppShell.tsx,
+ * `appShellErrorDetail`, — чтобы в одном продукте не было двух разных языков
+ * сообщений об ошибке. Текст исключения сюда не подставляется ни в одной ветке.
  */
-const workspaceRouteGenericHint =
-  "Раздел остановлен до обновления, чтобы не показывать неполное рабочее место.";
+export function workspaceRouteErrorDetail(error: unknown): string {
+  if (error instanceof Error && /chunk|import|loading/i.test(error.message)) {
+    return "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
+  }
 
-function isWorkspaceRouteChunkFailure(error: unknown): boolean {
-  return error instanceof Error && /chunk|import|loading/i.test(error.message);
+  return "Раздел остановлен до обновления, чтобы не показывать неполное рабочее место.";
 }
 
 function workspaceRouteErrorDiagnostics(error: unknown): string {
@@ -74,7 +74,7 @@ export function workspaceRouteErrorPresentation(
   options: WorkspaceRouteErrorPresentationOptions,
 ): WorkspaceRouteErrorPresentation {
   return {
-    hint: isWorkspaceRouteChunkFailure(error) ? workspaceRouteChunkFailureHint : workspaceRouteGenericHint,
+    hint: workspaceRouteErrorDetail(error),
     diagnostics: options.includeDiagnostics ? workspaceRouteErrorDiagnostics(error) : "",
     reference: options.occurredAt.toLocaleString("ru-RU"),
   };
