@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ShieldAlert, Archive, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientResource } from "../../hooks/usePatientResource";
 import { showToast } from "../GlobalToast";
 
 export interface ArchiveReasonItem {
@@ -14,61 +15,95 @@ export interface ArchiveReasonItem {
 }
 
 export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> = ({ patientId }) => {
-	const { auth } = useAppLogicContext();
-	const [reasons, setReasons] = useState<ArchiveReasonItem[]>([]);
-	const [loading, setLoading] = useState<boolean>(true);
+	const { auth, dashboard } = useAppLogicContext();
 	const [selectedReason, setSelectedReason] = useState<string>("");
-	const [isBlacklisted, setIsBlacklisted] = useState<boolean>(false);
 	const [confirmModalOpen, setConfirmModalOpen] = useState<boolean>(false);
+	const [isApplying, setIsApplying] = useState<boolean>(false);
 
+	// БЫЛО: ручная загрузка без сброса и без отмены. При переключении
+	// пациента виджет продолжал показывать статус предыдущего, а
+	// handleApplyStatus считает новое значение как !isBlacklisted и шлёт
+	// его ТЕКУЩЕМУ пациенту — то есть чужой показанный статус приводил к
+	// блокировке записи не тому человеку.
+	const {
+		data: reasons,
+		isLoading: loading,
+		reload,
+	} = usePatientResource<ArchiveReasonItem[]>(
+		patientId,
+		(id) => `/api/patients/${id}/archive-status`,
+		() =>
+			auth
+				? auth.denteClinicalReadHeaders()
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		[],
+	);
+
+	// Оптимистичное значение после успешной записи. Принадлежит конкретному
+	// пациенту, поэтому сбрасывается при переключении.
+	const [optimisticBlacklist, setOptimisticBlacklist] = useState<boolean | null>(null);
 	useEffect(() => {
-		if (!patientId) return;
-		fetch(`/api/patients/${patientId}/archive-status`, {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				const list = Array.isArray(data) ? data : [];
-				setReasons(list);
-				if (list.length > 0) {
-				    setIsBlacklisted(list[0].isBookingBlocked);
-				} else {
-				    setIsBlacklisted(false);
-				}
-				setLoading(false);
-			})
-			.catch((err) => {
-				console.error("[PatientArchiveAndBlacklistWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, [patientId, auth]);
+		setOptimisticBlacklist(null);
+		setConfirmModalOpen(false);
+	}, [patientId]);
 
-	const handleApplyStatus = () => {
-	    const newStatus = !isBlacklisted;
-		fetch(`/api/patients/${patientId}/archive-status`, {
-		    method: 'POST',
-			headers: auth ? {
-			    ...auth.denteClinicalMutationHeaders(),
-			    "Content-Type": "application/json"
-			} : { 
-			    "x-organization-id": "00000000-0000-0000-0000-000000000001",
-			    "Content-Type": "application/json"
-			},
-			body: JSON.stringify({ isBlacklisted: newStatus })
-		})
-		.then(res => res.json())
-		.then(data => {
-		    if (data.success || data.isBlacklisted !== undefined) {
-		        setIsBlacklisted(newStatus);
-        		setConfirmModalOpen(false);
-        		showToast(
-        			newStatus
-        				? "Пациент добавлен в черный список. Запись на прием заблокирована."
-        				: "Разблокировано. Пациент восстановлен из черного списка.",
-        			newStatus ? "warning" : "success"
-        		);
-		    }
-		});
+	const patientIdRef = useRef(patientId);
+	patientIdRef.current = patientId;
+
+	const isBlacklisted = optimisticBlacklist ?? (reasons[0]?.isBookingBlocked ?? false);
+
+	// Блокировка записи действует на всю сеть клиник, поэтому подтверждение
+	// обязано называть пациента поимённо, а не «пациента».
+	const patientName =
+		(dashboard?.patients as Array<{ id: string; fullName?: string }> | undefined)?.find(
+			(p) => p.id === patientId,
+		)?.fullName ?? null;
+
+	const handleApplyStatus = async () => {
+		if (isApplying || loading) return;
+		const targetPatientId = patientId;
+		const newStatus = !isBlacklisted;
+		setIsApplying(true);
+		try {
+			const res = await fetch(`/api/patients/${targetPatientId}/archive-status`, {
+				method: "POST",
+				headers: auth
+					? { ...auth.denteClinicalMutationHeaders(), "Content-Type": "application/json" }
+					: {
+							"x-organization-id": "00000000-0000-0000-0000-000000000001",
+							"Content-Type": "application/json",
+						},
+				body: JSON.stringify({ isBlacklisted: newStatus }),
+			});
+			// БЫЛО: ни .catch, ни проверки res.ok. При отказе сервера кнопка
+			// просто ничего не делала — оператор считал, что заблокировал.
+			if (!res.ok) {
+				showToast("Не удалось изменить статус блокировки", "error");
+				return;
+			}
+			const data = await res.json().catch(() => ({}) as Record<string, unknown>);
+			if (!(data.success || data.isBlacklisted !== undefined)) {
+				showToast("Сервер не подтвердил изменение статуса", "error");
+				return;
+			}
+			// Пациента могли переключить, пока запрос был в пути: тогда ответ
+			// не должен перекрашивать карточку уже другого человека.
+			if (patientIdRef.current !== targetPatientId) return;
+			setOptimisticBlacklist(newStatus);
+			setConfirmModalOpen(false);
+			reload();
+			showToast(
+				newStatus
+					? "Пациент добавлен в черный список. Запись на прием заблокирована."
+					: "Разблокировано. Пациент восстановлен из черного списка.",
+				newStatus ? "warning" : "success",
+			);
+		} catch (error) {
+			console.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
+			showToast("Сетевая ошибка при изменении статуса", "error");
+		} finally {
+			setIsApplying(false);
+		}
 	};
 
 	return (
@@ -100,14 +135,22 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 					<button
 						type="button"
 						onClick={() => setConfirmModalOpen(true)}
+						// Пока статус не загружен, isBlacklisted равен false по
+						// умолчанию: нажатие в этот момент предлагало бы «добавить
+						// в ЧС» пациента, который в нём уже есть.
+						disabled={loading || isApplying}
 						title={isBlacklisted ? "Снять блокировку записи" : "Заблокировать запись и добавить в ЧС"}
-						className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+						className={`px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
 							isBlacklisted
 								? "bg-emerald-600 hover:bg-emerald-700 text-white"
 								: "bg-rose-600 hover:bg-rose-700 text-white"
 						}`}
 					>
-						{isBlacklisted ? "Восстановить из черного списка" : "Добавить в черный список"}
+						{loading
+							? "Загрузка статуса…"
+							: isBlacklisted
+								? "Восстановить из черного списка"
+								: "Добавить в черный список"}
 					</button>
 				</div>
 			</div>
@@ -120,17 +163,18 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 					</div>
 					<p className="text-xs text-rose-700 dark:text-rose-300">
 						{!isBlacklisted
-							? "Вы собираетесь добавить пациента в черный список. Запись на прием будет заблокирована для этого пациента во всех клиниках сети."
-							: "Вы уверены, что хотите разблокировать этого пациента?"}
+							? `Вы собираетесь добавить в черный список: ${patientName ?? "выбранного пациента"}. Запись на прием будет заблокирована во всех клиниках сети.`
+							: `Снять блокировку записи с пациента: ${patientName ?? "выбранный пациент"}?`}
 					</p>
 					<div className="flex space-x-2 pt-1">
 						<button
 							type="button"
 							onClick={handleApplyStatus}
+							disabled={isApplying}
 							title="Подтвердить действие"
-							className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors"
+							className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
 						>
-							Подтвердить
+							{isApplying ? "Применяем…" : "Подтвердить"}
 						</button>
 						<button
 							type="button"

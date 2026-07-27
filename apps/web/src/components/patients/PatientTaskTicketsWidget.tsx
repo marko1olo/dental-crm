@@ -10,15 +10,14 @@ import {
 	User,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientResource } from "../../hooks/usePatientResource";
 import { showToast } from "../GlobalToast";
 
 export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
-	const [tickets, setTickets] = useState<any[]>([]);
 	const [isAdding, setIsAdding] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
 
 	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
 	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { "x-organization-id": "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
@@ -27,23 +26,20 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const [newDescription, setNewDescription] = useState("");
 	const [assignedToId, setAssignedToId] = useState("");
 
-	const fetchTickets = async () => {
-		setIsLoading(true);
-		try {
-			const res = await fetch(`/api/patients/${patientId}/tickets`, {
-				headers: getReadHeaders(),
-			});
-			if (res.ok) setTickets(await res.json());
-		} catch (e) {
-			console.error(e);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchTickets();
-	}, [patientId]);
+	// БЫЛО: ручная загрузка без сброса состояния и без отмены запроса —
+	// задачи предыдущего пациента оставались на карточке следующего.
+	const {
+		data: rawTickets,
+		setData: setTickets,
+		isLoading,
+		reload: fetchTickets,
+	} = usePatientResource<any[]>(
+		patientId,
+		(id) => `/api/patients/${id}/tickets`,
+		getReadHeaders,
+		[],
+	);
+	const tickets: any[] = Array.isArray(rawTickets) ? rawTickets : [];
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();

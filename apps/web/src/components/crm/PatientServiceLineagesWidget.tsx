@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { GitCommit, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientResource } from "../../hooks/usePatientResource";
 
 interface LineageItem {
 	id: string;
@@ -16,27 +17,23 @@ interface LineageItem {
 
 export const PatientServiceLineagesWidget: React.FC<{ patientId?: string }> = ({ patientId }) => {
 	const { auth } = useAppLogicContext();
-	const [items, setItems] = useState<LineageItem[]>([]);
-	const [loading, setLoading] = useState<boolean>(true);
-
-	useEffect(() => {
-		const url = patientId
-			? `/api/crm/patient-service-lineages?patientId=${encodeURIComponent(patientId)}`
-			: "/api/crm/patient-service-lineages";
-
-		fetch(url, {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				setItems(Array.isArray(data) ? data : []);
-				setLoading(false);
-			})
-			.catch((err) => {
-				console.error("[PatientServiceLineagesWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, [patientId, auth]);
+	// БЫЛО: без сброса и без отмены — при переключении пациента на карточке
+	// оставалось дерево обращений предыдущего.
+	// Пустой patientId означает «весь список», поэтому подставляется маркер:
+	// хук пропускает загрузку только при отсутствии идентификатора.
+	const { data: rawItems, isLoading: loading } = usePatientResource<unknown>(
+		patientId || "__all__",
+		(id) =>
+			id === "__all__"
+				? "/api/crm/patient-service-lineages"
+				: `/api/crm/patient-service-lineages?patientId=${encodeURIComponent(id)}`,
+		() =>
+			auth
+				? auth.denteClinicalReadHeaders()
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		[],
+	);
+	const items: LineageItem[] = Array.isArray(rawItems) ? (rawItems as LineageItem[]) : [];
 
 	return (
 		<div

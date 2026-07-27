@@ -17,35 +17,57 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 }) => {
 	const [loading, setLoading] = useState(false);
 	const [riskData, setRiskData] = useState<any>(null);
+	// Кнопка «Рассчитать AI-риск» перезапускает тот же эффект, а не отдельную
+	// функцию: иначе ручной запрос остался бы без отмены и снова мог бы
+	// показать чужой прогноз.
+	const [reloadToken, setReloadToken] = useState(0);
 
+	// Прогноз запрашивается через POST, поэтому общий хук usePatientResource
+	// (он делает GET) здесь не подходит — отмена сделана вручную.
+	// БЫЛО: состояние сбрасывалось, но устаревший ответ не отбрасывался.
+	// Ответ по ранее выбранному пациенту, пришедший позже, показывал его
+	// риск неявки на карточке текущего.
 	useEffect(() => {
-		if (patientId) {
+		if (!patientId) {
 			setRiskData(null);
-			fetchRisk(patientId);
-		}
-	}, [patientId]);
-
-	const fetchRisk = async (id: string) => {
-		setLoading(true);
-		try {
-			const res = await fetch("/api/ai/predict-no-show", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ patientId: id }),
-			});
-			if (res.ok) {
-				const data = await res.json();
-				setRiskData(data);
-			}
-		} catch (e) {
-			console.error("Failed to fetch AI no-show risk", e);
-		} finally {
 			setLoading(false);
+			return;
 		}
-	};
+		setRiskData(null);
+		setLoading(true);
+
+		const controller = new AbortController();
+		let cancelled = false;
+
+		(async () => {
+			try {
+				const res = await fetch("/api/ai/predict-no-show", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({ patientId }),
+					signal: controller.signal,
+				});
+				if (cancelled) return;
+				if (res.ok) {
+					const data = await res.json();
+					if (!cancelled) setRiskData(data);
+				}
+			} catch (e) {
+				if (cancelled || (e as Error)?.name === "AbortError") return;
+				console.error("Failed to fetch AI no-show risk", e);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+			controller.abort();
+		};
+	}, [patientId, reloadToken]);
 
 	if (!patientId) return null;
 
@@ -153,10 +175,11 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 					</span>
 					<button
 						type="button"
-						onClick={() => fetchRisk(patientId)}
-						className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+						onClick={() => setReloadToken((token) => token + 1)}
+						disabled={loading}
+						className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
 					>
-						Рассчитать AI-риск
+						{loading ? "Считаем…" : "Рассчитать AI-риск"}
 					</button>
 				</div>
 			)}

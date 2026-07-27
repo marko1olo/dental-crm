@@ -11,8 +11,9 @@ import {
 	UserX,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientResource } from "../../hooks/usePatientResource";
 import { showToast } from "../GlobalToast";
 
 export function PatientReclamationsWidget({
@@ -21,9 +22,7 @@ export function PatientReclamationsWidget({
 	patientId: string;
 }) {
 	const { dashboard, auth } = useAppLogicContext();
-	const [reclamations, setReclamations] = useState<any[]>([]);
 	const [isAdding, setIsAdding] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
 
 	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
 	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { "x-organization-id": "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
@@ -32,23 +31,22 @@ export function PatientReclamationsWidget({
 	const [newProposedAction, setNewProposedAction] = useState("");
 	const [doctorId, setDoctorId] = useState("");
 
-	const fetchReclamations = async () => {
-		setIsLoading(true);
-		try {
-			const res = await fetch(`/api/patients/${patientId}/reclamations`, {
-				headers: getReadHeaders(),
-			});
-			if (res.ok) setReclamations(await res.json());
-		} catch (e) {
-			console.error(e);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchReclamations();
-	}, [patientId]);
+	// БЫЛО: ручная загрузка без сброса состояния и без отмены запроса. При
+	// переключении пациента на его карточке оставались осложнения и
+	// претензии предыдущего — это уже не косметика, а приписывание чужого
+	// осложнения другому человеку.
+	const {
+		data: rawReclamations,
+		setData: setReclamations,
+		isLoading,
+		reload: fetchReclamations,
+	} = usePatientResource<any[]>(
+		patientId,
+		(id) => `/api/patients/${id}/reclamations`,
+		getReadHeaders,
+		[],
+	);
+	const reclamations: any[] = Array.isArray(rawReclamations) ? rawReclamations : [];
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();

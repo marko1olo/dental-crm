@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { MessageSquare, PhoneCall, Mail, Send } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { usePatientResource } from "../../hooks/usePatientResource";
 
 export interface CommunicationEventItem {
 	id: string;
@@ -15,25 +16,23 @@ export interface CommunicationEventItem {
 
 export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }> = ({ patientId }) => {
 	const { auth } = useAppLogicContext();
-	const [events, setEvents] = useState<CommunicationEventItem[]>([]);
-	const [loading, setLoading] = useState<boolean>(true);
-
-	useEffect(() => {
-		if (!patientId) return;
-		fetch(`/api/patients/${patientId}/communications`, {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
-			.then((res) => res.json())
-			.then((data) => {
-				const list = Array.isArray(data) ? data : [];
-				setEvents(list);
-				setLoading(false);
-			})
-			.catch((err) => {
-				console.error("[PatientCommunicationTimelineWidget fetch error]:", err);
-				setLoading(false);
-			});
-	}, [patientId, auth]);
+	// БЫЛО: ручной useEffect без сброса состояния и без отмены запроса.
+	// На карточке нового пациента 4 секунды висела переписка предыдущего,
+	// причём без индикатора загрузки, а поздний ответ по старому пациенту
+	// перетирал карточку текущего насовсем. Воспроизведено в браузере,
+	// scratch/verify-patient-widget-race.mjs.
+	const { data: rawEvents, isLoading: loading } = usePatientResource<unknown>(
+		patientId,
+		(id) => `/api/patients/${id}/communications`,
+		() =>
+			auth
+				? auth.denteClinicalReadHeaders()
+				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+		[],
+	);
+	const events: CommunicationEventItem[] = Array.isArray(rawEvents)
+		? (rawEvents as CommunicationEventItem[])
+		: [];
 
 	return (
 		<div
