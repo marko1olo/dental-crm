@@ -154,6 +154,8 @@ import { SettingsAiTab } from "./components/settings/SettingsAiTab";
 import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
+import { MigrationWizard } from "./components/settings/MigrationWizard";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import { SettingsModulesTab } from "./components/settings/SettingsModulesTab";
 import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
@@ -1464,7 +1466,33 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <SettingsReportingTab />
         ) : null}
 
-        {settingsTab === "imports" ? <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {/*
+          Мастер переноса стоит здесь, а не внутри SettingsImportsTab.
+
+          Он самодостаточен: сам ходит в /api/migration/* и не принимает ни
+          одного пропса. Вкладка импорта, наоборот, ждёт сотни пропсов из общего
+          объекта настроек, и отсутствие любого из них роняет её целиком вместе
+          со всем, что внутри. Вкладывать в неё рабочий инструмент переноса
+          значит ставить перенос базы клиники в зависимость от чужих пропсов.
+        */}
+        {settingsTab === "imports" ? <MigrationWizard /> : null}
+        {/*
+          Умный разбор — в собственной границе ошибок.
+
+          Компонент ждёт сотни значений из общего объекта настроек, и часть до
+          него не доходит: при выносе из этого файла потерялись защитные `?.`,
+          которые здесь стоят на каждом обращении к дашборду. Любое такое
+          обращение роняет компонент, а общая граница гасила вместе с ним ВЕСЬ
+          раздел настроек — включая мастер переноса, который от этих пропсов не
+          зависит вовсе.
+
+          Своя граница ограничивает падение одним блоком.
+        */}
+        {settingsTab === "imports" ? (
+          <ErrorBoundary moduleName="Умный разбор выгрузки">
+            <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} />
+          </ErrorBoundary>
+        ) : null}
         {settingsTab === "audit" ? <SettingsAuditTab props={settingsProps} settingsTab={settingsTab} /> : null}
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">

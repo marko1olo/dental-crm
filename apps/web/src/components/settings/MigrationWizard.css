@@ -1,0 +1,926 @@
+/**
+ * Мастер переноса базы.
+ *
+ * Все цвета берутся из переменных темы (dente-redesign.css), а не задаются
+ * литералами: в приложении три темы, и захардкоженный #ffffff превращает
+ * панель в белое пятно на тёмном фоне.
+ */
+
+.migration-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--ink);
+}
+
+/* ---- Заголовок ---- */
+
+.mw-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mw-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.mw-subtitle {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Шаги ---- */
+
+.mw-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.mw-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 13px;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.mw-step-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mw-step.is-current {
+  border-color: var(--teal);
+  background: var(--teal-surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.mw-step.is-current .mw-step-dot {
+  background: var(--teal);
+  color: var(--on-teal);
+}
+
+.mw-step.is-done .mw-step-dot {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+/* ---- Панель ---- */
+
+.mw-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: var(--shadow-1);
+}
+
+/* ---- Зона перетаскивания ---- */
+
+.mw-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  border: 2px dashed var(--line-strong);
+  border-radius: 12px;
+  background: var(--paper-soft);
+  text-align: center;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.mw-drop.is-dragging {
+  border-color: var(--teal);
+  background: var(--teal-surface);
+}
+
+.mw-drop-icon {
+  font-size: 32px;
+  line-height: 1;
+  color: var(--teal);
+}
+
+.mw-drop-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mw-drop-hint {
+  margin: 0 0 8px;
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mw-file-input {
+  display: none;
+}
+
+/* ---- Кнопки ---- */
+
+.mw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.mw-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mw-btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.mw-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.mw-btn-primary {
+  background: var(--teal);
+  color: var(--on-teal);
+}
+
+.mw-btn-primary:not(:disabled):hover {
+  background: var(--teal-dark);
+}
+
+.mw-btn-ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--ink-2);
+}
+
+.mw-btn-ghost:not(:disabled):hover {
+  background: var(--paper-soft);
+  border-color: var(--teal);
+}
+
+/**
+ * Кнопка записи в боевые таблицы намеренно красная и стоит отдельно: это
+ * единственное необратимое действие мастера, и оно не должно выглядеть как
+ * «продолжить».
+ */
+.mw-btn-danger {
+  background: var(--bad-fg);
+  color: #fff;
+}
+
+.mw-btn-danger:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+/* ---- Переключатель нейросети ---- */
+
+.mw-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-soft);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mw-toggle input {
+  margin-top: 2px;
+  accent-color: var(--teal);
+  width: 16px;
+  height: 16px;
+}
+
+.mw-toggle-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+/* ---- Сообщения ---- */
+
+.mw-note {
+  padding: 12px 14px;
+  border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: var(--teal-surface);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.mw-alert {
+  position: relative;
+  padding: 11px 38px 11px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mw-alert-bad {
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+}
+
+.mw-alert-warn {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.mw-alert-info {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+
+.mw-alert-code {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.08);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.mw-alert-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.mw-alert-close:hover {
+  opacity: 1;
+}
+
+/* ---- Карточка источника ---- */
+
+.mw-source-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-soft);
+}
+
+.mw-source-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mw-source-name {
+  font-weight: 620;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.mw-source-meta {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.mw-uncertain {
+  color: var(--warn-fg);
+  font-style: normal;
+}
+
+.mw-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---- Оценка ---- */
+
+.mw-projection {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mw-proj-item {
+  flex: 1 1 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-soft);
+}
+
+.mw-proj-value {
+  font-size: 22px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.mw-proj-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mw-proj-ok {
+  border-color: var(--ok-fg);
+  background: var(--ok-bg);
+}
+
+.mw-proj-ok .mw-proj-value,
+.mw-proj-ok .mw-proj-label {
+  color: var(--ok-fg);
+}
+
+.mw-proj-warn {
+  border-color: var(--warn-fg);
+  background: var(--warn-bg);
+}
+
+.mw-proj-warn .mw-proj-value,
+.mw-proj-warn .mw-proj-label {
+  color: var(--warn-fg);
+}
+
+/* ---- Таблица соответствия ---- */
+
+.mw-mapping-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mw-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.1fr) minmax(140px, 1.3fr) minmax(130px, 0.9fr) minmax(140px, 1.4fr);
+  gap: 12px;
+  align-items: center;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.mw-mapping-row:last-child {
+  border-bottom: none;
+}
+
+.mw-mapping-head {
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mw-col-source {
+  font-family: ui-monospace, monospace;
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.mw-col-target {
+  font-weight: 560;
+  overflow-wrap: anywhere;
+}
+
+/** Маски значений: моноширинный шрифт делает форму читаемой. */
+.mw-col-shapes {
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.mw-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mw-badge-vendor_profile {
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+}
+
+.mw-badge-deterministic {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.mw-badge-inferred {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+
+/** Решение нейросети видно отдельно: оператор должен знать, что это догадка. */
+.mw-badge-llm {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.mw-badge-manual {
+  background: var(--line);
+  color: var(--ink-2);
+}
+
+.mw-confidence {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Замечания ---- */
+
+.mw-findings summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+
+.mw-findings-bad {
+  color: var(--bad-fg);
+}
+
+.mw-findings ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mw-finding {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mw-finding-blocker {
+  color: var(--bad-fg);
+}
+
+.mw-finding-warning {
+  color: var(--warn-fg);
+}
+
+.mw-finding-info {
+  color: var(--muted);
+}
+
+.mw-finding-rows {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Действия ---- */
+
+.mw-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.mw-actions-note {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  max-width: 52ch;
+}
+
+/* ---- Прогресс ---- */
+
+.mw-running {
+  align-items: center;
+  text-align: center;
+}
+
+.mw-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.mw-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal), var(--teal-dark));
+  transition: width 0.4s ease;
+}
+
+.mw-running-phase {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 560;
+}
+
+.mw-running-percent {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  color: var(--teal-dark);
+}
+
+.mw-running-counters {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mw-running-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* ---- Итог сверки ---- */
+
+.mw-verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+}
+
+.mw-verdict.is-ok {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.mw-verdict.is-bad {
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+}
+
+/**
+ * Значок итога.
+ *
+ * Фон задаётся явным цветом, а НЕ currentColor: в одном правиле currentColor
+ * вычисляется от собственного свойства color этого же элемента, и запись
+ * «background: currentColor; color: var(--paper)» давала белый кружок с белой
+ * галочкой внутри — то есть пустой кружок вместо знака.
+ */
+.mw-verdict-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mw-verdict.is-ok .mw-verdict-mark {
+  background: var(--ok-fg);
+}
+
+.mw-verdict.is-bad .mw-verdict-mark {
+  background: var(--bad-fg);
+}
+
+.mw-verdict strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.mw-verdict p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.mw-counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.mw-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-soft);
+}
+
+.mw-counter-value {
+  font-size: 19px;
+  font-weight: 660;
+  font-variant-numeric: tabular-nums;
+}
+
+.mw-counter-label {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.mw-counter.is-ok .mw-counter-value {
+  color: var(--ok-fg);
+}
+
+.mw-counter.is-warn .mw-counter-value {
+  color: var(--warn-fg);
+}
+
+/* ---- Проверки сверки ---- */
+
+.mw-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mw-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-soft);
+}
+
+.mw-check.is-bad {
+  border-color: var(--bad-fg);
+  background: var(--bad-bg);
+}
+
+.mw-check-mark {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mw-check.is-ok .mw-check-mark {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.mw-check.is-bad .mw-check-mark {
+  background: var(--bad-fg);
+  color: #fff;
+}
+
+.mw-check-body {
+  min-width: 0;
+}
+
+.mw-check-body strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mw-check-numbers {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mw-check-detail {
+  margin: 3px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---- Карантин ---- */
+
+.mw-quarantine summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+
+.mw-quarantine ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mw-quarantine li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border-left: 3px solid var(--warn-fg);
+  border-radius: 0 8px 8px 0;
+  background: var(--paper-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.mw-quarantine li.is-blocking {
+  border-left-color: var(--bad-fg);
+}
+
+.mw-q-reason {
+  font-weight: 620;
+}
+
+.mw-q-row {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.mw-q-fix {
+  color: var(--teal-dark);
+}
+
+/* ---- Поиск баз ---- */
+
+.mw-discovery {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow-1);
+}
+
+.mw-discovery header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.mw-discovery-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mw-discovery h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.mw-discovery-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.mw-discovery-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper-soft);
+}
+
+.mw-d-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.mw-d-format {
+  color: var(--teal-dark);
+  font-size: 12px;
+}
+
+.mw-d-path {
+  color: var(--muted);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.mw-d-details {
+  color: var(--ink-2);
+  font-size: 12px;
+  white-space: pre-line;
+}
+
+/** Инструкция по выгрузке — главное, ради чего поиск и нужен. */
+.mw-d-guidance {
+  margin-top: 3px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--info-bg);
+  color: var(--info-fg);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mw-discovery-warning {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---- Узкие экраны ---- */
+
+@media (max-width: 720px) {
+  .mw-mapping-row {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 4px;
+  }
+
+  .mw-mapping-head {
+    display: none;
+  }
+
+  .mw-col-shapes {
+    grid-column: 1 / -1;
+  }
+}

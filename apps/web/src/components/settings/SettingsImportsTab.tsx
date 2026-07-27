@@ -1278,23 +1278,23 @@ export function SettingsImportsTab(props: Record<string, any>) {
     settingsTab === "telegram"
       ? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
       : "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-  const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
-  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
+  const typedClinicModes = Object.keys(clinicModeLabels ?? {}) as ClinicMode[];
+  const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
+  const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ?? []) as RoleQueue[];
+  const typedStaffMembers = (dashboard?.clinicSettings?.staff ?? []) as StaffMember[];
+  const typedChairs = (dashboard?.clinicSettings?.chairs ?? []) as Chair[];
   const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
   const typedUiLanguageOptions = uiLanguageOptions as Array<{ value: string; label: string; detail: string }>;
   const typedTelegramLinkStaffOptions = telegramLinkStaffOptions as StaffMember[];
-  const typedProtocolTemplates = dashboard.protocolTemplates as ProtocolTemplate[];
+  const typedProtocolTemplates = (dashboard?.protocolTemplates ?? []) as ProtocolTemplate[];
   const typedImagingConnectorCards = imagingConnectorCards as ImagingConnectorCard[];
   const typedImagingViewerCapabilities = imagingViewerCapabilities as ImagingViewerCapability[];
   const typedCtPlanningImplantPlan = ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
   const typedCtPlanningActiveQuickActionId =
     typeof ctPlanningActiveQuickActionId === "string" ? ctPlanningActiveQuickActionId : null;
   const typedImagingViewerActiveTool = imagingViewerActiveTool as ImagingViewerTool;
-  const typedIntegrationPresets = dashboard.clinicSettings.integrationPresets as IntegrationPreset[];
-  const typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
+  const typedIntegrationPresets = (dashboard?.clinicSettings?.integrationPresets ?? []) as IntegrationPreset[];
+  const typedSpeechProviders = (dashboard?.speechProviders ?? []) as SpeechProvider[];
   const typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
   const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
   const typedSpeechRecordingRecovery = speechRecordingRecovery as SpeechRecordingRecoveryList | null;
@@ -1306,16 +1306,16 @@ export function SettingsImportsTab(props: Record<string, any>) {
   const typedLocalBridgeReadiness = localBridgeReadiness as LocalBridgeReadinessResponse | null;
   const typedLocalBridgeUsePlans = localBridgeUsePlans as LocalBridgeUsePlansResponse | null;
   const typedPersistenceIntegrity = persistenceIntegrity as PersistenceIntegrityReport | null;
-  const typedImportBatches = dashboard.importBatches as ImportBatch[];
-  const typedAuditEvents = dashboard.auditEvents as AuditEvent[];
-  const typedImportSourceKinds = Object.keys(importSourceLabels) as ImportSourceKind[];
-  const typedDocumentIngestionTargets = Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[];
+  const typedImportBatches = (dashboard?.importBatches ?? []) as ImportBatch[];
+  const typedAuditEvents = (dashboard?.auditEvents ?? []) as AuditEvent[];
+  const typedImportSourceKinds = Object.keys(importSourceLabels ?? {}) as ImportSourceKind[];
+  const typedDocumentIngestionTargets = Object.keys(ingestionTargetLabels ?? {}) as DocumentIngestionTarget[];
   const typedDocumentIngestion = documentIngestion as DocumentIngestionResponse | null;
   const typedImportIntake = importIntake as ImportIntakeResponse | null;
   const typedImportPreview = importPreview as ImportPreviewResponse | null;
   const typedActiveWorkspaceProfile = activeWorkspaceProfile as WorkspaceProfile | null;
-  const typedWorkspaceProfiles = dashboard.clinicSettings.workspaceProfiles as WorkspaceProfile[];
-  const typedRoleAccessPolicies = dashboard.clinicSettings.roleAccessPolicies as RoleAccessPolicy[];
+  const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
+  const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
   const typedTelegramChatLinks = telegramChatLinks as DenteTelegramChatLinkPublic[];
   const typedTelegramLinkCodes = telegramLinkCodes as DenteTelegramLinkCodePublic[];
   const typedTelegramPreview = telegramPreview as DenteTelegramMessagePreview | null;
@@ -1859,13 +1859,13 @@ export function SettingsImportsTab(props: Record<string, any>) {
     );
   };
   const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<ClinicalRuleAction, string>;
-  const typedClinicalRuleActions = Object.keys(typedClinicalRuleActionLabels) as ClinicalRuleAction[];
+  const typedClinicalRuleActions = Object.keys(typedClinicalRuleActionLabels ?? {}) as ClinicalRuleAction[];
   const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<ClinicalRuleSeverity, string>;
-  const typedClinicalRuleSeverities = Object.keys(typedClinicalRuleSeverityLabels) as ClinicalRuleSeverity[];
-  const typedClinicalRules = dashboard.clinicalRules as ClinicalRule[];
-  const typedServiceCatalog = dashboard.serviceCatalog as ServiceCatalogItem[];
+  const typedClinicalRuleSeverities = Object.keys(typedClinicalRuleSeverityLabels ?? {}) as ClinicalRuleSeverity[];
+  const typedClinicalRules = (dashboard?.clinicalRules ?? []) as ClinicalRule[];
+  const typedServiceCatalog = (dashboard?.serviceCatalog ?? []) as ServiceCatalogItem[];
   const typedServiceCategoryLabels = serviceCategoryLabels as Record<ServiceCategory, string>;
-  const typedServiceCategories = Object.keys(typedServiceCategoryLabels) as ServiceCategory[];
+  const typedServiceCategories = Object.keys(typedServiceCategoryLabels ?? {}) as ServiceCategory[];
   const typedSettingsTabs = settingsTabs as SettingsTab[];
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) => `settings-panel-${tabId}`;
@@ -1926,6 +1926,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
   return (
     <>
           {settingsTab === "imports" ? (
+          <>
           <section className="import-studio smart-import-studio" aria-label="Умный разбор смешанной выгрузки">
             <div className="import-copy">
               <Sparkles aria-hidden="true" />
@@ -1940,7 +1941,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
             </div>
 
             <div className="import-source-grid smart-mode-grid" aria-label="Режим умного разбора">
-              {(Object.keys(smartImportModeLabels) as SmartImportMode[]).map((mode) => (
+              {(Object.keys(smartImportModeLabels ?? {}) as SmartImportMode[]).map((mode) => (
                 <button
                   className={`source-card ${smartImportMode === mode ? "active" : ""}`}
                   type="button"
@@ -3064,6 +3065,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
               </div>
             ) : null}
           </section>
+          </>
           ) : null}
 
           {["imports", "sources"].includes(settingsTab) ? (
