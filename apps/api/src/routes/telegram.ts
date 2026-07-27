@@ -19,6 +19,7 @@ import {
   updateDenteTelegramBotSettingsSchema,
   type DenteTelegramBotSettings,
   type DenteTelegramFeature,
+  type DenteTelegramOutboxDeliveryReceipt,
   type DenteTelegramOutboxDeliveryStatus,
   type DenteTelegramOutboxItem,
   type DenteTelegramOutboxSendDueResponse,
@@ -69,7 +70,15 @@ import type {
 } from "../sampleData.js";
 import { hydrateDomainStateFromDb } from "../db/domainStateHydration.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
-import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportFailure } from "../telegramTransport.js";
+import {
+  answerTelegramCallbackQuery,
+  sendTelegramPhotoMessage,
+  sendTelegramTextMessage,
+  type SendTelegramPhotoMessageInput,
+  type SendTelegramTextMessageInput,
+  type TelegramTransportFailure,
+  type TelegramTransportResult
+} from "../telegramTransport.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -78,6 +87,9 @@ const telegramLinkCodeRateLimitWindowMs = 10 * 60_000;
 const telegramLinkCodeRejectedAttemptLimit = 5;
 const telegramPhotoCaptionMaxLength = 1024;
 const telegramSplitPhotoCaption = "DENTE: сообщение клиники. Полный текст ниже.";
+// Фото ушло пациенту, а второе сообщение с полным текстом — нет. Отдельная причина отказа нужна,
+// чтобы повторная попытка знала, какая часть уже на телефоне, и не отправляла фото второй раз.
+export const telegramPhotoSentTextFailedBlockedReason = "telegram_photo_sent_text_failed";
 
 type UnknownRecord = Record<string, unknown>;
 type TelegramInlineKeyboardButton = { text: string; url?: string; callback_data?: string };
@@ -373,6 +385,18 @@ function telegramPhotoCaptionSplitTextWarning(result: TelegramTransportFailure):
   return telegramTransportFailureText(result, "Фото принято, но полный текст под ним не отправлен");
 }
 
+function telegramPhotoMessageReference(photoMessageId: number | null): string {
+  return photoMessageId !== null ? ` (сообщение ${photoMessageId})` : "";
+}
+
+function telegramPhotoPartialDeliveryWarning(photoMessageId: number | null): string {
+  return `Частичная доставка: фото уже у пациента${telegramPhotoMessageReference(photoMessageId)}. Повторная попытка отправит только текст, фото заново не уйдет.`;
+}
+
+function telegramPhotoAlreadyDeliveredWarning(photoMessageId: number | null): string {
+  return `Фото доставлено пациенту в предыдущей попытке${telegramPhotoMessageReference(photoMessageId)}; повторно отправляется только текст.`;
+}
+
 function telegramOutboxTransportFailureWarning(result: TelegramTransportFailure): string {
   return telegramTransportFailureText(result, "Telegram не принял сообщение");
 }
@@ -532,6 +556,115 @@ function isDenteTelegramOutboxItemDue(item: DenteTelegramOutboxItem, nowMs: numb
   return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs;
 }
 
+/**
+ * Какие части сообщения уже лежат у пациента в чате. "Фото + текст" уходит двумя вызовами
+ * Telegram, поэтому провал второго вызова НЕ означает, что не доставлено ничего.
+ */
+export type TelegramOutboxDeliveredParts = {
+  readonly photoDelivered: boolean;
+  readonly photoMessageId: number | null;
+};
+
+const telegramOutboxNothingDelivered: TelegramOutboxDeliveredParts = {
+  photoDelivered: false,
+  photoMessageId: null
+};
+
+/**
+ * Признак доставленной части читается из причины отказа, а не из наличия message_id:
+ * Telegram может принять фото и не вернуть message_id, и такая доставка все равно состоялась.
+ */
+export function telegramOutboxDeliveredParts(
+  receipt: DenteTelegramOutboxDeliveryReceipt | null | undefined
+): TelegramOutboxDeliveredParts {
+  if (!receipt || receipt.status !== "failed") return telegramOutboxNothingDelivered;
+  if (receipt.blockedReason !== telegramPhotoSentTextFailedBlockedReason) return telegramOutboxNothingDelivered;
+  return {
+    photoDelivered: true,
+    photoMessageId: typeof receipt.telegramMessageId === "number" ? receipt.telegramMessageId : null
+  };
+}
+
+type TelegramOutboxTransportSenders = {
+  readonly sendPhoto: (input: SendTelegramPhotoMessageInput) => Promise<TelegramTransportResult>;
+  readonly sendText: (input: SendTelegramTextMessageInput) => Promise<TelegramTransportResult>;
+};
+
+const telegramOutboxLiveSenders: TelegramOutboxTransportSenders = {
+  sendPhoto: sendTelegramPhotoMessage,
+  sendText: sendTelegramTextMessage
+};
+
+type TelegramOutboxPartDeliveryInput = {
+  readonly botToken: string;
+  readonly chatId: string;
+  readonly text: string;
+  readonly photoUrl: string | null;
+  readonly replyMarkup: Record<string, unknown> | null;
+  readonly timeoutMs: number;
+  readonly warnings: readonly string[];
+  readonly alreadyDelivered: TelegramOutboxDeliveredParts;
+  readonly senders?: TelegramOutboxTransportSenders;
+};
+
+type TelegramOutboxPartDeliveryOutcome = {
+  readonly transport: TelegramTransportResult;
+  readonly warnings: string[];
+  readonly delivered: TelegramOutboxDeliveredParts;
+};
+
+/**
+ * БЫЛО: последовательность "фото, затем полный текст" жила безымянной IIFE внутри отправки и
+ * возвращала только результат ПОСЛЕДНЕГО вызова Telegram. Если фото уходило, а текст под ним нет,
+ * вся позиция помечалась как полностью проваленная, message_id фото выбрасывался, и повторная
+ * попытка (её включает clientMutationId с префиксом "due-") начинала с нуля — пациент получал
+ * фото второй раз. Теперь доставленные части передаются внутрь и уже отправленное не повторяется.
+ */
+export async function deliverTelegramOutboxParts(
+  input: TelegramOutboxPartDeliveryInput
+): Promise<TelegramOutboxPartDeliveryOutcome> {
+  const senders = input.senders ?? telegramOutboxLiveSenders;
+  const warnings = [...input.warnings];
+  const photoUrl = input.photoUrl?.trim() || null;
+  let delivered = input.alreadyDelivered;
+
+  if (photoUrl && delivered.photoDelivered) {
+    warnings.push(telegramPhotoAlreadyDeliveredWarning(delivered.photoMessageId));
+  } else if (photoUrl) {
+    const shouldSplitPhotoCaption = input.text.length > telegramPhotoCaptionMaxLength;
+    const photoTransport = await senders.sendPhoto({
+      botToken: input.botToken,
+      chatId: input.chatId,
+      photoUrl,
+      caption: shouldSplitPhotoCaption ? telegramSplitPhotoCaption : input.text,
+      replyMarkup: shouldSplitPhotoCaption ? null : input.replyMarkup,
+      timeoutMs: input.timeoutMs
+    });
+    if (photoTransport.ok && !shouldSplitPhotoCaption) {
+      return { transport: photoTransport, warnings, delivered };
+    }
+    if (photoTransport.ok) {
+      delivered = { photoDelivered: true, photoMessageId: photoTransport.telegramMessageId };
+      warnings.push("telegram_photo_caption_split");
+    } else {
+      warnings.push(telegramPhotoFallbackWarning(photoTransport));
+    }
+  }
+
+  const textTransport = await senders.sendText({
+    botToken: input.botToken,
+    chatId: input.chatId,
+    text: input.text,
+    replyMarkup: input.replyMarkup,
+    timeoutMs: input.timeoutMs
+  });
+  if (!textTransport.ok && delivered.photoDelivered) {
+    warnings.push(telegramPhotoCaptionSplitTextWarning(textTransport));
+    warnings.push(telegramPhotoPartialDeliveryWarning(delivered.photoMessageId));
+  }
+  return { transport: textTransport, warnings, delivered };
+}
+
 async function executeTelegramOutboxSend(
   outboxItemId: string,
   input: DenteTelegramOutboxSendRequest,
@@ -665,57 +798,39 @@ async function executeTelegramOutboxSend(
   telegramOutboxDeliveryClaims.add(claimKey);
   const deliveryText = repairMojibakeText(prepared.text);
   const deliveryReplyMarkup = readableTelegramPayload(prepared.replyMarkup);
-  const deliveryWarnings = [...prepared.warnings];
-  const transport = await (async () => {
-    const photoUrl = prepared.photoUrl?.trim() || null;
-    if (photoUrl) {
-      const shouldSplitPhotoCaption = deliveryText.length > telegramPhotoCaptionMaxLength;
-      const photoTransport = await sendTelegramPhotoMessage({
-        botToken: token,
-        chatId: prepared.chatId,
-        photoUrl,
-        caption: shouldSplitPhotoCaption ? telegramSplitPhotoCaption : deliveryText,
-        replyMarkup: shouldSplitPhotoCaption ? null : deliveryReplyMarkup,
-        timeoutMs: configuredSendTimeoutMs()
-      });
-      if (photoTransport.ok) {
-        if (!shouldSplitPhotoCaption) return photoTransport;
-        deliveryWarnings.push("telegram_photo_caption_split");
-        const textTransport = await sendTelegramTextMessage({
-          botToken: token,
-          chatId: prepared.chatId,
-          text: deliveryText,
-          replyMarkup: deliveryReplyMarkup,
-          timeoutMs: configuredSendTimeoutMs()
-        });
-        if (textTransport.ok) return textTransport;
-        deliveryWarnings.push(telegramPhotoCaptionSplitTextWarning(textTransport));
-        return textTransport;
-      }
-      deliveryWarnings.push(telegramPhotoFallbackWarning(photoTransport));
-    }
-    return sendTelegramTextMessage({
-      botToken: token,
-      chatId: prepared.chatId,
-      text: deliveryText,
-      replyMarkup: deliveryReplyMarkup,
-      timeoutMs: configuredSendTimeoutMs()
-    });
-  })().finally(() => {
+  const partDelivery = await deliverTelegramOutboxParts({
+    botToken: token,
+    chatId: prepared.chatId,
+    text: deliveryText,
+    photoUrl: prepared.photoUrl,
+    replyMarkup: deliveryReplyMarkup,
+    timeoutMs: configuredSendTimeoutMs(),
+    warnings: prepared.warnings,
+    alreadyDelivered: telegramOutboxDeliveredParts(replay)
+  }).finally(() => {
     telegramOutboxDeliveryClaims.delete(claimKey);
   });
+  const transport = partDelivery.transport;
+  const deliveryWarnings = partDelivery.warnings;
 
   if (!transport.ok) {
     const retryAfterSeconds = telegramRetryAfterSeconds(transport);
     const transportWarning = telegramOutboxTransportFailureWarning(transport);
     const warnings = [...deliveryWarnings, transportWarning];
+    // Фото уже у пациента — фиксируем это в квитанции, иначе повтор отправит его снова.
+    const photoAlreadyWithPatient = partDelivery.delivered.photoDelivered;
+    const failureBlockedReason = photoAlreadyWithPatient
+      ? telegramPhotoSentTextFailedBlockedReason
+      : "telegram_transport_failed";
+    const deliveredPhotoMessageId = photoAlreadyWithPatient ? partDelivery.delivered.photoMessageId : null;
     const delivery = recordDenteTelegramOutboxDelivery({
       item: prepared.item,
       status: "failed",
       message: transportWarning,
+      telegramMessageId: deliveredPhotoMessageId,
       clientMutationId: deliveryClientMutationId,
       warnings,
-      blockedReason: "telegram_transport_failed"
+      blockedReason: failureBlockedReason
     });
     return {
       statusCode: 502,
@@ -724,11 +839,11 @@ async function executeTelegramOutboxSend(
         outboxItem: prepared.item,
         taskId: delivery.taskId,
         eventId: delivery.eventId,
-        telegramMessageId: null,
+        telegramMessageId: deliveredPhotoMessageId,
         clientMutationId: deliveryClientMutationId,
         warnings,
         retryAfterSeconds,
-        blockedReason: "telegram_transport_failed"
+        blockedReason: failureBlockedReason
       })
     };
   }
