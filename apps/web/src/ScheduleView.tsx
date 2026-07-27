@@ -72,6 +72,8 @@ type ScheduleViewProps = {
   ) => void;
   updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void;
   visibleScheduleSuggestions: ScheduleSuggestion[];
+  /** Перечитывание данных клиники: нужно для живого обновления сетки. */
+  loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
 };
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -82,7 +84,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const props = { ...logicContext, ...rawProps } as any;
   // Расписание перечитывается, когда запись создал или перенёс кто-то другой.
   // Без этого второй администратор видел устаревшую сетку до перезагрузки.
-  useScheduleRealtime(logicContext?.loadDashboard);
+  //
+  // Берётся из props, а не из logicContext: активный экземпляр ScheduleView
+  // отрисован в App.tsx ВЫШЕ AppLogicProvider, поэтому там контекст пуст.
+  // Первая версия читала logicContext?.loadDashboard и молча ничего не
+  // делала — событие до страницы доходило, сетка не обновлялась.
+  useScheduleRealtime(props.loadDashboard);
   const {
     scheduleDoctorFilterId,
     scheduleAssistantFilterId,

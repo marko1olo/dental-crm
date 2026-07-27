@@ -160,6 +160,7 @@ import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
@@ -176,8 +177,16 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
       return reply.code(400).send({ code: "AppointmentValidationError", message: appointmentCreateValidationMessage });
     }
     try {
-      await createAppointmentInDb(orgId, input);
+      const created = await createAppointmentInDb(orgId, input);
       const dashboard = await getDashboardFromDb(orgId);
+      // Раньше маршрут расписания не рассылал НИЧЕГО, хотя эндпоинт живых
+      // обновлений так и называется — /api/ws/schedule. Два администратора,
+      // работающие в расписании одновременно, не видели действий друг друга
+      // до перезагрузки страницы: прямой путь к двойной записи на один слот.
+      wsBroker.broadcastToOrganization(orgId, {
+        type: "APPOINTMENT_CREATED",
+        payload: { appointmentId: created?.id ?? null, startsAt: created?.startsAt ?? null }
+      });
       return reply.code(201).send(dashboardSchema.parse(dashboard));
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("create", error));
@@ -203,6 +212,12 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
     try {
       await updateAppointmentInDb(orgId, params.appointmentId, input);
       const dashboard = await getDashboardFromDb(orgId);
+      // Перенос и отмена приёма — то же самое: без рассылки коллега видит
+      // слот занятым, хотя он уже освобождён, и наоборот.
+      wsBroker.broadcastToOrganization(orgId, {
+        type: "APPOINTMENT_UPDATED",
+        payload: { appointmentId: params.appointmentId }
+      });
       return dashboardSchema.parse(dashboard);
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("update", error));

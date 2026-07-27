@@ -3670,6 +3670,12 @@ export function App() {
                 updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
                 updateNewAppointmentDraft={updateNewAppointmentDraft}
                 visibleScheduleSuggestions={visibleScheduleSuggestions}
+                // Нужен для живого обновления сетки, когда запись создал или
+                // перенёс другой администратор. Через контекст сюда не
+                // достать: этот ScheduleView отрисован ВЫШЕ AppLogicProvider,
+                // поэтому useAppLogicContext() здесь пуст и всё приходит
+                // пропсами.
+                loadDashboard={loadDashboard}
               />
             </Suspense>
           </WorkspaceRouteErrorBoundary>
