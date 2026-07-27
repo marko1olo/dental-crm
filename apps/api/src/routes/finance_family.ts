@@ -5,6 +5,11 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
+import {
+	kopecksToNumericString,
+	parseKopecks,
+	rublesToKopecks,
+} from "@dental/shared";
 import { db } from "../db/client.js";
 import { familyGroups, patients, payments } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -260,7 +265,8 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				organizationId,
 				name: data.name,
 				headPatientId: data.headPatientId || null,
-				balance: 0,
+				// numeric(12, 2) принимает строку — так значение не проходит через double.
+				balance: kopecksToNumericString(0),
 			})
 			.returning()) as any;
 		const family = result[0];
@@ -429,20 +435,30 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 						)
 						.limit(1);
 					if (duplicate) {
-						return { payment: duplicate, newBalance: Number(family.balance ?? 0), duplicate: true };
+						return {
+							payment: duplicate,
+							newBalance: kopecksToNumericString(parseKopecks(family.balance)),
+							duplicate: true,
+						};
 					}
 				}
 
-				const currentBalance = Number(family.balance ?? 0);
-				if (currentBalance < payload.amountRub) {
+				// Весь расчёт идёт целыми копейками. Раньше баланс читался через
+				// Number(), вычитание шло в плавающей точке, а в базу писался
+				// Math.round(newBalance): при балансе 150.50 и платеже 100 руб. в
+				// базу попадало 51, а клиентам по WebSocket уходило 50.50 — после
+				// перезагрузки страницы сумма менялась сама.
+				const currentKopecks = parseKopecks(family.balance);
+				const amountKopecks = rublesToKopecks(payload.amountRub);
+				if (currentKopecks < amountKopecks) {
 					throw new FamilyFinanceError("Недостаточно средств на семейном балансе", 402);
 				}
 
 				// 2. Deduct Balance
-				const newBalance = currentBalance - payload.amountRub;
+				const newBalance = kopecksToNumericString(currentKopecks - amountKopecks);
 				await tx
 					.update(familyGroups)
-					.set({ balance: Math.round(newBalance), organizationId })
+					.set({ balance: newBalance, organizationId })
 					.where(eq(familyGroups.id, family.id));
 
 				// 3. Create Payment Record
@@ -557,13 +573,19 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					if (duplicate) {
 						return {
 							payment: duplicate,
-							newBalance: Number(family.balance ?? 0),
+							newBalance: kopecksToNumericString(parseKopecks(family.balance)),
 							duplicate: true,
 						};
 					}
 				}
 
-				const newBalance = Number(family.balance ?? 0) + payload.amountRub;
+				// Пополнение считается там же в копейках. Раньше здесь складывались
+				// Number(строка) и целые рубли, и результат записывался БЕЗ
+				// округления — а списание, наоборот, округляло. Из-за асимметрии
+				// копейки попадали в кошелёк при пополнении и терялись при оплате.
+				const newBalance = kopecksToNumericString(
+					parseKopecks(family.balance) + rublesToKopecks(payload.amountRub),
+				);
 				await tx
 					.update(familyGroups)
 					.set({ balance: newBalance, organizationId, updatedAt: new Date() })

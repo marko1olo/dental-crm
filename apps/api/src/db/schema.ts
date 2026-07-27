@@ -1567,8 +1567,17 @@ export const familyGroups = pgTable("family_groups", {
   // The head (primary) patient of the family; the billing wallet is tied here
   headPatientId: uuid("head_patient_id"),
   primaryPatientId: uuid("primary_patient_id"),
-  // Family wallet balance in whole rubles
-  balance: integer("balance").notNull().default(0),
+  /**
+   * Баланс семейного кошелька.
+   *
+   * Колонка физически создана как numeric(12, 2) (миграция 0000), и драйвер
+   * отдаёт её СТРОКОЙ. Раньше здесь стояло integer("balance") с комментарием
+   * «in whole rubles»: TypeScript был уверен, что это number, а в рантайме
+   * приходило "150.50", и любое сложение без Number() давало склейку строк —
+   * "150.50" + 1000 === "150.501000". Объявление приведено к настоящему типу,
+   * чтобы компилятор требовал явного перевода через parseKopecks().
+   */
+  balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("0.00"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
