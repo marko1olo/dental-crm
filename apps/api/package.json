@@ -14,7 +14,8 @@
     "db:migrate:baseline": "tsx src/scripts/migrate.ts --baseline",
     "db:migrate:check": "tsx src/scripts/migrate.ts --dry-run",
     "verify:migration": "tsx src/scripts/verify-migration-engine.ts",
-    "verify:migration:http": "tsx src/scripts/verify-migration-http.ts"
+    "verify:migration:http": "tsx src/scripts/verify-migration-http.ts",
+    "verify:migration:formats": "tsx src/scripts/verify-migration-formats.ts"
   },
   "dependencies": {
     "@dental/shared": "*",

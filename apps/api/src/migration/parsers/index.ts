@@ -1,9 +1,14 @@
+import { randomUUID } from "node:crypto";
+import { unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type { MigrationSourceKind } from "@dental/shared";
 import { decodeSourceBuffer, normalizeDecodedText } from "../encoding.js";
 import { parseDelimited } from "./delimited.js";
 import { looksLikeDbf, parseDbf } from "./dbf.js";
 import { looksLikeZipContainer, parseOds, parseXlsx } from "./spreadsheet.js";
 import { parseJsonSource, parseXmlSource } from "./structured.js";
+import { inspectSqlite, rankTablesByRelevance, readSqliteSample } from "../formats/sqlite.js";
 
 /**
  * Единая точка входа разбора источника.
@@ -84,6 +89,60 @@ function looksLikeFreeText(text: string): boolean {
   return withSeparators / lines.length < 0.4;
 }
 
+/**
+ * Читает базу SQLite, пришедшую буфером, а не файлом.
+ *
+ * node:sqlite открывает базу только по пути на диске: библиотека работает с
+ * файлом, а не с памятью. Поэтому буфер кладётся во временный файл, читается и
+ * удаляется. Расточительно, но применяется лишь на синхронном пути разбора,
+ * куда база попадает целиком; потоковый путь читает файл напрямую с диска, и
+ * там этого копирования нет.
+ */
+function readSqliteAsTable(buffer: Buffer, sourceName: string): { table: ParsedTable; warnings: string[] } {
+  const temporaryPath = path.join(tmpdir(), `dente-sqlite-${randomUUID()}.db`);
+  try {
+    writeFileSync(temporaryPath, buffer);
+
+    const inspection = inspectSqlite(temporaryPath);
+    const ranked = rankTablesByRelevance(inspection.tables);
+    const chosen = ranked[0];
+
+    if (!chosen) {
+      return {
+        table: { name: sourceName, columns: [], rows: [], suspectRowNumbers: [] },
+        warnings: [...inspection.warnings, "В базе SQLite нет таблиц с данными."]
+      };
+    }
+
+    const sample = readSqliteSample(temporaryPath, chosen.name, Number.MAX_SAFE_INTEGER);
+    const warnings = [...inspection.warnings];
+    if (ranked.length > 1) {
+      warnings.push(
+        `В базе ${ranked.length} таблиц(ы) с данными: ${ranked
+          .slice(0, 8)
+          .map((table) => `${table.name} (${table.rowCount})`)
+          .join(", ")}. Разобрана «${chosen.name}».`
+      );
+    }
+
+    return {
+      table: {
+        name: chosen.name,
+        columns: sample.columns,
+        rows: sample.rows,
+        suspectRowNumbers: []
+      },
+      warnings
+    };
+  } finally {
+    try {
+      unlinkSync(temporaryPath);
+    } catch {
+      // Файл мог не создаться — это не повод ронять разбор.
+    }
+  }
+}
+
 /** Строки с признаками повреждения — уходят в карантин до разбора значений. */
 function findSuspectRows(rows: string[][], suspectFromParser: number[]): number[] {
   const suspect = new Set(suspectFromParser);
@@ -103,6 +162,27 @@ export function parseSource(input: ParseSourceInput): ParsedSource {
   // ------------------------------------------------------------------
   if (input.content && input.content.length > 0) {
     const buffer = input.content;
+
+    /**
+     * SQLite обязан опознаваться ЗДЕСЬ, до текстовых проверок.
+     *
+     * Файл SQLite хранит схему обычным текстом внутри страницы, поэтому в его
+     * содержимом встречается «CREATE TABLE». Проверка на дамп SQL срабатывала
+     * на этом и отвергала настоящую базу с сообщением «восстановите дамп в
+     * PostgreSQL» — совет бессмысленный и уводящий оператора в сторону.
+     */
+    if (buffer.subarray(0, 15).toString("latin1") === "SQLite format 3") {
+      const table = readSqliteAsTable(buffer, input.sourceName);
+      return {
+        sourceKind: "api",
+        tables: [table.table],
+        detectedEncoding: "utf-8",
+        encodingConfidence: 1,
+        delimiter: null,
+        warnings: table.warnings,
+        totalRows: table.table.rows.length
+      };
+    }
 
     if (input.forcedKind === "dbf" || (input.forcedKind === undefined && looksLikeDbf(buffer))) {
       const result = parseDbf(buffer);

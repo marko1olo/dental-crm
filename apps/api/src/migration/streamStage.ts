@@ -6,6 +6,8 @@ import { decodeSourceBuffer, normalizeDecodedText } from "./encoding.js";
 import { detectDelimiter, parseDelimited } from "./parsers/delimited.js";
 import { looksLikeDbf } from "./parsers/dbf.js";
 import { parseSource, type ParsedTable } from "./parsers/index.js";
+import { findMemoFile, openMemoFile, parseMemoPointer, type MemoFile } from "./formats/dbfMemo.js";
+import { inspectSqlite, rankTablesByRelevance, readSqliteSample, streamSqliteTable } from "./formats/sqlite.js";
 import { readUploadFully, readUploadHead } from "./uploadStore.js";
 
 /**
@@ -35,6 +37,12 @@ import { readUploadFully, readUploadHead } from "./uploadStore.js";
  * вызывающий узнаёт заранее, а не в момент падения по памяти.
  */
 
+/** Читает ASCII-строку из буфера — для сравнения сигнатур. */
+function asciiHead(buffer: Buffer, offset: number, length: number): string {
+  if (buffer.length < offset + length) return "";
+  return buffer.subarray(offset, offset + length).toString("latin1");
+}
+
 /** Строк в партии. 1000 при 20 колонках — порядка единиц мегабайт на партию. */
 export const STREAM_BATCH_ROWS = 1000;
 
@@ -61,6 +69,13 @@ export interface SourceShape {
   warnings: string[];
   /** true — формат читается потоком; false — только целиком. */
   streamable: boolean;
+  /**
+   * Таблицы базы, если источник — база с несколькими таблицами (SQLite).
+   * Пусто для одиночных таблиц и текстовых выгрузок.
+   */
+  availableTables?: Array<{ name: string; rowCount: number; columns: number }>;
+  /** Выбранная таблица базы. */
+  selectedTable?: string;
 }
 
 export interface RowBatch {
@@ -85,6 +100,8 @@ export async function detectSourceShape(input: {
   fileName: string;
   byteSize: number;
   forcedKind?: MigrationSourceKind | undefined;
+  /** Таблица базы, выбранная оператором. Для SQLite и прочих многотабличных. */
+  preferredTable?: string | undefined;
 }): Promise<SourceShape> {
   const head = await readUploadHead(input.filePath, Math.min(HEAD_PROBE_BYTES, input.byteSize));
 
@@ -102,6 +119,55 @@ export async function detectSourceShape(input: {
       sampleRows: sample,
       warnings: meta.warnings,
       streamable: true
+    };
+  }
+
+  /**
+   * SQLite: читается настоящей встроенной читалкой. База может содержать
+   * несколько таблиц, и переносить надо ту, где пациенты, — поэтому таблицы
+   * перечисляются и упорядочиваются по осмысленности, а оператор может выбрать
+   * другую параметром.
+   */
+  if (asciiHead(head, 0, 15) === "SQLite format 3") {
+    const inspection = inspectSqlite(input.filePath);
+    const ranked = rankTablesByRelevance(inspection.tables);
+    const chosen = input.preferredTable
+      ? (inspection.tables.find((table) => table.name === input.preferredTable) ?? ranked[0])
+      : ranked[0];
+
+    if (!chosen) {
+      throw new Error(
+        `В базе SQLite нет таблиц с данными. ${inspection.warnings.join(" ")}`.trim()
+      );
+    }
+
+    const sample = readSqliteSample(input.filePath, chosen.name, 2000);
+    const warnings = [...inspection.warnings];
+    if (ranked.length > 1) {
+      warnings.push(
+        `В базе ${ranked.length} таблиц(ы) с данными: ${ranked
+          .slice(0, 8)
+          .map((table) => `${table.name} (${table.rowCount})`)
+          .join(", ")}. Переносится «${chosen.name}»; другую можно выбрать при сопоставлении.`
+      );
+    }
+
+    return {
+      sourceKind: "api",
+      detectedEncoding: "utf-8",
+      encodingConfidence: 1,
+      delimiter: null,
+      columns: sample.columns,
+      tableName: chosen.name,
+      sampleRows: sample.rows,
+      warnings,
+      streamable: true,
+      availableTables: ranked.map((table) => ({
+        name: table.name,
+        rowCount: table.rowCount,
+        columns: table.columns.length
+      })),
+      selectedTable: chosen.name
     };
   }
 
@@ -617,19 +683,77 @@ export async function* streamSourceRows(input: {
   };
 
   // Первая строка данных: 2 при наличии заголовка, 1 без него.
-  let rowNumber = input.shape.sourceKind === "dbf" ? 1 : 2;
+  let rowNumber = input.shape.sourceKind === "dbf" || input.shape.selectedTable !== undefined ? 1 : 2;
 
-  if (input.shape.sourceKind === "dbf") {
-    const meta = await readDbfMeta(input.filePath);
-    for await (const batch of streamDbfRows(input.filePath, meta, batchRows)) {
+  /**
+   * SQLite. Таблица читается курсором партиями, база открыта только на чтение.
+   * Имя таблицы берётся из формы источника: оно уже выбрано на этапе опознания
+   * либо задано оператором.
+   */
+  if (input.shape.selectedTable !== undefined) {
+    for await (const batch of streamSqliteTable(input.filePath, input.shape.selectedTable, batchRows)) {
       if (batch.rows.length === 0) continue;
       yield {
         tableName: input.shape.tableName,
-        columns: input.shape.columns,
+        columns: batch.columns,
         rows: batch.rows.map(align),
         firstRowNumber: rowNumber
       };
       rowNumber += batch.rows.length;
+    }
+    return;
+  }
+
+  if (input.shape.sourceKind === "dbf") {
+    const meta = await readDbfMeta(input.filePath);
+
+    /**
+     * Memo-файл рядом с таблицей. Поле типа M хранит номер блока, а не текст:
+     * без .fpt/.dbt в карточку пациента попала бы строка «14» вместо анамнеза.
+     * Именно в memo у стоматологических систем лежат жалобы, анамнез и описание
+     * лечения — то, ради чего историю и переносят.
+     */
+    const memoFieldIndexes = meta.fields
+      .map((field, index) => ({ field, index }))
+      .filter((entry) => entry.field.type === "M")
+      .map((entry) => entry.index);
+
+    let memo: MemoFile | null = null;
+    if (memoFieldIndexes.length > 0) {
+      const memoPath = await findMemoFile(input.filePath);
+      if (memoPath) {
+        try {
+          memo = await openMemoFile(memoPath, meta.encoding);
+        } catch {
+          // Повреждённый memo не должен остановить перенос остальных полей.
+          memo = null;
+        }
+      }
+    }
+
+    try {
+      for await (const batch of streamDbfRows(input.filePath, meta, batchRows)) {
+        if (batch.rows.length === 0) continue;
+
+        if (memo && memoFieldIndexes.length > 0) {
+          for (const row of batch.rows) {
+            for (const fieldIndex of memoFieldIndexes) {
+              const pointer = parseMemoPointer(row[fieldIndex] ?? "");
+              row[fieldIndex] = pointer > 0 ? await memo.read(pointer) : "";
+            }
+          }
+        }
+
+        yield {
+          tableName: input.shape.tableName,
+          columns: input.shape.columns,
+          rows: batch.rows.map(align),
+          firstRowNumber: rowNumber
+        };
+        rowNumber += batch.rows.length;
+      }
+    } finally {
+      await memo?.close();
     }
     return;
   }

@@ -12,7 +12,9 @@ import { z } from "zod";
 import { requireClinicalMutationContext, requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { migrationReconciliations, migrationRuns } from "../db/schema.js";
+import { discoverLocalSources, summarizeDiscovery } from "../migration/discovery.js";
 import { listQuarantine } from "../migration/engine.js";
+import { readDicomMetadata } from "../migration/formats/dicom.js";
 import { mapRunPhase, MigrationPhaseError, stageRunPhase } from "../migration/phases.js";
 import { reconciliationReportCsv } from "../migration/reconcile.js";
 import { createRun, enqueueRun, findRun, countStagingByStatus } from "../migration/runStore.js";
@@ -104,6 +106,20 @@ const mapRequestSchema = z.object({
   mappingOverrides: z
     .array(z.object({ sourceColumn: z.string().min(1), targetField: migrationTargetFieldSchema }))
     .default([])
+});
+
+const discoverRequestSchema = z.object({
+  /**
+   * Корни обхода. Пусто — берутся диски и домашний каталог. Указывать корень
+   * стоит всегда, когда он известен: обход всего диска занимает десятки секунд.
+   */
+  roots: z.array(z.string().min(1).max(400)).max(10).default([]),
+  maxDepth: z.number().int().min(1).max(10).default(6),
+  timeBudgetMs: z.number().int().min(1000).max(180_000).default(45_000)
+});
+
+const dicomInspectSchema = z.object({
+  filePath: z.string().min(1).max(600)
 });
 
 const executeRequestSchema = z.object({
@@ -531,6 +547,117 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
     const context = await requireClinicalReadContext(request, reply, "migration worker status");
     if (!context) return;
     return reply.code(200).send({ worker: migrationWorkerStatus() });
+  });
+
+  /**
+   * Поиск баз старых систем на диске сервера.
+   *
+   * ЧЕМ ОТЛИЧАЕТСЯ ОТ /api/imports/smart/local-source-discovery
+   * Тот маршрут перечисляет каталоги и присваивает им вероятности, не открывая
+   * ни одного файла. Здесь каждый файл-кандидат открывается и опознаётся по
+   * содержимому, а ответ содержит факт, а не догадку: формат, версию, число
+   * записей и — для нечитаемых форматов — конкретную инструкцию, чем открыть.
+   *
+   * ПРАВА
+   * Требуется право на изменение, а не на чтение. Обход диска сервера — это
+   * действие уровня администратора: оно раскрывает структуру файловой системы,
+   * и давать его всем, кто может смотреть карточки, неправильно.
+   */
+  app.post("/api/migration/discover", async (request, reply) => {
+    const context = await requireClinicalMutationContext(request, reply, "migration discovery");
+    if (!context) return;
+
+    const parsed = discoverRequestSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return fail(reply, 400, "ValidationError", "Запрос поиска не прошёл проверку.", {
+        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
+      });
+    }
+
+    try {
+      const result = await discoverLocalSources({
+        ...(parsed.data.roots.length > 0 ? { roots: parsed.data.roots } : {}),
+        maxDepth: parsed.data.maxDepth,
+        timeBudgetMs: parsed.data.timeBudgetMs
+      });
+      const summary = summarizeDiscovery(result);
+
+      return reply.code(200).send({
+        roots: result.roots,
+        summary,
+        /**
+         * Читаемые источники идут первыми и отдельным списком: оператору нужно
+         * сразу видеть, что можно перенести прямо сейчас, а что требует выгрузки
+         * из старой программы.
+         */
+        readySources: result.sources
+          .filter((source) => source.format.readable)
+          .slice(0, 60)
+          .map((source) => ({
+            filePath: source.filePath,
+            fileName: source.fileName,
+            byteSize: source.byteSize,
+            modifiedAt: source.modifiedAt,
+            format: source.format.title,
+            formatId: source.format.id,
+            version: source.format.version,
+            details: source.details,
+            relevance: source.relevance
+          })),
+        needsExportSources: result.sources
+          .filter((source) => !source.format.readable)
+          .slice(0, 60)
+          .map((source) => ({
+            filePath: source.filePath,
+            fileName: source.fileName,
+            byteSize: source.byteSize,
+            format: source.format.title,
+            formatId: source.format.id,
+            version: source.format.version,
+            /** Что именно делать оператору. Ради этого поиск и нужен. */
+            guidance: source.format.guidance,
+            relevance: source.relevance
+          })),
+        imagingFolders: result.imagingFolders.slice(0, 20),
+        scan: {
+          filesScanned: result.filesScanned,
+          directoriesScanned: result.directoriesScanned,
+          elapsedMs: result.elapsedMs,
+          truncated: result.truncated
+        },
+        warnings: result.warnings
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Поиск не выполнен.";
+      return fail(reply, 500, "DiscoveryFailed", message);
+    }
+  });
+
+  /**
+   * Метаданные снимка DICOM.
+   *
+   * Нужен отдельно от переноса таблиц: снимки привязываются к пациентам по ФИО и
+   * дате рождения из самого снимка, и оператор должен увидеть, что там записано,
+   * до массовой привязки.
+   */
+  app.post("/api/migration/dicom/inspect", async (request, reply) => {
+    const context = await requireClinicalMutationContext(request, reply, "migration dicom inspect");
+    if (!context) return;
+
+    const parsed = dicomInspectSchema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return fail(reply, 400, "ValidationError", "Запрос разбора снимка не прошёл проверку.", {
+        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
+      });
+    }
+
+    try {
+      const metadata = await readDicomMetadata(parsed.data.filePath);
+      return reply.code(200).send({ filePath: parsed.data.filePath, metadata });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Снимок не разобран.";
+      return fail(reply, 422, "DicomRejected", message, { filePath: parsed.data.filePath });
+    }
   });
 }
 
