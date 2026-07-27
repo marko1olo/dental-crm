@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema.js";
 import { loadAdditionalServerEnv } from "../env/loadServerEnv.js";
+import { registerMoneyTypeParsers } from "./moneyTypeParsers.js";
 
 /**
  * Раньше здесь стоял голый `import "dotenv/config"`, который читает .env только
@@ -30,6 +31,13 @@ function requireDatabaseUrl(): string {
   }
   return url;
 }
+
+/*
+ * Разбор денежных типов включается до создания пула. Без него numeric-колонки
+ * приходят строками: суммы склеиваются вместо сложения, сравниваются как текст,
+ * а схемы z.number() отвергают верные данные. Подробнее — в moneyTypeParsers.ts.
+ */
+registerMoneyTypeParsers();
 
 export const pool = new pg.Pool({ connectionString: requireDatabaseUrl() });
 

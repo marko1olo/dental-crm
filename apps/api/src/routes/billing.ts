@@ -19,6 +19,52 @@ const paymentValidationMessage =
   "Оплата не записана: проверьте сумму, дату, способ оплаты, фискальный чек и явные данные плательщика.";
 const billingPaymentScopeError = "BillingPaymentScopeError" as const;
 
+/** Названия полей оплаты по-русски, чтобы отказ указывал на конкретное поле. */
+const paymentFieldLabels: Record<string, string> = {
+  amountRub: "сумма",
+  patientId: "пациент",
+  visitId: "прием",
+  documentId: "документ",
+  method: "способ оплаты",
+  paidAt: "дата оплаты",
+  fiscalReceiptNumber: "номер фискального чека",
+  fiscalReceiptIssuedAt: "дата фискального чека",
+  fiscalReceiptUrl: "ссылка на чек",
+  fiscalReceipt: "фискальный чек",
+  clientMutationId: "ключ операции",
+  payerFullName: "плательщик",
+  payerInn: "ИНН плательщика",
+  payerBirthDate: "дата рождения плательщика",
+  payerIdentityDocument: "документ плательщика",
+  payerRelationship: "родство плательщика",
+  taxDeductionCode: "код налогового вычета",
+  note: "примечание"
+};
+
+/**
+ * Отказ должен называть поле и причину.
+ *
+ * БЫЛО: на любую ошибку возвращался один и тот же перечень из пяти пунктов —
+ * «проверьте сумму, дату, способ оплаты, фискальный чек и явные данные
+ * плательщика». Кассир, набравший 1500,50, получал предложение проверить пять
+ * вещей и не узнавал, что дело в копейках. Разбирать такое в очереди у кассы
+ * невозможно.
+ */
+function paymentValidationDetail(issues: Array<{ path: Array<string | number>; message: string }>): string {
+  const named = issues
+    .slice(0, 3)
+    .map((issue) => {
+      const field = issue.path.find((part) => typeof part === "string");
+      const label = typeof field === "string" ? paymentFieldLabels[field] ?? String(field) : null;
+      return label ? `${label}: ${issue.message}` : issue.message;
+    })
+    .filter((text) => text.trim().length > 0);
+  if (named.length === 0) return paymentValidationMessage;
+  const rest = issues.length - named.length;
+  const tail = rest > 0 ? ` И ещё замечаний: ${rest}.` : "";
+  return `Оплата не записана. ${named.join("; ")}.${tail}`;
+}
+
 function sendBillingPaymentScopeError(reply: FastifyReply, statusCode: 404 | 409, message: string) {
   return reply.code(statusCode).send({
     error: billingPaymentScopeError,
@@ -141,7 +187,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "BillingValidationError",
-        message: paymentValidationMessage
+        message: paymentValidationDetail(parsedInput.error.issues)
       });
     }
     // БЫЛО: getDefaultOrganizationId() — это `SELECT id FROM organizations LIMIT 1`.

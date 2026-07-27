@@ -2488,8 +2488,27 @@ export function findPatient(patients: Patient[], patientId: string | null) {
   return patients.find((patient) => patient.id === patientId) ?? null;
 }
 
-export function money(value: number | null) {
-  return `${(value ?? 0).toLocaleString("ru-RU")} ₽`;
+/**
+ * Сумма для показа человеку.
+ *
+ * Копейки печатаются, только если они есть, и всегда двумя знаками. Раньше
+ * стоял голый toLocaleString без указания знаков: 1500,5 выводилось как
+ * «1 500,5 ₽» — для денег это неверная запись, полтинник читается как пять
+ * копеек. Круглые суммы при этом не обрастают «,00»: на экране, где почти все
+ * цены круглые, это лишний шум.
+ *
+ * Строку на входе тоже переживаем: колонки numeric приходили из драйвера базы
+ * строками, и такое значение могло долететь до форматирования.
+ */
+export function money(value: number | string | null) {
+  const amount = typeof value === "string" ? Number(value) : value;
+  const safeAmount = Number.isFinite(amount as number) ? (amount as number) : 0;
+  const kopecks = Math.round(safeAmount * 100) % 100;
+  const fractionDigits = kopecks === 0 ? 0 : 2;
+  return `${safeAmount.toLocaleString("ru-RU", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits
+  })} ₽`;
 }
 
 export function minutesLabel(value: number) {

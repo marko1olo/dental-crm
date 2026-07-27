@@ -437,7 +437,20 @@ export const payments = pgTable("payments", {
   visitId: uuid("visit_id").references(() => visits.id),
   documentId: uuid("document_id"),
   clientMutationId: text("client_mutation_id"),
-  amountRub: integer("amount_rub").notNull(),
+  /*
+   * Рубли с копейками, точный десятичный тип (миграция 0131). Раньше здесь был
+   * integer, и касса не могла принять ни 1500,50, ни 0,50.
+   *
+   * `mode: "number"` обязателен, а не косметика. По умолчанию drizzle отдаёт
+   * numeric строкой: `mapFromDriverValue` возвращает `String(value)`, причём
+   * независимо от разбора типов в драйвере. Первый заход был сделан через
+   * `$type<number>()` — тип стал числом только для компилятора, а в бою
+   * приходила строка «1500.50», схема оплаты её отвергала, и получалось худшее
+   * из возможного: платёж уже лёг в базу, а кассир увидел ошибку. С этим
+   * режимом drizzle сам приводит значение к числу при чтении и к строке при
+   * записи.
+   */
+  amountRub: numeric("amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
   method: paymentMethod("method").notNull().default("card"),
   status: paymentStatus("status").notNull().default("paid"),
   paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
