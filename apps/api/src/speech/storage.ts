@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   speechTranscriptionChunkSchema,
   type SpeechTranscriptionChunk,
@@ -62,12 +62,35 @@ const speechTranscriptionChunks: SpeechTranscriptionChunk[] = [];
 const durableRecordingPathPrefix = "speech-recording://";
 const durableSourceLabelPrefix = "speech_dictation:";
 const durableEnvelopeVersion = 1;
+const durableRecordingJobKind = "voice_transcription" as const;
+const durableWriteFailureWarningPrefix = "Фрагмент не сохранен в базу";
 
 type SpeechRecordingEnvelope = {
   envelopeVersion: number;
   recordingId: string;
   chunks: SpeechTranscriptionChunk[];
+  /**
+   * Записи конверта, которые не прошли проверку схемы фрагмента. Они переносятся
+   * в новый конверт как есть: перезапись не имеет права выбрасывать
+   * продиктованный текст только потому, что не смогла его разобрать. В горячий
+   * кэш такие записи не попадают — роуты чтения парсят полный
+   * speechTranscriptionChunkSchema и на неполном фрагменте отдали бы 500.
+   */
+  unreadableChunks?: unknown[];
 };
+
+/**
+ * Конверт сохранённой записи не читается вообще (не JSON или в нём нет массива
+ * фрагментов). Сливать с ним нечего, а перезаписывать его нельзя: под ним лежит
+ * медицинский текст. Поэтому запись падает громко, фрагмент остаётся в памяти с
+ * предупреждением, а строка в базе не трогается.
+ */
+export class SpeechDurableEnvelopeUnreadableError extends Error {
+  constructor(recordingId: string, reason: string) {
+    super(`Конверт записи ${recordingId} не читается (${reason}); перезапись отменена, чтобы не потерять сохранённый текст.`);
+    this.name = "SpeechDurableEnvelopeUnreadableError";
+  }
+}
 
 function maxCachedRecordingCount(): number {
   return Math.max(1, numberFromEnv("DENTAL_SPEECH_CACHED_RECORDINGS", 80));
@@ -327,18 +350,28 @@ function speechChunkRetryIdentityMatches(
  * молча уничтожало медицинский текст. Теперь выбрасываются только фрагменты,
  * подтверждённо записанные в PostgreSQL; всё остальное остаётся в памяти,
  * даже если лимит превышен.
+ *
+ * Бюджет записей считается ПО КЛИНИКЕ, а не на всю базу. Общий счётчик означал,
+ * что поток диктовок одной клиники выбивает из памяти живую запись другой: её
+ * фрагменты перестают отдаваться через GET /api/speech/chunks до следующего
+ * восстановления. Медицинскому продукту такой общий кэш арендаторов не нужен.
  */
 function trimSpeechTranscriptionChunkRetention(): void {
   const chunkCap = maxCachedChunksPerRecording();
   const recordingCap = maxCachedRecordingCount();
-  const retainedRecordings = new Set(
-    Array.from(new Set(speechTranscriptionChunks.map((chunk) => chunk.recordingId))).slice(0, recordingCap)
-  );
+  const retainedByOrganization = new Map<string, Set<string>>();
+  for (const chunk of speechTranscriptionChunks) {
+    const retained = retainedByOrganization.get(chunk.organizationId) ?? new Set<string>();
+    if (!retained.has(chunk.recordingId) && retained.size >= recordingCap) continue;
+    retained.add(chunk.recordingId);
+    retainedByOrganization.set(chunk.organizationId, retained);
+  }
+
   const keptPerRecording = new Map<string, number>();
   const keptChunks: SpeechTranscriptionChunk[] = [];
   for (const chunk of speechTranscriptionChunks) {
     const count = keptPerRecording.get(chunk.recordingId) ?? 0;
-    const overCap = !retainedRecordings.has(chunk.recordingId) || count >= chunkCap;
+    const overCap = !retainedByOrganization.get(chunk.organizationId)?.has(chunk.recordingId) || count >= chunkCap;
     if (overCap && durableChunkKeys.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))) {
       continue;
     }
@@ -351,6 +384,21 @@ function trimSpeechTranscriptionChunkRetention(): void {
   for (const key of durableChunkKeys) {
     if (!liveKeys.has(key)) durableChunkKeys.delete(key);
   }
+}
+
+/**
+ * Сколько фрагментов диктовки держится в памяти без подтверждения записи в базу.
+ * Это то самое неограниченное потребление памяти, которым оплачен запрет на
+ * уничтожение текста: пока база не приняла фрагмент, вытеснить его нельзя.
+ * Число попадает в предупреждение врачу, чтобы отказ базы был виден по величине,
+ * а не только по факту.
+ */
+function undurableCachedChunkCount(): number {
+  let count = 0;
+  for (const chunk of speechTranscriptionChunks) {
+    if (!durableChunkKeys.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))) count += 1;
+  }
+  return count;
 }
 
 async function resolveSpeechChunkOrganizationId(scope: {
@@ -384,8 +432,7 @@ function speechRecordingJobStatus(chunks: SpeechTranscriptionChunk[]): "queued" 
 
 /**
  * Средняя уверенность по фрагментам, у которых она вообще есть. Если её нет ни
- * у одного — возвращается null, и колонка не переписывается: подставлять ноль
- * вместо неизвестного значения запрещено, это выдумывание данных.
+ * у одного — возвращается null.
  */
 function speechRecordingConfidence(chunks: SpeechTranscriptionChunk[]): number | null {
   const values = chunks
@@ -395,28 +442,191 @@ function speechRecordingConfidence(chunks: SpeechTranscriptionChunk[]): number |
   return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
+/**
+ * ai_jobs.confidence — real NOT NULL DEFAULT 0 (проверено по
+ * information_schema.columns живой базы). Колонка не умеет хранить
+ * «неизвестно»: db/aiQuery.ts отдаёт её как confidence ?? 0, а настройки
+ * показывают Math.round(confidence * 100) + '%'. Раньше при неизвестной
+ * уверенности значение просто не писали — ноль приходил из DEFAULT молча, и
+ * отсутствие оценки выглядело как оценка «0 %». Теперь ноль пишется явно И в ту
+ * же строку кладётся предупреждение, которое интерфейс показывает рядом с
+ * процентом. Убрать ноль совсем можно только миграцией (nullable-колонка плюс
+ * AiRecognitionJob.confidence: number | null) — это вне делянки и объявлено долгом.
+ */
+const unknownConfidenceColumnValue = 0;
+
+function speechConfidenceDisclosures(chunks: SpeechTranscriptionChunk[], confidence: number | null): string[] {
+  if (confidence === null) {
+    return [
+      "Уверенность распознавания не сообщена ни одним фрагментом: ноль в поле confidence означает отсутствие оценки, а не нулевую уверенность."
+    ];
+  }
+  const reported = chunks.filter((chunk) => typeof chunk.confidence === "number").length;
+  if (reported < chunks.length) {
+    return [
+      `Уверенность распознавания известна только для ${reported} из ${chunks.length} фрагментов, среднее посчитано по ним.`
+    ];
+  }
+  return [];
+}
+
+/**
+ * Куда предназначен распознанный текст. Раньше здесь стояло
+ * target: "visit_note" для любого источника, и диктовка из документов или из
+ * импорта пациентов ложилась в базу с пометкой записи приема. Перечисление
+ * ai_recognition_target значения для лабораторной диктовки не содержит, поэтому
+ * settings_lab отправляется в document_draft: это черновик текста, но точно не
+ * запись приема.
+ */
+function durableRecordingTarget(
+  source: SpeechTranscriptionChunk["source"]
+): "visit_note" | "patient_import" | "document_draft" {
+  switch (source) {
+    case "visit":
+      return "visit_note";
+    case "import":
+      return "patient_import";
+    case "document":
+      return "document_draft";
+    case "settings_lab":
+      return "document_draft";
+  }
+}
+
+type DurableEnvelopeRead = {
+  chunks: SpeechTranscriptionChunk[];
+  unreadableChunks: unknown[];
+};
+
+function readDurableEnvelope(recordingId: string, rawEnvelope: string | null): DurableEnvelopeRead {
+  if (!rawEnvelope) return { chunks: [], unreadableChunks: [] };
+  let parsed: { chunks?: unknown; unreadableChunks?: unknown };
+  try {
+    parsed = JSON.parse(rawEnvelope) as { chunks?: unknown; unreadableChunks?: unknown };
+  } catch (error) {
+    throw new SpeechDurableEnvelopeUnreadableError(
+      recordingId,
+      error instanceof Error ? error.message : "не разбирается как JSON"
+    );
+  }
+  if (!Array.isArray(parsed.chunks)) {
+    throw new SpeechDurableEnvelopeUnreadableError(recordingId, "в конверте нет массива фрагментов");
+  }
+  const chunks: SpeechTranscriptionChunk[] = [];
+  const unreadableChunks: unknown[] = Array.isArray(parsed.unreadableChunks) ? [...parsed.unreadableChunks] : [];
+  for (const candidate of parsed.chunks) {
+    const chunk = speechTranscriptionChunkSchema.safeParse(candidate);
+    if (chunk.success) chunks.push(chunk.data);
+    else unreadableChunks.push(candidate);
+  }
+  return { chunks, unreadableChunks };
+}
+
+/**
+ * Сохранённый конверт записи. Читается ВНУТРИ очереди записи по этой же
+ * recordingId, поэтому между чтением и перезаписью в этом процессе никто не
+ * вклинится. Межпроцессная гонка остаётся: уникального индекса на
+ * (organization_id, input_storage_path) в ai_jobs нет, он требует миграции.
+ */
+async function loadDurableRecordingEnvelope(recordingId: string, organizationId: string): Promise<DurableEnvelopeRead> {
+  const [row] = await db
+    .select({ inputText: aiJobs.inputText })
+    .from(aiJobs)
+    .where(
+      and(eq(aiJobs.organizationId, organizationId), eq(aiJobs.inputStoragePath, durableRecordingPath(recordingId)))
+    )
+    .limit(1);
+  if (!row) return { chunks: [], unreadableChunks: [] };
+  const stored = readDurableEnvelope(recordingId, row.inputText);
+  return {
+    chunks: stored.chunks.filter((chunk) => chunk.recordingId === recordingId),
+    unreadableChunks: stored.unreadableChunks
+  };
+}
+
+/**
+ * Слияние сохранённого конверта с горячим кэшем по номеру фрагмента.
+ *
+ * ЗАЧЕМ: кэш имеет право быть неполным — вытеснение выбрасывает из него именно
+ * те фрагменты, которые уже лежат в базе. Пока конверт собирался из одного кэша,
+ * следующий фрагмент той же записи переписывал строку усечённым набором, и
+ * продиктованный текст уничтожался в PostgreSQL. Воспроизведено прогоном:
+ * при пределе в один фрагмент result_text терял первую строку диктовки.
+ * Кто из двух версий одного номера лучше, решает тот же порядок, по которому
+ * повторное распознавание заменяет фрагмент в памяти.
+ */
+function mergeDurableAndCachedChunks(
+  storedChunks: SpeechTranscriptionChunk[],
+  cachedChunks: SpeechTranscriptionChunk[]
+): SpeechTranscriptionChunk[] {
+  const merged = new Map<number, SpeechTranscriptionChunk>();
+  for (const chunk of storedChunks) merged.set(chunk.chunkIndex, chunk);
+  for (const chunk of cachedChunks) {
+    const stored = merged.get(chunk.chunkIndex);
+    merged.set(chunk.chunkIndex, !stored || shouldReplaceSpeechTranscriptionChunk(stored, chunk) ? chunk : stored);
+  }
+  return Array.from(merged.values()).sort(
+    (left, right) => left.chunkIndex - right.chunkIndex || left.createdAt.localeCompare(right.createdAt)
+  );
+}
+
+/**
+ * Предупреждение «фрагмент не сохранен в базу» описывает состояние памяти, а не
+ * содержимое строки. Попав в конверт удавшейся записи, оно становится ложью,
+ * которую потом никто не снимет. Из конверта оно вырезается.
+ */
+function withoutDurableFailureWarnings(chunks: SpeechTranscriptionChunk[]): SpeechTranscriptionChunk[] {
+  return chunks.map((chunk) =>
+    chunk.warnings.some((warning) => warning.startsWith(durableWriteFailureWarningPrefix))
+      ? { ...chunk, warnings: chunk.warnings.filter((warning) => !warning.startsWith(durableWriteFailureWarningPrefix)) }
+      : chunk
+  );
+}
+
+function clearCachedDurableFailureWarnings(recordingId: string): void {
+  for (const chunk of speechTranscriptionChunks) {
+    if (chunk.recordingId !== recordingId) continue;
+    if (!chunk.warnings.some((warning) => warning.startsWith(durableWriteFailureWarningPrefix))) continue;
+    chunk.warnings = chunk.warnings.filter((warning) => !warning.startsWith(durableWriteFailureWarningPrefix));
+  }
+}
+
 async function persistSpeechRecording(recordingId: string, organizationId: string): Promise<void> {
-  const chunks = listSpeechTranscriptionChunks(recordingId);
+  const stored = await loadDurableRecordingEnvelope(recordingId, organizationId);
+  const chunks = withoutDurableFailureWarnings(
+    mergeDurableAndCachedChunks(stored.chunks, listSpeechTranscriptionChunks(recordingId))
+  );
   if (chunks.length === 0) return;
 
   const assembly = assembleSpeechRecordingFromChunks(recordingId, chunks);
   const recovery = speechRecordingRecoveryFromChunks(recordingId, chunks);
-  const envelope: SpeechRecordingEnvelope = { envelopeVersion: durableEnvelopeVersion, recordingId, chunks };
+  const envelope: SpeechRecordingEnvelope = {
+    envelopeVersion: durableEnvelopeVersion,
+    recordingId,
+    chunks,
+    ...(stored.unreadableChunks.length > 0 ? { unreadableChunks: stored.unreadableChunks } : {})
+  };
   const confidence = speechRecordingConfidence(chunks);
   const storagePath = durableRecordingPath(recordingId);
   const values = {
     patientId: recovery.patientId,
     visitId: recovery.visitId,
-    target: "visit_note" as const,
+    target: durableRecordingTarget(recovery.source),
     status: speechRecordingJobStatus(chunks),
     sourceLabel: `${durableSourceLabelPrefix}${recovery.source}`,
     inputText: JSON.stringify(envelope),
     resultText: assembly.transcript,
-    warnings: assembly.warnings,
+    warnings: uniqueStrings([
+      ...speechConfidenceDisclosures(chunks, confidence),
+      stored.unreadableChunks.length > 0
+        ? `Записей конверта, не прошедших проверку схемы: ${stored.unreadableChunks.length}; они сохранены как есть и не потеряны.`
+        : "",
+      ...assembly.warnings
+    ]).slice(0, 12),
     suggestedNextStep: recovery.nextAction,
     modelName: assembly.providerLabels.join(", ") || null,
-    updatedAt: new Date(),
-    ...(confidence === null ? {} : { confidence })
+    confidence: confidence ?? unknownConfidenceColumnValue,
+    updatedAt: new Date()
   };
 
   const [updated] = await db
@@ -428,7 +638,7 @@ async function persistSpeechRecording(recordingId: string, organizationId: strin
   if (!updated) {
     await db.insert(aiJobs).values({
       organizationId,
-      kind: "voice_transcription",
+      kind: durableRecordingJobKind,
       inputStoragePath: storagePath,
       ...values
     });
@@ -464,38 +674,92 @@ function queueDurableRecordingWrite(recordingId: string, task: () => Promise<voi
 
 let speechRestorePromise: Promise<void> | null = null;
 let speechRestoreFailure: string | null = null;
+let speechRestoreFailedAttempts = 0;
+let speechRestoreRetryAtMs = 0;
+let speechRestoreUnreadableRows = 0;
+
+function speechRestoreBackoffMs(): number {
+  const base = numberFromEnv("DENTAL_SPEECH_RESTORE_RETRY_MS", 5000);
+  return base * 2 ** Math.min(Math.max(speechRestoreFailedAttempts - 1, 0), 6);
+}
 
 function speechDurableStoreWarning(): string {
   if (speechRestoreFailure) {
-    return `Расшифровки не восстановлены из базы (${speechRestoreFailure}); список может быть неполным.`;
+    return `Расшифровки не восстановлены из базы (${speechRestoreFailure}); неудачных попыток: ${speechRestoreFailedAttempts}; список может быть неполным.`;
+  }
+  if (speechRestoreUnreadableRows > 0) {
+    return `Конверты ${speechRestoreUnreadableRows} записей диктовки не прочитаны; их фрагменты не восстановлены в память, но в базе не тронуты.`;
   }
   return "";
 }
 
-function restoredChunksFromEnvelope(rawEnvelope: string | null): SpeechTranscriptionChunk[] {
-  if (!rawEnvelope) return [];
-  const parsed = JSON.parse(rawEnvelope) as Partial<SpeechRecordingEnvelope>;
-  if (!Array.isArray(parsed.chunks)) return [];
-  const restored: SpeechTranscriptionChunk[] = [];
-  for (const candidate of parsed.chunks) {
-    const chunk = speechTranscriptionChunkSchema.safeParse(candidate);
-    if (chunk.success) restored.push(chunk.data);
-  }
-  return restored;
+/**
+ * Состояние восстановления для теста границы отказа базы и для диагностики:
+ * причина последнего провала, число неудачных попыток и время следующей.
+ */
+export function speechDurableRestoreState(): {
+  failureReason: string | null;
+  failedAttempts: number;
+  unreadableRows: number;
+  nextRetryAt: string | null;
+} {
+  return {
+    failureReason: speechRestoreFailure,
+    failedAttempts: speechRestoreFailedAttempts,
+    unreadableRows: speechRestoreUnreadableRows,
+    nextRetryAt: speechRestoreRetryAtMs > 0 ? new Date(speechRestoreRetryAtMs).toISOString() : null
+  };
 }
 
+/**
+ * Восстановление горячего кэша из PostgreSQL.
+ *
+ * Префикс input_storage_path проверяется в WHERE, а не после лимита. В ai_jobs с
+ * тем же kind = voice_transcription пишет второй автор
+ * (db/aiQuery.ts createAiRecognitionJobInDb, input_storage_path у него пуст), и
+ * пока фильтр стоял после SQL-лимита, его строки съедали лимит целиком —
+ * восстановление возвращало ноль расшифровок при полной базе.
+ *
+ * row_number() по организации: бюджет кэша принадлежит клинике. Общий лимит
+ * означал, что клиника с потоком диктовок вытесняет расшифровки соседней.
+ *
+ * Нечитаемый конверт больше не роняет весь проход: строка пропускается,
+ * счётчик уходит в предупреждение врачу, остальные записи восстанавливаются.
+ */
 async function restoreSpeechTranscriptionChunks(): Promise<void> {
-  const rows = await db
-    .select({ inputText: aiJobs.inputText, inputStoragePath: aiJobs.inputStoragePath })
-    .from(aiJobs)
-    .where(eq(aiJobs.kind, "voice_transcription"))
-    .orderBy(desc(aiJobs.updatedAt))
-    .limit(maxCachedRecordingCount());
+  const perOrganizationLimit = maxCachedRecordingCount();
+  const storagePathPattern = `${durableRecordingPathPrefix}%`;
+  const restored = await db.execute(sql`
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        ${aiJobs.inputText} AS input_text,
+        ${aiJobs.inputStoragePath} AS input_storage_path,
+        row_number() OVER (
+          PARTITION BY ${aiJobs.organizationId}
+          ORDER BY ${aiJobs.updatedAt} DESC
+        ) AS recording_rank
+      FROM ${aiJobs}
+      WHERE ${aiJobs.kind} = ${durableRecordingJobKind}
+        AND ${aiJobs.inputStoragePath} LIKE ${storagePathPattern}
+    ) ranked
+    WHERE ranked.recording_rank <= ${perOrganizationLimit}
+  `);
 
   const cached = new Set(speechTranscriptionChunks.map((chunk) => speechChunkKey(chunk.recordingId, chunk.chunkIndex)));
-  for (const row of rows) {
-    if (!row.inputStoragePath?.startsWith(durableRecordingPathPrefix)) continue;
-    for (const chunk of restoredChunksFromEnvelope(row.inputText)) {
+  let unreadableRows = 0;
+  for (const row of restored.rows ?? []) {
+    const storagePath = typeof row.input_storage_path === "string" ? row.input_storage_path : "";
+    const inputText = typeof row.input_text === "string" ? row.input_text : null;
+    let restoredChunks: SpeechTranscriptionChunk[];
+    try {
+      restoredChunks = readDurableEnvelope(storagePath.slice(durableRecordingPathPrefix.length), inputText).chunks;
+    } catch (error) {
+      unreadableRows += 1;
+      console.error("[SpeechStorage] Конверт расшифровки не прочитан, строка пропущена:", error);
+      continue;
+    }
+    for (const chunk of restoredChunks) {
       const key = speechChunkKey(chunk.recordingId, chunk.chunkIndex);
       durableChunkKeys.add(key);
       if (cached.has(key)) continue;
@@ -503,6 +767,7 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
       speechTranscriptionChunks.push(chunk);
     }
   }
+  speechRestoreUnreadableRows = unreadableRows;
 }
 
 /**
@@ -510,20 +775,37 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
  * при импорте модуля (то есть на старте сервера) и перед каждой записью, чтобы
  * восстановление не гонялось с новым фрагментом. Тест использует её же, чтобы
  * пройти границу перезапуска процесса.
+ *
+ * ПОЧЕМУ ПРОВАЛ НЕ ЗАПОМИНАЕТСЯ НАВСЕГДА: раньше обработчик проглатывал отказ,
+ * промис оставался УСПЕШНЫМ, и каждая следующая проверка мгновенно
+ * возвращала его. Одна секундная недоступность базы на старте означала, что
+ * процесс до конца жизни работает с пустым кэшем — а записи в этом состоянии
+ * сливаться не с чем. Теперь после провала промис сбрасывается, и следующая
+ * запись пробует снова, но не раньше выдержки (DENTAL_SPEECH_RESTORE_RETRY_MS,
+ * по умолчанию 5000 мс, удваивается до седьмой попытки), чтобы не бомбить
+ * упавшую базу запросом на каждый фрагмент.
  */
 export function ensureSpeechTranscriptionChunksRestored(): Promise<void> {
-  if (!speechRestorePromise) {
-    speechRestorePromise = restoreSpeechTranscriptionChunks().then(
-      () => {
-        speechRestoreFailure = null;
-      },
-      (error: unknown) => {
-        speechRestoreFailure = error instanceof Error ? error.message : "неизвестная ошибка чтения";
-        console.error("[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы:", error);
-      }
-    );
+  if (speechRestorePromise) return speechRestorePromise;
+  if (speechRestoreFailure !== null && Date.now() < speechRestoreRetryAtMs) {
+    return Promise.resolve();
   }
-  return speechRestorePromise;
+  const attempt: Promise<void> = restoreSpeechTranscriptionChunks().then(
+    () => {
+      speechRestoreFailure = null;
+      speechRestoreFailedAttempts = 0;
+      speechRestoreRetryAtMs = 0;
+    },
+    (error: unknown) => {
+      speechRestoreFailedAttempts += 1;
+      speechRestoreFailure = error instanceof Error ? error.message : "неизвестная ошибка чтения";
+      speechRestoreRetryAtMs = Date.now() + speechRestoreBackoffMs();
+      if (speechRestorePromise === attempt) speechRestorePromise = null;
+      console.error("[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы:", error);
+    }
+  );
+  speechRestorePromise = attempt;
+  return attempt;
 }
 
 /**
@@ -536,6 +818,9 @@ export function resetSpeechTranscriptionCacheForRestart(): void {
   speechRecordingWriteChains.clear();
   speechRestorePromise = null;
   speechRestoreFailure = null;
+  speechRestoreFailedAttempts = 0;
+  speechRestoreRetryAtMs = 0;
+  speechRestoreUnreadableRows = 0;
 }
 
 export async function recordSpeechTranscriptionChunk(
@@ -610,13 +895,16 @@ async function withDurableSpeechRecording(
 
   try {
     await queueDurableRecordingWrite(chunk.recordingId, () => persistSpeechRecording(chunk.recordingId, organizationId));
+    // Запись прошла — прежнее предупреждение о том, что текст только в памяти,
+    // стало неправдой и снимается, иначе оно висело бы на сохранённой записи.
+    clearCachedDurableFailureWarnings(chunk.recordingId);
     return chunk;
   } catch (error) {
     const reason = error instanceof Error ? error.message : "неизвестная ошибка записи";
     console.error(`[SpeechStorage] Расшифровка ${chunk.recordingId} не сохранена в базу:`, error);
     chunk.warnings = uniqueStrings([
-      ...chunk.warnings,
-      `Фрагмент не сохранен в базу (${reason}); текст держится только в памяти сервера и будет потерян при перезапуске.`
+      ...chunk.warnings.filter((warning) => !warning.startsWith(durableWriteFailureWarningPrefix)),
+      `${durableWriteFailureWarningPrefix} (${reason}); текст держится только в памяти сервера (несохраненных фрагментов: ${undurableCachedChunkCount()}) и будет потерян при перезапуске.`
     ]).slice(0, 12);
     return chunk;
   }
