@@ -85,8 +85,27 @@ await new Promise((resolve, reject) => {
 
 let messageId = 0;
 const pending = new Map();
+/**
+ * Ошибки страницы собираются всегда. Без этого пустой снимок ничего не
+ * объясняет: панель может отсутствовать из-за вёрстки, из-за доступа или из-за
+ * упавшего при отрисовке компонента, и различить это по картинке невозможно.
+ */
+const pageErrors = [];
 socket.on("message", (raw) => {
   const message = JSON.parse(raw.toString());
+  if (message.method === "Runtime.exceptionThrown") {
+    const details = message.params?.exceptionDetails;
+    pageErrors.push(details?.exception?.description || details?.text || "исключение без описания");
+    return;
+  }
+  if (message.method === "Runtime.consoleAPICalled" && message.params?.type === "error") {
+    const text = (message.params.args || [])
+      .map((arg) => arg.description || arg.value || "")
+      .join(" ")
+      .trim();
+    if (text) pageErrors.push(text);
+    return;
+  }
   if (message.id && pending.has(message.id)) {
     const { resolve, reject } = pending.get(message.id);
     pending.delete(message.id);
@@ -173,12 +192,25 @@ async function waitForWorkspace(timeoutMs = 45000) {
 await waitForWorkspace();
 console.log("Рабочий кабинет открыт");
 
+/**
+ * Тема переключается ровно так, как это делает интерфейс: атрибут data-theme
+ * плюс класс dark/light на <html>.
+ *
+ * Раньше здесь выставлялся только атрибут, а класс оставался прежним. Снимки
+ * получались гибридом двух тем, и на «светлом» снимке нашлась чёрная плашка,
+ * которой в приложении нет: часть правил бралась из тёмного набора. Ложное
+ * доказательство хуже отсутствующего — оно ведёт к правкам вслепую.
+ */
 async function setTheme(theme) {
   await evaluate(`
     (() => {
       window.localStorage.setItem("dente_theme", ${JSON.stringify(theme)});
-      document.documentElement.setAttribute("data-theme", ${JSON.stringify(theme)});
-      return document.documentElement.getAttribute("data-theme");
+      const root = document.documentElement;
+      root.setAttribute("data-theme", ${JSON.stringify(theme)});
+      root.classList.toggle("dark", ${JSON.stringify(theme)} === "dark");
+      root.classList.toggle("light", ${JSON.stringify(theme)} === "light");
+      root.style.colorScheme = ${JSON.stringify(theme)} === "light" ? "light" : "dark";
+      return root.getAttribute("data-theme") + "/" + root.className;
     })()
   `);
 }
@@ -233,6 +265,15 @@ async function shootPanel(testId, fileName) {
   `);
   if (!box || box.width < 10 || box.height < 10) {
     console.log(`  ✗ ${fileName}: панель [${testId}] не найдена на странице`);
+    // Последние ошибки страницы печатаются рядом с провалом, а не в конце:
+    // именно они чаще всего и есть причина.
+    for (const error of pageErrors.slice(-3)) console.log(`     ошибка страницы: ${error.split("\n")[0]}`);
+    // И снимок того, что оказалось на экране вместо панели. Без него остаётся
+    // только гадать между вёрсткой, доступом и не тем разделом.
+    const missShot = await send("Page.captureScreenshot", { format: "png" });
+    const missName = fileName.replace(/\.png$/, "_ПУСТО.png");
+    await writeFile(path.join(OUT, missName), Buffer.from(missShot.data, "base64"));
+    console.log(`     что на экране: ${missName}`);
     return false;
   }
 
@@ -265,6 +306,60 @@ const PANELS = [
   { view: "communications", testId: "campaign-panel", slug: "campaigns" },
   { view: "analytics", testId: "manager-reports-panel", slug: "reports" },
   { view: "patients", testId: "patient-duplicate-merge-queues-widget", slug: "duplicates" },
+  {
+    view: "patients",
+    testId: "patient-duplicate-alert",
+    slug: "duplicateAlert",
+    // Предупреждение живёт внутри карточки конкретного пациента, а раздел
+    // открывается на первом по списку. Открываем именно того, у кого дубль есть,
+    // иначе снимать нечего — и это будет не дефект, а верное поведение.
+    // Возвращает не «сделано», а состояние: кликнули ли, отрисована ли вкладка
+    // карточки и что ответил маршрут. Когда снимок не удаётся, из строки видно,
+    // где обрыв, — иначе пришлось бы гадать между вёрсткой, доступом и данными.
+    prepare: `(async () => {
+      const wanted = "Орлова Марина Петровна";
+      // Клик именно по строке списка, найденной по заголовку: поиск по
+      // произвольным контейнерам выбирал не того пациента — снимок показал
+      // открытую карточку постороннего человека, у которого дублей нет.
+      const heading = [...document.querySelectorAll("article.patient-row h3")].find(
+        (node) => node.textContent?.trim() === wanted,
+      );
+      const hit = heading?.closest("article.patient-row");
+      if (hit) hit.click();
+      await new Promise((done) => setTimeout(done, 1200));
+      const overview = Boolean(document.querySelector('[data-testid="patient-overview-tab"]'));
+      // Какая карточка ОТКРЫТА на самом деле: клик по элементу списка мог не
+      // выбрать пациента, и тогда отсутствие предупреждения — верное поведение
+      // для другого пациента, а не дефект.
+      const nameInput = [...document.querySelectorAll("input")].find((node) => node.autocomplete === "name");
+      const openedName = nameInput?.value || "(поле ФИО не найдено)";
+      let api = "не проверялся";
+      try {
+        const response = await fetch("/api/patients/duplicates");
+        const body = response.ok ? await response.json() : null;
+        api = response.status + (body ? " пар: " + body.candidates.length : "");
+      } catch (error) {
+        api = "запрос упал: " + error.message;
+      }
+      // Замер подсказки «следующее действие» в списке: на снимке она оказалась
+      // чёрной плашкой с чёрным текстом. Считанные значения точнее, чем догадки
+      // по картинке.
+      const chip = document.querySelector(".patient-next-action");
+      let chipStyle = "плашка не найдена";
+      if (chip) {
+        const computed = getComputedStyle(chip);
+        const root = document.documentElement;
+        chipStyle =
+          "фон " + computed.backgroundColor + " / текст " + computed.color +
+          " | html: класс «" + root.className + "», data-theme «" + root.getAttribute("data-theme") + "»" +
+          " | --srf-chip-soft: " + getComputedStyle(root).getPropertyValue("--srf-chip-soft").trim();
+      }
+      return (
+        "клик: " + Boolean(hit) + ", открыт: " + openedName + ", карточка отрисована: " + overview +
+        ", маршрут: " + api + ", подсказка: " + chipStyle
+      );
+    })()`,
+  },
 ];
 
 await setViewport(1600, 1000);
@@ -278,6 +373,11 @@ for (const theme of ["light", "dark", "night"]) {
   for (const panel of PANELS) {
     const navigation = await goToView(panel.view);
     await sleep(1600);
+    if (panel.prepare) {
+      const outcome = await evaluate(panel.prepare);
+      console.log(`     подготовка: ${outcome}`);
+      await sleep(1400);
+    }
     const ok = await shootPanel(panel.testId, `${theme}_${panel.slug}.png`);
     if (!ok) console.log(`     переход в раздел: ${navigation}`);
   }
@@ -291,10 +391,30 @@ await sleep(800);
 for (const panel of PANELS) {
   await goToView(panel.view);
   await sleep(1500);
+  if (panel.prepare) {
+    console.log(`     подготовка: ${await evaluate(panel.prepare)}`);
+    await sleep(1400);
+  }
   await shootPanel(panel.testId, `narrow_${panel.slug}.png`);
 }
 
 await shootViewport("narrow_full.png");
+
+/**
+ * Карточка пациента во всех трёх темах целиком. Здесь плотнее всего узлы с
+ * классами Tailwind (`dark:bg-slate-800` и подобные), а Tailwind включается
+ * классом dark. Пока класс не ставился в ночной теме, эти узлы оставались
+ * светлыми на тёмном фоне — увидеть это можно только снимком раздела, а не
+ * снимком отдельной панели.
+ */
+console.log("\nРаздел картотеки целиком: проверка зон Tailwind");
+await setViewport(1600, 1000);
+for (const theme of ["light", "dark", "night"]) {
+  await setTheme(theme);
+  await goToView("patients");
+  await sleep(1800);
+  await shootViewport(`patients_${theme}_full.png`);
+}
 
 /**
  * Раздел «Коммуникации» целиком, во всю высоту. Нужен, чтобы увидеть, что

@@ -28,6 +28,16 @@ const MOUNTED_PANELS = [
 	{ component: "ManagerReportsPanel", file: "components/reports/ManagerReportsPanel.tsx" },
 	{ component: "MessageDeliveryConsole", file: "components/communications/MessageDeliveryConsole.tsx" },
 	{ component: "CampaignPanel", file: "components/communications/CampaignPanel.tsx" }
+	/*
+	 * ДОЛГ: PatientDuplicateAlert здесь пока нет, хотя он отрисовывается в
+	 * карточке пациента и снят на экране во всех трёх темах. Место его
+	 * монтирования — components/patients/PatientOverviewTab.tsx — сейчас содержит
+	 * незакоммиченную переработку другого исполнителя (удаление второй копии формы
+	 * пациента), поэтому файл не входит в этот коммит. Добавить строку
+	 *   { component: "PatientDuplicateAlert", file: "components/patients/PatientDuplicateAlert.tsx" }
+	 * сразу после того, как та переработка будет закоммичена: иначе проверка
+	 * падала бы в репозитории, где места монтирования ещё нет.
+	 */
 ];
 
 function readSource(relativePath: string): string {

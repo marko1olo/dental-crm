@@ -19,34 +19,16 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-
-type DuplicateReason =
-	| "same_name_and_birth_date"
-	| "same_name_birth_date_unknown"
-	| "same_phone_and_surname"
-	| "same_phone_only"
-	| "same_email";
-
-type DuplicateSide = {
-	patientId: string;
-	fullName: string;
-	phone: string | null;
-	birthDate: string | null;
-	email: string | null;
-};
-
-type DuplicateCandidate = {
-	leftPatientId: string;
-	leftName: string;
-	left: DuplicateSide;
-	rightPatientId: string;
-	rightName: string;
-	right: DuplicateSide;
-	reason: DuplicateReason;
-	confidence: number;
-	explanation: string;
-	caution: string | null;
-};
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	DOUBTFUL_BELOW,
+	type DuplicateCandidate,
+	type DuplicateReport,
+	dismissDuplicatePair,
+	duplicatePairKey,
+	fetchDuplicateReport,
+	mergeDuplicatePair
+} from "../../lib/patientDuplicatesApi";
 
 /** Дата рождения в человеческом виде: «10.01.1970», а не «1970-01-10». */
 function formatBirthDate(value: string | null): string {
@@ -56,33 +38,9 @@ function formatBirthDate(value: string | null): string {
 	return parsed.toLocaleDateString("ru-RU");
 }
 
-type DuplicateReport = {
-	candidates: DuplicateCandidate[];
-	examinedPatients: number;
-	dismissedPairs: number;
-	note: string;
-};
-
-/** Порог, ниже которого пара показывается как сомнительная. */
-const DOUBTFUL_BELOW = 0.6;
-
-async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch(() => null)) as unknown;
-	if (!response.ok) {
-		const message =
-			payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
-				? payload.message
-				: `Сервер ответил ${response.status}`;
-		throw new Error(message);
-	}
-	return payload as T;
-}
-
-function pairKey(candidate: DuplicateCandidate): string {
-	return `${candidate.leftPatientId}|${candidate.rightPatientId}`;
-}
-
 export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
 	const [report, setReport] = useState<DuplicateReport | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -95,34 +53,32 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 		setLoading(true);
 		setError(null);
 		try {
-			const response = await fetch("/api/patients/duplicates");
-			setReport(await readJson<DuplicateReport>(response));
+			setReport(await fetchDuplicateReport(auth ? auth.denteClinicalReadHeaders() : {}));
 		} catch (loadError) {
 			setReport(null);
 			setError(loadError instanceof Error ? loadError.message : String(loadError));
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [auth]);
 
 	useEffect(() => {
 		void load();
 	}, [load]);
 
 	async function merge(candidate: DuplicateCandidate, keepLeft: boolean) {
-		const key = pairKey(candidate);
+		const key = duplicatePairKey(candidate);
 		setBusyPair(key);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/patients/duplicates/merge", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					primaryPatientId: keepLeft ? candidate.leftPatientId : candidate.rightPatientId,
-					duplicatePatientId: keepLeft ? candidate.rightPatientId : candidate.leftPatientId
-				})
-			});
-			const data = await readJson<{ summary: string }>(response);
+			const data = await mergeDuplicatePair(
+				{
+					keepPatientId: keepLeft ? candidate.leftPatientId : candidate.rightPatientId,
+					mergePatientId: keepLeft ? candidate.rightPatientId : candidate.leftPatientId,
+					reason: "Объединено в разборе дублей"
+				},
+				auth ? auth.denteClinicalMutationHeaders() : {}
+			);
 			setNotice(data.summary);
 			setConfirming(null);
 			await load();
@@ -134,16 +90,18 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 	}
 
 	async function dismiss(candidate: DuplicateCandidate) {
-		const key = pairKey(candidate);
+		const key = duplicatePairKey(candidate);
 		setBusyPair(key);
 		setNotice(null);
 		try {
-			const response = await fetch("/api/patients/duplicates/dismiss", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ leftPatientId: candidate.leftPatientId, rightPatientId: candidate.rightPatientId })
-			});
-			const data = await readJson<{ message: string }>(response);
+			const data = await dismissDuplicatePair(
+				{
+					leftPatientId: candidate.leftPatientId,
+					rightPatientId: candidate.rightPatientId,
+					reason: "Отмечено в разборе дублей"
+				},
+				auth ? auth.denteClinicalMutationHeaders() : {}
+			);
 			setNotice(data.message);
 			await load();
 		} catch (dismissError) {
@@ -201,10 +159,12 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 								</thead>
 								<tbody>
 									{report.candidates.map((candidate) => {
-										const key = pairKey(candidate);
+										const key = duplicatePairKey(candidate);
 										const doubtful = candidate.confidence < DOUBTFUL_BELOW;
 										const isBusy = busyPair === key;
-										const isConfirming = confirming?.key === key;
+										// Локальная переменная, а не confirming?.key === key: внутри разметки
+											// компилятор иначе не знает, что confirming уже не null.
+											const pendingConfirm = confirming?.key === key ? confirming : null;
 
 										return (
 											<tr key={key}>
@@ -239,17 +199,17 @@ export const PatientDuplicateMergeQueuesWidget: React.FC = () => {
 													) : null}
 												</td>
 												<td data-label="Что делать">
-													{isConfirming ? (
+													{pendingConfirm ? (
 														<>
 															<span className="ops-note">
-																Останется карточка «{confirming.keepLeft ? candidate.leftName : candidate.rightName}».
+																Останется карточка «{pendingConfirm.keepLeft ? candidate.leftName : candidate.rightName}».
 																Вторая станет архивной ссылкой, ничего не удалится.
 															</span>
 															<button
 																className="primary-button"
 																type="button"
 																disabled={isBusy}
-																onClick={() => void merge(candidate, confirming.keepLeft)}
+																onClick={() => void merge(candidate, pendingConfirm.keepLeft)}
 															>
 																{isBusy ? "Объединяю…" : "Подтвердить объединение"}
 															</button>

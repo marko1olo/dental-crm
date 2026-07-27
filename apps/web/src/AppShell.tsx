@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode, useEffect } from "react";
 import { GlobalToast } from "./components/GlobalToast";
+import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 
 const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
@@ -59,12 +60,10 @@ function ThemeController() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const applyTheme = () => {
-      const resolvedTheme = themeMode === "auto" ? (media.matches ? "dark" : "light") : themeMode;
-      const root = document.documentElement;
-      root.dataset.theme = resolvedTheme;
-      root.classList.toggle("dark", resolvedTheme === "dark");
-      root.classList.toggle("light", resolvedTheme === "light");
-      root.style.colorScheme = resolvedTheme === "light" ? "light" : "dark";
+      // Разрешение темы вынесено в lib/themeClasses.ts и покрыто тестами: здесь
+      // жила ошибка, из-за которой в ночной теме не оставалось ни класса dark,
+      // ни light, и варианты Tailwind `dark:` в ней не срабатывали.
+      applyThemeToRoot(document.documentElement, resolveTheme(themeMode, media.matches));
     };
 
     applyTheme();
