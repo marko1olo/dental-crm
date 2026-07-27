@@ -13,6 +13,7 @@ import {
 	spawnTracked,
 	stopTracked,
 } from "./lib/processTracking.mjs";
+import { resolveViteBin } from "./lib/resolveViteBin.mjs";
 import { sleep } from "./lib/sleep.mjs";
 
 const watchdog = setTimeout(() => {
@@ -41,7 +42,6 @@ const screenshotDir =
 	process.env.SMOKE_SCREENSHOT_DIR ??
 	"test-results/workspace-live-core-actions";
 const apiServerPath = path.resolve("apps/api/dist/server.js");
-const vitePath = path.resolve("apps/web/node_modules/vite/bin/vite.js");
 
 const browserCandidates = [
 	process.env.BROWSER_BIN,
@@ -65,11 +65,7 @@ if (!browserPath) {
 if (!existsSync(apiServerPath)) {
 	throw new Error("Build API first: apps/api/dist/server.js is missing.");
 }
-if (!existsSync(vitePath)) {
-	throw new Error(
-		"Vite binary is missing. Run dependency install before this smoke test.",
-	);
-}
+const vitePath = resolveViteBin();
 
 function pad2(value) {
 	return String(value).padStart(2, "0");
