@@ -13,6 +13,7 @@ import { PatientsView } from "./PatientsView";
 import { PayrollView } from "./PayrollView";
 import { AnalyticsDashboardView } from "./pages/AnalyticsDashboardView";
 import { ManagerReportsPanel } from "./components/reports/ManagerReportsPanel";
+import { DayConfirmationsPanel } from "./components/schedule/DayConfirmationsPanel";
 import { ScannerView } from "./ScannerView";
 import { ScheduleView } from "./ScheduleView";
 import { SettingsView } from "./SettingsView";
@@ -99,6 +100,13 @@ export function AppRouter() {
 							>
 								<ScheduleView />
 							</Suspense>
+							{/*
+								Утренний обзвон. Подтверждение приёма по ссылке уже работает,
+								но без этого списка администратор не видит результата и
+								обзванивает всех подряд: половину звонков зря, половину
+								нужных пропуская.
+							*/}
+							<DayConfirmationsPanel />
 						</WorkspaceRouteErrorBoundary>
 					) : null}
 

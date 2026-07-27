@@ -51,6 +51,7 @@ import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
+import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -452,6 +453,11 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   // Подтверждение и отмена приёма пациентом по ссылке из напоминания. Без
   // авторизации — право несёт подписанный токен, а не идентификатор в адресе.
   await registerPublicAppointmentActionRoutes(app);
+
+  // Утренний обзвон: кто подтвердил, до кого напоминание не дошло и кому
+  // поэтому надо звонить. Без этого экрана подтверждение по ссылке не даёт
+  // экономии — администратор всё равно обзванивает всех подряд.
+  await registerDayConfirmationRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
