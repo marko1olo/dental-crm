@@ -122,32 +122,39 @@ function FiscalDetails({
       <summary>Фискальный чек и кассир</summary>
       <div className="smart-details-content">
         <div className="payment-capture-detail-grid">
+        {/* id + htmlFor обязательны: оформление «плавающей» подписи держится
+            на соседних селекторах (.smart-field input ~ label), а вот
+            доступное имя из соседства не берётся — программа чтения с
+            экрана объявляла эти поля безымянными. Атрибуты только
+            добавляются, на вид ничего не влияет. */}
         <div className="smart-field">
           <input
+            id="payment-fiscal-receipt-number"
             autoComplete="off"
             value={fiscalReceiptNumber}
             onChange={(event) => onFiscalReceiptNumberChange(event.target.value)}
             placeholder=" " />
-          <label>Номер чека (можно пусто, если есть ФД/ФПД)</label>
+          <label htmlFor="payment-fiscal-receipt-number">Номер чека (можно пусто, если есть ФД/ФПД)</label>
         </div>
         <div className="smart-field no-float">
-          <input type="datetime-local" value={fiscalReceiptIssuedAt} onChange={(event) => onFiscalReceiptIssuedAtChange(event.target.value)} />
-          <label>Дата чека</label>
+          <input id="payment-fiscal-receipt-issued-at" type="datetime-local" value={fiscalReceiptIssuedAt} onChange={(event) => onFiscalReceiptIssuedAtChange(event.target.value)} />
+          <label htmlFor="payment-fiscal-receipt-issued-at">Дата чека</label>
         </div>
         <div className="smart-field">
-          <DigitsInput maxLength={32} value={fiscalFn} onChange={onFiscalFnChange} placeholder=" " />
-          <label>ФО (номер фискального накопителя)</label>
+          <DigitsInput id="payment-fiscal-fn" maxLength={32} value={fiscalFn} onChange={onFiscalFnChange} placeholder=" " />
+          <label htmlFor="payment-fiscal-fn">ФО (номер фискального накопителя)</label>
         </div>
         <div className="smart-field">
-          <DigitsInput maxLength={32} value={fiscalFd} onChange={onFiscalFdChange} placeholder=" " />
-          <label>ФД (номер фискального документа)</label>
+          <DigitsInput id="payment-fiscal-fd" maxLength={32} value={fiscalFd} onChange={onFiscalFdChange} placeholder=" " />
+          <label htmlFor="payment-fiscal-fd">ФД (номер фискального документа)</label>
         </div>
         <div className="smart-field">
-          <DigitsInput maxLength={32} value={fiscalFpd} onChange={onFiscalFpdChange} placeholder=" " />
-          <label>ФПД (фискальный признак)</label>
+          <DigitsInput id="payment-fiscal-fpd" maxLength={32} value={fiscalFpd} onChange={onFiscalFpdChange} placeholder=" " />
+          <label htmlFor="payment-fiscal-fpd">ФПД (фискальный признак)</label>
         </div>
         <div className="smart-field">
           <input
+            id="payment-fiscal-receipt-url"
             type="url"
             autoComplete="url"
             aria-invalid={fiscalReceiptUrlInvalid || undefined}
@@ -155,15 +162,16 @@ function FiscalDetails({
             value={fiscalReceiptUrl}
             onChange={(event) => onFiscalReceiptUrlChange(event.target.value)}
             placeholder=" " />
-          <label>Ссылка НФД (https://...)</label>
+          <label htmlFor="payment-fiscal-receipt-url">Ссылка НФД (https://...)</label>
         </div>
         <div className="smart-field">
           <input
+            id="payment-fiscal-cashier-name"
             autoComplete="off"
             value={fiscalCashierName}
             onChange={(event) => onFiscalCashierNameChange(event.target.value)}
             placeholder=" " />
-          <label>Кассир (ФИО администратора)</label>
+          <label htmlFor="payment-fiscal-cashier-name">Кассир (ФИО администратора)</label>
         </div>
       </div>
       </div>
@@ -226,46 +234,51 @@ function TaxPayerDetails({
         <div className="payment-capture-detail-grid">
         <div className="smart-field">
           <input
+            id="payment-payer-full-name"
             autoComplete="name"
             value={payerFullName}
             onChange={(event) => onPayerFullNameChange(event.target.value)}
             placeholder=" " />
-          <label>Плательщик для вычета (ФИО)</label>
+          <label htmlFor="payment-payer-full-name">Плательщик для вычета (ФИО)</label>
         </div>
         <div className="smart-field">
           <DigitsInput
+            id="payment-payer-inn"
             maxLength={12}
             aria-invalid={payerInnInvalid || undefined}
             aria-describedby={payerInnInvalid ? paymentMissingId : undefined}
             value={payerInn}
             onChange={onPayerInnChange}
             placeholder=" " />
-          <label>ИНН плательщика (если есть)</label>
+          <label htmlFor="payment-payer-inn">ИНН плательщика (если есть)</label>
         </div>
         <div className="smart-field no-float">
           <input
+            id="payment-payer-birth-date"
             type="date"
             autoComplete="bday"
             value={payerBirthDate}
             onChange={(event) => onPayerBirthDateChange(event.target.value)}
             placeholder=" " />
-          <label>Дата рождения плательщика</label>
+          <label htmlFor="payment-payer-birth-date">Дата рождения плательщика</label>
         </div>
         <div className="smart-field">
           <input
+            id="payment-payer-identity-document"
             autoComplete="off"
             value={payerIdentityDocument}
             onChange={(event) => onPayerIdentityDocumentChange(event.target.value)}
             placeholder=" " />
-          <label>Документ плательщика (паспорт / иной)</label>
+          <label htmlFor="payment-payer-identity-document">Документ плательщика (паспорт / иной)</label>
         </div>
         <div className="smart-field">
           <input
+            id="payment-payer-relationship"
             autoComplete="off"
             value={payerRelationship}
             onChange={(event) => onPayerRelationshipChange(event.target.value)}
             placeholder=" " />
-          <label>Родство (пациент, мать...)</label>
+          <label htmlFor="payment-payer-relationship">Родство (пациент, мать...)</label>
           <div className="quick-chips-row" style={{ marginTop: "6px", padding: "0 14px 10px 14px" }}>
              {["пациент", "мать", "отец", "супруг", "супруга"].map(rel => (
                <button key={rel} type="button" className="quick-chip quick-chip--sm" onClick={() => onPayerRelationshipChange(rel)}>{rel}</button>
@@ -341,8 +354,8 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
       <div className="smart-details-content" style={{ padding: "16px", background: "var(--brand-50)", borderRadius: "8px", marginTop: "8px" }}>
         <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "16px" }}>
           <div style={{ flex: "1 1 200px" }}>
-            <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Срок рассрочки (мес): {months}</label>
-            <input type="range" min="2" max="24" step="1" value={months} onChange={(e) => setMonths(parseInt(e.target.value))} style={{ width: "100%" }} />
+            <label htmlFor="installment-months-range" style={{ fontSize: "13px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Срок рассрочки (мес): {months}</label>
+            <input id="installment-months-range" type="range" min="2" max="24" step="1" value={months} onChange={(e) => setMonths(parseInt(e.target.value))} style={{ width: "100%" }} />
             <div style={{ display: "flex", gap: "4px", marginTop: "8px", flexWrap: "wrap" }}>
               {[3, 6, 12, 24].map(m => (
                 <button key={m} type="button" className={`quick-chip quick-chip--sm ${months === m ? 'active' : ''}`} onClick={() => setMonths(m)}>{m} мес</button>
@@ -350,8 +363,8 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
             </div>
           </div>
           <div style={{ flex: "1 1 200px" }}>
-            <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Первоначальный взнос: {downPaymentPercent}%</label>
-            <input type="range" min="0" max="80" step="10" value={downPaymentPercent} onChange={(e) => setDownPaymentPercent(parseInt(e.target.value))} style={{ width: "100%" }} />
+            <label htmlFor="installment-down-payment-range" style={{ fontSize: "13px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Первоначальный взнос: {downPaymentPercent}%</label>
+            <input id="installment-down-payment-range" type="range" min="0" max="80" step="10" value={downPaymentPercent} onChange={(e) => setDownPaymentPercent(parseInt(e.target.value))} style={{ width: "100%" }} />
             <div style={{ display: "flex", gap: "4px", marginTop: "8px", flexWrap: "wrap" }}>
               {[0, 20, 30, 50].map(p => (
                 <button key={p} type="button" className={`quick-chip quick-chip--sm ${downPaymentPercent === p ? 'active' : ''}`} onClick={() => setDownPaymentPercent(p)}>{p}%</button>

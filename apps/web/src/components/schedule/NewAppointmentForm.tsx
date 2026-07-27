@@ -66,13 +66,21 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   return (
     <div className="appointment-create-wrapper" aria-label="Создание записи">
       <div className="appointment-create-editor" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' }}>
+        {/* Этот блок визуально скрыт (opacity 0, размер 0), но
+            focusNewAppointmentEditor в ScheduleView намеренно переводит сюда
+            фокус. Значит поля обязаны иметь доступные имена: без них
+            программа чтения с экрана объявляет безымянное поле ввода.
+            Отдельная проблема — фокус уезжает на невидимый элемент; она
+            требует переделки самого сценария создания записи. */}
         <input
           type="datetime-local"
+          aria-label="Начало записи"
           value={toDateTimeLocalValue(newAppointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />
         <input
           type="datetime-local"
+          aria-label="Окончание записи"
           value={toDateTimeLocalValue(newAppointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
           onChange={(event) => updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
         />

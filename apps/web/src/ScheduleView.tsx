@@ -350,6 +350,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--line)', paddingRight: '12px', marginRight: '4px' }}>
                 <input
                   type="date"
+                  aria-label="Фильтр расписания по дате"
                   value={scheduleDateFilter}
                   onChange={(event: TextFieldChangeEvent) => setScheduleDateFilter(event.target.value)}
                   style={{ border: '1px solid var(--line)', borderRadius: '8px', background: 'var(--paper-soft)', padding: '4px 8px', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', outline: 'none', cursor: 'pointer' }}

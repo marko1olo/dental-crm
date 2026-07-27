@@ -608,7 +608,12 @@ export const OdontogramModule = ({
 				<TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
 
 				{/* Floating Voice Dictation Button */}
+				{/* Кнопка состоит только из иконки, поэтому без aria-label и type
+				    она объявлялась безымянной и по умолчанию считалась submit. */}
 				<button
+					type="button"
+					aria-label="Диктовка состояния зубов голосом"
+					title="Диктовка состояния зубов голосом"
 					onClick={() => setIsVoiceOpen(true)}
 					style={{
 						position: "absolute",
