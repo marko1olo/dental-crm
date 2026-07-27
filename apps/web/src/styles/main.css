@@ -1639,6 +1639,129 @@ body.dark-mode .onboarding-draft-strip span {
   color: #ffffff;
 }
 
+/* «Что сделать сейчас» — срочные дела смены со своей кнопкой у каждого. */
+.shift-todo {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+  padding: 16px 18px;
+}
+
+.shift-todo-head {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.shift-todo-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.shift-todo-count {
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.shift-todo-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shift-todo-item {
+  align-items: center;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 11px 13px;
+}
+
+.shift-todo-item.priority-urgent {
+  border-left-color: #b3382f;
+}
+
+.shift-todo-item.priority-important {
+  border-left-color: var(--amber);
+}
+
+/* Каждая строка — своя сетка, поэтому колонка плашки задаётся шириной самой
+   плашки: без min-width заголовки дел разъезжаются по левому краю. */
+.shift-todo-priority {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  min-width: 62px;
+  padding: 4px 9px;
+  text-align: center;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+/* Плашки приоритета: светлый фон и тёмная краска работают в обеих темах,
+   как у существующих .status-* пилюль. */
+.shift-todo-priority.priority-urgent {
+  background: #f5e0dc;
+  color: #7d2c25;
+}
+
+.shift-todo-priority.priority-important {
+  background: #f5ece1;
+  color: #744225;
+}
+
+.shift-todo-priority.priority-routine {
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+}
+
+.shift-todo-text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shift-todo-text p {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 2px 0 0;
+}
+
+.shift-todo-patient {
+  color: var(--teal-dark);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.shift-todo-go {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .shift-todo-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .shift-todo-go {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
 .role-focus-strip {
   align-items: center;
   background: #0f3936;

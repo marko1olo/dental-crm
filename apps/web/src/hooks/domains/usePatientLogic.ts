@@ -21,6 +21,9 @@ import {
 } from "../../AppHelpers";
 import { usePatientStore } from "../../store/patientStore";
 
+/** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
+const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
+
 export function usePatientLogic({
 	dashboard,
 	query,
@@ -79,6 +82,22 @@ export function usePatientLogic({
 			null
 		);
 	}, [dashboard]);
+
+	/**
+	 * Пациент открытого приёма — и только он. `activePatient` выше при
+	 * отсутствии приёма подставляет первого пациента списка, поэтому карточка
+	 * на «Смене» показывала случайного человека с красной пометкой «СРОЧНО»,
+	 * хотя его никто не выбирал и приёма не было.
+	 *
+	 * Гидратация базы кладёт в `activeVisit` заготовку с нулевым UUID, когда
+	 * черновиков нет вовсе, — она пациентом не считается.
+	 */
+	const activeVisitPatient = useMemo(() => {
+		const visit = dashboard?.activeVisit;
+		if (!visit?.id || visit.id === NIL_VISIT_UUID) return null;
+		if (!visit.patientId || visit.patientId === NIL_VISIT_UUID) return null;
+		return findPatient(dashboard?.patients, visit.patientId) ?? null;
+	}, [dashboard?.activeVisit, dashboard?.patients]);
 
 	const selectedPatient = useMemo(() => {
 		if (!dashboard) return null;
@@ -465,6 +484,7 @@ export function usePatientLogic({
 		setIsPatientCreating,
 		setNewRulePatientText,
 		activePatient,
+		activeVisitPatient,
 		selectedPatient,
 		documentPatient,
 		documentPatientMatchesActiveVisit,

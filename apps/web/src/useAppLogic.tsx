@@ -2418,6 +2418,7 @@ export function useAppLogic(): any {
 		setIsPatientCreating,
 		setNewRulePatientText,
 		activePatient,
+		activeVisitPatient,
 		selectedPatient,
 		documentPatient,
 		documentPatientMatchesActiveVisit,
@@ -13330,10 +13331,27 @@ export function useAppLogic(): any {
 		) ?? dashboard?.shiftIntelligence?.roleQueues?.[0];
 	const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
 	const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
+	/**
+	 * Роли, которые в клинике никто не занимает. Владелец соло-практики сам себе
+	 * и врач, и администратор: если такие дела спрятать «не по его роли», он их
+	 * не увидит вообще — сделать их некому. Поэтому владелец получает дела всех
+	 * незанятых ролей вдобавок к своим.
+	 */
+	const uncoveredStaffRoles = useMemo(() => {
+		const covered = new Set(
+			(dashboard?.clinicSettings?.staff ?? [])
+				.filter((member) => member.active && member.role !== "owner")
+				.map((member) => member.role as string),
+		);
+		return (["doctor", "administrator", "assistant", "manager"] as const).filter(
+			(role) => !covered.has(role),
+		) as string[];
+	}, [dashboard?.clinicSettings?.staff]);
 	const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
 		(action) =>
 			action.role === selectedWorkspaceRole ||
-			(selectedWorkspaceRole === "owner" && action.role === "manager"),
+			(selectedWorkspaceRole === "owner" &&
+				(action.role === "manager" || uncoveredStaffRoles.includes(action.role))),
 	);
 	const visibleRecommendedActions = (
 		roleRecommendedActions.length
@@ -13463,6 +13481,7 @@ export function useAppLogic(): any {
 		activeImagingStudies,
 		activeIssuedPaidContracts,
 		activePatient,
+		activeVisitPatient,
 		activePatientCallablePhone,
 		activePatientHasCallablePhone,
 		activePatientInsight,

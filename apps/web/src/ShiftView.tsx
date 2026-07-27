@@ -1,10 +1,8 @@
 import { PatientAvatar } from './components/PatientAvatar';
 import { EmptyState } from './components/EmptyState';
 import {
-  AlertTriangle,
   Building2,
-  ChevronDown,
-  ChevronUp,
+  CheckCircle2,
   ClipboardCheck,
   CreditCard,
   FileText,
@@ -15,14 +13,13 @@ import {
   UserCheck,
   Gauge,
   Calendar,
+  CalendarPlus,
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
-import { workloadStateLabels } from "./workspaceUiLabels";
-import { ActionIcon } from "./workspaceShell";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -35,123 +32,265 @@ function calendarDateOfInstant(value: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : localCalendarDateString(parsed);
 }
 
+/**
+ * Заготовка приёма из гидратации базы: приёмов нет вовсе, но объект
+ * возвращается, чтобы карточка приёма открывалась пустой.
+ */
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
+/** Русское склонение счётного слова: 1 прием, 2 приема, 5 приемов. */
+function countLabel(count: number, one: string, few: string, many: string): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return `${count} ${many}`;
+  if (last === 1) return `${count} ${one}`;
+  if (last >= 2 && last <= 4) return `${count} ${few}`;
+  return `${count} ${many}`;
+}
+
+function appointmentsCountLabel(count: number): string {
+  return countLabel(count, "прием", "приема", "приемов");
+}
+
+/**
+ * Дата рождения человеческим видом. Раньше в карточку попадала строка из базы
+ * «1996-02-25». Общий `formatShortDate` тоже не годится: он даёт двузначный год,
+ * и «25.02.96» у пожилого пациента читается неоднозначно.
+ */
+function birthDateLabel(value: unknown): string {
+  if (typeof value !== "string" || !value) return "не указана";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  if (!year || !month || !day || year.length !== 4) return value;
+  return `${day}.${month}.${year}`;
+}
+
+function formatClockTime(value: unknown): string {
+  if (typeof value !== "string" || !value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function ShiftView({
-  activePatient,
   activePatientHasCallablePhone,
   activePatientCallablePhone,
   visibleRecommendedActions,
   recommendedActionPriorityLabels,
   staffRoleLabels,
-  selectedWorkspaceRole,
-  activeRoleQueue,
-  activeRolePolicy,
-  activeRoleWritableSections,
-  viewLabels,
-  activeRoleRestrictedSections,
   dashboard,
   activeQueueRole,
-  shiftWarnings,
-  warningSeverityLabels,
-  openScheduleWarning,
   setError,
   mostLoadedResource,
-  setSelectedPatientId,
-  activeDoctor
+  setSelectedPatientId
 }: any) {
-  const doctorTodayAppointments = useMemo(() => {
-    if (!dashboard || !dashboard.appointments || !activeDoctor) return [];
-    return dashboard.appointments
-      .filter((app: any) =>
-        app.doctorUserId === activeDoctor.id &&
-        calendarDateOfInstant(app.startsAt) === (dashboard.todayIso || localCalendarDateString())
-      )
-      .sort((a: any, b: any) => String(a.startsAt).localeCompare(String(b.startsAt)));
-  }, [dashboard, activeDoctor]);
-
   const patientsById = useMemo(() => {
     const index = new Map<string, any>();
     for (const patient of dashboard?.patients ?? []) index.set(patient.id, patient);
     return index;
   }, [dashboard?.patients]);
 
-  const [showDetails, setShowDetails] = useState(false);
+  /**
+   * Пациент, который сейчас в кресле. Раньше карточка «Сейчас в работе»
+   * показывала `activePatient`, а он подставляет первого пациента из списка,
+   * когда открытого приёма нет вовсе. Клиника без единой записи видела
+   * «прием идет» с именем случайного человека — рядом с надписью
+   * «Приемов нет». Показываем только настоящий приём.
+   */
+  const visitPatient = useMemo(() => {
+    const visit = dashboard?.activeVisit;
+    if (!visit || !visit.id || visit.id === NIL_UUID) return null;
+    if (!visit.patientId || visit.patientId === NIL_UUID) return null;
+    if (visit.status !== "draft") return null;
+    return patientsById.get(visit.patientId) ?? null;
+  }, [dashboard?.activeVisit, patientsById]);
+
+  const visitPatientCallablePhone = (visitPatient?.phone ?? "").trim().replace(/[^\d+]/g, "");
+  const visitPatientHasCallablePhone = visitPatientCallablePhone.length >= 5;
+
+  const todayIso = dashboard?.todayIso || localCalendarDateString();
+
+  /**
+   * Приёмы всей клиники на сегодня. Раньше список фильтровался по
+   * `activeDoctor`, а тот берётся из первого приёма в выдаче: владелец и
+   * администратор видели расписание одного произвольного врача под
+   * заголовком «Расписание приемов на сегодня».
+   */
+  const todayAppointments = useMemo(() => {
+    return (dashboard?.appointments ?? [])
+      .filter((app: any) => calendarDateOfInstant(app.startsAt) === todayIso)
+      .filter((app: any) => !["cancelled", "no_show"].includes(String(app.status ?? "").toLowerCase()))
+      .sort((a: any, b: any) => String(a.startsAt).localeCompare(String(b.startsAt)));
+  }, [dashboard?.appointments, todayIso]);
+
+  const staffById = useMemo(() => {
+    const index = new Map<string, any>();
+    for (const member of dashboard?.clinicSettings?.staff ?? []) index.set(member.id, member);
+    return index;
+  }, [dashboard?.clinicSettings?.staff]);
+
+  /** Фамилию врача в строке расписания показываем, только если врачей больше одного. */
+  const manyDoctors = useMemo(
+    () =>
+      (dashboard?.clinicSettings?.staff ?? []).filter(
+        (member: any) => member.active && member.role === "doctor"
+      ).length > 1,
+    [dashboard?.clinicSettings?.staff]
+  );
+
+  /** Ближайший приём, который ещё не начался: с него начинается день. */
+  const nextAppointment = useMemo(() => {
+    const now = Date.now();
+    return (
+      todayAppointments.find((app: any) => {
+        const ends = new Date(app.endsAt ?? app.startsAt).getTime();
+        return Number.isFinite(ends) && ends >= now;
+      }) ?? null
+    );
+  }, [todayAppointments]);
+
+  const nextAppointmentPatient = nextAppointment ? patientsById.get(nextAppointment.patientId) ?? null : null;
+
+  /**
+   * Очереди ролей нужны клинике, где роли разложены по людям. Кабинету, где
+   * один-два человека, эта таблица не говорит ничего: все задачи всё равно
+   * их собственные, а список ролей просто занимает экран.
+   */
+  const rolesWorthShowing = useMemo(
+    () =>
+      new Set(
+        (dashboard?.clinicSettings?.staff ?? [])
+          .filter((member: any) => member.active)
+          .map((member: any) => member.role)
+      ).size > 2,
+    [dashboard?.clinicSettings?.staff]
+  );
+
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showOtherQueues, setShowOtherQueues] = useState(false);
+
+  /** Переход по срочному делу: раздел берём из самого дела, пациента подставляем. */
+  function runRecommendedAction(action: any) {
+    if (action?.patientId && action.patientId !== NIL_UUID && patientsById.has(action.patientId)) {
+      setSelectedPatientId(action.patientId);
+    }
+    const section = typeof action?.section === "string" && action.section ? action.section : "shift";
+    window.location.hash = section;
+  }
   return (
     <>
 
         <section className="shift-hero" id="shift">
             <div className="now-card">
               <div className="row-between">
-                <p className="eyebrow">Сейчас в работе</p>
-                {activePatient ? (
+                <p className="eyebrow">{visitPatient ? "Сейчас в кресле" : "Сейчас в работе"}</p>
+                {visitPatient ? (
                   <span className="status-pill status-in_treatment">
                     <span className="pulse-dot" aria-hidden="true" />
                     прием идет
                   </span>
                 ) : null}
               </div>
-              {activePatient ? (
+              {visitPatient ? (
                 <>
                   <div className="patient-hero">
-                    <PatientAvatar fullName={activePatient.fullName} size={44} />
+                    <PatientAvatar fullName={visitPatient.fullName} size={44} />
                     <div className="hero-info">
-                      <h2>{activePatient.fullName}</h2>
-                      <p className="hero-phone">{activePatient.phone ?? "телефон не указан"}</p>
+                      <h2>{visitPatient.fullName}</h2>
+                      <p className="hero-phone">{visitPatient.phone ?? "телефон не указан"}</p>
                     </div>
                   </div>
                   <div className="hero-actions">
-                    <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "visit"; }}>
+                    <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { setSelectedPatientId(visitPatient.id); window.location.hash = "visit"; }}>
                       <ClipboardCheck aria-hidden="true" /> Открыть прием
                     </button>
-                    <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "imaging"; }}>
+                    <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { setSelectedPatientId(visitPatient.id); window.location.hash = "imaging"; }}>
                       <ImageIcon aria-hidden="true" /> Снимки
                     </button>
                     <button
                       className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
                       type="button"
                       aria-label="Позвонить пациенту"
-                      aria-describedby={!activePatientHasCallablePhone ? "shift-call-guidance" : undefined}
-                      aria-disabled={!activePatientHasCallablePhone}
-                      title={activePatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
-                      style={{ opacity: !activePatientHasCallablePhone ? 0.6 : 1 }}
+                      aria-describedby={!visitPatientHasCallablePhone ? "shift-call-guidance" : undefined}
+                      aria-disabled={!visitPatientHasCallablePhone}
+                      title={visitPatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
+                      style={{ opacity: !visitPatientHasCallablePhone ? 0.6 : 1 }}
                       onClick={() => {
-                        if (!activePatientHasCallablePhone) {
+                        if (!visitPatientHasCallablePhone) {
                           setError("В карточке пациента нет телефона. Добавьте номер в разделе «Пациенты», чтобы позвонить.");
                           return;
                         }
-                        window.location.href = `tel:${activePatientCallablePhone}`;
+                        window.location.href = `tel:${visitPatientCallablePhone}`;
                       }}
                     >
                       <Phone aria-hidden="true" /> Позвонить
                     </button>
                   </div>
-                  
+
                   {/* Compact Status Tracker */}
                   <div className="status-flow">
                     <span className="status-flow-label">Статус:</span>
                     <div className="status-flow-steps">
                       <span className="status-flow-step done">1. Запись</span>
                       <span className="status-flow-arrow" aria-hidden="true">→</span>
-                      <span className={`status-flow-step${dashboard?.activeVisit ? " done" : ""}`}>2. ЭМК</span>
+                      <span className="status-flow-step done">2. ЭМК</span>
                       <span className="status-flow-arrow" aria-hidden="true">→</span>
                       <span className="status-flow-step">3. Оплата</span>
                     </div>
                   </div>
 
-                  {!activePatientHasCallablePhone ? (
+                  {!visitPatientHasCallablePhone ? (
                     <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite">
                       В карточке пациента нет телефона. Откройте «Пациенты» и добавьте номер, чтобы кнопка звонка стала активной.
                     </p>
                   ) : null}
                 </>
+              ) : nextAppointment ? (
+                <>
+                  <div className="patient-hero">
+                    <PatientAvatar fullName={nextAppointmentPatient?.fullName ?? "?"} size={44} />
+                    <div className="hero-info">
+                      <h2>{nextAppointmentPatient?.fullName ?? "Пациент не найден"}</h2>
+                      <p className="hero-phone">
+                        Ближайший прием сегодня в {formatClockTime(nextAppointment.startsAt)}
+                        {nextAppointment.reason ? ` · ${nextAppointment.reason}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="hero-actions">
+                    <button
+                      className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+                      type="button"
+                      onClick={() => {
+                        if (nextAppointmentPatient) setSelectedPatientId(nextAppointmentPatient.id);
+                        window.location.hash = "visit";
+                      }}
+                    >
+                      <ClipboardCheck aria-hidden="true" /> Начать прием
+                    </button>
+                    <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "schedule"; }}>
+                      <Calendar aria-hidden="true" /> Все записи дня
+                    </button>
+                  </div>
+                  <p className="hero-call-guidance" role="status">
+                    Приём ещё не открыт. Нажмите «Начать прием», когда пациент сядет в кресло.
+                  </p>
+                </>
               ) : (
                 <EmptyState
                   icon={<ClipboardCheck size={28} />}
-                  title="Нет активного приема"
-                  description="Выберите пациента или запланируйте запись в расписании."
+                  title="Сейчас никого нет в кресле"
+                  description={
+                    todayAppointments.length > 0
+                      ? "Все приемы на сегодня уже прошли. Откройте расписание, чтобы записать пациента на другой день."
+                      : "На сегодня записей нет. Нажмите «Записать пациента», чтобы поставить первую."
+                  }
                   glass={false}
                   style={{ padding: "20px 16px" }}
+                  action={
+                    <button className="primary-button" type="button" onClick={() => { window.location.hash = "schedule"; }}>
+                      <CalendarPlus aria-hidden="true" size={16} /> Записать пациента
+                    </button>
+                  }
                 />
               )}
             </div>
@@ -162,16 +301,17 @@ export function ShiftView({
                 <h3>
                   <ClipboardCheck size={16} aria-hidden="true" /> Расписание приемов на сегодня
                 </h3>
-                <span className="today-schedule-count">{doctorTodayAppointments.length} приемов</span>
+                <span className="today-schedule-count">{appointmentsCountLabel(todayAppointments.length)}</span>
               </div>
-              {doctorTodayAppointments.length > 0 ? (
+              {todayAppointments.length > 0 ? (
                 <div className="today-schedule-list">
-                  {doctorTodayAppointments.map((app: any) => {
+                  {todayAppointments.map((app: any) => {
                     const patient = patientsById.get(app.patientId);
-                    const isCurrent = activePatient && activePatient.id === app.patientId;
-                    
-                    const timeStart = new Date(app.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-                    const timeEnd = new Date(app.endsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                    const isCurrent = Boolean(visitPatient && visitPatient.id === app.patientId);
+                    const doctor = staffById.get(app.doctorUserId);
+
+                    const timeStart = formatClockTime(app.startsAt);
+                    const timeEnd = formatClockTime(app.endsAt);
 
                     const statusKey = String(app.status || "").toLowerCase();
                     const statusLabels: Record<string, string> = {
@@ -210,7 +350,10 @@ export function ShiftView({
                         <div className="today-schedule-item-info">
                           <span className="today-schedule-time">{timeStart} – {timeEnd}</span>
                           <strong className="today-schedule-name">{patient ? patient.fullName : "Неизвестный пациент"}</strong>
-                          <span className="today-schedule-reason">{app.reason || "плановый осмотр"}</span>
+                          <span className="today-schedule-reason">
+                            {app.reason || "плановый осмотр"}
+                            {manyDoctors && doctor ? ` · ${doctor.fullName}` : ""}
+                          </span>
                         </div>
                         <span className={`status-pill status-${statusKey}`}>
                           {statusLabels[statusKey] || app.status}
@@ -222,10 +365,15 @@ export function ShiftView({
               ) : (
                 <EmptyState
                   icon={<Calendar size={24} />}
-                  title="Приемов нет"
-                  description="Сегодня у вас нет запланированных приемов."
+                  title="На сегодня записей нет"
+                  description="Свободный день. Запишите пациента — запись сразу появится здесь."
                   glass={false}
                   style={{ padding: "20px 16px" }}
+                  action={
+                    <button className="secondary-button" type="button" onClick={() => { window.location.hash = "schedule"; }}>
+                      <CalendarPlus aria-hidden="true" size={16} /> Открыть расписание
+                    </button>
+                  }
                 />
               )}
             </div>
@@ -233,25 +381,58 @@ export function ShiftView({
 
         <div className="shift-dashboard-grid" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
           <>
-            <section className="role-focus-strip" aria-label="Фокус текущей роли" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "14px 18px", borderRadius: "14px", background: "linear-gradient(135deg, var(--teal-surface), transparent 60%), var(--paper)", border: "1px solid var(--line)", boxShadow: "var(--shadow-1)", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: "240px" }}>
-                <div style={{ width: "38px", height: "38px", flexShrink: 0, borderRadius: "11px", background: "var(--teal-soft)", color: "var(--teal-dark)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <UserCheck aria-hidden="true" size={20} style={{ margin: "auto" }} />
-                </div>
-                <div>
-                  <p className="eyebrow" style={{ margin: 0, fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase" }}>Фокус: {staffRoleLabels?.[selectedWorkspaceRole] ?? selectedWorkspaceRole}</p>
-                  <h2 style={{ margin: "1px 0 0", fontSize: "15px", fontWeight: 700, color: "var(--ink)" }}>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Рабочая очередь"}</h2>
-                  <p style={{ margin: "1px 0 0", fontSize: "12.5px", color: "var(--muted)" }}>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor?.[0] ?? "Открыть смену и проверить очередь"}</p>
-                </div>
+            {/*
+              Здесь была полоса «Фокус: <роль>» с названием очереди, следующим
+              действием и чипами «0 открыто / Старт: Настройки / ✓Смена».
+              Название и следующее действие слово в слово повторяли карточку
+              роли ниже на этом же экране, а чипы показывали права доступа —
+              их место в настройках, а не на рабочем экране. При этом список
+              срочных дел приходил в этот компонент пропсом и не выводился
+              вообще: экран «что делать сейчас» не говорил, что делать.
+            */}
+            <section className="shift-todo" aria-label="Что сделать сейчас">
+              <div className="shift-todo-head">
+                <h2>Что сделать сейчас</h2>
+                <span className="shift-todo-count">
+                  {(visibleRecommendedActions ?? []).length > 0
+                    ? `дел: ${(visibleRecommendedActions ?? []).length}`
+                    : "всё закрыто"}
+                </span>
               </div>
-              <div className="role-focus-meta" style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }} aria-label="Доступы текущей роли">
-                <span className="status-pill">{activeRoleQueue?.openItems ?? 0} открыто</span>
-                {activeRolePolicy ? <span className="status-pill">Старт: {viewLabels?.[activeRolePolicy.defaultSection] ?? activeRolePolicy.defaultSection}</span> : null}
-                {(activeRoleWritableSections ?? []).slice(0, 3).map((section: any) => (
-                  <span key={section} className="status-pill status-confirmed">✓ {viewLabels?.[section] ?? section}</span>
-                ))}
-                {activeRoleRestrictedSections?.[0] ? <span className="status-pill status-cancelled">ограничено: {viewLabels?.[activeRoleRestrictedSections[0]] ?? activeRoleRestrictedSections[0]}</span> : null}
-              </div>
+              {(visibleRecommendedActions ?? []).length > 0 ? (
+                <ul className="shift-todo-list">
+                  {(visibleRecommendedActions ?? []).map((action: any) => {
+                    const patient = action.patientId ? patientsById.get(action.patientId) : null;
+                    return (
+                      <li key={action.id} className={`shift-todo-item priority-${action.priority}`}>
+                        <span className={`shift-todo-priority priority-${action.priority}`}>
+                          {recommendedActionPriorityLabels?.[action.priority] ?? action.priority}
+                        </span>
+                        <div className="shift-todo-text">
+                          <strong>{action.title}</strong>
+                          <p>{action.detail}</p>
+                          {patient ? <span className="shift-todo-patient">{patient.fullName}</span> : null}
+                        </div>
+                        <button
+                          className="secondary-button shift-todo-go"
+                          type="button"
+                          onClick={() => runRecommendedAction(action)}
+                        >
+                          {action.actionLabel || "Открыть"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <EmptyState
+                  icon={<CheckCircle2 size={24} />}
+                  title="Срочных дел нет"
+                  description="Все приемы подписаны, снимки проверены, документы и оплаты закрыты. Новое дело появится здесь само."
+                  glass={false}
+                  style={{ padding: "18px 16px" }}
+                />
+              )}
             </section>
 
             <section className="shift-intelligence" aria-label="Операционный контроль смены" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "18px 20px", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -313,49 +494,58 @@ export function ShiftView({
                 </div>
               )}
 
-              <div className="role-queue-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.02em" }}>Задачи по ролям</h3>
-                {(dashboard?.shiftIntelligence?.roleQueues ?? []).length > 1 && (
-                  <button
-                    className="text-button toggle-queues-btn"
-                    type="button"
-                    onClick={() => setShowOtherQueues((v) => !v)}
-                  >
-                    {showOtherQueues ? "Скрыть другие роли" : "Показать другие роли"}
-                  </button>
-                )}
-              </div>
+              {/*
+                Разбивка по ролям нужна там, где роли разложены по людям.
+                В кабинете, где работают один-два человека, все эти задачи всё
+                равно их собственные, а таблица ролей только занимает экран.
+              */}
+              {rolesWorthShowing ? (
+                <>
+                  <div className="role-queue-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.02em" }}>Задачи по ролям</h3>
+                    {(dashboard?.shiftIntelligence?.roleQueues ?? []).length > 1 && (
+                      <button
+                        className="text-button toggle-queues-btn"
+                        type="button"
+                        onClick={() => setShowOtherQueues((v) => !v)}
+                      >
+                        {showOtherQueues ? "Скрыть другие роли" : "Показать другие роли"}
+                      </button>
+                    )}
+                  </div>
 
-              <div className="role-queue-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-                {(dashboard?.shiftIntelligence?.roleQueues ?? [])
-                  .filter((q: any) => q.role === activeQueueRole || showOtherQueues)
-                  .map((queue: any) => (
-                    <article 
-                      className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`} 
-                      key={queue.role}
-                      style={{
-                        position: "relative",
-                        padding: "14px 16px",
-                        border: queue.role === activeQueueRole ? "1px solid var(--teal-ring)" : "1px solid var(--line)",
-                        borderRadius: "12px",
-                        background: queue.role === activeQueueRole ? "var(--teal-surface)" : "var(--paper)",
-                        boxShadow: "var(--shadow-1)",
-                        transition: "all 0.15s ease"
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--muted)" }}>
-                          <UserCheck size={14} aria-hidden="true" />
-                          {staffRoleLabels?.[queue.role] ?? queue.role}
-                        </span>
-                        <strong style={{ fontSize: "22px", fontWeight: 800, color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{queue.openItems}</strong>
-                      </div>
-                      <h3 style={{ margin: "8px 0 0", fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>{queue.title}</h3>
-                      <p style={{ margin: "2px 0 0", fontSize: "12.5px", color: "var(--ink-2)" }}>{queue.nextAction}</p>
-                      <small style={{ display: "block", marginTop: "8px", fontSize: "11.5px", color: "var(--muted)" }}>{queue.blockedBy?.[0] ?? queue.automationHint}</small>
-                    </article>
-                  ))}
-              </div>
+                  <div className="role-queue-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                    {(dashboard?.shiftIntelligence?.roleQueues ?? [])
+                      .filter((q: any) => q.role === activeQueueRole || showOtherQueues)
+                      .map((queue: any) => (
+                        <article
+                          className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`}
+                          key={queue.role}
+                          style={{
+                            position: "relative",
+                            padding: "14px 16px",
+                            border: queue.role === activeQueueRole ? "1px solid var(--teal-ring)" : "1px solid var(--line)",
+                            borderRadius: "12px",
+                            background: queue.role === activeQueueRole ? "var(--teal-surface)" : "var(--paper)",
+                            boxShadow: "var(--shadow-1)",
+                            transition: "all 0.15s ease"
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--muted)" }}>
+                              <UserCheck size={14} aria-hidden="true" />
+                              {staffRoleLabels?.[queue.role] ?? queue.role}
+                            </span>
+                            <strong style={{ fontSize: "22px", fontWeight: 800, color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{queue.openItems}</strong>
+                          </div>
+                          <h3 style={{ margin: "8px 0 0", fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>{queue.title}</h3>
+                          <p style={{ margin: "2px 0 0", fontSize: "12.5px", color: "var(--ink-2)" }}>{queue.nextAction}</p>
+                          <small style={{ display: "block", marginTop: "8px", fontSize: "11.5px", color: "var(--muted)" }}>{queue.blockedBy?.[0] ?? queue.automationHint}</small>
+                        </article>
+                      ))}
+                  </div>
+                </>
+              ) : null}
             </section>
           </>
         </div>
@@ -401,7 +591,7 @@ export function PatientCockpit({
             <div className="patient-info-list" style={{ display: "flex", flexDirection: "column", gap: "9px", fontSize: "13px", color: "var(--ink-2)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Calendar size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
-                <span>Дата рождения: <strong style={{ color: "var(--ink)", fontWeight: 600 }}>{activePatient.birthDate ?? "не указана"}</strong></span>
+                <span>Дата рождения: <strong style={{ color: "var(--ink)", fontWeight: 600 }}>{birthDateLabel(activePatient.birthDate)}</strong></span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Phone size={14} style={{ color: "var(--muted)", flexShrink: 0 }} />
@@ -425,9 +615,10 @@ export function PatientCockpit({
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "11.5px", fontWeight: 600 }}>
                   {activePatientInsight.balanceDueRub ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
-                  {activePatientInsight.openTasks > 0 ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>📞 {activePatientInsight.openTasks} задач</span> : null}
-                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов</span> : null}
-                  {activePatientInsight.recallDueAt ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>повтор {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                  {activePatientInsight.openTasks > 0 ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>📞 {countLabel(activePatientInsight.openTasks, "задача", "задачи", "задач")} на связь</span> : null}
+                  {/* Было «📄 3 док-тов»: и сокращение, и неясно, есть они или их нет. */}
+                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>📄 не хватает {countLabel(activePatientInsight.missingDocumentKinds.length, "документа", "документов", "документов")}</span> : null}
+                  {activePatientInsight.recallDueAt ? <span style={{ background: "var(--paper)", padding: "3px 8px", borderRadius: "6px", border: "1px solid var(--line)", color: "var(--ink)" }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
               </div>
             ) : null}
@@ -459,14 +650,14 @@ export function PatientCockpit({
               <MessageSquare aria-hidden="true" size={24} />
               <div>
                 <h3>Связь</h3>
-                <p className="tile-meta">{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
+                <p className="tile-meta">{activeCommunicationTasks.length > 0 ? countLabel(activeCommunicationTasks.length, "задача", "задачи", "задач") : "задач нет"}</p>
               </div>
             </article>
             <article role="button" tabIndex={0} aria-label="Открыть снимки пациента" className="clickable-card" onClick={() => { window.location.hash = "imaging"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "imaging"; } }}>
               <ImageIcon aria-hidden="true" size={24} />
               <div>
                 <h3>Снимки</h3>
-                <p className="tile-meta">{activeImagingStudies.length > 0 ? `${activeImagingStudies.length} снимка` : "снимков нет"}</p>
+                <p className="tile-meta">{activeImagingStudies.length > 0 ? countLabel(activeImagingStudies.length, "снимок", "снимка", "снимков") : "снимков нет"}</p>
               </div>
             </article>
           </div>

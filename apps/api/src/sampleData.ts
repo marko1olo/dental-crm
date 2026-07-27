@@ -505,6 +505,26 @@ export const activeVisit: Visit = {
 	updatedAt: nowIso,
 };
 
+/** Пустой идентификатор заготовки приёма из гидратации базы. */
+const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Приём открыт, только если он настоящий: есть свой идентификатор и пациент,
+ * которого видно в списке.
+ *
+ * Гидратация подставляет в `activeVisit` заготовку с нулевым UUID, когда
+ * черновиков нет вовсе. Без этой проверки заготовка считалась неподписанным
+ * приёмом, и клиника с нулём приёмов видела сразу три выдумки: срочное дело
+ * «Закрыть медицинскую запись» на несуществующего пациента, предупреждение
+ * смены «Прием не подписан» и единицу в очереди врача.
+ */
+export function hasUnsignedActiveVisit(): boolean {
+	if (activeVisit.status !== "draft") return false;
+	if (activeVisit.id === NIL_VISIT_UUID) return false;
+	if (activeVisit.patientId === NIL_VISIT_UUID) return false;
+	return patients.some((patient) => patient.id === activeVisit.patientId);
+}
+
 export const documents: GeneratedDocument[] = [
 	{
 		id: "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
@@ -2685,7 +2705,7 @@ function buildRecommendedActions(
 
 	const add = (action: RecommendedAction) => actions.push(action);
 
-	if (activeVisit.status === "draft") {
+	if (hasUnsignedActiveVisit()) {
 		add({
 			id: "action-sign-active-visit",
 			role: "doctor",
@@ -3162,9 +3182,7 @@ function buildRoleQueues(): RoleQueue[] {
 	const draftDocuments = documents.filter(
 		(document) => document.status === "draft",
 	).length;
-	const unsignedVisits = [activeVisit].filter(
-		(visit) => visit.status === "draft",
-	).length;
+	const unsignedVisits = hasUnsignedActiveVisit() ? 1 : 0;
 	const plannedAppointments = appointments.filter(
 		(appointment) => appointment.status === "planned",
 	).length;
@@ -3261,7 +3279,7 @@ function buildScheduleWarnings(): ScheduleWarning[] {
 			document.status === "draft",
 	);
 
-	if (activeVisit.status === "draft") {
+	if (hasUnsignedActiveVisit()) {
 		warnings.push({
 			id: "unsigned-active-visit",
 			severity: "warning",

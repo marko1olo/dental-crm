@@ -964,6 +964,7 @@ export function App() {
     activeImagingStudies,
     activeIssuedPaidContracts,
     activePatient,
+    activeVisitPatient,
     activePatientCallablePhone,
     activePatientHasCallablePhone,
     activePatientInsight,
@@ -3442,33 +3443,27 @@ export function App() {
 
         {currentView === "shift" ? (
         <ShiftView
-          activePatient={activePatient}
-          activePatientHasCallablePhone={activePatientHasCallablePhone}
-          activePatientCallablePhone={activePatientCallablePhone}
           visibleRecommendedActions={visibleRecommendedActions}
           recommendedActionPriorityLabels={recommendedActionPriorityLabels}
           staffRoleLabels={staffRoleLabels}
-          selectedWorkspaceRole={selectedWorkspaceRole}
-          activeRoleQueue={activeRoleQueue}
-          activeRolePolicy={activeRolePolicy}
-          activeRoleWritableSections={activeRoleWritableSections}
-          viewLabels={viewLabels}
-          activeRoleRestrictedSections={activeRoleRestrictedSections}
           dashboard={dashboard}
           activeQueueRole={activeQueueRole}
-          shiftWarnings={shiftWarnings}
-          warningSeverityLabels={warningSeverityLabels}
-          openScheduleWarning={openScheduleWarning}
           setError={setError}
           mostLoadedResource={mostLoadedResource}
           setSelectedPatientId={setSelectedPatientId}
-          activeDoctor={activeDoctor}
         />
         ) : null}
 
         {["shift", "patients"].includes(currentView) ? (
           <PatientCockpit
-            activePatient={activePatient}
+            /*
+              На «Смене» карточка показывает пациента открытого приёма, а не
+              `activePatient`: тот при отсутствии приёма подставляет первого
+              пациента списка, и на экран попадал случайный человек с красной
+              пометкой «СРОЧНО». Без приёма карточка честно говорит «Пациент
+              не выбран». В разделе «Пациенты» выбор из списка остаётся.
+            */
+            activePatient={currentView === "shift" ? activeVisitPatient : activePatient}
             activePatientInsight={activePatientInsight}
             dashboard={dashboard}
             activeCommunicationTasks={activeCommunicationTasks}
@@ -4138,7 +4133,13 @@ export function App() {
                 дебиторки, — там не было.
               */}
               <Suspense fallback={null}>
-                <ManagerReportsPanel />
+                {/*
+                  Режим клиники решает, какие разрезы показывать: занятость
+                  единственного кресла — всегда одно и то же число, выработка
+                  единственного врача — одна строка. Таблица правил лежит в
+                  lib/clinicCapabilities.ts, а не в сравнениях по разметке.
+                */}
+                <ManagerReportsPanel clinicMode={dashboard?.clinicSettings?.profile?.mode ?? null} />
               </Suspense>
             </WorkspaceRouteErrorBoundary>
           ) : null}
