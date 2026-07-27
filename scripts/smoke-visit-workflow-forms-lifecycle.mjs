@@ -527,8 +527,7 @@ for (const formCase of visitWorkflowCases) {
 		`${formCase.kind}: HTML must contain document title`,
 	);
 	assert(
-		issuedHtml.includes("Отметка о подписании") ||
-			issuedHtml.includes("ÐžÑ‚Ð¼ÐµÑ‚ÐºÐ° Ð¾ Ð¿Ð¾Ð´Ð¿Ð¸ÑÐ°Ð½Ð¸Ð¸"),
+		issuedHtml.includes("Отметка о подписании"),
 		`${formCase.kind}: HTML must include signature attestation block`,
 	);
 	for (const fragment of formCase.fragments) {
