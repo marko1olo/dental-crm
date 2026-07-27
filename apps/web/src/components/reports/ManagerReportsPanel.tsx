@@ -73,9 +73,28 @@ type ReportsSummary = {
 		lostAppointments: number;
 		isEmpty: boolean;
 	};
+	reminderEffect: {
+		reminded: ReminderGroup;
+		notReminded: ReminderGroup;
+		lostRateDifference: number | null;
+		caveat: string;
+		smallestGroupSize: number;
+		enoughData: boolean;
+		isEmpty: boolean;
+	};
 	patientFlow: { points: { bucket: string; newPatients: number; returningPatients: number }[]; newTotal: number; returningTotal: number };
 	receivables: { totalDebtRub: number; byBucket: Record<string, number>; debtors: number };
 	isEmpty: boolean;
+};
+
+/** Группа приёмов в сравнении «дошло напоминание или нет». */
+type ReminderGroup = {
+	appointments: number;
+	completed: number;
+	cancelled: number;
+	noShow: number;
+	lost: number;
+	lostRate: number | null;
 };
 
 const bucketLabels: Record<string, string> = {
@@ -414,6 +433,82 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 							{formatPercent(summary.appointments.cancellationRate)} · неявки:{" "}
 							{formatPercent(summary.appointments.noShowRate)}
 						</p>
+
+						{/*
+							── Работают ли напоминания ──────────────────────────────
+							Клиника платит за каждое SMS и должна видеть, окупается ли
+							это. Показываются ОБА состава групп, а не только разница:
+							по разнице долей нельзя понять, что она посчитана на трёх
+							приёмах. Когда данных мало, вывод помечается прямо, а не
+							подаётся как результат.
+						*/}
+						<h3 className="ops-section-title">Работают ли напоминания</h3>
+						{summary.reminderEffect.isEmpty ? (
+							<p className="ops-empty">Приёмов за период нет — сравнивать нечего.</p>
+						) : (
+							<>
+								<div className="ops-table-wrap">
+									<table className="ops-table">
+										<caption className="sr-only">Потери приёмов в зависимости от того, дошло ли напоминание</caption>
+										<thead>
+											<tr>
+												<th scope="col">Приёмы</th>
+												<th scope="col">Всего</th>
+												<th scope="col">Отмены</th>
+												<th scope="col">Неявки</th>
+												<th scope="col">Потеряно</th>
+												<th scope="col">Доля потерь</th>
+											</tr>
+										</thead>
+										<tbody>
+											{(
+												[
+													["Напоминание дошло", summary.reminderEffect.reminded],
+													["Напоминание не дошло", summary.reminderEffect.notReminded]
+												] as const
+											).map(([label, group]) => (
+												<tr key={label}>
+													<td className="ops-strong" data-label="Приёмы">
+														{label}
+													</td>
+													<td className="ops-num" data-label="Всего">
+														{group.appointments}
+													</td>
+													<td className="ops-num" data-label="Отмены">
+														{group.cancelled}
+													</td>
+													<td className="ops-num" data-label="Неявки">
+														{group.noShow}
+													</td>
+													<td className="ops-num" data-label="Потеряно">
+														{group.lost}
+													</td>
+													<td className="ops-num ops-strong" data-label="Доля потерь">
+														{formatPercent(group.lostRate)}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+
+								{summary.reminderEffect.lostRateDifference !== null ? (
+									<p className={summary.reminderEffect.enoughData ? "ops-hint" : "ops-hint ops-hint--weak"}>
+										{summary.reminderEffect.enoughData ? (
+											<>
+												Без напоминания теряется на{" "}
+												<strong>{Math.round(summary.reminderEffect.lostRateDifference * 100)} п. п.</strong> больше.{" "}
+											</>
+										) : null}
+										{summary.reminderEffect.caveat}
+									</p>
+								) : (
+									<p className="ops-hint">
+										Одна из групп пуста — сравнивать не с чем. {summary.reminderEffect.caveat}
+									</p>
+								)}
+							</>
+						)}
 
 						{/* ── Дебиторка ─────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Дебиторка</h3>

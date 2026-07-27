@@ -271,6 +271,9 @@ export const communicationIntentLabels: Record<
 	document_ready: "Документы",
 	imaging_review: "Снимок",
 	general: "Связь",
+	// Ответ на «СТОП» или «СТАРТ» от пациента. В журнале должно быть видно, что
+	// это ответ на его обращение, а не наша рассылка.
+	transactional_reply: "Ответ пациенту",
 };
 
 export const communicationPriorityLabels: Record<

@@ -25,6 +25,7 @@ import {
 	doctorPerformance,
 	patientFlow,
 	receivables,
+	reminderEffect,
 	revenueTimeline,
 	scheduleLoad,
 	serviceSales,
@@ -132,6 +133,17 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
 	});
 
+	/**
+	 * Работают ли напоминания. Отдельный маршрут, а не поле воронки: сравнение
+	 * групп требует объяснения оговорки, и его нельзя выдавать за долю неявок.
+	 */
+	app.get("/api/reports/reminder-effect", async (request, reply) => {
+		const resolved = await scopeFor(request, reply, "report reminder effect");
+		if (!resolved) return;
+		const report = await reminderEffect(resolved.scope);
+		return { period: { from: resolved.scope.from, to: resolved.scope.to }, ...report };
+	});
+
 	app.get("/api/reports/patient-flow", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report patient flow");
 		if (!resolved) return;
@@ -181,13 +193,14 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		const resolved = await scopeFor(request, reply, "report summary");
 		if (!resolved) return;
 
-		const [revenue, doctors, chairs, funnel, flow, debts] = await Promise.all([
+		const [revenue, doctors, chairs, funnel, flow, debts, reminders] = await Promise.all([
 			revenueTimeline(resolved.scope, resolved.query.granularity ?? "day"),
 			doctorPerformance(resolved.scope),
 			chairLoad(resolved.scope),
 			appointmentFunnel(resolved.scope),
 			patientFlow(resolved.scope),
-			receivables(resolved.scope.organizationId)
+			receivables(resolved.scope.organizationId),
+			reminderEffect(resolved.scope)
 		]);
 
 		return {
@@ -196,6 +209,7 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			doctors,
 			chairs,
 			appointments: funnel,
+			reminderEffect: reminders,
 			patientFlow: flow,
 			receivables: { totalDebtRub: debts.totalDebtRub, byBucket: debts.byBucket, debtors: debts.rows.length },
 			// Признак пустоты по всем разделам сразу: интерфейс должен различать

@@ -398,6 +398,19 @@
   color: var(--muted);
 }
 
+/*
+ * Оговорка, из-за которой на число нельзя опираться: данных слишком мало.
+ * Отметка слева, а не красный текст: это не ошибка, а предел точности — сам
+ * показатель посчитан верно, просто выборка не позволяет делать вывод.
+ */
+.ops-hint--weak {
+  padding: 8px 10px;
+  border-left: 3px solid var(--warn-fg);
+  border-radius: 0 8px 8px 0;
+  background: var(--warn-bg);
+  color: var(--ink);
+}
+
 .ops-notice {
   margin: 0 0 14px;
   padding: 10px 12px;

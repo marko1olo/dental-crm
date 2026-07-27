@@ -32,7 +32,16 @@
 
 import { and, eq, gte, isNotNull, lte, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointments, chairs, patients, payments, treatmentItems, users, visits } from "../../db/schema.js";
+import {
+	appointments,
+	chairs,
+	communicationOutbox,
+	patients,
+	payments,
+	treatmentItems,
+	users,
+	visits
+} from "../../db/schema.js";
 
 export type ReportPeriod = {
 	readonly from: Date;
@@ -416,6 +425,175 @@ export async function appointmentFunnel(scope: ReportScope): Promise<Appointment
 		noShowRate: share(noShow),
 		lostAppointments: cancelled + noShow,
 		isEmpty: total === 0
+	};
+}
+
+// ─── Эффект напоминаний ──────────────────────────────────────────────────────
+
+export type ReminderEffectGroup = {
+	/** Сколько приёмов в группе. */
+	readonly appointments: number;
+	readonly completed: number;
+	readonly cancelled: number;
+	readonly noShow: number;
+	/** Отмены плюс неявки — то, что клиника теряет. */
+	readonly lost: number;
+	/** Доля потерь; null, если приёмов в группе нет. */
+	readonly lostRate: number | null;
+};
+
+export type ReminderEffectReport = {
+	/** Приёмы, до которых напоминание дошло (отправлено или доставлено). */
+	readonly reminded: ReminderEffectGroup;
+	/** Приёмы, до которых напоминание НЕ дошло: не ставилось, подавлено или упало. */
+	readonly notReminded: ReminderEffectGroup;
+	/**
+	 * Разница долей потерь в процентных пунктах: notReminded − reminded.
+	 * Положительное значение означает, что без напоминания теряется больше.
+	 * null, если одна из групп пуста — сравнивать не с чем.
+	 */
+	readonly lostRateDifference: number | null;
+	/**
+	 * Почему это НЕ доказательство причинности. Группы различаются не только
+	 * напоминанием: напоминание не уходит тем, у кого нет телефона, нет
+	 * согласия или кто записан на сегодня. Такие пациенты и без напоминаний
+	 * ведут себя иначе.
+	 */
+	readonly caveat: string;
+	/**
+	 * Размер меньшей из групп и хватает ли его, чтобы вообще смотреть на
+	 * разницу.
+	 *
+	 * ЗАЧЕМ. На живых данных первый же прогон дал «напоминание дошло: 3 приёма,
+	 * потерь 0» против «не дошло: 19 приёмов, потерь 26 %», то есть разницу в
+	 * 26 процентных пунктов на выборке из трёх приёмов. Одна неявка в такой
+	 * группе перевернула бы вывод на противоположный. Показывать такое число
+	 * без предупреждения — значит подсунуть руководителю решение, основанное на
+	 * случайности.
+	 */
+	readonly smallestGroupSize: number;
+	readonly enoughData: boolean;
+	readonly isEmpty: boolean;
+};
+
+/**
+ * Ниже этого числа приёмов в группе разница долей — шум. Порог не статистический
+ * критерий, а граница здравого смысла: на тридцати приёмах одна неявка меняет
+ * долю на три процентных пункта, на трёх — на тридцать три.
+ */
+const RELIABLE_GROUP_SIZE = 30;
+
+/**
+ * Работают ли напоминания.
+ *
+ * ЧТО БЫЛО. В appointmentFunnel стоял комментарий «именно этот показатель
+ * клиника может уменьшить напоминаниями, и именно его нужно смотреть до и
+ * после» — а самого сравнения не было. Руководитель видел долю неявок и не мог
+ * узнать, меняют ли её напоминания, за которые он платит по SMS.
+ *
+ * ПОЧЕМУ СРАВНИВАЮТСЯ ГРУППЫ, А НЕ ПЕРИОДЫ «ДО» И «ПОСЛЕ». История изменения
+ * настроек в базе не хранится: момент включения напоминаний восстановить
+ * нечем. Сравнение «месяц назад против этого месяца» приписало бы напоминаниям
+ * заодно и сезон, и рекламу, и смену администратора. Сравнение внутри одного
+ * периода от этого свободно.
+ *
+ * Приём считается напомненным, если хотя бы одно напоминание по нему получило
+ * состояние «отправлено» или «доставлено». Подавленное и упавшее напоминание —
+ * это НЕ напоминание: пациент его не видел.
+ */
+export async function reminderEffect(scope: ReportScope): Promise<ReminderEffectReport> {
+	/*
+	 * Связь приёма с напоминанием — через ключ повтора вида
+	 * `reminder:<приём>:<часов>`: отдельной колонки под приём в очереди нет.
+	 * Разбор ключа делается в SQL через split_part, а не в JavaScript, чтобы не
+	 * тащить в память всю очередь клиники за период.
+	 */
+	const reminded = db.$with("reminded").as(
+		db
+			.select({
+				appointmentId: sql<string>`split_part(${communicationOutbox.dedupeKey}, ':', 2)::uuid`.as("appointment_id")
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, scope.organizationId),
+					sql`${communicationOutbox.dedupeKey} LIKE 'reminder:%'`,
+					// Только то, что пациент реально мог увидеть.
+					sql`${communicationOutbox.status} IN ('sent', 'delivered')`,
+					// Ключ должен содержать корректный идентификатор: испорченная
+					// строка не должна ронять весь отчёт приведением типа.
+					sql`split_part(${communicationOutbox.dedupeKey}, ':', 2) ~ '^[0-9a-fA-F-]{36}$'`
+				)
+			)
+			.groupBy(sql`split_part(${communicationOutbox.dedupeKey}, ':', 2)`)
+	);
+
+	const rows = await db
+		.with(reminded)
+		.select({
+			wasReminded: sql<boolean>`(${appointments.id} IN (SELECT appointment_id FROM reminded))`.as("was_reminded"),
+			status: appointments.status,
+			total: sql<number>`count(*)::int`
+		})
+		.from(appointments)
+		.where(
+			and(
+				eq(appointments.organizationId, scope.organizationId),
+				gte(appointments.startsAt, scope.from),
+				lte(appointments.startsAt, scope.to)
+			)
+		)
+		.groupBy(sql`was_reminded`, appointments.status);
+
+	const empty = (): { appointments: number; completed: number; cancelled: number; noShow: number } => ({
+		appointments: 0,
+		completed: 0,
+		cancelled: 0,
+		noShow: 0
+	});
+	const tally = { reminded: empty(), notReminded: empty() };
+
+	for (const row of rows) {
+		const bucket = row.wasReminded ? tally.reminded : tally.notReminded;
+		const count = Number(row.total);
+		bucket.appointments += count;
+		if (row.status === "completed") bucket.completed += count;
+		if (row.status === "cancelled") bucket.cancelled += count;
+		if (row.status === "no_show") bucket.noShow += count;
+	}
+
+	const finish = (bucket: ReturnType<typeof empty>): ReminderEffectGroup => {
+		const lost = bucket.cancelled + bucket.noShow;
+		return {
+			...bucket,
+			lost,
+			lostRate: bucket.appointments > 0 ? lost / bucket.appointments : null
+		};
+	};
+
+	const remindedGroup = finish(tally.reminded);
+	const notRemindedGroup = finish(tally.notReminded);
+	const comparable = remindedGroup.lostRate !== null && notRemindedGroup.lostRate !== null;
+	const smallestGroupSize = Math.min(remindedGroup.appointments, notRemindedGroup.appointments);
+	const enoughData = smallestGroupSize >= RELIABLE_GROUP_SIZE;
+
+	const caveat = enoughData
+		? "Это сравнение групп, а не доказательство причины: напоминание не уходит пациентам без телефона, " +
+			"без согласия и записанным на сегодня, а они и без напоминаний приходят иначе."
+		: `Данных мало: в меньшей группе ${smallestGroupSize} приём(ов), а разница становится осмысленной ` +
+			`примерно от ${RELIABLE_GROUP_SIZE}. Одна неявка здесь меняет вывод на противоположный — ` +
+			"смотрите на состав групп, а не на разницу долей.";
+
+	return {
+		reminded: remindedGroup,
+		notReminded: notRemindedGroup,
+		lostRateDifference: comparable
+			? (notRemindedGroup.lostRate as number) - (remindedGroup.lostRate as number)
+			: null,
+		caveat,
+		smallestGroupSize,
+		enoughData,
+		isEmpty: remindedGroup.appointments + notRemindedGroup.appointments === 0
 	};
 }
 

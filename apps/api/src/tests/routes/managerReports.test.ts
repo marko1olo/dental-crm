@@ -402,6 +402,34 @@ describe("отчёты руководителю", () => {
 		assert.equal(body.isEmpty, false);
 	});
 
+	test("эффект напоминаний: малая выборка помечена, а не выдана за вывод", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({ method: "GET", url: "/api/reports/reminder-effect", headers: ORG_HEADERS });
+		assert.equal(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body);
+
+		// Обе группы присутствуют всегда, даже пустые: интерфейс не должен
+		// догадываться, чего не хватает.
+		assert.ok(body.reminded, response.body);
+		assert.ok(body.notReminded, response.body);
+
+		// В тестовой клинике приёмов единицы, поэтому вывод обязан быть помечен
+		// как ненадёжный. Разница долей на выборке из трёх приёмов
+		// переворачивается одной неявкой.
+		assert.equal(body.enoughData, false, JSON.stringify(body));
+		assert.ok(body.caveat.includes("Данных мало"), body.caveat);
+		assert.equal(typeof body.smallestGroupSize, "number");
+
+		// Потери — это отмены плюс неявки, и в обеих группах считаются одинаково.
+		for (const group of [body.reminded, body.notReminded]) {
+			assert.equal(group.lost, group.cancelled + group.noShow, JSON.stringify(group));
+			if (group.appointments === 0) {
+				assert.equal(group.lostRate, null, "доля потерь без приёмов должна быть прочерком, а не нулём");
+			}
+		}
+	});
+
 	test("слишком широкий период отклоняется, а не обрезается молча", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
