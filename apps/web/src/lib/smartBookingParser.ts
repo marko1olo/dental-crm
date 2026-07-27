@@ -339,14 +339,44 @@ export function smartBookingParser(
     if (explicitDateMatch) {
       const day = parseInt(explicitDateMatch[1]!, 10);
       const monthStr = explicitDateMatch[2] ? explicitDateMatch[2]!.slice(0, 3).toLowerCase() : undefined;
-      
-      if (monthStr && MONTHS[monthStr] !== undefined) {
-        targetDate.setMonth(MONTHS[monthStr]!);
-      }
-      targetDate.setDate(day);
-      
-      if (targetDate.getTime() < now.getTime() - 86400000 && targetDate.getMonth() < now.getMonth()) {
-        targetDate.setFullYear(now.getFullYear() + 1);
+      const monthIndex = monthStr && MONTHS[monthStr] !== undefined ? MONTHS[monthStr]! : null;
+
+      /* БЫЛО: сначала setMonth, потом setDate — и месяц уезжал.
+         setMonth не проверяет, существует ли текущее число в новом месяце:
+         31 мая + setMonth(февраль) = 3 марта, и последующий setDate(5) даёт
+         5 марта вместо 5 февраля. Замерено, scratch/probe-booking-dates.mjs:
+           сейчас 31.05, «на 5 февраля» -> 5 марта 2027
+           сейчас 31.05, «на 20 июня»   -> 20 июля 2026
+         То есть врач называет июнь, а приём попадает в июль — молча и
+         правдоподобно.
+         Собираем дату по частям, начиная с безопасного первого числа, и
+         прижимаем число к длине месяца: «31 февраля» не существует. */
+      const setCalendarDay = (target: Date, monthValue: number | null, dayValue: number) => {
+        target.setDate(1);
+        if (monthValue !== null) target.setMonth(monthValue);
+        const lastDayOfMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+        target.setDate(Math.min(dayValue, lastDayOfMonth));
+      };
+
+      setCalendarDay(targetDate, monthIndex, day);
+
+      /* БЫЛО: перенос вперёд требовал, чтобы номер месяца разобранной даты
+         был меньше текущего. Для «на 3 число» месяц остаётся текущим,
+         условие не срабатывало, и приём назначался на число, которое уже
+         прошло: 27 июля «на 3 число» давало 3 июля — на 24 дня в прошлое.
+         Названная дата в прошлом означает следующий период: если месяц
+         назван — следующий год, если нет — следующий месяц. */
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      if (targetDate.getTime() < startOfToday.getTime()) {
+        if (monthIndex !== null) {
+          targetDate.setFullYear(targetDate.getFullYear() + 1);
+          setCalendarDay(targetDate, monthIndex, day);
+        } else {
+          targetDate.setDate(1);
+          targetDate.setMonth(targetDate.getMonth() + 1);
+          setCalendarDay(targetDate, null, day);
+        }
       }
       dateFound = true;
       remaining = remaining.replace(explicitDateMatch[0], ' ');
