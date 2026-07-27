@@ -12,6 +12,7 @@ import { ChatMessageDispatchStatusesWidget } from "./components/communications/C
 import { CollaborativeChatProcessingStatesWidget } from "./components/communications/CollaborativeChatProcessingStatesWidget";
 import { MessageTemplateCatalogsWidget } from "./components/communications/MessageTemplateCatalogsWidget";
 import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
+import { CampaignPanel } from "./components/communications/CampaignPanel";
 import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
 import { PreviousChatDialogHistoriesWidget } from "./components/communications/PreviousChatDialogHistoriesWidget";
 import { UisCallSpeechTranscriptsWidget } from "./components/communications/UisCallSpeechTranscriptsWidget";
@@ -332,6 +333,7 @@ export function CommunicationsView({
         редактор шаблонов и правила рассылки.
       */}
       <MessageDeliveryConsole />
+      <CampaignPanel />
 
       <div className="communication-layout">
         <section className="communication-task-list" aria-label="Очередь связи">
