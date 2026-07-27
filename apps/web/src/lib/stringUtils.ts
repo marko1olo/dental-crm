@@ -257,7 +257,21 @@ export function textToNumbers(text: string): string {
         continue;
       } else if (matchedVal === 1000) {
         if (currentNum === 0) {
-           currentNum = 1000;
+           /* «5 тысяч» — число цифрами, множитель словом. Цифровой токен в
+              таблицу числительных не попадает, поэтому currentNum оставался
+              нулём и на выходе получалось «5 1000». В разборе прайса это
+              значило потерю цены: регулярки ищут слово «тысяч», а его уже
+              заменили, и «5 1000» уходило в название услуги.
+              Забираем последнее уже выданное целое число и умножаем его. */
+           let lastIndex = result.length - 1;
+           while (lastIndex >= 0 && result[lastIndex]!.trim() === '') lastIndex -= 1;
+           const lastEmitted = lastIndex >= 0 ? result[lastIndex]!.trim() : '';
+           if (/^\d+$/.test(lastEmitted)) {
+             result.splice(lastIndex);
+             currentNum = Number.parseInt(lastEmitted, 10) * 1000;
+           } else {
+             currentNum = 1000;
+           }
         } else {
            let isValidMultiplier = true;
            const wLower = word.toLowerCase();

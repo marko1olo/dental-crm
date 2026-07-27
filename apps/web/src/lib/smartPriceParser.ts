@@ -56,6 +56,32 @@ export function parsePriceDictationLocal(input: string): ParsedPriceData {
     }
   }
 
+  /* Цена без слова-подсказки.
+     Все регулярки выше ищут «руб», «тысяч», «цена», «стоимость» или «за».
+     Но textToNumbers к этому моменту уже заменил надиктованные словами
+     числа цифрами и сами слова-множители из текста убрал. Диктовка
+     «удаление зуба тридцати тысяч» превращалась в «удаление зуба 30000»:
+     ни одной подсказки не осталось, цена не находилась вовсе, а число
+     уходило в название услуги. Замерено, scratch/probe-price-parser.mjs.
+
+     Берём самое большое отдельно стоящее число не меньше 100. Порог
+     отсекает номера зубов (11–48, и normalizeDentalSlang превращает
+     «шестерка» в 16) и мелкие количества, а цены в клинике начинаются от
+     сотен. */
+  if (result.price === null) {
+    const standaloneNumbers = normalized.match(/(?:^|[^\d.,])(\d{3,})(?=[^\d.,]|$)/g);
+    if (standaloneNumbers) {
+      const values = standaloneNumbers
+        .map((chunk) => Number.parseInt(chunk.replace(/\D/g, ""), 10))
+        .filter((value) => Number.isFinite(value) && value >= 100);
+      if (values.length > 0) {
+        const priceValue = Math.max(...values);
+        result.price = priceValue;
+        normalized = normalized.replace(new RegExp(`(?:^|[^\\d])${priceValue}(?=[^\\d]|$)`), ' ');
+      }
+    }
+  }
+
   // Extract Category
   for (const [key, categoryName] of Object.entries(CATEGORY_MAP)) {
     const catRegex = new RegExp(`(?:категори[а-я]*\\s*)?${key}[а-я]*`, 'i');
@@ -69,7 +95,11 @@ export function parsePriceDictationLocal(input: string): ParsedPriceData {
 
   // Clean up service name
   // Remove stopwords like "добавь", "в прайс", "услугу"
-  const stopWords = /(?:^|[^а-яёa-z0-9])(добавь|добавить|создай|услугу|в прайс|прайс|позицию|новую|сделай|напиши|запиши)(?:[^а-яёa-z0-9]|$)/gi;
+  /* «цена» и «стоимость» остаются в названии услуги, когда цену нашла
+     регулярка по слову «рублей»: она забирает только число и «рублей».
+     Диктовка «осмотр стоимость 500 рублей» давала услугу «Осмотр
+     стоимость». Это слова-подсказки, а не часть названия. */
+  const stopWords = /(?:^|[^а-яёa-z0-9])(добавь|добавить|создай|услугу|в прайс|прайс|позицию|новую|сделай|напиши|запиши|цена|цену|ценой|стоимость|стоимостью|за)(?:[^а-яёa-z0-9]|$)/gi;
   normalized = normalized.replace(stopWords, ' ').replace(stopWords, ' ');
   
   // Clean stray punctuation
