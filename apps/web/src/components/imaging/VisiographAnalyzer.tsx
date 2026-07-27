@@ -465,7 +465,11 @@ export function VisiographAnalyzer() {
         </span>
         {(scanHistory.length > 0 || isLoadingHistory) && (
           <span style={{
-            fontSize: '0.78rem', background: 'var(--teal)', color: 'white',
+            // БЫЛО: жёсткий 'white'. В тёмной теме --teal это #2dd4bf, и
+            // белая цифра на нём давала контраст 1.86 — счётчик снимков
+            // читался с трудом. --on-teal задуман ровно для этого: белый в
+            // светлой теме, почти чёрный в тёмной и ночной.
+            fontSize: '0.78rem', background: 'var(--teal)', color: 'var(--on-teal)',
             borderRadius: '999px', padding: '1px 7px', fontWeight: 600
           }}>
             {isLoadingHistory ? '…' : scanHistory.length}

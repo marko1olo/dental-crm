@@ -306,7 +306,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 role="tab"
                 aria-selected={visitSubViewTab === "emk"}
                 className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "emk" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "emk" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "emk" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "emk" ? "var(--on-teal)" : undefined }}
                 onClick={() => setVisitSubViewTab("emk")}
               >
                 📝 ЭМК и Диктовка
@@ -316,7 +316,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 role="tab"
                 aria-selected={visitSubViewTab === "odontogram"}
                 className={`secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors ${visitSubViewTab === "odontogram" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "odontogram" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "odontogram" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "odontogram" ? "var(--on-teal)" : undefined }}
                 onClick={() => setVisitSubViewTab("odontogram")}
               >
                 🦷 Зубная формула и Дневник
@@ -324,7 +324,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               <button
                 type="button"
                 className={`secondary-button ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
-                style={{ background: visitSubViewTab === "diagnostics" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "diagnostics" ? "#fff" : undefined }}
+                style={{ background: visitSubViewTab === "diagnostics" ? "var(--teal-dark)" : undefined, color: visitSubViewTab === "diagnostics" ? "var(--on-teal)" : undefined }}
                 onClick={() => setVisitSubViewTab("diagnostics")}
               >
                 🖼️ Рентгены и Диагностика
