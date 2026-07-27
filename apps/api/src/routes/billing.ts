@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
 import { requireClinicalMutationAccess, requireResolvedOrganizationId } from "../accessGuard.js";
+import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
   findPaymentByClientMutationIdInDb,
   getPatientForBilling,
@@ -108,6 +109,11 @@ function paymentRetryMatchesExisting(existingPayment: Payment, input: CreatePaym
 export async function registerBillingRoutes(app: FastifyInstance) {
   app.post("/api/billing/payments", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "billing payment create"))) return;
+    // Секрет клиники — это барьер периметра, он одинаков для чтения и записи.
+    // Здесь дополнительно проверяется роль сотрудника: врач и ассистент к кассе
+    // не допущены. Мягкий режим — если сотрудник не опознан, поведение прежнее
+    // (см. security/permissions.ts).
+    if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write")) return;
     const parsedInput = createPaymentSchema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({

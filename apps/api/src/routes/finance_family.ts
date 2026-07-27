@@ -11,6 +11,7 @@ import {
 	rublesToKopecks,
 } from "@dental/shared";
 import { db } from "../db/client.js";
+import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { familyGroups, patients, payments } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -236,6 +237,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			"family finance write",
 		);
 		if (!organizationId) return;
+		// Роль решает, кто двигает деньги: врач и ассистент к семейному
+		// кошельку не допущены. Раньше единственным барьером был общий
+		// секрет клиники, одинаковый для чтения и записи.
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const data = z
 			.object({
@@ -290,6 +295,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			"family finance write",
 		);
 		if (!organizationId) return;
+		// Роль решает, кто двигает деньги: врач и ассистент к семейному
+		// кошельку не допущены. Раньше единственным барьером был общий
+		// секрет клиники, одинаковый для чтения и записи.
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const { id } = req.params as { id: string };
 		const data = z
@@ -346,6 +355,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			"family finance write",
 		);
 		if (!organizationId) return;
+		// Роль решает, кто двигает деньги: врач и ассистент к семейному
+		// кошельку не допущены. Раньше единственным барьером был общий
+		// секрет клиники, одинаковый для чтения и записи.
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const { id } = req.params as { id: string };
 
@@ -385,6 +398,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			"family finance payment",
 		);
 		if (!organizationId) return;
+		// Роль решает, кто двигает деньги: врач и ассистент к семейному
+		// кошельку не допущены. Раньше единственным барьером был общий
+		// секрет клиники, одинаковый для чтения и записи.
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 		const payload = familyPaymentSchema.parse(req.body);
 
 		try {
@@ -513,6 +530,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 			"family wallet topup",
 		);
 		if (!organizationId) return;
+		// Роль решает, кто двигает деньги: врач и ассистент к семейному
+		// кошельку не допущены. Раньше единственным барьером был общий
+		// секрет клиники, одинаковый для чтения и записи.
+		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const parsed = familyTopupSchema.safeParse(req.body);
 		if (!parsed.success) {
