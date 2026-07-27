@@ -1,8 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
-import { requireClinicalMutationAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import {
-  getDefaultOrganizationId,
   findPaymentByClientMutationIdInDb,
   getPatientForBilling,
   getVisitForBilling,
@@ -116,10 +115,12 @@ export async function registerBillingRoutes(app: FastifyInstance) {
         message: paymentValidationMessage
       });
     }
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) {
-      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
-    }
+    // БЫЛО: getDefaultOrganizationId() — это `SELECT id FROM organizations LIMIT 1`.
+    // Оплата любой клиники записывалась в ПЕРВУЮ организацию таблицы: деньги
+    // попадали в чужую кассу, а у своей клиники не появлялись вовсе. Организация
+    // должна приходить из подписанного токена, как во всех остальных маршрутах.
+    const orgId = await requireResolvedOrganizationId(request, reply, "billing payment create");
+    if (!orgId) return;
     const input: CreatePaymentInput = parsedInput.data;
     const existingPayment = await findPaymentByClientMutationIdInDb(orgId, input.clientMutationId);
     if (existingPayment && existingPayment.patientId) {

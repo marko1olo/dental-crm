@@ -1560,7 +1560,14 @@ export const doctorCommissions = pgTable("doctor_commissions", {
 // family groups (linked family accounts)
 export const familyGroups = pgTable("family_groups", {
   id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id"),
+  /**
+   * NOT NULL с миграции 0119. Раньше колонка допускала NULL, а
+   * routes/finance_family.ts выбирал группы условием
+   * `organization_id = :orgId OR organization_id IS NULL` и присваивал
+   * найденную бесхозную группу первой обратившейся клинике — вместе с
+   * балансом семейного кошелька.
+   */
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   // Primary identifiers — 'name' is the display name, 'groupName' kept for compat
   name: text("name"),
   groupName: text("group_name").notNull().default(""),

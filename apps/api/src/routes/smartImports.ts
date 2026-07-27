@@ -48,9 +48,18 @@ import {
   type UpdateClinicProfileInput
 } from "@dental/shared";
 import { commitImagingImport, parseImagingManifest } from "./imaging.js";
-import { getDefaultOrganizationId } from "../db/imagingQuery.js";
 import { buildPatientImportPreview, commitPatientImport } from "./imports.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+// БЫЛО: во всех 8 обработчиках организация бралась через
+// getDefaultOrganizationId() — `SELECT id FROM organizations LIMIT 1`. Любой
+// импорт, из какой бы клиники его ни запустили, приземлялся в ПЕРВУЮ
+// организацию базы: чужие пациенты и снимки попадали не туда. Плюс в двух
+// обработчиках эта пара строк была продублирована через `var` (с `const` это
+// была бы ошибка компиляции — потому и использовался `var`).
+import {
+  requireClinicalMutationAccess,
+  requireClinicalReadAccess,
+  requireResolvedOrganizationId,
+} from "../accessGuard.js";
 
 
 const execFileAsync = promisify(execFile);
@@ -5592,8 +5601,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     return buildSmartImportPreview(orgId, input);
   });
 
@@ -5642,8 +5651,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     return buildMigrationAutopilot(orgId, input);
   });
 
@@ -5656,8 +5665,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     const plan = await buildMigrationAutopilot(orgId, input);
     const csv = buildMigrationAutopilotReportCsv(plan);
     return reply
@@ -5687,10 +5696,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
@@ -5708,8 +5715,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
@@ -5727,14 +5734,18 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await requireResolvedOrganizationId(request, reply, "smart import");
+    if (!orgId) return;
     const preview = await buildSmartImportPreview(orgId, input);
+    // БЫЛО: обе функции объявлены async, но вызывались без await. В ответ
+    // попадал Promise, а smartImportCommitResponseSchema ждёт объект — .parse()
+    // падал, и запрос отдавал 500 ВСЕГДА, когда есть что импортировать.
+    // «Успешным» коммит выглядел только на пустой выгрузке, где обе ветки дают
+    // null. Запись в базу при этом всё равно шла — в фоне и без обработки
+    // ошибок, так что упавший импорт оставлял частичные данные.
     const patientCommit =
       preview.patientPreview.totalRows > 0
-        ? commitPatientImport(orgId, {
+        ? await commitPatientImport(orgId, {
             sourceName: `${input.sourceName}:patients`,
             sourceKind: "mis_export",
             rawText: preview.patientRawText
@@ -5742,7 +5753,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
         : null;
     const imagingCommit =
       preview.imagingPreview.totalRows > 0
-        ? commitImagingImport(orgId, {
+        ? await commitImagingImport(orgId, {
             sourceName: `${input.sourceName}:imaging`,
             sourceKind: "folder_watch",
             rawText: preview.imagingRawText

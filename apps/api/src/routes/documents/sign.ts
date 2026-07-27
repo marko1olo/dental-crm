@@ -40,11 +40,23 @@ export async function register(app: FastifyInstance) {
 		}
 
 		try {
-			// Prevent exact signature replay attacks
+			// Защита от повторного использования той же подписи.
+			//
+			// БЫЛО: условие только по signatureSvg, без organizationId. Совпадение
+			// в ЛЮБОЙ другой клинике давало 409 — то есть endpoint подтверждал
+			// существование чужой подписи в чужой организации (утечка через
+			// сообщение об ошибке) и заодно мог заблокировать легитимную подпись.
+			// Соседний signUkep.ts уже фильтрует по organizationId с отдельным
+			// комментарием об этой же проблеме — здесь правку просто не применили.
 			const [replayed] = await db
 				.select({ id: generatedDocuments.id })
 				.from(generatedDocuments)
-				.where(eq(generatedDocuments.signatureSvg, signatureSvg))
+				.where(
+					and(
+						eq(generatedDocuments.organizationId, orgId),
+						eq(generatedDocuments.signatureSvg, signatureSvg),
+					),
+				)
 				.limit(1);
 
 			if (replayed) {

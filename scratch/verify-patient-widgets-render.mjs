@@ -42,9 +42,6 @@ page.on("console", (m) => {
 	const t = m.text();
 	// Сетевые 404 демо-данных не относятся к правке.
 	if (/Failed to load resource|favicon/i.test(t)) return;
-	// Предсуществующий дефект, не связанный с этой правкой: /api/ws/schedule
-	// отвечает 404, realtime-обновления не работают. Разбирается отдельно.
-	if (/WebSocket connection to .*\/api\/ws\/schedule/.test(t)) return;
 	consoleErrors.push(t.slice(0, 200));
 });
 

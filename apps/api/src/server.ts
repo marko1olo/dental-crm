@@ -34,6 +34,7 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
+import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
@@ -372,6 +373,9 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerSpeechRoutes(app);
   await registerSmartImportRoutes(app);
   await registerSystemRoutes(app);
+  // Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
+  // /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
+  await registerWebsocketRoutes(app);
   await registerTelegramRoutes(app);
   await registerTelegramWebhookRoutes(app);
   await registerVisitRoutes(app);

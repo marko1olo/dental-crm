@@ -62,6 +62,21 @@ class FamilyFinanceError extends Error {
 	}
 }
 
+/**
+ * БЫЛО: все три выборки семейной группы принимали не только свою организацию,
+ * но и группы с organizationId IS NULL, а эта функция вдобавок «присваивала»
+ * найденную бесхозную группу той клинике, которая обратилась к ней первой.
+ *
+ * Через семейную группу проходит кошелёк с деньгами. Любая клиника могла
+ * прочитать чужую группу без организации, забрать её себе и списать баланс.
+ * Колонка organization_id объявлена nullable, то есть такие строки были
+ * достижимы штатно, а не только после сбоя.
+ *
+ * СТАЛО: выборка строго по своей организации. Унаследованные строки без
+ * организации восстанавливаются миграцией
+ * 0119_family_groups_require_organization.sql (привязка по головному пациенту),
+ * после чего колонка становится NOT NULL.
+ */
 async function familyGroupForOrganization(
 	familyGroupId: string,
 	organizationId: string,
@@ -72,22 +87,11 @@ async function familyGroupForOrganization(
 		.where(
 			and(
 				eq(familyGroups.id, familyGroupId),
-				or(
-					eq(familyGroups.organizationId, organizationId),
-					isNull(familyGroups.organizationId),
-				),
+				eq(familyGroups.organizationId, organizationId),
 			),
 		)
 		.limit(1);
-	if (!family) return null;
-	if (!family.organizationId) {
-		await db
-			.update(familyGroups)
-			.set({ organizationId })
-			.where(eq(familyGroups.id, family.id));
-		return { ...family, organizationId };
-	}
-	return family;
+	return family ?? null;
 }
 
 async function familyMembersForOrganization(
@@ -407,10 +411,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.where(
 						and(
 							eq(familyGroups.id, payload.familyGroupId),
-							or(
-								eq(familyGroups.organizationId, organizationId),
-								isNull(familyGroups.organizationId),
-							),
+							eq(familyGroups.organizationId, organizationId),
 						),
 					)
 					.limit(1)
@@ -546,10 +547,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.where(
 						and(
 							eq(familyGroups.id, payload.familyGroupId),
-							or(
-								eq(familyGroups.organizationId, organizationId),
-								isNull(familyGroups.organizationId),
-							),
+							eq(familyGroups.organizationId, organizationId),
 						),
 					)
 					.limit(1)

@@ -18,11 +18,11 @@ import { imagingAnnotations } from "../db/schema.js";
 import { listAiRecognitionJobsFromDb, createAiRecognitionJobInDb } from "../db/aiQuery.js";
 import { getPatientByIdFromDb } from "../db/patientsQuery.js";
 import { getImagingStudyById } from "../db/imagingQuery.js";
-import { getDefaultOrganizationId } from "../db/documentQuery.js";
 
 import {
   requireClinicalMutationAccess,
   requireClinicalReadAccess,
+  requireResolvedOrganizationId,
 } from "../accessGuard.js";
 
 const aiRecognitionValidationMessage =
@@ -60,18 +60,22 @@ function sendVisitNoteDraftScopeError(
 
 export async function registerAiRoutes(app: FastifyInstance) {
   app.get("/api/ai/recognition-jobs", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+    // то есть задания распознавания читались из чужой клиники. Организация
+    // берётся из подписанного токена. Заодно исправлен порядок: запрос к базе
+    // шёл ДО проверки доступа, и неавторизованный вызов всё равно нагружал БД.
     if (
       !(await requireClinicalReadAccess(request, reply, "ai recognition jobs"))
     )
       return;
+    const orgId = await requireResolvedOrganizationId(request, reply, "ai recognition jobs");
+    if (!orgId) return;
     return z.array(aiRecognitionJobSchema).parse(await listAiRecognitionJobsFromDb(orgId));
   });
 
   app.post("/api/ai/recognition-jobs", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    // БЫЛО: getDefaultOrganizationId() — задание создавалось в первой
+    // организации таблицы, а не в клинике вызывающего.
     if (
       !(await requireClinicalMutationAccess(
         request,
@@ -80,6 +84,8 @@ export async function registerAiRoutes(app: FastifyInstance) {
       ))
     )
       return;
+    const orgId = await requireResolvedOrganizationId(request, reply, "ai recognition job create");
+    if (!orgId) return;
     const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
     if (!parsedInput.success) {
       console.error("SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:", parsedInput.error.format());
@@ -121,12 +127,14 @@ export async function registerAiRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/ai/visit-note-draft", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    // БЫЛО: getDefaultOrganizationId() — черновик собирался по данным пациента
+    // из первой организации таблицы.
     if (
       !(await requireClinicalReadAccess(request, reply, "ai visit note draft"))
     )
       return;
+    const orgId = await requireResolvedOrganizationId(request, reply, "ai visit note draft");
+    if (!orgId) return;
     const parsedInput = visitNoteDraftRequestSchema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({

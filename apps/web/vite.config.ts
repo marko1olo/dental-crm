@@ -150,7 +150,12 @@ export default defineConfig({
       "Cross-Origin-Embedder-Policy": "require-corp",
     },
     proxy: {
-      "/api": apiProxyTarget
+      // Живые обновления идут через тот же префикс /api, но требуют апгрейда
+      // до WebSocket. Без ws: true строковая форма прокси пропускает только
+      // обычный HTTP, и рукопожатие с /api/ws/schedule висело до таймаута:
+      // компоненты, собирающие адрес от window.location.host (например
+      // FamilyWalletPanel), не получали обновлений вообще.
+      "/api": { target: apiProxyTarget, changeOrigin: true, ws: true }
     }
   },
   worker: {
