@@ -242,12 +242,31 @@ export const OdontogramModule = ({
 		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
 	);
 	useEffect(() => {
-		if (
-			lastMessage?.type === "UPDATE_ODONTOGRAM" &&
-			lastMessage.payload.patientId === patientId
-		) {
-			setTeethData(lastMessage.payload.states);
-		}
+		if (lastMessage?.type !== "UPDATE_ODONTOGRAM") return;
+		// payload проверяется отдельно: до включения живых обновлений этот
+		// обработчик не исполнялся ни разу, и обращение к полю отсутствующего
+		// payload уронило бы весь модуль.
+		const payload = lastMessage.payload as
+			| { patientId?: string; states?: ToothData[] }
+			| undefined;
+		if (!payload || payload.patientId !== patientId) return;
+		const incoming = Array.isArray(payload.states) ? payload.states : [];
+		if (!incoming.length) return;
+
+		// БЫЛО: setTeethData(payload.states) — полная замена формулы.
+		// Сервер шлёт результат .returning() по батчу, то есть ТОЛЬКО
+		// изменённые зубы. Замена означала бы, что коллега, поставивший
+		// диагноз одному зубу, стирает у всех остальных открытых одонтограмм
+		// всю формулу до этого одного зуба. Правильно — слить по номеру зуба.
+		setTeethData((prev) => {
+			const merged = [...prev];
+			for (const tooth of incoming) {
+				const idx = merged.findIndex((x) => x.toothNumber === tooth.toothNumber);
+				if (idx > -1) merged[idx] = tooth;
+				else merged.push(tooth);
+			}
+			return merged;
+		});
 	}, [lastMessage, patientId]);
 
 	useEffect(() => {

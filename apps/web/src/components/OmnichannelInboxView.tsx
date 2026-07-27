@@ -375,6 +375,9 @@ export function OmnichannelInboxView() {
 	useEffect(() => {
 		if (lastMessage?.type === "INBOX_NEW_MESSAGE") {
 			const msg = lastMessage.payload;
+			// До включения живых обновлений этот обработчик не исполнялся ни
+			// разу. Кадр без payload уронил бы весь инбокс на msg.patientId.
+			if (!msg || typeof msg !== "object") return;
 			if (selectedPatientId === msg.patientId) {
 				setMessages((prev) => {
 					if (prev.some((m) => m.id === msg.id)) return prev;
