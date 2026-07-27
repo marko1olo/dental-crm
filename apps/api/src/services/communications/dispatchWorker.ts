@@ -13,6 +13,7 @@
 
 import { scheduleAppointmentReminders, type ReminderScheduleReport } from "./appointmentReminders.js";
 import { completeFinishedCampaigns, launchScheduledCampaigns } from "./campaigns.js";
+import { processInboundEvents } from "../messengerIngestion.js";
 import { dispatchDueMessages, type DispatchReport } from "./dispatcher.js";
 
 export type DispatchWorkerLogger = {
@@ -94,6 +95,32 @@ export function startCommunicationDispatchWorker(
 			schedule(intervalMs);
 			return;
 		}
+		try {
+			// Входящие разбираются на каждом тике, а не раз в десять: ответ
+			// «СТОП» должен остановить рассылку до следующей отправки, а не
+			// после неё.
+			//
+			// До этого разбор запускался только из вебхуков WhatsApp и MAX, без
+			// ожидания результата и без повтора: упавшее событие не разбиралось
+			// больше никогда, а входящие из других каналов — вообще.
+			const inbound = await processInboundEvents({ limit: 100 });
+			if (inbound.processed > 0) {
+				logger?.info(
+					{
+						processed: inbound.processed,
+						matched: inbound.matchedToPatient,
+						leads: inbound.leadsCreated,
+						optOuts: inbound.optOuts,
+						ambiguous: inbound.ambiguous
+					},
+					"Входящие сообщения разобраны"
+				);
+			}
+			for (const problem of inbound.problems) logger?.warn({ problem }, "Входящее сообщение не разобрано");
+		} catch (error) {
+			logger?.error({ error }, "Разбор входящих сообщений не удался");
+		}
+
 		try {
 			// Сначала поставить напоминания, потом разобрать очередь: то, что
 			// поставлено сейчас, уйдёт этим же проходом.

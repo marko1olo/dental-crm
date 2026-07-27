@@ -1828,16 +1828,28 @@ export const messengerFileAttachments = pgTable("messenger_file_attachments", {
 });
 
 // messenger inbound events (raw incoming webhook events)
+/**
+ * Очередь входящих сообщений из мессенджеров.
+ *
+ * ВНИМАНИЕ НА NOT NULL. В живой базе external_chat_id и event_kind объявлены
+ * NOT NULL, а здесь стояли необязательными — расхождение того же рода, что
+ * разбиралось в первом заходе по рантайм-DDL. Вставка без этих полей
+ * компилировалась и падала уже в Postgres, на живом вебхуке. Оба вызывающих
+ * места (routes/whatsapp.ts, routes/max.ts) их заполняют, поэтому объявление
+ * приведено к базе, а не наоборот: ослаблять ограничение в базе значит
+ * разрешить событие без канала-источника, которое потом нечем разобрать.
+ */
 export const messengerInboundEvents = pgTable("messenger_inbound_events", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   channel: text("channel").notNull().default("telegram"),
   externalId: text("external_id"),
-  externalChatId: text("external_chat_id"),
+  externalChatId: text("external_chat_id").notNull(),
   chatId: uuid("chat_id"),
   patientId: uuid("patient_id"),
   messageText: text("message_text"),
-  eventKind: text("event_kind"),
+  /** message | status | command — вид события у провайдера. */
+  eventKind: text("event_kind").notNull(),
   rawPayload: jsonb("raw_payload"),
   processedAt: timestamp("processed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
