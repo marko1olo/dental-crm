@@ -490,6 +490,8 @@ textarea:focus, input:focus, select:focus {
   box-shadow: var(--shadow-1);
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  /* Layout — replaces inline style */
+  display: flex; flex-direction: column; gap: 10px; padding: 16px;
 }
 .clickable-card:hover, .role-queue-card:hover {
   border-color: var(--teal-ring); box-shadow: var(--shadow-2); transform: translateY(-3px);
@@ -1098,3 +1100,90 @@ input:focus, textarea:focus {
   }
 }
 
+/* ---------- 21. УТИЛИТЫ РАЗМЕТКИ (заменяют inline-стили) ---------- */
+
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.row-start   { display: flex; align-items: center; gap: 10px; }
+.row-wrap    { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.col-stack   { display: flex; flex-direction: column; }
+.col-gap-2   { display: flex; flex-direction: column; gap: 2px; }
+.col-gap-8   { display: flex; flex-direction: column; gap: 8px; }
+.col-gap-16  { display: flex; flex-direction: column; gap: 16px; }
+.gap-8  { gap: 8px; }
+.gap-10 { gap: 10px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.min-w-0 { min-width: 0; }
+.flex-1 { flex: 1; }
+
+/* now-card расширенная раскладка */
+.now-card { display: flex; flex-direction: column; gap: 16px; padding: 16px; }
+.patient-hero { display: flex; align-items: center; gap: 14px; }
+.hero-info { min-width: 0; }
+.hero-info h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+.hero-phone { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok-fg); animation: dntPulse 1.8s ease infinite; display: inline-block; flex-shrink: 0; }
+
+/* Статус-флоу */
+.status-flow { display: flex; gap: 12px; background: var(--paper-soft); padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); align-items: center; font-size: 12.5px; font-weight: 600; }
+.status-flow-label { color: var(--muted); }
+.status-flow-steps { display: flex; align-items: center; gap: 6px; }
+.status-flow-step { color: var(--muted); font-weight: 500; }
+.status-flow-step.done { color: var(--teal-dark); font-weight: 600; }
+[data-theme="dark"] .status-flow-step.done, [data-theme="night"] .status-flow-step.done { color: var(--teal); }
+.status-flow-arrow { color: var(--line-strong); }
+
+/* Расписание дня — расширенная раскладка */
+.today-schedule-box { display: flex; flex-direction: column; }
+.today-schedule-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.today-schedule-header h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink); }
+.today-schedule-count { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.today-schedule-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 2px; }
+
+/* today-schedule-item полная раскладка (override всё) */
+.today-schedule-item {
+  display: flex !important; justify-content: space-between !important;
+  align-items: flex-start !important; gap: 10px !important;
+  padding: 11px 13px !important; cursor: pointer;
+}
+.today-schedule-item-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.today-schedule-time { font-size: 11.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.today-schedule-item.current-active .today-schedule-time { color: var(--teal-dark); }
+.today-schedule-name { font-size: 13.5px; color: var(--ink); font-weight: 700; }
+.today-schedule-reason { font-size: 12.5px; color: var(--muted); }
+
+/* Сетка плиток быстрых действий */
+.patient-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.feature-tile { padding: 16px; border-radius: 13px; border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow-1); cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: all 0.18s ease; }
+.feature-tile:hover { border-color: var(--teal-ring); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.feature-tile:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.feature-tile h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.feature-tile p  { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Глобальные focus-visible для всех интерактивных элементов */
+.today-schedule-item:focus-visible,
+.patient-row:focus-visible,
+.clickable-card:focus-visible,
+.role-queue-card:focus-visible,
+.round-link:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.feature-tile:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--teal) !important;
+  outline-offset: 2px !important;
+}
+
+/* patient-row hover */
+.patient-row { cursor: pointer; transition: border-color var(--transition-fast), box-shadow var(--transition-fast); }
+.patient-row:hover { border-color: var(--teal-ring) !important; box-shadow: var(--shadow-1); }
+.patient-row.selected { border-color: var(--teal) !important; background: var(--teal-surface) !important; }
+
+/* hero call guidance */
+.hero-call-guidance { margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+/* section-header utility */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-header h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.section-count { font-size: 11.5px; font-weight: 600; color: var(--muted); }
