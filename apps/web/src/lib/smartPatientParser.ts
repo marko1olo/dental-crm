@@ -8,6 +8,27 @@ export interface ParsedPatientData {
   email?: string;
 }
 
+/**
+ * Существует ли такая календарная дата и не в будущем ли она.
+ *
+ * Date принимает переполнение: new Date("1990-02-31") даёт 3 марта, поэтому
+ * сверяем разобранные части с тем, что получилось. Дата рождения в будущем
+ * невозможна и означает ошибку разбора, а не данные пациента.
+ */
+function isRealPastDateOnly(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const asDate = new Date(year, month - 1, day);
+  if (asDate.getFullYear() !== year || asDate.getMonth() !== month - 1 || asDate.getDate() !== day) return false;
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  return asDate.getTime() <= endOfToday.getTime();
+}
+
 export function parsePatientDictationLocal(input: string): ParsedPatientData {
   const result: ParsedPatientData = { fullName: "", phone: "", birthDate: "" };
   let normalizedInput = textToNumbers(input);
@@ -80,15 +101,29 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
   const dobRegexNum = /(?:^|[^0-9])(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{2,4})(?:[^0-9]|$)/;
   const dobMatchNum = remaining.match(dobRegexNum);
   if (dobMatchNum && dobMatchNum[1] && dobMatchNum[2] && dobMatchNum[3]) {
-    let day = dobMatchNum[1];
-    let month = dobMatchNum[2];
+    const day = dobMatchNum[1];
+    const month = dobMatchNum[2];
     let year = dobMatchNum[3];
     if (year.length === 2) {
-      const y = parseInt(year, 10);
-      year = y > 30 ? `19${year}` : `20${year}`;
+      /* БЫЛО: `y > 30 ? 19xx : 20xx` — порог зашит числом 30, поэтому годы
+         от 00 до 30 уходили в будущее: «12.05.30» давало 2030-05-12, то есть
+         дату рождения, которая ещё не наступила. Порог должен быть текущим
+         годом: двузначный год не больше текущего — это наш век, больше —
+         предыдущий. Тогда «30» это 1930, а «05» — 2005. */
+      const twoDigitYear = parseInt(year, 10);
+      const currentTwoDigitYear = new Date().getFullYear() % 100;
+      year = twoDigitYear <= currentTwoDigitYear ? `20${year}` : `19${year}`;
     }
-    result.birthDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    remaining = remaining.replace(dobMatchNum[0].trim(), ' ');
+    const candidate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    /* БЫЛО: строка собиралась без проверки, и наружу уходили даты, которых
+       не существует: «31.02.1990» -> «1990-02-31», «12.13.1990» ->
+       «1990-13-12», «00.05.1990» -> «1990-05-00». Сервер такие значения
+       отклоняет, но оператор видел в предпросмотре правдоподобную дату и не
+       понимал, за что отказ. Пустое поле честнее подставленной ошибки. */
+    if (isRealPastDateOnly(candidate)) {
+      result.birthDate = candidate;
+      remaining = remaining.replace(dobMatchNum[0].trim(), ' ');
+    }
   } else {
     const monthRoots = ["январ", "феврал", "март", "апрел", "мая", "май", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"];
     const monthMap: Record<string, number> = {
@@ -125,11 +160,16 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
           if (yearStr) {
              let year = yearStr;
              if (year.length === 2) {
-               const y = parseInt(year, 10);
-               year = y > 30 ? `19${year}` : `20${year}`;
+               // Тот же порог по текущему году, что и в числовой ветке выше.
+               const twoDigitYear = parseInt(year, 10);
+               const currentTwoDigitYear = new Date().getFullYear() % 100;
+               year = twoDigitYear <= currentTwoDigitYear ? `20${year}` : `19${year}`;
              }
-             result.birthDate = `${year}-${String(matchedMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-             
+             const candidate = `${year}-${String(matchedMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+             // «31 февраля 1990» существовать не может, как и дата в будущем.
+             if (!isRealPastDateOnly(candidate)) continue;
+             result.birthDate = candidate;
+
              const matchedTokensRegex = wordsTokens.slice(i, yearWordIndex + 1).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
              remaining = remaining.replace(new RegExp(matchedTokensRegex, 'i'), ' ');
              remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(?:года|год)(?:[^а-яёa-z0-9]|$)/gi, ' ');
