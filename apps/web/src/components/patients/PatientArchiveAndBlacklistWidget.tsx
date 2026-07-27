@@ -121,9 +121,11 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 						Блокировка записи и черный список
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700 font-medium">
-					Специфика IDENT #20
-				</span>
+				{/*
+					Здесь стояла плашка «Специфика IDENT #20» — внутренняя метка
+					сверки с конкурентом. Пользователю она не говорит ничего, а
+					рядом с кнопкой «Добавить в черный список» ещё и путает.
+				*/}
 			</div>
 
 			<div className="space-y-3">

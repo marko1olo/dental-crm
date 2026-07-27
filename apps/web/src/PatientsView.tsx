@@ -4,6 +4,7 @@ import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
+import { formatPhoneNumber } from './utils/inputSanitation';
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import { DictationHints } from "./DictationHints";
@@ -367,7 +368,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 inputMode="tel"
                 autoComplete="tel"
                 value={patientCoreDraft.phone}
-                onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("phone", event.target.value)}
+                /* Приведение к единому виду перенесено из удалённой второй копии
+                   этой же формы: там телефон нормализовался, здесь — нет. */
+                onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("phone", formatPhoneNumber(event.target.value))}
                 placeholder="+7..."
               />
             </label>
@@ -399,15 +402,37 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 rows={3}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--line)', fontSize: '14px', resize: 'vertical', background: 'var(--paper)', color: 'var(--ink)' }}
               />
+              {/*
+                Список сведён из двух: раньше на экране стояли две копии этой
+                формы со своими наборами пометок, дописывающими в одно и то же
+                поле. Повторное нажатие теперь ничего не дублирует — эта защита
+                была только во второй копии.
+              */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
-                {["Аллергия на анестезию", "Боится уколов", "VIP", "Денег не считает", "Часто отменяет", "Ортодонтический пациент", "Семья", "Согласовать скидку"].map(chip => (
+                {[
+                  "Аллергия на анестезию",
+                  "Плохо переносит анестезию",
+                  "Боится уколов",
+                  "Очень тревожный",
+                  "Рвотный рефлекс",
+                  "VIP",
+                  "Денег не считает",
+                  "Должник",
+                  "Часто отменяет",
+                  "Просит звонить заранее",
+                  "Ортодонтический пациент",
+                  "Семья",
+                  "Согласовать скидку"
+                ].map(chip => (
                   <button
                     key={chip}
                     type="button"
                     className="quick-chip"
                     onClick={() => {
                       const currentVal = patientCoreDraft.notes.trim();
-                      const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                      const chipLower = chip.toLowerCase();
+                      if (currentVal.toLowerCase().includes(chipLower)) return;
+                      const newVal = currentVal ? `${currentVal}, ${chipLower}` : chipLower;
                       updatePatientCoreDraft("notes", newVal);
                     }}
                   >

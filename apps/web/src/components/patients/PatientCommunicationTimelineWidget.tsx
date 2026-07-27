@@ -42,13 +42,16 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
 					<MessageSquare className="w-5 h-5 text-sky-500" />
+					{/* Было «Хронологическая история коммуникаций» — канцелярит. */}
 					<h3 className="font-semibold text-sm">
-						Хронологическая история коммуникаций
+						Звонки и сообщения
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
-					IDENT Parity #4
-				</span>
+				{/*
+					Здесь стояла плашка «IDENT Parity #4» — внутренняя метка
+					сверки с конкурентом, попавшая на экран пользователю. Ни
+					клинике, ни пациенту она не говорит ничего.
+				*/}
 			</div>
 
 			{loading ? (

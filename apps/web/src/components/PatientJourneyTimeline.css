@@ -1,15 +1,44 @@
+/*
+ * Лента приёмов — обычная панель приложения, а не отдельная тёмная вставка.
+ *
+ * БЫЛО: фон брался из `var(--glass-bg, rgba(24,24,27,0.85))`, а переменной
+ * `--glass-bg` в проекте нет вовсе — как и `--glass-border`. Значит запасное
+ * значение действовало всегда, и на светлой теме посреди белой страницы стоял
+ * чёрный прямоугольник. У пациента без приёмов он был ещё и пустым: выглядел
+ * как блок, который не загрузился.
+ */
 .patient-journey-timeline {
-	background: var(--glass-bg, rgba(24, 24, 27, 0.85));
-	backdrop-filter: blur(16px);
-	border: 1px solid var(--glass-border, rgba(63, 63, 70, 0.5));
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 16px;
-	box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-	padding: 32px;
+	box-shadow: var(--shadow-1);
+	padding: 24px;
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
-	color: var(--ink, #e4e4e7);
+	gap: 20px;
+	color: var(--ink);
 	max-width: 100%;
+}
+
+.timeline-empty {
+	border: 1px dashed var(--line);
+	border-radius: 12px;
+	padding: 20px 16px;
+	text-align: center;
+	display: grid;
+	gap: 6px;
+}
+
+.timeline-empty p {
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+	margin: 0;
+}
+
+.timeline-empty span {
+	color: var(--muted);
+	font-size: 12.5px;
 }
 
 .timeline-header {
@@ -31,7 +60,7 @@
 
 .patient-id-badge {
 	background: var(--paper-strong, rgba(39, 39, 42, 0.6));
-	border: 1px solid var(--glass-border, transparent);
+	border: 1px solid var(--line);
 	padding: 6px 12px;
 	border-radius: 8px;
 	font-family: monospace;
@@ -61,7 +90,7 @@
 	width: 40px;
 	height: 40px;
 	background: var(--paper, rgba(39, 39, 42, 0.8));
-	border: 1px solid var(--glass-border, rgba(82, 82, 91, 0.5));
+	border: 1px solid var(--line);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -102,7 +131,7 @@
 .timeline-content {
 	flex: 1;
 	background: var(--paper-strong, rgba(39, 39, 42, 0.3));
-	border: 1px solid var(--glass-border, rgba(82, 82, 91, 0.2));
+	border: 1px solid var(--line);
 	border-radius: 12px;
 	padding: 16px 20px;
 	margin-bottom: 24px;
@@ -114,7 +143,7 @@
 
 .timeline-content:hover {
 	background: var(--paper-strong, rgba(63, 63, 70, 0.5));
-	border-color: var(--glass-border, rgba(113, 113, 122, 0.4));
+	border-color: var(--line-strong, var(--line));
 	transform: translateX(4px);
 }
 
@@ -193,7 +222,7 @@
 /* Zeigarnik Effect Progress Bar */
 .zeigarnik-progress-container {
 	background: var(--paper-strong, rgba(39, 39, 42, 0.4));
-	border: 1px solid var(--glass-border, transparent);
+	border: 1px solid var(--line);
 	border-radius: 12px;
 	padding: 16px;
 	margin-bottom: 24px;

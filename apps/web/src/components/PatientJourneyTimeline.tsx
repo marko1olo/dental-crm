@@ -2,6 +2,52 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import "./PatientJourneyTimeline.css";
 import type { Dashboard } from "@dental/shared";
+import { money } from "../AppHelpers";
+
+/** Статусы приёма по-русски: в ленту попадал английский ключ из базы. */
+const appointmentStatusLabels: Record<string, string> = {
+	planned: "запланирован",
+	confirmed: "подтверждён",
+	arrived: "пациент пришёл",
+	in_treatment: "идёт приём",
+	in_progress: "идёт приём",
+	completed: "завершён",
+	cancelled: "отменён",
+	no_show: "пациент не пришёл",
+};
+
+/** Категории аналитики по-русски: печатался ключ вида churn_risk. */
+const insightCategoryLabels: Record<string, string> = {
+	churn_risk: "риск потерять пациента",
+	unscheduled_treatment: "лечение не запланировано",
+	overdue_recall: "пора на осмотр",
+	balance_due: "есть долг",
+	documents_missing: "не хватает документов",
+};
+
+const insightRiskLabels: Record<string, string> = {
+	low: "спокойно",
+	watch: "контроль",
+	medium: "контроль",
+	high: "срочно",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+	cash: "наличные",
+	card: "карта",
+	bank_transfer: "перевод",
+	online: "онлайн",
+	insurance: "страховая",
+	family_wallet: "семейный счёт",
+	other: "иное",
+};
+
+const paymentStatusLabels: Record<string, string> = {
+	planned: "запланирована",
+	paid: "оплачена",
+	refunded: "возврат",
+	voided: "аннулирована",
+};
 
 interface JourneyEvent {
 	id: string;
@@ -26,19 +72,41 @@ export const PatientJourneyTimeline: React.FC<{
 	const [events, setEvents] = useState<JourneyEvent[]>([]);
 
 	useEffect(() => {
-		// Generate real events from appointments
+		/*
+		 * Лента показывалась человеку с сырыми данными из базы:
+		 *  - «Врач: 8356141b-7cfa-4221-95f7-70f47e7344b1» — вместо фамилии
+		 *    печатался идентификатор строки;
+		 *  - «Прием: planned» — английский ключ статуса;
+		 *  - «Аналитика: churn_risk» — английский ключ категории;
+		 *  - плашка состояния «Completed» и «Draft» по-английски;
+		 *  - сумма форматировалась своей копией кода, из-за чего копейки
+		 *    печатались одной цифрой: «1 500,5 ₽»;
+		 *  - ключ строки брался из Math.random(), и React пересоздавал строки
+		 *    на каждой перерисовке.
+		 */
+		const staffById = new Map<string, { fullName?: string }>(
+			(dashboard?.clinicSettings?.staff ?? []).map((member) => [member.id, member]),
+		);
+		const doctorName = (doctorUserId: string | null | undefined) => {
+			if (!doctorUserId) return "врач не назначен";
+			return staffById.get(doctorUserId)?.fullName ?? "врач не найден в списке";
+		};
+
 		const appointments: any[] = dashboard?.appointments || [];
 		const visitEvents: JourneyEvent[] = appointments
 			.filter((a) => a.patientId === patientId)
-			.map((a) => ({
-				id: a.id,
-				timestamp: a.startsAt,
-				type: "appointment",
-				title: `Прием: ${a.status === "completed" ? "Завершен" : a.status}`,
-				description: `Врач: ${a.doctorUserId} | Причина: ${a.reason || "Нет"}`,
-				status: a.status === "completed" ? "Completed" : "Draft",
-				actionUrl: `/patients/${patientId}/visit/${a.id}`,
-			}));
+			.map((a) => {
+				const statusKey = String(a.status ?? "").toLowerCase();
+				return {
+					id: a.id,
+					timestamp: a.startsAt,
+					type: "appointment",
+					title: `Приём ${appointmentStatusLabels[statusKey] ?? statusKey}`,
+					description: `${doctorName(a.doctorUserId)} · ${a.reason || "повод не указан"}`,
+					status: appointmentStatusLabels[statusKey] ?? statusKey,
+					actionUrl: `/patients/${patientId}/visit/${a.id}`,
+				};
+			});
 
 		const payments: any[] = dashboard?.payments || [];
 		const paymentEvents: JourneyEvent[] = payments
@@ -47,10 +115,10 @@ export const PatientJourneyTimeline: React.FC<{
 				id: p.id,
 				timestamp: p.paidAt || p.createdAt,
 				type: "transaction",
-				title: `Оплата (${p.method})`,
-				description: `Сумма: ${p.amountRub.toLocaleString("ru-RU")} ₽`,
+				title: `Оплата: ${paymentMethodLabels[String(p.method)] ?? p.method}`,
+				description: `Сумма ${money(p.amountRub)}`,
 				amount: p.amountRub,
-				status: p.status,
+				status: paymentStatusLabels[String(p.status)] ?? p.status,
 				actionUrl: `#finance`,
 			}));
 
@@ -58,12 +126,12 @@ export const PatientJourneyTimeline: React.FC<{
 		const insightEvents: JourneyEvent[] = insights
 			.filter((i) => i.patientId === patientId)
 			.map((i) => ({
-				id: i.id || Math.random().toString(),
+				id: i.id ?? `insight-${i.patientId}-${i.category}`,
 				timestamp: i.createdAt || new Date().toISOString(),
 				type: "medical_alert",
-				title: `Аналитика: ${i.category === "churn_risk" ? "Риск оттока" : i.category === "unscheduled_treatment" ? "Незапланированное лечение" : i.category}`,
+				title: insightCategoryLabels[String(i.category)] ?? String(i.category),
 				description: i.reason,
-				status: i.riskLevel,
+				status: insightRiskLabels[String(i.riskLevel)] ?? i.riskLevel,
 			}));
 
 		const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents];
@@ -143,6 +211,21 @@ export const PatientJourneyTimeline: React.FC<{
 				</div>
 			)}
 
+			{/*
+				Пустого состояния не было вовсе: у пациента без приёмов на экране
+				оставался чёрный прямоугольник с заголовком и идентификатором —
+				выглядел как незагрузившийся блок.
+			*/}
+			{events.length === 0 ? (
+				<div className="timeline-empty">
+					<p>Здесь пока ничего не было</p>
+					<span>
+						Записи на приём, оплаты и предупреждения по этому пациенту появятся в
+						этой ленте сами, как только они появятся в клинике.
+					</span>
+				</div>
+			) : null}
+
 			<div className="timeline-track">
 				{events.map((evt, index) => {
 					// Эффект Края (Serial Position Effect): выделяем первый и последний элементы
@@ -166,8 +249,20 @@ export const PatientJourneyTimeline: React.FC<{
 
 							<div className="timeline-content">
 								<div className="content-header">
-									<span className="timestamp text-xs font-mono text-zinc-400">
-										{new Date(evt.timestamp).toLocaleString()}
+									{/* Было toLocaleString() без локали: формат зависел от настроек
+									    браузера, и у части пользователей дата выходила как 7/27/2026. */}
+									{/* Цвета текста здесь были из тёмной палитры (text-white,
+								    text-zinc-300/400) под чёрный фон блока. Фон теперь по
+								    теме, поэтому цвет тоже берём из токенов — иначе на
+								    светлой теме получился бы белый текст на белом. */}
+								<span className="timestamp text-xs font-mono">
+										{new Date(evt.timestamp).toLocaleString("ru-RU", {
+											day: "2-digit",
+											month: "2-digit",
+											year: "numeric",
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
 									</span>
 									{evt.status && (
 										<span
@@ -177,29 +272,15 @@ export const PatientJourneyTimeline: React.FC<{
 										</span>
 									)}
 								</div>
-								<h4
-									className={
-										isHighlight
-											? "text-lg text-white font-bold"
-											: "text-base text-zinc-300"
-									}
-								>
+								<h4 className={isHighlight ? "text-lg font-bold" : "text-base"}>
 									{evt.title}
 								</h4>
-								<p
-									className={
-										isHighlight
-											? "text-sm text-zinc-300"
-											: "text-sm text-zinc-400"
-									}
-								>
-									{evt.description}
-								</p>
-								{evt.amount && (
-									<div className="amount-highlight">
-										+{evt.amount.toLocaleString()} ₽
-									</div>
-								)}
+								<p className="text-sm">{evt.description}</p>
+								{/* Было toLocaleString() без локали и без копеек: 1500.5
+								    печаталось как «1500.5 ₽», а разряды не разделялись. */}
+								{evt.amount ? (
+									<div className="amount-highlight">+{money(evt.amount)}</div>
+								) : null}
 								{evt.actionUrl && (
 									<button
 										className="timeline-action-btn"
