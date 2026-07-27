@@ -17,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { z } from "zod";
 
 function documentSnapshotPath(documentId: string): string {
   const dir = path.join(process.cwd(), '.dente-data', 'documents');
@@ -159,10 +160,49 @@ export async function createGeneratedDocumentInDb(
   return mapDocument(record);
 }
 
+const signerUserIdSchema = z.string().uuid();
+
+/**
+ * Проверяет идентификатор сотрудника перед записью в юридически значимую колонку.
+ *
+ * БЫЛО: в `issued_by_user_id` уходил литерал `"doctor"`, а в `voided_by_user_id`
+ * — он же. Обе колонки объявлены как `uuid ... references(users.id)`
+ * (db/schema.ts:505 и :507), поэтому строка «doctor» не просто подменяла
+ * подписанта — Postgres отвергал её с 22P02 `invalid input syntax for type
+ * uuid`, и выдача документа падала целиком. Тот же класс отказа уже описан в
+ * routes/documents/issue.ts:57-59 для прежней подстановки «mock-org».
+ *
+ * Значение обязано быть либо UUID реального сотрудника, либо `null`
+ * («подписант не установлен»). Подстановка произвольной строки запрещена: она
+ * приписывает юридический документ несуществующему лицу.
+ */
+function signerUserIdForColumn(
+  value: string | null,
+  column: "issued_by_user_id" | "voided_by_user_id"
+): string | null {
+  if (value === null) return null;
+  const parsed = signerUserIdSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error(
+      `${column}: ожидался UUID сотрудника или null, получено ${JSON.stringify(value)}. ` +
+        "Колонка — uuid с внешним ключом на users.id; произвольная строка делает " +
+        "документ юридически недостоверным и отвергается Postgres (22P02)."
+    );
+  }
+  return parsed.data;
+}
+
 export async function issueGeneratedDocumentInDb(
   organizationId: string,
   documentId: string,
   options: {
+    /**
+     * Сотрудник, ВЫДАВШИЙ документ. Поле обязательно к передаче, чтобы каждый
+     * вызывающий осознанно выбрал: реальный пользователь из проверенного токена
+     * либо `null`, если авторизованного человека в запросе нет. Значения по
+     * умолчанию нет намеренно — именно оно и было источником литерала "doctor".
+     */
+    issuedByUserId: string | null;
     issuedAt?: string;
     releaseJournalEntry?: DocumentReleaseJournalEntry | null;
     snapshotHtml?: string;
@@ -170,8 +210,9 @@ export async function issueGeneratedDocumentInDb(
     taxPaymentSnapshot?: TaxPaymentSnapshot | null;
     taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
     totalAmountRub?: number | null;
-  } = {}
+  }
 ): Promise<GeneratedDocument | null> {
+  const issuedByUserId = signerUserIdForColumn(options.issuedByUserId, "issued_by_user_id");
   const [existing] = await db
     .select()
     .from(schema.generatedDocuments)
@@ -187,7 +228,7 @@ export async function issueGeneratedDocumentInDb(
     .set({
       status: "issued",
       issuedAt: options.issuedAt ? new Date(options.issuedAt) : new Date(),
-      issuedByUserId: "doctor", // usually from request, hardcoded in sampleData for now
+      issuedByUserId,
       releaseJournalEntry: options.releaseJournalEntry || null,
       signatureAttestation: options.signatureAttestation || null,
       taxPaymentSnapshotJson: options.taxPaymentSnapshot ? JSON.stringify(options.taxPaymentSnapshot) : existing.taxPaymentSnapshotJson,
@@ -218,8 +259,18 @@ export async function issueGeneratedDocumentInDb(
 export async function voidGeneratedDocumentInDb(
   organizationId: string,
   documentId: string,
-  options: { voidedAt?: string; voidAttestation?: DocumentVoidAttestation } = {}
+  options: {
+    /**
+     * Сотрудник, АННУЛИРОВАВШИЙ документ. Обязателен к передаче по той же
+     * причине, что и issuedByUserId: аннулирование — юридическое действие,
+     * и приписывать его литералу "doctor" нельзя.
+     */
+    voidedByUserId: string | null;
+    voidedAt?: string;
+    voidAttestation?: DocumentVoidAttestation;
+  }
 ): Promise<GeneratedDocument | null> {
+  const voidedByUserId = signerUserIdForColumn(options.voidedByUserId, "voided_by_user_id");
   const [existing] = await db
     .select()
     .from(schema.generatedDocuments)
@@ -233,7 +284,7 @@ export async function voidGeneratedDocumentInDb(
     .set({
       status: "voided",
       voidedAt: options.voidedAt ? new Date(options.voidedAt) : new Date(),
-      voidedByUserId: "doctor",
+      voidedByUserId,
       voidAttestation: options.voidAttestation || null
     })
     .where(and(eq(schema.generatedDocuments.organizationId, organizationId), eq(schema.generatedDocuments.id, documentId)))

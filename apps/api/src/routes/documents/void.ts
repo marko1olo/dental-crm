@@ -1,5 +1,5 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -115,7 +115,13 @@ export async function register(app: FastifyInstance) {
     }
 
     const voidedAt = new Date().toISOString();
+    // БЫЛО: слой БД писал в voided_by_user_id литерал "doctor" — та же
+    // uuid-колонка с внешним ключом на users.id, что и у выдачи, и тот же
+    // отказ Postgres 22P02. Аннулирование — юридическое действие, поэтому
+    // сотрудник берётся из подписанного staff-токена, а при его отсутствии
+    // остаётся null вместо выдуманного подписанта.
     const document = await voidGeneratedDocumentInDb(orgId, id, {
+      voidedByUserId: getRequestIdentity(request).userId,
       voidedAt,
       voidAttestation: {
         ...voidAttestationInput,

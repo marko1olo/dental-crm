@@ -1,5 +1,5 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -172,7 +172,14 @@ export async function register(app: FastifyInstance) {
       taxXmlSourceSnapshot
     };
     const issuedHtml = renderDocumentHtml(issuedDocumentCandidate, patient, renderContext);
+    // БЫЛО: слой БД писал в issued_by_user_id литерал "doctor". Колонка —
+    // uuid с внешним ключом на users.id, поэтому выдача документа не просто
+    // указывала фиктивного подписанта, а падала в Postgres (22P02). Реальный
+    // сотрудник берётся из подписанного staff-токена; если авторизованного
+    // человека в запросе нет, пишем null — «подписант не установлен», а не
+    // подставляем чужой идентификатор.
     const document = await issueGeneratedDocumentInDb(orgId, id, {
+      issuedByUserId: getRequestIdentity(request).userId,
       issuedAt,
       releaseJournalEntry,
       snapshotHtml: issuedHtml,
