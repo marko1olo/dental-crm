@@ -79645,7 +79645,7 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     nextAction: string;
     detectedToothCodes: string[];
     missingCriticalFields: string[];
-    detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+    detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
 }, {
     specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
     level: "review" | "ready" | "needs_more_dictation";
@@ -79654,7 +79654,7 @@ export declare const visitNoteDraftQualitySchema: z.ZodObject<{
     nextAction: string;
     detectedToothCodes: string[];
     missingCriticalFields: string[];
-    detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+    detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
 }>;
 export type VisitNoteDraftQuality = z.infer<typeof visitNoteDraftQualitySchema>;
 export declare const visitNoteDraftSchema: z.ZodObject<{
@@ -79680,7 +79680,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: string;
         detectedToothCodes: string[];
         missingCriticalFields: string[];
-        detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+        detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
     }, {
         specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
         level: "review" | "ready" | "needs_more_dictation";
@@ -79689,7 +79689,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: string;
         detectedToothCodes: string[];
         missingCriticalFields: string[];
-        detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+        detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
     }>>;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
@@ -79707,7 +79707,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: string;
         detectedToothCodes: string[];
         missingCriticalFields: string[];
-        detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+        detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
     } | undefined;
 }, {
     warnings: string[];
@@ -79724,7 +79724,7 @@ export declare const visitNoteDraftSchema: z.ZodObject<{
         nextAction: string;
         detectedToothCodes: string[];
         missingCriticalFields: string[];
-        detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+        detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
     } | undefined;
 }>;
 export type VisitNoteDraft = z.infer<typeof visitNoteDraftSchema>;
@@ -79756,7 +79756,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }, {
             specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
             level: "review" | "ready" | "needs_more_dictation";
@@ -79765,7 +79765,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
@@ -79783,7 +79783,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }, {
         warnings: string[];
@@ -79800,7 +79800,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }>;
     baseRevision: z.ZodNullable<z.ZodNumber>;
@@ -79824,7 +79824,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -79852,7 +79852,7 @@ export declare const visitDraftAutosaveSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -79894,7 +79894,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }, {
             specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
             level: "review" | "ready" | "needs_more_dictation";
@@ -79903,7 +79903,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
@@ -79921,7 +79921,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }, {
         warnings: string[];
@@ -79938,7 +79938,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }>;
     baseRevision: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
@@ -79960,7 +79960,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -79986,7 +79986,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -80012,7 +80012,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -80038,7 +80038,7 @@ export declare const visitDraftAutosaveRequestSchema: z.ZodEffects<z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     patientId: string;
@@ -80079,7 +80079,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             }, {
                 specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
                 level: "review" | "ready" | "needs_more_dictation";
@@ -80088,7 +80088,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             }>>;
             warnings: z.ZodArray<z.ZodString, "many">;
         }, "strip", z.ZodTypeAny, {
@@ -80106,7 +80106,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         }, {
             warnings: string[];
@@ -80123,7 +80123,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         }>;
         baseRevision: z.ZodNullable<z.ZodNumber>;
@@ -80147,7 +80147,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         };
         patientId: string;
@@ -80175,7 +80175,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         };
         patientId: string;
@@ -80205,7 +80205,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         };
         patientId: string;
@@ -80235,7 +80235,7 @@ export declare const visitDraftAutosaveResponseSchema: z.ZodObject<{
                 nextAction: string;
                 detectedToothCodes: string[];
                 missingCriticalFields: string[];
-                detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
             } | undefined;
         };
         patientId: string;
@@ -80297,7 +80297,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }, {
             specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
             level: "review" | "ready" | "needs_more_dictation";
@@ -80306,7 +80306,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
@@ -80324,7 +80324,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }, {
         warnings: string[];
@@ -80341,7 +80341,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
@@ -80360,7 +80360,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     warnings: string[];
@@ -80386,7 +80386,7 @@ export declare const speechTranscriptPolishResponseSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     warnings: string[];
@@ -80433,7 +80433,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }, {
             specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
             level: "review" | "ready" | "needs_more_dictation";
@@ -80442,7 +80442,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         }>>;
         warnings: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
@@ -80460,7 +80460,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }, {
         warnings: string[];
@@ -80477,7 +80477,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     }>;
     doctorSummary: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -80500,7 +80500,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     visitId: string;
@@ -80524,7 +80524,7 @@ export declare const acceptVisitDraftSchema: z.ZodObject<{
             nextAction: string;
             detectedToothCodes: string[];
             missingCriticalFields: string[];
-            detectedToothStates?: Record<string, "planned" | "idle" | "watch" | "done" | "missing" | "treatment"> | undefined;
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
         } | undefined;
     };
     visitId: string;
@@ -81639,7 +81639,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     telegramOutboxTemplateFilter: "appointment_confirmation" | "document_ready_notice" | "staff_daily_digest" | "appointment_reminder" | "payment_reminder_notice" | "tax_document_request_status" | "callback_request_received" | "post_visit_instruction_link" | "post_visit_checkup" | "recall_notice" | "review_request" | "all";
     onboardingDismissed: boolean;
     onboardingDismissedAt: string | null;
-    onboardingStep: "legal" | "telegram" | "role" | "clinic" | "done" | "intro" | "team" | "sources";
+    onboardingStep: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources";
     onboardingDraftMode: boolean;
     odontogramUseSurfaces: boolean;
 }, {
@@ -81687,7 +81687,7 @@ export declare const uiPreferencesSchema: z.ZodObject<{
     telegramOutboxTemplateFilter?: "appointment_confirmation" | "document_ready_notice" | "staff_daily_digest" | "appointment_reminder" | "payment_reminder_notice" | "tax_document_request_status" | "callback_request_received" | "post_visit_instruction_link" | "post_visit_checkup" | "recall_notice" | "review_request" | "all" | undefined;
     onboardingDismissed?: boolean | undefined;
     onboardingDismissedAt?: string | null | undefined;
-    onboardingStep?: "legal" | "telegram" | "role" | "clinic" | "done" | "intro" | "team" | "sources" | undefined;
+    onboardingStep?: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources" | undefined;
     onboardingDraftMode?: boolean | undefined;
     odontogramUseSurfaces?: boolean | undefined;
 }>;
@@ -81786,7 +81786,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     telegramOutboxTemplateFilter: "appointment_confirmation" | "document_ready_notice" | "staff_daily_digest" | "appointment_reminder" | "payment_reminder_notice" | "tax_document_request_status" | "callback_request_received" | "post_visit_instruction_link" | "post_visit_checkup" | "recall_notice" | "review_request" | "all";
     onboardingDismissed: boolean;
     onboardingDismissedAt: string | null;
-    onboardingStep: "legal" | "telegram" | "role" | "clinic" | "done" | "intro" | "team" | "sources";
+    onboardingStep: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources";
     onboardingDraftMode: boolean;
     odontogramUseSurfaces: boolean;
     version?: 1 | undefined;
@@ -81836,7 +81836,7 @@ export declare const uiPreferencesInputSchema: z.ZodObject<Omit<{
     telegramOutboxTemplateFilter?: "appointment_confirmation" | "document_ready_notice" | "staff_daily_digest" | "appointment_reminder" | "payment_reminder_notice" | "tax_document_request_status" | "callback_request_received" | "post_visit_instruction_link" | "post_visit_checkup" | "recall_notice" | "review_request" | "all" | undefined;
     onboardingDismissed?: boolean | undefined;
     onboardingDismissedAt?: string | null | undefined;
-    onboardingStep?: "legal" | "telegram" | "role" | "clinic" | "done" | "intro" | "team" | "sources" | undefined;
+    onboardingStep?: "done" | "legal" | "telegram" | "role" | "clinic" | "intro" | "team" | "sources" | undefined;
     onboardingDraftMode?: boolean | undefined;
     odontogramUseSurfaces?: boolean | undefined;
 }>;
@@ -92441,3 +92441,4 @@ export declare const visitFlowResultSchema: z.ZodObject<{
 export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;
 export * from "./utils/strings.js";
 export * from "./utils/dates.js";
+export * from "./utils/money.js";
