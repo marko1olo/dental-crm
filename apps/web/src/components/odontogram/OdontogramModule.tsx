@@ -6,7 +6,7 @@ import {
 	Stethoscope,
 	X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -223,6 +223,11 @@ export const OdontogramModule = ({
 	   принимает за факт. */
 	const [isLoadingTeeth, setIsLoadingTeeth] = useState(true);
 	const [teethLoadFailed, setTeethLoadFailed] = useState(false);
+	/* Актуальная формула для снимка перед сохранением. Брать её внутри
+	   обновления состояния нельзя: обновление может быть вызвано повторно, и
+	   тогда снимок одного сохранения захватит правку другого. */
+	const teethDataRef = useRef<ToothData[]>([]);
+	teethDataRef.current = teethData;
 	const [menuConfig, setMenuConfig] = useState<{
 		toothNumber: number;
 		x: number;
@@ -368,29 +373,39 @@ export const OdontogramModule = ({
 		toothNumbers: number[],
 		state: ToothState,
 	) => {
-		let previousTeethData: ToothData[] = [];
+		/* БЫЛО: снимок «до» делался как `previousTeethData = [...prev]` внутри
+		   обновления состояния, а новое состояние проставлялось мутацией
+		   `item.state = state`. Копия массива поверхностная — объекты зубов в
+		   ней те же самые, поэтому снимок менялся вместе с состоянием. Откат
+		   `setTeethData(previousTeethData)` возвращал уже НОВОЕ значение.
+
+		   Проверено в браузере, scratch/verify-odontogram-rollback.mjs: при
+		   ответе 500 на сохранение в базе оставался «Caries», всплывало
+		   «Изменения отменены», а на схеме стояло «отсутствует». Формула
+		   расходилась с базой, и интерфейс об этом врал. Врач мог закрыть
+		   приём или распечатать схему с состоянием, которого в карте нет.
+
+		   Снимок берётся до отправки, из ref с актуальным состоянием, и
+		   глубоко копируется. Новое состояние собирается новыми объектами,
+		   без мутации прежних. */
+		const previousTeethData: ToothData[] = teethDataRef.current.map((tooth) => ({
+			...tooth,
+			...(tooth.surfaces ? { surfaces: [...tooth.surfaces] } : {}),
+		}));
+
 		setTeethData((prev) => {
-			previousTeethData = [...prev];
-			const next = [...prev];
+			const next = prev.map((tooth) => {
+				if (!toothNumbers.includes(tooth.toothNumber)) return tooth;
+				const updated: ToothData = { ...tooth, state };
+				if (activeSurfaces.length > 0) updated.surfaces = [...activeSurfaces];
+				else delete updated.surfaces;
+				return updated;
+			});
 			for (const t of toothNumbers) {
-				const existingIdx = next.findIndex((x) => x.toothNumber === t);
-				if (existingIdx > -1) {
-					const item = next[existingIdx];
-					if (item) {
-						item.state = state;
-						if (activeSurfaces.length > 0) {
-							item.surfaces = [...activeSurfaces];
-						} else {
-							delete item.surfaces;
-						}
-					}
-				} else {
-					const newItem: ToothData = { toothNumber: t, state };
-					if (activeSurfaces.length > 0) {
-						newItem.surfaces = [...activeSurfaces];
-					}
-					next.push(newItem);
-				}
+				if (next.some((tooth) => tooth.toothNumber === t)) continue;
+				const newItem: ToothData = { toothNumber: t, state };
+				if (activeSurfaces.length > 0) newItem.surfaces = [...activeSurfaces];
+				next.push(newItem);
 			}
 			return next;
 		});

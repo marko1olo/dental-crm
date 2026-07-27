@@ -368,11 +368,27 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerInsuranceRoutes(app);
   await registerLabRoutes(app);
   await registerLeadsRoutes(app);
-  await registerMaxRoutes(app);
+  /* registerMaxRoutes и registerWhatsappRoutes навешивают внутри себя
+     app.addHook("preHandler", ...) с проверкой requireNonDoctorAccess. При
+     вызове напрямую с корневым экземпляром хук попадает в корневую область и
+     срабатывает на КАЖДОМ запросе всего API, а не только на своих маршрутах.
+
+     Замерено на живом сервере, scratch/probe-doctor-403-scope.mjs: врач,
+     разблокировавший смену своим PIN, получал 403 «Доктора не могут
+     выполнять это действие: non-doctor mutation» на всё, включая
+     /api/health, /api/dashboard, /api/patients и чтение зубной формулы. Без
+     токена сотрудника те же маршруты отвечали 200. То есть стоматолог,
+     войдя под собой, не мог работать в программе вообще — а зубная формула
+     это его основной инструмент.
+
+     app.register создаёт границу инкапсуляции: хук остаётся внутри своего
+     модуля. Маршруты внутри объявлены абсолютными путями (/api/max/...,
+     /api/whatsapp/...), поэтому префикс не нужен и адреса не меняются. */
+  await app.register(registerMaxRoutes);
   await registerSterilizationRoutes(app);
   await registerVkRoutes(app);
   await registerWaitlistRoutes(app);
-  await registerWhatsappRoutes(app);
+  await app.register(registerWhatsappRoutes);
   await registerPatientRoutes(app);
   await registerPricelistRoutes(app);
   await registerScheduleRoutes(app);
