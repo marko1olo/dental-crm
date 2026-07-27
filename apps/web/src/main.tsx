@@ -2,6 +2,10 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppShell } from "./AppShell";
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
+// Первым: утилиты живут в каскадном слое и по правилам CSS уступают
+// любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
+// но так виднее, что это фундамент, а не переопределение.
+import "./styles/tailwind.css";
 import "./styles/main.css";
 import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";

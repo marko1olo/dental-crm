@@ -1,3 +1,9 @@
+/* Tailwind 4 требует объявить источник темы, иначе @apply не знает про
+   утилиты и сборка падает. До подключения Tailwind директивы @apply были
+   недопустимым CSS и браузер выбрасывал эти правила целиком — компонент
+   оставался вовсе без оформления. */
+@reference "../../styles/tailwind.css";
+
 .visit-flow-progress {
 	@apply bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 flex flex-col gap-4 shadow-sm;
 }
