@@ -74,16 +74,19 @@ describe("проводка маршрутных модулей со своими
 			const full = join(dir, entry);
 			if (!statSync(full).isFile() || !entry.endsWith(".ts") || entry.endsWith(".test.ts")) continue;
 			const source = readFileSync(full, "utf8");
-			if (!/app\.addHook\(\s*["']preHandler["']/.test(source)) continue;
+			/* Любой вид хука, а не только preHandler: маршрутный модуль не должен
+			   влиять на чужие маршруты ни проверкой доступа, ни заголовками, ни
+			   обработкой ошибок. */
+			if (!/app\.addHook\(/.test(source)) continue;
 			const exported = /export async function (register\w+)/.exec(source);
 			if (exported?.[1]) found.push(exported[1]);
 		}
 		return found;
 	}
 
-	test("каждый модуль со своим preHandler регистрируется через app.register", () => {
+	test("каждый модуль со своим хуком регистрируется через app.register", () => {
 		const modules = routeModulesWithOwnHooks();
-		assert.ok(modules.length > 0, "не нашёл ни одного модуля со своим preHandler — проверка потеряла смысл");
+		assert.ok(modules.length > 0, "не нашёл ни одного модуля со своим хуком — проверка потеряла смысл");
 
 		const leaking: string[] = [];
 		for (const moduleName of modules) {
@@ -95,7 +98,7 @@ describe("проводка маршрутных модулей со своими
 		assert.deepEqual(
 			leaking,
 			[],
-			`эти модули навешивают свой preHandler и вызываются напрямую с корневым экземпляром, ` +
+			`эти модули навешивают свой хук и вызываются напрямую с корневым экземпляром, ` +
 				`поэтому их хук действует на весь API: ${leaking.join(", ")}. ` +
 				`Регистрируйте их через app.register(...), чтобы хук остался внутри модуля.`,
 		);
