@@ -256,6 +256,8 @@ export const communicationChannelLabels: Record<
 	telegram: "Телеграм",
 	email: "Email",
 	in_person: "В кабинете",
+	vk: "ВКонтакте",
+	max: "MAX",
 };
 
 export const communicationIntentLabels: Record<

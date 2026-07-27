@@ -732,7 +732,25 @@ export const clinicalRuleActionSchema = z.enum([
 ]);
 export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]);
 export const paymentStatusSchema = z.enum(["planned", "paid", "refunded", "voided"]);
-export const communicationChannelSchema = z.enum(["phone", "sms", "whatsapp", "telegram", "email", "in_person"]);
+/**
+ * Значения обязаны совпадать с pgEnum "communication_channel" в
+ * apps/api/src/db/schema.ts. БЫЛО: в базе восемь значений, здесь шесть — vk и
+ * max отсутствовали. routes/vk.ts и routes/max.ts пишут задачи и события с
+ * такими каналами, база их принимает, а db/domainStateHydration.ts прогоняет
+ * строки через communicationTaskSchema.safeParse и молча отбрасывает всё, что
+ * не прошло: переписка во «ВКонтакте» и MAX исчезала из рабочего кабинета,
+ * оставляя только строку в отчёте о гидратации.
+ */
+export const communicationChannelSchema = z.enum([
+    "phone",
+    "sms",
+    "whatsapp",
+    "telegram",
+    "email",
+    "in_person",
+    "vk",
+    "max"
+]);
 export const communicationIntentSchema = z.enum([
     "appointment_confirmation",
     "payment_reminder",

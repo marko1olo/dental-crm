@@ -337,7 +337,16 @@ export declare const paymentMethodSchema: z.ZodEnum<["cash", "card", "bank_trans
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export declare const paymentStatusSchema: z.ZodEnum<["planned", "paid", "refunded", "voided"]>;
 export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
-export declare const communicationChannelSchema: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+/**
+ * Значения обязаны совпадать с pgEnum "communication_channel" в
+ * apps/api/src/db/schema.ts. БЫЛО: в базе восемь значений, здесь шесть — vk и
+ * max отсутствовали. routes/vk.ts и routes/max.ts пишут задачи и события с
+ * такими каналами, база их принимает, а db/domainStateHydration.ts прогоняет
+ * строки через communicationTaskSchema.safeParse и молча отбрасывает всё, что
+ * не прошло: переписка во «ВКонтакте» и MAX исчезала из рабочего кабинета,
+ * оставляя только строку в отчёте о гидратации.
+ */
+export declare const communicationChannelSchema: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
 export type CommunicationChannel = z.infer<typeof communicationChannelSchema>;
 export declare const communicationIntentSchema: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general"]>;
 export type CommunicationIntent = z.infer<typeof communicationIntentSchema>;
@@ -5138,7 +5147,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     id: z.ZodString;
     organizationId: z.ZodString;
     title: z.ZodString;
-    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
     intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general"]>;
     audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
     body: z.ZodString;
@@ -5149,7 +5158,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     id: string;
     title: string;
     organizationId: string;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
     audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
     body: string;
@@ -5159,7 +5168,7 @@ export declare const communicationTemplateSchema: z.ZodObject<{
     id: string;
     title: string;
     organizationId: string;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
     audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
     body: string;
@@ -5174,7 +5183,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     visitId: z.ZodNullable<z.ZodString>;
     documentId: z.ZodNullable<z.ZodString>;
     assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
-    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
     intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general"]>;
     status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
     priority: z.ZodEnum<["low", "normal", "high", "urgent"]>;
@@ -5195,7 +5204,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     createdAt: string;
     priority: "urgent" | "low" | "normal" | "high";
     documentId: string | null;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
     body: string;
     appointmentId: string | null;
@@ -5214,7 +5223,7 @@ export declare const communicationTaskSchema: z.ZodObject<{
     createdAt: string;
     priority: "urgent" | "low" | "normal" | "high";
     documentId: string | null;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
     body: string;
     appointmentId: string | null;
@@ -5231,7 +5240,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     taskId: z.ZodNullable<z.ZodString>;
     patientId: z.ZodString;
     actorUserId: z.ZodNullable<z.ZodString>;
-    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+    channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
     direction: z.ZodEnum<["inbound", "outbound"]>;
     status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
     message: z.ZodString;
@@ -5243,7 +5252,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     createdAt: string;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     taskId: string | null;
     actorUserId: string | null;
     direction: "inbound" | "outbound";
@@ -5254,7 +5263,7 @@ export declare const communicationEventSchema: z.ZodObject<{
     patientId: string;
     organizationId: string;
     createdAt: string;
-    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+    channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
     taskId: string | null;
     actorUserId: string | null;
     direction: "inbound" | "outbound";
@@ -38007,7 +38016,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: z.ZodString;
         organizationId: z.ZodString;
         title: z.ZodString;
-        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
         intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general"]>;
         audienceRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
         body: z.ZodString;
@@ -38018,7 +38027,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         title: string;
         organizationId: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
         body: string;
@@ -38028,7 +38037,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         title: string;
         organizationId: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
         body: string;
@@ -38042,7 +38051,7 @@ export declare const dashboardSchema: z.ZodObject<{
         visitId: z.ZodNullable<z.ZodString>;
         documentId: z.ZodNullable<z.ZodString>;
         assignedRole: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
-        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
         intent: z.ZodEnum<["appointment_confirmation", "payment_reminder", "post_visit_instruction", "recall", "document_ready", "imaging_review", "general"]>;
         status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
         priority: z.ZodEnum<["low", "normal", "high", "urgent"]>;
@@ -38063,7 +38072,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         body: string;
         appointmentId: string | null;
@@ -38082,7 +38091,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         body: string;
         appointmentId: string | null;
@@ -38098,7 +38107,7 @@ export declare const dashboardSchema: z.ZodObject<{
         taskId: z.ZodNullable<z.ZodString>;
         patientId: z.ZodString;
         actorUserId: z.ZodNullable<z.ZodString>;
-        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person"]>;
+        channel: z.ZodEnum<["phone", "sms", "whatsapp", "telegram", "email", "in_person", "vk", "max"]>;
         direction: z.ZodEnum<["inbound", "outbound"]>;
         status: z.ZodEnum<["queued", "scheduled", "needs_call", "sent", "delivered", "completed", "failed", "skipped"]>;
         message: z.ZodString;
@@ -38110,7 +38119,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         taskId: string | null;
         actorUserId: string | null;
         direction: "inbound" | "outbound";
@@ -38121,7 +38130,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         taskId: string | null;
         actorUserId: string | null;
         direction: "inbound" | "outbound";
@@ -38841,7 +38850,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         title: string;
         organizationId: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
         body: string;
@@ -38857,7 +38866,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         body: string;
         appointmentId: string | null;
@@ -38874,7 +38883,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         taskId: string | null;
         actorUserId: string | null;
         direction: "inbound" | "outbound";
@@ -39504,7 +39513,7 @@ export declare const dashboardSchema: z.ZodObject<{
         id: string;
         title: string;
         organizationId: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         audienceRole: "owner" | "doctor" | "administrator" | "assistant" | "manager";
         body: string;
@@ -39520,7 +39529,7 @@ export declare const dashboardSchema: z.ZodObject<{
         createdAt: string;
         priority: "urgent" | "low" | "normal" | "high";
         documentId: string | null;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         intent: "appointment_confirmation" | "payment_reminder" | "post_visit_instruction" | "recall" | "document_ready" | "imaging_review" | "general";
         body: string;
         appointmentId: string | null;
@@ -39537,7 +39546,7 @@ export declare const dashboardSchema: z.ZodObject<{
         patientId: string;
         organizationId: string;
         createdAt: string;
-        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person";
+        channel: "phone" | "sms" | "whatsapp" | "telegram" | "email" | "in_person" | "vk" | "max";
         taskId: string | null;
         actorUserId: string | null;
         direction: "inbound" | "outbound";
