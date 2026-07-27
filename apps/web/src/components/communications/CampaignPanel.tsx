@@ -193,11 +193,11 @@ export function CampaignPanel() {
 
 	if (loadError) {
 		return (
-			<section className="panel" data-testid="campaign-panel">
+			<section className="panel ops-panel" data-testid="campaign-panel">
 				<div className="panel-heading">
 					<h2>Рассылки</h2>
 				</div>
-				<p role="alert">Не удалось получить рассылки: {loadError}</p>
+				<p className="ops-notice ops-notice--error" role="alert">Не удалось получить рассылки: {loadError}</p>
 				<button className="secondary-button" type="button" onClick={() => void load()}>
 					Повторить
 				</button>
@@ -206,21 +206,22 @@ export function CampaignPanel() {
 	}
 
 	return (
-		<section className="panel" data-testid="campaign-panel">
+		<section className="panel ops-panel" data-testid="campaign-panel">
 			<div className="panel-heading">
 				<h2>Рассылки</h2>
 			</div>
 
 			{notice ? (
-				<p role="status" aria-live="polite">
+				<p className="ops-notice" role="status" aria-live="polite">
 					{notice}
 				</p>
 			) : null}
 
 			{campaigns.length === 0 ? (
-				<p>Рассылок пока нет.</p>
+				<p className="ops-empty">Рассылок пока нет.</p>
 			) : (
-				<table>
+				<div className="ops-table-wrap">
+				<table className="ops-table">
 					<thead>
 						<tr>
 							<th scope="col">Название</th>
@@ -234,14 +235,37 @@ export function CampaignPanel() {
 					<tbody>
 						{campaigns.map((campaign) => (
 							<tr key={campaign.id}>
-								<td>{campaign.title}</td>
-								<td>{channelLabels[campaign.channel] ?? campaign.channel}</td>
-								<td>{campaign.scope === "marketing" ? "Рекламная" : "Сервисная"}</td>
-								<td>
-									<span className="status-pill">{campaignStatusLabels[campaign.status] ?? campaign.status}</span>
+								<td className="ops-strong" data-label="Название">
+									{campaign.title}
 								</td>
-								<td>{formatMoment(campaign.launchedAt)}</td>
-								<td>
+								<td data-label="Канал">{channelLabels[campaign.channel] ?? campaign.channel}</td>
+								<td data-label="Вид">
+									{campaign.scope === "marketing" ? (
+										// Рекламная требует согласия — это должно быть заметно.
+										<span className="ops-state ops-state--warn">Рекламная</span>
+									) : (
+										<span className="ops-state ops-state--info">Сервисная</span>
+									)}
+								</td>
+								<td data-label="Состояние">
+									<span
+										className={`ops-state ops-state--${
+											campaign.status === "completed"
+												? "ok"
+												: campaign.status === "running"
+													? "info"
+													: campaign.status === "cancelled"
+														? "bad"
+														: "muted"
+										}`}
+									>
+										{campaignStatusLabels[campaign.status] ?? campaign.status}
+									</span>
+								</td>
+								<td className="ops-time" data-label="Запущена">
+									{formatMoment(campaign.launchedAt)}
+								</td>
+								<td data-label="Действие">
 									<button className="secondary-button" type="button" onClick={() => void openPreview(campaign.id)}>
 										Предпросмотр
 									</button>
@@ -270,22 +294,38 @@ export function CampaignPanel() {
 						))}
 					</tbody>
 				</table>
+				</div>
 			)}
 
 			{previewFor ? (
-				<div>
-					<h3>Предпросмотр</h3>
+				<div className="ops-preview">
+					<h3 className="ops-section-title">Предпросмотр</h3>
 					{preview === null ? (
-						<p>Считаю получателей…</p>
+						<div className="ops-skeleton" aria-hidden="true">
+							<span className="ops-skeleton__line" />
+							<span className="ops-skeleton__line" />
+						</div>
 					) : (
 						<>
-							<p>
+							<p className="ops-hint">
 								Условия: {preview.criteria.length > 0 ? preview.criteria.join("; ") : "без ограничений"}.
 							</p>
-							<p>
-								Подошло: <strong>{preview.audience.matched}</strong>. Получат сообщение:{" "}
-								<strong>{preview.audience.deliverable}</strong>.
-							</p>
+							<ul className="ops-metrics">
+								<li className="ops-metric">
+									<span className="ops-metric__value">{preview.audience.matched}</span>
+									<span className="ops-metric__label">подошло по условиям</span>
+								</li>
+								<li className={`ops-metric ${preview.audience.deliverable > 0 ? "ops-metric--primary" : "ops-metric--danger"}`}>
+									<span className="ops-metric__value">{preview.audience.deliverable}</span>
+									<span className="ops-metric__label">получат сообщение</span>
+								</li>
+								<li className="ops-metric">
+									<span className="ops-metric__value">{preview.cost.billableUnits}</span>
+									<span className="ops-metric__label">
+										{preview.cost.segmentsPerMessage === null ? "сообщений к отправке" : "сегментов к оплате"}
+									</span>
+								</li>
+							</ul>
 							{/* Отсев с причинами: «отправлено 12 из 400» иначе выглядит как ошибка. */}
 							<ul>
 								{preview.audience.excluded.no_consent > 0 ? (
@@ -298,24 +338,26 @@ export function CampaignPanel() {
 									<li>не подошли по условиям: {preview.audience.excluded.excluded_by_criteria}</li>
 								) : null}
 							</ul>
-							<p>{preview.cost.note}</p>
+							<p className="ops-hint">{preview.cost.note}</p>
 							{preview.sampleText ? (
 								<>
-									<strong>Как увидит пациент:</strong>
-									<p>{preview.sampleText}</p>
+									<span className="ops-preview__title">Как увидит пациент</span>
+									<p className="ops-preview__text">{preview.sampleText}</p>
 								</>
 							) : null}
 							{preview.audience.notes.map((note) => (
-								<p key={note}>
-									<small>{note}</small>
+								<p className="ops-hint" key={note}>
+									{note}
 								</p>
 							))}
-							{preview.problems.length > 0 ? <p role="alert">{preview.problems.join(" ")}</p> : null}
+							{preview.problems.length > 0 ? (
+								<p className="ops-notice ops-notice--error" role="alert">
+									{preview.problems.join(" ")}
+								</p>
+							) : null}
 							{preview.audience.candidates.length > 0 ? (
-								<p>
-									<small>
-										Например: {preview.audience.candidates.map((candidate) => candidate.fullName).join(", ")}
-									</small>
+								<p className="ops-hint">
+									Например: {preview.audience.candidates.map((candidate) => candidate.fullName).join(", ")}
 								</p>
 							) : null}
 						</>
@@ -326,11 +368,12 @@ export function CampaignPanel() {
 				</div>
 			) : null}
 
-			<h3>Новая рассылка</h3>
+			<h3 className="ops-section-title">Новая рассылка</h3>
 			{templates.length === 0 ? (
-				<p>Нет активных шаблонов — сначала создайте шаблон для нужного канала.</p>
+				<p className="ops-empty">Нет активных шаблонов — сначала создайте шаблон для нужного канала.</p>
 			) : (
-				<div>
+				<div className="ops-toolbar">
+					<span className="ops-field ops-field--grow">
 					<label htmlFor="campaign-title">Название</label>
 					<input
 						id="campaign-title"
@@ -340,6 +383,8 @@ export function CampaignPanel() {
 						placeholder="Приглашение на осмотр"
 					/>
 
+					</span>
+					<span className="ops-field">
 					<label htmlFor="campaign-template">Шаблон</label>
 					<select id="campaign-template" value={templateId} onChange={(event) => setTemplateId(event.target.value)}>
 						<option value="">Выберите шаблон</option>
@@ -350,6 +395,8 @@ export function CampaignPanel() {
 						))}
 					</select>
 
+					</span>
+					<span className="ops-field">
 					<label htmlFor="campaign-scope">Вид</label>
 					<select
 						id="campaign-scope"
@@ -360,7 +407,9 @@ export function CampaignPanel() {
 						<option value="service">Сервисная — в рамках договора</option>
 					</select>
 
-					<label htmlFor="campaign-months">Последний приём был раньше, месяцев назад</label>
+					</span>
+					<span className="ops-field">
+					<label htmlFor="campaign-months">Не был, месяцев</label>
 					<input
 						id="campaign-months"
 						type="number"
@@ -370,7 +419,8 @@ export function CampaignPanel() {
 						onChange={(event) => setMonthsSinceVisit(event.target.value)}
 					/>
 
-					<label htmlFor="campaign-exclude-booked">
+					</span>
+					<label className="ops-checkbox" htmlFor="campaign-exclude-booked">
 						<input
 							id="campaign-exclude-booked"
 							type="checkbox"

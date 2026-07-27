@@ -20,6 +20,11 @@
  *
  * Диаграммы нарисованы полосками на CSS: сторонняя библиотека графиков здесь
  * ничего не добавляет, а её оформление ведут в другом месте.
+ *
+ * ОФОРМЛЕНИЕ. Всё на переменных темы через styles/dente-operations.css — в
+ * первой версии панель рисовалась голыми <table> и <ul> с оформлением в
+ * атрибуте style и зашитым цветом полосы, который ломался в тёмной теме.
+ * Цифры моноширинные: суммы в колонке стоят разряд под разрядом.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -156,21 +161,21 @@ export function ManagerReportsPanel() {
 	);
 
 	return (
-		<section className="panel" data-testid="manager-reports-panel">
+		<section className="panel ops-panel" data-testid="manager-reports-panel">
 			<div className="panel-heading">
 				<h2>Отчёты руководителю</h2>
 			</div>
 
-			<div className="quick-chips-row" style={{ flexWrap: "wrap", alignItems: "flex-end" }}>
-				<span>
-					<label htmlFor="report-from">С</label>
+			<div className="ops-toolbar">
+				<span className="ops-field">
+					<label htmlFor="report-from">Период с</label>
 					<input id="report-from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
 				</span>
-				<span>
+				<span className="ops-field">
 					<label htmlFor="report-to">по</label>
 					<input id="report-to" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
 				</span>
-				<span>
+				<span className="ops-field">
 					<label htmlFor="report-granularity">Детализация</label>
 					<select
 						id="report-granularity"
@@ -183,98 +188,101 @@ export function ManagerReportsPanel() {
 					</select>
 				</span>
 				<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
-					Обновить
+					{loading ? "Считаю…" : "Обновить"}
 				</button>
 			</div>
 
 			{error ? (
-				<p role="alert">
+				<p className="ops-notice ops-notice--error" role="alert">
 					Отчёт не построен: {error}
 				</p>
 			) : null}
 
-			{loading && summary === null ? <p>Считаю…</p> : null}
+			{/* Скелет держит высоту: без него содержимое прыгает при каждой смене периода. */}
+			{loading && summary === null ? (
+				<div className="ops-skeleton" aria-hidden="true">
+					<span className="ops-skeleton__line" />
+					<span className="ops-skeleton__line" />
+					<span className="ops-skeleton__line" />
+				</div>
+			) : null}
 
 			{summary ? (
 				summary.isEmpty ? (
-					<p>За выбранный период данных нет: ни платежей, ни приёмов. Это не нулевые показатели, а отсутствие записей.</p>
+					<p className="ops-empty">За выбранный период данных нет: ни платежей, ни приёмов. Это не нулевые показатели, а отсутствие записей.</p>
 				) : (
 					<>
 						{/* ── Главные числа ─────────────────────────────────────── */}
-						<h3>Итоги периода</h3>
-						<ul style={{ listStyle: "none", padding: 0, display: "flex", flexWrap: "wrap", gap: "16px" }}>
-							<li>
-								<strong>{formatRub(summary.revenue.totalRub)}</strong>
-								<br />
-								<small>получено</small>
+						<h3 className="ops-section-title">Итоги периода</h3>
+						<ul className="ops-metrics">
+							<li className="ops-metric ops-metric--primary">
+								<span className="ops-metric__value">{formatRub(summary.revenue.totalRub)}</span>
+								<span className="ops-metric__label">получено</span>
 							</li>
-							<li>
-								<strong>{summary.appointments.total}</strong>
-								<br />
-								<small>приёмов</small>
+							<li className="ops-metric">
+								<span className="ops-metric__value">{summary.appointments.total}</span>
+								<span className="ops-metric__label">приёмов</span>
 							</li>
-							<li>
-								<strong>{summary.appointments.lostAppointments}</strong>
-								<br />
+							<li className={`ops-metric ${summary.appointments.lostAppointments > 0 ? "ops-metric--danger" : ""}`}>
+								<span className="ops-metric__value">{summary.appointments.lostAppointments}</span>
 								{/* Именно этот показатель уменьшают напоминаниями. */}
-								<small>потеряно: отмены и неявки</small>
+								<span className="ops-metric__label">потеряно: отмены и неявки</span>
 							</li>
-							<li>
-								<strong>{formatPercent(summary.appointments.noShowRate)}</strong>
-								<br />
-								<small>доля неявок</small>
+							<li className="ops-metric">
+								<span className="ops-metric__value">{formatPercent(summary.appointments.noShowRate)}</span>
+								<span className="ops-metric__label">доля неявок</span>
 							</li>
-							<li>
-								<strong>{formatRub(summary.receivables.totalDebtRub)}</strong>
-								<br />
-								<small>долг, {summary.receivables.debtors} пациент(ов)</small>
+							<li className={`ops-metric ${summary.receivables.totalDebtRub > 0 ? "ops-metric--danger" : ""}`}>
+								<span className="ops-metric__value">{formatRub(summary.receivables.totalDebtRub)}</span>
+								<span className="ops-metric__label">долг, {summary.receivables.debtors} пациент(ов)</span>
 							</li>
-							<li>
-								<strong>
+							<li className="ops-metric">
+								<span className="ops-metric__value">
 									{summary.patientFlow.newTotal} / {summary.patientFlow.returningTotal}
-								</strong>
-								<br />
-								<small>первичные / повторные</small>
+								</span>
+								<span className="ops-metric__label">первичные / повторные</span>
 							</li>
 						</ul>
 
 						{/* ── Динамика выручки ──────────────────────────────────── */}
-						<h3>Выручка</h3>
+						<h3 className="ops-section-title">Выручка</h3>
 						{summary.revenue.isEmpty ? (
-							<p>Платежей за период не было.</p>
+							<p className="ops-empty">Платежей за период не было.</p>
 						) : (
-							<ul style={{ listStyle: "none", padding: 0 }}>
+							<ul className="ops-bars">
 								{summary.revenue.points.map((point) => (
-									<li key={point.bucket} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-										<span style={{ minWidth: "90px" }}>
-											<small>{point.bucket}</small>
-										</span>
+									<li className="ops-bar" key={point.bucket}>
+										<span className="ops-bar__label">{point.bucket}</span>
+										{/*
+											Ширина в процентах, а не в пикселях: колонка отчёта на
+											планшете и на широком мониторе разной ширины, и полоса в
+											240 пикселей на узком экране вылезала за край.
+										*/}
 										<span
-											aria-hidden="true"
-											style={{
-												display: "inline-block",
-												height: "10px",
-												width: `${maxRevenue > 0 ? Math.max(2, Math.round((point.revenueRub / maxRevenue) * 240)) : 2}px`,
-												background: "var(--teal-soft, #99f6e4)",
-												borderRadius: "4px"
-											}}
-										/>
-										<span>{formatRub(point.revenueRub)}</span>
-										<small>
-											· {point.paymentCount} платеж(ей), {point.payingPatients} пациент(ов)
-										</small>
+											className="ops-bar__track"
+											title={`${point.paymentCount} платеж(ей), ${point.payingPatients} пациент(ов)`}
+										>
+											<span
+												className="ops-bar__fill"
+												style={{
+													width: `${maxRevenue > 0 ? Math.max(2, Math.round((point.revenueRub / maxRevenue) * 100)) : 2}%`
+												}}
+											/>
+										</span>
+										<span className="ops-bar__value">{formatRub(point.revenueRub)}</span>
 									</li>
 								))}
 							</ul>
 						)}
 
 						{/* ── Врачи ─────────────────────────────────────────────── */}
-						<h3>Врачи</h3>
+						<h3 className="ops-section-title">Врачи</h3>
 						{summary.doctors.isEmpty ? (
-							<p>Выработки за период нет.</p>
+							<p className="ops-empty">Выработки за период нет.</p>
 						) : (
 							<>
-								<table>
+								<div className="ops-table-wrap">
+								<table className="ops-table">
 									<thead>
 										<tr>
 											<th scope="col">Врач</th>
@@ -289,40 +297,54 @@ export function ManagerReportsPanel() {
 									<tbody>
 										{summary.doctors.rows.map((row) => (
 											<tr key={row.doctorUserId ?? row.doctorName}>
-												<td>{row.doctorName}</td>
-												<td>{formatRub(row.revenueRub)}</td>
-												<td>{row.appointmentsTotal}</td>
-												<td>
+												<td className="ops-strong" data-label="Врач">
+													{row.doctorName}
+												</td>
+												<td className="ops-num" data-label="Получено">
+													{formatRub(row.revenueRub)}
+												</td>
+												<td className="ops-num" data-label="Приёмов">
+													{row.appointmentsTotal}
+												</td>
+												<td className="ops-num" data-label="Завершено">
 													{row.appointmentsCompleted} ({formatPercent(row.completionRate)})
 												</td>
-												<td>
+												<td className="ops-num" data-label="Неявки">
 													{row.appointmentsNoShow} ({formatPercent(row.noShowRate)})
 												</td>
-												<td>{row.averageTicketRub === null ? "—" : formatRub(row.averageTicketRub)}</td>
+												<td className="ops-num" data-label="Средний чек">
+													{row.averageTicketRub === null ? "—" : formatRub(row.averageTicketRub)}
+												</td>
 												{/* Себестоимости и процента врача в базе нет — прочерк осознанный. */}
-												<td title="Себестоимость материалов и процент врача в системе не заданы">—</td>
+												<td
+													className="ops-num"
+													data-label="Маржа"
+													title="Себестоимость материалов и процент врача в системе не заданы"
+												>
+													—
+												</td>
 											</tr>
 										))}
 									</tbody>
 								</table>
+								</div>
 								{summary.doctors.unattributedRevenueRub > 0 ? (
-									<p>
-										<small>
-											Не отнесено к врачу: {formatRub(summary.doctors.unattributedRevenueRub)}.{" "}
-											{summary.doctors.attributionNote}
-										</small>
+									<p className="ops-hint">
+										Не отнесено к врачу: {formatRub(summary.doctors.unattributedRevenueRub)}.{" "}
+										{summary.doctors.attributionNote}
 									</p>
 								) : null}
 							</>
 						)}
 
 						{/* ── Кресла ────────────────────────────────────────────── */}
-						<h3>Занятость кресел</h3>
+						<h3 className="ops-section-title">Занятость кресел</h3>
 						{summary.chairs.isEmpty ? (
-							<p>Приёмов за период не было.</p>
+							<p className="ops-empty">Приёмов за период не было.</p>
 						) : (
 							<>
-								<table>
+								<div className="ops-table-wrap">
+								<table className="ops-table">
 									<thead>
 										<tr>
 											<th scope="col">Кресло</th>
@@ -334,23 +356,30 @@ export function ManagerReportsPanel() {
 									<tbody>
 										{summary.chairs.rows.map((row) => (
 											<tr key={row.chairId ?? row.chairName}>
-												<td>{row.chairName}</td>
-												<td>{formatHours(row.bookedMinutes)}</td>
-												<td>{row.appointments}</td>
-												<td>{formatPercent(row.utilization)}</td>
+												<td className="ops-strong" data-label="Кресло">
+													{row.chairName}
+												</td>
+												<td className="ops-num" data-label="Занято">
+													{formatHours(row.bookedMinutes)}
+												</td>
+												<td className="ops-num" data-label="Приёмов">
+													{row.appointments}
+												</td>
+												<td className="ops-num" data-label="Занятость">
+													{formatPercent(row.utilization)}
+												</td>
 											</tr>
 										))}
 									</tbody>
 								</table>
+								</div>
 								{/* База расчёта обязана стоять рядом с процентом. */}
-								<p>
-									<small>{summary.chairs.basis.note}</small>
-								</p>
+								<p className="ops-hint">{summary.chairs.basis.note}</p>
 							</>
 						)}
 
 						{/* ── Приёмы ────────────────────────────────────────────── */}
-						<h3>Приёмы</h3>
+						<h3 className="ops-section-title">Приёмы</h3>
 						<p>
 							Дошли до кресла: {formatPercent(summary.appointments.arrivalRate)} · завершено:{" "}
 							{formatPercent(summary.appointments.completionRate)} · отменено:{" "}
@@ -359,27 +388,34 @@ export function ManagerReportsPanel() {
 						</p>
 
 						{/* ── Дебиторка ─────────────────────────────────────────── */}
-						<h3>Дебиторка</h3>
+						<h3 className="ops-section-title">Дебиторка</h3>
 						{summary.receivables.totalDebtRub === 0 ? (
-							<p>Долгов нет.</p>
+							<p className="ops-empty ops-empty--good">Долгов нет.</p>
 						) : (
-							<ul style={{ listStyle: "none", padding: 0 }}>
+							<ul className="ops-bars">
 								{Object.entries(summary.receivables.byBucket)
 									.filter(([, amount]) => amount > 0)
 									.map(([bucket, amount]) => (
-										<li key={bucket}>
-											{bucketLabels[bucket] ?? bucket}: <strong>{formatRub(amount)}</strong>
+										<li className="ops-bar" key={bucket}>
+											<span className="ops-bar__label">{bucketLabels[bucket] ?? bucket}</span>
+											<span className="ops-bar__track">
+												<span
+													className="ops-bar__fill"
+													style={{
+														width: `${Math.max(2, Math.round((amount / summary.receivables.totalDebtRub) * 100))}%`
+													}}
+												/>
+											</span>
+											<span className="ops-bar__value">{formatRub(amount)}</span>
 										</li>
 									))}
 							</ul>
 						)}
 
-						<p>
-							<small>
-								Период: {new Date(summary.period.from).toLocaleDateString("ru-RU")} —{" "}
-								{new Date(summary.period.to).toLocaleDateString("ru-RU")}. В выручку входят только полученные
-								платежи; назначенные и возвращённые не учитываются.
-							</small>
+						<p className="ops-hint">
+							Период: {new Date(summary.period.from).toLocaleDateString("ru-RU")} —{" "}
+							{new Date(summary.period.to).toLocaleDateString("ru-RU")}. В выручку входят только полученные
+							платежи; назначенные и возвращённые не учитываются.
 						</p>
 					</>
 				)

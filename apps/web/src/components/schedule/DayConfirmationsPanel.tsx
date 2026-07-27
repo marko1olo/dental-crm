@@ -8,16 +8,19 @@
  * дошло.
  *
  * УСТРОЙСТВО ЭКРАНА ПОДЧИНЕНО ОДНОМУ ВОПРОСУ: кому звонить. Поэтому список по
- * умолчанию показывает только таких пациентов, а не всех записанных: полный
- * список есть в расписании, а здесь нужна работа на утро. Переключатель
- * «показать всех» рядом.
+ * умолчанию показывает только таких пациентов: полный список есть в расписании,
+ * а здесь нужна работа на утро.
  *
- * Звонить нужно тому, кто не подтвердил И до кого напоминание не дошло.
- * Доставленное напоминание без ответа поводом для звонка не является: у
- * пациента был выбор, и это решение принято на стороне сервера, а не здесь.
+ * Решение «звонить или нет» принимает сервер (поле needsCall), а не разметка:
+ * доставленное напоминание без ответа поводом для звонка не является — у
+ * пациента был выбор.
+ *
+ * ОФОРМЛЕНИЕ. Ни одного зашитого цвета: всё на переменных темы через
+ * styles/dente-operations.css, поэтому светлая, тёмная и ночная темы работают
+ * одинаково. Цифры моноширинные — время и суммы стоят разряд под разрядом.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ReminderState = "not_queued" | "queued" | "sent" | "delivered" | "failed" | "suppressed" | "cancelled";
 
@@ -50,14 +53,15 @@ type DayConfirmations = {
 	isEmpty: boolean;
 };
 
-const reminderLabels: Record<ReminderState, string> = {
-	not_queued: "не отправлялось",
-	queued: "в очереди",
-	sent: "отправлено",
-	delivered: "доставлено",
-	failed: "не доставлено",
-	suppressed: "не отправлено",
-	cancelled: "снято"
+/** Подпись и вид состояния напоминания. Вид несёт смысл вместе с текстом. */
+const reminderPresentation: Record<ReminderState, { label: string; tone: "ok" | "warn" | "bad" | "info" | "muted" }> = {
+	delivered: { label: "доставлено", tone: "ok" },
+	sent: { label: "отправлено", tone: "info" },
+	queued: { label: "в очереди", tone: "info" },
+	failed: { label: "не доставлено", tone: "bad" },
+	suppressed: { label: "не отправлено", tone: "warn" },
+	cancelled: { label: "снято", tone: "muted" },
+	not_queued: { label: "не отправлялось", tone: "muted" }
 };
 
 const appointmentStatusLabels: Record<string, string> = {
@@ -105,6 +109,7 @@ export function DayConfirmationsPanel() {
 	const [loading, setLoading] = useState(false);
 	const [showAll, setShowAll] = useState(false);
 	const [handled, setHandled] = useState<Set<string>>(new Set());
+	const liveRegion = useRef<HTMLParagraphElement | null>(null);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -132,76 +137,103 @@ export function DayConfirmationsPanel() {
 		return showAll ? data.rows : data.rows.filter((row) => row.needsCall);
 	}, [data, showAll]);
 
-	function toggleHandled(appointmentId: string) {
+	const callProgress = useMemo(() => {
+		if (!data) return { done: 0, total: 0 };
+		const total = data.summary.needsCall;
+		const done = data.rows.filter((row) => row.needsCall && handled.has(row.appointmentId)).length;
+		return { done, total };
+	}, [data, handled]);
+
+	function toggleHandled(row: ConfirmationRow) {
 		setHandled((previous) => {
 			const next = new Set(previous);
-			if (next.has(appointmentId)) next.delete(appointmentId);
-			else next.add(appointmentId);
+			if (next.has(row.appointmentId)) next.delete(row.appointmentId);
+			else next.add(row.appointmentId);
 			return next;
 		});
+		// Читалка экрана должна сообщить об изменении: список визуально гаснет,
+		// но незрячему администратору это ничего не говорит.
+		if (liveRegion.current) {
+			liveRegion.current.textContent = handled.has(row.appointmentId)
+				? `${row.patientName} возвращён в список обзвона`
+				: `${row.patientName} отмечен как обзвоненный`;
+		}
 	}
 
 	return (
-		<section className="panel" data-testid="day-confirmations-panel">
+		<section className="panel ops-panel" data-testid="day-confirmations-panel">
 			<div className="panel-heading">
 				<h2>Обзвон и подтверждения</h2>
-				<span>
-					<label htmlFor="confirmations-date">День</label>
-					<input
-						id="confirmations-date"
-						type="date"
-						value={date}
-						onChange={(event) => setDate(event.target.value)}
-					/>
-					<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
-						Обновить
-					</button>
-				</span>
+				{data && data.summary.needsCall > 0 ? (
+					<span className="status-pill status-arrived">
+						обзвонено {callProgress.done} из {callProgress.total}
+					</span>
+				) : null}
 			</div>
 
-			{error ? <p role="alert">Список не построен: {error}</p> : null}
-			{loading && data === null ? <p>Загружаю…</p> : null}
+			<div className="ops-toolbar">
+				<span className="ops-field">
+					<label htmlFor="confirmations-date">День</label>
+					<input id="confirmations-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+				</span>
+				<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
+					{loading ? "Обновляю…" : "Обновить"}
+				</button>
+			</div>
+
+			{error ? (
+				<p className="ops-notice ops-notice--error" role="alert">
+					Список не построен: {error}
+				</p>
+			) : null}
+
+			{/* Скелет занимает место данных — кнопка не уезжает из-под пальца. */}
+			{loading && data === null ? (
+				<div className="ops-skeleton" aria-hidden="true">
+					<span className="ops-skeleton__line" />
+					<span className="ops-skeleton__line" />
+					<span className="ops-skeleton__line" />
+				</div>
+			) : null}
+
+			<p className="sr-only" role="status" aria-live="polite" ref={liveRegion} />
 
 			{data ? (
 				data.isEmpty ? (
-					<p>На этот день приёмов нет.</p>
+					<p className="ops-empty">На этот день приёмов нет.</p>
 				) : (
 					<>
-						<ul style={{ listStyle: "none", padding: 0, display: "flex", flexWrap: "wrap", gap: "16px" }}>
-							<li>
+						<ul className="ops-metrics">
+							<li className={`ops-metric ${data.summary.needsCall > 0 ? "ops-metric--primary" : ""}`}>
 								{/* Главное число экрана: сколько звонков реально нужно сделать. */}
-								<strong>{data.summary.needsCall}</strong>
-								<br />
-								<small>нужен звонок</small>
+								<span className="ops-metric__value">{data.summary.needsCall}</span>
+								<span className="ops-metric__label">нужен звонок</span>
 							</li>
-							<li>
-								<strong>{data.summary.confirmed}</strong>
-								<br />
-								<small>подтвердили сами</small>
+							<li className="ops-metric">
+								<span className="ops-metric__value">{data.summary.confirmed}</span>
+								<span className="ops-metric__label">подтвердили сами</span>
 							</li>
-							<li>
-								<strong>{data.summary.awaiting}</strong>
-								<br />
-								<small>ждут подтверждения</small>
+							<li className="ops-metric">
+								<span className="ops-metric__value">{data.summary.awaiting}</span>
+								<span className="ops-metric__label">ждут подтверждения</span>
 							</li>
-							<li>
-								<strong>{data.summary.total}</strong>
-								<br />
-								<small>всего приёмов</small>
+							<li className="ops-metric">
+								<span className="ops-metric__value">{data.summary.total}</span>
+								<span className="ops-metric__label">всего приёмов</span>
 							</li>
 							{data.summary.withoutPhone > 0 ? (
-								<li>
-									<strong>{data.summary.withoutPhone}</strong>
-									<br />
-									<small>без телефона</small>
+								<li className="ops-metric ops-metric--danger">
+									<span className="ops-metric__value">{data.summary.withoutPhone}</span>
+									<span className="ops-metric__label">без телефона</span>
 								</li>
 							) : null}
 						</ul>
 
-						<div className="quick-chips-row">
+						<div className="quick-chips-row" role="group" aria-label="Что показывать в списке">
 							<button
 								type="button"
 								className={`quick-chip ${showAll ? "" : "selected"}`}
+								aria-pressed={!showAll}
 								onClick={() => setShowAll(false)}
 							>
 								Только нужные звонки
@@ -209,6 +241,7 @@ export function DayConfirmationsPanel() {
 							<button
 								type="button"
 								className={`quick-chip ${showAll ? "selected" : ""}`}
+								aria-pressed={showAll}
 								onClick={() => setShowAll(true)}
 							>
 								Все приёмы дня
@@ -216,84 +249,91 @@ export function DayConfirmationsPanel() {
 						</div>
 
 						{visibleRows.length === 0 ? (
-							<p>
-								{/* Лучший возможный итог: обзвон не нужен вовсе. */}
+							<p className="ops-empty ops-empty--good">
+								{/* Лучший возможный итог — и выглядеть он должен как успех, а не как пустота. */}
 								Звонить никому не нужно: все либо подтвердили, либо получили напоминание.
 							</p>
 						) : (
-							<table>
-								<thead>
-									<tr>
-										<th scope="col">Время</th>
-										<th scope="col">Пациент</th>
-										<th scope="col">Телефон</th>
-										<th scope="col">Врач</th>
-										<th scope="col">Запись</th>
-										<th scope="col">Напоминание</th>
-										<th scope="col">Обзвон</th>
-									</tr>
-								</thead>
-								<tbody>
-									{visibleRows.map((row) => (
-										<tr key={row.appointmentId} style={handled.has(row.appointmentId) ? { opacity: 0.55 } : undefined}>
-											<td>{formatTime(row.startsAt, data.timeZone)}</td>
-											<td>{row.patientName}</td>
-											<td>
-												{row.phone ? (
-													// Ссылка tel: — на планшете регистратуры звонок в одно касание.
-													<a href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}>{row.phone}</a>
-												) : (
-													<span title="У пациента не указан телефон — позвонить некуда">телефона нет</span>
-												)}
-											</td>
-											<td>{row.doctorName ?? "—"}</td>
-											<td>
-												<span className={`status-pill status-${row.status}`}>
-													{appointmentStatusLabels[row.status] ?? row.status}
-												</span>
-												{row.patientClickedAt ? (
-													<>
-														<br />
-														<small>ответил сам</small>
-													</>
-												) : null}
-											</td>
-											<td>
-												{reminderLabels[row.reminder.state]}
-												{row.reminder.detail ? (
-													<>
-														<br />
-														{/* Причина недоставки прямо в строке: администратор должен
-														    понимать, почему пациент ничего не знает. */}
-														<small>{row.reminder.detail}</small>
-													</>
-												) : null}
-											</td>
-											<td>
-												{row.needsCall ? (
-													<button
-														className={handled.has(row.appointmentId) ? "secondary-button" : "primary-button"}
-														type="button"
-														onClick={() => toggleHandled(row.appointmentId)}
-													>
-														{handled.has(row.appointmentId) ? "Вернуть в список" : "Позвонил"}
-													</button>
-												) : (
-													"не требуется"
-												)}
-											</td>
+							<div className="ops-table-wrap">
+								<table className="ops-table">
+									<caption className="sr-only">
+										Приёмы на {data.date}. Отмечены те, кому нужен звонок.
+									</caption>
+									<thead>
+										<tr>
+											<th scope="col">Время</th>
+											<th scope="col">Пациент</th>
+											<th scope="col">Телефон</th>
+											<th scope="col">Врач</th>
+											<th scope="col">Запись</th>
+											<th scope="col">Напоминание</th>
+											<th scope="col">Обзвон</th>
 										</tr>
-									))}
-								</tbody>
-							</table>
+									</thead>
+									<tbody>
+										{visibleRows.map((row) => {
+											const isHandled = handled.has(row.appointmentId);
+											const reminder = reminderPresentation[row.reminder.state];
+											return (
+												<tr
+													key={row.appointmentId}
+													className={`${row.needsCall && !isHandled ? "ops-row--action" : ""} ${isHandled ? "ops-row--done" : ""}`}
+												>
+													<td className="ops-time" data-label="Время">
+														{formatTime(row.startsAt, data.timeZone)}
+													</td>
+													<td className="ops-strong" data-label="Пациент">
+														{row.patientName}
+													</td>
+													<td data-label="Телефон">
+														{row.phone ? (
+															// tel: — на планшете регистратуры звонок в одно касание.
+															<a href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}>{row.phone}</a>
+														) : (
+															<span className="ops-state ops-state--bad">телефона нет</span>
+														)}
+													</td>
+													<td data-label="Врач">{row.doctorName ?? "—"}</td>
+													<td data-label="Запись">
+														<span className={`status-pill status-${row.status}`}>
+															{appointmentStatusLabels[row.status] ?? row.status}
+														</span>
+														{row.patientClickedAt ? <span className="ops-note">ответил сам</span> : null}
+													</td>
+													<td data-label="Напоминание">
+														<span className={`ops-state ops-state--${reminder.tone}`}>{reminder.label}</span>
+														{row.reminder.detail ? (
+															// Причина недоставки прямо в строке: администратор должен
+															// понимать, почему пациент ничего не знает.
+															<span className="ops-note">{row.reminder.detail}</span>
+														) : null}
+													</td>
+													<td data-label="Обзвон">
+														{row.needsCall ? (
+															<button
+																className={isHandled ? "secondary-button" : "primary-button"}
+																type="button"
+																aria-pressed={isHandled}
+																onClick={() => toggleHandled(row)}
+															>
+																{isHandled ? "Вернуть" : "Позвонил"}
+															</button>
+														) : (
+															<span className="ops-note">не требуется</span>
+														)}
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
 						)}
 
-						<p>
-							<small>
-								Звонок нужен тому, кто не подтвердил и до кого напоминание не дошло. Доставленное напоминание без
-								ответа поводом для звонка не считается: у пациента был выбор. Отметка «Позвонил» живёт до
-								обновления страницы — это рабочий след на утро, а не запись в карточке.
-							</small>
+						<p className="ops-hint">
+							Звонок нужен тому, кто не подтвердил и до кого напоминание не дошло. Доставленное напоминание без
+							ответа поводом для звонка не считается: у пациента был выбор. Отметка «Позвонил» живёт до обновления
+							страницы — это рабочий след на утро, а не запись в карточке.
 						</p>
 					</>
 				)

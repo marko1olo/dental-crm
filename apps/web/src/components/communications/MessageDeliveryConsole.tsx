@@ -14,6 +14,11 @@
  *   • правила: тихие часы, суточный предел, автоматические напоминания.
  *
  * Ничего не подставляется «на всякий случай»: если данных нет, так и написано.
+ *
+ * ОФОРМЛЕНИЕ. Всё на переменных темы через styles/dente-operations.css: первая
+ * версия рисовалась голыми <table> и <ul> с оформлением в атрибуте style, и в
+ * тёмной теме это выглядело как необработанная разметка. Состояние сообщения
+ * передаётся текстом и значком, а не только цветом.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -120,6 +125,17 @@ const statusLabels: Record<string, string> = {
 	failed: "Ошибка",
 	cancelled: "Отменено",
 	suppressed: "Не отправлено"
+};
+
+/** Вид состояния. Цвет дублируется значком: он читается и без цветовосприятия. */
+const statusTone: Record<string, "ok" | "warn" | "bad" | "info" | "muted"> = {
+	queued: "info",
+	sending: "info",
+	sent: "info",
+	delivered: "ok",
+	failed: "bad",
+	cancelled: "muted",
+	suppressed: "warn"
 };
 
 function minutesToTime(minutes: number): string {
@@ -363,11 +379,13 @@ export function MessageDeliveryConsole() {
 
 	if (loadError) {
 		return (
-			<section className="panel" data-testid="message-delivery-console">
+			<section className="panel ops-panel" data-testid="message-delivery-console">
 				<div className="panel-heading">
 					<h2>Отправка сообщений</h2>
 				</div>
-				<p role="alert">Не удалось получить данные: {loadError}</p>
+				<p className="ops-notice ops-notice--error" role="alert">
+					Не удалось получить данные: {loadError}
+				</p>
 				<button className="secondary-button" type="button" onClick={() => void loadAll()}>
 					Повторить
 				</button>
@@ -376,7 +394,7 @@ export function MessageDeliveryConsole() {
 	}
 
 	return (
-		<section className="panel" data-testid="message-delivery-console">
+		<section className="panel ops-panel" data-testid="message-delivery-console">
 			<div className="panel-heading">
 				<h2>Отправка сообщений</h2>
 				<div className="quick-chips-row">
@@ -390,29 +408,29 @@ export function MessageDeliveryConsole() {
 			</div>
 
 			{notice ? (
-				<p role="status" aria-live="polite">
+				<p className="ops-notice" role="status" aria-live="polite">
 					{notice}
 				</p>
 			) : null}
 
 			{/* ── Шлюзы ─────────────────────────────────────────────────────── */}
-			<h3>Каналы</h3>
+			<h3 className="ops-section-title">Каналы</h3>
 			{gateways === null ? (
 				<p>Загружаю состояние каналов…</p>
 			) : (
 				<>
 					{configuredChannels.length === 0 ? (
-						<p role="alert">
+						<p className="ops-notice ops-notice--error" role="alert">
 							Ни один канал не настроен: сообщения не отправятся. Ключи шлюзов задаются в окружении сервера
 							(SMS, SMTP, WhatsApp, Telegram).
 						</p>
 					) : null}
-					<ul className="quick-chips-row" style={{ listStyle: "none", padding: 0, flexWrap: "wrap" }}>
+					<ul className="quick-chips-row ops-channel-list">
 						{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {
 							const channel = gateways.channels[code];
 							return (
 								<li key={code}>
-									<span className={`status-pill ${channel.configured ? "status-completed" : "status-cancelled"}`}>
+									<span className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}>
 										{channelLabels[code] ?? code}: {channel.configured ? "настроен" : "не настроен"}
 									</span>
 								</li>
@@ -420,7 +438,7 @@ export function MessageDeliveryConsole() {
 						})}
 					</ul>
 					{gateways.channels.sms.configured ? (
-						<p>
+						<p className="ops-hint">
 							SMS-шлюз: {gateways.channels.sms.provider ?? "—"}
 							{gateways.channels.sms.sender ? `, отправитель ${gateways.channels.sms.sender}` : ""}.{" "}
 							{gateways.channels.sms.balance
@@ -434,11 +452,12 @@ export function MessageDeliveryConsole() {
 			)}
 
 			{/* ── Журнал ────────────────────────────────────────────────────── */}
-			<h3>Журнал отправки</h3>
-			<div className="quick-chips-row" style={{ flexWrap: "wrap" }}>
+			<h3 className="ops-section-title">Журнал отправки</h3>
+			<div className="quick-chips-row" role="group" aria-label="Фильтр по состоянию">
 				<button
 					type="button"
 					className={`quick-chip ${statusFilter === "" ? "selected" : ""}`}
+					aria-pressed={statusFilter === ""}
 					onClick={() => setStatusFilter("")}
 				>
 					Все
@@ -448,6 +467,7 @@ export function MessageDeliveryConsole() {
 						key={code}
 						type="button"
 						className={`quick-chip ${statusFilter === code ? "selected" : ""}`}
+						aria-pressed={statusFilter === code}
 						onClick={() => setStatusFilter(code)}
 					>
 						{label}
@@ -457,9 +477,10 @@ export function MessageDeliveryConsole() {
 			</div>
 
 			{outbox.length === 0 ? (
-				<p>Сообщений с такими условиями нет.</p>
+				<p className="ops-empty">Сообщений с такими условиями нет.</p>
 			) : (
-				<table>
+				<div className="ops-table-wrap">
+				<table className="ops-table">
 					<thead>
 						<tr>
 							<th scope="col">Создано</th>
@@ -473,29 +494,27 @@ export function MessageDeliveryConsole() {
 					<tbody>
 						{outbox.map((item) => (
 							<tr key={item.id}>
-								<td>{formatMoment(item.createdAt)}</td>
-								<td>{channelLabels[item.channel] ?? item.channel}</td>
-								<td>{item.recipientAddress}</td>
-								<td title={item.body}>{item.body.length > 80 ? `${item.body.slice(0, 80)}…` : item.body}</td>
-								<td>
-									<span className="status-pill">{statusLabels[item.status] ?? item.status}</span>
+								<td className="ops-time" data-label="Создано">
+									{formatMoment(item.createdAt)}
+								</td>
+								<td data-label="Канал">{channelLabels[item.channel] ?? item.channel}</td>
+								<td data-label="Получатель">{item.recipientAddress}</td>
+								<td data-label="Текст" title={item.body}>
+									{item.body.length > 80 ? `${item.body.slice(0, 80)}…` : item.body}
+								</td>
+								<td data-label="Состояние">
+									<span className={`ops-state ops-state--${statusTone[item.status] ?? "muted"}`}>
+										{statusLabels[item.status] ?? item.status}
+									</span>
 									{/* Причина отказа показывается прямо в строке: раньше её негде было узнать. */}
-									{item.lastErrorMessage ? (
-										<>
-											<br />
-											<small>{item.lastErrorMessage}</small>
-										</>
-									) : null}
+									{item.lastErrorMessage ? <span className="ops-note">{item.lastErrorMessage}</span> : null}
 									{item.attempts > 0 ? (
-										<>
-											<br />
-											<small>
-												попыток {item.attempts} из {item.maxAttempts}
-											</small>
-										</>
+										<span className="ops-note">
+											попыток {item.attempts} из {item.maxAttempts}
+										</span>
 									) : null}
 								</td>
-								<td>
+								<td data-label="Действие">
 									{item.status === "queued" || item.status === "sending" ? (
 										<button
 											className="secondary-button"
@@ -522,21 +541,26 @@ export function MessageDeliveryConsole() {
 						))}
 					</tbody>
 				</table>
+				</div>
 			)}
 
 			{/* ── Шаблоны ───────────────────────────────────────────────────── */}
-			<h3>Шаблоны сообщений</h3>
+			<h3 className="ops-section-title">Шаблоны сообщений</h3>
 			{templates.length === 0 ? (
-				<p>Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические напоминания не включаются.</p>
+				<p className="ops-empty">
+					Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические напоминания не включаются.
+				</p>
 			) : (
-				<ul style={{ listStyle: "none", padding: 0 }}>
+				<ul className="ops-template-list">
 					{templates.map((template) => (
-						<li key={template.id}>
-							<strong>{template.title}</strong> · {channelLabels[template.channel] ?? template.channel} ·{" "}
-							{intentLabels[template.intent] ?? template.intent}
-							{template.isActive ? "" : " · выключен"}
-							<br />
-							<small>{template.body}</small>{" "}
+						<li className="ops-template" key={template.id}>
+							<span className="ops-template__head">
+								<strong>{template.title}</strong>
+								<span className="ops-state ops-state--info">{channelLabels[template.channel] ?? template.channel}</span>
+								<span className="ops-state">{intentLabels[template.intent] ?? template.intent}</span>
+								{template.isActive ? null : <span className="ops-state ops-state--warn">выключен</span>}
+							</span>
+							<span className="ops-note">{template.body}</span>
 							<button
 								className="secondary-button"
 								type="button"
@@ -555,7 +579,9 @@ export function MessageDeliveryConsole() {
 				</ul>
 			)}
 
-			<div>
+			<div className="ops-editor">
+				<div className="ops-toolbar">
+				<span className="ops-field ops-field--grow">
 				<label htmlFor="template-title">Название</label>
 				<input
 					id="template-title"
@@ -564,7 +590,9 @@ export function MessageDeliveryConsole() {
 					onChange={(event) => setDraftTitle(event.target.value)}
 					placeholder="Напоминание о приёме"
 				/>
+				</span>
 
+				<span className="ops-field">
 				<label htmlFor="template-channel">Канал</label>
 				<select
 					id="template-channel"
@@ -577,7 +605,9 @@ export function MessageDeliveryConsole() {
 						</option>
 					))}
 				</select>
+				</span>
 
+				<span className="ops-field">
 				<label htmlFor="template-intent">Назначение</label>
 				<select id="template-intent" value={draftIntent} onChange={(event) => setDraftIntent(event.target.value)}>
 					{Object.entries(intentLabels).map(([code, label]) => (
@@ -586,7 +616,10 @@ export function MessageDeliveryConsole() {
 						</option>
 					))}
 				</select>
+				</span>
+				</div>
 
+				<span className="ops-field">
 				<label htmlFor="template-body">Текст</label>
 				<textarea
 					id="template-body"
@@ -595,20 +628,29 @@ export function MessageDeliveryConsole() {
 					onChange={(event) => setDraftBody(event.target.value)}
 					placeholder="{patient}, напоминаем: приём {date} в {time}."
 				/>
+				</span>
 
-				{previewError ? <p role="alert">{previewError}</p> : null}
+				{previewError ? (
+					<p className="ops-notice ops-notice--error" role="alert">
+						{previewError}
+					</p>
+				) : null}
 				{preview ? (
-					<div>
-						<strong>Как увидит пациент:</strong>
-						<p>{preview.text}</p>
-						<small>
+					<div className="ops-preview">
+						<span className="ops-preview__title">Как увидит пациент</span>
+						<p className="ops-preview__text">{preview.text}</p>
+						<span className="ops-note">
 							{preview.length} симв. из {preview.limit}
 							{preview.sms
 								? ` · ${preview.sms.encoding === "ucs2" ? "кириллица" : "латиница"}, сегментов ${preview.sms.segments}, ` +
 									`свободно ${preview.sms.charactersLeftInSegment}`
 								: ""}
-						</small>
-						{preview.problems.length > 0 ? <p role="alert">{preview.problems.join(" ")}</p> : null}
+						</span>
+						{preview.problems.length > 0 ? (
+							<p className="ops-notice ops-notice--error" role="alert">
+								{preview.problems.join(" ")}
+							</p>
+						) : null}
 					</div>
 				) : null}
 
@@ -628,17 +670,19 @@ export function MessageDeliveryConsole() {
 			</div>
 
 			{/* ── Правила ───────────────────────────────────────────────────── */}
-			<h3>Правила рассылки</h3>
+			<h3 className="ops-section-title">Правила рассылки</h3>
 			{settings === null ? (
-				<p>Загружаю правила…</p>
+				<p className="ops-empty">Загружаю правила…</p>
 			) : (
 				<div>
-					<p>
+					<p className="ops-hint">
 						Часовой пояс: {settings.timezone}. Тихие часы: {minutesToTime(settings.quietHoursStartMinute)} —{" "}
 						{minutesToTime(settings.quietHoursEndMinute)}. Сервисные сообщения в это время откладываются до утра,
 						рекламные не отправляются. Не более {settings.dailyLimitPerPatient} сообщений одному пациенту в сутки.
 					</p>
 
+					<div className="ops-toolbar">
+					<span className="ops-field">
 					<label htmlFor="quiet-start">Тихие часы с</label>
 					<input
 						id="quiet-start"
@@ -651,6 +695,8 @@ export function MessageDeliveryConsole() {
 							}
 						}}
 					/>
+					</span>
+					<span className="ops-field">
 					<label htmlFor="quiet-end">до</label>
 					<input
 						id="quiet-end"
@@ -664,7 +710,10 @@ export function MessageDeliveryConsole() {
 						}}
 					/>
 
-					<label htmlFor="reminders-enabled">
+					</span>
+					</div>
+
+					<label className="ops-checkbox" htmlFor="reminders-enabled">
 						<input
 							id="reminders-enabled"
 							type="checkbox"
@@ -675,11 +724,9 @@ export function MessageDeliveryConsole() {
 						Напоминать о приёме автоматически за {settings.appointmentReminderLeadHours.join(", ")} ч
 					</label>
 					{settings.appointmentReminderEnabled ? null : (
-						<p>
-							<small>
-								Пока выключено. Для включения нужен активный шаблон с назначением «Подтверждение приёма» —
-								иначе автоматика не отправит ничего и промолчит об этом.
-							</small>
+						<p className="ops-hint">
+							Пока выключено. Для включения нужен активный шаблон с назначением «Подтверждение приёма» — иначе
+							автоматика не отправит ничего и промолчит об этом.
 						</p>
 					)}
 				</div>

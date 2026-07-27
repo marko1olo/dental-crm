@@ -19,6 +19,9 @@ import "./styles/touch-targets.css";
 import "./styles/overflow-fixes.css";
 // Контраст текста по WCAG 1.4.3.
 import "./styles/contrast-fixes.css";
+// Рабочие панели: обзвон, отправка сообщений, рассылки, отчёты. Всё на
+// переменных темы — без зашитых цветов, ломающихся в тёмной и ночной.
+import "./styles/dente-operations.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
