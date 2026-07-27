@@ -86,6 +86,12 @@ export interface SettingsState {
   settingsAdminSecretSession: string;
   scheduleAdminSecretSession: string;
   telegramAdminSecretSession: string;
+  /**
+   * Сервер отказал в изменении расписания и потребовал секрет администратора.
+   * Пустая строка — не требовал. Поле нужно, чтобы поле секрета появлялось в
+   * ответ на настоящий отказ, а не висело на экране постоянно.
+   */
+  scheduleAdminSecretDemand: string;
   telegramSendingItemId: string | null;
   telegramRevokingLinkId: string | null;
 
@@ -142,6 +148,7 @@ export interface SettingsActions {
   setSettingsAdminSecretSession: (val: string | ((prev: string) => string)) => void;
   setScheduleAdminSecretSession: (val: string | ((prev: string) => string)) => void;
   setTelegramAdminSecretSession: (val: string | ((prev: string) => string)) => void;
+  setScheduleAdminSecretDemand: (val: string | ((prev: string) => string)) => void;
   setTelegramSendingItemId: (val: string | null | ((prev: string | null) => string | null)) => void;
   setTelegramRevokingLinkId: (val: string | null | ((prev: string | null) => string | null)) => void;
 
@@ -198,6 +205,7 @@ const initialSettingsState: SettingsState = {
   settingsAdminSecretSession: "",
   scheduleAdminSecretSession: "",
   telegramAdminSecretSession: "",
+  scheduleAdminSecretDemand: "",
   telegramSendingItemId: null,
   telegramRevokingLinkId: null,
 
@@ -255,6 +263,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set) 
   setSettingsAdminSecretSession: (val) => set((state) => ({ settingsAdminSecretSession: resolveUpdater(val, state.settingsAdminSecretSession) })),
   setScheduleAdminSecretSession: (val) => set((state) => ({ scheduleAdminSecretSession: resolveUpdater(val, state.scheduleAdminSecretSession) })),
   setTelegramAdminSecretSession: (val) => set((state) => ({ telegramAdminSecretSession: resolveUpdater(val, state.telegramAdminSecretSession) })),
+  setScheduleAdminSecretDemand: (val) => set((state) => ({ scheduleAdminSecretDemand: resolveUpdater(val, state.scheduleAdminSecretDemand) })),
   setTelegramSendingItemId: (val) => set((state) => ({ telegramSendingItemId: resolveUpdater(val, state.telegramSendingItemId) })),
   setTelegramRevokingLinkId: (val) => set((state) => ({ telegramRevokingLinkId: resolveUpdater(val, state.telegramRevokingLinkId) })),
 

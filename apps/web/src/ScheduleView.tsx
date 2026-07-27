@@ -165,7 +165,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     updateNewAppointmentDraft,
     visibleScheduleSuggestions
   } = props;
-  const { setScheduleAdminSecretDraft, scheduleAdminSecretDraft, scheduleAdminSecretSession } = useSettingsStore();
+  const {
+    setScheduleAdminSecretDraft,
+    scheduleAdminSecretDraft,
+    scheduleAdminSecretSession,
+    scheduleAdminSecretDemand
+  } = useSettingsStore();
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [useManualSelects, setUseManualSelects] = useState(false);
@@ -173,6 +178,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
+
+  /*
+    Поле секрета показываем только тогда, когда сервер действительно отказал в
+    изменении расписания, либо секрет уже введён и его надо дать забыть.
+
+    Раньше на экране постоянно висела строка «🔐 Разблокировать сохранение
+    расписания» — замок без объяснения, зачем он и что случится. Он не охранял
+    ничего: серверная проверка requireScheduleMutationAccess объявлена в
+    apps/api/src/routes/schedule.ts и не вызывается ни в одном маршруте, а
+    DENTE_SCHEDULE_ADMIN_SECRET не задан. Проверено живьём
+    (scratch/verify-schedule-lock.mjs): создание приёма и перенос времени
+    проходят без секрета и с заведомо неверным секретом.
+  */
+  const scheduleAdminSecretNeeded =
+    scheduleAdminSecretDemand.length > 0 || scheduleAdminSecretSession.length > 0;
+  const scheduleAdminSecretReason =
+    scheduleAdminSecretDemand === "ScheduleAdminSecretMissing"
+      ? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
+      : "Сервер клиники не принял изменение расписания без секрета администратора. Введите его, чтобы сохранить запись.";
 
   const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) => {
     const startsAtMs = Date.parse(draft.startsAt);
@@ -438,13 +462,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                   </button>
                 ))}
             </div>
-            <details className="schedule-secret-collapsible">
-              <summary>🔐 Разблокировать сохранение расписания</summary>
-              <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "10px", background: "var(--paper-soft)", border: "1px solid var(--line)", marginTop: "8px" }}>
+            {scheduleAdminSecretNeeded ? (
+              <div className="appointment-editor schedule-admin-unlock" aria-label="Секрет администратора для сохранения расписания" role="group" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "10px", background: "var(--paper-soft)", border: "1px solid var(--line)", marginTop: "8px" }}>
               {!scheduleAdminSecretSession ? (
                 <>
+                  <p className="admin-unlock-guidance form-span-2" id="schedule-admin-unlock-guidance" role="status" aria-live="polite" style={{ margin: 0, fontWeight: 600 }}>
+                    {scheduleAdminSecretReason}
+                  </p>
                   <label className="form-span-2">
-                    Секрет администратора клиники для сохранения расписания
+                    Секрет администратора клиники
                     <input
                       type="password"
                       autoComplete="current-password"
@@ -457,39 +483,38 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                       }
                     }}
                       placeholder="введите секрет администратора"
-                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
+                      aria-describedby="schedule-admin-unlock-guidance"
                     />
                   </label>
-                  {!adminSecretReady ? (
-                    <p className="admin-unlock-guidance form-span-2" id="schedule-admin-unlock-guidance" role="status" aria-live="polite">
-                      Введите секрет администратора клиники, чтобы сохранять расписание.
-                    </p>
-                  ) : null}
                   <div className="appointment-editor-actions">
-                    <span className="save-state save-state-idle">Секрет хранится только до перезагрузки страницы.</span>
-                    <span className="save-state save-state-idle">Этот секрет относится только к расписанию. Он не разблокирует настройки клиники, Telegram или клинические данные.</span>
+                    <span className="save-state save-state-idle">Секрет хранится только до перезагрузки страницы и относится только к расписанию.</span>
                     <button
                       className="secondary-button"
                       type="button"
                       onClick={unlockScheduleAdminSession}
-                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
+                      aria-describedby="schedule-admin-unlock-guidance"
                       disabled={!adminSecretReady}
                     >
-                      <ShieldCheck aria-hidden="true" /> Разблокировать сохранение
+                      <ShieldCheck aria-hidden="true" /> Запомнить и повторить сохранение
                     </button>
                   </div>
                 </>
               ) : (
                 <div className="appointment-editor-actions">
-                  <span className="save-state save-state-saved">Админ-доступ активен для расписания.</span>
-                  <span className="save-state save-state-idle">Настройки, Telegram и клинические данные остаются отдельными зонами доступа.</span>
+                  {/*
+                    Раньше здесь стояло «Админ-доступ активен для расписания».
+                    Это неправда: секрет никто не проверял — он просто лёг в
+                    память и подставляется заголовком. Верен он или нет, видно
+                    только при сохранении записи.
+                  */}
+                  <span className="save-state save-state-idle">Секрет запомнен до перезагрузки страницы. Он подставляется при сохранении записи — верен он или нет, покажет само сохранение.</span>
                   <button className="secondary-button" type="button" onClick={lockScheduleAdminSession}>
                     Забыть секрет
                   </button>
                 </div>
               )}
               </div>
-            </details>
+            ) : null}
 
             <NewAppointmentForm
               dashboard={dashboard}
