@@ -38,23 +38,11 @@ CREATE INDEX IF NOT EXISTS "idx_tooth_state_history_patient_tooth"
 CREATE INDEX IF NOT EXISTS "idx_tooth_state_history_org_changed"
     ON "tooth_state_history" ("organization_id", "changed_at");
 
--- Перенос текущих состояний как стартовой точки истории: без этого у зубов,
--- заведённых до миграции, история начиналась бы с пустоты и выглядела так,
--- будто их никогда не лечили. Выполняется один раз — повторный запуск
--- ничего не задвоит благодаря NOT EXISTS.
-INSERT INTO "tooth_state_history" (
-    "organization_id", "patient_id", "tooth_number",
-    "previous_state", "new_state", "new_surfaces",
-    "reason", "changed_at"
-)
-SELECT
-    ts."organization_id", ts."patient_id", ts."tooth_number",
-    NULL, ts."state", ts."surfaces",
-    'Перенос текущего состояния при включении истории зуба',
-    COALESCE(ts."updated_at", ts."created_at")
-FROM "tooth_states" ts
-WHERE NOT EXISTS (
-    SELECT 1 FROM "tooth_state_history" h
-    WHERE h."patient_id" = ts."patient_id"
-      AND h."tooth_number" = ts."tooth_number"
-);
+-- Перенос текущих состояний как стартовой точки истории вынесен в отдельную
+-- миграцию 0120_backfill_tooth_state_history.sql.
+--
+-- ПОЧЕМУ ОТДЕЛЬНО: перенос читает tooth_states."organization_id", а эту колонку
+-- создаёт только 0118_align_tables_with_schema.sql. Пока перенос стоял здесь,
+-- на чистой базе миграции падали на
+-- «column ts.organization_id does not exist», и схема не разворачивалась
+-- дальше 0116. Порядок важен: сначала выравнивание таблиц, потом перенос.

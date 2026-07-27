@@ -9,7 +9,9 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:migrate:baseline": "tsx src/scripts/migrate.ts --baseline",
+    "db:migrate:check": "tsx src/scripts/migrate.ts --dry-run"
   },
   "dependencies": {
     "@dental/shared": "*",
