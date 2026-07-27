@@ -9,6 +9,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 
@@ -40,6 +41,22 @@ interface LabOrder {
 
 export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const { auth, dashboard } = useAppLogicContext();
+
+	/*
+	 * ЗАКАЗЫ В ЛАБОРАТОРИЮ МОЛЧА НЕ ЗАГРУЖАЛИСЬ. Панель стоит на вкладке
+	 * «Рентгены и Диагностика» экрана «Приём», а этот экран отрисован ВЫШЕ
+	 * AppLogicProvider — контекст здесь пуст, и `auth` равен undefined. Запрос
+	 * падал на `auth.denteClinicalReadHeaders()` внутри catch, список
+	 * оставался пустым, и врач видел «заказов нет» вместо настоящих заказов.
+	 *
+	 * denteAdminSecretRequestHeaders — тот же построитель заголовков, только
+	 * без секрета клинической зоны: токены клиники и сотрудника он берёт сам.
+	 * Когда контекст есть, работает прежний путь с секретом.
+	 */
+	const readHeaders = (extra: Record<string, string> = {}) =>
+		auth?.denteClinicalReadHeaders
+			? auth.denteClinicalReadHeaders(extra)
+			: denteAdminSecretRequestHeaders(extra);
 	const liveStatus = useAppStore((state) => (state as any).labOrderStatuses?.[patientId]);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +87,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			const res = await fetch(
 				`/api/clinical/lab-orders?patientId=${patientId}`,
 				{
-					headers: auth.denteClinicalReadHeaders(),
+					headers: readHeaders(),
 				},
 			);
 			if (res.ok) {
@@ -104,7 +121,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		try {
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
+				headers: readHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -143,7 +160,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		try {
 			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
 				method: "DELETE",
-				headers: auth.denteClinicalReadHeaders(),
+				headers: readHeaders(),
 			});
 			if (res.ok) {
 				showToast("Заказ удален", "success");
@@ -165,7 +182,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		try {
 			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
 				method: "PUT",
-				headers: auth.denteClinicalReadHeaders({
+				headers: readHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({ status }),

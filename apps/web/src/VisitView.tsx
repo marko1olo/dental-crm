@@ -21,7 +21,6 @@ import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAi
 import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
-import { VisitDictation } from "./components/visit/VisitDictation";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import "./styles/VisitView.css";
@@ -334,7 +333,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             {visitSubViewTab === "emk" && (
               <div style={{ margin: "16px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
                 <VisitSpecialtyFocus />
-                <VisitDictation />
+                {/*
+                  Здесь стоял <VisitDictation /> — вторая диктовка на том же
+                  экране, рядом с работающей. Отличить их на глаз нельзя, а
+                  сломана была именно эта: подпись действия печаталась как
+                  пустые кавычки «», список «Чтобы собрать черновик, осталось:»
+                  выводился пустым, быстрых фраз (Повод, Осмотр, Статус,
+                  Маршрут, План) не было вовсе. Компонент берёт значения из
+                  useAppLogicContext, а тех двух имён в контексте нет.
+
+                  Рабочая диктовка — ниже, она получает всё пропсами и умеет
+                  больше. Выносить её в компонент надо от неё же, а не от
+                  этой отставшей копии.
+                */}
                 <VisitEmkTab />
               </div>
             )}

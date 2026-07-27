@@ -53,16 +53,44 @@ export function VisitOdontogramTab(props?: { activePatient?: any; activeAppointm
 					minWidth: "300px",
 				}}
 			>
-				<VisitDiaryEditor
-					visitId={activeAppointment.id}
-					patientId={activePatient.id}
-				/>
-				{workspaceFlags.hasEngineeringStatus && (
-					<div style={{ marginTop: "16px" }}>
-						<EgiszMonitor
+				{/*
+					НАЖАТИЕ НА ВКЛАДКУ «ЗУБНАЯ ФОРМУЛА» РОНЯЛО ВЕСЬ РАЗДЕЛ «ПРИЁМ».
+					Здесь стояло `visitId={activeAppointment.id}` без проверки, а
+					проверка выше смотрит только на пациента. У клиники без приёмов
+					activeAppointment равен undefined — «Cannot read properties of
+					undefined (reading 'id')». Экран схлопывался вместе с кнопками
+					вкладок: вернуться можно было только перезагрузкой страницы.
+
+					Зубная карта приёма не требует — она принадлежит пациенту и
+					показывается всегда. Дневник приёма и мониторинг ЕГИСЗ без
+					приёма показывать нечего, поэтому вместо них честное объяснение.
+				*/}
+				{activeAppointment?.id ? (
+					<>
+						<VisitDiaryEditor
 							visitId={activeAppointment.id}
 							patientId={activePatient.id}
 						/>
+						{workspaceFlags.hasEngineeringStatus && (
+							<div style={{ marginTop: "16px" }}>
+								<EgiszMonitor
+									visitId={activeAppointment.id}
+									patientId={activePatient.id}
+								/>
+							</div>
+						)}
+					</>
+				) : (
+					<div className="text-center py-10 px-6 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+						<div className="text-3xl mb-2">📝</div>
+						<h4 className="text-base font-semibold text-slate-900 dark:text-white m-0">
+							Дневник приёма появится, когда приём откроют
+						</h4>
+						<p className="text-sm m-0 mt-1">
+							Зубную карту слева можно заполнять уже сейчас: она хранится у пациента.
+							Дневник записывается в конкретный приём — запишите пациента и начните
+							приём в разделе «Записи».
+						</p>
 					</div>
 				)}
 			</div>
