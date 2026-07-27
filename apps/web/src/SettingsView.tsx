@@ -1532,10 +1532,18 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         */}
         {settingsTab === "imports" ? (
           <ErrorBoundary moduleName="Умный разбор выгрузки">
-            <SettingsImportsTab props={settingsProps} settingsTab={settingsTab} />
+            {/*
+              Обе тяжёлые вкладки объявлены как `SettingsImportsTab(props:
+              Record<string, any>)` и достают значения прямо из `props`. Им
+              передавался объект `{ props: settingsProps, settingsTab }`, то
+              есть всё лежало на уровень глубже: `props.dashboard` было
+              undefined, и вкладка падала на `dashboard.clinicSettings`.
+              Раскладываем мешок так, как объявлен сам компонент.
+            */}
+            <SettingsImportsTab {...settingsProps} settingsTab={settingsTab} />
           </ErrorBoundary>
         ) : null}
-        {settingsTab === "audit" ? <SettingsAuditTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "audit" ? <SettingsAuditTab {...settingsProps} settingsTab={settingsTab} /> : null}
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <DadataGeocodedAddressesWidget />

@@ -169,6 +169,12 @@ import { PriceDictationBar } from "../../PriceDictationBar";
 import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
 import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
+/*
+ * Словари подписей — константы модулей, а не состояние: в мешок пропсов они не
+ * попадают, и Object.keys(undefined) роняет вкладку целиком.
+ */
+import { clinicModeLabels } from "../../workspaceUiLabels";
+import { importSourceLabels, ingestionTargetLabels } from "../../AppHelpers";
 
 type MprAxisVisualizerStyle = CSSProperties & {
   "--mpr-axis-deg": string;
@@ -782,7 +788,6 @@ export function SettingsAuditTab(props: Record<string, any>) {
     clearPricelistImage,
     clinicalRuleActionLabels,
     clinicalRuleSeverityLabels,
-    clinicModeLabels,
     clinicProfileDraft,
     clinicProfileSaveState,
     commitImagingImport,
@@ -867,10 +872,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
     importIntake,
     importPreview,
     importSourceKind,
-    importSourceLabels,
     importText,
     ingestImportFile,
-    ingestionTargetLabels,
     integrationCapabilityLabels,
     integrationCategoryLabels,
     integrationStatusLabels,
