@@ -478,17 +478,30 @@ function KpiCard({
 				gap: 8,
 			}}
 		>
+			{/*
+			  БЫЛО: акцентный цвет применялся ко всей строке, то есть и к
+			  иконке, и к подписи. Подписи ключевых показателей выходили
+			  нечитаемыми: «Ср. выручка / пациент» amber-500 на белом — 2.15,
+			  «Выручка» emerald-500 — 2.54, «Пациентов» blue-500 — 3.68,
+			  «Приёмов» violet-500 на тёмном фоне ночной темы — 4.2.
+			  Это показатели, по которым руководитель читает состояние клиники.
+
+			  Иконке достаточно 3:1 как графическому элементу, поэтому акцент
+			  остаётся на ней, а подпись переведена на текстовый токен темы.
+			*/}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					gap: 8,
-					color: color,
+					color: "var(--ink-2, var(--ink))",
 					fontSize: 13,
 					fontWeight: 500,
 				}}
 			>
-				{icon}
+				<span style={{ color, display: "inline-flex" }} aria-hidden="true">
+					{icon}
+				</span>
 				{label}
 			</div>
 			<div style={{ fontSize: "22px", fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>
