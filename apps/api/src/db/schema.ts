@@ -281,6 +281,15 @@ export const patients = pgTable("patients", {
   notes: text("notes"),
   administrativeProfile: jsonb("administrative_profile").$type<PatientAdministrativeProfile | null>(),
   familyGroupId: uuid("family_group_id"),
+  /**
+   * Куда объединена карточка (миграция 0128). Заполнено — значит это дубль, все
+   * записи, оплаты и снимки перенесены в указанную карточку.
+   *
+   * Карточка при слиянии НЕ УДАЛЯЕТСЯ: это медицинские данные, и удаление
+   * лишает клинику доказательств. Открыв её по старой ссылке, администратор
+   * должен увидеть, куда она объединена, а не пустоту.
+   */
+  mergedIntoPatientId: uuid("merged_into_patient_id"),
   isSynced: boolean("is_synced").notNull().default(false),
   version: integer("version").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

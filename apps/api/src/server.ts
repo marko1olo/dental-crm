@@ -54,6 +54,7 @@ import { registerReportRoutes } from "./routes/reports.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
 import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
+import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -467,6 +468,11 @@ export async function createDenteApiApp(options: {
   // поэтому надо звонить. Без этого экрана подтверждение по ссылке не даёт
   // экономии — администратор всё равно обзванивает всех подряд.
   await registerDayConfirmationRoutes(app);
+
+  // Разбор дублей пациентов. Виджет PatientDuplicateMergeQueuesWidget читает
+  // /api/crm/patient-duplicate-merge-queues — такого маршрута не существует
+  // (проверено запросом, 404), а искать дубли в проекте было нечем.
+  await registerPatientDuplicateRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
