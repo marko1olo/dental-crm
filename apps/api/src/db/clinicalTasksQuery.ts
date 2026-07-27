@@ -27,6 +27,20 @@ export type ClinicalTaskStatus = (typeof CLINICAL_TASK_STATUSES)[number];
 /** Статусы, при которых задача считается ещё не отработанной. */
 const OPEN_CLINICAL_TASK_STATUSES: readonly ClinicalTaskStatus[] = ["pending", "in_progress"];
 
+/**
+ * Список открытых статусов для `IN (...)`.
+ *
+ * Массив в шаблон `sql` подставлять нельзя: drizzle разворачивает JS-массив в
+ * перечисление плейсхолдеров `($1, $2)`, и `($1, $2)::clinical_task_status[]`
+ * PostgreSQL читает как приведение записи к массиву — ошибка 42846
+ * «cannot cast type record to clinical_task_status[]». Поэтому собираем
+ * параметры поштучно из той же константы, без второго списка литералов.
+ */
+const openClinicalTaskStatusList = sql.join(
+  OPEN_CLINICAL_TASK_STATUSES.map((status) => sql`${status}::clinical_task_status`),
+  sql`, `,
+);
+
 export interface ClinicalTaskRecord {
   id: string;
   organizationId: string;
@@ -152,7 +166,6 @@ export async function insertClinicalTaskInDb(
   const assignedDoctorId = input.assignedDoctorId ?? null;
   const dueAt = toIsoOrNull(input.dueAt);
   const status: ClinicalTaskStatus = input.status ?? "pending";
-  const openStatuses = [...OPEN_CLINICAL_TASK_STATUSES];
 
   const inserted = await db.execute(sql`
     INSERT INTO clinical_tasks (
@@ -170,7 +183,7 @@ export async function insertClinicalTaskInDb(
         AND existing.task_type = ${input.taskType}::text
         AND existing.title = ${input.title}::text
         AND existing.description IS NOT DISTINCT FROM ${description}::text
-        AND existing.status = ANY(${openStatuses}::clinical_task_status[])
+        AND existing.status IN (${openClinicalTaskStatusList})
     )
     RETURNING *
   `);
@@ -185,7 +198,7 @@ export async function insertClinicalTaskInDb(
       AND task_type = ${input.taskType}::text
       AND title = ${input.title}::text
       AND description IS NOT DISTINCT FROM ${description}::text
-      AND status = ANY(${openStatuses}::clinical_task_status[])
+      AND status IN (${openClinicalTaskStatusList})
     ORDER BY created_at ASC
     LIMIT 1
   `);
