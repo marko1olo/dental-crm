@@ -15,6 +15,8 @@ import "./styles/dente-redesign.css";
 import "./styles/token-aliases.css";
 // Минимальный размер зон нажатия на узких экранах.
 import "./styles/touch-targets.css";
+// Горизонтальные переполнения, подтверждённые замерами.
+import "./styles/overflow-fixes.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";

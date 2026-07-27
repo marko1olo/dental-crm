@@ -1,0 +1,91 @@
+/* ============================================================
+   Горизонтальные переполнения.
+
+   Аудит замерял getBoundingClientRect и брал самый внешний элемент
+   цепочки, чтобы не считать переполнение родителя дважды. 46 находок,
+   11 причин. Ниже — те, что подтверждены замерами в браузере.
+   ============================================================ */
+
+/* --- 1. Верхняя панель вылезает на 9px на всех мобильных экранах ---
+ *
+ * У .topbar отрицательные поля `margin: -22px -22px 0` — приём «вынести
+ * блок за отступы контейнера». На широких экранах отступ рабочей области
+ * 24px и -22px в него укладывается. На узких dente-redesign.css ставит
+ * `.workspace { padding: 14px 14px 100px !important }`, и вынос на 22px
+ * перебирает по 8px с каждой стороны.
+ *
+ * Замерено: 408px при родителе 390px, левый край -9px, переполнение 9px.
+ * Встречалось во всех 10 рабочих экранах в обеих темах.
+ */
+@media (max-width: 840px) {
+  .topbar {
+    margin-left: -14px;
+    margin-right: -14px;
+  }
+}
+
+/* --- 2. Секции смены раскрывались на 562px внутри 364px ---
+ *
+ * `.role-focus-strip` объявлена как сетка из двух колонок, вторая с
+ * минимумом 280px: `minmax(0, 1fr) minmax(280px, 0.86fr)`. Правило,
+ * которое сворачивает такие блоки в одну колонку на узких экранах,
+ * перечисляет .next-actions, .app-notice и другие, но не эти секции.
+ * `.shift-intelligence` — то же с `repeat(2, minmax(0, 1fr))`.
+ *
+ * Замерено: 562px при родителе 364px, переполнение 185px.
+ */
+@media (max-width: 700px) {
+  .role-focus-strip,
+  .shift-intelligence {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .shift-dashboard-grid > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* --- 3. Подпись в свёрнутом блоке документов пациента ---
+   * span.settings-advanced-hint шириной 223px вылезал на 47px:
+   * summary не давал ей перенести строку. */
+  .settings-advanced-toggle {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .settings-advanced-hint {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* --- 4. Карточки с классами Tailwind p-4/rounded-xl/border ---
+   * Вылезали на 19px: свои отступы поверх отступов страницы. */
+  .work-grid > div > .p-4,
+  .page-grid > div > .p-4 {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* --- 5. Зубная карта ---
+ *
+ * 32 зуба в ряд физически не помещаются в 390px: отдельная кнопка зуба
+ * вылезала на 48px, а на широком экране контейнер дуги — на 35px при
+ * 1440px. Карту нельзя сжать без потери читаемости, поэтому ей даётся
+ * собственная горизонтальная прокрутка, а страница перестаёт ехать.
+ */
+.tooth-chart-container,
+.tooth-arch-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tooth-chart-arch-container {
+  max-width: 100%;
+}
