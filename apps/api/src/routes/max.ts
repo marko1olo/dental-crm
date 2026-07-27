@@ -9,7 +9,7 @@
  */
 import { createHash } from "node:crypto";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -323,7 +323,9 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		const [patient] = await db
 			.select()
 			.from(patients)
-			.where(eq(patients.id, patientId))
+			// БЫЛО: условие только по patients.id, без организации. Сотрудник любой
+			// клиники мог указать UUID чужого пациента.
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
 			.limit(1);
 
 		if (!patient) {
@@ -346,28 +348,31 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			});
 		}
 
-		await db.insert(communicationEvents).values({
-			organizationId: orgId,
-			patientId,
-			channel: "telegram", // map max to telegram channel in DB schema
-			direction: "outbound",
-			status: "sent",
-			message,
+		// БЫЛО: обработчик писал строку в communication_events со статусом "sent",
+		// рассылал событие по WebSocket, печатал «[MAX Outbox] Sent to …» и
+		// возвращал { ok: true }. Обращения к API мессенджера не было. Отправка
+		// выглядела успешной, пациент не получал ничего.
+		//
+		// Транспорт MAX здесь не реализован: публично проверяемого контракта Bot
+		// API у business.max.ru нет (документация за входом в бизнес-аккаунт), а
+		// выдумывать адреса и формат запроса — это ровно та же подделка, только
+		// уровнем ниже. Пока транспорт не написан, обработчик честно отвечает
+		// 501: интерфейс покажет ошибку вместо ложного «отправлено».
+		//
+		// Когда контракт появится: добавить maxTransport.ts по образцу
+		// whatsappTransport.ts, записывать communication_events со статусом по
+		// фактическому результату (channel: "max" — значение добавлено в
+		// перечисление миграцией 0120) и рассылать событие только после
+		// подтверждения от провайдера.
+		request.log.warn(
+			{ organizationId: orgId, patientId },
+			"Запрошена отправка в MAX, транспорт не реализован",
+		);
+		return reply.code(501).send({
+			error: "MaxSendNotImplemented",
+			message:
+				"Отправка сообщений в MAX пока не реализована: нет транспорта к Bot API. Сообщение НЕ отправлено — воспользуйтесь другим каналом.",
 		});
-
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "INBOX_NEW_MESSAGE",
-			payload: {
-				channel: "max",
-				patientId,
-				text: message,
-				direction: "outbound",
-			},
-		});
-
-		console.log(`[MAX Outbox] Sent to ${patient.fullName}: ${message}`);
-
-		return { ok: true };
 	});
 }
 

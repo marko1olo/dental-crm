@@ -10,9 +10,14 @@
  * See: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import {
+	normalizeWhatsappRecipient,
+	readWhatsappCredentials,
+	sendWhatsappTextMessage,
+} from "../whatsappTransport.js";
 import {
 	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
@@ -457,7 +462,10 @@ export async function registerWhatsappRoutes(
 		const [patient] = await db
 			.select()
 			.from(patients)
-			.where(eq(patients.id, patientId))
+			// БЫЛО: условие только по patients.id, без организации. Сотрудник любой
+			// клиники мог указать UUID чужого пациента и написать ему от имени
+			// своей клиники.
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
 			.limit(1);
 
 		if (!patient) {
@@ -480,15 +488,60 @@ export async function registerWhatsappRoutes(
 			});
 		}
 
+		// БЫЛО: обработчик записывал строку в communication_events со статусом
+		// "sent", рассылал событие по WebSocket, печатал «[WhatsApp Outbox] Sent
+		// to …» в консоль и возвращал { ok: true }. Обращения к API Meta в
+		// проекте не было вообще. Администратор видел «отправлено», в истории
+		// коммуникаций появлялась запись, а пациент не получал ничего — для
+		// напоминания о приёме это хуже явной ошибки.
+		const credentials = readWhatsappCredentials(config);
+		if (!credentials) {
+			return reply.code(400).send({
+				error: "WhatsappNotConfigured",
+				message:
+					"Не заданы phone_number_id и токен доступа WhatsApp Cloud API. Сообщение не отправлено.",
+			});
+		}
+
+		const recipient = normalizeWhatsappRecipient(patient.phone);
+		if (!recipient) {
+			return reply.code(422).send({
+				error: "PatientPhoneMissing",
+				message:
+					"У пациента не указан корректный номер телефона — отправить сообщение в WhatsApp некуда.",
+			});
+		}
+
+		const sendResult = await sendWhatsappTextMessage({
+			...credentials,
+			toPhoneE164: recipient,
+			text: message,
+		});
+
+		// Запись в историю коммуникаций делается по фактическому результату:
+		// неудачная отправка сохраняется со статусом failed, а не как sent.
 		await db.insert(communicationEvents).values({
 			organizationId: orgId,
 			patientId,
 			channel: "whatsapp",
 			direction: "outbound",
-			status: "sent",
+			status: sendResult.ok ? "sent" : "failed",
 			message,
 		});
 
+		if (!sendResult.ok) {
+			request.log.warn(
+				{ errorClass: sendResult.errorClass, errorCode: sendResult.errorCode },
+				"WhatsApp Cloud API отклонил сообщение",
+			);
+			return reply.code(502).send({
+				error: "WhatsappSendFailed",
+				errorClass: sendResult.errorClass,
+				message: sendResult.errorMessage,
+			});
+		}
+
+		// Событие в интерфейс рассылается только после подтверждения от Meta.
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "INBOX_NEW_MESSAGE",
 			payload: {
@@ -499,11 +552,7 @@ export async function registerWhatsappRoutes(
 			},
 		});
 
-		console.log(
-			`[WhatsApp Outbox] Sent to ${patient.phone || patient.fullName}: ${message}`,
-		);
-
-		return { ok: true };
+		return { ok: true, providerMessageId: sendResult.providerMessageId };
 	});
 }
 
