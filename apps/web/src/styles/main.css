@@ -13969,7 +13969,7 @@ body {
 
 /* Buttons with Micro-animations */
 .primary-button {
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
   border: none;
   box-shadow: 0 4px 12px var(--teal-glow);
   transition: all var(--transition-fast);
@@ -14143,7 +14143,7 @@ input:focus, select:focus, textarea:focus {
   transform: translateX(4px);
 }
 .settings-tabs button.active {
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark)) !important;
+  background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark)) !important;
   color: white !important;
   box-shadow: 0 4px 12px var(--teal-glow) !important;
   transform: translateX(6px);
@@ -14615,7 +14615,7 @@ input:focus, select:focus, textarea:focus {
   }
   
   .settings-tabs button.active {
-    background: linear-gradient(135deg, var(--teal), var(--teal-dark)) !important;
+    background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark)) !important;
     color: white !important;
     box-shadow: 0 2px 8px var(--teal-glow) !important;
     transform: none !important;
@@ -15182,9 +15182,10 @@ input:focus, select:focus, textarea:focus {
 }
 
 .emk-tab-button.active {
-  background: var(--teal);
+  /* --teal-fill: белый текст на #0d9488 даёт 3.74:1 при норме 4.5. */
+  background: var(--teal-fill);
   color: #ffffff;
-  border-color: var(--teal);
+  border-color: var(--teal-fill);
   box-shadow: 0 2px 5px rgba(13, 148, 136, 0.2);
 }
 

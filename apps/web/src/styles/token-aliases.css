@@ -65,6 +65,11 @@
 :root,
 [data-theme="light"],
 html.light {
+  /* Сплошная заливка под белый текст. --teal (#0d9488) с белым даёт
+     3.74:1 — ниже нормы WCAG 4.5:1. --teal-dark (#0f766e) даёт 5.5:1.
+     В тёмной теме заливка остаётся --teal: там текст --on-teal
+     (#04211c), и контраст около 9:1 уже достаточен. */
+  --teal-fill: var(--teal-dark);
   --srf-check-task: #faf7f1;
   --srf-check-task-blocking: #fffaf0;
   --srf-chip-soft: #f7fbf9;
@@ -74,6 +79,7 @@ html.light {
 
 [data-theme="dark"],
 html.dark {
+  --teal-fill: var(--teal);
   --srf-check-task: #16201e;
   --srf-check-task-blocking: #2a2113;
   --srf-chip-soft: #16211f;
@@ -82,6 +88,7 @@ html.dark {
 }
 
 [data-theme="night"] {
+  --teal-fill: var(--teal);
   --srf-check-task: #1c1815;
   --srf-check-task-blocking: #2c2114;
   --srf-chip-soft: #1a1714;

@@ -222,7 +222,10 @@ textarea:focus, input:focus, select:focus {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 36px; padding: 0 16px;
   border: none; border-radius: 10px;
-  background: linear-gradient(180deg, var(--teal), var(--teal-dark));
+  /* --teal-fill вместо --teal: в светлой теме белый текст на #0d9488
+     даёт 3.74:1, ниже нормы WCAG 4.5:1. Токен подставляет #0f766e
+     (5.5:1) в светлой теме и оставляет --teal в тёмной. */
+  background: linear-gradient(180deg, var(--teal-fill), var(--teal-dark));
   color: var(--on-teal); font-size: 13px; font-weight: 700;
   box-shadow: 0 6px 16px -6px var(--teal-ring);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);

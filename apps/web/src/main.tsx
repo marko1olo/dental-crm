@@ -17,6 +17,8 @@ import "./styles/token-aliases.css";
 import "./styles/touch-targets.css";
 // Горизонтальные переполнения, подтверждённые замерами.
 import "./styles/overflow-fixes.css";
+// Контраст текста по WCAG 1.4.3.
+import "./styles/contrast-fixes.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
