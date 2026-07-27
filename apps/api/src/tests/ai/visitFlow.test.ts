@@ -86,7 +86,17 @@ describe("runVisitFlow Orchestrator", () => {
 
 		assert.deepStrictEqual(result.plan.data?.treatmentGoals, []);
 		assert.strictEqual(result.plan.data?.patientFriendlyExplanation, "Все будет ок");
-		assert.strictEqual(result.recommendations.data?.telegramSummary, "Рекомендации");
+
+		// Рекомендации не ходят в ИИ: personalizePostVisitRecommendations —
+		// детерминированный набор правил, в нём нет ни одного вызова fetch.
+		// Поэтому ветка recs в mockFetch на этот результат не влияет, и прежнее
+		// ожидание "Рекомендации" было недостижимо в принципе.
+		// Проверяем то, что здесь действительно проверяемо: по услуге
+		// «Лечение кариеса» выбрана кариозная ветка правил.
+		assert.match(
+			result.recommendations.data?.telegramSummary ?? "",
+			/^Рекомендации после лечения кариеса/,
+		);
 	});
 
 	test("runVisitFlow - draft fallback creates warnings but continues", async () => {
