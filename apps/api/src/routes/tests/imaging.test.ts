@@ -37,6 +37,34 @@ const testPatient = {
   phone: "+79990000000",
 } as unknown as Patient;
 
+/**
+ * Строка ровно в том виде, в котором её отдаёт база.
+ *
+ * Подменённый db.select раньше возвращал testPatient — объект прикладной
+ * формы Patient, без createdAt и updatedAt. getPatientsFromDb прогоняет
+ * строки через rowToPatient, тот звал p.createdAt.toISOString() и падал.
+ * Тест это не замечал, потому что getPatientsFromDb ловил любую ошибку и
+ * молча отдавал массив patients из памяти, куда тест сам положил
+ * testPatient. То есть проверялся путь через память, хотя в комментарии
+ * заявлен путь через базу.
+ *
+ * Подмена памятью убрана как источник молчаливой потери данных, поэтому
+ * фикстура теперь честно повторяет форму строки таблицы.
+ */
+const testPatientRow = {
+  id: testPatient.id,
+  organizationId: ORG_ID,
+  status: "active",
+  fullName: "Тестов Тест Тестович",
+  birthDate: null,
+  phone: "+79990000000",
+  email: null,
+  notes: null,
+  administrativeProfile: null,
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+};
+
 describe("commitImagingImport", () => {
   before(() => {
     patients.push(testPatient);
@@ -55,9 +83,10 @@ describe("commitImagingImport", () => {
     const patient = testPatient;
 
     // Сопоставление идёт через getPatientsFromDb, то есть по базе, а не по
-    // массиву в памяти: подменяем и выборку пациентов.
+    // массиву в памяти: подменяем и выборку пациентов. Возвращаем строку
+    // таблицы, а не прикладной объект, — иначе rowToPatient не отработает.
     mock.method(db, "select", () => ({
-      from: () => ({ where: async () => [testPatient] }),
+      from: () => ({ where: async () => [testPatientRow] }),
     }));
 
     const insertedValues: Array<Record<string, unknown>> = [];

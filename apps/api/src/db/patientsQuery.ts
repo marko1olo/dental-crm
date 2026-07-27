@@ -58,8 +58,17 @@ export async function getPatientsFromDb(organizationId: string): Promise<Patient
 	try {
 		const pts = await db.select().from(schema.patients).where(eq(schema.patients.organizationId, organizationId));
 		return pts.map(rowToPatient);
-	} catch {
-		return inMemoryPatients as unknown as Patient[];
+	} catch (error) {
+		/* БЫЛО: при сбое базы возвращался глобальный массив-образец
+		   inMemoryPatients. Он не отфильтрован по организации, то есть клиника
+		   получала чужой список, и, что важнее, интерфейс показывал этот
+		   список как настоящий: на экране «Пациенты» появлялись люди, которых
+		   в клинике нет, а настоящие исчезали. По такому списку регистратор
+		   мог записать на приём не того человека.
+		   Молчаливая подмена данных в медицинской системе опаснее честной
+		   ошибки. Режим работы без базы задаётся выше, в useInMemory(). */
+		console.error("[patientsQuery] Не удалось прочитать список пациентов из базы:", error);
+		throw error;
 	}
 }
 
@@ -80,8 +89,19 @@ export async function createPatientInDb(organizationId: string, input: CreatePat
 		if (!created) throw new Error("Failed to create patient in DB");
 
 		return rowToPatient(created);
-	} catch {
-		return createPatientInMemory(input);
+	} catch (error) {
+		/* БЫЛО: `catch { return createPatientInMemory(input) }`. Любая ошибка
+		   базы подменялась записью в оперативную память, и маршрут отвечал 201
+		   с пациентом, которого в базе нет. Проверено на живом API: вставка с
+		   недопустимым для PostgreSQL значением дала HTTP 201 и идентификатор
+		   88679224-…, которому в таблице patients соответствует 0 строк.
+		   Регистратор считает пациента созданным, а дальше по этому
+		   идентификатору не откроется карточка, не пройдёт запись на приём и
+		   не проведётся оплата.
+		   Подмена памятью уместна только в режиме без базы — он выше, в
+		   useInMemory(). Настоящий сбой базы обязан дойти до маршрута. */
+		console.error("[patientsQuery] Не удалось создать пациента в базе:", error);
+		throw error;
 	}
 }
 
@@ -110,8 +130,14 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 		if (!updated) return null;
 
 		return rowToPatient(updated);
-	} catch {
-		return updatePatientInMemory(patientId, input);
+	} catch (error) {
+		/* См. комментарий в createPatientInDb. Здесь подмена памятью давала
+		   HTTP 200 с объектом пациента при том, что в базе не менялось ничего:
+		   правка теряется молча и обнаруживается только после перезагрузки
+		   карточки. Маршрут уже умеет отвечать честно — «Не удалось сохранить
+		   изменения», — но получал успех вместо ошибки. */
+		console.error("[patientsQuery] Не удалось обновить пациента в базе:", error);
+		throw error;
 	}
 }
 
@@ -135,7 +161,10 @@ export async function updatePatientAdministrativeProfileInDb(organizationId: str
 		if (!updated) return null;
 
 		return rowToPatient(updated);
-	} catch {
-		return updatePatientAdministrativeProfileInMemory(patientId, input);
+	} catch (error) {
+		/* См. комментарий в createPatientInDb: сбой базы не должен выглядеть
+		   как успешное сохранение административного профиля. */
+		console.error("[patientsQuery] Не удалось обновить профиль пациента в базе:", error);
+		throw error;
 	}
 }
