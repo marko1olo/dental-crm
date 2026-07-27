@@ -25,6 +25,18 @@ type MprClinicalPreset =
 
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
+/*
+ * Подписи и форматтеры — константы модуля, а не состояние: в мешок пропсов
+ * они не попадают никогда. См. SourcesDicomCapability, где из-за этого падала
+ * вся вкладка «Источники».
+ */
+import {
+	dicomRenderCachePriorityLabels,
+	dicomSeriesDisplayText,
+	dicomSeriesWarningText,
+	humanizeIntegrationInput,
+	humanizeMigrationText,
+} from "../SettingsViewHelpers";
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
@@ -44,8 +56,6 @@ export function SourcesIntegrationPresets() {
 		dicomSeriesPreview,
 		imagingKindLabels,
 		dicomSeriesViewerLabels,
-		dicomSeriesDisplayText,
-		dicomSeriesWarningText,
 		mprLoadStrategyLabels,
 		mprResourceTierLabels,
 		cbctWorkbenchSeries,
@@ -171,14 +181,11 @@ export function SourcesIntegrationPresets() {
 		setDicomWebEndpointUrl,
 		dicomWebEndpointUrl,
 
-		humanizeIntegrationInput,
 		integrationCapabilityLabels,
 		integrationStatusLabels,
 		integrationCategoryLabels,
-		humanizeMigrationText,
 		dicomViewerLaunchManifest,
 		dicomReadinessCheckLabels,
-		dicomRenderCachePriorityLabels,
 		clearDicomWorkbenchRecovery,
 		downloadDicomWorkbenchManifest,
 		restoreDicomWorkbenchServerBundle,

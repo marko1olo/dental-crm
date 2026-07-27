@@ -347,6 +347,12 @@ export interface SettingsViewProps {
 }
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+  /*
+    Источники значений держим целиком, а не только россыпью имён: из них
+    собирается мешок пропсов для вкладок (см. settingsProps ниже). Раньше мешок
+    набивался руками, и вкладки получали малую часть того, что читают.
+  */
+  const appLogic = useAppLogicContext();
   const {
     activePatient,
     activeSettingsTabButtonRef,
@@ -852,45 +858,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     visibleTelegramOutboxItems,
     weekdayOptions,
     workspaceScopeLabels,
-  } = useAppLogicContext();
-  // Collect all destructured variables into a single props bag for legacy sub-tab components
-  const settingsProps: Record<string, any> = {
-    staffRoleLabels, dashboard, activePatient, activeStaffUser, activeWorkspaceProfile,
-    addChair, addStaffMember, clinicProfileDraft, clinicProfileSaveState, updateClinicProfileDraft,
-    toggleClinicWorkingDay, toggleStaffWorkingDay, toggleChairWorkingDay, weekdayOptions,
-    newChairName, newChairHasMicroscope, newChairHasSurgeryKit, newChairHasXraySensor,
-    setNewChairName, setNewChairHasMicroscope, setNewChairHasSurgeryKit, setNewChairHasXraySensor,
-    newStaffName, newStaffRole, newStaffSpecialty, setNewStaffName, setNewStaffRole, setNewStaffSpecialty,
-    uiLanguage, uiLanguageOptions, normalizeUiLanguageInput,
-    telegramModeDraft, telegramBotUsernameDraft, telegramModeLabels, telegramModeHints,
-    createTelegramLinkCode, telegramLinkCode, telegramLinkCodes, telegramLinkCodeStatusLabels,
-    telegramChatLinks, telegramChatLinkLedger, markTelegramSettingsDirty,
-    loadTelegramControlPlane, copyTelegramTextToClipboard, unlockTelegramAdminSession,
-    telegramAdminSecretDraft, telegramAdminSecretSession, adminSecretReady: false,
-    normalizedTelegramBotMode, normalizedTelegramPrivacyMode, normalizedTelegramLinkSubjectType,
-    /*
-      РАЗДЕЛ «НАСТРОЙКИ» НЕ ОТКРЫВАЛСЯ ВООБЩЕ.
-      Вкладка «Клиника» вынесена в отдельный компонент SettingsClinicTab, и он
-      достаёт из этого объекта 65 значений — а передавалось 28. Первое же
-      обращение по ключу к неопределённому объекту роняло отрисовку:
-      `staffScheduleDrafts[member.id]` → «Cannot read properties of undefined».
-      Пользователь видел «Раздел временно не открылся» и не мог задать ни
-      название клиники, ни телефон, ни кресла, ни расписание сотрудников.
-      Остальные 36 имён молча были бы undefined: кнопки вызывали бы
-      несуществующие функции, а подписи печатались бы как ключи.
-      Сверка ведётся скриптом scratch/audit-settings-props.mjs.
-    */
-    changeClinicMode, clinicModeLabels, specialtyLabels,
-    saveClinicProfileFromDraft, setUiLanguage,
-    legalMissingFields, legalReadinessPercent, humanizeMigrationText,
-    lookupClinicPublicProfile, isClinicPublicLookupLoading, clinicPublicLookup,
-    clinicPublicLookupFieldLabels, clinicPublicLookupWarningText,
-    staffScheduleDrafts, staffScheduleDraftFromWorkingHours, staffScheduleSaveStates,
-    staffScheduleDirtyIds, staffScheduleSavingId,
-    updateStaffScheduleDraft, updateStaffScheduleDay, saveStaffSchedule,
-    chairScheduleDrafts, chairScheduleSaveStates, chairScheduleDirtyIds, chairScheduleSavingId,
-    updateChairScheduleDraft, updateChairScheduleDay, saveChairSchedule,
-  };
+  } = appLogic;
+  const settingsStore = useSettingsStore();
   const {
     clinicMode,
     setClinicMode,
@@ -918,7 +887,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     setTelegramStaffEscalationChannelDraft,
     setTelegramPrivacyModeDraft,
     setTelegramAdminSecretDraft,
-  } = useSettingsStore();
+  } = settingsStore;
 
   const recognitionInputReady = (recognitionText || "").trim().length > 0;
   const smartImportInputReady = (smartImportText || "").trim().length > 0;
@@ -1170,18 +1139,53 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   } = derivations;
 
   /*
-    Дополнение к settingsProps для вкладки «Клиника». Эти пять значений
-    объявлены ниже места, где собирается settingsProps, поэтому попасть туда
-    напрямую не могут — сборка объекта выполняется до их объявления. Переносить
-    сам settingsProps на сотни строк вниз в общем файле опаснее, чем добавить
-    второй объект и слить их в месте отрисовки.
+    МЕШОК ПРОПСОВ ДЛЯ ВКЛАДОК НАСТРОЕК.
+
+    Вкладки вынесены в отдельные компоненты копированием тела этого файла и
+    достают значения по именам из объекта `props`. Раньше мешок набивался
+    руками — и набивался неполно: вкладка «Клиника» читала 65 имён при 28
+    переданных, вкладка «ТГ-бот» — 139 при 21. Недостающее приходило как
+    undefined, и первое же обращение по ключу или вызов роняли отрисовку:
+    раздел «Настройки» не открывался вообще, а «ТГ-бот» падал на
+    `typedTelegramChatLinks.filter`.
+
+    Ручной список обречён отставать: любое новое значение во вкладке снова даёт
+    падение, и заметить это можно только открыв вкладку. Поэтому мешок
+    собирается из тех же источников, из которых берёт значения сам
+    SettingsView: контекст логики, хранилище настроек, производные значения.
+    Порядок важен — производные считаются из первых двух и должны побеждать.
+
+    Локальные значения этого файла (их нет ни в одном источнике) добавляются
+    последними, поимённо.
   */
-  const settingsClinicExtraProps: Record<string, any> = {
+  const settingsProps: Record<string, any> = {
+    ...appLogic,
+    ...settingsStore,
+    ...derivations,
+    activeStaffUser,
+    adminSecretReady: false,
+    adminSecretScopeWarning,
+    legalMissingFields,
+    legalReadinessPercent,
     newChairReadyToCreate,
     newStaffReadyToCreate,
-    applyClinicLookupSuggestion,
-    clinicLookupSuggestionApplySummary,
-    clinicLookupSuggestionFieldEntries,
+    telegramPreviewLoadingGuidanceId,
+    telegramPreviewPatientGuidanceId,
+    telegramPreviewStaffGuidanceId,
+    /*
+      Приведения `typed*` для вкладки «ТГ-бот» считаются здесь, а не в
+      useSettingsDerivations: там одноимённые значения объявлены, но наружу не
+      возвращаются. Без них вкладка падала на `typedTelegramChatLinks.filter`.
+      Список получен сверкой локальных объявлений этого файла с тем, что читают
+      вкладки: scratch/probe-settings-locals.mjs.
+    */
+    typedTelegramChatLinks,
+    typedTelegramEnabledFeaturesDraft,
+    typedTelegramFeatureOptions,
+    typedTelegramInlineButtonKindLabels,
+    typedTelegramLinkCodes,
+    typedTelegramLinkStaffOptions,
+    typedTelegramPostVisitCheckupDelayDrafts,
   };
 
   const flags = useWorkspaceProfile();
@@ -1473,7 +1477,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
-        {settingsTab === "clinic" ? <SettingsClinicTab props={{ ...settingsProps, ...settingsClinicExtraProps }} settingsTab={settingsTab} /> : null}
+        {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "access" ? <SettingsAccessTab {...({ props: settingsProps, settingsTab } as any)} /> : null}
         {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
 

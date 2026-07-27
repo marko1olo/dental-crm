@@ -25,6 +25,21 @@ type MprClinicalPreset =
 
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
+/*
+ * Подписи и форматтеры — константы модуля, а не состояние. Компонент доставал
+ * их из мешка пропсов, где их нет и быть не может: туда попадают контекст
+ * логики, хранилище и производные значения. Вкладка «Источники» падала на
+ * `dicomRenderCachePriorityLabels[task.priority]` сообщением «Cannot read
+ * properties of undefined (reading 'blocking')»: «blocking» — это ключ
+ * приоритета задачи, а самого словаря подписей не существовало.
+ */
+import {
+	dicomRenderCachePriorityLabels,
+	dicomSeriesDisplayText,
+	dicomSeriesWarningText,
+	humanizeIntegrationInput,
+	humanizeMigrationText,
+} from "../SettingsViewHelpers";
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
@@ -44,8 +59,6 @@ export function SourcesDicomCapability() {
 		dicomSeriesPreview,
 		imagingKindLabels,
 		dicomSeriesViewerLabels,
-		dicomSeriesDisplayText,
-		dicomSeriesWarningText,
 		mprLoadStrategyLabels,
 		mprResourceTierLabels,
 		cbctWorkbenchSeries,
@@ -171,14 +184,11 @@ export function SourcesDicomCapability() {
 		setDicomWebEndpointUrl,
 		dicomWebEndpointUrl,
 
-		humanizeIntegrationInput,
 		integrationCapabilityLabels,
 		integrationStatusLabels,
 		integrationCategoryLabels,
-		humanizeMigrationText,
 		dicomViewerLaunchManifest,
 		dicomReadinessCheckLabels,
-		dicomRenderCachePriorityLabels,
 		clearDicomWorkbenchRecovery,
 		downloadDicomWorkbenchManifest,
 		restoreDicomWorkbenchServerBundle,

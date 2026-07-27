@@ -13,6 +13,8 @@ import "./SettingsAiTab.css";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+/* Форматтер предупреждений — константа модуля, а не пропс. */
+import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -42,7 +44,6 @@ export function SettingsAiTab() {
 		runRecognitionJob,
 		isRecognitionLoading,
 		recognitionInputReady,
-		aiRecognitionWarningText,
 		sendRecognitionResultToImport,
 		speechRecoveryStateLabels,
 		speechRecordingPathLabels,

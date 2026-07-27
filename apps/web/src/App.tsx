@@ -4705,9 +4705,25 @@ export function App() {
         ) : null}
 
         {currentView === "marketing" ? (
-          <Suspense fallback={<AppLoadingState message="Загрузка маркетинга" />}>
-            <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
-          </Suspense>
+          /*
+            ОТКРЫТИЕ «МАРКЕТИНГ/SEO» ГАСИЛО ВСЁ ПРИЛОЖЕНИЕ.
+            `clinicProfileDraft` в хранилище объявлен как null и заполняется
+            после загрузки клиники, а здесь читалось `clinicProfileDraft.phone`
+            без проверки. Пока черновик не пришёл — «Cannot read properties of
+            null (reading 'phone')». Причём падение происходило прямо в App, то
+            есть ВЫШЕ границы ошибок раздела: экран становился пустым целиком, и
+            помогала только перезагрузка страницы. Раздел теперь и сам под
+            границей ошибок, как остальные: поломка внутри него не должна
+            уносить рабочее место.
+          */
+          <WorkspaceRouteErrorBoundary view="marketing" label="Маркетинг/SEO" panelClassName="panel marketing-panel" panelId="marketing">
+            <Suspense fallback={<AppLoadingState message="Загрузка маркетинга" />}>
+              <MarketingView
+                clinicName={dashboard.clinicName}
+                clinicPhone={clinicProfileDraft?.phone ?? ""}
+              />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
         ) : null}
 
         <VoiceAssistantUI
