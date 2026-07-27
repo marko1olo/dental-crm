@@ -36,20 +36,32 @@ describe("speechJsonBodyLimitBytes", () => {
   });
 });
 
+/**
+ * Любой настроенный провайдер выбирается автоматически, если явный не задан
+ * (resolveSpeechProvider: режимы "auto" и "fallback"). Поэтому проверять
+ * «ничего не настроено» можно, только убрав ключи ВСЕХ провайдеров.
+ *
+ * Тесты удаляли лишь GROQ_API_KEY, а рабочий .env задаёт GROQ_API_KEYS —
+ * списочный вариант того же ключа. Groq оставался настроенным, подхватывался
+ * автоматически, и три проверки получали groq_whisper/manual вместо
+ * none/disabled. Результат зависел от .env конкретной машины: на пустом
+ * окружении тесты проходили, на рабочем — падали.
+ *
+ * Стираем по шаблону имён, а не списком: при добавлении провайдера в
+ * providerKeySpecs герметичность не потеряется молча.
+ */
+const SPEECH_ENV_PATTERN =
+  /^(DENTAL_SPEECH_|DENTAL_LOCAL_WHISPER_|DENTAL_VOSK_|GROQ_|OPENAI_|DEEPGRAM_|ASSEMBLYAI_|CLOUDFLARE_|AZURE_SPEECH_|GOOGLE_API_KEY|GOOGLE_APPLICATION_CREDENTIALS|HUGGINGFACE_|HF_TOKEN|VOSK_|LOCAL_VOSK_|LOCAL_WHISPER_|WHISPER_CPP_)/;
+
 describe("getSpeechGatewayStatus", () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
     originalEnv = process.env;
     process.env = { ...originalEnv };
-    // Clear out speech related env vars to start fresh
-    delete process.env.DENTAL_SPEECH_PROVIDER;
-    delete process.env.GROQ_API_KEY;
-    delete process.env.DENTAL_LOCAL_WHISPER_URL;
-    delete process.env.DENTAL_LOCAL_WHISPER_TRANSCRIBE_URL;
-    delete process.env.DENTAL_SPEECH_MAX_CHUNK_BYTES;
-    delete process.env.DENTAL_SPEECH_RECOMMENDED_CHUNK_MS;
-    delete process.env.DENTAL_SPEECH_MIN_CHUNK_MS;
+    for (const name of Object.keys(process.env)) {
+      if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
+    }
   });
 
   afterEach(() => {
