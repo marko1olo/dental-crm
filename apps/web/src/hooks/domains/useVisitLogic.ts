@@ -737,7 +737,7 @@ export function useVisitLogic({
 		const qualitySuffix =
 			quality.level === "clear"
 				? ""
-				: ` В· ${speechQualityLabels[quality.level]}`;
+				: ` · ${speechQualityLabels[quality.level]}`;
 		if (text) {
 			appliedSpeechChunkKeysRef.current.add(applyKey);
 			appendVisitDictationText(text);
@@ -804,7 +804,7 @@ export function useVisitLogic({
 				assembly.warnings.length
 			) {
 				const missing = assembly.missingChunkIndexes.length
-					? ` В· пропуски ${assembly.missingChunkIndexes.join(", ")}`
+					? ` · пропуски ${assembly.missingChunkIndexes.join(", ")}`
 					: "";
 				setSpeechStatusNote(
 					`Запись собрана: ${assembly.chunkCount} фрагм.${missing}`,
@@ -1225,7 +1225,7 @@ export function useVisitLogic({
 		setClearedTranscriptSnapshot(previousTranscript);
 		setTranscript("");
 		setSpeechStatusNote(
-			"Диктовка очищена. Можно сразу вернуть текст кнопкой В«ВернутьВ».",
+			"Диктовка очищена. Можно сразу вернуть текст кнопкой «Вернуть».",
 		);
 	}
 

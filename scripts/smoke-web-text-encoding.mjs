@@ -1,5 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+// Определение шаблонов вынесено в отдельный модуль, чтобы их можно было
+// проверить самостоятельно, а не копировать в проверку самой проверки.
+import { createMojibakePattern, garbledQuestionPattern } from "./lib/mojibakePattern.mjs";
 
 const webSrcRoot = path.join("apps", "web", "src");
 const sourceExtensions = new Set([
@@ -10,8 +13,8 @@ const sourceExtensions = new Set([
 	".ts",
 	".tsx",
 ]);
-const mojibakePattern = /(?:\u00c3.|\u00c2.|\u00d0.|\u00d1.|\u00e2.|\ufffd)/g;
-const garbledQuestionPattern = /\?{4,}/g;
+
+const mojibakePattern = createMojibakePattern();
 
 function walkSourceFiles(root) {
 	const files = [];

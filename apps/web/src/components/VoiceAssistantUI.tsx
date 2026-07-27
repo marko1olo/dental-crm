@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useVoiceAssistant } from '../hooks/useVoiceAssistant';
 import { DictationHints } from '../DictationHints';
 
@@ -88,8 +89,23 @@ export function VoiceAssistantUI({ onNavigate, onSearchQuery, onDateChange }: Vo
     }
   };
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none gap-3 select-none">
+  /* Портал в body по той же причине, что и у Omnibar: компонент монтируется
+     внутри <section class="workspace"> с backdrop-filter, а он создаёт
+     контейнерный блок для position: fixed. Без портала голосовые кнопки на
+     телефоне уезжали под конец страницы вместе с плашкой поиска.
+
+     Отступ снизу считается от той же переменной, что и у плашки поиска
+     (--floating-corner-bottom в dente-redesign.css). Жёсткое число здесь не
+     годится: на узком экране плашка сама поднимается на 4.5rem, чтобы не лезть
+     на нижнюю навигацию, и любое зашитое значение снова давало наложение —
+     замерено, пересечение 124x36 на 1600x1100 и 36x32 на 390x844. */
+  return createPortal(
+    <div
+      className="fixed right-6 z-50 flex flex-col items-end pointer-events-none gap-3 select-none"
+      style={{
+        bottom: "calc(var(--floating-corner-bottom, 1.5rem) + var(--floating-corner-step, 48px))",
+      }}
+    >
       
       {/* Onboarding & Commands Tutorial Popover */}
       {showTutorial && (
@@ -289,7 +305,8 @@ export function VoiceAssistantUI({ onNavigate, onSearchQuery, onDateChange }: Vo
         </button>
       </div>
 
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -5094,8 +5094,8 @@ export function useAppLogic(): any {
 				key: payerKey,
 				inn: payerInn,
 				label: payerInn
-					? `${payerName} В· ИНН ${payerInn}${payerRelationship ? ` В· ${payerRelationship}` : ""}`
-					: `${payerName} В· документ ${payerIdentity || "без ИНН"}${payerRelationship ? ` В· ${payerRelationship}` : ""}`,
+					? `${payerName} · ИНН ${payerInn}${payerRelationship ? ` · ${payerRelationship}` : ""}`
+					: `${payerName} · документ ${payerIdentity || "без ИНН"}${payerRelationship ? ` · ${payerRelationship}` : ""}`,
 				amountRub: payment.amountRub,
 				paymentCount: 1,
 			});
@@ -5830,10 +5830,28 @@ export function useAppLogic(): any {
 
 	const activeImagingStudies = useMemo(() => {
 		if (!dashboard) return [];
+		/* БЫЛО: сравнение строго с dashboard.activeVisit.patientId. Когда приём
+		   не открыт, сервер отдаёт синтетический activeVisit с нулевым
+		   идентификатором 00000000-0000-0000-0000-000000000000 — проверено
+		   запросом к /api/dashboard, scratch/probe-active-visit.mjs. Ни один
+		   снимок с таким пациентом не совпадает, поэтому лента была пуста
+		   ВСЕГДА, пока не начат приём.
+
+		   При этом шапка того же экрана показывает пациента через
+		   activePatient, у которого есть запасные варианты (активный приём ->
+		   первый активный пациент -> первый пациент). Получалось «Пациент:
+		   Ковальчук Дмитрий Игоревич · В ленте 0», хотя у Ковальчука снимок
+		   есть — сверено с /api/imaging/studies. Врач, открывший «Снимки» без
+		   начатого приёма, видел «Снимков по пациенту нет» и не мог посмотреть
+		   ни прошлогоднюю ОПТГ, ни только что загруженный снимок.
+
+		   Лента обязана показывать того же пациента, что назван в шапке. */
+		const feedPatientId = activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null;
+		if (!feedPatientId) return [];
 		return (dashboard.imagingStudies || [])
-			.filter((study) => study.patientId === dashboard?.activeVisit?.patientId)
+			.filter((study) => study.patientId === feedPatientId)
 			.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
-	}, [dashboard]);
+	}, [activePatient, dashboard]);
 
 	const imagingKindOptions = useMemo(
 		() => Array.from(new Set(activeImagingStudies.map((study) => study.kind))),
@@ -6257,7 +6275,7 @@ export function useAppLogic(): any {
 					: "",
 			]
 				.filter(Boolean)
-				.join(" В· "),
+				.join(" · "),
 			createdByUserId: null,
 			createdAt: now,
 			updatedAt: now,
@@ -7005,7 +7023,7 @@ export function useAppLogic(): any {
 		: browserContinuityCritical
 			? browserContinuity.warnings.slice(0, 2).join(", ") ||
 				"локальная защита ограничена"
-			: `${browserContinuity.localStorageWritable ? "черновики ок" : "черновики выкл."} В· ${
+			: `${browserContinuity.localStorageWritable ? "черновики ок" : "черновики выкл."} · ${
 					browserContinuity.indexedDbSupported
 						? "очередь аудио ок"
 						: "очередь аудио выкл."
@@ -10704,7 +10722,7 @@ export function useAppLogic(): any {
 			mediaRecorderRef.current?.state === "recording"
 		) {
 			setError(
-				"Запись уже идет. Нажмите В«Стоп записьВ», чтобы завершить текущий фрагмент.",
+				"Запись уже идет. Нажмите «Стоп запись», чтобы завершить текущий фрагмент.",
 			);
 			return;
 		}
@@ -11977,7 +11995,7 @@ export function useAppLogic(): any {
 			(metadata.group !== "tax" && metadata.amountSource !== "none");
 		if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
 			setError(
-				`Документ В«${metadata.label}В» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`,
+				`Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`,
 			);
 			return;
 		}
@@ -12677,7 +12695,7 @@ export function useAppLogic(): any {
 		if (dashboard && task.patientId !== dashboard?.activeVisit?.patientId) {
 			const taskPatientName = patientName(dashboard.patients, task.patientId);
 			setError(
-				`Открыта форма В«${documentLabels[kind]}В» для заявки пациента ${taskPatientName}. Перед выпуском документа переключите активный прием на этого пациента, чтобы не создать документ по текущему визиту.`,
+				`Открыта форма «${documentLabels[kind]}» для заявки пациента ${taskPatientName}. Перед выпуском документа переключите активный прием на этого пациента, чтобы не создать документ по текущему визиту.`,
 			);
 		}
 	}
@@ -13282,7 +13300,7 @@ export function useAppLogic(): any {
 		imagingViewerSaveError,
 	]
 		.filter(Boolean)
-		.join(" В· ");
+		.join(" · ");
 	const canRetryImagingViewerSave =
 		imagingViewerSessionReady &&
 		Boolean(selectedImagingStudy?.id) &&

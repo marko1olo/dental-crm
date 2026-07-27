@@ -815,9 +815,22 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   flex-shrink: 0 !important;
 }
 
+/* Плавающий угол: снизу справа живут плашка глобального поиска и голосовые
+   кнопки. Раньше обе были прибиты к одной точке bottom: 1.5rem, и плашка с
+   z-index 9998 накрывала нижнюю половину кнопок — замерено, пересечение
+   124x36 на экране 1600x1100. Подпирать кнопки жёстким числом нельзя: на
+   узком экране плашка сама поднимается на 4.5rem, чтобы не лезть на нижнюю
+   навигацию, и жёсткое число снова давало наложение (36x32 при 390px).
+   Одна переменная — единственный источник истины для обоих элементов. */
+:root {
+  --floating-corner-bottom: 1.5rem;
+  /* Высота плашки поиска плюс зазор: на столько выше стоят голосовые кнопки. */
+  --floating-corner-step: 48px;
+}
+
 .omnibar-trigger-btn {
   position: fixed !important;
-  bottom: 1.5rem !important;
+  bottom: var(--floating-corner-bottom) !important;
   right: 1.5rem !important;
   left: auto !important;
   z-index: 9998 !important;
@@ -859,8 +872,12 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   .app-shell.dente-redesign {
     flex-direction: column !important;
   }
+  :root {
+    /* Выше нижней навигации. Голосовые кнопки поднимаются вместе с плашкой,
+       потому что считают отступ от той же переменной. */
+    --floating-corner-bottom: 4.5rem;
+  }
   .omnibar-trigger-btn {
-    bottom: 4.5rem !important;
     right: 1rem !important;
     left: auto !important;
     padding: 6px 12px !important;

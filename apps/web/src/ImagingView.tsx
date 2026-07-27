@@ -1,4 +1,5 @@
 import {
+  ClipboardList,
   ExternalLink,
   FileText,
   FlipHorizontal,
@@ -23,6 +24,79 @@ const IMAGING_QUICK_CHIPS = [
   "Убыль костной ткани",
   "Требуется имплантация"
 ];
+
+/**
+ * Шаблоны описания снимка по типу исследования.
+ *
+ * БЫЛО: рядом с полем заметки стояла кнопка с роботом и подсказкой
+ * «Сгенерировать с помощью ИИ (заглушка)». Её единственным действием было
+ * дописать в заметку строку « [AI AnalyzeCTReport]» — то есть мусор в
+ * клинической записи. Никакого разбора снимка за ней не стояло: серверный
+ * путь /api/ai/recognition-jobs для image_summary тоже лишь оборачивает
+ * введённый текст в «Описание снимка: … Требуется подтверждение врачом».
+ *
+ * СТАЛО: кнопка вставляет заготовку описания под тип снимка. Это работает
+ * без сети и без ИИ, экономит врачу набор текста и держит описания
+ * однотипными — их можно сравнивать между визитами. Строки заготовки —
+ * то, что рентгенолог и так обязан описать.
+ */
+const IMAGING_DESCRIPTION_TEMPLATES: Record<string, string[]> = {
+  periapical: [
+    "Коронковая часть:",
+    "Полость зуба:",
+    "Корневые каналы:",
+    "Периапикальные ткани:",
+    "Заключение:"
+  ],
+  bitewing: [
+    "Контактные поверхности:",
+    "Уровень костной ткани:",
+    "Наддесневые и поддесневые отложения:",
+    "Заключение:"
+  ],
+  opg: [
+    "Зубная формула:",
+    "Уровень костной ткани:",
+    "Гайморовы пазухи:",
+    "Височно-челюстные суставы:",
+    "Ретинированные и непрорезавшиеся зубы:",
+    "Заключение:"
+  ],
+  ceph: [
+    "Профиль лица:",
+    "Скелетный класс:",
+    "Углы SNA / SNB / ANB:",
+    "Положение резцов:",
+    "Заключение:"
+  ],
+  cbct: [
+    "Область исследования:",
+    "Плотность костной ткани:",
+    "Высота и ширина кости:",
+    "Анатомические структуры (канал, пазуха, дно носа):",
+    "Патологические изменения:",
+    "Заключение:"
+  ],
+  photo: [
+    "Область съёмки:",
+    "Состояние мягких тканей:",
+    "Гигиена:",
+    "Заключение:"
+  ],
+  other: ["Область:", "Описание:", "Заключение:"]
+};
+
+function imagingDescriptionTemplate(
+  kind: string | null | undefined,
+  toothCode: string | null | undefined,
+  region: string | null | undefined
+): string {
+  const lines = IMAGING_DESCRIPTION_TEMPLATES[kind ?? "other"] ?? IMAGING_DESCRIPTION_TEMPLATES.other!;
+  // Зуб или область подставляем сразу: врачу не нужно их перепечатывать.
+  const header = toothCode ? `Зуб: ${toothCode}` : region ? `Область: ${region}` : null;
+  const body = header ? [header, ...lines.filter((line) => !line.startsWith("Область:"))] : lines;
+  return body.join("\n");
+}
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import { type MprWindowPreset } from "./imagingUiLabels";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
@@ -633,38 +707,37 @@ export function ImagingView(props: ImagingViewProps) {
                             <span>{imagingViewerSaveDetail}</span>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '400px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                              <input
+                            {/* БЫЛО: однострочный input. Описание снимка в одну
+                                строку не помещается — врач писал в щель на 40
+                                символов. Многострочное поле с тремя строками
+                                занимает столько же места, сколько занимала
+                                строка с кнопкой, но текст видно целиком. */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <textarea
                                 aria-label="Заметка к снимку"
                                 value={imagingViewerNote}
                                 onChange={(event) => setImagingViewerNote(event.target.value)}
-                                placeholder="Заметка к снимку"
-                                style={{ width: '100%', paddingRight: '40px' }}
+                                placeholder="Опишите снимок: что видно, где, какое заключение"
+                                rows={3}
+                                style={{ width: '100%', resize: 'vertical', minHeight: '72px', lineHeight: 1.45 }}
                               />
                               <button
                                 type="button"
-                                title="Сгенерировать с помощью ИИ (заглушка)"
+                                className="text-button"
+                                title="Вставить заготовку описания под тип этого снимка"
                                 onClick={() => {
-                                  // Здесь будет вызов AiOrchestrator.processImagingAnalysis
-                                  setImagingViewerNote(prev => (prev + " [AI AnalyzeCTReport]").trim());
+                                  const template = imagingDescriptionTemplate(
+                                    selectedImagingStudy?.kind,
+                                    selectedImagingStudy?.toothCode,
+                                    selectedImagingStudy?.region
+                                  );
+                                  // Уже написанное не затираем: дописываем ниже.
+                                  setImagingViewerNote(prev => (prev.trim() ? `${prev.trim()}\n\n${template}` : template));
                                 }}
-                                style={{
-                                  position: 'absolute',
-                                  right: '8px',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: 'var(--teal-dark)',
-                                  padding: '4px',
-                                  borderRadius: '50%'
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--teal-soft)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '32px' }}
                               >
-                                <Bot size={16} />
+                                <ClipboardList size={15} aria-hidden="true" />
+                                Шаблон описания
                               </button>
                             </div>
                             <div className="quick-chips-row" style={{ flexWrap: 'wrap', marginTop: '4px' }}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { Search, Calendar, Users, FileText, Settings, Banknote, Stethoscope, Camera, MessageSquare, X, CheckCircle2 } from 'lucide-react';
@@ -71,7 +72,20 @@ export function Omnibar() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isOmnibarOpen, setOmnibarOpen]);
 
-  return (
+  /* Портал в body обязателен.
+     Omnibar монтируется внутри <section class="workspace">, у которой задан
+     backdrop-filter: blur(12px) saturate(1.8). Ненулевой backdrop-filter
+     создаёт контейнерный блок для потомков с position: fixed, поэтому
+     «прибитая к экрану» плашка поиска на самом деле прибивалась к секции.
+     Замерено, scratch/probe-fixed-containing-block.mjs:
+       окно 1600x1100 — секция ровно 1100 высотой, плашка попадала в угол
+         правильно ПО СОВПАДЕНИЮ;
+       окно 390x844 — секция 1637 высотой, плашка оказывалась на y=1532,
+         то есть ниже окна: на телефоне глобальный поиск был недоступен,
+         пока не прокрутишь страницу до самого конца.
+     То же касалось и раскрытого окна поиска с fixed inset-0: оно
+     растягивалось по секции, а не по экрану. */
+  return createPortal(
     <>
       <AnimatePresence>
         {!isOmnibarOpen && (
@@ -201,6 +215,7 @@ export function Omnibar() {
           </div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 }
