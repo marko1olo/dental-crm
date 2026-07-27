@@ -1,27 +1,81 @@
-import { describe, it, before, after } from "node:test";
+import { describe, it, before, after, afterEach, mock } from "node:test";
 import assert from "node:assert";
-import { patients, imagingStudies, auditEvents } from "../../telegram/legacyMocks.js";
-import type { ImagingSourceKind, ImagingStudy, AuditEvent } from "@dental/shared";
+import { patients } from "../../sampleData.js";
+import type { ImagingSourceKind, Patient } from "@dental/shared";
 import { commitImagingImport } from "../imaging.js";
+import { db } from "../../db/client.js";
+
+/**
+ * Импорт снимков давно пишет в базу через createImagingStudyInDb, а не в
+ * массив imagingStudies в памяти.
+ *
+ * Тест ждал появления записи именно в массиве и звал commitImagingImport с
+ * orgId "mock-org". Массив не пополнялся никогда, а запрос уходил в живую базу
+ * и падал на «invalid input syntax for type uuid: "mock-org"». То есть
+ * разбор манифеста тест не проверял вовсе.
+ *
+ * Сопоставление пациента по ФИО и телефону идёт по данным в памяти и базы не
+ * требует, поэтому подменяется только db.insert — и проверяется то, что
+ * действительно уходит в базу.
+ */
+const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
+
+/**
+ * Пациента тест заводит сам, а не берёт patients[0].
+ *
+ * Демонстрационные данные в памяти перетираются сохранённым состоянием: если
+ * рядом с рабочим каталогом лежит .data/dental-crm-state.json (а он лежит в
+ * репозитории и содержит пустые массивы), applyPersistentState очищает
+ * patients при загрузке модуля. Из корня репозитория patients[0] оказывается
+ * undefined, из apps/api — нет. Тест не должен зависеть от того, откуда его
+ * запустили.
+ */
+const testPatient = {
+  id: "123e4567-e89b-12d3-a456-4266141740aa",
+  organizationId: ORG_ID,
+  fullName: "Тестов Тест Тестович",
+  phone: "+79990000000",
+} as unknown as Patient;
 
 describe("commitImagingImport", () => {
-  let initialStudiesSnapshot: ImagingStudy[];
-  let initialAuditEventsSnapshot: AuditEvent[];
-
   before(() => {
-    initialStudiesSnapshot = [...imagingStudies];
-    initialAuditEventsSnapshot = [...auditEvents];
+    patients.push(testPatient);
   });
 
   after(() => {
-    // Restore exact length to prevent leakage to state tests.
-    imagingStudies.splice(0, imagingStudies.length, ...initialStudiesSnapshot);
-    auditEvents.splice(0, auditEvents.length, ...initialAuditEventsSnapshot);
+    const index = patients.indexOf(testPatient);
+    if (index >= 0) patients.splice(index, 1);
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
   });
 
   it("processes valid records only and maps properties to the created study correctly", async () => {
-    const patient = patients[0];
-    assert.ok(patient, "Expected at least one patient in sample data");
+    const patient = testPatient;
+
+    // Сопоставление идёт через getPatientsFromDb, то есть по базе, а не по
+    // массиву в памяти: подменяем и выборку пациентов.
+    mock.method(db, "select", () => ({
+      from: () => ({ where: async () => [testPatient] }),
+    }));
+
+    const insertedValues: Array<Record<string, unknown>> = [];
+    mock.method(db, "insert", () => ({
+      values: (values: Record<string, unknown>) => {
+        insertedValues.push(values);
+        return {
+          // Ответ проходит через схему: идентификатор обязан быть UUID.
+          returning: async () => [
+            {
+              id: `123e4567-e89b-12d3-a456-42661417${String(insertedValues.length).padStart(4, "0")}`,
+              ...values,
+              createdAt: new Date(),
+            },
+          ],
+        };
+      },
+    }));
 
     const input = {
       sourceName: "test_import",
@@ -34,29 +88,52 @@ describe("commitImagingImport", () => {
         `|opg|C:\\scans\\invalid.dcm|Invalid OPG||||`,
         // Invalid row (no filepath)
         `${patient.fullName}|opg||Missing Path|${patient.phone}|||`,
-      ].join("\n")
-     };
+      ].join("\n"),
+    };
 
-     const result = await commitImagingImport("mock-org", input);
+    const result = await commitImagingImport(ORG_ID, input);
 
     assert.strictEqual(result.preview.totalRows, 3);
     assert.strictEqual(result.importedCount, 1);
     assert.strictEqual(result.skippedCount, 2);
     assert.strictEqual(result.createdStudyIds.length, 1);
 
-    const createdStudyId = result.createdStudyIds[0];
-    const newStudy = imagingStudies.find(s => s.id === createdStudyId);
+    // Ровно одна строка признана готовой — только она и уходит в базу.
+    assert.strictEqual(insertedValues.length, 1);
+    const stored = insertedValues[0]!;
+    assert.strictEqual(stored.organizationId, ORG_ID);
+    assert.strictEqual(stored.patientId, patient.id);
+    assert.strictEqual(stored.kind, "opg");
+    assert.strictEqual(stored.title, "Test OPG");
+    assert.strictEqual(stored.toothCode, "12, 13");
+    assert.strictEqual(stored.region, "Maxilla");
+    assert.strictEqual(stored.sourceKind, "dicom_file");
+    assert.strictEqual(stored.sourceName, "test_import");
+    assert.strictEqual(stored.storagePath, "C:\\scans\\valid.dcm");
+    assert.strictEqual(
+      (stored.capturedAt as Date).toISOString(),
+      "2023-10-27T10:00:00.000Z",
+    );
+    assert.strictEqual(
+      stored.aiSummary,
+      "Импортировано из test_import. Требует проверки снимка и привязки к ЭМК.",
+    );
+  });
 
-    assert.ok(newStudy, "The study was not found in the global imagingStudies array");
-    assert.strictEqual(newStudy.patientId, patient.id);
-    assert.strictEqual(newStudy.kind, "opg");
-    assert.strictEqual(newStudy.title, "Test OPG");
-    assert.strictEqual(newStudy.toothCode, "12, 13");
-    assert.strictEqual(newStudy.region, "Maxilla");
-    assert.strictEqual(newStudy.sourceKind, "dicom_file");
-    assert.strictEqual(newStudy.sourceName, "test_import");
-    assert.strictEqual(newStudy.storagePath, "C:\\scans\\valid.dcm");
-    assert.strictEqual(newStudy.capturedAt, "2023-10-27T10:00:00Z");
-    assert.strictEqual(newStudy.aiSummary, "Импортировано из test_import. Требует проверки снимка и привязки к ЭМК.");
+  it("не пишет в базу, если готовых строк нет", async () => {
+    let insertCalls = 0;
+    mock.method(db, "insert", () => {
+      insertCalls += 1;
+      return { values: () => ({ returning: async () => [] }) };
+    });
+
+    const result = await commitImagingImport(ORG_ID, {
+      sourceName: "test_import",
+      sourceKind: "folder_watch" as ImagingSourceKind,
+      rawText: ["fio|modality|filePath|title|phone|tooth|region|date", `|opg|||||`].join("\n"),
+    });
+
+    assert.strictEqual(result.importedCount, 0);
+    assert.strictEqual(insertCalls, 0);
   });
 });

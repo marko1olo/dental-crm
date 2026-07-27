@@ -5,72 +5,137 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+/**
+ * Демон резервного копирования переписан, а тест остался от прежней версии.
+ *
+ * Он ждал английских сообщений «Starting Encrypted Cloud Backup Daemon»,
+ * «Running scheduled daily backup», «Stopped Encrypted Cloud Backup Daemon».
+ * Ничего этого больше нет: сообщения русские, а по тику интервала демон просто
+ * вызывает createEncryptedBackup и ничего не пишет в журнал.
+ *
+ * Главное же — startBackupDaemon теперь требует CLINIC_ENCRYPTION_KEY и без
+ * него вообще не запускается: копия медицинских данных без шифрования
+ * недопустима. Тест ключ не задавал, поэтому демон уходил в ветку с
+ * console.error и не планировал ничего, а проверка «должно быть одно сообщение
+ * о старте» видела ноль.
+ *
+ * Ключ здесь тестовый и к рабочим данным отношения не имеет; заведомо не
+ * совпадает с образцом из репозитория, иначе демон его отвергнет.
+ */
+const TEST_ENCRYPTION_KEY = "unit-test-key-do-not-use-in-prod!!";
+
 describe("BackupWorker start/stop", () => {
-    let backupWorker: any;
-    let tempDir: string;
-    let originalPath: string | undefined;
+	let backupWorker: any;
+	let tempDir: string;
+	let originalPath: string | undefined;
+	let originalKey: string | undefined;
 
-    beforeEach(async () => {
-        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "backup-test-"));
-        fs.mkdirSync(path.join(tempDir, "a", "b"), { recursive: true });
+	beforeEach(async () => {
+		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "backup-test-"));
+		fs.mkdirSync(path.join(tempDir, "a", "b"), { recursive: true });
 
-        // Setup a dummy pg_dump
-        const dummyBin = path.join(tempDir, "bin");
-        fs.mkdirSync(dummyBin);
+		// Setup a dummy pg_dump
+		const dummyBin = path.join(tempDir, "bin");
+		fs.mkdirSync(dummyBin);
 
-        if (process.platform === 'win32') {
-            const dummyPgDump = path.join(dummyBin, 'pg_dump.cmd');
-            fs.writeFileSync(dummyPgDump, `@echo off\nexit 0\n`);
-        } else {
-            const dummyPgDump = path.join(dummyBin, 'pg_dump');
-            fs.writeFileSync(dummyPgDump, `#!/usr/bin/env node\nprocess.exit(0);\n`, { mode: 0o755 });
-        }
+		if (process.platform === "win32") {
+			const dummyPgDump = path.join(dummyBin, "pg_dump.cmd");
+			fs.writeFileSync(dummyPgDump, `@echo off\nexit 0\n`);
+		} else {
+			const dummyPgDump = path.join(dummyBin, "pg_dump");
+			fs.writeFileSync(dummyPgDump, `#!/usr/bin/env node\nprocess.exit(0);\n`, { mode: 0o755 });
+		}
 
-        originalPath = process.env.PATH;
-        process.env.PATH = `${dummyBin}${path.delimiter}${originalPath}`;
+		originalPath = process.env.PATH;
+		process.env.PATH = `${dummyBin}${path.delimiter}${originalPath}`;
 
-        test.mock.method(process, "cwd", () => path.join(tempDir, "a", "b"));
+		originalKey = process.env.CLINIC_ENCRYPTION_KEY;
+		process.env.CLINIC_ENCRYPTION_KEY = TEST_ENCRYPTION_KEY;
 
-        backupWorker = await import("./backupWorker.js");
-        backupWorker.stopBackupDaemon();
-    });
+		test.mock.method(process, "cwd", () => path.join(tempDir, "a", "b"));
 
-    afterEach(() => {
-        if (backupWorker) backupWorker.stopBackupDaemon();
-        test.mock.restoreAll();
-        if (originalPath) process.env.PATH = originalPath;
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
-    });
+		backupWorker = await import("./backupWorker.js");
+		backupWorker.stopBackupDaemon();
+	});
 
-    test("daemon starts, schedules, and executes callback using fake timers", async (t) => {
-        t.mock.timers.enable({ apis: ["setInterval", "Date"] });
+	afterEach(() => {
+		if (backupWorker) backupWorker.stopBackupDaemon();
+		test.mock.restoreAll();
+		if (originalPath) process.env.PATH = originalPath;
+		if (originalKey === undefined) delete process.env.CLINIC_ENCRYPTION_KEY;
+		else process.env.CLINIC_ENCRYPTION_KEY = originalKey;
+		try {
+			fs.rmSync(tempDir, { recursive: true, force: true });
+		} catch {}
+	});
 
-        const logMock = t.mock.method(console, "log", () => {});
+	test("daemon starts, schedules, and stops", async (t) => {
+		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
 
-        backupWorker.startBackupDaemon();
+		const logMock = t.mock.method(console, "log", () => {});
 
-        assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
-        assert.match(logMock.mock.calls[0].arguments[0], /Starting Encrypted Cloud Backup Daemon/);
+		backupWorker.startBackupDaemon();
 
-        // Advance time by 24 hours to trigger the interval
-        t.mock.timers.tick(24 * 60 * 60 * 1000);
+		assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
+		assert.match(logMock.mock.calls[0].arguments[0], /Резервное копирование включено/);
 
-        assert.strictEqual(logMock.mock.callCount(), 2, "Should log running scheduled backup");
-        assert.match(logMock.mock.calls[1].arguments[0], /Running scheduled daily backup/);
+		backupWorker.stopBackupDaemon();
 
-        backupWorker.startBackupDaemon();
+		const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
+		assert.match(logs, /Резервное копирование остановлено/);
 
-        backupWorker.stopBackupDaemon();
+		// После остановки интервал снят: тик 24 часов ничего не добавляет в журнал.
+		const callsAfterStop = logMock.mock.callCount();
+		t.mock.timers.tick(24 * 60 * 60 * 1000);
+		assert.strictEqual(
+			logMock.mock.callCount(),
+			callsAfterStop,
+			"Should not execute backup callback after stop",
+		);
+	});
 
-        const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
-        assert.match(logs, /Stopped Encrypted Cloud Backup Daemon/);
+	test("повторный запуск не создаёт второй интервал", async (t) => {
+		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+		const logMock = t.mock.method(console, "log", () => {});
 
-        // Advance time by another 24 hours to ensure it is stopped
-        t.mock.timers.tick(24 * 60 * 60 * 1000);
+		backupWorker.startBackupDaemon();
+		backupWorker.startBackupDaemon();
 
-        const runningLogs = logMock.mock.calls.filter((c: any) => /Running scheduled daily backup/.test(c.arguments[0]));
-        assert.strictEqual(runningLogs.length, 1, "Should not execute backup callback after stop");
+		// Второй вызов обязан выйти сразу: иначе первый интервал теряется и
+		// снять его уже нечем — копии начали бы делаться дважды.
+		assert.strictEqual(logMock.mock.callCount(), 1);
+	});
 
-        await new Promise((resolve) => setTimeout(resolve, 50));
-    });
+	test("без ключа шифрования демон не запускается и говорит об этом", async (t) => {
+		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+		delete process.env.CLINIC_ENCRYPTION_KEY;
+
+		const logMock = t.mock.method(console, "log", () => {});
+		const errorMock = t.mock.method(console, "error", () => {});
+
+		backupWorker.startBackupDaemon();
+
+		// Молчать нельзя: клиника должна знать, что копий НЕТ.
+		assert.strictEqual(logMock.mock.callCount(), 0);
+		assert.strictEqual(errorMock.mock.callCount(), 1);
+		assert.match(errorMock.mock.calls[0].arguments[0], /ОТКЛЮЧЕНО/);
+
+		// И ничего не запланировано.
+		backupWorker.stopBackupDaemon();
+		assert.strictEqual(logMock.mock.callCount(), 0);
+	});
+
+	test("слишком короткий ключ отвергается, а не дополняется нулями", async (t) => {
+		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
+		process.env.CLINIC_ENCRYPTION_KEY = "short-key";
+
+		const logMock = t.mock.method(console, "log", () => {});
+		const errorMock = t.mock.method(console, "error", () => {});
+
+		backupWorker.startBackupDaemon();
+
+		assert.strictEqual(logMock.mock.callCount(), 0);
+		assert.strictEqual(errorMock.mock.callCount(), 1);
+		assert.match(errorMock.mock.calls[0].arguments[0], /короче 32 байт/);
+	});
 });

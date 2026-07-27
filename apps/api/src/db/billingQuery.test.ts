@@ -15,7 +15,12 @@ describe("getPaymentsByPatientIdInDb", () => {
     assert.deepStrictEqual(result, []);
   });
 
-  test("maps createdAt and updatedAt dates to ISO strings correctly", async (t) => {
+  // Маппер отдаёт createdAt и paidAt; поля updatedAt в контракте Payment нет.
+  // Фикстура задавала updatedAt, поэтому p.paidAt оказывался undefined и
+  // маппер падал на .toISOString(). В базе paid_at объявлен NOT NULL (как и в
+  // schema.ts), так что для рабочего кода обращение без проверки безопасно —
+  // ошибочной была именно фикстура.
+  test("maps createdAt and paidAt dates to ISO strings correctly", async (t) => {
     t.mock.method(db, "select", () => ({
       from: () => ({
         where: async () => [
@@ -26,7 +31,7 @@ describe("getPaymentsByPatientIdInDb", () => {
             amountRub: 1000,
             status: "paid",
             createdAt: new Date("2023-10-01T12:00:00Z"),
-            updatedAt: new Date("2023-10-02T12:00:00Z")
+            paidAt: new Date("2023-10-02T12:00:00Z")
           },
           {
             id: "2",
@@ -35,7 +40,7 @@ describe("getPaymentsByPatientIdInDb", () => {
             amountRub: 500,
             status: "pending",
             createdAt: new Date("2023-10-03T12:00:00Z"),
-            updatedAt: new Date("2023-10-04T12:00:00Z")
+            paidAt: new Date("2023-10-04T12:00:00Z")
           }
         ]
       })
@@ -46,9 +51,9 @@ describe("getPaymentsByPatientIdInDb", () => {
     assert.strictEqual(result.length, 2);
     assert.strictEqual(result[0].id, "1");
     assert.strictEqual(result[0].createdAt, "2023-10-01T12:00:00.000Z");
-    assert.strictEqual(result[0].updatedAt, "2023-10-02T12:00:00.000Z");
+    assert.strictEqual(result[0].paidAt, "2023-10-02T12:00:00.000Z");
     assert.strictEqual(result[1].id, "2");
     assert.strictEqual(result[1].createdAt, "2023-10-03T12:00:00.000Z");
-    assert.strictEqual(result[1].updatedAt, "2023-10-04T12:00:00.000Z");
+    assert.strictEqual(result[1].paidAt, "2023-10-04T12:00:00.000Z");
   });
 });
