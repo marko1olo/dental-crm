@@ -200,9 +200,39 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     setScheduleStatusFilter("all");
   };
   const focusNewAppointmentEditor = () => {
-    const editor = document.querySelector<HTMLElement>(".appointment-create-editor");
-    motionSafeScrollIntoView(editor, { block: "center" });
-    editor?.querySelector<HTMLElement>("select, input, textarea, button")?.focus({ preventScroll: true });
+    // БЫЛО: фокус уходил в .appointment-create-editor — легаси-форму,
+    // скрытую через opacity 0, размер 0 и pointer-events: none. Нажатие
+    // «Создать запись» (и переход из листа ожидания) не меняло на экране
+    // ничего, а клавиатурный фокус пропадал в невидимом элементе: человек
+    // терял место в интерфейсе, а программа чтения с экрана начинала
+    // зачитывать поля, которых на экране нет.
+    //
+    // Берём первый РЕАЛЬНО видимый элемент управления в блоке создания
+    // записи. Выбор по видимости, а не по конкретному селектору, чтобы
+    // правка пережила перестановку блоков внутри формы.
+    const wrapper = document.querySelector<HTMLElement>(".appointment-create-wrapper");
+    if (!wrapper) return;
+
+    const isVisible = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return false;
+      // opacity предка НЕ наследуется в вычисленный стиль потомка: у
+      // ребёнка внутри opacity: 0 собственная opacity остаётся 1. Поэтому
+      // цепочку предков приходится проходить вручную.
+      for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+        const style = window.getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        if (Number.parseFloat(style.opacity) === 0) return false;
+      }
+      return true;
+    };
+
+    const target = Array.from(
+      wrapper.querySelectorAll<HTMLElement>("select, input, textarea, button"),
+    ).find((element) => !element.hasAttribute("disabled") && isVisible(element));
+
+    motionSafeScrollIntoView(target ?? wrapper, { block: "center" });
+    target?.focus({ preventScroll: true });
   };
   const openScheduleSuggestion = (section: string) => {
     window.location.hash = section;
