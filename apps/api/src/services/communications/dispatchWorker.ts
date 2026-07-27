@@ -12,6 +12,7 @@
  */
 
 import { scheduleAppointmentReminders, type ReminderScheduleReport } from "./appointmentReminders.js";
+import { completeFinishedCampaigns, launchScheduledCampaigns } from "./campaigns.js";
 import { dispatchDueMessages, type DispatchReport } from "./dispatcher.js";
 
 export type DispatchWorkerLogger = {
@@ -98,6 +99,19 @@ export function startCommunicationDispatchWorker(
 			// поставлено сейчас, уйдёт этим же проходом.
 			if (ticksSinceReminders >= reminderEveryTicks) {
 				ticksSinceReminders = 0;
+
+				// Отложенные рассылки: время пришло — ставим получателей в очередь.
+				const campaigns = await launchScheduledCampaigns();
+				if (campaigns.launched > 0) {
+					logger?.info({ launched: campaigns.launched }, "Отложенные рассылки запущены");
+				}
+				for (const problem of campaigns.problems) logger?.warn({ problem }, "Отложенная рассылка не запущена");
+
+				// Запущенная рассылка без остатка в очереди считается завершённой.
+				// Без этого «выполняется» остаётся навсегда.
+				const finished = await completeFinishedCampaigns();
+				if (finished > 0) logger?.info({ finished }, "Рассылки завершены");
+
 				const reminders = await scheduleAppointmentReminders();
 				if (reminders.queued > 0 || reminders.problems.length > 0) {
 					logger?.info(

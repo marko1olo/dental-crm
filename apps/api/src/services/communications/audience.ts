@@ -1,0 +1,457 @@
+/**
+ * Отбор получателей рассылки.
+ *
+ * ЗАЧЕМ ЭТОТ ФАЙЛ
+ * Отправить сообщение группе пациентов было нельзя: колонка campaign_id в
+ * очереди существовала как метка, а самой кампании и отбора получателей — нет.
+ * Виджеты вроде UisMassAppointmentConfirmationsWidget читали пустые таблицы и
+ * показывали выдуманные записи.
+ *
+ * ДВА ПРИНЦИПА
+ *
+ * 1. Признаки отбора — закрытый набор, а не произвольный SQL из интерфейса.
+ *    «Гибкий конструктор запросов» на медицинской базе означает, что рано или
+ *    поздно администратор выгрузит всю картотеку одним условием.
+ *
+ * 2. Кампания не запускается вслепую. Предпросмотр отвечает не только «сколько
+ *    подошло», но и сколько отсеяно и почему: нет контакта, нет согласия,
+ *    исчерпан суточный предел. Иначе «отправлено 12 из 400» выясняется уже
+ *    после отправки, и непонятно, ошибка это или так и задумано.
+ *
+ * Отдельно считается стоимость: для SMS это число сегментов, умноженное на
+ * получателей. Разница между «влезло в один сегмент» и «в три» — это счёт от
+ * оператора в конце месяца.
+ */
+
+import { and, eq, gte, inArray, isNotNull, lte, ne, sql, type SQL } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { appointments, patientCommunicationConsents, patients, payments, treatmentItems } from "../../db/schema.js";
+import { isValidEmailAddress } from "../../emailTransport.js";
+import { normalizeRussianMsisdn } from "../../smsTransport.js";
+import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
+import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
+import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
+import { resolveTelegramChatId } from "./channelRouter.js";
+import { describeSmsPayload } from "./templateRenderer.js";
+
+/**
+ * Признаки отбора. Все необязательные; заданные складываются по «и».
+ * Каждый признак превращается в настоящее условие SQL или в проверку после
+ * выборки — там, где выразить его запросом дороже, чем проверить в коде.
+ *
+ * `| undefined` выписано явно: при exactOptionalPropertyTypes разобранный zod
+ * отдаёт поля со значением undefined, а не отсутствующие, и без этого тип не
+ * принимает собственный же результат разбора.
+ */
+export type AudienceCriteria = {
+	/** active — обычные пациенты, archived — снятые с учёта. */
+	readonly status?: "active" | "archived" | undefined;
+	/** Последний приём был раньше этой даты (ISO). Основа возвратных рассылок. */
+	readonly lastVisitBefore?: string | undefined;
+	/** Последний приём был позже этой даты — для «недавно были». */
+	readonly lastVisitAfter?: string | undefined;
+	/** Ни одного приёма никогда. Взаимоисключающе с двумя предыдущими. */
+	readonly neverVisited?: boolean | undefined;
+	/** Есть будущая запись. false — чтобы не звать тех, кто уже записан. */
+	readonly hasFutureAppointment?: boolean | undefined;
+	/** Долг не меньше указанной суммы в рублях (оплачено минус запланировано). */
+	readonly debtAtLeastRub?: number | undefined;
+	/** День рождения в ближайшие N дней. */
+	readonly birthdayWithinDays?: number | undefined;
+	readonly ageFrom?: number | undefined;
+	readonly ageTo?: number | undefined;
+	/** Ограничить конкретными пациентами — для повторной отправки по списку. */
+	readonly patientIds?: string[] | undefined;
+};
+
+export type AudienceCandidate = {
+	readonly patientId: string;
+	readonly fullName: string;
+	readonly recipientAddress: string;
+};
+
+export type AudienceExclusionReason =
+	| "no_contact"
+	| "no_consent"
+	| "status_mismatch"
+	| "excluded_by_criteria";
+
+export type AudiencePreview = {
+	/** Подошли по признакам отбора. */
+	readonly matched: number;
+	/** Из них получат сообщение: есть контакт и согласие. */
+	readonly deliverable: number;
+	readonly candidates: AudienceCandidate[];
+	readonly excluded: Readonly<Record<AudienceExclusionReason, number>>;
+	/** Пояснения к отсеву — для интерфейса, не для лога. */
+	readonly notes: string[];
+};
+
+export type EstimateAudienceCostInput = {
+	readonly channel: CommunicationChannelCode;
+	readonly recipients: number;
+	readonly body: string;
+};
+
+export type AudienceCostEstimate = {
+	readonly recipients: number;
+	/** Для SMS — сегментов на одно сообщение. Для остальных каналов null. */
+	readonly segmentsPerMessage: number | null;
+	/** Всего тарифицируемых единиц: сегментов для SMS, сообщений для прочих. */
+	readonly billableUnits: number;
+	readonly note: string;
+};
+
+export function estimateAudienceCost(input: EstimateAudienceCostInput): AudienceCostEstimate {
+	if (input.channel === "sms") {
+		const payload = describeSmsPayload(input.body);
+		return {
+			recipients: input.recipients,
+			segmentsPerMessage: payload.segments,
+			billableUnits: payload.segments * input.recipients,
+			note:
+				`Кириллица считается как UCS-2: ${payload.characters} симв., ${payload.segments} сегм. на сообщение. ` +
+				`Оператор выставит счёт за ${payload.segments * input.recipients} сегмент(ов).`
+		};
+	}
+	return {
+		recipients: input.recipients,
+		segmentsPerMessage: null,
+		billableUnits: input.recipients,
+		note: `Сообщений к отправке: ${input.recipients}.`
+	};
+}
+
+/** Возраст в полных годах по дате рождения в виде «ГГГГ-ММ-ДД». */
+function ageFromBirthDate(birthDate: string | null, now: Date): number | null {
+	if (!birthDate) return null;
+	const parsed = new Date(birthDate);
+	if (Number.isNaN(parsed.getTime())) return null;
+	let age = now.getUTCFullYear() - parsed.getUTCFullYear();
+	const monthDelta = now.getUTCMonth() - parsed.getUTCMonth();
+	if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < parsed.getUTCDate())) age -= 1;
+	return age >= 0 && age < 130 ? age : null;
+}
+
+/**
+ * Через сколько дней день рождения. Считается по дню и месяцу, поэтому 29
+ * февраля у невисокосного года попадает на 1 марта — так же, как это делает
+ * администратор вручную.
+ */
+function daysUntilBirthday(birthDate: string | null, now: Date): number | null {
+	if (!birthDate) return null;
+	const parsed = new Date(birthDate);
+	if (Number.isNaN(parsed.getTime())) return null;
+
+	const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+	for (let yearOffset = 0; yearOffset <= 1; yearOffset += 1) {
+		const candidate = Date.UTC(now.getUTCFullYear() + yearOffset, parsed.getUTCMonth(), parsed.getUTCDate());
+		if (candidate >= todayUtc) {
+			return Math.round((candidate - todayUtc) / 86_400_000);
+		}
+	}
+	return null;
+}
+
+async function lastVisitByPatient(organizationId: string): Promise<Map<string, Date>> {
+	// Последним приёмом считается последняя завершённая запись: черновик визита
+	// без записи в расписании — это ещё не состоявшийся приём.
+	const rows = await db
+		.select({ patientId: appointments.patientId, lastAt: sql<Date>`max(${appointments.startsAt})` })
+		.from(appointments)
+		.where(
+			and(
+				eq(appointments.organizationId, organizationId),
+				isNotNull(appointments.patientId),
+				inArray(appointments.status, ["completed", "arrived", "in_treatment"])
+			)
+		)
+		.groupBy(appointments.patientId);
+
+	const map = new Map<string, Date>();
+	for (const row of rows) {
+		if (row.patientId && row.lastAt) map.set(row.patientId, new Date(row.lastAt));
+	}
+	return map;
+}
+
+async function futureAppointmentPatientIds(organizationId: string, now: Date): Promise<Set<string>> {
+	const rows = await db
+		.select({ patientId: appointments.patientId })
+		.from(appointments)
+		.where(
+			and(
+				eq(appointments.organizationId, organizationId),
+				isNotNull(appointments.patientId),
+				gte(appointments.startsAt, now),
+				inArray(appointments.status, ["planned", "confirmed"])
+			)
+		);
+	return new Set(rows.map((row) => row.patientId).filter((id): id is string => Boolean(id)));
+}
+
+/**
+ * Долг по пациенту: оплачено минус запланировано, как это считает
+ * db/domainStateHydration.ts. Возвращается положительное число рублей долга;
+ * переплата и ноль в карту не попадают.
+ */
+async function debtByPatient(organizationId: string): Promise<Map<string, number>> {
+	const paidRows = await db
+		.select({ patientId: payments.patientId, total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int` })
+		.from(payments)
+		.where(and(eq(payments.organizationId, organizationId), eq(payments.status, "paid")))
+		.groupBy(payments.patientId);
+
+	const plannedRows = await db
+		.select({
+			patientId: treatmentItems.patientId,
+			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::int`
+		})
+		.from(treatmentItems)
+		.where(and(eq(treatmentItems.organizationId, organizationId), ne(treatmentItems.status, "cancelled")))
+		.groupBy(treatmentItems.patientId);
+
+	const paid = new Map(paidRows.map((row) => [row.patientId, Number(row.total)]));
+	const debts = new Map<string, number>();
+	for (const row of plannedRows) {
+		const debt = Number(row.total) - (paid.get(row.patientId) ?? 0);
+		if (debt > 0) debts.set(row.patientId, debt);
+	}
+	return debts;
+}
+
+export type ResolveAudienceInput = {
+	readonly organizationId: string;
+	readonly channel: CommunicationChannelCode;
+	readonly scope: CommunicationConsentScope;
+	readonly criteria: AudienceCriteria;
+	readonly now?: Date;
+	/** Ограничить размер выборки — предпросмотр не должен тянуть всю картотеку. */
+	readonly limit?: number;
+};
+
+/**
+ * Кто получит рассылку и кто нет, с причинами. Одна и та же функция
+ * используется и для предпросмотра, и для запуска: расхождение между
+ * «показали» и «отправили» здесь недопустимо.
+ */
+export async function resolveAudience(input: ResolveAudienceInput): Promise<AudiencePreview> {
+	const now = input.now ?? new Date();
+	const limit = Math.max(1, Math.min(20_000, input.limit ?? 5000));
+	const criteria = input.criteria;
+
+	const filters: SQL[] = [eq(patients.organizationId, input.organizationId)];
+	filters.push(eq(patients.status, criteria.status ?? "active"));
+	if (criteria.patientIds && criteria.patientIds.length > 0) {
+		filters.push(inArray(patients.id, criteria.patientIds));
+	}
+
+	// Канал определяет, какой контакт обязателен. Без этого условия выборка
+	// показала бы 400 подходящих пациентов, из которых сообщение получат 40.
+	if (input.channel === "email") {
+		filters.push(isNotNull(patients.email));
+		filters.push(ne(patients.email, ""));
+	} else if (input.channel === "sms" || input.channel === "whatsapp") {
+		filters.push(isNotNull(patients.phone));
+		filters.push(ne(patients.phone, ""));
+	}
+
+	const rows = await db
+		.select({
+			id: patients.id,
+			fullName: patients.fullName,
+			phone: patients.phone,
+			email: patients.email,
+			birthDate: patients.birthDate
+		})
+		.from(patients)
+		.where(and(...filters))
+		.limit(limit);
+
+	const needsVisitData =
+		criteria.lastVisitBefore !== undefined || criteria.lastVisitAfter !== undefined || criteria.neverVisited === true;
+	const [lastVisits, futureAppointments, debts] = await Promise.all([
+		needsVisitData ? lastVisitByPatient(input.organizationId) : Promise.resolve(new Map<string, Date>()),
+		criteria.hasFutureAppointment !== undefined
+			? futureAppointmentPatientIds(input.organizationId, now)
+			: Promise.resolve(new Set<string>()),
+		criteria.debtAtLeastRub !== undefined ? debtByPatient(input.organizationId) : Promise.resolve(new Map<string, number>())
+	]);
+
+	const excluded: Record<AudienceExclusionReason, number> = {
+		no_contact: 0,
+		no_consent: 0,
+		status_mismatch: 0,
+		excluded_by_criteria: 0
+	};
+	const notes: string[] = [];
+	const matchedIds: string[] = [];
+	const matchedById = new Map<string, (typeof rows)[number]>();
+
+	for (const row of rows) {
+		if (criteria.neverVisited === true && lastVisits.has(row.id)) {
+			excluded.excluded_by_criteria += 1;
+			continue;
+		}
+		if (criteria.lastVisitBefore !== undefined) {
+			const lastVisit = lastVisits.get(row.id);
+			if (!lastVisit || lastVisit >= new Date(criteria.lastVisitBefore)) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+		}
+		if (criteria.lastVisitAfter !== undefined) {
+			const lastVisit = lastVisits.get(row.id);
+			if (!lastVisit || lastVisit <= new Date(criteria.lastVisitAfter)) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+		}
+		if (criteria.hasFutureAppointment !== undefined && futureAppointments.has(row.id) !== criteria.hasFutureAppointment) {
+			excluded.excluded_by_criteria += 1;
+			continue;
+		}
+		if (criteria.debtAtLeastRub !== undefined && (debts.get(row.id) ?? 0) < criteria.debtAtLeastRub) {
+			excluded.excluded_by_criteria += 1;
+			continue;
+		}
+		if (criteria.birthdayWithinDays !== undefined) {
+			const days = daysUntilBirthday(row.birthDate, now);
+			if (days === null || days > criteria.birthdayWithinDays) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+		}
+		if (criteria.ageFrom !== undefined || criteria.ageTo !== undefined) {
+			const age = ageFromBirthDate(row.birthDate, now);
+			if (age === null) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+			if (criteria.ageFrom !== undefined && age < criteria.ageFrom) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+			if (criteria.ageTo !== undefined && age > criteria.ageTo) {
+				excluded.excluded_by_criteria += 1;
+				continue;
+			}
+		}
+
+		matchedIds.push(row.id);
+		matchedById.set(row.id, row);
+	}
+
+	// Согласия читаются одним запросом на всю выборку: по одному на пациента —
+	// это тысяча запросов на тысячную рассылку.
+	const consentsByPatient = await loadConsents(input.organizationId, matchedIds);
+
+	const candidates: AudienceCandidate[] = [];
+	for (const patientId of matchedIds) {
+		const row = matchedById.get(patientId);
+		if (!row) continue;
+
+		if (!decideConsent(consentsByPatient.get(patientId) ?? [], input.channel, input.scope).allowed) {
+			excluded.no_consent += 1;
+			continue;
+		}
+
+		const address = await recipientAddressFor(input.organizationId, input.channel, row);
+		if (!address) {
+			excluded.no_contact += 1;
+			continue;
+		}
+
+		candidates.push({ patientId, fullName: row.fullName, recipientAddress: address });
+	}
+
+	if (excluded.no_consent > 0 && input.scope === "marketing") {
+		notes.push(
+			`${excluded.no_consent} пациент(ов) отсеяно без согласия на рекламные сообщения. ` +
+				"Согласие фиксируется в карточке пациента; без него отправка запрещена законом о рекламе."
+		);
+	}
+	if (excluded.no_contact > 0) {
+		notes.push(`${excluded.no_contact} пациент(ов) без пригодного контакта для этого канала.`);
+	}
+	if (rows.length >= limit) {
+		// Молчаливое усечение выборки выглядело бы как «столько и есть».
+		notes.push(`Показаны первые ${limit} записей: выборка ограничена, уточните условия отбора.`);
+	}
+
+	return { matched: matchedIds.length, deliverable: candidates.length, candidates, excluded, notes };
+}
+
+async function loadConsents(organizationId: string, patientIds: string[]): Promise<Map<string, ConsentRecord[]>> {
+	const result = new Map<string, ConsentRecord[]>();
+	if (patientIds.length === 0) return result;
+
+	const rows = await db
+		.select({
+			patientId: patientCommunicationConsents.patientId,
+			channel: patientCommunicationConsents.channel,
+			scope: patientCommunicationConsents.scope,
+			state: patientCommunicationConsents.state
+		})
+		.from(patientCommunicationConsents)
+		.where(
+			and(
+				eq(patientCommunicationConsents.organizationId, organizationId),
+				inArray(patientCommunicationConsents.patientId, patientIds)
+			)
+		);
+
+	for (const row of rows) {
+		const list = result.get(row.patientId) ?? [];
+		list.push({
+			channel: row.channel as CommunicationChannelCode,
+			scope: row.scope as CommunicationConsentScope,
+			state: row.state as "granted" | "revoked"
+		});
+		result.set(row.patientId, list);
+	}
+	return result;
+}
+
+async function recipientAddressFor(
+	organizationId: string,
+	channel: CommunicationChannelCode,
+	row: { id: string; phone: string | null; email: string | null }
+): Promise<string | null> {
+	if (channel === "telegram") return resolveTelegramChatId(organizationId, row.id);
+	if (channel === "email") {
+		const email = row.email?.trim() ?? "";
+		return isValidEmailAddress(email) ? email : null;
+	}
+	return channel === "whatsapp" ? normalizeWhatsappRecipient(row.phone) : normalizeRussianMsisdn(row.phone);
+}
+
+export const AUDIENCE_CRITERIA_KEYS: readonly (keyof AudienceCriteria)[] = [
+	"status",
+	"lastVisitBefore",
+	"lastVisitAfter",
+	"neverVisited",
+	"hasFutureAppointment",
+	"debtAtLeastRub",
+	"birthdayWithinDays",
+	"ageFrom",
+	"ageTo",
+	"patientIds"
+];
+
+/** Человекочитаемое описание условий — попадает в журнал и в интерфейс. */
+export function describeCriteria(criteria: AudienceCriteria): string[] {
+	const parts: string[] = [];
+	if (criteria.status) parts.push(criteria.status === "active" ? "активные пациенты" : "архивные пациенты");
+	if (criteria.neverVisited) parts.push("ни разу не были на приёме");
+	if (criteria.lastVisitBefore) parts.push(`последний приём раньше ${criteria.lastVisitBefore.slice(0, 10)}`);
+	if (criteria.lastVisitAfter) parts.push(`последний приём позже ${criteria.lastVisitAfter.slice(0, 10)}`);
+	if (criteria.hasFutureAppointment === true) parts.push("есть будущая запись");
+	if (criteria.hasFutureAppointment === false) parts.push("нет будущей записи");
+	if (criteria.debtAtLeastRub !== undefined) parts.push(`долг не меньше ${criteria.debtAtLeastRub} ₽`);
+	if (criteria.birthdayWithinDays !== undefined) parts.push(`день рождения в ближайшие ${criteria.birthdayWithinDays} дн.`);
+	if (criteria.ageFrom !== undefined) parts.push(`возраст от ${criteria.ageFrom}`);
+	if (criteria.ageTo !== undefined) parts.push(`возраст до ${criteria.ageTo}`);
+	if (criteria.patientIds?.length) parts.push(`список из ${criteria.patientIds.length} пациент(ов)`);
+	return parts;
+}

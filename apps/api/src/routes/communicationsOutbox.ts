@@ -33,6 +33,15 @@ import {
 } from "../services/communications/channelRouter.js";
 import { scheduleAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import {
+	campaignProgress,
+	cancelCampaign,
+	createCampaign,
+	launchCampaign,
+	parseAudienceCriteria,
+	previewCampaign
+} from "../services/communications/campaigns.js";
+import { communicationCampaigns } from "../db/communicationsSchema.js";
+import {
 	DEFAULT_COMMUNICATION_SETTINGS,
 	dispatchDueMessages,
 	enqueueMessage,
@@ -131,6 +140,35 @@ const consentUpdateSchema = z.object({
 		)
 		.min(1)
 		.max(32)
+});
+
+/**
+ * Условия отбора получателей рассылки. Закрытый набор признаков: «гибкий
+ * конструктор запросов» по медицинской базе рано или поздно выгрузит всю
+ * картотеку одним условием.
+ */
+const audienceCriteriaSchema = z
+	.object({
+		status: z.enum(["active", "archived"]).optional(),
+		lastVisitBefore: z.string().datetime({ offset: true }).optional(),
+		lastVisitAfter: z.string().datetime({ offset: true }).optional(),
+		neverVisited: z.boolean().optional(),
+		hasFutureAppointment: z.boolean().optional(),
+		debtAtLeastRub: z.number().int().min(1).max(10_000_000).optional(),
+		birthdayWithinDays: z.number().int().min(0).max(365).optional(),
+		ageFrom: z.number().int().min(0).max(120).optional(),
+		ageTo: z.number().int().min(0).max(120).optional(),
+		patientIds: z.array(z.string().uuid()).max(5000).optional()
+	})
+	.strict();
+
+const campaignCreateSchema = z.object({
+	title: z.string().trim().min(1).max(200),
+	templateId: z.string().uuid(),
+	scope: scopeSchema.default("marketing"),
+	criteria: audienceCriteriaSchema.default({}),
+	clinicId: z.string().uuid().nullable().optional(),
+	scheduledAt: z.string().datetime({ offset: true }).nullable().optional()
 });
 
 const outboxQuerySchema = z.object({
@@ -685,6 +723,139 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 
 		const report = await scheduleAppointmentReminders({ organizationId: context.organizationId });
 		return { report };
+	});
+
+	// ─── Рассылки ─────────────────────────────────────────────────────────────
+
+	app.get("/api/communications/campaigns", async (request, reply) => {
+		const context = await requireClinicalReadContext(request, reply, "communication campaigns");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.read")) return;
+
+		const rows = await db
+			.select()
+			.from(communicationCampaigns)
+			.where(eq(communicationCampaigns.organizationId, context.organizationId))
+			.orderBy(desc(communicationCampaigns.createdAt))
+			.limit(100);
+
+		return {
+			campaigns: rows.map((row) => ({
+				id: row.id,
+				title: row.title,
+				channel: row.channel,
+				scope: row.scope,
+				status: row.status,
+				templateId: row.templateId,
+				criteria: parseAudienceCriteria(row.audienceJson),
+				scheduledAt: row.scheduledAt,
+				launchedAt: row.launchedAt,
+				completedAt: row.completedAt,
+				createdAt: row.createdAt
+			}))
+		};
+	});
+
+	app.post("/api/communications/campaigns", async (request, reply) => {
+		const context = await requireClinicalMutationContext(request, reply, "communication campaign create");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+
+		const parsed = campaignCreateSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return validationError(reply, ["Проверьте название, шаблон и условия отбора получателей."]);
+		}
+		if (
+			parsed.data.criteria.ageFrom !== undefined &&
+			parsed.data.criteria.ageTo !== undefined &&
+			parsed.data.criteria.ageFrom > parsed.data.criteria.ageTo
+		) {
+			return validationError(reply, ["Возраст «от» больше возраста «до»."]);
+		}
+
+		const result = await createCampaign({
+			organizationId: context.organizationId,
+			title: parsed.data.title,
+			templateId: parsed.data.templateId,
+			scope: parsed.data.scope,
+			criteria: parsed.data.criteria,
+			clinicId: parsed.data.clinicId ?? null,
+			scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : null
+		});
+		if (!result.ok) return validationError(reply, [result.reason]);
+		return reply.code(201).send({ campaign: result.campaign });
+	});
+
+	/**
+	 * Предпросмотр перед запуском: сколько подошло, сколько получит, во сколько
+	 * это встанет и как будет выглядеть текст. Рассылка не должна уходить
+	 * вслепую — иначе «отправлено 12 из 400» выясняется уже после отправки.
+	 */
+	app.get("/api/communications/campaigns/:campaignId/preview", async (request, reply) => {
+		const context = await requireClinicalReadContext(request, reply, "communication campaign preview");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.read")) return;
+
+		const campaignId = (request.params as { campaignId?: string }).campaignId;
+		if (!campaignId) return validationError(reply, ["Не указана рассылка."]);
+
+		const preview = await previewCampaign(context.organizationId, campaignId);
+		if (!preview) {
+			return reply.code(404).send({ error: "CampaignNotFound", message: "Рассылка не найдена в этой клинике." });
+		}
+		return preview;
+	});
+
+	app.post("/api/communications/campaigns/:campaignId/launch", async (request, reply) => {
+		const context = await requireClinicalMutationContext(request, reply, "communication campaign launch");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+
+		const campaignId = (request.params as { campaignId?: string }).campaignId;
+		if (!campaignId) return validationError(reply, ["Не указана рассылка."]);
+
+		const result = await launchCampaign({ organizationId: context.organizationId, campaignId });
+		if (!result.ok) return validationError(reply, [result.reason]);
+		return {
+			queued: result.queued,
+			alreadyQueued: result.alreadyQueued,
+			skipped: result.skipped,
+			matched: result.matched,
+			// Рассылка идёт через ту же очередь: тихие часы и суточный предел
+			// действуют и здесь, поэтому «поставлено» не равно «уже ушло».
+			message: `Поставлено в очередь: ${result.queued}. Уже стояли: ${result.alreadyQueued}.`
+		};
+	});
+
+	app.post("/api/communications/campaigns/:campaignId/cancel", async (request, reply) => {
+		const context = await requireClinicalMutationContext(request, reply, "communication campaign cancel");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+
+		const campaignId = (request.params as { campaignId?: string }).campaignId;
+		if (!campaignId) return validationError(reply, ["Не указана рассылка."]);
+
+		const result = await cancelCampaign(context.organizationId, campaignId);
+		if (!result.ok) {
+			return reply.code(404).send({ error: "CampaignNotFound", message: "Рассылка не найдена в этой клинике." });
+		}
+		// Уже отправленное не трогается: в журнале оно должно остаться как есть.
+		return { ok: true, cancelledMessages: result.cancelledMessages };
+	});
+
+	app.get("/api/communications/campaigns/:campaignId/progress", async (request, reply) => {
+		const context = await requireClinicalReadContext(request, reply, "communication campaign progress");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.read")) return;
+
+		const campaignId = (request.params as { campaignId?: string }).campaignId;
+		if (!campaignId) return validationError(reply, ["Не указана рассылка."]);
+
+		const progress = await campaignProgress(context.organizationId, campaignId);
+		if (!progress) {
+			return reply.code(404).send({ error: "CampaignNotFound", message: "Рассылка не найдена в этой клинике." });
+		}
+		return progress;
 	});
 
 	// ─── Состояние шлюзов ─────────────────────────────────────────────────────
