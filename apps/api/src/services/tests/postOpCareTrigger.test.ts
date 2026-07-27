@@ -1,12 +1,14 @@
 import { test, mock, afterEach, describe, after } from "node:test";
 import assert from "node:assert";
 import { triggerPostOpCare } from "../postOpCareTrigger.js";
-import { db, client } from "../../db/client.js";
+import { db, pool } from "../../db/client.js";
 import { outgoingNotifications } from "../../db/schema.js";
 
 describe("postOpCareTrigger", () => {
     after(async () => {
-        await client.close();
+        // Раньше здесь звали client.close() — метод PGlite, которого в
+        // node-postgres нет, и файл не загружался целиком.
+        await pool.end();
     });
 
     afterEach(() => {

@@ -1354,6 +1354,10 @@ export const visitDiaries = pgTable("visit_diaries", {
   version: integer("version").notNull().default(1),
   // UKEP digital signature hash/blob attached on signing
   cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
+  // Учёт офлайн-синхронизации. Колонка есть в 0000, но в модели её не было, и
+  // services/syncDaemon.ts не компилировался: обмен с офлайн-клиентом не работал.
+  // Счётчик version объявлен выше.
+  isSynced: boolean("is_synced").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1394,6 +1398,9 @@ export const toothStates = pgTable("tooth_states", {
   state: text("state").notNull().default("healthy"),
   surfaces: jsonb("surfaces"),
   notes: text("notes"),
+  // Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
+  isSynced: boolean("is_synced").notNull().default(false),
+  version: integer("version").notNull().default(1),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1500,6 +1507,9 @@ export const patientInvoices = pgTable("patient_invoices", {
   status: text("status").notNull().default("draft"),
   issuedAt: timestamp("issued_at", { withTimezone: true }),
   paidAt: timestamp("paid_at", { withTimezone: true }),
+  // Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
+  isSynced: boolean("is_synced").notNull().default(false),
+  version: integer("version").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1997,5 +2007,73 @@ export const uisMassAppointmentConfirmations = pgTable("uis_mass_appointment_con
   confirmedViaSmsCount: integer("confirmed_via_sms_count").notNull().default(0),
   dispatchChannel: text("dispatch_channel").notNull().default("uis_sms"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Очередь исходящих уведомлений пациентам.
+ *
+ * ЗАЧЕМ ОБЪЯВЛЕНИЕ ПОЯВИЛОСЬ: таблица создана ещё миграцией 0000, но в модель не
+ * попала. services/notificationWorker.ts и services/postOpCareTrigger.ts
+ * импортируют `outgoingNotifications` отсюда, и оба модуля падали при загрузке с
+ * «does not provide an export named 'outgoingNotifications'» — напоминания и
+ * контроль самочувствия после приёма не работали вообще. Поломку не было видно,
+ * потому что tsconfig исключал src/services из проверки типов.
+ */
+export const outgoingNotifications = pgTable("outgoing_notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull(),
+  patientId: uuid("patient_id").notNull(),
+  type: text("type").notNull(),
+  payload: jsonb("payload").notNull(),
+  status: text("status").notNull().default("pending"),
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Суточные срезы BI-аналитики.
+ *
+ * Та же история, что и с outgoing_notifications: таблица есть в 0000, объявления
+ * не было, поэтому не загружались services/biAnalyticsWorker.ts и
+ * scripts/cronAnalyticsWorker.ts.
+ */
+export const biAnalyticsSnapshots = pgTable("bi_analytics_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull(),
+  snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
+  cohortLtvJson: jsonb("cohort_ltv_json").notNull().default({}),
+  planFunnelJson: jsonb("plan_funnel_json").notNull().default({}),
+  chairUtilizationJson: jsonb("chair_utilization_json").notNull().default({}),
+  doctorProfitabilityJson: jsonb("doctor_profitability_json").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Способы оплаты кассовой книги — тип "ledger_payment_method" из миграции 0000. */
+export const ledgerPaymentMethod = pgEnum("ledger_payment_method", [
+  "cash",
+  "card",
+  "dms",
+  "installment_balance",
+  "family_wallet",
+]);
+
+/**
+ * Кассовая книга: движение денег по счетам.
+ *
+ * Без этого объявления не загружался services/syncDaemon.ts.
+ *
+ * Сумма объявлена как numeric(12,2) — ровно так колонка создана в 0000. Драйвер
+ * отдаёт numeric строкой: складывать такие значения через Number() нельзя,
+ * потеряются копейки.
+ */
+export const cashLedger = pgTable("cash_ledger", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").notNull(),
+  paymentMethod: ledgerPaymentMethod("payment_method").notNull(),
+  amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull(),
+  operatorId: uuid("operator_id"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
 });
 

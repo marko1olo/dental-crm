@@ -10,13 +10,30 @@
 		"noEmitOnError": false
 	},
 	"include": ["src"],
+	// Список исключений был причиной того, что «компилируется» не значило
+	// «работает». Раньше отсюда целиком выпадали src/services и src/scripts —
+	// это боевой код, а не вспомогательный. Под прикрытием исключения там
+	// накопились ошибки, ломавшие модули на старте: notificationWorker,
+	// postOpCareTrigger, biAnalyticsWorker и syncDaemon импортировали из
+	// db/schema.js таблицы, которых в модели не было, и падали при загрузке с
+	// «does not provide an export named». npm run typecheck при этом показывал
+	// ноль ошибок.
+	//
+	// Теперь исключены только тесты (у них отдельный прогон, npm test) и
+	// поимённо — мёртвый код эпохи PGlite, который ничего не импортирует.
+	// Добавлять сюда каталоги боевого кода нельзя.
 	"exclude": [
 		"src/tests",
 		"src/**/*.test.ts",
 		"src/**/*.bench.ts",
-		"src/scripts",
-		"src/services",
-		"src/sampleData.ts",
+		// Движок PGlite из проекта удалён (db/client.ts работает через
+		// node-postgres), а пакет @electric-sql/pglite не установлен. Файлы
+		// оставлены как есть — на них никто не ссылается.
+		"src/services/syncEngine.ts",
+		"src/scripts/setup-fresh-db.ts",
+		"src/scripts/patch-owner-credentials.ts",
+		"src/scripts/seedPglite.ts",
+		// Демо-данные и легаси-моки: не участвуют в боевых маршрутах.
 		"src/sampleData_opt.ts",
 		"src/telegram/legacyMocks.ts"
 	]

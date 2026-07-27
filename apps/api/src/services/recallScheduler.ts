@@ -42,11 +42,17 @@ export class RecallScheduler {
 					),
 				);
 
-			const tasksToInsert = [];
+			const tasksToInsert: (typeof communicationTasks.$inferInsert)[] = [];
 			const now = new Date();
 
 			for (const item of readyForCrown) {
 				if (!item.toothNumber) continue;
+				// Без даты плана срок приживления не отсчитать. Раньше здесь было
+				// new Date(item.itemDate) при itemDate === null, что даёт 1 января
+				// 1970 года: условие now >= healingDate выполнялось всегда, и на
+				// каждый имплант без даты создавалась задача «пригласить на 3-й
+				// этап», хотя приживление ещё не прошло.
+				if (!item.itemDate) continue;
 				const isUpperJaw = item.toothNumber < 30;
 				const healingMonths = isUpperJaw ? 6 : 3;
 
