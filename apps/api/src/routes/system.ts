@@ -8,7 +8,8 @@ import {
   type LocalBridgeReadinessResponse,
   type LocalBridgeUsePath,
   type LocalBridgeUsePlan,
-  type LocalBridgeUsePlanStep
+  type LocalBridgeUsePlanStep,
+  type SpeechGatewayStatus
 } from "@dental/shared";
 import { buildPersistentStateExport, getPersistentStateIntegrityReport } from "../persistentState.js";
 import { db } from "../db/client.js";
@@ -372,6 +373,35 @@ function planStep(
   return { order, title, owner, path, storesLocalFirst, blocking, detail };
 }
 
+/**
+ * Что на самом деле происходит с аудио на серверном маршруте распознавания.
+ *
+ * БЫЛО: «Сервер клиники использует резервные маршруты распознавания и удаляет
+ * исходное аудио после обработки». Удаления не существовало ни одной строкой:
+ * у AssemblyAI загруженный файл и расшифровка оставались лежать бессрочно.
+ * Продукт сообщал клинике об удалении медицинских данных, которого не делал.
+ *
+ * СТАЛО: текст описывает разные маршруты по-разному, потому что они и есть разные.
+ * Асинхронный AssemblyAI создаёт объект на своей стороне — его шлюз теперь удаляет
+ * запросом DELETE, а неудачу удаления показывает в предупреждениях фрагмента.
+ * Остальные источники получают аудио внутри одного запроса: сервер клиники его не
+ * хранит (в базу уходит только текст), но их собственную политику хранения CRM не
+ * контролирует и обещать за неё не может.
+ */
+function serverAudioRetentionDetail(speech: SpeechGatewayStatus): string {
+  const asyncUploadProvider =
+    speech.providerId === "assemblyai_async" || speech.fallbackProviderIds.includes("assemblyai_async");
+  const base =
+    "Сервер клиники использует резервные маршруты распознавания и не хранит присланное аудио: в базу записывается только текст.";
+  return asyncUploadProvider
+    ? `${base} Загруженное в ${providerLabelForRetention(speech)} аудио и расшифровку сервер удаляет отдельным запросом сразу после обработки; если удаление не прошло, это попадает в предупреждения фрагмента.`
+    : `${base} Аудио уходит источнику внутри одного запроса и удаляется по его собственной политике хранения, которой CRM не управляет.`;
+}
+
+function providerLabelForRetention(speech: SpeechGatewayStatus): string {
+  return speech.providerId === "assemblyai_async" ? speech.providerLabel : "асинхронный источник распознавания";
+}
+
 function buildVisitDictationPlan(readiness: LocalBridgeReadinessResponse): LocalBridgeUsePlan {
   const speech = getSpeechGatewayStatus();
   const whisper = readyBridge(readiness, "speech_whisper");
@@ -406,7 +436,7 @@ function buildVisitDictationPlan(readiness: LocalBridgeReadinessResponse): Local
         localBridge
           ? "Локальный модуль может распознавать фрагменты на рабочей станции клиники после подключения маршрута приема аудиофрагментов."
           : serverSttAvailable
-            ? "Сервер клиники использует резервные маршруты распознавания и удаляет исходное аудио после обработки."
+            ? serverAudioRetentionDetail(speech)
             : "Готового модуля распознавания нет; держите локальную очередь и используйте детерминированную очистку."
       ),
       planStep(3, "Черновик через детерминированный парсер", "system", "browser_local", true, false, "Общий парсер строит профильный черновик ЭМК без облачной зависимости."),
