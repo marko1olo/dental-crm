@@ -1,6 +1,5 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
-import { ScheduleClipboardItemsWidget } from "./components/schedule/ScheduleClipboardItemsWidget";
 import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
 import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
 import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
@@ -53,6 +52,8 @@ type ScheduleViewProps = {
   normalizedAppointmentStatus: (value: unknown, fallback?: Appointment["status"]) => Appointment["status"];
   normalizedAppointmentStatusFilter: (value: unknown) => Appointment["status"] | "all";
   openAppointmentEditor: (appointment: Appointment) => void;
+  /** Открывает раздел, где закрывают предупреждение смены. */
+  openScheduleWarning: (warning: Dashboard["shiftIntelligence"]["scheduleWarnings"][number]) => void;
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   recommendedActionPriorityLabels: Record<ScheduleSuggestion["priority"], string>;
   resetNewAppointmentDraft: () => void;
@@ -152,6 +153,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     normalizedAppointmentStatus,
     normalizedAppointmentStatusFilter,
     openAppointmentEditor,
+    openScheduleWarning,
     patientName,
     recommendedActionPriorityLabels,
     resetNewAppointmentDraft,
@@ -197,6 +199,66 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     scheduleAdminSecretDemand === "ScheduleAdminSecretMissing"
       ? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
       : "Сервер клиники не принял изменение расписания без секрета администратора. Введите его, чтобы сохранить запись.";
+
+  /**
+   * Повторить запись: те же пациент, врач, ассистент, кресло, повод и
+   * длительность переносятся в форму новой записи, время сдвигается на неделю
+   * вперёд — остаётся поправить дату и нажать «Создать запись».
+   *
+   * Это замена «Буферу обмена переноса записей расписания». Тот показывал на
+   * экране пустую коробку с обещанием «из клика по визиту вы можете скопировать
+   * запись для быстрого вклеивания», хотя копировать было нечем: copyToBuffer
+   * не вызывался ни из одного места, вставки не существовало, а у таблицы
+   * schedule_clipboard_items во всём проекте нет ни одного писателя.
+   *
+   * Никакого нового контракта здесь нет: запись создаёт тот же
+   * POST /api/appointments, и охрана пересечений на нём работает.
+   */
+  const repeatAppointment = (appointment: Appointment) => {
+    const startsAtMs = Date.parse(appointment.startsAt);
+    const endsAtMs = Date.parse(appointment.endsAt);
+    const durationMs =
+      Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs > startsAtMs
+        ? endsAtMs - startsAtMs
+        : (dashboard.clinicSettings.profile.defaultVisitMinutes ?? 30) * 60_000;
+    const weekAhead = Number.isFinite(startsAtMs)
+      ? new Date(startsAtMs + 7 * 24 * 60 * 60_000)
+      : new Date();
+
+    /*
+      Ассистент: если в исходной записи его нет, ставим того, кого форма и так
+      подставляет по умолчанию (см. newAppointmentDraftFromDashboard: для не
+      соло-режима берётся первый активный ассистент). Иначе повтор оставлял бы
+      поле пустым, а форма тут же требовала «выберите ассистента» — и кнопка
+      «Создать запись» была бы заперта у записи, которая в базе живёт без
+      ассистента: сервер такие записи принимает.
+    */
+    const fallbackAssistant = (dashboard.clinicSettings?.staff ?? []).find(
+      (member) => member.active && member.role === "assistant"
+    );
+    const repeatAssistantId =
+      appointment.assistantUserId ??
+      (dashboard.clinicSettings.profile.mode === "solo_doctor" ? null : fallbackAssistant?.id ?? null);
+
+    updateNewAppointmentDraft("patientId", appointment.patientId);
+    updateNewAppointmentDraft("doctorUserId", appointment.doctorUserId);
+    updateNewAppointmentDraft("assistantUserId", repeatAssistantId ?? "");
+    updateNewAppointmentDraft("chairId", appointment.chairId);
+    updateNewAppointmentDraft("status", "planned");
+    updateNewAppointmentDraft("startsAt", weekAhead.toISOString());
+    updateNewAppointmentDraft("endsAt", new Date(weekAhead.getTime() + durationMs).toISOString());
+    updateNewAppointmentDraft("reason", appointment.reason ?? "");
+    updateNewAppointmentDraft("comment", "");
+    setShowCreateForm(true);
+    setUseManualSelects(true);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector(".appointment-create-form, .new-appointment-form")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  };
 
   const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) => {
     const startsAtMs = Date.parse(draft.startsAt);
@@ -337,9 +399,11 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 <button
                   className="text-button"
                   type="button"
+                  /* Было «День»: читается как режим показа (день/неделя),
+                     а кнопка ставит фильтр на сегодняшнюю дату. */
                   onClick={() => setScheduleDateFilter(todayScheduleDate())}
                 >
-                  День
+                  Сегодня
                 </button>
               </div>
             </div>
@@ -388,17 +452,29 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
             >
               {sortedAppointments.length > 0 ? (
                 <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
-              ) : (
-                <span className="status-pill status-empty">Нет записей</span>
-              )}
+              ) : null}
               {activeScheduleFilterCount > 0 ? (
                 <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>
               ) : null}
-              {shiftWarnings.length > 0 ? (
-                <span className="status-pill status-overdue">Предупреждений: {shiftWarnings.length}</span>
-              ) : (
-                <span className="status-pill status-completed">Ок</span>
-              )}
+              {/*
+                Здесь стояли чипы «Нет записей», «Предупреждений: 1» и «Ок».
+                Первый повторял пустое состояние панели ниже. Второй показывал
+                только цифру: что именно требует внимания, было спрятано под
+                кнопкой «Показать аналитику» в карточке «Контроль». Третий не
+                говорил ничего. Теперь предупреждение называет себя и по нажатию
+                ведёт туда, где его закрывают.
+              */}
+              {shiftWarnings.map((warning) => (
+                <button
+                  key={warning.id}
+                  type="button"
+                  className={`status-pill schedule-warning-chip ${warning.severity === "critical" ? "status-cancelled" : "status-overdue"}`}
+                  onClick={() => openScheduleWarning(warning)}
+                  title={warning.detail}
+                >
+                  {warning.title} — {warning.actionLabel.toLowerCase()}
+                </button>
+              ))}
               {showShiftAnalytics && (
                 <div className="schedule-shift-summary-grid" style={{ width: "100%", marginTop: "12px" }}>
                   {scheduleLoadSummaryCards.map((card) => (
@@ -577,6 +653,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                     formatTime={formatTime}
                     patientName={patientName}
                     openAppointmentEditor={openAppointmentEditor}
+                    repeatAppointment={repeatAppointment}
                     closeAppointmentEditor={closeAppointmentEditor}
                     updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
                     saveAppointmentSchedule={saveAppointmentSchedule}
@@ -614,7 +691,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
             {/* Schedule Utilities & Widgets Panel */}
             <div className="schedule-widgets-container mt-6" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <UrgentScheduleRequestsWidget />
-              <ScheduleClipboardItemsWidget />
+              {/*
+                Здесь стоял <ScheduleClipboardItemsWidget />: постоянно пустая
+                коробка «Буфер обмена переноса записей расписания» с обещанием
+                «из клика по визиту вы можете скопировать запись для быстрого
+                вклеивания». Наполнить её было нечем — copyToBuffer не
+                вызывался ни из одного места, вставки не существовало, а у
+                таблицы schedule_clipboard_items во всём проекте нет ни одного
+                писателя, только чтение. Обещанное действие теперь есть на самой
+                записи кнопкой «Повторить».
+              */}
               <ScheduleTimeReservationsWidget />
               <CancellationReasonsTwoLevelWidget />
               <ExternalScheduleActionLogsWidget />

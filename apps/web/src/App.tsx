@@ -3661,6 +3661,7 @@ export function App() {
                 normalizedAppointmentStatus={normalizedAppointmentStatus}
                 normalizedAppointmentStatusFilter={normalizedAppointmentStatusFilter}
                 openAppointmentEditor={openAppointmentEditor}
+                openScheduleWarning={openScheduleWarning}
                 patientName={patientName}
                 recommendedActionPriorityLabels={recommendedActionPriorityLabels}
                 resetNewAppointmentDraft={resetNewAppointmentDraft}

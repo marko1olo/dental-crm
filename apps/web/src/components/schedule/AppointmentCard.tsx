@@ -22,6 +22,16 @@ export type AppointmentCardProps = {
   formatTime: (value: string) => string;
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   openAppointmentEditor: (appointment: Appointment) => void;
+  /**
+   * Переносит пациента, врача, ассистента, кресло, длительность и повод этой
+   * записи в форму новой и открывает её. Заменяет «Буфер обмена переноса
+   * записей расписания» — тот показывал пустую коробку с обещанием
+   * «из клика по визиту вы можете скопировать запись», хотя копировать было
+   * нечем: функция copyToBuffer не вызывалась ни из одного места, вставки не
+   * существовало вовсе, а у таблицы schedule_clipboard_items во всём проекте
+   * нет ни одного писателя — только чтение.
+   */
+  repeatAppointment: (appointment: Appointment) => void;
   closeAppointmentEditor: (appointmentId: string) => void;
   updateAppointmentScheduleDraft: (appointmentId: string, key: any, value: any) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
@@ -52,6 +62,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
     formatTime,
     patientName,
     openAppointmentEditor,
+    repeatAppointment,
     closeAppointmentEditor,
     updateAppointmentScheduleDraft,
     saveAppointmentSchedule,
@@ -144,7 +155,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
         </p>
       ) : null}
 
-      <div className="appointment-card-footer flex justify-end mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+      <div className="appointment-card-footer flex justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button
+          className="secondary-button appointment-repeat-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
+          type="button"
+          onClick={() => repeatAppointment(appointment)}
+          aria-label={`Повторить запись: ${appointmentPatientName}. Форма новой записи откроется заполненной, останется выбрать время`}
+          title={`Повторить запись: те же пациент, врач и кресло — останется выбрать время`}
+          style={{ padding: '4px 12px', minHeight: '28px', fontSize: '12px' }}
+        >
+          Повторить
+        </button>
         <button
           className="secondary-button appointment-edit-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
           type="button"
