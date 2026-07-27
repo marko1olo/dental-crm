@@ -2437,6 +2437,21 @@ export function useAppLogic(): any {
 		createPatient,
 	} = patient;
 
+	/**
+	 * Идентификатор ОТКРЫТОГО приёма — или null, если приёма нет.
+	 *
+	 * Гидратация базы кладёт в `activeVisit` заготовку с нулевым UUID, когда
+	 * черновиков нет вовсе. Этот нулевой UUID уходил на сервер как visitId, и
+	 * касса получала «Прием для оплаты не найден»: сервер честно не находит
+	 * приём с таким идентификатором. Кнопка «Принять оплату» при этом была
+	 * доступна — кассир нажимал и не понимал, почему деньги не проходят.
+	 */
+	const realActiveVisitId =
+		dashboard?.activeVisit?.id &&
+		dashboard.activeVisit.id !== "00000000-0000-0000-0000-000000000000"
+			? dashboard.activeVisit.id
+			: null;
+
 	const activeAppointment = useMemo(() => {
 		if (!dashboard) return null;
 		return (
@@ -12453,13 +12468,25 @@ export function useAppLogic(): any {
 			return;
 		}
 		if (!documentPatient || !dashboard) {
-			setError("Выберите пациента и активный прием перед записью оплаты.");
+			setError("Выберите пациента, за которого принимаете оплату.");
 			return;
 		}
-		if (!documentPatientMatchesActiveVisit) {
+		/*
+		 * Барьер стоял на совпадении пациента с пациентом открытого приёма, и
+		 * это запирало кассу наглухо: когда открытых приёмов нет, гидратация
+		 * кладёт в activeVisit заготовку с нулевым UUID, совпадения не бывает
+		 * никогда. Кнопка «Принять оплату» была доступна, нажатие молча
+		 * ничего не делало — деньги принять было нельзя.
+		 *
+		 * Сервер оплату без приёма принимает: visitId необязателен, пациент
+		 * платит и авансом, и по счёту, и по долгу. Опасен ровно один случай —
+		 * открыт приём ДРУГОГО пациента; его и не пропускаем. Условие живёт в
+		 * одном месте, в paymentPatientContextReady.
+		 */
+		if (!paymentPatientContextReady) {
 			setError(
 				paymentPatientContextMessage ||
-					"Оплата не записана: выбранный пациент не совпадает с активным приемом.",
+					"Оплата не записана: сначала переключите открытый прием на этого пациента.",
 			);
 			return;
 		}
@@ -12562,7 +12589,8 @@ export function useAppLogic(): any {
 						patientId: documentPatient.id,
 						familyGroupId: famData.id,
 						amountRub,
-						visitId: dashboard?.activeVisit?.id || undefined,
+						/* Только настоящий приём: нулевой UUID заготовки сервер не найдёт. */
+						visitId: realActiveVisitId ?? undefined,
 						documentId: documentForPayment?.id || undefined,
 						// БЫЛО: оплата с семейного кошелька шла вообще без ключа
 						// идемпотентности. Повтор после обрыва связи списывал деньги
@@ -12590,7 +12618,8 @@ export function useAppLogic(): any {
 					}),
 					body: JSON.stringify({
 						patientId: documentPatient.id,
-						visitId: dashboard?.activeVisit?.id,
+						/* Только настоящий приём: нулевой UUID заготовки сервер не найдёт. */
+						visitId: realActiveVisitId,
 						documentId: documentForPayment?.id ?? null,
 						clientMutationId: paymentClientMutationId,
 						amountRub,

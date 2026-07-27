@@ -736,7 +736,8 @@ export function PaymentCapture({
         aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
         disabled={isSaving || !paymentReadyToSubmit}
       >
-        <CreditCard aria-hidden="true" /> {isSaving ? "Записываэ" : "Принять оплату"}
+        {/* Было «Записываэ»: опечатка на кнопке кассы, видна каждому кассиру. */}
+        <CreditCard aria-hidden="true" /> {isSaving ? "Записываю" : "Принять оплату"}
       </button>
     </div>
   );

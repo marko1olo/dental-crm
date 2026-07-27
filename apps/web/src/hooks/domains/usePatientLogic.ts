@@ -114,14 +114,39 @@ export function usePatientLogic({
 		documentPatient && dashboard?.activeVisit?.patientId === documentPatient.id,
 	);
 
+	/*
+	 * КАССА ОТКАЗЫВАЛАСЬ ПРИНИМАТЬ ДЕНЬГИ, КОГДА ПРИЁМА НЕТ ВОВСЕ.
+	 *
+	 * Готовность оплаты требовала совпадения пациента с пациентом открытого
+	 * приёма. Но гидратация базы кладёт в `activeVisit` заготовку с нулевым
+	 * UUID, когда открытых приёмов нет: совпадения не было никогда, и приём
+	 * оплаты был заперт. Хуже того, объяснение врало — «активный прием открыт
+	 * для другого пациента», хотя приём не открыт ни для кого.
+	 *
+	 * Сервер такие оплаты принимает: visitId необязателен, и это правильно —
+	 * пациент платит и авансом, и по счёту, и за документ, и по долгу.
+	 * Настоящий риск ровно один: открыт приём ДРУГОГО пациента, и деньги уйдут
+	 * не тому. Только этот случай и запираем.
+	 */
+	const activeVisitPatientId =
+		dashboard?.activeVisit?.id && dashboard.activeVisit.id !== NIL_VISIT_UUID
+			? dashboard.activeVisit.patientId
+			: null;
+	const openVisitBelongsToSomeoneElse = Boolean(
+		documentPatient &&
+			activeVisitPatientId &&
+			activeVisitPatientId !== NIL_VISIT_UUID &&
+			activeVisitPatientId !== documentPatient.id,
+	);
+
 	const paymentPatientContextReady = Boolean(
-		documentPatient && documentPatientMatchesActiveVisit,
+		documentPatient && !openVisitBelongsToSomeoneElse,
 	);
 
 	const paymentPatientContextMessage = !documentPatient
-		? "Выберите пациента текущего приема перед записью оплаты."
-		: !documentPatientMatchesActiveVisit
-			? `Сейчас выбран пациент ${documentPatient.fullName}, но активный прием открыт для другого пациента. Переключите активный прием перед записью оплаты.`
+		? "Выберите пациента, за которого принимаете оплату."
+		: openVisitBelongsToSomeoneElse
+			? `Сейчас выбран пациент ${documentPatient.fullName}, но открытый прием идёт у другого пациента. Переключите приём, иначе оплата уйдёт не тому.`
 			: "";
 
 	const patientAdministrativeProfileValidationMessage = useMemo(
