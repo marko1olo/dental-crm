@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, desc, eq, gte, ilike, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -161,6 +161,19 @@ function renderOtpMessage(policy: PortalOtpPolicy, code: string): string {
  * .limit(2) здесь не случайность: с частичным LIKE и .limit(1) сервер молча
  * выдавал первого попавшегося пациента, чей номер лишь СОДЕРЖИТ эти цифры, и
  * человек попадал в чужую медкарту. Неоднозначность — отказ, а не «первый».
+ *
+ * СРАВНИВАЮТСЯ ЦИФРЫ, А НЕ СТРОКА ИЗ КАРТОЧКИ. Прежнее условие
+ * `ilike(patients.phone, '%' || suffix)` сверялось с сырым значением колонки, а
+ * телефоны в базе записаны как «+7 916 555-11-22»: такая строка не кончается на
+ * десять цифр подряд и не совпадала НИКОГДА. На момент правки это 13 карточек
+ * из 16 с телефоном — 81%. То есть вход в личный кабинет для большинства
+ * пациентов молча не работал: сервер отвечал «код отправлен» и не отправлял
+ * ничего, потому что пациента не находил. Разбор по regexp_replace убирает
+ * разделители с обеих сторон сравнения.
+ *
+ * ЦЕНА: индекса под это выражение нет, значит последовательный просмотр
+ * patients на каждый запрос. На маршруте, ограниченном по частоте, это
+ * приемлемо; функциональный индекс вынесен в долг и назван в отчёте.
  */
 async function findUniquePatientByPhone(rawPhone: string): Promise<{
 	id: string;
@@ -169,6 +182,7 @@ async function findUniquePatientByPhone(rawPhone: string): Promise<{
 } | null> {
 	const digits = rawPhone.replace(/\D/g, "");
 	if (digits.length < 10) return null;
+	const suffix = digits.slice(-10);
 	const found = await db
 		.select({
 			id: patients.id,
@@ -176,7 +190,9 @@ async function findUniquePatientByPhone(rawPhone: string): Promise<{
 			phone: patients.phone,
 		})
 		.from(patients)
-		.where(ilike(patients.phone, `%${digits.slice(-10)}`))
+		.where(
+			sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`,
+		)
 		.limit(2);
 	return found.length === 1 ? (found[0] ?? null) : null;
 }
@@ -243,22 +259,6 @@ export const portalRoutes: FastifyPluginAsync = async (
 					.send({ error: "PhoneRequired", message: "Укажите номер телефона." });
 			}
 
-			/*
-			 * Ответ, одинаковый для «пациент найден», «такого номера нет»,
-			 * «номер принадлежит двум карточкам» и «код только что отправляли».
-			 * Все поля — константы настройки, они не зависят от того, что лежит в
-			 * базе. Иначе публичный маршрут работает справочником: «есть ли у этой
-			 * клиники пациент с таким телефоном» — а это медицинская тайна.
-			 */
-			const neutralAccepted = {
-				status: "accepted" as const,
-				message:
-					"Если номер зарегистрирован в клинике, мы отправили на него код для входа.",
-				codeLength: policy.codeLength,
-				expiresInSeconds: policy.ttlSeconds,
-				resendAfterSeconds: policy.resendCooldownSeconds,
-			};
-
 			const smsConfigured = readSmsCredentialsFromEnv() !== null;
 			/*
 			 * Ветка для разработки. Условия, при которых она допустима, выполнены
@@ -268,6 +268,30 @@ export const portalRoutes: FastifyPluginAsync = async (
 			 * журнал — в теле HTTP-ответа его нет даже здесь.
 			 */
 			const developerLogFallback = !smsConfigured && !isProductionRuntime();
+
+			/*
+			 * Ответ, одинаковый для «пациент найден», «такого номера нет»,
+			 * «номер принадлежит двум карточкам» и «код только что отправляли».
+			 * Все поля — константы настройки сервера, они не зависят от того, что
+			 * лежит в базе. Иначе публичный маршрут работает справочником: «есть ли
+			 * у этой клиники пациент с таким телефоном» — а это медицинская тайна.
+			 *
+			 * Поле delivery вычисляется ЗДЕСЬ, из настроек сервера, а не в ветке
+			 * успешной отправки. Первая версия дописывала его только когда пациент
+			 * найден — и живая проверка сразу показала утечку: на известный номер
+			 * приходило {... "delivery":"developer_log"}, на неизвестный — тот же
+			 * ответ без этого поля. Один лишний ключ в JSON и есть тот самый
+			 * справочник, который весь остальной код старается не построить.
+			 */
+			const neutralAccepted = {
+				status: "accepted" as const,
+				message:
+					"Если номер зарегистрирован в клинике, мы отправили на него код для входа.",
+				codeLength: policy.codeLength,
+				expiresInSeconds: policy.ttlSeconds,
+				resendAfterSeconds: policy.resendCooldownSeconds,
+				delivery: developerLogFallback ? ("developer_log" as const) : ("sms" as const),
+			};
 
 			if (!smsConfigured && !developerLogFallback) {
 				// Ненастроенный шлюз — факт о сервере, а не о пациенте: честный отказ
@@ -357,9 +381,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 					.update(portalOtpCodes)
 					.set({ deliveryStatus: "sent" })
 					.where(eq(portalOtpCodes.id, issuedId));
-				return reply
-					.status(202)
-					.send({ ...neutralAccepted, delivery: "developer_log" });
+				return reply.status(202).send(neutralAccepted);
 			}
 
 			const msisdn = normalizeRussianMsisdn(patient.phone);
@@ -421,7 +443,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				.update(portalOtpCodes)
 				.set({ deliveryStatus: "sent" })
 				.where(eq(portalOtpCodes.id, issuedId));
-			return reply.status(202).send({ ...neutralAccepted, delivery: "sms" });
+			return reply.status(202).send(neutralAccepted);
 		},
 	);
 
