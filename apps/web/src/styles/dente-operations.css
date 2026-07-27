@@ -414,6 +414,15 @@
   color: var(--bad-fg);
 }
 
+/* Сообщение «ни один канал не подключён»: заголовок, объяснение и действие. */
+.ops-channels-empty p {
+  margin: 6px 0 0;
+}
+
+.ops-channels-empty button {
+  margin-top: 10px;
+}
+
 .ops-empty {
   margin: 0;
   padding: 22px 16px;

@@ -451,9 +451,9 @@ export function MessageDeliveryConsole() {
 						 * readSmtpCredentialsFromEnv) — их подключает тот, кто ставил
 						 * программу.
 						 */
-						<div className="ops-notice ops-notice--error" role="alert">
+						<div className="ops-notice ops-notice--error ops-channels-empty" role="alert">
 							<strong>Сообщения сейчас не отправляются: ни один канал связи не подключён.</strong>
-							<p style={{ margin: "6px 0 0" }}>
+							<p>
 								Телеграм и WhatsApp клиника подключает сама — в настройках. SMS и электронную
 								почту подключает тот, кто устанавливал программу: для них нужны ключи доступа
 								на сервере клиники.
@@ -461,7 +461,6 @@ export function MessageDeliveryConsole() {
 							<button
 								type="button"
 								className="secondary-button"
-								style={{ marginTop: "10px" }}
 								onClick={() => {
 									window.location.hash = "settings/telegram";
 								}}

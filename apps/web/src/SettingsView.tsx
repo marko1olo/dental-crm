@@ -868,6 +868,28 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     loadTelegramControlPlane, copyTelegramTextToClipboard, unlockTelegramAdminSession,
     telegramAdminSecretDraft, telegramAdminSecretSession, adminSecretReady: false,
     normalizedTelegramBotMode, normalizedTelegramPrivacyMode, normalizedTelegramLinkSubjectType,
+    /*
+      РАЗДЕЛ «НАСТРОЙКИ» НЕ ОТКРЫВАЛСЯ ВООБЩЕ.
+      Вкладка «Клиника» вынесена в отдельный компонент SettingsClinicTab, и он
+      достаёт из этого объекта 65 значений — а передавалось 28. Первое же
+      обращение по ключу к неопределённому объекту роняло отрисовку:
+      `staffScheduleDrafts[member.id]` → «Cannot read properties of undefined».
+      Пользователь видел «Раздел временно не открылся» и не мог задать ни
+      название клиники, ни телефон, ни кресла, ни расписание сотрудников.
+      Остальные 36 имён молча были бы undefined: кнопки вызывали бы
+      несуществующие функции, а подписи печатались бы как ключи.
+      Сверка ведётся скриптом scratch/audit-settings-props.mjs.
+    */
+    changeClinicMode, clinicModeLabels, specialtyLabels,
+    saveClinicProfileFromDraft, setUiLanguage,
+    legalMissingFields, legalReadinessPercent, humanizeMigrationText,
+    lookupClinicPublicProfile, isClinicPublicLookupLoading, clinicPublicLookup,
+    clinicPublicLookupFieldLabels, clinicPublicLookupWarningText,
+    staffScheduleDrafts, staffScheduleDraftFromWorkingHours, staffScheduleSaveStates,
+    staffScheduleDirtyIds, staffScheduleSavingId,
+    updateStaffScheduleDraft, updateStaffScheduleDay, saveStaffSchedule,
+    chairScheduleDrafts, chairScheduleSaveStates, chairScheduleDirtyIds, chairScheduleSavingId,
+    updateChairScheduleDraft, updateChairScheduleDay, saveChairSchedule,
   };
   const {
     clinicMode,
@@ -1146,6 +1168,22 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     typedServiceCategoryLabels,
     typedServiceCategories,
   } = derivations;
+
+  /*
+    Дополнение к settingsProps для вкладки «Клиника». Эти пять значений
+    объявлены ниже места, где собирается settingsProps, поэтому попасть туда
+    напрямую не могут — сборка объекта выполняется до их объявления. Переносить
+    сам settingsProps на сотни строк вниз в общем файле опаснее, чем добавить
+    второй объект и слить их в месте отрисовки.
+  */
+  const settingsClinicExtraProps: Record<string, any> = {
+    newChairReadyToCreate,
+    newStaffReadyToCreate,
+    applyClinicLookupSuggestion,
+    clinicLookupSuggestionApplySummary,
+    clinicLookupSuggestionFieldEntries,
+  };
+
   const flags = useWorkspaceProfile();
   let typedSettingsTabs = settingsTabs as SettingsTab[];
   if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
@@ -1435,7 +1473,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "staff" ? <SettingsStaffTab props={settingsProps} /> : null}
 
-        {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {settingsTab === "clinic" ? <SettingsClinicTab props={{ ...settingsProps, ...settingsClinicExtraProps }} settingsTab={settingsTab} /> : null}
         {settingsTab === "access" ? <SettingsAccessTab {...({ props: settingsProps, settingsTab } as any)} /> : null}
         {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
 

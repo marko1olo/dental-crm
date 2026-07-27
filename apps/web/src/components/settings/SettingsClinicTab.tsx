@@ -8,7 +8,94 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type WeekdayOption = { value: number; label: string };
 
-function StaffCredentialsEditor({ member, saveCredentials }: { member: any, saveCredentials: (staffId: string, email?: string, password?: string, pin?: string) => Promise<boolean> }) {
+/*
+ * Подписи публичного поиска реквизитов. Компонент читал их из пропсов, но их
+ * там не было и быть не могло: они объявлены как константы модуля в соседних
+ * файлах настроек (SettingsAuditTab, LegacyMigrationStudio), а не приходят из
+ * логики. Значит на экране вместо подписи печатался бы ключ вида
+ * `not_configured`, а граница текста о том, что можно отправлять наружу,
+ * не показывалась бы вовсе. Держим их здесь, рядом с местом применения.
+ *
+ * Тройное дублирование этих словарей по файлам настроек вынесено долгом.
+ */
+const clinicPublicLookupBoundaryText =
+  "Публичный поиск получает только реквизиты клиники: ИНН, ОГРН, КПП, название, адрес или лицензию. Пациентов, снимки, базы и локальные пути сюда не отправлять.";
+
+const clinicPublicLookupProviderStatusLabels: Record<string, string> = {
+  ready: "профиль найден",
+  not_configured: "онлайн-поиск не настроен",
+  error: "онлайн-поиск не ответил",
+  skipped_no_safe_query: "нужны реквизиты"
+};
+
+const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
+  dadata: "Сервис реквизитов",
+  manual_public_targets: "Из введенных реквизитов"
+};
+
+/**
+ * Сохранение доступов сотрудника: логин, пароль, PIN.
+ *
+ * Функция была объявлена в пропсах как `saveStaffCredentials` и не приходила
+ * ниоткуда — во всём проекте её не существует. То есть кнопка «Сохранить
+ * доступы» падала на вызове undefined. Маршрут при этом рабочий:
+ * `POST /api/settings/staff/:staffId/credentials` принимает любую из трёх
+ * величин и хеширует их на сервере (routes/settings.ts).
+ *
+ * Проверки здесь такие же, как во вкладке «Сотрудники»: PIN ровно из четырёх
+ * цифр, пароль не короче шести символов. Иначе сервер примет короткий пароль, и
+ * сотрудник останется с доступом, который подбирается за минуту.
+ */
+async function saveStaffCredentialsRequest(
+  staffId: string,
+  email?: string,
+  password?: string,
+  pin?: string
+): Promise<boolean> {
+  const payload: { email?: string; password?: string; pinCode?: string } = {};
+  const trimmedEmail = (email ?? "").trim();
+  if (trimmedEmail) payload.email = trimmedEmail;
+  if (password) {
+    if (password.length < 6) {
+      showToast("Пароль должен быть не короче 6 символов", "warning");
+      return false;
+    }
+    payload.password = password;
+  }
+  if (pin) {
+    if (!/^\d{4}$/.test(pin)) {
+      showToast("PIN-код состоит ровно из 4 цифр", "warning");
+      return false;
+    }
+    payload.pinCode = pin;
+  }
+  if (Object.keys(payload).length === 0) {
+    showToast("Заполните логин, пароль или PIN-код", "warning");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`/api/settings/staff/${staffId}/credentials`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-dente-clinic-token": localStorage.getItem("dente_clinic_token") ?? "",
+      },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => ({}) as { message?: string });
+    if (!response.ok) {
+      showToast(body.message || "Доступы не сохранены", "error");
+      return false;
+    }
+    return true;
+  } catch (error) {
+    showToast("Доступы не сохранены: сервер не ответил", "error");
+    return false;
+  }
+}
+
+function StaffCredentialsEditor({ member, saveCredentials }: { member: any, saveCredentials?: (staffId: string, email?: string, password?: string, pin?: string) => Promise<boolean> }) {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState(member.email || "");
   const [password, setPassword] = useState("");
@@ -17,7 +104,8 @@ function StaffCredentialsEditor({ member, saveCredentials }: { member: any, save
 
   const handleSave = async () => {
     setSaving(true);
-    const success = await saveCredentials(member.id, email, password, pin);
+    const save = saveCredentials ?? saveStaffCredentialsRequest;
+    const success = await save(member.id, email, password, pin);
     setSaving(false);
     if (success) {
       showToast("Доступы обновлены", "success");
@@ -119,10 +207,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
     toggleChairWorkingDay,
     updateChairScheduleDay,
     saveChairSchedule,
-    clinicPublicLookupProviderStatusLabels,
     humanizeMigrationText,
-    clinicPublicLookupBoundaryText,
-    clinicPublicLookupSuggestionSourceLabels,
     clinicLookupSuggestionFieldEntries,
     clinicPublicLookupFieldLabels,
     clinicPublicLookupWarningText,
