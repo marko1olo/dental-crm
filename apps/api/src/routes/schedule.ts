@@ -161,6 +161,7 @@ import { TOKEN_SECRET } from "./auth.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
@@ -211,6 +212,21 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
     }
     try {
       await updateAppointmentInDb(orgId, params.appointmentId, input);
+
+      // Напоминание ставится в очередь заранее и несёт в тексте дату и время.
+      // После переноса или отмены оно стало неверным: пациент получил бы
+      // «ждём вас 12 августа в 14:30» на приём, которого в это время уже нет.
+      // Снимаем неотправленные — планировщик поставит новое с верным временем.
+      await invalidateAppointmentReminders(
+        orgId,
+        params.appointmentId,
+        "Приём изменён администратором"
+      ).catch((error: unknown) => {
+        // Сбой снятия не должен отменять сам перенос: администратор уже видит
+        // новое время, и падение маршрута выглядело бы как непринятая правка.
+        request.log.error({ err: error }, "Не удалось снять устаревшие напоминания о приёме");
+      });
+
       const dashboard = await getDashboardFromDb(orgId);
       // Перенос и отмена приёма — то же самое: без рассылки коллега видит
       // слот занятым, хотя он уже освобождён, и наоборот.

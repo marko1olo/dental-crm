@@ -52,7 +52,8 @@ export const communicationTemplateVariables: readonly TemplateVariableDefinition
 	{ key: "amount", label: "Сумма", example: "12 400 ₽", phi: false },
 	{ key: "balance", label: "Остаток по счёту", example: "3 200 ₽", phi: false },
 	{ key: "link", label: "Ссылка", example: "https://clinic.example/portal", phi: false },
-	{ key: "confirmLink", label: "Ссылка подтверждения", example: "https://clinic.example/c/ab12", phi: false },
+	{ key: "confirmLink", label: "Ссылка подтверждения приёма", example: "https://clinic.example/c/ab12", phi: false },
+	{ key: "cancelLink", label: "Ссылка отмены приёма", example: "https://clinic.example/x/ab12", phi: false },
 	{ key: "reviewLink", label: "Ссылка на отзыв", example: "https://clinic.example/review", phi: false },
 	// Ниже — медицинские сведения. Канал без согласия их не пропустит.
 	{ key: "procedure", label: "Процедура", example: "лечение кариеса", phi: true },

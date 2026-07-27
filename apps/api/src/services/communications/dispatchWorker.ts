@@ -12,6 +12,7 @@
  */
 
 import { scheduleAppointmentReminders, type ReminderScheduleReport } from "./appointmentReminders.js";
+import { purgeExpiredActionCodes } from "./appointmentActionLinks.js";
 import { completeFinishedCampaigns, launchScheduledCampaigns } from "./campaigns.js";
 import { processInboundEvents } from "../messengerIngestion.js";
 import { dispatchDueMessages, type DispatchReport } from "./dispatcher.js";
@@ -138,6 +139,11 @@ export function startCommunicationDispatchWorker(
 				// Без этого «выполняется» остаётся навсегда.
 				const finished = await completeFinishedCampaigns();
 				if (finished > 0) logger?.info({ finished }, "Рассылки завершены");
+
+				// Просроченные коды ссылок: держим неделю после истечения на случай
+				// разбора «я нажал, а не сработало», дальше они только занимают место.
+				const purged = await purgeExpiredActionCodes(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+				if (purged > 0) logger?.info({ purged }, "Просроченные ссылки подтверждения убраны");
 
 				const reminders = await scheduleAppointmentReminders();
 				if (reminders.queued > 0 || reminders.problems.length > 0) {

@@ -50,6 +50,7 @@ import registerDiaryRoutes from "./routes/diary.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
+import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -447,6 +448,10 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   // не «пациент получил»: SMS на выключенный телефон шлюз принимает и берёт за
   // неё деньги. Вызывается извне, поэтому защищён секретом обратного вызова.
   await registerCommunicationReceiptRoutes(app);
+
+  // Подтверждение и отмена приёма пациентом по ссылке из напоминания. Без
+  // авторизации — право несёт подписанный токен, а не идентификатор в адресе.
+  await registerPublicAppointmentActionRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

@@ -18,11 +18,12 @@
  * повторное клиника платит дважды, а доверие теряет один раз.
  */
 
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, like, lte } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
 	clinics,
+	communicationOutbox,
 	communicationSettings,
 	communicationTemplates,
 	organizations,
@@ -30,6 +31,7 @@ import {
 	patients,
 	users
 } from "../../db/schema.js";
+import { issueAppointmentActionLinks } from "./appointmentActionLinks.js";
 import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
 import { enqueueMessage, parseLeadHours, resolveCommunicationSettings, resolveRecipientAddress } from "./dispatcher.js";
 import { renderTemplate } from "./templateRenderer.js";
@@ -76,6 +78,49 @@ function formatInTimeZone(date: Date, timeZone: string, options: Intl.DateTimeFo
 	} catch {
 		return new Intl.DateTimeFormat("ru-RU", { ...options, timeZone: "UTC" }).format(date);
 	}
+}
+
+/**
+ * Снятие напоминаний, которые перестали соответствовать приёму.
+ *
+ * ЗАЧЕМ ЭТО ОБЯЗАТЕЛЬНО. Напоминание ставится в очередь заранее и несёт в тексте
+ * дату и время: «ждём вас 12 августа в 14:30». Если приём перенесли или
+ * отменили, а очередь не тронули, пациент получит это сообщение с уже неверным
+ * временем — либо приглашение на приём, которого нет. Такое хуже отсутствия
+ * напоминания: человек приедет не в тот день и будет прав.
+ *
+ * ПОЧЕМУ УДАЛЕНИЕ, А НЕ СТАТУС «ОТМЕНЕНО». Ключ дубля у напоминания —
+ * `reminder:<приём>:<часов>`. Если оставить строку с этим ключом в любом
+ * состоянии, повторная постановка увидит её как дубль и НЕ создаст напоминание
+ * с новым временем — приём переехал, а пациент не узнает. Удаляются только
+ * строки в состоянии `queued`: ничего отправленного это не затрагивает, а
+ * ценность записи о неотправленном и уже неверном напоминании нулевая.
+ */
+export async function invalidateAppointmentReminders(
+	organizationId: string,
+	appointmentId: string,
+	reason: string
+): Promise<number> {
+	const removed = await db
+		.delete(communicationOutbox)
+		.where(
+			and(
+				eq(communicationOutbox.organizationId, organizationId),
+				eq(communicationOutbox.status, "queued"),
+				// Только напоминания этого приёма: ключ начинается с
+				// `reminder:<приём>:`. Рассылки и ручные сообщения не трогаем.
+				like(communicationOutbox.dedupeKey, `reminder:${appointmentId}:%`)
+			)
+		)
+		.returning({ id: communicationOutbox.id });
+
+	if (removed.length > 0) {
+		// Причина остаётся в журнале сервера: в самой строке её уже не сохранить.
+		console.info(
+			`[reminders] снято напоминаний: ${removed.length}, приём ${appointmentId}, причина: ${reason}`
+		);
+	}
+	return removed.length;
 }
 
 export type ScheduleAppointmentRemindersOptions = {
@@ -258,6 +303,18 @@ async function scheduleForOrganization(
 			if (clinic?.phone) values.clinicPhone = clinic.phone;
 			if (clinic?.address) values.clinicAddress = clinic.address;
 			if (doctor?.fullName) values.doctor = shortDoctorName(doctor.fullName);
+
+			// Ссылки «подтвердить» и «отменить». Если публичный адрес клиники не
+			// настроен, переменных просто нет: шаблон с {confirmLink} тогда не
+			// отрендерится и напоминание не уйдёт с пустым местом вместо ссылки.
+			const links = await issueAppointmentActionLinks(
+				{ organizationId, appointmentId: appointment.id, startsAt: appointment.startsAt },
+				now
+			);
+			if (links) {
+				values.confirmLink = links.confirmLink;
+				values.cancelLink = links.cancelLink;
+			}
 
 			const outcome = await enqueueReminderForAppointment({
 				organizationId,
