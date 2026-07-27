@@ -19,21 +19,22 @@ import {
 	patientCoreDraftSignature,
 	responseErrorMessage,
 } from "../../AppHelpers";
+import { resetPaymentComposer } from "../../components/finance/paymentComposerReset";
+import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
 
+/*
+ * Записывающие функции формы оплаты больше не прокидываются сюда по одной:
+ * сброс берёт их из того же хранилища, где лежат сами поля, и очищает форму
+ * целиком. Прокинутая россыпь сеттеров и была причиной того, что восемь полей
+ * из четырнадцати забыли — см. сброс при смене пациента ниже.
+ */
 export function usePatientLogic({
 	dashboard,
 	query,
-	setPaymentFeedback,
-	setPaymentPayerFullName,
-	setPaymentPayerInn,
-	setPaymentPayerBirthDate,
-	setPaymentPayerIdentityDocument,
-	setPaymentPayerRelationship,
-	setPaymentTaxDeductionCode,
 	setError,
 	auth,
 	setDashboard,
@@ -196,14 +197,28 @@ export function usePatientLogic({
 		);
 	}, [activePatient?.id, dashboard?.patients?.length]);
 
+	/*
+	 * СМЕНИЛСЯ ПАЦИЕНТ — ФОРМА ОПЛАТЫ ПУСТАЯ.
+	 *
+	 * БЫЛО: здесь очищались только шесть полей плательщика для вычета. Сумма и
+	 * весь фискальный блок (номер чека, дата, ФН, ФД, ФПД, ссылка НФД, кассир)
+	 * оставались от предыдущего пациента. Кассир набирал сумму и переписывал
+	 * признаки с чека пациента А, не нажимал «Принять оплату», переключался на
+	 * пациента Б — и форма выглядела заполненной им самим. Нажатие записывало
+	 * деньги пациенту Б с суммой пациента А и с фискальными признаками чужого
+	 * чека; они же уходят в налоговые документы.
+	 *
+	 * Сброс после записанного платежа (useAppLogic.tsx) очищал все четырнадцать
+	 * полей — то есть программа сама знала, как выглядит свежая форма, но при
+	 * смене пациента этого не делала. Теперь определение одно на оба случая:
+	 * components/finance/paymentComposerReset.ts.
+	 *
+	 * Зависимость — идентификатор пациента, поэтому перезагрузка сводки при том
+	 * же пациенте набранную сумму не стирает. Снятие выбора (пациента нет,
+	 * идентификатор становится undefined) считается сменой и тоже очищает форму.
+	 */
 	useEffect(() => {
-		setPaymentFeedback("");
-		setPaymentPayerFullName("");
-		setPaymentPayerInn("");
-		setPaymentPayerBirthDate("");
-		setPaymentPayerIdentityDocument("");
-		setPaymentPayerRelationship("пациент");
-		setPaymentTaxDeductionCode("");
+		resetPaymentComposer(useDocumentStore.getState());
 	}, [documentPatient?.id]);
 
 	useEffect(() => {

@@ -2375,16 +2375,14 @@ export function useAppLogic(): any {
 		loadTelegramControlPlane: telegramSettingsModule.loadTelegramControlPlane,
 	});
 
+	/*
+	 * Россыпь сеттеров формы оплаты сюда больше не передаётся: сброс при смене
+	 * пациента берёт их из documentStore целиком, поэтому забыть поле нельзя.
+	 * Раньше передавались шесть из четырнадцати — ровно те шесть и очищались.
+	 */
 	const patient = usePatientLogic({
 		dashboard,
 		query,
-		setPaymentFeedback,
-		setPaymentPayerFullName,
-		setPaymentPayerInn,
-		setPaymentPayerBirthDate,
-		setPaymentPayerIdentityDocument,
-		setPaymentPayerRelationship,
-		setPaymentTaxDeductionCode,
 		setError,
 		auth,
 		setDashboard,
