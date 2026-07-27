@@ -64,7 +64,13 @@ export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidget
 							Срочные обращения «Острая боль»
 						</h4>
 						<p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--ink-2)", fontWeight: 500 }}>
-							{requests.length > 0 ? formatUrgentRequestsCount(requests.length) : "Срочных обращений нет. Окна резерва готовы"}
+							{/* БЫЛО: при пустом списке здесь стояло «Срочных обращений нет.
+							    Окна резерва готовы», и ровно та же фраза повторялась в блоке
+							    ниже, в сорока пикселях. Подзаголовок объясняет, что это за
+							    блок; текущее состояние показывает тело. */}
+							{requests.length > 0
+								? formatUrgentRequestsCount(requests.length)
+								: "Пациенты с острой болью, которым нужно окно сегодня"}
 						</p>
 					</div>
 				</div>

@@ -170,11 +170,15 @@ export function AnalyticsDashboardView() {
 					</div>
 
 					<div className="analytics-grid">
-						{/* Widget 1: Cohort LTV */}
+						{/* Widget 1: Cohort LTV.
+						    БЫЛО в заголовке: «Выручка по когортам (LTV)». Ни «когорта», ни
+						    «LTV» врачу и администратору ничего не говорят. Название теперь
+						    объясняет смысл, термин остался в подсказке для тех, кто ищет
+						    именно его. */}
 						<article className="glass-widget">
-							<h3>
-								<TrendingUp className="w-5 h-5 text-dente-teal" /> Выручка по
-								когортам (LTV)
+							<h3 title="Когорты: пациенты сгруппированы по месяцу первого визита. LTV — сколько денег приносит один пациент за всё время.">
+								<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
+								приносит пациент со временем
 							</h3>
 							<div className="widget-chart-container">
 								{data.cohortLtvJson && data.cohortLtvJson.length > 0 ? (
@@ -272,9 +276,15 @@ export function AnalyticsDashboardView() {
 										</AreaChart>
 									</ResponsiveContainer>
 								) : (
-									<div className="analytics-empty-state">
-										Недостаточно данных по когортам
-									</div>
+									/* БЫЛО: одна серая строка курсивом «Недостаточно данных по
+									   когортам» в пустой рамке на 300 пикселей. Она сообщает, что
+									   всё плохо, но не говорит ни почему, ни что делать. */
+									<EmptyState
+										glass={false}
+										title="Пока нечего показать"
+										description="График появится, когда в клинике будут оплаты хотя бы за два месяца: он сравнивает, сколько принесли пациенты, пришедшие в разные месяцы."
+										style={{ height: "100%", padding: "20px" }}
+									/>
 								)}
 							</div>
 						</article>
@@ -335,7 +345,12 @@ export function AnalyticsDashboardView() {
 										</ComposedChart>
 									</ResponsiveContainer>
 								) : (
-									<div className="analytics-empty-state">Нет данных по планам</div>
+									<EmptyState
+										glass={false}
+										title="Планов лечения ещё нет"
+										description="Составьте план в карточке пациента — здесь будет видно, сколько планов предложено, сколько принято и сколько оплачено."
+										style={{ height: "100%", padding: "20px" }}
+									/>
 								)}
 							</div>
 						</article>
@@ -387,9 +402,12 @@ export function AnalyticsDashboardView() {
 										</RadialBarChart>
 									</ResponsiveContainer>
 								) : (
-									<div className="analytics-empty-state">
-										Нет данных по загруженности
-									</div>
+									<EmptyState
+										glass={false}
+										title="Приёмов за этот период нет"
+										description="Смените период вверху страницы или запишите пациента в разделе «Записи» — загруженность считается по фактическим приёмам в креслах."
+										style={{ height: "100%", padding: "20px" }}
+									/>
 								)}
 							</div>
 						</article>
@@ -439,7 +457,12 @@ export function AnalyticsDashboardView() {
 										</tbody>
 									</table>
 								) : (
-									<div className="analytics-empty-state">Нет данных по врачам</div>
+									<EmptyState
+										glass={false}
+										title="Закрытых приёмов пока нет"
+										description="Эффективность считается по завершённым визитам. Закройте приём в разделе «Приём» — врач появится в этом списке."
+										style={{ height: "100%", padding: "20px" }}
+									/>
 								)}
 							</div>
 						</article>
