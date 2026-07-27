@@ -1,9 +1,11 @@
 # R1-dictation-rework — state
 
-STATUS: DEFECT CONFIRMED
+STATUS: DONE
 Agent: implementer under [ARCHON]
 Started: 2026-07-28
-HEAD at start: d9c90d6852a5c17e7ce8c8f7af300940787e8673
+HEAD at start: d9c90d6852a5c17e7ce8c8f7af300940787e8673 (moved under the other author: a9619b4c -> 0e42238d4)
+My commits: 7d277108cd308ab2d6131a3462964e3ac34bdb54 (fix), 3343a5df1b4f802e96f2f887b4f174e2b459573e (tests),
+plus a docs commit for handoff.md / state.md / the corrections to C4 handoff.md.
 
 ## Packet
 Rework of C4-dictation-lost. Spec = .agents/archon/packets/C4-dictation-lost/review.md (7 numbered items,
@@ -13,52 +15,42 @@ items 1-2 BLOCKING). Claim: apps/api/src/speech/storage.ts + its node:test. Gate
 - STARTED — packet dir created, state.md written before reading anything.
 - AUTHORITY READ — .agents/AGENTS.md, .agents/INDEX.md, .agents/CLINICAL_RULES.md,
   .agents/ARCHITECTURE.md (§ Speech Gating & AI Gateway), C4 review.md + handoff.md + state.md: all complete.
-- GIT — HEAD d9c90d6852a5c17e7ce8c8f7af300940787e8673. `git status --porcelain` on
-  apps/api/src/speech/storage.ts and apps/api/src/speech/tests/storage.test.ts: CLEAN (only my own
-  untracked packet dir). Index empty. NO COLLISION.
-- DEFECT CONFIRMED — all seven reviewer items verified at real lines of HEAD storage.ts (626 lines, read in full):
-  1. storage.ts:399 `const chunks = listSpeechTranscriptionChunks(recordingId);` -> :413-414 writes
-     `inputText`/`resultText` from that CACHE ONLY, while :342 lets trim evict a chunk precisely because
-     it is durable. Blind overwrite. BLOCKING item 1 real.
-  2. C4 handoff.md:144-147 «Текст не уничтожен» — false, reviewer has run output. BLOCKING item 2 real.
-  3. storage.ts:488-497 — prefix filter `startsWith(durableRecordingPathPrefix)` runs AFTER `.limit()`. Real.
-  4. storage.ts:514-527 — `speechRestorePromise` memoises a RESOLVED failure; only the test-only reset
-     clears it. Real.
-  5. storage.ts:419 `...(confidence === null ? {} : { confidence })` + INSERT :429-434 spreads the same
-     `values` -> column omitted -> DB default. Verified in live DB:
-     `ai_jobs.confidence real NOT NULL default 0`. Reader `db/aiQuery.ts:77` maps `j.confidence ?? 0`,
-     UI renders `Math.round(confidence*100)%` at components/settings/SettingsAiTab.tsx:311. Real.
-  6. storage.ts:331-354 — trim may only drop durable chunks, so with writes failing the array is unbounded.
-     Real, but the reviewer's stated MECHANISM ("PG down") is wrong — see DISPUTE below.
-  7. storage.ts:487-493 — restore has no organization predicate; live DB has 2 orgs. Real.
-  Live DB facts (raw pg read, 127.0.0.1:5432): orgs = 4a3420d1-6ffb-4459-bd8f-7f7087f5e191 (3 patients,
-  0 visits) and d0000000-0000-4000-8000-00000000d001 (14 patients, 10 visits). ai_jobs: 0 rows.
-  Only index on ai_jobs: ai_jobs_pkey(id) — no unique key on (organization_id, input_storage_path).
+- GIT — HEAD d9c90d68. storage.ts and tests/storage.test.ts CLEAN, index empty. NO COLLISION.
+- DEFECT CONFIRMED — all seven reviewer items verified at real lines of the pre-fix storage.ts (626 lines,
+  read in full). Live DB facts: 2 organizations (d0000000-...-d001 with 10 visits / 14 patients;
+  4a3420d1-... with 3 patients, 0 visits), ai_jobs empty, only index ai_jobs_pkey(id),
+  ai_jobs.confidence = real NOT NULL DEFAULT 0.
+- DEFECT REPRODUCED BY RUN before any product edit:
+  `cd apps/api && node --import tsx --test src/speech/tests/storage.test.ts` -> tests 9, pass 5, fail 4.
+      actual:   'Диагноз K04.0 пульпит.\nПлан: эндодонтическое лечение.'
+      expected: 'Жалобы: боль зуб 26.\nДиагноз K04.0 пульпит.\nПлан: эндодонтическое лечение.'
+  «Жалобы: боль зуб 26.» was DELETED from PostgreSQL by the next chunk of the same recording.
+- EDIT WRITTEN — apps/api/src/speech/storage.ts: merge with the stored envelope; verbatim carry of
+  unreadable envelope entries; unreadable envelope => write refused, row untouched; prefix in WHERE +
+  row_number() per organization; per-organization eviction budget; retryable restore with backoff +
+  speechDurableRestoreState(); explicit confidence + disclosure warnings; target from source; stale
+  failure warning cleared on success; undurable backlog count in the failure warning.
+- GATE PASSED — `npm run typecheck -w @dental/api` TYPECHECK_EXIT=0 (and again after HEAD moved).
+- COMMITTED 7d277108cd308ab2d6131a3462964e3ac34bdb54 (storage.ts + state.md + commitmsg.txt).
+- UNIT AFTER FIX — storage.test.ts: tests 9, pass 9, fail 0. storageRestoreRetry.test.ts: tests 3, pass 3, fail 0.
+- COMMITTED 3343a5df1b4f802e96f2f887b4f174e2b459573e (both test files + commitmsg-test.txt).
+- PROVEN — full suite `npm test -w @dental/api`: tests 895, pass 894, fail 1 (pre-existing
+  src/tests/routes/dayConfirmations.test.ts:217 timezone rollover, same red the reviewer had).
+  DB VERIFIED by raw pg (no ORM): cache held 1 chunk after eviction, ai_jobs.result_text held all 3
+  lines, envelope chunks 3, probe row deleted, leftovers 0.
+  API VERIFIED: POST /api/speech/transcribe-chunk -> 201 on the live 4100, and the row it wrote carries
+  the confidence-disclosure marker that exists only in my commit -> the shared server DOES run my code
+  (the packet brief said it would not; apps/api/package.json dev = "tsx watch src/server.ts").
+  SMOKE: npm run smoke:speech-clinical-scope still red at scripts/smoke-speech-clinical-scope.mjs:137,
+  pre-existing, dentalPrompt.ts is outside my claim.
+- BLOCKING item 2 CLOSED — .agents/archon/packets/C4-dictation-lost/handoff.md corrected in three places
+  (the «Текст не уничтожен» lie at the old lines 144-147, the «Вытеснение больше не уничтожает текст»
+  heading, and «Ноль вместо неизвестного значения не подставляется»).
+- DONE — handoff.md written.
 
-## DISPUTE prepared for item 6
-With PostgreSQL fully unreachable, a NEW chunk cannot be admitted at all: `recordSpeechTranscriptionChunk`
--> `resolveSpeechChunkOrganizationId` (:356-377) queries visits/patients, so it REJECTS instead of
-accumulating. Unbounded growth needs reads OK + ai_jobs writes failing (disk full, FK violation, lock).
-To be proven by execution, not asserted.
-
-## Plan (about to write)
-storage.ts:
- A. persistSpeechRecording: read the stored envelope for (organizationId, storagePath) INSIDE the
-    serialized write chain, MERGE with the cache (per chunkIndex, better chunk wins via the existing
-    shouldReplaceSpeechTranscriptionChunk ordering), write the merged envelope + merged transcript.
-    Entries that fail zod are carried verbatim in `unreadableChunks` — a rewrite may not drop text it
-    could not parse. A totally unparseable envelope throws => row untouched, loud warning.
- B. restore: single query, prefix in WHERE, row_number() OVER (PARTITION BY organization_id) so the
-    budget is per clinic; one unreadable row no longer aborts the whole restore.
- C. retry: on failure speechRestorePromise = null + exponential backoff
-    (DENTAL_SPEECH_RESTORE_RETRY_MS, default 5000). Exported read-only diagnostics for the test.
- D. confidence written EXPLICITLY on both paths + a disclosure warning on the same row when it is
-    unknown or only partially reported. Full removal of the 0 needs a nullable column = migration = debt.
- E. trim: per-organization recording budget.
- F. target from source instead of hardcoded visit_note; stale «не сохранен в базу» warning cleared on
-    success and never carried into the durable row.
-Tests: storage.test.ts (+merge/eviction, foreign-row starvation, per-org budget+restore, write-failure
-retention, confidence disclosure) and storageRestoreRetry.test.ts (pool.end() => retry/backoff proof).
-
-## Next
-- Write the failing test first, run it against unfixed storage.ts to reproduce the reviewer's FINDING 1.
+## Files left on disk
+- .agents/archon/packets/R1-dictation-rework/state.md (this file)
+- .agents/archon/packets/R1-dictation-rework/commitmsg.txt
+- .agents/archon/packets/R1-dictation-rework/commitmsg-test.txt
+- .agents/archon/packets/R1-dictation-rework/commitmsg-docs.txt
+- .agents/archon/packets/R1-dictation-rework/handoff.md
