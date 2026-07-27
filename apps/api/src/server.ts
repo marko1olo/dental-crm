@@ -12,7 +12,9 @@ import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
+import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientRoutes } from "./routes/patients.js";
+import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
@@ -319,6 +321,12 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerImagingRoutes(app);
   await registerIngestionRoutes(app);
   await registerImportRoutes(app);
+  // Зубная формула и история зуба. Оба модуля были написаны, но ни разу не
+  // зарегистрированы: Fastify отвечал «Route POST:/api/patients/:id/
+  // tooth-states/batch not found», поэтому состояния зубов физически не могли
+  // сохраниться, а вкладка «История зуба» не имела источника данных.
+  await registerOdontogramRoutes(app);
+  await registerToothHistoryRoutes(app);
   await registerPatientRoutes(app);
   await registerPricelistRoutes(app);
   await registerScheduleRoutes(app);

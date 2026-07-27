@@ -9,7 +9,7 @@ import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/s
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { Odontogram } from "./components/Odontogram";
+import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
@@ -443,10 +443,29 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             </div>
           ) : null}
 
-          {/* Clinical Tools: Odontogram & 2D X-Ray Analyzer */}
-          <div style={{ marginTop: '24px', marginBottom: '16px' }}>
-            <Odontogram />
-          </div>
+          {/*
+            Clinical Tools: Odontogram & 2D X-Ray Analyzer
+
+            Здесь стоял components/Odontogram.tsx, и у него было три проблемы,
+            каждая клинически значимая:
+              • состояния зубов жили в локальном сторе (patientStore.odontogramState)
+                и НЕ сохранялись на сервер — отмеченный кариес исчезал при
+                перезагрузке страницы;
+              • стор один на всё приложение, без привязки к пациенту, поэтому
+                формула одного пациента показывалась у всех остальных;
+              • компонент рендерился и без выбранного пациента.
+            Всё это при том, что бэкенд давно умеет
+            GET/POST /api/patients/:id/tooth-states и историю зуба, а
+            odontogram/OdontogramModule.tsx их вызывает и умеет поверхности,
+            детскую формулу, мультивыбор и историю — просто нигде не был
+            подключён. Формула привязана к пациенту, поэтому и рендерится только
+            когда пациент выбран.
+          */}
+          {selectedPatient ? (
+            <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+              <OdontogramModule patientId={selectedPatient.id} />
+            </div>
+          ) : null}
 
           <VisiographAnalyzer />
 
