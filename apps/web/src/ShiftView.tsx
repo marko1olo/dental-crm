@@ -81,26 +81,26 @@ export function ShiftView({
     <>
 
         <section className="shift-hero" id="shift">
-            <div className="now-card" style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+            <div className="now-card">
+              <div className="row-between">
                 <p className="eyebrow">Сейчас в работе</p>
                 {activePatient ? (
-                  <span className="status-pill status-in_treatment" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--ok-fg)", animation: "dntPulse 1.8s ease infinite" }} />
+                  <span className="status-pill status-in_treatment">
+                    <span className="pulse-dot" aria-hidden="true" />
                     прием идет
                   </span>
                 ) : null}
               </div>
               {activePatient ? (
                 <>
-                  <div className="patient-hero" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                  <div className="patient-hero">
                     <PatientAvatar fullName={activePatient.fullName} size={44} />
-                    <div style={{ minWidth: 0 }}>
-                      <h2 style={{ margin: 0, fontSize: "19px", fontWeight: 700, letterSpacing: "-0.01em" }}>{activePatient.fullName}</h2>
-                      <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{activePatient.phone ?? "телефон не указан"}</p>
+                    <div className="hero-info">
+                      <h2>{activePatient.fullName}</h2>
+                      <p className="hero-phone">{activePatient.phone ?? "телефон не указан"}</p>
                     </div>
                   </div>
-                  <div className="hero-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <div className="hero-actions">
                     <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => { window.location.hash = "visit"; }}>
                       <ClipboardCheck aria-hidden="true" /> Открыть прием
                     </button>
@@ -128,19 +128,19 @@ export function ShiftView({
                   </div>
                   
                   {/* Compact Status Tracker */}
-                  <div style={{ display: "flex", gap: "12px", background: "var(--paper-soft)", padding: "9px 14px", borderRadius: "10px", border: "1px solid var(--line)", alignItems: "center", fontSize: "12.5px", fontWeight: 600 }}>
-                    <span style={{ color: "var(--muted)" }}>Статус:</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "var(--teal-dark)", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>1. Запись</span>
-                      <span style={{ color: "var(--line-strong)" }}>→</span>
-                      <span style={{ color: dashboard?.activeVisit ? "var(--teal-dark)" : "var(--muted)", fontWeight: dashboard?.activeVisit ? 600 : 500 }}>2. ЭМК</span>
-                      <span style={{ color: "var(--line-strong)" }}>→</span>
-                      <span style={{ color: "var(--muted)", fontWeight: 500 }}>3. Оплата</span>
+                  <div className="status-flow">
+                    <span className="status-flow-label">Статус:</span>
+                    <div className="status-flow-steps">
+                      <span className="status-flow-step done">1. Запись</span>
+                      <span className="status-flow-arrow" aria-hidden="true">→</span>
+                      <span className={`status-flow-step${dashboard?.activeVisit ? " done" : ""}`}>2. ЭМК</span>
+                      <span className="status-flow-arrow" aria-hidden="true">→</span>
+                      <span className="status-flow-step">3. Оплата</span>
                     </div>
                   </div>
 
                   {!activePatientHasCallablePhone ? (
-                    <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite" style={{ marginTop: "4px", fontSize: "12px", color: "var(--muted)" }}>
+                    <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite">
                       В карточке пациента нет телефона. Откройте «Пациенты» и добавьте номер, чтобы кнопка звонка стала активной.
                     </p>
                   ) : null}
@@ -157,15 +157,15 @@ export function ShiftView({
             </div>
 
             {/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-            <div className="today-schedule-box" style={{ padding: "16px", borderRadius: "14px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700 }}>
-                  <ClipboardCheck size={16} color="var(--teal)" /> Расписание приемов на сегодня
+            <div className="today-schedule-box">
+              <div className="today-schedule-header">
+                <h3>
+                  <ClipboardCheck size={16} aria-hidden="true" /> Расписание приемов на сегодня
                 </h3>
-                <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--muted)" }}>{doctorTodayAppointments.length} приемов</span>
+                <span className="today-schedule-count">{doctorTodayAppointments.length} приемов</span>
               </div>
               {doctorTodayAppointments.length > 0 ? (
-                <div className="today-schedule-list" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "280px", overflowY: "auto", paddingRight: "2px" }}>
+                <div className="today-schedule-list">
                   {doctorTodayAppointments.map((app: any) => {
                     const patient = patientsById.get(app.patientId);
                     const isCurrent = activePatient && activePatient.id === app.patientId;
@@ -192,19 +192,7 @@ export function ShiftView({
                         tabIndex={0}
                         aria-label={`Прием: ${patient ? patient.fullName : "Неизвестный пациент"}, ${timeStart} – ${timeEnd}`}
                         className={`today-schedule-item focus:ring-2 focus:ring-teal-600 focus:outline-none ${isCurrent ? "current-active" : ""}`}
-                        style={{ 
-                          display: "flex", 
-                          justifyContent: "space-between", 
-                          alignItems: "flex-start", 
-                          gap: "10px",
-                          padding: "11px 13px", 
-                          background: isCurrent ? "var(--teal-surface)" : "var(--paper)", 
-                          border: isCurrent ? "1px solid var(--teal-ring)" : "1px solid var(--line)", 
-                          borderLeft: isCurrent ? "3px solid var(--teal)" : "1px solid var(--line)",
-                          borderRadius: "10px",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease"
-                        }}
+
                         onClick={() => {
                           if (patient) {
                             setSelectedPatientId(patient.id);
@@ -219,16 +207,10 @@ export function ShiftView({
                           }
                         }}
                       >
-                        <div className="today-schedule-item-info" style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
-                          <span className="today-schedule-time" style={{ fontSize: "11.5px", fontWeight: 600, color: isCurrent ? "var(--teal-dark)" : "var(--muted)", fontVariantNumeric: "tabular-nums" }}>
-                            {timeStart} – {timeEnd}
-                          </span>
-                          <strong className="today-schedule-name" style={{ fontSize: "13.5px", color: "var(--ink)", fontWeight: 700 }}>
-                            {patient ? patient.fullName : "Неизвестный пациент"}
-                          </strong>
-                          <span className="today-schedule-reason" style={{ fontSize: "12.5px", color: "var(--muted)" }}>
-                            {app.reason || "плановый осмотр"}
-                          </span>
+                        <div className="today-schedule-item-info">
+                          <span className="today-schedule-time">{timeStart} – {timeEnd}</span>
+                          <strong className="today-schedule-name">{patient ? patient.fullName : "Неизвестный пациент"}</strong>
+                          <span className="today-schedule-reason">{app.reason || "плановый осмотр"}</span>
                         </div>
                         <span className={`status-pill status-${statusKey}`}>
                           {statusLabels[statusKey] || app.status}
@@ -392,9 +374,9 @@ export function PatientCockpit({
   if (!activePatient) {
     return (
       <section className="patient-cockpit dnt-cockpit" aria-label="Карточка пациента">
-        <div className="patient-summary-card" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "20px", boxShadow: "var(--shadow-1)" }}>
-          <p className="eyebrow" style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>Карточка пациента</p>
-          <h2 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>Пациент не выбран</h2>
+        <div className="patient-summary-card">
+          <p className="eyebrow" style={{ margin: "0 0 8px" }}>Карточка пациента</p>
+          <h2>Пациент не выбран</h2>
           <div className="patient-facts" style={{ marginTop: "8px", fontSize: "13px", color: "var(--muted)" }}>
             <span>Выберите пациента в списке или расписании, чтобы увидеть его данные.</span>
           </div>
@@ -406,12 +388,12 @@ export function PatientCockpit({
   return (
     <>
         <section className="patient-cockpit dnt-cockpit" aria-label="Карточка пациента">
-          <div className="patient-summary-card" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "20px", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div className="patient-summary-card col-gap-16">
             <p className="eyebrow" style={{ margin: 0, fontSize: "11px", fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>Карточка пациента</p>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div className="patient-hero">
               <PatientAvatar fullName={activePatient.fullName} size={44} />
-              <div style={{ minWidth: 0 }}>
-                <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--ink)" }}>{activePatient.fullName}</h2>
+              <div className="hero-info">
+                <h2 style={{ fontSize: "16px" }}>{activePatient.fullName}</h2>
                 <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--muted)" }}>карта #{activePatient.id ? activePatient.id.slice(0, 6) : "1042"}</p>
               </div>
             </div>
@@ -451,40 +433,40 @@ export function PatientCockpit({
             ) : null}
           </div>
 
-          <div className="patient-feature-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
-            <article role="button" tabIndex={0} aria-label="Открыть ЭМК и историю" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "visit"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "visit"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+          <div className="patient-feature-grid">
+            <article role="button" tabIndex={0} aria-label="Открыть ЭМК и историю" className="clickable-card" onClick={() => { window.location.hash = "visit"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "visit"; } }}>
               <History aria-hidden="true" size={24} />
               <div>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>ЭМК / История</h3>
-                <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>Приёмы · диагнозы · зубная карта</p>
+                <h3>ЭМК / История</h3>
+                <p className="tile-meta">Приёмы · диагнозы · зубная карта</p>
               </div>
             </article>
-            <article role="button" tabIndex={0} aria-label="Открыть документы" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "documents"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "documents"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть документы" className="clickable-card" onClick={() => { window.location.hash = "documents"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "documents"; } }}>
               <FileText aria-hidden="true" size={24} />
               <div>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Документы</h3>
-                <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
+                <h3>Документы</h3>
+                <p className="tile-meta">{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
               </div>
             </article>
-            <article role="button" tabIndex={0} aria-label="Открыть оплаты" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "finance"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "finance"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть оплаты" className="clickable-card" onClick={() => { window.location.hash = "finance"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "finance"; } }}>
               <CreditCard aria-hidden="true" size={24} />
               <div>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Оплаты</h3>
-                <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{money(dashboard?.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard?.billingSummary?.totalDueRub ?? 0)}</p>
+                <h3>Оплаты</h3>
+                <p className="tile-meta">{money(dashboard?.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard?.billingSummary?.totalDueRub ?? 0)}</p>
               </div>
             </article>
-            <article role="button" tabIndex={0} aria-label="Открыть связь и задачи" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "communications"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "communications"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть связь и задачи" className="clickable-card" onClick={() => { window.location.hash = "communications"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "communications"; } }}>
               <MessageSquare aria-hidden="true" size={24} />
               <div>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Связь</h3>
-                <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
+                <h3>Связь</h3>
+                <p className="tile-meta">{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
               </div>
             </article>
-            <article role="button" tabIndex={0} aria-label="Открыть снимки пациента" className="clickable-card focus:ring-2 focus:ring-teal-600 focus:outline-none" onClick={() => { window.location.hash = "imaging"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "imaging"; } }} style={{ padding: "16px", borderRadius: "13px", border: "1px solid var(--line)", background: "var(--paper)", boxShadow: "var(--shadow-1)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px", transition: "all 0.18s ease" }}>
+            <article role="button" tabIndex={0} aria-label="Открыть снимки пациента" className="clickable-card" onClick={() => { window.location.hash = "imaging"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "imaging"; } }}>
               <ImageIcon aria-hidden="true" size={24} />
               <div>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>Снимки</h3>
-                <p className="tile-meta" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>{activeImagingStudies.length > 0 ? `${activeImagingStudies.length} снимка` : "снимков нет"}</p>
+                <h3>Снимки</h3>
+                <p className="tile-meta">{activeImagingStudies.length > 0 ? `${activeImagingStudies.length} снимка` : "снимков нет"}</p>
               </div>
             </article>
           </div>
