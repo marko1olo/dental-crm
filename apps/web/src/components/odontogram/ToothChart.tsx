@@ -13,6 +13,25 @@ export type ToothState =
 	| "Healthy"
 	| "Planned_Implant";
 
+/**
+ * Русские названия состояний — для доступного имени зуба.
+ *
+ * Объявлено здесь, рядом с самим типом ToothState: OdontogramModule уже
+ * импортирует ToothChart, и обратный импорт замкнул бы цикл. Record без
+ * необязательных ключей заставляет компилятор потребовать перевод при
+ * добавлении нового состояния.
+ */
+export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
+	Caries: "кариес",
+	Pulpitis: "пульпит",
+	Filled: "пломба",
+	Crown: "коронка",
+	Implant: "имплантат",
+	Planned_Implant: "имплантат в плане",
+	Missing: "отсутствует",
+	Healthy: "здоров",
+};
+
 export interface ToothData {
 	toothNumber: number;
 	state: ToothState;
@@ -336,10 +355,26 @@ const ToothSVG = ({
 	);
 
 	return (
+		/* Зуб был обычным div с onClick: ни фокуса, ни обработки клавиш, ни
+		   роли. Врач с клавиатуры или программой чтения с экрана не мог
+		   выставить состояние зуба вовсе — до формулы просто нельзя было
+		   добраться. Теперь это кнопка по роли: Tab доводит до зуба,
+		   Enter и Пробел открывают то же меню состояний, а доступное имя
+		   содержит номер зуба и текущее состояние по-русски. */
 		<div
 			className={`tooth-svg-wrapper ${isTop ? "top" : "bottom"} ${isSelected ? "selected" : ""}`}
 			data-tooth-id={number}
+			role="button"
+			tabIndex={0}
+			aria-label={`Зуб ${number}, ${TOOTH_STATE_LABELS[state]}`}
+			aria-pressed={isSelected ? true : undefined}
 			onClick={(e) => onClick(e, number)}
+			onKeyDown={(e) => {
+				if (e.key !== "Enter" && e.key !== " ") return;
+				// Пробел иначе прокручивает страницу.
+				e.preventDefault();
+				onClick(e as unknown as React.MouseEvent, number);
+			}}
 			style={
 				isSelected
 					? {

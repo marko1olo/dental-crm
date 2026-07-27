@@ -19,6 +19,64 @@ import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
 
+/**
+ * Состояния зуба, доступные врачу в контекстном меню.
+ *
+ * Порядок — по частоте записи на приёме: сначала находки, затем
+ * выполненные работы, затем план и «здоров».
+ *
+ * Набор обязан покрывать весь тип ToothState и перечисление
+ * toothStateValues на сервере: раньше в меню было шесть состояний из
+ * восьми, и «Пломба» с «Имплантат в плане» выставить было нельзя,
+ * хотя сервер их принимал и одонтограмма их рисовала.
+ */
+const TOOTH_STATE_ACTIONS: ReadonlyArray<{
+	state: ToothState;
+	label: string;
+	className: string;
+}> = [
+	{
+		state: "Caries",
+		label: "Кариес",
+		className: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
+	},
+	{
+		state: "Pulpitis",
+		label: "Пульпит",
+		className: "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+	},
+	{
+		state: "Filled",
+		label: "Пломба",
+		className: "bg-teal-500/10 text-teal-300 border-teal-500/20 hover:bg-teal-500/20",
+	},
+	{
+		state: "Crown",
+		label: "Коронка",
+		className: "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+	},
+	{
+		state: "Implant",
+		label: "Имплантат",
+		className: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
+	},
+	{
+		state: "Planned_Implant",
+		label: "Имплантат в плане",
+		className: "bg-lime-500/10 text-lime-300 border-lime-500/20 hover:bg-lime-500/20",
+	},
+	{
+		state: "Missing",
+		label: "Отсутствует",
+		className: "bg-zinc-800/40 text-zinc-400 border-zinc-700/30 hover:bg-zinc-800/60",
+	},
+	{
+		state: "Healthy",
+		label: "Здоров",
+		className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+	},
+];
+
 const SurfaceSelector = ({
 	selected,
 	onChange,
@@ -545,42 +603,24 @@ export const OdontogramModule = ({
 										/>
 									</div>
 								)}
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Caries")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
-								>
-									Кариес
-								</button>
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Pulpitis")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
-								>
-									Пульпит
-								</button>
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Missing")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-zinc-800/40 text-zinc-400 border-zinc-700/30 hover:bg-zinc-800/60"
-								>
-									Отсутствует
-								</button>
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Crown")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
-								>
-									Коронка
-								</button>
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Implant")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20"
-								>
-									Имплантат
-								</button>
-								<button
-									onClick={() => updateToothState(selectedTeeth, "Healthy")}
-									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-								>
-									Здоров
-								</button>
+								{/* Список состояний вынесен в TOOTH_STATE_ACTIONS: раньше здесь
+								    были восемь почти одинаковых блоков JSX, и два состояния из
+								    восьми в набор просто не попали — «Пломба» и «Имплантат в
+								    плане». Оба поддерживаются схемой API (перечисление
+								    toothStateValues в routes/odontogram.ts), у обоих есть цвета
+								    и отрисовка (для пломбы рисуются каналы), но выставить их
+								    из интерфейса было нельзя. Пломба — самая частая запись в
+								    зубной формуле. */}
+								{TOOTH_STATE_ACTIONS.map((action) => (
+									<button
+										key={action.state}
+										type="button"
+										onClick={() => updateToothState(selectedTeeth, action.state)}
+										className={`flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs ${action.className}`}
+									>
+										{action.label}
+									</button>
+								))}
 								<button
 									onClick={() => {
 										setHistoryTooth(menuConfig.toothNumber);
