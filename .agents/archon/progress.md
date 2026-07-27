@@ -187,6 +187,105 @@ between the four wave-1 packets is therefore possible and I verify their diffs p
    analytics/portal/sync/docs/proof. **No claim overlap so far**, but the tree moves under the fleet
    and `server.ts` — a cross-lane seam — is currently dirty and unavailable.
 
+## CYCLE 1 CLOSED — 22 `[ARCHON]` commits, all 8 packets landed
+
+Run `wf_da0d6ab1-799` completed: 15 agents, 12 done, **3 killed by "Credit balance is too low"**
+(P2 build, attack:P1, attack:P4). Credit death is now an observed fact of this campaign, not a theory.
+**The durability protocol paid for itself:** P2 died mid-proofs but had already committed `d719cb192`
+*and* `e14bc316a` (its 281-line `portalOtp.test.ts`), and its `state.md` recorded exactly which proof
+step it was on. Nothing had to be re-derived.
+
+Landed: analytics `+null ₽`, portal OTP bypass (×2 commits), syncDaemon deletion, production
+stack-trace leak, 3× vite-path smokes, `issuedByUserId:"doctor"`, cron worker's invented 40 % margin,
+encoding-guard mojibake — plus regression tests for the signer and the BI snapshot.
+
+### THIRD CONTAMINATION — and it broke HEAD a second time
+`e14bc316a` (P2) swept in `git rm apps/web/src/components/analytics/LostPatientsFiltersWidget.tsx`.
+At HEAD the widget was gone while **`MarketingView.tsx:17,395` and `AnalyticsDashboardView.tsx:25,510`
+still imported and rendered it**. Restored forward in `bb74658dc`; `npm run typecheck -w @dental/web`
+then exit 0.
+Three occurrences, one mechanism: **a bare `git commit` commits the shared index, and `git rm` stages
+instantly.** All of cycle 1 ran with the old recipe because the fix was written after wave 1 launched.
+Cycle 2's script mandates `git commit -F <msg> -- <paths>` plus a `git diff --cached --name-only`
+inspection.
+Note the deletion itself was *correct* — that widget reads `lost_patients_filters`, a table with no
+writers, exactly the hollow-widget class in backlog item 8. It must land with both import removals in
+one commit.
+
+### NEW STANDING LEAD DUTY
+**Verify HEAD compiles, not just the working tree.** The working tree hid both breakages because the
+other author's uncommitted edits removed the imports. Check: for any file deleted in a recent commit,
+`git grep -n "<BaseName>" HEAD -- apps/` must return nothing.
+
+### Known churn, not ours to commit
+`apps/api/dist/**` (44 files) is TRACKED and went dirty when the P3 reviewer ran
+`npm run build -w @dental/api` as legitimate proof. Generated output; left alone.
+
+## CYCLE 2 — dispatched, run `wf_2583cd41-191`, script `.agents/archon/cycle2.workflow.js`
+
+Waves of 3 (narrowed from 4 after the credit deaths). Targets chosen to avoid the second author, who is
+concentrated in `SettingsView.tsx`, `components/settings/**`, `components/communications/**`,
+`App.tsx`, `MarketingView.tsx`, `VisitView.tsx`, `server.ts`.
+
+| # | Packet | Why |
+|---|---|---|
+| C1 | `dicomweb.ts:7` — every DICOM UID serves the same `test.dcm` | Patient safety: a dentist can plan an implant against another patient's anatomy |
+| C2 | `ClinicalRouter.ts` — phase-handoff tasks never persisted | A handoff that lives only in one HTTP response did not happen |
+| C3 | Nav rail: 11 unlabelled icons, 3 identical sparkle glyphs | Lead's own read of 4 plates; `viewLabels`/`viewHints` already exist and are never rendered |
+| C4 | Dictation transcripts in a module-level array, lost on restart | Medical documentation destroyed by a `tsx watch` reload |
+| C5 | `Cornerstone3DViewer.tsx:230-232` — panoramic uses a fixed fake spline | Plausible image of nothing; ignores the drawn ROI |
+| C6 | Finance: `3800` pre-filled in a money field with no patient selected | Found by the lead opening the plate; fabricated default in a money input |
+
+## CYCLE 2 CLOSED — 17 commits, 12/12 agents, ZERO credit deaths, ZERO contaminations
+
+Run `wf_2583cd41-191`. The pathspec commit rule worked: **no deletions, no swept-in files, HEAD stayed
+compilable.** Both authoritative gates green afterwards — `tsc -b --noEmit` (web) and
+`tsc -p tsconfig.json --noEmit` (api) both exit 0.
+
+| Packet | Verdict | Outcome |
+|---|---|---|
+| C1 DICOM any-UID | SOUND_WITH_NITS | `f70a47ff2` + test `370fd2933` |
+| C2 clinical handoff not persisted | SOUND_WITH_NITS | `2f18e4406` + `669c812a5` (cast bug) |
+| C3 nav rail 11 blind icons | SOUND_WITH_NITS | `e71445757` + guard test `0500e257e` |
+| C4 dictation lost on restart | **NEEDS_REWORK** | `1c9a05bb7`, `a8531562d` |
+| C5 panoramic fake spline | **NEEDS_REWORK** | `3f773b3e0`, `f11754ea4` |
+| C6 finance phantom amount | **NEEDS_REWORK** | `8f9243bdd`, `a4907fe62` |
+
+### The reviewers earned their cost this cycle
+- **C1 reviewer found two CONFIRMED holes the builder never reported.** (i) The demo-sample branch at
+  `dicomweb.ts:204-207` never references `organizationId`: a second organization's validly-signed token
+  returns **200 + 121,356 bytes of DICOM**, and so does a token carrying a UUID **present in no
+  `organizations` row at all** — the route never validates that the org id resolves. (ii)
+  `requireClinicalReadAccess`, the guard this route advertises, is **never exercised**: the tests set
+  `DENTE_CLINICAL_ALLOW_UNGUARDED_READS=1` and clear the admin secret, and `apps/api/.env` does the
+  same, so `accessGuard.ts:63` returns true unconditionally in all 9 tests. An untested guard is not a
+  guard. Neither appeared in the builder's PROVEN/NOT PROVEN lists.
+- **C4 reviewer caught a false handoff claim.** The handoff asserted «Текст не уничтожен»; the reviewer
+  produced run output proving dictated text can still be destroyed, because
+  `persistSpeechRecording` overwrites the durable envelope from a cache eviction may truncate.
+- **C5 reviewer called it "the most honest packet" — every proof reproduced — and still failed it**,
+  because `volume.voxelManager.getScalarData()` throws on every real CBCT volume, making the
+  `volume_not_ready` guard unreachable. Passes every test, breaks on real data one line later.
+- **C6 turned out better than the packet I wrote.** The `3800` I spotted on the plate was already
+  fixed; the agent found the live defect instead — **a patient's payment amount and fiscal-receipt
+  fields carried over to the NEXT patient** (`8f9243bdd`). Its own fix then introduced a mount-time
+  wipe of the money input, which the reviewer caught.
+
+## CYCLE 3 — dispatched, run `wf_3b16bb25-3a6`, script `.agents/archon/cycle3.workflow.js`
+
+Rework first: a half-closed chain looks wired and is worse than an open one. Rework packets are given
+the reviewer's `review.md` **as their specification**, and must mark every numbered item CLOSED /
+DECLARED DEBT / DISPUTED-with-evidence — a silently ignored item is an automatic re-fail.
+
+| # | Packet | Source |
+|---|---|---|
+| R1 | dictation: durable-envelope overwrite + false handoff claim | C4 review, 7 items, 2 blocking |
+| R2 | panoramic: closed-contour fake tail + unreachable CBCT guard | C5 review, F1/F2 HIGH |
+| R3 | finance: mount-time wipe regression + wrong reachability claim | C6 review, 2 blocking |
+| R4 | DICOM cross-tenant leak + untested clinical-read guard | C1 review, both CONFIRMED |
+| R5 | telegram: UTC digest dedup, fail-open `scheduledAt`, duplicate photo | dossier §5.7 |
+| R6 | AssemblyAI 15 s cap + provider audio not deleted though `system.ts:409` says it is | dossier §5.7 |
+
 ## Lead-owned, not delegated
 
 - [ ] Re-run both capture pipelines, MD5-audit personally, read the unjudged plates
