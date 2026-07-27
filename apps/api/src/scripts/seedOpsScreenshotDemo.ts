@@ -79,7 +79,10 @@ async function clean(): Promise<void> {
 	await db.delete(users).where(eq(users.organizationId, ORG_ID));
 	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
 	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-	console.log("Демонстрационная организация удалена.");
+	// В stderr, а не в stdout: stdout этого скрипта — строго JSON с токенами, его
+	// перенаправляют в .ops-shot-tokens.json. Любая проза в stdout делает файл
+	// нечитаемым, а seed() вызывает clean() перед наполнением.
+	console.error("Демонстрационная организация удалена.");
 }
 
 async function seed(): Promise<void> {
@@ -101,6 +104,33 @@ async function seed(): Promise<void> {
 		{ id: DOCTOR_A, organizationId: ORG_ID, fullName: "Смирнова Елена Владимировна", role: "doctor" },
 		{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Гаврилов Никита Сергеевич", role: "doctor" },
 		{ id: ADMIN_USER, organizationId: ORG_ID, fullName: "Администратор клиники", role: "administrator" }
+	]);
+
+	// Намеренные дубли: настоящий (то же имя и дата рождения) и мнимый
+	// (родственники на одном номере). Нужны, чтобы разбор дублей на снимке
+	// показывал и уверенную пару, и пару с предупреждением.
+	const DUPLICATE_REAL = "d0000000-0000-4000-8000-0000000009a1";
+	const DUPLICATE_KIN = "d0000000-0000-4000-8000-0000000009a2";
+
+	await db.insert(patients).values([
+		{
+			id: DUPLICATE_REAL,
+			organizationId: ORG_ID,
+			// Имя в другом регистре и с двойным пробелом, дата рождения та же, что
+			// у первого пациента списка: это уверенный дубль.
+			fullName: "орлова  марина петровна",
+			birthDate: "1970-01-10",
+			phone: "+7 916 200-10-20",
+			email: null
+		},
+		{
+			id: DUPLICATE_KIN,
+			organizationId: ORG_ID,
+			fullName: "Орлов Кирилл Сергеевич",
+			birthDate: null,
+			phone: "+7 916 200-10-20",
+			email: null
+		}
 	]);
 
 	await db.insert(patients).values(

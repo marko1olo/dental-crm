@@ -43,11 +43,26 @@ export type DuplicateReason =
 	/** Совпала электронная почта. */
 	| "same_email";
 
+/**
+ * Карточка в паре. Телефон и дата рождения обязательны в ответе: администратор
+ * решает, один это человек или два, и без этих полей решение принимается
+ * вслепую — по одним именам отличить дубль от тёзки невозможно.
+ */
+export type DuplicateSide = {
+	readonly patientId: string;
+	readonly fullName: string;
+	readonly phone: string | null;
+	readonly birthDate: string | null;
+	readonly email: string | null;
+};
+
 export type DuplicateCandidate = {
 	readonly leftPatientId: string;
 	readonly leftName: string;
+	readonly left: DuplicateSide;
 	readonly rightPatientId: string;
 	readonly rightName: string;
+	readonly right: DuplicateSide;
 	readonly reason: DuplicateReason;
 	/** 0…1. Ниже 0.5 объединять без проверки человеком нельзя. */
 	readonly confidence: number;
@@ -200,11 +215,20 @@ export async function findDuplicateCandidates(
 
 		// Порядок в паре устойчив, чтобы список не «прыгал» между запросами.
 		const [first, second] = left.id < right.id ? [left, right] : [right, left];
+		const side = (row: PatientRow): DuplicateSide => ({
+			patientId: row.id,
+			fullName: row.fullName,
+			phone: row.phone,
+			birthDate: row.birthDate,
+			email: row.email
+		});
 		strongest.set(key, {
 			leftPatientId: first.id,
 			leftName: first.fullName,
+			left: side(first),
 			rightPatientId: second.id,
 			rightName: second.fullName,
+			right: side(second),
 			reason,
 			confidence: meta.confidence,
 			explanation: meta.explanation,
