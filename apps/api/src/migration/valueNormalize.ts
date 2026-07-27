@@ -174,6 +174,23 @@ function validateParts(parts: DateParts): boolean {
   return parts.day <= daysInMonth(parts.year, parts.month);
 }
 
+/** Время суток из строки: минуты от полуночи и признак часового пояса. */
+function extractTimeOfDay(raw: string): { minutes: number; seconds: number; explicitUtc: boolean } | null {
+  const match = /[T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?\s*(Z|[+-]\d{2}:?\d{2})?$/i.exec(raw.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3] ?? "0");
+  if (hours > 23 || minutes > 59 || seconds > 59) return null;
+  const zone = match[4] ?? "";
+  return {
+    minutes: hours * 60 + minutes,
+    seconds,
+    // Смещение указано явно — значение уже привязано к поясу, пересчитывать не нужно.
+    explicitUtc: zone !== ""
+  };
+}
+
 /** Три числа из строки даты, если строка вообще похожа на дату. */
 function extractDateNumbers(raw: string): { numbers: number[]; hadTime: boolean } | null {
   const trimmed = raw.trim();
@@ -344,6 +361,180 @@ export function normalizeDateValue(
     `Дата «${truncateForMessage(text)}» не существует в календаре (проверьте число дней в месяце и год).`,
     transforms
   );
+}
+
+/**
+ * Дата вместе со временем суток.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНО ОТ normalizeDateValue
+ * Тот отрезает время намеренно: дата рождения не имеет времени, и «01.01.1980
+ * 00:00:00» из выгрузки не должно превращаться в момент. Но для записи в
+ * расписании время — это и есть содержание: приём в 14:30 и приём в 09:00 —
+ * разные события. Перенос расписания, теряющий время, бесполезен, а хуже того —
+ * выглядит успешным: даты на месте, все строки загружены, сверка сошлась.
+ */
+export interface NormalizedDateTime {
+  /** Дата в ISO: YYYY-MM-DD. */
+  date: string;
+  /** Минуты от полуночи местного времени клиники. null — время не указано. */
+  timeMinutes: number | null;
+  /** Секунды внутри минуты — сохраняются, если были в источнике. */
+  seconds: number;
+  /**
+   * true — в источнике был явный часовой пояс (суффикс Z или ±HH:MM), значение
+   * уже абсолютное и пересчитывать его по поясу клиники нельзя.
+   */
+  absolute: boolean;
+}
+
+export function normalizeDateTimeValue(
+  raw: string | null | undefined,
+  hint: DateFormatHint = { order: "dmy", rationale: "по умолчанию", coverage: 0 }
+): NormalizedValue<NormalizedDateTime> {
+  const datePart = normalizeDateValue(raw, hint);
+  if (datePart.value === null) {
+    return { value: null, transforms: datePart.transforms, confidence: datePart.confidence, issue: datePart.issue };
+  }
+
+  const time = isNullToken(raw) ? null : extractTimeOfDay(String(raw));
+  const transforms = datePart.transforms.filter((transform) => transform !== "strip-time");
+
+  if (!time) {
+    return ok(
+      { date: datePart.value, timeMinutes: null, seconds: 0, absolute: false },
+      [...transforms, "date-only"],
+      datePart.confidence
+    );
+  }
+
+  return ok(
+    {
+      date: datePart.value,
+      timeMinutes: time.minutes,
+      seconds: time.seconds,
+      absolute: time.explicitUtc
+    },
+    [...transforms, time.explicitUtc ? "datetime:absolute" : "datetime:clinic-local"],
+    datePart.confidence
+  );
+}
+
+/**
+ * Смещение часового пояса в миллисекундах для конкретного момента.
+ *
+ * Считается через Intl, а не константой: Россия отменила переход на летнее
+ * время в 2014 году, но приёмы 2010 года в выгрузке имеют другое смещение.
+ * Константа +3 часа сдвинула бы половину старого расписания на час.
+ */
+function timeZoneOffsetMs(instantMs: number, timeZone: string): number {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  const parts = formatter.formatToParts(new Date(instantMs));
+  const value = (type: string): number => Number(parts.find((part) => part.type === type)?.value ?? "0");
+  // hour 24 встречается в некоторых сборках ICU для полуночи.
+  const asIfUtc = Date.UTC(value("year"), value("month") - 1, value("day"), value("hour") % 24, value("minute"), value("second"));
+  return asIfUtc - instantMs;
+}
+
+/**
+ * Местное время клиники в момент абсолютного времени.
+ *
+ * Выгрузка старой системы содержит местное время без указания пояса: «12.03.2019
+ * 14:30» означает половину третьего в клинике. Записать это как UTC значило бы
+ * сдвинуть весь перенесённый график на три часа, и врач увидел бы приёмы,
+ * которых в это время не было.
+ *
+ * Двойной пересчёт нужен для границы перехода на летнее время: смещение в
+ * предполагаемый момент и в исправленный может различаться.
+ */
+export function clinicLocalToUtc(value: NormalizedDateTime, timeZone: string): Date {
+  const [year, month, day] = value.date.split("-").map(Number) as [number, number, number];
+  const minutes = value.timeMinutes ?? 0;
+  const hours = Math.floor(minutes / 60);
+  const minuteOfHour = minutes % 60;
+
+  const naive = Date.UTC(year, month - 1, day, hours, minuteOfHour, value.seconds);
+
+  // Явный пояс в источнике — значение уже абсолютное.
+  if (value.absolute) return new Date(naive);
+
+  try {
+    const firstOffset = timeZoneOffsetMs(naive, timeZone);
+    let utc = naive - firstOffset;
+    const secondOffset = timeZoneOffsetMs(utc, timeZone);
+    if (secondOffset !== firstOffset) utc = naive - secondOffset;
+    return new Date(utc);
+  } catch {
+    // Неизвестное имя пояса — не повод потерять запись; трактуем как UTC.
+    return new Date(naive);
+  }
+}
+
+/** Часовой пояс по умолчанию, если у клиники он не задан. */
+export const DEFAULT_CLINIC_TIME_ZONE = "Europe/Moscow";
+
+/**
+ * Строковое представление даты со временем для хранения в стейджинге.
+ *
+ * Формат самоописывающийся и сортируемый лексикографически:
+ *   «2019-03-12»              — только дата, времени в источнике не было;
+ *   «2019-03-12T14:30:00»     — местное время клиники;
+ *   «2019-03-12T14:30:00Z»    — абсолютное время (в источнике был явный пояс).
+ *
+ * Строка, а не объект: значение попадает в normalized_json, участвует в
+ * сравнениях доменных правил и в бизнес-ключах, и со строкой это работает без
+ * особых случаев.
+ */
+export function formatNormalizedDateTime(value: NormalizedDateTime): string {
+  if (value.timeMinutes === null) return value.date;
+  const hours = String(Math.floor(value.timeMinutes / 60)).padStart(2, "0");
+  const minutes = String(value.timeMinutes % 60).padStart(2, "0");
+  const seconds = String(value.seconds).padStart(2, "0");
+  return `${value.date}T${hours}:${minutes}:${seconds}${value.absolute ? "Z" : ""}`;
+}
+
+/**
+ * Обратный разбор для загрузчика: строка стейджинга в абсолютный момент.
+ *
+ * Значение без суффикса Z трактуется как местное время клиники и переводится
+ * по её часовому поясу. Значение без времени получает время по умолчанию —
+ * загрузчик передаёт его осмысленно (для приёма это начало рабочего дня).
+ */
+export function storedDateTimeToUtc(
+  value: string,
+  timeZone: string,
+  defaultTimeMinutes = 0
+): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?(Z)?)?$/.exec(value.trim());
+  if (!match) {
+    // Значение не в нашем формате: пробуем стандартный разбор, чтобы не потерять.
+    const fallback = new Date(value);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  const hasTime = match[4] !== undefined;
+  return clinicLocalToUtc(
+    {
+      date: `${match[1]}-${match[2]}-${match[3]}`,
+      timeMinutes: hasTime ? Number(match[4]) * 60 + Number(match[5]) : defaultTimeMinutes,
+      seconds: Number(match[6] ?? "0"),
+      absolute: match[7] === "Z"
+    },
+    timeZone
+  );
+}
+
+/** Только календарная часть значения — для бизнес-ключей и доменных правил. */
+export function dateOnlyPart(value: string): string {
+  return value.slice(0, 10);
 }
 
 // ---------------------------------------------------------------------------

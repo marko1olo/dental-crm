@@ -9,8 +9,10 @@ import { MIGRATION_MAX_ROW_CHARS } from "@dental/shared";
 import type { ColumnProfile } from "./columnProfile.js";
 import {
   combineNameParts,
+  dateOnlyPart,
+  formatNormalizedDateTime,
   isNullToken,
-  normalizeBooleanValue,
+  normalizeDateTimeValue,
   normalizeDateValue,
   normalizeEmailValue,
   normalizeEnumValue,
@@ -289,12 +291,35 @@ export function transformRow(input: TransformRowInput): TransformedRow {
 
     switch (field) {
       case "patient.birthDate":
+        /**
+         * Дата рождения — именно дата. Время «00:00:00», которым чужие системы
+         * заполняют колонку типа datetime, отбрасывается сознательно.
+         */
+        apply(field, column.sourceColumn, rawValue, normalizeDateValue(rawValue, dateHint), column.decidedBy, column.confidence);
+        break;
+
       case "patient.createdAt":
       case "appointment.startsAt":
       case "appointment.endsAt":
       case "visit.date":
       case "payment.paidAt":
-        apply(field, column.sourceColumn, rawValue, normalizeDateValue(rawValue, dateHint), column.decidedBy, column.confidence);
+        /**
+         * Здесь время суток — содержательная часть значения. Приём в 14:30 и
+         * приём в 09:00 — разные события, и перенос, теряющий время, оставляет
+         * клинику с графиком, где все приёмы стоят в один час.
+         *
+         * Значение сохраняется как местное время клиники; в абсолютное его
+         * переводит загрузчик, знающий часовой пояс организации.
+         */
+        apply(
+          field,
+          column.sourceColumn,
+          rawValue,
+          normalizeDateTimeValue(rawValue, dateHint),
+          column.decidedBy,
+          column.confidence,
+          formatNormalizedDateTime
+        );
         break;
 
       case "patient.phone":
@@ -549,6 +574,11 @@ function domainRuleIssues(entityKind: MigrationEntityKind, values: Record<string
   if (entityKind === "appointment") {
     const startsAt = values.startsAt as string | undefined;
     const endsAt = values.endsAt as string | undefined;
+    /**
+     * Формат хранения даты со временем сортируется лексикографически, поэтому
+     * сравнение строк корректно. Суффикс «Z» на сравнение внутри одной колонки
+     * не влияет: либо он есть у всех значений, либо ни у одного.
+     */
     if (startsAt && endsAt && endsAt < startsAt) {
       issues.push({
         reason: "validation_failed",
@@ -577,12 +607,13 @@ function domainRuleIssues(entityKind: MigrationEntityKind, values: Record<string
       });
     }
     const paidAt = values.paidAt as string | undefined;
-    if (paidAt && paidAt > today) {
+    // Сравниваем календарную часть: платёж сегодня в 18:00 не «в будущем».
+    if (paidAt && dateOnlyPart(paidAt) > today) {
       issues.push({
         reason: "validation_failed",
         blocking: false,
         fieldPath: "paidAt",
-        message: `Дата платежа ${paidAt} находится в будущем.`,
+        message: `Дата платежа ${dateOnlyPart(paidAt)} находится в будущем.`,
         suggestedFix: "Значение перенесено как есть; проверьте источник."
       });
     }

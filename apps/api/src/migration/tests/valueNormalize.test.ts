@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
   combineNameParts,
+  dateOnlyPart,
   detectDateOrder,
   fixNameCase,
+  formatNormalizedDateTime,
   isNullToken,
   normalizeBooleanValue,
+  normalizeDateTimeValue,
   normalizeDateValue,
   normalizeEmailValue,
   normalizeEnumValue,
@@ -14,7 +17,8 @@ import {
   normalizeNameValue,
   normalizePhoneValue,
   normalizeText,
-  normalizeToothCode
+  normalizeToothCode,
+  storedDateTimeToUtc
 } from "../valueNormalize.js";
 
 describe("признак пустого значения", () => {
@@ -118,6 +122,103 @@ describe("даты", () => {
     const parsed = normalizeDateValue("00.00.0000", hint);
     assert.equal(parsed.value, null);
     assert.equal(parsed.issue, null);
+  });
+});
+
+describe("дата со временем", () => {
+  const hint = detectDateOrder(["12.03.2019 14:30", "17.03.2019 09:15"]);
+
+  test("время суток сохраняется, а не отбрасывается", () => {
+    /**
+     * Именно этот случай раньше терялся: normalizeDateValue отрезает время
+     * (и правильно делает для даты рождения), а загрузчик расписания ставил всем
+     * приёмам девять утра. Перенос выглядел успешным и был бесполезен.
+     */
+    const parsed = normalizeDateTimeValue("12.03.2019 14:30", hint);
+    assert.equal(parsed.value?.date, "2019-03-12");
+    assert.equal(parsed.value?.timeMinutes, 14 * 60 + 30);
+    assert.equal(parsed.value?.absolute, false);
+    assert.equal(formatNormalizedDateTime(parsed.value!), "2019-03-12T14:30:00");
+  });
+
+  test("секунды сохраняются, если были в источнике", () => {
+    const parsed = normalizeDateTimeValue("12.03.2019 14:30:45", hint);
+    assert.equal(parsed.value?.seconds, 45);
+    assert.equal(formatNormalizedDateTime(parsed.value!), "2019-03-12T14:30:45");
+  });
+
+  test("явный часовой пояс делает значение абсолютным", () => {
+    const parsed = normalizeDateTimeValue("2019-03-12T14:30:00Z", hint);
+    assert.equal(parsed.value?.absolute, true);
+    assert.equal(formatNormalizedDateTime(parsed.value!), "2019-03-12T14:30:00Z");
+  });
+
+  test("отсутствие времени отличается от полуночи", () => {
+    const parsed = normalizeDateTimeValue("12.03.2019", hint);
+    assert.equal(parsed.value?.timeMinutes, null);
+    // Без времени формат остаётся датой — загрузчик подставит осмысленное время.
+    assert.equal(formatNormalizedDateTime(parsed.value!), "2019-03-12");
+  });
+
+  test("нераспознанная дата остаётся нераспознанной и со временем", () => {
+    assert.equal(normalizeDateTimeValue("31.02.2019 14:30", hint).value, null);
+    assert.equal(normalizeDateTimeValue("когда-то в марте", hint).value, null);
+  });
+
+  test("формат хранения сортируется лексикографически", () => {
+    const values = ["2019-03-12T14:30:00", "2019-03-12T09:15:00", "2019-03-13T09:00:00", "2019-03-12"];
+    assert.deepEqual([...values].sort(), [
+      "2019-03-12",
+      "2019-03-12T09:15:00",
+      "2019-03-12T14:30:00",
+      "2019-03-13T09:00:00"
+    ]);
+  });
+});
+
+describe("перевод местного времени клиники в абсолютное", () => {
+  test("местное время не сдвигается: 14:30 в Москве это 11:30 UTC", () => {
+    const utc = storedDateTimeToUtc("2019-03-12T14:30:00", "Europe/Moscow");
+    assert.equal(utc?.toISOString(), "2019-03-12T11:30:00.000Z");
+  });
+
+  test("значение с явным поясом не пересчитывается второй раз", () => {
+    const utc = storedDateTimeToUtc("2019-03-12T14:30:00Z", "Europe/Moscow");
+    assert.equal(utc?.toISOString(), "2019-03-12T14:30:00.000Z");
+  });
+
+  test("исторический переход на летнее время учитывается", () => {
+    /**
+     * Россия отменила летнее время в 2014-м. До отмены смещение Москвы летом
+     * было +4, зимой +3. Константа «+3» сдвинула бы летние приёмы 2010 года на
+     * час, поэтому смещение берётся из Intl для конкретного момента.
+     */
+    const winter2010 = storedDateTimeToUtc("2010-01-15T12:00:00", "Europe/Moscow");
+    const summer2010 = storedDateTimeToUtc("2010-07-15T12:00:00", "Europe/Moscow");
+    assert.equal(winter2010?.toISOString(), "2010-01-15T09:00:00.000Z");
+    // Летом 2010 Москва была UTC+4, поэтому полдень местного — 08:00 UTC.
+    assert.equal(summer2010?.toISOString(), "2010-07-15T08:00:00.000Z");
+  });
+
+  test("другой часовой пояс клиники учитывается", () => {
+    // Владивосток UTC+10.
+    const utc = storedDateTimeToUtc("2019-03-12T14:30:00", "Asia/Vladivostok");
+    assert.equal(utc?.toISOString(), "2019-03-12T04:30:00.000Z");
+  });
+
+  test("дата без времени получает переданное время по умолчанию", () => {
+    const nineAm = storedDateTimeToUtc("2019-03-12", "Europe/Moscow", 9 * 60);
+    assert.equal(nineAm?.toISOString(), "2019-03-12T06:00:00.000Z");
+  });
+
+  test("неизвестное имя пояса не роняет разбор", () => {
+    const utc = storedDateTimeToUtc("2019-03-12T14:30:00", "Нет/Такого");
+    assert.ok(utc !== null);
+  });
+
+  test("календарная часть отделяется от времени", () => {
+    assert.equal(dateOnlyPart("2019-03-12T14:30:00"), "2019-03-12");
+    assert.equal(dateOnlyPart("2019-03-12"), "2019-03-12");
   });
 });
 

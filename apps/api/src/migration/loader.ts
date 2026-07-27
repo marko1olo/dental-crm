@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import {
   appointments,
   auditEvents,
+  communicationSettings,
   migrationEntityLinks,
   migrationQuarantineRecords,
   migrationStagingRecords,
@@ -13,6 +14,7 @@ import {
 } from "../db/schema.js";
 import { IdentityIndex, naturalKeyFor, rawRowHash, type IdentityCandidate } from "./identity.js";
 import type { RowIssue, TransformedRow } from "./rowTransform.js";
+import { DEFAULT_CLINIC_TIME_ZONE, dateOnlyPart, storedDateTimeToUtc } from "./valueNormalize.js";
 
 /**
  * Укладка в стейджинг и загрузка в боевые таблицы.
@@ -40,6 +42,31 @@ const LOAD_BATCH_SIZE = 500;
 
 /** Длительность приёма по умолчанию, если в источнике её нет. */
 const DEFAULT_APPOINTMENT_MINUTES = 30;
+
+/**
+ * Время, которым дополняются значения без времени суток.
+ * Приём без времени ставится на начало рабочего дня (9:00), платёж — на полдень:
+ * так он не уезжает в предыдущие сутки ни при каком часовом поясе.
+ */
+const APPOINTMENT_DEFAULT_MINUTES = 9 * 60;
+const PAYMENT_DEFAULT_MINUTES = 12 * 60;
+
+/**
+ * Часовой пояс клиники.
+ *
+ * Выгрузка старой системы содержит МЕСТНОЕ время без указания пояса. Записать
+ * «14:30» как UTC значит сдвинуть весь перенесённый график на три часа, и врач
+ * увидит приёмы, которых в это время не было. Пояс берётся из настроек рассылки
+ * организации — там он уже есть и уже используется для тихих часов, так что
+ * второго источника истины не появляется.
+ */
+async function clinicTimeZone(organizationId: string): Promise<string> {
+  const [row] = await db
+    .select({ timezone: communicationSettings.timezone })
+    .from(communicationSettings)
+    .where(eq(communicationSettings.organizationId, organizationId));
+  return row?.timezone?.trim() || DEFAULT_CLINIC_TIME_ZONE;
+}
 
 export interface StagedRow {
   stagingId: string;
@@ -575,6 +602,7 @@ export async function loadAppointments(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const appointmentLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "appointment");
+  const timeZone = await clinicTimeZone(input.organizationId);
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
@@ -610,8 +638,15 @@ export async function loadAppointments(input: {
             outcome.failed += 1;
             continue;
           }
-          const startsAt = new Date(`${startsAtRaw}T09:00:00.000Z`);
-          if (Number.isNaN(startsAt.getTime())) {
+          /**
+           * Время приёма из источника — местное время клиники, и оно
+           * сохраняется. Раньше здесь стояло `T09:00:00.000Z`, из-за чего все
+           * перенесённые приёмы вставали на девять утра по UTC независимо от
+           * того, во сколько они были: перенос расписания терял ровно то, ради
+           * чего расписание переносят.
+           */
+          const startsAt = storedDateTimeToUtc(startsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES);
+          if (!startsAt) {
             outcome.failed += 1;
             continue;
           }
@@ -619,9 +654,9 @@ export async function loadAppointments(input: {
           const duration =
             typeof values.durationMinutes === "number" ? values.durationMinutes : DEFAULT_APPOINTMENT_MINUTES;
           const endsAtRaw = values.endsAt as string | undefined;
-          let endsAt = endsAtRaw ? new Date(`${endsAtRaw}T09:00:00.000Z`) : null;
+          let endsAt = endsAtRaw ? storedDateTimeToUtc(endsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES) : null;
           // Окончание раньше начала либо отсутствует — считаем по длительности.
-          if (!endsAt || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
+          if (!endsAt || endsAt <= startsAt) {
             endsAt = new Date(startsAt.getTime() + duration * 60_000);
           }
 
@@ -729,6 +764,7 @@ export async function loadPayments(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const paymentLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "payment");
+  const timeZone = await clinicTimeZone(input.organizationId);
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
@@ -785,7 +821,9 @@ export async function loadPayments(input: {
           }
 
           const paidAtRaw = values.paidAt as string | undefined;
-          const paidAt = paidAtRaw ? new Date(`${paidAtRaw}T12:00:00.000Z`) : new Date();
+          // Время платежа из источника сохраняется; без времени — полдень
+          // местного времени, чтобы платёж не уехал в предыдущие сутки.
+          const paidAt = paidAtRaw ? storedDateTimeToUtc(paidAtRaw, timeZone, PAYMENT_DEFAULT_MINUTES) : null;
 
           const [created] = await tx
             .insert(payments)
@@ -795,7 +833,7 @@ export async function loadPayments(input: {
               amountRub,
               method: (values.method as typeof payments.$inferInsert.method) ?? "card",
               status: "paid",
-              paidAt: Number.isNaN(paidAt.getTime()) ? new Date() : paidAt,
+              paidAt: paidAt ?? new Date(),
               note: [(values.note as string | undefined) ?? "", `Перенос из «${input.sourceName}»`]
                 .filter(Boolean)
                 .join("\n")
@@ -878,6 +916,7 @@ export async function loadVisits(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const visitLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "visit");
+  const timeZone = await clinicTimeZone(input.organizationId);
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
@@ -946,11 +985,16 @@ export async function loadVisits(input: {
               treatmentPlan: (values.treatmentPlan as string | undefined) ?? null,
               doctorSummary: [
                 (values.doctorSummary as string | undefined) ?? "",
-                `Перенесено из «${input.sourceName}»${values.date ? `, дата приёма ${values.date}` : ""}.`
+                `Перенесено из «${input.sourceName}»${
+                  values.date ? `, дата приёма ${dateOnlyPart(values.date as string)}` : ""
+                }.`
               ]
                 .filter(Boolean)
                 .join("\n"),
-              signedAt: values.date ? new Date(`${values.date as string}T12:00:00.000Z`) : new Date()
+              // Время приёма из источника сохраняется, а не заменяется полднем.
+              signedAt: values.date
+                ? (storedDateTimeToUtc(values.date as string, timeZone, PAYMENT_DEFAULT_MINUTES) ?? new Date())
+                : new Date()
             })
             .returning({ id: visits.id });
 

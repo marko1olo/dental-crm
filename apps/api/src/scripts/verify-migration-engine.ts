@@ -9,9 +9,11 @@ import {
   migrationQuarantineRecords,
   migrationRuns,
   migrationStagingRecords,
+  appointments,
   organizations,
   patients,
-  payments
+  payments,
+  visits
 } from "../db/schema.js";
 import { analyzeSource, listQuarantine, rollbackRun, runMigration } from "../migration/engine.js";
 import { buildDbfFile, encodeSingleByte } from "../migration/tests/fixtures.js";
@@ -215,7 +217,114 @@ try {
     .where(eq(migrationStagingRecords.runId, payRun.run.runId));
   check("исходные строки сохранены после откатa", Number(stagedAfterRb[0]!.n) === 4, `${stagedAfterRb[0]!.n} строк`);
 
-  console.log("--- 10. DBF в cp866 через тот же движок");
+  console.log("--- 10. Расписание: время приёма обязано сохраниться");
+  const scheduleCsv = [
+    "Код;Пациент;Дата приёма;Длительность;Статус;Повод",
+    "9001;101;12.03.2019 14:30;45;завершён;Лечение 16 зуба",
+    "9002;102;12.03.2019 09:15;30;отменена пациентом;Осмотр",
+    "9003;103;13.03.2019;60;запланирован;Без указания времени",
+    "9004;101;14.03.2019 18:45;30;неявка;Повторный"
+  ].join("\n");
+  const schedRun = await runMigration({
+    ...base,
+    sourceName: "расписание.csv",
+    rawText: scheduleCsv,
+    dryRun: false,
+    requestedEntityKind: "appointment"
+  });
+  console.log(`       записи: создано ${schedRun.run.loadedRows}, карантин ${schedRun.run.quarantinedRows}`);
+
+  const loadedAppointments = await db
+    .select({
+      startsAt: appointments.startsAt,
+      endsAt: appointments.endsAt,
+      status: appointments.status,
+      reason: appointments.reason
+    })
+    .from(appointments)
+    .where(eq(appointments.organizationId, ORG))
+    .orderBy(appointments.startsAt);
+
+  /** Часовой пояс клиники по умолчанию — Europe/Moscow, поэтому 14:30 мск = 11:30 UTC. */
+  const asMoscow = (value: Date): string =>
+    new Intl.DateTimeFormat("ru-RU", {
+      timeZone: "Europe/Moscow",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit"
+    }).format(value);
+  console.log(
+    `       в базе (мск): ${loadedAppointments.map((a) => `${asMoscow(a.startsAt)}→${asMoscow(a.endsAt)} ${a.status}`).join(" | ")}`
+  );
+
+  same("создано 4 записи", loadedAppointments.length, 4);
+  check(
+    "время 14:30 сохранено, а не заменено девятью утра",
+    loadedAppointments.some((a) => asMoscow(a.startsAt).endsWith("14:30")),
+    loadedAppointments.map((a) => asMoscow(a.startsAt)).join(", ")
+  );
+  check("время 09:15 сохранено", loadedAppointments.some((a) => asMoscow(a.startsAt).endsWith("09:15")));
+  check("время 18:45 сохранено", loadedAppointments.some((a) => asMoscow(a.startsAt).endsWith("18:45")));
+  check(
+    "все четыре момента различны",
+    new Set(loadedAppointments.map((a) => a.startsAt.getTime())).size === 4,
+    `уникальных моментов: ${new Set(loadedAppointments.map((a) => a.startsAt.getTime())).size}`
+  );
+  const fortyFive = loadedAppointments.find((a) => asMoscow(a.startsAt).endsWith("14:30"));
+  check(
+    "длительность 45 минут учтена в окончании",
+    fortyFive !== undefined && fortyFive.endsAt.getTime() - fortyFive.startsAt.getTime() === 45 * 60_000,
+    fortyFive ? `${(fortyFive.endsAt.getTime() - fortyFive.startsAt.getTime()) / 60000} мин` : "не найдено"
+  );
+  check("статус «отменена пациентом» распознан", loadedAppointments.some((a) => a.status === "cancelled"));
+  check("статус «неявка» распознан", loadedAppointments.some((a) => a.status === "no_show"));
+  check("статус «завершён» распознан", loadedAppointments.some((a) => a.status === "completed"));
+  check(
+    "запись без времени поставлена на начало дня, а не потеряна",
+    loadedAppointments.some((a) => asMoscow(a.startsAt).endsWith("09:00")),
+    loadedAppointments.map((a) => asMoscow(a.startsAt)).join(", ")
+  );
+
+  console.log("--- 11. Приёмы с клинической частью");
+  const visitsCsv = [
+    "Код;Пациент;Дата;Жалобы;Анамнез;Диагноз;План лечения",
+    "7001;101;12.03.2019 14:30;Боль при накусывании на 16;Лечение 2 года назад;K04.0 Пульпит;Эндодонтическое лечение 16",
+    "7002;102;12.03.2019 09:15;Профилактический осмотр;Без особенностей;K02.1 Кариес дентина;Пломба 26"
+  ].join("\n");
+  const visitRun = await runMigration({
+    ...base,
+    sourceName: "приёмы.csv",
+    rawText: visitsCsv,
+    dryRun: false,
+    requestedEntityKind: "visit"
+  });
+  const loadedVisits = await db
+    .select({
+      complaint: visits.complaint,
+      diagnosis: visits.diagnosis,
+      status: visits.status,
+      signedAt: visits.signedAt
+    })
+    .from(visits)
+    .where(eq(visits.organizationId, ORG));
+  console.log(`       приёмы: создано ${visitRun.run.loadedRows}, карантин ${visitRun.run.quarantinedRows}`);
+  console.log(`       в базе: ${loadedVisits.map((v) => `${v.status}/${v.diagnosis}`).join(" | ")}`);
+  same("создано 2 приёма", loadedVisits.length, 2);
+  check("жалобы перенесены дословно", loadedVisits.some((v) => v.complaint === "Боль при накусывании на 16"));
+  check("диагноз перенесён", loadedVisits.some((v) => v.diagnosis === "K04.0 Пульпит"));
+  check(
+    "перенесённый приём закрыт, а не оставлен черновиком",
+    loadedVisits.every((v) => v.status === "signed"),
+    loadedVisits.map((v) => v.status).join(",")
+  );
+  check(
+    "время приёма сохранено в подписи",
+    loadedVisits.some((v) => v.signedAt !== null && asMoscow(v.signedAt).endsWith("14:30")),
+    loadedVisits.map((v) => (v.signedAt ? asMoscow(v.signedAt) : "null")).join(", ")
+  );
+
+  console.log("--- 12. DBF в cp866 через тот же движок");
   const dbf = buildDbfFile(
     [
       { name: "NKART", type: "I", length: 4 },
@@ -253,7 +362,10 @@ try {
   );
 } finally {
   console.log("\n--- Уборка тестовых данных");
+  // Порядок удаления от зависимых к тем, на кого ссылаются.
   await db.delete(payments).where(eq(payments.organizationId, ORG));
+  await db.delete(visits).where(eq(visits.organizationId, ORG));
+  await db.delete(appointments).where(eq(appointments.organizationId, ORG));
   const runs = await db.select({ id: migrationRuns.id }).from(migrationRuns).where(eq(migrationRuns.organizationId, ORG));
   for (const run of runs) {
     await db.delete(migrationQuarantineRecords).where(eq(migrationQuarantineRecords.runId, run.id));

@@ -31,7 +31,7 @@ import { missingRequiredFields, resolveDeterministicMapping } from "./mapping.js
 import { parseSource, type ParsedSource, type ParsedTable } from "./parsers/index.js";
 import { reconcileRun } from "./reconcile.js";
 import { transformRow } from "./rowTransform.js";
-import { normalizeMoneyValue, type DateFormatHint } from "./valueNormalize.js";
+import { dateOnlyPart, normalizeMoneyValue, type DateFormatHint } from "./valueNormalize.js";
 
 /**
  * Управляющий движок переноса.
@@ -431,19 +431,27 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
             dateHints: prepared.dateHints,
             confidenceThreshold: DEFAULT_CONFIDENCE_THRESHOLD
           }),
-        naturalKeyOf: (transformed) =>
-          naturalKeyFor(prepared.entityKind, {
+        naturalKeyOf: (transformed) => {
+          /**
+           * В бизнес-ключ идёт только календарная часть даты. Если брать дату со
+           * временем, то исправление времени приёма в старой системе между двумя
+           * выгрузками дало бы другой ключ, и повторный перенос завёл бы второй
+           * приём вместо обновления первого.
+           */
+          const rawDate = (transformed.values.date ?? transformed.values.paidAt ?? transformed.values.startsAt) as
+            | string
+            | undefined;
+          return naturalKeyFor(prepared.entityKind, {
             externalId: transformed.values.externalId as string | undefined,
             fullName: (transformed.values.fullName ?? transformed.values.name) as string | undefined,
             phone: transformed.values.phone as string | undefined,
             birthDate: transformed.values.birthDate as string | undefined,
-            date: (transformed.values.date ?? transformed.values.paidAt ?? transformed.values.startsAt) as
-              | string
-              | undefined,
+            date: rawDate ? dateOnlyPart(rawDate) : undefined,
             amountRub: transformed.values.amountRub as number | undefined,
             patientKey: transformed.values.patientRef as string | undefined,
             toothCode: transformed.values.toothCode as string | undefined
-          })
+          });
+        }
       });
 
       stagedTotal += staged.rows.length;
