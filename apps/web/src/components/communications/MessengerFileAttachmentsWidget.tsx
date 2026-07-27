@@ -17,8 +17,7 @@ export const MessengerFileAttachmentsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/communications/messenger-file-attachments", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setAttachments(Array.isArray(data) ? data : []);

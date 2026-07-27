@@ -35,7 +35,7 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 		() =>
 			auth
 				? auth.denteClinicalReadHeaders()
-				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+				: {},
 		[],
 	);
 
@@ -70,7 +70,6 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 				headers: auth
 					? { ...auth.denteClinicalMutationHeaders(), "Content-Type": "application/json" }
 					: {
-							"x-organization-id": "00000000-0000-0000-0000-000000000001",
 							"Content-Type": "application/json",
 						},
 				body: JSON.stringify({ isBlacklisted: newStatus }),

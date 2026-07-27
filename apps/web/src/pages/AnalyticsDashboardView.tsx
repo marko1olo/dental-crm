@@ -66,7 +66,10 @@ export function AnalyticsDashboardView() {
 	const getReadHeaders = () =>
 		authContext
 			? authContext.denteClinicalReadHeaders()
-			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+			// Без контекста авторизации заголовок организации не подставляем:
+			// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
+			// а без него сервер обязан ответить 401, а не выдать чужую клинику.
+			: {};
 	const [data, setData] = useState<AnalyticsData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);

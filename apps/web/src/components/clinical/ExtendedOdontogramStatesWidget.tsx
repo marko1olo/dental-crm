@@ -23,7 +23,7 @@ export const ExtendedOdontogramStatesWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/clinical/extended-odontogram-states", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : {},
 		})
 			.then((res) => res.json())
 			.then((data) => {

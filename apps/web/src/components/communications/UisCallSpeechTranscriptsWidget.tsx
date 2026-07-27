@@ -17,8 +17,7 @@ export const UisCallSpeechTranscriptsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/communications/uis-call-speech-transcripts", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setTranscripts(Array.isArray(data) ? data : []);

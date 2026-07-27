@@ -17,8 +17,7 @@ export const Mkb10AutoDirectoriesWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/integrations/mkb10-auto-directories", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setItems(Array.isArray(data) ? data : []);

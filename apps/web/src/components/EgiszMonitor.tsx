@@ -33,7 +33,7 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 		try {
 			const headers = authContext
 				? authContext.denteClinicalReadHeaders()
-				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+				: {};
 			const res = await fetch(`/api/egisz/logs/${patientId}`, { headers });
 			if (res.ok) {
 				const data = await res.json();
@@ -69,7 +69,7 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 		try {
 			const headers = authContext
 				? authContext.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
-				: { "x-organization-id": "00000000-0000-0000-0000-000000000001", "Content-Type": "application/json" };
+				: { "Content-Type": "application/json" };
 			const res = await fetch(`/api/egisz/send`, {
 				method: "POST",
 				headers,

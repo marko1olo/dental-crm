@@ -15,8 +15,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/integrations/yandex-calendar-syncs", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setSyncs(Array.isArray(data) ? data : []);

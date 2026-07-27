@@ -57,7 +57,7 @@ export function PatientOverviewTab() {
 		if (selectedPatientId) {
 			const headers = appLogic?.auth
 				? appLogic.auth.denteClinicalReadHeaders()
-				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+				: {};
 			fetch(`/api/finance/family/patient/${selectedPatientId}`, { headers })
 				.then((res) => {
 					if (!res.ok) throw new Error("No family");
@@ -246,7 +246,7 @@ export function PatientOverviewTab() {
 							if (selectedPatientId) {
 								const headers = appLogic?.auth
 									? appLogic.auth.denteClinicalReadHeaders()
-									: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+									: {};
 								fetch(`/api/finance/family/patient/${selectedPatientId}`, { headers })
 									.then((res) => {
 										if (!res.ok) throw new Error("No family");

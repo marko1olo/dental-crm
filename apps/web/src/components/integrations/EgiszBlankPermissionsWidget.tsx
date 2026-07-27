@@ -16,8 +16,7 @@ export const EgiszBlankPermissionsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/integrations/egisz-blank-permissions", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setPermissions(Array.isArray(data) ? data : []);

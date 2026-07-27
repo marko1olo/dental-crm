@@ -18,8 +18,7 @@ export const DiagnocatAiFindingsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/integrations/diagnocat-findings", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setFindings(Array.isArray(data) ? data : []);

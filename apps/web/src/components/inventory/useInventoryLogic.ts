@@ -26,7 +26,13 @@ export function useInventoryLogic(organizationId: string) {
 		if (auth && typeof auth.denteClinicalReadHeaders === "function") {
 			return auth.denteClinicalReadHeaders(extra);
 		}
-		return { "x-organization-id": organizationId || "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
+		// БЫЛО: сюда подставлялся жёстко зашитый UUID организации. Сервер
+		// принимает x-organization-id только в разработке при
+		// DENTE_DEV_ALLOW_HEADER_ORG=1 — и тогда весь склад показывался за одну и
+		// ту же клинику, кто бы ни вошёл. Токен кабинета добавляет глобальная
+		// обёртка fetch (lib/apiAuthFetch.ts); без него сервер обязан ответить
+		// 401, а не подставить чужую организацию.
+		return { ...(extra || {}) };
 	};
 
 	// Barcode Scanner State

@@ -17,8 +17,7 @@ export const MessageTemplateCatalogsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/communications/message-template-catalogs", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setTemplates(Array.isArray(data) ? data : []);

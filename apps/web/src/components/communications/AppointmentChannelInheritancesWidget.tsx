@@ -20,7 +20,10 @@ export const AppointmentChannelInheritancesWidget: React.FC = () => {
 	useEffect(() => {
 		const headers = authContext
 			? authContext.denteClinicalReadHeaders()
-			: { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
+			// Без контекста авторизации заголовок организации не подставляем:
+			// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
+			// а без него сервер обязан ответить 401, а не выдать чужую клинику.
+			: {};
 		fetch("/api/communications/appointment-channel-inheritances", { headers })
 			.then((res) => res.json())
 			.then((data) => {

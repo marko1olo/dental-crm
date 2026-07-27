@@ -16,8 +16,7 @@ export const UisMassAppointmentConfirmationsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/communications/uis-mass-appointment-confirmations", {
-			headers: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
-		})
+					})
 			.then((res) => res.json())
 			.then((data) => {
 				setConfirmations(Array.isArray(data) ? data : []);

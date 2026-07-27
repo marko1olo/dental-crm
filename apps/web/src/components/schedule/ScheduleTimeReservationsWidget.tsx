@@ -22,7 +22,7 @@ export const ScheduleTimeReservationsWidget: React.FC = () => {
 
 	useEffect(() => {
 		fetch("/api/schedule/time-reservations", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : {},
 		})
 			.then((res) => res.json())
 			.then((data) => {

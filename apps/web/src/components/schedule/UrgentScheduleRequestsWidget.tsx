@@ -35,7 +35,7 @@ export const UrgentScheduleRequestsWidget: React.FC<UrgentScheduleRequestsWidget
 
 	useEffect(() => {
 		fetch("/api/schedule/urgent-schedule-requests", {
-			headers: auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+			headers: auth ? auth.denteClinicalReadHeaders() : {},
 		})
 			.then((res) => res.json())
 			.then((data) => {

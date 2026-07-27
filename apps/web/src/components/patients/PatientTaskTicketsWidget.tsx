@@ -19,8 +19,8 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
 	const [isAdding, setIsAdding] = useState(false);
 
-	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : { "x-organization-id": "00000000-0000-0000-0000-000000000001" };
-	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { "x-organization-id": "00000000-0000-0000-0000-000000000001", ...(extra || {}) };
+	const getReadHeaders = () => auth ? auth.denteClinicalReadHeaders() : {};
+	const getMutationHeaders = (extra?: Record<string, string>) => auth ? auth.denteClinicalMutationHeaders(extra) : { ...(extra || {}) };
 
 	const [newTitle, setNewTitle] = useState("");
 	const [newDescription, setNewDescription] = useState("");

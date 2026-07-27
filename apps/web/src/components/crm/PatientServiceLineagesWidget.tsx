@@ -30,7 +30,7 @@ export const PatientServiceLineagesWidget: React.FC<{ patientId?: string }> = ({
 		() =>
 			auth
 				? auth.denteClinicalReadHeaders()
-				: { "x-organization-id": "00000000-0000-0000-0000-000000000001" },
+				: {},
 		[],
 	);
 	const items: LineageItem[] = Array.isArray(rawItems) ? (rawItems as LineageItem[]) : [];

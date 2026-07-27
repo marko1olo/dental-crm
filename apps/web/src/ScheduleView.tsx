@@ -75,10 +75,14 @@ type ScheduleViewProps = {
 };
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useScheduleRealtime } from "./hooks/useScheduleRealtime";
 
 export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const logicContext = useAppLogicContext();
   const props = { ...logicContext, ...rawProps } as any;
+  // Расписание перечитывается, когда запись создал или перенёс кто-то другой.
+  // Без этого второй администратор видел устаревшую сетку до перезагрузки.
+  useScheduleRealtime(logicContext?.loadDashboard);
   const {
     scheduleDoctorFilterId,
     scheduleAssistantFilterId,
