@@ -76,6 +76,15 @@
   My file has zero importers and cannot affect it.
 - DONE — handoff.md written.
 
+## Commits (all landed)
+
+1. `aa649990557f886d93fdd88e54d89029228cffc8` fix — margin/completionRate fabrication removed
+2. `1e1605c6178a04f480a503b7e3dfcdd30730a3e1` test — 14 node:test guards + comment accuracy
+3. `198da887c5719a112f3413425a30ba7542789e15` docs — this black box, handoff, 3 read-only probes
+
+PACKET CLOSED. Nothing of mine left uncommitted. Claimed file
+`apps/api/src/scripts/cronAnalyticsWorker.ts` is clean at HEAD.
+
 ## Old notes: proofs (commit already landed, these cannot lose work)
 
 - write node:test for buildDoctorProfitabilityRow, run with
