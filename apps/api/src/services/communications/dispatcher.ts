@@ -256,6 +256,12 @@ export async function enqueueMessage(input: EnqueueMessageInput): Promise<Enqueu
 // ─── Разбор очереди ──────────────────────────────────────────────────────────
 
 export type DispatchOptions = {
+	/**
+	 * Ограничить проход одной организацией. Нужно для ручного запуска из
+	 * интерфейса: администратор одной клиники не должен разбирать очередь
+	 * соседней, даже если процесс общий.
+	 */
+	readonly organizationId?: string | null;
 	/** Сколько сообщений забрать за проход. */
 	readonly batchSize?: number;
 	/** Имя процесса в поле locked_by — чтобы было видно, кто держит строку. */
@@ -281,12 +287,18 @@ type OutboxRow = typeof communicationOutbox.$inferSelect;
  * Возврат зависших захватов. Процесс мог упасть между «пометил sending» и
  * «записал результат»; без этого такие строки не отправятся никогда.
  */
-async function releaseStuckLocks(now: Date, stuckLockMinutes: number): Promise<number> {
+async function releaseStuckLocks(now: Date, stuckLockMinutes: number, organizationId: string | null): Promise<number> {
 	const threshold = new Date(now.getTime() - stuckLockMinutes * 60_000);
+	const scope = [
+		eq(communicationOutbox.status, "sending" as const),
+		or(lt(communicationOutbox.lockedAt, threshold), sql`${communicationOutbox.lockedAt} IS NULL`)
+	];
+	if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
+
 	const released = await db
 		.update(communicationOutbox)
 		.set({ status: "queued", lockedAt: null, lockedBy: null, nextAttemptAt: now, updatedAt: now })
-		.where(and(eq(communicationOutbox.status, "sending"), or(lt(communicationOutbox.lockedAt, threshold), sql`${communicationOutbox.lockedAt} IS NULL`)))
+		.where(and(...scope))
 		.returning({ id: communicationOutbox.id });
 	return released.length;
 }
@@ -295,12 +307,20 @@ async function releaseStuckLocks(now: Date, stuckLockMinutes: number): Promise<n
  * Захват пачки. SKIP LOCKED пропускает строки, которые уже держит другой
  * процесс: две копии сервера не отправят одно напоминание дважды.
  */
-async function claimBatch(now: Date, batchSize: number, workerId: string): Promise<OutboxRow[]> {
+async function claimBatch(
+	now: Date,
+	batchSize: number,
+	workerId: string,
+	organizationId: string | null
+): Promise<OutboxRow[]> {
 	return db.transaction(async (tx) => {
+		const scope = [eq(communicationOutbox.status, "queued" as const), lte(communicationOutbox.nextAttemptAt, now)];
+		if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
+
 		const candidates = await tx
 			.select({ id: communicationOutbox.id })
 			.from(communicationOutbox)
-			.where(and(eq(communicationOutbox.status, "queued"), lte(communicationOutbox.nextAttemptAt, now)))
+			.where(and(...scope))
 			.orderBy(communicationOutbox.nextAttemptAt)
 			.limit(batchSize)
 			.for("update", { skipLocked: true });
@@ -545,8 +565,9 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 	const workerId = options.workerId ?? `api:${process.pid}`;
 	const stuckLockMinutes = Math.max(1, options.stuckLockMinutes ?? 10);
 
-	const releasedStuck = await releaseStuckLocks(now, stuckLockMinutes);
-	const claimed = await claimBatch(now, batchSize, workerId);
+	const organizationScope = options.organizationId ?? null;
+	const releasedStuck = await releaseStuckLocks(now, stuckLockMinutes, organizationScope);
+	const claimed = await claimBatch(now, batchSize, workerId, organizationScope);
 	const report = { claimed: claimed.length, sent: 0, retried: 0, failed: 0, suppressed: 0, deferred: 0, releasedStuck };
 	if (claimed.length === 0) return report;
 

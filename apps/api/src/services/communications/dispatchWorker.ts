@@ -1,0 +1,110 @@
+/**
+ * Фоновый разбор очереди исходящих сообщений.
+ *
+ * ЗАЧЕМ: services/notificationWorker.ts объявлял `setInterval` в 10 секунд и
+ * ниоткуда не вызывался — startNotificationWorker не встречается в проекте
+ * нигде, кроме собственного теста. Очередь не разбиралась вообще.
+ *
+ * Устройство повторяет startDenteTelegramOutboxDueWorker в routes/telegram.ts:
+ * следующий тик планируется только после завершения предыдущего, наложение
+ * тиков исключено, а сам обработчик выключается переменной окружения — на
+ * машине разработчика фоновые отправки не нужны.
+ */
+
+import { dispatchDueMessages, type DispatchReport } from "./dispatcher.js";
+
+export type DispatchWorkerLogger = {
+	info: (payload: Record<string, unknown>, message: string) => void;
+	warn: (payload: Record<string, unknown>, message: string) => void;
+	error: (payload: Record<string, unknown>, message: string) => void;
+};
+
+export type DispatchWorkerHandle = {
+	readonly enabled: boolean;
+	stop: () => void;
+	runOnce: () => Promise<DispatchReport | null>;
+};
+
+function parseBoolean(value: string | undefined): boolean {
+	const normalized = value?.trim().toLowerCase();
+	return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
+function parseInteger(value: string | undefined, fallback: number, min: number, max: number): number {
+	const parsed = Number.parseInt(value?.trim() ?? "", 10);
+	if (!Number.isFinite(parsed)) return fallback;
+	return Math.max(min, Math.min(max, parsed));
+}
+
+export function startCommunicationDispatchWorker(
+	options: { logger?: DispatchWorkerLogger; env?: NodeJS.ProcessEnv } = {}
+): DispatchWorkerHandle {
+	const env = options.env ?? process.env;
+	const logger = options.logger;
+
+	if (!parseBoolean(env.DENTE_COMMUNICATION_WORKER_ENABLED)) {
+		return { enabled: false, stop: () => undefined, runOnce: async () => null };
+	}
+
+	const intervalMs = parseInteger(env.DENTE_COMMUNICATION_WORKER_INTERVAL_MS, 30_000, 5_000, 15 * 60_000);
+	const batchSize = parseInteger(env.DENTE_COMMUNICATION_WORKER_BATCH_SIZE, 25, 1, 200);
+	const stuckLockMinutes = parseInteger(env.DENTE_COMMUNICATION_WORKER_STUCK_LOCK_MINUTES, 10, 1, 240);
+	const workerId = `${env.DENTE_COMMUNICATION_WORKER_ID?.trim() || "api"}:${process.pid}`;
+
+	let stopped = false;
+	let inFlight = false;
+	let timer: ReturnType<typeof setTimeout> | null = null;
+
+	const schedule = (delayMs: number) => {
+		if (stopped) return;
+		timer = setTimeout(() => {
+			void tick();
+		}, delayMs);
+		// Тик не должен удерживать процесс при завершении работы.
+		timer.unref?.();
+	};
+
+	const runOnce = async (): Promise<DispatchReport | null> => {
+		if (stopped || inFlight) return null;
+		inFlight = true;
+		try {
+			return await dispatchDueMessages({ batchSize, workerId, stuckLockMinutes });
+		} finally {
+			inFlight = false;
+		}
+	};
+
+	const tick = async () => {
+		if (stopped) return;
+		if (inFlight) {
+			logger?.warn({}, "Разбор очереди сообщений: предыдущий тик ещё идёт, пропуск");
+			schedule(intervalMs);
+			return;
+		}
+		try {
+			const report = await runOnce();
+			// Логируется только непустой проход: иначе журнал заполняется нулями.
+			if (report && report.claimed > 0) {
+				logger?.info({ ...report }, "Разбор очереди сообщений завершён");
+			}
+			if (report && report.releasedStuck > 0) {
+				logger?.warn({ releasedStuck: report.releasedStuck }, "Возвращены зависшие отправки");
+			}
+		} catch (error) {
+			logger?.error({ error }, "Разбор очереди сообщений не удался");
+		}
+		schedule(intervalMs);
+	};
+
+	schedule(intervalMs);
+
+	return {
+		enabled: true,
+		stop: () => {
+			stopped = true;
+			if (timer) clearTimeout(timer);
+			timer = null;
+		},
+		runOnce
+	};
+}

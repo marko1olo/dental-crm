@@ -53,6 +53,11 @@ export const PERMISSIONS = [
 	"settings.write",
 	// Выгрузка медицинских документов в ЕГИСЗ
 	"egisz.submit",
+	// Переписка с пациентами: шаблоны, очередь отправки, согласия, рассылки.
+	// Отдельно от patients.*: смотреть карточку и рассылать сообщения — разные
+	// полномочия, и цена ошибки в рассылке измеряется в штрафах ФАС.
+	"communications.read",
+	"communications.write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -77,6 +82,7 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"analytics.read",
 		"inventory.read", "inventory.write",
 		"settings.read",
+		"communications.read", "communications.write",
 	],
 
 	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату.
@@ -89,6 +95,7 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"analytics.read",
 		"inventory.read",
 		"settings.read",
+		"communications.read", "communications.write",
 	],
 
 	// Врач: ведёт приём и документацию, к кассе и настройкам не допущен.
@@ -98,6 +105,8 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"clinical.read", "clinical.write",
 		"inventory.read",
 		"egisz.submit",
+		// Врач видит переписку с пациентом, но рассылки не запускает.
+		"communications.read",
 	],
 
 	// Ассистент: видит приём и списывает материалы, ничего не решает.
@@ -106,6 +115,7 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"patients.read",
 		"clinical.read",
 		"inventory.read", "inventory.write",
+		"communications.read",
 	],
 };
 

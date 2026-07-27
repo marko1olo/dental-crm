@@ -46,6 +46,8 @@ import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 // Вторая партия незарегистрированных модулей. Фронтенд обращается к ним
 // (только к /api/inventory — 25 мест), но Fastify отвечал 404.
 import registerDiaryRoutes from "./routes/diary.js";
+import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
+import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { portalRoutes } from "./routes/portal.js";
@@ -209,7 +211,7 @@ function publicApiErrorMessage(error: unknown, statusCode: number): string {
   return fallbackApiErrorMessage(statusCode);
 }
 
-export async function createDenteApiApp(options: { startTelegramWorker?: boolean } = {}) {
+export async function createDenteApiApp(options: { startTelegramWorker?: boolean; startCommunicationWorker?: boolean } = {}) {
   const app = Fastify({
     logger: {
       level: process.env.NODE_ENV === "production" ? "info" : "debug",
@@ -409,11 +411,29 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
   await app.register(telephonyRoutes, { prefix: "/api/telephony" });
 
+  // Сообщения пациентам: справочник шаблонов, очередь отправки, согласия,
+  // настройки рассылки и состояние шлюзов. Прежний routes/communications.ts
+  // состоял из одного обработчика «закрыть задачу связи»; отправлять было
+  // нечем и посмотреть, почему сообщение не ушло, было негде.
+  await registerCommunicationOutboxRoutes(app);
+
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
     app.addHook("onClose", async () => {
       telegramOutboxDueWorker.stop();
     });
+  }
+
+  // Разбор очереди исходящих сообщений. Прежний services/notificationWorker.ts
+  // объявлял setInterval и ниоткуда не вызывался — очередь не разбиралась.
+  // Включается DENTE_COMMUNICATION_WORKER_ENABLED=1.
+  if (options.startCommunicationWorker !== false) {
+    const communicationWorker = startCommunicationDispatchWorker({ logger: app.log });
+    if (communicationWorker.enabled) {
+      app.addHook("onClose", async () => {
+        communicationWorker.stop();
+      });
+    }
   }
 
   return app;
