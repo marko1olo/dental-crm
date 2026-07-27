@@ -350,7 +350,11 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
 
   return (
     <details className="payment-capture-detail-section" open={isOpen} style={{ marginBottom: "20px" }}>
-      <summary>Калькулятор рассрочки (Внутренний)</summary>
+      {/* БЫЛО: «Калькулятор рассрочки (Внутренний)». Слово «внутренний» —
+          из разработки: пользователю оно не говорит ничего, а насторожить
+          может. Смысл в том, что рассрочка беспроцентная и от самой клиники,
+          без банка, — так и написано. */}
+      <summary>Рассрочка от клиники, без банка</summary>
       <div className="smart-details-content" style={{ padding: "16px", background: "var(--brand-50)", borderRadius: "8px", marginTop: "8px" }}>
         <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "16px" }}>
           <div style={{ flex: "1 1 200px" }}>
@@ -551,7 +555,15 @@ export function PaymentCapture({
         </div>
       ) : (
         <>
-        <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '8px 12px', background: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* flexDirection задаём явно. Класс .smart-ai-booking в main.css
+            содержит flex-direction: column, инлайновый стиль его не отменял, и
+            строка разворачивалась в столбик: значок, поле ввода и микрофон
+            вставали друг под другом в узкой колонке шириной около 200px, а
+            подсказка «Пример: Оплата 5000 картой…» обрезалась на полуслове.
+            Видно на скриншоте экрана «Оплаты». Соседний вызов класса в
+            NewAppointmentForm столбик задаёт сам, поэтому общий стиль не
+            трогаем. */}
+        <div className="smart-ai-booking" style={{ gridColumn: '1 / -1', marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '8px 12px', background: 'var(--paper)', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
           <Bot size={18} color="var(--brand-600)" />
           <div style={{ position: 'relative', flex: 1 }}>
             <input
