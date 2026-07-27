@@ -1,3 +1,8 @@
+import {
+	kopecksToNumericString,
+	parseKopecks,
+	percentageOfKopecks,
+} from "@dental/shared";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
@@ -10,15 +15,32 @@ import {
 	visitDiaries,
 } from "../db/schema.js";
 
+/**
+ * ЕДИНИЦА И ОТБОР ВЫРУЧКИ.
+ *
+ * payments."amount_rub" — колонка integer в ЦЕЛЫХ РУБЛЯХ. Раньше здесь стояло
+ * `sum(CAST(amount_rub AS float) / 100)`: значение делилось на 100, как будто в
+ * колонке копейки, и выручка каждого врача занижалась в сто раз. Плюс приведение
+ * к float пускало деньги через двоичную дробь без нужды — сумма целых точна сама.
+ * Правильную конвенцию задаёт routes/analytics.ts: `sum(amount_rub)` без деления.
+ *
+ * Отбирать нужно только оплаченные платежи. Без фильтра в выручку попадают
+ * planned (деньги ещё не получены — в этом статусе, например, лежат пополнения
+ * семейного кошелька), а также возвраты и аннулированные. Ровно эту ошибку уже
+ * исправляли в routes/analytics.ts, здесь она осталась.
+ */
+const PAID_PAYMENTS_ONLY = eq(payments.status, "paid");
+
 async function computeCohortLtvAll() {
 	// Aggregate actual payments by month and organization
 	const result = await db
 		.select({
 			organizationId: payments.organizationId,
 			month: sql<string>`to_char(${payments.createdAt}, 'Mon')`,
-			total: sql<number>`sum(CAST(${payments.amountRub} AS float) / 100)`,
+			total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 		})
 		.from(payments)
+		.where(PAID_PAYMENTS_ONLY)
 		.groupBy(payments.organizationId, sql`to_char(${payments.createdAt}, 'Mon')`);
 
 	const map = new Map<string, any[]>();
@@ -111,6 +133,49 @@ async function computeChairUtilizationAll() {
 	return orgChairs;
 }
 
+/**
+ * Доли материалов и комиссии заданы базисными пунктами (1% = 100 б.п.), чтобы
+ * расчёт шёл целыми копейками. Раньше стояло 0.15 / 0.25, а результат
+ * прогонялся через `+(x).toFixed(2)` — округление двоичной дроби вместо точной
+ * доли.
+ */
+const MATERIAL_BASIS_POINTS = 1_500;
+const COMMISSION_BASIS_POINTS = 2_500;
+
+/**
+ * Строка прибыльности врача. Вынесена из запроса отдельно, чтобы арифметику
+ * можно было проверить тестом без базы.
+ *
+ * Суммы отдаются строками "0.00": это тот же вид, в котором деньги лежат в
+ * numeric-колонках, и он не теряет копейки при сериализации в JSON.
+ */
+export function doctorProfitabilityRow(
+	name: string,
+	totalRevenue: string | number | null,
+	paymentCount: number,
+) {
+	// sum() над integer возвращает bigint, а драйвер отдаёт bigint строкой —
+	// parseKopecks разбирает и строку, и число, не пуская значение через float.
+	const revenueKopecks = parseKopecks(totalRevenue);
+	const materialKopecks = percentageOfKopecks(revenueKopecks, MATERIAL_BASIS_POINTS);
+	const commissionKopecks = percentageOfKopecks(
+		revenueKopecks,
+		COMMISSION_BASIS_POINTS,
+	);
+	// Маржа — остаток, а не отдельно посчитанный процент: так три слагаемых
+	// всегда сходятся к выручке до копейки.
+	const marginKopecks = revenueKopecks - materialKopecks - commissionKopecks;
+
+	return {
+		name,
+		revenue: kopecksToNumericString(revenueKopecks),
+		materialCost: kopecksToNumericString(materialKopecks),
+		commission: kopecksToNumericString(commissionKopecks),
+		margin: kopecksToNumericString(marginKopecks),
+		completionRate: paymentCount > 0 ? 100 : 0,
+	};
+}
+
 async function computeDoctorProfitabilityAll() {
 	// Real join: payments -> visitDiaries -> users (doctor)
 	const rows = await db
@@ -118,16 +183,14 @@ async function computeDoctorProfitabilityAll() {
 			organizationId: payments.organizationId,
 			doctorId: visitDiaries.doctorId,
 			doctorName: users.fullName,
-			totalRevenue: sql<number>`coalesce(sum(cast(${payments.amountRub} as float) / 100), 0)`,
+			totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 			paymentCount: sql<number>`count(${payments.id})`,
 		})
 		.from(payments)
 		.leftJoin(visitDiaries, eq(payments.visitId, visitDiaries.visitId))
 		.leftJoin(users, eq(visitDiaries.doctorId, users.id))
+		.where(PAID_PAYMENTS_ONLY)
 		.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
-
-	const MATERIAL_RATE = 0.15;
-	const COMMISSION_RATE = 0.25;
 
 	const map = new Map<string, any[]>();
 	for (const r of rows) {
@@ -135,20 +198,13 @@ async function computeDoctorProfitabilityAll() {
 		if (!map.has(r.organizationId)) {
 			map.set(r.organizationId, []);
 		}
-
-		const revenue = Number(r.totalRevenue) || 0;
-		const materialCost = +(revenue * MATERIAL_RATE).toFixed(2);
-		const commission = +(revenue * COMMISSION_RATE).toFixed(2);
-		const margin = +(revenue - materialCost - commission).toFixed(2);
-
-		map.get(r.organizationId)!.push({
-			name: r.doctorName ?? "Врач не указан",
-			revenue,
-			materialCost,
-			commission,
-			margin,
-			completionRate: r.paymentCount > 0 ? 100 : 0,
-		});
+		map.get(r.organizationId)!.push(
+			doctorProfitabilityRow(
+				r.doctorName ?? "Врач не указан",
+				r.totalRevenue,
+				r.paymentCount,
+			),
+		);
 	}
 
 	return map;
