@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const appSource =
 	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+	readAppLogicSourceSync();
 const communicationsSource = readFileSync(
 	"apps/web/src/CommunicationsView.tsx",
 	"utf8",

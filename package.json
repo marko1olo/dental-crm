@@ -136,6 +136,10 @@
 		"smoke:speech-key-rotation": "node scripts/smoke-speech-key-rotation.mjs",
 		"db:generate": "npm run db:generate -w @dental/api",
 		"db:migrate": "npm run db:migrate -w @dental/api",
+		"db:migrate:baseline": "npm run db:migrate:baseline -w @dental/api",
+		"db:migrate:check": "npm run db:migrate:check -w @dental/api",
+		"smoke:schema-ddl-coverage": "node scripts/smoke-schema-ddl-coverage.mjs",
+		"smoke:schema-column-parity": "node scripts/smoke-schema-column-parity.mjs",
 		"smoke:persistent-state-save": "node scripts/smoke-persistent-state-save.mjs",
 		"smoke:imaging-manifest-parser": "node scripts/smoke-imaging-manifest-parser.mjs",
 		"smoke:wave16": "npx tsx scripts/test-edge-cases-wave16.mjs"
@@ -152,6 +156,7 @@
 		"@babel/parser": "^8.0.0",
 		"@babel/traverse": "^8.0.0",
 		"fast-json-stringify": "^6.4.0",
+		"recharts": "^3.10.1",
 		"ret": "^0.5.0",
 		"svg-path-bbox": "^2.1.0",
 		"tsx": "^4.22.4"

@@ -89,9 +89,26 @@ async function evaluate(expression) {
 async function setTheme(theme) {
   await evaluate(`(() => {
     window.localStorage.setItem('dente_theme_mode', '${theme}');
+    try {
+      const p1 = JSON.parse(window.localStorage.getItem('dental-crm:web-ui-preferences:v1') || '{}');
+      p1.themeMode = '${theme}';
+      window.localStorage.setItem('dental-crm:web-ui-preferences:v1', JSON.stringify(p1));
+
+      const p2 = JSON.parse(window.localStorage.getItem('dente_ui_preferences_v1') || '{}');
+      p2.themeMode = '${theme}';
+      window.localStorage.setItem('dente_ui_preferences_v1', JSON.stringify(p2));
+    } catch (e) {}
+
     const s = window.__useThemeStore;
     if (s) s.getState().setThemeMode('${theme}');
     document.documentElement.dataset.theme = '${theme}';
+
+    // Dismiss lock screen if active
+    const lockScreen = document.querySelector('.pin-lock-screen, .lock-screen, [data-lock-screen]');
+    if (lockScreen) {
+      const pinBtn = document.querySelector('.pin-button, button:not([disabled])');
+      if (pinBtn) pinBtn.click();
+    }
     return document.documentElement.dataset.theme;
   })()`);
   await sleep(600);
@@ -124,6 +141,30 @@ async function waitForViewReady(viewName) {
 }
 
 async function nav(viewName) {
+  await evaluate(`(() => {
+    try {
+      if (!localStorage.getItem("dente_staff_token")) {
+        localStorage.setItem("dente_staff_token", "demo-staff-token");
+        localStorage.setItem("dente_clinic_token", "demo-clinic-token");
+        localStorage.setItem("dente_workspace_role", "owner");
+      }
+    } catch(e) {}
+  })()`);
+
+  await evaluate(`(() => {
+    try {
+      const pinPad = document.querySelector('.staff-pin-pad, .pin-lock-screen');
+      if (pinPad) {
+        const staffCard = document.querySelector('.staff-card, .staff-member-item');
+        if (staffCard) staffCard.click();
+        const zeroBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === '0');
+        if (zeroBtn) {
+          for (let i = 0; i < 4; i++) zeroBtn.click();
+        }
+      }
+    } catch(e) {}
+  })()`);
+
   const selector = `aside.sidebar nav a[href="#${viewName}"], .dnt-bottom-nav a[href="#${viewName}"]`;
   const success = await evaluate(`(() => {
     const link = document.querySelector('${selector}');

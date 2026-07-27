@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
+import { readAppLogicSource } from "./lib/app-logic-source.mjs";
 
 const appSource = (
 	(await readFile("apps/web/src/App.tsx", "utf8")) +
 	"\n" +
-	(await readFile("apps/web/src/useAppLogic.tsx", "utf8"))
+	(await readAppLogicSource())
 ).replace(/\r\n/g, "\n");
 
 function fail(message) {

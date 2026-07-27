@@ -10,6 +10,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
@@ -40,7 +41,7 @@ const documentExtractorSource = readFileSync(
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
 ].join("\n");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");

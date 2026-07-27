@@ -6675,7 +6675,11 @@ export async function registerImagingRoutes(app: FastifyInstance) {
       // вызов модели выполнялся заново. Функция сохранения была импортирована,
       // но не вызывалась ни разу.
       try {
-        await updateImagingStudyAiSummaryInDb(orgId, id, analysisResult);
+        // В базе под заключение отведена одна текстовая колонка ai_summary,
+        // поэтому сохраняется текст заключения. Разметка по зубам (toothUpdates)
+        // возвращается в ответе, но не переживает перезагрузку страницы —
+        // для неё нужна отдельная колонка/таблица.
+        await updateImagingStudyAiSummaryInDb(orgId, id, analysisResult.summary);
       } catch (persistError) {
         request.log.error({ err: persistError }, "[imaging] Не удалось сохранить заключение ИИ");
       }

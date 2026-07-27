@@ -14,7 +14,10 @@ import { eq } from "drizzle-orm";
  */
 function demoFixturesAllowed(): boolean {
   if (process.env.NODE_ENV === "production") return false;
-  return process.env.DENTE_ALLOW_DEMO_FIXTURES !== "0";
+  // Реализация расходилась с комментарием выше: было `!== "0"`, то есть
+  // выдуманный пациент с диагнозом отдавался по умолчанию везде, где NODE_ENV
+  // не равен ровно "production" (в том числе при `npm start` без переменной).
+  return process.env.DENTE_ALLOW_DEMO_FIXTURES === "1";
 }
 
 export default async function registerEgiszRoutes(app: FastifyInstance) {

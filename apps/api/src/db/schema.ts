@@ -1854,16 +1854,20 @@ export const patientArchiveReasonsAndBlacklists = pgTable("patient_archive_reaso
 });
 
 // patient communication timelines (full comm history per patient)
+// ВНИМАНИЕ: определение приведено к физической таблице из миграции
+// drizzle/0102_add_patient_communication_timelines.sql. БЫЛО: здесь описывались
+// колонки patient_id/channel/direction/intent/message/status/operator_id, которых
+// в базе нет. Любой db.select().from(...) по этой таблице падал на уровне SQL, и
+// роут молча отдавал заглушку. Фронтенд (PatientCommunicationTimelinesWidget)
+// тоже читает именно эти поля: patientName/eventType/statusColor/audioRecordingUrl.
 export const patientCommunicationTimelines = pgTable("patient_communication_timelines", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  patientId: uuid("patient_id").notNull().references(() => patients.id),
-  channel: text("channel").notNull(),
-  direction: text("direction").notNull().default("outbound"),
-  intent: text("intent"),
-  message: text("message"),
-  status: text("status").notNull().default("delivered"),
-  operatorId: uuid("operator_id"),
+  patientName: text("patient_name").notNull(),
+  eventType: text("event_type").notNull().default("call"),
+  statusColor: text("status_color").notNull().default("green"),
+  audioRecordingUrl: text("audio_recording_url"),
+  comment: text("comment").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

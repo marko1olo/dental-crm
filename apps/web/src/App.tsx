@@ -2443,7 +2443,7 @@ export function App() {
           </section>
         ) : null}
 
-        {!onboardingDismissed && !showFullOnboardingGuide ? (
+        {!onboardingDismissed && !showFullOnboardingGuide && !isLocalOnboardingDismissed ? (
           <section className="onboarding-compact-strip" aria-label="Первичная настройка клиники">
             <div>
               <strong>Можно начать прием без мастера</strong>

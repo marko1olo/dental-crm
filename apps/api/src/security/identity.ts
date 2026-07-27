@@ -46,14 +46,18 @@ function headerValue(request: FastifyRequest, name: string): string | null {
 }
 
 /**
- * Вне production заголовок x-organization-id принимается АВТОМАТИЧЕСКИ,
- * чтобы локальная разработка не требовала настройки .env.
- * Отключить явно: DENTE_DEV_ALLOW_HEADER_ORG=0
- * В production не работает никогда, независимо от переменной.
+ * Заголовок x-organization-id принимается ТОЛЬКО при явном
+ * DENTE_DEV_ALLOW_HEADER_ORG=1 и NODE_ENV !== production.
+ *
+ * БЫЛО: послабление действовало по умолчанию везде, где NODE_ENV !== "production".
+ * Это опасно не только в разработке: `npm start` (node dist/server.js) не
+ * выставляет NODE_ENV вовсе, поэтому боевой запуск без явной переменной попадал
+ * ровно в эту ветку — и клиент мог назвать себя любой клиникой сам.
+ * Умолчание переведено в opt-in: чтобы включить, нужно осознанное действие.
  */
 function devHeaderOrgAllowed(): boolean {
   if (process.env.NODE_ENV === "production") return false;
-  return process.env.DENTE_DEV_ALLOW_HEADER_ORG !== "0";
+  return process.env.DENTE_DEV_ALLOW_HEADER_ORG === "1";
 }
 
 /**

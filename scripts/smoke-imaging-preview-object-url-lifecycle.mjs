@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
-const source = readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+const source = readAppLogicSourceSync();
 const normalizedSource = source.replace(/\r\n/g, "\n");
 const start = source.indexOf("const imagingPreviewWorkset =");
 const end = source.indexOf(

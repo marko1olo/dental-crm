@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { issueAttestation } from "./lib/documentIssueAttestation.mjs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-tax-knd-xml-"));
 
@@ -41,7 +42,7 @@ function assertNoMojibake(value, label) {
 
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
 ].join("\n");
 const documentRoutesSource = readFileSync(

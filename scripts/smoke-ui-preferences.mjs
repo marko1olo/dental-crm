@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
+import { readAppLogicSource } from "./lib/app-logic-source.mjs";
 
 const appSource = [
 	await readFile("apps/web/src/App.tsx", "utf8"),
-	await readFile("apps/web/src/useAppLogic.tsx", "utf8"),
+	await readAppLogicSource(),
 	await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
 ].join("\n");
 const documentsViewSource = await readFile(

@@ -1,8 +1,9 @@
 import fs from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const source = [
 	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
-	fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 	fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
 	fs.readFileSync("apps/web/src/store/documentStore.ts", "utf8"),
 	fs.readFileSync("apps/web/src/CommunicationsView.tsx", "utf8"),

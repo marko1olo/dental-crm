@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.DENTE_CLINICAL_ADMIN_SECRET =
@@ -43,7 +44,7 @@ const sampleSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const appSource =
 	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+	readAppLogicSourceSync();
 const communicationsSource = readFileSync(
 	"apps/web/src/CommunicationsView.tsx",
 	"utf8",

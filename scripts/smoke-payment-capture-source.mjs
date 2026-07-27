@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const mainAppSource = readFileSync("apps/web/src/App.tsx", "utf8");
-const appLogicSource = readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+const appLogicSource = readAppLogicSourceSync();
 const appSource = mainAppSource + appLogicSource;
 const financeViewSource = readFileSync("apps/web/src/FinanceView.tsx", "utf8");
 const paymentCaptureSource = readFileSync(

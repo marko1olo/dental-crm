@@ -17,6 +17,7 @@ type AppointmentRejectionReason =
   | "resource_missing"
   | "resource_overlap"
   | "outside_operational_hours"
+  | "patient_blacklisted"
   | "mutation_rejected";
 
 type AppointmentRejectionResponse = {
@@ -27,6 +28,7 @@ type AppointmentRejectionResponse = {
 };
 
 const denteAdminSecretHeader = "x-dente-admin-secret";
+const appointmentBlacklistedMessage = "Запись не создана: выбранный пациент внесен в черный список и заблокирован для записи.";
 const appointmentCreateValidationMessage =
   "Запись не создана: выберите пациента, врача, кресло, дату и время приема.";
 const appointmentUpdateValidationMessage =
@@ -67,6 +69,7 @@ function normalizedAppointmentException(error: unknown): string {
 
 function classifyAppointmentRejection(error: unknown): AppointmentRejectionReason {
   const message = normalizedAppointmentException(error);
+  if (message.includes("черный список") || message.includes("черном списке") || message.includes("Запись заблокирована")) return "patient_blacklisted";
   if (message === "Запись не найдена") return "appointment_not_found";
   if (message.includes("не найден") || message.includes("не активен")) return "reference_missing";
   if (message.includes("Время окончания записи должно быть позже времени начала")) return "time_invalid";
@@ -78,6 +81,7 @@ function classifyAppointmentRejection(error: unknown): AppointmentRejectionReaso
 }
 
 function appointmentRejectionMessage(reason: AppointmentRejectionReason, operation: "create" | "update"): string {
+  if (reason === "patient_blacklisted") return appointmentBlacklistedMessage;
   if (reason === "appointment_not_found") return appointmentNotFoundMessage;
   if (reason === "reference_missing") {
     return operation === "create" ? appointmentReferenceMissingCreateMessage : appointmentReferenceMissingUpdateMessage;

@@ -8,6 +8,8 @@ import {
   appointments as inMemoryAppointments
 } from "../sampleData.js";
 
+import { isPatientBookingBlocked } from "./patientArchiveReasonsAndBlacklistsQuery.js";
+
 function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
@@ -16,6 +18,10 @@ export async function createAppointmentInDb(organizationId: string, input: Creat
   if (useInMemory()) {
     return createAppointmentInMemory(input);
   }
+  if (input.patientId && await isPatientBookingBlocked(organizationId, input.patientId)) {
+    throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+  }
+
   const startsAtMs = Date.parse(input.startsAt);
   const endsAtMs = Date.parse(input.endsAt);
   if (!Number.isFinite(startsAtMs) || !Number.isFinite(endsAtMs) || endsAtMs <= startsAtMs) {

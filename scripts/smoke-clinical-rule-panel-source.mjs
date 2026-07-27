@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 	existsSync("apps/web/src/VisitView.tsx")
 		? readFileSync("apps/web/src/VisitView.tsx", "utf8")
 		: "",

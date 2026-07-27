@@ -10,7 +10,8 @@ import type {
   DocumentVoidAttestation,
   TaxPaymentSnapshot,
   TaxXmlSourceSnapshot,
-  TaxXmlSnapshot
+  TaxXmlSnapshot,
+  TreatmentPlanItem
 } from "@dental/shared";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -292,10 +293,33 @@ export async function getDocumentRenderContextFromDb(organizationId: string, pat
   const settings = await getClinicSettingsFromDb(organizationId);
   const serviceCatalog = await getServiceCatalogForOrganization(organizationId);
   let payments: Awaited<ReturnType<typeof getPaymentsByPatientIdInDb>> = [];
-  let treatmentPlanItems: Awaited<ReturnType<typeof getTreatmentPlanItemsForPatient>> = [];
+  let treatmentPlanItems: TreatmentPlanItem[] = [];
   if (patientId) {
     payments = await getPaymentsByPatientIdInDb(organizationId, patientId);
-    treatmentPlanItems = await getTreatmentPlanItemsForPatient(organizationId, patientId);
+    // Строки treatment_items — это форма базы, а не доменный тип: quantity там
+    // numeric (драйвер отдаёт строку), serviceId может быть NULL, а названия
+    // услуги на момент выдачи (snapshotServiceName) в таблице нет вообще.
+    // Рендер документа печатает именно snapshotServiceName, поэтому подставляем
+    // title строки — он и есть зафиксированное название позиции плана.
+    treatmentPlanItems = (await getTreatmentPlanItemsForPatient(organizationId, patientId)).map(
+      (item): TreatmentPlanItem => ({
+        id: item.id,
+        organizationId: item.organizationId,
+        patientId: item.patientId,
+        visitId: item.visitId ?? null,
+        serviceId: item.serviceId ?? "",
+        snapshotServiceName: item.title,
+        snapshotServiceCategory: null,
+        toothCode: item.toothCode ?? null,
+        quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+        unitPriceRub: Math.max(0, item.unitPriceRub),
+        discountRub: Math.max(0, item.discountRub),
+        status: item.status,
+        plannedDoctorUserId: item.plannedDoctorUserId ?? null,
+        plannedChairId: item.plannedChairId ?? null,
+        notes: item.notes ?? null,
+      })
+    );
   }
   return { clinicProfile: settings.profile, serviceCatalog, payments, treatmentPlanItems };
 }

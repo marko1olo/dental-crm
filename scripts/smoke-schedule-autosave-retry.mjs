@@ -1,8 +1,9 @@
 import fs from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const appSource = [
 	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
-	fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 ].join("\n");
 
 const requiredSnippets = [

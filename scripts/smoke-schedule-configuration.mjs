@@ -2,6 +2,7 @@ import fs, { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "development";
@@ -1381,7 +1382,7 @@ const appSource = [
 			"apps/web/src/components/schedule/NewAppointmentForm.tsx",
 			"utf8",
 		),
-	fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 	fs.readFileSync("apps/web/src/hooks/domains/useAuthLogic.ts", "utf8"),
 	fs.readFileSync("apps/web/src/hooks/domains/usePatientLogic.ts", "utf8"),
 	fs.readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8"),

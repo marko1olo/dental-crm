@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), "dental-patient-admin-"));
 const stateFilePath = path.join(tempRoot, "state.json");
@@ -49,7 +50,7 @@ function assert(condition, message) {
 const appSource =
 	readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8") +
 	"\n" +
-	readFileSync(path.resolve("apps/web/src/useAppLogic.tsx"), "utf8");
+	readAppLogicSourceSync();
 const patientsSource = readFileSync(
 	path.resolve("apps/web/src/PatientsView.tsx"),
 	"utf8",

@@ -2068,6 +2068,36 @@ export function validScheduleTimeZone(
 	}
 }
 
+/**
+ * Сегодняшняя дата в часовом поясе клиники (YYYY-MM-DD).
+ *
+ * БЫЛО: buildDashboard() возвращал жёстко зашитое "2026-05-12". От этого
+ * значения считается вся вкладка «Смена»: какие приёмы показать как сегодняшние,
+ * что просрочено, что закрывать. То есть расписание всегда показывало «сегодня»
+ * 12 мая 2026 года независимо от реальной даты.
+ *
+ * Дата берётся именно в часовом поясе клиники, а не сервера: в Самаре рабочий
+ * день начинается на три часа раньше UTC, и по UTC-дате утренние приёмы
+ * попадали бы во «вчера».
+ */
+export function clinicTodayIso(timeZone: string = clinicProfile.timezone): string {
+	const zone = validScheduleTimeZone(timeZone);
+	try {
+		const parts = new Map(
+			getAppointmentTimeFormatter(zone)
+				.formatToParts(new Date())
+				.map((part) => [part.type, part.value]),
+		);
+		const year = parts.get("year");
+		const month = parts.get("month");
+		const day = parts.get("day");
+		if (year && month && day) return `${year}-${month}-${day}`;
+	} catch {
+		// Ниже — запасной вариант по UTC.
+	}
+	return new Date().toISOString().slice(0, 10);
+}
+
 function assertValidScheduleTimeZone(value: string): void {
 	try {
 		getAppointmentTimeFormatter(value);
@@ -10235,7 +10265,9 @@ export function buildDashboard(): Dashboard {
 
 	return {
 		clinicName: repairMojibakeText(clinicProfile.clinicName),
-		todayIso: "2026-05-12",
+		// БЫЛО: "2026-05-12" — жёстко зашитая дата. Вкладка «Смена» всегда
+		// показывала приёмы за 12 мая 2026 года, а реальный день был пуст.
+		todayIso: clinicTodayIso(),
 		clinicSettings: buildClinicSettings(),
 		shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
 		patients: repairMojibakeDeep(patients),

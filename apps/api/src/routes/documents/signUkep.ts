@@ -26,7 +26,12 @@ export async function register(app: FastifyInstance) {
 		try {
 			// First verify the document exists and is in a state that allows signing
 			const [doc] = await db
-				.select({ status: generatedDocuments.status })
+				.select({
+					status: generatedDocuments.status,
+					// Нужна для проверки повторного подписания ниже: без этой
+					// колонки в выборке doc.cryptoSignaturePkcs7 не существует.
+					cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
+				})
 				.from(generatedDocuments)
 				.where(
 					and(

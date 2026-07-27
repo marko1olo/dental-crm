@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -6,7 +7,7 @@ function assert(condition, message) {
 
 const appSource = [
 	readFileSync("apps/web/src/App.tsx", "utf8"),
-	readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+	readAppLogicSourceSync(),
 ].join("\n");
 const source = appSource;
 const documentsViewSource = readFileSync(

@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 
@@ -151,7 +152,7 @@ assert(
 const appSource = [
 	await import("node:fs").then((fs) => fs.readFileSync(appSourcePath, "utf8")),
 	await import("node:fs").then((fs) =>
-		fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+		readAppLogicSourceSync(),
 	),
 ].join("\n");
 assertSourceContains(
