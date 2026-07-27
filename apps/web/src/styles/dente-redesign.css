@@ -892,9 +892,21 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   font-weight: 700 !important;
 }
 
+/* Активный чип: непрозрачная подложка и явный светлый текст.
+ *
+ * Было только `color: var(--teal)`, а фон оставался полупрозрачным
+ * (--teal-soft, alpha 0.15). Что окажется под ним, зависит от предка, и
+ * там, где предок сам бирюзовый, получался бирюзовый текст на бирюзовом
+ * фоне: чип «0%» в рассрочке на экране оплат, тёмная тема, контраст по
+ * пикселям 1.13 — надпись не видна.
+ *
+ * Непрозрачный --elev убирает зависимость от предка, --teal-2 на нём
+ * даёт контраст около 11:1, бирюзовая рамка сохраняет смысл «выбрано». */
 [data-theme="dark"] .quick-chip.active,
 [data-theme="night"] .quick-chip.active {
-  color: var(--teal) !important;
+  background: var(--elev) !important;
+  border-color: var(--teal) !important;
+  color: var(--teal-2) !important;
 }
 
 select {
