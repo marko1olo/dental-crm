@@ -2503,3 +2503,41 @@ export const migrationReconciliations = pgTable("migration_reconciliations", {
     idxReconciliationRun: index("migration_reconciliations_run_idx").on(table.runId, table.generatedAt)
   };
 });
+
+/**
+ * Одноразовые коды входа в личный кабинет пациента (drizzle/0133).
+ *
+ * Раньше кода входа не существовало как данных: routes/portal.ts сверял ввод с
+ * одной строкой из окружения, а при NODE_ENV != "production" — с литералом
+ * "0000". Один секрет на всех пациентов сразу, без срока годности и без
+ * ограничения числа попыток.
+ *
+ * Хранится только PBKDF2-хеш («соль:хеш» из utils/cryptoHelper.ts). Номер
+ * телефона намеренно не дублируется: он уже есть в patients.phone, а частота
+ * выдачи считается по patientId — код заводится лишь тогда, когда телефон
+ * однозначно сопоставлен ровно одному пациенту.
+ */
+export const portalOtpCodes = pgTable("portal_otp_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  codeHash: text("code_hash").notNull(),
+  /** "sms" — реальная отправка шлюзом; "developer_log" — только вне production. */
+  channel: text("channel").notNull(),
+  /** pending -> sent | failed. Проверке подлежат только строки "sent". */
+  deliveryStatus: text("delivery_status").notNull().default("pending"),
+  deliveryErrorClass: text("delivery_error_class"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxPortalOtpPatient: index("portal_otp_codes_patient_idx").on(
+      table.organizationId,
+      table.patientId,
+      table.createdAt
+    ),
+    idxPortalOtpExpires: index("portal_otp_codes_expires_idx").on(table.expiresAt)
+  };
+});
