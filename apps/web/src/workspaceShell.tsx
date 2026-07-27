@@ -1,5 +1,7 @@
 import type { StaffRole } from "@dental/shared";
+import type { LucideIcon } from "lucide-react";
 import {
+  BarChart3,
   CalendarClock,
   CalendarDays,
   ClipboardCheck,
@@ -9,12 +11,14 @@ import {
   FileCheck2,
   FileText,
   Image as ImageIcon,
+  LayoutDashboard,
+  Megaphone,
   MessageSquare,
   Mic,
   Plus,
   ReceiptText,
-  Sparkles,
   Stethoscope,
+  TrendingUp,
   Users,
   Lock,
   ChevronsLeft} from "lucide-react";
@@ -55,31 +59,59 @@ export const viewHints: Record<AppView, string> = {
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
 
+/*
+ * Раньше это были две цепочки if с общим `return <Sparkles/>` в конце. У «Смены»
+ * и «Маркетинга» своей ветки не было вовсе, у «Аналитики» стояла та же искорка —
+ * и в боковом меню на позициях 1, 8 и 11 подряд оказывались три одинаковых
+ * значка. Подписей рядом нет, значит различить разделы нечем: администратор
+ * запоминает не раздел, а номер позиции сверху.
+ *
+ * Теперь это исчерпывающие Record<AppView, LucideIcon>: ветку нельзя забыть —
+ * без неё не собирается проект, а уникальность значков закрыта тестом
+ * __tests__/workspaceShellNav.test.ts, чтобы три искорки не вернулись.
+ */
+export const sidebarIcons: Record<AppView, LucideIcon> = {
+  shift: LayoutDashboard,
+  schedule: CalendarDays,
+  patients: Users,
+  imaging: ImageIcon,
+  visit: ClipboardList,
+  documents: FileText,
+  finance: CreditCard,
+  analytics: BarChart3,
+  communications: MessageSquare,
+  settings: Database,
+  marketing: Megaphone
+};
+
+/*
+ * Второй набор — для кнопок действия. Он намеренно отличается от бокового меню:
+ * там существительное («Записи» — календарь), здесь глагол («записать» — часы
+ * со стрелкой). Это уже было в коде для schedule/visit/documents/finance,
+ * поэтому shift/analytics/marketing дополнены в той же логике.
+ */
+export const actionIcons: Record<AppView, LucideIcon> = {
+  shift: LayoutDashboard,
+  schedule: CalendarClock,
+  patients: Users,
+  imaging: ImageIcon,
+  visit: ClipboardCheck,
+  documents: FileCheck2,
+  finance: ReceiptText,
+  analytics: TrendingUp,
+  communications: MessageSquare,
+  settings: Database,
+  marketing: Megaphone
+};
+
 function SidebarIcon({ section }: { section: AppView }) {
-  if (section === "schedule") return <CalendarDays aria-hidden="true" />;
-  if (section === "patients") return <Users aria-hidden="true" />;
-  if (section === "imaging") return <ImageIcon aria-hidden="true" />;
-  if (section === "visit") return <ClipboardList aria-hidden="true" />;
-  if (section === "documents") return <FileText aria-hidden="true" />;
-  if (section === "finance") return <CreditCard aria-hidden="true" />;
-  if (section === "analytics") return <Sparkles aria-hidden="true" />;
-  if (section === "communications") return <MessageSquare aria-hidden="true" />;
-  if (section === "settings") return <Database aria-hidden="true" />;
-  if (section === "marketing") return <Sparkles aria-hidden="true" />;
-  return <Sparkles aria-hidden="true" />;
+  const Glyph = sidebarIcons[section];
+  return <Glyph aria-hidden="true" />;
 }
 
 export function ActionIcon({ section }: { section: AppView }) {
-  if (section === "schedule") return <CalendarClock aria-hidden="true" />;
-  if (section === "patients") return <Users aria-hidden="true" />;
-  if (section === "imaging") return <ImageIcon aria-hidden="true" />;
-  if (section === "visit") return <ClipboardCheck aria-hidden="true" />;
-  if (section === "documents") return <FileCheck2 aria-hidden="true" />;
-  if (section === "finance") return <ReceiptText aria-hidden="true" />;
-  if (section === "analytics") return <Sparkles aria-hidden="true" />;
-  if (section === "communications") return <MessageSquare aria-hidden="true" />;
-  if (section === "settings") return <Database aria-hidden="true" />;
-  return <Sparkles aria-hidden="true" />;
+  const Glyph = actionIcons[section];
+  return <Glyph aria-hidden="true" />;
 }
 
 export function getFilteredAppViews(role: StaffRole): AppView[] {
@@ -116,13 +148,45 @@ export function WorkspaceSidebar({
 }) {
   const allowedViews = getFilteredAppViews(role);
 
+  /*
+   * Широкую подпись .nav-copy таблица стилей прячет в двух случаях:
+   * при свернутом меню (dente-redesign.css:354, [data-collapsed="true"]) и на
+   * узких экранах (dente-redesign.css:588, @media max-width 1140px). В обоих
+   * рельса превращалась в столбик безымянных значков — ровно это и снято на
+   * .dente-redesign-shots/desktop_light_patients.png. Свернутое состояние
+   * запоминается в localStorage (App.tsx:945), то есть один случайный клик
+   * оставлял администратора без подписей навсегда.
+   *
+   * Поэтому под значком показываем короткую подпись из того же viewLabels
+   * ровно в этих двух случаях. Значок и подписи лежат в одной обертке, чтобы
+   * у .nav-item был единственный ребенок: заданный в CSS зазор 11px между
+   * детьми тогда не участвует в раскладке и вертикальный ритм задается здесь.
+   *
+   * Классы — утилиты Tailwind; они лежат в @layer utilities и по правилам
+   * каскада проигрывают рукописному CSS проекта, поэтому назначаются только
+   * свойствам, которых ни один селектор проекта у этих элементов не задает
+   * (см. пояснение в styles/tailwind.css). Цвет наследуется от .nav-item,
+   * то есть темы light/dark/night работают без единого статичного цвета.
+   */
+  const navSlotClass = collapsed
+    ? "flex w-full min-w-0 flex-col items-center gap-[0.1875rem] text-center"
+    : "flex w-full min-w-0 items-center gap-[0.6875rem] max-[1140px]:flex-col max-[1140px]:gap-[0.1875rem] max-[1140px]:text-center";
+  const navCaptionClass = collapsed
+    ? "block max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words"
+    : "hidden max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words max-[1140px]:block";
+
   return (
-    <aside className="sidebar" aria-label="Навигация" data-collapsed={collapsed}>
+    <aside className="sidebar" data-collapsed={collapsed}>
       <div className="brand-mark">
         <Stethoscope aria-hidden="true" />
         <span>DENTE</span>
       </div>
-      <nav>
+      {/*
+        Имя ориентира переехало с <aside> на <nav>: программа чтения с экрана
+        объявляла «Навигация» на дополнительном блоке, а сам список разделов
+        оставался безымянным ориентиром. Двух подписей не заводим.
+      */}
+      <nav aria-label="Навигация">
         {appViews.map((view) =>
           allowedViews.includes(view) ? (
             <a
@@ -136,10 +200,13 @@ export function WorkspaceSidebar({
               onFocus={() => onViewIntent?.(view)}
               onTouchStart={() => onViewIntent?.(view)}
             >
-              <SidebarIcon section={view} />
-              <span className="nav-copy">
-                <span className="nav-label">{viewLabels[view]}</span>
-                <small>{viewHints[view]}</small>
+              <span className={navSlotClass}>
+                <SidebarIcon section={view} />
+                <span className="nav-copy">
+                  <span className="nav-label">{viewLabels[view]}</span>
+                  <small>{viewHints[view]}</small>
+                </span>
+                <span className={navCaptionClass}>{viewLabels[view]}</span>
               </span>
             </a>
           ) : null
