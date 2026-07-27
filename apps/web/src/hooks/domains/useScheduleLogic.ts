@@ -629,6 +629,7 @@ export function useScheduleLogic({
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
+			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
 		);
 		if (missing.length) {
 			const message = `Перед сохранением записи: ${missing.join("; ")}.`;
@@ -725,6 +726,7 @@ export function useScheduleLogic({
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
+			{ chairs: dashboard?.clinicSettings?.chairs, patients: dashboard?.patients },
 		);
 	}
 

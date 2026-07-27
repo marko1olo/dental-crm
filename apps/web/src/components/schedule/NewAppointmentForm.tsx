@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ChangeEvent } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Plus, Bot } from "lucide-react";
+import { appointmentScheduleMissingFields, type AppointmentScheduleDraft } from "../../AppHelpers";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { DictationHints } from "../../DictationHints";
 import { SmartParsePreview } from "../../SmartParsePreview";
@@ -46,21 +47,21 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   const [smartParsedData, setSmartParsedData] = useState<unknown>(null);
   const [showHints, setShowHints] = useState(false);
 
-  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt as string);
-  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt as string);
-  const newAppointmentMissingSteps = [
-    !newAppointmentDraft.patientId ? "выберите пациента" : null,
-    !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
-    dashboard.clinicSettings.profile.mode !== "solo_doctor" && (dashboard.clinicSettings?.staff ?? []).some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
-    !newAppointmentDraft.chairId ? "выберите кресло" : null,
-    !String(newAppointmentDraft.startsAt || '').trim() ? "Укажите начало приема" : null,
-    String(newAppointmentDraft.startsAt || '').trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "Проверьте время начала" : null,
-    !String(newAppointmentDraft.endsAt || '').trim() ? "Укажите окончание приема" : null,
-    String(newAppointmentDraft.endsAt || '').trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "Проверьте время окончания" : null,
-    Number.isFinite(newAppointmentStartsAtMs) && Number.isFinite(newAppointmentEndsAtMs) && newAppointmentEndsAtMs <= newAppointmentStartsAtMs
-      ? "окончание должно быть позже начала"
-      : null
-  ].filter((step): step is string => Boolean(step));
+  /*
+    Правило «чего не хватает записи» одно на всё приложение и лежит в
+    appointmentScheduleMissingFields. Здесь была четвёртая по счёту копия
+    того же перечня — со своими формулировками («Проверьте время начала»
+    против «проверьте дату начала»), из-за чего подсказка у кнопки и текст
+    ошибки при сохранении говорили по-разному об одном и том же. И ни одна из
+    копий не различала «не выбрано» от «в клинике вообще нет»: клиника без
+    кресел получала указание «выберите кресло» при пустом списке.
+  */
+  const newAppointmentMissingSteps = appointmentScheduleMissingFields(
+    newAppointmentDraft as AppointmentScheduleDraft,
+    dashboard.clinicSettings.profile.mode,
+    dashboard.clinicSettings?.staff,
+    { chairs: dashboard.clinicSettings?.chairs, patients: dashboard.patients }
+  );
   const newAppointmentReadyToCreate = newAppointmentMissingSteps.length === 0;
 
   return (

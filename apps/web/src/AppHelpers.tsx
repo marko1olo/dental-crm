@@ -4556,12 +4556,56 @@ export function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDr
   ].filter((step): step is string => Boolean(step));
 }
 
-export function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined, staff: Dashboard["clinicSettings"]["staff"] | null | undefined): string[] {
+/**
+ * Чего не хватает записи, человеческими словами.
+ *
+ * Различает «не выбрано» и «в клинике вообще нет». Раньше клиника без кресел
+ * получала подсказку «выберите кресло» при пустом списке кресел: указание,
+ * которое невозможно выполнить, и кнопка создания заперта без объяснения, куда
+ * идти. То же с врачом и пациентами у только что заведённой клиники.
+ *
+ * `resources` необязателен: без него поведение прежнее.
+ */
+export function appointmentScheduleMissingFields(
+  draft: AppointmentScheduleDraft,
+  clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined,
+  staff: Dashboard["clinicSettings"]["staff"] | null | undefined,
+  resources?: {
+    chairs?: Dashboard["clinicSettings"]["chairs"] | null;
+    patients?: Dashboard["patients"] | null;
+  }
+): string[] {
   const missing: string[] = [];
-  if (!draft.patientId) missing.push("выберите пациента");
-  if (!draft.doctorUserId) missing.push("выберите врача");
-  if (clinicMode !== "solo_doctor" && (staff || []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId) missing.push("выберите ассистента");
-  if (!draft.chairId) missing.push("выберите кресло");
+  const activeStaff = (staff || []).filter((member) => member.active);
+  const hasDoctor = activeStaff.some((member) => member.role === "doctor" || member.role === "owner");
+  const hasAssistant = activeStaff.some((member) => member.role === "assistant");
+  const activeChairs = resources?.chairs ? resources.chairs.filter((chair) => chair.active) : null;
+  const patients = resources?.patients ?? null;
+
+  if (!draft.patientId) {
+    missing.push(
+      patients && patients.length === 0
+        ? "в клинике ещё нет пациентов — создайте карточку в разделе «Пациенты»"
+        : "выберите пациента"
+    );
+  }
+  if (!draft.doctorUserId) {
+    missing.push(
+      staff && !hasDoctor
+        ? "в клинике нет врача — добавьте сотрудника в настройках"
+        : "выберите врача"
+    );
+  }
+  if (clinicMode !== "solo_doctor" && hasAssistant && !draft.assistantUserId) {
+    missing.push("выберите ассистента");
+  }
+  if (!draft.chairId) {
+    missing.push(
+      activeChairs && activeChairs.length === 0
+        ? "в клинике нет кресел — добавьте кресло в настройках"
+        : "выберите кресло"
+    );
+  }
   missing.push(...appointmentScheduleDateMissingSteps(draft));
   return missing;
 }

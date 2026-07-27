@@ -5,6 +5,7 @@ import { CancellationReasonsTwoLevelWidget } from "./components/schedule/Cancell
 import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { EmptyState } from "./components/EmptyState";
+import { appointmentScheduleMissingFields } from "./AppHelpers";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
@@ -260,23 +261,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     }
   };
 
-  const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) => {
-    const startsAtMs = Date.parse(draft.startsAt);
-    const endsAtMs = Date.parse(draft.endsAt);
-    return [
-      !draft.patientId ? "выберите пациента" : null,
-      !draft.doctorUserId ? "выберите врача" : null,
-      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
-      !draft.chairId ? "выберите кресло" : null,
-      !draft.startsAt.trim() ? "укажите начало приема" : null,
-      draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
-      !draft.endsAt.trim() ? "укажите окончание приема" : null,
-      draft.endsAt.trim() && !Number.isFinite(endsAtMs) ? "проверьте дату окончания приема" : null,
-      Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs <= startsAtMs
-        ? "окончание приема должно быть позже начала"
-        : null
-    ].filter((step): step is string => Boolean(step));
-  };
+  /*
+    Одно правило на всю запись. Здесь и ниже в списке приёмов лежали ещё две
+    копии того же перечня «чего не хватает» — с расхождениями в тексте
+    («проверьте дату начала» против «проверьте дату начала приема») и без
+    различения «не выбрано» и «в клинике вообще нет». Правило живёт в
+    appointmentScheduleMissingFields, оттуда же его берёт сохранение.
+  */
+  const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) =>
+    appointmentScheduleMissingFields(
+      draft,
+      dashboard.clinicSettings.profile.mode,
+      dashboard.clinicSettings.staff,
+      { chairs: dashboard.clinicSettings.chairs, patients: dashboard.patients }
+    );
   const todayScheduleDate = () => toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10);
   const resetScheduleFilters = () => {
     setScheduleDateFilter("");
@@ -617,19 +615,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 const startsAtMs = Date.parse(draft.startsAt);
                 const endsAtMs = Date.parse(draft.endsAt);
                 
-                const missingSteps = [
-                  !draft.patientId ? 'выберите пациента' : null,
-                  !draft.doctorUserId ? 'выберите врача' : null,
-                  dashboard.clinicSettings.profile.mode !== 'solo_doctor' && dashboard.clinicSettings.staff.some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
-                  !draft.chairId ? 'выберите кресло' : null,
-                  !draft.startsAt.trim() ? 'укажите начало приема' : null,
-                  draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? 'проверьте дату начала' : null,
-                  !draft.endsAt.trim() ? 'укажите окончание приема' : null,
-                  draft.endsAt.trim() && !Number.isFinite(endsAtMs) ? 'проверьте дату окончания' : null,
-                  Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs <= startsAtMs
-                    ? 'окончание должно быть позже начала'
-                    : null
-                ].filter((step) => Boolean(step));
+                const missingSteps = appointmentDraftMissingSteps(draft);
                 const readyToSave = missingSteps.length === 0 && dirty;
 
                 return (
