@@ -11,6 +11,7 @@ import { AppointmentChannelInheritancesWidget } from "./components/communication
 import { ChatMessageDispatchStatusesWidget } from "./components/communications/ChatMessageDispatchStatusesWidget";
 import { CollaborativeChatProcessingStatesWidget } from "./components/communications/CollaborativeChatProcessingStatesWidget";
 import { MessageTemplateCatalogsWidget } from "./components/communications/MessageTemplateCatalogsWidget";
+import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
 import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
 import { PreviousChatDialogHistoriesWidget } from "./components/communications/PreviousChatDialogHistoriesWidget";
 import { UisCallSpeechTranscriptsWidget } from "./components/communications/UisCallSpeechTranscriptsWidget";
@@ -323,6 +324,14 @@ export function CommunicationsView({
           ))}
         </div>
       </div>
+
+      {/*
+        Пульт отправки. Всё, что ниже в этом разделе, — списки, которые ничего
+        не отправляют: до появления очереди сообщений отправки в проекте не
+        существовало вообще. Здесь настоящие шлюзы, журнал с причиной отказа,
+        редактор шаблонов и правила рассылки.
+      */}
+      <MessageDeliveryConsole />
 
       <div className="communication-layout">
         <section className="communication-task-list" aria-label="Очередь связи">
