@@ -200,12 +200,28 @@ export async function resolveRecipientAddress(
 	}
 
 	const [patient] = await db
-		.select({ phone: patients.phone, email: patients.email })
+		.select({ phone: patients.phone, email: patients.email, notes: patients.notes })
 		.from(patients)
 		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
 		.limit(1);
 
 	if (!patient) return { address: null, reason: "Пациент не найден в этой организации." };
+
+	if (channel === "max") {
+		/*
+		 * В MAX бот не пишет первым: диалог начинает пациент, и его идентификатор
+		 * приходит во входящем событии. Разбор входящих оставляет метку
+		 * `MAX:<chat_id>` в заметках карточки — отсюда и берётся адрес. Раньше в
+		 * это поле подставлялся телефон, то есть заведомо непригодное значение.
+		 */
+		const mark = /MAX:(-?\d{1,19})/.exec(patient.notes ?? "");
+		return mark?.[1]
+			? { address: mark[1], reason: null }
+			: {
+					address: null,
+					reason: "У пациента нет переписки в MAX: бот не может написать первым, диалог начинает пациент."
+				};
+	}
 
 	if (channel === "email") {
 		const email = patient.email?.trim() ?? "";

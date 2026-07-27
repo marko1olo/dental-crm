@@ -13,8 +13,14 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { denteTelegramBotConfigs, denteTelegramChatLinks, denteWhatsappBotConfigs } from "../../db/schema.js";
+import {
+	denteMaxBotConfigs,
+	denteTelegramBotConfigs,
+	denteTelegramChatLinks,
+	denteWhatsappBotConfigs
+} from "../../db/schema.js";
 import { sendEmail, readSmtpCredentialsFromEnv, type SmtpCredentials } from "../../emailTransport.js";
+import { parseMaxRecipient, sendMaxTextMessage } from "../../maxTransport.js";
 import { readSmsCredentialsFromEnv, sendSms, type SmsCredentials } from "../../smsTransport.js";
 import { sendTelegramTextMessage } from "../../telegramTransport.js";
 import { decryptTelegramChatId } from "../../utils/telegramChatRef.js";
@@ -49,6 +55,12 @@ export type ChannelCredentialSet = {
 	readonly smtp: SmtpCredentials | null;
 	readonly whatsapp: WhatsappCredentials | null;
 	readonly telegramBotToken: string | null;
+	/**
+	 * Токен бота MAX. Берётся из колонки max_bot_token и только при включённой
+	 * интеграции: token_secret_ref для этого не годится — туда соседние
+	 * интеграции кладут маскированное значение.
+	 */
+	readonly maxBotToken: string | null;
 };
 
 /**
@@ -89,12 +101,20 @@ export async function resolveChannelCredentials(
 		.where(eq(denteTelegramBotConfigs.organizationId, organizationId))
 		.limit(1);
 
+	const [maxConfig] = await db
+		.select({ token: denteMaxBotConfigs.maxBotToken, isActive: denteMaxBotConfigs.isActive })
+		.from(denteMaxBotConfigs)
+		.where(eq(denteMaxBotConfigs.organizationId, organizationId))
+		.limit(1);
+
 	return {
 		sms: readSmsCredentialsFromEnv(env),
 		smtp: readSmtpCredentialsFromEnv(env),
 		// Неактивная интеграция — это «не настроено», а не «настроено и молчит».
 		whatsapp: whatsappConfig?.isActive ? readWhatsappCredentials(whatsappConfig) : null,
-		telegramBotToken: readTelegramBotToken(telegramConfig?.mode ?? null, env)
+		telegramBotToken: readTelegramBotToken(telegramConfig?.mode ?? null, env),
+		// Выключенная интеграция — это «не настроено», а не «настроено и молчит».
+		maxBotToken: maxConfig?.isActive ? maxConfig.token?.trim() || null : null
 	};
 }
 
@@ -195,10 +215,45 @@ export async function sendThroughChannel(
 					};
 		}
 
+		case "max": {
+			if (!credentials.maxBotToken) {
+				return notConfigured("Бот MAX не подключён: в настройках клиники нет токена или интеграция выключена.");
+			}
+
+			// Адрес приходит из метки MAX:<chat_id>, оставленной разбором входящих.
+			// Телефон или почта в этом поле означают, что связи с чатом нет.
+			const recipient = parseMaxRecipient(request.recipientAddress);
+			if (!recipient) {
+				return notConfigured(
+					"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал."
+				);
+			}
+
+			const result = await sendMaxTextMessage({
+				botToken: credentials.maxBotToken,
+				recipient,
+				text: request.body
+			});
+
+			return result.ok
+				? { ok: true, providerMessageId: result.providerMessageId, segments: null }
+				: {
+						ok: false,
+						errorClass: result.errorClass,
+						errorMessage: result.errorMessage
+					};
+		}
+
 		case "vk":
-		case "max":
+			/*
+			 * ДОЛГ, А НЕ ЗАГЛУШКА-ОБМАНКА. В проекте нет ни одного обращения к API
+			 * VK, нет колонки под токен сообщества и нет разбора входящих оттуда:
+			 * реализовать отправку означало бы выдумать и контракт, и место
+			 * хранения ключа. Канал честно сообщает, что не настроен, и сообщение
+			 * не теряется — оно видно в журнале с этой причиной.
+			 */
 			return notConfigured(
-				`Отправка в ${request.channel === "vk" ? "VK" : "MAX"} не реализована. Сообщение не отправлено.`
+				"Отправка во ВКонтакте не подключена: нет ни ключа сообщества, ни разбора входящих. Выберите другой канал."
 			);
 
 		case "phone":
