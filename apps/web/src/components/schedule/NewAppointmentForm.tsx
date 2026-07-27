@@ -248,7 +248,23 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             {newAppointmentReadyToCreate ? (
               <span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs">✓ Готово к созданию</span>
             ) : (
-              <span className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs">Заполните поля</span>
+              /* БЫЛО: «Заполните поля» — какие именно, не сказано. Подробный
+                 список «Чтобы создать запись, осталось…» в компоненте есть, но
+                 он лежит внизу формы ручного ввода, а она по умолчанию свёрнута:
+                 пользователь его просто не видит и гадает, чего не хватает.
+                 Показываем нехватку прямо у кнопки. Длинный список не влезет в
+                 строку, поэтому первые два пункта словами, остальное числом, а
+                 полный список остаётся в подсказке. */
+              <span
+                className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs"
+                title={`Осталось: ${newAppointmentMissingSteps.join("; ")}`}
+              >
+                {(() => {
+                  const shown = newAppointmentMissingSteps.slice(0, 2).join(", ");
+                  const rest = newAppointmentMissingSteps.length - 2;
+                  return rest > 0 ? `Осталось: ${shown} и ещё ${rest}` : `Осталось: ${shown}`;
+                })()}
+              </span>
             )}
             <button
               type="button"
