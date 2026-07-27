@@ -2,15 +2,26 @@ import { test, describe, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import Fastify from "fastify";
 import * as visits from "./visits.js";
-import * as accessGuard from "../accessGuard.js";
+import { TOKEN_SECRET } from "./auth.js";
+import { signToken } from "../utils/cryptoHelper.js";
 
 describe("visits routes - accept visit draft errors", () => {
   let app: ReturnType<typeof Fastify>;
+  let clinicHeaders: Record<string, string>;
 
   beforeEach(async () => {
     process.env.NODE_ENV = "test";
     delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
     process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
+
+    // Маршрут сам проверяет x-dente-clinic-token и отдаёт 401 ещё до
+    // requireClinicalMutationAccess, поэтому послаблений guard'а недостаточно.
+    clinicHeaders = {
+      "x-dente-clinic-token": signToken(
+        { organizationId: "123e4567-e89b-12d3-a456-4266141740ff" },
+        TOKEN_SECRET(),
+      ),
+    };
 
     app = Fastify();
     await app.register(visits.registerVisitRoutes);
@@ -22,15 +33,15 @@ describe("visits routes - accept visit draft errors", () => {
   });
 
   test("accept visit draft visit not found error path", async () => {
-    // `mock.method` cannot redefine the property imported by the ESM loader sometimes because it's non-configurable.
-    // However, since `process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS` is strictly set to "1"
-    // and `process.env.NODE_ENV` is "test", the function `requireClinicalMutationAccess` returns `true` natively without a mock.
-    // So we don't need to mock it at all!
+    // requireClinicalMutationAccess пропускает запрос сам, без подмены:
+    // DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS=1 и NODE_ENV != production.
+    // Но перед ним стоит проверка токена кабинета, поэтому нужен заголовок.
 
     const fakeUuid = "00000000-0000-0000-0000-000000000000";
     const response = await app.inject({
       method: "POST",
       url: `/api/visits/${fakeUuid}/draft/accept`,
+      headers: clinicHeaders,
       payload: {
         visitId: fakeUuid,
         draft: {
