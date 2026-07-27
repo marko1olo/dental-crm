@@ -17,6 +17,8 @@ export const migrationRunStatusSchema = z.enum([
   "staging",
   "mapping",
   "validated",
+  /** Оператор запустил выполнение; фоновый воркер ещё не взял прогон. */
+  "queued",
   "loading",
   "completed",
   "completed_with_quarantine",

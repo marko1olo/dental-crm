@@ -158,14 +158,26 @@ export function profileColumn(name: string, index: number, rows: string[][]): Co
 
     /**
      * Имя человека проверяется строже, чем нормализатором: тот принимает одно
-     * слово, а признаком колонки ФИО служат два-три слова из букв. Иначе
+     * слово, а признаком колонки ФИО служат несколько именных токенов. Иначе
      * колонка «Город» получит высокую долю «имён».
+     *
+     * Именным считается либо слово из букв, либо инициалы. Инициалы обязательны:
+     * «Иванов И.И.» — самая частая форма записи ФИО в российских системах
+     * первого поколения, где под ФИО отводили тридцать символов. Правило «все
+     * токены из букв» отвергало такую колонку целиком, и перенос отказывался
+     * заводить пациентов, у которых имя есть.
+     *
+     * Один посторонний токен допускается: выгрузки содержат «Иванов И.И. 2» для
+     * различения однофамильцев и «Петрова (Сидорова) Анна» после смены фамилии.
      */
     const nameParsed = normalizeNameValue(value);
     if (nameParsed.value !== null) {
       const words = nameParsed.value.fullName.split(/\s+/).filter(Boolean);
-      const lettersOnly = words.every((word) => /^[\p{L}][\p{L}'-]*$/u.test(word));
-      if (words.length >= 2 && words.length <= 4 && lettersOnly) nameOk += 1;
+      const nameLike = words.filter(
+        (word) => /^[\p{L}][\p{L}'’-]*$/u.test(word) || /^(?:[\p{L}]\.){1,3}$/u.test(word)
+      ).length;
+      const foreign = words.length - nameLike;
+      if (nameLike >= 2 && words.length <= 5 && foreign <= 1) nameOk += 1;
     }
   }
 

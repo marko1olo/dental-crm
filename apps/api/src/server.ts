@@ -13,6 +13,8 @@ import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
+import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
+import { startMigrationWorker, stopMigrationWorker } from "./migration/worker.js";
 // Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
@@ -216,7 +218,12 @@ function publicApiErrorMessage(error: unknown, statusCode: number): string {
   return fallbackApiErrorMessage(statusCode);
 }
 
-export async function createDenteApiApp(options: { startTelegramWorker?: boolean; startCommunicationWorker?: boolean } = {}) {
+export async function createDenteApiApp(options: {
+  startTelegramWorker?: boolean;
+  startCommunicationWorker?: boolean;
+  /** Фоновое выполнение переноса чужой базы. Тесты выключают, чтобы не гонять очередь. */
+  startMigrationWorker?: boolean;
+} = {}) {
   const app = Fastify({
     logger: {
       level: process.env.NODE_ENV === "production" ? "info" : "debug",
@@ -353,6 +360,8 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerImportRoutes(app);
   // Движок переноса чужой базы: стейджинг, карантин, сверка, откат.
   await registerMigrationRoutes(app);
+  // Оркестрация по фазам для больших выгрузок: заливка потоком, очередь, воркер.
+  await registerMigrationRunRoutes(app);
   // Зубная формула и история зуба. Оба модуля были написаны, но ни разу не
   // зарегистрированы: Fastify отвечал «Route POST:/api/patients/:id/
   // tooth-states/batch not found», поэтому состояния зубов физически не могли
@@ -476,6 +485,21 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
         communicationWorker.stop();
       });
     }
+  }
+
+  /**
+   * Фоновое выполнение переноса чужой базы.
+   *
+   * Без него прогон, поставленный в очередь маршрутом /execute, никто не возьмёт,
+   * и оператор будет бесконечно видеть статус «в очереди». На старте воркер
+   * подбирает прогоны, брошенные предыдущим экземпляром процесса, и продолжает
+   * их с оставшихся строк стейджинга.
+   */
+  if (options.startMigrationWorker !== false) {
+    await startMigrationWorker();
+    app.addHook("onClose", async () => {
+      stopMigrationWorker();
+    });
   }
 
   return app;

@@ -2251,6 +2251,8 @@ export const migrationRunStatus = pgEnum("migration_run_status", [
   "staging",
   "mapping",
   "validated",
+  /** Оператор запустил выполнение; фоновый воркер ещё не взял прогон (0128). */
+  "queued",
   "loading",
   "completed",
   "completed_with_quarantine",
@@ -2353,6 +2355,22 @@ export const migrationRuns = pgTable("migration_runs", {
   finishedAt: timestamp("finished_at", { withTimezone: true }),
   errorClass: text("error_class"),
   errorMessage: text("error_message"),
+  // ---- Асинхронное выполнение (миграция 0129) ----
+  /** Человекочитаемая фаза: «Укладка строк», «Загрузка платежей». */
+  phase: text("phase"),
+  /** Процесс-владелец: хост и pid. Пусто — прогон никем не занят. */
+  workerId: text("worker_id"),
+  /** Отметка живучести владельца. Устаревшая означает, что процесс умер. */
+  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true }),
+  queuedAt: timestamp("queued_at", { withTimezone: true }),
+  /** Путь к временному файлу источника: фазы не требуют повторной заливки. */
+  uploadPath: text("upload_path"),
+  uploadFileName: text("upload_file_name"),
+  /** Прогресс считается по стейджингу — верен и после перезапуска процесса. */
+  progressTotal: integer("progress_total").notNull().default(0),
+  progressDone: integer("progress_done").notNull().default(0),
+  /** Сколько раз прогон подбирался после падения владельца. */
+  resumeCount: integer("resume_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => {

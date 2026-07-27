@@ -648,27 +648,56 @@ export async function loadPatients(input: {
 
             if (match && match.verdict.action === "needs_review") {
               /**
-               * Похоже, но недостаточно, чтобы сливать. Создавать карточку тоже
-               * рискованно: возможно, это тот же человек. Строка уходит в карантин
-               * на решение человека — единственный честный выход.
+               * Похоже, но недостаточно, чтобы сливать автоматически. Что делать
+               * дальше, зависит от того, есть ли у источника собственный ключ.
+               *
+               * ЕСТЬ КЛЮЧ (externalId). Старая система присвоила этим записям
+               * разные первичные ключи, то есть считает их разными людьми. Её
+               * решение — это данные, а не шум: уважаем структуру источника,
+               * карточку создаём, а сходство отмечаем НЕблокирующим
+               * предупреждением для последующего разбора.
+               *
+               * Раньше здесь стояла блокировка без этого различия, и на реальной
+               * выгрузке, где однофамильцы с одинаковой датой рождения — обычное
+               * дело, в карантин уезжало большинство базы. Перенос, отложивший
+               * 85% пациентов «на разбор», клиника не примет, и правильно
+               * сделает: мы не нашли ошибку, мы отказались от работы.
+               *
+               * НЕТ КЛЮЧА. Опереться не на что, кроме сходства, и создание
+               * второй карточки было бы догадкой. Строка уходит в карантин.
                */
-              outcome.issuesByStagingId.set(row.stagingId, {
-                reason: "duplicate_conflict",
-                blocking: true,
-                fieldPath: null,
-                message: `Возможный дубль существующей карточки: совпадение ${Math.round(
-                  match.verdict.score * 100
-                )}% (${match.verdict.rationale}). Автоматическое слияние не выполнено.`,
-                suggestedFix:
-                  "Сравните карточки и решите: слить с существующей либо создать новую. Оба действия доступны из карантина."
-              });
-              if (!input.dryRun) {
-                await sp
-                  .update(migrationStagingRecords)
-                  .set({ status: "quarantined", updatedAt: new Date() })
-                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              const sourceKnowsThemApart = Boolean(externalId);
+
+              if (sourceKnowsThemApart) {
+                outcome.issuesByStagingId.set(row.stagingId, {
+                  reason: "duplicate_conflict",
+                  blocking: false,
+                  fieldPath: null,
+                  message: `Похоже на существующую карточку (совпадение ${Math.round(
+                    match.verdict.score * 100
+                  )}%: ${match.verdict.rationale}), но в старой системе это отдельная запись с ключом «${externalId}». Карточка создана; проверьте, не дубль ли это.`,
+                  suggestedFix: "Сравните карточки и при необходимости слейте их штатным слиянием пациентов."
+                });
+                // Дальше строка идёт обычным путём создания.
+              } else {
+                outcome.issuesByStagingId.set(row.stagingId, {
+                  reason: "duplicate_conflict",
+                  blocking: true,
+                  fieldPath: null,
+                  message: `Возможный дубль существующей карточки: совпадение ${Math.round(
+                    match.verdict.score * 100
+                  )}% (${match.verdict.rationale}). В источнике нет собственного ключа записи, поэтому решение оставлено человеку.`,
+                  suggestedFix:
+                    "Сравните карточки и решите: слить с существующей либо создать новую. Оба действия доступны из карантина."
+                });
+                if (!input.dryRun) {
+                  await sp
+                    .update(migrationStagingRecords)
+                    .set({ status: "quarantined", updatedAt: new Date() })
+                    .where(eq(migrationStagingRecords.id, row.stagingId));
+                }
+                return;
               }
-              return;
             }
 
             // ---- Новый пациент.
