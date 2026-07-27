@@ -12,6 +12,19 @@ import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
+// Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
+// отвечали 404, то есть функциональность существовала только в исходниках.
+import { registerFilesRoutes } from "./routes/files.js";
+import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
+import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
+import { registerInsuranceRoutes } from "./routes/insurance.js";
+import { registerLabRoutes } from "./routes/lab.js";
+import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerMaxRoutes } from "./routes/max.js";
+import { registerSterilizationRoutes } from "./routes/sterilization.js";
+import { registerVkRoutes } from "./routes/vk.js";
+import { registerWaitlistRoutes } from "./routes/waitlist.js";
+import { registerWhatsappRoutes } from "./routes/whatsapp.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientRoutes } from "./routes/patients.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
@@ -327,6 +340,22 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   // сохраниться, а вкладка «История зуба» не имела источника данных.
   await registerOdontogramRoutes(app);
   await registerToothHistoryRoutes(app);
+  // Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
+  // ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
+  // файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.
+  // Проверено на дубли: среди 225 объявленных путей пересечений с уже
+  // работающими маршрутами нет.
+  await registerFilesRoutes(app);
+  await registerFamilyFinanceRoutes(app);
+  await registerImagingPlanningRoutes(app);
+  await registerInsuranceRoutes(app);
+  await registerLabRoutes(app);
+  await registerLeadsRoutes(app);
+  await registerMaxRoutes(app);
+  await registerSterilizationRoutes(app);
+  await registerVkRoutes(app);
+  await registerWaitlistRoutes(app);
+  await registerWhatsappRoutes(app);
   await registerPatientRoutes(app);
   await registerPricelistRoutes(app);
   await registerScheduleRoutes(app);
