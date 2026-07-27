@@ -19,9 +19,41 @@ function useInMemory(): boolean {
 	return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
+/**
+ * Отметка времени из строки таблицы в ISO-строку.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНАЯ ФУНКЦИЯ: раньше здесь стояло `p.createdAt.toISOString()`, и
+ * строка без этого поля роняла запрос с «Cannot read properties of undefined
+ * (reading 'toISOString')» изнутри Array.map — по такому сообщению невозможно
+ * понять, ни какой пациент, ни какое поле. Драйвер к тому же отдаёт timestamptz
+ * то объектом Date, то строкой, в зависимости от пути (RETURNING, JSON-обмен
+ * между процессами), поэтому оба вида принимаются, а отсутствие значения
+ * называется прямо.
+ */
+function rowTimestampToIso(value: unknown, field: string, patientId: unknown): string {
+	if (value instanceof Date) {
+		if (Number.isNaN(value.getTime())) {
+			throw new Error(`Пациент ${String(patientId)}: поле ${field} содержит недопустимую дату.`);
+		}
+		return value.toISOString();
+	}
+	if (typeof value === "string" && value.trim()) {
+		const parsed = new Date(value);
+		if (Number.isNaN(parsed.getTime())) {
+			throw new Error(`Пациент ${String(patientId)}: поле ${field} не разбирается как дата: ${value}`);
+		}
+		return parsed.toISOString();
+	}
+	throw new Error(
+		`Пациент ${String(patientId)}: в строке таблицы нет поля ${field}. ` +
+			"Карточка не собрана: подставлять текущее время нельзя, оно исказит историю."
+	);
+}
+
 /** Maps a Drizzle $inferSelect row to a validated Patient DTO via Zod parse.
- *  No type assertions — Zod validates at the DB/API boundary and returns the typed object. */
-function rowToPatient(p: typeof schema.patients.$inferSelect): Patient {
+ *  No type assertions — Zod validates at the DB/API boundary and returns the typed object.
+ *  Экспортируется, чтобы преобразование строки проверялось тестом напрямую. */
+export function rowToPatient(p: typeof schema.patients.$inferSelect): Patient {
 	return patientSchema.parse({
 		id: p.id,
 		organizationId: p.organizationId,
@@ -33,8 +65,8 @@ function rowToPatient(p: typeof schema.patients.$inferSelect): Patient {
 		notes: p.notes,
 		administrativeProfile: p.administrativeProfile ?? null,
 		balanceRub: 0,
-		createdAt: p.createdAt.toISOString(),
-		updatedAt: p.updatedAt.toISOString(),
+		createdAt: rowTimestampToIso(p.createdAt, "created_at", p.id),
+		updatedAt: rowTimestampToIso(p.updatedAt, "updated_at", p.id),
 	});
 }
 

@@ -5,6 +5,7 @@ import {
 	getPatientsFromDb,
 	updatePatientInDb,
 	updatePatientAdministrativeProfileInDb,
+	rowToPatient,
 } from "../../db/patientsQuery.js";
 import { db } from "../../db/client.js";
 
@@ -171,4 +172,67 @@ describe("patientsQuery: сбой базы не подменяется памя�
 		const patient = await updatePatientInDb(ORG, PATIENT, { fullName: "Чужой" } as never);
 		assert.equal(patient, null);
 	});
+});
+
+test("строка без отметок времени называет пациента и поле, а не роняет map", () => {
+	// БЫЛО: `p.createdAt.toISOString()` на строке без этого поля давало
+	// «Cannot read properties of undefined (reading 'toISOString')» изнутри
+	// Array.map — по такому сообщению не понять ни пациента, ни поле.
+	const brokenRow = {
+		id: "123e4567-e89b-12d3-a456-426614174000",
+		organizationId: "123e4567-e89b-12d3-a456-4266141740ff",
+		status: "active",
+		fullName: "Тестов Тест",
+		birthDate: null,
+		phone: null,
+		email: null,
+		notes: null,
+		administrativeProfile: null,
+		familyGroupId: null,
+		isSynced: false,
+		version: 1,
+		updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+	} as unknown as Record<string, unknown>;
+
+	assert.throws(
+		() => rowToPatient(brokenRow),
+		(error: unknown) =>
+			error instanceof Error &&
+			error.message.includes("123e4567-e89b-12d3-a456-426614174000") &&
+			error.message.includes("created_at"),
+	);
+});
+
+test("отметку времени принимает и строкой, и объектом Date", () => {
+	// Драйвер отдаёт timestamptz по-разному в зависимости от пути:
+	// RETURNING, обмен JSON между процессами.
+	const asDate = rowToPatient({
+		id: "123e4567-e89b-12d3-a456-426614174001",
+		organizationId: "123e4567-e89b-12d3-a456-4266141740ff",
+		status: "active",
+		fullName: "Тестов Тест",
+		birthDate: null,
+		phone: null,
+		email: null,
+		notes: null,
+		administrativeProfile: null,
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+	} as never);
+	assert.equal(asDate.createdAt, "2026-01-01T00:00:00.000Z");
+
+	const asString = rowToPatient({
+		id: "123e4567-e89b-12d3-a456-426614174002",
+		organizationId: "123e4567-e89b-12d3-a456-4266141740ff",
+		status: "active",
+		fullName: "Тестов Тест",
+		birthDate: null,
+		phone: null,
+		email: null,
+		notes: null,
+		administrativeProfile: null,
+		createdAt: "2026-01-01T00:00:00.000Z",
+		updatedAt: "2026-01-02T00:00:00.000Z",
+	} as never);
+	assert.equal(asString.updatedAt, "2026-01-02T00:00:00.000Z");
 });
