@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "db:migrate:baseline": "tsx src/scripts/migrate.ts --baseline",
-    "db:migrate:check": "tsx src/scripts/migrate.ts --dry-run"
+    "db:migrate:check": "tsx src/scripts/migrate.ts --dry-run",
+    "verify:migration": "tsx src/scripts/verify-migration-engine.ts"
   },
   "dependencies": {
     "@dental/shared": "*",

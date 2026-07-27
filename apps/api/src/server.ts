@@ -12,6 +12,7 @@ import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
+import { registerMigrationRoutes } from "./routes/migration.js";
 // Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
 // отвечали 404, то есть функциональность существовала только в исходниках.
 import { registerFilesRoutes } from "./routes/files.js";
@@ -346,6 +347,8 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerImagingRoutes(app);
   await registerIngestionRoutes(app);
   await registerImportRoutes(app);
+  // Движок переноса чужой базы: стейджинг, карантин, сверка, откат.
+  await registerMigrationRoutes(app);
   // Зубная формула и история зуба. Оба модуля были написаны, но ни разу не
   // зарегистрированы: Fastify отвечал «Route POST:/api/patients/:id/
   // tooth-states/batch not found», поэтому состояния зубов физически не могли

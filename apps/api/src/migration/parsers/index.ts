@@ -39,11 +39,11 @@ export interface ParseSourceInput {
   /** Имя файла или источника — участвует только в выборе разбора по расширению. */
   sourceName: string;
   /** Двоичное содержимое, если источник — файл. */
-  content?: Buffer;
+  content?: Buffer | undefined;
   /** Текстовое содержимое, если источник — вставка или уже раскодированный текст. */
-  rawText?: string;
+  rawText?: string | undefined;
   /** Явно указанный оператором формат. Отменяет определение по содержимому. */
-  forcedKind?: MigrationSourceKind;
+  forcedKind?: MigrationSourceKind | undefined;
 }
 
 function extensionOf(sourceName: string): string {
