@@ -2093,3 +2093,114 @@ export const cashLedger = pgTable("cash_ledger", {
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
 });
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Очередь исходящих сообщений (миграция 0123)
+//
+// Единственная существовавшая очередь — outgoing_notifications — состоит из
+// полей (type, payload jsonb, status text) и не знает ни канала, ни адреса
+// получателя, ни числа попыток, ни причины отказа. Её обработчик умел только
+// Telegram, не повторял отправку и ниоткуда не вызывался. Здесь очередь знает
+// всё, что нужно для разбора: чем отправляли, куда, сколько раз пробовали и
+// почему не вышло.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const communicationOutboxStatus = pgEnum("communication_outbox_status", [
+  "queued",
+  "sending",
+  "sent",
+  "delivered",
+  "failed",
+  "cancelled",
+  "suppressed",
+]);
+
+/**
+ * Сервисные и рекламные сообщения разделены потому, что ФЗ «О рекламе» ст. 18
+ * ч. 1 требует предварительного согласия именно на рекламу по сетям
+ * электросвязи. Напоминание о приёме — сервисное сообщение в рамках договора.
+ */
+export const communicationConsentScope = pgEnum("communication_consent_scope", ["service", "marketing"]);
+export const communicationConsentState = pgEnum("communication_consent_state", ["granted", "revoked"]);
+
+export const communicationOutbox = pgTable("communication_outbox", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  clinicId: uuid("clinic_id").references(() => clinics.id),
+  patientId: uuid("patient_id").references(() => patients.id),
+  taskId: uuid("task_id").references(() => communicationTasks.id),
+  templateId: uuid("template_id").references(() => communicationTemplates.id),
+  campaignId: uuid("campaign_id"),
+  channel: communicationChannel("channel").notNull(),
+  intent: communicationIntent("intent").notNull(),
+  scope: communicationConsentScope("scope").notNull().default("service"),
+  /** Номер, адрес почты или идентификатор чата, приведённый к формату канала. */
+  recipientAddress: text("recipient_address").notNull(),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  status: communicationOutboxStatus("status").notNull().default("queued"),
+  attempts: integer("attempts").notNull().default(0),
+  maxAttempts: integer("max_attempts").notNull().default(5),
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull().defaultNow(),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+  /** Захват строки обработчиком; по locked_at возвращаются зависшие отправки. */
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  lockedBy: text("locked_by"),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  lastErrorClass: text("last_error_class"),
+  lastErrorMessage: text("last_error_message"),
+  providerMessageId: text("provider_message_id"),
+  segments: integer("segments"),
+  /** Одно и то же напоминание не ставится в очередь дважды. */
+  dedupeKey: text("dedupe_key").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    outboxOrgDedupeUnique: unique("communication_outbox_org_dedupe_unique").on(table.organizationId, table.dedupeKey),
+    outboxOrgCreatedIdx: index("communication_outbox_org_created_idx").on(table.organizationId, table.createdAt),
+  };
+});
+
+export const patientCommunicationConsents = pgTable("patient_communication_consents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  channel: communicationChannel("channel").notNull(),
+  scope: communicationConsentScope("scope").notNull(),
+  state: communicationConsentState("state").notNull(),
+  /** Договор, портал пациента, слова администратора, ответ «СТОП» во входящем. */
+  source: text("source").notNull(),
+  evidence: text("evidence"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+  decidedByUserId: uuid("decided_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    consentUnique: unique("patient_communication_consents_unique").on(
+      table.organizationId,
+      table.patientId,
+      table.channel,
+      table.scope,
+    ),
+  };
+});
+
+export const communicationSettings = pgTable("communication_settings", {
+  organizationId: uuid("organization_id").primaryKey().references(() => organizations.id),
+  timezone: text("timezone").notNull().default("Europe/Moscow"),
+  /** Минуты от полуночи. По умолчанию 21:00–09:00. */
+  quietHoursStartMinute: integer("quiet_hours_start_minute").notNull().default(1260),
+  quietHoursEndMinute: integer("quiet_hours_end_minute").notNull().default(540),
+  /** Сервисное в тихие часы откладывается до утра, а не отменяется. */
+  deferServiceInQuietHours: boolean("defer_service_in_quiet_hours").notNull().default(true),
+  blockMarketingInQuietHours: boolean("block_marketing_in_quiet_hours").notNull().default(true),
+  dailyLimitPerPatient: integer("daily_limit_per_patient").notNull().default(3),
+  maxAttempts: integer("max_attempts").notNull().default(5),
+  retryBaseSeconds: integer("retry_base_seconds").notNull().default(60),
+  retryMaxSeconds: integer("retry_max_seconds").notNull().default(3600),
+  channelFallbackJson: text("channel_fallback_json").notNull().default('["telegram","whatsapp","sms","email"]'),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
