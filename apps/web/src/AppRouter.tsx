@@ -12,6 +12,7 @@ import { MarketingView } from "./MarketingView";
 import { PatientsView } from "./PatientsView";
 import { PayrollView } from "./PayrollView";
 import { AnalyticsDashboardView } from "./pages/AnalyticsDashboardView";
+import { ManagerReportsPanel } from "./components/reports/ManagerReportsPanel";
 import { ScannerView } from "./ScannerView";
 import { ScheduleView } from "./ScheduleView";
 import { SettingsView } from "./SettingsView";
@@ -238,6 +239,12 @@ export function AppRouter() {
 							>
 								<AnalyticsDashboardView />
 							</Suspense>
+							{/*
+								Отчёты руководителю. Экран выше показывает воронку, доли
+								кресел и когорты; того, по чему принимают решения —
+								динамики выручки, доли неявок, дебиторки, — там не было.
+							*/}
+							<ManagerReportsPanel />
 						</WorkspaceRouteErrorBoundary>
 					) : null}
 
