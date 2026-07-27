@@ -9,18 +9,80 @@ type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
   view: LazyWorkspaceView;
 }>;
 
-type WorkspaceRouteErrorBoundaryState = {
-  detail: string;
-  hasError: boolean;
+/**
+ * Что видит человек, когда раздел не открылся.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Прежняя функция возвращала на экран
+ * `[Error] ${error.message}\n${error.stack || ''}` без единой проверки режима
+ * сборки, и это значение рисовалось в `<small>` всегда. То есть администратор
+ * клиники на рабочем месте получал сырой стек JavaScript: пути внутри бандла,
+ * имена внутренних модулей и англоязычный текст исключения. Соседняя граница
+ * ошибок оболочки (AppShell.tsx, `appShellErrorDetail`) в такой же ситуации
+ * показывает человеческую русскую фразу и никогда не показывает стек — две
+ * границы вели себя по-разному, и протекала та, что обёрнута вокруг всех
+ * маршрутизируемых разделов.
+ *
+ * ПОЧЕМУ ОТДЕЛЬНАЯ ЧИСТАЯ ФУНКЦИЯ. Решение «показывать стек или нет» не видно
+ * ни в типах, ни в сборке: `error.stack` — обычная строка, typecheck на неё
+ * зелёный. Проверить это можно только тестом, а тест возможен только у чистой
+ * функции, которой признак режима передан аргументом (в node:test
+ * `import.meta.env` не существует).
+ */
+export type WorkspaceRouteErrorPresentation = {
+  /** Русская фраза для сотрудника клиники. Никогда не содержит текст ошибки. */
+  readonly hint: string;
+  /**
+   * Полный технический текст ошибки со стеком. Пустая строка везде, кроме
+   * разработки: в production это утечка внутренностей бандла на экран клиники.
+   */
+  readonly diagnostics: string;
+  /** Время сбоя — единственная опора, которую сотрудник может назвать в поддержку. */
+  readonly reference: string;
 };
 
-function workspaceRouteErrorDetail(error: unknown): string {
-  if (error instanceof Error && /chunk|import|loading/i.test(error.message)) {
-    return "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
+export type WorkspaceRouteErrorPresentationOptions = {
+  /** Только для разработки. В production — строго false. */
+  readonly includeDiagnostics: boolean;
+  readonly occurredAt: Date;
+};
+
+const workspaceRouteChunkFailureHint =
+  "Файлы раздела не загрузились. Обычно помогает обновление после восстановления сети.";
+
+/**
+ * Формулировка повторяет соседнюю границу ошибок оболочки (AppShell.tsx), чтобы
+ * в одном продукте не было двух разных языков сообщений об ошибке.
+ */
+const workspaceRouteGenericHint =
+  "Раздел остановлен до обновления, чтобы не показывать неполное рабочее место.";
+
+function isWorkspaceRouteChunkFailure(error: unknown): boolean {
+  return error instanceof Error && /chunk|import|loading/i.test(error.message);
+}
+
+function workspaceRouteErrorDiagnostics(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return String(error);
   }
 
-  return error instanceof Error ? `[Error] ${error.message}\n${error.stack || ''}` : String(error);
+  const stack = error.stack?.trim() ?? "";
+  return stack.length > 0 ? `[Error] ${error.message}\n${stack}` : `[Error] ${error.message}`;
 }
+
+export function workspaceRouteErrorPresentation(
+  error: unknown,
+  options: WorkspaceRouteErrorPresentationOptions,
+): WorkspaceRouteErrorPresentation {
+  return {
+    hint: isWorkspaceRouteChunkFailure(error) ? workspaceRouteChunkFailureHint : workspaceRouteGenericHint,
+    diagnostics: options.includeDiagnostics ? workspaceRouteErrorDiagnostics(error) : "",
+    reference: options.occurredAt.toLocaleString("ru-RU"),
+  };
+}
+
+type WorkspaceRouteErrorBoundaryState = {
+  presentation: WorkspaceRouteErrorPresentation | null;
+};
 
 function requestDenteStaleWorkspaceRefresh(): void {
   navigator.serviceWorker?.controller?.postMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
@@ -31,26 +93,43 @@ export class WorkspaceRouteErrorBoundary extends Component<
   WorkspaceRouteErrorBoundaryProps,
   WorkspaceRouteErrorBoundaryState
 > {
-  state: WorkspaceRouteErrorBoundaryState = { detail: "", hasError: false };
+  state: WorkspaceRouteErrorBoundaryState = { presentation: null };
 
   static getDerivedStateFromError(error: unknown): WorkspaceRouteErrorBoundaryState {
-    return { detail: workspaceRouteErrorDetail(error), hasError: true };
+    return {
+      presentation: workspaceRouteErrorPresentation(error, {
+        // Разработчик видит полный стек прямо на экране, сотрудник клиники — никогда.
+        // Признак режима тот же, что и в остальном apps/web: AppShell.tsx, main.tsx.
+        includeDiagnostics: !import.meta.env.PROD,
+        occurredAt: new Date(),
+      }),
+    };
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
-    if (!import.meta.env.PROD) {
-      console.error(`DENTE route failed: ${this.props.view}`, error, errorInfo.componentStack);
-    }
+    // Консоль получает ошибку целиком в любом режиме, включая production. Раньше
+    // журналирование было закрыто проверкой `!import.meta.env.PROD`, и после того
+    // как стек убран с экрана, в production не осталось бы вообще ни одного следа
+    // сбоя. Консоль не видна сотруднику клиники и ничего ему не показывает.
+    console.error(`DENTE route failed: ${this.props.view}`, error, errorInfo.componentStack);
   }
 
   componentDidUpdate(previousProps: WorkspaceRouteErrorBoundaryProps) {
-    if (previousProps.view !== this.props.view && this.state.hasError) {
-      this.setState({ detail: "", hasError: false });
+    if (previousProps.view !== this.props.view && this.state.presentation) {
+      this.setState({ presentation: null });
     }
   }
 
+  private retryWorkspaceRoute = () => {
+    // Мягкий повтор: раздел монтируется заново без перезагрузки страницы, поэтому
+    // незаписанные данные в других панелях рабочего места остаются на месте.
+    this.setState({ presentation: null });
+  };
+
   render() {
-    if (this.state.hasError) {
+    const presentation = this.state.presentation;
+
+    if (presentation) {
       return (
         <section className={`${this.props.panelClassName} workspace-route-error`} id={this.props.panelId} role="alert" aria-live="assertive">
           <div className="panel-heading">
@@ -58,10 +137,23 @@ export class WorkspaceRouteErrorBoundary extends Component<
             <span className="status-pill status-needs_review">не открылось</span>
           </div>
           <p>Раздел временно не открылся. Уже введенные данные не менялись.</p>
-          <small>{this.state.detail}</small>
-          <button className="secondary-button" type="button" onClick={requestDenteStaleWorkspaceRefresh}>
-            Обновить рабочее место
-          </button>
+          <small>{presentation.hint}</small>
+          <small>
+            Если раздел не открывается и после обновления — сообщите в поддержку время сбоя: {presentation.reference}
+          </small>
+          {presentation.diagnostics ? (
+            <small className="block max-w-full overflow-x-auto font-mono text-xs whitespace-pre-wrap break-words">
+              {presentation.diagnostics}
+            </small>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button className="secondary-button" type="button" onClick={this.retryWorkspaceRoute}>
+              Повторить открытие
+            </button>
+            <button className="secondary-button" type="button" onClick={requestDenteStaleWorkspaceRefresh}>
+              Обновить рабочее место
+            </button>
+          </div>
         </section>
       );
     }
