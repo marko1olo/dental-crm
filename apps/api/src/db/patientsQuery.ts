@@ -99,7 +99,12 @@ export async function updatePatientInDb(organizationId: string, patientId: strin
 				notes: input.notes,
 				updatedAt: new Date(),
 			})
-			.where(eq(schema.patients.id, patientId))
+			/* organizationId обязателен в условии. Без него запись шла только
+			   по идентификатору пациента, и клиника переписывала карточку
+			   чужой клиники: проверено на живой базе — PUT /api/patients/<uuid
+			   чужого пациента> с токеном первой клиники вернул 200 и заменил
+			   ФИО и телефон в чужой организации. */
+			.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, patientId)))
 			.returning();
 
 		if (!updated) return null;
@@ -120,7 +125,11 @@ export async function updatePatientAdministrativeProfileInDb(organizationId: str
 				administrativeProfile: input as typeof schema.patients.$inferSelect["administrativeProfile"],
 				updatedAt: new Date(),
 			})
-			.where(eq(schema.patients.id, patientId))
+			/* Тот же пропуск, что и в updatePatientInDb. Здесь маршрут сейчас
+			   прикрыт проверкой getPatientByIdFromDb(orgId, ...) перед вызовом,
+			   но полагаться на порядок вызовов в маршруте нельзя: ограничение
+			   области принадлежит запросу. */
+			.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, patientId)))
 			.returning();
 
 		if (!updated) return null;
