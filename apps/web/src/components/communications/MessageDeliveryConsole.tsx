@@ -398,10 +398,26 @@ export function MessageDeliveryConsole() {
 			<div className="panel-heading">
 				<h2>Отправка сообщений</h2>
 				<div className="quick-chips-row">
-					<button className="secondary-button" type="button" onClick={() => void runDispatch()} disabled={busy}>
-						Разобрать очередь
+					{/*
+						Было «Разобрать очередь» — из чего понять, что произойдёт, нельзя.
+						Кнопка берёт до 25 сообщений из очереди и пытается их отправить.
+					*/}
+					<button
+						className="secondary-button"
+						type="button"
+						title="Взять сообщения из очереди и попробовать отправить их сейчас"
+						onClick={() => void runDispatch()}
+						disabled={busy}
+					>
+						Отправить из очереди
 					</button>
-					<button className="secondary-button" type="button" onClick={() => void runReminders()} disabled={busy}>
+					<button
+						className="secondary-button"
+						type="button"
+						title="Поставить в очередь напоминания о завтрашних приёмах — тем, кому их ещё не ставили"
+						onClick={() => void runReminders()}
+						disabled={busy}
+					>
 						Поставить напоминания
 					</button>
 				</div>
@@ -420,10 +436,39 @@ export function MessageDeliveryConsole() {
 			) : (
 				<>
 					{configuredChannels.length === 0 ? (
-						<p className="ops-notice ops-notice--error" role="alert">
-							Ни один канал не настроен: сообщения не отправятся. Ключи шлюзов задаются в окружении сервера
-							(SMS, SMTP, WhatsApp, Telegram).
-						</p>
+						/*
+						 * БЫЛО: «Ни один канал не настроен: сообщения не отправятся. Ключи
+						 * шлюзов задаются в окружении сервера (SMS, SMTP, WhatsApp,
+						 * Telegram)». Администратор клиники не знает, что такое окружение
+						 * сервера, и — главное — идти ему было некуда: сказали, что не
+						 * работает, и не сказали, что делать.
+						 *
+						 * Разделяем по ответственности, потому что она разная:
+						 * WhatsApp хранится в denteWhatsappBotConfigs, Telegram — в
+						 * denteTelegramBotConfigs, то есть эти два канала клиника
+						 * подключает сама через настройки. SMS и почта читаются только из
+						 * окружения сервера (readSmsCredentialsFromEnv,
+						 * readSmtpCredentialsFromEnv) — их подключает тот, кто ставил
+						 * программу.
+						 */
+						<div className="ops-notice ops-notice--error" role="alert">
+							<strong>Сообщения сейчас не отправляются: ни один канал связи не подключён.</strong>
+							<p style={{ margin: "6px 0 0" }}>
+								Телеграм и WhatsApp клиника подключает сама — в настройках. SMS и электронную
+								почту подключает тот, кто устанавливал программу: для них нужны ключи доступа
+								на сервере клиники.
+							</p>
+							<button
+								type="button"
+								className="secondary-button"
+								style={{ marginTop: "10px" }}
+								onClick={() => {
+									window.location.hash = "settings/telegram";
+								}}
+							>
+								Подключить Телеграм или WhatsApp
+							</button>
+						</div>
 					) : null}
 					<ul className="quick-chips-row ops-channel-list">
 						{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {

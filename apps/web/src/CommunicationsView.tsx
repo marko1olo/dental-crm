@@ -240,6 +240,15 @@ export function CommunicationsView({
   // режим не известен — тогда показывается всё (см. clinicCapabilities).
   const clinicMode = dashboard?.clinicSettings?.profile?.mode ?? null;
 
+  const communicationSummaryHasNumbers = Boolean(
+    (dashboard?.communicationSummary?.openTasks ?? 0) ||
+      (dashboard?.communicationSummary?.dueToday ?? 0) ||
+      (dashboard?.communicationSummary?.overdue ?? 0) ||
+      (dashboard?.communicationSummary?.urgentTasks ?? 0) ||
+      (dashboard?.communicationSummary?.appointmentConfirmations ?? 0) ||
+      (dashboard?.communicationSummary?.postVisitInstructions ?? 0)
+  );
+
   return (
     <div className="panel communications-panel" id="communications" data-testid="communications-view">
       <div className="panel-heading">
@@ -249,6 +258,13 @@ export function CommunicationsView({
         </button>
       </div>
 
+      {/*
+        Сводка из четырёх счётчиков нужна тогда, когда в ней есть хоть что-то.
+        В клинике без задач связи это были четыре нуля в ряд — они занимали
+        верх экрана и не сообщали ничего, кроме того, что и так видно по
+        пустому списку ниже. Показываем сводку, когда есть о чём сводить.
+      */}
+      {communicationSummaryHasNumbers ? (
       <div className="communications-summary-grid" aria-label="Сводка связи">
         <article className={dashboard?.communicationSummary?.urgentTasks ? "communication-urgent" : ""}>
           <span>Открыто</span>
@@ -271,14 +287,22 @@ export function CommunicationsView({
           <p>инструкции пациентам</p>
         </article>
       </div>
+      ) : null}
 
+      {/*
+        Поле заметки нужно только при закрытии задачи связи: оно уходит в
+        `POST /api/communications/tasks/complete` вместе с taskId. Раньше блок
+        висел на экране всегда — и у клиники без единой задачи это была форма
+        без объекта: «Заметка закрытия» чего, если закрывать нечего.
+      */}
+      {(sortedCommunicationTasks ?? []).length ? (
       <div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
         <div className="flex justify-between items-center mb-3">
           <div>
             <label htmlFor={communicationNoteInputId} className="text-sm font-semibold text-[var(--ink)] block">
-              Заметка закрытия
+              Что сказал пациент
             </label>
-            <span id={communicationNoteDescriptionId} className="text-xs text-[var(--muted)]">Задача закрывается с событием и попадает в аудит.</span>
+            <span id={communicationNoteDescriptionId} className="text-xs text-[var(--muted)]">Запись попадёт в задачу, которую вы закроете ниже, и останется в журнале клиники.</span>
           </div>
           <SmartMicrophoneButton
             context="general"
@@ -315,6 +339,7 @@ export function CommunicationsView({
           ))}
         </div>
       </div>
+      ) : null}
 
       {/*
         Пульт отправки: настоящие шлюзы, журнал с причиной отказа, редактор
