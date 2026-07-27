@@ -10,7 +10,12 @@ import {
 	documentIngestionResponseSchema,
 } from "@dental/shared";
 
-type ZipEntry = {
+/**
+ * Экспортируется для движка переноса (migration/parsers/spreadsheet.ts): книга
+ * Excel там разбирается по адресам ячеек, а не по их порядку, и повторять чтение
+ * ZIP-контейнера во втором месте незачем.
+ */
+export type ZipEntry = {
 	name: string;
 	data: Buffer;
 };
@@ -236,7 +241,7 @@ function stripRtf(value: string): string {
 	);
 }
 
-function readZipEntries(buffer: Buffer): {
+export function readZipEntries(buffer: Buffer): {
 	entries: ZipEntry[];
 	warnings: string[];
 } {
