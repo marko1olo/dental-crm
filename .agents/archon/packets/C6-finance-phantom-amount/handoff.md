@@ -6,6 +6,44 @@ HEAD на старте пакета: 26f1f3c59f5f64b3a4caa83ec2f6e05a03e14b88
 
 ---
 
+## ПОПРАВКА ПАКЕТА R3 (2026-07-28): УТВЕРЖДЕНИЕ О ДОСЯГАЕМОСТИ БЫЛО НЕВЕРНЫМ
+
+Разбор вернул этот пакет как NEEDS_REWORK. Поправки внесены пакетом
+`R3-finance-rework`, коммиты `e90e1b276` (починка) и `6d97e0e7d` (замок).
+
+**Что было заявлено неверно.** В сдаче этого пакета (поле «reachability» доклада)
+утверждалось: «the God Context is instantiated once at the app root and is mounted
+for the entire session» и «Because it lives in an always-mounted hook rather than in
+a view, it fires on every patient switch regardless of which screen the operator is
+on». Первое предложение неверно, второе верно лишь наполовину.
+
+**Как есть на самом деле.** `useAppLogic()` вызывается из ДВУХ мест, проверено
+`rg -n "useAppLogic\(\)" apps/web/src`:
+- `apps/web/src/App.tsx:956` — корневой экземпляр;
+- `apps/web/src/components/useVisitDiaryLogic.ts:27` — второй полный экземпляр
+  контекста, минуя `useAppLogicContext()`.
+
+Значит, эффект сброса монтируется заново при каждом открытии вкладки «Зубная формула
+и Дневник»: `App.tsx:3745 <VisitView>` → `VisitView.tsx:353-355 <VisitOdontogramTab>`
+→ `VisitOdontogramTab.tsx:68-73 <VisitDiaryEditor>` → `VisitDiaryEditor.tsx:103
+useVisitDiaryLogic` → `useAppLogic.tsx:2383 usePatientLogic`.
+
+**Чем это обошлось.** `useEffect` на первом прогоне выполняется всегда, а сброс,
+добавленный этим пакетом, первого прогона не отличал. Поэтому починка «сумма не
+переезжает на следующего пациента» одновременно завела новый дефект: кассир, набравший
+сумму и переписавший ФН/ФД/ФПД с чека, терял их молча, просто заглянув на «Приём» и
+открыв вкладку дневника. Разбор это поймал; закрыто в R3 признаком первого прогона
+(`PAYMENT_COMPOSER_PATIENT_UNTRACKED` + `resetPaymentComposerOnPatientChange`).
+
+**Поправки к номерам строк этой сдачи** (были поданы как свежепрочитанные):
+`useAppLogic.tsx:2378-2392` → вызов `usePatientLogic` на `2383`;
+`usePatientLogic.ts:199-207` → после починки эффект был на `220-222`;
+`documentPatient` — `usePatientLogic.ts:112`, а не `:111`;
+сброс после платежа — `useAppLogic.tsx:12662-12675` (`paymentMutationIdRef` на `12661`,
+`await loadDashboard()` на `12676`), а не `12661-12677`.
+
+---
+
 ## Что было сломано (file:line)
 
 ### 1. Заявленный дефект — «3800» в поле суммы — УЖЕ ПОЧИНЕН ДО МЕНЯ. НЕ МОЯ РАБОТА.
@@ -57,12 +95,16 @@ useEffect(() => {
 выглядит заполненной им самим. Нажатие пишет деньги Б с суммой А и фискальными
 признаками чужого чека — тело запроса собирается из тех же значений состояния
 (`useAppLogic.tsx:12610-12653`). Фискальные признаки уходят в налоговые документы.
-Пациент — `selectedPatient ?? activePatient` (`usePatientLogic.ts:111`), поэтому
+Пациент — `selectedPatient ?? activePatient` (`usePatientLogic.ts:112`), поэтому
 его двигает любое переключение в программе, не только на экране «Оплаты».
 
-Хранилище без `persist` (в `documentStore.ts` ноль совпадений на
-persist/localStorage/createJSONStorage) — перенос живёт в пределах одной сессии,
-перезагрузку страницы не переживает.
+Ни одно поле формы приёма оплаты в хранилище не сохраняется между запусками
+(в `documentStore.ts` ноль совпадений на persist/createJSONStorage; `localStorage`
+хранилище всё же читает — `documentStore.ts:44` вызывает `loadUiPreferences()` и
+подставляет из неё `paymentMethod` на `:2127`, но ни суммы, ни фискальных полей там
+нет). Поэтому перенос живёт в пределах одной сессии и перезагрузку страницы не
+переживает — а вот способ оплаты переживает, и это осознанная настройка рабочего
+места, а не данные платежа.
 
 ---
 
