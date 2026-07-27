@@ -47,6 +47,19 @@
     min-height: 36px;
   }
 
+  /* !important нужен только там, где конкурирующее объявление тоже с
+     !important, иначе правило не действует:
+       main.css  .quick-chip--sm        { min-height: 24px !important }
+       main.css  .appointment-edit-button { min-height: 28px !important }
+     Замерено до правки: чипы быстрых сумм оплаты 55x24, 56x24, 41x24. */
+  .quick-chip--sm {
+    min-height: 36px !important;
+  }
+
+  .appointment-edit-button {
+    min-height: 40px !important;
+  }
+
   .quick-chips-row,
   .dictation-quick-row {
     gap: 8px;
@@ -101,5 +114,23 @@
      Нативная дорожка тонкая, палец по ней не попадает. */
   input[type="range"] {
     min-height: 44px;
+  }
+
+  /* --- Узкие по ширине цели ---
+     Высота бывает достаточной, а ширина нет. Замерено: кнопка
+     микрофона в умном бронировании 16x36, кнопка «День» в заголовке
+     расписания 30x44. */
+  .text-button,
+  .smart-ai-booking button,
+  .panel-heading button {
+    min-width: 44px;
+  }
+
+  /* Кнопки-иконки внутри полей позиционируются абсолютно, поэтому
+     задаём размер обеих сторон. */
+  .smart-ai-booking .relative button,
+  .smart-field button[aria-label] {
+    min-height: 40px;
+    min-width: 40px;
   }
 }
