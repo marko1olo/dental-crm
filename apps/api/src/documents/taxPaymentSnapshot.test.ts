@@ -147,11 +147,30 @@ describe('taxPaymentsForIssueSnapshot', () => {
     assert.strictEqual(result[0]?.id, 'payment-1');
   });
 
+  /**
+   * Справка о вычете требует явного выбора платежей: её вид входит в
+   * taxPaymentSelectionDocumentKinds, и без выбора baseTaxPaymentsForDocument
+   * намеренно отдаёт пустой список. Тесты ниже выбор не задавали и потому
+   * получали 0 платежей — проверяемая ветка не достигалась вовсе.
+   *
+   * Задаём выбор явно, как это делает интерфейс: только так проверяется то,
+   * ради чего эти тесты написаны, — отсев платежей, уже попавших в другую
+   * выданную справку за тот же год.
+   */
+  const withSelection = (
+    document: Partial<GeneratedDocument>,
+    selectedPaymentIds: string[],
+  ): GeneratedDocument =>
+    ({
+      ...document,
+      payload: { taxPaymentSelection: { selectedPaymentIds } },
+    }) as GeneratedDocument;
+
   test('filters out payments already used by other issued tax certificates in the same scope', () => {
-    const document: GeneratedDocument = {
-      ...baseDocument,
-      kind: 'tax_deduction_certificate',
-    } as GeneratedDocument;
+    const document = withSelection(
+      { ...baseDocument, kind: 'tax_deduction_certificate' },
+      ['payment-1', 'payment-2'],
+    );
 
     const payments: Payment[] = [
       { ...basePayment, id: 'payment-1', fiscalReceiptNumber: 'rcpt-1' } as Payment,
@@ -183,10 +202,10 @@ describe('taxPaymentsForIssueSnapshot', () => {
   });
 
   test('ensures payments that are not covered are still included for duplicate sensitive documents', () => {
-    const document: GeneratedDocument = {
-      ...baseDocument,
-      kind: 'tax_deduction_certificate',
-    } as GeneratedDocument;
+    const document = withSelection(
+      { ...baseDocument, kind: 'tax_deduction_certificate' },
+      ['payment-1', 'payment-2'],
+    );
 
     const payments: Payment[] = [
       { ...basePayment, id: 'payment-1' } as Payment,
@@ -219,10 +238,10 @@ describe('taxPaymentsForIssueSnapshot', () => {
   });
 
   test('returns base payments if there are no existing documents causing duplicates', () => {
-    const document: GeneratedDocument = {
-      ...baseDocument,
-      kind: 'tax_deduction_certificate',
-    } as GeneratedDocument;
+    const document = withSelection(
+      { ...baseDocument, kind: 'tax_deduction_certificate' },
+      ['payment-1', 'payment-2'],
+    );
 
     const payments: Payment[] = [
       { ...basePayment, id: 'payment-1' } as Payment,
@@ -235,5 +254,73 @@ describe('taxPaymentsForIssueSnapshot', () => {
     assert.strictEqual(result.length, 2);
     assert.strictEqual(result[0]?.id, 'payment-1');
     assert.strictEqual(result[1]?.id, 'payment-2');
+  });
+
+  test('явно выбранный платёж всё равно отсеивается, если он уже в выданной справке', () => {
+    // Ровно тот путь, который раньше выходил досрочно и не сверялся с выданными
+    // справками: один и тот же чек мог попасть в две справки за один год.
+    const document = withSelection(
+      { ...baseDocument, kind: 'tax_deduction_certificate' },
+      ['payment-1', 'payment-2'],
+    );
+
+    const payments: Payment[] = [
+      { ...basePayment, id: 'payment-1', fiscalReceiptNumber: 'rcpt-1' } as Payment,
+      { ...basePayment, id: 'payment-2', fiscalReceiptNumber: 'rcpt-2' } as Payment,
+    ];
+
+    const existingDocuments: GeneratedDocument[] = [
+      {
+        id: 'doc-2',
+        organizationId: 'org-1',
+        patientId: 'patient-1',
+        kind: 'tax_deduction_certificate',
+        taxYear: 2023,
+        status: 'issued',
+        taxPaymentSnapshot: {
+          paymentIds: ['payment-1'],
+          fiscalReceiptKeys: ['rcpt-1'],
+          payments: [],
+          createdAt: '',
+          taxYear: 2023,
+          taxPayerInn: null,
+        },
+      } as unknown as GeneratedDocument,
+    ];
+
+    const result = taxPaymentsForIssueSnapshot(document, payments, existingDocuments);
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0]?.id, 'payment-2');
+  });
+
+  test('переоформление той же справки не отсеивает её собственные платежи', () => {
+    // sameTaxDocumentScope исключает документ по id, иначе повторная выдача
+    // обнуляла бы справку.
+    const document = withSelection(
+      { ...baseDocument, id: 'doc-1', kind: 'tax_deduction_certificate', status: 'issued' },
+      ['payment-1'],
+    );
+
+    const payments: Payment[] = [
+      { ...basePayment, id: 'payment-1', fiscalReceiptNumber: 'rcpt-1' } as Payment,
+    ];
+
+    const existingDocuments: GeneratedDocument[] = [
+      {
+        ...document,
+        taxPaymentSnapshot: {
+          paymentIds: ['payment-1'],
+          fiscalReceiptKeys: ['rcpt-1'],
+          payments: [],
+          createdAt: '',
+          taxYear: 2023,
+          taxPayerInn: null,
+        },
+      } as unknown as GeneratedDocument,
+    ];
+
+    const result = taxPaymentsForIssueSnapshot(document, payments, existingDocuments);
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0]?.id, 'payment-1');
   });
 });
