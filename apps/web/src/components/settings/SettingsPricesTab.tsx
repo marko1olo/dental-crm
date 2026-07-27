@@ -418,7 +418,10 @@ export function SettingsPricesTab() {
 							{pricelistSourceKind === "spreadsheet_copy" && (
 								<div className="pricelist-text-input">
 									<textarea
-										placeholder="Вставьте скопированный текст из Excel или Word..."
+										/* Поле стало пустым: раньше в нём лежал выдуманный прайс
+										   из десяти позиций, и его можно было занести в базу
+										   настоящей клиники одним нажатием. */
+										placeholder={"Вставьте прайс из Excel или Word — по строке на услугу.\nНапример: Лечение кариеса 6 800 руб"}
 										value={pricelistText}
 										onChange={(e) => setPricelistText(e.target.value)}
 										rows={6}

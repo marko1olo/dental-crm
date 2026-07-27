@@ -2090,7 +2090,18 @@ const createFinancialSlice = (set: any) => ({
   setWarrantyControlVisitsUnderstood: createSetter(set, "warrantyControlVisitsUnderstood"),
   refundAction: "partial_refund",
   setRefundAction: createSetter(set, "refundAction"),
-  refundAmountRub: "3800",
+  /*
+   * ДЕНЕЖНЫЕ ПОЛЯ НАЧИНАЮТСЯ ПУСТЫМИ.
+   *
+   * Здесь стояло "3800" — остаток от демонстрационных данных, попавший в
+   * начальное состояние. На экране «Оплаты» касса открывалась с уже введённой
+   * суммой 3800 ₽ при нулевом остатке по пациенту, а форма возврата — с
+   * готовым возвратом на 3800 ₽. Кассир, не заметив подставленного числа,
+   * принимает или возвращает сумму, которой никто не называл.
+   *
+   * Сумму денег программа предлагать не должна: её вводит человек осознанно.
+   */
+  refundAmountRub: "",
   setRefundAmountRub: createSetter(set, "refundAmountRub"),
   refundReason: "",
   setRefundReason: createSetter(set, "refundReason"),
@@ -2110,7 +2121,8 @@ const createFinancialSlice = (set: any) => ({
   setRefundCorrectionFiscalReceiptNumber: createSetter(set, "refundCorrectionFiscalReceiptNumber"),
   refundAccountantDecision: "",
   setRefundAccountantDecision: createSetter(set, "refundAccountantDecision"),
-  paymentAmount: "3800",
+  /* Пустое поле суммы: см. пояснение у refundAmountRub выше. */
+  paymentAmount: "",
   setPaymentAmount: createSetter(set, "paymentAmount"),
   paymentMethod: initialUiPreferences.paymentMethod,
   setPaymentMethod: createSetter(set, "paymentMethod"),

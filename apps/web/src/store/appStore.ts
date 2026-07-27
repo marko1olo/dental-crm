@@ -302,11 +302,24 @@ export const useAppStore = create<AppStore>((set) => ({
   setReleaseProtectionNote: (val) => set({ releaseProtectionNote: val }),
   communicationNote: "Пациенту передана информация, задача закрыта.",
   setCommunicationNote: (val) => set({ communicationNote: val }),
-  importText: "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт",
+  /*
+   * ПОЛЯ ИМПОРТА НАЧИНАЮТСЯ ПУСТЫМИ.
+   *
+   * Здесь стояли выдуманные данные: три пациента с телефонами и датами
+   * рождения, ещё три строки со снимками и путями к файлам, и прайс из десяти
+   * позиций с ценами до 160 000 ₽. Всё это подставлялось в поля импорта при
+   * первом открытии — то есть настоящая клиника видела чужие цены и
+   * несуществующих пациентов уже набранными, и одно нажатие «Разобрать» →
+   * «Загрузить» заносило их в её базу.
+   *
+   * Показывать пример надо подсказкой в пустом поле, а не подставленным
+   * текстом, который невозможно отличить от своего.
+   */
+  importText: "",
   setImportText: (val) => set({ importText: val }),
-  smartImportText: "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных",
+  smartImportText: "",
   setSmartImportText: (val) => set({ smartImportText: val }),
-  pricelistText: "Коронка циркониевая MultiLayer 35 000 руб\nКоронка IPS e.max 32 000 руб\nВинир керамический E.max 38 000 руб\nРеставрация композитная Filtek 9 500 руб\nЛечение канала 1 канал 6 800 руб\nИмплантация Straumann BLX 85 000 руб\nАбатмент индивидуальный циркониевый 28 000 руб\nСинус-лифтинг открытый 55 000 руб\nПрофессиональная гигиена Air Flow EMS 6 000 руб\nЭлайнеры Star Smile 160 000 руб",
+  pricelistText: "",
   setPricelistText: (val) => set({ pricelistText: val }),
   pricelistSourceKind: (loadUiPreferences() ?? defaultUiPreferences).pricelistSourceKind,
   setPricelistSourceKind: (val) => set({ pricelistSourceKind: val }),
