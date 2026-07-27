@@ -2167,6 +2167,14 @@ export const communicationOutbox = pgTable("communication_outbox", {
   lastErrorMessage: text("last_error_message"),
   providerMessageId: text("provider_message_id"),
   segments: integer("segments"),
+  /**
+   * Квитанция о доставке (миграция 0126). `sent` означает «шлюз принял», а не
+   * «пациент получил»: SMS на выключенный телефон шлюз принимает и берёт за неё
+   * деньги. Для напоминания о приёме разница решающая.
+   */
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  /** Что именно сказал провайдер — код и расшифровка, для разбора споров. */
+  receiptDetail: text("receipt_detail"),
   /** Одно и то же напоминание не ставится в очередь дважды. */
   dedupeKey: text("dedupe_key").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

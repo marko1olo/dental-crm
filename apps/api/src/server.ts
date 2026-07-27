@@ -49,6 +49,7 @@ import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import registerDiaryRoutes from "./routes/diary.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
 import { registerReportRoutes } from "./routes/reports.js";
+import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -425,6 +426,11 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   // ни динамики выручки, ни доли неявок, ни дебиторки, ни того, что продаётся,
   // владелец клиники увидеть не мог, хотя данные для всего этого в базе есть.
   await registerReportRoutes(app);
+
+  // Квитанции о доставке от провайдеров. Статус sent означает «шлюз принял», а
+  // не «пациент получил»: SMS на выключенный телефон шлюз принимает и берёт за
+  // неё деньги. Вызывается извне, поэтому защищён секретом обратного вызова.
+  await registerCommunicationReceiptRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
