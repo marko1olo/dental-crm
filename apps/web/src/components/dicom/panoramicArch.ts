@@ -54,7 +54,11 @@ export interface DrawnArchAnnotation {
  * Reasons the traced geometry itself cannot produce a reconstruction. These
  * are the only verdicts `buildPanoramicArch` can reach on its own.
  */
-export type PanoramicArchIssue = "no_arch" | "too_few_points" | "wrong_plane";
+export type PanoramicArchIssue =
+	| "no_arch"
+	| "too_few_points"
+	| "degenerate_arch"
+	| "wrong_plane";
 
 /**
  * Every reason the viewer may have to refuse a panorama: the geometry verdicts
@@ -94,10 +98,15 @@ export type PanoramicArchResult =
 export const DEFAULT_ARCH_SAMPLE_STEP_MM = 0.25;
 
 /**
- * Upper bound on output columns. A panorama wider than this is beyond any
+ * Target ceiling on output columns. A panorama wider than this is beyond any
  * display and would make the worker allocate width*height floats for nothing.
  * When a traced arch would exceed it, the effective step is widened instead of
  * truncating the arch — the dentist's full curve is always represented.
+ *
+ * It is a target, not a hard limit: every control point is emitted regardless,
+ * so a trace with more than `MAX_ARCH_SAMPLES` control points overshoots by the
+ * excess. That is the correct trade — losing a placed point would falsify the
+ * arch, allocating a few extra columns only costs memory.
  */
 export const MAX_ARCH_SAMPLES = 4096;
 
@@ -123,6 +132,8 @@ export const panoramicIssueLabels: Record<PanoramicIssue, string> = {
 		"Панорама не построена: зубная дуга не обведена. Включите инструмент «Дуга (Spline)» и поставьте точки вдоль дуги на панели AXIAL.",
 	too_few_points:
 		"Панорама не построена: в обведённой дуге меньше двух точек. Поставьте минимум две точки вдоль зубной дуги.",
+	degenerate_arch:
+		"Панорама не построена: длина обведённой дуги нулевая — точки стоят в одном месте. Обведите дугу от одного конца челюсти до другого.",
 	wrong_plane:
 		"Панорама не построена: дуга обведена не на аксиальном срезе. Постройте дугу на панели AXIAL.",
 	read_failed:
@@ -340,8 +351,17 @@ export function buildPanoramicArch(
 ): PanoramicArchResult {
 	const stepMm = options.sampleStepMm ?? DEFAULT_ARCH_SAMPLE_STEP_MM;
 
-	let bestControlPointCount = 0;
-	let sawNonAxial = false;
+	// Annotations are walked newest first, so the first problem recorded is the
+	// problem with the trace the dentist just made — that is the one worth
+	// telling them about.
+	let firstIssue: PanoramicArchIssue | null = null;
+	let firstIssueControlPoints = 0;
+
+	const recordIssue = (reason: PanoramicArchIssue, controlPointCount: number) => {
+		if (firstIssue !== null) return;
+		firstIssue = reason;
+		firstIssueControlPoints = controlPointCount;
+	};
 
 	for (let i = annotations.length - 1; i >= 0; i--) {
 		const annotation = annotations[i]!;
@@ -350,17 +370,12 @@ export function buildPanoramicArch(
 		if (controlPoints.length === 0) continue;
 
 		if (!isAxialPlane(annotation)) {
-			sawNonAxial = true;
-			if (controlPoints.length > bestControlPointCount) {
-				bestControlPointCount = controlPoints.length;
-			}
+			recordIssue("wrong_plane", controlPoints.length);
 			continue;
 		}
 
 		if (controlPoints.length < 2) {
-			if (controlPoints.length > bestControlPointCount) {
-				bestControlPointCount = controlPoints.length;
-			}
+			recordIssue("too_few_points", controlPoints.length);
 			continue;
 		}
 
@@ -370,36 +385,24 @@ export function buildPanoramicArch(
 		const curve = usePolyline
 			? resamplePolylineByArcLength(polyline, stepMm)
 			: sampleArchCurve(controlPoints, stepMm);
+		const lengthMm = polylineLengthMm(curve);
 
-		if (curve.length < 2) {
-			// A degenerate trace (all points on top of each other) cannot be
-			// unwrapped into columns; treat it as not enough geometry.
-			if (controlPoints.length > bestControlPointCount) {
-				bestControlPointCount = controlPoints.length;
-			}
+		if (curve.length < 2 || lengthMm < stepMm) {
+			// The trace has points but no extent — they sit on top of each other,
+			// or within one output column of each other. Unwrapping it yields a
+			// strip of one repeated ray: a plausible-looking image of nothing.
+			recordIssue("degenerate_arch", controlPoints.length);
 			continue;
 		}
 
-		return {
-			status: "ready",
-			curve,
-			controlPoints,
-			lengthMm: polylineLengthMm(curve),
-		};
+		return { status: "ready", curve, controlPoints, lengthMm };
 	}
 
-	if (sawNonAxial) {
+	if (firstIssue !== null) {
 		return {
 			status: "unavailable",
-			reason: "wrong_plane",
-			controlPointCount: bestControlPointCount,
-		};
-	}
-	if (bestControlPointCount > 0) {
-		return {
-			status: "unavailable",
-			reason: "too_few_points",
-			controlPointCount: bestControlPointCount,
+			reason: firstIssue,
+			controlPointCount: firstIssueControlPoints,
 		};
 	}
 	return { status: "unavailable", reason: "no_arch", controlPointCount: 0 };
