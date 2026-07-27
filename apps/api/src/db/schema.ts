@@ -23,6 +23,10 @@ import type {
   FiscalReceiptDetails,
   ImagingViewerAnnotation,
   ImagingViewerSessionState,
+  MigrationEntityBreakdown,
+  MigrationFieldLineage,
+  MigrationMappingSnapshot,
+  MigrationReconciliationCheck,
   PatientAdministrativeProfile,
   StaffRole,
   TaxXmlSnapshot,
@@ -2201,6 +2205,234 @@ export const communicationSettings = pgTable("communication_settings", {
   retryBaseSeconds: integer("retry_base_seconds").notNull().default(60),
   retryMaxSeconds: integer("retry_max_seconds").notNull().default(3600),
   channelFallbackJson: text("channel_fallback_json").notNull().default('["telegram","whatsapp","sms","email"]'),
+  /**
+   * Автоматические напоминания о приёме (миграция 0124). Выключены по
+   * умолчанию: включать рассылку пациентам без ведома клиники нельзя.
+   */
+  appointmentReminderEnabled: boolean("appointment_reminder_enabled").notNull().default(false),
+  /** Часы до приёма: несколько значений — несколько напоминаний. */
+  appointmentReminderLeadHoursJson: text("appointment_reminder_lead_hours_json").notNull().default("[24]"),
+  /** Окно поиска, чтобы перезапуск не разослал напоминания о вчерашних приёмах. */
+  appointmentReminderWindowMinutes: integer("appointment_reminder_window_minutes").notNull().default(90),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ============================================================================
+// Движок переноса из чужих систем (миграция 0124).
+//
+// Слой стейджинга существует ровно для того, чтобы чужие данные не касались
+// боевых таблиц до того, как их пересчитали и проверили. Каждая исходная строка
+// сохраняется дословно; каждое поле знает, откуда оно и кто принял решение.
+// ============================================================================
+
+export const migrationRunStatus = pgEnum("migration_run_status", [
+  "draft",
+  "staging",
+  "mapping",
+  "validated",
+  "loading",
+  "completed",
+  "completed_with_quarantine",
+  "failed",
+  "rolled_back"
+]);
+
+export const migrationSourceKind = pgEnum("migration_source_kind", [
+  "delimited",
+  "spreadsheet",
+  "json",
+  "xml",
+  "dbf",
+  "sql_dump",
+  "clipboard",
+  "free_text",
+  "api"
+]);
+
+export const migrationEntityKind = pgEnum("migration_entity_kind", [
+  "patient",
+  "doctor",
+  "service",
+  "appointment",
+  "visit",
+  "payment",
+  "treatment_plan",
+  "tooth_state",
+  "document",
+  "unknown"
+]);
+
+export const migrationStagingStatus = pgEnum("migration_staging_status", [
+  "pending",
+  "normalized",
+  "mapped",
+  "ready",
+  "loaded",
+  "updated",
+  "duplicate",
+  "quarantined",
+  "skipped"
+]);
+
+export const migrationQuarantineReason = pgEnum("migration_quarantine_reason", [
+  "missing_required_field",
+  "unparsable_value",
+  "encoding_damage",
+  "broken_reference",
+  "duplicate_conflict",
+  "validation_failed",
+  "ambiguous_mapping",
+  "low_confidence",
+  "target_write_failed",
+  "row_too_large"
+]);
+
+export const migrationQuarantineResolution = pgEnum("migration_quarantine_resolution", [
+  "open",
+  "resolved_imported",
+  "resolved_merged",
+  "discarded"
+]);
+
+export const migrationDecisionSource = pgEnum("migration_decision_source", [
+  "vendor_profile",
+  "deterministic",
+  "llm",
+  "manual",
+  "inferred"
+]);
+
+export const migrationRuns = pgTable("migration_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  sourceName: text("source_name").notNull(),
+  sourceKind: migrationSourceKind("source_kind").notNull(),
+  /** sha256 исходных байт — узнаёт повторно загружаемый файл, но не запрещает его. */
+  sourceFingerprint: text("source_fingerprint"),
+  sourceBytes: integer("source_bytes"),
+  detectedEncoding: text("detected_encoding"),
+  encodingConfidence: real("encoding_confidence"),
+  vendorProfile: text("vendor_profile"),
+  status: migrationRunStatus("status").notNull().default("draft"),
+  dryRun: boolean("dry_run").notNull().default(true),
+  /** Инвариант сверки: sourceRows = loaded + updated + duplicate + quarantined + skipped. */
+  sourceRows: integer("source_rows").notNull().default(0),
+  stagedRows: integer("staged_rows").notNull().default(0),
+  loadedRows: integer("loaded_rows").notNull().default(0),
+  updatedRows: integer("updated_rows").notNull().default(0),
+  duplicateRows: integer("duplicate_rows").notNull().default(0),
+  quarantinedRows: integer("quarantined_rows").notNull().default(0),
+  skippedRows: integer("skipped_rows").notNull().default(0),
+  mappingJson: jsonb("mapping_json").$type<MigrationMappingSnapshot | null>(),
+  llmCalls: integer("llm_calls").notNull().default(0),
+  /** Прямая мера галлюцинаций: сколько ответов модели отвергла проверка. */
+  llmRejectedSuggestions: integer("llm_rejected_suggestions").notNull().default(0),
+  startedByUserId: uuid("started_by_user_id").references(() => users.id),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  errorClass: text("error_class"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxMigrationRunsOrgCreated: index("migration_runs_org_created_idx").on(table.organizationId, table.createdAt)
+  };
+});
+
+export const migrationStagingRecords = pgTable("migration_staging_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").notNull().references(() => migrationRuns.id, { onDelete: "cascade" }),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  entityKind: migrationEntityKind("entity_kind").notNull().default("unknown"),
+  sourceTable: text("source_table").notNull().default(""),
+  sourceRowNumber: integer("source_row_number").notNull(),
+  /** Исходная строка дословно. Единственное доказательство того, что было в старой системе. */
+  rawJson: jsonb("raw_json").$type<Record<string, string>>().notNull(),
+  rawHash: text("raw_hash").notNull(),
+  naturalKey: text("natural_key"),
+  normalizedJson: jsonb("normalized_json").$type<Record<string, unknown> | null>(),
+  lineageJson: jsonb("lineage_json").$type<MigrationFieldLineage[] | null>(),
+  status: migrationStagingStatus("status").notNull().default("pending"),
+  targetEntityId: uuid("target_entity_id"),
+  confidence: real("confidence").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    stagingRowUnique: unique("migration_staging_row_unique").on(table.runId, table.sourceTable, table.sourceRowNumber),
+    idxStagingRunStatus: index("migration_staging_run_status_idx").on(table.runId, table.status),
+    idxStagingHash: index("migration_staging_hash_idx").on(table.runId, table.rawHash)
+  };
+});
+
+export const migrationQuarantineRecords = pgTable("migration_quarantine_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").notNull().references(() => migrationRuns.id, { onDelete: "cascade" }),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  stagingRecordId: uuid("staging_record_id").references(() => migrationStagingRecords.id, { onDelete: "cascade" }),
+  entityKind: migrationEntityKind("entity_kind").notNull().default("unknown"),
+  reason: migrationQuarantineReason("reason").notNull(),
+  /** false — строку можно загрузить, но оператор должен знать. Не блокирует перенос. */
+  blocking: boolean("blocking").notNull().default(true),
+  fieldPath: text("field_path"),
+  /** Текст для человека. Без сырых персональных данных — они остаются в стейджинге. */
+  message: text("message").notNull(),
+  suggestedFix: text("suggested_fix"),
+  resolution: migrationQuarantineResolution("resolution").notNull().default("open"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id),
+  retryCount: integer("retry_count").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxQuarantineRun: index("migration_quarantine_run_idx").on(table.runId, table.resolution, table.reason)
+  };
+});
+
+export const migrationEntityLinks = pgTable("migration_entity_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  entityKind: migrationEntityKind("entity_kind").notNull(),
+  sourceSystem: text("source_system").notNull(),
+  sourceEntityId: text("source_entity_id").notNull(),
+  naturalKey: text("natural_key"),
+  /**
+   * Внешнего ключа нет намеренно: ссылка указывает в разные таблицы в
+   * зависимости от entityKind, а откат должен пережить удаление цели.
+   */
+  targetEntityId: uuid("target_entity_id").notNull(),
+  createdByRunId: uuid("created_by_run_id").references(() => migrationRuns.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    entityLinkSourceUnique: unique("migration_entity_links_source_unique").on(
+      table.organizationId,
+      table.entityKind,
+      table.sourceSystem,
+      table.sourceEntityId
+    ),
+    idxEntityLinksTarget: index("migration_entity_links_target_idx").on(table.targetEntityId),
+    idxEntityLinksRun: index("migration_entity_links_run_idx").on(table.createdByRunId)
+  };
+});
+
+export const migrationReconciliations = pgTable("migration_reconciliations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").notNull().references(() => migrationRuns.id, { onDelete: "cascade" }),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
+  balanced: boolean("balanced").notNull(),
+  checksJson: jsonb("checks_json").$type<MigrationReconciliationCheck[]>().notNull(),
+  entityBreakdownJson: jsonb("entity_breakdown_json").$type<MigrationEntityBreakdown[]>().notNull(),
+  sourceMoneyTotalRub: integer("source_money_total_rub"),
+  loadedMoneyTotalRub: integer("loaded_money_total_rub"),
+  quarantinedMoneyTotalRub: integer("quarantined_money_total_rub"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    idxReconciliationRun: index("migration_reconciliations_run_idx").on(table.runId, table.generatedAt)
+  };
 });

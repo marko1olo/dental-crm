@@ -72,6 +72,9 @@ export type ResolvedCommunicationSettings = QuietHoursSettings &
 		readonly dailyLimitPerPatient: number;
 		readonly maxAttempts: number;
 		readonly channelFallback: CommunicationChannelCode[];
+		readonly appointmentReminderEnabled: boolean;
+		readonly appointmentReminderLeadHours: number[];
+		readonly appointmentReminderWindowMinutes: number;
 	};
 
 export const DEFAULT_COMMUNICATION_SETTINGS: ResolvedCommunicationSettings = {
@@ -84,7 +87,11 @@ export const DEFAULT_COMMUNICATION_SETTINGS: ResolvedCommunicationSettings = {
 	maxAttempts: 5,
 	retryBaseSeconds: 60,
 	retryMaxSeconds: 3600,
-	channelFallback: ["telegram", "whatsapp", "sms", "email"]
+	channelFallback: ["telegram", "whatsapp", "sms", "email"],
+	// Выключено по умолчанию: включать рассылку пациентам без ведома клиники нельзя.
+	appointmentReminderEnabled: false,
+	appointmentReminderLeadHours: [24],
+	appointmentReminderWindowMinutes: 90
 };
 
 function parseChannelFallback(raw: string): CommunicationChannelCode[] {
@@ -97,6 +104,20 @@ function parseChannelFallback(raw: string): CommunicationChannelCode[] {
 		return channels.length > 0 ? channels : DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
 	} catch {
 		return DEFAULT_COMMUNICATION_SETTINGS.channelFallback;
+	}
+}
+
+/** Часы до приёма, когда отправлять напоминание. Порядок — от дальнего к ближнему. */
+export function parseLeadHours(raw: string): number[] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [24];
+		const hours = parsed
+			.map((value) => (typeof value === "number" ? value : Number.parseFloat(String(value))))
+			.filter((value) => Number.isFinite(value) && value > 0 && value <= 720);
+		return hours.length > 0 ? [...new Set(hours)].sort((left, right) => right - left) : [24];
+	} catch {
+		return [24];
 	}
 }
 
@@ -119,7 +140,10 @@ export async function resolveCommunicationSettings(organizationId: string): Prom
 		maxAttempts: row.maxAttempts,
 		retryBaseSeconds: row.retryBaseSeconds,
 		retryMaxSeconds: row.retryMaxSeconds,
-		channelFallback: parseChannelFallback(row.channelFallbackJson)
+		channelFallback: parseChannelFallback(row.channelFallbackJson),
+		appointmentReminderEnabled: row.appointmentReminderEnabled,
+		appointmentReminderLeadHours: parseLeadHours(row.appointmentReminderLeadHoursJson),
+		appointmentReminderWindowMinutes: row.appointmentReminderWindowMinutes
 	};
 }
 

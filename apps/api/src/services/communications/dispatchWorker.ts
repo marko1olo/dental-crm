@@ -11,6 +11,7 @@
  * машине разработчика фоновые отправки не нужны.
  */
 
+import { scheduleAppointmentReminders, type ReminderScheduleReport } from "./appointmentReminders.js";
 import { dispatchDueMessages, type DispatchReport } from "./dispatcher.js";
 
 export type DispatchWorkerLogger = {
@@ -23,6 +24,8 @@ export type DispatchWorkerHandle = {
 	readonly enabled: boolean;
 	stop: () => void;
 	runOnce: () => Promise<DispatchReport | null>;
+	/** Отдельный прогон планировщика напоминаний — для теста и ручного запуска. */
+	scheduleRemindersOnce: () => Promise<ReminderScheduleReport | null>;
 };
 
 function parseBoolean(value: string | undefined): boolean {
@@ -43,13 +46,17 @@ export function startCommunicationDispatchWorker(
 	const logger = options.logger;
 
 	if (!parseBoolean(env.DENTE_COMMUNICATION_WORKER_ENABLED)) {
-		return { enabled: false, stop: () => undefined, runOnce: async () => null };
+		return { enabled: false, stop: () => undefined, runOnce: async () => null, scheduleRemindersOnce: async () => null };
 	}
 
 	const intervalMs = parseInteger(env.DENTE_COMMUNICATION_WORKER_INTERVAL_MS, 30_000, 5_000, 15 * 60_000);
 	const batchSize = parseInteger(env.DENTE_COMMUNICATION_WORKER_BATCH_SIZE, 25, 1, 200);
 	const stuckLockMinutes = parseInteger(env.DENTE_COMMUNICATION_WORKER_STUCK_LOCK_MINUTES, 10, 1, 240);
 	const workerId = `${env.DENTE_COMMUNICATION_WORKER_ID?.trim() || "api"}:${process.pid}`;
+	// Напоминания ставятся реже, чем разбирается очередь: приёмы не появляются
+	// каждые полминуты, а лишний проход — это лишние запросы к базе.
+	const reminderEveryTicks = parseInteger(env.DENTE_COMMUNICATION_REMINDER_EVERY_TICKS, 10, 1, 200);
+	let ticksSinceReminders = reminderEveryTicks;
 
 	let stopped = false;
 	let inFlight = false;
@@ -74,6 +81,11 @@ export function startCommunicationDispatchWorker(
 		}
 	};
 
+	const scheduleRemindersOnce = async (): Promise<ReminderScheduleReport | null> => {
+		if (stopped) return null;
+		return scheduleAppointmentReminders();
+	};
+
 	const tick = async () => {
 		if (stopped) return;
 		if (inFlight) {
@@ -81,6 +93,26 @@ export function startCommunicationDispatchWorker(
 			schedule(intervalMs);
 			return;
 		}
+		try {
+			// Сначала поставить напоминания, потом разобрать очередь: то, что
+			// поставлено сейчас, уйдёт этим же проходом.
+			if (ticksSinceReminders >= reminderEveryTicks) {
+				ticksSinceReminders = 0;
+				const reminders = await scheduleAppointmentReminders();
+				if (reminders.queued > 0 || reminders.problems.length > 0) {
+					logger?.info(
+						{ queued: reminders.queued, examined: reminders.examined, problems: reminders.problems.length },
+						"Напоминания о приёме поставлены в очередь"
+					);
+				}
+				for (const problem of reminders.problems) logger?.warn({ problem }, "Напоминания о приёме: помеха");
+			} else {
+				ticksSinceReminders += 1;
+			}
+		} catch (error) {
+			logger?.error({ error }, "Планировщик напоминаний не отработал");
+		}
+
 		try {
 			const report = await runOnce();
 			// Логируется только непустой проход: иначе журнал заполняется нулями.
@@ -105,6 +137,7 @@ export function startCommunicationDispatchWorker(
 			if (timer) clearTimeout(timer);
 			timer = null;
 		},
-		runOnce
+		runOnce,
+		scheduleRemindersOnce
 	};
 }

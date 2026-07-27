@@ -31,6 +31,7 @@ import {
 	resolveChannelCredentials,
 	type CommunicationChannelCode
 } from "../services/communications/channelRouter.js";
+import { scheduleAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import {
 	DEFAULT_COMMUNICATION_SETTINGS,
 	dispatchDueMessages,
@@ -111,7 +112,10 @@ const settingsSchema = z.object({
 	maxAttempts: z.number().int().min(1).max(20).optional(),
 	retryBaseSeconds: z.number().int().min(5).max(3600).optional(),
 	retryMaxSeconds: z.number().int().min(60).max(86_400).optional(),
-	channelFallback: z.array(deliverableChannelSchema).min(1).max(8).optional()
+	channelFallback: z.array(deliverableChannelSchema).min(1).max(8).optional(),
+	appointmentReminderEnabled: z.boolean().optional(),
+	appointmentReminderLeadHours: z.array(z.number().min(0.5).max(720)).min(1).max(6).optional(),
+	appointmentReminderWindowMinutes: z.number().int().min(5).max(1440).optional()
 });
 
 const consentUpdateSchema = z.object({
@@ -335,11 +339,39 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 			maxAttempts: parsed.data.maxAttempts ?? current.maxAttempts,
 			retryBaseSeconds: parsed.data.retryBaseSeconds ?? current.retryBaseSeconds,
 			retryMaxSeconds: parsed.data.retryMaxSeconds ?? current.retryMaxSeconds,
-			channelFallbackJson: JSON.stringify(parsed.data.channelFallback ?? current.channelFallback)
+			channelFallbackJson: JSON.stringify(parsed.data.channelFallback ?? current.channelFallback),
+			appointmentReminderEnabled: parsed.data.appointmentReminderEnabled ?? current.appointmentReminderEnabled,
+			appointmentReminderLeadHoursJson: JSON.stringify(
+				parsed.data.appointmentReminderLeadHours ?? current.appointmentReminderLeadHours
+			),
+			appointmentReminderWindowMinutes:
+				parsed.data.appointmentReminderWindowMinutes ?? current.appointmentReminderWindowMinutes
 		};
 
 		if (next.retryMaxSeconds < next.retryBaseSeconds) {
 			return validationError(reply, ["Потолок паузы между попытками меньше её начального значения."]);
+		}
+
+		// Включить напоминания без шаблона — значит завести автоматику, которая
+		// ничего не отправит и промолчит об этом. Отказываем сразу и объясняем.
+		if (next.appointmentReminderEnabled && !current.appointmentReminderEnabled) {
+			const [reminderTemplate] = await db
+				.select({ id: communicationTemplates.id })
+				.from(communicationTemplates)
+				.where(
+					and(
+						eq(communicationTemplates.organizationId, context.organizationId),
+						eq(communicationTemplates.intent, "appointment_confirmation"),
+						eq(communicationTemplates.isActive, true)
+					)
+				)
+				.limit(1);
+			if (!reminderTemplate) {
+				return validationError(reply, [
+					"Нет активного шаблона с назначением «Подтверждение приёма» — напоминания отправлять нечем.",
+					"Создайте шаблон для нужного канала и включите напоминания снова."
+				]);
+			}
 		}
 
 		await db
@@ -639,6 +671,19 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 			batchSize: Number.isFinite(batchSize) ? batchSize : 25,
 			workerId: `manual:${context.organizationId}`
 		});
+		return { report };
+	});
+
+	/**
+	 * Ручная постановка напоминаний. Нужна для проверки настройки: администратор
+	 * включил напоминания и хочет увидеть результат сейчас, а не через сутки.
+	 */
+	app.post("/api/communications/reminders/run", async (request, reply) => {
+		const context = await requireClinicalMutationContext(request, reply, "communication reminders run");
+		if (!context) return;
+		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
+
+		const report = await scheduleAppointmentReminders({ organizationId: context.organizationId });
 		return { report };
 	});
 
