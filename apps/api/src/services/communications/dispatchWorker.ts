@@ -31,6 +31,58 @@ export type DispatchWorkerHandle = {
 	scheduleRemindersOnce: () => Promise<ReminderScheduleReport | null>;
 };
 
+/**
+ * Состояние автоматической отправки — для показа в интерфейсе.
+ *
+ * ЗАЧЕМ ЭТО ОТДЕЛЬНО. Обработчик выключен по умолчанию, и это правильно: рассылка
+ * пациентам не должна включаться сама на чьей-то машине. Но узнать об этом из
+ * интерфейса было НЕЛЬЗЯ. Клиника видела очередь, в которой копятся сообщения, и
+ * не имела ни одного признака, что их никто не отправляет. Худший исход такой:
+ * администратор уверен, что напоминания уходят, пациенты не приходят, и никто не
+ * связывает одно с другим неделями.
+ */
+export type AutomaticSendingState = {
+	readonly enabled: boolean;
+	readonly intervalSeconds: number | null;
+	readonly batchSize: number | null;
+	/** Что делать человеку, читающему это на экране. */
+	readonly detail: string;
+	/** Имя переменной окружения — чтобы не искать её по документации. */
+	readonly enableWith: string;
+};
+
+/**
+ * Чистая функция: читает окружение и объясняет состояние словами. Вынесена из
+ * тела обработчика, чтобы её можно было и показать в интерфейсе, и проверить
+ * тестом без запуска таймеров.
+ */
+export function describeAutomaticSending(env: NodeJS.ProcessEnv = process.env): AutomaticSendingState {
+	const enabled = parseBoolean(env.DENTE_COMMUNICATION_WORKER_ENABLED);
+	if (!enabled) {
+		return {
+			enabled: false,
+			intervalSeconds: null,
+			batchSize: null,
+			detail:
+				"Автоматическая отправка выключена на сервере: сообщения копятся в очереди и никуда не уходят. " +
+				// Название кнопки указано ровно то, что стоит на экране
+				// (MessageDeliveryConsole): текст, отсылающий к несуществующей
+				// кнопке, — это тупик, а не подсказка.
+				"Пока она выключена, очередь разбирается вручную кнопкой «Отправить из очереди».",
+			enableWith: "DENTE_COMMUNICATION_WORKER_ENABLED"
+		};
+	}
+
+	const intervalMs = parseInteger(env.DENTE_COMMUNICATION_WORKER_INTERVAL_MS, 30_000, 5_000, 15 * 60_000);
+	return {
+		enabled: true,
+		intervalSeconds: Math.round(intervalMs / 1000),
+		batchSize: parseInteger(env.DENTE_COMMUNICATION_WORKER_BATCH_SIZE, 25, 1, 200),
+		detail: `Очередь разбирается автоматически каждые ${Math.round(intervalMs / 1000)} с.`,
+		enableWith: "DENTE_COMMUNICATION_WORKER_ENABLED"
+	};
+}
+
 function parseBoolean(value: string | undefined): boolean {
 	const normalized = value?.trim().toLowerCase();
 	return normalized === "1" || normalized === "true" || normalized === "yes";

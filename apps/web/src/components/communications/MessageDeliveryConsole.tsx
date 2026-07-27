@@ -40,6 +40,16 @@ type GatewayStatus = {
 		vk: { configured: boolean; detail: string };
 		max: { configured: boolean; detail: string };
 	};
+	/** Разбирает ли кто-нибудь очередь и сколько в ней просроченных сообщений. */
+	automaticSending: {
+		enabled: boolean;
+		intervalSeconds: number | null;
+		batchSize: number | null;
+		detail: string;
+		enableWith: string;
+		waiting: number;
+		oldestWaitingAt: string | null;
+	};
 	deliverableChannels: string[];
 };
 
@@ -427,6 +437,41 @@ export function MessageDeliveryConsole() {
 				<p className="ops-notice" role="status" aria-live="polite">
 					{notice}
 				</p>
+			) : null}
+
+			{/*
+				── Кто разбирает очередь ──────────────────────────────────────────
+				Самый дорогой сбой в этом разделе — молчаливый. Обработчик очереди
+				выключен по умолчанию (рассылка не должна включаться сама), но узнать
+				об этом из интерфейса было нельзя: экран показывал наполняющуюся
+				очередь и ни одного признака, что её никто не отправляет.
+				Предупреждение появляется только когда сообщения реально ждут: пустая
+				очередь при выключенном обработчике никому не мешает.
+
+				И только когда подключён хотя бы один канал. Иначе на экране
+				оказывались две красные плашки подряд, обе со словами «сообщения не
+				отправляются», хотя причина одна и она ниже: без ключей шлюза
+				включённый обработчик тоже ничего не отправит. Две тревоги за раз
+				читаются как шум и перестают читаться вовсе.
+			*/}
+			{gateways &&
+			configuredChannels.length > 0 &&
+			!gateways.automaticSending.enabled &&
+			gateways.automaticSending.waiting > 0 ? (
+				<div className="ops-notice ops-notice--error" role="alert">
+					<strong>
+						Сообщения не отправляются: ждут в очереди {gateways.automaticSending.waiting}
+						{gateways.automaticSending.oldestWaitingAt
+							? `, самое раннее с ${new Date(gateways.automaticSending.oldestWaitingAt).toLocaleString("ru-RU")}`
+							: ""}
+						.
+					</strong>
+					<p>
+						Автоматическая отправка выключена на сервере. Разослать накопившееся прямо сейчас можно кнопкой
+						«Отправить из очереди» выше; чтобы сообщения уходили сами, тот, кто устанавливал программу,
+						включает переменную {gateways.automaticSending.enableWith}.
+					</p>
+				</div>
 			) : null}
 
 			{/* ── Шлюзы ─────────────────────────────────────────────────────── */}

@@ -32,6 +32,7 @@ import {
 	type CommunicationChannelCode
 } from "../services/communications/channelRouter.js";
 import { scheduleAppointmentReminders } from "../services/communications/appointmentReminders.js";
+import { describeAutomaticSending } from "../services/communications/dispatchWorker.js";
 import {
 	campaignProgress,
 	cancelCampaign,
@@ -864,6 +865,34 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 	 * Что настроено, а что нет — одним ответом. Без этого экрана «не отправилось»
 	 * выясняется только по журналу постфактум.
 	 */
+	/**
+	 * Сколько сообщений ждёт отправки и с какого времени.
+	 *
+	 * Считается по времени, когда сообщение уже ДОЛЖНО было уйти: строка,
+	 * запланированная на завтра, не «застряла». Возраст самой старой такой
+	 * строки — это и есть ответ на вопрос «давно ли всё стоит».
+	 */
+	async function queueBacklog(organizationId: string): Promise<{ waiting: number; oldestWaitingAt: Date | null }> {
+		const now = new Date();
+		const [row] = await db
+			.select({
+				waiting: sql<number>`count(*)::int`,
+				oldest: sql<Date | null>`min(${communicationOutbox.scheduledAt})`
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					// Только «queued»: в перечислении очереди статуса «scheduled» нет,
+					// отложенные строки остаются queued с будущим scheduled_at.
+					eq(communicationOutbox.status, "queued"),
+					lte(communicationOutbox.scheduledAt, now)
+				)
+			);
+
+		return { waiting: Number(row?.waiting ?? 0), oldestWaitingAt: row?.oldest ?? null };
+	}
+
 	app.get("/api/communications/gateway-status", async (request, reply) => {
 		const context = await requireClinicalReadContext(request, reply, "communication gateway status");
 		if (!context) return;
@@ -894,11 +923,24 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 				},
 				whatsapp: { configured: credentials.whatsapp !== null },
 				telegram: { configured: credentials.telegramBotToken !== null },
-				// VK и MAX отправку не поддерживают — так и написано, вместо
-				// «подключено» при отсутствующей реализации.
-				vk: { configured: false, detail: "Отправка в VK не реализована." },
-				max: { configured: false, detail: "Отправка в MAX не реализована." }
+				// MAX отправляет с тех пор, как появился maxTransport; признак берётся
+				// из тех же учётных данных, что и сама отправка, а не пишется руками —
+				// иначе экран однажды разойдётся с поведением, как разошёлся здесь.
+				max: {
+					configured: credentials.maxBotToken !== null,
+					detail:
+						credentials.maxBotToken !== null
+							? "Бот подключён. Первым написать нельзя: диалог начинает пациент."
+							: "Бот MAX не подключён: нет токена или интеграция выключена."
+				},
+				vk: { configured: false, detail: "Отправка во ВКонтакте не подключена: нет ключа сообщества." }
 			},
+			/*
+			 * Работает ли автоматическая отправка и сколько сообщений ждёт. Без
+			 * этого экран показывал наполняющуюся очередь и ни одного признака
+			 * того, что её никто не разбирает.
+			 */
+			automaticSending: { ...describeAutomaticSending(), ...(await queueBacklog(context.organizationId)) },
 			deliverableChannels: MACHINE_DELIVERABLE_CHANNELS,
 			defaults: DEFAULT_COMMUNICATION_SETTINGS
 		};
