@@ -97,17 +97,32 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     const loginId = email.toLowerCase().trim();
 
+    const isDemoClinicLogin =
+      demoLoginAllowed() && loginId === "clinic@example.com" && password === "dente2026";
+
     // Look up organization by login ID
+    //
+    // БЫЛО: ошибка базы гасилась дважды (.catch(() => []) и внешний try/catch),
+    // после чего org оставалась пустой и клиника получала 401 «Неверный логин
+    // или пароль». Недоступная база выглядела как неправильный пароль: сотрудники
+    // перебирали пароли, а авария в логах отличалась от обычной опечатки только
+    // строкой AUTH_DB_ERROR. Отказ инфраструктуры должен отвечать 500.
+    //
+    // Демо-вход сохраняет прежнее поведение: он не обращается к базе и остаётся
+    // доступен, если таблиц ещё нет (свежая установка до миграций).
     let org;
     try {
-      const result = await db.select().from(organizations).where(eq(organizations.loginId, loginId)).limit(1).catch(() => []);
+      const result = await db.select().from(organizations).where(eq(organizations.loginId, loginId)).limit(1);
       org = result[0];
     } catch (dbErr) {
       console.error("[AUTH_DB_ERROR]", dbErr);
+      if (!isDemoClinicLogin) {
+        return reply.code(500).send({
+          error: "AuthUnavailable",
+          message: "Вход временно недоступен: нет связи с базой данных. Повторите попытку позже."
+        });
+      }
     }
-
-    const isDemoClinicLogin =
-      demoLoginAllowed() && loginId === "clinic@example.com" && password === "dente2026";
 
     if (!org) {
       if (isDemoClinicLogin) {

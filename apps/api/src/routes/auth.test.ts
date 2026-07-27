@@ -98,7 +98,12 @@ describe("auth routes", () => {
       assert.strictEqual(response.json().error, "ClinicAuthRequired");
     });
 
-    test("returns 404 when user not found", async () => {
+    test("несуществующий сотрудник неотличим от неверного PIN", async () => {
+      // Раньше здесь ожидался 404 UserNotFound. Такой ответ делал endpoint
+      // оракулом: по коду можно было перебрать, какие сотрудники есть в
+      // организации. Теперь оба случая отвечают одинаково — это и проверяем.
+      const clinicToken = signToken({ organizationId: 'org1' }, "test-secret", 60*60);
+
       mock.method(db, 'select', () => ({
         from: () => ({
           where: () => ({
@@ -106,17 +111,34 @@ describe("auth routes", () => {
           })
         })
       }));
-
-      const clinicToken = signToken({ organizationId: 'org1' }, "test-secret", 60*60);
-
-      const response = await app.inject({
+      const missingUser = await app.inject({
         method: "POST",
         url: "/api/auth/staff/unlock",
         headers: { "x-dente-clinic-token": clinicToken },
         payload: { userId: "user1", pinCode: "1234" }
       });
-      assert.strictEqual(response.statusCode, 404);
-      assert.strictEqual(response.json().error, "UserNotFound");
+
+      mock.restoreAll();
+      mock.method(db, 'select', () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => [{ id: 'user1', organizationId: 'org1', pinCodeHash: hashCredential('1234'), role: 'doctor' }]
+          })
+        })
+      }));
+      const wrongPin = await app.inject({
+        method: "POST",
+        url: "/api/auth/staff/unlock",
+        headers: { "x-dente-clinic-token": clinicToken },
+        payload: { userId: "user1", pinCode: "9999" }
+      });
+
+      assert.strictEqual(missingUser.statusCode, 401);
+      assert.strictEqual(missingUser.json().error, "AuthError");
+      // Ответы обязаны совпадать полностью, иначе разница выдаёт существование
+      // сотрудника.
+      assert.strictEqual(wrongPin.statusCode, missingUser.statusCode);
+      assert.deepStrictEqual(wrongPin.json(), missingUser.json());
     });
 
     test("returns 200 on successful unlock", async () => {
@@ -209,15 +231,28 @@ describe("auth routes", () => {
       assert.strictEqual(response.statusCode, 401);
     });
 
-    test("returns user1 demo profile directly", async () => {
+    test("нет демо-профиля в обход базы: неизвестный сотрудник -> 404", async () => {
+      // Раньше тест ожидал, что для userId "user1" вернётся готовый демо-профиль
+      // без обращения к базе. Такой ветки в маршруте нет — он всегда идёт в базу
+      // (демо-бэкдоры выключены). Без подмены запрос уходил в живую базу, где
+      // "user1" не UUID, и падал с 500; ожидание .id тоже устарело — маршрут
+      // отдаёт { ok, user }.
+      mock.method(db, 'select', () => ({
+        from: () => ({
+          where: () => ({
+            limit: async () => []
+          })
+        })
+      }));
+
       const staffToken = signToken({ userId: 'user1' }, "test-secret", 60*60);
       const response = await app.inject({
         method: "GET",
         url: "/api/auth/user/me",
         headers: { "x-dente-staff-token": staffToken }
       });
-      assert.strictEqual(response.statusCode, 200);
-      assert.strictEqual(response.json().id, "user1");
+      assert.strictEqual(response.statusCode, 404);
+      assert.strictEqual(response.json().error, "NotFound");
     });
 
     test("returns 200 with user profile", async () => {

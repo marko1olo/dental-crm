@@ -5,7 +5,20 @@ import os from "node:os";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { loadAdditionalServerEnv, getLoadedServerEnvFiles } from "./loadServerEnv.js";
 
-const TEST_DIR = path.join(process.cwd(), ".test-env-dir");
+/**
+ * Каталог теста обязан лежать вне репозитория.
+ *
+ * Было path.join(process.cwd(), ".test-env-dir") — внутри проекта. Поиск
+ * файлов окружения помимо cwd просматривает ещё и cwd/../.., поэтому
+ * подхватывались настоящие .env проекта: тест на слияние GROQ_API_KEYS получал
+ * к своим key1,key2,key3 ещё и живые ключи из рабочего окружения. Мало того что
+ * проверка становилась зависимой от машины — при падении node печатает
+ * фактическое значение, то есть настоящие ключи утекали в вывод тестов и в
+ * логи CI.
+ *
+ * mkdtemp в системном временном каталоге: и cwd, и cwd/../.. заведомо пусты.
+ */
+let TEST_DIR = "";
 
 describe('loadAdditionalServerEnv', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -14,6 +27,7 @@ describe('loadAdditionalServerEnv', () => {
   beforeEach(() => {
     originalEnv = { ...process.env };
     originalCwd = process.cwd;
+    TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dente-env-test-'));
 
     // Clear relevant process.env variables
     delete process.env.DENTAL_ENV_FILE;
@@ -27,7 +41,6 @@ describe('loadAdditionalServerEnv', () => {
     delete process.env.VAR3;
     delete process.env.VAR4;
 
-    fs.mkdirSync(TEST_DIR, { recursive: true });
     process.cwd = () => TEST_DIR;
   });
 
@@ -133,6 +146,12 @@ describe('getLoadedServerEnvFiles', () => {
   });
 
   test('returns deduplicated array of loaded env files', async () => {
+    // Этот блок не подменяет cwd, поэтому загружаются и настоящие .env проекта.
+    // Прежний замер «стало ровно на 2 больше» исходил из того, что других
+    // файлов нет: на рабочей машине их семь, и тест падал (9 вместо 7).
+    // Сначала даём загрузчику осесть, затем меряем прирост — список
+    // дедуплицируется, поэтому повторный вызов ничего не добавляет.
+    loadAdditionalServerEnv();
     const initialFiles = getLoadedServerEnvFiles();
 
     process.env.DENTAL_EXTRA_ENV_FILES = `${env1},${env2}`;
