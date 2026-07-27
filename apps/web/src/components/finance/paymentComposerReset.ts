@@ -122,3 +122,69 @@ export function resetPaymentComposer(setters: PaymentComposerSetters): void {
 	setters.setPaymentTaxDeductionCode(fields.paymentTaxDeductionCode);
 	setters.setPaymentFeedback("");
 }
+
+/*
+ * ПОЧЕМУ СБРОС НЕ ИМЕЕТ ПРАВА СРАБАТЫВАТЬ НА МОНТИРОВАНИИ.
+ *
+ * Форма приёма оплаты лежит в общем хранилище (documentStore), а не при экране
+ * кассы. Эффект «сменился пациент — форма пустая» живёт в useAppLogic, и этот
+ * контекст создаётся НЕ один раз за сеанс: кроме корня приложения его заводит
+ * заново useVisitDiaryLogic. Значит, эффект монтируется каждый раз, когда врач
+ * открывает вкладку «Зубная формула и Дневник», — а `useEffect` на монтировании
+ * выполняется всегда, независимо от значений в массиве зависимостей.
+ *
+ * Без защиты это стирало набранную сумму и переписанный с чека фискальный блок
+ * у кассира, который никакого пациента не переключал: достаточно было отойти на
+ * «Приём», открыть вкладку дневника и вернуться. Одна беда (деньги уезжают к
+ * чужому пациенту) была бы обменена на другую (деньги молча пропадают из формы).
+ *
+ * Поэтому решение о сбросе принимает эта функция, а не сам эффект: она помнит
+ * пациента предыдущего прогона и гасит форму только при настоящей смене.
+ */
+
+/**
+ * «Этот экземпляр эффекта ещё ни разу не выполнялся».
+ *
+ * Отдельный символ, а не `undefined` и не `null`: «пациент не выбран» — это
+ * настоящее состояние формы (`documentPatient?.id` равен `undefined`), и путать
+ * его с первым прогоном нельзя. Иначе монтирование при выбранном пациенте снова
+ * выглядело бы сменой пациента и снова стирало сумму.
+ */
+export const PAYMENT_COMPOSER_PATIENT_UNTRACKED: unique symbol = Symbol(
+	"payment-composer-patient-untracked",
+);
+
+/** Пациент предыдущего прогона эффекта либо признак первого прогона. */
+export type TrackedComposerPatientId =
+	| string
+	| undefined
+	| typeof PAYMENT_COMPOSER_PATIENT_UNTRACKED;
+
+/** Ссылка (`useRef`), в которой эффект держит пациента предыдущего прогона. */
+export interface TrackedComposerPatientRef {
+	current: TrackedComposerPatientId;
+}
+
+/**
+ * Гасит форму приёма оплаты только при настоящей смене пациента.
+ *
+ * Первый прогон экземпляра эффекта (монтирование) сбросом не считается: набранное
+ * человеком остаётся. Снятие выбора пациента — переход в `undefined` — смена, и
+ * форма гасится: сумма без пациента ни к кому не относится.
+ *
+ * Возвращает `true`, если форма была сброшена. Возвращаемое значение — не
+ * украшение: на нём держится проверка `tests/paymentComposerReset.test.ts`,
+ * которая считает сбросы на последовательности пациентов.
+ */
+export function resetPaymentComposerOnPatientChange(
+	trackedPatientId: TrackedComposerPatientRef,
+	patientId: string | undefined,
+	setters: PaymentComposerSetters,
+): boolean {
+	const previousPatientId = trackedPatientId.current;
+	trackedPatientId.current = patientId;
+	if (previousPatientId === PAYMENT_COMPOSER_PATIENT_UNTRACKED) return false;
+	if (previousPatientId === patientId) return false;
+	resetPaymentComposer(setters);
+	return true;
+}

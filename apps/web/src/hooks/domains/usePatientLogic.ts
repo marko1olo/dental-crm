@@ -19,7 +19,11 @@ import {
 	patientCoreDraftSignature,
 	responseErrorMessage,
 } from "../../AppHelpers";
-import { resetPaymentComposer } from "../../components/finance/paymentComposerReset";
+import {
+	PAYMENT_COMPOSER_PATIENT_UNTRACKED,
+	resetPaymentComposerOnPatientChange,
+	type TrackedComposerPatientId,
+} from "../../components/finance/paymentComposerReset";
 import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 
@@ -216,9 +220,26 @@ export function usePatientLogic({
 	 * Зависимость — идентификатор пациента, поэтому перезагрузка сводки при том
 	 * же пациенте набранную сумму не стирает. Снятие выбора (пациента нет,
 	 * идентификатор становится undefined) считается сменой и тоже очищает форму.
+	 *
+	 * МОНТИРОВАНИЕ СМЕНОЙ ПАЦИЕНТА НЕ СЧИТАЕТСЯ. `useEffect` на первом прогоне
+	 * выполняется всегда, а этот контекст создаётся не единожды за сеанс: помимо
+	 * корня приложения (App.tsx) его заводит заново useVisitDiaryLogic, то есть
+	 * каждое открытие вкладки «Зубная формула и Дневник». Без этой защиты кассир,
+	 * набравший сумму и переписавший ФН/ФД/ФПД с чека, терял их молча, просто
+	 * заглянув на «Приём» и вернувшись. Пациента предыдущего прогона помнит
+	 * ссылка ниже; решение о сбросе принимает
+	 * resetPaymentComposerOnPatientChange, одна на оба экземпляра эффекта.
 	 */
+	const paymentComposerPatientIdRef = useRef<TrackedComposerPatientId>(
+		PAYMENT_COMPOSER_PATIENT_UNTRACKED,
+	);
+
 	useEffect(() => {
-		resetPaymentComposer(useDocumentStore.getState());
+		resetPaymentComposerOnPatientChange(
+			paymentComposerPatientIdRef,
+			documentPatient?.id,
+			useDocumentStore.getState(),
+		);
 	}, [documentPatient?.id]);
 
 	useEffect(() => {
