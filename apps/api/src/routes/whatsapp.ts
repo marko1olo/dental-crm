@@ -30,6 +30,7 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
+import { applyReceipts, parseWhatsappStatuses } from "../services/communications/deliveryReceipts.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -401,6 +402,30 @@ export async function registerWhatsappRoutes(
 						.limit(1);
 
 					if (!orgConfig) continue;
+
+					/*
+					 * Квитанции доставки. Раньше value.statuses отбрасывался молча, и
+					 * сообщение, ушедшее в WhatsApp, навсегда оставалось «отправлено»:
+					 * доставлено оно, прочитано или отвергнуто — в журнале не
+					 * отличалось, хотя для SMS это работало. Организация в
+					 * applyReceipts не передаётся: она берётся из найденной строки
+					 * очереди, иначе чужой вебхук мог бы менять статусы другой клиники.
+					 */
+					const receipts = parseWhatsappStatuses(value.statuses);
+					if (receipts.length > 0) {
+						try {
+							const report = await applyReceipts(receipts);
+							if (report.unmatched > 0) {
+								console.warn(
+									`Whatsapp: квитанций без своего сообщения в очереди: ${report.unmatched} (сообщение отправлено не через журнал?)`,
+								);
+							}
+						} catch (receiptError) {
+							// Квитанция не должна ломать разбор входящих сообщений: пациент
+							// написал в чат, и это важнее, чем обновление статуса.
+							console.error("Whatsapp: квитанции не применены:", receiptError);
+						}
+					}
 
 					const messages = Array.isArray(value.messages)
 						? (value.messages as unknown[])

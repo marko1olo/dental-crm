@@ -30,12 +30,18 @@ export const patientDuplicateDecisions = pgTable(
 		 * же решение записалось бы дважды в обратном порядке и продолжало
 		 * предлагаться.
 		 */
+		/*
+		 * onDelete: cascade — так в живой базе после миграции 0130. Решение о паре
+		 * бессмысленно без одной из сторон, и без каскада запись держала пациента:
+		 * удалить его не могли ни очистка тестовых данных, ни удаление по
+		 * требованию субъекта персональных данных.
+		 */
 		leftPatientId: uuid("left_patient_id")
 			.notNull()
-			.references(() => patients.id),
+			.references(() => patients.id, { onDelete: "cascade" }),
 		rightPatientId: uuid("right_patient_id")
 			.notNull()
-			.references(() => patients.id),
+			.references(() => patients.id, { onDelete: "cascade" }),
 		/** dismissed — «это разные люди»; merged — карточки объединены. */
 		decision: text("decision").notNull(),
 		/** Слияние медицинских карт должно быть объяснимо: кто и когда. */

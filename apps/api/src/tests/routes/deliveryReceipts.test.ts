@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { communicationOutbox, organizations, patients } from "../../db/schema.js";
 import { registerCommunicationReceiptRoutes } from "../../routes/communicationReceipts.js";
-import { parseSmsRuReceipts, parseSmscReceipt } from "../../services/communications/deliveryReceipts.js";
+import { parseSmsRuReceipts, parseSmscReceipt, parseWhatsappStatuses } from "../../services/communications/deliveryReceipts.js";
 
 /**
  * Квитанции о доставке.
@@ -71,6 +71,54 @@ describe("разбор квитанций провайдеров", () => {
 		// преждевременно признать сообщение потерянным.
 		assert.equal(parseSmscReceipt({ id: "12345", status: "-1" })?.state, "in_transit");
 		assert.equal(parseSmscReceipt({ id: "12345", status: "0" })?.state, "in_transit");
+	});
+
+	test("WhatsApp: прочитано считается доставкой, а не отдельным исходом", () => {
+		const receipts = parseWhatsappStatuses([
+			{ id: "wamid.A", status: "delivered" },
+			{ id: "wamid.B", status: "read" },
+			{ id: "wamid.C", status: "sent" }
+		]);
+		assert.equal(receipts[0]?.state, "delivered");
+		// Для напоминания о приёме «прочитано» — тот же успех, что «доставлено».
+		assert.equal(receipts[1]?.state, "delivered");
+		assert.equal(receipts[2]?.state, "in_transit");
+	});
+
+	test("WhatsApp: отказ объяснён человеческим текстом, а не кодом Meta", () => {
+		const [receipt] = parseWhatsappStatuses([
+			{ id: "wamid.D", status: "failed", errors: [{ code: 131026, title: "Message undeliverable" }] }
+		]);
+		assert.equal(receipt?.state, "failed");
+		// Администратор должен понять, что делать: писать SMS.
+		assert.ok(receipt?.detail.includes("нет WhatsApp"), receipt?.detail);
+		assert.ok(receipt?.detail.includes("131026"), receipt?.detail);
+	});
+
+	test("WhatsApp: окно 24 часов названо своими словами", () => {
+		const [receipt] = parseWhatsappStatuses([
+			{ id: "wamid.E", status: "failed", errors: [{ code: 131047, title: "Re-engagement message" }] }
+		]);
+		assert.ok(receipt?.detail.includes("24 часов"), receipt?.detail);
+	});
+
+	test("WhatsApp: незнакомый код не выдумывает объяснение", () => {
+		const [receipt] = parseWhatsappStatuses([
+			{ id: "wamid.F", status: "failed", errors: [{ code: 999999, title: "Something new" }] }
+		]);
+		// Берётся заголовок от Meta, а не придуманная фраза.
+		assert.ok(receipt?.detail.includes("Something new"), receipt?.detail);
+	});
+
+	test("WhatsApp: мусор и чужие поля не создают квитанций", () => {
+		assert.deepEqual(parseWhatsappStatuses(undefined), []);
+		assert.deepEqual(parseWhatsappStatuses([]), []);
+		assert.deepEqual(parseWhatsappStatuses([{ status: "delivered" }]), []);
+		assert.deepEqual(parseWhatsappStatuses(["строка"]), []);
+		// Неизвестное состояние сохраняется как unknown: расхождение с
+		// документацией Meta должно быть видно, а статус при этом не меняется.
+		const [unknown] = parseWhatsappStatuses([{ id: "wamid.G", status: "deleted" }]);
+		assert.equal(unknown?.state, "unknown");
 	});
 
 	test("SMSC: код ошибки попадает в текст квитанции", () => {

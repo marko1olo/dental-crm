@@ -124,6 +124,89 @@ export function parseSmscReceipt(params: Record<string, unknown>): ParsedReceipt
 	};
 }
 
+/**
+ * Причины отказа WhatsApp Cloud API, которые администратор клиники должен
+ * понимать без чтения документации Meta. «131026» на экране бесполезен: он не
+ * говорит, что делать. «У пациента нет WhatsApp — напишите SMS» говорит.
+ */
+const WHATSAPP_ERRORS: Readonly<Record<number, string>> = {
+	131026: "у получателя нет WhatsApp или он не может принять сообщение — нужен другой канал",
+	131047: "прошло больше 24 часов с последнего ответа пациента: свободный текст запрещён, нужен согласованный шаблон",
+	131049: "Meta ограничила доставку этому получателю, чтобы снизить долю рассылок",
+	131051: "тип сообщения не поддерживается получателем",
+	131053: "вложение не принято: неподходящий формат или размер",
+	132000: "число значений не совпадает с шаблоном",
+	132001: "шаблон не найден или не одобрен",
+	133010: "номер отправителя не зарегистрирован в WhatsApp Business",
+	470: "истекло окно свободной переписки — нужен шаблон"
+};
+
+/**
+ * Квитанции WhatsApp Cloud API из `value.statuses` вебхука.
+ *
+ * ЧТО БЫЛО. Вебхук разбирал только `value.messages`, а `value.statuses`
+ * отбрасывал молча. Из-за этого сообщение, отправленное в WhatsApp, навсегда
+ * оставалось «отправлено»: доставлено оно, прочитано или отвергнуто — в журнале
+ * не отличалось. Для SMS это работало, для WhatsApp нет.
+ *
+ * `read` считается доставкой, а не отдельным состоянием: для напоминания о
+ * приёме «прочитано» — тот же успех, что «доставлено», и понижать одно до
+ * другого нельзя (порядок запросов Meta не гарантирует).
+ */
+export function parseWhatsappStatuses(rawStatuses: unknown): ParsedReceipt[] {
+	if (!Array.isArray(rawStatuses)) return [];
+
+	const receipts: ParsedReceipt[] = [];
+	for (const item of rawStatuses) {
+		if (!item || typeof item !== "object") continue;
+		const entry = item as Record<string, unknown>;
+
+		const providerMessageId = typeof entry.id === "string" ? entry.id.trim() : "";
+		if (!providerMessageId) continue;
+
+		const status = typeof entry.status === "string" ? entry.status.trim().toLowerCase() : "";
+
+		// Расшифровка ошибки берётся из первой записи errors: Meta присылает их
+		// массивом, но для одного сообщения причина одна.
+		const errors = Array.isArray(entry.errors) ? entry.errors : [];
+		const firstError = errors.length > 0 && errors[0] && typeof errors[0] === "object" ? (errors[0] as Record<string, unknown>) : null;
+		const errorCode = typeof firstError?.code === "number" ? firstError.code : null;
+		const errorTitle = typeof firstError?.title === "string" ? firstError.title : null;
+
+		if (status === "delivered") {
+			receipts.push({ providerMessageId, state: "delivered", detail: "WhatsApp: доставлено" });
+			continue;
+		}
+		if (status === "read") {
+			receipts.push({ providerMessageId, state: "delivered", detail: "WhatsApp: прочитано" });
+			continue;
+		}
+		if (status === "sent") {
+			receipts.push({ providerMessageId, state: "in_transit", detail: "WhatsApp: передано в сеть" });
+			continue;
+		}
+		if (status === "failed") {
+			const human = errorCode !== null ? WHATSAPP_ERRORS[errorCode] : undefined;
+			const explanation = human ?? errorTitle ?? "причина не указана";
+			receipts.push({
+				providerMessageId,
+				state: "failed",
+				detail: `WhatsApp: не доставлено — ${explanation}${errorCode !== null ? ` (код ${errorCode})` : ""}`
+			});
+			continue;
+		}
+
+		// Неизвестное состояние статус не меняет, но текст сохраняется: иначе
+		// расхождение с документацией Meta осталось бы невидимым.
+		receipts.push({
+			providerMessageId,
+			state: "unknown",
+			detail: `WhatsApp: состояние «${status || "не указано"}» не распознано`
+		});
+	}
+	return receipts;
+}
+
 export type ApplyReceiptsReport = {
 	readonly applied: number;
 	readonly delivered: number;
