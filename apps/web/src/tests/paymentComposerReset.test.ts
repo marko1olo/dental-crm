@@ -6,9 +6,12 @@ import { fileURLToPath } from "node:url";
 import {
 	DEFAULT_PAYER_RELATIONSHIP,
 	emptyPaymentComposerFields,
+	PAYMENT_COMPOSER_PATIENT_UNTRACKED,
 	type PaymentComposerFields,
 	type PaymentComposerSetters,
 	resetPaymentComposer,
+	resetPaymentComposerOnPatientChange,
+	type TrackedComposerPatientRef,
 } from "../components/finance/paymentComposerReset";
 
 /**
@@ -18,11 +21,23 @@ import {
  * плательщика для вычета. Сумма и весь фискальный блок оставались от
  * предыдущего человека, и следующий платёж записывался с ними.
  *
- * Проверяем три вещи:
+ * И ОБРАТНАЯ БЕДА: ПЕРВАЯ ПОЧИНКА ГАСИЛА ФОРМУ НА МОНТИРОВАНИИ.
+ *
+ * Эффект сброса живёт в useAppLogic, а этот контекст создаётся не один раз за
+ * сеанс: помимо корня приложения его заводит заново useVisitDiaryLogic, то есть
+ * каждое открытие вкладки «Зубная формула и Дневник». `useEffect` на первом
+ * прогоне выполняется всегда, поэтому набранная сумма и переписанный с чека
+ * фискальный блок исчезали у кассира, который никого не переключал. Решение о
+ * сбросе теперь принимает `resetPaymentComposerOnPatientChange`, и проверки ниже
+ * исполняют именно её, а не пересказ её логики.
+ *
+ * Проверяем четыре вещи:
  *  1. свежая форма — сумма пустая, чужих реквизитов нет;
  *  2. сброс действительно гасит унаследованные значения (исполняется на
  *     подставном хранилище, значения читаются после вызова);
- *  3. оба места, где форма обязана стать свежей, перечисляют все поля —
+ *  3. монтирование при том же пациенте (в том числе второй экземпляр контекста)
+ *     сбросов не даёт вовсе, а настоящая смена пациента даёт ровно один;
+ *  4. оба места, где форма обязана стать свежей, перечисляют все поля —
  *     сброс при смене пациента вызовом общего перечня, сброс после платежа
  *     пока своим списком. Второе читается из исходника: разойтись повторно
  *     они не смогут молча.
@@ -104,22 +119,30 @@ const composerFilledForPatientA: PaymentComposerFields & { paymentFeedback: stri
 	paymentFeedback: "Оплата 5 000 ₽ записана для Абросимовой Елены Петровны.",
 };
 
+/** Свежая ссылка `useRef` смонтированного экземпляра эффекта. */
+function mountComposerEffect(): TrackedComposerPatientRef {
+	return { current: PAYMENT_COMPOSER_PATIENT_UNTRACKED };
+}
+
 /**
- * Модель зависимости эффекта `[documentPatient?.id]`: сброс отрабатывает ровно
- * тогда, когда идентификатор пациента изменился. Снятие выбора — переход в
- * `undefined` — такое же изменение.
+ * Прогоняет один смонтированный экземпляр эффекта по последовательности
+ * значений `documentPatient?.id` и возвращает число настоящих сбросов.
+ *
+ * Решение о сбросе принимает боевая `resetPaymentComposerOnPatientChange` —
+ * здесь не пересказ её логики, а её исполнение. Первое значение
+ * последовательности — монтирование. Снятие выбора пациента передаётся как
+ * `undefined`, как его и отдаёт `documentPatient?.id`.
  */
 function applyPatientSwitches(
 	store: ReturnType<typeof makeStore>,
 	patientIds: readonly (string | undefined)[],
+	effect: TrackedComposerPatientRef = mountComposerEffect(),
 ): number {
-	let previous: string | undefined | symbol = Symbol("не смонтировано");
 	let resets = 0;
 	for (const patientId of patientIds) {
-		if (patientId === previous) continue;
-		previous = patientId;
-		resetPaymentComposer(store.setters);
-		resets += 1;
+		if (resetPaymentComposerOnPatientChange(effect, patientId, store.setters)) {
+			resets += 1;
+		}
 	}
 	return resets;
 }
@@ -188,15 +211,89 @@ describe("смена пациента гасит форму предыдущег
 	it("снятие выбора пациента очищает набранную сумму", () => {
 		const store = makeStore(composerFilledForPatientA);
 		const resets = applyPatientSwitches(store, ["pat-a", "pat-a", undefined]);
-		assert.equal(resets, 2);
+		assert.equal(resets, 1);
 		assert.equal(store.state.paymentAmount, "");
 		assert.equal(store.state.paymentFiscalFn, "");
 	});
 
-	it("перезагрузка сводки при том же пациенте сбросов не добавляет", () => {
+	it("на смене пациента не остаётся ни одного поля предыдущего", () => {
+		const store = makeStore(composerFilledForPatientA);
+		const effect = mountComposerEffect();
+		assert.equal(
+			resetPaymentComposerOnPatientChange(effect, "pat-a", store.setters),
+			false,
+			"монтирование при выбранном пациенте не имеет права гасить форму",
+		);
+		assert.equal(store.state.paymentAmount, "12000,50");
+		assert.equal(
+			resetPaymentComposerOnPatientChange(effect, "pat-b", store.setters),
+			true,
+			"настоящая смена пациента обязана дать сброс",
+		);
+		const survivors = Object.entries(store.state).filter(([field, value]) => {
+			if (field === "paymentPayerRelationship") {
+				return value !== DEFAULT_PAYER_RELATIONSHIP;
+			}
+			return value !== "";
+		});
+		assert.deepEqual(
+			survivors,
+			[],
+			`после смены пациента в форме остались чужие данные: ${survivors
+				.map(([field, value]) => `${field}=${String(value)}`)
+				.join(", ")}`,
+		);
+	});
+});
+
+describe("монтирование не считается сменой пациента", () => {
+	it("перезагрузка сводки при том же пациенте сбросов не даёт вовсе", () => {
 		const store = makeStore(composerFilledForPatientA);
 		const resets = applyPatientSwitches(store, ["pat-a", "pat-a", "pat-a", "pat-a"]);
+		assert.equal(resets, 0);
+		assert.equal(store.state.paymentAmount, "12000,50");
+		assert.equal(store.state.paymentFiscalFn, "9960440301234567");
+	});
+
+	it("сумма без выбранного пациента переживает монтирование", () => {
+		const store = makeStore(composerFilledForPatientA);
+		const resets = applyPatientSwitches(store, [undefined, undefined]);
+		assert.equal(resets, 0);
+		assert.equal(store.state.paymentAmount, "12000,50");
+	});
+
+	it("вкладка «Зубная формула» заводит второй экземпляр контекста и сумму не стирает", () => {
+		/*
+		 * useAppLogic вызывается из двух мест — App.tsx и useVisitDiaryLogic, —
+		 * поэтому эффект монтируется заново при каждом открытии вкладки дневника,
+		 * уже при выбранном пациенте и при заполненной кассиром форме. Хранилище
+		 * формы одно на оба экземпляра, свой `useRef` у каждого.
+		 */
+		const store = makeStore(composerFilledForPatientA);
+		const rootEffect = mountComposerEffect();
+		applyPatientSwitches(store, [undefined, "pat-a"], rootEffect);
+		store.setters.setPaymentAmount("12000,50");
+		store.setters.setPaymentFiscalFn("9960440301234567");
+
+		const diaryEffect = mountComposerEffect();
+		const wiped = resetPaymentComposerOnPatientChange(
+			diaryEffect,
+			"pat-a",
+			store.setters,
+		);
+
+		assert.equal(wiped, false);
+		assert.equal(store.state.paymentAmount, "12000,50");
+		assert.equal(store.state.paymentFiscalFn, "9960440301234567");
+	});
+
+	it("после монтирования второй экземпляр гасит форму на настоящей смене", () => {
+		const store = makeStore(composerFilledForPatientA);
+		const diaryEffect = mountComposerEffect();
+		const resets = applyPatientSwitches(store, ["pat-a", "pat-b"], diaryEffect);
 		assert.equal(resets, 1);
+		assert.equal(store.state.paymentAmount, "");
+		assert.equal(store.state.paymentFiscalFpd, "");
 	});
 });
 
@@ -207,34 +304,66 @@ describe("оба сброса перечисляют все поля формы"
 
 	const setterName = (field: string) => `set${field[0]!.toUpperCase()}${field.slice(1)}`;
 
+	/** Значение поля попадает в выражение как текст: спецсимволы обезвреживаем. */
+	const escapeForRegExp = (value: string) =>
+		value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 	it("перечень полей не пуст и покрывает сумму", () => {
 		assert.ok(composerFieldNames.length >= 14);
 		assert.ok(composerFieldNames.includes("paymentAmount"));
 	});
 
-	it("сброс при смене пациента вызывает общий перечень и висит на пациенте", () => {
+	/*
+	 * Выражения ниже терпят любые переносы и отступы: форматировщик волен
+	 * переложить аргументы по строкам, и это не дефект кассы. Ловим только
+	 * исчезновение самого вызова.
+	 */
+	it("сброс при смене пациента идёт через защиту от монтирования", () => {
 		const source = read("hooks/domains/usePatientLogic.ts");
 		const effect =
-			/useEffect\(\(\) => \{\s*resetPaymentComposer\(useDocumentStore\.getState\(\)\);\s*\}, \[documentPatient\?\.id\]\);/.exec(
+			/useEffect\(\s*\(\s*\)\s*=>\s*\{\s*resetPaymentComposerOnPatientChange\(\s*paymentComposerPatientIdRef\s*,\s*documentPatient\?\.id\s*,\s*useDocumentStore\.getState\(\)\s*,?\s*\)\s*;?\s*\}\s*,\s*\[\s*documentPatient\?\.id\s*\]\s*\)\s*;/.exec(
 				source,
 			);
 		assert.ok(
 			effect,
-			"сброс при смене пациента больше не вызывает resetPaymentComposer по documentPatient?.id",
+			"сброс при смене пациента больше не идёт через resetPaymentComposerOnPatientChange по documentPatient?.id",
 		);
 	});
 
-	it("сброс после записанного платежа гасит каждое поле формы", () => {
+	it("память эффекта заведена признаком первого прогона, а не undefined", () => {
+		const source = read("hooks/domains/usePatientLogic.ts");
+		const seededRef =
+			/const\s+paymentComposerPatientIdRef\s*=\s*useRef\s*<[^>]*>\s*\(\s*PAYMENT_COMPOSER_PATIENT_UNTRACKED\s*,?\s*\)/.exec(
+				source,
+			);
+		assert.ok(
+			seededRef,
+			"ссылка заведена не признаком первого прогона: монтирование при выбранном пациенте снова начнёт стирать сумму",
+		);
+	});
+
+	it("сброс после записанного платежа гасит каждое поле формы свежим значением", () => {
 		const source = read("useAppLogic.tsx");
 		const start = source.indexOf("paymentMutationIdRef.current = null;");
 		assert.ok(start > 0, "не найдено начало сброса после платежа в useAppLogic.tsx");
 		const end = source.indexOf("await loadDashboard();", start);
 		assert.ok(end > start, "не найден конец сброса после платежа в useAppLogic.tsx");
 		const block = source.slice(start, end);
+		const freshFields = emptyPaymentComposerFields();
 		for (const field of composerFieldNames) {
-			assert.ok(
-				block.includes(`${setterName(field)}(`),
-				`сброс после платежа не гасит ${field}: форма уйдёт в следующий платёж заполненной`,
+			/*
+			 * Проверяется не имя сеттера, а переданное значение: вызов
+			 * `setPaymentAmount(paymentAmount)` тоже содержит имя, но форму не
+			 * гасит, а пишет в неё то же самое.
+			 */
+			const freshValue = freshFields[field];
+			const assignsFreshValue = new RegExp(
+				`${setterName(field)}\\(\\s*"${escapeForRegExp(freshValue)}"\\s*\\)`,
+			);
+			assert.match(
+				block,
+				assignsFreshValue,
+				`сброс после платежа не выставляет ${field} в ${JSON.stringify(freshValue)}: форма уйдёт в следующий платёж заполненной`,
 			);
 		}
 	});
