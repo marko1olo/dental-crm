@@ -13,6 +13,7 @@ import {
   normalizeEmailValue,
   normalizeEnumValue,
   normalizeGenderValue,
+  normalizeMoneyRubles,
   normalizeMoneyValue,
   normalizeNameValue,
   normalizePhoneValue,
@@ -320,20 +321,27 @@ describe("имена", () => {
 });
 
 describe("деньги", () => {
-  test("российская запись с разрядами и валютой", () => {
-    assert.equal(normalizeMoneyValue("1 500,00 руб.").value, 1500);
-    assert.equal(normalizeMoneyValue("2500₽").value, 2500);
-    assert.equal(normalizeMoneyValue("15 000").value, 15000);
+  test("российская запись с разрядами и валютой разбирается в копейки", () => {
+    assert.equal(normalizeMoneyValue("1 500,00 руб.").value, 150000);
+    assert.equal(normalizeMoneyValue("2500₽").value, 250000);
+    assert.equal(normalizeMoneyValue("15 000").value, 1500000);
+  });
+
+  test("копейки сохраняются точно, без плавающей точки", () => {
+    // Ради этого функция и считает копейки регулярным выражением, а не parseFloat.
+    assert.equal(normalizeMoneyValue("23 400,50").value, 2340050);
+    assert.equal(normalizeMoneyValue("0,01").value, 1);
+    assert.equal(normalizeMoneyValue("1500,5").value, 150050);
   });
 
   test("американская запись с точкой как дробной частью", () => {
-    assert.equal(normalizeMoneyValue("1,500.00").value, 1500);
-    assert.equal(normalizeMoneyValue("1500.50").value, 1501);
+    assert.equal(normalizeMoneyValue("1,500.00").value, 150000);
+    assert.equal(normalizeMoneyValue("1500.50").value, 150050);
   });
 
   test("отрицательная сумма в скобках — бухгалтерская запись", () => {
-    assert.equal(normalizeMoneyValue("(1 500,00)").value, -1500);
-    assert.equal(normalizeMoneyValue("-1500").value, -1500);
+    assert.equal(normalizeMoneyValue("(1 500,00)").value, -150000);
+    assert.equal(normalizeMoneyValue("-1500").value, -150000);
   });
 
   test("ноль — это сумма, а не пустота", () => {
@@ -342,14 +350,21 @@ describe("деньги", () => {
     assert.equal(parsed.issue, null);
   });
 
-  test("округление копеек до рублей отмечается в преобразованиях", () => {
-    const parsed = normalizeMoneyValue("1500,50");
-    assert.ok(parsed.transforms.includes("round-kopecks-to-rubles"));
+  test("целые рубли для колонки integer: округление отмечено в преобразованиях", () => {
+    const exact = normalizeMoneyRubles("1500,00");
+    assert.equal(exact.value, 1500);
+    assert.ok(!exact.transforms.includes("round-kopecks-to-rubles"));
+
+    const rounded = normalizeMoneyRubles("23 400,50");
+    assert.equal(rounded.value, 23401);
+    // Округление обязано быть видно в происхождении поля, а не произойти молча.
+    assert.ok(rounded.transforms.includes("round-kopecks-to-rubles"));
   });
 
   test("неправдоподобная и нечисловая сумма отклоняются", () => {
     assert.equal(normalizeMoneyValue("бесплатно").value, null);
     assert.equal(normalizeMoneyValue("99999999999").value, null);
+    assert.equal(normalizeMoneyRubles("бесплатно").value, null);
   });
 });
 

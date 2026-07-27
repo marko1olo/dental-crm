@@ -190,11 +190,37 @@ try {
   check("платёж на несуществующего пациента изолирован", payQ.some((q) => q.reason === "broken_reference"), payQ.map((q) => q.reason).join(","));
   check("отрицательный платёж изолирован", payQ.some((q) => q.reason === "validation_failed" && q.fieldPath === "amountRub"));
 
-  console.log("--- 8. Сверка денег");
+  console.log("--- 8. Сверка денег ДО КОПЕЙКИ");
   const moneyChecks = payRun.reconciliation.checks.filter((c) => c.code.startsWith("money"));
-  for (const c of moneyChecks) console.log(`       ${c.passed ? "[+]" : "[-]"} ${c.title}: ${c.expected} vs ${c.actual}`);
-  check("проверка денег присутствует", moneyChecks.length >= 1);
+  for (const c of moneyChecks) {
+    console.log(`       ${c.passed ? "[+]" : "[-]"} ${c.title}: ожидалось ${c.expected}, получено ${c.actual}`);
+  }
+  check("проверки денег присутствуют", moneyChecks.length >= 3, `${moneyChecks.length} проверок`);
   check("деньги сходятся", moneyChecks.every((c) => c.passed), moneyChecks.filter((c) => !c.passed).map((c) => c.detail).join("; ") || "ок");
+
+  /**
+   * Источник: 1500,00 + 23400,50 + 5000,00 + (-2000,00). В копейках это
+   * 150000 + 2340050 + 500000 - 200000 = 2790050.
+   */
+  const parseCheck = moneyChecks.find((c) => c.code === "money_parse_completeness_kopecks");
+  same("сумма источника в копейках посчитана точно", parseCheck?.expected, 2790050);
+  same("разбор не потерял ни копейки", parseCheck?.actual, 2790050);
+
+  const conservation = moneyChecks.find((c) => c.code === "money_conservation_kopecks");
+  check("баланс копеек замкнут", conservation?.passed === true, conservation?.detail ?? "проверка отсутствует");
+
+  /**
+   * Округление до рубля названо отдельным числом.
+   *
+   * Загружаются два платежа: 1500,00 и 23400,50 — точно 2 355 050 копеек. В
+   * колонку целых рублей ложится 1500 + 23401 = 24 901 руб. = 2 490 100 копеек
+   * по номиналу, то есть на 50 копеек больше точной суммы. Именно это
+   * расхождение и обязано быть названо, а не спрятано.
+   */
+  const rounding = moneyChecks.find((c) => c.code === "money_rounding_disclosure");
+  check("округление копеек названо и посчитано", rounding !== undefined, rounding?.detail ?? "проверка отсутствует");
+  same("расхождение округления ровно 50 копеек", rounding?.actual, 50);
+  console.log(`       ${rounding?.detail ?? ""}`);
 
   console.log("--- 9. Откат прогона платежей");
   const rb = await rollbackRun({ organizationId: ORG, runId: payRun.run.runId });
@@ -324,7 +350,77 @@ try {
     loadedVisits.map((v) => (v.signedAt ? asMoscow(v.signedAt) : "null")).join(", ")
   );
 
-  console.log("--- 12. DBF в cp866 через тот же движок");
+  console.log("--- 12. Изоляция строки: отказ базы по одной строке не уносит остальные");
+  /**
+   * Ситуация настоящая, а не выдуманная: карточка пациента удалена вручную уже
+   * после переноса, а соответствие «ключ старой системы → uuid» осталось.
+   * Следующая выгрузка платежей сошлётся на удалённый uuid, и внешний ключ
+   * payments.patient_id отвергнет ровно эту строку.
+   *
+   * Раньше try/catch стоял вокруг всей партии, и такая строка уносила с собой
+   * все 500 строк партии. Проверяем, что теперь падает только она.
+   */
+  const [victimLink] = await db
+    .select({ target: migrationEntityLinks.targetEntityId, sourceId: migrationEntityLinks.sourceEntityId })
+    .from(migrationEntityLinks)
+    .where(and(eq(migrationEntityLinks.organizationId, ORG), eq(migrationEntityLinks.entityKind, "patient")))
+    .limit(1);
+
+  if (!victimLink) {
+    check("подготовка проверки изоляции", false, "не найдено ни одной ссылки пациента");
+  } else {
+    // Удаляем карточку, оставляя ссылку висеть в никуда.
+    await db.delete(appointments).where(eq(appointments.patientId, victimLink.target));
+    await db.delete(visits).where(eq(visits.patientId, victimLink.target));
+    await db.delete(patients).where(eq(patients.id, victimLink.target));
+
+    const brokenSourceId = victimLink.sourceId.replace(/^id:/, "");
+    const isolationCsv = [
+      "Код;Пациент;Сумма;Дата оплаты;Способ оплаты",
+      `8001;${brokenSourceId};1 000,00;01.04.2020;карта`,
+      "8002;102;2 000,00;02.04.2020;карта",
+      "8003;103;3 000,00;03.04.2020;наличными"
+    ].join("\n");
+
+    const isolationRun = await runMigration({
+      ...base,
+      sourceName: "оплаты-изоляция.csv",
+      rawText: isolationCsv,
+      dryRun: false,
+      requestedEntityKind: "payment"
+    });
+    console.log(
+      `       создано ${isolationRun.run.loadedRows}, карантин ${isolationRun.run.quarantinedRows}, отказов ${isolationRun.run.sourceRows - isolationRun.run.loadedRows - isolationRun.run.duplicateRows}`
+    );
+
+    const isolationPayments = await db
+      .select({ amountRub: payments.amountRub })
+      .from(payments)
+      .where(eq(payments.organizationId, ORG));
+    const amounts = isolationPayments.map((p) => p.amountRub).sort((a, b) => a - b);
+    console.log(`       суммы в базе: ${amounts.join(", ")}`);
+
+    // Две исправные строки обязаны загрузиться, несмотря на отказ третьей.
+    check("исправные строки партии загружены", amounts.includes(2000) && amounts.includes(3000), amounts.join(", "));
+    check("строка с битой ссылкой не загружена", !amounts.includes(1000), amounts.join(", "));
+
+    const isolationQ = await listQuarantine(ORG, isolationRun.run.runId, 20);
+    for (const q of isolationQ) {
+      console.log(`       строка ${q.sourceRowNumber} [${q.reason}]: ${q.message.slice(0, 100)}`);
+    }
+    check(
+      "отказ базы записан как причина карантина именно для этой строки",
+      isolationQ.some((q) => q.reason === "target_write_failed" || q.reason === "broken_reference"),
+      isolationQ.map((q) => `${q.sourceRowNumber}:${q.reason}`).join(", ")
+    );
+    check(
+      "сверка видит все три строки, ни одна не потеряна",
+      isolationRun.reconciliation.checks.find((c) => c.code === "row_conservation")?.passed === true,
+      isolationRun.reconciliation.checks.find((c) => c.code === "row_conservation")?.detail ?? ""
+    );
+  }
+
+  console.log("--- 13. DBF в cp866 через тот же движок");
   const dbf = buildDbfFile(
     [
       { name: "NKART", type: "I", length: 4 },

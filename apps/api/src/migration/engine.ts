@@ -81,8 +81,8 @@ interface PreparedTable {
   dateHints: Map<string, DateFormatHint>;
   llmCalls: number;
   llmRejected: number;
-  /** Сумма платежей источника, посчитанная до загрузки — точка отсчёта для сверки. */
-  sourceMoneyTotalRub: number | null;
+  /** Точная сумма платежей источника в копейках, посчитанная до загрузки. */
+  sourceMoneyTotalKopecks: number | null;
 }
 
 function decodeContent(contentBase64: string | undefined): Buffer | undefined {
@@ -178,12 +178,13 @@ async function prepareSource(input: EngineInput): Promise<{
      * загрузки. Сверка потом сравнит с ней то, что оказалось в стейджинге, и
      * поймает суммы, потерянные при разборе.
      */
-    let sourceMoneyTotalRub: number | null = null;
+    let sourceMoneyTotalKopecks: number | null = null;
     const amountColumn = columns.find((column) => column.targetField === "payment.amountRub");
     if (amountColumn) {
       const index = table.columns.indexOf(amountColumn.sourceColumn);
       if (index >= 0) {
-        sourceMoneyTotalRub = table.rows.reduce((sum, row) => {
+        // normalizeMoneyValue возвращает копейки — суммируем целые, без потерь.
+        sourceMoneyTotalKopecks = table.rows.reduce((sum, row) => {
           const parsedAmount = normalizeMoneyValue(row[index] ?? "");
           return sum + (parsedAmount.value ?? 0);
         }, 0);
@@ -197,7 +198,7 @@ async function prepareSource(input: EngineInput): Promise<{
       dateHints,
       llmCalls,
       llmRejected,
-      sourceMoneyTotalRub,
+      sourceMoneyTotalKopecks,
       mapping: {
         vendorProfile: deterministic.vendorProfile?.code ?? null,
         sourceTable: table.name,
@@ -405,11 +406,12 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
     let updatedTotal = 0;
     let duplicateTotal = 0;
     let quarantinedTotal = 0;
-    let sourceMoneyTotalRub: number | null = null;
+    /** Точная сумма платежей источника в копейках — независимая точка отсчёта сверки. */
+    let sourceMoneyTotalKopecks: number | null = null;
 
     for (const prepared of tables) {
-      if (prepared.sourceMoneyTotalRub !== null) {
-        sourceMoneyTotalRub = (sourceMoneyTotalRub ?? 0) + prepared.sourceMoneyTotalRub;
+      if (prepared.sourceMoneyTotalKopecks !== null) {
+        sourceMoneyTotalKopecks = (sourceMoneyTotalKopecks ?? 0) + prepared.sourceMoneyTotalKopecks;
       }
 
       // ---- Укладка в стейджинг.
@@ -565,7 +567,7 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
       runId: run.id,
       organizationId: input.organizationId,
       sourceRowsParsed: totalSourceRows,
-      sourceMoneyTotalRub,
+      sourceMoneyTotalKopecks,
       dryRun: input.dryRun
     });
 

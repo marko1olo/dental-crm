@@ -68,6 +68,191 @@ async function clinicTimeZone(organizationId: string): Promise<string> {
   return row?.timezone?.trim() || DEFAULT_CLINIC_TIME_ZONE;
 }
 
+/**
+ * Тип транзакции Drizzle. Выводится из сигнатуры db.transaction, а не пишется
+ * руками: при обновлении драйвера тип поедет вместе с ним.
+ */
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Поля ошибки PostgreSQL, которые приходят через драйвер node-postgres. */
+interface PostgresErrorFields {
+  code?: string | undefined;
+  constraint?: string | undefined;
+  column?: string | undefined;
+  detail?: string | undefined;
+  table?: string | undefined;
+}
+
+/**
+ * Извлекает поля ошибки PostgreSQL из исключения Drizzle.
+ *
+ * Drizzle оборачивает ошибку драйвера, поэтому нужное лежит либо в самом
+ * объекте, либо в cause. Проверка идёт через unknown без приведения к any.
+ */
+function postgresErrorFields(error: unknown): PostgresErrorFields {
+  const candidates: unknown[] = [error];
+  if (error !== null && typeof error === "object" && "cause" in error) {
+    candidates.push((error as { cause: unknown }).cause);
+  }
+
+  for (const candidate of candidates) {
+    if (candidate === null || typeof candidate !== "object") continue;
+    const record = candidate as Record<string, unknown>;
+    if (typeof record.code === "string") {
+      return {
+        code: record.code,
+        constraint: typeof record.constraint === "string" ? record.constraint : undefined,
+        column: typeof record.column === "string" ? record.column : undefined,
+        detail: typeof record.detail === "string" ? record.detail : undefined,
+        table: typeof record.table === "string" ? record.table : undefined
+      };
+    }
+  }
+  return {};
+}
+
+/**
+ * Переводит отказ базы в объяснение для оператора клиники.
+ *
+ * ЗАЧЕМ
+ * Без перевода в карантин попадал текст вида «Failed query: insert into
+ * "payments" ("id", "organization_id", ...) values ($1, $2, ...)» — то есть
+ * запрос целиком. Администратору клиники такое сообщение не говорит ничего, а
+ * ради него карантин и существует: строка отложена, чтобы человек мог её
+ * исправить. Коды SQLSTATE переводятся в причину и в действие.
+ */
+function explainDatabaseError(error: unknown): { message: string; suggestedFix: string; fieldPath: string | null } {
+  const fields = postgresErrorFields(error);
+  const column = fields.column ?? null;
+
+  switch (fields.code) {
+    case "23503":
+      return {
+        message: "ссылка на запись, которой нет в базе. Обычно связанная сущность была удалена уже после переноса.",
+        suggestedFix: "Проверьте, существует ли связанный пациент или приём, и перенесите сначала его.",
+        fieldPath: column
+      };
+    case "23505":
+      return {
+        message: `нарушена уникальность${fields.constraint ? ` (${fields.constraint})` : ""}: такая запись уже есть.`,
+        suggestedFix: "Это дубль. Либо пропустите строку, либо исправьте отличающее её значение.",
+        fieldPath: column
+      };
+    case "23502":
+      return {
+        message: `обязательное поле${column ? ` «${column}»` : ""} пустое, а база не принимает пустое значение.`,
+        suggestedFix: "Сопоставьте колонку источника с этим полем либо заполните значение вручную.",
+        fieldPath: column
+      };
+    case "23514":
+      return {
+        message: `значение не проходит проверку базы${fields.constraint ? ` (${fields.constraint})` : ""}.`,
+        suggestedFix: "Значение вне допустимого диапазона. Исправьте его в источнике.",
+        fieldPath: column
+      };
+    case "22001":
+      return {
+        message: "значение длиннее, чем допускает колонка.",
+        suggestedFix: "Сократите значение в источнике либо перенесите его в поле примечания.",
+        fieldPath: column
+      };
+    case "22P02":
+    case "22007":
+    case "22008":
+      return {
+        message: "значение не приводится к типу колонки (число, дата или перечисление).",
+        suggestedFix: "Проверьте, та ли колонка сопоставлена этому полю.",
+        fieldPath: column
+      };
+    case "22021":
+    case "22P05":
+      return {
+        message: "в значении есть байты, недопустимые для базы (например, нулевой символ).",
+        suggestedFix: "Источник повреждён на уровне байт. Перевыгрузите файл из старой системы.",
+        fieldPath: column
+      };
+    case "40001":
+    case "40P01":
+      return {
+        message: "конфликт одновременного доступа к базе.",
+        suggestedFix: "Повторите загрузку: строка не записана и не продублируется.",
+        fieldPath: null
+      };
+    default: {
+      /**
+       * Неизвестный код. Показываем первую строку сообщения без текста запроса:
+       * Drizzle пишет «Failed query: <весь SQL>», и он занимает весь экран,
+       * не добавляя ничего к пониманию.
+       */
+      const raw = error instanceof Error ? error.message : String(error);
+      const withoutQuery = raw.split(/\n|Failed query:/)[0]?.trim() ?? raw;
+      return {
+        message: `${withoutQuery.slice(0, 200)}${fields.code ? ` (код ${fields.code})` : ""}`,
+        suggestedFix: "Причина не распознана автоматически. Строка сохранена целиком и доступна для разбора.",
+        fieldPath: column
+      };
+    }
+  }
+}
+
+/**
+ * Изоляция ОДНОЙ строки внутри транзакции партии.
+ *
+ * ЗАЧЕМ ЭТО ПОЯВИЛОСЬ
+ * Раньше try/catch стоял вокруг всей партии в 500 строк:
+ *
+ *     } catch (error) { outcome.failed += batch.length; ... }
+ *
+ * То есть одна строка, отклонённая базой (нарушение ограничения, слишком
+ * длинное значение, конфликт уникальности), уносила с собой 499 исправных.
+ * На выгрузке в 100 000 строк это означало, что несколько кривых записей
+ * обнуляли результат целых партий, и повторный запуск натыкался на те же строки.
+ *
+ * Здесь каждая строка получает точку сохранения (SAVEPOINT). Отказ откатывает
+ * только её, транзакция партии продолжается, а строка уходит в карантин с
+ * текстом ошибки от базы.
+ *
+ * Точка сохранения на строку стоит примерно как один дополнительный запрос —
+ * платить за это разумно: цена альтернативы измеряется сотнями потерянных строк.
+ */
+async function loadRowInSavepoint(
+  tx: DbTransaction,
+  row: StagedRow,
+  outcome: LoadOutcome,
+  entityTitle: string,
+  work: (savepoint: DbTransaction) => Promise<void>
+): Promise<void> {
+  try {
+    // Вложенная транзакция Drizzle — это SAVEPOINT в PostgreSQL.
+    await tx.transaction(async (savepoint) => {
+      await work(savepoint);
+    });
+  } catch (error) {
+    outcome.failed += 1;
+    const explained = explainDatabaseError(error);
+    outcome.issuesByStagingId.set(row.stagingId, {
+      reason: "target_write_failed",
+      blocking: true,
+      fieldPath: explained.fieldPath,
+      message: `Строка ${row.sourceRowNumber} (${entityTitle}) не записана: ${explained.message}`,
+      suggestedFix: `${explained.suggestedFix} Остальные строки партии загружены, эта ждёт в карантине.`
+    });
+    /**
+     * Статус строки выставляется ОТДЕЛЬНОЙ транзакцией, а не в tx: точка
+     * сохранения уже откачена, и запись внутри той же транзакции про неудачу
+     * этой же строки откатилась бы вместе с ней при следующем сбое.
+     */
+    await db
+      .update(migrationStagingRecords)
+      .set({ status: "quarantined", updatedAt: new Date() })
+      .where(eq(migrationStagingRecords.id, row.stagingId))
+      .catch(() => {
+        // Если и это не удалось, строка останется ready и попадёт в сверку как
+        // нерешённая — это верный сигнал, а не тихая потеря.
+      });
+  }
+}
+
 export interface StagedRow {
   stagingId: string;
   sourceRowNumber: number;
@@ -378,61 +563,142 @@ export async function loadPatients(input: {
     try {
       await db.transaction(async (tx) => {
         for (const row of batch) {
-          const values = row.transformed.values;
-          const fullName = values.fullName as string | undefined;
-          if (!fullName) {
-            outcome.failed += 1;
-            continue;
-          }
-
-          const externalId = values.externalId as string | undefined;
-          const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
-          const candidate: IdentityCandidate = {
-            fullName,
-            phone: (values.phone as string | undefined) ?? null,
-            birthDate: (values.birthDate as string | undefined) ?? null,
-            email: (values.email as string | undefined) ?? null
-          };
-
-          // ---- Уровень 1 и 2: сущность уже переносилась.
-          const linkedId = linkKey ? links.get(linkKey) : undefined;
-          if (linkedId) {
-            if (input.dryRun) {
-              outcome.duplicates += 1;
-              continue;
+          // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
+          await loadRowInSavepoint(tx, row, outcome, "пациент", async (sp) => {
+            const values = row.transformed.values;
+            const fullName = values.fullName as string | undefined;
+            if (!fullName) {
+              outcome.failed += 1;
+              return;
             }
-            /**
-             * Обновление, а не пропуск: оператор мог исправить данные в старой
-             * системе и повторить выгрузку. Пустые значения не затирают
-             * заполненные — иначе повторный прогон с урезанной выгрузкой
-             * очистил бы поля, заполненные в первый раз.
-             */
-            const patch: Record<string, unknown> = { updatedAt: new Date() };
-            if (values.phone) patch.phone = values.phone;
-            if (values.birthDate) patch.birthDate = values.birthDate;
-            if (values.email) patch.email = values.email;
-            if (values.notes) patch.notes = values.notes;
-            patch.fullName = fullName;
 
-            await tx.update(patients).set(patch).where(
-              and(eq(patients.id, linkedId), eq(patients.organizationId, input.organizationId))
-            );
-            await tx
-              .update(migrationStagingRecords)
-              .set({ status: "updated", targetEntityId: linkedId, updatedAt: new Date() })
-              .where(eq(migrationStagingRecords.id, row.stagingId));
-            outcome.updated += 1;
-            continue;
-          }
+            const externalId = values.externalId as string | undefined;
+            const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
+            const candidate: IdentityCandidate = {
+              fullName,
+              phone: (values.phone as string | undefined) ?? null,
+              birthDate: (values.birthDate as string | undefined) ?? null,
+              email: (values.email as string | undefined) ?? null
+            };
 
-          // ---- Уровень 3: похожий пациент уже есть в базе.
-          const match = identityIndex.findBest(candidate);
-          if (match && match.verdict.action === "same") {
-            if (input.dryRun) {
-              outcome.duplicates += 1;
-              continue;
+            // ---- Уровень 1 и 2: сущность уже переносилась.
+            const linkedId = linkKey ? links.get(linkKey) : undefined;
+            if (linkedId) {
+              if (input.dryRun) {
+                outcome.duplicates += 1;
+                return;
+              }
+              /**
+               * Обновление, а не пропуск: оператор мог исправить данные в старой
+               * системе и повторить выгрузку. Пустые значения не затирают
+               * заполненные — иначе повторный прогон с урезанной выгрузкой
+               * очистил бы поля, заполненные в первый раз.
+               */
+              const patch: Record<string, unknown> = { updatedAt: new Date() };
+              if (values.phone) patch.phone = values.phone;
+              if (values.birthDate) patch.birthDate = values.birthDate;
+              if (values.email) patch.email = values.email;
+              if (values.notes) patch.notes = values.notes;
+              patch.fullName = fullName;
+
+              await sp.update(patients).set(patch).where(
+                and(eq(patients.id, linkedId), eq(patients.organizationId, input.organizationId))
+              );
+              await sp
+                .update(migrationStagingRecords)
+                .set({ status: "updated", targetEntityId: linkedId, updatedAt: new Date() })
+                .where(eq(migrationStagingRecords.id, row.stagingId));
+              outcome.updated += 1;
+              return;
             }
-            await tx
+
+            // ---- Уровень 3: похожий пациент уже есть в базе.
+            const match = identityIndex.findBest(candidate);
+            if (match && match.verdict.action === "same") {
+              if (input.dryRun) {
+                outcome.duplicates += 1;
+                return;
+              }
+              await sp
+                .insert(migrationEntityLinks)
+                .values({
+                  organizationId: input.organizationId,
+                  entityKind: "patient",
+                  sourceSystem: input.sourceSystem,
+                  sourceEntityId: linkKey ?? `row:${row.sourceTable}:${row.sourceRowNumber}`,
+                  naturalKey: row.naturalKey,
+                  targetEntityId: match.record.id,
+                  createdByRunId: input.runId
+                })
+                .onConflictDoNothing();
+              await sp
+                .update(migrationStagingRecords)
+                .set({ status: "duplicate", targetEntityId: match.record.id, updatedAt: new Date() })
+                .where(eq(migrationStagingRecords.id, row.stagingId));
+              outcome.duplicates += 1;
+              outcome.issuesByStagingId.set(row.stagingId, {
+                reason: "duplicate_conflict",
+                blocking: false,
+                fieldPath: null,
+                message: `Пациент уже есть в базе (совпадение ${Math.round(match.verdict.score * 100)}%: ${match.verdict.rationale}). Карточка не создана повторно, данные привязаны к существующей.`,
+                suggestedFix: null
+              });
+              return;
+            }
+
+            if (match && match.verdict.action === "needs_review") {
+              /**
+               * Похоже, но недостаточно, чтобы сливать. Создавать карточку тоже
+               * рискованно: возможно, это тот же человек. Строка уходит в карантин
+               * на решение человека — единственный честный выход.
+               */
+              outcome.issuesByStagingId.set(row.stagingId, {
+                reason: "duplicate_conflict",
+                blocking: true,
+                fieldPath: null,
+                message: `Возможный дубль существующей карточки: совпадение ${Math.round(
+                  match.verdict.score * 100
+                )}% (${match.verdict.rationale}). Автоматическое слияние не выполнено.`,
+                suggestedFix:
+                  "Сравните карточки и решите: слить с существующей либо создать новую. Оба действия доступны из карантина."
+              });
+              if (!input.dryRun) {
+                await sp
+                  .update(migrationStagingRecords)
+                  .set({ status: "quarantined", updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
+            }
+
+            // ---- Новый пациент.
+            if (input.dryRun) {
+              outcome.created += 1;
+              // В сухом прогоне индекс всё равно пополняется: дубли внутри самой
+              // выгрузки должны находиться и без записи в базу.
+              identityIndex.add({ ...candidate, id: `dry:${row.stagingId}` });
+              return;
+            }
+
+            const [created] = await sp
+              .insert(patients)
+              .values({
+                organizationId: input.organizationId,
+                fullName,
+                birthDate: (values.birthDate as string | undefined) ?? null,
+                phone: (values.phone as string | undefined) ?? null,
+                email: (values.email as string | undefined) ?? null,
+                notes: buildPatientNotes(values),
+                status: (values.status as "active" | "archived" | undefined) ?? "active"
+              })
+              .returning({ id: patients.id });
+
+            if (!created) {
+              outcome.failed += 1;
+              return;
+            }
+
+            await sp
               .insert(migrationEntityLinks)
               .values({
                 organizationId: input.organizationId,
@@ -440,123 +706,46 @@ export async function loadPatients(input: {
                 sourceSystem: input.sourceSystem,
                 sourceEntityId: linkKey ?? `row:${row.sourceTable}:${row.sourceRowNumber}`,
                 naturalKey: row.naturalKey,
-                targetEntityId: match.record.id,
+                targetEntityId: created.id,
                 createdByRunId: input.runId
               })
               .onConflictDoNothing();
-            await tx
+
+            await sp
               .update(migrationStagingRecords)
-              .set({ status: "duplicate", targetEntityId: match.record.id, updatedAt: new Date() })
+              .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
               .where(eq(migrationStagingRecords.id, row.stagingId));
-            outcome.duplicates += 1;
-            outcome.issuesByStagingId.set(row.stagingId, {
-              reason: "duplicate_conflict",
-              blocking: false,
-              fieldPath: null,
-              message: `Пациент уже есть в базе (совпадение ${Math.round(match.verdict.score * 100)}%: ${match.verdict.rationale}). Карточка не создана повторно, данные привязаны к существующей.`,
-              suggestedFix: null
-            });
-            continue;
-          }
 
-          if (match && match.verdict.action === "needs_review") {
-            /**
-             * Похоже, но недостаточно, чтобы сливать. Создавать карточку тоже
-             * рискованно: возможно, это тот же человек. Строка уходит в карантин
-             * на решение человека — единственный честный выход.
-             */
-            outcome.issuesByStagingId.set(row.stagingId, {
-              reason: "duplicate_conflict",
-              blocking: true,
-              fieldPath: null,
-              message: `Возможный дубль существующей карточки: совпадение ${Math.round(
-                match.verdict.score * 100
-              )}% (${match.verdict.rationale}). Автоматическое слияние не выполнено.`,
-              suggestedFix:
-                "Сравните карточки и решите: слить с существующей либо создать новую. Оба действия доступны из карантина."
+            await sp.insert(auditEvents).values({
+              organizationId: input.organizationId,
+              entityType: "patient",
+              entityId: created.id,
+              action: "patient_migrated",
+              reason: `Перенос из «${input.sourceName}», строка ${row.sourceRowNumber}. Прогон ${input.runId}.`
             });
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "quarantined", updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
-            }
-            continue;
-          }
 
-          // ---- Новый пациент.
-          if (input.dryRun) {
+            identityIndex.add({ ...candidate, id: created.id });
+            if (linkKey) links.set(linkKey, created.id);
             outcome.created += 1;
-            // В сухом прогоне индекс всё равно пополняется: дубли внутри самой
-            // выгрузки должны находиться и без записи в базу.
-            identityIndex.add({ ...candidate, id: `dry:${row.stagingId}` });
-            continue;
-          }
-
-          const [created] = await tx
-            .insert(patients)
-            .values({
-              organizationId: input.organizationId,
-              fullName,
-              birthDate: (values.birthDate as string | undefined) ?? null,
-              phone: (values.phone as string | undefined) ?? null,
-              email: (values.email as string | undefined) ?? null,
-              notes: buildPatientNotes(values),
-              status: (values.status as "active" | "archived" | undefined) ?? "active"
-            })
-            .returning({ id: patients.id });
-
-          if (!created) {
-            outcome.failed += 1;
-            continue;
-          }
-
-          await tx
-            .insert(migrationEntityLinks)
-            .values({
-              organizationId: input.organizationId,
-              entityKind: "patient",
-              sourceSystem: input.sourceSystem,
-              sourceEntityId: linkKey ?? `row:${row.sourceTable}:${row.sourceRowNumber}`,
-              naturalKey: row.naturalKey,
-              targetEntityId: created.id,
-              createdByRunId: input.runId
-            })
-            .onConflictDoNothing();
-
-          await tx
-            .update(migrationStagingRecords)
-            .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
-            .where(eq(migrationStagingRecords.id, row.stagingId));
-
-          await tx.insert(auditEvents).values({
-            organizationId: input.organizationId,
-            entityType: "patient",
-            entityId: created.id,
-            action: "patient_migrated",
-            reason: `Перенос из «${input.sourceName}», строка ${row.sourceRowNumber}. Прогон ${input.runId}.`
           });
-
-          identityIndex.add({ ...candidate, id: created.id });
-          if (linkKey) links.set(linkKey, created.id);
-          outcome.created += 1;
         }
       });
     } catch (error) {
       /**
-       * Партия не прошла целиком. Строки остаются в стейджинге со статусом
-       * ready, и повторный запуск попробует их снова: таблица соответствий не
-       * даст создать дубли того, что успело записаться в других партиях.
+       * Сюда попадают только отказы уровня всей транзакции: обрыв соединения,
+       * исчерпание пула, отключение базы. Отказ отдельной строки перехвачен её
+       * точкой сохранения и здесь не появляется.
        */
-      outcome.failed += batch.length;
       const message = error instanceof Error ? error.message : String(error);
-      for (const row of batch) {
+      const unresolved = batch.filter((row) => !outcome.issuesByStagingId.has(row.stagingId));
+      outcome.failed += unresolved.length;
+      for (const row of unresolved) {
         outcome.issuesByStagingId.set(row.stagingId, {
           reason: "target_write_failed",
           blocking: true,
           fieldPath: null,
-          message: `База отклонила запись партии: ${message.slice(0, 300)}`,
-          suggestedFix: "Устраните причину отказа и повторите загрузку — уже перенесённые строки не продублируются."
+          message: `Транзакция партии прервана: ${message.slice(0, 300)}`,
+          suggestedFix: "Проверьте доступность базы и повторите загрузку — уже перенесённые строки не продублируются."
         });
       }
     }
@@ -610,127 +799,133 @@ export async function loadAppointments(input: {
     try {
       await db.transaction(async (tx) => {
         for (const row of batch) {
-          const values = row.transformed.values;
-          const patientRef = values.patientRef as string | undefined;
-          const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
+          // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
+          await loadRowInSavepoint(tx, row, outcome, "запись расписания", async (sp) => {
+            const values = row.transformed.values;
+            const patientRef = values.patientRef as string | undefined;
+            const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
 
-          if (!patientId) {
-            outcome.issuesByStagingId.set(row.stagingId, {
-              reason: "broken_reference",
-              blocking: true,
-              fieldPath: "patientRef",
-              message: patientRef
-                ? `Пациент с идентификатором «${patientRef}» не найден среди перенесённых. Запись расписания без пациента не создаётся.`
-                : "В строке нет ссылки на пациента.",
-              suggestedFix: "Перенесите сначала таблицу пациентов, затем повторите загрузку расписания."
-            });
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "quarantined", updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            if (!patientId) {
+              outcome.issuesByStagingId.set(row.stagingId, {
+                reason: "broken_reference",
+                blocking: true,
+                fieldPath: "patientRef",
+                message: patientRef
+                  ? `Пациент с идентификатором «${patientRef}» не найден среди перенесённых. Запись расписания без пациента не создаётся.`
+                  : "В строке нет ссылки на пациента.",
+                suggestedFix: "Перенесите сначала таблицу пациентов, затем повторите загрузку расписания."
+              });
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "quarantined", updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
             }
-            continue;
-          }
 
-          const startsAtRaw = values.startsAt as string | undefined;
-          if (!startsAtRaw) {
-            outcome.failed += 1;
-            continue;
-          }
-          /**
-           * Время приёма из источника — местное время клиники, и оно
-           * сохраняется. Раньше здесь стояло `T09:00:00.000Z`, из-за чего все
-           * перенесённые приёмы вставали на девять утра по UTC независимо от
-           * того, во сколько они были: перенос расписания терял ровно то, ради
-           * чего расписание переносят.
-           */
-          const startsAt = storedDateTimeToUtc(startsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES);
-          if (!startsAt) {
-            outcome.failed += 1;
-            continue;
-          }
-
-          const duration =
-            typeof values.durationMinutes === "number" ? values.durationMinutes : DEFAULT_APPOINTMENT_MINUTES;
-          const endsAtRaw = values.endsAt as string | undefined;
-          let endsAt = endsAtRaw ? storedDateTimeToUtc(endsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES) : null;
-          // Окончание раньше начала либо отсутствует — считаем по длительности.
-          if (!endsAt || endsAt <= startsAt) {
-            endsAt = new Date(startsAt.getTime() + duration * 60_000);
-          }
-
-          const externalId = values.externalId as string | undefined;
-          const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
-          const existingId = linkKey ? appointmentLinks.get(linkKey) : undefined;
-
-          if (existingId) {
-            outcome.duplicates += 1;
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            const startsAtRaw = values.startsAt as string | undefined;
+            if (!startsAtRaw) {
+              outcome.failed += 1;
+              return;
             }
-            continue;
-          }
+            /**
+             * Время приёма из источника — местное время клиники, и оно
+             * сохраняется. Раньше здесь стояло `T09:00:00.000Z`, из-за чего все
+             * перенесённые приёмы вставали на девять утра по UTC независимо от
+             * того, во сколько они были: перенос расписания терял ровно то, ради
+             * чего расписание переносят.
+             */
+            const startsAt = storedDateTimeToUtc(startsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES);
+            if (!startsAt) {
+              outcome.failed += 1;
+              return;
+            }
 
-          if (input.dryRun) {
-            outcome.created += 1;
-            continue;
-          }
+            const duration =
+              typeof values.durationMinutes === "number" ? values.durationMinutes : DEFAULT_APPOINTMENT_MINUTES;
+            const endsAtRaw = values.endsAt as string | undefined;
+            let endsAt = endsAtRaw ? storedDateTimeToUtc(endsAtRaw, timeZone, APPOINTMENT_DEFAULT_MINUTES) : null;
+            // Окончание раньше начала либо отсутствует — считаем по длительности.
+            if (!endsAt || endsAt <= startsAt) {
+              endsAt = new Date(startsAt.getTime() + duration * 60_000);
+            }
 
-          const [created] = await tx
-            .insert(appointments)
-            .values({
-              organizationId: input.organizationId,
-              patientId,
-              status: (values.status as typeof appointments.$inferInsert.status) ?? "planned",
-              startsAt,
-              endsAt,
-              reason: (values.reason as string | undefined) ?? null,
-              comment: (values.comment as string | undefined) ?? null
-            })
-            .returning({ id: appointments.id });
+            const externalId = values.externalId as string | undefined;
+            const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
+            const existingId = linkKey ? appointmentLinks.get(linkKey) : undefined;
 
-          if (!created) {
-            outcome.failed += 1;
-            continue;
-          }
+            if (existingId) {
+              outcome.duplicates += 1;
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
+            }
 
-          if (linkKey) {
-            await tx
-              .insert(migrationEntityLinks)
+            if (input.dryRun) {
+              outcome.created += 1;
+              return;
+            }
+
+            const [created] = await tx
+              .insert(appointments)
               .values({
                 organizationId: input.organizationId,
-                entityKind: "appointment",
-                sourceSystem: input.sourceSystem,
-                sourceEntityId: linkKey,
-                naturalKey: row.naturalKey,
-                targetEntityId: created.id,
-                createdByRunId: input.runId
+                patientId,
+                status: (values.status as typeof appointments.$inferInsert.status) ?? "planned",
+                startsAt,
+                endsAt,
+                reason: (values.reason as string | undefined) ?? null,
+                comment: (values.comment as string | undefined) ?? null
               })
-              .onConflictDoNothing();
-            appointmentLinks.set(linkKey, created.id);
-          }
+              .returning({ id: appointments.id });
 
-          await tx
-            .update(migrationStagingRecords)
-            .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
-            .where(eq(migrationStagingRecords.id, row.stagingId));
-          outcome.created += 1;
+            if (!created) {
+              outcome.failed += 1;
+              return;
+            }
+
+            if (linkKey) {
+              await tx
+                .insert(migrationEntityLinks)
+                .values({
+                  organizationId: input.organizationId,
+                  entityKind: "appointment",
+                  sourceSystem: input.sourceSystem,
+                  sourceEntityId: linkKey,
+                  naturalKey: row.naturalKey,
+                  targetEntityId: created.id,
+                  createdByRunId: input.runId
+                })
+                .onConflictDoNothing();
+              appointmentLinks.set(linkKey, created.id);
+            }
+
+            await tx
+              .update(migrationStagingRecords)
+              .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
+              .where(eq(migrationStagingRecords.id, row.stagingId));
+            outcome.created += 1;
+          });
         }
       });
     } catch (error) {
-      outcome.failed += batch.length;
       const message = error instanceof Error ? error.message : String(error);
-      for (const row of batch) {
+      // Сюда попадают только отказы уровня транзакции: обрыв соединения,
+      // исчерпание пула. Отказ строки перехвачен её точкой сохранения.
+      const unresolved = batch.filter((row) => !outcome.issuesByStagingId.has(row.stagingId));
+      outcome.failed += unresolved.length;
+      for (const row of unresolved) {
         outcome.issuesByStagingId.set(row.stagingId, {
           reason: "target_write_failed",
           blocking: true,
           fieldPath: null,
-          message: `База отклонила запись партии: ${message.slice(0, 300)}`,
-          suggestedFix: "Устраните причину отказа и повторите загрузку."
+          message: `Транзакция партии прервана: ${message.slice(0, 300)}`,
+          suggestedFix: "Проверьте доступность базы и повторите загрузку — уже перенесённые строки не продублируются."
         });
       }
     }
@@ -772,121 +967,127 @@ export async function loadPayments(input: {
     try {
       await db.transaction(async (tx) => {
         for (const row of batch) {
-          const values = row.transformed.values;
-          const patientRef = values.patientRef as string | undefined;
-          const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
-          const amountRub = values.amountRub as number | undefined;
+          // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
+          await loadRowInSavepoint(tx, row, outcome, "платёж", async (sp) => {
+            const values = row.transformed.values;
+            const patientRef = values.patientRef as string | undefined;
+            const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
+            const amountRub = values.amountRub as number | undefined;
 
-          if (!patientId) {
-            outcome.issuesByStagingId.set(row.stagingId, {
-              reason: "broken_reference",
-              blocking: true,
-              fieldPath: "patientRef",
-              message: patientRef
-                ? `Платёж ссылается на пациента «${patientRef}», которого нет среди перенесённых. Деньги нельзя записать на неизвестного плательщика.`
-                : "В строке платежа нет ссылки на пациента.",
-              suggestedFix: "Перенесите таблицу пациентов, затем повторите загрузку платежей."
-            });
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "quarantined", updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            if (!patientId) {
+              outcome.issuesByStagingId.set(row.stagingId, {
+                reason: "broken_reference",
+                blocking: true,
+                fieldPath: "patientRef",
+                message: patientRef
+                  ? `Платёж ссылается на пациента «${patientRef}», которого нет среди перенесённых. Деньги нельзя записать на неизвестного плательщика.`
+                  : "В строке платежа нет ссылки на пациента.",
+                suggestedFix: "Перенесите таблицу пациентов, затем повторите загрузку платежей."
+              });
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "quarantined", updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
             }
-            continue;
-          }
 
-          if (typeof amountRub !== "number") {
-            outcome.failed += 1;
-            continue;
-          }
-
-          const externalId = values.externalId as string | undefined;
-          const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
-          const existingId = linkKey ? paymentLinks.get(linkKey) : undefined;
-          if (existingId) {
-            outcome.duplicates += 1;
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            if (typeof amountRub !== "number") {
+              outcome.failed += 1;
+              return;
             }
-            continue;
-          }
 
-          if (input.dryRun) {
-            outcome.created += 1;
-            continue;
-          }
+            const externalId = values.externalId as string | undefined;
+            const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
+            const existingId = linkKey ? paymentLinks.get(linkKey) : undefined;
+            if (existingId) {
+              outcome.duplicates += 1;
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
+            }
 
-          const paidAtRaw = values.paidAt as string | undefined;
-          // Время платежа из источника сохраняется; без времени — полдень
-          // местного времени, чтобы платёж не уехал в предыдущие сутки.
-          const paidAt = paidAtRaw ? storedDateTimeToUtc(paidAtRaw, timeZone, PAYMENT_DEFAULT_MINUTES) : null;
+            if (input.dryRun) {
+              outcome.created += 1;
+              return;
+            }
 
-          const [created] = await tx
-            .insert(payments)
-            .values({
-              organizationId: input.organizationId,
-              patientId,
-              amountRub,
-              method: (values.method as typeof payments.$inferInsert.method) ?? "card",
-              status: "paid",
-              paidAt: paidAt ?? new Date(),
-              note: [(values.note as string | undefined) ?? "", `Перенос из «${input.sourceName}»`]
-                .filter(Boolean)
-                .join("\n")
-            })
-            .returning({ id: payments.id });
+            const paidAtRaw = values.paidAt as string | undefined;
+            // Время платежа из источника сохраняется; без времени — полдень
+            // местного времени, чтобы платёж не уехал в предыдущие сутки.
+            const paidAt = paidAtRaw ? storedDateTimeToUtc(paidAtRaw, timeZone, PAYMENT_DEFAULT_MINUTES) : null;
 
-          if (!created) {
-            outcome.failed += 1;
-            continue;
-          }
-
-          if (linkKey) {
-            await tx
-              .insert(migrationEntityLinks)
+            const [created] = await tx
+              .insert(payments)
               .values({
                 organizationId: input.organizationId,
-                entityKind: "payment",
-                sourceSystem: input.sourceSystem,
-                sourceEntityId: linkKey,
-                naturalKey: row.naturalKey,
-                targetEntityId: created.id,
-                createdByRunId: input.runId
+                patientId,
+                amountRub,
+                method: (values.method as typeof payments.$inferInsert.method) ?? "card",
+                status: "paid",
+                paidAt: paidAt ?? new Date(),
+                note: [(values.note as string | undefined) ?? "", `Перенос из «${input.sourceName}»`]
+                  .filter(Boolean)
+                  .join("\n")
               })
-              .onConflictDoNothing();
-            paymentLinks.set(linkKey, created.id);
-          }
+              .returning({ id: payments.id });
 
-          await tx
-            .update(migrationStagingRecords)
-            .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
-            .where(eq(migrationStagingRecords.id, row.stagingId));
+            if (!created) {
+              outcome.failed += 1;
+              return;
+            }
 
-          await tx.insert(auditEvents).values({
-            organizationId: input.organizationId,
-            entityType: "payment",
-            entityId: created.id,
-            action: "payment_migrated",
-            reason: `Перенос из «${input.sourceName}», строка ${row.sourceRowNumber}, сумма ${amountRub} руб.`
+            if (linkKey) {
+              await tx
+                .insert(migrationEntityLinks)
+                .values({
+                  organizationId: input.organizationId,
+                  entityKind: "payment",
+                  sourceSystem: input.sourceSystem,
+                  sourceEntityId: linkKey,
+                  naturalKey: row.naturalKey,
+                  targetEntityId: created.id,
+                  createdByRunId: input.runId
+                })
+                .onConflictDoNothing();
+              paymentLinks.set(linkKey, created.id);
+            }
+
+            await tx
+              .update(migrationStagingRecords)
+              .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
+              .where(eq(migrationStagingRecords.id, row.stagingId));
+
+            await sp.insert(auditEvents).values({
+              organizationId: input.organizationId,
+              entityType: "payment",
+              entityId: created.id,
+              action: "payment_migrated",
+              reason: `Перенос из «${input.sourceName}», строка ${row.sourceRowNumber}, сумма ${amountRub} руб.`
+            });
+
+            outcome.created += 1;
           });
-
-          outcome.created += 1;
         }
       });
     } catch (error) {
-      outcome.failed += batch.length;
       const message = error instanceof Error ? error.message : String(error);
-      for (const row of batch) {
+      // Сюда попадают только отказы уровня транзакции: обрыв соединения,
+      // исчерпание пула. Отказ строки перехвачен её точкой сохранения.
+      const unresolved = batch.filter((row) => !outcome.issuesByStagingId.has(row.stagingId));
+      outcome.failed += unresolved.length;
+      for (const row of unresolved) {
         outcome.issuesByStagingId.set(row.stagingId, {
           reason: "target_write_failed",
           blocking: true,
           fieldPath: null,
-          message: `База отклонила запись партии платежей: ${message.slice(0, 300)}`,
-          suggestedFix: "Устраните причину отказа и повторите загрузку."
+          message: `Транзакция партии прервана: ${message.slice(0, 300)}`,
+          suggestedFix: "Проверьте доступность базы и повторите загрузку — уже перенесённые строки не продублируются."
         });
       }
     }
@@ -924,118 +1125,124 @@ export async function loadVisits(input: {
     try {
       await db.transaction(async (tx) => {
         for (const row of batch) {
-          const values = row.transformed.values;
-          const patientRef = values.patientRef as string | undefined;
-          const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
+          // Каждая строка в своей точке сохранения: отказ по одной не уносит партию.
+          await loadRowInSavepoint(tx, row, outcome, "приём", async (sp) => {
+            const values = row.transformed.values;
+            const patientRef = values.patientRef as string | undefined;
+            const patientId = patientRef ? patientLinks.get(`id:${patientRef}`) : undefined;
 
-          if (!patientId) {
-            outcome.issuesByStagingId.set(row.stagingId, {
-              reason: "broken_reference",
-              blocking: true,
-              fieldPath: "patientRef",
-              message: patientRef
-                ? `Приём ссылается на пациента «${patientRef}», которого нет среди перенесённых.`
-                : "В строке приёма нет ссылки на пациента.",
-              suggestedFix: "Перенесите таблицу пациентов, затем повторите загрузку приёмов."
-            });
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "quarantined", updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            if (!patientId) {
+              outcome.issuesByStagingId.set(row.stagingId, {
+                reason: "broken_reference",
+                blocking: true,
+                fieldPath: "patientRef",
+                message: patientRef
+                  ? `Приём ссылается на пациента «${patientRef}», которого нет среди перенесённых.`
+                  : "В строке приёма нет ссылки на пациента.",
+                suggestedFix: "Перенесите таблицу пациентов, затем повторите загрузку приёмов."
+              });
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "quarantined", updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
             }
-            continue;
-          }
 
-          const externalId = values.externalId as string | undefined;
-          const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
-          const existingId = linkKey ? visitLinks.get(linkKey) : undefined;
-          if (existingId) {
-            outcome.duplicates += 1;
-            if (!input.dryRun) {
-              await tx
-                .update(migrationStagingRecords)
-                .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
-                .where(eq(migrationStagingRecords.id, row.stagingId));
+            const externalId = values.externalId as string | undefined;
+            const linkKey = externalId ? `id:${externalId}` : row.naturalKey;
+            const existingId = linkKey ? visitLinks.get(linkKey) : undefined;
+            if (existingId) {
+              outcome.duplicates += 1;
+              if (!input.dryRun) {
+                await tx
+                  .update(migrationStagingRecords)
+                  .set({ status: "duplicate", targetEntityId: existingId, updatedAt: new Date() })
+                  .where(eq(migrationStagingRecords.id, row.stagingId));
+              }
+              return;
             }
-            continue;
-          }
 
-          if (input.dryRun) {
-            outcome.created += 1;
-            continue;
-          }
+            if (input.dryRun) {
+              outcome.created += 1;
+              return;
+            }
 
-          /**
-           * Перенесённый приём получает статус signed: это состоявшийся,
-           * закрытый приём из старой системы, а не черновик, который врач
-           * дописывает. Черновик в списке «незакрытые приёмы» через год после
-           * переноса — ложная задача для врача.
-           */
-          const [created] = await tx
-            .insert(visits)
-            .values({
-              organizationId: input.organizationId,
-              patientId,
-              status: "signed",
-              complaint: (values.complaint as string | undefined) ?? null,
-              anamnesis: (values.anamnesis as string | undefined) ?? null,
-              objectiveStatus: (values.objectiveStatus as string | undefined) ?? null,
-              diagnosis: (values.diagnosis as string | undefined) ?? null,
-              treatmentPlan: (values.treatmentPlan as string | undefined) ?? null,
-              doctorSummary: [
-                (values.doctorSummary as string | undefined) ?? "",
-                `Перенесено из «${input.sourceName}»${
-                  values.date ? `, дата приёма ${dateOnlyPart(values.date as string)}` : ""
-                }.`
-              ]
-                .filter(Boolean)
-                .join("\n"),
-              // Время приёма из источника сохраняется, а не заменяется полднем.
-              signedAt: values.date
-                ? (storedDateTimeToUtc(values.date as string, timeZone, PAYMENT_DEFAULT_MINUTES) ?? new Date())
-                : new Date()
-            })
-            .returning({ id: visits.id });
-
-          if (!created) {
-            outcome.failed += 1;
-            continue;
-          }
-
-          if (linkKey) {
-            await tx
-              .insert(migrationEntityLinks)
+            /**
+             * Перенесённый приём получает статус signed: это состоявшийся,
+             * закрытый приём из старой системы, а не черновик, который врач
+             * дописывает. Черновик в списке «незакрытые приёмы» через год после
+             * переноса — ложная задача для врача.
+             */
+            const [created] = await tx
+              .insert(visits)
               .values({
                 organizationId: input.organizationId,
-                entityKind: "visit",
-                sourceSystem: input.sourceSystem,
-                sourceEntityId: linkKey,
-                naturalKey: row.naturalKey,
-                targetEntityId: created.id,
-                createdByRunId: input.runId
+                patientId,
+                status: "signed",
+                complaint: (values.complaint as string | undefined) ?? null,
+                anamnesis: (values.anamnesis as string | undefined) ?? null,
+                objectiveStatus: (values.objectiveStatus as string | undefined) ?? null,
+                diagnosis: (values.diagnosis as string | undefined) ?? null,
+                treatmentPlan: (values.treatmentPlan as string | undefined) ?? null,
+                doctorSummary: [
+                  (values.doctorSummary as string | undefined) ?? "",
+                  `Перенесено из «${input.sourceName}»${
+                    values.date ? `, дата приёма ${dateOnlyPart(values.date as string)}` : ""
+                  }.`
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+                // Время приёма из источника сохраняется, а не заменяется полднем.
+                signedAt: values.date
+                  ? (storedDateTimeToUtc(values.date as string, timeZone, PAYMENT_DEFAULT_MINUTES) ?? new Date())
+                  : new Date()
               })
-              .onConflictDoNothing();
-            visitLinks.set(linkKey, created.id);
-          }
+              .returning({ id: visits.id });
 
-          await tx
-            .update(migrationStagingRecords)
-            .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
-            .where(eq(migrationStagingRecords.id, row.stagingId));
-          outcome.created += 1;
+            if (!created) {
+              outcome.failed += 1;
+              return;
+            }
+
+            if (linkKey) {
+              await tx
+                .insert(migrationEntityLinks)
+                .values({
+                  organizationId: input.organizationId,
+                  entityKind: "visit",
+                  sourceSystem: input.sourceSystem,
+                  sourceEntityId: linkKey,
+                  naturalKey: row.naturalKey,
+                  targetEntityId: created.id,
+                  createdByRunId: input.runId
+                })
+                .onConflictDoNothing();
+              visitLinks.set(linkKey, created.id);
+            }
+
+            await tx
+              .update(migrationStagingRecords)
+              .set({ status: "loaded", targetEntityId: created.id, updatedAt: new Date() })
+              .where(eq(migrationStagingRecords.id, row.stagingId));
+            outcome.created += 1;
+          });
         }
       });
     } catch (error) {
-      outcome.failed += batch.length;
       const message = error instanceof Error ? error.message : String(error);
-      for (const row of batch) {
+      // Сюда попадают только отказы уровня транзакции: обрыв соединения,
+      // исчерпание пула. Отказ строки перехвачен её точкой сохранения.
+      const unresolved = batch.filter((row) => !outcome.issuesByStagingId.has(row.stagingId));
+      outcome.failed += unresolved.length;
+      for (const row of unresolved) {
         outcome.issuesByStagingId.set(row.stagingId, {
           reason: "target_write_failed",
           blocking: true,
           fieldPath: null,
-          message: `База отклонила запись партии приёмов: ${message.slice(0, 300)}`,
-          suggestedFix: "Устраните причину отказа и повторите загрузку."
+          message: `Транзакция партии прервана: ${message.slice(0, 300)}`,
+          suggestedFix: "Проверьте доступность базы и повторите загрузку — уже перенесённые строки не продублируются."
         });
       }
     }

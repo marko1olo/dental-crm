@@ -17,6 +17,7 @@ import {
   normalizeEmailValue,
   normalizeEnumValue,
   normalizeGenderValue,
+  normalizeMoneyRubles,
   normalizeMoneyValue,
   normalizeNameValue,
   normalizePhoneValue,
@@ -369,12 +370,23 @@ export function transformRow(input: TransformRowInput): TransformedRow {
         break;
 
       case "service.priceRub":
-      case "payment.amountRub":
-        apply(field, column.sourceColumn, rawValue, normalizeMoneyValue(rawValue), column.decidedBy, column.confidence);
+      case "payment.amountRub": {
+        /**
+         * В боевую колонку идут целые рубли — она так объявлена. Но точная сумма
+         * в копейках сохраняется рядом, в normalized_json: без неё сверка не
+         * смогла бы свести деньги до копейки и округление осталось бы невидимым.
+         */
+        apply(field, column.sourceColumn, rawValue, normalizeMoneyRubles(rawValue), column.decidedBy, column.confidence);
+        const exact = normalizeMoneyValue(rawValue);
+        if (exact.value !== null) {
+          values[field === "payment.amountRub" ? "amountKopecks" : "priceKopecks"] = exact.value;
+        }
         break;
+      }
 
       case "appointment.durationMinutes": {
-        const parsed = normalizeMoneyValue(rawValue);
+        // Длительность — не деньги; берём целочисленный разбор той же функции.
+        const parsed = normalizeMoneyRubles(rawValue);
         apply(field, column.sourceColumn, rawValue, parsed, column.decidedBy, column.confidence, (minutes) =>
           Math.max(5, Math.min(600, Math.round(minutes)))
         );

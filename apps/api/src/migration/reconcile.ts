@@ -36,8 +36,12 @@ export interface ReconcileInput {
   organizationId: string;
   /** Число строк, прочитанных из источника разбором. Внешняя точка отсчёта. */
   sourceRowsParsed: number;
-  /** Суммы платежей, посчитанные разбором источника до загрузки. */
-  sourceMoneyTotalRub: number | null;
+  /**
+   * Точная сумма платежей источника в КОПЕЙКАХ, посчитанная разбором до
+   * загрузки. Независимая точка отсчёта: если бы сверка брала это число из
+   * счётчиков загрузчика, она подтверждала бы его собственную арифметику.
+   */
+  sourceMoneyTotalKopecks: number | null;
   dryRun: boolean;
 }
 
@@ -122,21 +126,64 @@ async function tallyByStatus(runId: string): Promise<Map<MigrationEntityKind, St
  * null, слагаемое отсутствует, и расхождение с независимо посчитанной суммой
  * источника это обнаружит.
  */
-async function moneyTotals(runId: string): Promise<{ loaded: number; quarantined: number; staged: number }> {
+interface MoneyTotals {
+  /** Точные суммы в копейках — по ним сводится баланс. */
+  stagedKopecks: number;
+  loadedKopecks: number;
+  quarantinedKopecks: number;
+  /** Целые рубли, фактически записанные в боевую колонку amount_rub. */
+  loadedRubles: number;
+  quarantinedRubles: number;
+  stagedRubles: number;
+}
+
+/**
+ * Денежные итоги прогона.
+ *
+ * ПОЧЕМУ В КОПЕЙКАХ, А НЕ В РУБЛЯХ
+ * Колонка payments.amount_rub объявлена целыми рублями, поэтому «23 400,50» из
+ * чужой базы записывается как 23 401. Если сверять рубли с рублями, потеря
+ * пятидесяти копеек не видна нигде: обе стороны уже округлены, и баланс
+ * «сходится» при фактическом расхождении.
+ *
+ * Поэтому баланс сводится по точным копейкам из normalized_json.amountKopecks,
+ * а округление показывается отдельным числом. Требование «свести деньги до
+ * копейки» выполняется единственным честным способом при целочисленной колонке:
+ * разница названа, посчитана и видна в отчёте, а не спрятана.
+ */
+async function moneyTotals(runId: string): Promise<MoneyTotals> {
+  const kopecksExpression = sql`(${migrationStagingRecords.normalizedJson} ->> 'amountKopecks')::numeric`;
+  const rublesExpression = sql`(${migrationStagingRecords.normalizedJson} ->> 'amountRub')::numeric`;
+  const loadedCondition = sql`${migrationStagingRecords.status} in ('loaded','updated')`;
+  const quarantinedCondition = sql`${migrationStagingRecords.status} = 'quarantined'`;
+
   const [row] = await db
     .select({
-      staged: sql<string>`coalesce(sum((${migrationStagingRecords.normalizedJson} ->> 'amountRub')::numeric), 0)`,
-      loaded: sql<string>`coalesce(sum(case when ${migrationStagingRecords.status} in ('loaded','updated') then (${migrationStagingRecords.normalizedJson} ->> 'amountRub')::numeric else 0 end), 0)`,
-      quarantined: sql<string>`coalesce(sum(case when ${migrationStagingRecords.status} = 'quarantined' then (${migrationStagingRecords.normalizedJson} ->> 'amountRub')::numeric else 0 end), 0)`
+      stagedKopecks: sql<string>`coalesce(sum(${kopecksExpression}), 0)`,
+      loadedKopecks: sql<string>`coalesce(sum(case when ${loadedCondition} then ${kopecksExpression} else 0 end), 0)`,
+      quarantinedKopecks: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${kopecksExpression} else 0 end), 0)`,
+      stagedRubles: sql<string>`coalesce(sum(${rublesExpression}), 0)`,
+      loadedRubles: sql<string>`coalesce(sum(case when ${loadedCondition} then ${rublesExpression} else 0 end), 0)`,
+      quarantinedRubles: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${rublesExpression} else 0 end), 0)`
     })
     .from(migrationStagingRecords)
     .where(and(eq(migrationStagingRecords.runId, runId), eq(migrationStagingRecords.entityKind, "payment")));
 
   return {
-    staged: Math.round(Number(row?.staged ?? 0)),
-    loaded: Math.round(Number(row?.loaded ?? 0)),
-    quarantined: Math.round(Number(row?.quarantined ?? 0))
+    stagedKopecks: Math.round(Number(row?.stagedKopecks ?? 0)),
+    loadedKopecks: Math.round(Number(row?.loadedKopecks ?? 0)),
+    quarantinedKopecks: Math.round(Number(row?.quarantinedKopecks ?? 0)),
+    stagedRubles: Math.round(Number(row?.stagedRubles ?? 0)),
+    loadedRubles: Math.round(Number(row?.loadedRubles ?? 0)),
+    quarantinedRubles: Math.round(Number(row?.quarantinedRubles ?? 0))
   };
+}
+
+/** Форматирует копейки как рубли для текста отчёта. */
+function formatKopecks(kopecks: number): string {
+  const sign = kopecks < 0 ? "−" : "";
+  const absolute = Math.abs(kopecks);
+  return `${sign}${Math.floor(absolute / 100)},${String(absolute % 100).padStart(2, "0")} руб.`;
 }
 
 export async function reconcileRun(input: ReconcileInput): Promise<MigrationReconciliationReport> {
@@ -262,36 +309,76 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
   const paymentTally = byEntity.get("payment");
 
   if (paymentTally && paymentTally.total > 0) {
-    if (input.sourceMoneyTotalRub !== null) {
+    /**
+     * Проверка 5.1: разбор ничего не потерял. Сумма источника считается движком
+     * из исходных значений ДО загрузки и передаётся сюда в копейках.
+     */
+    if (input.sourceMoneyTotalKopecks !== null) {
+      const diff = input.sourceMoneyTotalKopecks - money.stagedKopecks;
       checks.push({
-        code: "money_parse_completeness",
-        title: "Сумма разобранных платежей совпадает с суммой источника",
-        expected: input.sourceMoneyTotalRub,
-        actual: money.staged,
-        passed: money.staged === input.sourceMoneyTotalRub,
+        code: "money_parse_completeness_kopecks",
+        title: "Сумма разобранных платежей совпадает с суммой источника (до копейки)",
+        expected: input.sourceMoneyTotalKopecks,
+        actual: money.stagedKopecks,
+        passed: diff === 0,
         detail:
-          money.staged === input.sourceMoneyTotalRub
-            ? `Сумма платежей источника ${input.sourceMoneyTotalRub} руб. разобрана полностью.`
-            : `Сумма платежей источника ${input.sourceMoneyTotalRub} руб., а в стейджинге ${money.staged} руб. Разница ${
-                input.sourceMoneyTotalRub - money.staged
-              } руб. — часть сумм не разобралась.`
+          diff === 0
+            ? `Сумма платежей источника ${formatKopecks(input.sourceMoneyTotalKopecks)} разобрана полностью, копейка в копейку.`
+            : `Сумма платежей источника ${formatKopecks(input.sourceMoneyTotalKopecks)}, а в стейджинге ${formatKopecks(
+                money.stagedKopecks
+              )}. Не разобрано ${formatKopecks(diff)} — часть значений в колонке суммы не является суммой.`
       });
     }
 
-    const moneyAccounted = money.loaded + money.quarantined;
+    /**
+     * Проверка 5.2: главный денежный баланс. Ни одна копейка не исчезла между
+     * стейджингом и итогом: загружено плюс изолировано равно уложенному.
+     */
+    const accountedKopecks = money.loadedKopecks + money.quarantinedKopecks;
     checks.push({
-      code: "money_conservation",
-      title: "Сумма загруженных и изолированных платежей равна сумме в стейджинге",
-      expected: money.staged,
-      actual: input.dryRun ? money.staged : moneyAccounted,
-      passed: input.dryRun ? true : moneyAccounted === money.staged,
+      code: "money_conservation_kopecks",
+      title: "Загруженное плюс изолированное равно уложенному (до копейки)",
+      expected: money.stagedKopecks,
+      actual: input.dryRun ? money.stagedKopecks : accountedKopecks,
+      passed: input.dryRun ? true : accountedKopecks === money.stagedKopecks,
       detail: input.dryRun
-        ? `Сухой прогон: к загрузке подготовлено ${money.staged} руб.`
-        : moneyAccounted === money.staged
-          ? `${money.staged} руб. распределены: загружено ${money.loaded} руб., в карантине ${money.quarantined} руб.`
-          : `Деньги не сходятся: в стейджинге ${money.staged} руб., учтено ${moneyAccounted} руб. Потеряно из вида ${
-              money.staged - moneyAccounted
-            } руб.`
+        ? `Сухой прогон: к загрузке подготовлено ${formatKopecks(money.stagedKopecks)}.`
+        : accountedKopecks === money.stagedKopecks
+          ? `${formatKopecks(money.stagedKopecks)} распределены: загружено ${formatKopecks(
+              money.loadedKopecks
+            )}, в карантине ${formatKopecks(money.quarantinedKopecks)}.`
+          : `Деньги не сходятся: в стейджинге ${formatKopecks(money.stagedKopecks)}, учтено ${formatKopecks(
+              accountedKopecks
+            )}. Потеряно из вида ${formatKopecks(money.stagedKopecks - accountedKopecks)}.`
+    });
+
+    /**
+     * Проверка 5.3: округление до рубля названо и посчитано.
+     *
+     * Колонка payments.amount_rub хранит целые рубли, поэтому копейки при записи
+     * округляются. Это НЕ ошибка переноса, но и не то, о чём можно молчать:
+     * клиника должна видеть, что итог в базе отличается от итога в старой
+     * системе на конкретную сумму, а не обнаружить это при сверке с бухгалтерией.
+     *
+     * Проверка не проваливается: округление неизбежно при целочисленной колонке.
+     * Она информирует. Провалить её значило бы объявить перенос неудачным из-за
+     * свойства схемы, которое переносом не лечится.
+     */
+    const roundingDeltaKopecks = money.loadedRubles * 100 - money.loadedKopecks;
+    checks.push({
+      code: "money_rounding_disclosure",
+      title: "Округление копеек до рубля при записи в боевую колонку",
+      expected: 0,
+      actual: roundingDeltaKopecks,
+      passed: true,
+      detail:
+        roundingDeltaKopecks === 0
+          ? "Все суммы были целыми в рублях, округление не потребовалось."
+          : `Колонка payments.amount_rub хранит целые рубли: точная сумма загруженного ${formatKopecks(
+              money.loadedKopecks
+            )} записана как ${money.loadedRubles} руб. Расхождение с бухгалтерией старой системы составит ${formatKopecks(
+              Math.abs(roundingDeltaKopecks)
+            )}. Точные копейки сохранены в стейджинге и доступны для сверки.`
     });
   }
 
@@ -326,9 +413,10 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
     balanced,
     checks,
     entityBreakdown,
-    sourceMoneyTotalRub: input.sourceMoneyTotalRub,
-    loadedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.loaded : null,
-    quarantinedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.quarantined : null
+    // В отчёте — целые рубли для читаемости; точность живёт в проверках выше.
+    sourceMoneyTotalRub: input.sourceMoneyTotalKopecks === null ? null : Math.round(input.sourceMoneyTotalKopecks / 100),
+    loadedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.loadedRubles : null,
+    quarantinedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.quarantinedRubles : null
   };
 
   /**

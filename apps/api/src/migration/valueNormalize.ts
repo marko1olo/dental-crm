@@ -838,27 +838,61 @@ export function normalizeMoneyValue(raw: string | null | undefined): NormalizedV
     }
   }
 
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
+  /**
+   * Копейки считаются из строки регулярным выражением, а не через parseFloat:
+   * «23400.50» → 2340050 точно. Тот же приём, что в packages/shared/utils/money.ts,
+   * и по той же причине — деньги не должны проходить через плавающую точку.
+   */
+  const kopecksMatch = /^(\d+)(?:\.(\d{1,2}))?$/.exec(normalized);
+  if (!kopecksMatch) {
     return bad(`Сумма «${truncateForMessage(text)}» не разобрана как число.`, transforms);
   }
+  const wholePart = Number(kopecksMatch[1]);
+  const fractionPart = Number((kopecksMatch[2] ?? "").padEnd(2, "0") || "0");
+  if (!Number.isSafeInteger(wholePart)) {
+    return bad(`Сумма «${truncateForMessage(text)}» выходит за допустимые пределы.`, transforms);
+  }
+  const magnitudeKopecks = wholePart * 100 + fractionPart;
+  const kopecks = negative ? -magnitudeKopecks : magnitudeKopecks;
 
-  const signed = negative ? -parsed : parsed;
-  const rubles = Math.round(signed);
-  if (!Number.isInteger(signed)) transforms.push("round-kopecks-to-rubles");
-
-  if (!Number.isSafeInteger(rubles)) {
+  if (!Number.isSafeInteger(kopecks)) {
     return bad(`Сумма «${truncateForMessage(text)}» выходит за допустимые пределы.`, transforms);
   }
   // Платёж в миллиард рублей в стоматологии — это ошибка разбора, а не платёж.
-  if (Math.abs(rubles) > 1_000_000_000) {
+  if (Math.abs(kopecks) > 100_000_000_000) {
     return bad(
-      `Сумма ${rubles} руб. неправдоподобна — вероятно, в колонку попало не денежное значение.`,
+      `Сумма ${Math.round(kopecks / 100)} руб. неправдоподобна — вероятно, в колонку попало не денежное значение.`,
       transforms
     );
   }
 
-  return ok(rubles, [...transforms, "money:rub"], 0.97);
+  return ok(kopecks, [...transforms, "money:kopecks"], 0.97);
+}
+
+/**
+ * Сумма в целых рублях — для колонок, объявленных как integer.
+ *
+ * ЗАЧЕМ ДВЕ ФУНКЦИИ
+ * Колонка payments.amount_rub объявлена целыми рублями (см. money.ts: денежные
+ * колонки живут в двух видах, integer и numeric(12,2)). Значит, «23 400,50» из
+ * чужой базы физически не влезает в неё без потери пятидесяти копеек.
+ *
+ * Замалчивать эту потерю нельзя: требование к переносу — свести деньги ДО
+ * КОПЕЙКИ. Поэтому копейки считаются отдельно и точно (normalizeMoneyValue),
+ * сохраняются в стейджинге, и сверка сравнивает именно их, показывая округление
+ * отдельным числом. Округление остаётся, но перестаёт быть невидимым: оператор
+ * видит, что из 27 900,50 руб. в базу легло 27 901 руб., а разница в 50 копеек
+ * названа и посчитана.
+ */
+export function normalizeMoneyRubles(raw: string | null | undefined): NormalizedValue<number> {
+  const kopecks = normalizeMoneyValue(raw);
+  if (kopecks.value === null) {
+    return { value: null, transforms: kopecks.transforms, confidence: kopecks.confidence, issue: kopecks.issue };
+  }
+  const rubles = Math.round(kopecks.value / 100);
+  const transforms = [...kopecks.transforms.filter((transform) => transform !== "money:kopecks"), "money:rub"];
+  if (kopecks.value % 100 !== 0) transforms.push("round-kopecks-to-rubles");
+  return ok(rubles, transforms, kopecks.confidence);
 }
 
 // ---------------------------------------------------------------------------
