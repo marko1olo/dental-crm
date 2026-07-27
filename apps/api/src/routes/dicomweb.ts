@@ -35,12 +35,23 @@ import { requireOrganizationId } from "../security/identity.js";
  *      подтверждает ТОЛЬКО UID исследования, поэтому серию и объект обязаны
  *      подтвердить сами байты файла: иначе тот же обман вернулся бы уровнем
  *      выше — один файл на любую серию внутри исследования.
- *   3. Демонстрационный файл. Отдаётся исключительно под теми UID, которые
- *      физически записаны в нём самом. Никакого списка «разрешённых» UID в
- *      коде нет: тождество файла берётся из файла.
+ *   3. Демонстрационный файл. Отдаётся только той организации, которой он
+ *      назначен явно через DENTE_DICOM_SAMPLE_ORGANIZATION_ID, и только под
+ *      теми UID, которые физически записаны в нём самом. Никакого списка
+ *      «разрешённых» UID в коде нет: тождество файла берётся из файла.
+ *      Переменная не задана — ветки образца нет ни для кого.
  * Если ни один источник не подтвердил все три UID — 404 с машиночитаемым
  * кодом. Просмотрщик, который не показал ничего, безопасен; просмотрщик,
  * показавший чужой снимок, — нет.
+ *
+ * ВТОРОЙ ДЕФЕКТ, ЗАКРЫТЫЙ ЗДЕСЬ (ветка 3 не смотрела на организацию вовсе):
+ * подписанный токен другой клиники получал те же байты образца, и токен с
+ * идентификатором организации, которого нет ни в одной строке organizations, —
+ * тоже. Подпись токена доказывает лишь то, что токен выдал этот сервер; она не
+ * доказывает, что организация существует. Теперь организация из токена сверяется
+ * с таблицей organizations до любого обращения к диску, а образец привязан к
+ * конкретному владельцу. Неизвестный арендатор не проходит на этом маршруте
+ * никуда.
  *
  * ЧЕГО ЗДЕСЬ НЕТ: QIDO-RS (поиск исследований/серий), /metadata, /frames,
  * /bulkdata, multipart/related. Зарегистрирован ровно один ресурс — объект.
@@ -61,6 +72,23 @@ const DICOM_HEADER_PROBE_BYTES = 1024 * 1024;
 
 /** Переменная окружения с путём к демонстрационному файлу. */
 const SAMPLE_DICOM_PATH_ENV = "DENTE_DICOM_SAMPLE_PATH";
+
+/**
+ * Переменная окружения с организацией-владельцем демонстрационного файла.
+ * Не задана — образец не отдаётся никому, включая единственную организацию
+ * установки. Отказ по умолчанию: у файла на диске нет строки в базе, а значит
+ * нет и владельца, которого можно вывести, — его обязан назвать оператор.
+ */
+const SAMPLE_DICOM_ORGANIZATION_ID_ENV = "DENTE_DICOM_SAMPLE_ORGANIZATION_ID";
+
+/**
+ * Форма UUID без привязки к версии. Нужна ровно для одного: не отправлять в
+ * PostgreSQL строку, которая не приводится к типу uuid (organizations.id —
+ * колонка uuid, ошибка 22P02 превратила бы честный отказ в 500). Нулевой UUID
+ * 00000000-0000-0000-0000-000000000000 форму проходит намеренно: существует
+ * организация или нет — решает база, а не регулярное выражение.
+ */
+const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 interface DicomFileIdentity {
   studyUid: string | null;
@@ -133,19 +161,56 @@ async function fileCarriesRequestedUids(
  * Путь к демонстрационному файлу. Настраивается через окружение; значение по
  * умолчанию сохраняет прежнее размещение в репозитории (.data/dicom/test.dcm
  * относительно корня монорепозитория, сервер запускается из apps/api).
- *
- * ГРАНИЦА, О КОТОРОЙ НАДО ЗНАТЬ: у этого файла нет владельца в базе, поэтому
- * он отдаётся любой авторизованной клинике — под своими подлинными UID и
- * только под ними. Для образца из репозитория (публичный набор
- * «CompressedSamples^CT2») это безопасно: ничьих данных в нём нет. Но если
- * DENTE_DICOM_SAMPLE_PATH направить на настоящий снимок пациента, он станет
- * читаемым для всех клиник установки. Настоящие исследования должны попадать
- * в imaging_studies / imaging_instances, где организация проверяется.
  */
 function sampleDicomPath(): string {
   const configured = process.env[SAMPLE_DICOM_PATH_ENV]?.trim();
   if (configured) return path.resolve(configured);
   return path.resolve(process.cwd(), "../../.data/dicom/test.dcm");
+}
+
+/**
+ * Организация-владелец демонстрационного файла либо null.
+ *
+ * БЫЛО: у файла не было владельца, и ветка образца не спрашивала организацию —
+ * то есть владельцем была любая организация с подписанным токеном, включая ту,
+ * которой нет в базе. Комментарий на этом месте честно описывал границу, но
+ * границей она от этого не становилась: код её не проверял.
+ *
+ * СТАЛО: владельца называет оператор. Значение не задано или не UUID — ветки
+ * образца нет. Это дороже для разработчика (без переменной локальный
+ * просмотрщик образца не покажет) и правильнее для пациента: если
+ * DENTE_DICOM_SAMPLE_PATH направить на настоящий снимок, безвладельческий файл
+ * стал бы читаемым для всех клиник установки.
+ */
+function sampleDicomOwnerOrganizationId(): string | null {
+  const configured = process.env[SAMPLE_DICOM_ORGANIZATION_ID_ENV]?.trim();
+  if (!configured || !UUID_SHAPE.test(configured)) return null;
+  return configured;
+}
+
+/**
+ * Существует ли организация с таким идентификатором.
+ *
+ * ЗАЧЕМ ЭТО ЗДЕСЬ, А НЕ В ОБЩЕМ ГЕЙТЕ: requireOrganizationId
+ * (security/identity.ts) возвращает organizationId прямо из проверенной подписи
+ * и в базу не смотрит. Подпись доказывает авторство сервера, а не существование
+ * арендатора: токен с любым UUID, подписанный этим секретом, проходил как
+ * действительный. Это свойство общего гейта, оно касается всех маршрутов и
+ * правится отдельно — но данный маршрут отдаёт медицинские байты, поэтому он
+ * проверяет арендатора сам и сейчас.
+ *
+ * Бросает исключение, если база недоступна: вызывающий обязан различать «такой
+ * организации нет» и «проверить не удалось». Подставить false во втором случае
+ * значило бы выдать выдуманный ответ за проверенный.
+ */
+async function organizationExists(organizationId: string): Promise<boolean> {
+  if (!UUID_SHAPE.test(organizationId)) return false;
+  const [row] = await db
+    .select({ id: schema.organizations.id })
+    .from(schema.organizations)
+    .where(eq(schema.organizations.id, organizationId))
+    .limit(1);
+  return typeof row?.id === "string";
 }
 
 /**
@@ -201,9 +266,16 @@ async function resolveInstanceFilePath(
     }
   }
 
-  const samplePath = sampleDicomPath();
-  if (await fileCarriesRequestedUids(samplePath, studyUid, seriesUid, instanceUid)) {
-    return samplePath;
+  // Ветка образца проходит тот же арендный гейт, что и настоящее исследование:
+  // спрашивающая организация обязана быть той, которой образец назначен. Раньше
+  // здесь не было ни одного упоминания organizationId — и это была единственная
+  // ветка маршрута, отдававшая байты кому угодно.
+  const sampleOwnerOrganizationId = sampleDicomOwnerOrganizationId();
+  if (sampleOwnerOrganizationId !== null && sampleOwnerOrganizationId === organizationId) {
+    const samplePath = sampleDicomPath();
+    if (await fileCarriesRequestedUids(samplePath, studyUid, seriesUid, instanceUid)) {
+      return samplePath;
+    }
   }
 
   return null;
@@ -216,6 +288,36 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
       if (!(await requireClinicalReadAccess(request, reply, "dicom instance read"))) return;
       const organizationId = requireOrganizationId(request, reply);
       if (!organizationId) return;
+
+      // Организация обязана существовать. Проверка стоит до разбора адреса:
+      // неизвестному арендатору не сообщается даже то, правильно ли он составил
+      // запрос. Отказ по причине недоступной базы отделён от отказа по причине
+      // отсутствующей организации — иначе авария хранилища выглядела бы как
+      // проверенный вывод «такой клиники нет».
+      let organizationKnown: boolean;
+      try {
+        organizationKnown = await organizationExists(organizationId);
+      } catch (lookupError) {
+        request.log.error(
+          { err: lookupError, organizationId },
+          "[dicomweb] Не удалось проверить организацию запроса — снимок не выдан"
+        );
+        return reply.code(503).send({
+          error: "OrganizationCheckUnavailable",
+          message:
+            "Снимок не выдан: не удалось проверить организацию запроса. Повторите позже — выдача без проверки клиники запрещена."
+        });
+      }
+      if (!organizationKnown) {
+        request.log.warn(
+          { organizationId },
+          "[dicomweb] Токен подписан, но организации с таким идентификатором нет — снимок не выдан"
+        );
+        return reply.code(403).send({
+          error: "OrganizationUnknown",
+          message: "Снимок не выдан: организация из токена не существует."
+        });
+      }
 
       const studyUid = normalizeUid(request.params.studyUid);
       const seriesUid = normalizeUid(request.params.seriesUid);
