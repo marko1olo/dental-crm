@@ -380,7 +380,14 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
           </div>
           <div>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Первый взнос</div>
-            <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--brand-600)" }}>{downPayment.toLocaleString('ru-RU')} ₽</div>
+            {/* БЫЛО: color: var(--brand-600). В светлой теме это #0284c7, и на
+                фоне var(--paper) контраст 4.1 при пороге 4.5 — замерено,
+                scratch/audit-inline-colors.mjs. Начертание 16px/600 к крупному
+                тексту не относится, поэтому послабления нет.
+                Это денежная цифра: читаемость важнее акцента. Оставляем тот же
+                цвет, что у соседней «Суммы лечения» — они равноправны, а
+                выделен и без того «Ежемесячный платеж»: он крупнее и цветной. */}
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>{downPayment.toLocaleString('ru-RU')} ₽</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Ежемесячный платеж</div>
