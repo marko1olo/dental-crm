@@ -762,7 +762,15 @@ export const communicationIntentSchema = z.enum([
     "recall",
     "document_ready",
     "imaging_review",
-    "general"
+    "general",
+    /*
+     * Ответ на прямое обращение пациента: он написал «СТОП» или «СТАРТ», мы
+     * подтверждаем, что услышали. Единственное назначение, которому диспетчер
+     * разрешает обойти только что отозванное согласие и тихие часы (миграция
+     * 0132). Значение обязано быть и здесь: иначе строки очереди с ним молча
+     * отбрасываются при разборе ответа на клиенте.
+     */
+    "transactional_reply"
 ]);
 export const communicationTaskWorkflowCodeSchema = z.enum([
     "telegram_tax_document_request",

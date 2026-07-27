@@ -104,7 +104,14 @@ export const communicationIntent = pgEnum("communication_intent", [
   "recall",
   "document_ready",
   "imaging_review",
-  "general"
+  "general",
+  /*
+   * Ответ на прямое обращение пациента: он написал «СТОП» — мы подтверждаем,
+   * что услышали. Не реклама и не рассылка, инициатива принадлежит пациенту.
+   * Единственное назначение, которому диспетчер разрешает обойти отозванное
+   * согласие и тихие часы; см. миграцию 0132 и dispatcher.
+   */
+  "transactional_reply"
 ]);
 export const communicationStatus = pgEnum("communication_status", [
   "queued",

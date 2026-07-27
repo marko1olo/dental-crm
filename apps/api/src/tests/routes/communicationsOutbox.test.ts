@@ -76,6 +76,33 @@ describe("маршруты сообщений пациентам", () => {
 					email: "test-patient@example.ru"
 				})
 				.onConflictDoNothing();
+
+			/*
+			 * Тихие часы выключены явно.
+			 *
+			 * БЕЗ ЭТОГО ТЕСТ ЗАВИСЕЛ ОТ ЧАСА ЗАПУСКА. По умолчанию тихие часы —
+			 * с 21:00 до 09:00 и служебные сообщения в них ОТКЛАДЫВАЮТСЯ. Поэтому
+			 * днём разбор очереди доходил до проверки шлюза и давал ожидаемое
+			 * «suppressed: шлюз не настроен», а вечером сообщение откладывалось до
+			 * утра и оставалось «queued» — три проверки в этом файле падали.
+			 * Найдено в 23:18: набор был зелёным ровно потому, что все прежние
+			 * прогоны шли днём.
+			 *
+			 * Проверка самих тихих часов живёт в тестах deliveryPolicy, где время
+			 * задаётся явным аргументом, а не берётся из часов машины.
+			 */
+			await db
+				.insert(communicationSettings)
+				.values({
+					organizationId: ORG_ID,
+					timezone: "Europe/Moscow",
+					deferServiceInQuietHours: false,
+					blockMarketingInQuietHours: false
+				})
+				.onConflictDoUpdate({
+					target: communicationSettings.organizationId,
+					set: { deferServiceInQuietHours: false, blockMarketingInQuietHours: false }
+				});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;

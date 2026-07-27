@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	communicationEvents,
+	communicationOutbox,
 	crmLeads,
 	messengerInboundEvents,
 	organizations,
@@ -113,6 +114,7 @@ describe("разбор входящих сообщений", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
+			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
 			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_ID));
 			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
 			await db.delete(messengerInboundEvents).where(eq(messengerInboundEvents.organizationId, ORG_ID));
@@ -153,6 +155,74 @@ describe("разбор входящих сообщений", () => {
 		assert.equal(consents.length, 2, JSON.stringify(consents));
 		assert.ok(consents.every((row) => row.state === "revoked"), JSON.stringify(consents));
 		assert.ok(consents.every((row) => row.source === "inbound_stop"), JSON.stringify(consents));
+	});
+
+	test("после «СТОП» пациенту уходит подтверждение, а не тишина", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		await db.insert(messengerInboundEvents).values({
+			organizationId: ORG_ID,
+			channel: "whatsapp",
+			externalChatId: "79160000201",
+			messageText: "стоп",
+			eventKind: "message"
+		});
+
+		await processInboundEvents({ limit: 50 });
+
+		const queued = await db
+			.select({
+				intent: communicationOutbox.intent,
+				scope: communicationOutbox.scope,
+				body: communicationOutbox.body,
+				channel: communicationOutbox.channel,
+				status: communicationOutbox.status
+			})
+			.from(communicationOutbox)
+			.where(and(eq(communicationOutbox.organizationId, ORG_ID), eq(communicationOutbox.patientId, PATIENT_ID)));
+
+		const acknowledgement = queued.find((row) => row.intent === "transactional_reply");
+		assert.ok(acknowledgement, `подтверждение не поставлено в очередь: ${JSON.stringify(queued)}`);
+		// Ответ идёт по тому каналу, откуда пришёл «СТОП».
+		assert.equal(acknowledgement.channel, "whatsapp");
+		// Это не реклама: область остаётся служебной.
+		assert.equal(acknowledgement.scope, "service");
+		// В тексте обязателен способ вернуться — иначе отписка необратима для
+		// пациента, который передумал.
+		assert.ok(acknowledgement.body.includes("СТАРТ"), acknowledgement.body);
+	});
+
+	test("повторный разбор того же события не удваивает подтверждение", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const [event] = await db
+			.insert(messengerInboundEvents)
+			.values({
+				organizationId: ORG_ID,
+				channel: "sms",
+				externalChatId: "79160000201",
+				messageText: "отпишите меня",
+				eventKind: "message"
+			})
+			.returning({ id: messengerInboundEvents.id });
+		assert.ok(event);
+
+		await processInboundEvents({ limit: 50 });
+		// Разбор повторяется целиком: так бывает при перезапуске обработчика.
+		await db.update(messengerInboundEvents).set({ processedAt: null }).where(eq(messengerInboundEvents.id, event.id));
+		await processInboundEvents({ limit: 50 });
+
+		const acknowledgements = await db
+			.select({ id: communicationOutbox.id })
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, ORG_ID),
+					eq(communicationOutbox.dedupeKey, `optout-ack:${event.id}`)
+				)
+			);
+
+		assert.equal(acknowledgements.length, 1, "подтверждение поставлено дважды");
 	});
 
 	test("«СТАРТ» возвращает только сервисные сообщения, но не рекламу", async (context) => {

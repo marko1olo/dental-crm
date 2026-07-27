@@ -45,7 +45,9 @@ import {
 	patientCommunicationConsents,
 	patients
 } from "../db/schema.js";
-import { detectOptOutIntent } from "./communications/optOut.js";
+import type { CommunicationChannelCode } from "./communications/channelRouter.js";
+import { enqueueMessage } from "./communications/dispatcher.js";
+import { detectOptOutIntent, optOutAcknowledgement } from "./communications/optOut.js";
 import { wsBroker } from "./websocketBroker.js";
 
 export type InboundIngestionReport = {
@@ -60,13 +62,19 @@ export type InboundIngestionReport = {
 };
 
 /** Каналы, которые могут прийти во входящих. Значения совпадают с pgEnum. */
-const KNOWN_CHANNELS = new Set(["telegram", "whatsapp", "vk", "max", "sms", "email"]);
+const KNOWN_CHANNELS: readonly CommunicationChannelCode[] = ["telegram", "whatsapp", "vk", "max", "sms", "email"];
 
-function channelForEvent(rawChannel: string): string {
+/**
+ * Тип возвращается конкретный, а не string: код канала расходится дальше — в
+ * согласия, в очередь, в ответ пациенту, — и потерянный тип там означал бы
+ * приведение вслепую.
+ */
+function channelForEvent(rawChannel: string): CommunicationChannelCode {
 	// Неизвестный канал раньше подменялся телеграмом. Подмена — это неправда в
 	// журнале; здесь неизвестное значение сводится к telegram только потому,
 	// что колонка перечислением ограничена, и это единственный случай.
-	return KNOWN_CHANNELS.has(rawChannel) ? rawChannel : "telegram";
+	const known = KNOWN_CHANNELS.find((candidate) => candidate === rawChannel);
+	return known ?? "telegram";
 }
 
 type PatientMatch =
@@ -233,6 +241,56 @@ export async function processInboundEvents(options: { limit?: number } = {}): Pr
 	return report;
 }
 
+/**
+ * Подтверждение пациенту, что его «СТОП» или «СТАРТ» приняты.
+ *
+ * ЧТО БЫЛО. Текст подтверждения существовал (optOutAcknowledgement), но не
+ * отправлялся никуда, кроме теста: согласие отзывалось молча. Со стороны
+ * пациента это выглядит как игнорирование — он попросил перестать, ответа нет,
+ * а через неделю приходит служебное напоминание о приёме. Дальше жалоба, и она
+ * будет справедливой по ощущению, даже если формально всё верно.
+ *
+ * Ставится с назначением transactional_reply — единственным, которому диспетчер
+ * разрешает обойти только что отозванное согласие и тихие часы. Ключ повтора
+ * привязан к событию: повторный разбор той же входящей строки не пошлёт второе
+ * подтверждение.
+ *
+ * Ошибка постановки не роняет разбор входящих: отзыв согласия уже произошёл и
+ * важнее ответа. Молча это тоже не проходит — причина пишется в журнал.
+ */
+async function sendOptOutAcknowledgement(
+	organizationId: string,
+	patientId: string,
+	channel: CommunicationChannelCode,
+	intent: "opt_out" | "opt_in",
+	eventId: string
+): Promise<void> {
+	try {
+		const [clinic] = await db
+			.select({ name: clinics.name })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+
+		const result = await enqueueMessage({
+			organizationId,
+			patientId,
+			channel,
+			intent: "transactional_reply",
+			// scope остаётся служебным: это ответ на обращение, не реклама.
+			scope: "service",
+			body: optOutAcknowledgement(intent, clinic?.name ?? "Клиника"),
+			dedupeKey: `optout-ack:${eventId}`
+		});
+
+		if (!result.ok) {
+			console.warn(`Подтверждение отписки не поставлено в очередь (пациент ${patientId}): ${result.reason}`);
+		}
+	} catch (error) {
+		console.error("Подтверждение отписки не поставлено в очередь:", error);
+	}
+}
+
 type InboundEventRow = typeof messengerInboundEvents.$inferSelect;
 
 async function processSingleEvent(
@@ -280,9 +338,11 @@ async function processSingleEvent(
 		if (intent === "opt_out") {
 			await revokeConsentForChannel(organizationId, patientId, channel, messageText);
 			report.optOuts += 1;
+			await sendOptOutAcknowledgement(organizationId, patientId, channel, "opt_out", event.id);
 		} else if (intent === "opt_in") {
 			await restoreServiceConsent(organizationId, patientId, channel, messageText);
 			report.optIns += 1;
+			await sendOptOutAcknowledgement(organizationId, patientId, channel, "opt_in", event.id);
 		}
 
 		await db.insert(communicationEvents).values({

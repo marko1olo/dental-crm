@@ -64,7 +64,13 @@ export type CommunicationIntentCode =
 	| "recall"
 	| "document_ready"
 	| "imaging_review"
-	| "general";
+	| "general"
+	/**
+	 * Ответ на прямое обращение пациента (он написал «СТОП» или «СТАРТ»).
+	 * Единственное назначение, которому разрешено обойти только что отозванное
+	 * согласие и тихие часы; ставится исключительно разбором входящих сообщений.
+	 */
+	| "transactional_reply";
 
 /** Настройки рассылки организации со значениями по умолчанию, если строки нет. */
 export type ResolvedCommunicationSettings = QuietHoursSettings &
@@ -473,15 +479,37 @@ async function processRow(
 		return "suppressed";
 	}
 
+	/*
+	 * ОТВЕТ НА ОБРАЩЕНИЕ ПАЦИЕНТА — единственное исключение из проверок согласия
+	 * и тихих часов.
+	 *
+	 * Пациент написал «СТОП»: согласие отозвано в ту же секунду, поэтому обычная
+	 * проверка запретила бы даже подтверждение его собственной просьбы, а тихие
+	 * часы отложили бы ответ до утра. Человек в этот момент ждёт ответа и не
+	 * знает, услышали его или нет.
+	 *
+	 * Исключение узкое по построению: оно привязано к назначению
+	 * transactional_reply, которое ставится только в разборе входящих сообщений
+	 * (services/messengerIngestion.ts) в ответ на действие пациента, и никогда —
+	 * рассылками, напоминаниями или ручной отправкой. Суточный предел сообщений
+	 * пациенту при этом СОХРАНЯЕТСЯ: он защищает от цикла, если пациент шлёт
+	 * «СТОП» десять раз подряд.
+	 */
+	const isTransactionalReply = row.intent === "transactional_reply";
+
 	// Согласие проверяется здесь, а не при постановке: за время ожидания в
 	// очереди пациент мог отказаться, и отправить после отказа — нарушение.
 	if (row.patientId) {
-		const consent = decideConsent(context.consents.get(row.patientId) ?? [], channel, scope);
-		if (!consent.allowed) {
-			await markSuppressed(row, consent.reason ?? "Нет согласия на сообщения по этому каналу.", now);
-			return "suppressed";
+		if (!isTransactionalReply) {
+			const consent = decideConsent(context.consents.get(row.patientId) ?? [], channel, scope);
+			if (!consent.allowed) {
+				await markSuppressed(row, consent.reason ?? "Нет согласия на сообщения по этому каналу.", now);
+				return "suppressed";
+			}
 		}
 
+		// Суточный предел действует и для ответа на обращение: он защищает от
+		// цикла, если пациент отправит «СТОП» десять раз подряд.
 		const alreadySent = context.sentToday.get(row.patientId) ?? 0;
 		if (alreadySent >= settings.dailyLimitPerPatient) {
 			await markSuppressed(
@@ -493,7 +521,9 @@ async function processRow(
 		}
 	}
 
-	const quietHours = decideQuietHours(now, scope, settings);
+	// Тихие часы к ответу на обращение не применяются: пациент написал сейчас и
+	// ждёт ответа сейчас, а не в девять утра.
+	const quietHours = isTransactionalReply ? ({ action: "send" } as const) : decideQuietHours(now, scope, settings);
 	if (quietHours.action === "suppress") {
 		await markSuppressed(row, quietHours.reason, now);
 		return "suppressed";

@@ -18,6 +18,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { appointmentActionCodes, communicationCampaigns } from "../db/communicationsSchema.js";
+import { patientDuplicateDecisions } from "../db/patientsSchema.js";
 import {
 	appointments,
 	chairs,
@@ -74,6 +75,10 @@ async function clean(): Promise<void> {
 	await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
 	await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
 	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+	// Решения по дублям удаляются явно, хотя после миграции 0130 их снял бы и
+	// каскад: скрипт не должен зависеть от того, что база доедет до 0130. Без
+	// этой строки повторный сев падал сразу после первого объединения карточек.
+	await db.delete(patientDuplicateDecisions).where(eq(patientDuplicateDecisions.organizationId, ORG_ID));
 	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 	await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 	await db.delete(users).where(eq(users.organizationId, ORG_ID));
