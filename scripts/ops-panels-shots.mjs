@@ -295,6 +295,26 @@ for (const panel of PANELS) {
 
 await shootViewport("narrow_full.png");
 
+/**
+ * Раздел «Коммуникации» целиком, во всю высоту. Нужен, чтобы увидеть, что
+ * находится НИЖЕ рабочих панелей: там висят виджеты, чьи адреса отвечают 404.
+ */
+console.log("\nРаздел коммуникаций целиком");
+await setTheme("light");
+await setViewport(1600, 1000);
+await sleep(800);
+await goToView("communications");
+await sleep(2500);
+
+const pageHeight = await evaluate("Math.min(document.body.scrollHeight, 12000)");
+const fullShot = await send("Page.captureScreenshot", {
+  format: "png",
+  clip: { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 },
+  captureBeyondViewport: true,
+});
+await writeFile(path.join(OUT, "communications_full.png"), Buffer.from(fullShot.data, "base64"));
+console.log(`  ✓ communications_full.png (высота страницы ${pageHeight})`);
+
 socket.close();
 browser.kill();
 console.log(`\nСнимки: ${OUT}`);

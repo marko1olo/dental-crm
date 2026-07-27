@@ -3,22 +3,9 @@ import { useState } from "react";
 import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
 import { EmptyState } from "./components/EmptyState";
-import { CrmEmailDispatchLogsWidget } from "./components/communications/CrmEmailDispatchLogsWidget";
-import { UisOmniMessengerQueuesWidget } from "./components/communications/UisOmniMessengerQueuesWidget";
-import { QuickAppointmentConfirmationsWidget } from "./components/communications/QuickAppointmentConfirmationsWidget";
-import { ProdoctorovSyncWidget } from "./components/integrations/ProdoctorovSyncWidget";
-import { AppointmentChannelInheritancesWidget } from "./components/communications/AppointmentChannelInheritancesWidget";
-import { ChatMessageDispatchStatusesWidget } from "./components/communications/ChatMessageDispatchStatusesWidget";
-import { CollaborativeChatProcessingStatesWidget } from "./components/communications/CollaborativeChatProcessingStatesWidget";
-import { MessageTemplateCatalogsWidget } from "./components/communications/MessageTemplateCatalogsWidget";
 import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
-import { MessengerFileAttachmentsWidget } from "./components/communications/MessengerFileAttachmentsWidget";
-import { PreviousChatDialogHistoriesWidget } from "./components/communications/PreviousChatDialogHistoriesWidget";
-import { UisCallSpeechTranscriptsWidget } from "./components/communications/UisCallSpeechTranscriptsWidget";
-import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
-import { UisMassAppointmentConfirmationsWidget } from "./components/communications/UisMassAppointmentConfirmationsWidget";
-import { UisSmsChatQuotasWidget } from "./components/communications/UisSmsChatQuotasWidget";
+import { hasCapability } from "./lib/clinicCapabilities";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -249,6 +236,9 @@ export function CommunicationsView({
 }: any = {}) {
   const communicationNoteInputId = "communication-closing-note";
   const communicationNoteDescriptionId = "communication-closing-note-guidance";
+  // Режим клиники решает, какие разделы уместны. Пока профиль не загружен,
+  // режим не известен — тогда показывается всё (см. clinicCapabilities).
+  const clinicMode = dashboard?.clinicSettings?.profile?.mode ?? null;
 
   return (
     <div className="panel communications-panel" id="communications" data-testid="communications-view">
@@ -327,13 +317,17 @@ export function CommunicationsView({
       </div>
 
       {/*
-        Пульт отправки. Всё, что ниже в этом разделе, — списки, которые ничего
-        не отправляют: до появления очереди сообщений отправки в проекте не
-        существовало вообще. Здесь настоящие шлюзы, журнал с причиной отказа,
-        редактор шаблонов и правила рассылки.
+        Пульт отправки: настоящие шлюзы, журнал с причиной отказа, редактор
+        шаблонов и правила рассылки.
+
+        Рассылки по базе показываются не всем. Отдельному врачу они не нужны —
+        его режим описан как «минимум экранов», маркетинга у него нет, а лишний
+        раздел на экране стоит дороже, чем отсутствующая возможность. Решение
+        принимает таблица режимов в lib/clinicCapabilities.ts, а не сравнение
+        строк здесь.
       */}
       <MessageDeliveryConsole />
-      <CampaignPanel />
+      {hasCapability(clinicMode, "massCampaigns") ? <CampaignPanel /> : null}
 
       <div className="communication-layout">
         <section className="communication-task-list" aria-label="Очередь связи">
@@ -409,22 +403,34 @@ export function CommunicationsView({
         </aside>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <QuickAppointmentConfirmationsWidget />
-        <CrmEmailDispatchLogsWidget />
-        <UisOmniMessengerQueuesWidget />
-        <ProdoctorovSyncWidget />
-        <AppointmentChannelInheritancesWidget />
-        <ChatMessageDispatchStatusesWidget />
-        <CollaborativeChatProcessingStatesWidget />
-        <MessageTemplateCatalogsWidget />
-        <MessengerFileAttachmentsWidget />
-        <PreviousChatDialogHistoriesWidget />
-        <UisCallSpeechTranscriptsWidget />
-        <UisMassAppointmentConfirmationsWidget />
-        <ConfirmationPerformanceReportsWidget />
-        <UisSmsChatQuotasWidget />
-      </div>
+      {/*
+        ЗДЕСЬ БЫЛА СЕТКА ИЗ 14 ВИДЖЕТОВ. Убрана после проверки живыми запросами:
+
+          404 (маршрута не существует вовсе) — 9 штук:
+            appointment-channel-inheritances, chat-message-dispatch-statuses,
+            collaborative-chat-processing-states, message-template-catalogs,
+            messenger-file-attachments, previous-chat-dialog-histories,
+            uis-call-speech-transcripts, uis-mass-appointment-confirmations,
+            uis-sms-chat-quotas
+          200 с пустым массивом (таблицы пусты) — 5 штук:
+            email-dispatch-logs, quick-appointment-confirmations,
+            uis-omni-messenger-queues, confirmation-performance-reports,
+            prodoctorov-sync
+
+        То есть все четырнадцать показывали «данные отсутствуют» и занимали
+        четыре экрана прокрутки под рабочими панелями. Их назначение уже
+        закрыто настоящими инструментами выше:
+          справочник шаблонов        → редактор в «Отправке сообщений»
+          логи отправки по e-mail    → журнал очереди с причиной отказа
+          квоты SMS                  → остаток на счету в состоянии шлюзов
+          массовое подтверждение     → «Рассылки»
+          отчёт по подтверждениям    → «Обзвон и подтверждения» и отчёты
+
+        Дописывать девять отсутствующих маршрутов ради виджетов, которых никто
+        не просил, значило бы выдумывать контракты. Файлы виджетов удалены,
+        кроме ConfirmationPerformanceReportsWidget: он используется ещё в
+        аналитике и в смене.
+      */}
     </div>
   );
 }

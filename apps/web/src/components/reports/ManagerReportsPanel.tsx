@@ -28,6 +28,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { hasCapability, type ClinicMode } from "../../lib/clinicCapabilities";
 
 type RevenuePoint = { bucket: string; revenueRub: number; paymentCount: number; payingPatients: number };
 
@@ -123,7 +124,18 @@ function monthBounds(now = new Date()): { from: string; to: string } {
 	return { from: iso(first), to: iso(last) };
 }
 
-export function ManagerReportsPanel() {
+export type ManagerReportsPanelProps = {
+	/**
+	 * Режим клиники. Определяет, какие разрезы уместны: занятость единственного
+	 * кресла — всегда одно и то же число, а выработка единственного врача — одна
+	 * строка. Не передан — показывается всё (см. lib/clinicCapabilities.ts).
+	 */
+	readonly clinicMode?: ClinicMode | null;
+};
+
+export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelProps = {}) {
+	const showDoctorBreakdown = hasCapability(clinicMode, "doctorBreakdown");
+	const showChairUtilisation = hasCapability(clinicMode, "chairUtilisation");
 	const initial = useMemo(() => monthBounds(), []);
 	const [from, setFrom] = useState(initial.from);
 	const [to, setTo] = useState(initial.to);
@@ -276,6 +288,12 @@ export function ManagerReportsPanel() {
 						)}
 
 						{/* ── Врачи ─────────────────────────────────────────────── */}
+						{/*
+							У отдельного врача этот разрез — одна строка с его же фамилией.
+							Прячем не потому, что пусто, а потому что сравнивать не с кем.
+						*/}
+						{showDoctorBreakdown ? (
+							<>
 						<h3 className="ops-section-title">Врачи</h3>
 						{summary.doctors.isEmpty ? (
 							<p className="ops-empty">Выработки за период нет.</p>
@@ -336,8 +354,16 @@ export function ManagerReportsPanel() {
 								) : null}
 							</>
 						)}
+						</>
+						) : null}
 
 						{/* ── Кресла ────────────────────────────────────────────── */}
+						{/*
+							При одном кресле процент занятости — всегда одно и то же число:
+							смотреть там нечего, а строка на экране остаётся.
+						*/}
+						{showChairUtilisation ? (
+							<>
 						<h3 className="ops-section-title">Занятость кресел</h3>
 						{summary.chairs.isEmpty ? (
 							<p className="ops-empty">Приёмов за период не было.</p>
@@ -377,6 +403,8 @@ export function ManagerReportsPanel() {
 								<p className="ops-hint">{summary.chairs.basis.note}</p>
 							</>
 						)}
+						</>
+						) : null}
 
 						{/* ── Приёмы ────────────────────────────────────────────── */}
 						<h3 className="ops-section-title">Приёмы</h3>
