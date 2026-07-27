@@ -48,6 +48,7 @@ import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 // (только к /api/inventory — 25 мест), но Fastify отвечал 404.
 import registerDiaryRoutes from "./routes/diary.js";
 import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
+import { registerReportRoutes } from "./routes/reports.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -419,6 +420,11 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   // состоял из одного обработчика «закрыть задачу связи»; отправлять было
   // нечем и посмотреть, почему сообщение не ушло, было негде.
   await registerCommunicationOutboxRoutes(app);
+
+  // Отчёты руководителю. Единственным отчётом был /api/analytics/dashboard:
+  // ни динамики выручки, ни доли неявок, ни дебиторки, ни того, что продаётся,
+  // владелец клиники увидеть не мог, хотя данные для всего этого в базе есть.
+  await registerReportRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
