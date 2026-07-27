@@ -9,6 +9,8 @@ import {
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 import { requireOrganizationId } from "../security/identity.js";
 import { evaluateClinicalRulesInDb, createClinicalRuleInDb, updateClinicalRuleInDb } from "../db/clinicalQuery.js";
+import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
+import { CLINICAL_PHASE_CODES, ClinicalRouter, isClinicalPhaseCode } from "../services/clinical/ClinicalRouter.js";
 
 type ClinicalPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -24,6 +26,21 @@ function parseClinicalPayload<T>(schema: ClinicalPayloadSchema<T>, value: unknow
   if (!parsed.success) return null;
   return parsed.data;
 }
+
+/**
+ * Колонки clinical_tasks имеют тип uuid: строка неверного формата доходит до
+ * PostgreSQL и возвращается пятисоткой «invalid input syntax for type uuid».
+ * Проверяем формат заранее, чтобы клиент получил внятные 400, а не 500.
+ */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function optionalUuid(value: unknown): string | null | undefined {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string" || !UUID_PATTERN.test(value)) return undefined;
+  return value;
+}
+
+const clinicalPhaseCompletionValidationMessage = `Ошибка валидации: нужен patientId в формате UUID и completedPhaseCode из списка: ${CLINICAL_PHASE_CODES.join(", ")}.`;
 
 export async function registerClinicalRoutes(app: FastifyInstance) {
   app.post("/api/clinical/rules/evaluate", async (request, reply) => {
@@ -79,6 +96,78 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     const orgId = requireOrganizationId(request, reply);
     if (!orgId) return;
     return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
+  });
+
+  /**
+   * Завершение клинического этапа и передача пациента следующему врачу.
+   *
+   * БЫЛО: роута не существовало. Сервис ClinicalRouter собирал задачу-передачу
+   * в памяти, печатал её в консоль и возвращал вызывающему, которого не было:
+   * класс не был подключён ни к одному эндпоинту. Передача между этапами
+   * лечения не доходила ни до базы, ни до следующего врача.
+   */
+  app.post("/api/clinical/phase-completions", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "clinical phase completion"))) return;
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
+
+    const body = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
+    const patientId = typeof body.patientId === "string" && UUID_PATTERN.test(body.patientId) ? body.patientId : null;
+    const treatmentPlanId = optionalUuid(body.treatmentPlanId);
+    const assignedDoctorId = optionalUuid(body.assignedDoctorId);
+    const toothCodesRaw = body.toothCodes;
+    const toothCodesValid =
+      toothCodesRaw === undefined || (Array.isArray(toothCodesRaw) && toothCodesRaw.every((c) => typeof c === "string"));
+    const notesValid = body.notes === undefined || body.notes === null || typeof body.notes === "string";
+
+    if (
+      !patientId ||
+      !isClinicalPhaseCode(body.completedPhaseCode) ||
+      treatmentPlanId === undefined ||
+      assignedDoctorId === undefined ||
+      !toothCodesValid ||
+      !notesValid
+    ) {
+      return reply
+        .code(400)
+        .send({ error: "ClinicalPhaseValidationError", message: clinicalPhaseCompletionValidationMessage });
+    }
+
+    try {
+      const task = await new ClinicalRouter().handlePhaseCompletion(orgId, {
+        patientId,
+        completedPhaseCode: body.completedPhaseCode,
+        notes: typeof body.notes === "string" ? body.notes : null,
+        toothCodes: (toothCodesRaw as string[] | undefined) ?? [],
+        treatmentPlanId,
+        assignedDoctorId,
+      });
+      if (!task) {
+        return reply
+          .code(400)
+          .send({ error: "ClinicalPhaseValidationError", message: clinicalPhaseCompletionValidationMessage });
+      }
+      return reply.code(201).send(task);
+    } catch (error) {
+      if (error instanceof ClinicalTaskOwnershipError) {
+        return reply.code(404).send({ error: "ClinicalTaskReferenceNotFound", message: error.message, field: error.field });
+      }
+      throw error;
+    }
+  });
+
+  /** Задачи, созданные передачей между этапами. Это то, что видит следующий врач, открывая карту. */
+  app.get("/api/clinical/tasks", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "clinical tasks read"))) return;
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
+    const { patientId } = request.query as { patientId?: string };
+    if (patientId !== undefined && !UUID_PATTERN.test(patientId)) {
+      return reply
+        .code(400)
+        .send({ error: "ClinicalTaskValidationError", message: "Ошибка валидации: patientId должен быть UUID." });
+    }
+    return reply.code(200).send(await new ClinicalRouter().listTasks(orgId, patientId));
   });
 
 	// COMPETITOR FEATURE #19: прием::пользовательские_справочники_бланков_форма_043у
