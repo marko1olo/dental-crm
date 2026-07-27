@@ -130,6 +130,42 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 }
 
 /**
+ * Контекст защищённого обработчика: и гейт пройден, и арендатор определён.
+ *
+ * ЗАЧЕМ: requireClinicalReadAccess/requireClinicalMutationAccess возвращают
+ * boolean (пройден ли гейт), а organizationId приходит из другого источника —
+ * подписанного токена. Их легко перепутать: в routes/analytics.ts результат
+ * гейта присвоили переменной orgId, дальше проверили `typeof orgId !== "string"`
+ * — условие всегда истинно, и дашборд молча отдавал пустой ответ. Компилятор
+ * такое не ловит: сравнение typeof у boolean легально.
+ *
+ * Эти две функции соединяют оба шага и возвращают либо готовый организационный
+ * идентификатор, либо null (ответ клиенту уже отправлен). Перепутать нечего:
+ * возвращается ровно то, что нужно обработчику.
+ */
+export async function requireClinicalReadContext(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  protectedArea = "clinical read",
+): Promise<{ organizationId: string } | null> {
+  if (!(await requireClinicalReadAccess(request, reply, protectedArea))) return null;
+  const organizationId = await requireVerifiedOrganizationId(request, reply);
+  if (!organizationId) return null;
+  return { organizationId };
+}
+
+export async function requireClinicalMutationContext(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  protectedArea = "clinical mutation",
+): Promise<{ organizationId: string } | null> {
+  if (!(await requireClinicalMutationAccess(request, reply, protectedArea))) return null;
+  const organizationId = await requireVerifiedOrganizationId(request, reply);
+  if (!organizationId) return null;
+  return { organizationId };
+}
+
+/**
  * requireNonDoctorAccess — allows any authenticated non-doctor (admin, staff)
  * through. Doctors are restricted from certain write routes.
  */

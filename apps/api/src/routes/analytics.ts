@@ -1,6 +1,9 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess } from "../accessGuard.js";
+import {
+	requireClinicalReadAccess,
+	requireResolvedOrganizationId,
+} from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
 	appointments,
@@ -19,12 +22,27 @@ const RU_MONTHS = [
 
 export async function registerAnalyticsRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/dashboard", async (request, reply) => {
-		const orgId = await requireClinicalReadAccess(
+		// БЫЛО: `const orgId = await requireClinicalReadAccess(...)` — этот guard
+		// возвращает Promise<boolean> (проверка секрета), а не идентификатор
+		// организации. При успешной проверке orgId === true, поэтому условие
+		// `typeof orgId !== "string"` срабатывало ВСЕГДА и обработчик выходил до
+		// первого запроса к базе: весь дашборд молча отдавал пустой ответ.
+		// Типизация это не ловит — сравнение typeof у boolean легально.
+		// Теперь два шага явно разделены: гейт по секрету и получение арендатора
+		// из подписанного токена.
+		const readAllowed = await requireClinicalReadAccess(
 			request,
 			reply,
 			"analytics dashboard",
 		);
-		if (!orgId || typeof orgId !== "string") return;
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"analytics dashboard",
+		);
+		if (!orgId) return;
 
 		try {
 			const { range } = request.query as { range?: string };

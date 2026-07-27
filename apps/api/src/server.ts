@@ -42,6 +42,15 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.js";
 import { registerAuditRoutes } from "./routes/audit.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
+// Вторая партия незарегистрированных модулей. Фронтенд обращается к ним
+// (только к /api/inventory — 25 мест), но Fastify отвечал 404.
+import registerDiaryRoutes from "./routes/diary.js";
+import registerEgiszRoutes from "./routes/egisz.js";
+import { inventoryRoutes } from "./routes/inventory.js";
+import { portalRoutes } from "./routes/portal.js";
+import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
+import registerTemplateRoutes from "./routes/templates.js";
+import { telephonyRoutes } from "./routes/telephony.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
@@ -372,6 +381,29 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerAnalyticsRoutes(app);
   await registerAuditRoutes(app);
   await workspaceProfileRoutes(app);
+
+  // Вторая партия ранее незарегистрированных модулей.
+  //
+  // Префиксы восстановлены по адресам, которые уже вызывает фронтенд:
+  //   /api/inventory/:organizationId...        — apps/web/src (25 обращений)
+  //   /api/portal/auth/send-otp, /me, ...      — GuestLabPortal / портал пациента
+  //   /api/public/booking/:organizationId/...  — pages/PublicBookingWidget.tsx
+  // diary.ts и egisz.ts объявляют абсолютные пути, префикс им не нужен.
+  //
+  // Дубли проверены: из 29 путей этих модулей пересекался ровно один —
+  // /api/clinical/custom-examination-form-catalogs объявлялся и в egisz.ts, и в
+  // clinical.ts:85. Каталог форм осмотра к ЕГИСЗ отношения не имеет, поэтому
+  // удалён из egisz.ts; на дубле Fastify падал бы при старте.
+  await registerDiaryRoutes(app);
+  await registerEgiszRoutes(app);
+  // templates.ts нашёл тест routeRegistrationCoverage: полностью готовый
+  // CRUD шаблонов приёма (аналог «Шаблонов амбулаторных карт»), при этом
+  // apps/web обращается к /api/templates, а маршрута не существовало.
+  await registerTemplateRoutes(app);
+  await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+  await app.register(portalRoutes, { prefix: "/api/portal" });
+  await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
+  await app.register(telephonyRoutes, { prefix: "/api/telephony" });
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
