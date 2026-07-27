@@ -74,7 +74,7 @@ export declare const documentKindSourceMetadata: {
         readonly sourceStatus: "clinic_template";
         readonly sourceAuthority: "DENTE";
         readonly sourceReference: "Клинический план лечения из визита и прайс-листа";
-        readonly sourceNote: "План должен брать услуги и суммы из серверных фактов пациента/визита, а не из свободного текста браузера.";
+        readonly sourceNote: "Услуги, этапы и суммы берутся из приёма и прайс-листа клиники, а не набираются вручную: в плане будет ровно то, что записано в карточке.";
         readonly sourceCheckedAt: "2026-05-24";
     };
     readonly treatment_plan_acceptance: {

@@ -1,4 +1,5 @@
 import { CheckCircle2, FileText } from "lucide-react";
+import { isoDateLabel } from "./AppHelpers";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
@@ -1226,9 +1227,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </select>
                 </label>
                 <span id={selectedDocumentCreateGuidanceId}>
+                  {/* Было «Перед созданием CRM проверит обязательные поля» —
+                      программа говорила о себе аббревиатурой. */}
                   {selectedDocumentNeedsPayload
-                    ? "Перед созданием CRM проверит обязательные поля этой формы. Заполните форму ниже. Выбранный документ сохраняется в настройках."
-                    : "Можно создать сразу. Выбор сохранится для следующего открытия."}
+                    ? "Заполните форму ниже: без обязательных полей документ не создастся. Выбранный вид документа запомнится."
+                    : "Можно создать сразу. Выбранный вид документа запомнится."}
                 </span>
 
               </div>
@@ -1241,7 +1244,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 </div>
                 <p>{typedSelectedDocumentMetadata.sourceNote}</p>
                 <small>
-                  {typedSelectedDocumentMetadata.sourceReference} · проверено {typedSelectedDocumentMetadata.sourceCheckedAt}
+                  {typedSelectedDocumentMetadata.sourceReference} · форма сверена с источником {isoDateLabel(typedSelectedDocumentMetadata.sourceCheckedAt)}
                 </small>
                 {typedSelectedDocumentMetadata.sourceUrls.length ? (
                   <div className="document-source-links" aria-label="Официальные источники формы">
@@ -4784,7 +4787,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <span>Источник</span>
                     <strong>{documentAuditFacts.sourceAuthority}</strong>
                     <small>
-                      {documentAuditFacts.sourceReference} · проверено {documentAuditFacts.sourceCheckedAt}
+                      {documentAuditFacts.sourceReference} · форма сверена с источником {isoDateLabel(documentAuditFacts.sourceCheckedAt)}
                     </small>
                     {documentAuditFacts.sourceUrls.length ? (
                       <div className="document-source-links" aria-label="Официальные источники паспорта документа">

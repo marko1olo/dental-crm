@@ -118,6 +118,7 @@
 		"smoke:api-text-encoding": "node scripts/smoke-api-text-encoding.mjs",
 		"smoke:api-dicom-scan-abort-yield-source": "node scripts/smoke-api-dicom-scan-abort-yield-source.mjs",
 		"smoke:web-text-encoding": "node scripts/smoke-web-text-encoding.mjs",
+		"smoke:mixed-script-words": "node scripts/smoke-mixed-script-words.mjs",
 		"smoke:russian-fallback-source": "node scripts/smoke-russian-fallback-source.mjs",
 		"smoke:ui-preferences": "node scripts/smoke-ui-preferences.mjs",
 		"smoke:dicomweb-connector-boundary": "node scripts/smoke-dicomweb-connector-boundary.mjs",

@@ -229,19 +229,19 @@ try {
     .select({ n: sql<string>`count(*)` })
     .from(payments)
     .where(eq(payments.organizationId, ORG));
-  same("платежей после откатa", Number(afterRollback[0]!.n), 0);
+  same("платежей после отката", Number(afterRollback[0]!.n), 0);
   const linksLeft = await db
     .select({ n: sql<string>`count(*)` })
     .from(migrationEntityLinks)
     .where(and(eq(migrationEntityLinks.organizationId, ORG), eq(migrationEntityLinks.createdByRunId, payRun.run.runId)));
   same("ссылки удалённых сущностей убраны", Number(linksLeft[0]!.n), 0);
   const [rolledRun] = await db.select({ status: migrationRuns.status }).from(migrationRuns).where(eq(migrationRuns.id, payRun.run.runId));
-  same("статус прогона после откатa", rolledRun!.status, "rolled_back");
+  same("статус прогона после отката", rolledRun!.status, "rolled_back");
   const stagedAfterRb = await db
     .select({ n: sql<string>`count(*)` })
     .from(migrationStagingRecords)
     .where(eq(migrationStagingRecords.runId, payRun.run.runId));
-  check("исходные строки сохранены после откатa", Number(stagedAfterRb[0]!.n) === 4, `${stagedAfterRb[0]!.n} строк`);
+  check("исходные строки сохранены после отката", Number(stagedAfterRb[0]!.n) === 4, `${stagedAfterRb[0]!.n} строк`);
 
   console.log("--- 10. Расписание: время приёма обязано сохраниться");
   const scheduleCsv = [

@@ -2511,6 +2511,19 @@ export function money(value: number | string | null) {
   })} ₽`;
 }
 
+/**
+ * Дата вида «2026-05-24» человеческим видом: «24.05.2026».
+ *
+ * Нужна там, где в интерфейс попадает строка даты из данных, а не отметка
+ * времени: на экране «Документы» стояло «проверено 2026-05-24».
+ */
+export function isoDateLabel(value: unknown): string {
+  if (typeof value !== "string" || !value) return "";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  if (!year || !month || !day || year.length !== 4) return value;
+  return `${day}.${month}.${year}`;
+}
+
 export function minutesLabel(value: number) {
   if (value < 60) return `${value} мин`;
   const hours = Math.floor(value / 60);
