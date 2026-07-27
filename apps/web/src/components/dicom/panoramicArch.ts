@@ -2,7 +2,8 @@ import type { Point2D } from "../../mprMath";
 
 /**
  * Panoramic (ОПТГ) reconstruction geometry, derived from the dental arch the
- * dentist actually traced with the SplineROI tool.
+ * dentist actually traced with the SplineROI tool, plus the rules that decide
+ * whether there are decoded voxels to unwrap along it.
  *
  * This module is deliberately free of DOM, canvas, WebGL and cornerstone
  * imports at runtime: every cornerstone shape it consumes is described
@@ -43,6 +44,14 @@ export interface DrawnArchAnnotation {
 				contour?:
 					| {
 							polyline?: WorldPoint[] | undefined;
+							/**
+							 * Set by cornerstone when the trace was finished as a loop. A
+							 * finished SplineROI is a CLOSED SplineROI: double-clicking or
+							 * clicking back on the first control point is the only way to end a
+							 * trace and both set this flag (`SplineROITool.js:245-269`), so this
+							 * is the production case, not an edge case. It MUST be read — see
+							 * `buildPanoramicArch`.
+							 */
 							closed?: boolean | undefined;
 					  }
 					| undefined;
@@ -119,6 +128,22 @@ export const MAX_ARCH_SAMPLES = 4096;
 export const AXIAL_NORMAL_MIN_ABS_Z = 0.9;
 
 /**
+ * When `data.contour.closed` is missing, this decides whether a polyline is a
+ * loop: the gap between its last and first point, as a fraction of its own
+ * length.
+ *
+ * A closed spline's polyline ends exactly where it began, so the gap is zero.
+ * An open traced arch runs from one last molar to the other, so its gap is the
+ * end-to-end chord — tens of millimetres, roughly 40% of the arch length. 1% of
+ * a ~130 mm arch is ~1.3 mm: orders of magnitude above floating-point noise and
+ * orders of magnitude below any real open trace. Cornerstone applies the same
+ * geometric test with an exact-equality tolerance when the flag is absent
+ * (`updateContourPolyline.js`), so this is the tolerant version of a rule that
+ * already exists upstream.
+ */
+export const CLOSED_CONTOUR_GAP_FRACTION = 0.01;
+
+/**
  * Russian UI copy for each issue.
  *
  * i18n debt, stated plainly: this repo has no i18n library and no locale
@@ -141,6 +166,19 @@ export const panoramicIssueLabels: Record<PanoramicIssue, string> = {
 	volume_not_ready:
 		"Панорама не построена: объём ещё не декодирован. Дождитесь окончания загрузки серии и нажмите «Развернуть» снова.",
 };
+
+/**
+ * Russian UI copy for a panorama that WAS built, kept in this dictionary next to
+ * the refusal copy so that no user-facing literal lives inline in JSX. Same
+ * i18n debt as `panoramicIssueLabels`, stated once above; the unit is part of
+ * the sentence, so the formatting belongs here rather than in the component.
+ */
+export function panoramicReadyLabel(
+	controlPointCount: number,
+	lengthMm: number,
+): string {
+	return `Панорама построена по обведённой дуге: точек ${controlPointCount}, длина дуги ${lengthMm.toFixed(1)} мм.`;
+}
 
 /**
  * Drops the world Z of each point, keeping the axial-plane X/Y that
@@ -169,6 +207,63 @@ export function polylineLengthMm(points: readonly Point2D[]): number {
 		total += Math.hypot(b.x - a.x, b.y - a.y);
 	}
 	return total;
+}
+
+/**
+ * True when a polyline comes back to where it started — a loop, not an open
+ * arch. Second line of defence behind `data.contour.closed`: an annotation whose
+ * flag was never stamped can still be a loop, and unwrapping a loop appends a
+ * return sweep across the tongue and palate to the panorama.
+ *
+ * Fewer than four points cannot describe a loop worth cutting, which is the same
+ * threshold cornerstone uses for its own closed test. A trace with no extent is
+ * not a loop either — it is a degenerate arch and is reported as one — so
+ * zero-length input answers false.
+ */
+export function polylineReturnsToStart(
+	points: readonly Point2D[],
+	gapFraction: number = CLOSED_CONTOUR_GAP_FRACTION,
+): boolean {
+	if (points.length < 4) return false;
+	const totalMm = polylineLengthMm(points);
+	if (totalMm <= 0) return false;
+	const fraction =
+		Number.isFinite(gapFraction) && gapFraction >= 0
+			? gapFraction
+			: CLOSED_CONTOUR_GAP_FRACTION;
+	const first = points[0]!;
+	const last = points[points.length - 1]!;
+	return Math.hypot(last.x - first.x, last.y - first.y) <= totalMm * fraction;
+}
+
+/**
+ * Puts the arch in a deterministic column order: the end on the patient's RIGHT
+ * comes first, so it lands in the leftmost column of the unwrap
+ * (`generatePanoramicImage` writes column x from `splinePoints[x]`,
+ * `../../mprMath.ts:237` and `:267-268`). That is how an ОПТГ is read — as if
+ * facing the patient — and cornerstone's world frame is the DICOM patient frame,
+ * where +X grows toward the patient's LEFT, so "patient's right first" is
+ * "smallest world X first".
+ *
+ * Without this the order was whatever cornerstone left behind: for a closed
+ * contour `updateContourPolyline` reverses the polyline AND the handle list to
+ * force a clockwise winding, so which side of the patient landed on the left of
+ * the panorama depended on the direction the arch happened to be traced in.
+ *
+ * The tie-breaks keep this a pure function of the geometry: equal X falls back
+ * to Y (posterior grows +Y in the patient frame), equal in both leaves the order
+ * untouched.
+ */
+export function orientArchPatientRightFirst(
+	points: readonly Point2D[],
+): Point2D[] {
+	const ordered = points.map((point) => ({ ...point }));
+	if (ordered.length < 2) return ordered;
+	const first = ordered[0]!;
+	const last = ordered[ordered.length - 1]!;
+	if (first.x > last.x) return ordered.reverse();
+	if (first.x === last.x && first.y > last.y) return ordered.reverse();
+	return ordered;
 }
 
 function lerp(a: Point2D, b: Point2D, t: number): Point2D {
@@ -337,9 +432,11 @@ export interface BuildPanoramicArchOptions {
  * The most recently drawn spline wins: cornerstone appends new annotations, so
  * the last usable one is the arch the dentist is working with right now.
  *
- * When cornerstone has already rendered a dense polyline for that annotation,
- * that polyline IS the curve the dentist saw, so it is resampled directly.
- * Otherwise the control points are interpolated with a centripetal
+ * When cornerstone has already rendered a dense OPEN polyline for that
+ * annotation, that polyline IS the curve the dentist saw, so it is resampled
+ * directly. When the contour is closed — which is how every finished SplineROI
+ * trace ends — the polyline contains a wrap-around segment that is not part of
+ * the arch, so the control points are interpolated instead with a centripetal
  * Catmull-Rom that passes through every one of them.
  *
  * There is no fallback curve. If nothing usable was drawn, the caller gets
@@ -381,10 +478,25 @@ export function buildPanoramicArch(
 
 		const rawPolyline = annotation.data?.contour?.polyline ?? [];
 		const polyline = projectToAxialPlane(rawPolyline);
-		const usePolyline = polyline.length > controlPoints.length;
-		const curve = usePolyline
+		// A CLOSED contour's polyline carries one extra curve segment wrapping the
+		// last control point back to the first (`CubicSpline.js:40-41` decides the
+		// segment count, `Spline.js:211-214` emits all of them), and closed is the
+		// only way a SplineROI trace can be finished. Walking that polyline as if it
+		// were open appends a return sweep straight across the tongue and palate to
+		// the right of the real panorama — on a ~130 mm arch with a ~55 mm
+		// end-to-end chord that is ~30% of the output columns showing tissue that is
+		// not the dental arch — and inflates the reported arch length by the same
+		// amount. The dentist's own control points are an open list by construction,
+		// so a closed contour is interpolated from them instead of resampled.
+		const contourIsClosed =
+			annotation.data?.contour?.closed === true ||
+			polylineReturnsToStart(polyline);
+		const usePolyline =
+			!contourIsClosed && polyline.length > controlPoints.length;
+		const sampled = usePolyline
 			? resamplePolylineByArcLength(polyline, stepMm)
 			: sampleArchCurve(controlPoints, stepMm);
+		const curve = orientArchPatientRightFirst(sampled);
 		const lengthMm = polylineLengthMm(curve);
 
 		if (curve.length < 2 || lengthMm < stepMm) {
@@ -395,7 +507,12 @@ export function buildPanoramicArch(
 			continue;
 		}
 
-		return { status: "ready", curve, controlPoints, lengthMm };
+		return {
+			status: "ready",
+			curve,
+			controlPoints: orientArchPatientRightFirst(controlPoints),
+			lengthMm,
+		};
 	}
 
 	if (firstIssue !== null) {
@@ -406,4 +523,135 @@ export function buildPanoramicArch(
 		};
 	}
 	return { status: "unavailable", reason: "no_arch", controlPointCount: 0 };
+}
+
+/**
+ * The subset of a cornerstone image volume needed to decide whether there are
+ * decoded voxels to unwrap. Described structurally for the same reason as
+ * `DrawnArchAnnotation`: so the readiness rules are executable in `node:test`
+ * without a browser and without a DICOM archive.
+ */
+export interface VolumeScalarDataSource {
+	/** [columns, rows, slices] of the volume. */
+	dimensions?: ArrayLike<number> | undefined;
+	/** One imageId per slice, in slice order. */
+	imageIds?: readonly string[] | undefined;
+	voxelManager?:
+		| {
+				/**
+				 * cornerstone 5 path: assembles the volume out of the per-slice image
+				 * cache (`VoxelManager.js:643-669`). Returns a zero-length array when
+				 * no slice has been decoded yet.
+				 */
+				getCompleteScalarDataArray?: (() => ArrayLike<number>) | undefined;
+				/**
+				 * Legacy accessor. THROWS `'No scalar data available'` on a streaming
+				 * image volume, which is every CBCT series this viewer loads.
+				 */
+				getScalarData?:
+					| ((storeScalarData?: boolean) => ArrayLike<number>)
+					| undefined;
+		  }
+		| undefined;
+}
+
+export type PanoramicVolumeResult =
+	| {
+			status: "ready";
+			/** Voxels in volume index order, at least `voxelCount` long. */
+			scalarData: ArrayLike<number>;
+			/** dimensions[0] * dimensions[1] * dimensions[2]. */
+			voxelCount: number;
+	  }
+	| { status: "unavailable"; reason: "volume_not_ready" };
+
+function expectedVoxelCount(
+	dimensions: ArrayLike<number> | undefined,
+): number | null {
+	if (!dimensions || dimensions.length < 3) return null;
+	let count = 1;
+	for (let axis = 0; axis < 3; axis++) {
+		const size = dimensions[axis];
+		if (typeof size !== "number" || !Number.isFinite(size) || size < 1) {
+			return null;
+		}
+		count *= Math.floor(size);
+	}
+	return count;
+}
+
+function readWithoutThrowing(
+	read: () => ArrayLike<number> | undefined,
+): ArrayLike<number> | undefined {
+	try {
+		return read();
+	} catch {
+		// Both cornerstone accessors report "no voxels" by throwing, not by
+		// returning: `VoxelManager.getScalarData()` ends in
+		// `throw new Error('No scalar data available')` when the manager has
+		// neither `scalarData` nor `_getScalarData` (`VoxelManager.js:273-286`),
+		// and `createImageVolumeVoxelManager` sets neither
+		// (`VoxelManager.js:505-597`). An uncaught throw here killed the click
+		// handler outright — React does not route event-handler throws to an error
+		// boundary — so the refusal path below could never be reached.
+		return undefined;
+	}
+}
+
+/**
+ * Reads the voxels the panorama will be sampled from, or refuses.
+ *
+ * Refuses — rather than throwing, and rather than handing over a partly filled
+ * buffer — in every one of these cases:
+ * - no volume in the cache yet;
+ * - dimensions missing or not three positive sizes, so the buffer cannot be
+ *   checked against the volume it claims to describe;
+ * - `isSliceDecoded` says some slice is still absent from the image cache.
+ *   `getCompleteScalarDataArray` reads exactly that cache and silently leaves
+ *   missing slices at zero, so a half-loaded series would otherwise unwrap into
+ *   a panorama with black bands across it — a plausible image containing a
+ *   section of nothing, the same defect class this module exists to remove;
+ * - every accessor threw, or returned fewer values than the volume has voxels.
+ *
+ * @param isSliceDecoded predicate over `volume.imageIds`; omit it only where
+ * there is no image cache to ask.
+ */
+export function readVolumeScalarData(
+	volume: VolumeScalarDataSource | null | undefined,
+	isSliceDecoded?: ((imageId: string) => boolean) | undefined,
+): PanoramicVolumeResult {
+	const notReady: PanoramicVolumeResult = {
+		status: "unavailable",
+		reason: "volume_not_ready",
+	};
+	if (!volume) return notReady;
+
+	const voxelCount = expectedVoxelCount(volume.dimensions);
+	if (voxelCount === null) return notReady;
+
+	if (isSliceDecoded && volume.imageIds) {
+		if (volume.imageIds.length === 0) return notReady;
+		for (const imageId of volume.imageIds) {
+			if (!isSliceDecoded(imageId)) return notReady;
+		}
+	}
+
+	const manager = volume.voxelManager;
+	if (!manager) return notReady;
+
+	const fromImageCache = readWithoutThrowing(() =>
+		manager.getCompleteScalarDataArray?.(),
+	);
+	if (fromImageCache && fromImageCache.length >= voxelCount) {
+		return { status: "ready", scalarData: fromImageCache, voxelCount };
+	}
+
+	const fromLegacyAccessor = readWithoutThrowing(() =>
+		manager.getScalarData?.(),
+	);
+	if (fromLegacyAccessor && fromLegacyAccessor.length >= voxelCount) {
+		return { status: "ready", scalarData: fromLegacyAccessor, voxelCount };
+	}
+
+	return notReady;
 }

@@ -15,6 +15,8 @@ import {
 import {
   buildPanoramicArch,
   panoramicIssueLabels,
+  panoramicReadyLabel,
+  readVolumeScalarData,
   type DrawnArchAnnotation,
   type PanoramicIssue,
 } from "./panoramicArch";
@@ -292,8 +294,25 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       return;
     }
     const volume = cornerstone.cache.getVolume(volumeId);
-    const raw = volume?.voxelManager?.getScalarData();
-    if (!volume || !raw) {
+    // БЫЛО: `volume.voxelManager.getScalarData()` вызывался напрямую и бросал
+    // 'No scalar data available' на КАЖДОЙ реальной серии КЛКТ — у voxelManager
+    // потокового объёма нет ни `scalarData`, ни `_getScalarData`
+    // (VoxelManager.js:273-286 против фабрики :505-597). Исключение вылетало из
+    // обработчика клика (React 18 не отправляет такое в error boundary), поэтому
+    // проверка «объём не готов» ниже была недостижима, а панорама не строилась
+    // никогда. Теперь чтение идёт через путь, который на cornerstone 5 работает,
+    // и любой бросок превращается в отказ, а не в мёртвую кнопку.
+    const voxels = readVolumeScalarData(
+      volume
+        ? {
+            dimensions: volume.dimensions,
+            imageIds: volume.imageIds,
+            voxelManager: volume.voxelManager,
+          }
+        : null,
+      (imageId) => cornerstone.cache.getImage(imageId) !== undefined,
+    );
+    if (voxels.status !== "ready" || !volume) {
       // БЫЛО: окно открывалось с вечным спиннером «Calculating Trilinear
       // Interpolation...», хотя ничего не считалось и досчитаться не могло —
       // повторной попытки в коде нет. Честнее не открывать окно вовсе.
@@ -308,7 +327,7 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     setArchSummary({ points: arch.controlPoints.length, lengthMm: arch.lengthMm });
     setSplinePoints(arch.curve);
     setPanorexVolume({
-      scalarData: toTransferableScalarData(raw),
+      scalarData: toTransferableScalarData(voxels.scalarData),
       dimensions: [dx, dy, dz],
       origin: [ox, oy, oz],
       // cornerstone exposes a 3x3 Mat3; expand it to the 16-element mat4 layout
@@ -385,7 +404,7 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       : archSummary !== null
         ? {
             tone: "ready",
-            text: `Панорама построена по обведённой дуге: точек ${archSummary.points}, длина дуги ${archSummary.lengthMm.toFixed(1)} мм.`,
+            text: panoramicReadyLabel(archSummary.points, archSummary.lengthMm),
           }
         : null;
 
@@ -499,7 +518,13 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
         <PanoramicRendererWindow
           volume={panorexVolume}
           splinePoints={splinePoints}
-          onClose={() => setShowPanorex(false)}
+          onClose={() => {
+            // БЫЛО: закрытие окна снимало только само окно, а зелёная плашка
+            // «Панорама построена…» продолжала висеть — уверенность в том, чего
+            // на экране больше нет.
+            setShowPanorex(false);
+            setArchSummary(null);
+          }}
           thickness={panorexThickness}
           blendMode={blendMode}
         />
