@@ -53,6 +53,19 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
     }
   }
 
+  /* Один зуб — одна запись.
+     Дедупликация была только внутри фразы, поэтому упомянутый дважды зуб
+     давал две записи, и они могли противоречить друг другу:
+     «36 зуб кариес, удалили 36 зуб» -> [{36,treatment},{36,missing}].
+     Дальше обе записи применяются по очереди, и итог формулы зависит от
+     порядка обхода. Оставляем последнее упоминание: в диктовке врач
+     заканчивает тем, что стало с зубом на самом деле. */
+  if (result.toothUpdates.length > 1) {
+    const lastByTooth = new Map<string, string>();
+    for (const update of result.toothUpdates) lastByTooth.set(update.code, update.state);
+    result.toothUpdates = [...lastByTooth].map(([code, state]) => ({ code, state }));
+  }
+
   // Tokenized State-Machine for EMK (to handle unpunctuated STT output)
   const tokens = input.split(/\s+/).filter(Boolean);
   
@@ -63,21 +76,38 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
     const cleanToken = tl.replace(/[.,;!?:]/g, '');
     
     // Switch state based on explicit keywords
-    if (/^(жалоб)/.test(cleanToken)) currentSection = "complaint";
+    /* БЫЛО: /^(жалоб)/ — только существительное «жалоба», «жалобы».
+       Врач диктует естественно: «жалуется на выпавшую пломбу». Слово
+       «жалуется» под этот шаблон не подходило, раздел не открывался, и весь
+       текст до следующего опознанного слова просто выбрасывался. Проверено
+       на живом парсере: из фразы «Иванов пришел, жалуется на выпавшую
+       пломбу. 11 зуб кариес...» жалоба пациента не попадала в ЭМК вообще —
+       в результате оставался только диагноз. Потеря жалобы в медкарте —
+       потеря юридически значимой записи. */
+    if (/^жал(об|уе|ую)/.test(cleanToken)) currentSection = "complaint";
     else if (/^(анамнез)/.test(cleanToken)) currentSection = "anamnesis";
     else if (/^(объективно|статус)/.test(cleanToken)) currentSection = "objectiveStatus";
     else if (/^(диагноз)/.test(cleanToken)) currentSection = "diagnosis";
-    else if (/^(лечени|план|сделано)/.test(cleanToken)) currentSection = "treatmentPlan";
-    
+    /* «сделано» опознавалось, а «сделал» и «сделали» — нет, хотя диктуют
+       именно так. Добавлены и «выполн», «провед»: «проведена анестезия». */
+    else if (/^(лечени|план|сделан|сделал|выполн|провед)/.test(cleanToken)) currentSection = "treatmentPlan";
+
     // Hard implicit triggers (switch even if currently in another section)
     else if (/^(аллерг|беремен)/.test(cleanToken)) currentSection = "anamnesis";
-    
+
     // Soft implicit triggers (only switch if no explicit section is active)
     else {
       if (!currentSection) {
         if (/(болит|ноет|реакци)/.test(cleanToken)) currentSection = "complaint";
         else if (/(кариес|пульпит|периодонтит)/.test(cleanToken)) currentSection = "diagnosis";
         else if (/(кт|сним|рентген|налет|полост|перкусс|слизист)/.test(cleanToken)) currentSection = "objectiveStatus";
+        /* Диктовка о вмешательстве без слов-разделов пропадала целиком:
+           «удалил 38 зуб. экстракция прошла успешно. анестезия» давала
+           пустой emkUpdates — менялось только состояние зуба, а запись о
+           лечении не сохранялась нигде. Ни одно из этих слов не может
+           относиться к жалобе или диагнозу, поэтому направляем их в план
+           лечения. */
+        else if (/(удал|экстракц|анестез|пломбир|коффердам|имплантац)/.test(cleanToken)) currentSection = "treatmentPlan";
       }
     }
     
@@ -92,7 +122,9 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
 
   // Cleanup prefixes and capitalize
   if (result.emkUpdates.complaint) {
-    let clean = result.emkUpdates.complaint.replace(/^жалобы\s*(на)?\s*[:\-]*\s*/i, '').trim();
+    // Срезаем и существительное, и глагольные формы: раздел теперь
+    // открывается по «жалуется», значит и начинаться текст может с него.
+    let clean = result.emkUpdates.complaint.replace(/^жал(?:обы|оба|уется|уются|уюсь)\s*(?:на)?\s*[:\-]*\s*/i, '').trim();
     if (clean) result.emkUpdates.complaint = clean.charAt(0).toUpperCase() + clean.slice(1) + (clean.endsWith('.') ? '' : '.');
     else delete result.emkUpdates.complaint;
   }

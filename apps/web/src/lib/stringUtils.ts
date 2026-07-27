@@ -111,7 +111,81 @@ export function containsAnyFuzzyRoot(text: string, roots: string[]): boolean {
 }
 
 /**
- * Converts Russian number words into digits. 
+ * Похоже ли слово на числительное настолько, чтобы заменить его цифрой.
+ *
+ * Отличается от isFuzzyRootMatch тем, что сравнивает слово ЦЕЛИКОМ и
+ * требует близости длин. isFuzzyRootMatch сравнивает только начало слова
+ * той же длины, что корень, — для поиска «жалобами» по корню «жалоб» это
+ * правильно, а для чисел разрушительно: любое длинное слово с похожим
+ * началом становилось числом.
+ *
+ * Замерено на словаре из 73 медицинских слов
+ * (scratch/audit-text-to-numbers.mjs): искажались семь.
+ *   «пульпит»     -> начало «пуль» против корня «нуль», расстояние 1 -> 0
+ *   «пульпа»      -> то же -> 0
+ *   «периодонтит» -> начало «периодо» против «первого» -> 1
+ *   «киста»       -> 300
+ *   «стоматит»    -> 100
+ * Номер зуба и состояние определяются по тексту ПОСЛЕ этой замены,
+ * поэтому слова «пульпит», «периодонтит», «киста» до проверки состояния
+ * не доживали, и зуб получал «запланировано» вместо «лечение».
+ *
+ * Ограничение длины: падежные формы числительных длиннее корня не больше
+ * чем на пару букв («одиннадцати», «сорока», «семидесяти»), тогда как
+ * посторонние слова длиннее заметно.
+ */
+function fuzzyNumberDistance(word: string, root: string): number {
+  if (!word || !root) return -1;
+  const input = word.toLowerCase();
+  const target = root.toLowerCase();
+  if (input === target) return 0;
+  // Падежное окончание добавляет к корню не больше двух символов,
+  // усечение речью — не больше двух.
+  if (Math.abs(input.length - target.length) > 2) return -1;
+  /* Начало слова распознавание речи почти не портит, а корни числительных
+     различимы именно началом. Без этого условия «киста» совпадала с
+     «триста» (расстояние 2 при допуске 2) и превращалась в 300. */
+  if (input.slice(0, 2) !== target.slice(0, 2)) return -1;
+  const distance = levenshteinDistance(input, target);
+  const limit = target.length <= 3 ? 0 : target.length <= 5 ? 1 : target.length <= 8 ? 2 : 3;
+  return distance <= limit ? distance : -1;
+}
+
+/**
+ * Выбирает ближайший корень числительного, а не первый подошедший.
+ *
+ * БЫЛО: корни перебирались от самого длинного к короткому, и первый
+ * подошедший выигрывал. Длинный корень успевал перехватить падежную форму
+ * короткого:
+ *   «двадцати» -> «двенадцать» -> 12 вместо 20
+ *   «тридцати» -> «тринадцать» -> 13 вместо 30
+ * Через textToNumbers идёт диктовка суммы платежа (PaymentCapture) и
+ * разбор прайса, поэтому «тридцати тысяч» превращалось в 13000. Замерено
+ * на самой функции, scratch/probe-numbers-realfn.mjs.
+ *
+ * Расстояние до правильного корня всегда меньше: до «двадцать» — 1, до
+ * «двенадцать» — 4. Поэтому выбираем минимальное расстояние, а при
+ * равенстве — корень, ближайший по длине.
+ */
+function bestFuzzyNumberRoot(word: string, roots: string[]): string | null {
+  let bestRoot: string | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let bestLengthGap = Number.POSITIVE_INFINITY;
+  for (const root of roots) {
+    const distance = fuzzyNumberDistance(word, root);
+    if (distance < 0) continue;
+    const lengthGap = Math.abs(root.length - word.length);
+    if (distance < bestDistance || (distance === bestDistance && lengthGap < bestLengthGap)) {
+      bestRoot = root;
+      bestDistance = distance;
+      bestLengthGap = lengthGap;
+    }
+  }
+  return bestRoot;
+}
+
+/**
+ * Converts Russian number words into digits.
  * Correctly combines "восемь девятьсот шестнадцать" into "8 916".
  */
 export function textToNumbers(text: string): string {
@@ -120,6 +194,13 @@ export function textToNumbers(text: string): string {
     "два": 2, "две": 2, "второй": 2, "второго": 2,
     "три": 3, "третий": 3, "третьего": 3,
     "четыре": 4, "четвертый": 4, "четвертого": 4,
+    /* Короткие родительные формы не ловятся нечётким сравнением: до корня
+       больше двух правок при коротком допуске. Задаём их точно, иначе
+       «двух тысяч» и «трёх тысяч» остаются словами и сумма не разбирается.
+       Проверено scratch/probe-numbers-realfn.mjs. */
+    "одного": 1, "одну": 1, "двух": 2, "двум": 2, "трёх": 3, "трех": 3,
+    "трём": 3, "трем": 3, "четырёх": 4, "четырех": 4, "четырём": 4,
+    "ста": 100, "двухсот": 200, "трёхсот": 300, "трехсот": 300,
     "пять": 5, "пятый": 5, "пятого": 5,
     "шесть": 6, "шестой": 6, "шестого": 6,
     "семь": 7, "седьмой": 7, "седьмого": 7,
@@ -156,14 +237,8 @@ export function textToNumbers(text: string): string {
     
     let matchedVal = numValues[word];
     if (matchedVal === undefined) {
-      // Sort keys by length descending to match longest roots first (e.g., "двенадцать" before "две")
-      const sortedKeys = Object.keys(numValues).sort((a, b) => b.length - a.length);
-      for (const k of sortedKeys) {
-        if (isFuzzyRootMatch(word, k)) {
-          matchedVal = numValues[k];
-          break;
-        }
-      }
+      const closestRoot = bestFuzzyNumberRoot(word, Object.keys(numValues));
+      if (closestRoot !== null) matchedVal = numValues[closestRoot];
     }
     
     if (matchedVal !== undefined) {
@@ -173,9 +248,13 @@ export function textToNumbers(text: string): string {
         if (currentNum > 0) {
           result.push(prefix + currentNum.toString() + " ");
         }
-        result.push(prefix + "0 ");
+        /* БЫЛО: после этой ветки поток шёл к общему завершению, где ноль
+           дописывался второй раз, и «ноль» превращалось в «0 0». Ветка
+           полностью самодостаточна, поэтому переходим к следующему слову. */
+        result.push(prefix + "0" + suffix + " ");
         currentNum = 0;
         inNumber = false;
+        continue;
       } else if (matchedVal === 1000) {
         if (currentNum === 0) {
            currentNum = 1000;
@@ -190,7 +269,12 @@ export function textToNumbers(text: string): string {
            } else if (lastDigit === 1) {
               if (!wLower.endsWith("а") && !wLower.endsWith("у")) isValidMultiplier = false;
            } else if (lastDigit >= 2 && lastDigit <= 4) {
-              if (!wLower.endsWith("и")) isValidMultiplier = false;
+              /* «две тысячи» — именительный, «двух тысяч» — родительный.
+                 Правило проверяло только первое, поэтому «двух тысяч»
+                 распадалось на «2 1000» вместо 2000. Родительная форма
+                 множителя — «тысяч» — законна после родительного
+                 числительного, поэтому принимаем и её. */
+              if (!wLower.endsWith("и") && wLower !== "тысяч") isValidMultiplier = false;
            } else {
               if (wLower.endsWith("а") || wLower.endsWith("и")) isValidMultiplier = false;
            }
@@ -221,15 +305,11 @@ export function textToNumbers(text: string): string {
           const wMatch = tokens[j]!.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
           const nextWord = wMatch ? wMatch[2]!.toLowerCase() : tokens[j]!.toLowerCase();
           
+          /* Загляд вперёд обязан пользоваться тем же строгим правилом.
+             С прежним isFuzzyRootMatch медицинское слово после числа
+             считалось продолжением числа, и накопление суммы шло дальше. */
           let hasNext = numValues[nextWord] !== undefined;
-          if (!hasNext) {
-            const sortedKeys = Object.keys(numValues).sort((a, b) => b.length - a.length);
-            for (const k of sortedKeys) {
-              if (isFuzzyRootMatch(nextWord, k)) {
-                hasNext = true; break;
-              }
-            }
-          }
+          if (!hasNext) hasNext = bestFuzzyNumberRoot(nextWord, Object.keys(numValues)) !== null;
           if (hasNext) {
             nextIsNumber = true;
           }
