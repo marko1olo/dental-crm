@@ -1,7 +1,6 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { EmptyState } from "./components/EmptyState";
 import { appointmentScheduleMissingFields } from "./AppHelpers";
 
@@ -674,7 +673,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
             {/* Schedule Utilities & Widgets Panel */}
             <div className="schedule-widgets-container mt-6" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <UrgentScheduleRequestsWidget />
+              {/*
+                Здесь стоял <UrgentScheduleRequestsWidget />: «Срочных обращений
+                нет. Окна резерва готовы» — у таблицы urgent_schedule_requests
+                нет ни одного писателя, в живой базе ноль строк. Пациент с
+                острой болью попадает в систему обычной записью на приём, а не
+                в отдельную очередь, которую некому наполнить.
+              */}
               {/*
                 Здесь стоял <ScheduleClipboardItemsWidget />: постоянно пустая
                 коробка «Буфер обмена переноса записей расписания» с обещанием

@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
-import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { countLabel, formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 
 /** Calendar date in local clinic time. */
@@ -429,20 +428,37 @@ export function ShiftView({
             </section>
 
             <section className="shift-intelligence" aria-label="Операционный контроль смены" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "18px 20px", boxShadow: "var(--shadow-1)", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div>
-                <UrgentScheduleRequestsWidget
-                  headerExtra={
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      aria-expanded={showAnalytics}
-                      onClick={() => setShowAnalytics((v) => !v)}
-                      style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
-                    >
-                      {showAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
-                    </button>
-                  }
-                />
+              {/*
+                Здесь стоял <UrgentScheduleRequestsWidget />: «Срочных обращений
+                нет. Окна резерва готовы» — таблица urgent_schedule_requests не
+                наполняется ничем, писателей ноль, строк в живой базе ноль.
+                Заголовок раздела он держал заодно, поэтому заголовок написан
+                прямо здесь: кнопка аналитики осталась на своём месте, а
+                вечно пустой список острой боли ушёл.
+              */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: "var(--teal-soft)", color: "var(--teal-dark)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Gauge size={16} aria-hidden="true" />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>
+                      Операционный контроль смены
+                    </h4>
+                    <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--ink-2)", fontWeight: 500 }}>
+                      Насколько режим клиники и загрузка кресел совпадают с планом на день
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  aria-expanded={showAnalytics}
+                  onClick={() => setShowAnalytics((v) => !v)}
+                  style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px", flexShrink: 0 }}
+                >
+                  {showAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
+                </button>
               </div>
 
               {showAnalytics && (

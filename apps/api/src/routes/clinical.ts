@@ -425,16 +425,13 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #21: расписание::виджет_срочные_обращения_под_календарем
-	app.get("/api/schedule/urgent-schedule-requests", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getUrgentScheduleRequestsFromDb } = await import("../db/urgentScheduleRequestsQuery.js");
-		return reply.status(200).send(await getUrgentScheduleRequestsFromDb(orgId));
-	});
+	/*
+	 * /api/schedule/urgent-schedule-requests удалён вместе с модулем и блоками
+	 * на «Расписании» и «Смене»: у urgent_schedule_requests нет ни одного
+	 * писателя, в живой базе ноль строк. Пациент с острой болью попадает в
+	 * систему обычной записью на приём — отдельной очереди, которую некому
+	 * наполнить, быть не должно.
+	 */
 
 	// COMPETITOR FEATURE #23: аналитика::отчет_эффективность_подтверждения_приемов
 	app.get("/api/analytics/confirmation-performance-reports", async (request, reply) => {
