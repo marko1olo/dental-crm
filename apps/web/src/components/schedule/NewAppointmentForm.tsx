@@ -297,8 +297,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
         ) : null}
         <div className="flex justify-between items-center flex-wrap gap-2 pt-1">
           <div className="flex gap-3 items-center">
+            {/*
+              data-schedule-create-toggle и aria-expanded — не украшение.
+              «Записать на приём» из листа ожидания раскрывает эту форму, находя
+              кнопку в живой странице, и раньше искало её по классу
+              `.text-button` и по подписи «Показать все поля». Класс здесь
+              secondary-button, поэтому не находило НИЧЕГО, и форма оставалась
+              свёрнутой (подробности в WaitlistDrawer.handleBook). Опознавательная
+              метка не зависит ни от оформления, ни от текста подписи, а
+              aria-expanded заодно сообщает состояние программе чтения с экрана.
+            */}
             <button
               type="button"
+              data-schedule-create-toggle="true"
+              aria-expanded={showCreateForm}
               onClick={() => setShowCreateForm(!showCreateForm)}
               className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
               style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}

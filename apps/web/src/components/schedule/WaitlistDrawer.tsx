@@ -260,13 +260,37 @@ export function WaitlistDrawer(props: Props) {
 			updateNewAppointmentDraft("doctorUserId", item.preferredDoctorId);
 		}
 
-		// Trigger click to open form if hidden
+		/*
+			«ЗАПИСАТЬ НА ПРИЁМ» ИЗ ОЧЕРЕДИ НЕ РАСКРЫВАЛО ФОРМУ ЗАПИСИ.
+
+			ЧТО БЫЛО СЛОМАНО. Кнопку «Показать все поля» искали по классу
+			`.text-button` внутри формы создания. В самой форме
+			(NewAppointmentForm.tsx) у этой кнопки класс `secondary-button`, а
+			`.text-button` там не встречается ни разу — querySelector возвращал null,
+			условие не выполнялось, и форма оставалась свёрнутой. Поиск по подписи
+			ломался вторым концом: подпись сменилась на «Показать все поля / Ручной
+			ввод», и любая её будущая правка снова тихо выключила бы раскрытие.
+
+			ЧТО ВИДЕЛ АДМИНИСТРАТОР. В листе ожидания у пациента нажимал «Записать
+			на приём» — ящик закрывался, всплывало «Пациент выбран. Укажите время
+			записи», и указывать время было НЕГДЕ: форма свёрнута, полей нет.
+			Пациент при этом уже подставлен в черновик. Дальше два исхода: человек
+			решает, что кнопка сломана, и очередь стоит; либо жмёт «Создать запись»
+			(она рядом и активна, когда черновику хватает полей) — и запись уходит в
+			базу со временем, которого он ни разу не видел на экране.
+
+			ЧТО СТАЛО. Кнопку ищем по опознавательной метке
+			data-schedule-create-toggle, не зависящей ни от оформления, ни от текста,
+			а раскрыта форма или нет — читаем из aria-expanded той же кнопки, а не
+			из её подписи.
+		*/
 		const formWrapper = document.querySelector<HTMLElement>(
 			".appointment-create-wrapper",
 		);
-		const toggleBtn =
-			formWrapper?.querySelector<HTMLButtonElement>(".text-button");
-		if (toggleBtn && toggleBtn.textContent?.includes("Показать все поля")) {
+		const toggleBtn = formWrapper?.querySelector<HTMLButtonElement>(
+			"[data-schedule-create-toggle]",
+		);
+		if (toggleBtn && toggleBtn.getAttribute("aria-expanded") !== "true") {
 			toggleBtn.click();
 		}
 
