@@ -23,9 +23,9 @@
  * оператора в конце месяца.
  */
 
-import { and, eq, gte, inArray, isNotNull, lte, ne, sql, type SQL } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointments, patientCommunicationConsents, patients, payments, treatmentItems } from "../../db/schema.js";
+import { appointments, patients, payments, treatmentItems } from "../../db/schema.js";
 import { isValidEmailAddress } from "../../emailTransport.js";
 import { normalizeRussianMsisdn } from "../../smsTransport.js";
 import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
