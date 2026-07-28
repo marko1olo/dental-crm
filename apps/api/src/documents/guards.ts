@@ -482,12 +482,12 @@ export function paymentRefundCorrectionSelectionErrorForDocument(
 		);
 		const refundableRub = payment.amountRub - alreadyRefundedRub;
 		if (refundableRub <= 0) {
-			return `По чеку на ${payment.amountRub} руб. уже возвращено ${alreadyRefundedRub} руб. Свободного остатка для возврата нет.`;
+			return `По чеку на ${kopecksToNumericString(parseKopecks(payment.amountRub))} руб. уже возвращено ${kopecksToNumericString(parseKopecks(alreadyRefundedRub))} руб. Свободного остатка для возврата нет.`;
 		}
 		if (payload.amountRub > refundableRub) {
 			return alreadyRefundedRub > 0
-				? `Сумма возврата (${payload.amountRub} руб.) превышает остаток по чеку: из ${payment.amountRub} руб. уже возвращено ${alreadyRefundedRub} руб., доступно ${refundableRub} руб.`
-				: `Сумма возврата (${payload.amountRub} руб.) не может превышать сумму исходного чека (${payment.amountRub} руб.).`;
+				? `Сумма возврата (${kopecksToNumericString(parseKopecks(payload.amountRub))} руб.) превышает остаток по чеку: из ${kopecksToNumericString(parseKopecks(payment.amountRub))} руб. уже возвращено ${kopecksToNumericString(parseKopecks(alreadyRefundedRub))} руб., доступно ${kopecksToNumericString(parseKopecks(refundableRub))} руб.`
+				: `Сумма возврата (${kopecksToNumericString(parseKopecks(payload.amountRub))} руб.) не может превышать сумму исходного чека (${kopecksToNumericString(parseKopecks(payment.amountRub))} руб.).`;
 		}
 		if (!payment.fiscalReceiptNumber?.trim()) {
 			return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";
@@ -686,7 +686,7 @@ function financialServiceLinesMismatchReason(
 	for (const [index, line] of lines.entries()) {
 		const expectedTotalRub = expectedFinancialLineTotal(line);
 		if (Math.abs(line.totalRub - expectedTotalRub) > 0.01) {
-			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${expectedTotalRub} руб. по количеству, цене и скидке; передано ${line.totalRub} руб.`;
+			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${kopecksToNumericString(parseKopecks(expectedTotalRub))} руб. по количеству, цене и скидке; передано ${kopecksToNumericString(parseKopecks(line.totalRub))} руб.`;
 		}
 	}
 	return null;
@@ -700,7 +700,7 @@ function financialServiceLinesGrandTotalMismatchReason(
 	const linesTotalRub = financialLinesTotal(lines);
 	const targetRub = Math.round(totalAmountRub * 100) / 100;
 	if (Math.abs(linesTotalRub - targetRub) > 0.01) {
-		return `${documentLabel}: общий итог ${totalAmountRub} руб. не совпадает с суммой строк ${linesTotalRub} руб.`;
+		return `${documentLabel}: общий итог ${kopecksToNumericString(parseKopecks(totalAmountRub))} руб. не совпадает с суммой строк ${kopecksToNumericString(parseKopecks(linesTotalRub))} руб.`;
 	}
 	return null;
 }
@@ -714,7 +714,7 @@ function plannedFactsTotalMismatchReason(
 		facts.plannedAmountRub > 0 &&
 		payloadTotalRub !== facts.plannedAmountRub
 	) {
-		return `${documentLabel}: сумма ${payloadTotalRub} руб. не совпадает с актуальным планом лечения ${facts.plannedAmountRub} руб.`;
+		return `${documentLabel}: сумма ${kopecksToNumericString(parseKopecks(payloadTotalRub))} руб. не совпадает с актуальным планом лечения ${kopecksToNumericString(parseKopecks(facts.plannedAmountRub))} руб.`;
 	}
 	return null;
 }
@@ -725,7 +725,7 @@ function paidFactsTotalMismatchReason(
 	documentLabel: string,
 ): string | null {
 	if (facts.paidAmountRub > 0 && payloadTotalRub !== facts.paidAmountRub) {
-		return `${documentLabel}: сумма ${payloadTotalRub} руб. не совпадает с реально оплаченным контекстом ${facts.paidAmountRub} руб.`;
+		return `${documentLabel}: сумма ${kopecksToNumericString(parseKopecks(payloadTotalRub))} руб. не совпадает с реально оплаченным контекстом ${kopecksToNumericString(parseKopecks(facts.paidAmountRub))} руб.`;
 	}
 	return null;
 }
@@ -783,7 +783,7 @@ function installmentScheduleMismatchReason(
 		payload.totalAmountRub - payload.prepaidAmountRub,
 	);
 	if (payload.remainingAmountRub !== expectedRemainingRub) {
-		return `График рассрочки: остаток ${payload.remainingAmountRub} руб. не совпадает с суммой минус предоплатой ${expectedRemainingRub} руб.`;
+		return `График рассрочки: остаток ${kopecksToNumericString(parseKopecks(payload.remainingAmountRub))} руб. не совпадает с суммой минус предоплатой ${kopecksToNumericString(parseKopecks(expectedRemainingRub))} руб.`;
 	}
 
 	const installmentsTotalKopecks = sumKopecks(
