@@ -110,9 +110,22 @@ Use these exclusively. Blind terminal navigation is banned.
     `denteAdminSecretRequestHeaders` (`AppHelpers.tsx:4090`). A tool that misses the real one while
     printing a hundred phantoms cannot be used as a pass/fail gate.
 - **What actually matters here, and it is not the cycle count.** Seven zustand stores execute `AppHelpers`
-  code at **module-evaluation** time to seed initial state — `defaultUiPreferences` (`AppHelpers.tsx:3538`,
-  not hoisted) together with `loadUiPreferences` (`:4056`). Module-scope evaluation is what turns a future
-  static cycle into a `TypeError: cannot read property of undefined` at boot rather than a lint warning.
+  code at **module-evaluation** time to seed initial state. Counted 2026-07-28: **23 call sites across
+  `apps/web/src/store/`** — `appStore.ts` (9, inside the `create<AppStore>((set) => ({...}))` initializer,
+  which zustand invokes synchronously, so it is module-eval and not deferred), `settingsStore.ts` (9, inside
+  the module-scope `const initialSettingsState` literal), and one each in `imagingStore.ts`,
+  `documentStore.ts`, `patientStore.ts`, `scheduleStore.ts`, `visitStore.ts`. Nothing in `useAppLogic.tsx`
+  qualifies — its five call sites are inside the hook body, deferred to render.
+- **The failure mode, corrected 2026-07-28 — the earlier text in this rule said `TypeError` and that was
+  wrong.** The two bindings differ in hoisting and that decides everything:
+  `loadUiPreferences` is `export function` (`AppHelpers.tsx:4062`) and IS hoisted, so the binding is already
+  callable; `defaultUiPreferences` is `export const` (`AppHelpers.tsx:3544`) and is NOT. `loadUiPreferences`
+  reads that const three times in its own body. So a reversed import order does not give a
+  `TypeError: cannot read property of undefined`, and it does not silently seed wrong defaults either — it
+  throws a hard **`ReferenceError: Cannot access 'defaultUiPreferences' before initialization`** from the
+  temporal dead zone, at module-evaluation, before React renders. The user sees a blank white page, not a
+  degraded widget. Getting this wrong sends the next agent hunting a subtle behaviour bug when the real
+  symptom is immediate and total.
   That coupling is the real architectural debt; the cycle count is a symptom report with a broken sensor.
 - So: run the working invocation above, read the cycles it prints, and **classify each edge by opening the
   import** before calling anything a defect. Do not quote a total as proof of health, and do not "fix" a
