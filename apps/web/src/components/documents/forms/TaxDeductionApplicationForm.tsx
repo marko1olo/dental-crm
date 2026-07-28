@@ -5,6 +5,7 @@ import type {
 } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
+import { taxApplicationBlockersReview } from "../taxApplicationBlockers";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
 export interface TaxDeductionApplicationFormProps {
@@ -27,6 +28,11 @@ export interface TaxDeductionApplicationFormProps {
  * Две копии одной формы означали, что правка в одной из них не доходила до
  * пациента вовсе. Теперь копия в DocumentsView.tsx удалена, а сюда вернулись
  * настоящие типы вместо `any` и общая оболочка карточки.
+ *
+ * Сверху карточки — перечень невыполненных условий. Разбор и три ловушки, которые
+ * по виду экрана угадать нельзя (ИНН обязателен не всегда, полномочия
+ * представителя становятся обязательными по родству, контакт обязателен без
+ * подсказки), записаны в taxApplicationBlockers.ts.
  */
 export function TaxDeductionApplicationForm({
 	deliveryChannelOptions,
@@ -61,14 +67,56 @@ export function TaxDeductionApplicationForm({
 		setTaxApplicationTaxpayerInn,
 	} = useDocumentStore();
 
+	const review = taxApplicationBlockersReview({
+		taxpayerFullName: taxApplicationTaxpayerFullName,
+		taxpayerInn: taxApplicationTaxpayerInn,
+		taxpayerBirthDate: taxApplicationTaxpayerBirthDate,
+		taxpayerIdentityDocument: taxApplicationTaxpayerIdentityDocument,
+		relationship: taxApplicationRelationship,
+		form: taxApplicationForm,
+		authorityDocument: taxApplicationAuthorityDocument,
+		contact: taxApplicationContact,
+		duplicateWarningAccepted: taxApplicationDuplicateWarningAccepted,
+	});
+
 	return (
 		<DocumentPayloadCard
 			title="Заявление на налоговую справку"
 			description="Заявитель, ИНН, документ, родство, год и способ выдачи без ручных правок в HTML."
+			notice={
+				review.blockers.length > 0 ? (
+					<div
+						className="schedule-create-missing document-tax-application-blockers"
+						role="status"
+						aria-live="polite"
+						style={{ marginTop: "12px" }}
+					>
+						<strong>
+							Заявление не создастся: осталось {review.blockers.length} условий из{" "}
+							{review.requiredCount}:
+						</strong>
+						<ul>
+							{review.blockers.map((blocker) => (
+								<li key={blocker.field}>
+									{blocker.label} — {blocker.hint}
+								</li>
+							))}
+						</ul>
+						<small>
+							Все эти поля в блоке «Ручная корректировка полей» ниже. Дату заявления
+							программа поставит сама при создании.
+						</small>
+					</div>
+				) : null
+			}
 		>
 			<label>
 				Заявитель / налогоплательщик
-				<input value={taxApplicationTaxpayerFullName} onChange={(event) => setTaxApplicationTaxpayerFullName(event.target.value)} />
+				<input
+					value={taxApplicationTaxpayerFullName}
+					onChange={(event) => setTaxApplicationTaxpayerFullName(event.target.value)}
+					placeholder="ФИО того, кто получит вычет"
+				/>
 			</label>
 			<div className="document-payload-row">
 				<label>
@@ -147,14 +195,28 @@ export function TaxDeductionApplicationForm({
 			</div>
 			<label>
 				Кому сообщить о готовности
-				<input value={taxApplicationContact} onChange={(event) => setTaxApplicationContact(event.target.value)} />
+				<input
+					value={taxApplicationContact}
+					onChange={(event) => setTaxApplicationContact(event.target.value)}
+					placeholder="телефон или другой способ связи"
+				/>
 			</label>
 			<label>
 				Полномочия представителя
+				{/*
+					Подпись пустого поля зависит от родства намеренно. Раньше здесь всегда
+					стояло «если заявитель не сам пациент», то есть поле читалось как
+					необязательное ровно в том случае, когда без него заявление не
+					создастся.
+				*/}
 				<input
 					value={taxApplicationAuthorityDocument}
 					onChange={(event) => setTaxApplicationAuthorityDocument(event.target.value)}
-					placeholder="если заявитель не сам пациент"
+					placeholder={
+						taxApplicationRelationship === "self"
+							? "не требуется: заявитель — сам пациент"
+							: "обязательно: доверенность, свидетельство о рождении или о браке"
+					}
 				/>
 			</label>
 			<label className="document-payload-checkbox">
