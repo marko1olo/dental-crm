@@ -1,6 +1,7 @@
 import type { PhotoVideoConsentMaterial } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
+import { photoVideoConsentBlockersReview } from "../photoVideoConsentBlockers";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
 export interface PhotoVideoConsentFormProps {
@@ -13,6 +14,11 @@ export interface PhotoVideoConsentFormProps {
 /**
  * Согласие на фото, видео и снимки: отдельное разрешение на каждый способ
  * использования. Вынесено из DocumentsView.tsx дословно.
+ *
+ * Сверху карточки — перечень невыполненных условий. Разбор и то, что видел
+ * администратор до него (три отказа подряд на каждом новом согласии и
+ * недействительная сама по себе отметка узнаваемой публикации), записаны в
+ * photoVideoConsentBlockers.ts.
  */
 export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: PhotoVideoConsentFormProps) {
 	const {
@@ -37,10 +43,47 @@ export function PhotoVideoConsentForm({ materialOptions, toggleMaterial }: Photo
 		setPhotoVideoScopeNotes,
 	} = useDocumentStore();
 
+	const review = photoVideoConsentBlockersReview({
+		materials: photoVideoMaterials,
+		clinicalRecordUseConfirmed: photoVideoClinicalRecordUseConfirmed,
+		anonymizationConfirmed: photoVideoAnonymizationConfirmed,
+		revocationChannel: photoVideoRevocationChannel,
+		recognizablePublicationAllowed: photoVideoRecognizablePublicationAllowed,
+		marketingUseAllowed: photoVideoMarketingUseAllowed,
+		educationUseAllowed: photoVideoEducationUseAllowed,
+	});
+
 	return (
 		<DocumentPayloadCard
 			title="Фото, видео и снимки"
 			description="Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация."
+			notice={
+				review.blockers.length > 0 ? (
+					<div
+						className="schedule-create-missing document-photo-video-blockers"
+						role="status"
+						aria-live="polite"
+						style={{ marginTop: "12px" }}
+					>
+						<strong>
+							Согласие на фото и видео не создастся: не выполнено{" "}
+							{review.blockers.length} условий из {review.requiredCount}. Отметки ниже
+							перемешаны: часть выбирает пациент, а эти обязательны для клиники:
+						</strong>
+						<ul>
+							{review.blockers.map((blocker) => (
+								<li key={blocker.field}>
+									{blocker.label} — {blocker.hint}
+								</li>
+							))}
+						</ul>
+						<small>
+							Все они в блоке «Ручная корректировка полей» ниже. Перечень
+							пересчитывается сам, пока вы отмечаете.
+						</small>
+					</div>
+				) : null
+			}
 		>
 			<div className="document-payload-row">
 				{materialOptions.map((option) => (
