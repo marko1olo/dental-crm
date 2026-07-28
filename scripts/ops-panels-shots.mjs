@@ -415,6 +415,24 @@ for (const panel of PANELS) {
 await shootViewport("narrow_full.png");
 
 /**
+ * Раздел финансов целиком. Нужен после того, как оттуда убрали четыре пустых
+ * блока: снимок показывает, не осталось ли на их месте дыр в сетке.
+ */
+console.log("\nРаздел финансов целиком");
+await setTheme("light");
+await setViewport(1600, 1000);
+await goToView("finance");
+await sleep(2200);
+const financeHeight = await evaluate("Math.min(document.body.scrollHeight, 9000)");
+const financeShot = await send("Page.captureScreenshot", {
+  format: "png",
+  clip: { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 },
+  captureBeyondViewport: true,
+});
+await writeFile(path.join(OUT, "finance_full.png"), Buffer.from(financeShot.data, "base64"));
+console.log(`  ✓ finance_full.png (высота ${financeHeight})`);
+
+/**
  * Карточка пациента во всех трёх темах целиком. Здесь плотнее всего узлы с
  * классами Tailwind (`dark:bg-slate-800` и подобные), а Tailwind включается
  * классом dark. Пока класс не ставился в ночной теме, эти узлы оставались
