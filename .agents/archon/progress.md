@@ -835,3 +835,87 @@ dangling references repo-wide, no churn swept in). The GUARD half does not do wh
 
 Also recorded by that reviewer: `npm test -w @dental/web` is **620 tests, 618 pass, 2 FAIL**, both in
 `lib/panelStateText.test.ts` — the neighbour's in-flight contract migration, not Y3's doing.
+
+## CYCLE 11 — FOUR PACKETS COMMITTED. AA1 REVIEWED: NEEDS_REWORK, AND THE REVIEWER EARNED EVERY LINE.
+
+Three of the four reviews died on credits again (AA2, AA3, AA4) and were resumed from cache. The one
+that finished tested ELEVEN hypotheses by execution rather than by reading, and it is the best review of
+the campaign. Its findings, each re-verified by the lead before being recorded here:
+
+**DISPROVED — the 22 web typecheck errors are not AA1's.** All 22 sit in
+`apps/web/src/components/schedule/scheduleDayGrouping.test.ts`, which `git cat-file -e` proves did not
+exist in AA1's commit. The lead reached the same conclusion independently by a different route (the file
+is untracked, `??`, zero history). **HEAD compiles in both workspaces.**
+
+**CONFIRMED, AND WORSE THAN THE BRIEF CLAIMED.** The reviewer extracted the parent module and EXECUTED it
+against every parent subject literal. Two real outputs on a dentist's screen before the fix:
+- `WaitlistDrawer` → «Очередь ожидания **не загружены**» — feminine singular noun, plural predicate.
+- `FamilyWalletPanel` → «**undefined** не загружены: …» — a literal JavaScript `undefined` rendered to the
+  user. **Neither the brief nor the builder found this.** It is the strongest possible justification for
+  refusing to revert the dead agent's migration.
+
+**CONFIRMED — the string all four artefacts quote does NOT reproduce.** «Статус блокировки не прочитан»
+was cited as the motivating example; the parent literal was `title: "Блокировка записи и черный список"`,
+yielding «Блокировка записи и черный список не загружены» — a coordinated noun pair where plural
+agreement is legitimate Russian. «Статус блокировки записи» is that panel's `accusative` field, which
+feeds the LOADING title and never the failure title. So the commit message overstates on the specific
+example while understating on the real damage. Both directions are recorded.
+
+**CONFIRMED — ~115 lines of dictation contract with ZERO committed consumers**, added to
+`apps/web/src/lib/panelStateText.ts`: `SERVER_PARSED_DICTATION_CONTEXTS`, `serverParsesDictation`,
+`resolveDictationPhase`, `isDictationResultEmpty`, `dictationEmptyHint`, `dictationComplexHint`,
+`DICTATION_PARSING_TITLE`, `dictationFailureText`. Verified by the lead: `git grep` on the HEAD ref
+returns 0 consumers; the working tree has 6, all in one uncommitted edit to `SmartParsePreview.tsx` by an
+agent still in flight.
+
+**LEAD'S RULING ON IT.** Not deleted. Deleting would destroy an in-flight agent's work, and nothing may
+be lost. But two charges stand independently of the consumer and are recorded as debt:
+1. **Wrong home.** `panelStateText.ts` documents itself as panel loading/empty/failure text. Dictation
+   window state is a second concern bolted into a single-purpose module — §5 anti-monolith, in reverse.
+2. **Freeze proximity.** Dictation failed review five times and `apps/api/src/speech/**` plus
+   `routes/speech.ts` are frozen. This block is not literally in a frozen path, but it is the same
+   subject appearing in a new file, which is exactly what a freeze is meant to stop. The next dictation
+   packet moves it out or justifies it in writing.
+
+**CONFIRMED AND FIXED IMMEDIATELY — a false claim in a code comment.** The block asserted of
+`localDictationParser.ts`: «слова «цена» и «прайс» в нём не встречаются ни разу». The lead measured it:
+«цена» is at `localDictationParser.ts:156` and `:164`, inside the regexes that extract the PAYMENT AMOUNT
+from a dentist's phrase. The conclusion the comment supports is nonetheless TRUE and was verified
+separately — `routes/ai.ts:194` is `z.enum(["schedule","patient","visit"])` and `ParserContext` has the
+same three, so price-list parsing genuinely does not exist server-side. **A false detail decorating a
+sound conclusion is how trust in a wrong statement gets manufactured**, so the comment now carries the
+correction rather than the claim.
+
+**CONFIRMED — another author's behavioural change swept in via the shared index.** `PatientReclamationsWidget.tsx`
+gained a new «+ Фиксировать» button in the failure branch, a second `<PanelLoadFailure>` above the open
+form, and a flex layout change. The work is complete and compiles, and the builder declared the sweep in
+its packet — but the commit body says «Формулировки не переписаны — переписано только согласование»,
+which is false for that file. **A new user-facing control is undisclosed in the artefact that survives.**
+
+**DISPROVED, AND THE BRIEF WAS WRONG — credit to the builder.** The brief ordered a fix to
+`ImagingView.tsx(372,37): Cannot find name countLabel`. That error does not exist: `countLabel` is
+imported at `:101`, used at `:374`, exported at `AppHelpers.tsx:2539`, all added by commit `e8f01692e`
+which is an ANCESTOR of AA1's commit. **The lead quoted a typecheck reading that a neighbouring commit
+had already fixed** — the same stale-measurement class as the shared-build trap. The builder proved the
+absence instead of inventing a label to silence a compiler that was not complaining.
+
+**DISPROVED — reversion is not survivable, so the tests are not ceremony.** The parent module exports no
+`panelRetryLabel` at all, so the test file fails at load if the fix is reverted. The reviewer also swept
+null + 0..599, all 601 statuses: `retryLabel === null` in exactly four (400, 404, 413, 422), DEAD ENDS =
+0, and zero digit-or-Latin leaks into user-facing cause text. It further proved the old `retryable` was
+`true` on every one of the 601 failure statuses — confirming by execution the «always true, nobody read
+it» claim that had been an inference.
+
+### CORRECTION TO THE LEAD'S OWN GIT DISCIPLINE
+Commit `89f54b21c` reported 542 insertions across three files when the lead had written perhaps 70 lines.
+`scripts/dente-redesign-shots.mjs` was **already dirty** with another author's substantial uncommitted
+rewrite (env-var configuration, the shot-audit module, the per-view container assertions), and the lead's
+pathspec commit took all of it. The work is better off in history than sitting dirty and losable, and it
+demonstrably functions — it ran tonight and produced correct assertions. But the commit message describes
+only the lead's two fixes and says nothing about the ~700 swept lines.
+
+**The lead skipped the exact step it imposes on every agent: check whether a file is already dirty BEFORE
+editing it.** The three-step discipline (stage → inspect `git diff --cached --name-only` → commit with a
+pathspec) protects against a foreign *index*, not against a foreign *working tree*. Amending is
+impossible — the commit is pushed and a second author commits continuously. So the record is corrected
+here instead. **Step 0 is now: `git status --porcelain -- <path>` before the first edit.**
