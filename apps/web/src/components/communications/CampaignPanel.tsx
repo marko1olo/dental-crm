@@ -14,6 +14,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+
 type CampaignCriteria = {
 	status?: "active" | "archived";
 	lastVisitBefore?: string;
@@ -103,6 +105,32 @@ function formatMoment(value: string | null): string {
 }
 
 export function CampaignPanel() {
+	/*
+	 * ПОЧЕМУ ЗДЕСЬ ЗАГОЛОВКИ, А НЕ ГОЛЫЙ fetch. БЫЛО СЛОМАНО НАСМЕРТЬ, но только у
+	 * заказчика. Все адреса этой панели закрыты охраной `apps/api/src/accessGuard.ts`
+	 * (`requireClinicalReadContext` / `requireClinicalMutationContext` в
+	 * communicationsOutbox.ts) — без заголовка `x-dente-admin-secret` она отвечает 403
+	 * даже при действительных токенах кабинета и сотрудника. На машине разработчика
+	 * секрет в корневом `.env` закомментирован, зато включены лазейки
+	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, поэтому локально панель зелёная.
+	 * Лазейки живут только пока NODE_ENV !== "production", то есть в настоящей клинике
+	 * раздел «Рассылки» был мёртв целиком: вместо списка — «Не удалось получить
+	 * рассылки: Сервер ответил 403», создать рассылку нельзя, предпросмотр не считался,
+	 * «Запустить» и «Остановить» молча отказывали. Ни типы, ни тесты, ни глаза этого
+	 * здесь не видели.
+	 *
+	 * `auth` берётся ТОЛЬКО из useAppLogicContext(): одноимённые функции, вывезенные из
+	 * AppHelpers, сеансовый секрет сами НЕ подставляют — с ними код компилируется, гейт
+	 * молчит, а клиника по-прежнему получает 403. Контекстные подставляют
+	 * `clinicalAdminSecretSession` (hooks/domains/useAuthLogic.ts).
+	 *
+	 * Проверка на `auth` — не перестраховка: useAppLogicContext() вне провайдера
+	 * возвращает пустой объект (contexts/AppLogicContext.tsx:21), и панель не должна
+	 * падать в изолированном показе.
+	 */
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+
 	const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
 	const [templates, setTemplates] = useState<TemplateOption[]>([]);
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -125,8 +153,8 @@ export function CampaignPanel() {
 		setLoadError(null);
 		try {
 			const [campaignResponse, templateResponse] = await Promise.all([
-				fetch("/api/communications/campaigns"),
-				fetch("/api/communications/templates")
+				fetch("/api/communications/campaigns", { headers: auth ? auth.denteClinicalReadHeaders() : {} }),
+				fetch("/api/communications/templates", { headers: auth ? auth.denteClinicalReadHeaders() : {} })
 			]);
 			const campaignData = await readJson<{ campaigns: CampaignItem[] }>(campaignResponse);
 			const templateData = await readJson<{ templates: TemplateOption[] }>(templateResponse);
@@ -135,7 +163,10 @@ export function CampaignPanel() {
 		} catch (error) {
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
-	}, []);
+		// `auth` в зависимостях: секрет живёт в сеансе и появляется после разблокировки
+		// раздела. Без него панель навсегда осталась бы с заголовками того первого
+		// отрисовывания, когда секрета ещё не было, — то есть с 403 до перезагрузки страницы.
+	}, [auth]);
 
 	useEffect(() => {
 		void load();
@@ -161,7 +192,7 @@ export function CampaignPanel() {
 		try {
 			const response = await fetch("/api/communications/campaigns", {
 				method: "POST",
-				headers: { "content-type": "application/json" },
+				headers: { ...(auth ? auth.denteClinicalMutationHeaders() : {}), "content-type": "application/json" },
 				body: JSON.stringify({ title, templateId, scope, criteria: buildCriteria() })
 			});
 			const data = await readJson<{ campaign: CampaignItem }>(response);
@@ -197,7 +228,9 @@ export function CampaignPanel() {
 		setPreview(null);
 		setPreviewError(null);
 		try {
-			const response = await fetch(`/api/communications/campaigns/${campaignId}/preview`);
+			const response = await fetch(`/api/communications/campaigns/${campaignId}/preview`, {
+				headers: auth ? auth.denteClinicalReadHeaders() : {}
+			});
 			setPreview(await readJson<CampaignPreview>(response));
 		} catch (error) {
 			setPreviewError(error instanceof Error ? error.message : String(error));
@@ -208,7 +241,20 @@ export function CampaignPanel() {
 		setBusy(true);
 		setNotice(null);
 		try {
-			const response = await fetch(`/api/communications/campaigns/${campaignId}/${action}`, { method: "POST" });
+			/*
+			 * Заголовки здесь нужны ровно так же, хотя гейт check:guarded-headers этот
+			 * вызов НЕ находит: у него в адресе две подстановки подряд, а гейт сверяет
+			 * `/api/communications/campaigns/SEGMENT/SEGMENT` с `:campaignId/launch` и
+			 * совпадения не видит (границы проверки названы в её шапке). Охрана же на
+			 * сервере настоящая — requireClinicalMutationContext на launch и cancel
+			 * (communicationsOutbox.ts:811 и :832). Без секрета «Запустить» и
+			 * «Остановить» в клинике отказывали, то есть остановить идущую рекламную
+			 * рассылку было нечем.
+			 */
+			const response = await fetch(`/api/communications/campaigns/${campaignId}/${action}`, {
+				method: "POST",
+				headers: auth ? auth.denteClinicalMutationHeaders() : {}
+			});
 			const data = await readJson<{ queued?: number; alreadyQueued?: number; cancelledMessages?: number }>(response);
 			setNotice({
 				kind: "done",
