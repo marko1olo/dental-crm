@@ -17,7 +17,9 @@ import {
   createChairInDb,
   updateChairWorkingHoursInDb,
   updateChairProfileInDb,
-  deactivateChairInDb
+  deactivateChairInDb,
+  listDoctorCommissionRatesInDb,
+  setDoctorCommissionRateInDb
 } from "../db/settingsQuery.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 import {
@@ -53,6 +55,19 @@ const updateStaffMemberProfileSchema = z.object({
   phone: z.string().trim().max(80).nullable().optional(),
   email: z.string().trim().email().max(240).nullable().optional(),
   active: z.boolean().optional()
+});
+
+/**
+ * Ставка врача: PUT /api/settings/staff/:staffId/commission.
+ *
+ * Процент от кассы, по которому клиника платит врачу. Границы взяты из
+ * колонки: doctor_commissions.commission_pct — numeric(5,2), поэтому больше
+ * 100 % записать нельзя, и это не произвольный предел, а форма хранения.
+ * Ноль допустим: врач на окладе — реальная договорённость, и запрещать её
+ * значило бы заставлять клинику держать выдуманный процент.
+ */
+const updateDoctorCommissionSchema = z.object({
+  commissionPct: z.number().min(0).max(100)
 });
 
 /**
@@ -115,6 +130,11 @@ const chairProfileEmptyUpdateMessage =
   "Карточка кресла не сохранена: не переданы поля для изменения. Расписание меняется отдельным адресом.";
 const chairProfileNotFoundMessage = "Карточка кресла не сохранена: кресло не найдено в этой клинике.";
 const chairProfileRejectedMessage = "Карточка кресла не сохранена: проверьте переданные поля.";
+const doctorCommissionRouteValidationMessage = "Ставка врача не сохранена: выберите сотрудника.";
+const doctorCommissionValidationMessage =
+  "Ставка врача не сохранена: укажите процент от кассы числом от 0 до 100.";
+const doctorCommissionNotFoundMessage = "Ставка врача не сохранена: сотрудник не найден в этой клинике.";
+const doctorCommissionRejectedMessage = "Ставка врача не сохранена: проверьте выбранного сотрудника и процент.";
 const chairDeactivateRouteValidationMessage = "Кресло не отключено: выберите кресло.";
 const chairDeactivateNotFoundMessage = "Кресло не отключено: кресло не найдено в этой клинике.";
 const chairDeactivateRejectedMessage = "Кресло не отключено: проверьте выбранное кресло.";
@@ -518,6 +538,73 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         staffDeactivateNotFoundMessage,
         staffDeactivateRejectedMessage,
         "StaffDeactivate"
+      );
+    }
+  });
+
+  /**
+   * Действующие ставки врачей. Отдельный адрес, а не поле в карточке
+   * сотрудника: ставка лежит в другой таблице (doctor_commissions), у неё своя
+   * дата начала действия и своя история отключённых строк, и втискивать её в
+   * staffMemberSchema значило бы показывать процент без даты, с которой он
+   * действует.
+   */
+  app.get("/api/settings/staff/commissions", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const commissions = await listDoctorCommissionRatesInDb(orgId);
+    return { commissions };
+  });
+
+  /**
+   * Назначение ставки врачу — процента от кассы, по которому клиника платит за
+   * лечение.
+   *
+   * До этого маршрута ставку не задавал ни один достижимый экран: писали её
+   * только недостижимый мастер первого запуска и routes/diary.ts, который при
+   * первом закрытии приёма молча вставляет 30 %. Экран выплат печатал «не
+   * задана», владелец шёл исправлять и не находил куда — и клиника платила по
+   * проценту, которого никто не согласовывал.
+   */
+  app.put("/api/settings/staff/:staffId/commission", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { staffId?: string };
+    if (!params.staffId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: doctorCommissionRouteValidationMessage
+      });
+    }
+    const input = parseSettingsPayload(updateDoctorCommissionSchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: doctorCommissionValidationMessage });
+    }
+    try {
+      const saved = await setDoctorCommissionRateInDb(orgId, params.staffId, input.commissionPct);
+      return saved;
+    } catch (error) {
+      // Отключённое хранение — это не ошибка оператора: процент вводить некуда,
+      // потому что ставки живут только в базе. Отвечать 409 «проверьте поля»
+      // значило бы послать владельца искать опечатку там, где её нет.
+      const message = settingsDomainMessage(error);
+      if (message.includes("DENTAL_STATE_PERSISTENCE")) {
+        return reply.code(503).send({
+          error: "DoctorCommissionStorageUnavailable",
+          reason: "state_persistence_off",
+          message
+        });
+      }
+      // Причина уходит в журнал сервера целиком: наружу идёт текст для
+      // оператора, но без записи здесь отказ по ставке был бы неотличим от
+      // опечатки в проценте, и разбирать его было бы нечем.
+      console.error("[настройки] ставка врача не сохранена:", error);
+      return staffMutationRejection(
+        reply,
+        error,
+        doctorCommissionNotFoundMessage,
+        doctorCommissionRejectedMessage,
+        "DoctorCommission"
       );
     }
   });

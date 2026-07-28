@@ -55,6 +55,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { countLabel, money } from "../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 
 /** Состояние расчёта по врачу. Значения приходят с сервера как есть. */
 type DoctorPayoutState = "computed" | "rate_missing" | "rate_invalid" | "material_policy_missing";
@@ -173,9 +174,57 @@ function percentLabel(value: number | null): string {
 	return value === null ? "—" : `${value} %`;
 }
 
+/**
+ * Ставка врача задаётся ЗДЕСЬ, и это не украшение экрана.
+ *
+ * ЧТО БЫЛО. Строка «Задайте процент врача, и итог станет полным» стояла под
+ * таблицей и вела в пустоту: во всём вебе процент врача вводился ровно в одном
+ * месте — в шаге мастера первого запуска, которого не рендерил никто. На
+ * сервере писателей `doctor_commissions.commission_pct` тоже было два, и оба
+ * мимо владельца: мёртвый маршрут того же мастера и `routes/diary.ts`, который
+ * при первом закрытии приёма молча вставляет 30 %. Владелец читал «не задана»,
+ * шёл исправлять — и не находил куда. Либо платил по 30 %, которых никто не
+ * согласовывал.
+ *
+ * ПОЧЕМУ ИМЕННО НА ЭТОМ ЭКРАНЕ, А НЕ ТОЛЬКО В НАСТРОЙКАХ. «Не задана» написано
+ * здесь, и решение о проценте принимают, глядя на кассу врача за месяц, которая
+ * тоже здесь. Отправить владельца в другой раздел — значит попросить его
+ * запомнить сумму и вернуться.
+ *
+ * ПОЧЕМУ ПОСЛЕ СОХРАНЕНИЯ ВЕСЬ ОТЧЁТ ПЕРЕЧИТЫВАЕТСЯ. Начисленное, удержанное и
+ * сумма к выплате — это деньги, и считает их сервер. Пересчитать их на клиенте
+ * из нового процента означало бы напечатать зарплату, которую сервер не
+ * подтверждал: порядок операций (процент от кассы, и только потом вычет доли
+ * себестоимости материалов) живёт в
+ * `apps/api/src/services/finance/doctorPayouts.ts`, и вторая его копия здесь
+ * разъехалась бы с первой при первой же правке договорённости.
+ *
+ * ПОЧЕМУ ТОЛЬКО ПРИ scope === "all". При «own» врач видит собственную строку.
+ * Дать ему поле собственного процента — значит предложить назначить себе
+ * зарплату. Это подсказка интерфейса, а НЕ защита: настоящая проверка
+ * серверная, в `requireSettingsAccess` (`apps/api/src/routes/settings.ts`), и
+ * копию матрицы прав здесь держать нельзя — она разъедется.
+ */
+type CommissionSaveState =
+	| { kind: "idle" }
+	| { kind: "saving" }
+	| { kind: "failed"; message: string };
+
+/** Границы взяты из колонки: commission_pct — numeric(5,2), больше 100 % не хранится. */
+function parseCommissionInput(raw: string): number | null {
+	const normalized = raw.replace(",", ".").trim();
+	if (normalized === "") return null;
+	const parsed = Number(normalized);
+	if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+	return parsed;
+}
+
 export function DoctorPayoutDashboard() {
 	const [month, setMonth] = useState<string>(() => currentMonthValue());
 	const [state, setState] = useState<PayoutLoadState>({ kind: "loading" });
+	const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
+	const [rateDraft, setRateDraft] = useState<string>("");
+	const [rateSave, setRateSave] = useState<CommissionSaveState>({ kind: "idle" });
 
 	const load = useCallback(async (monthValue: string) => {
 		const bounds = monthBoundsOf(monthValue);
@@ -261,8 +310,68 @@ export function DoctorPayoutDashboard() {
 		void load(month);
 	}, [load, month]);
 
+	const saveRate = useCallback(
+		async (doctorUserId: string, raw: string) => {
+			const pct = parseCommissionInput(raw);
+			if (pct === null) {
+				setRateSave({
+					kind: "failed",
+					message: "Процент от кассы указывается числом от 0 до 100. Ставка не сохранена."
+				});
+				return;
+			}
+
+			setRateSave({ kind: "saving" });
+			try {
+				/*
+				 * Оба токена — кабинета и сотрудника — обязательны для изменяющего
+				 * запроса. Запрос без них получает 401 молча, и экран выглядит не
+				 * сломанным, а пустым; этот класс дефекта в проекте встречался
+				 * трижды. `denteAdminSecretRequestHeaders` отправляет оба.
+				 */
+				const response = await fetch(`/api/settings/staff/${doctorUserId}/commission`, {
+					method: "PUT",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({ commissionPct: pct })
+				});
+				const payload = (await response.json().catch(() => null)) as unknown;
+				if (!response.ok) {
+					// Сообщение сервера идёт наружу дословно: он один знает причину
+					// отказа — не тот сотрудник, нет секрета администратора клиники,
+					// отключено хранение. Своё поверх чужого придумывать нельзя.
+					setRateSave({
+						kind: "failed",
+						message:
+							serverMessageOf(payload) ??
+							`Ставка не сохранена: сервер ответил ${response.status}. Повторите или обратитесь к администратору системы.`
+					});
+					return;
+				}
+				setEditingRateFor(null);
+				setRateDraft("");
+				setRateSave({ kind: "idle" });
+				// Деньги пересчитывает сервер, поэтому отчёт перечитывается целиком.
+				await load(month);
+			} catch (error) {
+				setRateSave({
+					kind: "failed",
+					message:
+						error instanceof Error && error.message
+							? `Ставка не сохранена, запрос к серверу не дошёл: ${error.message}. Проверьте связь и повторите.`
+							: "Ставка не сохранена, запрос к серверу не дошёл. Проверьте связь и повторите."
+				});
+			}
+		},
+		[load, month]
+	);
+
 	const report = state.kind === "ready" ? state.report : null;
 	const isOwnScope = report?.scope === "own";
+	/*
+	 * Право менять ставку — только у того, кому сервер отдал выплаты ВСЕЙ клиники.
+	 * Подсказка интерфейса, не защита: решает `requireSettingsAccess` на сервере.
+	 */
+	const canEditRates = report !== null && report.scope === "all";
 
 	/*
 	 * Касса ПО ВИДИМЫМ СТРОКАМ, а не из `totals`.
@@ -396,10 +505,71 @@ export function DoctorPayoutDashboard() {
 												нуля вместо разговора о проценте.
 											*/}
 											<td className="ops-num" data-label="Ставка">
-												{row.commissionPct === null ? (
-													<span className="ops-state ops-state--warn">не задана</span>
+												{editingRateFor === row.doctorUserId ? (
+													<form
+														className="ops-field"
+														onSubmit={(event) => {
+															event.preventDefault();
+															void saveRate(row.doctorUserId, rateDraft);
+														}}
+													>
+														<label htmlFor={`rate-${row.doctorUserId}`}>
+															Процент от кассы для {row.doctorName}
+														</label>
+														<input
+															id={`rate-${row.doctorUserId}`}
+															type="number"
+															inputMode="decimal"
+															min={0}
+															max={100}
+															step={0.01}
+															value={rateDraft}
+															autoFocus
+															onChange={(event) => setRateDraft(event.target.value)}
+														/>
+														<button className="primary-button" type="submit" disabled={rateSave.kind === "saving"}>
+															{rateSave.kind === "saving" ? "Сохраняю…" : "Сохранить"}
+														</button>
+														<button
+															className="secondary-button"
+															type="button"
+															onClick={() => {
+																setEditingRateFor(null);
+																setRateDraft("");
+																setRateSave({ kind: "idle" });
+															}}
+														>
+															Отмена
+														</button>
+													</form>
 												) : (
-													percentLabel(row.commissionPct)
+													<>
+														{row.commissionPct === null ? (
+															<span className="ops-state ops-state--warn">не задана</span>
+														) : (
+															percentLabel(row.commissionPct)
+														)}
+														{canEditRates ? (
+															<>
+																<br />
+																<button
+																	className="secondary-button"
+																	type="button"
+																	onClick={() => {
+																		setEditingRateFor(row.doctorUserId);
+																		// Прежнее значение подставляется в поле: чаще
+																		// правят на несколько пунктов, а не вводят
+																		// заново. Пустое поле у заданной ставки
+																		// выглядело бы как «ставки нет».
+																		setRateDraft(row.commissionPct === null ? "" : String(row.commissionPct));
+																		setRateSave({ kind: "idle" });
+																	}}
+																>
+																	{row.commissionPct === null ? "Задать ставку" : "Изменить"}
+																</button>
+															</>
+														) : null}
+													</>
 												)}
 											</td>
 											<td className="ops-num" data-label="Начислено">
@@ -459,6 +629,18 @@ export function DoctorPayoutDashboard() {
 							планшете подсказки не открываются, а именно здесь написано, что
 							владельцу сделать, чтобы сумма появилась.
 						*/}
+						{/*
+							Отказ сохранения ставки стоит под таблицей, а не в ячейке: в узкой
+							числовой колонке причина не читается, а знать её обязательно —
+							иначе владелец решит, что процент сохранён, и продолжит платить по
+							старому.
+						*/}
+						{rateSave.kind === "failed" ? (
+							<p className="ops-notice ops-notice--error" role="alert">
+								{rateSave.message}
+							</p>
+						) : null}
+
 						<ul className="ops-bars">
 							{report.rows.map((row) => (
 								<li className="ops-hint" key={`note-${row.doctorUserId}`}>
@@ -533,8 +715,10 @@ export function DoctorPayoutDashboard() {
 							<p className="ops-hint ops-hint--weak">
 								Итог посчитан по {countLabel(report.totals.doctorsCounted, "врачу", "врачам", "врачам")} из{" "}
 								{report.rows.length}: у {report.totals.doctorsWithoutRate} нет пригодной ставки, и сумму к
-								выплате им считать не из чего. Это отсутствие расчёта, а не ноль к выплате. Задайте процент
-								врача, и итог станет полным.
+								выплате им считать не из чего. Это отсутствие расчёта, а не ноль к выплате.{" "}
+								{canEditRates
+									? "Нажмите «Задать ставку» в колонке «Ставка» напротив врача — итог пересчитается сразу."
+									: "Ставку задаёт тот, кому сервер открывает выплаты всей клиники."}
 							</p>
 						) : null}
 

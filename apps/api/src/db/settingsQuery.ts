@@ -1,6 +1,6 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile, ClinicMode, ClinicScheduleDefaults, StaffWorkingHours } from "@dental/shared";
 import { clinicModeSchema, clinicScheduleDefaultsSchema, staffWorkingHoursSchema, staffRoleSchema } from "@dental/shared";
 import type { StaffMember } from "@dental/shared";
@@ -258,6 +258,188 @@ export async function updateStaffCredentialsInDb(
 ) {
   if (useInMemory()) return;
   await db.update(schema.users).set(updates).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
+}
+
+/**
+ * Ставка врача — процент от кассы, по которому клиника платит за лечение.
+ *
+ * Хранится в doctor_commissions. Расчёт выплат
+ * (services/finance/doctorPayouts.ts) читает её ТОЛЬКО из колонки
+ * commission_pct и ТОЛЬКО по user_id: соединение по doctor_id дало бы пустоту
+ * всегда, потому что ту колонку не пишет никто.
+ *
+ * До появления этих двух функций ставку не задавал ни один достижимый экран.
+ * Писателей было два, и оба мимо владельца клиники: недостижимый мастер
+ * первого запуска и routes/diary.ts, который при первом закрытии приёма молча
+ * вставляет 30 % — значение, которое код подставил сам, а не договорённость с
+ * врачом. Экран выплат печатал «не задана», владелец шёл исправлять и не
+ * находил куда.
+ */
+export interface DoctorCommissionRate {
+  userId: string;
+  commissionPct: string;
+  materialCostDeductionPct: string;
+  effectiveFrom: string;
+}
+
+const COMMISSION_STORAGE_UNAVAILABLE =
+  "Ставка врача не сохранена: хранение отключено (DENTAL_STATE_PERSISTENCE=off), ставки живут только в базе. Включите базу и повторите.";
+
+/**
+ * Действующие ставки всех врачей организации, самая свежая первой.
+ *
+ * Отдаются только строки с is_active = true: отключённые остаются в таблице
+ * ради истории, но платить по ним нельзя. Порядок совпадает с порядком, по
+ * которому ставку выбирает расчёт выплат (свежая effective_from, при равенстве
+ * — свежая created_at), поэтому первая строка на врача — та же, по которой
+ * посчитаются деньги.
+ */
+export async function listDoctorCommissionRatesInDb(organizationId: string): Promise<DoctorCommissionRate[]> {
+  if (useInMemory()) return [];
+  const rows = await db
+    .select({
+      userId: schema.doctorCommissions.userId,
+      commissionPct: schema.doctorCommissions.commissionPct,
+      materialCostDeductionPct: schema.doctorCommissions.materialCostDeductionPct,
+      effectiveFrom: schema.doctorCommissions.effectiveFrom
+    })
+    .from(schema.doctorCommissions)
+    .where(
+      and(
+        eq(schema.doctorCommissions.organizationId, organizationId),
+        eq(schema.doctorCommissions.isActive, true)
+      )
+    )
+    .orderBy(desc(schema.doctorCommissions.effectiveFrom), desc(schema.doctorCommissions.createdAt));
+
+  const rates: DoctorCommissionRate[] = [];
+  for (const row of rows) {
+    // user_id в схеме допускает NULL, а платить по строке без врача нельзя:
+    // такая ставка не принадлежит никому и в расчёт выплат тоже не попадает.
+    if (!row.userId) continue;
+    rates.push({
+      userId: row.userId,
+      commissionPct: row.commissionPct,
+      materialCostDeductionPct: row.materialCostDeductionPct,
+      effectiveFrom: row.effectiveFrom.toISOString()
+    });
+  }
+  return rates;
+}
+
+/**
+ * Назначение ставки врачу.
+ *
+ * Три решения, каждое из которых иначе стоило бы клинике денег:
+ *
+ * 1. Пишутся ОБА процента — commission_pct и commission_percent. Рядом в
+ *    таблице живёт commission_percent с DEFAULT '25'. Вставка без него
+ *    оставила бы в ОДНОЙ строке два несогласованных числа (45 % в одной
+ *    колонке, 25 % в другой), и первый же будущий читатель второй колонки
+ *    заплатил бы врачу другую сумму — без ошибки и без расхождения в логах.
+ *
+ * 2. Прежние действующие ставки отключаются, а не остаются рядом. Уникальности
+ *    в базе нет, и при нескольких активных строках расчёт берёт самую свежую,
+ *    приписывая к выплате предупреждение о двоящейся настройке
+ *    (doctorPayouts.ts:373). Ставка врача не должна зависеть от порядка строк.
+ *
+ * 3. Строки не удаляются: is_active = false сохраняет, что клиника назначала
+ *    раньше. Прошлые периоды продолжают считаться по той ставке, которая
+ *    действовала тогда, — новая начинает действовать с момента назначения.
+ *
+ * Доля себестоимости материалов (material_cost_deduction_pct) переносится из
+ * прежней действующей строки: это ВТОРАЯ, независимая договорённость с врачом,
+ * и правка процента от кассы не имеет права её обнулять.
+ */
+export async function setDoctorCommissionRateInDb(
+  organizationId: string,
+  staffId: string,
+  commissionPct: number
+): Promise<DoctorCommissionRate> {
+  if (useInMemory()) throw new Error(COMMISSION_STORAGE_UNAVAILABLE);
+
+  const [staffMember] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)))
+    .limit(1);
+  if (!staffMember) throw new Error("Сотрудник не найден.");
+
+  const normalizedPct = commissionPct.toFixed(2);
+
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select({ materialCostDeductionPct: schema.doctorCommissions.materialCostDeductionPct })
+      .from(schema.doctorCommissions)
+      .where(
+        and(
+          eq(schema.doctorCommissions.organizationId, organizationId),
+          eq(schema.doctorCommissions.userId, staffId),
+          eq(schema.doctorCommissions.isActive, true)
+        )
+      )
+      .orderBy(desc(schema.doctorCommissions.effectiveFrom), desc(schema.doctorCommissions.createdAt))
+      .limit(1);
+
+    await tx
+      .update(schema.doctorCommissions)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(schema.doctorCommissions.organizationId, organizationId),
+          eq(schema.doctorCommissions.userId, staffId),
+          eq(schema.doctorCommissions.isActive, true)
+        )
+      );
+
+    const effectiveFrom = new Date();
+    const [inserted] = await tx
+      .insert(schema.doctorCommissions)
+      .values({
+        organizationId,
+        userId: staffId,
+        /*
+         * specialty и service_category передаются ЯВНО, и это не избыточность.
+         * Модель Drizzle описывает их как text со значением по умолчанию, а в
+         * живой таблице это перечисления (dental_specialty, service_category)
+         * NOT NULL и БЕЗ значения по умолчанию — замерено на базе. Вставка,
+         * доверившаяся модели, отправляла в обе колонки DEFAULT, получала NULL и
+         * падала на NOT NULL: ставка не сохранялась, а владелец видел «проверьте
+         * выбранного сотрудника и процент», где ни сотрудник, ни процент не были
+         * виноваты. Ровно поэтому их явно передаёт и routes/diary.ts.
+         *
+         * Значения выбраны как наименее лживые: расчёт выплат
+         * (services/finance/doctorPayouts.ts) не фильтрует ставку ни по
+         * специальности, ни по категории услуги — он берёт любую действующую
+         * строку врача. Поставить здесь «therapy» значило бы заявить, что процент
+         * действует только на терапию, чего клиника не говорила.
+         *
+         * ДОЛГ: раздельные ставки по категориям услуг в продукте отсутствуют, а
+         * колонки под них в таблице есть. Это продуктовое решение, и выдумывать
+         * его здесь нельзя.
+         */
+        specialty: "universal",
+        serviceCategory: "other",
+        commissionPct: normalizedPct,
+        commissionPercent: normalizedPct,
+        materialCostDeductionPct: previous?.materialCostDeductionPct ?? "0",
+        isActive: true,
+        effectiveFrom
+      })
+      .returning({
+        commissionPct: schema.doctorCommissions.commissionPct,
+        materialCostDeductionPct: schema.doctorCommissions.materialCostDeductionPct,
+        effectiveFrom: schema.doctorCommissions.effectiveFrom
+      });
+    if (!inserted) throw new Error("Ставка врача не сохранена: строка ставки не записалась.");
+
+    return {
+      userId: staffId,
+      commissionPct: inserted.commissionPct,
+      materialCostDeductionPct: inserted.materialCostDeductionPct,
+      effectiveFrom: inserted.effectiveFrom.toISOString()
+    };
+  });
 }
 
 export async function createChairInDb(organizationId: string, input: CreateChairInput) {
