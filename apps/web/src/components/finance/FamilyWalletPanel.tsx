@@ -160,12 +160,53 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * же приёмом, что и в форме приёма оплаты выше на этом же экране.
 	 */
 	const [amountInput, setAmountInput] = useState("");
-	// Ключ идемпотентности живёт между повторами: без него повторная отправка
-	// после обрыва связи зачислила бы деньги дважды.
-	const topupMutationIdRef = useRef<string | null>(null);
-	// То же самое для списания. Отключённой кнопки недостаточно: она защищает
-	// только от второго клика, но не от повтора после потерянного ответа.
-	const payMutationIdRef = useRef<string | null>(null);
+	/*
+	 * КЛЮЧ ИДЕМПОТЕНТНОСТИ ПРИВЯЗАН К ОДНОЙ КОНКРЕТНОЙ ОПЕРАЦИИ.
+	 *
+	 * Ключ обязан жить между повторами: без него повторная отправка после обрыва
+	 * связи списала бы деньги второй раз. Но жить он должен ровно у ТОЙ операции,
+	 * для которой выдан, — иначе он превращается в обратную беду.
+	 *
+	 * БЫЛО: `useRef<string | null>`, один ключ на панель. После обрыва связи ключ
+	 * намеренно сохранялся (для безопасного повтора), а сбрасывался только при
+	 * успехе. Ни смена пациента, ни смена суммы его не трогали. Сервер же ищет
+	 * повтор ТОЛЬКО по паре (organizationId, clientMutationId) — ни пациента, ни
+	 * сумму он не сверяет (routes/finance_family.ts) — и на найденный повтор
+	 * отвечает 200 с ранее созданным платежом и `duplicate: true`.
+	 *
+	 * Отсюда ложный успех: администратор списывал 15 000 ₽ у Иванова, связь
+	 * обрывалась, он переходил к Петрову, набирал 1 000 ₽, нажимал «Списать» — и
+	 * запрос уходил с ТЕМ ЖЕ ключом. Сервер узнавал в нём платёж Иванова, ничего
+	 * не списывал и отвечал успехом. Панель писала «Оплата списана с семейного
+	 * кошелька», очищала поле — а у Петрова не списано ничего, долг открыт, оплаты
+	 * в журнале нет. Администратор отпускал человека как оплатившего. То же самое
+	 * при смене суммы у одного пациента: повтор «на 3 000 ₽» подтверждался
+	 * успехом, хотя списаны были прежние 500 ₽.
+	 *
+	 * СТАЛО: рядом с ключом хранится подпись операции — те самые поля, которые
+	 * уходят в тело запроса и двигают деньги. Совпала подпись — это повтор, ключ
+	 * тот же, второго списания не будет. Изменилась хоть одна — это ДРУГАЯ
+	 * операция, и она получает новый ключ. Отдельного сброса при смене пациента не
+	 * нужно: пациент входит в подпись, и одно правило не может разойтись с другим.
+	 */
+	type MutationTicket = { requestKey: string; mutationId: string };
+	const topupMutationRef = useRef<MutationTicket | null>(null);
+	const payMutationRef = useRef<MutationTicket | null>(null);
+
+	/**
+	 * Выдать ключ для операции с такой подписью: тот же при повторе, новый при
+	 * любом изменении денежной части запроса.
+	 */
+	const mutationIdFor = (
+		ref: React.MutableRefObject<MutationTicket | null>,
+		prefix: string,
+		requestKey: string,
+	): string => {
+		if (ref.current?.requestKey !== requestKey) {
+			ref.current = { requestKey, mutationId: `${prefix}-${crypto.randomUUID()}` };
+		}
+		return ref.current.mutationId;
+	};
 
 	const isPatientDatabaseId = PATIENT_ID_PATTERN.test(patientId);
 	// Номер запроса вместо флага cancelled: тот же счётчик защищает и повторную
@@ -391,9 +432,13 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		// интерфейс показал «Сетевая ошибка», оператор нажал повторно — семья
 		// заплатила дважды за одно лечение. Серверная защита по паре
 		// (organizationId, clientMutationId) есть, но без ключа не срабатывает.
-		if (!payMutationIdRef.current) {
-			payMutationIdRef.current = `family-pay-${crypto.randomUUID()}`;
-		}
+		// Подпись — ровно те поля тела запроса, которые двигают деньги: другой
+		// пациент, другая семья или другая сумма означают другую операцию.
+		const mutationId = mutationIdFor(
+			payMutationRef,
+			"family-pay",
+			`${patientId}|${family.id}|${amount}`,
+		);
 
 		setIsPaying(true);
 		try {
@@ -406,7 +451,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					patientId,
 					familyGroupId: family.id,
 					amountRub: amount,
-					clientMutationId: payMutationIdRef.current,
+					clientMutationId: mutationId,
 				}),
 			});
 
@@ -419,8 +464,24 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				return;
 			}
 			// Списание прошло — следующее получит новый ключ.
-			payMutationIdRef.current = null;
-			showToast("Оплата списана с семейного кошелька", "success");
+			payMutationRef.current = null;
+			/*
+			 * ПОВТОР НАЗЫВАЕТСЯ ПОВТОРОМ, А НЕ НОВЫМ СПИСАНИЕМ.
+			 *
+			 * БЫЛО: `duplicate` из ответа не читался вовсе, и повтор после потерянного
+			 * ответа рапортовал «Оплата списана» — то есть о СЕГОДНЯШНЕМ списании,
+			 * которого в этот раз не было. Администратор, не понявший, прошла ли первая
+			 * попытка, получал подтверждение и не мог отличить одно списание от двух.
+			 * Сервер отвечает `duplicate: true`, когда узнал ключ и денег НЕ тронул, —
+			 * это и говорим словами: деньги ушли раньше, второй раз не ушли.
+			 */
+			const payResult = (await res.json().catch(() => null)) as { duplicate?: boolean } | null;
+			showToast(
+				payResult?.duplicate
+					? "Эта оплата уже была списана раньше — второй раз деньги не списаны."
+					: "Оплата списана с семейного кошелька",
+				"success",
+			);
 			// Поле суммы обнуляется, иначе после успешного списания в нём
 			// остаётся та же сумма и кнопка снова активна — приглашение
 			// случайно списать второй раз.
@@ -452,9 +513,13 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast("Введите сумму пополнения целыми рублями", "error");
 			return;
 		}
-		if (!topupMutationIdRef.current) {
-			topupMutationIdRef.current = `family-topup-${crypto.randomUUID()}`;
-		}
+		// Способ входит в подпись наравне с суммой: он попадает в журнал платежей и
+		// в сверку кассы, поэтому «те же 5 000 ₽, но картой» — другая операция.
+		const mutationId = mutationIdFor(
+			topupMutationRef,
+			"family-topup",
+			`${patientId}|${family.id}|${topupAmount}|${topupMethod}`,
+		);
 
 		setIsToppingUp(true);
 		try {
@@ -473,7 +538,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					// вечером наличных в ящике оказывалось меньше, чем в отчёте, ровно
 					// на сумму такого пополнения. Причину сверки было не найти.
 					method: topupMethod,
-					clientMutationId: topupMutationIdRef.current,
+					clientMutationId: mutationId,
 				}),
 			});
 			if (!res.ok) {
@@ -485,10 +550,21 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				return;
 			}
 			// Зачисление прошло — следующее пополнение получит новый ключ.
-			topupMutationIdRef.current = null;
+			topupMutationRef.current = null;
+			// Повтор не выдаём за новое зачисление: сервер вернул `duplicate: true`,
+			// значит баланс он в этот раз не менял. Иначе семья, внёсшая аванс дважды
+			// по одной непрошедшей попытке, увидела бы два подтверждения на один взнос.
 			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
 			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
-			showToast(`Семейный счёт пополнен на ${money(topupAmount)}`, "success");
+			const topupResult = (await res.json().catch(() => null)) as {
+				duplicate?: boolean;
+			} | null;
+			showToast(
+				topupResult?.duplicate
+					? `Этот аванс уже был зачислен раньше — ${money(topupAmount)} второй раз не зачислены.`
+					: `Семейный счёт пополнен на ${money(topupAmount)}`,
+				"success",
+			);
 			setTopupInput("");
 			void loadFamily();
 		} catch (e) {
