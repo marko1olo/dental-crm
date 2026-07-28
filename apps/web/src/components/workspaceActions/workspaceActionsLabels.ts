@@ -1,24 +1,51 @@
 /**
- * Словарь подписей плавающего угла. Библиотеки i18n в проекте нет, поэтому
- * текст региона живёт одним словарём рядом с его владельцем — по тому же
- * принципу, что `imagingUiLabels.ts` и `pricelistUiMeta.ts`. Русский текст в
- * JSX больше не пишется: подписи угла берутся отсюда.
+ * Словарь подписей группы действий рабочей области. Библиотеки i18n в проекте
+ * нет, поэтому текст живёт одним словарём рядом со своим владельцем — по тому же
+ * принципу, что `imagingUiLabels.ts` и `pricelistUiMeta.ts`. Русский текст в JSX
+ * не пишется.
+ *
+ * ГЛАВНОЕ ОТЛИЧИЕ ОТ ПРЕДЫДУЩЕЙ ВЕРСИИ: у каждого действия теперь есть ВИДИМАЯ
+ * подпись (`label`) и объяснение простыми словами (`hint`). Раньше справка и
+ * микрофон были круглыми кнопками без текста: смысл существовал только в
+ * атрибуте `title`, то есть на телефоне не существовал вообще. Кнопка без
+ * подписи рядом с пятью подписанными пунктами навигации — это потеря ясности,
+ * а не экономия места.
+ *
+ * `hint` показывается только в панели на узком экране, где есть ширина под
+ * строку текста; в топбаре видны иконка и `label`. Так объяснение есть там, где
+ * человек в нём нуждается, и не засоряет плотную строку топбара.
  */
 
-export const cornerDockLabels = {
-	/** Подпись самого региона для скринридера. */
-	region: "Плавающие действия",
+export const workspaceActionsLabels = {
+	/** Подпись группы для программы чтения с экрана. */
+	region: "Голос и поиск",
+	/** Пункт нижней навигации, открывающий панель на узком экране. */
+	navTrigger: {
+		label: "Голос",
+		titleClosed: "Открыть голос и поиск",
+		titleOpen: "Закрыть голос и поиск",
+	},
+	panel: {
+		/** Заголовок панели на узком экране. */
+		heading: "Голос и поиск",
+		close: "Закрыть панель",
+	},
 	search: {
 		title: "Глобальный поиск и команды (Cmd+K)",
-		text: "Поиск (Cmd+K)",
+		label: "Поиск",
+		hint: "Найти пациента, раздел или действие",
 	},
 	help: {
 		title: "Справка по голосовым командам",
+		label: "Справка",
+		hint: "Какие команды понимает помощник",
 		heading: "Голосовое управление",
 		subheading: "Интерактивное обучение",
 		close: "Закрыть подсказку",
 	},
 	voice: {
+		label: "Голос",
+		hint: "Держите кнопку и говорите — текст попадёт в карту",
 		idle: "Удерживайте для записи (или нажмите один раз)",
 		listening: "Нажмите для завершения",
 		listeningTitle: "Ассистент слушает…",
@@ -34,9 +61,9 @@ export const cornerDockLabels = {
 	},
 } as const;
 
-export type CornerHelpTab = keyof typeof cornerDockLabels.tabs;
+export type WorkspaceActionHelpTab = keyof typeof workspaceActionsLabels.tabs;
 
-export interface CornerVoiceCommand {
+export interface WorkspaceVoiceCommand {
 	readonly command: string;
 	readonly detail: string;
 }
@@ -45,13 +72,12 @@ export interface CornerVoiceCommand {
  * Список голосовых команд по вкладкам справки. Раньше он лежал прямо в JSX
  * тремя массивами объектов с русскими строками.
  */
-export const cornerVoiceCommands: Record<
-	CornerHelpTab,
-	{ readonly intro: string; readonly items: readonly CornerVoiceCommand[] }
+export const workspaceVoiceCommands: Record<
+	WorkspaceActionHelpTab,
+	{ readonly intro: string; readonly items: readonly WorkspaceVoiceCommand[] }
 > = {
 	nav: {
-		intro:
-			"Скажите команду для быстрого перехода между разделами клиники:",
+		intro: "Скажите команду для быстрого перехода между разделами клиники:",
 		items: [
 			{
 				command: "«Перейди в расписание»",
@@ -77,8 +103,7 @@ export const cornerVoiceCommands: Record<
 		],
 	},
 	search: {
-		intro:
-			"Используйте для поиска пациентов или смены даты в календаре:",
+		intro: "Используйте для поиска пациентов или смены даты в календаре:",
 		items: [
 			{
 				command: "«Найди пациента Смирнов»",
@@ -131,5 +156,5 @@ export const cornerVoiceCommands: Record<
 };
 
 /** Предупреждение под списком команд вкладки диктовки ЭМК. */
-export const cornerVoiceVisitNote =
+export const workspaceVoiceVisitNote =
 	"Совет: убедитесь, что открыта вкладка приёма (ЭМК), чтобы текст диктовки автоматически распределился по медицинским полям.";

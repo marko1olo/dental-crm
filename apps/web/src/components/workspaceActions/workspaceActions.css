@@ -1,0 +1,640 @@
+/* ============================================================
+   ГРУППА ДЕЙСТВИЙ РАБОЧЕЙ ОБЛАСТИ — поиск, голос, справка.
+
+   ЗДЕСЬ НЕТ И НЕ ДОЛЖНО ПОЯВИТЬСЯ `position: fixed`. Предыдущая версия этого
+   файла (`floatingCorner/cornerDock.css`) прибивала три кнопки к правому нижнему
+   углу экрана и держала подъём `--corner-dock-lift` в `bottom: calc(...)`, чтобы
+   «уступать» кнопкам под собой. Порог уступки был недостижим арифметически
+   (обоснование в `workspaceActionsPlacement.ts`), поэтому группа больше не
+   висит над контентом: на широком экране она стоит в строке действий топбара, на
+   узком — в нижней навигации. Вместе с плаванием удалены подъём, компактный
+   режим и резерв пустого низа `--corner-dock-reserve-block`.
+
+   Единственный элемент, который перекрывает страницу, — временная накладка
+   (расшифровка речи, справка, чип команды). Она вызвана самим человеком,
+   закрывается им же и является обычным всплывающим слоем, а не постоянной
+   фурнитурой.
+   ============================================================ */
+
+/* ---------- ТОЧКА КРЕПЛЕНИЯ В ТОПБАРЕ ---------- */
+.dnt-actions-mount--header {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 0 0 auto;
+}
+
+/* Пока раскладка узкая, хост живёт в навигации, а эта точка пуста: пустой
+   flex-элемент всё равно добавил бы строке лишний зазор. */
+.dnt-actions-mount--header:empty {
+	display: none;
+}
+
+/* Строка действий топбара получает право на перенос ТОЛЬКО когда в ней стоит эта
+   группа. Русские подписи длиннее английских на 30-50%, и на 841-1000px строка
+   из шести чужих кнопок плюс группа может не уместиться: без переноса она
+   выдавливала бы название клиники. Правило намеренно ограничено через :has,
+   чтобы не менять поведение топбара там, где группы нет. */
+.topbar .top-actions:has(> .dnt-actions-mount--header) {
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	row-gap: 0.5rem;
+}
+
+/* ---------- ХОСТ ---------- */
+.dnt-actions {
+	/* Слой накладки. Шкала задана в main.css: --z-sticky 500 <
+	   накладка < --z-drawer-overlay 1000. Накладка обязана пропускать вперёд
+	   ящики, модальные окна и тосты и не имеет права висеть поверх диалога. */
+	--dnt-actions-z: 900;
+	min-width: 0;
+}
+
+.dnt-actions[data-placement="header"] {
+	display: flex;
+	align-items: center;
+}
+
+.dnt-actions[data-placement="nav"] {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-width: 0;
+}
+
+/* Слот строки не создаёт собственный бокс: порядок задаётся порядком слотов, а
+   пустой слот не оставляет после себя зазор. */
+.dnt-actions__bar .dnt-actions__slot {
+	display: contents;
+}
+
+/* ---------- СТРОКА КНОПОК: ШИРОКИЙ ЭКРАН ----------
+   Одна сегментированная группа, а не три отдельных соседа. Топбар и без того
+   страдает от шести несгруппированных кнопок; седьмой сосед ухудшил бы это, а
+   группа с общей рамкой читается как один элемент. */
+.dnt-actions[data-placement="header"] .dnt-actions__bar {
+	display: flex;
+	align-items: stretch;
+	/* 1px — волосяные разделители между сегментами: зазор показывает фон
+	   контейнера. Единственное место в файле, где уместен px. */
+	gap: 1px;
+	border: 1px solid var(--line-strong);
+	border-radius: 999px;
+	background: var(--line);
+	overflow: hidden;
+	box-shadow: var(--shadow-1);
+}
+
+/* ---------- СТРОКА КНОПОК: УЗКИЙ ЭКРАН ----------
+   Вертикальный список крупных строк с подписью и объяснением. */
+.dnt-actions[data-placement="nav"] .dnt-actions__bar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+/* ---------- КНОПКА ДЕЙСТВИЯ ---------- */
+.dnt-actions__control {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	border: 0;
+	background: var(--paper);
+	color: var(--ink-2);
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition:
+		background var(--transition-fast, 0.15s ease),
+		color var(--transition-fast, 0.15s ease);
+}
+
+.dnt-actions[data-placement="header"] .dnt-actions__control {
+	min-height: 2.5rem;
+	padding: 0.5rem 0.875rem;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control {
+	width: 100%;
+	/* Крупная зона нажатия: палец, а не курсор. */
+	min-height: 3.25rem;
+	padding: 0.625rem 0.875rem;
+	border: 1px solid var(--line-strong);
+	border-radius: 0.875rem;
+	font-size: 0.9375rem;
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.dnt-actions__control:hover {
+	background: var(--teal-surface);
+	color: var(--teal-dark);
+}
+
+.dnt-actions__control:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: -2px;
+	position: relative;
+}
+
+.dnt-actions__control--primary {
+	background: var(--paper-strong);
+	color: var(--ink);
+}
+
+.dnt-actions__control[aria-pressed="true"],
+.dnt-actions__control[aria-expanded="true"],
+.dnt-actions__control--active {
+	background: var(--teal);
+	border-color: var(--teal-dark);
+	color: var(--on-teal);
+}
+
+.dnt-actions__control[aria-pressed="true"] .dnt-actions__control-hint,
+.dnt-actions__control[aria-expanded="true"] .dnt-actions__control-hint {
+	color: var(--on-teal);
+}
+
+.dnt-actions__control-icon {
+	width: 1.125rem;
+	height: 1.125rem;
+	flex: 0 0 auto;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control-icon {
+	width: 1.375rem;
+	height: 1.375rem;
+}
+
+.dnt-actions__control-text {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 0;
+	gap: 0.0625rem;
+}
+
+.dnt-actions__control-label {
+	overflow-wrap: anywhere;
+}
+
+/* Объяснение простыми словами показывается там, где есть ширина под строку
+   текста, — в панели на узком экране. В плотной строке топбара видны иконка и
+   подпись: смысл кнопки уже назван словом, а не спрятан в title. */
+.dnt-actions__control-hint {
+	display: none;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__control-hint {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+
+/* ---------- КОНТЕЙНЕР ГРУППЫ ВНУТРИ ЧУЖОЙ НАВИГАЦИИ ----------
+   Единственный узел, который группа добавляет в разметку нижней навигации
+   (её рендерит `App.tsx`). `display: contents` обязателен: кнопка должна быть
+   flex-элементом САМОЙ навигации, иначе она не получит её `flex: 1`, её
+   выравнивание и общую с соседями ширину, а встанет отдельным блоком сбоку.
+   Панель внутри позиционируется от навигации — она `position: fixed`, то есть
+   ближайший позиционированный предок, а контейнер с `display: contents` бокса
+   не создаёт и предком для позиционирования не становится. */
+.dnt-actions-nav-slot {
+	display: contents;
+}
+
+/* ---------- ПУНКТ НИЖНЕЙ НАВИГАЦИИ ----------
+   Форма повторяет соседей (`.dnt-bottom-nav a`): иконка сверху, подпись снизу,
+   тот же радиус и тот же активный вид. Пункт ОДИН: восемь пунктов на 390px дают
+   46px на пункт, и подпись «Пациенты» перестаёт влезать. Поэтому три действия
+   лежат в панели, а не в самой навигации. */
+.dnt-actions__trigger {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.1875rem;
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 4.75rem;
+	padding: 0.375rem 0.25rem;
+	border: 0;
+	border-radius: 0.625rem;
+	background: transparent;
+	color: var(--muted);
+	font: inherit;
+	/* 0.65625rem = 10.5px при базовом кегле 16px — ровно кегль соседних пунктов
+	   навигации, но в относительных единицах: при увеличенном шрифте подпись
+	   растёт вместе с ними, а не остаётся мелкой. */
+	font-size: 0.65625rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition:
+		background var(--transition-fast, 0.15s ease),
+		color var(--transition-fast, 0.15s ease);
+}
+
+.dnt-actions__trigger svg {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.dnt-actions__trigger > span {
+	text-align: center;
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__trigger--open {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-weight: 700;
+}
+
+[data-theme="dark"] .dnt-actions__trigger--open,
+[data-theme="night"] .dnt-actions__trigger--open {
+	color: var(--teal);
+}
+
+.dnt-actions__trigger:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+/* ---------- ПАНЕЛЬ НАД НАВИГАЦИЕЙ ----------
+   Позиционируется относительно самой навигации (она `position: fixed`), поэтому
+   занимает её ширину и садится ровно над её рамкой. Панель открывает и
+   закрывает человек: своей кнопкой, повторным нажатием пункта или Escape.
+   Закрытия по нажатию мимо здесь нет намеренно — диктовка живёт внутри панели, и
+   случайный тап оставил бы включённый микрофон без единого признака на экране. */
+.dnt-actions__sheet {
+	position: absolute;
+	left: 0;
+	right: 0;
+	/* +1px — толщина верхней рамки навигации: панель садится на неё, а не под. */
+	bottom: calc(100% + 1px);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-height: 70vh;
+	overflow-y: auto;
+	padding: 0.875rem 1rem 1rem;
+	background: var(--paper);
+	border-top: 1px solid var(--line);
+	box-shadow: var(--shadow-3);
+}
+
+/* `display: flex` перебивает браузерное правило для [hidden], поэтому скрытие
+   объявлено явно. Панель скрывается стилем, а не размонтированием: жильцы
+   остаются в дереве React, и включённая диктовка переживает закрытие. */
+.dnt-actions__sheet[hidden] {
+	display: none;
+}
+
+.dnt-actions__sheet-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.dnt-actions__sheet-title {
+	margin: 0;
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__sheet-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex: 0 0 auto;
+	border: 1px solid transparent;
+	border-radius: 0.625rem;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+}
+
+.dnt-actions__sheet-close:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.dnt-actions__sheet-close:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.dnt-actions__sheet-close svg {
+	width: 1.125rem;
+	height: 1.125rem;
+}
+
+.dnt-actions__sheet-body {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+/* ---------- ВРЕМЕННАЯ НАКЛАДКА ----------
+   Единственный слой группы, который перекрывает страницу. Вызывается человеком,
+   закрывается им же. В топбаре — выпадающая панель под группой; в узкой
+   раскладке — блок в потоке панели, выше строки кнопок. */
+.dnt-actions__notice:empty {
+	display: none;
+}
+
+.dnt-actions[data-placement="header"] .dnt-actions__notice {
+	position: absolute;
+	top: calc(100% + 0.5rem);
+	right: 0;
+	z-index: var(--dnt-actions-z);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.75rem;
+	/* Ширина ограничена и экраном тоже: 3rem — двойной отступ топбара. */
+	width: min(24rem, calc(100vw - 3rem));
+	max-height: min(70vh, 34rem);
+	overflow-y: auto;
+}
+
+.dnt-actions[data-placement="nav"] .dnt-actions__notice {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-height: 50vh;
+	overflow-y: auto;
+}
+
+/* ---------- СОДЕРЖИМОЕ НАКЛАДКИ ---------- */
+.dnt-actions__panel {
+	width: 100%;
+	padding: 1rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+	font-size: 0.8125rem;
+	line-height: 1.5;
+}
+
+.dnt-actions__panel-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-bottom: 0.75rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.dnt-actions__panel-title {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__panel-subtitle {
+	margin: 0;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__panel-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 auto;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+}
+
+.dnt-actions__panel-close:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+/* Иконка приходит из lucide-react с атрибутами width/height 24: атрибут
+   presentation перебивается CSS, поэтому размер задаётся здесь, как и у
+   остальных иконок группы. */
+.dnt-actions__panel-close svg {
+	width: 1.125rem;
+	height: 1.125rem;
+}
+
+.dnt-actions__panel-close:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.dnt-actions__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	margin-bottom: 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.dnt-actions__tab {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.375rem 0.5rem;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+	/* Русские подписи вкладок длиннее английских — перенос вместо обрезки. */
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.dnt-actions__tab--active {
+	background: var(--teal-soft);
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+}
+
+.dnt-actions__hint {
+	margin: 0 0 0.5rem;
+	color: var(--ink-2);
+}
+
+.dnt-actions__cmd-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.dnt-actions__cmd {
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.dnt-actions__cmd-title {
+	font-weight: 600;
+	color: var(--teal-dark);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__cmd-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__note {
+	margin-top: 0.75rem;
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--warn-fg);
+	border-radius: 0.75rem;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	font-size: 0.6875rem;
+}
+
+/* Пузырь расшифровки речи. */
+.dnt-actions__transcript {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.75rem;
+	width: 100%;
+}
+
+.dnt-actions__transcript-card {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.875rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+}
+
+.dnt-actions__transcript-head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.dnt-actions__rec-dot {
+	width: 0.625rem;
+	height: 0.625rem;
+	border-radius: 9999px;
+	background: var(--bad-fg);
+}
+
+.dnt-actions__rec-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.dnt-actions__rec-mode {
+	margin-left: auto;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 0.625rem;
+	font-weight: 600;
+}
+
+.dnt-actions__transcript-text {
+	min-height: 2.5rem;
+	margin-bottom: 0.75rem;
+	color: var(--ink);
+	font-size: 0.875rem;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.dnt-actions__meter {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.25rem;
+	height: 1.5rem;
+}
+
+.dnt-actions__meter-bar {
+	width: 0.375rem;
+	border-radius: 9999px;
+	background: var(--teal);
+}
+
+/* Чип выполненной команды. */
+.dnt-actions__action {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 0.75rem;
+	border: 1px solid var(--teal-ring);
+	border-radius: 0.75rem;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	box-shadow: var(--shadow-2);
+}
+
+.dnt-actions__action-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	flex: 0 0 auto;
+}
+
+.dnt-actions__action-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.dnt-actions__action-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+/* Подсказки диктовки рядом с пузырём — только там, где есть ширина.
+   768px — ровно `md:` из Tailwind, каким подсказки были размечены изначально.
+   Единица px только в медиавыражении: там rem считается от базового кегля
+   БРАУЗЕРА, поэтому rem-порог разъезжается с px-порогами оболочки. */
+.dnt-actions__side-hints {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.dnt-actions__side-hints {
+		display: block;
+	}
+}

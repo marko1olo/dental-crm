@@ -1,5 +1,5 @@
 /**
- * Индикатор уровня записи для угловой кнопки микрофона.
+ * Индикатор уровня записи для кнопки голоса.
  *
  * Раньше высота полосок считалась как `Math.max(10, Math.random() * glow)`:
  * на экране двигался генератор случайных чисел, а не измеренный уровень
@@ -9,6 +9,11 @@
  *
  * Здесь высота — детерминированная функция реального уровня. Тишина видна как
  * тишина.
+ *
+ * Модуль переехал из `floatingCorner/voiceMeter.ts` вместе с владельцем группы
+ * действий: сам плавающий угол удалён (обоснование —
+ * `workspaceActionsPlacement.ts`), а индикатор уровня к геометрии угла никогда
+ * отношения не имел и работает там, где живёт кнопка голоса.
  */
 
 /** Количество полосок индикатора. */
@@ -49,4 +54,25 @@ export function voiceMeterHeights(
 		heights.push(Math.round(share * 1000) / 10);
 	}
 	return heights;
+}
+
+/**
+ * Радиус свечения кнопки голоса в пикселях. Единственная динамическая величина
+ * оформления: цвет берётся из токена темы, а радиус растёт от измеренного
+ * уровня. Вынесен сюда из JSX, чтобы арифметику можно было проверить тестом.
+ */
+export const VOICE_GLOW_MIN_PX = 20;
+export const VOICE_GLOW_MAX_PX = 100;
+
+export function voiceGlowRadiusPx(volume: number): number {
+	const safeVolume = Number.isFinite(volume) ? volume : 0;
+	const level =
+		Math.min(VOICE_METER_VOLUME_MAX, Math.max(0, safeVolume)) /
+		VOICE_METER_VOLUME_MAX;
+	return Math.round(
+		Math.min(
+			VOICE_GLOW_MAX_PX,
+			Math.max(VOICE_GLOW_MIN_PX, level * VOICE_GLOW_MAX_PX),
+		),
+	);
 }

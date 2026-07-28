@@ -26,6 +26,7 @@ import {
   Users,
   Lock,
   ChevronsLeft} from "lucide-react";
+import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { type ClinicMode, describeHiddenCapabilities, hasCapability, resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
@@ -519,6 +520,27 @@ export function WorkspaceTopbar({
         <RecentPatientHistoryWidget compactDropdown />
       </div>
       <div className="top-actions">
+        {/*
+          ГРУППА ДЕЙСТВИЙ ПОМОЩНИКА (поиск, голос, справка) — ОДИН элемент, а не
+          три новых соседа. Эти три кнопки раньше плавали в правом нижнем углу
+          поверх страницы и накрывали её элементы: механизм «уступи кнопке под
+          собой» был арифметически неисполним (обоснование и замеры —
+          `components/workspaceActions/workspaceActionsPlacement.ts`), поэтому он
+          удалён, а действия переехали в существующую фурнитуру.
+
+          Место выбрано ПЕРВЫМ в строке намеренно. У топбара уже была
+          зафиксированная беда: шесть несгруппированных кнопок без иерархии.
+          Группа приходит сюда как одна сегментированная единица с общей рамкой
+          и встаёт ДО кнопок клиники, поэтому инструменты помощника читаются
+          отдельным блоком, а главное действие «Запись» остаётся последним и
+          самым правым.
+
+          Это ЕДИНСТВЕННАЯ точка монтажа группы на весь проект. На узком экране
+          она сама вставляет свой контейнер в живую нижнюю навигацию и рисует в
+          него портал, а этот якорь остаётся пустым и скрывается через `:empty`.
+          Так `App.tsx` не нужно править ради второй точки монтажа.
+        */}
+        <WorkspaceActionsMount />
 
         {showAdministrationTopActions ? (
           <a
