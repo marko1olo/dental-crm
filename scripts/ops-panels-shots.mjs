@@ -650,6 +650,19 @@ function isNoReply(error) {
   return /нет ответа за \d+ с/i.test(String(error?.message ?? error));
 }
 
+/**
+ * Приложение ещё не поднялось: хранилище темы на странице отсутствует.
+ *
+ * Это тот же класс, что и перезагрузка, только замеченный с другой стороны.
+ * Восстановление темы применяло её НЕМЕДЛЕННО и падало, если попадало в окно
+ * между перезагрузкой и запуском модулей: «Хранилище темы недоступно
+ * (window.__useThemeStore не найден)». Прогон при этом умирал на третьей теме,
+ * потеряв уже снятые плиты, — при том, что лечится это ожиданием кабинета.
+ */
+function isAppNotLoaded(error) {
+  return /Хранилище темы недоступно/i.test(String(error?.message ?? error));
+}
+
 async function withReloadRecovery(label, run, attempts = 3) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -660,15 +673,24 @@ async function withReloadRecovery(label, run, attempts = 3) {
         console.log(
           `  ↻ ${label}: тема сбилась сама (приложение подняло хранилище заново), применяю «${session.theme}» и повторяю — попытка ${attempt + 1} из ${attempts}`,
         );
+        /*
+         * Кабинет ждём ПЕРЕД применением темы. Снос темы и перезагрузка — это
+         * часто одно и то же событие, замеченное с разных сторон, и применение
+         * темы в окно между перезагрузкой и запуском модулей падало с
+         * «Хранилище темы недоступно», убивая прогон на третьей теме.
+         */
+        await waitForWorkspace();
         if (session.theme) await applyTheme(session.theme);
         await sleep(400);
         continue;
       }
-      if (!isContextDestroyed(error) && !isNoReply(error)) throw error;
+      if (!isContextDestroyed(error) && !isNoReply(error) && !isAppNotLoaded(error)) throw error;
       console.log(
         isNoReply(error)
           ? `  ↻ ${label}: браузер не ответил в срок (машина загружена), возвращаю страницу в рабочее состояние и повторяю — попытка ${attempt + 1} из ${attempts}`
-          : `  ↻ ${label}: страница перезагрузилась (горячая перезагрузка Vite при правке исходников), восстанавливаю и повторяю — попытка ${attempt + 1} из ${attempts}`,
+          : isAppNotLoaded(error)
+            ? `  ↻ ${label}: приложение ещё не поднялось после перезагрузки, жду кабинет и повторяю — попытка ${attempt + 1} из ${attempts}`
+            : `  ↻ ${label}: страница перезагрузилась (горячая перезагрузка Vite при правке исходников), восстанавливаю и повторяю — попытка ${attempt + 1} из ${attempts}`,
       );
       await restoreSession();
     }
