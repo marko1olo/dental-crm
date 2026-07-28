@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { operatorReadableErrorDetail } from "../AppHelpers";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
 import {
 	actionFailureToast,
 	type PanelSubject,
@@ -102,6 +103,46 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const [revisionCount, setRevisionCount] = useState(0);
 	const [loadState, setLoadState] = useState<DiaryLoadState>({ phase: "loading" });
 
+	/**
+	 * Заголовки с админским секретом клинической сессии.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО. Три адреса дневника закрыты охраной `accessGuard.ts`:
+	 * чтение дневника и его ревизий — `requireClinicalReadAccess`, подписание
+	 * (POST /api/diaries/:id/lock) — `requireClinicalMutationAccess`. Без
+	 * заголовка `x-dente-admin-secret` охрана отвечает 403. Все три запроса шли
+	 * голым `fetch` без заголовков, и на ЭТОЙ машине это не видно: в корневом
+	 * .env секрет закомментирован, зато включены лазейки
+	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS. Лазейки действуют только
+	 * пока NODE_ENV !== "production", то есть у заказчика их нет.
+	 *
+	 * ЧТО ЭТО ЗНАЧИЛО У ЗАКАЗЧИКА. Чтение отвечало 403, дневник уходил в
+	 * состояние `failed` — врач видел «Записи приёма не загружены» вместо
+	 * основной медицинской записи, а сохранение и подписание при этом
+	 * запрещены (см. doSave/doLock). Подписание отвечало 403 и на своём
+	 * запросе: приём было НЕЧЕМ ЗАКРЫТЬ, дневник оставался несданным
+	 * документом. Ревизии молчали, и пометка «⚠ Ревизий: N» в форме 043/у
+	 * пропадала.
+	 *
+	 * ТОЛЬКО ИЗ КОНТЕКСТА. Одноимённый `auth` экспортирует ещё и
+	 * `AppHelpers.tsx`, но там функции подставляют секрет лишь тогда, когда его
+	 * передали вторым аргументом. С ним код собирается, проверка заголовков
+	 * замолкает, а в клинике остаётся тот же 403. Здесь `auth` берётся из
+	 * `useAppLogicContext()`, где он приходит из `useAuthLogic` вместе с
+	 * `clinicalAdminSecretSession`. Соседний `useAppLogic()` строкой выше для
+	 * этого не годится: он поднимает ВТОРОЙ экземпляр общего хука, со своим
+	 * пустым состоянием секрета.
+	 *
+	 * ЧЕРЕЗ ref, А НЕ ЧЕРЕЗ ЗАВИСИМОСТЬ. `useAuthLogic` возвращает новый объект
+	 * на каждый рендер провайдера. Эффект чтения ниже первым делом ставит
+	 * `setDiary(EMPTY_DIARY)`, поэтому `auth` в его зависимостях стирал бы
+	 * набранный врачом текст на каждом рендере. ref делает это структурно
+	 * невозможным.
+	 */
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const authRef = useRef(auth);
+	authRef.current = auth;
+
 	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const icdRef = useRef<HTMLDivElement>(null);
 	/**
@@ -141,8 +182,15 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 		const loadDiary = async () => {
 			let status: number | null = null;
+			/* Секрет берётся на момент запроса, а не на момент рендера эффекта. */
+			const headerSource = authRef.current;
 			try {
-				const response = await fetch(`/api/diaries/visit/${visitId}`);
+				const response = await fetch(`/api/diaries/visit/${visitId}`, {
+					headers:
+						headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
+							? headerSource.denteClinicalReadHeaders()
+							: {},
+				});
 				status = response.status;
 				// Тело читается один раз строкой: на пустом теле res.json() бросает
 				// исключение с английским текстом, и прежний catch превращал это в
@@ -193,7 +241,12 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					// ревизий становилось «0», и пометка «⚠ Ревизий: N» в форме
 					// 043/у пропадала у дневника, который правили после подписи.
 					try {
-						const revisionsResponse = await fetch(`/api/diaries/${d.id}/revisions`);
+						const revisionsResponse = await fetch(`/api/diaries/${d.id}/revisions`, {
+							headers:
+								headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
+									? headerSource.denteClinicalReadHeaders()
+									: {},
+						});
 						const revisionsBody = await revisionsResponse.text();
 						if (!revisionsResponse.ok) {
 							console.error(
@@ -445,9 +498,20 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return;
 		}
 		try {
+			/*
+			 * Подписание — запись, поэтому заголовки мутации. Без них охрана
+			 * requireClinicalMutationAccess отвечает 403, и приём остаётся
+			 * незакрытым: подписать дневник в клинике было нечем.
+			 */
+			const headerSource = authRef.current;
 			const res = await fetch(`/api/diaries/${diaryId}/lock`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers:
+					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+						? headerSource.denteClinicalMutationHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
 				body: JSON.stringify({ pkcs7Signature }),
 			});
 			// Тело читается строкой: у отказа оно может быть пустым, и прежний
