@@ -53,21 +53,55 @@ export function OrthodonticProgressWidget({
 	const [saving, setSaving] = useState(false);
 
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
-	if (!patient) return null;
 
-	// Backwards compatibility migration logic:
-	// If the new structured DB field is missing, fallback to parsing legacy notes.
-	const orthoFromProfile = patient.administrativeProfile?.orthodonticProgress;
-	const { cleanNotes, legacyOrtho } = parseLegacyOrthoNotes(patient.notes);
+	// Если новое структурированное поле не заполнено, читаем старую запись,
+	// которую раньше складывали в конец заметок.
+	const orthoFromProfile = patient?.administrativeProfile?.orthodonticProgress;
+	const { cleanNotes, legacyOrtho } = parseLegacyOrthoNotes(patient?.notes);
 
 	const ortho: OrthoData | null = orthoFromProfile || legacyOrtho || null;
 
-	// Form states
+	// Поля формы
 	const [formCurrent, setFormCurrent] = useState(ortho?.currentAligner ?? 1);
 	const [formTotal, setFormTotal] = useState(ortho?.totalAligners ?? 40);
 	const [formStart, setFormStart] = useState(
 		ortho?.startDate ?? getTodayString(),
 	);
+
+	/*
+	 * БЫЛО: номера капп и дата начала брались из пациента ОДИН раз, при первом
+	 * появлении виджета — `useState(ortho?.currentAligner ?? 1)` — и дальше не
+	 * пересчитывались никогда. Виджет не размонтируется при переключении карточки
+	 * (PatientOverviewTab рендерит его без key), а сброс стоял только в
+	 * handleStartEdit, то есть при нажатии «Изменить».
+	 *
+	 * Что видел врач: открыл настройку трекера у пациента с 12-й каппой из 40,
+	 * не закрыл, переключился на другого пациента — и в его карточке стоит форма
+	 * с числами 12 и 40 от первого. «Сохранить» записывало эти числа в
+	 * administrative-profile ВТОРОГО пациента: чужой этап лечения, по которому
+	 * потом считают, когда менять каппу и когда снимать элайнеры.
+	 *
+	 * Сброс в фазе рендера: `ortho` здесь уже относится к новому пациенту, потому
+	 * что поиск идёт по актуальному patientId.
+	 */
+	const [formPatientId, setFormPatientId] = useState(patientId);
+	if (formPatientId !== patientId) {
+		setFormPatientId(patientId);
+		setIsEditing(false);
+		setFormCurrent(ortho?.currentAligner ?? 1);
+		setFormTotal(ortho?.totalAligners ?? 40);
+		setFormStart(ortho?.startDate ?? getTodayString());
+	}
+
+	/*
+	 * БЫЛО: этот выход стоял ВЫШЕ трёх useState. Пока пациент находился в
+	 * dashboard, компонент вызывал шесть хуков, а на первом же рендере, где его
+	 * там нет (обновление списка пациентов, выбор пациента, ещё не попавшего в
+	 * dashboard), — только три. React такое считает ошибкой и роняет всё дерево:
+	 * «Rendered fewer hooks than expected», то есть у врача гаснет вся карточка
+	 * пациента, а не один виджет. Проверка обязана стоять после всех хуков.
+	 */
+	if (!patient) return null;
 
 	// Reset form states if patient changes or edits are cancelled
 	const handleStartEdit = () => {
@@ -112,9 +146,12 @@ export function OrthodonticProgressWidget({
 			if (!resAdmin.ok)
 				throw new Error("Failed to save patient administrative profile");
 
-			// Migrate: Clean up the legacy stringified JSON from notes if it exists
+			// Убираем старую техническую запись из заметок, если она там была.
+			// БЫЛО: ответ на этот запрос не проверялся вовсе, и при его отказе врач
+			// всё равно видел зелёное «обновлено», хотя в заметках пациента остался
+			// хвост со служебными данными — он виден в поле заметок карточки.
 			if (legacyOrtho) {
-				await fetch(`/api/patients/${patientId}`, {
+				const resNotes = await fetch(`/api/patients/${patientId}`, {
 					method: "PUT",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
@@ -123,6 +160,15 @@ export function OrthodonticProgressWidget({
 						notes: cleanNotes,
 					}),
 				});
+				if (!resNotes.ok) {
+					showToast(
+						"Этап лечения сохранён, но старая служебная запись в заметках не удалена — она осталась видна в поле заметок. Повторите сохранение позже.",
+						"warning",
+					);
+					setIsEditing(false);
+					await loadDashboard();
+					return;
+				}
 			}
 
 			showToast("Ортодонтический этап обновлен", "success");
@@ -164,8 +210,10 @@ export function OrthodonticProgressWidget({
 			if (!resAdmin.ok)
 				throw new Error("Failed to clear patient administrative profile");
 
+			// Тот же непроверенный ответ, что и при сохранении: «удалено» показывалось
+			// даже когда служебный хвост остался в заметках.
 			if (legacyOrtho) {
-				await fetch(`/api/patients/${patientId}`, {
+				const resNotes = await fetch(`/api/patients/${patientId}`, {
 					method: "PUT",
 					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
@@ -174,6 +222,15 @@ export function OrthodonticProgressWidget({
 						notes: cleanNotes,
 					}),
 				});
+				if (!resNotes.ok) {
+					showToast(
+						"Отслеживание капп убрано, но старая служебная запись в заметках не удалена — она осталась видна в поле заметок. Повторите позже.",
+						"warning",
+					);
+					setIsEditing(false);
+					await loadDashboard();
+					return;
+				}
 			}
 
 			showToast("Трекер ортодонтии удален", "success");
