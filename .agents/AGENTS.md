@@ -96,7 +96,31 @@ Use these exclusively. Blind terminal navigation is banned.
   ```bash
   npx madge --circular --extensions ts,tsx apps/api/src apps/web/src
   ```
-- **Measured baseline, 2026-07-28: 116 real cycles — 9 in `apps/api/src`, 107 in `apps/web/src`.** They exist precisely because this rule's command never detected anything. Do not treat the number as a target to game: the point is that a refactor must not add to it. The API set is small and legible — seven of the nine are `routes/documents.ts` importing its own `routes/documents/*` children, which import back; the other two are `services/communications/deliveryPolicy.ts` and `channelRouter.ts`.
+- **`madge`'s count is not a defect count. Corrected 2026-07-28 after an eight-cluster analysis that opened
+  every actual import statement instead of reading the graph.** The raw number was 121 (9 api, 112 web) and
+  that number is wrong in both directions:
+  - **It over-reports.** `madge` counts an `import type` edge as a cycle, but TypeScript erases those at
+    compile time, so no cycle exists at runtime. `contexts/AppLogicContext.tsx:2` is already `import type`,
+    and it sits on 41 of the 44 finance cycles alone. It also counts `React.lazy(() => import(...))`
+    dynamic imports, which do not exist at module-initialisation time at all — all 49 cycles attributed to
+    `AppHelpers.tsx` entered through three of those. Four independent clusters concluded that essentially
+    every cycle in their set is already severed at runtime before any code change.
+  - **It under-reports.** It missed a genuine static cycle: `AppHelpers.tsx:305` →
+    `workspaceShell.tsx:32` → `hooks/useWorkspaceProfile.ts`, closed by the runtime binding
+    `denteAdminSecretRequestHeaders` (`AppHelpers.tsx:4090`). A tool that misses the real one while
+    printing a hundred phantoms cannot be used as a pass/fail gate.
+- **What actually matters here, and it is not the cycle count.** Seven zustand stores execute `AppHelpers`
+  code at **module-evaluation** time to seed initial state — `defaultUiPreferences` (`AppHelpers.tsx:3538`,
+  not hoisted) together with `loadUiPreferences` (`:4056`). Module-scope evaluation is what turns a future
+  static cycle into a `TypeError: cannot read property of undefined` at boot rather than a lint warning.
+  That coupling is the real architectural debt; the cycle count is a symptom report with a broken sensor.
+- So: run the working invocation above, read the cycles it prints, and **classify each edge by opening the
+  import** before calling anything a defect. Do not quote a total as proof of health, and do not "fix" a
+  cycle whose edge is already `import type` or `lazy()` — there is nothing there to fix.
+- First real cleanup landed 2026-07-28: 10 verified-dead imports deleted, including
+  `const FinanceView = lazy(...)` at `AppHelpers.tsx:372` which nothing rendered and which alone accounted
+  for 43 reported cycles. Web count 112 → 108, api unchanged at 9. The small delta is the point: the
+  remaining count is mostly phantom.
 - You are equipped with `tokei`. Use it to audit codebase size and complexity before rewriting.
 
 **12. THE SEMANTIC GIT DOCTRINE**
@@ -199,9 +223,15 @@ Use these exclusively. Blind terminal navigation is banned.
 - `apps/web/src/App.tsx` — главный компонент, **4 876 строк** (измерено 2026-07-28;
   прежняя цифра «~2400» была занижена вдвое и указывала на App.tsx как на монолит,
   тогда как он третий по размеру)
-- `apps/web/src/AppHelpers.tsx` — 6 158 строк; `components/settings/SmartImportStudio.tsx`
-  — 4 244; `DocumentsView.tsx` — 4 187. Любая цифра размера здесь гниёт: пересчитывай
-  (`wc -l`) прежде чем ссылаться на неё, и обновляй с датой, как в `INDEX.md`.
+- `apps/web/src/AppHelpers.tsx` — 6 158 строк; `DocumentsView.tsx` — 4 187;
+  `components/settings/SettingsImportsTab.tsx` — 4 149 (пересчитано 2026-07-28).
+  Здесь третьим стоял `components/settings/SmartImportStudio.tsx` — 4 244. Его в дереве
+  больше нет: он удалён вместе с `LegacyMigrationStudio.tsx` (2 623) как несмонтированная
+  копия вкладки импорта — ни одного собственного `aria-label` против 48 у смонтированной
+  вкладки и 13 обращений `dashboard.` без защитного `?.`. Разбор лежит в
+  `apps/web/src/tests/panelsAreMounted.test.ts`, рядом с местом, где стояли их строки долга.
+  Любая цифра размера здесь гниёт: пересчитывай (`wc -l`) прежде чем ссылаться на неё, и
+  обновляй с датой, как в `INDEX.md`.
 - `apps/api/src/db/schema.ts` — Drizzle ORM схема БД
 - `apps/api/src/routes/` — API роуты
 
