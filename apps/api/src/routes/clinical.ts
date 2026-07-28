@@ -178,16 +178,20 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * полей и экрана редактора; возвращать блоки имеет смысл вместе с ними.
 	 */
 
-	// COMPETITOR FEATURE #34: план_лечения::управление_этапами_и_автоархивация
-	app.get("/api/documents/treatment-plan-stages", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getTreatmentPlanStagesFromDb } = await import("../db/treatmentPlanStagesAutoArchiveQuery.js");
-		return reply.status(200).send(await getTreatmentPlanStagesFromDb(orgId));
-	});
+	/*
+	 * Три маршрута плана лечения удалены вместе со своими модулями и своими
+	 * блоками внизу экрана «Документы»:
+	 *   /api/documents/treatment-plan-stages            treatment_plan_stages
+	 *   /api/documents/treatment-plan-lock-tokens       treatment_plan_lock_tokens
+	 *   /api/documents/treatment-plan-print-odontogram  treatment_plan_print_odontograms
+	 * Ни в одну из трёх таблиц приложение не пишет, в живой базе по нулю строк —
+	 * все три блока показывали «отсутствуют» с первого дня и до последнего.
+	 *
+	 * ДОЛГ: этапность плана лечения и печать одонтограммы в плане — настоящие
+	 * задачи, но обе начинаются с редактора этапов, которого нет. Блокировка
+	 * плана от одновременного редактирования нужна только там, где над одним
+	 * планом работают двое, — не для одиночной практики.
+	 */
 
 	// COMPETITOR FEATURE #37: расписание::резервирование_времени_в_сетке
 	app.get("/api/schedule/time-reservations", async (request, reply) => {
@@ -358,28 +362,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * advance_deposit_taggings не наполняется ничем. Часть кассовой темы 54-ФЗ,
 	 * которой в системе нет; см. долг в apps/web/src/FinanceView.tsx.
 	 */
-
-	// COMPETITOR FEATURE #52: план_лечения::конструктор_планов_лечения_2_0
-	app.get("/api/documents/treatment-plan-lock-tokens", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getTreatmentPlanLockTokensFromDb } = await import("../db/treatmentPlanLockTokensQuery.js");
-		return reply.status(200).send(await getTreatmentPlanLockTokensFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE: документы::печать_одонтограммы_в_плане_лечения
-	app.get("/api/documents/treatment-plan-print-odontogram", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getTreatmentPlanPrintOdontogramsFromDb } = await import("../db/treatmentPlanPrintOdontogramsQuery.js");
-		return reply.status(200).send(await getTreatmentPlanPrintOdontogramsFromDb(orgId));
-	});
 
 
 	/*

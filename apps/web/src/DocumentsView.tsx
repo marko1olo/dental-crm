@@ -4,9 +4,6 @@ import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
-import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
-import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
-import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanStagesWidget";
 import {
   documentFactoryGroups,
   documentKindMetadata as sharedDocumentKindMetadata,
@@ -5091,13 +5088,6 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </article>
                 );
               })}
-            </div>
-            {/* min(380px, 100%): иначе колонка держит 380px в контейнере
-                364px, и правый край карточек срезается на телефоне. */}
-            <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "16px" }}>
-              <TreatmentPlanLockTokensWidget />
-              <TreatmentPlanPrintOdontogramWidget />
-              <TreatmentPlanStagesWidget />
             </div>
           </div>
       );
