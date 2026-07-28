@@ -38,6 +38,19 @@ import {
 import { isValidFdiToothNumber } from '@dental/shared';
 // Русское склонение счётного слова: «1 зуб», «2 зуба», «5 зубов».
 import { countLabel } from '../../AppHelpers';
+/*
+ * Секрет администратора берётся ТОЛЬКО отсюда — из контекста приложения.
+ *
+ * ЛОВУШКА, В КОТОРУЮ ЛЕГКО ПОПАСТЬ ИМЕННО В ЭТОМ ФАЙЛЕ: строкой выше стоит
+ * импорт из AppHelpers.tsx, а там (около строки 6142) есть ЕЩЁ ОДИН экспорт
+ * `auth` с теми же именами функций — и он сеансовый секрет НЕ подставляет.
+ * С ним код компилируется, гейт check:guarded-headers замолкает, а клиника
+ * по-прежнему получает 403: то есть поломка становится невидимой вместо того,
+ * чтобы быть исправленной. Секрет из сеанса подставляют только функции из
+ * useAppLogicContext() (hooks/domains/useAuthLogic.ts:135 —
+ * `adminSecretOverride ?? clinicalAdminSecretSession`).
+ */
+import { useAppLogicContext } from '../../contexts/AppLogicContext';
 import { usePatientStore, type ToothStatus } from '../../store/patientStore';
 import { ShadowAnalystImageSlider } from './ShadowAnalystImageSlider';
 import { PanelLoadFailure } from '../PanelLoadFailure';
@@ -189,6 +202,72 @@ export function VisiographAnalyzer() {
 
   const { selectedPatientId, setToothStatus } = usePatientStore();
 
+  /*
+   * ЗАГОЛОВКИ ОХРАНЫ. ЭТА ПАНЕЛЬ БЫЛА МЁРТВА У ЗАКАЗЧИКА ЦЕЛИКОМ, и увидеть это
+   * на машине разработчика нельзя.
+   *
+   * Каждый адрес, который зовёт панель, закрыт охраной `apps/api/src/accessGuard.ts`:
+   *   POST /api/imaging/visiograph-ai   — requireClinicalReadAccess (imaging.ts:6225)
+   *   POST /api/xray/scans              — requireClinicalMutationAccess (xray.ts:100)
+   *   GET  /api/xray/scans              — requireClinicalReadAccess (xray.ts:207)
+   *   GET  /api/xray/scans/:id          — requireClinicalReadAccess (xray.ts:228)
+   * Без заголовка `x-dente-admin-secret` охрана отвечает 403 даже при действительных
+   * токенах кабинета и сотрудника. Панель звала все четыре голым fetch, поэтому у
+   * заказчика разбор снимка не запускался вовсе — тело отказа охраны содержит поле
+   * `error`, и врач получал плашку «Ошибка анализа: ClinicalReadSecretRequired»
+   * (accessGuard.ts:79; человеческий текст лежит рядом, в поле `message`, но здесь
+   * его никто не читает — это отдельный мелкий долг). Снимок не сохранялся в карту, а
+   * архив снимков пациента помечался как непрочитанный. Локально всё зелёное: в корневом `.env` секрет
+   * закомментирован, зато включены лазейки
+   * DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, а живут они только пока
+   * NODE_ENV !== "production". Ни типы, ни тесты, ни глаза на этой машине такого не
+   * показывают — ловит `npm run check:guarded-headers`.
+   *
+   * ПОЧЕМУ ЧЕРЕЗ ref. `processFile` мемоизирован (useCallback по
+   * [selectedPatientId, setToothStatus]), и взятый в его замыкание `auth` застыл бы
+   * на том отрисовывании, когда секрета в сеансе ещё не было — он появляется после
+   * разблокировки раздела, и 403 держался бы до перезагрузки страницы. Дописать
+   * `auth` в зависимости тоже нельзя: useAuthLogic возвращает НОВЫЙ объект на каждом
+   * отрисовывании (useAppLogic.tsx:2395, без useMemo), а такие зависимости в других
+   * панелях этого проекта уже дают перезапуск запроса на каждом отрисовывании. Ref
+   * остаётся одним объектом, значение в нём всегда свежее, поэтому функции ниже
+   * читают секрет В МОМЕНТ ЗАПРОСА — даже вызванные из устаревшего замыкания.
+   */
+  const appLogic = useAppLogicContext();
+  const authRef = useRef(appLogic?.auth);
+  authRef.current = appLogic?.auth;
+
+  /*
+   * ДВЕ ОБЁРТКИ, А НЕ ПОВТОР ПРОВЕРКИ У КАЖДОГО ИЗ ПЯТИ ВЫЗОВОВ. Они делают ровно
+   * одно: читают свежий `auth` из ref и передают дело функциям контекста.
+   *
+   * ПОЧЕМУ ИМЕНА ТЕ ЖЕ, что у функций контекста. Гейт check:guarded-headers ищет у
+   * вызова именно эти имена (scripts/check-guarded-route-headers.mjs:56), и местное
+   * имя-синоним сделало бы все пять вызовов невидимыми для проверки: файл выглядел
+   * бы исправленным, а следующий добавленный сюда голый fetch никто бы не поймал.
+   * Столкновения имён нет — этих имён в файле не импортируют, а обёртка вызывает
+   * ровно ту функцию, чьё имя носит.
+   *
+   * Проверка на `auth` — не перестраховка: useAppLogicContext() вне провайдера
+   * возвращает пустой объект (contexts/AppLogicContext.tsx:21), и обращение к
+   * отсутствующей функции уронило бы всю карту пациента вместо показа отказа. В этом
+   * случае `extra` возвращается как есть: у запросов с телом там лежит Content-Type,
+   * и потерять его значило бы сломать разбор тела на сервере ещё и без секрета.
+   */
+  const denteClinicalReadHeaders = (extra?: Record<string, string>): Record<string, string> => {
+    const auth = authRef.current;
+    return auth && typeof auth.denteClinicalReadHeaders === 'function'
+      ? auth.denteClinicalReadHeaders(extra ?? {})
+      : { ...(extra ?? {}) };
+  };
+
+  const denteClinicalMutationHeaders = (extra?: Record<string, string>): Record<string, string> => {
+    const auth = authRef.current;
+    return auth && typeof auth.denteClinicalMutationHeaders === 'function'
+      ? auth.denteClinicalMutationHeaders(extra ?? {})
+      : { ...(extra ?? {}) };
+  };
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -289,8 +368,11 @@ export function VisiographAnalyzer() {
     let status: number | null = null;
     const isStale = () => usePatientStore.getState().selectedPatientId !== patientId;
     try {
+      // Content-Type у этого запроса больше нет: тела у GET нет, и объявлять его
+      // формат было нечего — а место заголовков нужно тому, без чего охрана
+      // отвечает 403.
       const res = await fetch(`/api/xray/scans?patientId=${patientId}`, {
-        headers: { 'Content-Type': 'application/json' }
+        headers: denteClinicalReadHeaders()
       });
       status = res.status;
       if (isStale()) return;
@@ -377,9 +459,20 @@ export function VisiographAnalyzer() {
       setCurrentImageUrl(compressed);
 
       // 3. Synchronous AI analysis
+      /*
+       * ЧИТАЮЩИЕ заголовки, хотя метод POST: на сервере разбор снимка закрыт именно
+       * `requireClinicalReadAccess` (imaging.ts:6225) — он ничего не меняет, картинка
+       * просто передаётся телом. Секрет у чтения и записи сейчас один, но совпадать с
+       * охраной маршрута надёжнее, чем угадывать по методу.
+       *
+       * Гейт check:guarded-headers этот вызов НЕ находил, хотя охрана на нём
+       * настоящая, — поэтому он и не попал в выданный список из трёх адресов. Без
+       * секрета сюда упирался ВЕСЬ разбор: 403 на первом же шаге, и до сохранения в
+       * карту дело не доходило.
+       */
       const aiRes = await fetch('/api/imaging/visiograph-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: denteClinicalReadHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ imageBase64: compressed }),
       });
 
@@ -473,9 +566,17 @@ export function VisiographAnalyzer() {
       } else {
         setIsSaving(true);
         try {
+          /*
+           * Content-Type здесь оставлен намеренно: тело — JSON со снимком в виде
+           * data-URI (`imageBase64`), а не FormData. У FormData объявлять Content-Type
+           * нельзя — браузер сам ставит его вместе с границей частей (boundary), и
+           * заданный руками заголовок ломает разбор тела на сервере. Если этот вызов
+           * когда-нибудь переведут на FormData, Content-Type надо убрать, а
+           * `denteClinicalMutationHeaders()` вызвать без аргументов.
+           */
           const saveRes = await fetch('/api/xray/scans', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: denteClinicalMutationHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
               patientId: selectedPatientId,
               imageBase64: compressed,
@@ -497,9 +598,26 @@ export function VisiographAnalyzer() {
             // проверять отдельно: снимок уже в карте, а текста разбора в нём нет.
             let reportSaved = false;
             try {
+              /*
+               * ЭТОГО МАРШРУТА НА СЕРВЕРЕ НЕТ. В xray.ts зарегистрированы только
+               * POST /api/xray/scans, POST /api/xray/scans/:id/analyze,
+               * GET /api/xray/scans, GET /api/xray/scans/:id и
+               * DELETE /api/xray/scans/:id — ни PUT, ни PATCH. Проверено живьём на
+               * работающем API (127.0.0.1:4100): PUT /api/xray/scans/<id> отвечает
+               * 404, причём без всякой охраны, потому что маршрутизация идёт до
+               * обработчиков. Значит текст заключения в карту не попадает НИКОГДА и
+               * ни на какой машине, и врач всегда видит ниже плашку «Снимок в карту
+               * лёг, а текст заключения сохранить не удалось».
+               *
+               * Здесь это не лечится: маршрут добавляется в apps/api (правка сервера),
+               * и вынесено это в долг отдельно. Пишущие заголовки поставлены всё
+               * равно — когда маршрут появится, он будет закрыт
+               * requireClinicalMutationAccess, как и остальная запись снимков, и
+               * вызов не придётся починять второй раз.
+               */
               const reportRes = await fetch(`/api/xray/scans/${saved.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: denteClinicalMutationHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                   aiReport: aiResult.report,
                   aiSummary: fakeScan.aiSummary,
@@ -582,7 +700,7 @@ export function VisiographAnalyzer() {
     setSaveFailure(null);
     // Fetch full scan with image
     try {
-      const res = await fetch(`/api/xray/scans/${scan.id}`);
+      const res = await fetch(`/api/xray/scans/${scan.id}`, { headers: denteClinicalReadHeaders() });
       if (res.ok) {
         const full: XrayScan = await res.json();
         setCurrentScan(full);
