@@ -20,7 +20,7 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -118,7 +118,25 @@ describe("церемония подписания дневника одинак�
 	async function seedScenario(
 		label: string,
 		stock: string = START_STOCK,
+		options: {
+			/** Сколько списывает правило за единицу услуги. По умолчанию 2. */
+			quantityToDeduct?: string;
+			/**
+			 * `null` воспроизводит то, что делает продукт: routes/inventory.ts:410-417
+			 * создаёт правило БЕЗ organization_id (колонка nullable).
+			 */
+			ruleOrganizationId?: string | null;
+			/** Количество услуги в плане. По умолчанию 2. */
+			treatmentQuantity?: string;
+		} = {},
 	): Promise<Scenario> {
+		const quantityToDeduct = options.quantityToDeduct ?? QUANTITY_TO_DEDUCT;
+		const ruleOrganizationId =
+			options.ruleOrganizationId === undefined
+				? organizationId
+				: options.ruleOrganizationId;
+		const treatmentQuantity =
+			options.treatmentQuantity ?? String(TREATMENT_QUANTITY);
 		const [service] = await db
 			.insert(serviceCatalogItems)
 			.values({
@@ -142,11 +160,11 @@ describe("церемония подписания дневника одинак�
 			.returning({ id: inventoryItems.id });
 
 		await db.insert(procedureMaterialRules).values({
-			organizationId,
+			...(ruleOrganizationId ? { organizationId: ruleOrganizationId } : {}),
 			serviceId: service.id,
 			inventoryItemId: item.id,
 			materialName: `Композит U5-${label}`,
-			quantityToDeduct: QUANTITY_TO_DEDUCT,
+			quantityToDeduct,
 		});
 
 		const [visit] = await db
@@ -162,7 +180,7 @@ describe("церемония подписания дневника одинак�
 				visitId: visit.id,
 				serviceId: service.id,
 				title: `Лечение кариеса (${label})`,
-				quantity: String(TREATMENT_QUANTITY),
+				quantity: treatmentQuantity,
 				priceRub: 4500,
 				unitPriceRub: 4500,
 				status: "approved",
@@ -309,6 +327,14 @@ describe("церемония подписания дневника одинак�
 			await db
 				.delete(procedureMaterialRules)
 				.where(eq(procedureMaterialRules.organizationId, organizationId));
+			// Правила без organization_id по организации не удаляются — их надо
+			// снимать по позиции склада, иначе фикстура остаётся в живой базе.
+			await db.execute(
+				sql`delete from procedure_material_rules
+				     where inventory_item_id in (
+				       select id from inventory_items where organization_id = ${organizationId}
+				     )`,
+			);
 			await db
 				.delete(treatmentItems)
 				.where(eq(treatmentItems.organizationId, organizationId));
@@ -508,10 +534,17 @@ describe("церемония подписания дневника одинак�
 	});
 
 	test("пустая полка не даёт подписать приём и не восстанавливает остаток", async () => {
-		// stock_quantity = 0 при непустой устаревшей current_qty. БЫЛО:
-		// `inv.stockQuantity || inv.currentQty` считало настоящий ноль отсутствием
-		// значения, брало остаток из current_qty, проверка достаточности проходила,
-		// и подписание УВЕЛИЧИВАЛО остаток пустой полки.
+		// stock_quantity = 0 при непустой устаревшей current_qty.
+		//
+		// ПОПРАВКА К ЗАПИСИ: первоначальный комментарий здесь утверждал, что
+		// `inv.stockQuantity || inv.currentQty` принимал настоящий ноль за
+		// отсутствующее значение и подписание УВЕЛИЧИВАЛО остаток пустой полки.
+		// Это не воспроизводится ни на одной версии маршрута: на 1f65d674b^ пустая
+		// полка отвечала 400 TransactionFailed при остатке 0, ровно как и сейчас.
+		// Причина — drizzle отдаёт numeric строкой, а "0" истинна (см. отдельный
+		// тест ниже). Этот тест не про исправленный дефект, он про инвариант:
+		// подписание приёма не должно ни проходить, ни поднимать остаток, если
+		// материала нет.
 		const scenario = await seedScenario("empty", "0");
 
 		const response = await app.inject({
@@ -608,5 +641,157 @@ describe("церемония подписания дневника одинак�
 		const stockAfterRetries = await observe(scenario);
 		assert.deepEqual(stockAfterRetries, stockAfterFirst);
 		assert.equal(stockAfterRetries.deductionRows, 1);
+	});
+
+	test("правило с отрицательным списанием не увеличивает остаток и не пишет расход", async () => {
+		// НАСТОЯЩИЙ дефект, который закрыл 1f65d674b (заголовок коммита назвал
+		// другой, несуществующий). Измерено на 1f65d674b^ той же фикстурой:
+		// остаток 10 -> 16 и строка inventory_transactions на "+6" с типом
+		// auto_deduct. Подписание приёма создавало материал из ничего, а склад
+		// получал документ о расходе, которого не было.
+		const scenario = await seedScenario("negative", START_STOCK, {
+			quantityToDeduct: "-3",
+		});
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(response.statusCode, 200, response.body);
+
+		const outcome = await observe(scenario);
+		assert.equal(
+			outcome.stockAfter,
+			Number(START_STOCK),
+			"подписание приёма не может увеличить остаток материала",
+		);
+		assert.equal(outcome.stockDelta, 0);
+		assert.equal(
+			outcome.deductionRows,
+			0,
+			"отрицательное правило не должно оставлять строку расхода",
+		);
+		// Церемония при этом обязана пройти целиком: пропускается только списание
+		// по неверному правилу, а не подпись, журнал и закрытие услуги.
+		assert.equal(outcome.diaryLocked, true);
+		assert.equal(outcome.auditRows, 1);
+		assert.equal(outcome.auditAction, "VISIT_SIGNED_AND_LOCKED");
+		assert.equal(outcome.treatmentItemStatus, "completed");
+	});
+
+	test("правило со списанием 0 не пишет мусорную строку движения склада", async () => {
+		// Измерено на 1f65d674b^: остаток оставался 10 (то есть списывалось 0, а не
+		// 1, как утверждал коммит), но в inventory_transactions уходила строка на
+		// "0" — документ о расходе, которого не было.
+		const scenario = await seedScenario("zerorule", START_STOCK, {
+			quantityToDeduct: "0",
+		});
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(response.statusCode, 200, response.body);
+
+		const outcome = await observe(scenario);
+		assert.equal(outcome.stockAfter, Number(START_STOCK));
+		assert.equal(
+			outcome.deductionRows,
+			0,
+			"списание 0 — это не списание, строки движения быть не должно",
+		);
+		assert.equal(outcome.diaryLocked, true);
+		assert.equal(outcome.auditRows, 1);
+	});
+
+	test("ничьё правило материалов (organization_id NULL) всё равно списывает материал", async () => {
+		// Единственный маршрут, создающий правила материалов
+		// (routes/inventory.ts:410-417), не заполняет organization_id. Когда
+		// церемония требовала точного совпадения организации, подписание приёма по
+		// такому правилу НЕ СПИСЫВАЛО НИЧЕГО: измерено — остаток 10 -> 10, ноль
+		// строк расхода, ответ 200, дневник подписан. До 87e367c40 то же правило
+		// списывало (10 -> 6).
+		const scenario = await seedScenario("orgless", START_STOCK, {
+			ruleOrganizationId: null,
+		});
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: ANAMNESIS,
+				status: "signed",
+				pkcs7Signature: PKCS7,
+			},
+		});
+		assert.equal(response.statusCode, 200, response.body);
+
+		const outcome = await observe(scenario);
+		assert.equal(
+			outcome.stockAfter,
+			EXPECTED_STOCK_AFTER,
+			"правило без организации обязано списывать материал так же, как своё",
+		);
+		assert.equal(outcome.deductionRows, 1);
+		assert.equal(outcome.deductionQuantity, EXPECTED_DEDUCTION);
+		assert.equal(outcome.deductionType, "auto_deduct");
+	});
+
+	test("numeric-ноль приходит из drizzle строкой, поэтому || и ?? здесь неразличимы", async () => {
+		// Гейт под поправку к записи. Коммит 1f65d674b объяснял замену `||` на `??`
+		// тем, что драйвер отдаёт для нуля настоящее число 0 (ложное значение) и
+		// ветка фолбэка срабатывала. Драйвер действительно отдаёт число, НО
+		// schema.ts объявляет все три колонки numeric, а drizzle для numeric зовёт
+		// String(value) (PgNumeric.mapFromDriverValue), поэтому в маршрут приходит
+		// строка "0" — истинная. Значит `||` провалиться не мог, и та замена была
+		// защитной гигиеной, а не исправлением склада. Если модель когда-нибудь
+		// перейдёт на numeric-режим с числами, этот тест покраснеет — и вывод про
+		// неразличимость операторов придётся пересматривать.
+		const scenario = await seedScenario("noopzero", "0", {
+			quantityToDeduct: "0",
+			treatmentQuantity: "0",
+		});
+
+		const [item] = await db
+			.select()
+			.from(inventoryItems)
+			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		const [rule] = await db
+			.select()
+			.from(procedureMaterialRules)
+			.where(eq(procedureMaterialRules.serviceId, scenario.serviceId));
+		const [treatment] = await db
+			.select()
+			.from(treatmentItems)
+			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+
+		for (const [name, value] of [
+			["inventory_items.stock_quantity", item.stockQuantity],
+			["procedure_material_rules.quantity_to_deduct", rule.quantityToDeduct],
+			["treatment_items.quantity", treatment.quantity],
+		] as const) {
+			assert.equal(typeof value, "string", `${name}: drizzle должен отдать строку`);
+			assert.equal(Number(value), 0, `${name}: в базе лежит настоящий ноль`);
+			assert.ok(value, `${name}: строка нуля истинна, поэтому || не проваливается`);
+		}
 	});
 });
