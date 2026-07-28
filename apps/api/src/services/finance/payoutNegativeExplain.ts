@@ -291,7 +291,6 @@ export function negativeTotalsExplanation(input: {
 	readonly totals: DoctorPayoutTotals;
 	readonly split: PayoutSignSplit;
 	readonly scope: "all" | "own";
-	readonly rowCount: number;
 }): string | null {
 	const { totals, split, scope } = input;
 	if (split.debtToClinicRub <= 0) return null;
@@ -372,7 +371,6 @@ export function explainNegativePayouts(
 		totals: report.totals,
 		split,
 		scope: options.scope,
-		rowCount: report.rows.length,
 	});
 
 	return {

@@ -285,7 +285,6 @@ test("отрицательный итог по клинике объяснён �
 		totals: totalsOf(),
 		split: { payoutDueRub: 203.27, debtToClinicRub: 400, doctorsDue: 1, doctorsInDebt: 1 },
 		scope: "all",
-		rowCount: 3,
 	});
 	assert.ok(text);
 	assert.match(text, /сальдо, а не сумму к выплате/);
@@ -300,7 +299,6 @@ test("положительное сальдо с долгом внутри то�
 		totals: totalsOf({ payoutRub: 600 }),
 		split: { payoutDueRub: 1000, debtToClinicRub: 400, doctorsDue: 2, doctorsInDebt: 1 },
 		scope: "all",
-		rowCount: 4,
 	});
 	assert.ok(text);
 	assert.match(text, /Число в плитке \(600 ₽\) — это разница между ними/);
@@ -313,7 +311,6 @@ test("если к выплате нет никого, подпись «к вып
 		totals: totalsOf({ payoutRub: -400 }),
 		split: { payoutDueRub: 0, debtToClinicRub: 400, doctorsDue: 0, doctorsInDebt: 1 },
 		scope: "all",
-		rowCount: 1,
 	});
 	assert.ok(text);
 	assert.match(text, /Подпись «к выплате всего» здесь неверна/);
@@ -325,7 +322,6 @@ test("врачу про его собственный минус сказано,
 		totals: totalsOf({ payoutRub: -400 }),
 		split: { payoutDueRub: 0, debtToClinicRub: 400, doctorsDue: 0, doctorsInDebt: 1 },
 		scope: "own",
-		rowCount: 1,
 	});
 	assert.ok(text);
 	assert.match(text, /не сумма, которую с вас требуют доплатить/);
@@ -340,7 +336,6 @@ test("клиника без долгов не видит ни одного но�
 			totals: totalsOf({ payoutRub: 5000 }),
 			split: { payoutDueRub: 5000, debtToClinicRub: 0, doctorsDue: 3, doctorsInDebt: 0 },
 			scope: "all",
-			rowCount: 3,
 		}),
 		null,
 	);
