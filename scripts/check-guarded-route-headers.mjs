@@ -75,13 +75,67 @@ function sources(dir, extensions) {
 	return out;
 }
 
-/*
- * Комментарии вырезаются. В этом проекте принято подробно объяснять в
+/**
+ * Вырезание комментариев. В этом проекте принято подробно объяснять в
  * комментариях, какой адрес почему сломан, — и без вырезания проверка ловила бы
  * собственную документацию как настоящий вызов.
+ *
+ * ПОЧЕМУ НЕ РЕГУЛЯРНЫМ ВЫРАЖЕНИЕМ, как было сначала. Прежняя строка
+ * `text.replace(/\/\*[\s\S]*?\*\//g, "")` ослепила проверку на ЦЕЛОМ ФАЙЛЕ.
+ * В routes/imaging.ts (строка 3083) есть заголовок запроса:
+ *     Accept: "application/dicom+json, application/json;q=0.9, * / *;q=0.1"
+ * (звёздочка-слэш-звёздочка написана здесь с пробелами, чтобы не повторить беду).
+ * Внутри этой СТРОКИ живёт последовательность «слэш-звёздочка», и выражение
+ * считало её началом комментария, после чего съедало всё до следующего
+ * «звёздочка-слэш» — тысячи строк вместе со всеми 25 регистрациями маршрутов
+ * файла. Из-за этого ни один охраняемый маршрут раздела «Снимки» в находки не
+ * попадал, и POST /api/imaging/visiograph-ai пришлось искать глазами.
+ *
+ * Теперь текст проходится посимвольно, и внутри строковых литералов комментарии
+ * не ищутся вовсе. Переводы строк у вырезанных комментариев сохраняются: номера
+ * строк в отчёте обязаны совпадать с файлом, иначе находку невозможно открыть.
  */
 function stripComments(text) {
-	return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+	let out = "";
+	let index = 0;
+	let quote = null;
+	while (index < text.length) {
+		const char = text[index];
+		const next = text[index + 1];
+		if (quote) {
+			if (char === "\\") {
+				out += char + (next ?? "");
+				index += 2;
+				continue;
+			}
+			if (char === quote) quote = null;
+			out += char;
+			index += 1;
+			continue;
+		}
+		if (char === '"' || char === "'" || char === "`") {
+			quote = char;
+			out += char;
+			index += 1;
+			continue;
+		}
+		if (char === "/" && next === "*") {
+			const end = text.indexOf("*/", index + 2);
+			const stop = end === -1 ? text.length : end + 2;
+			/* Только переводы строк — чтобы номера строк не съехали. */
+			out += text.slice(index, stop).replace(/[^\n]/g, "");
+			index = stop;
+			continue;
+		}
+		if (char === "/" && next === "/") {
+			const end = text.indexOf("\n", index);
+			index = end === -1 ? text.length : end;
+			continue;
+		}
+		out += char;
+		index += 1;
+	}
+	return out;
 }
 
 function lineOf(text, index) {
@@ -327,6 +381,28 @@ function matchPrecision(routePath, webPath) {
 			process.exit(2);
 		}
 	}
+	/*
+	 * СЛЕПОТА НА ЦЕЛЫЙ ФАЙЛ, тоже найденная субагентом. Строка с заголовком
+	 * Accept, содержащая «звёздочка-слэш-звёздочка», раньше съедала весь остаток
+	 * файла вместе с регистрациями маршрутов. Проверяем на том же образце.
+	 */
+	const acceptHeaderSample = [
+		'const headers = { Accept: "application/json;q=0.9, ' + "*/*" + ';q=0.1" };',
+		'app.post("/api/самопроверка/после-заголовка", async () => {',
+		"  await requireClinicalReadAccess(request, reply, 'проверка');",
+		"});",
+	].join("\n");
+	if (!stripComments(acceptHeaderSample).includes("/api/самопроверка/после-заголовка")) {
+		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: строка с заголовком Accept съедает маршруты за собой.");
+		console.error("Так уже терялись все 25 маршрутов routes/imaging.ts — разбор комментариев сломан.");
+		process.exit(2);
+	}
+	/* И обратное: настоящий комментарий обязан вырезаться, иначе поймаем документацию. */
+	if (stripComments("/* app.get(\"/api/выдуманный\") */\nconst x = 1;").includes("/api/выдуманный")) {
+		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: комментарии не вырезаются — проверка поймает свою документацию");
+		process.exit(2);
+	}
+
 	/* И обратное: разное число звеньев сводиться не должно. */
 	if (pathsMatch("/api/patients/duplicates", "/api/patients/SEGMENT/duplicates")) {
 		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: адреса с разным числом звеньев сведены — будут ложные находки");
