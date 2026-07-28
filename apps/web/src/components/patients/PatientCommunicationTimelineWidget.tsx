@@ -1,17 +1,69 @@
+/**
+ * Звонки и сообщения пациента на его карточке.
+ *
+ * ЧТО БЫЛО. Виджет запрашивал /api/patients/:patientId/communications —
+ * такого маршрута на сервере нет, ответ 404 (проверено стражем адресов
+ * apps/api/src/tests/webCallsExistingRoutes.test.ts). Разметка при этом
+ * читала поля channelType, direction, summary, staffName и timestamp,
+ * которых сервер не отдаёт ни по одному адресу: они были выдуманы. То есть
+ * даже при живом адресе экран остался бы пустым.
+ *
+ * ЧТО ЗДЕСЬ ТЕПЕРЬ. Запрос идёт в работающий маршрут
+ * GET /api/patients/:patientId/communication-timelines, а на экране —
+ * реальные поля таблицы patient_communication_timelines: eventType,
+ * statusColor, comment, audioRecordingUrl, createdAt.
+ */
+
 import React from "react";
 import { MessageSquare, PhoneCall, Mail, Send } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
+import { formatDateTime } from "../../utils/formatting";
 
+/** Событие ленты в том виде, в каком его отдаёт сервер. */
 export interface CommunicationEventItem {
 	id: string;
 	organizationId: string;
-	patientId: string;
-	channelType: "CALL" | "SMS" | "WHATSAPP" | "TELEGRAM" | "EMAIL";
-	direction: "INBOUND" | "OUTBOUND";
-	summary: string;
-	staffName: string;
-	timestamp: string;
+	patientName: string;
+	eventType: string;
+	statusColor: string;
+	audioRecordingUrl: string | null;
+	comment: string;
+	createdAt: string;
+}
+
+/**
+ * Тип события хранится строкой, поэтому незнакомое значение показывается как
+ * есть: событие было, прятать его из-за неизвестного вида нельзя.
+ */
+const eventTypeLabels: Record<string, string> = {
+	call: "Звонок",
+	incoming_call: "Входящий звонок",
+	outgoing_call: "Исходящий звонок",
+	missed_call: "Пропущенный звонок",
+	sms: "СМС",
+	email: "Письмо",
+	chat: "Переписка",
+	visit: "Визит",
+};
+
+function eventTypeLabel(eventType: string): string {
+	return eventTypeLabels[eventType.toLowerCase()] ?? eventType;
+}
+
+function EventIcon({ eventType }: { eventType: string }) {
+	const kind = eventType.toLowerCase();
+	if (kind.includes("call")) return <PhoneCall className="w-4 h-4 text-emerald-500" />;
+	if (kind.includes("email")) return <Mail className="w-4 h-4 text-purple-500" />;
+	return <Send className="w-4 h-4 text-sky-500" />;
+}
+
+/** Дата и время события; при нечитаемом значении показываем исходную строку. */
+function formatEventMoment(value: string): string {
+	if (!value) return "дата не указана";
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return value;
+	return formatDateTime(value);
 }
 
 export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }> = ({ patientId }) => {
@@ -21,9 +73,13 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 	// причём без индикатора загрузки, а поздний ответ по старому пациенту
 	// перетирал карточку текущего насовсем. Воспроизведено в браузере,
 	// scratch/verify-patient-widget-race.mjs.
-	const { data: rawEvents, isLoading: loading } = usePatientResource<unknown>(
+	const {
+		data: rawEvents,
+		isLoading: loading,
+		error,
+	} = usePatientResource<unknown>(
 		patientId,
-		(id) => `/api/patients/${id}/communications`,
+		(id) => `/api/patients/${id}/communication-timelines`,
 		() =>
 			auth
 				? auth.denteClinicalReadHeaders()
@@ -58,6 +114,13 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 				<div className="text-xs py-3 text-slate-500 dark:text-slate-400">
 					Загрузка истории коммуникаций...
 				</div>
+			) : error ? (
+				<div
+					role="alert"
+					className="p-3 rounded-lg border text-xs bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800"
+				>
+					История не загружена: {error} Это не значит, что общения с пациентом не было.
+				</div>
 			) : events.length === 0 ? (
 				<div className="p-4 text-center rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400">
 					Записи звонков и сообщений с пациентом отсутствуют.
@@ -70,19 +133,26 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 							className="p-3 rounded-lg border flex items-center justify-between gap-2 text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div className="flex items-center space-x-2">
-								{ev.channelType === "CALL" ? (
-									<PhoneCall className="w-4 h-4 text-emerald-500" />
-								) : ev.channelType === "EMAIL" ? (
-									<Mail className="w-4 h-4 text-purple-500" />
-								) : (
-									<Send className="w-4 h-4 text-sky-500" />
-								)}
+								<EventIcon eventType={ev.eventType} />
 								<div>
-									<div className="font-bold text-slate-900 dark:text-white">{ev.summary}</div>
-									<div className="text-slate-500 dark:text-slate-400">Сотрудник: {ev.staffName}</div>
+									<div className="font-bold text-slate-900 dark:text-white">{ev.comment}</div>
+									<div className="text-slate-500 dark:text-slate-400">{eventTypeLabel(ev.eventType)}</div>
 								</div>
 							</div>
-							<span className="font-mono text-slate-400">{ev.timestamp}</span>
+							<div className="flex items-center gap-2 whitespace-nowrap">
+								{ev.audioRecordingUrl && (
+									<a
+										href={ev.audioRecordingUrl}
+										target="_blank"
+										rel="noreferrer"
+										title="Открыть запись разговора"
+										className="px-2 py-1 rounded border font-medium bg-teal-100 text-teal-800 border-teal-300 hover:bg-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800 dark:hover:bg-teal-900 transition-colors"
+									>
+										▶ Запись
+									</a>
+								)}
+								<span className="font-mono text-slate-400">{formatEventMoment(ev.createdAt)}</span>
+							</div>
 						</div>
 					))}
 				</div>

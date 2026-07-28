@@ -269,7 +269,16 @@ export function CampaignPanel() {
 									<button className="secondary-button" type="button" onClick={() => void openPreview(campaign.id)}>
 										Предпросмотр
 									</button>
-									{campaign.status === "draft" || campaign.status === "scheduled" || campaign.status === "running" ? (
+									{/*
+										У ИДУЩЕЙ рассылки кнопки «Запустить» нет вовсе.
+										Раньше она показывалась и при состоянии «Выполняется»,
+										причём единственной залитой кнопкой в строке — то есть
+										самой заметной. Один лишний щелчок пересобирал аудиторию
+										и переписывал счётчики уже идущей рекламной рассылки.
+										Пока рассылка идёт, осмысленное действие ровно одно —
+										остановить, и оно теперь главное.
+									*/}
+									{campaign.status === "draft" || campaign.status === "scheduled" ? (
 										<>
 											<button
 												className="primary-button"
@@ -288,6 +297,15 @@ export function CampaignPanel() {
 												Отменить
 											</button>
 										</>
+									) : campaign.status === "running" ? (
+										<button
+											className="primary-button"
+											type="button"
+											disabled={busy}
+											onClick={() => void campaignAction(campaign.id, "cancel")}
+										>
+											Остановить
+										</button>
 									) : null}
 								</td>
 							</tr>

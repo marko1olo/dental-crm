@@ -308,7 +308,19 @@ describe("рассылки пациентам", () => {
 		assert.ok(rows[0]?.body.startsWith("Пётр Иванович, приглашаем"), rows[0]?.body ?? "");
 	});
 
-	test("повторный запуск не отправляет второе сообщение", async (context) => {
+	/*
+	 * Раньше здесь проверялось, что повторный запуск ПРОХОДИТ и не создаёт второго
+	 * сообщения: от дублей защищал ключ повтора. Защита работает, но правило было
+	 * слишком мягким. Повторный запуск идущей рассылки заново снимает аудиторию и
+	 * переписывает счётчики и время старта — журнал перестаёт отвечать на вопрос
+	 * «скольким и когда ушло». Найдено просмотром снимка экрана: у рассылки в
+	 * состоянии «Выполняется» кнопка «Запустить» была самой заметной в строке, то
+	 * есть один лишний щелчок портил журнал рассылки по всей базе.
+	 *
+	 * Теперь идущая рассылка второй раз не запускается вовсе, и проверяются оба
+	 * следствия: понятный отказ и по-прежнему ровно одно сообщение в очереди.
+	 */
+	test("идущая рассылка второй раз не запускается", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const response = await app.inject({
@@ -316,10 +328,11 @@ describe("рассылки пациентам", () => {
 			url: `/api/communications/campaigns/${campaignId}/launch`,
 			headers: ORG_HEADERS
 		});
-		assert.equal(response.statusCode, 200, response.body);
+		assert.equal(response.statusCode, 400, response.body);
 		const body = JSON.parse(response.body);
-		assert.equal(body.queued, 0);
-		assert.equal(body.alreadyQueued, 1);
+		// Отказ обязан объяснять, что делать дальше, а не просто запрещать.
+		assert.ok(body.message.includes("уже выполняется"), body.message);
+		assert.ok(body.message.includes("отмените"), body.message);
 
 		const rows = await db
 			.select({ id: communicationOutbox.id })

@@ -26,6 +26,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *
  * `reload` нужен виджетам, которые перечитывают список после своей же
  * мутации (создали задачу — обновили список).
+ *
+ * `error` появился по третьей причине: отказ сервера (404 на несуществующий
+ * адрес, 500 на сбой запроса) раньше оставлял пустое значение, и виджет
+ * показывал «данных нет». Это ложь: данные могут быть, их не удалось
+ * получить. Виджет обязан показать отказ, а не выдать его за пустоту.
  */
 export function usePatientResource<T>(
 	patientId: string | null | undefined,
@@ -36,10 +41,12 @@ export function usePatientResource<T>(
 	data: T;
 	setData: React.Dispatch<React.SetStateAction<T>>;
 	isLoading: boolean;
+	error: string | null;
 	reload: () => void;
 } {
 	const [data, setData] = useState<T>(emptyValue);
 	const [isLoading, setIsLoading] = useState<boolean>(Boolean(patientId));
+	const [error, setError] = useState<string | null>(null);
 	const [reloadToken, setReloadToken] = useState(0);
 
 	// Функции приходят новыми на каждом рендере. Держим их в ref, иначе
@@ -54,12 +61,14 @@ export function usePatientResource<T>(
 		if (!patientId) {
 			setData(emptyRef.current);
 			setIsLoading(false);
+			setError(null);
 			return;
 		}
 
 		// Данные предыдущего пациента убираются ДО ответа сервера, а не после.
 		setData(emptyRef.current);
 		setIsLoading(true);
+		setError(null);
 
 		const controller = new AbortController();
 		let cancelled = false;
@@ -71,15 +80,20 @@ export function usePatientResource<T>(
 					signal: controller.signal,
 				});
 				if (cancelled) return;
-				const parsed = res.ok ? ((await res.json()) as T) : null;
+				if (!res.ok) {
+					setError(`Сервер ответил ошибкой ${res.status}. Данные не загружены.`);
+					return;
+				}
+				const parsed = (await res.json()) as T;
 				// Повторная проверка: разбор тела — тоже await, за это время
 				// пациент мог смениться.
 				if (cancelled) return;
-				if (parsed !== null) setData(parsed);
-			} catch (error) {
+				setData(parsed);
+			} catch (requestError) {
 				if (cancelled) return;
-				if ((error as Error)?.name === "AbortError") return;
-				console.error(`[usePatientResource ${patientId}]`, error);
+				if ((requestError as Error)?.name === "AbortError") return;
+				console.error(`[usePatientResource ${patientId}]`, requestError);
+				setError("Не удалось связаться с сервером. Данные не загружены.");
 			} finally {
 				if (!cancelled) setIsLoading(false);
 			}
@@ -93,5 +107,5 @@ export function usePatientResource<T>(
 
 	const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
-	return { data, setData, isLoading, reload };
+	return { data, setData, isLoading, error, reload };
 }

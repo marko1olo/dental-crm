@@ -37,8 +37,10 @@ const KNOWN_MISSING: readonly string[] = [
 	// Виджеты «конкурентного паритета»: ни маршрута, ни писателя в таблице.
 	"/api/clinical/visit-examination-photo-links",
 	"/api/crm/bulk-image-operation-logs",
-	"/api/crm/patient-communication-timelines",
-	"/api/crm/patient-archive-reasons-and-blacklists",
+	// Отсюда убраны как починенные: /api/crm/patient-communication-timelines
+	// (виджет переведён на communication-timelines у пациента) и
+	// /api/crm/patient-archive-reasons-and-blacklists (переведён на
+	// archive-status у пациента).
 	"/api/crm/patient-duplicate-merge-queues",
 	"/api/integrations/egisz-blank-permissions",
 	"/api/integrations/mkb10-auto-directories",
@@ -68,15 +70,15 @@ const KNOWN_MISSING: readonly string[] = [
 	 * Найдено этой же проверкой при вводе — аудит их не заметил. Проверено
 	 * вручную: маршрутов нет ни в одном файле routes/.
 	 */
-	// Лента переписки пациента: рабочего адреса нет вовсе (в patients.ts его нет).
-	"/api/patients/:param/communications",
+	// Строка /api/patients/:param/communications убрана: рабочий адрес всё-таки
+	// есть — /api/patients/:patientId/communication-timelines в routes/patients.ts,
+	// виджет карточки пациента переведён на него.
 	// Рекламации и задачи по пациенту — таблицы есть, маршрутов нет.
 	"/api/patients/:param/reclamations",
-	"/api/patients/:param/tickets",
-	// Правка и удаление сотрудника и кресла: на сервере только вложенные адреса
-	// /credentials и /working-hours, а интерфейс зовёт саму сущность.
-	"/api/settings/staff/:param",
-	"/api/settings/chairs/:param"
+	"/api/patients/:param/tickets"
+	// Строки /api/settings/staff/:param и /api/settings/chairs/:param убраны:
+	// в routes/settings.ts добавлены PUT/DELETE на саму сущность сотрудника и
+	// кресла, раньше там жили только вложенные /credentials и /working-hours.
 ];
 
 /** Префиксы, под которыми модули регистрируются в server.ts. */
@@ -231,11 +233,19 @@ describe("адреса, которые зовёт интерфейс", () => {
 	test("список известного долга не разрастается молча", () => {
 		/*
 		 * Верхняя граница ровно по текущему размеру: добавить строку в список
-		 * можно только осознанно, вместе с этим числом. 33 — это 28 находок
-		 * аудита плюс 5, найденных самой этой проверкой при вводе.
+		 * можно только осознанно, вместе с этим числом. Начиналось с 33 — это 28
+		 * находок аудита плюс 5, найденных самой этой проверкой при вводе.
+		 *
+		 * Сейчас 30. Минус три строки: /api/patients/:param/communications
+		 * (виджет переведён на существующий адрес) и два адреса настроек,
+		 * /api/settings/staff/:param и /api/settings/chairs/:param, — им написаны
+		 * настоящие обработчики в routes/settings.ts. Граница ставится по
+		 * фактическому размеру списка, а не «на единицу больше»: запас в этом
+		 * числе означает, что одну строку можно добавить молча, а ради запрета
+		 * такого добавления проверка и написана.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 33,
+			KNOWN_MISSING.length <= 30,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);

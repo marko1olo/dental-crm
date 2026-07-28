@@ -672,8 +672,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
         {/* min(280px, 100%): иначе колонка не ужимается ниже 280px и
             карточки срезаются справа на узком экране. */}
         <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px" }}>
-          <PatientArchiveReasonsAndBlacklistsWidget />
-          <PatientCommunicationTimelinesWidget />
+          {/* Оба виджета читают данные конкретного пациента, поэтому
+              получают выбранного — иначе запрос уходит без пациента и
+              карточка показывает чужие звонки и чужие блокировки. */}
+          <PatientArchiveReasonsAndBlacklistsWidget patientId={selectedPatientId} />
+          <PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
           <BulkImageOperationLogsWidget />
           <CustomCrmTaskTypesWidget />
           <PatientDuplicateMergeQueuesWidget />
