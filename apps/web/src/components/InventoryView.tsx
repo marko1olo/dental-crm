@@ -12,10 +12,55 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { showToast } from "./GlobalToast";
+import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import type { InventoryItem } from "./inventory/useInventoryLogic";
 import { useInventoryLogic } from "./inventory/useInventoryLogic";
+
+/**
+ * Как показать срок годности расходника.
+ *
+ * Три состояния, а не два: просроченный материал использовать нельзя вообще,
+ * истекающий надо успеть израсходовать, остальное просто дата. Раньше первые
+ * два не различались и красились цветом var(--tomato) — токена с таким именем
+ * в проекте нет, так что предупреждение не было видно.
+ *
+ * Дни считаются по календарным датам, а не по разнице в миллисекундах: срок
+ * указан днём, и «осталось 0 дней» должно значить «истекает сегодня», а не
+ * зависеть от времени суток.
+ */
+function expirationState(isoDate: string): { label: string; className: string } {
+	const readable = new Date(`${isoDate}T00:00:00`).toLocaleDateString("ru-RU");
+	const startOfDay = (value: Date) => Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
+	const expires = new Date(`${isoDate}T00:00:00`);
+	const daysLeft = Math.round((startOfDay(expires) - startOfDay(new Date())) / 86400000);
+
+	if (daysLeft < 0) {
+		return { label: `Просрочен с ${readable}`, className: "inventory-expiry-expired" };
+	}
+	if (daysLeft === 0) {
+		return { label: `Истекает сегодня, ${readable}`, className: "inventory-expiry-expired" };
+	}
+	if (daysLeft <= 30) {
+		return {
+			label: `Годен до ${readable} — ${daysLabel(daysLeft)}`,
+			className: "inventory-expiry-soon",
+		};
+	}
+	return { label: `Годен до ${readable}`, className: "" };
+}
+
+/** Русское склонение дней: 1 день, 2 дня, 5 дней. */
+function daysLabel(count: number): string {
+	const lastTwo = count % 100;
+	const last = count % 10;
+	if (lastTwo >= 11 && lastTwo <= 14) return `осталось ${count} дней`;
+	if (last === 1) return `остался ${count} день`;
+	if (last >= 2 && last <= 4) return `осталось ${count} дня`;
+	return `осталось ${count} дней`;
+}
 
 export const InventoryView: React.FC<{ organizationId: string }> = ({
 	organizationId,
@@ -450,7 +495,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								}}
 							>
 								<TrendingUp size={14} />
-								{totalValue.toLocaleString("ru-RU")} ₽
+								{money(totalValue)}
 							</strong>
 						</div>
 					)}
@@ -691,8 +736,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							<tbody>
 								{filteredItems.length === 0 ? (
 									<tr>
+										{/* В шапке семь колонок: при colSpan={5} текст съезжал влево. */}
 										<td
-											colSpan={5}
+											colSpan={7}
 											style={{
 												padding: 48,
 												textAlign: "center",
@@ -774,7 +820,16 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 															<div
 																style={{ color: "var(--ink)", fontWeight: 500 }}
 															>
-																{unitCost.toLocaleString("ru-RU")} ₽
+																{/*
+															  Деньги показывает общая money() из AppHelpers.
+
+															  Стояло `unitCost.toLocaleString("ru-RU") + " ₽"`:
+															  цена 1250,50 печаталась как «1 250,5 ₽», потому что
+															  toLocaleString по умолчанию лишний ноль опускает.
+															  На деньгах это читается так, будто пятьдесят копеек
+															  превратились в пять.
+															*/}
+															{money(unitCost)}
 															</div>
 															{lineValue > 0 && (
 																<div
@@ -783,7 +838,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		fontSize: 12,
 																	}}
 																>
-																	итого: {lineValue.toLocaleString("ru-RU")} ₽
+																	итого: {money(lineValue)}
 																</div>
 															)}
 														</div>
@@ -805,42 +860,31 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														fontSize: 14,
 													}}
 												>
+													{/*
+													  Просрочку и «вот-вот истечёт» надо различать.
+
+													  Раньше оба случая красились одинаково и цветом
+													  var(--tomato) — токена с таким именем в проекте нет
+													  вовсе, поэтому предупреждение попросту не
+													  показывалось: текст оставался обычным. Просроченный
+													  материал нельзя использовать совсем, а истекающий
+													  надо успеть израсходовать — это разные решения
+													  кладовщика, и выглядеть они обязаны по-разному.
+													*/}
 													{item.expirationDate ? (
-														<div
-															style={{
-																display: "flex",
-																flexDirection: "column",
-															}}
-														>
-															<span
-																style={{
-																	color:
-																		new Date(item.expirationDate) <
-																		new Date(
-																			Date.now() + 30 * 24 * 60 * 60 * 1000,
-																		)
-																			? "var(--tomato)"
-																			: "var(--ink)",
-																	fontWeight:
-																		new Date(item.expirationDate) <
-																		new Date(
-																			Date.now() + 30 * 24 * 60 * 60 * 1000,
-																		)
-																			? 600
-																			: 400,
-																}}
-															>
-																Годен до:{" "}
-																{new Date(
-																	item.expirationDate,
-																).toLocaleDateString("ru-RU")}
-															</span>
-															{item.lotNumber && (
-																<span style={{ fontSize: 12 }}>
-																	Партия: {item.lotNumber}
-																</span>
-															)}
-														</div>
+														(() => {
+															const state = expirationState(item.expirationDate);
+															return (
+																<div style={{ display: "flex", flexDirection: "column" }}>
+																	<span className={state.className}>{state.label}</span>
+																	{item.lotNumber ? (
+																		<span style={{ fontSize: 12 }}>Партия: {item.lotNumber}</span>
+																	) : null}
+																</div>
+															);
+														})()
+													) : item.lotNumber ? (
+														<span style={{ fontSize: 12 }}>Партия: {item.lotNumber}</span>
 													) : (
 														<span style={{ fontStyle: "italic", opacity: 0.5 }}>
 															Не указан
@@ -1142,6 +1186,65 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									/>
 								</div>
 							</div>
+
+							{/*
+							  Партия и срок годности — на поверхности.
+
+							  Колонка «Партия / Срок» на экране была давно и всегда писала
+							  «Не указан»: полей для ввода не существовало, а в таблице
+							  inventory_items не было и колонок. Просроченный композит или
+							  анестетик — это вред пациенту, поэтому срок стоит рядом с
+							  ценой, а не спрятан под «показать больше».
+							*/}
+							<div className="inventory-form-row">
+								<label className="inventory-form-field">
+									Партия
+									<input
+										type="text"
+										value={formData.lotNumber}
+										onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
+										placeholder="номер с упаковки, если есть"
+									/>
+								</label>
+								<label className="inventory-form-field">
+									Срок годности
+									<input
+										type="date"
+										value={formData.expirationDate}
+										onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
+									/>
+								</label>
+							</div>
+
+							{/*
+							  Артикул и штрихкод нужны не каждому, поэтому убраны под
+							  раскрытие: у соло-врача их обычно нет вовсе. Форма присылала
+							  оба поля и раньше, но ввести их было негде.
+							*/}
+							<details className="inventory-form-more">
+								<summary>Артикул и штрихкод</summary>
+								<div className="inventory-form-row">
+									<label className="inventory-form-field">
+										Артикул
+										<input
+											type="text"
+											value={formData.sku}
+											onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+											placeholder="код поставщика"
+										/>
+									</label>
+									<label className="inventory-form-field">
+										Штрихкод
+										<input
+											type="text"
+											value={formData.barcode}
+											onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+											placeholder="или отсканируйте сканером"
+										/>
+									</label>
+								</div>
+							</details>
+
 							<button
 								type="submit"
 								className="primary-button"
@@ -1363,6 +1466,22 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					</div>
 				</div>
 			)}
+
+			{/*
+			  Окно подтверждения удаления.
+
+			  Состояние confirmDialog заполнялось обработчиками корзины давно, но
+			  рисовать его было нечем — здесь ничего не стояло. Нажатие на корзину
+			  у материала и у правила списания не давало вообще никакого отклика.
+			*/}
+			{confirmDialog?.isOpen ? (
+				<InventoryConfirmDialog
+					title={confirmDialog.title}
+					message={confirmDialog.message}
+					onConfirm={confirmDialog.onConfirm}
+					onCancel={() => setConfirmDialog(null)}
+				/>
+			) : null}
 		</div>
 	);
 };

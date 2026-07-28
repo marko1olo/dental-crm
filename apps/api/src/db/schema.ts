@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   foreignKey,
   integer,
   jsonb,
@@ -1539,6 +1540,20 @@ export const inventoryItems = pgTable("inventory_items", {
   notes: text("notes"),
   sku: text("sku"),
   barcode: text("barcode"),
+  /*
+   * Партия и срок годности расходника.
+   *
+   * Экран склада показывал колонку «Партия / Срок» и читал эти поля, которых в
+   * таблице не было вовсе: колонка всегда писала «Не указан», а ввести данные
+   * было негде. Просроченный композит или анестетик — это вред пациенту, а не
+   * неаккуратный учёт.
+   *
+   * date, а не timestamp: у расходников срок указан днём или месяцем, часовой
+   * пояс здесь только мешал бы. mode "string" — дата приходит и уходит как
+   * «2027-03-31», в том же виде, в каком её вводят в поле типа date.
+   */
+  lotNumber: text("lot_number"),
+  expirationDate: date("expiration_date", { mode: "string" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

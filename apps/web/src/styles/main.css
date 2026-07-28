@@ -11319,6 +11319,66 @@ html.dark .emk-tab-button.active,
   filter: brightness(1.08);
 }
 
+/*
+ * Поля формы материала.
+ *
+ * Партия и срок годности стоят на поверхности: просроченный расходник — вред
+ * пациенту. Артикул и штрихкод убраны под раскрытие, у соло-врача их обычно нет.
+ */
+.inventory-form-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inventory-form-field {
+  color: var(--muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+}
+
+.inventory-form-field input {
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  outline: none;
+  padding: 10px 14px;
+}
+
+.inventory-form-more summary {
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.inventory-form-more[open] summary {
+  margin-bottom: 10px;
+}
+
+/* Срок годности в списке материалов. */
+.inventory-expiry-expired {
+  color: var(--rust, #b91c1c);
+  font-weight: 700;
+}
+
+.inventory-expiry-soon {
+  color: var(--amber, #d97706);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .inventory-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .document-payload-card .document-payload-checkbox {
   align-items: center;
   display: flex;

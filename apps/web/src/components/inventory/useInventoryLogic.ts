@@ -15,6 +15,76 @@ export interface InventoryItem {
 	lotNumber?: string;
 }
 
+/**
+ * Приведение строки склада, пришедшей с сервера, к обещанному виду.
+ *
+ * Тип InventoryItem объявляет stockQuantity и criticalThreshold числами, а
+ * сервер присылает их СТРОКАМИ: колонки объявлены numeric без mode "number", и
+ * drizzle гонит значение через String(). Компилятор об этом не знает, потому
+ * что ответ раскладывался в состояние без разбора — `Array.isArray(data)`, и
+ * готово.
+ *
+ * Что из этого выходило на экране (видно на снимке склада):
+ *   «в дефиците 1» при остатке 10 и минимальном запасе 3. Сравнение
+ *     stockQuantity <= criticalThreshold шло по строкам, а "10" < "3"
+ *     лексикографически — правда. Склад сообщал о дефиците полного материала;
+ *   предпросмотр «Будет: …» в окне прихода складывал строку с числом:
+ *     "10" + 5 давало «105» вместо 15;
+ *   стоимость позиции считалась как "10" * цена — здесь умножение спасало,
+ *     потому что JavaScript приводит строку к числу при умножении, но не при
+ *     сложении и не при сравнении. Именно поэтому дефицит врал, а итог нет.
+ *
+ * Разбор на входе делает объявленный тип правдой: дальше по коду числа можно
+ * складывать и сравнивать, не думая о том, что пришло с сервера.
+ */
+function inventoryItemFromServer(raw: unknown): InventoryItem {
+	const row = (raw ?? {}) as Record<string, unknown>;
+	const asNumber = (value: unknown) => {
+		const parsed = typeof value === "number" ? value : Number(value);
+		return Number.isFinite(parsed) ? parsed : 0;
+	};
+	/*
+	 * Необязательные поля собираются через локальные строки, а не через функцию,
+	 * возвращающую `string | undefined`: при exactOptionalPropertyTypes значение
+	 * `undefined` не подходит свойству, объявленному как `sku?: string`.
+	 */
+	const asText = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+	const sku = asText(row.sku);
+	const barcode = asText(row.barcode);
+	const lotNumber = asText(row.lotNumber);
+	const expiration = asText(row.expirationDate);
+	return {
+		id: String(row.id ?? ""),
+		name: typeof row.name === "string" ? row.name : "",
+		stockQuantity: asNumber(row.stockQuantity),
+		criticalThreshold: asNumber(row.criticalThreshold),
+		// Цена остаётся строкой: так объявлен тип, и её везде читают через Number().
+		unitCostRub: row.unitCostRub === null || row.unitCostRub === undefined ? "0" : String(row.unitCostRub),
+		updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
+		...(sku ? { sku } : {}),
+		...(barcode ? { barcode } : {}),
+		...(lotNumber ? { lotNumber } : {}),
+		/*
+		 * Срок годности приводим к «ГГГГ-ММ-ДД» по местному дню.
+		 *
+		 * Колонка date часового пояса не несёт, но сервер отдаёт её строкой ISO с
+		 * временем; взять первые десять знаков напрямую нельзя — при отрицательном
+		 * смещении часового пояса дата уехала бы на сутки назад.
+		 */
+		...(expiration ? { expirationDate: localDayOf(expiration) } : {}),
+	};
+}
+
+/** Календарный день значения даты по местному времени, в виде «ГГГГ-ММ-ДД». */
+function localDayOf(value: string): string {
+	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return value.slice(0, 10);
+	const month = String(parsed.getMonth() + 1).padStart(2, "0");
+	const day = String(parsed.getDate()).padStart(2, "0");
+	return `${parsed.getFullYear()}-${month}-${day}`;
+}
+
 export function useInventoryLogic(organizationId: string) {
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -122,6 +192,8 @@ export function useInventoryLogic(organizationId: string) {
 							unitCostRub: "",
 							sku: "",
 							barcode: barcodeBuffer,
+							lotNumber: "",
+							expirationDate: "",
 						});
 						setEditingItem(null);
 						setShowModal(true);
@@ -227,6 +299,8 @@ export function useInventoryLogic(organizationId: string) {
 		unitCostRub: "",
 		sku: "",
 		barcode: "",
+		lotNumber: "",
+		expirationDate: "",
 	});
 
 	// Confirm Dialog State
@@ -252,7 +326,7 @@ export function useInventoryLogic(organizationId: string) {
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setItems(Array.isArray(data) ? data : []);
+				setItems(Array.isArray(data) ? data.map(inventoryItemFromServer) : []);
 			} else {
 				showToast("Ошибка загрузки склада", "error");
 			}
@@ -289,6 +363,8 @@ export function useInventoryLogic(organizationId: string) {
 			unitCostRub: "",
 			sku: "",
 			barcode: "",
+			lotNumber: "",
+			expirationDate: "",
 		});
 		setShowModal(true);
 	};
@@ -298,9 +374,18 @@ export function useInventoryLogic(organizationId: string) {
 		setFormData({
 			name: item.name,
 			threshold: String(item.criticalThreshold),
-			unitCostRub: item.unitCostRub || "0",
+			/*
+			 * Цена и порог берутся как есть, без подстановки нуля вместо пустоты.
+			 *
+			 * Стояло `item.unitCostRub || "0"`: у материала без цены форма
+			 * открывалась с нулём, выглядящим введённым, и при сохранении ноль
+			 * уходил в базу как настоящая цена.
+			 */
+			unitCostRub: item.unitCostRub ?? "",
 			sku: item.sku || "",
 			barcode: item.barcode || "",
+			lotNumber: item.lotNumber || "",
+			expirationDate: item.expirationDate || "",
 		});
 		setShowModal(true);
 	};
@@ -309,7 +394,14 @@ export function useInventoryLogic(organizationId: string) {
 		e.preventDefault();
 		if (!formData.name.trim()) return;
 		const unitCost = Math.max(0, parseFloat(formData.unitCostRub) || 0);
-		const threshold = Math.max(0, parseInt(formData.threshold) || 5);
+		/*
+		 * Пустой порог — это ноль, а не пятёрка.
+		 *
+		 * Стояло `|| 5`: не заполнив поле, кладовщик получал в базе выдуманный
+		 * минимальный остаток, и склад начинал сигналить о дефиците материала,
+		 * для которого порога никто не задавал. Ноль означает «следить не просили».
+		 */
+		const threshold = Math.max(0, parseInt(formData.threshold) || 0);
 		try {
 			if (editingItem) {
 				const res = await fetch(
@@ -325,6 +417,8 @@ export function useInventoryLogic(organizationId: string) {
 							unitCostRub: unitCost,
 							sku: formData.sku.trim() || null,
 							barcode: formData.barcode.trim() || null,
+							lotNumber: formData.lotNumber.trim() || null,
+							expirationDate: formData.expirationDate.trim() || null,
 						}),
 					},
 				);
@@ -348,6 +442,8 @@ export function useInventoryLogic(organizationId: string) {
 						stockQuantity: 0,
 						sku: formData.sku.trim() || null,
 						barcode: formData.barcode.trim() || null,
+						lotNumber: formData.lotNumber.trim() || null,
+						expirationDate: formData.expirationDate.trim() || null,
 					}),
 				});
 				if (res.ok) {

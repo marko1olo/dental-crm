@@ -12,6 +12,35 @@ import {
 	serviceCatalogItems,
 } from "../db/schema.js";
 
+/**
+ * Метка «дату прислали, но разобрать её нельзя».
+ *
+ * Отличать её от пустого значения обязательно: пустой срок годности —
+ * нормальное состояние (у многих расходников его просто не пишут), а
+ * непонятная строка означает ошибку ввода, и молча превращать её в «срока нет»
+ * значит потерять предупреждение о просрочке.
+ */
+const INVALID_DATE = Symbol("invalid-expiration-date");
+
+/**
+ * Приведение срока годности к виду, который принимает колонка date.
+ *
+ * Поле ввода типа date отдаёт «2027-03-31», и в этом же виде значение уходит в
+ * базу. Всё остальное — ошибка, о которой надо сказать человеку, а не
+ * подставлять пустоту.
+ */
+function normalizedExpirationDate(value: string | null | undefined): string | null | typeof INVALID_DATE {
+	if (value === null || value === undefined) return null;
+	const trimmed = String(value).trim();
+	if (!trimmed) return null;
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return INVALID_DATE;
+	const parsed = new Date(`${trimmed}T00:00:00Z`);
+	if (Number.isNaN(parsed.getTime())) return INVALID_DATE;
+	// 2027-02-31 разбирается в 3 марта: сверяем, что дата не «уехала».
+	if (parsed.toISOString().slice(0, 10) !== trimmed) return INVALID_DATE;
+	return trimmed;
+}
+
 export const inventoryRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
@@ -51,6 +80,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			stockQuantity?: number;
 			sku?: string | null;
 			barcode?: string | null;
+			lotNumber?: string | null;
+			expirationDate?: string | null;
 		};
 	}>("/:organizationId", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -67,14 +98,33 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		const {
 			name,
-			criticalThreshold = 5,
+			criticalThreshold = 0,
 			unitCostRub = 0,
 			stockQuantity = 0,
 			sku = null,
 			barcode = null,
+			lotNumber = null,
+			expirationDate = null,
 		} = request.body;
 		if (!name?.trim()) {
-			return reply.status(400).send({ error: "Name is required" });
+			return reply
+				.status(400)
+				.send({ error: "NameRequired", message: "Укажите название материала." });
+		}
+		/*
+		 * Умолчание порога снижено с 5 до 0.
+		 *
+		 * Пятёрка бралась с потолка: не приславший поле клиент получал в базу
+		 * выдуманный минимальный остаток, и склад начинал сигналить о дефиците
+		 * материала, для которого никто порога не задавал. Ноль означает «порог не
+		 * задан» и ни о чём не сигналит.
+		 */
+		const expiration = normalizedExpirationDate(expirationDate);
+		if (expiration === INVALID_DATE) {
+			return reply.status(400).send({
+				error: "ExpirationDateInvalid",
+				message: "Срок годности указывается датой, например 31.03.2027.",
+			});
 		}
 
 		const newItem = await db
@@ -87,6 +137,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				stockQuantity: String(Math.max(0, stockQuantity)),
 				sku: sku?.trim() || null,
 				barcode: barcode?.trim() || null,
+				lotNumber: lotNumber?.trim() || null,
+				expirationDate: expiration,
 			})
 			.returning();
 
@@ -187,6 +239,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			unitCostRub?: number;
 			sku?: string | null;
 			barcode?: string | null;
+			lotNumber?: string | null;
+			expirationDate?: string | null;
 		};
 	}>("/:organizationId/:itemId", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -201,9 +255,38 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const { name, criticalThreshold = 5, unitCostRub = 0 } = request.body;
+		/*
+		 * Правка материала сохраняла только название, порог и цену.
+		 *
+		 * Артикул и штрихкод форма присылала, а `.set()` их не писал: кладовщик
+		 * менял штрихкод, видел «Материал обновлён» и получал прежнее значение.
+		 * Молчаливая потеря введённого хуже отказа — человек уверен, что данные
+		 * сохранены.
+		 *
+		 * Умолчание порога снижено с 5 до 0 по той же причине, что и при создании:
+		 * пятёрка бралась с потолка и заставляла склад сигналить о дефиците
+		 * материала, для которого порога не задавали.
+		 */
+		const {
+			name,
+			criticalThreshold = 0,
+			unitCostRub = 0,
+			sku = null,
+			barcode = null,
+			lotNumber = null,
+			expirationDate = null,
+		} = request.body;
 		if (!name?.trim()) {
-			return reply.status(400).send({ error: "Name is required" });
+			return reply
+				.status(400)
+				.send({ error: "NameRequired", message: "Укажите название материала." });
+		}
+		const expiration = normalizedExpirationDate(expirationDate);
+		if (expiration === INVALID_DATE) {
+			return reply.status(400).send({
+				error: "ExpirationDateInvalid",
+				message: "Срок годности указывается датой, например 31.03.2027.",
+			});
 		}
 
 		const [existing] = await db
@@ -224,6 +307,10 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				name: name.trim(),
 				criticalThreshold: String(Math.max(0, criticalThreshold)),
 				unitCostRub: String(Math.max(0, unitCostRub)),
+				sku: sku?.trim() || null,
+				barcode: barcode?.trim() || null,
+				lotNumber: lotNumber?.trim() || null,
+				expirationDate: expiration,
 				updatedAt: new Date(),
 			})
 			.where(
