@@ -564,7 +564,24 @@ export function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 		);
 }
 
-/** Итоги кассы за период целиком: сходится ли сумма по врачам с кассой. */
+/**
+ * Итоги кассы за период целиком: сходится ли сумма по врачам с кассой.
+ *
+ * ОХВАТ «ТОЛЬКО СВОИ» ОБЯЗАТЕЛЕН И ЗДЕСЬ, А НЕ ТОЛЬКО В СТРОКАХ.
+ * БЫЛО: `scope` передавался, но `onlyDoctorUserId` этот запрос игнорировал.
+ * Строки врач получал свои, а `totals` — по всей клинике: на живой базе врач с
+ * собственной кассой 23 400 ₽ получал `revenueRub: 67400` и `paymentCount: 8`,
+ * то есть выручку коллег и число чужих оплат. Заслонка на экране этого не
+ * лечит — число уходит в ответ маршрута и видно в сетевой панели браузера.
+ * Зарплата коллеги — не та величина, которую врач вправе сложить из отчёта о
+ * своей выплате.
+ *
+ * При `onlyDoctorUserId` соединения остаются левыми, а условие по врачу стоит в
+ * WHERE: оплата без визита даёт NULL в `doctor_user_id`, сравнение с ним
+ * неверно, и такая касса из «своего» итога выпадает. Поэтому у врача
+ * `revenueRub` = `attributableRevenueRub`, а «не отнесено к врачу» равно нулю —
+ * чужая и ничейная касса в его отчёт не попадают вовсе.
+ */
 function buildPeriodRevenueQuery(scope: DoctorPayoutScope) {
 	const { organizationId, from, to } = scope;
 	return db
@@ -588,6 +605,7 @@ function buildPeriodRevenueQuery(scope: DoctorPayoutScope) {
 				eq(payments.status, "paid"),
 				gte(payments.paidAt, from),
 				lte(payments.paidAt, to),
+				scope.onlyDoctorUserId ? eq(appointments.doctorUserId, scope.onlyDoctorUserId) : undefined,
 			),
 		);
 }
