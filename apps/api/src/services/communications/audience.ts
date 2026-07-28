@@ -30,6 +30,7 @@ import { isValidEmailAddress } from "../../emailTransport.js";
 import { normalizeRussianMsisdn } from "../../smsTransport.js";
 import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
+import { loadConsentsByPatient } from "./consentLoader.js";
 import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
 import { resolveTelegramChatId } from "./channelRouter.js";
 import { describeSmsPayload } from "./templateRenderer.js";
@@ -388,35 +389,14 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 	return { matched: matchedIds.length, deliverable: candidates.length, candidates, excluded, notes };
 }
 
+/**
+ * Тело этой функции переехало в ./consentLoader.ts без изменения запроса: тот же
+ * пакетный отбор по (organization_id, patient_id) понадобился планировщику
+ * напоминаний о приёме, который до этого спрашивал базу о каждом приёме отдельно.
+ * Обёртка оставлена, чтобы не менять здесь ни одного вызова.
+ */
 async function loadConsents(organizationId: string, patientIds: string[]): Promise<Map<string, ConsentRecord[]>> {
-	const result = new Map<string, ConsentRecord[]>();
-	if (patientIds.length === 0) return result;
-
-	const rows = await db
-		.select({
-			patientId: patientCommunicationConsents.patientId,
-			channel: patientCommunicationConsents.channel,
-			scope: patientCommunicationConsents.scope,
-			state: patientCommunicationConsents.state
-		})
-		.from(patientCommunicationConsents)
-		.where(
-			and(
-				eq(patientCommunicationConsents.organizationId, organizationId),
-				inArray(patientCommunicationConsents.patientId, patientIds)
-			)
-		);
-
-	for (const row of rows) {
-		const list = result.get(row.patientId) ?? [];
-		list.push({
-			channel: row.channel as CommunicationChannelCode,
-			scope: row.scope as CommunicationConsentScope,
-			state: row.state as "granted" | "revoked"
-		});
-		result.set(row.patientId, list);
-	}
-	return result;
+	return loadConsentsByPatient(organizationId, patientIds);
 }
 
 async function recipientAddressFor(

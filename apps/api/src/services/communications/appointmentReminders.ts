@@ -27,11 +27,11 @@ import {
 	communicationSettings,
 	communicationTemplates,
 	organizations,
-	patientCommunicationConsents,
 	patients,
 	users
 } from "../../db/schema.js";
 import { issueAppointmentActionLinks } from "./appointmentActionLinks.js";
+import { loadConsentsByPatient } from "./consentLoader.js";
 import { decideConsent, type ConsentRecord } from "./deliveryPolicy.js";
 import { enqueueMessage, parseLeadHours, resolveCommunicationSettings, resolveRecipientAddress } from "./dispatcher.js";
 import { renderTemplate } from "./templateRenderer.js";
@@ -252,45 +252,54 @@ async function scheduleForOrganization(
 				)
 			);
 
+		// ФИО пациентов, ФИО врачей и согласия — по одному запросу на всю выборку
+		// окна, а не по три запроса на приём. Прежний вариант делал 3N+1 обращений
+		// на каждый порог оповещения: при 30 приёмах в день и двух порогах это 182
+		// запроса за проход планировщика вместо 8. Каждый занимал соединение из
+		// пула, общего с интерактивной работой администраторов, поэтому фоновая
+		// рассылка напоминаний конкурировала со стойкой регистрации. Правило
+		// «согласия читаются пакетом» уже было записано в рассылках с той же
+		// причиной — здесь оно наконец соблюдается через общий consentLoader.
+		const duePatientIds = [...new Set(dueAppointments.map((row) => row.patientId).filter((id): id is string => !!id))];
+		const dueDoctorIds = [
+			...new Set(dueAppointments.map((row) => row.doctorUserId).filter((id): id is string => !!id))
+		];
+
+		const patientRows =
+			duePatientIds.length > 0
+				? await db
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(and(eq(patients.organizationId, organizationId), inArray(patients.id, duePatientIds)))
+				: [];
+		const patientById = new Map(patientRows.map((row) => [row.id, row]));
+
+		// Отбор врачей сознательно оставлен без условия по организации: прежний
+		// запрос его тоже не имел, а добавить его — значит потерять ФИО врача у
+		// приёма с чужим doctor_user_id, и тогда шаблон с {doctor} не отрендерится
+		// и напоминание просто не уйдёт. Молча перестать напоминать хуже, чем
+		// подставить имя. Отсутствие отбора по организации записано долгом.
+		const doctorRows =
+			dueDoctorIds.length > 0
+				? await db
+						.select({ id: users.id, fullName: users.fullName })
+						.from(users)
+						.where(inArray(users.id, dueDoctorIds))
+				: [];
+		const doctorById = new Map(doctorRows.map((row) => [row.id, row]));
+
+		const consentsByPatient = await loadConsentsByPatient(organizationId, duePatientIds);
+
 		for (const appointment of dueAppointments) {
 			if (!appointment.patientId) continue;
 			report.examined += 1;
 
-			const [patient] = await db
-				.select({ fullName: patients.fullName })
-				.from(patients)
-				.where(and(eq(patients.id, appointment.patientId), eq(patients.organizationId, organizationId)))
-				.limit(1);
+			const patient = patientById.get(appointment.patientId);
 			if (!patient) continue;
 
-			const doctor = appointment.doctorUserId
-				? (
-						await db
-							.select({ fullName: users.fullName })
-							.from(users)
-							.where(eq(users.id, appointment.doctorUserId))
-							.limit(1)
-					)[0]
-				: undefined;
+			const doctor = appointment.doctorUserId ? doctorById.get(appointment.doctorUserId) : undefined;
 
-			const consentRows = await db
-				.select({
-					channel: patientCommunicationConsents.channel,
-					scope: patientCommunicationConsents.scope,
-					state: patientCommunicationConsents.state
-				})
-				.from(patientCommunicationConsents)
-				.where(
-					and(
-						eq(patientCommunicationConsents.organizationId, organizationId),
-						eq(patientCommunicationConsents.patientId, appointment.patientId)
-					)
-				);
-			const consents: ConsentRecord[] = consentRows.map((row) => ({
-				channel: row.channel as CommunicationChannelCode,
-				scope: row.scope as "service" | "marketing",
-				state: row.state as "granted" | "revoked"
-			}));
+			const consents: ConsentRecord[] = consentsByPatient.get(appointment.patientId) ?? [];
 
 			const values: Record<string, string> = {
 				patient: addressableName(patient.fullName),
