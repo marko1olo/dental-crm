@@ -1015,6 +1015,48 @@ export function ImagingView(props: ImagingViewProps) {
                 </article>
     
                 <div className="imaging-list">
+                  {/*
+                    ЧТО БЫЛО. Лента снимков — это один `map` по списку. При нуле
+                    записей он не рисует ничего, и на месте списка оставалась пустая
+                    полоса. Врач не мог отличить три разные ситуации: снимков у
+                    пациента действительно нет, их скрыл фильтр типа, или пациент не
+                    выбран вовсе. Фильтр типа при переключении пациента не
+                    сбрасывается, поэтому «пусто из-за фильтра» — не редкость: у
+                    нового пациента снимки другого типа, а лента молчит.
+
+                    ДОЛГ С ПРИЧИНОЙ. Состояний «загружаю» и «ошибка загрузки» здесь
+                    нет: экран не получает ни признака загрузки дашборда, ни текста
+                    ошибки — в списке свойств <ImagingView> в App.tsx таких нет,
+                    а App.tsx в эту правку не входит. Поэтому текст ниже говорит
+                    только то, что известно наверняка, и не утверждает «снимков нет»
+                    там, где правильнее «ничего не пришло».
+                  */}
+                  {visibleImagingStudies.length === 0 ? (
+                    !activePatient ? (
+                      <EmptyState
+                        icon={<ImageIcon size={28} />}
+                        title="Пациент не выбран"
+                        description="Лента показывает снимки того пациента, который назван в шапке экрана. Выберите пациента в картотеке или откройте приём — снимки подтянутся сами."
+                      />
+                    ) : activeImagingStudies.length > 0 && imagingKindFilter !== "all" ? (
+                      <EmptyState
+                        icon={<ImageIcon size={28} />}
+                        title={`Снимков типа «${imagingKindLabels[imagingKindFilter] ?? imagingKindFilter}» у пациента нет`}
+                        description={`Их скрыл фильтр типа: у пациента ${countLabel(activeImagingStudies.length, "снимок", "снимка", "снимков")} других типов.`}
+                        action={
+                          <button className="secondary-button" type="button" onClick={() => setImagingKindFilter("all")}>
+                            Показать все снимки
+                          </button>
+                        }
+                      />
+                    ) : (
+                      <EmptyState
+                        icon={<ImageIcon size={28} />}
+                        title="Снимков в карте пациента нет"
+                        description="В ленте только снимки, привязанные к пациенту в базе. Файлы, выбранные с диска кнопками «Папка DICOM» и «Файлы», в карту не попадают и после перезагрузки страницы не сохраняются. Кнопка «Добавить снимок вручную» создаёт карточку без файла — разобрать такой снимок нельзя."
+                      />
+                    )
+                  ) : null}
                   {visibleImagingStudies.map((study: any) => (
                     <article
                       className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
