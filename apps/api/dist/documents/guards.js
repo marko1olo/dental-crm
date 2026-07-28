@@ -221,7 +221,46 @@ export function paymentReceiptSelectionErrorForDocument(input, payments) {
     }
     return null;
 }
-export function paymentRefundCorrectionSelectionErrorForDocument(input, payments) {
+/**
+ * Сумма, уже возвращённая по платежу ВЫДАННЫМИ документами возврата/коррекции.
+ *
+ * ЗАЧЕМ: без этого учёта возврат по одному чеку можно было оформить сколько
+ * угодно раз. Проверка сравнивала каждую заявку с ИСХОДНОЙ суммой платежа,
+ * а не с остатком, и нигде в коде не выставлялся статус "refunded"
+ * (db.update(payments) не вызывается ни разу). Два возврата по 30 000 ₽
+ * с чека на 50 000 ₽ проходили оба — клиника выплачивала 60 000 ₽.
+ *
+ * Считаем по фактически выданным документам, поэтому отдельная колонка в БД
+ * и миграция не нужны: источник истины — сами документы возврата.
+ */
+export function alreadyRefundedRubForPayment(paymentId, documents, excludeDocumentId) {
+    if (!documents?.length)
+        return 0;
+    let total = 0;
+    for (const candidate of documents) {
+        if (candidate.kind !== "payment_refund_correction_request")
+            continue;
+        if (candidate.status !== "issued")
+            continue;
+        if (excludeDocumentId && candidate.id === excludeDocumentId)
+            continue;
+        const refund = candidate.payload?.paymentRefundCorrection;
+        if (!refund)
+            continue;
+        const selected = refund.selectedPaymentIds ?? [];
+        if (!selected.includes(paymentId))
+            continue;
+        const amount = Number(refund.amountRub ?? 0);
+        if (Number.isFinite(amount) && amount > 0)
+            total += amount;
+    }
+    return total;
+}
+export function paymentRefundCorrectionSelectionErrorForDocument(input, payments, 
+/** Ранее выданные документы пациента — нужны для учёта прошлых возвратов. */
+issuedDocuments, 
+/** Идентификатор текущего документа, чтобы не считать его самого. */
+currentDocumentId) {
     if (input.kind !== "payment_refund_correction_request")
         return null;
     const payload = input.payload?.paymentRefundCorrection;
@@ -251,8 +290,17 @@ export function paymentRefundCorrectionSelectionErrorForDocument(input, payments
         if (payment.status !== "paid" || payment.amountRub <= 0) {
             return "Возврат или коррекцию можно оформить только по проведенному положительному платежу.";
         }
-        if (payload.amountRub > payment.amountRub) {
-            return `Сумма возврата (${payload.amountRub} руб.) не может превышать сумму исходного чека (${payment.amountRub} руб.).`;
+        // БЫЛО: сравнение с ПОЛНОЙ суммой платежа без учёта предыдущих возвратов —
+        // по чеку на 50 000 ₽ проходили два возврата по 30 000 ₽ подряд.
+        const alreadyRefundedRub = alreadyRefundedRubForPayment(payment.id, issuedDocuments, currentDocumentId);
+        const refundableRub = payment.amountRub - alreadyRefundedRub;
+        if (refundableRub <= 0) {
+            return `По чеку на ${payment.amountRub} руб. уже возвращено ${alreadyRefundedRub} руб. Свободного остатка для возврата нет.`;
+        }
+        if (payload.amountRub > refundableRub) {
+            return alreadyRefundedRub > 0
+                ? `Сумма возврата (${payload.amountRub} руб.) превышает остаток по чеку: из ${payment.amountRub} руб. уже возвращено ${alreadyRefundedRub} руб., доступно ${refundableRub} руб.`
+                : `Сумма возврата (${payload.amountRub} руб.) не может превышать сумму исходного чека (${payment.amountRub} руб.).`;
         }
         if (!payment.fiscalReceiptNumber?.trim()) {
             return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";

@@ -1,14 +1,13 @@
+import { requireOrganizationId } from "../../security/identity.js";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { createDocumentSchema, publicGeneratedDocumentSchema } from "@dental/shared";
 import { paidAmountRubForDocument, plannedAmountRubForDocument, paymentRefundCorrectionSelectionErrorForDocument, paymentReceiptSelectionErrorForDocument, taxPaymentSelectionErrorForDocument, validateDocumentCreation } from "../../documents/guards.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
-import { createGeneratedDocumentInDb } from "../../db/documentQuery.js";
+import { createGeneratedDocumentInDb, getDocumentsByPatientId } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getTreatmentPlanItemsForPatient } from "../../db/clinicalQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 import { apiError, documentCreateValidationMessageForRequest } from "../documents.js";
 export async function register(app) {
     app.post("/api/documents", async (request, reply) => {
@@ -22,14 +21,19 @@ export async function register(app) {
             });
         }
         const input = repairMojibakeDeep(parsedInput.data);
-        const clinicHeader = request.headers["x-dente-clinic-token"];
-        const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-        const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-        const orgId = payload?.organizationId || "mock-org"; // fallback for tests
+        // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+        // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+        // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+        // Организация теперь берётся только из проверенного токена (401 иначе).
+        const orgId = requireOrganizationId(request, reply);
+        if (!orgId)
+            return;
         const patient = await getPatientByIdFromDb(orgId, input.patientId);
         const visit = input.visitId ? await getVisitByIdInDb(orgId, input.visitId) : null;
         const patientPayments = await getPaymentsByPatientIdInDb(orgId, input.patientId);
         const patientPlanItems = await getTreatmentPlanItemsForPatient(orgId, input.patientId);
+        // Нужны для контроля суммарных возвратов по одному чеку (см. guards.ts).
+        const patientDocuments = await getDocumentsByPatientId(orgId, input.patientId);
         const validation = validateDocumentCreation(input, {
             patient: patient ?? null,
             visit,
@@ -37,7 +41,7 @@ export async function register(app) {
             plannedAmountRub: plannedAmountRubForDocument(input.kind, input, patientPlanItems.map(item => ({ ...item, quantity: Number(item.quantity) }))),
             taxPaymentSelectionError: taxPaymentSelectionErrorForDocument(input, patientPayments),
             paymentReceiptSelectionError: paymentReceiptSelectionErrorForDocument(input, patientPayments),
-            paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, patientPayments)
+            paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, patientPayments, patientDocuments)
         });
         if (!validation.ok) {
             return reply.code(validation.statusCode).send(apiError(validation.error));

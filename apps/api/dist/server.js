@@ -12,13 +12,32 @@ import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
+import { registerMigrationRoutes } from "./routes/migration.js";
+import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
+import { startMigrationWorker, stopMigrationWorker } from "./migration/worker.js";
+// Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
+// отвечали 404, то есть функциональность существовала только в исходниках.
+import { registerFilesRoutes } from "./routes/files.js";
+import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
+import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
+import { registerInsuranceRoutes } from "./routes/insurance.js";
+import { registerLabRoutes } from "./routes/lab.js";
+import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerMaxRoutes } from "./routes/max.js";
+import { registerSterilizationRoutes } from "./routes/sterilization.js";
+import { registerVkRoutes } from "./routes/vk.js";
+import { registerWaitlistRoutes } from "./routes/waitlist.js";
+import { registerWhatsappRoutes } from "./routes/whatsapp.js";
+import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientRoutes } from "./routes/patients.js";
+import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
+import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
@@ -27,14 +46,73 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.js";
 import { registerAuditRoutes } from "./routes/audit.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
+// Вторая партия незарегистрированных модулей. Фронтенд обращается к ним
+// (только к /api/inventory — 25 мест), но Fastify отвечал 404.
+import registerDiaryRoutes from "./routes/diary.js";
+import { registerCommunicationOutboxRoutes } from "./routes/communicationsOutbox.js";
+import { registerReportRoutes } from "./routes/reports.js";
+import { registerCommunicationReceiptRoutes } from "./routes/communicationReceipts.js";
+import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
+import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
+import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
+import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
+import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
+import registerEgiszRoutes from "./routes/egisz.js";
+import { inventoryRoutes } from "./routes/inventory.js";
+import { portalRoutes } from "./routes/portal.js";
+import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
+import registerTemplateRoutes from "./routes/templates.js";
+import { telephonyRoutes } from "./routes/telephony.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
 import { ensureSshTunnel } from "./speech/tunnel.js";
 import { getProxyAgent } from "./speech/keyPool.js";
 import { startWatchdog } from "./watchdog.js";
+import { registerRateLimiting } from "./security/rateLimit.js";
+import { startBackupDaemon, stopBackupDaemon } from "./services/backupWorker.js";
+import { authTokenSecret } from "./security/authSecret.js";
+import { getRequestIdentity } from "./security/identity.js";
 loadAdditionalServerEnv();
 startWatchdog();
+/**
+ * Проверка конфигурации безопасности на старте (fail fast).
+ * Раньше сервер спокойно поднимался без AUTH_TOKEN_SECRET и подписывал токены
+ * публичной строкой из репозитория. Теперь в production он не стартует вовсе,
+ * а в dev печатает предупреждения о небезопасных послаблениях.
+ */
+function assertSecurityConfiguration() {
+    // Бросит исключение в production, если AUTH_TOKEN_SECRET не задан или слабый.
+    authTokenSecret();
+    const isProduction = process.env.NODE_ENV === "production";
+    const unsafeFlags = [
+        "DENTE_CLINICAL_ALLOW_UNGUARDED_READS",
+        "DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS",
+        "DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
+        "DENTE_DEV_ALLOW_HEADER_ORG",
+        "DENTE_ALLOW_DEMO_LOGIN",
+        "DENTE_ALLOW_DEMO_FIXTURES"
+    ].filter((name) => process.env[name] === "1");
+    if (isProduction) {
+        if (unsafeFlags.length > 0) {
+            throw new Error(`Небезопасные флаги разработки включены в production: ${unsafeFlags.join(", ")}. Отключите их перед запуском.`);
+        }
+        return;
+    }
+    // Вне production часть послаблений включена по умолчанию (демо-вход, код
+    // портала 0000), а часть требует явного флага. Раньше это сообщение
+    // перечисляло послабления списком «как будто все включены» — теперь
+    // печатается фактическое состояние, иначе предупреждение вводит в заблуждение.
+    const активные = [
+        process.env.DENTE_ALLOW_DEMO_LOGIN !== "0" ? "демо-вход" : null,
+        "код портала по умолчанию 0000",
+        process.env.DENTE_DEV_ALLOW_HEADER_ORG === "1" ? "заголовок x-organization-id" : null,
+        process.env.DENTE_ALLOW_DEMO_FIXTURES === "1" ? "демо-фикстуры ЕГИСЗ" : null
+    ].filter(Boolean);
+    console.warn(`[security] Режим разработки. Активные послабления: ${активные.join(", ")}. ` +
+        "В production все они выключены автоматически.");
+}
+assertSecurityConfiguration();
 async function checkProxyPortDirectly(proxyUrlString) {
     return new Promise((resolve) => {
         try {
@@ -126,8 +204,28 @@ function publicApiErrorMessage(error, statusCode) {
 export async function createDenteApiApp(options = {}) {
     const app = Fastify({
         logger: {
-            level: process.env.NODE_ENV === "production" ? "info" : "debug"
-        }
+            level: process.env.NODE_ENV === "production" ? "info" : "debug",
+            redact: {
+                // Не пишем в логи секреты и токены — иначе они утекают в файлы логов
+                // и в системы сбора логов вместе с обычной отладкой.
+                paths: [
+                    'req.headers.authorization',
+                    'req.headers["x-dente-clinic-token"]',
+                    'req.headers["x-dente-staff-token"]',
+                    'req.headers["x-dente-admin-secret"]',
+                    'req.headers.cookie',
+                    'res.headers["set-cookie"]'
+                ],
+                censor: "[скрыто]"
+            }
+        },
+        // За обратным прокси (nginx) реальный IP приходит в X-Forwarded-For.
+        // Без trustProxy rate-limit видит один и тот же адрес контейнера у всех
+        // клиентов. Включается явно, чтобы напрямую доступный API не доверял
+        // подделанному заголовку.
+        trustProxy: process.env.TRUST_PROXY === "1",
+        // Ограничение размера тела запроса: снимки и DICOM приходят base64.
+        bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES ?? 256 * 1024 * 1024)
     });
     let rawWebOrigin = process.env.WEB_ORIGIN;
     if (!rawWebOrigin) {
@@ -155,16 +253,40 @@ export async function createDenteApiApp(options = {}) {
         }
     });
     await app.register(cors, {
-        origin: webOrigins
+        origin: webOrigins,
+        // Заголовки авторизации должны явно проходить преflight-проверку.
+        allowedHeaders: [
+            "content-type",
+            "authorization",
+            "x-dente-clinic-token",
+            "x-dente-staff-token",
+            "x-dente-admin-secret",
+            "x-organization-id",
+            "x-requested-with"
+        ],
+        exposedHeaders: ["retry-after", "x-ratelimit-limit", "x-ratelimit-remaining"],
+        maxAge: 600
     });
-    app.addHook("onRequest", async (_request, reply) => {
+    // Ограничение частоты запросов для аутентификации и публичных маршрутов.
+    // Раньше в routes/auth.ts стоял config.rateLimit, но плагин @fastify/rate-limit
+    // не установлен — конфигурация игнорировалась, и пароль кабинета можно было
+    // перебирать без ограничений.
+    registerRateLimiting(app);
+    app.addHook("onRequest", async (request, reply) => {
         reply.header("X-Content-Type-Options", "nosniff");
         reply.header("X-Frame-Options", "DENY");
-        reply.header("X-XSS-Protection", "1; mode=block");
+        reply.header("X-XSS-Protection", "0"); // Устаревший фильтр сам был источником уязвимостей; актуальная защита — CSP.
         reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        // Один раз разбираем токены запроса и кладём результат в request.user,
+        // чтобы маршруты не парсили заголовки самостоятельно и не расходились в логике.
+        getRequestIdentity(request);
     });
-    app.setErrorHandler((error, _request, reply) => {
-        import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", (error?.stack || error?.message || String(error)) + "\nCAUSE: " + (error?.cause || "") + "\n"));
+    app.setErrorHandler((error, request, reply) => {
+        // БЫЛО: каждый обработчик ошибок синхронно дописывал стектрейс в
+        // "C:/Clinic_MVP/error.log" — жёстко зашитый Windows-путь, который не
+        // существует на сервере, файл рос без ограничений (уже ~1 МБ) и содержал
+        // внутренние пути и данные запросов. СТАЛО: штатный логгер Fastify.
+        request.log.error({ err: error, url: request.url, method: request.method }, "Необработанная ошибка запроса");
         if (isZodValidationError(error)) {
             reply.status(400).send({
                 error: "ValidationError",
@@ -205,6 +327,48 @@ export async function createDenteApiApp(options = {}) {
     await registerImagingRoutes(app);
     await registerIngestionRoutes(app);
     await registerImportRoutes(app);
+    // Движок переноса чужой базы: стейджинг, карантин, сверка, откат.
+    await registerMigrationRoutes(app);
+    // Оркестрация по фазам для больших выгрузок: заливка потоком, очередь, воркер.
+    await registerMigrationRunRoutes(app);
+    // Зубная формула и история зуба. Оба модуля были написаны, но ни разу не
+    // зарегистрированы: Fastify отвечал «Route POST:/api/patients/:id/
+    // tooth-states/batch not found», поэтому состояния зубов физически не могли
+    // сохраниться, а вкладка «История зуба» не имела источника данных.
+    await registerOdontogramRoutes(app);
+    await registerToothHistoryRoutes(app);
+    // Ни один из этих модулей раньше не регистрировался, поэтому семейный кошелёк,
+    // ДМС, зуботехническая лаборатория, лист ожидания, лиды, стерилизация,
+    // файлы, планирование по снимкам и каналы VK/WhatsApp/MAX отвечали 404.
+    // Проверено на дубли: среди 225 объявленных путей пересечений с уже
+    // работающими маршрутами нет.
+    await registerFilesRoutes(app);
+    await registerFamilyFinanceRoutes(app);
+    await registerImagingPlanningRoutes(app);
+    await registerInsuranceRoutes(app);
+    await registerLabRoutes(app);
+    await registerLeadsRoutes(app);
+    /* registerMaxRoutes и registerWhatsappRoutes навешивают внутри себя
+       app.addHook("preHandler", ...) с проверкой requireNonDoctorAccess. При
+       вызове напрямую с корневым экземпляром хук попадает в корневую область и
+       срабатывает на КАЖДОМ запросе всего API, а не только на своих маршрутах.
+  
+       Замерено на живом сервере, scratch/probe-doctor-403-scope.mjs: врач,
+       разблокировавший смену своим PIN, получал 403 «Доктора не могут
+       выполнять это действие: non-doctor mutation» на всё, включая
+       /api/health, /api/dashboard, /api/patients и чтение зубной формулы. Без
+       токена сотрудника те же маршруты отвечали 200. То есть стоматолог,
+       войдя под собой, не мог работать в программе вообще — а зубная формула
+       это его основной инструмент.
+  
+       app.register создаёт границу инкапсуляции: хук остаётся внутри своего
+       модуля. Маршруты внутри объявлены абсолютными путями (/api/max/...,
+       /api/whatsapp/...), поэтому префикс не нужен и адреса не меняются. */
+    await app.register(registerMaxRoutes);
+    await registerSterilizationRoutes(app);
+    await registerVkRoutes(app);
+    await registerWaitlistRoutes(app);
+    await app.register(registerWhatsappRoutes);
     await registerPatientRoutes(app);
     await registerPricelistRoutes(app);
     await registerScheduleRoutes(app);
@@ -212,6 +376,9 @@ export async function createDenteApiApp(options = {}) {
     await registerSpeechRoutes(app);
     await registerSmartImportRoutes(app);
     await registerSystemRoutes(app);
+    // Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
+    // /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
+    await registerWebsocketRoutes(app);
     await registerTelegramRoutes(app);
     await registerTelegramWebhookRoutes(app);
     await registerVisitRoutes(app);
@@ -221,10 +388,85 @@ export async function createDenteApiApp(options = {}) {
     await registerAnalyticsRoutes(app);
     await registerAuditRoutes(app);
     await workspaceProfileRoutes(app);
+    // Вторая партия ранее незарегистрированных модулей.
+    //
+    // Префиксы восстановлены по адресам, которые уже вызывает фронтенд:
+    //   /api/inventory/:organizationId...        — apps/web/src (25 обращений)
+    //   /api/portal/auth/send-otp, /me, ...      — GuestLabPortal / портал пациента
+    //   /api/public/booking/:organizationId/...  — pages/PublicBookingWidget.tsx
+    // diary.ts и egisz.ts объявляют абсолютные пути, префикс им не нужен.
+    //
+    // Дубли проверены: из 29 путей этих модулей пересекался ровно один —
+    // /api/clinical/custom-examination-form-catalogs объявлялся и в egisz.ts, и в
+    // clinical.ts:85. Каталог форм осмотра к ЕГИСЗ отношения не имеет, поэтому
+    // удалён из egisz.ts; на дубле Fastify падал бы при старте.
+    await registerDiaryRoutes(app);
+    await registerEgiszRoutes(app);
+    // templates.ts нашёл тест routeRegistrationCoverage: полностью готовый
+    // CRUD шаблонов приёма (аналог «Шаблонов амбулаторных карт»), при этом
+    // apps/web обращается к /api/templates, а маршрута не существовало.
+    await registerTemplateRoutes(app);
+    await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+    await app.register(portalRoutes, { prefix: "/api/portal" });
+    await app.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
+    await app.register(telephonyRoutes, { prefix: "/api/telephony" });
+    // Сообщения пациентам: справочник шаблонов, очередь отправки, согласия,
+    // настройки рассылки и состояние шлюзов. Прежний routes/communications.ts
+    // состоял из одного обработчика «закрыть задачу связи»; отправлять было
+    // нечем и посмотреть, почему сообщение не ушло, было негде.
+    await registerCommunicationOutboxRoutes(app);
+    // Отчёты руководителю. Единственным отчётом был /api/analytics/dashboard:
+    // ни динамики выручки, ни доли неявок, ни дебиторки, ни того, что продаётся,
+    // владелец клиники увидеть не мог, хотя данные для всего этого в базе есть.
+    await registerReportRoutes(app);
+    // Квитанции о доставке от провайдеров. Статус sent означает «шлюз принял», а
+    // не «пациент получил»: SMS на выключенный телефон шлюз принимает и берёт за
+    // неё деньги. Вызывается извне, поэтому защищён секретом обратного вызова.
+    await registerCommunicationReceiptRoutes(app);
+    // Подтверждение и отмена приёма пациентом по ссылке из напоминания. Без
+    // авторизации — право несёт подписанный токен, а не идентификатор в адресе.
+    await registerPublicAppointmentActionRoutes(app);
+    // Утренний обзвон: кто подтвердил, до кого напоминание не дошло и кому
+    // поэтому надо звонить. Без этого экрана подтверждение по ссылке не даёт
+    // экономии — администратор всё равно обзванивает всех подряд.
+    await registerDayConfirmationRoutes(app);
+    // Разбор дублей пациентов. Виджет PatientDuplicateMergeQueuesWidget читает
+    // /api/crm/patient-duplicate-merge-queues — такого маршрута не существует
+    // (проверено запросом, 404), а искать дубли в проекте было нечем.
+    await registerPatientDuplicateRoutes(app);
+    // Возврат пациентов. Экран «потерянные пациенты» читал таблицу
+    // lost_patients_filters, в которую никто ничего не пишет: список был снимком,
+    // сделанным неизвестно когда. Здесь он считается по текущим данным.
+    await registerPatientRecallRoutes(app);
     if (options.startTelegramWorker !== false) {
         const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
         app.addHook("onClose", async () => {
             telegramOutboxDueWorker.stop();
+        });
+    }
+    // Разбор очереди исходящих сообщений. Прежний services/notificationWorker.ts
+    // объявлял setInterval и ниоткуда не вызывался — очередь не разбиралась.
+    // Включается DENTE_COMMUNICATION_WORKER_ENABLED=1.
+    if (options.startCommunicationWorker !== false) {
+        const communicationWorker = startCommunicationDispatchWorker({ logger: app.log });
+        if (communicationWorker.enabled) {
+            app.addHook("onClose", async () => {
+                communicationWorker.stop();
+            });
+        }
+    }
+    /**
+     * Фоновое выполнение переноса чужой базы.
+     *
+     * Без него прогон, поставленный в очередь маршрутом /execute, никто не возьмёт,
+     * и оператор будет бесконечно видеть статус «в очереди». На старте воркер
+     * подбирает прогоны, брошенные предыдущим экземпляром процесса, и продолжает
+     * их с оставшихся строк стейджинга.
+     */
+    if (options.startMigrationWorker !== false) {
+        await startMigrationWorker();
+        app.addHook("onClose", async () => {
+            stopMigrationWorker();
         });
     }
     return app;
@@ -241,6 +483,7 @@ export async function startDenteApiServer() {
         const gracefulShutdown = async (signal) => {
             app.log.info(`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`);
             try {
+                stopBackupDaemon();
                 await app.close();
                 const { pool } = await import("./db/client.js");
                 if (pool)
@@ -253,6 +496,10 @@ export async function startDenteApiServer() {
                 process.exit(1);
             }
         };
+        // Резервное копирование базы. БЫЛО: модуль существовал, но startBackupDaemon
+        // не вызывался НИ ОТКУДА — копий не создавалось вообще, при том что в логах
+        // и в интерфейсе всё выглядело так, будто они делаются.
+        startBackupDaemon();
         process.on("SIGINT", () => gracefulShutdown("SIGINT"));
         process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     }

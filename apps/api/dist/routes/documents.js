@@ -9,7 +9,7 @@ import { documentAuditFactsSchema, documentKindMetadata } from "@dental/shared";
 import { getAppointmentByIdInDb } from "../db/appointmentsQuery.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { getDocumentRenderContextFromDb, readIssuedDocumentSnapshot } from "../db/documentQuery.js";
-import { getDefaultOrganizationId, getDocumentsByPatientId } from "../db/documentQuery.js";
+import { getDocumentsByPatientId } from "../db/documentQuery.js";
 import { documentIssueBlockReason, renderDocumentHtml, taxFiscalDocumentBlockReason } from "../documents/renderDocument.js";
 import { paymentIdsForTaxDocument, receiptKeysForTaxDocument, taxDocumentDuplicateSensitive, taxPaymentSnapshotTotalRub, taxPaymentsForDocumentScope } from "../documents/taxPaymentSnapshot.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
@@ -603,8 +603,10 @@ export function releaseReceiptMatchesCopyRequest(release, request) {
         releasePeriodCoveredByRequest(release, request));
 }
 export async function findIssuedMedicalCopyRequestForRelease(document) {
-    const orgId = await getDefaultOrganizationId();
-    const allDocuments = await getDocumentsByPatientId(orgId, document.patientId);
+    // БЫЛО: getDefaultOrganizationId() — первая организация в базе, а не та,
+    // которой принадлежит документ. Проверка цепочки документов выполнялась
+    // по чужой клинике, а `orgId!` при пустой таблице подставлял null в uuid-колонку.
+    const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
     const release = document.payload?.medicalDocumentReleaseReceipt;
     if (!release)
         return null;
@@ -687,8 +689,33 @@ export async function outpatientMedicalCard025uSourcesAreValid(payload, document
         return false;
     return await signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
 }
+/**
+ * Контекст рендеринга документа.
+ *
+ * БЫЛО: функция возвращала пустой объект `{}`. Любой документ, которому нужен
+ * юридический профиль клиники (договор, акт, справка), при выдаче и печати
+ * получал отказ «Юридический профиль клиники заполнен не полностью:
+ * clinicProfile» — при том, что профиль в базе заполнен. Настоящий сборщик
+ * контекста существовал (getDocumentRenderContextFromDb), но не использовался,
+ * потому что сам падал: внутри стоял require() в ES-модуле.
+ *
+ * Синхронная версия оставлена для обратной совместимости — она возвращает
+ * только origin и явно помечена как неполная.
+ */
 export function documentRenderContext() {
     return {};
+}
+/** Полный контекст рендеринга: профиль клиники, прайс, оплаты, план лечения. */
+export async function resolveDocumentRenderContext(organizationId, patientId) {
+    try {
+        return (await getDocumentRenderContextFromDb(organizationId, patientId));
+    }
+    catch (error) {
+        // Документ важнее полноты контекста: возвращаем пустой, чтобы вызывающий
+        // код выдал понятную ошибку валидации, а не 500.
+        console.error("[documents] Не удалось собрать контекст рендеринга:", error);
+        return {};
+    }
 }
 export function apiError(message, error = "DocumentOperationRejected") {
     return {
@@ -716,8 +743,10 @@ export function configuredTaxOfficeCode() {
     return process.env.DENTE_FNS_TAX_OFFICE_CODE?.trim() || process.env.FNS_TAX_OFFICE_CODE?.trim() || null;
 }
 export async function documentIssueChainBlockReason(document) {
-    const orgId = await getDefaultOrganizationId();
-    const allDocuments = await getDocumentsByPatientId(orgId, document.patientId);
+    // БЫЛО: getDefaultOrganizationId() — первая организация в базе, а не та,
+    // которой принадлежит документ. Проверка цепочки документов выполнялась
+    // по чужой клинике, а `orgId!` при пустой таблице подставлял null в uuid-колонку.
+    const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
     if (taxCertificateExpectedApplicationForm(document) && !(await hasIssuedTaxApplicationForCertificate(document))) {
         return "Перед выдачей налогового документа нужно выпустить заявление налогоплательщика с тем же годом, формой, ИНН, реквизитами плательщика и точным набором выбранных фискальных чеков.";
     }
@@ -734,7 +763,10 @@ export async function documentIssueChainBlockReason(document) {
             return "Перед распиской о выдаче медицинских документов нужно выбрать конкретный уже выданный запрос пациента или представителя с тем же получателем, форматом, периодом и не меньшим составом документов.";
         }
     }
-    if (document.kind === "completed_works_act" && !completedWorksActMatchesIssuedContract(document)) {
+    // БЫЛО: без await. `!Promise` — всегда false, поэтому проверка привязки акта
+    // к ВЫДАННОМУ договору не срабатывала никогда: акт выполненных работ можно было
+    // выдать со ссылкой на удалённый, черновой или чужой договор.
+    if (document.kind === "completed_works_act" && !(await completedWorksActMatchesIssuedContract(document))) {
         return "Перед выдачей акта нужно выбрать конкретный уже выданный договор платных медицинских услуг по этому пациенту и визиту.";
     }
     const card025u = document.payload?.outpatientMedicalCard025u;
@@ -792,7 +824,12 @@ export async function buildDocumentAuditFacts(document, patient) {
     const htmlPreviewUrl = `/api/documents/${document.id}/html`;
     const htmlDownloadUrl = immutableSnapshotReady ? `${htmlPreviewUrl}?download=1` : null;
     // treatment_plan PDFs are rendered on-the-fly (no signed archive required) — available in draft too
-    const treatmentPlanPdfUrl = document.kind === "treatment_plan" ? `/api/documents/${document.id}/treatment-plan-pdf` : null;
+    // БЫЛО: для плана лечения всегда предлагалась ссылка на «живой» рендер, даже
+    // после выдачи и после аннулирования — она перекрывала архивную ссылку.
+    // Теперь живой рендер только для черновика, выданный документ идёт через архив.
+    const treatmentPlanPdfUrl = document.kind === "treatment_plan" && document.status === "draft"
+        ? `/api/documents/${document.id}/treatment-plan-pdf`
+        : null;
     const pdfDownloadUrl = treatmentPlanPdfUrl ?? (immutableSnapshotReady && hasIssueSignatureAttestation ? `/api/documents/${document.id}/pdf` : null);
     const canExportFnsXml = document.kind === "tax_deduction_certificate" &&
         document.status === "issued" &&

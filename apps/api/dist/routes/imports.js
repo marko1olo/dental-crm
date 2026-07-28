@@ -1,8 +1,8 @@
 import { importCommitRequestSchema, importCommitResponseSchema, importIntakeRequestSchema, importIntakeResponseSchema, importPreviewRequestSchema, importPreviewResponseSchema, splitLine, normalizeDate } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { patients, importBatches, auditEvents, organizations } from "../db/schema.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { patients, importBatches, auditEvents } from "../db/schema.js";
+import { requireClinicalMutationContext, requireClinicalReadContext } from "../accessGuard.js";
 const headerAliases = {
     fio: "fullName",
     "full name": "fullName",
@@ -226,17 +226,35 @@ export async function buildPatientImportPreview(orgId, input) {
             row.status = "blocked";
             row.warnings.push("Нет ФИО пациента");
         }
+        /**
+         * Отсутствие телефона — предупреждение, а НЕ причина не переносить пациента.
+         *
+         * Раньше строка без телефона получала status "warning", а commitPatientImport
+         * фильтровал `row.status === "ready"` — то есть пациент молча не заводился.
+         * В журнале администратора без телефона записана половина пожилых пациентов,
+         * и клиника теряла их, не получая об этом ни одного сообщения: preview
+         * показывал «warning», а после импорта их просто не было.
+         *
+         * Теперь такие строки переносятся, а предупреждение остаётся: карточка без
+         * телефона полезна (история лечения, снимки), а «потерянный пациент» —
+         * нет. Строки со статусом warning импортируются, см. commitPatientImport.
+         */
         if (!row.phone) {
-            row.status = row.status === "blocked" ? "blocked" : "warning";
-            row.warnings.push("Нет телефона для связи");
+            row.warnings.push("Нет телефона для связи — пациент будет перенесён, напоминания отправлять будет некуда");
         }
+        /**
+         * Дубль — это причина НЕ создавать вторую карточку, поэтому статус warning
+         * здесь оправдан: такие строки не импортируются (см. commitPatientImport).
+         * Отличие от случая выше в том, что пропуск дубля — желаемое поведение, а
+         * пропуск пациента без телефона был потерей данных.
+         */
         if (row.phone && knownPhones.has(row.phone)) {
             row.status = row.status === "blocked" ? "blocked" : "warning";
-            row.warnings.push("Возможный дубль по телефону");
+            row.warnings.push("Возможный дубль по телефону — карточка не будет создана повторно");
         }
         if (row.fullName && knownNames.has(row.fullName.trim().toLowerCase())) {
             row.status = row.status === "blocked" ? "blocked" : "warning";
-            row.warnings.push("Возможный дубль по ФИО");
+            row.warnings.push("Возможный дубль по ФИО — карточка не будет создана повторно");
         }
         return row;
     });
@@ -250,48 +268,64 @@ export async function buildPatientImportPreview(orgId, input) {
     };
     return importPreviewResponseSchema.parse(response);
 }
+/**
+ * Организация берётся из проверенного токена запроса.
+ *
+ * БЫЛО во всех трёх обработчиках:
+ *
+ *     const [org] = await db.select().from(organizations).limit(1);
+ *
+ * — первая строка таблицы организаций, без всякой связи с тем, кто прислал
+ * запрос. На одной клинике в базе это работает и потому не бросается в глаза.
+ * Как только клиник становится две, администратор второй клиники загружает
+ * выгрузку своих пациентов в базу первой: `limit(1)` без `order by` возвращает
+ * то, что отдаст планировщик, а изоляции арендаторов нет вовсе.
+ *
+ * requireClinicalReadContext/MutationContext возвращают organizationId, извлечённый
+ * из подписанного токена, и сами отвечают клиенту при отказе.
+ */
 export async function registerImportRoutes(app) {
     app.post("/api/imports/patients/intake", async (request, reply) => {
-        if (!(await requireClinicalReadAccess(request, reply, "patient import intake")))
+        const context = await requireClinicalReadContext(request, reply, "patient import intake");
+        if (!context)
             return;
-        const [org] = await db.select().from(organizations).limit(1);
-        if (!org)
-            return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
         const parsed = parseImportPayload(importIntakeRequestSchema, request.body, "Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника.");
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        return await buildPatientImportIntake(org.id, input);
+        return await buildPatientImportIntake(context.organizationId, input);
     });
     app.post("/api/imports/patients/preview", async (request, reply) => {
-        if (!(await requireClinicalReadAccess(request, reply, "patient import preview")))
+        const context = await requireClinicalReadContext(request, reply, "patient import preview");
+        if (!context)
             return;
-        const [org] = await db.select().from(organizations).limit(1);
-        if (!org)
-            return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
         const parsed = parseImportPayload(importPreviewRequestSchema, request.body, "Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов.");
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        return await buildPatientImportPreview(org.id, input);
+        return await buildPatientImportPreview(context.organizationId, input);
     });
     app.post("/api/imports/patients/commit", async (request, reply) => {
-        if (!(await requireClinicalMutationAccess(request, reply, "patient import commit")))
+        const context = await requireClinicalMutationContext(request, reply, "patient import commit");
+        if (!context)
             return;
-        const [org] = await db.select().from(organizations).limit(1);
-        if (!org)
-            return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
         const parsed = parseImportPayload(importCommitRequestSchema, request.body, "Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью.");
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        return await commitPatientImport(org.id, input);
+        return await commitPatientImport(context.organizationId, input);
     });
 }
 export async function commitPatientImport(orgId, input) {
     const preview = await buildPatientImportPreview(orgId, input);
     const result = await db.transaction(async (tx) => {
         const importedPatientIds = [];
+        /**
+         * Импортируются строки со статусом ready. Пациент без телефона теперь
+         * получает ready с предупреждением (см. buildPatientImportPreview), поэтому
+         * он переносится, а не теряется молча. Статус warning остался только за
+         * дублями — их пропуск и есть желаемое поведение.
+         */
         const validRows = preview.rows.filter((row) => row.status === "ready" && row.fullName);
         for (const row of validRows) {
             const [inserted] = await tx.insert(patients).values({

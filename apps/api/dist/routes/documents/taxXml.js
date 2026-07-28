@@ -1,11 +1,10 @@
+import { requireOrganizationId } from "../../security/identity.js";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { buildTaxPaymentSnapshotForIssue, taxDocumentUsesPaymentSnapshot } from "../../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../../documents/taxXml.js";
-import { apiError, configuredTaxOfficeCode, documentIssueBlockReason, documentIssueChainBlockReason, findIssuedDuplicateTaxCertificate, frozenTaxXmlClinicProfile, frozenTaxXmlPatient, frozenTaxXmlPayments, taxSnapshotDocument, taxXmlSourceSnapshotSha256, documentRenderContext } from "../documents.js";
+import { apiError, configuredTaxOfficeCode, documentIssueBlockReason, documentIssueChainBlockReason, findIssuedDuplicateTaxCertificate, frozenTaxXmlClinicProfile, frozenTaxXmlPatient, frozenTaxXmlPayments, taxSnapshotDocument, taxXmlSourceSnapshotSha256, resolveDocumentRenderContext } from "../documents.js";
 import { getDocumentById, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 export async function register(app) {
     app.get("/api/documents/:id/tax-xml", handleGetTaxXml);
@@ -14,10 +13,13 @@ async function handleGetTaxXml(request, reply) {
     if (!(await requireClinicalReadAccess(request, reply, "document tax xml")))
         return;
     const { id } = request.params;
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId || "mock-org";
+    // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+    // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+    // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+    // Организация теперь берётся только из проверенного токена (401 иначе).
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId)
+        return;
     const document = await getDocumentById(orgId, id);
     if (!document) {
         return reply.code(404).send(apiError("Документ не найден"));
@@ -61,7 +63,8 @@ async function handleGetTaxXml(request, reply) {
             .code(409)
             .send(apiError("XML ФНС нельзя собрать без снимка данных пациента, клиники и платежей на момент выдачи. Аннулируйте и выдайте исправленную справку."));
     }
-    const renderContext = documentRenderContext();
+    // Реальный контекст вместо пустой заглушки (см. documents.ts).
+    const renderContext = await resolveDocumentRenderContext(orgId, document.patientId);
     const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
     const xmlClinicProfile = frozenTaxXmlClinicProfile(xmlDocument, await import("../../db/settingsQuery.js").then(m => m.getClinicSettingsFromDb(orgId).then(s => s.profile)));
     const xmlPayments = frozenTaxXmlPayments(xmlDocument, await import("../../db/billingQuery.js").then(m => m.getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId)));

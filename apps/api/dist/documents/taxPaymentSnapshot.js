@@ -99,15 +99,22 @@ export function coveredIdentifiersForIssuedTaxCertificates(document, documents, 
     return { paymentIds, fiscalReceiptKeys };
 }
 export function taxPaymentsForIssueSnapshot(document, payments, documents) {
-    const explicitPaymentIds = selectedPaymentIdsForTaxDocument(document);
-    if (explicitPaymentIds.size) {
-        return baseTaxPaymentsForDocument(document, payments);
-    }
-    if (!taxDocumentDuplicateSensitive(document.kind)) {
-        return baseTaxPaymentsForDocument(document, payments);
-    }
-    const covered = coveredIdentifiersForIssuedTaxCertificates(document, documents, payments);
     const selectedPayments = baseTaxPaymentsForDocument(document, payments);
+    if (!taxDocumentDuplicateSensitive(document.kind)) {
+        return selectedPayments;
+    }
+    // БЫЛО: при явно выбранных платежах функция возвращалась здесь досрочно, не
+    // сверяясь с уже выданными справками. А для справок без явного выбора
+    // baseTaxPaymentsForDocument отдаёт пустой список (см. ветку snapshot-видов),
+    // и фильтр ниже всегда работал по пустому массиву. То есть защита от
+    // повторного включения платежа не срабатывала ни на одном пути:
+    // coveredIdentifiersForIssuedTaxCertificates была мёртвым кодом, и один и тот
+    // же чек мог попасть в две выданные справки за один налоговый год.
+    //
+    // Своих платежей документ при этом не теряет: sameTaxDocumentScope исключает
+    // сам документ по id и учитывает только уже выданные (issued) справки того же
+    // вида, пациента и года.
+    const covered = coveredIdentifiersForIssuedTaxCertificates(document, documents, payments);
     return selectedPayments.filter((payment) => !covered.paymentIds.has(payment.id) && !covered.fiscalReceiptKeys.has(taxPaymentReceiptKey(payment)));
 }
 export function buildTaxPaymentSnapshotForIssue(document, payments, documents) {

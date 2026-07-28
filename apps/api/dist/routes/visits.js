@@ -21,7 +21,15 @@ function visitDraftDomainMessage(error) {
         return "";
     return error.message.trim();
 }
-function sendVisitDraftMutationError(error, reply, operation) {
+/**
+ * Экспортируется ради тестов: разбор доменной ошибки в код ответа — это вся
+ * логика, которую здесь стоит проверять, а дотянуться до неё через HTTP нельзя.
+ * upsertVisitDraftAutosaveInDb импортируется деструктуризацией, подменить его
+ * в тесте невозможно, и тесты вместо этого выставляли переменные окружения
+ * DENTAL_MOCK_*_ERROR, которых в коде не существует, — ошибка не подставлялась
+ * никогда, запрос уходил в живую базу и все ветки отвечали одинаково.
+ */
+export function sendVisitDraftMutationError(error, reply, operation) {
     const message = visitDraftDomainMessage(error);
     if (message === "Визит не найден") {
         return reply.code(404).send({

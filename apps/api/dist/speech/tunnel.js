@@ -1,5 +1,11 @@
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+// Импорт через пространство имён, а не деструктуризацией: обращение к
+// cp.spawn / fs.existsSync резолвится в момент вызова. При `import { spawn }`
+// привязка захватывается на загрузке модуля, и подмена в тестах не действует —
+// из-за этого три теста туннеля проверяли не то, что заявляли, а четвёртый
+// «проходил» по ложной причине (ранний выход по отсутствию ключа).
+// Файл уже импортировал net именно так; теперь стиль единый.
+import cp from "node:child_process";
+import fs from "node:fs";
 import net from "node:net";
 let tunnelProcess = null;
 const SOCKS_PORT = 1080;
@@ -35,7 +41,7 @@ export async function ensureSshTunnel() {
         return true;
     }
     // 2. Проверяем наличие приватного ключа
-    if (!existsSync(sshKey)) {
+    if (!fs.existsSync(sshKey)) {
         console.warn(`[SSH Tunnel] SSH key not found at ${sshKey}. Cannot start tunnel.`);
         return false;
     }
@@ -50,7 +56,7 @@ export async function ensureSshTunnel() {
             "-i", sshKey,
             sshHost
         ];
-        tunnelProcess = spawn("ssh", cmdArgs, {
+        tunnelProcess = cp.spawn("ssh", cmdArgs, {
             detached: true,
             stdio: "ignore"
         });

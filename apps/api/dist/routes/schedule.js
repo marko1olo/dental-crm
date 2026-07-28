@@ -2,6 +2,7 @@ import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import { createAppointmentSchema, dashboardSchema, updateAppointmentSchema } from "@dental/shared";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 const denteAdminSecretHeader = "x-dente-admin-secret";
+const appointmentBlacklistedMessage = "Запись не создана: выбранный пациент внесен в черный список и заблокирован для записи.";
 const appointmentCreateValidationMessage = "Запись не создана: выберите пациента, врача, кресло, дату и время приема.";
 const appointmentUpdateValidationMessage = "Запись не обновлена: проверьте статус, время, врача, кресло и пациента.";
 const appointmentMissingRouteMessage = "Запись не выбрана. Откройте актуальную строку расписания и повторите действие.";
@@ -32,6 +33,8 @@ function normalizedAppointmentException(error) {
 }
 function classifyAppointmentRejection(error) {
     const message = normalizedAppointmentException(error);
+    if (message.includes("черный список") || message.includes("черном списке") || message.includes("Запись заблокирована"))
+        return "patient_blacklisted";
     if (message === "Запись не найдена")
         return "appointment_not_found";
     if (message.includes("не найден") || message.includes("не активен"))
@@ -49,6 +52,8 @@ function classifyAppointmentRejection(error) {
     return "mutation_rejected";
 }
 function appointmentRejectionMessage(reason, operation) {
+    if (reason === "patient_blacklisted")
+        return appointmentBlacklistedMessage;
     if (reason === "appointment_not_found")
         return appointmentNotFoundMessage;
     if (reason === "reference_missing") {
@@ -125,6 +130,8 @@ import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
+import { wsBroker } from "../services/websocketBroker.js";
+import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 export async function registerScheduleRoutes(app) {
     app.post("/api/appointments", async (request, reply) => {
         const clinicHeader = request.headers["x-dente-clinic-token"];
@@ -140,8 +147,16 @@ export async function registerScheduleRoutes(app) {
             return reply.code(400).send({ code: "AppointmentValidationError", message: appointmentCreateValidationMessage });
         }
         try {
-            await createAppointmentInDb(orgId, input);
+            const created = await createAppointmentInDb(orgId, input);
             const dashboard = await getDashboardFromDb(orgId);
+            // Раньше маршрут расписания не рассылал НИЧЕГО, хотя эндпоинт живых
+            // обновлений так и называется — /api/ws/schedule. Два администратора,
+            // работающие в расписании одновременно, не видели действий друг друга
+            // до перезагрузки страницы: прямой путь к двойной записи на один слот.
+            wsBroker.broadcastToOrganization(orgId, {
+                type: "APPOINTMENT_CREATED",
+                payload: { appointmentId: created?.id ?? null, startsAt: created?.startsAt ?? null }
+            });
             return reply.code(201).send(dashboardSchema.parse(dashboard));
         }
         catch (error) {
@@ -167,7 +182,22 @@ export async function registerScheduleRoutes(app) {
         }
         try {
             await updateAppointmentInDb(orgId, params.appointmentId, input);
+            // Напоминание ставится в очередь заранее и несёт в тексте дату и время.
+            // После переноса или отмены оно стало неверным: пациент получил бы
+            // «ждём вас 12 августа в 14:30» на приём, которого в это время уже нет.
+            // Снимаем неотправленные — планировщик поставит новое с верным временем.
+            await invalidateAppointmentReminders(orgId, params.appointmentId, "Приём изменён администратором").catch((error) => {
+                // Сбой снятия не должен отменять сам перенос: администратор уже видит
+                // новое время, и падение маршрута выглядело бы как непринятая правка.
+                request.log.error({ err: error }, "Не удалось снять устаревшие напоминания о приёме");
+            });
             const dashboard = await getDashboardFromDb(orgId);
+            // Перенос и отмена приёма — то же самое: без рассылки коллега видит
+            // слот занятым, хотя он уже освобождён, и наоборот.
+            wsBroker.broadcastToOrganization(orgId, {
+                type: "APPOINTMENT_UPDATED",
+                payload: { appointmentId: params.appointmentId }
+            });
             return dashboardSchema.parse(dashboard);
         }
         catch (error) {

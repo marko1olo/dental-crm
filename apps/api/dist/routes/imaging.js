@@ -10,8 +10,9 @@ import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
 import { createInflateRaw, deflateSync } from "node:zlib";
 import { denteAdminSecretHeader, requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireOrganizationId } from "../security/identity.js";
 import { createImagingStudySchema, dicomFirstFramePreviewRequestSchema, dicomFirstFramePreviewResponseSchema, dicomFolderWorkupPlanRequestSchema, dicomFolderWorkupPlanResponseSchema, dicomFolderSeriesPreviewRequestSchema, dicomFolderSeriesPreviewResponseSchema, dicomLocalFolderDiscoveryRequestSchema, dicomLocalFolderDiscoveryResponseSchema, dicomRenderCachePlanRequestSchema, dicomRenderCachePlanResponseSchema, dicomWorkbenchBundleListResponseSchema, dicomWorkbenchBundleResponseSchema, dicomViewerLaunchManifestRequestSchema, dicomViewerLaunchManifestResponseSchema, dicomViewerToolStateBundleRequestSchema, dicomViewerToolStateBundleResponseSchema, dicomViewerWorkbenchManifestRequestSchema, dicomViewerWorkbenchManifestResponseSchema, dicomWebConnectorCheckRequestSchema, dicomWebConnectorCheckResponseSchema, dicomWorkstationReadinessRequestSchema, dicomWorkstationReadinessResponseSchema, dicomSeriesPreviewRequestSchema, dicomSeriesPreviewResponseSchema, localImagingOrganizerRequestSchema, localImagingOrganizerResponseSchema, imagingFolderScanRequestSchema, imagingFolderScanResponseSchema, imagingImportCommitResponseSchema, imagingImportPreviewRequestSchema, imagingImportPreviewResponseSchema, imagingViewerSessionResponseSchema, imagingStudySchema, saveDicomWorkbenchBundleRequestSchema, saveImagingViewerSessionRequestSchema, normalizeDate, splitLine } from "@dental/shared";
-import { getImagingStudiesForPatient, getAllImagingStudies, getImagingStudyById, createImagingStudyInDb, getDefaultOrganizationId, getOrCreateImagingViewerSession, listDicomWorkbenchBundles, saveDicomWorkbenchBundle, saveImagingViewerSession } from "../db/imagingQuery.js";
+import { getImagingStudiesForPatient, getAllImagingStudies, getImagingStudyById, createImagingStudyInDb, updateImagingStudyAiSummaryInDb, getOrCreateImagingViewerSession, listDicomWorkbenchBundles, saveDicomWorkbenchBundle, saveImagingViewerSession } from "../db/imagingQuery.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { getPatientByIdFromDb, getPatientsFromDb } from "../db/patientsQuery.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
@@ -534,15 +535,42 @@ function extractDicomFieldValue(line, labels) {
     }
     return null;
 }
+/**
+ * Сопоставление строки манифеста с пациентом.
+ *
+ * БЫЛО: `.find(...)` возвращал ПЕРВОГО подошедшего, без проверки на
+ * неоднозначность, и совпадение только по ФИО считалось таким же надёжным,
+ * как совпадение по телефону. У двух «Ивановых Иванов Ивановичей» КЛКТ уходил
+ * в ту карту, которую база вернула первой, а строка помечалась «ready» и
+ * импортировалась без участия человека. Второй Иванов получал чужой снимок.
+ *
+ * СТАЛО: телефон — сильный признак, только ФИО — слабый; при нескольких
+ * кандидатах пациент не подставляется и строка требует ручного выбора.
+ */
 async function matchPatient(orgId, patientName, phone) {
     const patients = await getPatientsFromDb(orgId);
     const normalizedName = patientName?.trim().toLowerCase();
-    return patients.find((patient) => {
-        const patientPhone = normalizePhone(patient.phone);
-        if (phone && patientPhone === phone)
-            return true;
-        return Boolean(normalizedName && patient.fullName.trim().toLowerCase() === normalizedName);
-    });
+    const phoneMatches = phone
+        ? patients.filter((patient) => normalizePhone(patient.phone) === phone)
+        : [];
+    if (phoneMatches.length === 1) {
+        return { patient: phoneMatches[0], ambiguous: false, weakMatch: false };
+    }
+    if (phoneMatches.length > 1) {
+        return { patient: undefined, ambiguous: true, weakMatch: false };
+    }
+    const nameMatches = normalizedName
+        ? patients.filter((patient) => patient.fullName.trim().toLowerCase() === normalizedName)
+        : [];
+    if (nameMatches.length === 1) {
+        // Совпадение только по ФИО — слабое: однофамильцы с одинаковым именем
+        // встречаются, поэтому автоматически такую строку не импортируем.
+        return { patient: nameMatches[0], ambiguous: false, weakMatch: true };
+    }
+    if (nameMatches.length > 1) {
+        return { patient: undefined, ambiguous: true, weakMatch: false };
+    }
+    return { patient: undefined, ambiguous: false, weakMatch: false };
 }
 async function parseManifestLine(orgId, line, rowNumber, sourceKind, sourceName) {
     const phone = extractPhone(line);
@@ -560,10 +588,17 @@ async function parseManifestLine(orgId, line, rowNumber, sourceKind, sourceName)
         .filter((part) => /^[A-Za-zА-Яа-яЁё-]{2,}$/.test(part))
         .slice(0, 4)
         .join(" ") || null;
-    const patient = await matchPatient(orgId, patientName, phone);
+    const { patient, ambiguous, weakMatch } = await matchPatient(orgId, patientName, phone);
     const warnings = [];
-    if (!patient)
+    if (ambiguous) {
+        warnings.push("Найдено несколько пациентов с такими данными — выберите нужного вручную, иначе снимок попадёт в чужую карту");
+    }
+    else if (!patient) {
         warnings.push("Пациент не найден, нужно сопоставление");
+    }
+    else if (weakMatch) {
+        warnings.push("Пациент найден только по ФИО (без телефона) — подтвердите совпадение вручную");
+    }
     if (!kind)
         warnings.push("Тип снимка не распознан");
     if (!filePath)
@@ -582,7 +617,9 @@ async function parseManifestLine(orgId, line, rowNumber, sourceKind, sourceName)
         filePath,
         sourceKind: detectSourceKind(filePath ?? line, sourceKind),
         sourceName,
-        status: blocked ? "blocked" : patient ? "ready" : "warning",
+        // Автоматический импорт (status "ready") только при надёжном совпадении:
+        // слабое совпадение по одному ФИО и неоднозначность требуют человека.
+        status: blocked ? "blocked" : patient && !weakMatch ? "ready" : "warning",
         warnings
     };
 }
@@ -634,12 +671,16 @@ export async function parseImagingManifest(orgIdOrInput, maybeInput) {
             else
                 draft[field] = value;
         });
-        const patient = await matchPatient(orgId, draft.patientName ?? null, draft.phone ?? null);
+        const { patient, ambiguous, weakMatch } = await matchPatient(orgId, draft.patientName ?? null, draft.phone ?? null);
         const kind = draft.kind ?? detectKind(draft.filePath ?? "");
         const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", sourceKind);
         const warnings = [];
-        if (!patient)
+        if (ambiguous)
+            warnings.push("Найдено несколько пациентов с такими данными — выберите нужного вручную");
+        else if (!patient)
             warnings.push("Пациент не найден, нужно сопоставление");
+        else if (weakMatch)
+            warnings.push("Пациент найден только по ФИО (без телефона) — подтвердите совпадение");
         if (!kind)
             warnings.push("Тип снимка не распознан");
         if (!draft.filePath)
@@ -658,7 +699,9 @@ export async function parseImagingManifest(orgIdOrInput, maybeInput) {
             filePath: draft.filePath ?? null,
             sourceKind: source,
             sourceName: draft.sourceName ?? sourceName,
-            status: blocked ? "blocked" : patient ? "ready" : "warning",
+            // Автоматический импорт (status "ready") только при надёжном совпадении:
+            // слабое совпадение по одному ФИО и неоднозначность требуют человека.
+            status: blocked ? "blocked" : patient && !weakMatch ? "ready" : "warning",
             warnings
         };
     }));
@@ -2584,15 +2627,19 @@ export async function parseDicomSeriesManifest(orgId, input) {
                 draft[field] = value;
         });
         const lineFallback = await parseDicomManifestLine(orgId, line, index + 2, input.sourceKind, input.sourceName);
-        const patient = await matchPatient(orgId, draft.patientName ?? lineFallback.patientName, draft.phone ?? lineFallback.phone);
+        const { patient, ambiguous: patientAmbiguous, weakMatch: patientWeakMatch } = await matchPatient(orgId, draft.patientName ?? lineFallback.patientName, draft.phone ?? lineFallback.phone);
         const modality = draft.modality ?? lineFallback.modality;
         const kind = draft.kind ??
             modalityToKind(modality, `${draft.studyDescription ?? ""} ${draft.seriesDescription ?? ""}`) ??
             lineFallback.kind;
         const filePath = draft.filePath ?? lineFallback.filePath;
         const warnings = [];
-        if (!patient)
+        if (patientAmbiguous)
+            warnings.push("Найдено несколько пациентов с такими данными — выберите нужного вручную");
+        else if (!patient)
             warnings.push("Пациент не найден, нужно сопоставление");
+        else if (patientWeakMatch)
+            warnings.push("Пациент найден только по ФИО (без телефона) — подтвердите совпадение");
         if (!kind)
             warnings.push("Тип исследования не распознан");
         if (!filePath)
@@ -2626,7 +2673,9 @@ export async function parseDicomSeriesManifest(orgId, input) {
             filePath,
             sourceKind: detectSourceKind(filePath ?? draft.sourceName ?? "", input.sourceKind),
             sourceName: draft.sourceName ?? input.sourceName,
-            status: blocked ? "blocked" : patient ? "ready" : "warning",
+            // Автоматический импорт (status "ready") только при надёжном совпадении:
+            // слабое совпадение по одному ФИО и неоднозначность требуют человека.
+            status: blocked ? "blocked" : patient && !patientWeakMatch ? "ready" : "warning",
             warnings
         };
     }));
@@ -5356,7 +5405,10 @@ async function organizeLocalImagingSources(input, options = {}) {
         nextAction
     });
 }
-async function buildDicomFolderSeriesPreview(input, options = {}) {
+async function buildDicomFolderSeriesPreview(input, options = {}, organizationId = "") {
+    // Организация ПЕРЕДАЁТСЯ вызывающим обработчиком: раньше функция сама брала
+    // «первую строку таблицы organizations» и в мультиклинике разбирала папку
+    // от имени чужой клиники.
     const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
         maxFolders: input.maxFolders,
         maxEntriesPerFolder: input.maxEntriesPerFolder
@@ -5366,9 +5418,7 @@ async function buildDicomFolderSeriesPreview(input, options = {}) {
         sourceName: input.sourceName,
         maxHeaderBytes: input.maxHeaderBytes
     }, options);
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId)
-        throw new Error("No org");
+    const orgId = organizationId;
     const preview = await parseDicomSeriesManifest(orgId, {
         sourceName: input.sourceName,
         sourceKind: "dicom_file",
@@ -5413,8 +5463,8 @@ function nextDicomFolderAction(pathKind) {
             return "Оставьте предпросмотр только с метаданными и попросите администратора выбрать более подходящую станцию или источник.";
     }
 }
-async function buildDicomFolderWorkupPlan(input, options = {}) {
-    const folder = await buildDicomFolderSeriesPreview(input, options);
+async function buildDicomFolderWorkupPlan(input, options = {}, organizationId = "") {
+    const folder = await buildDicomFolderSeriesPreview(input, options, organizationId);
     const warnings = new Set(folder.warnings);
     const eligibleSeries = folder.preview.series.filter((series) => series.status !== "blocked").slice(0, 12);
     if (folder.preview.series.length > eligibleSeries.length) {
@@ -5489,9 +5539,13 @@ export async function registerImagingRoutes(app) {
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            throw new Error("No org");
+            return;
         return parseImagingManifest(orgId, input);
     });
     app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
@@ -5501,9 +5555,13 @@ export async function registerImagingRoutes(app) {
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            throw new Error("No org");
+            return;
         return parseDicomSeriesManifest(orgId, input);
     });
     app.post("/api/imaging/dicomweb/check", async (request, reply) => {
@@ -5567,9 +5625,13 @@ export async function registerImagingRoutes(app) {
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const bundle = await saveDicomWorkbenchBundle(orgId, input);
         return reply.code(201).send(dicomWorkbenchBundleResponseSchema.parse({ bundle, warnings: bundle.warnings }));
     });
@@ -5578,9 +5640,13 @@ export async function registerImagingRoutes(app) {
             return;
         const query = request.query;
         const requestedLimit = Number(query.limit ?? 8);
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const bundles = await listDicomWorkbenchBundles(orgId, Number.isFinite(requestedLimit) ? requestedLimit : 8);
         return dicomWorkbenchBundleListResponseSchema.parse({
             bundles,
@@ -5616,8 +5682,11 @@ export async function registerImagingRoutes(app) {
         const parsed = parseImagingPayload(dicomFolderSeriesPreviewRequestSchema, request.body, "Предпросмотр папки DICOM не построен: выберите папку снимков и безопасные лимиты чтения.");
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
+        const previewOrgId = requireOrganizationId(request, reply);
+        if (!previewOrgId)
+            return;
         const input = parsed.data;
-        return runAbortableImagingScan(request, reply, (options) => buildDicomFolderSeriesPreview(input, options));
+        return runAbortableImagingScan(request, reply, (options) => buildDicomFolderSeriesPreview(input, options, previewOrgId));
     });
     app.post("/api/imaging/dicom/first-frame-preview", async (request, reply) => {
         if (!(await requireClinicalReadAccess(request, reply, "dicom first frame preview")))
@@ -5634,8 +5703,11 @@ export async function registerImagingRoutes(app) {
         const parsed = parseImagingPayload(dicomFolderWorkupPlanRequestSchema, request.body, "План работы с папкой DICOM не построен: выберите папку снимков и передайте сведения об устройстве.");
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
+        const workupOrgId = requireOrganizationId(request, reply);
+        if (!workupOrgId)
+            return;
         const input = parsed.data;
-        return runAbortableImagingScan(request, reply, (options) => buildDicomFolderWorkupPlan(input, options));
+        return runAbortableImagingScan(request, reply, (options) => buildDicomFolderWorkupPlan(input, options, workupOrgId));
     });
     app.post("/api/imaging/imports/commit", async (request, reply) => {
         if (!(await requireClinicalMutationAccess(request, reply, "imaging import commit")))
@@ -5644,9 +5716,13 @@ export async function registerImagingRoutes(app) {
         if (!parsed.ok)
             return reply.code(400).send(parsed.response);
         const input = parsed.data;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            throw new Error("No org");
+            return;
         return commitImagingImport(orgId, input);
     });
     app.post("/api/imaging/folders/scan-preview", async (request, reply) => {
@@ -5662,9 +5738,13 @@ export async function registerImagingRoutes(app) {
                 maxEntriesPerFolder: input.maxEntriesPerFolder
             });
             const rawText = buildFolderScanManifest(scan.files);
-            var orgId = await getDefaultOrganizationId();
+            // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+            // а не клиника, приславшая запрос. В установке на несколько клиник врач
+            // клиники Б получал 404 на собственное исследование, а в худшем случае —
+            // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+            const orgId = requireOrganizationId(request, reply);
             if (!orgId)
-                throw new Error("No org");
+                return;
             const preview = await parseImagingManifest(orgId, { sourceName: input.sourceName, sourceKind: "folder_watch", rawText });
             return imagingFolderScanResponseSchema.parse({
                 folderPath: path.resolve(input.folderPath),
@@ -5681,9 +5761,13 @@ export async function registerImagingRoutes(app) {
         if (!(await requireClinicalReadAccess(request, reply, "imaging studies")))
             return;
         const { patientId } = request.query;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const studies = patientId ? await getImagingStudiesForPatient(orgId, patientId) : await getAllImagingStudies(orgId);
         return studies.map((study) => imagingStudySchema.parse(study));
     });
@@ -5691,9 +5775,13 @@ export async function registerImagingRoutes(app) {
         if (!(await requireClinicalReadAccess(request, reply, "imaging viewer session read")))
             return;
         const { id } = request.params;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const study = await getImagingStudyById(orgId, id);
         if (!study)
             return sendImagingStudyNotFound(reply);
@@ -5707,9 +5795,13 @@ export async function registerImagingRoutes(app) {
         if (!(await requireClinicalMutationAccess(request, reply, "imaging viewer session save")))
             return;
         const { id } = request.params;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const study = await getImagingStudyById(orgId, id);
         if (!study)
             return sendImagingStudyNotFound(reply);
@@ -5724,9 +5816,13 @@ export async function registerImagingRoutes(app) {
         }));
     });
     app.post("/api/imaging/studies", async (request, reply) => {
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         if (!(await requireClinicalMutationAccess(request, reply, "imaging study create")))
             return;
         const parsed = parseImagingPayload(createImagingStudySchema, request.body, "Снимок не создан: выберите пациента, вид снимка и название.");
@@ -5770,35 +5866,77 @@ export async function registerImagingRoutes(app) {
         if (!(await requireClinicalMutationAccess(request, reply, "imaging study analyze")))
             return;
         const { id } = request.params;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const study = await getImagingStudyById(orgId, id);
         if (!study)
             return sendImagingStudyNotFound(reply);
+        // БЫЛО: если файл снимка отсутствовал или не читался, в модель отправлялся
+        // ПУСТОЙ БЕЛЫЙ ПИКСЕЛЬ 1×1, а результат возвращался как ok:true вместе с
+        // предложениями по изменению зубной формулы. Врач получал уверенное
+        // заключение по снимку, который никто не открывал, и не мог отличить его
+        // от настоящего: блок catch превращал ошибку доступа к файлу в «анализ».
+        if (!study.storagePath) {
+            return reply.code(422).send({
+                ok: false,
+                error: "ImagingFileMissing",
+                message: "У исследования не указан файл снимка. Анализ невозможен — загрузите изображение.",
+            });
+        }
+        if (!existsSync(study.storagePath)) {
+            return reply.code(422).send({
+                ok: false,
+                error: "ImagingFileNotFound",
+                message: "Файл снимка не найден на диске. Проверьте, что хранилище подключено, и повторите загрузку.",
+            });
+        }
+        // Ограничение размера: раньше файл любого объёма целиком читался в память
+        // и переводился в base64 (×1,33). Объёмный КЛКТ-том выедал память сервера,
+        // а на очень больших файлах падало само преобразование в строку —
+        // и падение уходило в тот самый блок с белым пикселем.
+        const maxAnalyzableBytes = Number(process.env.DENTE_AI_IMAGE_MAX_BYTES ?? 24 * 1024 * 1024);
         let imageBase64;
         try {
-            if (study.storagePath && existsSync(study.storagePath)) {
-                // Real image on disk — read as base64
-                const buf = await readFile(study.storagePath);
-                imageBase64 = buf.toString("base64");
+            const fileSizeBytes = statSync(study.storagePath).size;
+            if (fileSizeBytes > maxAnalyzableBytes) {
+                return reply.code(413).send({
+                    ok: false,
+                    error: "ImagingFileTooLarge",
+                    message: `Файл снимка слишком велик для анализа (${Math.round(fileSizeBytes / 1024 / 1024)} МБ, предел ${Math.round(maxAnalyzableBytes / 1024 / 1024)} МБ). Используйте отдельный кадр вместо полного тома.`,
+                });
             }
-            else {
-                // No real image file: use a minimal 1x1 white PNG so the AI at least gets a valid payload
-                // In production this would be fetched from PACS / DICOM storage
-                imageBase64 =
-                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-            }
+            const buf = await readFile(study.storagePath);
+            imageBase64 = buf.toString("base64");
         }
-        catch {
-            imageBase64 =
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        catch (readError) {
+            request.log.error({ err: readError, storagePath: study.storagePath }, "[imaging] Не удалось прочитать файл снимка");
+            return reply.code(422).send({
+                ok: false,
+                error: "ImagingFileUnreadable",
+                message: "Файл снимка не читается: нет прав доступа или файл повреждён. Анализ не выполнялся.",
+            });
         }
         try {
             const analysisResult = await analyzeImagingStudy(imageBase64);
-            // Mutate in-memory study (persists for session)
-            study.aiSummary = analysisResult.summary;
-            study.aiToothUpdates = analysisResult.toothUpdates;
+            // БЫЛО: результат записывался в поля объекта в памяти и умирал вместе
+            // с запросом — при повторном открытии заключение исчезало, а платный
+            // вызов модели выполнялся заново. Функция сохранения была импортирована,
+            // но не вызывалась ни разу.
+            try {
+                // В базе под заключение отведена одна текстовая колонка ai_summary,
+                // поэтому сохраняется текст заключения. Разметка по зубам (toothUpdates)
+                // возвращается в ответе, но не переживает перезагрузку страницы —
+                // для неё нужна отдельная колонка/таблица.
+                await updateImagingStudyAiSummaryInDb(orgId, id, analysisResult.summary);
+            }
+            catch (persistError) {
+                request.log.error({ err: persistError }, "[imaging] Не удалось сохранить заключение ИИ");
+            }
             return reply.code(200).send({ ok: true, analysisResult });
         }
         catch (err) {
@@ -5810,9 +5948,13 @@ export async function registerImagingRoutes(app) {
         if (!(await requireClinicalReadAccess(request, reply, "imaging preview")))
             return;
         const { id } = request.params;
-        var orgId = await getDefaultOrganizationId();
+        // БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
+        // а не клиника, приславшая запрос. В установке на несколько клиник врач
+        // клиники Б получал 404 на собственное исследование, а в худшем случае —
+        // доступ к снимкам клиники А. Организация берётся из проверенного токена.
+        const orgId = requireOrganizationId(request, reply);
         if (!orgId)
-            return reply.code(500).send({ error: "No org" });
+            return;
         const study = await getImagingStudyById(orgId, id);
         if (!study) {
             return sendImagingStudyNotFound(reply);

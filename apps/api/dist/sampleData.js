@@ -325,6 +325,27 @@ export const activeVisit = {
     createdAt: nowIso,
     updatedAt: nowIso,
 };
+/** Пустой идентификатор заготовки приёма из гидратации базы. */
+const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
+/**
+ * Приём открыт, только если он настоящий: есть свой идентификатор и пациент,
+ * которого видно в списке.
+ *
+ * Гидратация подставляет в `activeVisit` заготовку с нулевым UUID, когда
+ * черновиков нет вовсе. Без этой проверки заготовка считалась неподписанным
+ * приёмом, и клиника с нулём приёмов видела сразу три выдумки: срочное дело
+ * «Закрыть медицинскую запись» на несуществующего пациента, предупреждение
+ * смены «Прием не подписан» и единицу в очереди врача.
+ */
+export function hasUnsignedActiveVisit() {
+    if (activeVisit.status !== "draft")
+        return false;
+    if (activeVisit.id === NIL_VISIT_UUID)
+        return false;
+    if (activeVisit.patientId === NIL_VISIT_UUID)
+        return false;
+    return patients.some((patient) => patient.id === activeVisit.patientId);
+}
 export const documents = [
     {
         id: "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
@@ -362,6 +383,21 @@ export const documents = [
     },
 ];
 export const serviceCatalogMap = new Map();
+/**
+ * Услуга по идентификатору. Обращения к прайсу шли то через индекс, то линейным
+ * поиском по массиву — из-за этого одна и та же услуга в разных местах могла
+ * находиться и не находиться. Здесь единая точка: индекс, а при промахе —
+ * поиск по массиву с достройкой индекса.
+ */
+export function getServiceCatalogItem(serviceId) {
+    const indexed = serviceCatalogMap.get(serviceId);
+    if (indexed !== undefined)
+        return indexed;
+    const found = serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+    if (found)
+        serviceCatalogMap.set(serviceId, found);
+    return found;
+}
 export const serviceCatalog = [
     {
         id: "svc-consult-primary",
@@ -1018,8 +1054,7 @@ export function buildBillingSummary() {
         const lineTotal = treatmentLineTotal(item);
         totalPlannedRub += lineTotal;
         totalDiscountRub += item.discountRub;
-        const service = serviceCatalogMap.get(item.serviceId) ||
-            serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+        const service = getServiceCatalogItem(item.serviceId);
         if (service?.taxDeductible) {
             taxDeductionEligibleRub += lineTotal;
         }
@@ -1405,19 +1440,47 @@ export function buildCommunicationSummary() {
         postVisitInstructions: openTasks.filter((task) => task.intent === "post_visit_instruction").length,
     };
 }
+/**
+ * Группировка строк по пациенту за один проход. Используется там, где раньше
+ * для каждого пациента заново фильтровался весь массив.
+ */
+function groupByPatientId(rows) {
+    const grouped = new Map();
+    for (const row of rows) {
+        const patientId = row.patientId;
+        if (!patientId)
+            continue;
+        const bucket = grouped.get(patientId);
+        if (bucket)
+            bucket.push(row);
+        else
+            grouped.set(patientId, [row]);
+    }
+    return grouped;
+}
 function buildPatientInsights() {
     const requiredDocuments = [
         "paid_medical_services_contract",
         "informed_consent",
         "completed_works_act",
     ];
+    // БЫЛО: на каждого пациента выполнялось шесть полных проходов по всем
+    // документам, задачам, снимкам, платежам, позициям плана и записям — то есть
+    // O(пациенты × записи). На демо-базе это незаметно, на клинике с несколькими
+    // тысячами пациентов главный экран считался секундами. Группируем один раз.
+    const documentsByPatient = groupByPatientId(documents);
+    const tasksByPatient = groupByPatientId(communicationTasks.filter(isOpenCommunicationTask));
+    const imagesByPatient = groupByPatientId(imagingStudies);
+    const paymentsByPatient = groupByPatientId(payments.filter((payment) => payment.status === "paid"));
+    const planItemsByPatient = groupByPatientId(treatmentPlanItems);
+    const appointmentsByPatient = groupByPatientId(appointments);
     return patients.map((patient) => {
-        const patientDocuments = documents.filter((document) => document.patientId === patient.id);
-        const patientTasks = communicationTasks.filter((task) => task.patientId === patient.id && isOpenCommunicationTask(task));
-        const patientImages = imagingStudies.filter((study) => study.patientId === patient.id);
-        const patientPayments = payments.filter((payment) => payment.patientId === patient.id && payment.status === "paid");
-        const patientPlanItems = treatmentPlanItems.filter((item) => item.patientId === patient.id);
-        const patientAppointments = appointments.filter((appointment) => appointment.patientId === patient.id);
+        const patientDocuments = documentsByPatient.get(patient.id) ?? [];
+        const patientTasks = tasksByPatient.get(patient.id) ?? [];
+        const patientImages = imagesByPatient.get(patient.id) ?? [];
+        const patientPayments = paymentsByPatient.get(patient.id) ?? [];
+        const patientPlanItems = planItemsByPatient.get(patient.id) ?? [];
+        const patientAppointments = appointmentsByPatient.get(patient.id) ?? [];
         const draftVisit = activeVisit.patientId === patient.id && activeVisit.status === "draft";
         const missingDocumentKinds = requiredDocuments.filter((kind) => !patientDocuments.some((document) => document.kind === kind && document.status !== "voided"));
         const plannedRub = patientPlanItems.reduce((total, item) => total +
@@ -1599,6 +1662,35 @@ export function validScheduleTimeZone(value) {
     catch {
         return defaultClinicTimezone;
     }
+}
+/**
+ * Сегодняшняя дата в часовом поясе клиники (YYYY-MM-DD).
+ *
+ * БЫЛО: buildDashboard() возвращал жёстко зашитое "2026-05-12". От этого
+ * значения считается вся вкладка «Смена»: какие приёмы показать как сегодняшние,
+ * что просрочено, что закрывать. То есть расписание всегда показывало «сегодня»
+ * 12 мая 2026 года независимо от реальной даты.
+ *
+ * Дата берётся именно в часовом поясе клиники, а не сервера: в Самаре рабочий
+ * день начинается на три часа раньше UTC, и по UTC-дате утренние приёмы
+ * попадали бы во «вчера».
+ */
+export function clinicTodayIso(timeZone = clinicProfile.timezone) {
+    const zone = validScheduleTimeZone(timeZone);
+    try {
+        const parts = new Map(getAppointmentTimeFormatter(zone)
+            .formatToParts(new Date())
+            .map((part) => [part.type, part.value]));
+        const year = parts.get("year");
+        const month = parts.get("month");
+        const day = parts.get("day");
+        if (year && month && day)
+            return `${year}-${month}-${day}`;
+    }
+    catch {
+        // Ниже — запасной вариант по UTC.
+    }
+    return new Date().toISOString().slice(0, 10);
 }
 function assertValidScheduleTimeZone(value) {
     try {
@@ -2055,7 +2147,7 @@ function buildRecommendedActions(patientInsights = buildPatientInsights()) {
     const incompleteImport = importBatches.find((batch) => batch.status !== "completed");
     const modeFit = buildModeFit();
     const add = (action) => actions.push(action);
-    if (activeVisit.status === "draft") {
+    if (hasUnsignedActiveVisit()) {
         add({
             id: "action-sign-active-visit",
             role: "doctor",
@@ -2449,7 +2541,7 @@ function buildRoleQueues() {
     const billing = buildBillingSummary();
     const communication = buildCommunicationSummary();
     const draftDocuments = documents.filter((document) => document.status === "draft").length;
-    const unsignedVisits = [activeVisit].filter((visit) => visit.status === "draft").length;
+    const unsignedVisits = hasUnsignedActiveVisit() ? 1 : 0;
     const plannedAppointments = appointments.filter((appointment) => appointment.status === "planned").length;
     const reviewImages = imagingStudies.filter((study) => study.status === "needs_review").length;
     const incompleteImports = importBatches.filter((batch) => batch.status !== "completed").length;
@@ -2516,7 +2608,7 @@ function buildScheduleWarnings() {
     const reviewImage = imagingStudies.find((study) => study.status === "needs_review");
     const taxDocument = documents.find((document) => document.kind === "tax_deduction_certificate" &&
         document.status === "draft");
-    if (activeVisit.status === "draft") {
+    if (hasUnsignedActiveVisit()) {
         warnings.push({
             id: "unsigned-active-visit",
             severity: "warning",
@@ -6648,7 +6740,10 @@ function buildDenteTelegramRecallItems(runtimeScope) {
             return [];
         if (item.status !== "completed")
             return [];
-        const service = serviceCatalogMap.get(item.serviceId);
+        // БЫЛО: только индекс, без запасного поиска по прайсу. Услуга, добавленная
+        // после построения индекса, не находилась, и напоминание о гигиене
+        // пациенту не уходило вовсе.
+        const service = getServiceCatalogItem(item.serviceId);
         if (service?.category !== "hygiene")
             return [];
         const patient = activePatientsMap.get(item.patientId);
@@ -6818,6 +6913,10 @@ function taxApplicationSlaWarning(document) {
 function buildDenteTelegramTaxDocumentRequestItems(runtimeScope) {
     const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
     const organizationScope = runtime.settings.organizationId;
+    // Один индекс активных пациентов вместо линейного поиска на каждый документ.
+    const activePatientIds = new Set(patients
+        .filter((candidate) => candidate.status === "active")
+        .map((candidate) => candidate.id));
     return documents.flatMap((document) => {
         if (document.organizationId !== organizationScope)
             return [];
@@ -6827,8 +6926,9 @@ function buildDenteTelegramTaxDocumentRequestItems(runtimeScope) {
             return [];
         if (!document.payload?.taxDeductionApplication)
             return [];
-        const patient = patients.find((candidate) => candidate.id === document.patientId && candidate.status === "active");
-        if (!patient)
+        if (!document.patientId)
+            return [];
+        if (!activePatientIds.has(document.patientId))
             return [];
         const itemId = taxDocumentRequestOutboxId(document);
         if (taxDocumentRequestAlreadySent(itemId))
@@ -7736,7 +7836,9 @@ export function buildDashboard() {
     const appointmentReadiness = buildAppointmentReadiness(patientInsights);
     return {
         clinicName: repairMojibakeText(clinicProfile.clinicName),
-        todayIso: "2026-05-12",
+        // БЫЛО: "2026-05-12" — жёстко зашитая дата. Вкладка «Смена» всегда
+        // показывала приёмы за 12 мая 2026 года, а реальный день был пуст.
+        todayIso: clinicTodayIso(),
         clinicSettings: buildClinicSettings(),
         shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
         patients: repairMojibakeDeep(patients),
@@ -8540,17 +8642,32 @@ function speechRecordingRecoveryFromChunks(recordingId, chunks) {
         .sort((left, right) => left.chunkIndex - right.chunkIndex ||
         left.createdAt.localeCompare(right.createdAt));
     const assembly = assembleSpeechRecordingFromChunks(recordingId, sortedChunks);
+    // БЫЛО: семь отдельных проходов по массиву фрагментов. Считаем за один.
     const statusCounts = {
-        transcribed: sortedChunks.filter((chunk) => chunk.status === "transcribed")
-            .length,
-        fallback_text: sortedChunks.filter((chunk) => chunk.status === "fallback_text").length,
-        needs_provider_key: sortedChunks.filter((chunk) => chunk.status === "needs_provider_key").length,
-        failed: sortedChunks.filter((chunk) => chunk.status === "failed").length,
+        transcribed: 0,
+        fallback_text: 0,
+        needs_provider_key: 0,
+        failed: 0,
     };
-    const totalDurationMs = sortedChunks.some((chunk) => chunk.durationMs !== null)
-        ? sortedChunks.reduce((total, chunk) => total + (chunk.durationMs ?? 0), 0)
-        : null;
-    const totalBytes = sortedChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
+    let hasKnownDuration = false;
+    let durationSumMs = 0;
+    let totalBytes = 0;
+    for (const chunk of sortedChunks) {
+        if (chunk.status === "transcribed")
+            statusCounts.transcribed += 1;
+        else if (chunk.status === "fallback_text")
+            statusCounts.fallback_text += 1;
+        else if (chunk.status === "needs_provider_key")
+            statusCounts.needs_provider_key += 1;
+        else if (chunk.status === "failed")
+            statusCounts.failed += 1;
+        if (chunk.durationMs !== null) {
+            hasKnownDuration = true;
+            durationSumMs += chunk.durationMs;
+        }
+        totalBytes += chunk.byteLength;
+    }
+    const totalDurationMs = hasKnownDuration ? durationSumMs : null;
     const qualityCounts = countSpeechQualities(sortedChunks);
     const transcriptPreview = assembly.transcript
         .replace(/\s+/g, " ")

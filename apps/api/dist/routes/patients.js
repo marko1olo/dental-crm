@@ -43,7 +43,13 @@ function findPatientDuplicate(patientsList, input, ignoredPatientId) {
         const sameName = Boolean(inputName) && inputName === normalizePatientNameForDuplicate(patient.fullName);
         const sameBirthDate = Boolean(inputBirthDate) && inputBirthDate === (patient.birthDate ?? "");
         const samePhone = Boolean(inputPhone) && inputPhone === normalizePatientPhoneForDuplicate(patient.phone);
-        return (sameName && sameBirthDate) || (sameName && samePhone) || (sameBirthDate && samePhone);
+        // БЫЛО: пара «дата рождения + телефон» БЕЗ сравнения имени считалась
+        // дублем. Близнецы с телефоном матери и супруги с одной датой рождения
+        // на общем номере получали жёсткий отказ при регистрации без возможности
+        // подтвердить, что это разные люди. Совпадение имени теперь обязательно:
+        // это оставляет защиту от настоящих дублей (один человек заведён дважды),
+        // но перестаёт блокировать разных людей одной семьи.
+        return (sameName && sameBirthDate) || (sameName && samePhone);
     }) ?? null);
 }
 function sendPatientDuplicate(reply) {
@@ -140,8 +146,15 @@ export async function registerPatientRoutes(app) {
             return patientSchema.parse(patient);
         }
         catch (e) {
-            console.error("[Patients] Update error:", e);
-            return sendPatientNotFound(reply);
+            // БЫЛО: любой сбой внутри try отвечал 404 «Пациент не найден» — включая
+            // ошибку разбора ответа patientSchema.parse ПОСЛЕ успешной записи в базу.
+            // Оператор видел «пациент не найден», считал, что данные не сохранились,
+            // и заводил карточку заново — появлялись дубли уже сохранённых пациентов.
+            request.log.error({ err: e }, "[Patients] Ошибка обновления пациента");
+            return reply.code(500).send({
+                error: "PatientUpdateFailed",
+                message: "Не удалось сохранить изменения. Данные могли быть записаны — обновите карточку перед повторным вводом."
+            });
         }
     });
     app.put("/api/patients/:patientId/administrative-profile", async (request, reply) => {
@@ -192,8 +205,13 @@ export async function registerPatientRoutes(app) {
             return patientSchema.parse(patient);
         }
         catch (e) {
-            console.error("[Patients] Update profile error:", e);
-            return sendPatientNotFound(reply);
+            // См. комментарий выше: 404 после успешной записи вводил оператора в
+            // заблуждение и приводил к повторному вводу тех же данных.
+            request.log.error({ err: e }, "[Patients] Ошибка обновления профиля пациента");
+            return reply.code(500).send({
+                error: "PatientProfileUpdateFailed",
+                message: "Не удалось сохранить профиль. Данные могли быть записаны — обновите карточку перед повторным вводом."
+            });
         }
     });
     // COMPETITOR FEATURE #4: пациенты::хронологическая_история_коммуникаций
@@ -206,8 +224,17 @@ export async function registerPatientRoutes(app) {
         if (!payload || !payload.organizationId)
             return reply.code(401).send({ error: "AuthExpired" });
         const orgId = payload.organizationId;
+        // БЫЛО: параметр :patientId объявлен, но не читался — в карточке КАЖДОГО
+        // пациента показывалась история звонков, SMS и переписки ВСЕХ пациентов
+        // клиники. Это раскрытие персональных данных внутри интерфейса.
+        const { patientId } = request.params;
+        if (!patientId) {
+            return reply.code(400).send({ error: "ValidationError", message: "Не указан пациент." });
+        }
         const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
-        return reply.status(200).send(await getPatientCommunicationTimelinesFromDb(orgId));
+        return reply
+            .status(200)
+            .send(await getPatientCommunicationTimelinesFromDb(orgId, patientId));
     });
     // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
     app.get("/api/patients/:patientId/archive-status", async (request, reply) => {

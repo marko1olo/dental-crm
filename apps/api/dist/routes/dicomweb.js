@@ -10,7 +10,12 @@ export async function registerDicomwebRoutes(app) {
             const stat = await fs.stat(fallbackPath);
             reply.header("Content-Type", "application/dicom");
             reply.header("Content-Length", stat.size);
-            reply.header("Access-Control-Allow-Origin", "*");
+            // БЫЛО: reply.header("Access-Control-Allow-Origin", "*") — маршрут сам
+            // выставлял разрешение для любого источника и тем самым перебивал общую
+            // политику CORS приложения (server.ts регистрирует @fastify/cors со
+            // списком webOrigins). Речь о выдаче DICOM-снимков, то есть медицинских
+            // данных: со звёздочкой их мог вычитать любой сторонний сайт. Заголовок
+            // убран — источник определяет общая политика.
             return reply.send(createReadStream(fallbackPath));
         }
         catch (e) {

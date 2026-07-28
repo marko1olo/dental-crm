@@ -1,7 +1,7 @@
 import { dentalPricelistAnalysisRequestSchema, dentalPricelistAnalysisResponseSchema } from "@dental/shared";
-import { requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import { analyzePricelist } from "../pricelist/analyzer.js";
-import { getDefaultOrganizationId, getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
+import { getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 const pricelistValidationMessage = "Ошибка валидации: прайс-лист или запрос не соответствуют формату.";
 function parsePricelistPayload(schema, value) {
     const parsed = schema.safeParse(value);
@@ -23,10 +23,11 @@ export async function registerPricelistRoutes(app) {
                 message: pricelistValidationMessage
             });
         }
-        const orgId = await getDefaultOrganizationId();
-        if (!orgId) {
-            return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
-        }
+        // БЫЛО: getDefaultOrganizationId() — прайс сравнивался с каталогом услуг
+        // ПЕРВОЙ организации в базе. Клиника получала анализ по чужим ценам.
+        const orgId = await requireResolvedOrganizationId(request, reply, "pricelist analysis");
+        if (!orgId)
+            return;
         const catalog = await getServiceCatalogForOrganization(orgId);
         return dentalPricelistAnalysisResponseSchema.parse(await analyzePricelist(input, catalog));
     });

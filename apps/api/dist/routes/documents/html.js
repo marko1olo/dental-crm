@@ -1,20 +1,22 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
+import { requireOrganizationId } from "../../security/identity.js";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { apiError, documentAttachmentFileName, documentHasIssuedArchiveMetadata, documentIssueBlockReason, documentIssueChainBlockReason, documentRequiresIssuedArchive, issuedArchiveIntegrityError, documentRenderContext } from "../documents.js";
+import { apiError, documentAttachmentFileName, documentHasIssuedArchiveMetadata, documentIssueBlockReason, documentIssueChainBlockReason, documentRequiresIssuedArchive, issuedArchiveIntegrityError, resolveDocumentRenderContext } from "../documents.js";
 import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 import { renderDocumentHtml } from "../../documents/renderDocument.js";
 export async function register(app) {
     app.get("/api/documents/:id/html", async (request, reply) => {
         if (!(await requireClinicalReadAccess(request, reply, "document html")))
             return;
         const { id } = request.params;
-        const clinicHeader = request.headers["x-dente-clinic-token"];
-        const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-        const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-        const orgId = payload?.organizationId || "mock-org";
+        // БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
+        // Все проверки принадлежности сравнивали подделку саму с собой и сходились,
+        // а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
+        // Организация теперь берётся только из проверенного токена (401 иначе).
+        const orgId = requireOrganizationId(request, reply);
+        if (!orgId)
+            return;
         const document = await getDocumentById(orgId, id);
         if (!document) {
             return reply.code(404).send(apiError("Документ не найден"));
@@ -39,8 +41,17 @@ export async function register(app) {
         const requestHost = request.headers.host ?? "127.0.0.1:4100";
         const requestProto = request.headers["x-forwarded-proto"] ?? "http";
         const origin = `${requestProto}://${requestHost}`;
-        const renderContext = { ...documentRenderContext(), origin };
-        const blockReason = documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document);
+        // Реальный контекст вместо пустой заглушки (см. documents.ts).
+        const renderContext = {
+            ...(await resolveDocumentRenderContext(orgId, document.patientId)),
+            origin,
+        };
+        // БЫЛО: без await у второго операнда. Для чистого черновика левая часть
+        // равна null, и blockReason становился Promise — истинным значением.
+        // Врач нажимал «Печать» и получал 409 «Печатная форма недоступна:
+        // [object Promise]». Печать не работала вообще ни для одного документа.
+        const blockReason = documentIssueBlockReason(document, patient, renderContext) ??
+            (await documentIssueChainBlockReason(document));
         if (blockReason) {
             return reply.code(409).send(apiError(`Печатная форма недоступна: ${blockReason}`));
         }

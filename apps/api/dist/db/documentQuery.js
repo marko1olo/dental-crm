@@ -195,7 +195,10 @@ export async function storeTaxXmlSnapshotInDb(organizationId, documentId, snapsh
     const completeSnapshot = {
         ...snapshot,
         createdAt: snapshot.createdAt || new Date().toISOString(),
-        sha256: snapshot.sha256 || require("crypto").createHash("sha256").update(snapshot.xml).digest("hex")
+        // БЫЛО: require("crypto") в ES-модуле — ReferenceError при попытке
+        // посчитать контрольную сумму налогового XML, то есть сохранение снимка
+        // падало ровно тогда, когда хеш не пришёл извне.
+        sha256: snapshot.sha256 || createHash("sha256").update(snapshot.xml).digest("hex")
     };
     const [doc] = await db
         .update(schema.generatedDocuments)
@@ -205,17 +208,45 @@ export async function storeTaxXmlSnapshotInDb(organizationId, documentId, snapsh
     return doc;
 }
 export async function getDocumentRenderContextFromDb(organizationId, patientId) {
-    const { getClinicSettingsFromDb } = require('./settingsQuery.js');
-    const { getServiceCatalogForOrganization } = require('./pricelistQuery.js');
-    const { getPaymentsByPatientIdInDb } = require('./billingQuery.js');
-    const { getTreatmentPlanItemsForPatient } = require('./clinicalQuery.js');
+    // БЫЛО: require(...) внутри ES-модуля. В apps/api объявлен "type": "module",
+    // поэтому require здесь не определён — функция падала с ReferenceError при
+    // КАЖДОМ вызове. Именно поэтому «Паспорт документа» не мог собрать данные.
+    // Динамический import — штатный способ отложенной загрузки в ESM и заодно
+    // сохраняет разрыв циклических зависимостей, ради которого это писалось.
+    const [{ getClinicSettingsFromDb }, { getServiceCatalogForOrganization }, { getPaymentsByPatientIdInDb }, { getTreatmentPlanItemsForPatient },] = await Promise.all([
+        import('./settingsQuery.js'),
+        import('./pricelistQuery.js'),
+        import('./billingQuery.js'),
+        import('./clinicalQuery.js'),
+    ]);
     const settings = await getClinicSettingsFromDb(organizationId);
     const serviceCatalog = await getServiceCatalogForOrganization(organizationId);
     let payments = [];
     let treatmentPlanItems = [];
     if (patientId) {
         payments = await getPaymentsByPatientIdInDb(organizationId, patientId);
-        treatmentPlanItems = await getTreatmentPlanItemsForPatient(organizationId, patientId);
+        // Строки treatment_items — это форма базы, а не доменный тип: quantity там
+        // numeric (драйвер отдаёт строку), serviceId может быть NULL, а названия
+        // услуги на момент выдачи (snapshotServiceName) в таблице нет вообще.
+        // Рендер документа печатает именно snapshotServiceName, поэтому подставляем
+        // title строки — он и есть зафиксированное название позиции плана.
+        treatmentPlanItems = (await getTreatmentPlanItemsForPatient(organizationId, patientId)).map((item) => ({
+            id: item.id,
+            organizationId: item.organizationId,
+            patientId: item.patientId,
+            visitId: item.visitId ?? null,
+            serviceId: item.serviceId ?? "",
+            snapshotServiceName: item.title,
+            snapshotServiceCategory: null,
+            toothCode: item.toothCode ?? null,
+            quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+            unitPriceRub: Math.max(0, item.unitPriceRub),
+            discountRub: Math.max(0, item.discountRub),
+            status: item.status,
+            plannedDoctorUserId: item.plannedDoctorUserId ?? null,
+            plannedChairId: item.plannedChairId ?? null,
+            notes: item.notes ?? null,
+        }));
     }
     return { clinicProfile: settings.profile, serviceCatalog, payments, treatmentPlanItems };
 }

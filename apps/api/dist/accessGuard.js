@@ -1,8 +1,10 @@
 import "dotenv/config";
 import { timingSafeSecretEqual } from "./utils/timingSafeSecretEqual.js";
+import { authTokenSecret, clinicalAdminSecret } from "./security/authSecret.js";
+import { getRequestIdentity, requireOrganizationId as requireVerifiedOrganizationId } from "./security/identity.js";
 export const denteAdminSecretHeader = "x-dente-admin-secret";
 export function configuredClinicalAccessSecret() {
-    return process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() || null;
+    return clinicalAdminSecret();
 }
 export function configuredClinicalMutationSecret() {
     return configuredClinicalAccessSecret();
@@ -62,51 +64,77 @@ export async function requireClinicalReadAccess(request, reply, protectedArea = 
     return false;
 }
 /**
- * Resolves the organization ID from the incoming request.
- * Checks (in order):
- *  1. JWT / session user.organizationId
- *  2. x-organization-id header
- *  3. Returns null if neither present
+ * Определяет организацию запроса.
+ *
+ * БЕЗОПАСНОСТЬ: организация берётся ТОЛЬКО из подписанного токена
+ * (x-dente-clinic-token / x-dente-staff-token). Заголовок x-organization-id
+ * больше не является источником истины — раньше любой клиент мог подставить
+ * чужой UUID и прочитать карты пациентов другой клиники (IDOR / нарушение
+ * изоляции арендаторов). Заголовок работает только в dev при явном
+ * DENTE_DEV_ALLOW_HEADER_ORG=1 (см. security/identity.ts).
  */
 export async function resolveOrganizationId(request) {
-    const user = request.user;
-    if (user?.organizationId && typeof user.organizationId === "string") {
-        return user.organizationId;
-    }
-    const headerValue = request.headers["x-organization-id"];
-    const normalized = Array.isArray(headerValue) ? headerValue[0] : headerValue;
-    if (typeof normalized === "string" && normalized.trim().length > 0) {
-        return normalized.trim();
-    }
-    return null;
+    return getRequestIdentity(request).organizationId;
 }
 /**
- * Requires that requireResolvedOrganizationId is set on the request.
- * Returns the orgId or sends a 403 and returns null.
+ * Возвращает organizationId из проверенного токена либо отправляет 401.
  */
 export async function requireResolvedOrganizationId(request, reply, _protectedArea) {
-    const orgId = await resolveOrganizationId(request);
-    if (!orgId) {
-        reply.code(403).send({ error: "OrganizationIdRequired", message: "Organization ID required." });
-        return null;
-    }
-    return orgId;
+    return requireVerifiedOrganizationId(request, reply);
 }
 /**
- * requireResolvedStaffOrAdminOrganizationId — alias of requireResolvedOrganizationId
- * for routes that require staff or admin role in addition to org context.
- * Role check is delegated to the calling route.
+ * requireResolvedStaffOrAdminOrganizationId — как requireResolvedOrganizationId,
+ * но дополнительно требует авторизованного сотрудника (не только токен кабинета).
  */
 export async function requireResolvedStaffOrAdminOrganizationId(request, reply, _protectedArea) {
-    return requireResolvedOrganizationId(request, reply);
+    const identity = getRequestIdentity(request);
+    if (!identity.organizationId) {
+        reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+        return null;
+    }
+    if (!identity.userId) {
+        reply.code(401).send({ error: "StaffAuthRequired", message: "Требуется вход сотрудника." });
+        return null;
+    }
+    return identity.organizationId;
+}
+/**
+ * Контекст защищённого обработчика: и гейт пройден, и арендатор определён.
+ *
+ * ЗАЧЕМ: requireClinicalReadAccess/requireClinicalMutationAccess возвращают
+ * boolean (пройден ли гейт), а organizationId приходит из другого источника —
+ * подписанного токена. Их легко перепутать: в routes/analytics.ts результат
+ * гейта присвоили переменной orgId, дальше проверили `typeof orgId !== "string"`
+ * — условие всегда истинно, и дашборд молча отдавал пустой ответ. Компилятор
+ * такое не ловит: сравнение typeof у boolean легально.
+ *
+ * Эти две функции соединяют оба шага и возвращают либо готовый организационный
+ * идентификатор, либо null (ответ клиенту уже отправлен). Перепутать нечего:
+ * возвращается ровно то, что нужно обработчику.
+ */
+export async function requireClinicalReadContext(request, reply, protectedArea = "clinical read") {
+    if (!(await requireClinicalReadAccess(request, reply, protectedArea)))
+        return null;
+    const organizationId = await requireVerifiedOrganizationId(request, reply);
+    if (!organizationId)
+        return null;
+    return { organizationId };
+}
+export async function requireClinicalMutationContext(request, reply, protectedArea = "clinical mutation") {
+    if (!(await requireClinicalMutationAccess(request, reply, protectedArea)))
+        return null;
+    const organizationId = await requireVerifiedOrganizationId(request, reply);
+    if (!organizationId)
+        return null;
+    return { organizationId };
 }
 /**
  * requireNonDoctorAccess — allows any authenticated non-doctor (admin, staff)
  * through. Doctors are restricted from certain write routes.
  */
 export async function requireNonDoctorAccess(request, reply, protectedArea = "non-doctor mutation") {
-    const user = request.user;
-    if (user?.role === "doctor") {
+    const identity = getRequestIdentity(request);
+    if (identity.role === "doctor") {
         reply.code(403).send({
             error: "DoctorsNotAllowed",
             message: `Доктора не могут выполнять это действие: ${protectedArea}`,
@@ -116,8 +144,11 @@ export async function requireNonDoctorAccess(request, reply, protectedArea = "no
     return requireClinicalMutationAccess(request, reply, protectedArea);
 }
 /**
- * Returns configured clinical secret for signing tokens.
+ * Секрет подписи токенов. Делегирует в единственный источник истины
+ * (security/authSecret.ts), который падает в production, если секрет не задан.
+ * Раньше здесь был публичный литерал "dente-fallback-secret-2026", позволявший
+ * подделать токен любой клиники.
  */
 export function requireAuthTokenSecret() {
-    return process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() || "dente-fallback-secret-2026";
+    return authTokenSecret();
 }

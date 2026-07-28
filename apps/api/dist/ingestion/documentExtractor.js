@@ -188,7 +188,7 @@ function stripRtf(value) {
         .replace(/\\[a-z]+\d* ?/gi, " ")
         .replace(/[ \t]{2,}/g, " "));
 }
-function readZipEntries(buffer) {
+export function readZipEntries(buffer) {
     const warnings = [];
     const entries = [];
     let eocdOffset = -1;
