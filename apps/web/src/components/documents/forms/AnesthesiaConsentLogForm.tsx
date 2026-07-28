@@ -1,3 +1,7 @@
+import {
+	ANESTHESIA_MEDICATION_JOIN_LIMIT,
+	anesthesiaTextLimitsReview,
+} from "../anesthesiaTextLimits";
 import { useDocumentStore } from "../../../store/documentStore";
 import { AnamnesisField } from "../AnamnesisField";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
@@ -31,6 +35,10 @@ import type { DocumentVisitHints } from "./documentFormTypes";
  * «заполнить пустое поле одним нажатием», а правки в styles/* этой задаче не
  * разрешены. Ничего специфичного для анамнеза в нём нет
  * (styles/main.css:11425-11439) — только рамка, отступы и выравнивание влево.
+ *
+ * СЛИШКОМ ДЛИННЫЙ ТЕКСТ ОТКАЗЫВАЛСЯ СООБЩЕНИЕМ О ДРУГОЙ БЕДЕ. Пределы длины из
+ * схемы содержимого журнала теперь видны на экране, а не только на сервере:
+ * разбор и то, что видел врач, записаны в anesthesiaTextLimits.ts.
  */
 export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<DocumentVisitHints, "inferredTreatmentArea">) {
 	const {
@@ -67,8 +75,54 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 	const zoneOfferedFromVisit =
 		anesthesiaZone.trim() === "" ? (inferredTreatmentArea ?? "").trim() : "";
 
+	const limits = anesthesiaTextLimitsReview({
+		method: anesthesiaMethod,
+		anesthetic: anesthesiaAnesthetic,
+		vasoconstrictor: anesthesiaVasoconstrictor,
+		zone: anesthesiaZone,
+		allergyStatus: anesthesiaAllergyStatus,
+		restrictionNotes: anesthesiaRestrictionNotes,
+		doseTime: anesthesiaDoseTime,
+		doseMl: anesthesiaDoseMl,
+		reaction: anesthesiaReaction,
+	});
+
 	return (
-		<DocumentPayloadCard title="Журнал анестезии" description="Перед созданием: метод, препарат, зона, доза и реакция.">
+		<DocumentPayloadCard
+			title="Журнал анестезии"
+			description="Перед созданием: метод, препарат, зона, доза и реакция."
+			notice={
+				limits.tooLong.length > 0 ? (
+					<div
+						className="schedule-create-missing document-anesthesia-too-long"
+						role="status"
+						aria-live="polite"
+						style={{ marginTop: "12px" }}
+					>
+						<strong>
+							Журнал не создастся: текст в {limits.tooLong.length} поле длиннее, чем
+							принимает сервер. Отказ на нажатие «Создать» при этом говорит про
+							незаполненные поля, поэтому причину пишем здесь:
+						</strong>
+						<ul>
+							{limits.tooLong.map((entry) => (
+								<li key={entry.field}>
+									{entry.label} — {entry.length} символов, принимается не больше{" "}
+									{entry.limit}: сократите на {entry.length - entry.limit}
+									{entry.field === "anesthesiaMedicationJoin"
+										? `. В строку дозы уходит склейка «препарат, вазоконстриктор», и у неё предел ${ANESTHESIA_MEDICATION_JOIN_LIMIT ?? 0} — короче, чем у самого поля препарата: сократите любое из двух`
+										: ""}
+								</li>
+							))}
+						</ul>
+						<small>
+							Текст не обрезается сам: обрезка посередине испортила бы клиническую
+							запись, поэтому сокращает врач.
+						</small>
+					</div>
+				) : null
+			}
+		>
 			<label>
 				Метод
 				<input
