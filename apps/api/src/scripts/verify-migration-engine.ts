@@ -181,7 +181,9 @@ try {
   console.log(`       суммы в базе: ${loadedPayments.map((p) => p.amountRub).join(", ")}`);
   same("загружено 2 платежа", loadedPayments.length, 2);
   check("сумма 1500 разобрана из '1 500,00 руб.'", loadedPayments.some((p) => p.amountRub === 1500));
-  check("сумма 23401 разобрана из '23 400,50'", loadedPayments.some((p) => p.amountRub === 23401));
+  // БЫЛО: ожидалось 23401 — то есть скрипт проверял, что перенос ОКРУГЛИЛ сумму
+  // до рубля. Колонка amount_rub — numeric(12, 2), копейки обязаны доехать.
+  check("сумма 23400,50 доехала до колонки без округления", loadedPayments.some((p) => p.amountRub === 23400.5));
 
   const payQ = await listQuarantine(ORG, payRun.run.runId, 50);
   for (const q of payQ.slice(0, 5)) {
@@ -210,17 +212,22 @@ try {
   check("баланс копеек замкнут", conservation?.passed === true, conservation?.detail ?? "проверка отсутствует");
 
   /**
-   * Округление до рубля названо отдельным числом.
+   * В колонку ушла ровно разобранная сумма.
    *
-   * Загружаются два платежа: 1500,00 и 23400,50 — точно 2 355 050 копеек. В
-   * колонку целых рублей ложится 1500 + 23401 = 24 901 руб. = 2 490 100 копеек
-   * по номиналу, то есть на 50 копеек больше точной суммы. Именно это
-   * расхождение и обязано быть названо, а не спрятано.
+   * Загружаются два платежа: 1500,00 и 23400,50 — точно 2 355 050 копеек, и
+   * столько же обязано лежать в колонке amount_rub (numeric(12, 2)).
+   *
+   * БЫЛО: здесь проверялась противоположность — «расхождение округления ровно 50
+   * копеек» у проверки money_rounding_disclosure, которая ВСЕГДА проходила и лишь
+   * называла потерю вслух. Потеря устранена, поэтому проверка стала
+   * money_column_exactness_kopecks и обязана давать ноль расхождения.
    */
-  const rounding = moneyChecks.find((c) => c.code === "money_rounding_disclosure");
-  check("округление копеек названо и посчитано", rounding !== undefined, rounding?.detail ?? "проверка отсутствует");
-  same("расхождение округления ровно 50 копеек", rounding?.actual, 50);
-  console.log(`       ${rounding?.detail ?? ""}`);
+  const exactness = moneyChecks.find((c) => c.code === "money_column_exactness_kopecks");
+  check("проверка точности колонки присутствует", exactness !== undefined, exactness?.detail ?? "проверка отсутствует");
+  same("разобрано копеек", exactness?.expected, 2355050);
+  same("в колонку записано столько же копеек", exactness?.actual, 2355050);
+  check("копейки не потеряны при записи", exactness?.passed === true, exactness?.detail ?? "проверка отсутствует");
+  console.log(`       ${exactness?.detail ?? ""}`);
 
   console.log("--- 9. Откат прогона платежей");
   const rb = await rollbackRun({ organizationId: ORG, runId: payRun.run.runId });

@@ -1263,8 +1263,26 @@ export function findVisitById(visitId: string): Visit | null {
 	return activeVisit.id === visitId ? activeVisit : null;
 }
 
+/*
+ * Округление до копейки, а не до рубля.
+ *
+ * Цены позиций плана и суммы платежей приходят из numeric(12, 2), то есть с
+ * копейками. Умножение на количество и сложение в плавающей точке оставляют
+ * хвост (1500.10 * 3 = 4500.299999999999), а сводка проходит через
+ * dashboardSchema.parse в apps/api/src/routes/schedule.ts — там исключение
+ * означает 500 на расписании. Тот же приём применяется в
+ * apps/api/src/documents/guards.ts и в веб-расчёте той же сводки, поэтому обе
+ * стороны считают строку одинаково и итог РАВЕН сумме частей.
+ */
+function roundToKopecks(value: number): number {
+	return Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
+}
+
 function treatmentLineTotal(item: TreatmentPlanItem): number {
-	return Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
+	return Math.max(
+		0,
+		roundToKopecks(item.unitPriceRub * item.quantity - item.discountRub),
+	);
 }
 
 export function buildBillingSummary(): BillingSummary {
@@ -1322,12 +1340,12 @@ export function buildBillingSummary(): BillingSummary {
 	}
 
 	return {
-		totalPlannedRub,
-		totalDiscountRub,
-		totalPaidRub,
-		totalDueRub: Math.max(0, totalPlannedRub - totalPaidRub),
-		taxDeductionEligibleRub,
-		draftDocumentAmountRub,
+		totalPlannedRub: roundToKopecks(totalPlannedRub),
+		totalDiscountRub: roundToKopecks(totalDiscountRub),
+		totalPaidRub: roundToKopecks(totalPaidRub),
+		totalDueRub: Math.max(0, roundToKopecks(totalPlannedRub - totalPaidRub)),
+		taxDeductionEligibleRub: roundToKopecks(taxDeductionEligibleRub),
+		draftDocumentAmountRub: roundToKopecks(draftDocumentAmountRub),
 		openTreatmentItems,
 		unpaidDocuments,
 	};
@@ -1855,17 +1873,16 @@ function buildPatientInsights(): PatientInsight[] {
 					(document) => document.kind === kind && document.status !== "voided",
 				),
 		);
-		const plannedRub = patientPlanItems.reduce(
-			(total, item) =>
-				total +
-				Math.max(0, item.quantity * item.unitPriceRub - item.discountRub),
-			0,
+		const plannedRub = roundToKopecks(
+			patientPlanItems.reduce(
+				(total, item) => total + treatmentLineTotal(item),
+				0,
+			),
 		);
-		const paidRub = patientPayments.reduce(
-			(total, payment) => total + payment.amountRub,
-			0,
+		const paidRub = roundToKopecks(
+			patientPayments.reduce((total, payment) => total + payment.amountRub, 0),
 		);
-		const balanceDueRub = Math.max(0, plannedRub - paidRub);
+		const balanceDueRub = Math.max(0, roundToKopecks(plannedRub - paidRub));
 		const recallTask = patientTasks
 			.filter((task) => task.intent === "recall")
 			.sort((left, right) => left.dueAt.localeCompare(right.dueAt))[0];

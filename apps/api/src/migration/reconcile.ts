@@ -4,6 +4,7 @@ import type {
   MigrationReconciliationCheck,
   MigrationReconciliationReport
 } from "@dental/shared";
+import { formatKopecksRu, kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { and, count, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { migrationQuarantineRecords, migrationReconciliations, migrationStagingRecords } from "../db/schema.js";
@@ -127,29 +128,30 @@ async function tallyByStatus(runId: string): Promise<Map<MigrationEntityKind, St
  * источника это обнаружит.
  */
 interface MoneyTotals {
-  /** Точные суммы в копейках — по ним сводится баланс. */
+  /** Точные суммы в копейках из normalized_json.amountKopecks. */
   stagedKopecks: number;
   loadedKopecks: number;
   quarantinedKopecks: number;
-  /** Целые рубли, фактически записанные в боевую колонку amount_rub. */
-  loadedRubles: number;
-  quarantinedRubles: number;
-  stagedRubles: number;
+  /**
+   * Сумма загруженного, пересчитанная из значения, которое реально ушло в боевую
+   * колонку (normalized_json.amountRub). Тоже в копейках: сравнивать рубли с
+   * рублями через плавающую точку значило бы проверять деньги тем же
+   * инструментом, который их и портит.
+   */
+  loadedColumnKopecks: number;
 }
 
 /**
  * Денежные итоги прогона.
  *
- * ПОЧЕМУ В КОПЕЙКАХ, А НЕ В РУБЛЯХ
- * Колонка payments.amount_rub объявлена целыми рублями, поэтому «23 400,50» из
- * чужой базы записывается как 23 401. Если сверять рубли с рублями, потеря
- * пятидесяти копеек не видна нигде: обе стороны уже округлены, и баланс
- * «сходится» при фактическом расхождении.
+ * ПОЧЕМУ ВСЁ В КОПЕЙКАХ
+ * Копейка — целое число, и только на целых числах баланс «сошлось / не сошлось»
+ * означает то, что написано. Стоит перевести любую из сторон в рубли с
+ * плавающей точкой, и сравнение начинает зависеть от порядка слагаемых.
  *
- * Поэтому баланс сводится по точным копейкам из normalized_json.amountKopecks,
- * а округление показывается отдельным числом. Требование «свести деньги до
- * копейки» выполняется единственным честным способом при целочисленной колонке:
- * разница названа, посчитана и видна в отчёте, а не спрятана.
+ * Прежняя версия считала рублёвую сторону через `Math.round(Number(sum))`, потому
+ * что колонка считалась целочисленной. Колонка — numeric(12, 2), и это
+ * округление само порождало расхождение, которое отчёт затем «раскрывал».
  */
 async function moneyTotals(runId: string): Promise<MoneyTotals> {
   const kopecksExpression = sql`(${migrationStagingRecords.normalizedJson} ->> 'amountKopecks')::numeric`;
@@ -162,28 +164,26 @@ async function moneyTotals(runId: string): Promise<MoneyTotals> {
       stagedKopecks: sql<string>`coalesce(sum(${kopecksExpression}), 0)`,
       loadedKopecks: sql<string>`coalesce(sum(case when ${loadedCondition} then ${kopecksExpression} else 0 end), 0)`,
       quarantinedKopecks: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${kopecksExpression} else 0 end), 0)`,
-      stagedRubles: sql<string>`coalesce(sum(${rublesExpression}), 0)`,
-      loadedRubles: sql<string>`coalesce(sum(case when ${loadedCondition} then ${rublesExpression} else 0 end), 0)`,
-      quarantinedRubles: sql<string>`coalesce(sum(case when ${quarantinedCondition} then ${rublesExpression} else 0 end), 0)`
+      loadedRubles: sql<string>`coalesce(sum(case when ${loadedCondition} then ${rublesExpression} else 0 end), 0)`
     })
     .from(migrationStagingRecords)
     .where(and(eq(migrationStagingRecords.runId, runId), eq(migrationStagingRecords.entityKind, "payment")));
 
   return {
+    // amountKopecks — уже целые копейки: сумма целых по numeric приходит строкой
+    // без дробной части, Number() точен до 2^53.
     stagedKopecks: Math.round(Number(row?.stagedKopecks ?? 0)),
     loadedKopecks: Math.round(Number(row?.loadedKopecks ?? 0)),
     quarantinedKopecks: Math.round(Number(row?.quarantinedKopecks ?? 0)),
-    stagedRubles: Math.round(Number(row?.stagedRubles ?? 0)),
-    loadedRubles: Math.round(Number(row?.loadedRubles ?? 0)),
-    quarantinedRubles: Math.round(Number(row?.quarantinedRubles ?? 0))
+    // amountRub — рубли с копейками; parseKopecks разбирает строку numeric
+    // регулярным выражением, без parseFloat, поэтому «24901.50» → 2490150 точно.
+    loadedColumnKopecks: parseKopecks(row?.loadedRubles ?? "0")
   };
 }
 
-/** Форматирует копейки как рубли для текста отчёта. */
-function formatKopecks(kopecks: number): string {
-  const sign = kopecks < 0 ? "−" : "";
-  const absolute = Math.abs(kopecks);
-  return `${sign}${Math.floor(absolute / 100)},${String(absolute % 100).padStart(2, "0")} руб.`;
+/** Рубли из копеек для полей отчёта, объявленных числом. Перевод точный. */
+function rublesFromKopecks(kopecks: number): number {
+  return Number(kopecksToNumericString(kopecks));
 }
 
 export async function reconcileRun(input: ReconcileInput): Promise<MigrationReconciliationReport> {
@@ -323,10 +323,10 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
         passed: diff === 0,
         detail:
           diff === 0
-            ? `Сумма платежей источника ${formatKopecks(input.sourceMoneyTotalKopecks)} разобрана полностью, копейка в копейку.`
-            : `Сумма платежей источника ${formatKopecks(input.sourceMoneyTotalKopecks)}, а в стейджинге ${formatKopecks(
+            ? `Сумма платежей источника ${formatKopecksRu(input.sourceMoneyTotalKopecks)} разобрана полностью, копейка в копейку.`
+            : `Сумма платежей источника ${formatKopecksRu(input.sourceMoneyTotalKopecks)}, а в стейджинге ${formatKopecksRu(
                 money.stagedKopecks
-              )}. Не разобрано ${formatKopecks(diff)} — часть значений в колонке суммы не является суммой.`
+              )}. Не разобрано ${formatKopecksRu(diff)} — часть значений в колонке суммы не является суммой.`
       });
     }
 
@@ -342,43 +342,45 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
       actual: input.dryRun ? money.stagedKopecks : accountedKopecks,
       passed: input.dryRun ? true : accountedKopecks === money.stagedKopecks,
       detail: input.dryRun
-        ? `Сухой прогон: к загрузке подготовлено ${formatKopecks(money.stagedKopecks)}.`
+        ? `Сухой прогон: к загрузке подготовлено ${formatKopecksRu(money.stagedKopecks)}.`
         : accountedKopecks === money.stagedKopecks
-          ? `${formatKopecks(money.stagedKopecks)} распределены: загружено ${formatKopecks(
+          ? `${formatKopecksRu(money.stagedKopecks)} распределены: загружено ${formatKopecksRu(
               money.loadedKopecks
-            )}, в карантине ${formatKopecks(money.quarantinedKopecks)}.`
-          : `Деньги не сходятся: в стейджинге ${formatKopecks(money.stagedKopecks)}, учтено ${formatKopecks(
+            )}, в карантине ${formatKopecksRu(money.quarantinedKopecks)}.`
+          : `Деньги не сходятся: в стейджинге ${formatKopecksRu(money.stagedKopecks)}, учтено ${formatKopecksRu(
               accountedKopecks
-            )}. Потеряно из вида ${formatKopecks(money.stagedKopecks - accountedKopecks)}.`
+            )}. Потеряно из вида ${formatKopecksRu(money.stagedKopecks - accountedKopecks)}.`
     });
 
     /**
-     * Проверка 5.3: округление до рубля названо и посчитано.
+     * Проверка 5.3: в боевую колонку ушла ровно разобранная сумма, до копейки.
      *
-     * Колонка payments.amount_rub хранит целые рубли, поэтому копейки при записи
-     * округляются. Это НЕ ошибка переноса, но и не то, о чём можно молчать:
-     * клиника должна видеть, что итог в базе отличается от итога в старой
-     * системе на конкретную сумму, а не обнаружить это при сверке с бухгалтерией.
+     * БЫЛА проверка «money_rounding_disclosure»: она РАСКРЫВАЛА неизбежную, как
+     * тогда считалось, потерю копеек — колонка payments.amount_rub числилась
+     * целочисленной, и отчёт лишь называл разницу вслух, всегда с passed: true.
+     * Колонка — numeric(12, 2). Потеря перестала быть неизбежной, а значит
+     * перестала быть допустимой: теперь расхождение обязано быть нулевым, и
+     * проверка на нём ПРОВАЛИВАЕТСЯ, иначе перенос нельзя объявлять сошедшимся.
      *
-     * Проверка не проваливается: округление неизбежно при целочисленной колонке.
-     * Она информирует. Провалить её значило бы объявить перенос неудачным из-за
-     * свойства схемы, которое переносом не лечится.
+     * Сравниваются два независимо посчитанных числа: точные копейки разбора
+     * (normalized_json.amountKopecks) и копейки того значения, которое ушло в
+     * колонку (normalized_json.amountRub). Оба целые.
      */
-    const roundingDeltaKopecks = money.loadedRubles * 100 - money.loadedKopecks;
+    const columnDeltaKopecks = money.loadedColumnKopecks - money.loadedKopecks;
     checks.push({
-      code: "money_rounding_disclosure",
-      title: "Округление копеек до рубля при записи в боевую колонку",
-      expected: 0,
-      actual: roundingDeltaKopecks,
-      passed: true,
+      code: "money_column_exactness_kopecks",
+      title: "В колонку суммы записано ровно разобранное значение (до копейки)",
+      expected: money.loadedKopecks,
+      actual: money.loadedColumnKopecks,
+      passed: columnDeltaKopecks === 0,
       detail:
-        roundingDeltaKopecks === 0
-          ? "Все суммы были целыми в рублях, округление не потребовалось."
-          : `Колонка payments.amount_rub хранит целые рубли: точная сумма загруженного ${formatKopecks(
-              money.loadedKopecks
-            )} записана как ${money.loadedRubles} руб. Расхождение с бухгалтерией старой системы составит ${formatKopecks(
-              Math.abs(roundingDeltaKopecks)
-            )}. Точные копейки сохранены в стейджинге и доступны для сверки.`
+        columnDeltaKopecks === 0
+          ? `Загружено ${formatKopecksRu(money.loadedKopecks)} — столько же, сколько разобрано из источника, копейка в копейку.`
+          : `Разобрано ${formatKopecksRu(money.loadedKopecks)}, а в колонку суммы ушло ${formatKopecksRu(
+              money.loadedColumnKopecks
+            )}. Расхождение ${formatKopecksRu(
+              Math.abs(columnDeltaKopecks)
+            )} означает, что перенос изменил деньги клиники. Загрузку нужно откатить и разобрать причину: колонка amount_rub объявлена numeric(12, 2) и обязана принимать копейки без потерь.`
     });
   }
 
@@ -413,10 +415,18 @@ export async function reconcileRun(input: ReconcileInput): Promise<MigrationReco
     balanced,
     checks,
     entityBreakdown,
-    // В отчёте — целые рубли для читаемости; точность живёт в проверках выше.
-    sourceMoneyTotalRub: input.sourceMoneyTotalKopecks === null ? null : Math.round(input.sourceMoneyTotalKopecks / 100),
-    loadedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.loadedRubles : null,
-    quarantinedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? money.quarantinedRubles : null
+    /**
+     * Итоги отчёта — рубли с копейками. Раньше здесь стояло
+     * `Math.round(kopecks / 100)` «для читаемости»: акт о переносе, который
+     * клиника подписывает, объявлял сумму на копейки не такой, какая перенесена,
+     * а колонки migration_reconciliations.*_money_total_rub — numeric(12, 2) и
+     * держат точное значение.
+     */
+    sourceMoneyTotalRub:
+      input.sourceMoneyTotalKopecks === null ? null : rublesFromKopecks(input.sourceMoneyTotalKopecks),
+    loadedMoneyTotalRub: paymentTally && paymentTally.total > 0 ? rublesFromKopecks(money.loadedKopecks) : null,
+    quarantinedMoneyTotalRub:
+      paymentTally && paymentTally.total > 0 ? rublesFromKopecks(money.quarantinedKopecks) : null
   };
 
   /**
@@ -483,10 +493,17 @@ export function reconciliationReportCsv(report: MigrationReconciliationReport): 
   }
   if (report.sourceMoneyTotalRub !== null) {
     lines.push("");
-    lines.push("Деньги, руб.;Значение");
-    lines.push(`Сумма в источнике;${cell(report.sourceMoneyTotalRub)}`);
-    lines.push(`Загружено;${cell(report.loadedMoneyTotalRub)}`);
-    lines.push(`В карантине;${cell(report.quarantinedMoneyTotalRub)}`);
+    lines.push("Деньги;Значение");
+    /**
+     * Суммы печатаются русской записью «24 901,50 ₽», а не числом как есть.
+     * С тех пор как перенос сохраняет копейки, `String(24901.5)` дало бы в акте
+     * «24901.5» — точка вместо запятой и один знак копеек; это не денежная
+     * запись, и клиника, которая этот акт подписывает, читает её неправильно.
+     */
+    const csvMoney = (value: number | null): string => (value === null ? "" : formatKopecksRu(parseKopecks(value)));
+    lines.push(`Сумма в источнике;${cell(csvMoney(report.sourceMoneyTotalRub))}`);
+    lines.push(`Загружено;${cell(csvMoney(report.loadedMoneyTotalRub))}`);
+    lines.push(`В карантине;${cell(csvMoney(report.quarantinedMoneyTotalRub))}`);
   }
 
   return lines.join("\r\n");

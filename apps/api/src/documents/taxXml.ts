@@ -1,3 +1,4 @@
+import { kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import type {
 	ClinicProfile,
 	GeneratedDocument,
@@ -29,8 +30,9 @@ type Knd1151156XmlPreflightExpected = {
 	taxYear: number;
 	documentNumber: string;
 	samePatientFlag: "0" | "1";
-	sumCode1: number;
-	sumCode2: number;
+	/** Суммы расходов в ЦЕЛЫХ КОПЕЙКАХ: предпроверка сверяет то же число, что выгрузка. */
+	sumCode1Kopecks: number;
+	sumCode2Kopecks: number;
 	requiresPatient: boolean;
 };
 
@@ -228,9 +230,9 @@ function validateKnd1151156XmlDraft(
 		});
 	}
 
-	const expectedCode1 = `СуммаКод1="${money(expected.sumCode1)}"`;
-	const expectedCode2 = `СуммаКод2="${money(expected.sumCode2)}"`;
-	if (expected.sumCode1 > 0) {
+	const expectedCode1 = `СуммаКод1="${money(expected.sumCode1Kopecks)}"`;
+	const expectedCode2 = `СуммаКод2="${money(expected.sumCode2Kopecks)}"`;
+	if (expected.sumCode1Kopecks > 0) {
 		pushMissingPreflightIssue(
 			issues,
 			xmlText,
@@ -244,7 +246,7 @@ function validateKnd1151156XmlDraft(
 			message: "СуммаКод1 не должна выгружаться при нулевой сумме.",
 		});
 	}
-	if (expected.sumCode2 > 0) {
+	if (expected.sumCode2Kopecks > 0) {
 		pushMissingPreflightIssue(
 			issues,
 			xmlText,
@@ -335,14 +337,36 @@ function taxPaymentCode(payment: Payment): "1" | "2" | null {
 		: null;
 }
 
-function taxPaymentSum(payments: Payment[], code: "1" | "2"): number {
-	return payments
-		.filter((payment) => taxPaymentCode(payment) === code)
-		.reduce((total, payment) => total + payment.amountRub, 0);
+/**
+ * Сумма расходов по коду услуги — в ЦЕЛЫХ КОПЕЙКАХ.
+ *
+ * БЫЛО: `reduce((total, p) => total + p.amountRub, 0)` — второе, независимое от
+ * итога справки сложение тех же платежей, и тоже в плавающей точке. У одной
+ * справки получалось два итога, посчитанных разными выражениями, и разойтись
+ * они могли между собой: двадцать платежей по 55,55 дают 1110.9999999999995.
+ * В выгрузку для ФНС такое число попадать не должно ни в каком виде.
+ */
+function taxPaymentSumKopecks(payments: Payment[], code: "1" | "2"): number {
+	return sumKopecks(
+		payments
+			.filter((payment) => taxPaymentCode(payment) === code)
+			.map((payment) => parseKopecks(payment.amountRub)),
+	);
 }
 
-function money(value: number): string {
-	return Math.max(0, value).toFixed(2);
+/**
+ * Денежный атрибут выгрузки: рубли и ровно две цифры копеек, точка как
+ * разделитель — «1000.00», «5400.50».
+ *
+ * БЫЛО: `Math.max(0, value).toFixed(2)` от числа с плавающей точкой. Две цифры
+ * оно давало, но за счёт округления уже испорченного значения: расхождение
+ * пряталось, а не отсутствовало, и на сумме вида 0,145 руб. `toFixed` отдаёт
+ * «0.14» — копейка теряется в документе для налоговой. Теперь строка берётся из
+ * целых копеек через `kopecksToNumericString` (@dental/shared) — округлять
+ * нечего, потому что дробной части нет.
+ */
+function money(kopecks: number): string {
+	return kopecksToNumericString(Math.max(0, kopecks));
 }
 
 function isoToRuDate(value: string | null | undefined): string | null {
@@ -613,11 +637,11 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	const sumCode1 = taxPaymentSum(taxPayments, "1");
-	const sumCode2 = taxPaymentSum(taxPayments, "2");
+	const sumCode1Kopecks = taxPaymentSumKopecks(taxPayments, "1");
+	const sumCode2Kopecks = taxPaymentSumKopecks(taxPayments, "2");
 	const sumAttrs = [
-		sumCode1 > 0 ? `СуммаКод1="${money(sumCode1)}"` : null,
-		sumCode2 > 0 ? `СуммаКод2="${money(sumCode2)}"` : null,
+		sumCode1Kopecks > 0 ? `СуммаКод1="${money(sumCode1Kopecks)}"` : null,
+		sumCode2Kopecks > 0 ? `СуммаКод2="${money(sumCode2Kopecks)}"` : null,
 	]
 		.filter(Boolean)
 		.join(" ");
@@ -653,8 +677,8 @@ export function buildKnd1151156Xml(
 		taxYear: document.taxYear,
 		documentNumber,
 		samePatientFlag,
-		sumCode1,
-		sumCode2,
+		sumCode1Kopecks,
+		sumCode2Kopecks,
 		requiresPatient: samePatientFlag === "0",
 	});
 	if (preflightIssues.length) {

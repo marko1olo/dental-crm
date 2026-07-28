@@ -1,3 +1,4 @@
+import { kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import type { GeneratedDocument, Payment, TaxPaymentSnapshot } from "@dental/shared";
 
 const taxDocumentSnapshotKinds = new Set<GeneratedDocument["kind"]>([
@@ -171,6 +172,23 @@ export function buildTaxPaymentSnapshotForIssue(
   };
 }
 
+/**
+ * Итог справки для налогового вычета.
+ *
+ * БЫЛО: `payments.reduce((total, p) => total + p.amountRub, 0)` — сложение в
+ * двоичной плавающей точке. Двадцать приёмов по 55,55 давали не 1111, а
+ * 1110.9999999999995; десять по 1010,10 — 10101.000000000002. Это число уходит
+ * в `totalAmountRub` документа (routes/documents.ts, `taxSnapshotDocument`),
+ * оттуда в печатную форму, в PDF и в SHA-256 выданного снимка. Справку человек
+ * несёт в налоговую, и её итог обязан быть равен сумме её же строк — не
+ * «примерно равен».
+ *
+ * Считается целыми копейками через @dental/shared (`parseKopecks` + `sumKopecks`),
+ * то есть сложением целых чисел, а результат приводится обратно в рубли через
+ * ту же строку numeric(12, 2), которая лежит в колонке базы. Своей арифметики
+ * денег здесь нет и быть не должно.
+ */
 export function taxPaymentSnapshotTotalRub(snapshot: TaxPaymentSnapshot): number {
-  return snapshot.payments.reduce((total, payment) => total + payment.amountRub, 0);
+  const totalKopecks = sumKopecks(snapshot.payments.map((payment) => parseKopecks(payment.amountRub)));
+  return Number(kopecksToNumericString(totalKopecks));
 }

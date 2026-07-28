@@ -350,15 +350,21 @@ describe("деньги", () => {
     assert.equal(parsed.issue, null);
   });
 
-  test("целые рубли для колонки integer: округление отмечено в преобразованиях", () => {
-    const exact = normalizeMoneyRubles("1500,00");
-    assert.equal(exact.value, 1500);
-    assert.ok(!exact.transforms.includes("round-kopecks-to-rubles"));
+  test("рубли для колонки numeric(12,2): копейки доходят до колонки, а не округляются", () => {
+    // БЫЛО: этот тест утверждал обратное — что «23 400,50» превращается в 23401,
+    // и требовал пометку «round-kopecks-to-rubles» в происхождении поля. Он
+    // закреплял потерю копеек на КАЖДОМ перенесённом платеже, обоснованную
+    // мёртвым утверждением, будто payments.amount_rub — колонка integer.
+    const whole = normalizeMoneyRubles("1500,00");
+    assert.equal(whole.value, 1500);
 
-    const rounded = normalizeMoneyRubles("23 400,50");
-    assert.equal(rounded.value, 23401);
-    // Округление обязано быть видно в происхождении поля, а не произойти молча.
-    assert.ok(rounded.transforms.includes("round-kopecks-to-rubles"));
+    const withKopecks = normalizeMoneyRubles("23 400,50");
+    assert.equal(withKopecks.value, 23400.5);
+    assert.ok(!withKopecks.transforms.includes("round-kopecks-to-rubles"));
+
+    // Одна копейка — минимальная сумма, которая обязана выжить.
+    assert.equal(normalizeMoneyRubles("0,01").value, 0.01);
+    assert.equal(normalizeMoneyRubles("(1 500,55)").value, -1500.55);
   });
 
   test("неправдоподобная и нечисловая сумма отклоняются", () => {

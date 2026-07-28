@@ -5,7 +5,7 @@ import type {
   MigrationQuarantineReason,
   MigrationTargetField
 } from "@dental/shared";
-import { MIGRATION_MAX_ROW_CHARS } from "@dental/shared";
+import { MIGRATION_MAX_ROW_CHARS, formatKopecksRu, parseKopecks } from "@dental/shared";
 import type { ColumnProfile } from "./columnProfile.js";
 import {
   combineNameParts,
@@ -372,9 +372,15 @@ export function transformRow(input: TransformRowInput): TransformedRow {
       case "service.priceRub":
       case "payment.amountRub": {
         /**
-         * В боевую колонку идут целые рубли — она так объявлена. Но точная сумма
-         * в копейках сохраняется рядом, в normalized_json: без неё сверка не
-         * смогла бы свести деньги до копейки и округление осталось бы невидимым.
+         * В боевую колонку идёт сумма С КОПЕЙКАМИ: payments.amount_rub —
+         * numeric(12, 2), а не integer. Прежний комментарий здесь утверждал
+         * обратное («в боевую колонку идут целые рубли — она так объявлена»), и
+         * из-за него normalizeMoneyRubles округляла каждый перенесённый платёж
+         * до рубля, уже посчитав точное значение строкой ниже.
+         *
+         * Точные копейки продолжают сохраняться рядом, в normalized_json: это
+         * независимая от загрузчика точка отсчёта, по которой сверка доказывает,
+         * что колонка получила ровно разобранную сумму (reconcile.ts).
          */
         apply(field, column.sourceColumn, rawValue, normalizeMoneyRubles(rawValue), column.decidedBy, column.confidence);
         const exact = normalizeMoneyValue(rawValue);
@@ -385,7 +391,9 @@ export function transformRow(input: TransformRowInput): TransformedRow {
       }
 
       case "appointment.durationMinutes": {
-        // Длительность — не деньги; берём целочисленный разбор той же функции.
+        // Длительность — не деньги; у денежного разбора берётся только умение
+        // читать разделители разрядов и дробной части. Целым число делает
+        // Math.round ниже: сама функция копейки больше не округляет.
         const parsed = normalizeMoneyRubles(rawValue);
         apply(field, column.sourceColumn, rawValue, parsed, column.decidedBy, column.confidence, (minutes) =>
           Math.max(5, Math.min(600, Math.round(minutes)))
@@ -614,7 +622,7 @@ function domainRuleIssues(entityKind: MigrationEntityKind, values: Record<string
         reason: "validation_failed",
         blocking: true,
         fieldPath: "amountRub",
-        message: `Сумма платежа отрицательная (${amount} руб.) — вероятно, это возврат.`,
+        message: `Сумма платежа отрицательная (${formatKopecksRu(parseKopecks(amount))}) — вероятно, это возврат.`,
         suggestedFix: "Возвраты переносятся отдельно. Подтвердите строку из карантина, если это действительно платёж."
       });
     }

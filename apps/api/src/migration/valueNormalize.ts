@@ -1,3 +1,4 @@
+import { formatKopecksRu, kopecksToNumericString } from "@dental/shared";
 import { hasEncodingDamage } from "./encoding.js";
 
 /**
@@ -771,11 +772,12 @@ export function combineNameParts(
 // ---------------------------------------------------------------------------
 
 /**
- * Разбирает денежную сумму в целые рубли.
+ * Разбирает денежную сумму в ЦЕЛЫЕ КОПЕЙКИ.
  *
- * Наши денежные колонки платежей объявлены как integer рублей, поэтому копейки
- * округляются — но не молча: если они есть, это попадает в преобразования и
- * видно в происхождении поля.
+ * Заголовок раньше утверждал «в целые рубли», а функция всегда возвращала
+ * копейки (см. `money:kopecks` в конце): именно это расхождение и убедило
+ * соседнюю normalizeMoneyRubles округлять до рубля. Возвращаются копейки —
+ * целое число, ничего не округлено, ничего не потеряно.
  */
 export function normalizeMoneyValue(raw: string | null | undefined): NormalizedValue<number> {
   if (isNullToken(raw, false)) return empty(["null-token"]);
@@ -861,7 +863,7 @@ export function normalizeMoneyValue(raw: string | null | undefined): NormalizedV
   // Платёж в миллиард рублей в стоматологии — это ошибка разбора, а не платёж.
   if (Math.abs(kopecks) > 100_000_000_000) {
     return bad(
-      `Сумма ${Math.round(kopecks / 100)} руб. неправдоподобна — вероятно, в колонку попало не денежное значение.`,
+      `Сумма ${formatKopecksRu(kopecks)} неправдоподобна — вероятно, в колонку попало не денежное значение.`,
       transforms
     );
   }
@@ -870,28 +872,38 @@ export function normalizeMoneyValue(raw: string | null | undefined): NormalizedV
 }
 
 /**
- * Сумма в целых рублях — для колонок, объявленных как integer.
+ * Сумма в рублях с копейками — ровно то значение, которое ложится в денежную
+ * колонку numeric(12, 2).
  *
  * ЗАЧЕМ ДВЕ ФУНКЦИИ
- * Колонка payments.amount_rub объявлена целыми рублями (см. money.ts: денежные
- * колонки живут в двух видах, integer и numeric(12,2)). Значит, «23 400,50» из
- * чужой базы физически не влезает в неё без потери пятидесяти копеек.
+ * normalizeMoneyValue отдаёт целые копейки: в них считают и сверяют. Здесь то же
+ * значение переводится в рубли для записи в колонку, и перевод точный — через
+ * строку numeric(12, 2) из @dental/shared, а не делением с плавающей точкой.
  *
- * Замалчивать эту потерю нельзя: требование к переносу — свести деньги ДО
- * КОПЕЙКИ. Поэтому копейки считаются отдельно и точно (normalizeMoneyValue),
- * сохраняются в стейджинге, и сверка сравнивает именно их, показывая округление
- * отдельным числом. Округление остаётся, но перестаёт быть невидимым: оператор
- * видит, что из 27 900,50 руб. в базу легло 27 901 руб., а разница в 50 копеек
- * названа и посчитана.
+ * БЫЛО: `Math.round(kopecks.value / 100)`, то есть округление до целого рубля,
+ * с пометкой «round-kopecks-to-rubles» в происхождении поля. Обоснование стояло
+ * в этом же комментарии: «колонка payments.amount_rub объявлена целыми рублями».
+ * ЭТО НЕВЕРНО с миграции 0131: колонка — numeric(12, 2), объявлена
+ * `numeric("amount_rub", { precision: 12, scale: 2, mode: "number" })`
+ * (db/schema.ts), и drizzle пишет её через String(), то есть 23400.5 доходит до
+ * базы как «23400.5» и хранится как 23400.50. Копейки влезают.
+ *
+ * Цена ошибки была необратимой: клиника, переезжающая с чужой системы, теряла
+ * копейки на КАЖДОМ платеже своей истории — «23 400,50» ложилось как 23 401, —
+ * причём точное значение было посчитано строкой выше и выброшено. Восстановить
+ * его после переноса нельзя ничем: исходной выгрузки у клиники может уже не быть.
+ *
+ * Точные копейки по-прежнему сохраняются в normalized_json (rowTransform.ts):
+ * это независимая точка отсчёта для сверки, и она нужна, чтобы доказать, что
+ * колонка получила ровно разобранное значение, а не «примерно» его.
  */
 export function normalizeMoneyRubles(raw: string | null | undefined): NormalizedValue<number> {
   const kopecks = normalizeMoneyValue(raw);
   if (kopecks.value === null) {
     return { value: null, transforms: kopecks.transforms, confidence: kopecks.confidence, issue: kopecks.issue };
   }
-  const rubles = Math.round(kopecks.value / 100);
+  const rubles = Number(kopecksToNumericString(kopecks.value));
   const transforms = [...kopecks.transforms.filter((transform) => transform !== "money:kopecks"), "money:rub"];
-  if (kopecks.value % 100 !== 0) transforms.push("round-kopecks-to-rubles");
   return ok(rubles, transforms, kopecks.confidence);
 }
 
