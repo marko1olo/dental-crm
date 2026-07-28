@@ -196,6 +196,14 @@ export function VisiographAnalyzer() {
   // status = null — это «до сервера не дошли вовсе», и его надо отличать от
   // «отказа не было».
   const [historyFailure, setHistoryFailure] = useState<{ status: number | null } | null>(null);
+  /*
+   * Отказ ЗАПИСИ в карту держим отдельно от `error` (тот подписан «Ошибка
+   * анализа» и означает «разбора нет вовсе»). Здесь разбор как раз есть и уже
+   * показан на экране, но в карту он не лёг. Без этого признака отказ записи
+   * был НЕВИДИМ: заключение висело на экране как готовое, а после перезагрузки
+   * страницы исчезало — врач считал, что оно в карте.
+   */
+  const [saveFailure, setSaveFailure] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
@@ -309,6 +317,7 @@ export function VisiographAnalyzer() {
 
     setIsAnalyzing(true);
     setError(null);
+    setSaveFailure(null);
     setCurrentScan(null);
     setCurrentImageUrl(null);
 
@@ -396,7 +405,23 @@ export function VisiographAnalyzer() {
       };
       setCurrentScan(fakeScan);
 
-      if (selectedPatientId) {
+      /*
+       * ЗАПИСЬ В КАРТУ. Прежний код молчал о любом отказе записи:
+       *   `if (saveRes.ok)` без ветки else — отказ сервера (нет места, снимок
+       *     слишком тяжёлый, смена без прав) не показывался никак;
+       *   пустой catch с пометкой «silent — result still shown» — обрыв связи тоже;
+       *   PUT с заключением шёл через `.catch(() => {})` и без проверки res.ok,
+       *     то есть снимок мог лечь в карту БЕЗ заключения;
+       *   при невыбранном пациенте записи не было вовсе и об этом не сообщалось.
+       * Во всех четырёх случаях врач видел готовое заключение на экране, закрывал
+       * вкладку и терял его: после перезагрузки карта возвращалась без записи.
+       * Теперь каждый отказ записи называется вслух, с указанием что делать.
+       */
+      if (!selectedPatientId) {
+        setSaveFailure(
+          'Пациент не выбран, поэтому заключение НЕ сохранено в карту. Откройте карту пациента и загрузите снимок ещё раз — или скопируйте текст заключения себе до перехода.',
+        );
+      } else {
         setIsSaving(true);
         try {
           const saveRes = await fetch('/api/xray/scans', {
@@ -410,22 +435,59 @@ export function VisiographAnalyzer() {
               kind: 'periapical',
             }),
           });
-          if (saveRes.ok) {
+          if (!saveRes.ok) {
+            console.error(`[VisiographAnalyzer] снимок не сохранён, ответ ${saveRes.status}`);
+            setSaveFailure(
+              saveRes.status === 413
+                ? 'Снимок слишком тяжёлый для сохранения, заключение в карту НЕ попало. Загрузите снимок меньшего размера и повторите разбор.'
+                : 'Сохранить снимок в карту не удалось, заключение осталось только на этом экране. Скопируйте текст заключения и повторите загрузку снимка.',
+            );
+          } else {
             const saved: XrayScan = await saveRes.json();
-            // Persist AI result on the saved record
-            await fetch(`/api/xray/scans/${saved.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                aiReport: aiResult.report,
-                aiSummary: fakeScan.aiSummary,
-                aiToothStates: aiResult.toothStates,
-                status: 'done',
-              }),
-            }).catch(() => {}); // best-effort
-            setScanHistory(prev => [{ ...saved, aiReport: aiResult.report, aiToothStates: aiResult.toothStates, status: 'done' }, ...prev]);
+            // Заключение дописывается вторым запросом, поэтому его отказ надо
+            // проверять отдельно: снимок уже в карте, а текста разбора в нём нет.
+            let reportSaved = false;
+            try {
+              const reportRes = await fetch(`/api/xray/scans/${saved.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  aiReport: aiResult.report,
+                  aiSummary: fakeScan.aiSummary,
+                  aiToothStates: aiResult.toothStates,
+                  status: 'done',
+                }),
+              });
+              reportSaved = reportRes.ok;
+              if (!reportRes.ok) {
+                console.error(`[VisiographAnalyzer] заключение не сохранено, ответ ${reportRes.status}`);
+              }
+            } catch (reportErr) {
+              console.error('[VisiographAnalyzer] заключение не сохранено', reportErr);
+            }
+            if (!reportSaved) {
+              setSaveFailure(
+                'Снимок в карту лёг, а текст заключения сохранить не удалось — после перезагрузки страницы его в карте не будет. Скопируйте заключение в заметки визита или повторите разбор.',
+              );
+            }
+            /*
+             * В список пишем то, что реально сохранено. Раньше заключение
+             * подставлялось в строку истории всегда, и после отказа PUT список
+             * показывал «есть заключение» там, где на сервере его нет.
+             */
+            setScanHistory(prev => [
+              reportSaved
+                ? { ...saved, aiReport: aiResult.report, aiToothStates: aiResult.toothStates, status: 'done' }
+                : saved,
+              ...prev,
+            ]);
           }
-        } catch { /* silent — result still shown */ }
+        } catch (saveErr) {
+          console.error('[VisiographAnalyzer] запись снимка в карту не выполнена', saveErr);
+          setSaveFailure(
+            'Сервер не ответил на сохранение, заключение осталось только на этом экране и после перезагрузки исчезнет. Проверьте связь и повторите загрузку снимка.',
+          );
+        }
         finally { setIsSaving(false); }
       }
 
@@ -772,6 +834,30 @@ export function VisiographAnalyzer() {
               {isSaving && (
                 <div style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Loader2 size={12} className="animate-spin" /> Сохранение в карту пациента...
+                </div>
+              )}
+
+              {/*
+                * Отказ записи в карту. Стоит РЯДОМ с заключением, а не наверху
+                * панели: врач читает текст разбора и должен здесь же увидеть, что
+                * в карту он не попал. Цвет — предупреждение (--warn-bg/--warn-fg
+                * объявлены во всех трёх темах), потому что разбор не потерян,
+                * он на экране; потеряна только запись.
+                */}
+              {!isSaving && saveFailure && (
+                <div
+                  role="alert"
+                  style={{
+                    padding: '10px 14px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                    borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                  <div>
+                    <strong>Заключение не сохранено в карту</strong>
+                    <div style={{ marginTop: '4px' }}>{saveFailure}</div>
+                  </div>
                 </div>
               )}
 
