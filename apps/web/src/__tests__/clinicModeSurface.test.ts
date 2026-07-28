@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { StaffRole } from "@dental/shared";
-import { clinicCapabilities, clinicModes, describeHiddenCapabilities, hasCapability, type ClinicMode, visibleStaffRoles } from "../lib/clinicCapabilities.js";
+import { applyClinicModeToFlags, clinicCapabilities, clinicModes, describeHiddenCapabilities, hasCapability, type ClinicMode, visibleStaffRoles } from "../lib/clinicCapabilities.js";
+import type { WorkspaceFeatureFlags } from "../hooks/useWorkspaceProfile.js";
 import { appViews, getFilteredAppViews, getRailViewsHiddenByMode, getVisibleRailViews, viewLabels } from "../workspaceShell.js";
 
 /*
@@ -35,7 +36,137 @@ const railFor = (mode: ClinicMode | null): string[] => {
 
 const named = (views: readonly string[]): string => views.map((view) => viewLabels[view as (typeof appViews)[number]]).join(", ");
 
+/*
+ * ВТОРАЯ СИСТЕМА МОДУЛЬНОСТИ — ПРИЗНАКИ МОДУЛЕЙ.
+ *
+ * Состав экрана решают не только режим и роль: часть вкладок настроек прячется по
+ * признакам из `hooks/useWorkspaceProfile.ts` (`SettingsView.tsx:1201` строит
+ * список вкладок, `:1512` — сами панели). Поэтому «что видно отдельному врачу»
+ * без признаков не посчитать.
+ *
+ * Значения здесь — фикстура, а не выдумка про продукт: `GET
+ * /api/workspace/profile` (`apps/api/src/routes/workspaceProfile.ts:451`) отдаёт
+ * признаки константой, все включённые, любой организации. Проверяется ровно одно:
+ * какие из них снимает режим. Тип взят из настоящего интерфейса, поэтому
+ * переименование признака ломает фикстуру, а не проходит молча.
+ */
+type ModuleFlagFixture = Pick<
+	WorkspaceFeatureFlags,
+	| "hasMarketingModule"
+	| "hasPayrollModule"
+	| "hasAnalyticsModule"
+	| "hasInventoryModule"
+	| "hasOrthodontics"
+	| "hasDentalLab"
+	| "hasPediatricMode"
+	| "aiEnableTreatmentPlan"
+	| "aiEnableRecommendations"
+	| "aiEnableDocuments"
+>;
+
+const serverFlags: ModuleFlagFixture = {
+	hasMarketingModule: true,
+	hasPayrollModule: true,
+	hasAnalyticsModule: true,
+	hasInventoryModule: true,
+	hasOrthodontics: true,
+	hasDentalLab: true,
+	hasPediatricMode: true,
+	aiEnableTreatmentPlan: true,
+	aiEnableRecommendations: true,
+	aiEnableDocuments: true
+};
+
+const flagKeys = Object.keys(serverFlags) as Array<keyof ModuleFlagFixture>;
+
+/** Клинические признаки: лечение режимом не упрощается, снять их он не вправе. */
+const clinicalFlags: ReadonlyArray<keyof ModuleFlagFixture> = [
+	"hasOrthodontics",
+	"hasDentalLab",
+	"hasPediatricMode",
+	"aiEnableTreatmentPlan",
+	"aiEnableRecommendations",
+	"aiEnableDocuments"
+];
+
+/**
+ * Всё, что клиника при этом режиме видит, одним списком: разделы меню, роли в
+ * переключателях, возможности внутри разделов и признаки модулей. Сравнение двух
+ * таких списков и есть смысл режима — по нему видно, что именно убрано.
+ */
+const moduleSurface = (mode: ClinicMode | null): string[] => {
+	const flags = applyClinicModeToFlags(serverFlags, mode);
+	return [
+		...railFor(mode).map((view) => `меню: ${viewLabels[view as (typeof appViews)[number]]}`),
+		...visibleStaffRoles(roleFocusOrder, mode).map((role) => `роль: ${role}`),
+		...clinicCapabilities(mode).map((capability) => `возможность: ${capability}`),
+		...flagKeys.filter((key) => flags[key]).map((key) => `модуль: ${key}`)
+	];
+};
+
 describe("состав рабочего экрана по режиму клиники", () => {
+	it("видимое отдельному врачу — строгое подмножество видимого сети, лечение целиком", () => {
+		/*
+		 * ГЛАВНАЯ ПРОВЕРКА РЕЖИМА, И ОНА ЗДЕСЬ ИМЕННО ПЕЧАТЬЮ СПИСКОВ. Зелёная
+		 * проверка, которая ничего не печатает, не доказывает ничего: «режим прячет
+		 * лишнее» — это утверждение о двух составах экрана, и увидеть его можно
+		 * только положив их рядом.
+		 *
+		 * Держится ровно две вещи, обе продуктовые. Первое: отдельный врач не видит
+		 * НИЧЕГО, чего не видит сеть, — упрощение не вправе отнимать произвольное.
+		 * Второе: он видит ВСЁ лечение — разделы приёма и клинические признаки
+		 * (ортодонтия, зуботехническая лаборатория, детский режим, помощь ИИ)
+		 * остаются на месте. Скрывается организационная обвязка: продвижение,
+		 * воронка обращений, роли отсутствующих сотрудников.
+		 */
+		const solo = moduleSurface("solo_doctor");
+		const network = moduleSurface("network_clinic");
+		const removed = network.filter((entry) => !solo.includes(entry));
+		console.log(`  ВИДИТ ОТДЕЛЬНЫЙ ВРАЧ (${solo.length}):`);
+		for (const entry of solo) console.log(`      ${entry}`);
+		console.log(`  ВИДИТ СЕТЬ ФИЛИАЛОВ (${network.length}):`);
+		for (const entry of network) console.log(`      ${entry}`);
+		console.log(`  РЕЖИМ УБРАЛ (${removed.length}): ${removed.join(" | ")}`);
+
+		for (const entry of solo) {
+			assert.ok(network.includes(entry), `«${entry}» есть у отдельного врача и нет у сети`);
+		}
+		assert.ok(solo.length < network.length, "режим не убрал ни одного пункта — флаг ничем не управляет");
+		for (const view of clinicalViews) {
+			assert.ok(solo.includes(`меню: ${viewLabels[view]}`), `у отдельного врача пропал раздел «${viewLabels[view]}»`);
+		}
+		for (const flag of clinicalFlags) {
+			assert.ok(solo.includes(`модуль: ${flag}`), `режим снял клинический признак ${flag}`);
+		}
+	});
+
+	it("режим только снимает признак модуля: не поднимает и не трогает клинические", () => {
+		/*
+		 * Правило жило выражением внутри React-хука `useWorkspaceProfile`, и потому
+		 * не проверялось ничем: убедиться, что режим снимает ровно один признак,
+		 * можно было только отрисовкой. Теперь это функция, и держится тремя
+		 * утверждениями.
+		 *
+		 * Ссылка на объект сохраняется, когда менять нечего, — результат идёт в
+		 * useMemo, и новый объект на каждый рендер перерисовывал бы всех
+		 * потребителей признаков.
+		 */
+		assert.equal(applyClinicModeToFlags(serverFlags, "network_clinic"), serverFlags);
+		assert.equal(applyClinicModeToFlags(serverFlags, "one_chair"), serverFlags);
+		assert.equal(applyClinicModeToFlags(serverFlags, null), serverFlags, "неизвестный режим не смеет ничего снимать");
+
+		// Клиника выключила маркетинг вручную — режим сети не включает его обратно.
+		const manuallyOff: ModuleFlagFixture = { ...serverFlags, hasMarketingModule: false };
+		assert.equal(applyClinicModeToFlags(manuallyOff, "network_clinic"), manuallyOff);
+
+		const solo = applyClinicModeToFlags(serverFlags, "solo_doctor");
+		assert.equal(solo.hasMarketingModule, false, "вкладка настроек «Маркетинг» осталась у отдельного врача");
+		const touched = flagKeys.filter((key) => key !== "hasMarketingModule" && solo[key] !== serverFlags[key]);
+		assert.deepEqual(touched, [], `режим тронул признаки помимо маркетинга: ${touched.join(", ")}`);
+		console.log(`  снято режимом «отдельный врач»: hasMarketingModule (вкладка настроек «Маркетинг» уходит вместе с разделом меню)`);
+		console.log(`  остальные ${flagKeys.length - 1} признака не тронуты: ${flagKeys.filter((key) => key !== "hasMarketingModule").join(", ")}`);
+	});
+
 	it("печатает оба состава: отдельный врач против сети", () => {
 		const solo = railFor("solo_doctor");
 		const network = railFor("network_clinic");

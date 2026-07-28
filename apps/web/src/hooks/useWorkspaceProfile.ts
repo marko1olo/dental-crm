@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
-import { hasCapability, resolveClinicMode } from "../lib/clinicCapabilities";
+import { applyClinicModeToFlags, resolveClinicMode } from "../lib/clinicCapabilities";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -166,20 +166,20 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
  * `aiEnable*` и остальные) режимом НЕ управляются и здесь не участвуют: врач,
  * работающий один, лечит ровно так же, как клиника. Скрывается организационная
  * обвязка, не медицина.
+ *
+ * САМО ПРАВИЛО ЛЕЖИТ НЕ ЗДЕСЬ, а в `lib/clinicCapabilities.ts`
+ * (`applyClinicModeToFlags`), рядом с таблицей возможностей, по которой из меню
+ * уходит раздел. Выражением внутри хука оно было непроверяемым: убедиться, что
+ * режим опускает ровно один признак и не трогает ни одного клинического, можно
+ * было только отрисовкой. Здесь остаётся подключение к данным — откуда берётся
+ * режим и как результат кэшируется.
  */
 export function useWorkspaceProfile() {
 	const store = useWorkspaceProfileStore();
 	const clinicMode = resolveClinicMode(
 		useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode,
 	);
-	const marketingFitsMode = hasCapability(clinicMode, "marketingSection");
-	return useMemo(
-		() =>
-			store.hasMarketingModule && !marketingFitsMode
-				? { ...store, hasMarketingModule: false }
-				: store,
-		[store, marketingFitsMode],
-	);
+	return useMemo(() => applyClinicModeToFlags(store, clinicMode), [store, clinicMode]);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

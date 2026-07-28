@@ -321,6 +321,7 @@ import {
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+import { resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { preloadWorkspaceView, scheduleIdleWorkspacePreload } from "./workspacePreload";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
@@ -2039,6 +2040,31 @@ export function App() {
     );
   }
 
+  /*
+   * РОЛИ В МАСТЕРЕ НАСТРОЙКИ — ТОЛЬКО СУЩЕСТВУЮЩИЕ ПРИ ЭТОМ РЕЖИМЕ КЛИНИКИ.
+   *
+   * Переключатель роли в шапке (WorkspaceTopbar) уже спрашивает режим, а два шага
+   * мастера — «Ваша рабочая роль» и «Кто сейчас работает» — предлагали все пять
+   * ролей всегда. Мастер сам заводил сотрудника, которого потом отфильтровывала
+   * шапка: клиника в режиме отдельного врача выбирала «Управляющий», после чего
+   * шапка показывала «Роль: Управляющий», предлагала «Врач» и «Владелец», и ни
+   * одна кнопка не была подсвечена.
+   *
+   * Правило одно на все переключатели — staffRoleChoices из
+   * lib/clinicCapabilities.ts, там же, где таблица ролей по режимам. Второе
+   * описание того же правила разъехалось бы с первым при первой же правке.
+   * Текущая выбранная роль остаётся в списке всегда, иначе человек не увидит,
+   * где он находится.
+   *
+   * Режим берётся из того же ответа сервера, что и в шапке
+   * (dashboard.clinicSettings.profile.mode). Пока его нет — предлагаются все
+   * роли: отнимать выбор у клиники, чей режим ещё не известен, нельзя.
+   */
+  const onboardingRoleChoices = staffRoleChoices(
+    roleFocusOrder,
+    resolveClinicMode(dashboard?.clinicSettings?.profile?.mode),
+    selectedWorkspaceRole
+  );
 
   if (!onboardingDismissed && !isLocalOnboardingDismissed) {
     return (
@@ -2165,7 +2191,7 @@ export function App() {
                   <div className="wizard-field">
                     <span id="onboarding-role-label">Ваша рабочая роль</span>
                     <div className="wizard-role-row" role="group" aria-labelledby="onboarding-role-label">
-                      {roleFocusOrder.map((role) => (
+                      {onboardingRoleChoices.map((role) => (
                         <button
                           className={`wizard-role-chip${selectedWorkspaceRole === role ? " active" : ""}`}
                           key={role}
@@ -2522,7 +2548,7 @@ export function App() {
                 </div>
                 <div className="onboarding-form-grid">
                   <div className="role-picker form-span-2" aria-label="Роль нового сотрудника">
-                    {roleFocusOrder.map((role) => (
+                    {onboardingRoleChoices.map((role) => (
                       <button
                         className={selectedWorkspaceRole === role ? "active" : ""}
                         key={role}
