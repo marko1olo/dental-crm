@@ -1,27 +1,28 @@
 /**
- * InsuranceContractsPanel — manages DMS (voluntary medical insurance) contracts
- * for the organization. Lives in the Settings → ДМС tab.
+ * Договоры ДМС клиники: страховые компании и процент покрытия по категориям
+ * услуг. Вкладка «Настройки → Страховые», покрытие применяется в сравнительном
+ * конструкторе смет.
+ *
+ * Что здесь было сломано и почему разбор ответа живёт отдельным модулем —
+ * в ./insuranceContractsPanelData.ts. Коротко: отказ чтения показывался как
+ * «Договоров ДМС нет», а при отказе сохранения администратору печатался
+ * английский машинный код сервера.
  */
 
 import { Edit2, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
-
-interface InsuranceContract {
-	id: string;
-	companyName: string;
-	policyNumberMask: string | null;
-	coverageTherapyPct: number;
-	coverageSurgeryPct: number;
-	coverageOrthoPct: number;
-	coverageHygienePct: number;
-	annualLimitRub: number | null;
-	isActive: boolean;
-	createdAt: string;
-}
+import { PanelLoadFailure } from "../PanelLoadFailure";
+import {
+	INSURANCE_CONTRACTS_PANEL_SUBJECT,
+	type InsuranceContract,
+	type InsuranceContractsLoadState,
+	parseInsuranceContractsPayload,
+} from "./insuranceContractsPanelData";
 
 interface ContractFormData {
 	companyName: string;
@@ -53,7 +54,16 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const {} = derivations;
 
 	const [contracts, setContracts] = useState<InsuranceContract[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	/*
+	 * Загрузка / прочитано / отказ. Раньше здесь стоял один `isLoading`, и отказ
+	 * сервера был неотличим от честной пустоты: список оставался пустым, а панель
+	 * рисовала «Договоров ДМС нет» — навсегда, потому что всплывающее сообщение
+	 * исчезает через несколько секунд.
+	 */
+	const [loadState, setLoadState] = useState<InsuranceContractsLoadState>({
+		phase: "loading",
+	});
+	const [isSaving, setIsSaving] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const [editingContract, setEditingContract] =
 		useState<InsuranceContract | null>(null);
@@ -64,21 +74,27 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const borderColor = "var(--line)";
 
 	const fetchContracts = useCallback(async () => {
+		setLoadState({ phase: "loading" });
 		try {
-			setIsLoading(true);
 			const res = await fetch("/api/insurance/contracts", {
 				headers: auth.denteClinicalReadHeaders(),
 			});
-			if (res.ok) {
-				const data = await res.json();
-				setContracts(Array.isArray(data) ? data : []);
-			} else {
-				showToast("Ошибка загрузки договоров ДМС", "error");
+			/* Тело читается строкой один раз: у res.json() на пустом ответе и на
+			   HTML от прокси исключение с английским текстом. */
+			const raw = await res.text();
+			const outcome = parseInsuranceContractsPayload(res.status, raw);
+			if (!outcome.ok) {
+				// Код ответа нужен разработчику, а не администратору: в консоль.
+				console.error("[договоры ДМС] не прочитаны, ответ", outcome.status);
+				setLoadState({ phase: "failed", status: outcome.status });
+				return;
 			}
-		} catch {
-			showToast("Системная ошибка", "error");
-		} finally {
-			setIsLoading(false);
+			setContracts(outcome.contracts);
+			setLoadState({ phase: "ready" });
+		} catch (err) {
+			// До сервера не дошли вовсе: status = null, текст об этом так и скажет.
+			console.error("[договоры ДМС] запрос не дошёл до сервера", err);
+			setLoadState({ phase: "failed", status: null });
 		}
 	}, [auth]);
 
@@ -123,6 +139,16 @@ export const InsuranceContractsPanel: React.FC = () => {
 				: undefined,
 		};
 
+		/*
+		 * Что именно не получилось — в тексте отказа. Раньше здесь было «Ошибка
+		 * сохранения» и, что хуже, поле `error` сервера: этот сервер кладёт туда
+		 * машинный код по-английски («companyName is required», «Failed to create
+		 * contract»), и администратор читал его дословно.
+		 */
+		const failedAction = editingContract
+			? `Договор «${payload.companyName}» не изменён`
+			: `Договор «${payload.companyName}» не добавлен`;
+		setIsSaving(true);
 		try {
 			let res: Response;
 			if (editingContract) {
@@ -143,42 +169,63 @@ export const InsuranceContractsPanel: React.FC = () => {
 				});
 			}
 
-			if (res.ok) {
-				showToast(
-					editingContract ? "Договор обновлён" : "Договор добавлен",
-					"success",
-				);
-				setShowModal(false);
-				fetchContracts();
-			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast((err as any)?.error ?? "Ошибка сохранения", "error");
+			if (!res.ok) {
+				console.error("[договоры ДМС] не сохранён, ответ", res.status);
+				/* Окно НЕ закрываем: введённое останется на экране, и его не придётся
+				   набирать заново. Раньше окно закрывалось только при успехе — это
+				   было верно, и здесь это сохранено явно. */
+				showToast(actionFailureToast(failedAction, res.status), "error");
+				return;
 			}
-		} catch {
-			showToast("Системная ошибка", "error");
+			showToast(
+				editingContract
+					? `Договор «${payload.companyName}» изменён`
+					: `Договор «${payload.companyName}» добавлен`,
+				"success",
+			);
+			setShowModal(false);
+			await fetchContracts();
+		} catch (err) {
+			// Текст исключения наружу не идёт ни при каких условиях: он английский.
+			console.error("[договоры ДМС] сохранение не дошло до сервера", err);
+			showToast(actionFailureToast(failedAction, null), "error");
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
 	const handleDeactivate = async (contract: InsuranceContract) => {
 		if (
 			!window.confirm(
-				`Удалить договор «${contract.companyName}»? Его больше нельзя будет использовать в планах лечения.`,
+				`Убрать договор «${contract.companyName}» из работы? В новых сметах его покрытие применяться не будет. Уже посчитанные сметы не изменятся.`,
 			)
 		)
 			return;
+		/*
+		 * «Удалён» и «деактивирован» — разные обещания, а стояли оба сразу: вопрос
+		 * говорил «Удалить договор», а сообщение об успехе — «Договор
+		 * деактивирован». Сервер снимает признак isActive, то есть договор убирается
+		 * из работы, а не стирается. Так и сказано в обоих текстах.
+		 */
+		const failedAction = `Договор «${contract.companyName}» не убран из работы`;
 		try {
 			const res = await fetch(`/api/insurance/contracts/${contract.id}`, {
 				method: "DELETE",
 				headers: auth.denteClinicalReadHeaders(),
 			});
-			if (res.ok) {
-				showToast("Договор деактивирован", "success");
-				fetchContracts();
-			} else {
-				showToast("Ошибка удаления", "error");
+			if (!res.ok) {
+				console.error("[договоры ДМС] не убран из работы, ответ", res.status);
+				showToast(actionFailureToast(failedAction, res.status), "error");
+				return;
 			}
-		} catch {
-			showToast("Системная ошибка", "error");
+			showToast(
+				`Договор «${contract.companyName}» убран из работы`,
+				"success",
+			);
+			await fetchContracts();
+		} catch (err) {
+			console.error("[договоры ДМС] удаление не дошло до сервера", err);
+			showToast(actionFailureToast(failedAction, null), "error");
 		}
 	};
 
@@ -211,10 +258,32 @@ export const InsuranceContractsPanel: React.FC = () => {
 				</button>
 			</div>
 
-			{/* Contracts list */}
-			{isLoading ? (
-				<div className="p-12 text-center text-slate-500 dark:text-slate-400">
-					Загрузка договоров...
+			{/*
+				ТРИ СОСТОЯНИЯ, А НЕ ДВА.
+
+				БЫЛО: `isLoading ? загрузка : contracts.length === 0 ? «Договоров ДМС
+				нет» : список`. Под «нет» попадал и непрочитанный список — при 401 у
+				незакрытой смены или сбое базы экран навсегда утверждал, что у клиники
+				нет ни одного договора. Администратор заводил их заново (дубли) или
+				считал смету без страховой доли.
+			*/}
+			{loadState.phase === "failed" ? (
+				<PanelLoadFailure
+					subject={INSURANCE_CONTRACTS_PANEL_SUBJECT}
+					status={loadState.status}
+					onRetry={() => void fetchContracts()}
+				/>
+			) : loadState.phase === "loading" ? (
+				<div
+					className="p-12 text-center text-slate-500 dark:text-slate-400"
+					role="status"
+					aria-live="polite"
+				>
+					{
+						panelStateText(INSURANCE_CONTRACTS_PANEL_SUBJECT, {
+							phase: "loading",
+						}).title
+					}
 				</div>
 			) : contracts.length === 0 ? (
 				<div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
@@ -223,10 +292,11 @@ export const InsuranceContractsPanel: React.FC = () => {
 						strokeWidth={1}
 						className="opacity-40 mb-3 mx-auto"
 					/>
-					<p className="m-0 text-base">Договоров ДМС нет.</p>
+					<p className="m-0 text-base">
+						{INSURANCE_CONTRACTS_PANEL_SUBJECT.emptyTitle}
+					</p>
 					<p className="mt-1.5 mb-0 text-xs text-slate-400">
-						Добавьте договор страховой компании, чтобы применять его в
-						планировщике смет.
+						{INSURANCE_CONTRACTS_PANEL_SUBJECT.emptyHint}
 					</p>
 				</div>
 			) : (
@@ -555,12 +625,23 @@ export const InsuranceContractsPanel: React.FC = () => {
 								/>
 							</div>
 
+							{/*
+								Кнопка молчала на время запроса: нажатие не давало никакого
+								отклика, и по второму-третьему нажатию уходило столько же
+								запросов на создание — то есть дубли договоров делались самой
+								кнопкой.
+							*/}
 							<button
 								type="submit"
 								className="primary-button"
+								disabled={isSaving}
 								style={{ justifyContent: "center", marginTop: 4 }}
 							>
-								{editingContract ? "Сохранить изменения" : "Добавить договор"}
+								{isSaving
+									? "Сохраняем…"
+									: editingContract
+										? "Сохранить изменения"
+										: "Добавить договор"}
 							</button>
 						</form>
 					</div>
