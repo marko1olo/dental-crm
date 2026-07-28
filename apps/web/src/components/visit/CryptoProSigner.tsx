@@ -46,6 +46,14 @@ interface CryptoProSignerProps {
   не как юридическая.
 */
 
+/**
+ * Почему подпись КриптоПро сейчас не проходит и что делать вместо неё. Текст
+ * один и тот же для предупреждения в окне и для отказа по кнопке, чтобы врач не
+ * читал две разные версии одной причины.
+ */
+export const CRYPTO_SIGNING_UNAVAILABLE_TEXT =
+	"Подпись КриптоПро для этой записи пока недоступна: подписывается отпечаток записи, а его создаёт сервер только в момент подписания — у ещё не подписанной записи его нет. Сохранение черновика тут не поможет. Подпишите запись простой подписью по ПИН-коду на соседней вкладке — правки она блокирует так же. О том, что подпись КриптоПро не работает, сообщите администратору клиники.";
+
 /** Человеческая причина отказа. Машинный текст плагина на экран не выносим. */
 function readableSigningFailure(error: unknown): string {
 	const raw = error instanceof Error ? error.message : String(error ?? "");
@@ -124,6 +132,31 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	const needsTokenPin =
 		selectedCertInfo?.provider === "rutoken" || selectedCertInfo?.deviceId !== undefined;
 
+	/*
+	 * ПОДПИСЬ КРИПТОПРО ИЗ ЭТОГО ОКНА СЕЙЧАС НЕВОЗМОЖНА, И ВРАЧ ОБЯЗАН УЗНАТЬ ОБ
+	 * ЭТОМ СРАЗУ, А НЕ ПОСЛЕ ПОИСКОВ РУТОКЕНА.
+	 *
+	 * Подписывается отпечаток записи (diaryHash). Его создаёт ТОЛЬКО сервер и
+	 * только в момент подписания: apps/api/src/routes/diary.ts:181 пишет
+	 * diary_hash в маршруте /lock, а сохранение черновика хеш не считает вовсе.
+	 * У неподписанного дневника отпечатка нет — значит, здесь diaryHash === null
+	 * всегда, потому что окно доступно только пока isLocked === false (правка
+	 * подписанного идёт через ревизию, и там дневник остаётся подписанным).
+	 *
+	 * БЫЛО: отказ по этому условию говорил «дневник не сохранён на сервере,
+	 * нажмите „Сохранить черновик“ и повторите». Врач сохранял, повторял и
+	 * получал тот же отказ — по кругу, без конца, потому что сохранение хеша не
+	 * создаёт. Единственный рабочий способ (простая подпись по ПИН-коду) при этом
+	 * лежал рядом, но экран на него не показывал.
+	 *
+	 * ДОЛГ ВЕДУЩЕМУ, НУЖЕН СЕРВЕР: чтобы подпись КриптоПро ожила, сервер должен
+	 * отдавать отпечаток ТЕКУЩЕГО содержимого до подписания (например, в строке
+	 * дневника из GET /api/diaries — computeDiaryHash там уже есть). Считать хеш
+	 * на клиенте нельзя: набор полей и порядок склейки — серверный, разойдутся
+	 * форматом, и проверка целостности не сойдётся.
+	 */
+	const cryptoSigningUnavailable = !diaryHash;
+
 	const handleConfirmLock = async () => {
 		if (isSigning) return;
 		setFailureText(null);
@@ -133,10 +166,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 				setFailureText("Сначала выберите сертификат из списка.");
 				return;
 			}
-			if (!diaryHash) {
-				setFailureText(
-					"Подписывать пока нечего: дневник не сохранён на сервере. Закройте окно, нажмите «Сохранить черновик» и повторите подписание.",
-				);
+			if (cryptoSigningUnavailable) {
+				setFailureText(CRYPTO_SIGNING_UNAVAILABLE_TEXT);
 				return;
 			}
 			if (needsTokenPin && pinCode.length === 0) {
@@ -286,6 +317,20 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							</div>
 						) : (
 							<div className="mb-6 space-y-4">
+								{/*
+									Причина называется до всех действий: раньше врач выбирал
+									сертификат, искал носитель, вводил ПИН носителя — и только
+									после кнопки узнавал отказ, да ещё и с неверным советом.
+								*/}
+								{cryptoSigningUnavailable ? (
+									<p
+										role="status"
+										aria-live="polite"
+										className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-200 text-xs leading-relaxed"
+									>
+										{CRYPTO_SIGNING_UNAVAILABLE_TEXT}
+									</p>
+								) : null}
 								<div>
 									<label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
 										Выберите сертификат
@@ -380,10 +425,23 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							>
 								Отмена
 							</button>
+							{/*
+								Кнопка не ведёт в тупик: пока подпись КриптоПро невозможна,
+								нажимать её незачем — рядом написано, чем подписать вместо неё.
+								Проверка в handleConfirmLock оставлена как второй рубеж.
+							*/}
 							<button
 								type="button"
 								onClick={handleConfirmLock}
-								disabled={isSigning}
+								disabled={
+									isSigning ||
+									(signatureType === "crypto" && cryptoSigningUnavailable)
+								}
+								title={
+									signatureType === "crypto" && cryptoSigningUnavailable
+										? CRYPTO_SIGNING_UNAVAILABLE_TEXT
+										: undefined
+								}
 								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
 							>
 								{isSigning ? (
