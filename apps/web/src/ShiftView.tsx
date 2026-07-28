@@ -565,13 +565,17 @@ export function ShiftView({
                             </span>
                             {/* Голое число рядом с названием роли: глазами видно, что
                                 это счётчик, а вслух читалось «АДМИНИСТРАТОР 3».
-                                Подпись проговаривает единицу измерения с согласованием. */}
+                                Единицу измерения даёт скрытая подпись с согласованием:
+                                aria-label на <strong> часть читалок игнорирует, потому
+                                что у элемента нет своей роли. */}
                             <strong
                               title={countLabel(queue.openItems ?? 0, "открытое дело", "открытых дела", "открытых дел")}
-                              aria-label={countLabel(queue.openItems ?? 0, "открытое дело", "открытых дела", "открытых дел")}
                               style={{ fontSize: "22px", fontWeight: 800, color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}
                             >
-                              {queue.openItems}
+                              <span aria-hidden="true">{queue.openItems}</span>
+                              <span className="sr-only">
+                                {countLabel(queue.openItems ?? 0, "открытое дело", "открытых дела", "открытых дел")}
+                              </span>
                             </strong>
                           </div>
                           <h3 style={{ margin: "8px 0 0", fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>{queue.title}</h3>
