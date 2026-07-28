@@ -24,45 +24,117 @@ interface LabOrderData {
 	createdAt: string;
 }
 
-export function GuestLabPortal() {
-	const [token, setToken] = useState<string>("");
+interface GuestLabPortalProps {
+	/**
+	 * Токен заказа из ссылки. Разбор адреса живёт в lib/publicPortalRoute.ts и
+	 * вызывается в main.tsx до рендера: держать второй разбор здесь значило бы
+	 * иметь два несогласуемых понимания одной ссылки.
+	 */
+	token: string;
+}
+
+/**
+ * Текст отказа обязан называть ПРИЧИНУ и ДЕЙСТВИЕ, а не код ответа: экран
+ * открывает зуботехник, у которого нет ни доступа к журналам, ни возможности
+ * спросить у разработчика. Раньше здесь на любой неуспех печаталось «Заказ не
+ * найден или доступ запрещен» — из этой строки нельзя понять ни что случилось,
+ * ни что делать дальше.
+ */
+function labOrderLoadFailureText(status: number): string {
+	if (status === 404) {
+		return (
+			"Заказ по этой ссылке не найден: ссылка скопирована не целиком либо клиника удалила заказ. " +
+			"Откройте ссылку из сообщения клиники ещё раз целиком — от «http» до последнего символа — " +
+			"или запросите новую."
+		);
+	}
+	if (status === 400) {
+		return (
+			"В ссылке нет номера заказа, открывать нечего. Скопируйте ссылку из сообщения клиники " +
+			"целиком: у неё обрезан конец."
+		);
+	}
+	return (
+		"Сервер клиники не смог отдать заказ. Обновите страницу через минуту; если повторится — " +
+		"сообщите в клинику, что портал лаборатории отвечает ошибкой."
+	);
+}
+
+function statusSaveFailureText(status: number): string {
+	if (status === 404) {
+		return (
+			"Заказ по этой ссылке больше не доступен: клиника его удалила. Статус НЕ сохранён — " +
+			"уточните заказ в клинике."
+		);
+	}
+	if (status === 400) {
+		return (
+			"Клиника не приняла этот статус. Статус НЕ сохранён — обновите страницу: набор действий " +
+			"по заказу мог измениться."
+		);
+	}
+	return (
+		"Сервер клиники не сохранил статус. Нажмите кнопку ещё раз через минуту — до этого " +
+		"клиника видит прежний статус."
+	);
+}
+
+const NETWORK_FAILURE_TEXT =
+	"Нет связи с сервером клиники. Проверьте интернет и обновите страницу — данные заказа не загружены.";
+
+/**
+ * Материал в базе хранится кодом (schema.ts labOrders.material), а выбирает его
+ * врач из списка в components/schedule/LabOrdersPanel.tsx:382-386. Портал печатал
+ * код как есть: зуботехник видел «zirconia» латиницей вместо «Диоксид циркония» —
+ * замерено на живом экране. Подписи те же, что в списке выбора у врача, чтобы
+ * клиника и лаборатория называли материал одним словом.
+ */
+const MATERIAL_LABELS: Record<string, string> = {
+	zirconia: "Диоксид циркония",
+	emax: "E.max (керамика)",
+	pfm: "Металлокерамика",
+	composite: "Композит",
+	temporary: "Временная пластмасса",
+};
+
+export function GuestLabPortal({ token }: GuestLabPortalProps) {
 	const [order, setOrder] = useState<LabOrderData | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	useEffect(() => {
-		const hash = window.location.hash;
-		const parts = hash.split("/lab-order/");
-		if (parts.length > 1 && parts[1]) {
-			const extractedToken = parts[1] as string;
-			setToken(extractedToken);
+		// Флаг отмены нужен из-за React.StrictMode: в разработке эффект исполняется
+		// дважды, и без него второй ответ перезаписывал бы состояние первого.
+		let cancelled = false;
+		setIsLoading(true);
+		setError(null);
 
-			fetch(`/api/portal/lab-order/${extractedToken}`)
-				.then((res) => {
-					if (!res.ok) throw new Error("Заказ не найден или доступ запрещен");
-					return res.json();
-				})
-				.then((data) => {
-					setOrder(data);
-				})
-				.catch((e) => {
-					setError(e.message);
-				})
-				.finally(() => {
-					setIsLoading(false);
-				});
-		} else {
-			setError("Токен не предоставлен");
-			setIsLoading(false);
-		}
-	}, []);
+		void (async () => {
+			try {
+				const res = await fetch(`/api/portal/lab-order/${encodeURIComponent(token)}`);
+				if (!res.ok) throw new Error(labOrderLoadFailureText(res.status));
+				const data = (await res.json()) as LabOrderData;
+				if (!cancelled) setOrder(data);
+			} catch (e) {
+				// Сетевой отказ fetch не несёт кода ответа вовсе — про него нужен
+				// свой текст, иначе он выглядел бы как ошибка сервера.
+				if (!cancelled) setError(e instanceof Error ? e.message : NETWORK_FAILURE_TEXT);
+			} finally {
+				if (!cancelled) setIsLoading(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [token]);
 
 	const updateStatus = async (newStatus: string) => {
 		if (!token || !order) return;
 		try {
 			setIsUpdating(true);
-			const res = await fetch(`/api/portal/lab-order/${token}/status`, {
+			const res = await fetch(`/api/portal/lab-order/${encodeURIComponent(token)}/status`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -70,15 +142,23 @@ export function GuestLabPortal() {
 				body: JSON.stringify({ status: newStatus }),
 			});
 
-			if (!res.ok) throw new Error("Ошибка при обновлении статуса");
+			if (!res.ok) throw new Error(statusSaveFailureText(res.status));
 
-			const data = await res.json();
-			if (data.success) {
-				setOrder({ ...order, status: data.status });
-				showToast("Статус успешно обновлен", "success");
+			const data = (await res.json()) as { success?: boolean; status?: string };
+			// Прежняя редакция проверяла только data.success и при любом другом
+			// ответе не делала НИЧЕГО: зуботехник нажимал кнопку, экран молчал, и
+			// он не мог отличить сохранённый статус от потерянного.
+			if (!data.success || typeof data.status !== "string") {
+				throw new Error(
+					"Клиника не подтвердила смену статуса. Статус НЕ сохранён — обновите страницу и " +
+						"нажмите кнопку ещё раз.",
+				);
 			}
-		} catch (e: any) {
-			showToast(e.message, "error");
+
+			setOrder({ ...order, status: data.status });
+			showToast("Статус заказа сохранён, врач увидит его в расписании клиники", "success");
+		} catch (e) {
+			showToast(e instanceof Error ? e.message : statusSaveFailureText(0), "error");
 		} finally {
 			setIsUpdating(false);
 		}
@@ -135,7 +215,13 @@ export function GuestLabPortal() {
 	return (
 		<div className="guest-portal-container">
 			<div className="guest-portal-card">
-				<div className="guest-portal-icon-wrapper" style={{ background: "var(--primary-bg)", color: "var(--primary)", borderColor: "transparent" }}>
+				{/*
+					Было `background: var(--primary-bg)` — имени --primary-bg нет ни в одной
+					таблице стилей проекта (единственное вхождение было здесь). Значение
+					недействительно, поэтому круг под значком оставался прозрачным.
+					--teal-soft и --teal объявлены во всех трёх темах (styles/main.css).
+				*/}
+				<div className="guest-portal-icon-wrapper" style={{ background: "var(--teal-soft)", color: "var(--teal)", borderColor: "transparent" }}>
 					<Beaker size={32} />
 				</div>
 				<h1 className="guest-portal-title">Портал Зуботехнической Лаборатории</h1>
@@ -170,7 +256,13 @@ export function GuestLabPortal() {
 								</div>
 								<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
 									<span className="guest-portal-field-label">Материал</span>
-									<span className="guest-portal-field-value">{order.material || "—"}</span>
+									{/*
+										Неизвестный код печатается как есть, а не заменяется на «—»:
+										прочерк скрыл бы от зуботехника то, что врач всё-таки указал.
+									*/}
+									<span className="guest-portal-field-value">
+										{order.material ? (MATERIAL_LABELS[order.material] ?? order.material) : "—"}
+									</span>
 								</div>
 								<div style={{ display: "flex", justifyContent: "space-between" }}>
 									<span className="guest-portal-field-label">Цвет (Vita)</span>
@@ -182,7 +274,14 @@ export function GuestLabPortal() {
 							<h3 className="guest-portal-field-label" style={{ marginBottom: "12px" }}>
 								<AlignLeft size={16} /> Клинические заметки
 							</h3>
-							<div style={{ background: "#fef9c3", padding: "16px", borderRadius: "8px", color: "#854d0e", minHeight: "100px", border: "1px solid #fef08a" }}>
+							{/*
+								Было три зашитых цвета (#fef9c3 / #854d0e / #fef08a). Страница
+								следует теме посетителя, а не клиники (main.tsx), поэтому светлая
+								плашка с коричневым текстом на тёмной подложке была бы ярким
+								пятном. --amber-soft, --amber и --text-primary объявлены для всех
+								трёх тем (styles/main.css, styles/premium.css).
+							*/}
+							<div style={{ background: "var(--amber-soft)", padding: "16px", borderRadius: "8px", color: "var(--text-primary)", minHeight: "100px", border: "1px solid var(--amber)" }}>
 								{order.clinicalNotes ? (
 									<p style={{ margin: 0, fontSize: "14px", whiteSpace: "pre-wrap" }}>{order.clinicalNotes}</p>
 								) : (

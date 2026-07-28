@@ -94,30 +94,45 @@
 	border: 1px solid;
 }
 
+/*
+ * Плашка статуса. Прежняя редакция зашивала светлые пастельные цвета
+ * (#fef3c7 / #d1fae5 / …), а страница следует теме ПОСЕТИТЕЛЯ, не клиники
+ * (main.tsx): на тёмной подложке это были яркие пятна. Все имена ниже объявлены
+ * для всех трёх тем в styles/main.css, поэтому оттенок сохраняется, а
+ * светлота идёт за темой.
+ *
+ * Правил ровно столько, сколько статусов у заказа в базе (schema.ts labOrders):
+ * зуботехник видит и те, что ставит клиника, — без правила на draft/sent/received
+ * плашка оставалась без фона, а рамку брала от currentColor.
+ *
+ * Цвет ТЕКСТА у всех один — --text-primary. Цветной текст на цветной подложке
+ * здесь не проходит по контрасту: --amber на --amber-soft в светлой теме даёт
+ * 2,9:1 при требуемых 4,5:1 (WCAG 1.4.3, размер 14px полужирный — не «крупный
+ * текст»). Статус различается подложкой, рамкой, значком и русской подписью, то
+ * есть не одним цветом.
+ */
+.guest-portal-status-badge.draft,
+.guest-portal-status-badge.sent {
+	background: var(--teal-surface);
+	color: var(--text-primary);
+	border-color: var(--teal-soft);
+}
 .guest-portal-status-badge.in_progress {
-	background: #fef3c7;
-	color: #92400e;
-	border-color: #fde68a;
+	background: var(--amber-soft);
+	color: var(--text-primary);
+	border-color: var(--amber);
 }
 .guest-portal-status-badge.refitting {
-	background: #ffedd5;
-	color: #9a3412;
-	border-color: #fed7aa;
+	background: var(--rust-soft);
+	color: var(--text-primary);
+	border-color: var(--rust);
 }
-.guest-portal-status-badge.shipped {
-	background: #d1fae5;
-	color: #065f46;
-	border-color: #a7f3d0;
-}
+.guest-portal-status-badge.shipped,
+.guest-portal-status-badge.received,
 .guest-portal-status-badge.completed {
-	background: #ecfdf5;
-	color: #047857;
-	border-color: #a7f3d0;
-}
-.guest-portal-status-badge.default {
-	background: var(--line, #e2e8f0);
-	color: var(--text-secondary, #64748b);
-	border-color: var(--line, #e2e8f0);
+	background: var(--teal-soft);
+	color: var(--text-primary);
+	border-color: var(--teal);
 }
 
 .guest-portal-actions {

@@ -1,7 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppShell } from "./AppShell";
+import { GlobalToast } from "./components/GlobalToast";
+import { GuestLabPortal } from "./GuestLabPortal";
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
+import { publicPortalRouteFromHash } from "./lib/publicPortalRoute";
+import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -26,17 +30,57 @@ import "./styles/dente-operations.css";
 // зашивали светлую палитру и ломали тёмную тему.
 import "./styles/onboarding-wizard.css";
 
-// Подставляет токены кабинета и сотрудника во все запросы к /api/.
-// Должно выполниться ДО первого рендера: часть экранов запрашивает данные
-// сразу при монтировании. Благодаря этому сервер может требовать токен и
-// больше не доверяет заголовку x-organization-id от клиента.
-installApiAuthFetch();
+/**
+ * РАЗВИЛКА ПУБЛИЧНОГО КОНТУРА. Решается ДО подстановки токенов и до рендера.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Регистратура нажимала «Ссылка технику»
+ * (components/schedule/LabOrdersPanel.tsx), получала подсказку «Ссылка для
+ * зуботехника скопирована в буфер обмена» и отправляла в лабораторию адрес
+ * #/portal/lab-order/<токен>. Разбора этого адреса здесь не было: AppShell
+ * рендерился безусловно, а viewFromHash() (AppHelpers.tsx) на таком хеше
+ * откатывался на «Смену». Зуботехник открывал рабочее место клиники вместо
+ * своего заказа — статус коронки продолжал жить в телефонных звонках, при том
+ * что оба серверных маршрута портала (apps/api/src/routes/lab.ts) давно готовы.
+ */
+const publicPortalRoute = publicPortalRouteFromHash(window.location.hash);
+const appRoot = createRoot(document.getElementById("root")!);
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <AppShell />
-  </React.StrictMode>
-);
+if (publicPortalRoute) {
+  // Тему на публичной странице выбирает не клиника, а сам посетитель: у
+  // зуботехника нет ни настроек кабинета, ни themeStore, а index.html жёстко
+  // ставит на <html> класс dark. Без этой строки внешний участник всегда
+  // получал бы тёмную палитру клиники независимо от своей системы.
+  applyThemeToRoot(
+    document.documentElement,
+    resolveTheme("auto", window.matchMedia("(prefers-color-scheme: dark)").matches)
+  );
+
+  // installApiAuthFetch() здесь НЕ вызывается сознательно: он читает токен
+  // кабинета и токен сотрудника из localStorage и подставляет их в запросы к
+  // /api/. Зуботехник — внешний участник, его маршруты авторизации не требуют
+  // вовсе, и заводить на публичной странице чтение клинических токенов не за чем.
+  //
+  // GlobalToast приходится ставить рядом: подтверждение смены статуса портал
+  // отправляет через showToast, а внутри AppShell этот приёмник остался.
+  appRoot.render(
+    <React.StrictMode>
+      <GuestLabPortal token={publicPortalRoute.token} />
+      <GlobalToast />
+    </React.StrictMode>
+  );
+} else {
+  // Подставляет токены кабинета и сотрудника во все запросы к /api/.
+  // Должно выполниться ДО первого рендера: часть экранов запрашивает данные
+  // сразу при монтировании. Благодаря этому сервер может требовать токен и
+  // больше не доверяет заголовку x-organization-id от клиента.
+  installApiAuthFetch();
+
+  appRoot.render(
+    <React.StrictMode>
+      <AppShell />
+    </React.StrictMode>
+  );
+}
 
 const DENTE_SW_RELOAD_MARKER = "dente:sw-controller-reload";
 
@@ -81,7 +125,10 @@ function watchDenteServiceWorkerUpdates(registration: ServiceWorkerRegistration)
   }, 30 * 60 * 1000);
 }
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
+// Service worker кэширует оболочку рабочего места клиники. На публичной странице
+// он не нужен и вреден: у зуботехника в кэше осталась бы оболочка чужой клиники,
+// а «Обновить рабочее место» ему предлагать нечего.
+if (!publicPortalRoute && "serviceWorker" in navigator && import.meta.env.PROD) {
   if (window.sessionStorage.getItem(DENTE_SW_RELOAD_MARKER) === "1") {
     window.sessionStorage.removeItem(DENTE_SW_RELOAD_MARKER);
   }
