@@ -351,6 +351,38 @@ a-cache-that-can-vanish (S2), as two separate packets in two separate files.
 it was parsed as an interpolation. Zero agents ran. Fixed and relaunched via `resumeFromRunId`. Standing
 note for every future script: **escape `${` in brief text**.
 
+## LEAD DIAGNOSIS WAS WRONG — corrected by packet S1, recorded per §4 T.A.R.S.
+
+I wrote in this ledger and in the S1 brief that `POST /api/speech/transcribe-chunk` "has no guard of
+any kind" and that `speech.ts` used only the read guard. **Both statements are false.**
+`requireClinicalMutationAccess` was called as the **first line of the handler body**. I read the route
+*registration* line and did not read the handler — the exact failure I have been ordering every
+subagent not to commit (§ READ BEFORE WRITE: "Appending a quick-fix to the bottom of an unread file is
+a critical compliance failure"). The observations were sound; the diagnosis attached to them was not.
+
+**What was actually true** (S1, measured live, booleans only — no secrets printed):
+1. `accessGuard.ts:31-33` returns **true for a credential-less request** when
+   `DENTE_CLINICAL_ADMIN_SECRET` is unset and `DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS=1`. Measured on
+   this host: secret configured = false, flag === "1" = true, NODE_ENV production = false. That is what
+   produced my 400 and the reviewer's 201.
+2. **Tenant-blind write, and this one is true in EVERY configuration.** No `organizationId` was ever
+   resolved. Patient and visit were looked up by bare UUID, and `speech/storage.ts:404-425` derives the
+   stored chunk's organization **from the client-supplied patientId/visitId**. So a caller could write
+   into another clinic's patient record regardless of env flags.
+
+**The cost of my error:** my framing pointed at a missing guard on one line. The second and more
+serious half — the tenant-blind write — **could not have been found from the wording I gave.** The
+agent found it by reading the handler I had not.
+
+**And my systemic hypothesis was wrong too, which is worth as much.** S1's census: **183 mutating route
+registrations across 63 files — 177 guarded, 6 without**, all six analysed line by line, with all five
+script iterations and their false positives disclosed (including a pass that missed routes registered
+on `server`). The `speech.ts` case was the **only** real asymmetry. There is no fleet-wide unguarded-
+route epidemic. That negative result is a genuine finding and it removes a whole cycle I had queued.
+
+Standing correction to my own method: **a route's guard lives in the handler, not the registration.**
+Never diagnose auth from a `grep` of `app.post(`.
+
 ## Lead-owned, not delegated
 
 - [ ] Re-run both capture pipelines, MD5-audit personally, read the unjudged plates
