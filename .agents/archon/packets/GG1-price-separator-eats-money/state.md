@@ -1,0 +1,1 @@
+START: GG1 rework of FF4 — reproducing 4 reviewer findings in apps/api/src/pricelist/analyzer.ts (descending '/' pair collapses to higher price, title-strip at :501 deletes non-price numbers, currency-on-both-bounds range still broken).
