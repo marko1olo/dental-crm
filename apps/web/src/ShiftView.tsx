@@ -17,7 +17,8 @@ import {
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { countLabel, formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
+import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
+import { countLabel } from "./lib/russianPlural";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -36,9 +37,9 @@ function calendarDateOfInstant(value: unknown): string | null {
  */
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
-/* Склонение счётного слова живёт в AppHelpers: оно понадобилось уже на трёх
-   экранах, и три копии разошлись бы так же, как разошлись правила «чего не
-   хватает записи». */
+/* Склонение счётного слова живёт в листовом модуле lib/russianPlural: правило
+   согласования одно на весь продукт, а через AppHelpers оно тянуло за собой
+   таблицы стилей и делало любой логический тест этого файла незагружаемым. */
 function appointmentsCountLabel(count: number): string {
   return countLabel(count, "прием", "приема", "приемов");
 }
@@ -346,8 +347,11 @@ export function ShiftView({
                             {manyDoctors && doctor ? ` · ${doctor.fullName}` : ""}
                           </span>
                         </div>
+                        {/* Резервным значением был сам app.status — ключ базы
+                            латиницей. Именно так на экран врача попали «Статус не
+                            загружены»: неизвестный ключ печатался как есть. */}
                         <span className={`status-pill status-${statusKey}`}>
-                          {statusLabels[statusKey] || app.status}
+                          {statusLabels[statusKey] ?? "статус неизвестен"}
                         </span>
                       </div>
                     );
@@ -384,9 +388,12 @@ export function ShiftView({
             <section className="shift-todo" aria-label="Что сделать сейчас">
               <div className="shift-todo-head">
                 <h2>Что сделать сейчас</h2>
+                {/* Было «дел: 2» — родительный обрывок с двоеточием, каким счётчик
+                    печатает машина. Человек читает «2 дела», и число обязано
+                    согласоваться с существительным: 1 дело, 2 дела, 5 дел. */}
                 <span className="shift-todo-count">
                   {(visibleRecommendedActions ?? []).length > 0
-                    ? `дел: ${(visibleRecommendedActions ?? []).length}`
+                    ? countLabel((visibleRecommendedActions ?? []).length, "дело", "дела", "дел")
                     : "всё закрыто"}
                 </span>
               </div>
@@ -396,8 +403,10 @@ export function ShiftView({
                     const patient = action.patientId ? patientsById.get(action.patientId) : null;
                     return (
                       <li key={action.id} className={`shift-todo-item priority-${action.priority}`}>
+                        {/* Тот же случай: без словаря подписей в метке оказывался
+                            ключ urgent/routine латиницей. */}
                         <span className={`shift-todo-priority priority-${action.priority}`}>
-                          {recommendedActionPriorityLabels?.[action.priority] ?? action.priority}
+                          {recommendedActionPriorityLabels?.[action.priority] ?? "без пометки"}
                         </span>
                         <div className="shift-todo-text">
                           <strong>{action.title}</strong>
@@ -467,7 +476,9 @@ export function ShiftView({
                       <Building2 aria-hidden="true" />
                       <div>
                         <p className="eyebrow">Режим клиники</p>
-                        <h2 style={{ fontSize: "15px", margin: 0 }}>{dashboard?.shiftIntelligence?.modeFit?.title ?? "По умолчанию"}</h2>
+                        {/* «По умолчанию» — слово из настроек программы, а не ответ
+                            на вопрос «какой у клиники режим». */}
+                        <h2 style={{ fontSize: "15px", margin: 0 }}>{dashboard?.shiftIntelligence?.modeFit?.title ?? "Режим ещё не выбран"}</h2>
                       </div>
                       <strong style={{ marginLeft: "auto", fontSize: "18px", color: "var(--teal-dark)" }}>{dashboard?.shiftIntelligence?.modeFit?.fitScore ?? 0}%</strong>
                     </div>
@@ -479,14 +490,17 @@ export function ShiftView({
                       <Gauge aria-hidden="true" />
                       <div>
                         <p className="eyebrow">Загрузка</p>
-                        <h2 style={{ fontSize: "15px", margin: 0 }}>{mostLoadedResource?.title ?? "Нет ресурсов"}</h2>
+                        {/* «Нет ресурсов» — название сущности из базы. В клинике
+                            загружены кресла и врачи, ресурсов там нет. */}
+                        <h2 style={{ fontSize: "15px", margin: 0 }}>{mostLoadedResource?.title ?? "Кресел и врачей нет"}</h2>
                       </div>
                       <strong style={{ marginLeft: "auto", fontSize: "18px", color: "var(--teal-dark)" }}>{mostLoadedResource ? `${mostLoadedResource.utilizationPercent}%` : "0%"}</strong>
                     </div>
                     {mostLoadedResource ? (
                       <>
                         <p style={{ fontSize: "12.5px", color: "var(--muted)", margin: "8px 0" }}>
-                          {minutesLabel(mostLoadedResource.bookedMinutes)} · {mostLoadedResource.appointmentCount} записей
+                          {/* Было «1 записей»: число не согласовывалось с существительным. */}
+                          {minutesLabel(mostLoadedResource.bookedMinutes)} · {countLabel(mostLoadedResource.appointmentCount ?? 0, "запись", "записи", "записей")}
                         </p>
                         <div className="load-meter" aria-label={`Загрузка ${mostLoadedResource.utilizationPercent}%`} style={{ height: "4px", borderRadius: "4px", background: "var(--line)", overflow: "hidden" }}>
                           <span style={{ display: "block", height: "100%", width: `${Math.min(100, mostLoadedResource.utilizationPercent)}%`, background: "var(--teal)" }} />
@@ -549,7 +563,16 @@ export function ShiftView({
                               <UserCheck size={14} aria-hidden="true" />
                               {staffRoleLabels?.[queue.role] ?? queue.role}
                             </span>
-                            <strong style={{ fontSize: "22px", fontWeight: 800, color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{queue.openItems}</strong>
+                            {/* Голое число рядом с названием роли: глазами видно, что
+                                это счётчик, а вслух читалось «АДМИНИСТРАТОР 3».
+                                Подпись проговаривает единицу измерения с согласованием. */}
+                            <strong
+                              title={countLabel(queue.openItems ?? 0, "открытое дело", "открытых дела", "открытых дел")}
+                              aria-label={countLabel(queue.openItems ?? 0, "открытое дело", "открытых дела", "открытых дел")}
+                              style={{ fontSize: "22px", fontWeight: 800, color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}
+                            >
+                              {queue.openItems}
+                            </strong>
                           </div>
                           <h3 style={{ margin: "8px 0 0", fontSize: "14px", fontWeight: 700, color: "var(--ink)" }}>{queue.title}</h3>
                           <p style={{ margin: "2px 0 0", fontSize: "12.5px", color: "var(--ink-2)" }}>{queue.nextAction}</p>
@@ -611,7 +634,12 @@ export function PatientCockpit({
               <PatientAvatar fullName={activePatient.fullName} size={44} />
               <div className="hero-info">
                 <h2 style={{ fontSize: "16px" }}>{activePatient.fullName}</h2>
-                <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--muted)" }}>карта #{activePatient.id ? activePatient.id.slice(0, 6) : "1042"}</p>
+                {/* Пациенту без id подставлялся номер карты «1042» — выдуманный
+                    номер, которого нет ни в одной картотеке. Придумывать номер
+                    нельзя: администратор станет искать по нему бумажную карту. */}
+                <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                  {activePatient.id ? `карта № ${activePatient.id.slice(0, 6)}` : "номер карты не присвоен"}
+                </p>
               </div>
             </div>
 
@@ -663,7 +691,13 @@ export function PatientCockpit({
               <FileText aria-hidden="true" size={24} />
               <div>
                 <h3>Документы</h3>
-                <p className="tile-meta">{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
+                {/* Было «3 шт. по визиту», а на пустой карточке — «нет по визиту»:
+                    сокращение из накладной и фраза, которая по-русски не строится. */}
+                <p className="tile-meta">
+                  {activeUsableDocuments.length > 0
+                    ? `${countLabel(activeUsableDocuments.length, "документ", "документа", "документов")} по визиту`
+                    : "по визиту документов нет"}
+                </p>
               </div>
             </article>
             <article role="button" tabIndex={0} aria-label="Открыть оплаты" className="clickable-card" onClick={() => { window.location.hash = "finance"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "finance"; } }}>
