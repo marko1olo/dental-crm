@@ -159,10 +159,43 @@ const CYCLE5_CORRECTIONS = `
 `
 
 const CYCLE7_CORRECTIONS = `
+═══ EXPLICIT SUPERSESSIONS — THE TEXT ABOVE ACCUMULATED STALE LINES ACROSS CYCLES. ═══
+This preamble is reused verbatim each cycle and has picked up statements that are now WRONG. Where the
+text above conflicts with anything below, BELOW WINS. Specifically dead now:
+- "You may now run 'npm run build -w @dental/api' freely as proof" — **NO. Superseded by §7a below.**
+  Builds are a shared-state gate and belong to the lead.
+- "Gates: 'npm run typecheck -w @dental/api' | '-w @dental/web' | 'npm test -w @dental/api'" listed as
+  yours — **NO. Superseded by §7a below.** Only 'node --import tsx --test <one file>' is yours.
+- "'npm run typecheck -w @dental/web' currently reports 6 PRE-EXISTING errors ... AnamnesisField" —
+  **STALE. Those were fixed; both gates were GREEN at this cycle's dispatch.** If you see typecheck
+  errors reported to you, treat them as live, not pre-existing.
+
+═══ §7a GATE DISCIPLINE — ONE WRITER PER GATE. READ THIS BEFORE ANYTHING ELSE. ═══
+The constitution was amended mid-campaign (.agents/AGENTS.md §7a) and it binds you:
+**'npm run typecheck', 'npm run build', migrations, seeds and Playwright runs all touch SHARED state** —
+'dist/', 'apps/web/tsconfig.tsbuildinfo', generated 'packages/shared/dist/', and the single live
+PostgreSQL 18 on 127.0.0.1:5432. **One agent at a time on any of those.** Read-only 'rg'/'fd'/'sg'/'jq'
+parallelises freely.
+
+The lead has been violating this: three agents per wave were running 'npm run typecheck -w @dental/web'
+concurrently, and that command WRITES 'apps/web/tsconfig.tsbuildinfo'. Corrected for this cycle:
+
+- **DO NOT RUN 'npm run typecheck'. DO NOT RUN 'npm run build'. DO NOT RUN 'npm test' (whole workspace).**
+  DO NOT run migrations or seeds. The LEAD owns those gates and runs them serially at wave end.
+- **You DO run your own single test file**, which touches no shared build state:
+      node --import tsx --test <path to your one test file>
+  That is your compile-and-behaviour signal. Quote its true exit code and counts.
+- **If your packet genuinely requires a build, a migration, or the whole suite, say so in 'blockers' and
+  STOP at that point.** The lead grants exclusive scope and runs it. Do not take the gate yourself
+  because you think you are the only one running — you are not.
+- 'node scripts/smoke-clinical-mutation-guard.mjs' boots the real app read-only and is safe to run.
+  So is 'node scripts/check-css-tokens.mjs' and 'npm run smoke:web-text-encoding'.
+- There is NO per-agent database. Never run destructive SQL. Read-only SELECTs against 5432 are fine.
+
 ═══ CORRECTIONS + THE DIRECTOR'S STANDING CONSTITUTION — CYCLE 7. THESE OVERRIDE THE TEXT ABOVE. ═══
-1. apps/api/dist is NOT tracked; it exists on disk. Never stage it. 'npm run build -w @dental/api' costs
-   ZERO git churn — use it freely. **A stale dist has hidden four defects this campaign.** If your proof
-   loads apps/api/dist/**, REBUILD FIRST or your result describes yesterday's code.
+1. apps/api/dist is NOT tracked; it exists on disk. Never stage it. **A stale dist has hidden four
+   defects this campaign**, so if your proof loads 'apps/api/dist/**' the result describes yesterday's
+   code — say so and hand the rebuild to the lead rather than building yourself (§7a above).
 2. The dev server runs 'tsx watch' and picks up source edits. **API VERIFIED against 127.0.0.1:4100 IS
    available.** Never restart the shared server.
 3. A guard is decided in the HANDLER BODY, never at the 'app.post(...)' registration line.
@@ -214,7 +247,7 @@ const PACKETS = [
     wave: 1,
     dir: '.agents/archon/packets/W1-hollow-query-census',
     files: 'a new scripts/ census tool, plus deletion of provably-dead db/*Query.ts modules AND their widgets. Coordinate, do not fight, over files the second author is deleting.',
-    gate: 'npm run typecheck -w @dental/api && npm run typecheck -w @dental/web',
+    gate: 'your census tool run + node --import tsx --test on your own test file. NEVER npm run typecheck or build — the lead owns those gates (§7a).',
     brief: `
 PACKET W1 — READ-ONLY QUERY MODULES OVER TABLES NOTHING EVER WRITES TO. §1: A WIDGET THAT CAN NEVER
 HAVE DATA IS NOT A MISSING FEATURE, IT IS A LIE WITH A UI.
@@ -266,7 +299,7 @@ PROOF EXPECTED:
     wave: 1,
     dir: '.agents/archon/packets/W2-clinicmode-really-hides',
     files: 'apps/web/src/store/settingsStore.ts, useSettingsDerivations.tsx, workspaceShell.tsx and the gating sites you find. NOT App.tsx (packet W3 owns it this cycle).',
-    gate: 'npm run typecheck -w @dental/web',
+    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
     brief: `
 PACKET W2 — A SOLO DENTIST OPENS THE APP AND SEES A NETWORK CLINIC. §5 IS THE CORE OF THE PRODUCT.
 Lane: ADAPTIVITY / DESIGN SYSTEM. Read .agents/UI_STANDARDS.md COMPLETE.
@@ -302,7 +335,8 @@ PROOF EXPECTED:
 - UNIT VERIFIED: a node:test over the pure gating function — given mode 'solo' the visible module list
   is a strict subset of 'network_clinic', and every clinical capability still reachable. Quote the two
   lists. **The two lists ARE the proof**; a passing test that does not print them proves nothing.
-- TYPECHECK VERIFIED: npm run typecheck -w @dental/web
+- TYPECHECK: **NOT yours to run** (§7a — shared '.tsbuildinfo'). Say in your handoff that the lead must
+  gate it, and name the exact command. Your own signal is your single test file.
 - Rendered appearance is NOT VERIFIED by you — the lead owns screenshots and will capture solo vs
   network mode personally. Give the exact command.
 `,
@@ -313,7 +347,7 @@ PROOF EXPECTED:
     wave: 1,
     dir: '.agents/archon/packets/W3-unreachable-views',
     files: 'apps/web/src/App.tsx, workspaceShell.tsx (appViews), workspacePreload.ts, AppRouter.tsx, and the five view files. CHECK App.tsx IS CLEAN FIRST.',
-    gate: 'npm run typecheck -w @dental/web',
+    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
     brief: `
 PACKET W3 — FIVE FINISHED-LOOKING VIEWS, 4,689 LINES, REACHABLE BY NOBODY. §1: EITHER REAL OR GONE.
 Lane: WEB / cross-lane seam. Read .agents/UI_STANDARDS.md COMPLETE.
@@ -355,7 +389,8 @@ PROOF EXPECTED:
 - UNIT VERIFIED: 'tests/panelsAreMounted.test.ts' must pass, and extend it so a view present in
   'appViews' but missing from 'App.tsx' or 'workspacePreload.ts' FAILS. That guard is the whole reason
   this defect existed. EXECUTE it, quote the pass.
-- TYPECHECK VERIFIED: npm run typecheck -w @dental/web
+- TYPECHECK: **NOT yours to run** (§7a — shared '.tsbuildinfo'). Say in your handoff that the lead must
+  gate it, and name the exact command. Your own signal is your single test file.
 - For each deletion: 'git grep -n "<Name>" HEAD -- apps/' returning nothing.
 - Rendered appearance is NOT VERIFIED by you — the lead will open each newly routed view personally.
 `,
@@ -366,7 +401,7 @@ PROOF EXPECTED:
     wave: 2,
     dir: '.agents/archon/packets/W4-human-error-text',
     files: 'the UI error/empty/loading surfaces you identify. NOT App.tsx (W3 owns it), NOT the frozen speech/telegram routes.',
-    gate: 'npm run typecheck -w @dental/web',
+    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
     brief: `
 PACKET W4 — ERRORS THAT TELL THE USER NOTHING. §3 IS THE PACKET.
 Lane: WEB / ADAPTIVITY. Read .agents/UI_STANDARDS.md COMPLETE and .agents/archon/VISUAL_VERDICT.md
@@ -477,7 +512,7 @@ PROOF EXPECTED:
     wave: 2,
     dir: '.agents/archon/packets/W6-monolith-real-split',
     files: 'ONE monolith you choose, plus the domain components you extract. NOT App.tsx (W3), NOT useAppLogic.tsx (cross-lane seam, additive only).',
-    gate: 'npm run typecheck -w @dental/web',
+    gate: 'node --import tsx --test on your own single test file. NEVER npm run typecheck — the lead owns that gate (§7a).',
     brief: `
 PACKET W6 — SPLIT ONE MONOLITH FOR REAL. §5: THE DECOMPOSITION MUST BE IMPORTED AND USED, NOT ORPHANED.
 Lane: WEB. Read .agents/UI_STANDARDS.md COMPLETE.
@@ -511,7 +546,8 @@ ORDER:
 PROOF EXPECTED:
 - The before/after line count of the parent and each extracted file. Real numbers.
 - 'git grep' output proving EVERY new component is imported and used.
-- TYPECHECK VERIFIED: npm run typecheck -w @dental/web
+- TYPECHECK: **NOT yours to run** (§7a — shared '.tsbuildinfo'). Say in your handoff that the lead must
+  gate it, and name the exact command. Your own signal is your single test file.
 - UNIT VERIFIED where you extracted pure logic into a hook or helper.
 - Rendered appearance is NOT VERIFIED by you — say so; a refactor that silently changes the screen is
   the failure mode here, and the lead will compare captures.
@@ -573,8 +609,16 @@ function buildStage(p) {
     LAW + CYCLE7_CORRECTIONS +
     '\n═══════════════════════════════════════════════════════════════\n' +
     'YOUR PACKET: ' + p.id + '\n' +
-    'YOUR FILE CLAIM (edit nothing outside this): ' + p.files + '\n' +
-    'YOUR COMPILE GATE: ' + p.gate + '\n' +
+    'YOUR ROLE: implementer with file-edit rights, bounded to the claim below (§7a).\n' +
+    'WHY THIS IS DELEGATED: it needs full-file comprehension of a specific subsystem plus its own\n' +
+    'reconnaissance, and it is disjoint from the other packets in this wave.\n' +
+    'YOUR FILE CLAIM — OWNED read/edit scope, edit nothing outside it: ' + p.files + '\n' +
+    'FORBIDDEN SCOPE: any file not in your claim; apps/api/src/speech/**, routes/speech.ts,\n' +
+    'routes/telegram.ts (frozen); any file another author has dirty; the shared gates listed in §7a\n' +
+    '(typecheck, build, whole-suite test, migrations, seeds) — those are the lead\'s.\n' +
+    'YOUR OWN SIGNAL (safe, no shared state): ' + p.gate + '\n' +
+    'EVIDENCE STANDARD: every "proven" entry is a command you actually ran, with its true exit code and\n' +
+    'real output quoted. Your output is EVIDENCE, not authority — the lead re-runs it.\n' +
     'YOUR PACKET DIRECTORY (create FIRST): ' + p.dir + '\n' +
     '═══════════════════════════════════════════════════════════════\n' + p.brief +
     '\n═══════════════════════════════════════════════════════════════\n' +
@@ -586,7 +630,7 @@ function buildStage(p) {
     ' 4. Read your target file(s) IN FULL. Confirm the defect at real lines.\n' +
     '    state.md == DEFECT CONFIRMED / ABSENT. If absent, say so loudly; never invent work.\n' +
     ' 5. Build the real fix. No stub, no facade, no half-product (§1). state.md == EDIT WRITTEN.\n' +
-    ' 6. Run your compile gate. state.md == GATE PASSED.\n' +
+    ' 6. Run YOUR OWN signal only (never the shared gates — §7a). state.md == SELF-CHECK PASSED.\n' +
     ' 7. **COMMIT NOW** — pathspec form, retry loop, verify with git log -1 --stat.\n' +
     '    state.md == COMMITTED <hash>. Do NOT wait for proofs. Nothing may be lost.\n' +
     ' 8. Proofs. Second commit for the test. state.md == PROVEN.\n' +
