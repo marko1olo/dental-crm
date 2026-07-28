@@ -35,6 +35,14 @@ interface CryptoProSignerProps {
   6. Дата подписания печаталась как new Date(lockedAt!) — при отсутствии даты
      врач видел «Invalid Date» под словом «Подписано».
   7. Окно не закрывалось клавишей Escape, хотя перекрывало весь экран.
+  8. Закрыть окно посреди подписания было можно — и это выглядело как успех.
+     И Escape, и кнопка «Отмена» смотрели только на isSigning, а ожидание
+     подтверждения подписи (до 1,5 секунды) ими закрывалось. Врач, решив, что
+     «Подписываю…» повисло, закрывал окно — исчезнувшее окно и есть тот самый
+     единственный признак, который читается как «подписано», — а вместе с окном
+     гасла ещё не показанная причина отказа. Запись оставалась неподписанной.
+     Теперь на время подписания заперты все элементы окна, и окно объясняет,
+     чего именно ждёт.
 
   ДОЛГ ВЕДУЩЕМУ, НУЖЕН СЕРВЕР. «Простая ЭП» отправляет в подпись строку
   `PIN:<четыре цифры>`, и маршрут /api/diaries/:id/lock складывает её в поле
@@ -111,15 +119,39 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	 */
 	const [awaitingLockConfirmation, setAwaitingLockConfirmation] = useState(false);
 
-	// Окно перекрывает весь экран, поэтому обязано закрываться Escape.
+	/*
+	 * ПОДПИСАНИЕ ИДЁТ — ОКНО ЗАКРЫТЬ НЕЛЬЗЯ НИЧЕМ.
+	 *
+	 * БЫЛО: и клавиша Escape, и кнопка «Отмена» смотрели ТОЛЬКО на isSigning, а
+	 * ожидание подтверждения подписи (awaitingLockConfirmation, до 1,5 секунды)
+	 * ими не закрывалось. Это возвращало ровно тот дефект, от которого ожидание и
+	 * заведено: врач нажимал «Подписать», окно замирало на «Подписываю…», и,
+	 * решив, что ничего не происходит, он жал Escape или «Отмена». Окно исчезало —
+	 * то есть подавало ЕДИНСТВЕННЫЙ признак, который врач читает как «подписано»,
+	 * — а closeDialog гасил таймер вместе с ещё не показанной причиной отказа.
+	 * Запись при этом оставалась неподписанной и открытой для правок.
+	 *
+	 * Отказы doLock (components/useVisitDiaryLogic.ts) исключений не бросают:
+	 * врач не выбран, дневник не прочитан с сервера, штрихкод лотка не подтверждён
+	 * журналом стерилизации, дневник не сохранён, маршрут /lock ответил ошибкой,
+	 * сеть не дошла — в каждом случае функция возвращает управление так же, как
+	 * при успехе. Признак успеха один: isLocked у родителя. Пока его нет, окно
+	 * держим, причём запрет ограничен по времени: таймер ожидания всегда
+	 * срабатывает и либо показывает отказ, либо компонент уходит в ветку
+	 * «Подписано». Тупика здесь нет.
+	 */
+	const lockInProgress = isSigning || awaitingLockConfirmation;
+
+	// Окно перекрывает весь экран, поэтому обязано закрываться Escape — но не
+	// посреди подписания, когда закрытие выглядит как подтверждение подписи.
 	useEffect(() => {
 		if (!showPinDialog) return;
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape" && !isSigning) closeDialog();
+			if (event.key === "Escape" && !lockInProgress) closeDialog();
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [showPinDialog, isSigning]);
+	}, [showPinDialog, lockInProgress]);
 
 	// Ожидание подтверждения подписи: истекло, а признак isLocked не пришёл —
 	// значит, подписание отказало без исключения (см. пояснение выше).
@@ -193,7 +225,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	const handleConfirmLock = async () => {
 		// Пока ждём подтверждения подписи, второе нажатие — второе подписание той
 		// же записи.
-		if (isSigning || awaitingLockConfirmation) return;
+		if (lockInProgress) return;
 		setFailureText(null);
 
 		if (signatureType === "crypto") {
@@ -297,7 +329,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 						<div className="flex gap-2 mb-6 p-1 bg-zinc-950 rounded-lg border border-zinc-800">
 							<button
 								type="button"
-								disabled={isSigning}
+								disabled={lockInProgress}
 								onClick={() => {
 									setSignatureType("pin");
 									setFailureText(null);
@@ -314,7 +346,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							</button>
 							<button
 								type="button"
-								disabled={isSigning}
+								disabled={lockInProgress}
 								onClick={() => {
 									setSignatureType("crypto");
 									setFailureText(null);
@@ -341,7 +373,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									inputMode="numeric"
 									autoComplete="off"
 									maxLength={4}
-									disabled={isSigning}
+									disabled={lockInProgress}
 									className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
 									value={pinCode}
 									onChange={(e) => {
@@ -381,7 +413,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 											setSelectedCert(e.target.value);
 											setFailureText(null);
 										}}
-										disabled={isLoadingCerts || isSigning}
+										disabled={isLoadingCerts || lockInProgress}
 									>
 										{isLoadingCerts ? (
 											<option>Читаем сертификаты…</option>
@@ -412,7 +444,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									<button
 										type="button"
 										onClick={loadCertificates}
-										disabled={isLoadingCerts || isSigning}
+										disabled={isLoadingCerts || lockInProgress}
 										className="mt-2 text-xs text-rose-400 hover:text-rose-300 disabled:opacity-60"
 									>
 										{isLoadingCerts ? "Обновляю…" : "Обновить список"}
@@ -431,7 +463,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										<input
 											type="password"
 											autoComplete="off"
-											disabled={isSigning}
+											disabled={lockInProgress}
 											className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
 											value={pinCode}
 											onChange={(e) => {
@@ -455,11 +487,33 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 							</div>
 						) : null}
 
+						{/*
+							Кнопки на время подписания заперты, поэтому окно обязано сказать,
+							ЧЕГО оно ждёт и сколько. Молча погасшая «Отмена» — это отдельный
+							дефект: врач решает, что окно повисло, и ищет, чем его закрыть.
+						*/}
+						{lockInProgress ? (
+							<div
+								role="status"
+								aria-live="polite"
+								className="mb-4 p-3 rounded-xl bg-zinc-800/70 border border-zinc-700 text-zinc-300 text-xs leading-relaxed"
+							>
+								Отправили подпись и ждём подтверждения сервера — это пара секунд. Не
+								закрывайте окно: пока подтверждения нет, запись НЕ подписана. Если
+								подписать не удалось, причина появится здесь же.
+							</div>
+						) : null}
+
 						<div className="flex gap-3 pt-2">
 							<button
 								type="button"
 								onClick={closeDialog}
-								disabled={isSigning}
+								disabled={lockInProgress}
+								title={
+									lockInProgress
+										? "Идёт подписание. Дождитесь подтверждения сервера или сообщения об отказе — закрытое окно выглядело бы как подписанная запись."
+										: undefined
+								}
 								className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors disabled:opacity-60"
 							>
 								Отмена
@@ -473,8 +527,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								type="button"
 								onClick={handleConfirmLock}
 								disabled={
-									isSigning ||
-									awaitingLockConfirmation ||
+									lockInProgress ||
 									(signatureType === "crypto" && cryptoSigningUnavailable)
 								}
 								title={
@@ -484,7 +537,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								}
 								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
 							>
-								{isSigning || awaitingLockConfirmation ? (
+								{lockInProgress ? (
 									"Подписываю…"
 								) : (
 									<>
