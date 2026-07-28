@@ -6,12 +6,27 @@ import { VisitFlowProgress } from "./VisitFlowProgress";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldLabel, visitSaveReceiptText } from "../../AppHelpers";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { useVisitStore } from "../../store/visitStore";
+
+/**
+ * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.
+ *
+ * БЫЛО: разделитель выбирался по `!curr.endsWith(" ")`. Из-за этого текст,
+ * заканчивающийся пробелом (а диктовка почти всегда так и заканчивается),
+ * склеивался без запятой — «Жалоб нет Острая боль», — а текст, заканчивающийся
+ * запятой, получал вторую: «Острая боль, , Коффердам». Смотрим на последний
+ * ЗНАЧИМЫЙ символ, а не на пробел.
+ */
+function appendClinicalText(current: string, addition: string, separator: string): string {
+	const base = current.replace(/\s+$/, "");
+	if (!base) return addition;
+	if (/[,;.:-]$/.test(base)) return `${base} ${addition}`;
+	return `${base}${separator}${addition}`;
+}
 
 export function VisitEmkTab() {
 	const appLogic = (useAppLogicContext() || {}) as any;
 	const {
-		activeEmkTab,
-		setActiveEmkTab,
 		visitNoteForm = {},
 		updateVisitNoteField,
 		isVisitNoteDirty,
@@ -25,13 +40,45 @@ export function VisitEmkTab() {
 		isDraftAccepting,
 		visitNoteActionLabel,
 		visitNoteStatusLabel,
-		visitFlowResult,
 		visitNoteFieldDefinitions = [],
 		visitNoteAcceptMissingSteps
 	} = appLogic;
 
+	/*
+	 * БЫЛО: activeEmkTab и setActiveEmkTab брались из useAppLogicContext, а таких
+	 * полей в контексте нет вообще (проверено: во всём useAppLogic.tsx этих имён
+	 * не существует). Последствия на экране «Прием», вкладка «ЭМК и Диктовка» —
+	 * та, что открыта по умолчанию:
+	 *   • activeEmkTab === undefined, поэтому сравнение с "all" ложно, а
+	 *     фильтр `f.key === undefined` не пропускал НИ ОДНОГО поля: панель
+	 *     «ЭМК после диктовки» показывала шапку, полоску вкладок и ничего
+	 *     больше. Ни жалоб, ни анамнеза, ни диагноза — записывать приём было
+	 *     физически некуда;
+	 *   • setActiveEmkTab === undefined, поэтому все шесть кнопок вкладок были
+	 *     кнопками-пустышками: клик молча падал с TypeError в консоль.
+	 * Состояние вкладки — локальное дело этой панели, в общий контекст его
+	 * выносить незачем: держим его здесь.
+	 */
+	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
+
 	const noteForm = visitNoteForm;
-	const draft = appLogic.visitDraft;
+	/*
+	 * БЫЛО: appLogic.visitDraft. Черновик лежит в контексте под именем `draft`
+	 * (useAppLogic.tsx возвращает именно его), а `visitDraft` не существует.
+	 * Из-за опечатки панель никогда не признавала, что черновик собран: шапка
+	 * говорила «Структура приема» вместо «Проверьте черновик», блок качества
+	 * разбора не показывался, а предупреждения нейро-черновика («проверьте
+	 * диагноз», «зуб не указан») не доходили до врача вовсе.
+	 */
+	const draft = appLogic.draft ?? null;
+	/*
+	 * БЫЛО: visitFlowResult из контекста, которого там нет — useAppLogic даже не
+	 * забирает это поле из useVisitLogic. Панель «Ассистент обработки приема» не
+	 * показывалась НИ РАЗУ, хотя сборка нейро-черновика её результат заполняет.
+	 * Читаем прямо из хранилища визита — это и есть источник, куда пишет
+	 * buildDraft.
+	 */
+	const visitFlowResult = useVisitStore((state) => state.visitFlowResult);
 
 		const emkTabs = [
 		{ id: "all", label: "Все поля" },
@@ -47,6 +94,13 @@ export function VisitEmkTab() {
 		activeEmkTab === "all"
 			? allFields
 			: allFields.filter((f: any) => f.key === activeEmkTab);
+	/*
+	 * Поля приходят из контекста. Если их нет (карта приёма ещё не загрузилась
+	 * или загрузка не удалась), врач должен видеть причину, а не молча пустое
+	 * место: пустой экран и отказ сервера выглядят одинаково, и врач начинает
+	 * искать, куда пропала запись.
+	 */
+	const fieldsUnavailable = allFields.length === 0;
 
 	return (
 				<section
@@ -98,6 +152,20 @@ export function VisitEmkTab() {
 						<div
 							className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}
 						>
+							{fieldsUnavailable ? (
+								<div
+									className="p-4 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300"
+									role="status"
+									aria-live="polite"
+								>
+									<strong className="block mb-1 text-slate-900 dark:text-white">
+										Поля приёма пока не открылись
+									</strong>
+									Карта приёма ещё загружается. Если через несколько секунд поля не
+									появились — обновите страницу; набранный текст сохраняется на этом
+									компьютере и не потеряется.
+								</div>
+							) : null}
 							{visibleFields.map((field) => {
 								const QUICK_CHIPS: Record<string, string[]> = {
 									complaint: [
@@ -167,10 +235,12 @@ export function VisitEmkTab() {
 												context="visit"
 												sterileMode={false}
 												onResult={(text) => {
+													if (!updateVisitNoteField) return;
 													const curr = visitNoteForm[field.key] || "";
-													const sep =
-														curr.length > 0 && !curr.endsWith(" ") ? " " : "";
-													updateVisitNoteField(field.key, curr + sep + text);
+													updateVisitNoteField(
+														field.key,
+														appendClinicalText(curr, text, " "),
+													);
 												}}
 												style={{ padding: "2px" }}
 											/>
@@ -188,14 +258,11 @@ export function VisitEmkTab() {
 														key={chip}
 														type="button"
 														onClick={() => {
+															if (!updateVisitNoteField) return;
 															const curr = visitNoteForm[field.key] || "";
-															const sep =
-																curr.length > 0 && !curr.endsWith(" ")
-																	? ", "
-																	: "";
 															updateVisitNoteField(
 																field.key,
-																curr + sep + chip,
+																appendClinicalText(curr, chip, ", "),
 															);
 														}}
 														className="quick-chip"
@@ -206,9 +273,10 @@ export function VisitEmkTab() {
 											</div>
 										)}
 										<textarea
+											aria-label={field.label}
 											value={visitNoteForm[field.key] ?? ""}
 											onChange={(event) =>
-												updateVisitNoteField(field.key, event.target.value)
+												updateVisitNoteField?.(field.key, event.target.value)
 											}
 											className="min-h-[80px] rounded-lg p-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white resize-y w-full outline-none focus:border-sky-500"
 										/>
@@ -254,6 +322,12 @@ export function VisitEmkTab() {
 
 						<div className="ai-draft">
 							<ShieldCheck aria-hidden="true" />
+							{/*
+								Последняя ветка раньше подставляла doctorSummary без запаса: у
+								нового приёма его нет, и врач видел щит-иконку с пустой строкой
+								рядом — то есть панель молчала о том, записано ли что-нибудь.
+								Пустота теперь объясняет себя сама.
+							*/}
 							<p>
 								{draft
 									? (draft.warnings ?? []).join(" ")
@@ -263,7 +337,8 @@ export function VisitEmkTab() {
 											? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
 											: lastVisitSaveReceipt
 												? visitSaveReceiptText(lastVisitSaveReceipt)
-												: dashboard?.activeVisit?.doctorSummary}
+												: (dashboard?.activeVisit?.doctorSummary ||
+													"Запись приёма пока пустая. Продиктуйте или впишите жалобы, осмотр и диагноз — кнопка сохранения появится сразу после первой правки.")}
 							</p>
 							{pendingVisitSaveCount ? (
 								<button

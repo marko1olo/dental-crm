@@ -4,7 +4,9 @@ import { countLabel } from './AppHelpers';
 import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
-import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, ShieldCheck, Sparkles } from "lucide-react";
+// ShieldCheck убран из импорта вместе с дублирующей панелью ЭМК: он рисовался
+// только в её блоке .ai-draft, а тот теперь живёт в components/visit/VisitEmkTab.tsx.
+import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, Sparkles } from "lucide-react";
 import { getToothPath, getToothConfig } from "./utils/toothGeometry";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -151,7 +153,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   const safeVisitSafetyCards = Array.isArray(visitSafetyCards) ? visitSafetyCards : [];
   const safeSpecialtyLabels = specialtyLabels || { universal: "Универсальный прием" };
 
-  const [activeEmkTab, setActiveEmkTab] = useState("all");
   const [visitSubViewTab, setVisitSubViewTab] = useState<"emk" | "odontogram" | "diagnostics">("emk");
   const [showHints, setShowHints] = useState(false);
   const [showSmartPreview, setShowSmartPreview] = useState(false);
@@ -212,20 +213,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
   // ─────────────────────────────────────────────────────────────
 
-  const emkTabs = [
-    { id: "all", label: "Все поля" },
-    { id: "complaint", label: "Жалобы" },
-    { id: "anamnesis", label: "Анамнез" },
-    { id: "objectiveStatus", label: "Объективно" },
-    { id: "diagnosis", label: "Диагноз" },
-    { id: "treatmentPlan", label: "Лечение" }
-  ];
-
-  const fieldDefs = Array.isArray(visitNoteFieldDefinitions) ? visitNoteFieldDefinitions : [];
-  const visibleFields = activeEmkTab === "all"
-    ? fieldDefs
-    : fieldDefs.filter((f: any) => f.key === activeEmkTab);
-
   const safeVisitWarnings = Array.isArray(visitWarnings) ? visitWarnings : [];
   const safeImagingStudies = Array.isArray(activeImagingStudies) ? activeImagingStudies : [];
   const safeUsableDocuments = Array.isArray(activeUsableDocuments) ? activeUsableDocuments : [];
@@ -237,6 +224,47 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
       setSelectedToothForMenu({ code, state: currentState });
     }
   };
+
+  /*
+    РАЗБОР ДИКТОВКИ ВОЗВРАЩАЕТ ВРАЧА К ТЕКСТУ, КОТОРЫЙ НАДО ПРОВЕРИТЬ.
+
+    Поля ЭМК живут во вкладке «ЭМК и Диктовка». Кнопки «Разобрать текст» и
+    «Собрать нейро-черновик» стоят ниже вкладок и доступны всегда, поэтому их
+    можно нажать, стоя на зубной формуле или на снимках. Черновик в этом случае
+    заполнялся, а на экране не менялось ничего: врач видел неотличимую от
+    отказа тишину и нажимал ещё раз. Печатать заново он не начинал только
+    потому, что текст диктовки остаётся на месте.
+  */
+  React.useEffect(() => {
+    if (draft) setVisitSubViewTab("emk");
+  }, [draft]);
+
+  /*
+    ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
+
+    Было: пока dashboard не пришёл, activePatient пуст, и экран уверенно
+    заявлял «Пациент не выбран». Администратор с трубкой в руке шёл выбирать
+    пациента заново, хотя выбор был сделан и данные ещё летели по сети.
+  */
+  if (!activePatient && !dashboard) {
+    return (
+      <div className="panel visit-panel" id="visit" data-testid="visit-view">
+        <div className="panel-heading">
+          <h2>Текущий прием</h2>
+        </div>
+        <div
+          role="status"
+          aria-live="polite"
+          style={{ margin: "24px 0", padding: "24px", textAlign: "center", color: "var(--muted)" }}
+        >
+          <p style={{ margin: 0, fontSize: "1rem" }}>Открываем приём…</p>
+          <p style={{ margin: "6px 0 0", fontSize: "0.9rem" }}>
+            Загружаем карту пациента и запись смены.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!activePatient) {
     return (
@@ -420,30 +448,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </section>
             </details>
 
-            <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
-              <div>
-                <p className="eyebrow">Фокус врача</p>
-                <h3>{safeSpecialtyLabels[selectedSpecialty] || selectedSpecialty || "Прием"}</h3>
-                <p>{activeDoctor?.fullName?.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
-              </div>
-              <div className="specialty-focus-options">
-                {(Array.isArray(visibleVisitSpecialtyFocusOptions) ? visibleVisitSpecialtyFocusOptions : []).map((option: any) => (
-                  <button
-                    className={selectedSpecialty === option.specialty ? "active" : ""}
-                    type="button"
-                    key={option.specialty}
-                    aria-pressed={selectedSpecialty === option.specialty}
-                    onClick={() => {
-                      if (setSelectedSpecialty) setSelectedSpecialty(option.specialty);
-                      if (setSelectedProtocolId) setSelectedProtocolId(null);
-                    }}
-                  >
-                    <strong>{option.title}</strong>
-                    <span>{option.hint}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+            {/*
+              ЗДЕСЬ СТОЯЛА ВТОРАЯ ПОЛОСА «ФОКУС ВРАЧА» — ДУБЛЬ ОДИН В ОДИН.
+              Тот же заголовок, те же кнопки специальностей, тот же обработчик;
+              первая (компонент VisitSpecialtyFocus) рисуется во вкладке «ЭМК и
+              Диктовка» на несколько сантиметров выше. Врач видел два одинаковых
+              набора переключателей и не мог знать, отличаются ли они.
+              Оставлен один — компонентный, потому что именно он принадлежит
+              вкладке, которую врач открывает.
+            */}
 
             <div className="dictation-box" data-recording={isServerVoiceRecording} style={{ position: 'relative' }}>
               {speechTranscriptionBusy && (
@@ -994,165 +1007,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             </div>
 
 
-            <section className="visit-note-panel" aria-label="Черновик электронной медицинской карты">
-              <div className="visit-note-head">
-                <div>
-                  <p className="eyebrow">ЭМК после диктовки</p>
-                  <h3>{draft ? "Проверьте черновик" : isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}</h3>
-                </div>
-                <span className={draft || isVisitNoteDirty ? "ready" : ""}>{visitNoteStatusLabel}</span>
-              </div>
+            {/*
+              ЗДЕСЬ СТОЯЛА ВТОРАЯ ПАНЕЛЬ ЭМК — ПОЛНЫЙ ДУБЛЬ ТОЙ, ЧТО ВО ВКЛАДКЕ.
 
-              {/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
-              <div className="emk-tabs-container" role="tablist">
-                {emkTabs.map((tab) => {
-                  const isFilled = tab.id !== "all" && String(visitNoteForm[tab.id] ?? "").trim().length > 0;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeEmkTab === tab.id}
-                      className={`emk-tab-button ${activeEmkTab === tab.id ? "active" : ""}`}
-                      onClick={() => setActiveEmkTab(tab.id)}
-                    >
-                      {tab.label}
-                      {isFilled && <span className="emk-tab-dot" title="Заполнено" />}
-                    </button>
-                  );
-                })}
-              </div>
+              На вкладке «ЭМК и Диктовка» (она открыта по умолчанию) рисуется
+              components/visit/VisitEmkTab.tsx: та же шапка «ЭМК после
+              диктовки», те же шесть вкладок полей, те же пять полей, тот же
+              блок качества разбора и та же кнопка сохранения. Здесь, ниже
+              зубной карты, стояла её копия. На экране это выглядело так: два
+              одинаковых заголовка, две полоски вкладок, ДВЕ кнопки сохранения
+              приёма. Полоски вкладок были независимы (одна брала состояние
+              отсюда, другая — своё), поэтому «Жалобы», выбранные наверху, не
+              меняли нижнюю панель, и наоборот: врач видел два разных набора
+              полей одного и того же приёма.
 
-              <div className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}>
-                {visibleFields.map((field) => {
-                  const QUICK_CHIPS: Record<string, string[]> = {
-                    complaint: ["Жалоб нет", "Ноющие боли", "Острая боль", "Боль при накусывании", "Реакция на холод/горячее", "Застревание пищи", "Эстетический дефект", "Проф. осмотр"],
-                    anamnesis: ["Ранее лечен по поводу неосложненного кариеса", "Травма зуба", "Хрон. заболевания отрицает", "Аллергоанамнез не отягощен", "Аллергия на лидокаин"],
-                    objectiveStatus: ["Зондирование безболезненно", "Перкуссия безболезненна", "Слизистая оболочка бледно-розового цвета", "Глубокая кариозная полость", "Сообщается с полостью зуба"],
-                    diagnosis: ["K02.1 Кариес дентина", "K04.0 Острый пульпит", "K04.5 Хронический апикальный периодонтит", "K05.0 Острый гингивит", "K08.1 Потеря зубов"],
-                    treatmentPlan: ["Анестезия аппликационная", "Анестезия инфильтрационная", "Коффердам", "Мех/Мед обработка", "Реставрация композитом светового отверждения", "Шлифовка, полировка", "Удаление зуба"]
-                  };
-                  const chips = QUICK_CHIPS[field.key] || [];
-                  return (
-                    <div key={field.key} className="emk-field-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{field.label}</strong>
-                      </div>
-                      {chips.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                          {chips.map(chip => (
-                            <button
-                              key={chip}
-                              type="button"
-                              onClick={() => {
-                                const curr = visitNoteForm[field.key] || "";
-                                const sep = curr.length > 0 && !curr.endsWith(' ') ? ', ' : '';
-                                updateVisitNoteField(field.key, curr + sep + chip);
-                              }}
-                              className="quick-chip"
-                            >
-                              + {chip}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <textarea 
-                        value={visitNoteForm[field.key]} 
-                        onChange={(event) => updateVisitNoteField(field.key, event.target.value)}
-                        style={{ minHeight: '80px', borderRadius: '8px', padding: '0.6rem', border: '1px solid var(--line-strong)', resize: 'vertical', width: '100%', outline: 'none' }}
-                        onFocus={(e) => e.target.style.borderColor = 'var(--brand-400)'}
-                        onBlur={(e) => e.target.style.borderColor = 'var(--line-strong)'}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {draft?.quality ? (
-                <div className={`visit-draft-quality quality-${draft.quality.level}`}>
-                  <div>
-                    <strong>{visitDraftQualityLabels[draft.quality.level]}</strong>
-                    <span>{Math.round(draft.quality.confidence * 100)}% · {specialtyLabels[draft.quality.specialty]}</span>
-                  </div>
-                  <p>{draft.quality.nextAction}</p>
-                  <div className="visit-draft-signal-row">
-                    {draft.quality.detectedToothCodes.slice(0, 6).map((toothCode) => (
-                      <span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
-                    ))}
-                    {draft.quality.signals.slice(0, 7).map((signal) => (
-                      <span key={signal}>{visitDraftSignalLabel(signal)}</span>
-                    ))}
-                    {draft.quality.missingCriticalFields.slice(0, 5).map((field) => (
-                      <small key={field}>проверить: {visitDraftMissingFieldLabel(field)}</small>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="ai-draft">
-                <ShieldCheck aria-hidden="true" />
-                <p>
-                  {draft
-                    ? draft.warnings.join(" ")
-                    : isVisitNoteDirty
-                      ? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
-                      : pendingVisitSaveCount
-                        ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
-                        : lastVisitSaveReceipt
-                          ? visitSaveReceiptText(lastVisitSaveReceipt)
-                          : (dashboard?.activeVisit?.doctorSummary ?? "")}
-                </p>
-                {pendingVisitSaveCount ? (
-                  <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
-                    {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
-                  </button>
-                ) : null}
-                {(draft || isVisitNoteDirty) ? (
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={acceptDraftToVisit}
-                    disabled={!visitNoteReadyToAccept || isDraftAccepting}
-                    aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}
-                  >
-                    <Check aria-hidden="true" /> {visitNoteActionLabel}
-                  </button>
-                ) : null}
-                {/*
-                  ПЛАШКА «ОСТАЛОСЬ ЗАПОЛНИТЬ» ОФОРМЛЯЕТСЯ КЛАССОМ, А НЕ ИНЛАЙНОМ.
-
-                  Здесь стояли инлайновые стили с именами --amber-50, --amber-200,
-                  --amber-800 и --amber-900. Ни одно из них не объявлено ни в
-                  styles/dente-redesign.css, ни в styles/token-aliases.css, ни в
-                  main.css (там эти имена встречаются только с запасным значением:
-                  var(--amber-50, #fffbeb)). Неизвестное имя в var() делает всё
-                  объявление недействительным, и оно НЕ откатывается к правилу из
-                  каскада: background и border берут начальное значение, то есть
-                  прозрачный фон и полное отсутствие рамки. Класс
-                  .visit-note-missing (main.css:10697) при этом задаёт ровно то,
-                  что инлайн пытался повторить, — фон #fff8ef, рамку #e7c68e,
-                  радиус, отступы и цвет текста #744d18. Инлайн его перебивал и
-                  ломал: единственная подсказка о том, чего не хватает для
-                  сохранения приёма, рисовалась без плашки, вплотную к соседнему
-                  тексту. Тот же блок в components/visit/VisitEmkTab.tsx:292-306
-                  оформлен без инлайна и выглядит правильно.
-
-                  marginTop тоже убран: .ai-draft — сетка с gap 12px, а у
-                  .visit-note-missing стоит grid-column: 1 / -1, то есть отступ уже
-                  есть и 1rem поверх него был двойным.
-                */}
-                {(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
-                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
-                    <strong>Чтобы сохранить запись приема, осталось:</strong>
-                    <ul>
-                      {(visitNoteAcceptMissingSteps || []).map((step: any) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            </section>
+              Оставлена компонентная — она умеет то, чего эта копия не умела:
+              микрофон у каждого поля (диктовать прямо в «Жалобы», не сбивая
+              общий текст) и отметку выполненных услуг по плану. Кроме того у
+              этой копии textarea получала value без запаса `?? ""`: при
+              появлении нового поля в справочнике поле стало бы
+              неуправляемым, то есть набранный в нём текст не попадал бы в
+              состояние и терялся при следующей перерисовке.
+            */}
 
             <details className="protocol-library" aria-label="Шаблоны приема по специальности">
               <summary className="protocol-summary">
