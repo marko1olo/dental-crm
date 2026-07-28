@@ -42,6 +42,30 @@ const dateSchema = z
 	.string()
 	.regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты: YYYY-MM-DD");
 
+/**
+ * Идентификатор клиники из адреса ссылки.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Значение уходило в запрос без проверки, колонка
+ * объявлена uuid, и Postgres отвечал ошибкой разбора. Ответ 500 приходил
+ * ПАЦИЕНТУ, а виджет печатает тело ответа дословно
+ * (PublicBookingWidget.tsx:84) — на экране человека появлялся текст запроса к
+ * базе целиком: «Failed query: select "id", "full_name", "specialties" from
+ * "users" where …». Пациент не понимает ничего, клиника не узнаёт, что ссылка
+ * на её виджет испорчена, а наружу утекает устройство базы.
+ */
+const organizationIdSchema = z.string().uuid();
+
+/**
+ * Единый текст про мёртвую ссылку: и в списке врачей, и в свободном времени.
+ *
+ * Читает его ПАЦИЕНТ, поэтому названа причина (ссылка не ведёт ни к одной
+ * клинике) и оба доступных ему действия. Прежнее «Организация не найдена»
+ * называло факт без действия, а слово «организация» пациенту вообще ни о чём не
+ * говорит: он записывается в клинику.
+ */
+const CLINIC_LINK_DEAD_MESSAGE =
+	"Клиника по этой ссылке не найдена: ссылка на онлайн-запись устарела или скопирована не полностью. Откройте запись заново с сайта клиники или позвоните в клинику, чтобы записаться.";
+
 const DEFAULT_TIMEZONE = "Europe/Samara";
 // Fallback working window when a clinic has no configured schedule for the day.
 const DEFAULT_OPEN_MINUTE = 9 * 60;
@@ -293,8 +317,33 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				return reply.status(429).send({ error: "Слишком много запросов." });
 			}
 			const { organizationId } = request.params;
-			if (!organizationId)
-				return reply.status(400).send({ error: "Missing organizationId" });
+			if (!organizationIdSchema.safeParse(organizationId).success) {
+				return reply.status(404).send({
+					error: "ClinicLinkInvalid",
+					message: CLINIC_LINK_DEAD_MESSAGE,
+				});
+			}
+
+			/*
+			 * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Существование клиники не проверялось
+			 * вовсе, поэтому устаревшая ссылка, опечатка в QR-коде и клиника без
+			 * единого принимающего врача давали ОДИН ответ `200 []`, а виджет
+			 * рисовал на него «Нет доступных врачей» (PublicBookingWidget.tsx:312).
+			 * Пациент читал это как «врачи заняты» и уходил; клиника никогда не
+			 * узнавала, что её виджет мёртв, потому что сервер отвечал успехом.
+			 * Три состояния — ссылка не ведёт к клинике, у клиники нет открытых
+			 * для записи врачей, врачи есть — теперь три разных ответа.
+			 */
+			const [organization] = await db
+				.select({ id: organizations.id })
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+			if (!organization) {
+				return reply
+					.status(404)
+					.send({ error: "ClinicNotFound", message: CLINIC_LINK_DEAD_MESSAGE });
+			}
 
 			const doctorsList = await db
 				.select({
@@ -311,6 +360,17 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				)
 				.limit(50);
 
+			if (doctorsList.length === 0) {
+				// Клиника существует, но записываться не к кому. Причина у сервера
+				// установлена ровно такая; ПОЧЕМУ врачей нет (не заведены, у всех
+				// снята роль врача) он не знает и не сочиняет.
+				return reply.status(503).send({
+					error: "NoBookableDoctors",
+					message:
+						"В этой клинике пока нет ни одного врача, открытого для записи через сайт, поэтому выбрать специалиста не из кого. Позвоните в клинику — там запишут на приём.",
+				});
+			}
+
 			return doctorsList;
 		},
 	);
@@ -326,11 +386,27 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const { organizationId, doctorId } = request.params;
 		const { date } = request.query;
 
+		// «Missing params» уходило ПАЦИЕНТУ и печаталось дословно: латиница вместо
+		// причины. Причина у сервера есть — в запросе нет даты.
 		if (!organizationId || !doctorId || !date) {
-			return reply.status(400).send({ error: "Missing params" });
+			return reply.status(400).send({
+				error: "BookingDateMissing",
+				message:
+					"Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату», а если оно не открывается — обновите страницу записи.",
+			});
+		}
+		if (!organizationIdSchema.safeParse(organizationId).success) {
+			return reply.status(404).send({
+				error: "ClinicLinkInvalid",
+				message: CLINIC_LINK_DEAD_MESSAGE,
+			});
 		}
 		if (!dateSchema.safeParse(date).success) {
-			return reply.status(400).send({ error: "Формат даты: YYYY-MM-DD" });
+			return reply.status(400).send({
+				error: "BookingDateInvalid",
+				message:
+					"Дату приёма сервер не разобрал. Выберите дату в поле «Выберите дату» ещё раз, а если она не подставляется — обновите страницу записи.",
+			});
 		}
 
 		// Resolve the clinic timezone + working schedule so slots reflect the
@@ -342,7 +418,9 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			.limit(1);
 
 		if (!org) {
-			return reply.status(404).send({ error: "Организация не найдена" });
+			return reply
+				.status(404)
+				.send({ error: "ClinicNotFound", message: CLINIC_LINK_DEAD_MESSAGE });
 		}
 
 		const [clinic] = await db
@@ -371,12 +449,49 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const calendarWeekday = new Date(Date.UTC(wy, wm - 1, wd)).getUTCDay();
 		const daySchedule = resolveDaySchedule(schedule, calendarWeekday);
 
-		if (
-			!daySchedule.isWorking ||
-			daySchedule.closeMinute <= daySchedule.openMinute
-		) {
-			// Clinic closed on this weekday — no slots.
-			return [];
+		/*
+		 * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ, И ПОЧЕМУ ЭТО ДОРОЖЕ ОСТАЛЬНЫХ ОТКАЗОВ.
+		 *
+		 * Здесь отказ читает ПАЦИЕНТ, а не сотрудник, и непонятый отказ стоит
+		 * клинике записи. Пять разных состояний дня сервер сливал в один ответ
+		 * `200 []`, а виджет рисовал на все пять «Нет свободных мест»
+		 * (PublicBookingWidget.tsx:377):
+		 *
+		 *   1. клиника в этот день не работает;
+		 *   2. часы приёма заданы неверно (окончание не позже начала);
+		 *   3. рабочее окно короче одного приёма;
+		 *   4. приёмные часы этого дня уже прошли;
+		 *   5. все окна дня заняты.
+		 *
+		 * «Нет свободных мест» читается как «всё занято, приходите в другой раз»,
+		 * и пациент закрывает страницу. «В этот день клиника не работает» читается
+		 * как «возьмите другой день», и пациент записывается. Сервер знал, какой
+		 * из пяти случаев, и молчал.
+		 *
+		 * Правда остаётся только за пятым состоянием: 200 с пустым списком теперь
+		 * означает ровно «окна есть, но все заняты», и «Нет свободных мест» на нём
+		 * не врёт. Остальные четыре называют свою причину и своё действие.
+		 * Форма успешного ответа не менялась (тот же массив слотов), поэтому
+		 * парная правка виджета не нужна: при !res.ok он уже показывает поле
+		 * message дословно в красной рамке (:137-158 и :353-359).
+		 */
+		if (!daySchedule.isWorking) {
+			// 409, как и в POST /book ниже на этот же случай: день существует, но
+			// приёма в нём нет. Текст тот же, что там, — теперь пациент прочитает
+			// его до заполнения формы, а не после.
+			return reply.status(409).send({
+				error: "ClinicClosedThatDay",
+				message: "В этот день клиника не работает. Выберите другую дату.",
+			});
+		}
+		if (daySchedule.closeMinute <= daySchedule.openMinute) {
+			// Это НЕ выходной: клиника считает день рабочим, а часы заданы так, что
+			// рабочего времени не остаётся. Причина другая, значит и текст другой.
+			return reply.status(409).send({
+				error: "ClinicHoursMisconfigured",
+				message:
+					"Часы приёма на этот день у клиники заданы неверно: окончание рабочего дня не позже начала, поэтому свободного времени нет ни одного. Выберите другую дату или позвоните в клинику.",
+			});
 		}
 
 		// The clinic day, expressed as a UTC instant range, for the appointment query.
@@ -399,17 +514,29 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 		const nowMs = Date.now();
 		const slots: { time: string; startsAt: string; endsAt: string }[] = [];
+		/*
+		 * Два счётчика вместо одного пустого массива: без них «окон в этом дне не
+		 * бывает», «окна были, но все прошли» и «окна есть, все заняты»
+		 * неразличимы, а действия у пациента в них разные.
+		 *
+		 * windowSlots — сколько приёмов вообще укладывается в рабочее окно;
+		 * upcomingSlots — сколько из них ещё не наступило.
+		 */
+		let windowSlots = 0;
+		let upcomingSlots = 0;
 
 		for (
 			let minute = daySchedule.openMinute;
 			minute + slotMinutes <= daySchedule.closeMinute;
 			minute += slotMinutes
 		) {
+			windowSlots += 1;
 			const slotStart = localWallTimeToUtc(date, minute, timeZone);
 			const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60_000);
 
 			// Don't offer slots in the past.
 			if (slotStart.getTime() <= nowMs) continue;
+			upcomingSlots += 1;
 
 			const isTaken = existingApps.some((app) => {
 				const appStart = new Date(app.startsAt).getTime();
@@ -430,6 +557,26 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			}
 		}
 
+		if (windowSlots === 0) {
+			// Рабочий день короче одного приёма: 20 минут работы при приёме в 30
+			// минут не дают ни одного окна. Для пациента это не «занято».
+			return reply.status(409).send({
+				error: "ClinicDayShorterThanVisit",
+				message:
+					"Рабочее время клиники в этот день короче одного приёма, поэтому записаться на него нельзя. Выберите другую дату или позвоните в клинику.",
+			});
+		}
+		if (upcomingSlots === 0) {
+			// Окна в дне были, но все они уже прошли: сегодняшний день после
+			// закрытия и любая прошедшая дата. «Всё занято» здесь ложь.
+			return reply.status(409).send({
+				error: "ClinicDayAlreadyOver",
+				message:
+					"Приёмные часы этого дня уже прошли, записаться на него больше нельзя. Выберите другую дату.",
+			});
+		}
+
+		// Дальше пустой список означает ровно одно: окна есть, все заняты.
 		return slots;
 	});
 
