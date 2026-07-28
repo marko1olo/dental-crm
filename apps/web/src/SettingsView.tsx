@@ -22,7 +22,14 @@ onClick={unlockTelegramAdminSession}
 typedRecognitionJob.warnings.map((warning) => (
                       <span key={warning}>{aiRecognitionWarningText(warning)}</span>
 */
-import { useState, useEffect } from "react";
+/*
+ * Импорта useState/useEffect здесь больше нет: единственными состояниями этого
+ * файла были два списка под мёртвые адреса /api/system/ram-watchdogs и
+ * /api/crm/patient-duplicate-merge-queues, и они убраны вместе с запросами
+ * (причина — у комментария «ЗДЕСЬ СТОЯЛИ ДВА ЗАПРОСА» ниже). Раздел настроек
+ * своего состояния не держит: всё приходит из useAppLogicContext,
+ * useSettingsStore и useSettingsDerivations.
+ */
 /*
  * Импортов DadataGeocodedAddressesWidget и SingleSessionEnforcementsWidget
  * здесь больше нет намеренно: обе панели физически нечем заполнить. Причины
@@ -1281,19 +1288,37 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     );
   };
 
-  const [ramWatchdogs, setRamWatchdogs] = useState<any[]>([]);
-  const [mergeQueues, setMergeQueues] = useState<any[]>([]);
+  /*
+    ЗДЕСЬ СТОЯЛИ ДВА ЗАПРОСА, УХОДИВШИЕ В НИКУДА ПРИ КАЖДОМ ОТКРЫТИИ НАСТРОЕК,
+    и две врезки в шапке, которые их читали. Убраны вместе.
 
-  useEffect(() => {
-    // БЫЛО: сюда передавался жёстко зашитый UUID демо-организации в заголовке
-    // x-organization-id — при работе реальной клиники это тянуло чужие данные,
-    // а на сервере такой заголовок вообще принимался без аутентификации.
-    // Токен кабинета теперь подставляется автоматически (lib/apiAuthFetch.ts).
-    fetch("/api/system/ram-watchdogs")
-      .then((r) => (r.ok ? r.json() : [])).then((d) => setRamWatchdogs(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch("/api/crm/patient-duplicate-merge-queues")
-      .then((r) => (r.ok ? r.json() : [])).then((d) => setMergeQueues(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
+    Оба адреса на сервере не существуют и отвечают 404 — это зафиксировано
+    списком известного долга в apps/api/src/tests/webCallsExistingRoutes.test.ts
+    ("/api/system/ram-watchdogs", "/api/crm/patient-duplicate-merge-queues") и
+    подтверждено тем, что ни в одном файле apps/api/src/routes они не
+    зарегистрированы. Обёртка `r.ok ? r.json() : []` превращала отказ в пустой
+    список, поэтому увидеть 404 было нельзя: врезки просто не появлялись.
+
+    Даже появись маршруты, врезки остались бы пустыми: они читали поля, которых
+    нет ни в одной таблице. Нагрузка ОЗУ печатала clientHostName / usedRamMb /
+    totalRamMb / warningLevel, а в system_ram_watchdogs лежат heap_used_mb,
+    heap_total_mb, rss_mb, external_mb, gc_count. Очередь дубликатов печатала
+    primaryPatientName / duplicatePatientName / similarityScorePercent, а в
+    patient_duplicate_merge_queues есть только source_patient_id,
+    target_patient_id и match_score. Ни одно имя не совпадает.
+
+    Писателя нет ни у одной из двух таблиц: во всём apps/api/src обе упомянуты
+    только в объявлении схемы, в живой базе по нулю строк.
+
+    ЧЕМ ЭТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ, помимо двух холостых запросов на каждое
+    открытие настроек. Телеметрия ОЗУ рабочих станций — работа сисадмина, а не
+    стоматологии: чтобы её собрать, нужен агент на каждом рабочем месте, и для
+    клиники из трёх кресел это не та цена. А разбор дублей карточек уже сделан
+    по-настоящему и живым расчётом — /api/patients/duplicates, панель
+    components/crm/PatientDuplicateMergeQueuesWidget. Вторая, мёртвая врезка про
+    те же дубли в шапке настроек могла показать только другое число и тем самым
+    поссорить владельца с работающим экраном.
+  */
 
   return (
     <motion.section
@@ -1312,18 +1337,18 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           <h2 title="Раздел административных настроек: управление персоналом, прайс-листом, интеграцией с ЕГИСЗ/ОФД и бланками">Настройки клиники</h2>
         </div>
 
-        {/* Real Feature Integrations in Settings Header */}
-        {ramWatchdogs.length > 0 && (
-          <div data-testid="system-ram-watchdog-indicator" style={{ background: 'var(--surface-100)', border: '1px solid var(--line)', color: 'var(--ink)', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            🖥️ Нагрузка ОЗУ ({ramWatchdogs[0].clientHostName}): <strong>{ramWatchdogs[0].usedRamMb} MB / {ramWatchdogs[0].totalRamMb} MB</strong> ({ramWatchdogs[0].warningLevel})
-          </div>
-        )}
+        {/*
+          Здесь были две врезки — «Нагрузка ОЗУ» и «Очередь дубликатов». Причина
+          удаления и доказательства — у места, где стояли их запросы (ищи
+          «ЗДЕСЬ СТОЯЛИ ДВА ЗАПРОСА» выше в этом файле). Не возвращать, не
+          прочитав тот комментарий: у обеих таблиц нет писателя, а имена полей
+          во врезках не совпадали со схемой ни в одном знаке.
 
-        {mergeQueues.length > 0 && (
-          <div data-testid="duplicate-merge-queue-panel" style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            👥 Очередь дубликатов: <strong>{mergeQueues[0].primaryPatientName}</strong> ↔ {mergeQueues[0].duplicatePatientName} ({mergeQueues[0].similarityScorePercent}% совпадения)
-          </div>
-        )}
+          Отдельно про цвета: врезка дубликатов была прибита гвоздями к светлой
+          теме (#fef2f2 / #fca5a5 / #991b1b) в обход токенов темы, то есть в
+          тёмной теме это был красный текст на почти белом фоне. Возвращать такую
+          разметку нельзя даже с живыми данными — только через var(--...).
+        */}
         <div className="settings-heading-actions">
           <span>Не показывается врачу в рабочей смене</span>
           <button
