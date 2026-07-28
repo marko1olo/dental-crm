@@ -7,8 +7,10 @@
  * плюс узкий экран — именно там ломается вёрстка, и именно это нельзя проверить
  * чтением исходников.
  *
- * Тема переключается записью в localStorage и атрибутом data-theme на <html>:
- * так же, как это делает переключатель в интерфейсе.
+ * Тема переключается через собственное хранилище приложения — тем же вызовом,
+ * что и переключатель в интерфейсе, — и перед КАЖДЫМ снимком проверяется, какая
+ * тема на самом деле применена к <html>. Подробности — у applyTheme и
+ * assertThemeBeforeShot ниже.
  *
  * ТРЕБУЕТСЯ живой веб-сервер на 127.0.0.1:5173. Без него сценарий падает, а не
  * делает вид, что снял: снимок несуществующей страницы — это ложное
@@ -19,10 +21,13 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const OUT = "C:/Clinic_MVP/dental-crm/.dente-ops-shots";
 const webBaseUrl = "http://127.0.0.1:5173";
 const cdpPort = 9341;
+/** Время старта: попадает в theme-audit.json, чтобы плиты нельзя было спутать со вчерашними. */
+const runStartedAt = new Date().toISOString();
 
 const res = await fetch(webBaseUrl).catch((error) => {
   throw new Error(`Веб-сервер на ${webBaseUrl} недоступен (${error.message}). Запустите npm run dev.`);
@@ -56,6 +61,19 @@ const browser = spawn(
   ],
   { stdio: ["ignore", "ignore", "pipe"] },
 );
+
+/**
+ * Сценарий теперь МОЖЕТ упасть посередине: проверка темы обрывает прогон, а не
+ * дописывает подложный снимок. Без этой строки каждое такое падение оставляло бы
+ * висеть headless-браузер на общей машине.
+ */
+process.on("exit", () => {
+  try {
+    browser.kill();
+  } catch {
+    /* уже мёртв */
+  }
+});
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -193,26 +211,217 @@ await waitForWorkspace();
 console.log("Рабочий кабинет открыт");
 
 /**
- * Тема переключается ровно так, как это делает интерфейс: атрибут data-theme
- * плюс класс dark/light на <html>.
+ * СОСТОЯНИЕ ТЕМЫ, СЧИТАННОЕ СО СТРАНИЦЫ.
  *
- * Раньше здесь выставлялся только атрибут, а класс оставался прежним. Снимки
- * получались гибридом двух тем, и на «светлом» снимке нашлась чёрная плашка,
- * которой в приложении нет: часть правил бралась из тёмного набора. Ложное
- * доказательство хуже отсутствующего — оно ведёт к правкам вслепую.
+ * Возвращает не «что мы просили», а «что применено»: значение data-theme,
+ * режим в хранилище приложения и отпечаток палитры — вычисленные значения всех
+ * пользовательских свойств, которые вообще зависят от темы.
+ *
+ * Список имён токенов здесь намеренно НЕ зашит. Он берётся из самих правил CSS:
+ * токен считается зависящим от темы, если объявлен в блоках хотя бы двух разных
+ * тем. Зашитый список разошёлся бы с палитрой, а расхождение означало бы, что
+ * охрана проверяет не то, что рисуется.
  */
-async function setTheme(theme) {
-  await evaluate(`
+const THEMES = ["light", "dark", "night"];
+
+const THEME_STATE_EXPRESSION = `
+  (() => {
+    const root = document.documentElement;
+    const store = window.__useThemeStore;
+    const themesOfToken = new Map();
+    const collect = (rules) => {
+      for (const rule of rules) {
+        if (rule.cssRules) collect(rule.cssRules);
+        const selector = rule.selectorText;
+        if (!selector || !rule.style) continue;
+        const themes = selector
+          .split("[data-theme=")
+          .slice(1)
+          .map((part) => part.slice(0, part.indexOf("]")).split('"').join("").split("'").join("").trim())
+          .filter(Boolean);
+        if (!themes.length) continue;
+        for (let index = 0; index < rule.style.length; index += 1) {
+          const name = rule.style.item(index);
+          if (!name.startsWith("--")) continue;
+          let seen = themesOfToken.get(name);
+          if (!seen) {
+            seen = new Set();
+            themesOfToken.set(name, seen);
+          }
+          for (const theme of themes) seen.add(theme);
+        }
+      }
+    };
+    for (const sheet of document.styleSheets) {
+      try {
+        collect(sheet.cssRules);
+      } catch {
+        /* чужой источник (шрифты Google): правила недоступны, палитры там нет */
+      }
+    }
+    const computed = getComputedStyle(root);
+    const activeTheme = root.dataset.theme || "";
+    const varying = [...themesOfToken.entries()]
+      .filter((entry) => entry[1].size > 1)
+      .map((entry) => entry[0])
+      .sort();
+    const values = varying.map((name) => name + ":" + computed.getPropertyValue(name).trim());
+    /* Пустым считается только токен, который для ТЕКУЩЕЙ темы объявлен, но не
+       разрешился: значит цепочка var() оборвалась, и плашка покрасится в
+       ничто. Токен, которого в этой теме просто нет, — не дефект. */
+    const declaredHere = varying.filter((name) => themesOfToken.get(name).has(activeTheme));
+    return {
+      dataTheme: activeTheme,
+      mode: store ? store.getState().themeMode : null,
+      storeAvailable: Boolean(store),
+      className: root.className,
+      colorScheme: root.style.colorScheme,
+      tokenCount: varying.length,
+      declaredHere: declaredHere.length,
+      empty: declaredHere.filter((name) => !computed.getPropertyValue(name).trim()),
+      values,
+    };
+  })()
+`;
+
+/** Отпечаток палитры: короткий хеш от «имя:значение» всех тем-зависимых токенов. */
+function paletteFingerprint(values) {
+  return createHash("sha256").update(values.join("\n")).digest("hex").slice(0, 12);
+}
+
+async function readThemeState() {
+  const state = await evaluate(THEME_STATE_EXPRESSION);
+  if (!state) throw new Error("Страница не вернула состояние темы");
+  return { ...state, fingerprint: paletteFingerprint(state.values) };
+}
+
+/** Текущий размер окна — часть ключа отпечатка: часть тем-зависимых токенов объявлена внутри @media. */
+let currentViewport = "не задан";
+
+/**
+ * ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ЧЕРЕЗ ХРАНИЛИЩЕ ПРИЛОЖЕНИЯ, А НЕ ЧЕРЕЗ АТРИБУТ РУКАМИ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Раньше здесь писался ключ localStorage «dente_theme» и
+ * руками выставлялись data-theme и классы dark/light. Ключ «dente_theme» не
+ * читает НИКТО: приложение хранит режим в «dente_theme_mode»
+ * (apps/web/src/store/themeStore.ts:5). То есть конвейер ни разу не сообщил
+ * приложению тему — он только подменял атрибут на <html>. Атрибут держится лишь
+ * до следующего применения темы приложением: перезагрузка страницы Vite после
+ * правки, повторная инициализация модуля темы при горячей замене, смена
+ * системной темы в режиме «auto» — любое из этих событий вызывает
+ * applyThemeToRoot (apps/web/src/AppShell.tsx:66) и молча возвращает data-theme
+ * к значению из хранилища. Так «светлая» плита получила ночные пиксели
+ * (VISUAL_VERDICT.md, аддендум C1).
+ *
+ * ЧТО ТЕПЕРЬ. Вызывается setThemeMode — та же функция, что и у переключателя в
+ * интерфейсе (workspaceShell.tsx:353). Она сама пишет правильный ключ и сама
+ * ведёт к applyThemeToRoot, поэтому источник истины один, а перезагрузка
+ * страницы посреди прогона возвращает ТУ ЖЕ тему, а не чужую. Затем сценарий
+ * ждёт, пока тема действительно применится, а не спит наугад.
+ */
+async function applyTheme(theme) {
+  const applied = await evaluate(`
     (() => {
-      window.localStorage.setItem("dente_theme", ${JSON.stringify(theme)});
-      const root = document.documentElement;
-      root.setAttribute("data-theme", ${JSON.stringify(theme)});
-      root.classList.toggle("dark", ${JSON.stringify(theme)} === "dark");
-      root.classList.toggle("light", ${JSON.stringify(theme)} === "light");
-      root.style.colorScheme = ${JSON.stringify(theme)} === "light" ? "light" : "dark";
-      return root.getAttribute("data-theme") + "/" + root.className;
+      const store = window.__useThemeStore;
+      if (!store) return { ok: false };
+      store.getState().setThemeMode(${JSON.stringify(theme)});
+      return { ok: true };
     })()
   `);
+  if (!applied?.ok) {
+    throw new Error(
+      `Хранилище темы недоступно (window.__useThemeStore не найден): приложение не загрузилось, снимать нечего. Тема «${theme}» не применена.`,
+    );
+  }
+
+  const deadline = Date.now() + 15000;
+  let state = null;
+  while (Date.now() < deadline) {
+    state = await readThemeState();
+    if (state.dataTheme === theme && state.mode === theme && state.tokenCount > 0 && state.empty.length === 0) {
+      return state;
+    }
+    await sleep(150);
+  }
+  throw new Error(
+    `Тема «${theme}» не применилась за 15 с: data-theme «${state?.dataTheme}», режим «${state?.mode}», тем-зависимых токенов ${state?.tokenCount ?? 0}, пустых ${state?.empty?.length ?? 0}.`,
+  );
+}
+
+/**
+ * ПРОВЕРКА ПЕРЕД КАЖДЫМ СНИМКОМ. Здесь конвейер перестаёт быть источником
+ * подложных доказательств.
+ *
+ * Снимок с ночными пикселями под именем light_* — это выдуманное
+ * доказательство, ровно та болезнь, ради которой всё это делается. Поэтому
+ * прогон ПАДАЕТ, а не предупреждает: файл с чужой темой не должен попасть на
+ * диск и быть подшит как плита темы.
+ *
+ * Проверяется четыре вещи:
+ *  1) data-theme совпадает с темой, под именем которой файл будет записан;
+ *  2) режим в хранилище приложения тот же — иначе перезагрузка вернёт другую тему;
+ *  3) все тем-зависимые токены имеют значение — пустой var() в background даёт
+ *     чёрную плашку поверх текста (VISUAL_VERDICT.md, B1.1);
+ *  4) отпечаток палитры этой темы НЕ совпадает с отпечатком другой темы при том
+ *     же размере окна. Совпадение значит: атрибут переставили, а палитра не
+ *     сменилась — то есть снимки двух тем окажутся одинаковыми.
+ */
+const paletteByThemeAndViewport = new Map();
+
+async function assertThemeBeforeShot(theme, fileName) {
+  const state = await readThemeState();
+  const where = `${fileName} (ожидалась тема «${theme}»)`;
+
+  // Имя файла и заявленная тема должны совпадать. Это ловит не приложение, а
+  // ошибку в самом сценарии: снимок, названный чужой темой, — та же ложь.
+  const namedTheme = THEMES.find((candidate) => fileName.includes(candidate));
+  if (namedTheme && namedTheme !== theme) {
+    throw new Error(
+      `${where}: имя файла говорит о теме «${namedTheme}». Ошибка в сценарии, а не в приложении: имя и снимаемая тема разошлись.`,
+    );
+  }
+
+  if (state.dataTheme !== theme) {
+    throw new Error(
+      `${where}: на <html> применена тема «${state.dataTheme || "нет атрибута"}», режим хранилища «${state.mode}». Снимок с чужой темой под этим именем — подложное доказательство, прогон остановлен.`,
+    );
+  }
+  if (state.mode !== theme) {
+    throw new Error(
+      `${where}: атрибут data-theme верный, но режим в хранилище приложения «${state.mode}». Перезагрузка страницы вернёт другую тему, снимку доверять нельзя.`,
+    );
+  }
+  if (state.tokenCount === 0) {
+    throw new Error(
+      `${where}: в загруженных стилях не найдено ни одного токена, зависящего от темы. Палитра не загрузилась — снимать нечего.`,
+    );
+  }
+  if (state.empty.length > 0) {
+    throw new Error(
+      `${where}: тем-зависимые токены без значения (${state.empty.length}): ${state.empty.slice(0, 6).join(", ")}. Пустой var() красит плашку в чёрное поверх текста.`,
+    );
+  }
+
+  const key = `${theme}@${currentViewport}`;
+  const known = paletteByThemeAndViewport.get(key);
+  if (known && known !== state.fingerprint) {
+    throw new Error(
+      `${where}: палитра темы «${theme}» изменилась посреди прогона (${known} -> ${state.fingerprint}). Плиты одной темы сняты в разных палитрах.`,
+    );
+  }
+  if (!known) {
+    for (const [otherKey, otherFingerprint] of paletteByThemeAndViewport) {
+      if (otherFingerprint !== state.fingerprint) continue;
+      const [otherTheme, otherViewport] = otherKey.split("@");
+      if (otherTheme === theme || otherViewport !== currentViewport) continue;
+      throw new Error(
+        `${where}: палитра совпала с темой «${otherTheme}» при том же размере окна (отпечаток ${state.fingerprint}). Атрибут темы переставлен, а цвета не сменились.`,
+      );
+    }
+    paletteByThemeAndViewport.set(key, state.fingerprint);
+  }
+
+  return state;
 }
 
 async function setViewport(width, height) {
@@ -222,6 +431,7 @@ async function setViewport(width, height) {
     deviceScaleFactor: 1,
     mobile: width < 800,
   });
+  currentViewport = `${width}x${height}`;
 }
 
 async function goToView(view) {
@@ -251,8 +461,33 @@ async function waitForPanel(testId, timeoutMs = 15000) {
   return false;
 }
 
+/**
+ * Что этот прогон реально записал: имя файла, заявленная тема, применённая тема,
+ * отпечаток палитры, md5 и размер. Ложится рядом со снимками как их
+ * происхождение и служит основой аудита в конце прогона.
+ */
+const shotLog = [];
+
+async function writeShot(fileName, base64, theme, themeState, note) {
+  const buffer = Buffer.from(base64, "base64");
+  await writeFile(path.join(OUT, fileName), buffer);
+  shotLog.push({
+    file: fileName,
+    theme,
+    dataTheme: themeState?.dataTheme ?? null,
+    storeMode: themeState?.mode ?? null,
+    palette: themeState?.fingerprint ?? null,
+    viewport: currentViewport,
+    md5: createHash("md5").update(buffer).digest("hex"),
+    bytes: buffer.length,
+    diagnostic: fileName.includes("_ПУСТО"),
+  });
+  console.log(`  ✓ ${fileName} (${note}, тема «${themeState?.dataTheme ?? "?"}», палитра ${themeState?.fingerprint ?? "?"})`);
+  return buffer;
+}
+
 /** Снимок конкретной панели по её data-testid, а не всей страницы. */
-async function shootPanel(testId, fileName) {
+async function shootPanel(testId, fileName, theme) {
   await waitForPanel(testId);
   const box = await evaluate(`
     (() => {
@@ -271,13 +506,21 @@ async function shootPanel(testId, fileName) {
     // И снимок того, что оказалось на экране вместо панели. Без него остаётся
     // только гадать между вёрсткой, доступом и не тем разделом.
     const missShot = await send("Page.captureScreenshot", { format: "png" });
+    const missState = await readThemeState();
     const missName = fileName.replace(/\.png$/, "_ПУСТО.png");
-    await writeFile(path.join(OUT, missName), Buffer.from(missShot.data, "base64"));
-    console.log(`     что на экране: ${missName}`);
+    await writeShot(missName, missShot.data, theme, missState, "что на экране вместо панели");
+    // Диагностический кадр записан ДО проверки темы намеренно: он нужен, даже
+    // если тема оказалась чужой. А проверка всё равно обрывает прогон — иначе
+    // файл с именем light_* и ночными пикселями попал бы в доказательства.
+    await assertThemeBeforeShot(theme, missName);
     return false;
   }
 
   await sleep(400);
+  // Проверка вплотную к затвору: между переключением темы и этим кадром были
+  // переход в раздел, ожидания и подготовка данных — за это время приложение
+  // могло применить тему заново.
+  const themeState = await assertThemeBeforeShot(theme, fileName);
   const shot = await send("Page.captureScreenshot", {
     format: "png",
     clip: {
@@ -289,15 +532,21 @@ async function shootPanel(testId, fileName) {
     },
     captureBeyondViewport: true,
   });
-  await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
-  console.log(`  ✓ ${fileName} (${Math.round(box.width)}×${Math.round(box.height)})`);
+  await writeShot(fileName, shot.data, theme, themeState, `${Math.round(box.width)}×${Math.round(box.height)}`);
   return true;
 }
 
-async function shootViewport(fileName) {
+async function shootViewport(fileName, theme) {
+  const themeState = await assertThemeBeforeShot(theme, fileName);
   const shot = await send("Page.captureScreenshot", { format: "png" });
-  await writeFile(path.join(OUT, fileName), Buffer.from(shot.data, "base64"));
-  console.log(`  ✓ ${fileName} (весь экран)`);
+  await writeShot(fileName, shot.data, theme, themeState, "весь экран");
+}
+
+/** Снимок области страницы: раздел целиком, во всю высоту и с уменьшением. */
+async function shootClipped(fileName, theme, clip) {
+  const themeState = await assertThemeBeforeShot(theme, fileName);
+  const shot = await send("Page.captureScreenshot", { format: "png", clip, captureBeyondViewport: true });
+  await writeShot(fileName, shot.data, theme, themeState, `высота ${clip.height}, масштаб ${clip.scale}`);
 }
 
 const PANELS = [
@@ -379,10 +628,12 @@ const PANELS = [
 await setViewport(1600, 1000);
 await sleep(2500);
 
-for (const theme of ["light", "dark", "night"]) {
+for (const theme of THEMES) {
   console.log(`\nТема: ${theme}`);
-  await setTheme(theme);
-  await sleep(600);
+  const applied = await applyTheme(theme);
+  console.log(
+    `     применено: data-theme «${applied.dataTheme}», режим «${applied.mode}», класс «${applied.className}», тем-зависимых токенов ${applied.tokenCount} (объявлено в этой теме ${applied.declaredHere}), отпечаток палитры ${applied.fingerprint}`,
+  );
 
   for (const panel of PANELS) {
     const navigation = await goToView(panel.view);
@@ -392,15 +643,15 @@ for (const theme of ["light", "dark", "night"]) {
       console.log(`     подготовка: ${outcome}`);
       await sleep(1400);
     }
-    const ok = await shootPanel(panel.testId, `${theme}_${panel.slug}.png`);
+    const ok = await shootPanel(panel.testId, `${theme}_${panel.slug}.png`, theme);
     if (!ok) console.log(`     переход в раздел: ${navigation}`);
   }
 }
 
 // Узкий экран проверяется в одной теме: правила перестроения общие.
 console.log("\nУзкий экран (планшет в портрете, 720×1100)");
-await setTheme("light");
 await setViewport(720, 1100);
+await applyTheme("light");
 await sleep(800);
 for (const panel of PANELS) {
   await goToView(panel.view);
@@ -409,28 +660,22 @@ for (const panel of PANELS) {
     console.log(`     подготовка: ${await evaluate(panel.prepare)}`);
     await sleep(1400);
   }
-  await shootPanel(panel.testId, `narrow_${panel.slug}.png`);
+  await shootPanel(panel.testId, `narrow_${panel.slug}.png`, "light");
 }
 
-await shootViewport("narrow_full.png");
+await shootViewport("narrow_full.png", "light");
 
 /**
  * Раздел финансов целиком. Нужен после того, как оттуда убрали четыре пустых
  * блока: снимок показывает, не осталось ли на их месте дыр в сетке.
  */
 console.log("\nРаздел финансов целиком");
-await setTheme("light");
 await setViewport(1600, 1000);
+await applyTheme("light");
 await goToView("finance");
 await sleep(2200);
 const financeHeight = await evaluate("Math.min(document.body.scrollHeight, 9000)");
-const financeShot = await send("Page.captureScreenshot", {
-  format: "png",
-  clip: { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 },
-  captureBeyondViewport: true,
-});
-await writeFile(path.join(OUT, "finance_full.png"), Buffer.from(financeShot.data, "base64"));
-console.log(`  ✓ finance_full.png (высота ${financeHeight})`);
+await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 });
 
 /**
  * Карточка пациента во всех трёх темах целиком. Здесь плотнее всего узлы с
@@ -441,11 +686,11 @@ console.log(`  ✓ finance_full.png (высота ${financeHeight})`);
  */
 console.log("\nРаздел картотеки целиком: проверка зон Tailwind");
 await setViewport(1600, 1000);
-for (const theme of ["light", "dark", "night"]) {
-  await setTheme(theme);
+for (const theme of THEMES) {
+  await applyTheme(theme);
   await goToView("patients");
   await sleep(1800);
-  await shootViewport(`patients_${theme}_full.png`);
+  await shootViewport(`patients_${theme}_full.png`, theme);
 }
 
 /**
@@ -453,21 +698,68 @@ for (const theme of ["light", "dark", "night"]) {
  * находится НИЖЕ рабочих панелей: там висят виджеты, чьи адреса отвечают 404.
  */
 console.log("\nРаздел коммуникаций целиком");
-await setTheme("light");
 await setViewport(1600, 1000);
+await applyTheme("light");
 await sleep(800);
 await goToView("communications");
 await sleep(2500);
 
 const pageHeight = await evaluate("Math.min(document.body.scrollHeight, 12000)");
-const fullShot = await send("Page.captureScreenshot", {
-  format: "png",
-  clip: { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 },
-  captureBeyondViewport: true,
-});
-await writeFile(path.join(OUT, "communications_full.png"), Buffer.from(fullShot.data, "base64"));
-console.log(`  ✓ communications_full.png (высота страницы ${pageHeight})`);
+await shootClipped("communications_full.png", "light", { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 });
 
 socket.close();
-browser.kill();
+
+/**
+ * АУДИТ ПРОГОНА. Раньше его делал лид руками — и именно так нашёлся снимок
+ * light_duplicateAlert.png, побайтово равный ночному (VISUAL_VERDICT.md, C1).
+ * Прогон, который это допустил, вышел с кодом 0: «35 файлов, 33 уникальных md5»
+ * пришлось считать человеку. Теперь считает сценарий и падает сам.
+ *
+ * Правило простое: каждый файл — своя панель, своя тема или свой размер окна.
+ * Двух побайтово одинаковых плит быть не может. Диагностические кадры «_ПУСТО»
+ * из правила исключены: это снимок всего экрана вместо ненайденной панели, и
+ * две подряд идущие неудачи законно дают один и тот же кадр.
+ */
+const plates = shotLog.filter((entry) => !entry.diagnostic);
+const misses = shotLog.filter((entry) => entry.diagnostic);
+const byHash = new Map();
+for (const entry of plates) {
+  const group = byHash.get(entry.md5) ?? [];
+  group.push(entry);
+  byHash.set(entry.md5, group);
+}
+
+const manifest = {
+  startedAt: runStartedAt,
+  finishedAt: new Date().toISOString(),
+  out: OUT,
+  palettes: [...paletteByThemeAndViewport].map(([key, fingerprint]) => ({ key, fingerprint })),
+  plates: plates.length,
+  uniqueMd5: byHash.size,
+  diagnostics: misses.map((entry) => entry.file),
+  shots: shotLog,
+};
+await writeFile(path.join(OUT, "theme-audit.json"), JSON.stringify(manifest, null, 2), "utf8");
+
 console.log(`\nСнимки: ${OUT}`);
+console.log(`Плит записано: ${plates.length}, уникальных md5: ${byHash.size}. Диагностических «ПУСТО»: ${misses.length}${misses.length ? " — " + misses.map((entry) => entry.file).join(", ") : ""}`);
+for (const { key, fingerprint } of manifest.palettes) console.log(`  палитра ${key}: ${fingerprint}`);
+console.log("Три темы одной панели — три разных файла:");
+for (const panel of PANELS) {
+  const row = THEMES.map((theme) => {
+    const entry = plates.find((item) => item.file === `${theme}_${panel.slug}.png`);
+    return `${theme} ${entry ? entry.md5.slice(0, 12) : "нет плиты"}`;
+  });
+  console.log(`  ${panel.slug}: ${row.join(" | ")}`);
+}
+console.log(`Происхождение каждой плиты: ${path.join(OUT, "theme-audit.json")}`);
+
+const collisions = [...byHash.values()].filter((group) => group.length > 1);
+if (collisions.length > 0) {
+  for (const group of collisions) {
+    console.error(`  побайтово одинаковы: ${group.map((entry) => `${entry.file} (тема ${entry.theme}, ${entry.viewport})`).join(", ")}`);
+  }
+  throw new Error(
+    `Аудит прогона: ${collisions.length} групп(а) побайтово одинаковых плит. Разные панели, темы и размеры окна не могут дать один файл — снимки не отражают то, чем названы.`,
+  );
+}
