@@ -157,8 +157,19 @@ export function percentageOfKopecks(
  * три раза по 33.33 с потерянной копейкой и не три раза по 33.34 с лишней.
  * Остаток раскидывается по первым частям — так первый платёж чуть больше, что
  * привычно для графиков платежей.
+ *
+ * Тип возврата — непустой кортеж, а не просто массив. Это не украшение: `parts`
+ * меньше единицы отсекается броском ниже, поэтому первая часть существует
+ * ВСЕГДА, и вызывающий не обязан её проверять. С обычным `Kopecks[]` при
+ * включённом noUncheckedIndexedAccess разбор `const [first] = splitKopecks(...)`
+ * давал `Kopecks | undefined`, и график рассрочки в renderDocument.ts не
+ * компилировался. Вторая часть по-прежнему может отсутствовать — при `parts: 1`
+ * её действительно нет, и это правда, которую тип обязан сохранить.
  */
-export function splitKopecks(total: Kopecks, parts: number): Kopecks[] {
+export function splitKopecks(
+	total: Kopecks,
+	parts: number,
+): [Kopecks, ...Kopecks[]] {
 	assertWholeKopecks(total);
 	if (!Number.isInteger(parts) || parts <= 0) {
 		throw new Error(
@@ -169,10 +180,11 @@ export function splitKopecks(total: Kopecks, parts: number): Kopecks[] {
 	const absolute = Math.abs(total);
 	const base = Math.trunc(absolute / parts);
 	const remainder = absolute - base * parts;
-	return Array.from(
+	const split = Array.from(
 		{ length: parts },
 		(_, index) => sign * (base + (index < remainder ? 1 : 0)),
 	);
+	return split as [Kopecks, ...Kopecks[]];
 }
 
 /** Отображение для интерфейса и печатных форм: "1 500,50 ₽". */

@@ -831,7 +831,9 @@ function installmentRows(document: GeneratedDocument, context: DocumentRenderCon
     );
   }
   if (remainingKopecks > 0) {
-    const [firstPartKopecks, secondPartKopecks] = splitKopecks(remainingKopecks, 2);
+    // Вторая половина по умолчанию ноль: splitKopecks гарантирует только первую
+    // часть, а условие ниже уже отбрасывает нулевой финальный платёж.
+    const [firstPartKopecks, secondPartKopecks = 0] = splitKopecks(remainingKopecks, 2);
     rows.push(
       `<tr><td>Следующий платеж до ближайшего визита</td><td>${escapeHtml(
         rub(rublesFromKopecks(firstPartKopecks))
