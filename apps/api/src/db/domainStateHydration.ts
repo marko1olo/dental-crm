@@ -280,7 +280,34 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			"imagingStudies",
 			report,
 		),
-		selectByOrganization<typeof schema.services.$inferSelect>(schema.services, organizationId, "serviceCatalog", report),
+		/*
+		 * Прайс читается из service_catalog_items, а не из services.
+		 *
+		 * Справочников услуг в базе два, и они жили порознь. В
+		 * service_catalog_items пишет мастер первого запуска
+		 * (routes/workspaceProfile.ts), из него читают документы
+		 * (db/pricelistQuery.ts) и по нему сверяет услугу склад
+		 * (routes/inventory.ts) — всего 21 обращение в четырёх файлах. Таблицу
+		 * services читала одна эта строка, и именно она питала все экраны.
+		 *
+		 * Что из этого выходило, проверено живьём
+		 * (scratch/verify-service-tables-split.mjs): услуга, заведённая в services,
+		 * появлялась в списке на экране, а склад на неё отвечал «услуга не
+		 * найдена» — кладовщик выбирал услугу из выпадающего списка и получал
+		 * отказ про то, что видит перед собой. И наоборот: услуги, созданные
+		 * мастером первого запуска, на экране не показывались вовсе.
+		 *
+		 * Направление выбрано по числу потребителей: дешевле развернуть одно
+		 * чтение, чем двадцать одно обращение. После правки таблица services не
+		 * читается никем; её удаление — отдельная работа с переносом данных тех
+		 * клиник, где строки в ней уже есть.
+		 */
+		selectByOrganization<typeof schema.serviceCatalogItems.$inferSelect>(
+			schema.serviceCatalogItems,
+			organizationId,
+			"serviceCatalog",
+			report,
+		),
 		selectByOrganization<typeof schema.clinicalRules.$inferSelect>(
 			schema.clinicalRules,
 			organizationId,
@@ -670,14 +697,14 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			 * целиком. Схема теперь принимает копейки, поэтому округление не просто
 			 * лишнее — оно вредное.
 			 *
-			 * Number() остаётся: колонка services.base_price_rub объявлена numeric
-			 * с mode "number", но соседние таблицы прайса пока без него, и лишнее
-			 * приведение числа к числу ничего не стоит.
+			 * Number() остаётся: колонка объявлена numeric с mode "number", но
+			 * соседние прайсовые таблицы пока без него, и лишнее приведение числа
+			 * к числу ничего не стоит.
 			 */
 			basePriceRub: Math.max(0, Number(service.basePriceRub) || 0),
 			durationMinutes: Math.max(1, service.durationMinutes),
 			taxDeductible: service.taxDeductible,
-			active: service.active,
+			active: service.isActive,
 		})),
 		serviceCatalogItemSchema,
 		"serviceCatalog",
