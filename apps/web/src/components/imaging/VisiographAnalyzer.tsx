@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { usePatientStore, type ToothStatus } from '../../store/patientStore';
 import { ShadowAnalystImageSlider } from './ShadowAnalystImageSlider';
+import { PanelLoadFailure } from '../PanelLoadFailure';
+import { panelStateText, resolvePanelPhase, type PanelSubject } from '../../lib/panelStateText';
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
@@ -147,6 +149,23 @@ function parseReportSections(report: string): Array<{ title: string; content: st
   return sections;
 }
 
+// ─── Тексты состояний архива снимков ─────────────────────────────────────────
+
+/**
+ * Как называется архив для человека — в трёх состояниях сразу.
+ * Формулировки берутся из общего модуля lib/panelStateText, а не пишутся здесь
+ * заново: на других панелях уже стояли «Ошибка 500» и «данных нет» вместо
+ * отказа, и второй язык ошибок на том же экране — это та же поломка.
+ */
+const SCAN_ARCHIVE_SUBJECT: PanelSubject = {
+  title: 'Снимки пациента',
+  accusative: 'архив снимков пациента',
+  emptyTitle: 'Снимков у этого пациента пока нет.',
+  emptyHint: 'Перетащите первый прицельный снимок в поле выше — он попадёт в карту вместе с разбором ИИ.',
+  failureConsequence:
+    'Не считайте, что снимков нет: архив не прочитан. Прошлые снимки могли быть загружены на другом рабочем месте.',
+};
+
 // ─── Основной компонент ───────────────────────────────────────────────────────
 
 export function VisiographAnalyzer() {
@@ -167,6 +186,11 @@ export function VisiographAnalyzer() {
   const [currentScan, setCurrentScan] = useState<XrayScan | null>(null);
   const [scanHistory, setScanHistory] = useState<XrayScan[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  // Отказ чтения архива храним отдельно от `error` (тот подписан «Ошибка
+  // анализа» и относится к разбору снимка). Обёртка-объект, а не просто число:
+  // status = null — это «до сервера не дошли вовсе», и его надо отличать от
+  // «отказа не было».
+  const [historyFailure, setHistoryFailure] = useState<{ status: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
@@ -193,24 +217,72 @@ export function VisiographAnalyzer() {
   useEffect(() => {
     if (!selectedPatientId) {
       setScanHistory([]);
+      setHistoryFailure(null);
+      // Индикатор гасим и здесь: запрос по прежнему пациенту вернётся уже
+      // «просроченным» и свой finally пропустит, иначе счётчик в сводке остался
+      // бы с «…» навсегда.
+      setIsLoadingHistory(false);
       return;
     }
     loadHistory(selectedPatientId);
   }, [selectedPatientId]);
 
+  /**
+   * Чтение архива снимков пациента.
+   *
+   * ЧТО БЫЛО СЛОМАНО. Тело состояло из `if (!res.ok) return;` и пустого catch,
+   * и setError здесь не вызывался ни разу. Любой отказ — у смены нет доступа,
+   * сервер клиники не запущен, ответ непонятен — выглядел на экране РОВНО как
+   * «у пациента нет снимков»: счётчик в сводке и секция «История снимков» просто
+   * не появлялись, а сама панель оставалась на вид полностью рабочей. Врач не
+   * мог отличить непрочитанный архив от пустого и делал вывод «снимков не было».
+   *
+   * Второе, тяжелее. Прежний список НЕ гасился. Эффект выше чистит scanHistory
+   * только когда пациент не выбран вовсе, а при прямом переключении A→B
+   * (setSelectedPatientId пишет новый id, не проходя через null) неудачный ответ
+   * по B оставлял на экране снимки A под открытой картой B — чужие снимки в
+   * чужой карте. Поэтому список чистится ДО запроса.
+   *
+   * Третье. Ответ применяется только если пациент с тех пор не сменился: запрос
+   * по A может вернуться позже переключения на B и записать снимки A в карту B.
+   * По той же причине isLoadingHistory гасит только актуальный запрос — иначе
+   * поздний ответ по A убирал бы индикатор загрузки у идущего запроса по B.
+   */
   const loadHistory = async (patientId: string) => {
     setIsLoadingHistory(true);
+    setHistoryFailure(null);
+    setScanHistory([]);
+    // null = до сервера не дошли; после ответа сюда попадает его код, поэтому
+    // «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
+    let status: number | null = null;
+    const isStale = () => usePatientStore.getState().selectedPatientId !== patientId;
     try {
       const res = await fetch(`/api/xray/scans?patientId=${patientId}`, {
         headers: { 'Content-Type': 'application/json' }
       });
-      if (!res.ok) return;
-      const data: XrayScan[] = await res.json();
-      setScanHistory(data.filter(s => s.status === 'done'));
-    } catch {
-      // silent
+      status = res.status;
+      if (isStale()) return;
+      if (!res.ok) {
+        setHistoryFailure({ status });
+        return;
+      }
+      const data = await res.json() as unknown;
+      if (isStale()) return;
+      // Сервер обязан отдать массив (GET /api/xray/scans возвращает
+      // scans.map(...)). Если пришло что-то другое — это отказ, а не пустой
+      // архив: прежний код падал здесь на data.filter и уходил в пустой catch.
+      if (!Array.isArray(data)) {
+        setHistoryFailure({ status });
+        return;
+      }
+      setScanHistory((data as XrayScan[]).filter(s => s.status === 'done'));
+    } catch (err) {
+      // Код ответа человеку не показываем — он уходит в консоль разработчику.
+      console.error('[VisiographAnalyzer] Архив снимков не прочитан:', err);
+      if (isStale()) return;
+      setHistoryFailure({ status });
     } finally {
-      setIsLoadingHistory(false);
+      if (!isStale()) setIsLoadingHistory(false);
     }
   };
 
@@ -452,6 +524,16 @@ export function VisiographAnalyzer() {
     : [];
   const criticalCount = toothStatesArray.filter(t => t.state === 'treatment' || t.state === 'watch').length;
 
+  // Какое из трёх состояний архива показывать. Решение вынесено в общий
+  // resolvePanelPhase, потому что ошибались именно в порядке: отказ важнее
+  // пустоты, загрузка важнее пустоты. Прежнее условие было одно —
+  // `scanHistory.length > 0` — и молча накрывало оба случая.
+  const historyPhase = resolvePanelPhase({
+    isLoading: isLoadingHistory,
+    hasFailure: historyFailure !== null,
+    isEmpty: scanHistory.length === 0,
+  });
+
   // ── Цвета: только имена, объявленные в темах ─────────────────────────────
   // БЫЛО: по всей разметке ниже стояли var(--border), var(--surface),
   // var(--bg-inset), var(--text), var(--text-muted) — ни одно из этих имён не
@@ -497,6 +579,18 @@ export function VisiographAnalyzer() {
             borderRadius: '999px', padding: '1px 7px', fontWeight: 600
           }}>
             {isLoadingHistory ? '…' : scanHistory.length}
+          </span>
+        )}
+        {/* Панель свёрнута по умолчанию (<details> без open), поэтому отказ
+            чтения архива внутри неё врач бы не увидел вовсе — а раньше он и
+            внутри выглядел как «снимков нет». Пометка в сводке — единственное
+            место, где это видно в свёрнутом виде. */}
+        {historyFailure && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+            fontSize: '0.78rem', color: 'var(--warn-fg)', fontWeight: 600,
+          }}>
+            <AlertTriangle size={13} /> архив снимков не прочитан
           </span>
         )}
       </summary>
@@ -773,8 +867,39 @@ export function VisiographAnalyzer() {
             </div>
           )}
 
-          {/* Scan history */}
-          {!currentScan && scanHistory.length > 0 && (
+          {/* Архив снимков: загрузка / отказ / пусто / список — четыре разных
+              вида вместо прежних двух («список» и «ничего», куда попадал и
+              отказ сервера). */}
+          {!currentScan && selectedPatientId && historyPhase === 'loading' && (
+            <div style={{
+              marginTop: '16px', fontSize: '0.85rem', color: 'var(--muted)',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+              <Loader2 size={13} className="animate-spin" />
+              {panelStateText(SCAN_ARCHIVE_SUBJECT, { phase: 'loading' }).title}
+            </div>
+          )}
+
+          {!currentScan && selectedPatientId && historyPhase === 'failed' && historyFailure && (
+            <div style={{ marginTop: '16px' }}>
+              <PanelLoadFailure
+                subject={SCAN_ARCHIVE_SUBJECT}
+                status={historyFailure.status}
+                onRetry={() => loadHistory(selectedPatientId)}
+              />
+            </div>
+          )}
+
+          {/* Честная пустота. Что делать дальше, уже написано в зоне загрузки
+              выше, поэтому подсказка здесь не повторяется — иначе на одном
+              экране два раза сказано одно и то же. */}
+          {!currentScan && selectedPatientId && historyPhase === 'empty' && (
+            <div style={{ marginTop: '16px', fontSize: '0.82rem', color: 'var(--muted)' }}>
+              {panelStateText(SCAN_ARCHIVE_SUBJECT, { phase: 'empty' }).title}
+            </div>
+          )}
+
+          {!currentScan && historyPhase === 'ready' && (
             <div style={{ marginTop: '16px' }}>
               <button
                 onClick={() => setHistoryExpanded(!historyExpanded)}
