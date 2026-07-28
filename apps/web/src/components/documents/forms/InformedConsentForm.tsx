@@ -1,5 +1,6 @@
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
+import { informedConsentBlockersReview } from "../informedConsentBlockers";
 import type { DocumentVisitHints } from "./documentFormTypes";
 
 /**
@@ -9,6 +10,10 @@ import type { DocumentVisitHints } from "./documentFormTypes";
  * хранилища документов сама — их около двадцати, и протаскивать их пропсами
  * значило бы заменить монолит длинным списком аргументов. Сверху приходят
  * только подсказки активного визита.
+ *
+ * Сверху карточки — перечень невыполненных условий. Разбор и то, что видел врач
+ * до него (четыре отказа подряд на каждом согласии, три из них про галочки в
+ * самом низу свёрнутого блока), записаны в informedConsentBlockers.ts.
  */
 export function InformedConsentForm({
 	activeDoctorFullName,
@@ -48,10 +53,53 @@ export function InformedConsentForm({
 		setInformedConsentWithdrawUnderstood,
 	} = useDocumentStore();
 
+	const review = informedConsentBlockersReview({
+		intervention: informedConsentIntervention,
+		toothOrArea: informedConsentToothOrArea,
+		inferredTreatmentArea: inferredTreatmentArea ?? "",
+		diagnosisOrIndication: informedConsentDiagnosisOrIndication,
+		activeVisitComplaint: activeVisitComplaint ?? "",
+		expectedBenefit: informedConsentExpectedBenefit,
+		risks: informedConsentRisks,
+		alternatives: informedConsentAlternatives,
+		aftercare: informedConsentAftercare,
+		doctorFullName: informedConsentDoctorFullName,
+		activeDoctorFullName: activeDoctorFullName ?? "",
+		questionsAnswered: informedConsentQuestionsAnswered,
+		risksUnderstood: informedConsentRisksUnderstood,
+		withdrawUnderstood: informedConsentWithdrawUnderstood,
+	});
+
 	return (
 		<DocumentPayloadCard
 			title="Информированное согласие"
 			description="Конкретное вмешательство, область, показание, риски, альтернативы и рекомендации без пустого шаблона."
+			notice={
+				review.blockers.length > 0 ? (
+					<div
+						className="schedule-create-missing document-informed-consent-blockers"
+						role="status"
+						aria-live="polite"
+						style={{ marginTop: "12px" }}
+					>
+						<strong>
+							Согласие не создастся: осталось {review.blockers.length} условий из{" "}
+							{review.requiredCount}:
+						</strong>
+						<ul>
+							{review.blockers.map((blocker) => (
+								<li key={blocker.field}>
+									{blocker.label} — {blocker.hint}
+								</li>
+							))}
+						</ul>
+						<small>
+							Всё это в блоке «Ручная корректировка полей» ниже, отметки — в самом его
+							низу. Дату подтверждения программа поставит сама при создании.
+						</small>
+					</div>
+				) : null
+			}
 		>
 			<label>
 				Планируемое вмешательство
