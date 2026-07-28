@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
@@ -152,6 +153,14 @@ export function LeadsKanbanView() {
 	 */
 	const visitMinutes = dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
 
+	/*
+	 * Пояс клиники для расчёта дня по умолчанию. К моменту подстановки настройки
+	 * могут ещё не прийти — тогда день считается по поясу рабочей машины, и это
+	 * честный ответ: рабочая станция регистратуры стоит в клинике. Неверным он не
+	 * бывает никогда только в одном случае — если это не UTC.
+	 */
+	const clinicTimeZone = dashboard?.clinicSettings?.profile?.timezone ?? null;
+
 	const { lastMessage } = useWebsocket(
 		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
 	);
@@ -169,9 +178,25 @@ export function LeadsKanbanView() {
 	useEffect(() => {
 		fetchLeads();
 
-		const tomorrow = new Date();
-		tomorrow.setDate(tomorrow.getDate() + 1);
-		setAppointmentDate(tomorrow.toISOString().split("T")[0] ?? "");
+		/*
+		 * ДЕНЬ ПО УМОЛЧАНИЮ — ЗАВТРА, И ЭТО НАДО СЧИТАТЬ КАЛЕНДАРНО.
+		 *
+		 * Стояло: setDate(getDate() + 1), а затем toISOString().split("T")[0].
+		 * Шаг был верен, а toISOString его отменял — он отдаёт день по Гринвичу.
+		 * У всех российских поясов смещение положительное (Москва +3, Самара +4,
+		 * Камчатка +12), поэтому день по UTC отстаёт от местного каждую ночь: в
+		 * Москве с 00:00 до 03:00, в Самаре до 04:00, на Камчатке половину суток.
+		 * В этот промежуток «завтра» отдавало СЕГОДНЯШНЕЕ число.
+		 *
+		 * Для клиники это значит, что обращение с сайта записывают на сегодня
+		 * вместо завтра. Первичный пациент приходит в день, когда его не ждут, —
+		 * или не приходит вовсе, а в воронке лид уже отмечен записанным.
+		 *
+		 * dateInputValuePlusDays считает сдвиг календарно (Date.UTC) и в поясе
+		 * клиники, поэтому и переход через конец месяца, и сутки длиной 25 часов
+		 * ему безразличны.
+		 */
+		setAppointmentDate(dateInputValuePlusDays(1, clinicTimeZone));
 	}, []);
 
 	/*
