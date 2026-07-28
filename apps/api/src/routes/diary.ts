@@ -68,8 +68,18 @@ function isDeductibleQuantity(value: number): boolean {
 /** Транзакция drizzle — тип берётся у самого db, чтобы не тянуть внутренние пути ORM. */
 type DiaryDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+/*
+ * `NotSaved` отделён от `NotFound` НЕ ради красоты кода, а потому что это два
+ * разных состояния с разными действиями врача и разными кодами ответа:
+ * «дневника нет» лечится повторным сохранением черновика, «дневник не удалось
+ * сохранить» повторным сохранением НЕ лечится и означает сбой сервера. Раньше
+ * оба состояния носили код `NotFound`, отдавались одним 404 и различались бы
+ * только сравнением текста `err.message` — ровно тем приёмом, который этот файл
+ * уже однажды признал негодным (см. комментарий к DiarySigningError ниже).
+ */
 type DiarySigningFailureCode =
 	| "NotFound"
+	| "NotSaved"
 	| "AlreadyLocked"
 	| "InsufficientStock";
 
@@ -149,7 +159,13 @@ async function runDiarySigningCeremony(
 		.limit(1)
 		.for("update");
 	if (!diary) {
-		throw new DiarySigningError("NotFound", "Дневник не найден.");
+		// Текст говорит врачу и причину, и следующий шаг. Прежнее «Дневник не
+		// найден.» причину называло, а действие — нет, и до экрана всё равно не
+		// доходило: ветка ответа выбрасывала message целиком.
+		throw new DiarySigningError(
+			"NotFound",
+			"Дневник приёма не найден в этой клинике, подписывать нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён. Откройте приём заново, нажмите «Сохранить черновик» и повторите подписание.",
+		);
 	}
 	if (diary.isLocked) {
 		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
@@ -401,6 +417,20 @@ async function runDiarySigningCeremony(
 	};
 }
 
+/**
+ * Кто вправе подписать дневник приёма. Один текст на два маршрута подписания
+ * (POST /api/diaries со статусом «signed» и POST /api/diaries/:id/lock), потому
+ * что действие человека в обоих случаях одно и то же, а расходящиеся
+ * формулировки одного отказа — это тот же дефект в рассрочку.
+ *
+ * Перечисления «кто может» из ролевой матрицы здесь нет намеренно: право
+ * проверяется прямо в этих двух маршрутах сравнением роли смены с «doctor» и
+ * «admin», и фраза описывает именно это сравнение, а не матрицу
+ * security/permissions.ts, которая к нему не применяется.
+ */
+const DIARY_SIGNING_ROLE_MESSAGE =
+	"Дневник приёма подписывает только врач или администратор клиники: у вашей смены такого права нет, и повторный вход его не добавит. Позовите врача, который вёл приём, — подписать может он.";
+
 export default async function registerDiaryRoutes(app: FastifyInstance) {
 	// GET /api/diaries/visit/:visitId — fetch diary for a visit
 	app.get("/api/diaries/visit/:visitId", async (req, reply) => {
@@ -465,7 +495,16 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		const isSigning = data.status === "signed";
 
 		if (isSigning && role !== "doctor" && role !== "admin") {
-			return reply.code(403).send({ error: "OnlyDoctorsCanSign" });
+			// Голый код отказа здесь давал самое вредное из возможных указаний:
+			// клиент строит по 403 «войдите в смену заново или попросите
+			// администратора открыть доступ», а повторный вход ассистенту права
+			// подписывать дневник не добавит НИКОГДА. Причина у сервера установлена
+			// точно — роль смены не врач и не администратор, — и названа она без
+			// внутреннего ключа роли, который человеку ничего не говорит.
+			return reply.code(403).send({
+				error: "OnlyDoctorsCanSign",
+				message: DIARY_SIGNING_ROLE_MESSAGE,
+			});
 		}
 
 		try {
@@ -555,9 +594,13 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						.returning({ id: visitDiaries.id });
 					const insertedId = inserted[0]?.id;
 					if (!insertedId) {
+						// Дневник приёма — юридический документ. Первое, что человек
+						// обязан услышать, — что набранный текст ещё на экране и его
+						// нельзя терять; «повторите» здесь было бы ложью, потому что
+						// повтор соберёт тот же запрос.
 						throw new DiarySigningError(
-							"NotFound",
-							"Дневник не удалось создать.",
+							"NotSaved",
+							"Дневник приёма не удалось сохранить на сервере, поэтому он не подписан. Не закрывайте приём: набранный текст ещё на экране, скопируйте его в надёжное место и позовите администратора клиники.",
 						);
 					}
 					diaryId = insertedId;
@@ -593,7 +636,30 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						.code(400)
 						.send({ error: "TransactionFailed", message: err.message });
 				}
-				return reply.code(404).send({ error: "NotFound" });
+				/*
+				 * ЧТО БЫЛО СЛОМАНО. Здесь стояло `return reply.code(404).send({ error:
+				 * "NotFound" })` — то есть две соседние ветки того же catch передавали
+				 * причину наружу, а третья её выбрасывала, хотя в err.message лежала
+				 * готовая русская фраза. Без message клиент строит текст по коду
+				 * ответа, и для 404 это «сервер не знает такого раздела — скорее всего
+				 * программа клиники обновлена не полностью, сообщите администратору»
+				 * (apps/web/src/lib/panelStateText.ts:125-127). Это не безликий текст,
+				 * а ЛОЖНОЕ указание: маршрут существует и работает, а врача отправляют
+				 * звать администратора вместо одного нажатия «Сохранить черновик».
+				 *
+				 * И два состояния разведены по кодам, потому что действия у них
+				 * противоположные: «дневника нет» лечится повторным сохранением
+				 * (404), «дневник не удалось сохранить» не лечится ничем на стороне
+				 * врача и обязано читаться как сбой сервера (500).
+				 */
+				if (err.code === "NotSaved") {
+					return reply
+						.code(500)
+						.send({ error: "DiaryNotSaved", message: err.message });
+				}
+				return reply
+					.code(404)
+					.send({ error: "NotFound", message: err.message });
 			}
 			throw err;
 		}
@@ -609,12 +675,32 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
 
+		/*
+		 * ЭТО МЕСТО ДОКАЗАНО ЗАПРОСОМ, а не выведено чтением, и оно вреднее ветки в
+		 * POST выше: сюда стучится живой клиент подписания
+		 * (apps/web/src/components/useVisitDiaryLogic.ts:507), и он строит текст
+		 * тоста ровно из поля message, а без него — по коду ответа (:530-540).
+		 * Голые отказы ниже давали врачу три ложных указания подряд: 403 читалось
+		 * как «войдите в смену заново» (ассистенту это не поможет никогда), 404 —
+		 * как «программа клиники обновлена не полностью, сообщите администратору»
+		 * (маршрут существует и работает). Дневник приёма — юридический документ, и
+		 * врач, не понявший отказ, либо теряет заполненный текст, либо переписывает
+		 * его во второй записи.
+		 */
 		if (role !== "doctor" && role !== "admin") {
-			return reply.code(403).send({ error: "OnlyDoctorsCanLock" });
+			return reply.code(403).send({
+				error: "OnlyDoctorsCanLock",
+				message: DIARY_SIGNING_ROLE_MESSAGE,
+			});
 		}
 
 		const orgId = await resolveOrganizationId(req);
-		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
+		if (!orgId)
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message:
+					"Рабочий кабинет клиники не определён, поэтому подписать дневник нельзя. Войдите в кабинет клиники заново и повторите подписание — набранный текст останется на экране.",
+			});
 
 		const [existing] = await db
 			.select()
@@ -623,11 +709,19 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
 			);
 
-		if (!existing) return reply.code(404).send({ error: "NotFound" });
+		if (!existing)
+			return reply.code(404).send({
+				error: "NotFound",
+				message:
+					"Дневник приёма не найден в этой клинике, подписывать нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён. Откройте приём заново, нажмите «Сохранить черновик» и повторите подписание.",
+			});
 		if (existing.isLocked)
-			return reply
-				.code(409)
-				.send({ error: "AlreadyLocked", hash: existing.diaryHash });
+			return reply.code(409).send({
+				error: "AlreadyLocked",
+				hash: existing.diaryHash,
+				message:
+					"Дневник этого приёма уже подписан и заблокирован, второй раз подписывать его не нужно. Если нужна правка подписанного дневника, её проводит администратор клиники через ревизию.",
+			});
 
 		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
 		try {
@@ -646,11 +740,22 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			});
 		} catch (err) {
 			if (err instanceof DiarySigningError) {
+				// Те же две ветки, что и в POST выше, теряли здесь готовую русскую
+				// причину из err.message — при том, что третья, соседняя, её отдавала.
 				if (err.code === "AlreadyLocked") {
-					return reply.code(409).send({ error: "AlreadyLocked" });
+					return reply
+						.code(409)
+						.send({ error: "AlreadyLocked", message: err.message });
 				}
 				if (err.code === "NotFound") {
-					return reply.code(404).send({ error: "NotFound" });
+					return reply
+						.code(404)
+						.send({ error: "NotFound", message: err.message });
+				}
+				if (err.code === "NotSaved") {
+					return reply
+						.code(500)
+						.send({ error: "DiaryNotSaved", message: err.message });
 				}
 				return reply
 					.code(400)
