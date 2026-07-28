@@ -8,6 +8,7 @@ import { authTokenSecret } from "../security/authSecret.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import { resetRateLimit } from "../security/rateLimit.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../security/identity.js";
+import { staffRoleSchema } from "@dental/shared";
 
 /**
  * Секрет подписи токенов. Раньше здесь стоял публичный фолбэк
@@ -569,19 +570,55 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
     const staffPayload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
-    
-    if (!staffPayload?.organizationId || (staffPayload.role !== 'owner' && staffPayload.role !== 'admin')) {
-      return reply.code(403).send({ error: 'Forbidden', message: 'Нет прав на приглашение сотрудников.' });
+
+    /*
+     * БЫЛО: `staffPayload.role !== 'owner' && staffPayload.role !== 'admin'` —
+     * своя пара написаний прямо в условии. Роли `admin` в staffRoleSchema нет
+     * (там owner, doctor, administrator, assistant, manager), поэтому настоящий
+     * администратор клиники получал 403 и приглашать сотрудников мог только
+     * владелец.
+     *
+     * Свой список ролей здесь не заводится: в проекте уже есть единственный
+     * ADMIN_ROLES (security/identity.ts) — «роли, которым разрешены
+     * административные действия», и тем же списком пользуются два соседних
+     * маршрута этого файла (строки ~294 и ~352). Легаси-написание `admin` в нём
+     * оставлено сознательно, и здесь оно тоже сохраняется: два списка одной
+     * правды — ровно та болезнь, которую этот продукт уже проходил.
+     * Сравнение в нижнем регистре, как у соседей.
+     */
+    const invitingRole = String(staffPayload?.role ?? '').toLowerCase();
+    if (!staffPayload?.organizationId || !ADMIN_ROLES.some((allowed) => allowed === invitingRole)) {
+      return reply.code(403).send({ error: 'Forbidden', message: 'Приглашать сотрудников может владелец клиники или администратор.' });
     }
     if (!email || !role) return reply.code(400).send({ error: 'ValidationError', message: 'Укажите email и роль.' });
-    
+
+    /*
+     * РОЛЬ ПРОВЕРЯЕТСЯ ПО СХЕМЕ, а не принимается как есть. Прежде значение из
+     * тела запроса ложилось в user_invitations.role напрямую, а
+     * /api/auth/invites/accept переносит его в users.role тоже без проверки.
+     * Экран настроек до недавнего исправления отправлял `admin` — роль, которой
+     * нет в схеме, — и она доживала до users.role. Дальше getFilteredAppViews
+     * на незнакомой роли доходит до ветки «вернуть все разделы», и приглашённый
+     * администратор получал права владельца: 14 разделов вместо 9.
+     *
+     * Экранную часть уже починили (59a886a2c, список ролей выведен из схемы), но
+     * сервер обязан отказывать сам: клиент — не место для проверки прав.
+     */
+    const parsedRole = staffRoleSchema.safeParse(role);
+    if (!parsedRole.success) {
+      return reply.code(400).send({
+        error: 'ValidationError',
+        message: 'Такой должности в программе нет. Выберите её из списка на экране приглашения.'
+      });
+    }
+
     const tokenUuid = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     
     await db.insert(userInvitations).values({
       organizationId: staffPayload.organizationId as string,
       email: email.toLowerCase().trim(),
-      role,
+      role: parsedRole.data,
       inviteToken: tokenUuid,
       expiresAt,
       status: 'pending'
