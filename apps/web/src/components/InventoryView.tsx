@@ -101,6 +101,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		setAdjustAmount,
 		adjustType,
 		setAdjustType,
+		isAdjustingStock,
 		fetchItems,
 		openAddModal,
 		openEditModal,
@@ -1484,20 +1485,36 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									</strong>
 								</p>
 							)}
+							{/*
+							  Кнопка запирается на время запроса.
+
+							  БЫЛО: кнопка оставалась нажимаемой, пока сервер отвечал.
+							  Приход и списание прибавляются к остатку, а не задают его,
+							  поэтому второе нажатие по медленной сети двигало остаток
+							  второй раз — материал списывался дважды за одно окно.
+							  Погасшая кнопка с честной надписью показывает, что работа
+							  идёт, и не даёт нажать повторно.
+							*/}
 							<button
 								type="submit"
+								disabled={isAdjustingStock}
 								style={{
 									padding: "12px",
 									borderRadius: 8,
 									border: "none",
 									fontWeight: 600,
 									color: "#fff",
-									cursor: "pointer",
+									cursor: isAdjustingStock ? "wait" : "pointer",
 									background: adjustType === "in" ? "#3b82f6" : "var(--tomato)",
 									fontSize: 15,
+									opacity: isAdjustingStock ? 0.6 : 1,
 								}}
 							>
-								{adjustType === "in" ? "Оприходовать" : "Списать"}
+								{isAdjustingStock
+									? "Сохраняем..."
+									: adjustType === "in"
+										? "Оприходовать"
+										: "Списать"}
 							</button>
 						</form>
 					</div>

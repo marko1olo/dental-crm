@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -317,6 +317,23 @@ export function useInventoryLogic(organizationId: string) {
 	);
 	const [adjustAmount, setAdjustAmount] = useState("");
 	const [adjustType, setAdjustType] = useState<"in" | "out">("in");
+	/*
+	 * Замок на повторное движение остатка.
+	 *
+	 * БЫЛО: кнопка «Списать» ничем не запиралась и на время запроса выглядела
+	 * живой. Сервер на PATCH .../stock прибавляет adjustment к остатку, а не
+	 * ставит итог, поэтому два нажатия подряд — а по медленной сети кладовщик
+	 * жмёт второй раз всегда — уходили двумя запросами и списывали материал
+	 * ДВАЖДЫ. На экране это выглядело как одно списание: «Остаток изменён»
+	 * показывался один раз, список перечитывался после второго ответа, и разницу
+	 * замечали только при инвентаризации.
+	 *
+	 * Признак держим в ref, а не только в состоянии: два клика успевают попасть в
+	 * один такт до перерисовки, и обработчик второго увидел бы прежнее значение
+	 * состояния. Состояние рядом нужно, чтобы кнопка погасла и сменила надпись.
+	 */
+	const isAdjustingStockRef = useRef(false);
+	const [isAdjustingStock, setIsAdjustingStock] = useState(false);
 
 	const fetchItems = async () => {
 		try {
@@ -495,6 +512,10 @@ export function useInventoryLogic(organizationId: string) {
 
 		const amount = parseInt(adjustAmount);
 		if (isNaN(amount) || amount <= 0) return;
+		// Второе нажатие по тому же остатку игнорируем: первый запрос ещё в пути.
+		if (isAdjustingStockRef.current) return;
+		isAdjustingStockRef.current = true;
+		setIsAdjustingStock(true);
 
 		const adjustment = adjustType === "in" ? amount : -amount;
 
@@ -520,6 +541,13 @@ export function useInventoryLogic(organizationId: string) {
 		} catch (e) {
 			console.error(e);
 			showToast("Системная ошибка", "error");
+		} finally {
+			/*
+			 * Замок снимаем в любом исходе: после отказа сервера кладовщик обязан
+			 * иметь возможность повторить списание, иначе окно останется мёртвым.
+			 */
+			isAdjustingStockRef.current = false;
+			setIsAdjustingStock(false);
 		}
 	};
 
@@ -572,6 +600,7 @@ export function useInventoryLogic(organizationId: string) {
 		adjustType,
 		setAdjustType,
 		handleAdjustStock,
+		isAdjustingStock,
 		criticalItemsCount,
 		lowStockCount: criticalItemsCount,
 		totalValue,
