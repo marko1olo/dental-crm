@@ -64,8 +64,10 @@ describe("buildPatientImportIntake", () => {
 		const result = await buildPatientImportIntake(ORG_ID, input);
 
 		assert.strictEqual(result.recognitionNotes.length, 3);
+		const ocrNote = result.recognitionNotes[2];
+		assert.ok(ocrNote);
 		assert.ok(
-			result.recognitionNotes[2].includes(
+			ocrNote.includes(
 				"Фото журнала должно проходить OCR/vision worker; этот endpoint принимает распознанный текст и нормализует его.",
 			),
 		);
@@ -81,8 +83,10 @@ describe("buildPatientImportIntake", () => {
 		const result = await buildPatientImportIntake(ORG_ID, input);
 
 		assert.strictEqual(result.recognitionNotes.length, 3);
+		const voiceNote = result.recognitionNotes[2];
+		assert.ok(voiceNote);
 		assert.ok(
-			result.recognitionNotes[2].includes(
+			voiceNote.includes(
 				"Диктовка превращается в текст браузером или AI-worker, затем разбирается тем же безопасным preview.",
 			),
 		);

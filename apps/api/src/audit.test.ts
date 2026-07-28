@@ -1,7 +1,19 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { db } from './db/client.js';
+import type { auditEvents } from './db/schema.js';
 import { recordAuditEvent } from './audit.js';
+
+/**
+ * Настоящий параметр db.insert(auditEvents).values() — строка вставки в
+ * audit_events.
+ *
+ * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
+ * параметров, тип arguments выводился как пустой кортеж [], и обращение к
+ * arguments[0] не компилировалось. Тип взят из самой таблицы, поэтому расходиться
+ * со схемой он не может.
+ */
+type AuditEventInsert = typeof auditEvents.$inferInsert;
 
 describe('recordAuditEvent', () => {
   beforeEach(() => {
@@ -9,7 +21,7 @@ describe('recordAuditEvent', () => {
   });
 
   test('inserts audit event with provided organizationId', async (t) => {
-    const valuesMock = t.mock.fn(async () => {});
+    const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
     t.mock.method(db, 'insert', () => ({
       values: valuesMock
     }));
@@ -27,7 +39,9 @@ describe('recordAuditEvent', () => {
 
     assert.strictEqual(selectMock.mock.calls.length, 0);
     assert.strictEqual(valuesMock.mock.calls.length, 1);
-    assert.deepStrictEqual(valuesMock.mock.calls[0].arguments[0], {
+    const insertCall = valuesMock.mock.calls[0];
+    assert.ok(insertCall);
+    assert.deepStrictEqual(insertCall.arguments[0], {
       organizationId: 'org-123',
       entityType: 'User',
       entityId: 'user-456',
@@ -37,7 +51,7 @@ describe('recordAuditEvent', () => {
   });
 
   test('fetches first organization when organizationId is missing', async (t) => {
-    const valuesMock = t.mock.fn(async () => {});
+    const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
     t.mock.method(db, 'insert', () => ({
       values: valuesMock
     }));
@@ -57,7 +71,9 @@ describe('recordAuditEvent', () => {
 
     assert.strictEqual(limitMock.mock.calls.length, 1);
     assert.strictEqual(valuesMock.mock.calls.length, 1);
-    assert.deepStrictEqual(valuesMock.mock.calls[0].arguments[0], {
+    const insertCall = valuesMock.mock.calls[0];
+    assert.ok(insertCall);
+    assert.deepStrictEqual(insertCall.arguments[0], {
       organizationId: 'org-fallback',
       entityType: 'Post',
       entityId: 'post-1',
@@ -67,7 +83,7 @@ describe('recordAuditEvent', () => {
   });
 
   test('returns early without inserting if no organization is found', async (t) => {
-    const valuesMock = t.mock.fn(async () => {});
+    const valuesMock = t.mock.fn(async (_values: AuditEventInsert) => {});
     t.mock.method(db, 'insert', () => ({
       values: valuesMock
     }));

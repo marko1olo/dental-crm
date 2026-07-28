@@ -4,6 +4,17 @@ import { triggerPostOpCare } from "../postOpCareTrigger.js";
 import { db, pool } from "../../db/client.js";
 import { outgoingNotifications } from "../../db/schema.js";
 
+/**
+ * Настоящий параметр db.insert(outgoingNotifications).values() — строка вставки
+ * в outgoing_notifications.
+ *
+ * Без него mock.fn(async () => {}) объявлял подменённую функцию вообще без
+ * параметров, тип arguments выводился как пустой кортеж [], обращение к
+ * arguments[0] не компилировалось, а args дальше считался undefined. Тип взят из
+ * самой таблицы, поэтому расходиться со схемой он не может.
+ */
+type OutgoingNotificationInsert = typeof outgoingNotifications.$inferInsert;
+
 describe("postOpCareTrigger", () => {
     after(async () => {
         // Раньше здесь звали client.close() — метод PGlite, которого в
@@ -16,7 +27,9 @@ describe("postOpCareTrigger", () => {
     });
 
     test("triggerPostOpCare inserts correct notification", async () => {
-        const valuesMock = mock.fn(async () => {});
+        const valuesMock = mock.fn(
+            async (_values: OutgoingNotificationInsert) => {},
+        );
         mock.method(db, "insert", (schema) => {
             assert.strictEqual(schema, outgoingNotifications);
             return { values: valuesMock };
@@ -25,7 +38,9 @@ describe("postOpCareTrigger", () => {
         await triggerPostOpCare("org-123", "pat-456", "Extraction");
 
         assert.strictEqual(valuesMock.mock.calls.length, 1);
-        const args = valuesMock.mock.calls[0].arguments[0];
+        const insertCall = valuesMock.mock.calls[0];
+        assert.ok(insertCall);
+        const args = insertCall.arguments[0];
 
         assert.strictEqual(args.organizationId, "org-123");
         assert.strictEqual(args.patientId, "pat-456");

@@ -24,7 +24,9 @@ describe('startNotificationWorker', () => {
     workerModule.startNotificationWorker();
 
     assert.strictEqual(setIntervalMock.mock.callCount(), 1);
-    const args = setIntervalMock.mock.calls[0].arguments;
+    const intervalCall = setIntervalMock.mock.calls[0];
+    assert.ok(intervalCall);
+    const args = intervalCall.arguments;
     assert.strictEqual(args[1], 10000);
     assert.strictEqual(typeof args[0], 'function');
 

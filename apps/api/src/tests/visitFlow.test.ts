@@ -56,9 +56,8 @@ describe('runVisitFlow Orchestrator', () => {
 			patientId: '00000000-0000-0000-0000-000000000000',
 			transcript: 'Тест',
 			specialty: 'therapist',
-			source: 'voice',
 			completedServices: [
-				{ title: 'Лечение кариеса', priceRub: 1000, serviceId: '1', categoryId: '1' },
+				{ title: 'Лечение кариеса', priceRub: 1000, serviceId: '1', quantity: 1 },
 			],
 			orchestratorConfig: { enablePlan: true, enableRecommendations: true, enableDocuments: true },
 		});
@@ -75,9 +74,8 @@ describe('runVisitFlow Orchestrator', () => {
 			patientId: '00000000-0000-0000-0000-000000000000',
 			transcript: 'Тест',
 			specialty: 'therapist',
-			source: 'voice',
 			completedServices: [
-				{ title: 'Лечение кариеса', priceRub: 1000, serviceId: '1', categoryId: '1' },
+				{ title: 'Лечение кариеса', priceRub: 1000, serviceId: '1', quantity: 1 },
 			],
 			orchestratorConfig: { enablePlan: false, enableRecommendations: false, enableDocuments: false },
 		});

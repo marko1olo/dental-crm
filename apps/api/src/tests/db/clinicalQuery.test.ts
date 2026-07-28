@@ -46,6 +46,7 @@ describe('getClinicalRules', () => {
     const rules = await getClinicalRules('org1');
     assert.equal(rules.length, 1);
     const rule = rules[0];
+    assert.ok(rule);
     assert.deepEqual(rule.triggerServiceIds, ["1", "2"]);
     assert.deepEqual(rule.requiredServiceIds, []);
     assert.deepEqual(rule.requiresCompletedServiceIds, []); // Should handle null

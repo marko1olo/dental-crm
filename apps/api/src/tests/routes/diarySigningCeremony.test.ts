@@ -147,6 +147,7 @@ describe("церемония подписания дневника одинак�
 				priceRub: 4500,
 			})
 			.returning({ id: serviceCatalogItems.id });
+		assert.ok(service);
 
 		const [item] = await db
 			.insert(inventoryItems)
@@ -158,6 +159,7 @@ describe("церемония подписания дневника одинак�
 				unitCostRub: "123.45",
 			})
 			.returning({ id: inventoryItems.id });
+		assert.ok(item);
 
 		await db.insert(procedureMaterialRules).values({
 			...(ruleOrganizationId ? { organizationId: ruleOrganizationId } : {}),
@@ -171,6 +173,7 @@ describe("церемония подписания дневника одинак�
 			.insert(visits)
 			.values({ organizationId, patientId, status: "draft" })
 			.returning({ id: visits.id });
+		assert.ok(visit);
 
 		const [treatmentItem] = await db
 			.insert(treatmentItems)
@@ -186,6 +189,7 @@ describe("церемония подписания дневника одинак�
 				status: "approved",
 			})
 			.returning({ id: treatmentItems.id });
+		assert.ok(treatmentItem);
 
 		return {
 			visitId: visit.id,
@@ -205,10 +209,12 @@ describe("церемония подписания дневника одинак�
 					eq(visitDiaries.organizationId, organizationId),
 				),
 			);
+		assert.ok(diary);
 		const [item] = await db
 			.select()
 			.from(inventoryItems)
 			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		assert.ok(item);
 		const movements = await db
 			.select()
 			.from(inventoryTransactions)
@@ -231,6 +237,7 @@ describe("церемония подписания дневника одинак�
 			.select()
 			.from(treatmentItems)
 			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+		assert.ok(treatment);
 		const commissions = await db
 			.select()
 			.from(doctorCommissions)
@@ -277,18 +284,21 @@ describe("церемония подписания дневника одинак�
 			.insert(organizations)
 			.values({ name: "U5 ceremony probe clinic" })
 			.returning({ id: organizations.id });
+		assert.ok(organization);
 		organizationId = organization.id;
 
 		const [doctor] = await db
 			.insert(users)
 			.values({ organizationId, fullName: "Врач U5", role: "doctor" })
 			.returning({ id: users.id });
+		assert.ok(doctor);
 		doctorId = doctor.id;
 
 		const [patient] = await db
 			.insert(patients)
 			.values({ organizationId, fullName: "Пациент U5" })
 			.returning({ id: patients.id });
+		assert.ok(patient);
 		patientId = patient.id;
 
 		staffToken = signToken(
@@ -399,6 +409,7 @@ describe("церемония подписания дневника одинак�
 					eq(visitDiaries.organizationId, organizationId),
 				),
 			);
+		assert.ok(lockDiary);
 		const lockSign = await app.inject({
 			method: "POST",
 			url: `/api/diaries/${lockDiary.id}/lock`,
@@ -517,6 +528,7 @@ describe("церемония подписания дневника одинак�
 					eq(visitDiaries.organizationId, organizationId),
 				),
 			);
+		assert.ok(stored);
 		assert.equal(stored.anamnesis, ANAMNESIS, "текст карты должен сохраниться");
 		assert.equal(stored.diaryHash, signedHash);
 		assert.equal(stored.diaryHash, diaryHashOf(stored));
@@ -568,6 +580,7 @@ describe("церемония подписания дневника одинак�
 			.select()
 			.from(inventoryItems)
 			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		assert.ok(item);
 		assert.equal(Number(item.stockQuantity), 0, "остаток пустой полки не должен вырасти");
 
 		// Транзакция откатилась целиком: дневник не подписан, журнал пуст, услуга не закрыта.
@@ -590,6 +603,7 @@ describe("церемония подписания дневника одинак�
 			.select()
 			.from(treatmentItems)
 			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+		assert.ok(treatment);
 		assert.equal(treatment.status, "approved", "услуга не должна закрыться");
 	});
 
@@ -628,6 +642,7 @@ describe("церемония подписания дневника одинак�
 					eq(visitDiaries.organizationId, organizationId),
 				),
 			);
+		assert.ok(diary);
 		const lockAgain = await app.inject({
 			method: "POST",
 			url: `/api/diaries/${diary.id}/lock`,
@@ -775,14 +790,17 @@ describe("церемония подписания дневника одинак�
 			.select()
 			.from(inventoryItems)
 			.where(eq(inventoryItems.id, scenario.inventoryItemId));
+		assert.ok(item);
 		const [rule] = await db
 			.select()
 			.from(procedureMaterialRules)
 			.where(eq(procedureMaterialRules.serviceId, scenario.serviceId));
+		assert.ok(rule);
 		const [treatment] = await db
 			.select()
 			.from(treatmentItems)
 			.where(eq(treatmentItems.id, scenario.treatmentItemId));
+		assert.ok(treatment);
 
 		for (const [name, value] of [
 			["inventory_items.stock_quantity", item.stockQuantity],

@@ -1,0 +1,52 @@
+{
+	// Проверка типов ТЕСТОВ apps/api.
+	//
+	// ЗАЧЕМ ОТДЕЛЬНЫЙ ФАЙЛ, А НЕ ПРОСТО СНЯТОЕ ИСКЛЮЧЕНИЕ В tsconfig.json.
+	// tsconfig.json у apps/api — это ещё и конфигурация СБОРКИ: npm run build
+	// вызывает `tsc -p tsconfig.json` и пишет результат в dist/. Включи тесты
+	// туда — и они начнут компилироваться в боевой вывод, то есть тесты и их
+	// фикстуры уедут в dist/ вместе с сервером. У apps/web такой развилки нет:
+	// его tsconfig.json стоит с "noEmit": true и потому обходится совсем без
+	// exclude, проверяя тесты тем же прогоном. Здесь для этого нужен второй,
+	// непишущий конфиг.
+	//
+	// ЧТО ЭТО ЗАКРЫВАЕТ. В tsconfig.json стоит `exclude: ["src/tests",
+	// "src/**/*.test.ts", "src/**/*.bench.ts"]`, из-за чего `tsc --noEmit` —
+	// гейт, на который в проекте ссылаются как на «типы чисто», — не брал в
+	// программу НИ ОДНОГО тестового файла. Замер 2026-07-29: 0 файлов
+	// `*.test.ts` в программе основного конфига против 78 у apps/web, при 129
+	// тестовых файлах и 1 файле замеров в apps/api. Под этим прикрытием
+	// накопилось 155 ошибок типов, среди них не только шум: в
+	// utils/cryptoHelper.bench.ts вызывался .then() на строке (hashCredential
+	// синхронный) — половина замера не исполнялась ни разу, а
+	// tests/routes/patientRecall.test.ts и tests/routes/waitlistMatches.test.ts
+	// заводили кресло без обязательной колонки clinic_id.
+	//
+	// ГОНЯТЬ: npm run typecheck:tests -w @dental/api. Подключено в корневой
+	// npm run typecheck (а через него — в npm run lint), поэтому обязательный по
+	// AGENTS.md прогон проверки типов теперь покрывает и тесты.
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		// Этот конфиг ничего не собирает: он только проверяет типы.
+		"noEmit": true,
+		// rootDir из tsconfig.json ("src") здесь пришлось бы нарушить: тест
+		// tests/clinicModeOneVocabulary.test.ts намеренно импортирует модуль из
+		// apps/web, потому что проверяет единственность словаря режимов на
+		// границе двух пакетов. При rootDir: "src" это давало TS6059 («файл вне
+		// rootDir») — ошибку про размещение вывода, которой при noEmit не
+		// существует по смыслу. Корень монорепозитория содержит оба пакета.
+		"rootDir": "../.."
+	},
+	"include": ["src"],
+	// Исключены ровно те же файлы, что и в tsconfig.json, МИНУС тесты: мёртвый
+	// код эпохи PGlite (пакет @electric-sql/pglite не установлен) и легаси-моки.
+	// Добавлять сюда тесты нельзя — в этом весь смысл файла.
+	"exclude": [
+		"src/services/syncEngine.ts",
+		"src/scripts/setup-fresh-db.ts",
+		"src/scripts/patch-owner-credentials.ts",
+		"src/scripts/seedPglite.ts",
+		"src/sampleData_opt.ts",
+		"src/telegram/legacyMocks.ts"
+	]
+}

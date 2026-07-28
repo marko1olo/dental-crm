@@ -215,6 +215,10 @@ describe("денежные гейты выдачи: квитанция и воз
 	}
 
 	function refundDocument(payments: Payment[], refundAmountRub: number): GeneratedDocument {
+		// Номер фискального чека берётся у первой оплаты набора: пустой набор
+		// заявление на возврат описать не может, и тест обязан сказать это прямо.
+		const firstPayment = payments[0];
+		assert.ok(firstPayment, "набор оплат для возврата не может быть пустым");
 		const paymentRefundCorrection = paymentRefundCorrectionPayloadSchema.parse({
 			action: "full_refund",
 			selectedPaymentIds: payments.map((payment) => payment.id),
@@ -223,7 +227,7 @@ describe("денежные гейты выдачи: квитанция и воз
 			refundMethod: "cash",
 			recipientFullName: payerFullName,
 			recipientIdentityDocument: identityDocument,
-			originalFiscalReceiptNumber: payments[0].fiscalReceiptNumber,
+			originalFiscalReceiptNumber: firstPayment.fiscalReceiptNumber,
 			accountantDecision: "Возврат согласован главным врачом и бухгалтером клиники.",
 		});
 		return {

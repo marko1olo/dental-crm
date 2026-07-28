@@ -120,8 +120,10 @@ describe("loadServerEnv", () => {
 				warnMock.mock.calls.length > 0,
 				"Console warn should be called",
 			);
+			const firstWarn = warnMock.mock.calls[0];
+			assert.ok(firstWarn);
 			assert.ok(
-				warnMock.mock.calls[0].arguments[0].includes(
+				firstWarn.arguments[0].includes(
 					"[env] Failed to load optional env file",
 				),
 			);

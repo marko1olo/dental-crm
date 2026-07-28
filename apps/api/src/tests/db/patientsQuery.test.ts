@@ -192,7 +192,14 @@ test("строка без отметок времени называет пац�
 		isSynced: false,
 		version: 1,
 		updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-	} as unknown as Record<string, unknown>;
+		/*
+		 * Строка НАМЕРЕННО нарушает тип: весь смысл проверки — отсутствующий
+		 * createdAt, которого объявление параметра не допускает, поэтому обойтись
+		 * без приведения нельзя. Приведение указывает на сам нарушаемый
+		 * контракт, а не на безымянный Record<string, unknown>, который до этого
+		 * к параметру всё равно не приводился.
+		 */
+	} as unknown as Parameters<typeof rowToPatient>[0];
 
 	assert.throws(
 		() => rowToPatient(brokenRow),

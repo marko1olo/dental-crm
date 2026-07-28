@@ -49,16 +49,28 @@ describe("generateDentalCdaXml", () => {
 	});
 
 	test("handles missing optional parameters correctly", () => {
+		/*
+		 * Отсутствие необязательного параметра выражается его ОТСУТСТВИЕМ, а не
+		 * значением undefined: при exactOptionalPropertyTypes объявление
+		 * `clinicOid?: string` явное undefined не принимает. Для генератора это
+		 * ровно то же самое — все четыре поля он читает через `||` и тернарник
+		 * (services/egiszCdaGenerator.ts: строки 46, 71, 113, 123), поэтому
+		 * пропущенный ключ и undefined дают один и тот же XML.
+		 */
+		const {
+			clinicOid: _clinicOid, // Should fallback to default
+			doctorSnils: _doctorSnils, // Should omit id
+			anamnesis: _anamnesis, // Should fallback to "Без особенностей"
+			treatmentDescription: _treatmentDescription, // Should fallback to "Осмотр и консультация"
+			...withoutOptionalParams
+		} = baseParams;
+
 		const params = {
-			...baseParams,
+			...withoutOptionalParams,
 			patientName: { first: "Анна", last: "Смирнова" }, // No middle name
 			doctorName: { first: "Елена", last: "Соколова" }, // No middle name
 			patientBirthDate: null, // No birth date
 			patientGender: "female" as const, // Female gender code
-			clinicOid: undefined, // Should fallback to default
-			doctorSnils: undefined, // Should omit id
-			anamnesis: undefined, // Should fallback to "Без особенностей"
-			treatmentDescription: undefined, // Should fallback to "Осмотр и консультация"
 		};
 
 		const xml = generateDentalCdaXml(params);

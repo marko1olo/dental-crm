@@ -48,6 +48,47 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/*
+ * Ответ маршрута в том виде, в каком его читают проверки ниже. Без этого
+ * описания `JSON.parse` даёт any, Map по строкам выводится как
+ * Map<unknown, unknown>, а `?.needsCall` сужает unknown до `{}` — то есть до
+ * типа без единого свойства. Именно так главное поле этого экрана оставалось
+ * непроверяемым: опечатка в его имени не поймалась бы ничем.
+ */
+type DayConfirmationsRow = {
+	appointmentId: string;
+	startsAt: string;
+	status: string;
+	patientId: string;
+	patientName: string;
+	phone: string | null;
+	doctorName: string | null;
+	needsCall: boolean;
+	patientClickedAt: string | null;
+	reminder: { state: string; detail: string | null };
+};
+
+type DayConfirmationsBody = {
+	date: string;
+	timeZone: string;
+	isEmpty: boolean;
+	rows: DayConfirmationsRow[];
+	summary: {
+		total: number;
+		confirmed: number;
+		awaiting: number;
+		cancelled: number;
+		noShow: number;
+		needsCall: number;
+		withoutPhone: number;
+	};
+};
+
+/** Строки по идентификатору приёма: ключ типизирован, значение — строка ответа. */
+function rowsByAppointment(body: DayConfirmationsBody): Map<string, DayConfirmationsRow> {
+	return new Map<string, DayConfirmationsRow>(body.rows.map((row) => [row.appointmentId, row]));
+}
+
 describe("границы дня в часовом поясе клиники", () => {
 	test("сутки начинаются по местному времени, а не по серверному", () => {
 		// В клинике на востоке страны «завтра» наступает раньше: считать по
@@ -275,7 +316,7 @@ describe("список подтверждений на день", () => {
 
 		const response = await app.inject({ method: "GET", url: "/api/schedule/day-confirmations", headers: ORG_HEADERS });
 		assert.equal(response.statusCode, 200, response.body);
-		const body = JSON.parse(response.body);
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
 		assert.equal(body.date, isoDate, `ожидалась дата ${isoDate}`);
 		assert.equal(body.timeZone, "Europe/Moscow");
 		assert.equal(body.summary.total, 4, JSON.stringify(body.summary));
@@ -289,8 +330,8 @@ describe("список подтверждений на день", () => {
 			url: `/api/schedule/day-confirmations?date=${isoDate}`,
 			headers: ORG_HEADERS
 		});
-		const body = JSON.parse(response.body);
-		const byId = new Map(body.rows.map((row: { appointmentId: string }) => [row.appointmentId, row]));
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
+		const byId = rowsByAppointment(body);
 
 		// Подтвердил — звонить не нужно.
 		assert.equal(byId.get(CONFIRMED_APPOINTMENT)?.needsCall, false);
@@ -315,8 +356,8 @@ describe("список подтверждений на день", () => {
 			url: `/api/schedule/day-confirmations?date=${isoDate}`,
 			headers: ORG_HEADERS
 		});
-		const body = JSON.parse(response.body);
-		const byId = new Map(body.rows.map((row: { appointmentId: string }) => [row.appointmentId, row]));
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
+		const byId = rowsByAppointment(body);
 
 		assert.equal(byId.get(DELIVERED_APPOINTMENT)?.reminder.state, "delivered");
 		assert.equal(byId.get(FAILED_APPOINTMENT)?.reminder.state, "failed");
@@ -332,8 +373,8 @@ describe("список подтверждений на день", () => {
 			url: `/api/schedule/day-confirmations?date=${isoDate}`,
 			headers: ORG_HEADERS
 		});
-		const body = JSON.parse(response.body);
-		const byId = new Map(body.rows.map((row: { appointmentId: string }) => [row.appointmentId, row]));
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
+		const byId = rowsByAppointment(body);
 
 		assert.notEqual(byId.get(CONFIRMED_APPOINTMENT)?.patientClickedAt, null);
 		assert.equal(byId.get(DELIVERED_APPOINTMENT)?.patientClickedAt, null);
@@ -347,11 +388,13 @@ describe("список подтверждений на день", () => {
 			url: `/api/schedule/day-confirmations?date=${isoDate}`,
 			headers: ORG_HEADERS
 		});
-		const body = JSON.parse(response.body);
-		const times = body.rows.map((row: { startsAt: string }) => new Date(row.startsAt).getTime());
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
+		const times = body.rows.map((row) => new Date(row.startsAt).getTime());
 		assert.deepEqual(times, [...times].sort((left, right) => left - right));
 		// Врач подставлен по идентификатору, а не «Врач клиники».
-		assert.equal(body.rows[0].doctorName, "Смирнов Сергей Сергеевич");
+		const earliest = body.rows[0];
+		assert.ok(earliest, "в дне с четырьмя приёмами не вернулось ни одной строки");
+		assert.equal(earliest.doctorName, "Смирнов Сергей Сергеевич");
 	});
 
 	test("день без приёмов помечен явно", async (context) => {
@@ -363,7 +406,7 @@ describe("список подтверждений на день", () => {
 			headers: ORG_HEADERS
 		});
 		assert.equal(response.statusCode, 200, response.body);
-		const body = JSON.parse(response.body);
+		const body = JSON.parse(response.body) as DayConfirmationsBody;
 		assert.equal(body.isEmpty, true);
 		assert.equal(body.summary.total, 0);
 		assert.deepEqual(body.rows, []);

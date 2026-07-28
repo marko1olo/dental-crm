@@ -11,7 +11,7 @@ import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointmentWaitlists, appointments, chairs, organizations, patients, users } from "../../db/schema.js";
+import { appointmentWaitlists, appointments, chairs, clinics, organizations, patients, users } from "../../db/schema.js";
 import { registerWaitlistMatchRoutes } from "../../routes/waitlistMatches.js";
 
 const ORG_ID = "dce70000-0000-4000-8000-000000000801";
@@ -19,6 +19,7 @@ const OTHER_ORG = "dce70000-0000-4000-8000-000000000802";
 const DOCTOR_A = "dce70000-0000-4000-8000-000000000811";
 const DOCTOR_B = "dce70000-0000-4000-8000-000000000812";
 const CHAIR_ID = "dce70000-0000-4000-8000-000000000813";
+const CLINIC_ID = "dce70000-0000-4000-8000-000000000814";
 /** Пациент, чей приём отменён: его окно и предлагаем. */
 const CANCELLED_PATIENT = "dce70000-0000-4000-8000-000000000821";
 /** Ждёт того же врача и это же время — должен быть первым. */
@@ -72,7 +73,16 @@ describe("подбор на освободившееся окно", () => {
 					{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Врач Второй", role: "doctor" }
 				])
 				.onConflictDoNothing();
-			await db.insert(chairs).values({ id: CHAIR_ID, organizationId: ORG_ID, name: "Кресло" }).onConflictDoNothing();
+			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
+			// клиника заводится здесь же, как в остальных тестах по живой базе.
+			await db
+				.insert(clinics)
+				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
+				.onConflictDoNothing();
+			await db
+				.insert(chairs)
+				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло" })
+				.onConflictDoNothing();
 
 			await db
 				.insert(patients)
@@ -165,6 +175,7 @@ describe("подбор на освободившееся окно", () => {
 			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 			await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 			await db.delete(users).where(eq(users.organizationId, ORG_ID));
+			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
 			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 			await db.delete(organizations).where(eq(organizations.id, OTHER_ORG));
 		}

@@ -144,6 +144,9 @@ async function main(): Promise<void> {
 		.insert(organizations)
 		.values({ name: "V2 deduction proof clinic" })
 		.returning({ id: organizations.id });
+	if (!organization) {
+		throw new Error("организация замера не создана");
+	}
 	const organizationId = organization.id;
 
 	let app: FastifyInstance | null = null;
@@ -152,10 +155,19 @@ async function main(): Promise<void> {
 			.insert(users)
 			.values({ organizationId, fullName: "Врач V2", role: "doctor" })
 			.returning({ id: users.id });
+		if (!doctor) {
+			throw new Error("врач замера не создан");
+		}
 		const [patient] = await db
 			.insert(patients)
 			.values({ organizationId, fullName: "Пациент V2" })
 			.returning({ id: patients.id });
+		if (!patient) {
+			throw new Error("пациент замера не создан");
+		}
+		// Отдельный id: сужение `patient` не проходит внутрь вложенных функций
+		// seed/sign, а нужен он именно там.
+		const patientId = patient.id;
 		const staffToken = signToken(
 			{ organizationId, userId: doctor.id, role: "doctor" },
 			authTokenSecret(),
@@ -227,6 +239,9 @@ async function main(): Promise<void> {
 					priceRub: 4500,
 				})
 				.returning({ id: serviceCatalogItems.id });
+			if (!service) {
+				throw new Error(`услуга не создана: ${label}`);
+			}
 			const [item] = await db
 				.insert(inventoryItems)
 				.values({
@@ -237,6 +252,9 @@ async function main(): Promise<void> {
 					unitCostRub: "123.45",
 				})
 				.returning({ id: inventoryItems.id });
+			if (!item) {
+				throw new Error(`позиция склада не создана: ${label}`);
+			}
 			await db.insert(procedureMaterialRules).values({
 				// Пропуск organizationId воспроизводит routes/inventory.ts:410-417:
 				// правило создаётся продуктом БЕЗ organization_id.
@@ -248,13 +266,16 @@ async function main(): Promise<void> {
 			});
 			const [visit] = await db
 				.insert(visits)
-				.values({ organizationId, patientId: patient.id, status: "draft" })
+				.values({ organizationId, patientId, status: "draft" })
 				.returning({ id: visits.id });
+			if (!visit) {
+				throw new Error(`визит не создан: ${label}`);
+			}
 			const [treatmentItem] = await db
 				.insert(treatmentItems)
 				.values({
 					organizationId,
-					patientId: patient.id,
+					patientId,
 					visitId: visit.id,
 					serviceId: service.id,
 					title: `Лечение (${label})`,
@@ -264,6 +285,9 @@ async function main(): Promise<void> {
 					status: "approved",
 				})
 				.returning({ id: treatmentItems.id });
+			if (!treatmentItem) {
+				throw new Error(`позиция плана лечения не создана: ${label}`);
+			}
 			return {
 				label,
 				visitId: visit.id,
@@ -276,7 +300,7 @@ async function main(): Promise<void> {
 		async function sign(fixture: Fixture): Promise<Observation> {
 			const draft = await post("/api/diaries", {
 				visitId: fixture.visitId,
-				patientId: patient.id,
+				patientId,
 				anamnesis: "Жалобы на боль при накусывании.",
 				statusLocalis: "Зуб 36: глубокая кариозная полость.",
 				treatmentDescription: "Обработка, пломба.",
@@ -301,7 +325,7 @@ async function main(): Promise<void> {
 						})
 					: await post("/api/diaries", {
 							visitId: fixture.visitId,
-							patientId: patient.id,
+							patientId,
 							status: "signed",
 							pkcs7Signature: PKCS7,
 						});

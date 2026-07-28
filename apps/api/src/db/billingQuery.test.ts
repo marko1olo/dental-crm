@@ -49,11 +49,17 @@ describe("getPaymentsByPatientIdInDb", () => {
     const result = await getPaymentsByPatientIdInDb("org-1", "patient-1");
 
     assert.strictEqual(result.length, 2);
-    assert.strictEqual(result[0].id, "1");
-    assert.strictEqual(result[0].createdAt, "2023-10-01T12:00:00.000Z");
-    assert.strictEqual(result[0].paidAt, "2023-10-02T12:00:00.000Z");
-    assert.strictEqual(result[1].id, "2");
-    assert.strictEqual(result[1].createdAt, "2023-10-03T12:00:00.000Z");
-    assert.strictEqual(result[1].paidAt, "2023-10-04T12:00:00.000Z");
+    // Локальные переменные под noUncheckedIndexedAccess: assert.ok — настоящая
+    // проверка, тест падает внятно, а не TypeError-ом на обращении к полю.
+    const firstPayment = result[0];
+    const secondPayment = result[1];
+    assert.ok(firstPayment);
+    assert.ok(secondPayment);
+    assert.strictEqual(firstPayment.id, "1");
+    assert.strictEqual(firstPayment.createdAt, "2023-10-01T12:00:00.000Z");
+    assert.strictEqual(firstPayment.paidAt, "2023-10-02T12:00:00.000Z");
+    assert.strictEqual(secondPayment.id, "2");
+    assert.strictEqual(secondPayment.createdAt, "2023-10-03T12:00:00.000Z");
+    assert.strictEqual(secondPayment.paidAt, "2023-10-04T12:00:00.000Z");
   });
 });

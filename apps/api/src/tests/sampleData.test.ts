@@ -164,6 +164,8 @@ describe('buildBillingSummary', () => {
       patientId: randomUUID(),
       visitId: randomUUID(),
       serviceId: randomUUID(),
+      // Обязательное поле схемы: без него объект не является TreatmentPlanItem.
+      snapshotServiceName: 'Test Service',
       toothCode: null,
       quantity: 1,
       unitPriceRub: 1000,
@@ -214,6 +216,8 @@ describe('buildBillingSummary', () => {
       organizationId: randomUUID(),
       code: 'TEST',
       title: 'Test Service',
+      // aliases объявлен через .default([]), поэтому в выводимом типе он обязателен.
+      aliases: [],
       category: 'therapy',
       specialty: 'therapist',
       basePriceRub: 1000,

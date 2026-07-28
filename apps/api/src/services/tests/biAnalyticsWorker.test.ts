@@ -55,16 +55,20 @@ test("startBiAnalyticsWorker scheduling", (t) => {
 	startBiAnalyticsWorker();
 
 	assert.strictEqual(setTimeoutMock.mock.calls.length, 1);
-	assert.strictEqual(setTimeoutMock.mock.calls[0].arguments[1], 5000);
+	const timeoutCall = setTimeoutMock.mock.calls[0];
+	assert.ok(timeoutCall);
+	assert.strictEqual(timeoutCall.arguments[1], 5000);
 
 	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
+	const intervalCall = setIntervalMock.mock.calls[0];
+	assert.ok(intervalCall);
 	assert.strictEqual(
-		setIntervalMock.mock.calls[0].arguments[1],
+		intervalCall.arguments[1],
 		1000 * 60 * 60,
 	);
 
-	const timeoutFn = setTimeoutMock.mock.calls[0].arguments[0] as Function;
-	const intervalFn = setIntervalMock.mock.calls[0].arguments[0] as Function;
+	const timeoutFn = timeoutCall.arguments[0] as Function;
+	const intervalFn = intervalCall.arguments[0] as Function;
 
 	assert.strictEqual(typeof timeoutFn, 'function');
 	assert.strictEqual(typeof intervalFn, 'function');

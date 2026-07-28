@@ -18,11 +18,18 @@
  * свойство — «словарь один» — по своей природе лежит на границе двух пакетов:
  * пишет значение сервер, а решает по нему состав разделов интерфейс. Тест,
  * проверяющий только одну сторону, пропустил бы ровно тот дефект, который тут был.
- * Сторона выбрана apps/api, потому что `apps/api/tsconfig.json` исключает тесты из
- * компиляции (`exclude: ["src/tests", …]`), а `apps/web/tsconfig.json` — нет:
- * зеркальный тест в apps/web затянул бы в его программу схему drizzle и типы node,
- * которых у веба в `types: ["vite/client"]` нет, и уронил бы веб-гейт.
- * `lib/clinicCapabilities.ts` не тянет ни React, ни CSS — только `@dental/shared`.
+ * Сторона выбрана apps/api, потому что зеркальный тест в apps/web затянул бы в его
+ * программу схему drizzle и типы node, которых у веба в `types: ["vite/client"]`
+ * нет, и уронил бы веб-гейт. `lib/clinicCapabilities.ts` не тянет ни React, ни
+ * CSS — только `@dental/shared`.
+ *
+ * ЗДЕСЬ РАНЬШЕ СТОЯЛО ДРУГОЕ ОБОСНОВАНИЕ, и оно опиралось на дефект: «сторона
+ * выбрана apps/api, потому что apps/api/tsconfig.json исключает тесты из
+ * компиляции». Исключение действительно было, и из-за него ни один из 129 тестовых
+ * файлов apps/api не проходил проверку типов. Дыра закрыта: тесты проверяет
+ * `apps/api/tsconfig.tests.json` (`npm run typecheck:tests -w @dental/api`), и этот
+ * файл вместе с импортированным модулем apps/web входит в её программу. Опираться
+ * на отсутствие проверки при выборе места для теста больше нельзя.
  */
 
 import assert from "node:assert/strict";
@@ -128,7 +135,15 @@ test("миграция 0140 запрещает базе хранить что-л
 	const check = /CHECK\s*\(\s*"clinic_mode"\s+IN\s*\(([^)]*)\)/i.exec(sql);
 	assert.ok(check, "в миграции 0140 нет ограничения CHECK на clinic_mode — колонка остаётся свободным text");
 
-	const constrained = [...check[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+	/* Список внутри IN(...) — группа 1; без проверки она имеет тип string | undefined. */
+	const constrainedList = check[1];
+	assert.ok(constrainedList, "в ограничении CHECK на clinic_mode пустой список значений");
+
+	const constrained = [...constrainedList.matchAll(/'([^']+)'/g)].map((match) => {
+		const value = match[1];
+		assert.ok(value, "в списке значений ограничения CHECK нашлась пустая кавычка");
+		return value;
+	});
 	assert.deepEqual(
 		[...constrained].sort(),
 		[...VOCABULARY].sort(),
@@ -148,10 +163,17 @@ test("миграция 0140 запрещает базе хранить что-л
 	 */
 	const updateCase = /SET\s+clinic_mode\s*=\s*CASE([\s\S]*?)END/i.exec(sql);
 	assert.ok(updateCase, "в миграции 0140 нет правила переноса существующих строк");
-	for (const [, assigned] of updateCase[1].matchAll(/THEN\s+'([^']+)'/g)) {
+
+	/* Тело CASE — группа 1; проверяется отдельно, иначе тип остаётся string | undefined. */
+	const caseBody = updateCase[1];
+	assert.ok(caseBody, "правило переноса существующих строк в миграции 0140 пустое");
+
+	for (const [, assigned] of caseBody.matchAll(/THEN\s+'([^']+)'/g)) {
+		assert.ok(assigned, "в ветке THEN правила переноса не разобралось присваиваемое значение");
 		assert.ok(VOCABULARY.includes(assigned), `правило переноса присваивает «${assigned}» вне словаря`);
 	}
-	for (const [, assigned] of updateCase[1].matchAll(/ELSE\s+'([^']+)'/g)) {
+	for (const [, assigned] of caseBody.matchAll(/ELSE\s+'([^']+)'/g)) {
+		assert.ok(assigned, "в ветке ELSE правила переноса не разобралось присваиваемое значение");
 		assert.ok(VOCABULARY.includes(assigned), `ветка ELSE правила переноса присваивает «${assigned}» вне словаря`);
 	}
 });

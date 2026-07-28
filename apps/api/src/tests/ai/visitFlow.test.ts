@@ -2,6 +2,18 @@ import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { runVisitFlow } from "../../ai/visitFlowOrchestrator.js";
 
+/*
+ * В контракте (visitFlowStepResultSchema, packages/shared/src/index.ts) поле
+ * data каждого этапа объявлено как z.unknown().nullable(), то есть у него нет
+ * ни одного известного свойства: `data?.x` сужает unknown до `{}` и читать x
+ * нельзя. Ниже перечислено ровно то, что читают эти тесты, — не весь ответ
+ * этапа, а его проверяемая часть.
+ */
+type PlanStageData = { treatmentGoals?: unknown; patientFriendlyExplanation?: string };
+type RecommendationsStageData = { telegramSummary?: string };
+type DraftStageData = { warnings?: unknown[] };
+type DocumentsStageData = { suggestions: string[] };
+
 describe("runVisitFlow Orchestrator", () => {
 	const originalEnv = process.env;
 
@@ -74,7 +86,7 @@ describe("runVisitFlow Orchestrator", () => {
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", categoryId: "1" }],
+			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", quantity: 1 }],
 			orchestratorConfig: { enablePlan: true, enableRecommendations: true, enableDocuments: true }
 		});
 
@@ -84,8 +96,11 @@ describe("runVisitFlow Orchestrator", () => {
 		assert.strictEqual(result.documents.status, "success");
 		assert.strictEqual(result.overallStatus, "success");
 
-		assert.deepStrictEqual(result.plan.data?.treatmentGoals, []);
-		assert.strictEqual(result.plan.data?.patientFriendlyExplanation, "Все будет ок");
+		const planData = result.plan.data as PlanStageData | null;
+		const recommendationsData = result.recommendations.data as RecommendationsStageData | null;
+
+		assert.deepStrictEqual(planData?.treatmentGoals, []);
+		assert.strictEqual(planData?.patientFriendlyExplanation, "Все будет ок");
 
 		// Рекомендации не ходят в ИИ: personalizePostVisitRecommendations —
 		// детерминированный набор правил, в нём нет ни одного вызова fetch.
@@ -94,7 +109,7 @@ describe("runVisitFlow Orchestrator", () => {
 		// Проверяем то, что здесь действительно проверяемо: по услуге
 		// «Лечение кариеса» выбрана кариозная ветка правил.
 		assert.match(
-			result.recommendations.data?.telegramSummary ?? "",
+			recommendationsData?.telegramSummary ?? "",
 			/^Рекомендации после лечения кариеса/,
 		);
 	});
@@ -106,11 +121,12 @@ describe("runVisitFlow Orchestrator", () => {
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Жалоба пациента болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение", priceRub: 1000, serviceId: "1", categoryId: "1" }]
+			completedServices: [{ title: "Лечение", priceRub: 1000, serviceId: "1", quantity: 1 }]
 		});
 
 		assert.strictEqual(result.draft.status, "success");
-		assert.ok(result.draft.data?.warnings?.length ?? 0 > 0);
+		const draftData = result.draft.data as DraftStageData | null;
+		assert.ok(draftData?.warnings?.length ?? 0 > 0);
 		// Since completedServices is provided, plan and recommendations should still be generated
 		assert.strictEqual(result.overallStatus, "success");
 		assert.strictEqual(result.plan.status, "success");
@@ -128,14 +144,17 @@ describe("runVisitFlow Orchestrator", () => {
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", categoryId: "1" }],
+			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", quantity: 1 }],
 		});
+
+		const planData = result.plan.data as PlanStageData | null;
+		const recommendationsData = result.recommendations.data as RecommendationsStageData | null;
 
 		assert.strictEqual(result.draft.status, "success");
 		assert.strictEqual(result.plan.status, "success");
-		assert.ok(result.plan.data?.patientFriendlyExplanation?.includes("Ваш план лечения"));
+		assert.ok(planData?.patientFriendlyExplanation?.includes("Ваш план лечения"));
 		assert.strictEqual(result.recommendations.status, "success");
-		assert.ok(result.recommendations.data?.telegramSummary?.includes("Рекомендации после"));
+		assert.ok(recommendationsData?.telegramSummary?.includes("Рекомендации после"));
 		assert.strictEqual(result.overallStatus, "success");
 	});
 
@@ -166,11 +185,13 @@ describe("runVisitFlow Orchestrator", () => {
 			patientId: "00000000-0000-0000-0000-000000000000",
 			transcript: "Болит зуб",
 			specialty: "universal",
-			completedServices: [{ title: "Сложное удаление зуба", priceRub: 1000, serviceId: "1", categoryId: "1" }],
+			completedServices: [{ title: "Сложное удаление зуба", priceRub: 1000, serviceId: "1", quantity: 1 }],
 		});
 
+		const documentsData = result.documents.data as DocumentsStageData | null;
+
 		assert.strictEqual(result.documents.status, "success");
-		assert.ok(result.documents.data?.suggestions.includes("procedure_specific_consent"));
-		assert.ok(result.documents.data?.suggestions.includes("post_visit_recommendations"));
+		assert.ok(documentsData?.suggestions.includes("procedure_specific_consent"));
+		assert.ok(documentsData?.suggestions.includes("post_visit_recommendations"));
 	});
 });

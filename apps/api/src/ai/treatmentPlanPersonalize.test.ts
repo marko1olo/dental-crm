@@ -1,5 +1,8 @@
 import { test } from 'node:test';
-import * as assert from 'node:assert/strict';
+// Импорт по умолчанию, как в остальных 52 тестах репозитория: только у него
+// assert.ok гарантированно сужает тип (сигнатура-утверждение asserts value), а
+// проверки ниже на этом держатся.
+import assert from 'node:assert/strict';
 import { personalizeTreatmentPlan } from './treatmentPlanPersonalize.js';
 
 test('personalizeTreatmentPlan tests', async (t) => {
@@ -43,7 +46,9 @@ test('personalizeTreatmentPlan tests', async (t) => {
     const result = await personalizeTreatmentPlan(basePayload as any);
 
     assert.strictEqual(fetchMock.mock.callCount(), 1);
-    const callArgs = fetchMock.mock.calls[0].arguments;
+    const firstCall = fetchMock.mock.calls[0];
+    assert.ok(firstCall);
+    const callArgs = firstCall.arguments;
     assert.strictEqual(callArgs[0], 'https://api.openai.com/v1/chat/completions');
 
     assert.strictEqual(result.patientFriendlyExplanation, 'AI Expl');
@@ -99,8 +104,12 @@ test('personalizeTreatmentPlan tests', async (t) => {
     const result = await personalizeTreatmentPlan(basePayload as any);
 
     assert.ok(fetchMock.mock.callCount() >= 2);
-    const firstCallUrl = fetchMock.mock.calls[0].arguments[0];
-    const secondCallUrl = fetchMock.mock.calls[1].arguments[0];
+    const firstCall = fetchMock.mock.calls[0];
+    assert.ok(firstCall);
+    const secondCall = fetchMock.mock.calls[1];
+    assert.ok(secondCall);
+    const firstCallUrl = firstCall.arguments[0];
+    const secondCallUrl = secondCall.arguments[0];
     assert.strictEqual(firstCallUrl, 'https://api.openai.com/v1/chat/completions');
     assert.strictEqual(secondCallUrl, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
 

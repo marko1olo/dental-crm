@@ -77,7 +77,9 @@ describe("BackupWorker start/stop", () => {
 		backupWorker.startBackupDaemon();
 
 		assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
-		assert.match(logMock.mock.calls[0].arguments[0], /Резервное копирование включено/);
+		const startLog = logMock.mock.calls[0];
+		assert.ok(startLog);
+		assert.match(startLog.arguments[0], /Резервное копирование включено/);
 
 		backupWorker.stopBackupDaemon();
 
@@ -118,7 +120,9 @@ describe("BackupWorker start/stop", () => {
 		// Молчать нельзя: клиника должна знать, что копий НЕТ.
 		assert.strictEqual(logMock.mock.callCount(), 0);
 		assert.strictEqual(errorMock.mock.callCount(), 1);
-		assert.match(errorMock.mock.calls[0].arguments[0], /ОТКЛЮЧЕНО/);
+		const disabledError = errorMock.mock.calls[0];
+		assert.ok(disabledError);
+		assert.match(disabledError.arguments[0], /ОТКЛЮЧЕНО/);
 
 		// И ничего не запланировано.
 		backupWorker.stopBackupDaemon();
@@ -136,6 +140,8 @@ describe("BackupWorker start/stop", () => {
 
 		assert.strictEqual(logMock.mock.callCount(), 0);
 		assert.strictEqual(errorMock.mock.callCount(), 1);
-		assert.match(errorMock.mock.calls[0].arguments[0], /короче 32 байт/);
+		const shortKeyError = errorMock.mock.calls[0];
+		assert.ok(shortKeyError);
+		assert.match(shortKeyError.arguments[0], /короче 32 байт/);
 	});
 });

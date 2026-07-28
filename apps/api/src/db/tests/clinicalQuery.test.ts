@@ -81,7 +81,11 @@ describe('evaluateClinicalRulesInDb', () => {
     });
 
     assert.strictEqual(result.evaluations.length, 1);
-    assert.strictEqual(result.evaluations[0].resolved, true);
+    // Локальная переменная под noUncheckedIndexedAccess: assert.ok — настоящая
+    // проверка, тест падает внятно, а не TypeError-ом на обращении к полю.
+    const evaluation = result.evaluations[0];
+    assert.ok(evaluation);
+    assert.strictEqual(evaluation.resolved, true);
     assert.strictEqual(result.summary.unresolved, 0);
     assert.strictEqual(result.summary.coveredRules, 1);
   });
@@ -100,8 +104,10 @@ describe('evaluateClinicalRulesInDb', () => {
     });
 
     assert.strictEqual(result.evaluations.length, 1);
-    assert.strictEqual(result.evaluations[0].resolved, false);
-    assert.deepStrictEqual(result.evaluations[0].missingRequiredServiceIds, ['service-req-2']);
+    const evaluation = result.evaluations[0];
+    assert.ok(evaluation);
+    assert.strictEqual(evaluation.resolved, false);
+    assert.deepStrictEqual(evaluation.missingRequiredServiceIds, ['service-req-2']);
     assert.strictEqual(result.summary.unresolved, 1);
     assert.strictEqual(result.summary.requiredServices, 1);
   });
@@ -120,8 +126,10 @@ describe('evaluateClinicalRulesInDb', () => {
     });
 
     assert.strictEqual(result.evaluations.length, 1);
-    assert.strictEqual(result.evaluations[0].resolved, false);
-    assert.deepStrictEqual(result.evaluations[0].missingCompletedServiceIds, ['service-comp-1']);
+    const evaluation = result.evaluations[0];
+    assert.ok(evaluation);
+    assert.strictEqual(evaluation.resolved, false);
+    assert.deepStrictEqual(evaluation.missingCompletedServiceIds, ['service-comp-1']);
   });
 
   test('handles block_service logic correctly with blocked services', async () => {
@@ -139,8 +147,10 @@ describe('evaluateClinicalRulesInDb', () => {
     });
 
     assert.strictEqual(result.evaluations.length, 1);
-    assert.strictEqual(result.evaluations[0].resolved, false);
-    assert.deepStrictEqual(result.evaluations[0].blockedServiceIds, ['service-1']);
+    const evaluation = result.evaluations[0];
+    assert.ok(evaluation);
+    assert.strictEqual(evaluation.resolved, false);
+    assert.deepStrictEqual(evaluation.blockedServiceIds, ['service-1']);
   });
 
   test('show_warning and schedule_followup always remain unresolved', async () => {
@@ -168,8 +178,12 @@ describe('evaluateClinicalRulesInDb', () => {
     });
 
     assert.strictEqual(result.evaluations.length, 2);
-    assert.strictEqual(result.evaluations[0].resolved, false);
-    assert.strictEqual(result.evaluations[1].resolved, false);
+    const warningEvaluation = result.evaluations[0];
+    const followupEvaluation = result.evaluations[1];
+    assert.ok(warningEvaluation);
+    assert.ok(followupEvaluation);
+    assert.strictEqual(warningEvaluation.resolved, false);
+    assert.strictEqual(followupEvaluation.resolved, false);
     assert.strictEqual(result.summary.unresolved, 2);
   });
 });

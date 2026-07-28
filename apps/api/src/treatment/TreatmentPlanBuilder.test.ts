@@ -23,7 +23,10 @@ const mockToothRows: ClinicalToothRow[] = [
   {
     toothOrArea: '18',
     surfaces: [],
-    status: 'healthy',
+    // 'healthy' в перечислении статусов зуба нет; здоровый зуб — это 'sound'.
+    // Построитель плана сравнивает статус только со 'missing', поэтому для него
+    // это то же самое, что и раньше: зуб 18 остаётся присутствующим.
+    status: 'sound',
     diagnosisOrFinding: '',
     indication: '',
     plannedAction: ''
@@ -44,6 +47,7 @@ const mockService: ServiceCatalogItem = {
   code: 'C01',
   title: 'Лечение кариеса',
   aliases: [],
+  active: true,
   category: 'therapy',
   specialty: 'therapist',
   basePriceRub: 5000,
@@ -57,6 +61,7 @@ const mockSurgeryService: ServiceCatalogItem = {
   code: 'S01',
   title: 'Установка импланта',
   aliases: [],
+  active: true,
   category: 'surgery',
   specialty: 'surgeon',
   basePriceRub: 50000,
@@ -70,6 +75,7 @@ const mockExtractionService: ServiceCatalogItem = {
   code: 'E01',
   title: 'Удаление зуба',
   aliases: [],
+  active: true,
   category: 'surgery',
   specialty: 'surgeon',
   basePriceRub: 3000,
@@ -189,8 +195,10 @@ test('TreatmentPlanBuilder', async (t) => {
       const result = builder.convertToAct([item1.id]);
 
       assert.equal(result.updatedItems.length, 1);
-      assert.equal(result.updatedItems[0].id, item1.id);
-      assert.equal(result.updatedItems[0].status, 'completed');
+      const converted = result.updatedItems[0];
+      assert.ok(converted, 'ни одна позиция не переведена в акт');
+      assert.equal(converted.id, item1.id);
+      assert.equal(converted.status, 'completed');
 
       // item2 should still be proposed
       assert.equal(builder.getItems().find(i => i.id === item2.id)?.status, 'proposed');

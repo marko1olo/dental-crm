@@ -10,12 +10,13 @@ import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { appointments, chairs, communicationOutbox, organizations, patients, users } from "../../db/schema.js";
+import { appointments, chairs, clinics, communicationOutbox, organizations, patients, users } from "../../db/schema.js";
 import { registerPatientRecallRoutes } from "../../routes/patientRecall.js";
 
 const ORG_ID = "dce70000-0000-4000-8000-000000000701";
 const DOCTOR_ID = "dce70000-0000-4000-8000-000000000702";
 const CHAIR_ID = "dce70000-0000-4000-8000-000000000703";
+const CLINIC_ID = "dce70000-0000-4000-8000-000000000704";
 const DUE_PATIENT = "dce70000-0000-4000-8000-000000000711";
 const RECENT_PATIENT = "dce70000-0000-4000-8000-000000000712";
 const BOOKED_PATIENT = "dce70000-0000-4000-8000-000000000713";
@@ -49,9 +50,15 @@ describe("возврат пациентов", () => {
 				.insert(users)
 				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Врач Возвратов", role: "doctor" })
 				.onConflictDoNothing();
+			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
+			// клиника заводится здесь же, как в остальных тестах по живой базе.
+			await db
+				.insert(clinics)
+				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
+				.onConflictDoNothing();
 			await db
 				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, name: "Кресло 1" })
+				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" })
 				.onConflictDoNothing();
 
 			await db
@@ -117,6 +124,7 @@ describe("возврат пациентов", () => {
 			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 			await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 			await db.delete(users).where(eq(users.organizationId, ORG_ID));
+			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
 			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 		}
 		await app.close();

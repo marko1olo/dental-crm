@@ -12,8 +12,14 @@ async function runBench() {
   const startPar = performance.now();
   const promises: Promise<boolean>[] = [];
   for (let i = 0; i < 50; i++) {
+    /*
+     * hashCredential возвращает строку, а не Promise (внутри pbkdf2Sync), поэтому
+     * прежний вызов .then() прямо на результате падал с TypeError: этот замер не
+     * выполнялся ни разу. Результат заворачивается в Promise.resolve, чтобы
+     * Promise.all ниже получил то, что объявлено в типе promises.
+     */
     promises.push(
-      hashCredential("password").then((hash) =>
+      Promise.resolve(hashCredential("password")).then((hash) =>
         verifyCredential("password", hash),
       ),
     );

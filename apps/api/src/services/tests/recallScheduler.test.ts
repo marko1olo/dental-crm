@@ -16,11 +16,15 @@ describe("RecallScheduler", () => {
   let orgId: string;
   let patientId: string;
   let planId: string;
+  // price_id в treatment_plan_items_new объявлен notNull и без ссылки на
+  // прайс-лист: планировщик отзывов его не читает, но пропускать колонку нельзя.
+  let priceId: string;
 
   beforeEach(async () => {
     orgId = randomUUID();
     patientId = randomUUID();
     planId = randomUUID();
+    priceId = randomUUID();
 
     await db.insert(organizations).values({
       id: orgId,
@@ -37,6 +41,7 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlans).values({
       id: planId,
+      organizationId: orgId,
       patientId,
       name: "Test Plan",
       status: "Active",
@@ -72,6 +77,7 @@ describe("RecallScheduler", () => {
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
       planId,
+      priceId,
       toothNumber: 11, // Upper jaw
       phase: 2, // Surgery
       quantity: 1,
@@ -86,8 +92,10 @@ describe("RecallScheduler", () => {
       .from(communicationTasks)
       .where(eq(communicationTasks.patientId, patientId));
     assert.strictEqual(tasks.length, 1);
-    assert.ok(tasks[0].title.includes("зуб 11"));
-    assert.strictEqual(tasks[0].intent, "recall");
+    const task = tasks[0];
+    assert.ok(task);
+    assert.ok(task.title.includes("зуб 11"));
+    assert.strictEqual(task.intent, "recall");
   });
 
   it("should trigger recall for lower jaw (3 months)", async () => {
@@ -105,6 +113,7 @@ describe("RecallScheduler", () => {
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
       planId,
+      priceId,
       toothNumber: 31, // Lower jaw
       phase: 2, // Surgery
       quantity: 1,
@@ -119,7 +128,9 @@ describe("RecallScheduler", () => {
       .from(communicationTasks)
       .where(eq(communicationTasks.patientId, patientId));
     assert.strictEqual(tasks.length, 1);
-    assert.ok(tasks[0].title.includes("зуб 31"));
+    const task = tasks[0];
+    assert.ok(task);
+    assert.ok(task.title.includes("зуб 31"));
   });
 
   it("should not trigger recall if healing time has not elapsed", async () => {
@@ -136,6 +147,7 @@ describe("RecallScheduler", () => {
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
       planId,
+      priceId,
       toothNumber: 11,
       phase: 2,
       quantity: 1,
@@ -163,6 +175,7 @@ describe("RecallScheduler", () => {
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
       planId,
+      priceId,
       toothNumber: 11,
       phase: 3, // Prosthetics
       quantity: 1,
@@ -190,6 +203,7 @@ describe("RecallScheduler", () => {
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
       planId,
+      priceId,
       toothNumber: null,
       phase: 2, // Surgery
       quantity: 1,
