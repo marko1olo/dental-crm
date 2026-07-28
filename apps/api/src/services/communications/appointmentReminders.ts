@@ -40,6 +40,34 @@ import type { CommunicationChannelCode } from "./channelRouter.js";
 /** Статусы, при которых напоминание уместно. Отменённому приёму оно вредно. */
 const REMINDABLE_STATUSES = ["planned", "confirmed"] as const;
 
+/** Почему пациент остался без напоминания. Код, а не готовая фраза: формулировку выбирает интерфейс. */
+export type ReminderSkipReason = "no_channel" | "no_template_data";
+
+/**
+ * Пациент, которому напоминание не поставлено, — с ИМЕНЕМ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Счётчики `skippedNoChannel` и `skippedNoTemplateData`
+ * считались, но в отчёте наружу шли только числа, а `problems` пополнялся лишь
+ * при сбое уровня организации. Десять приёмов на завтра, три пациента без
+ * телефона — и клиника видела «Поставлено напоминаний: 7» без единого признака,
+ * что трое не узнают о приёме. Числа мало: чтобы позвонить, администратору нужно
+ * ИМЯ, а не количество.
+ */
+export type ReminderSkip = {
+	readonly patientName: string;
+	readonly reason: ReminderSkipReason;
+	/** Время приёма, о котором не удалось напомнить (ISO). Формат выбирает интерфейс. */
+	readonly appointmentAt: string;
+};
+
+/**
+ * Сколько имён попадает в отчёт. Список нужен, чтобы обзвонить людей, поэтому он
+ * ограничен обозримым числом: дальше администратору нужен журнал, а не строка на
+ * пол-экрана, а ответ маршрута обязан оставаться конечным. Счётчики при этом
+ * точные и не обрезаются никогда — интерфейс говорит «названы первые N из M».
+ */
+export const MAX_NAMED_REMINDER_SKIPS = 20;
+
 export type ReminderScheduleReport = {
 	readonly organizations: number;
 	readonly examined: number;
@@ -49,6 +77,8 @@ export type ReminderScheduleReport = {
 	readonly skippedNoChannel: number;
 	/** Шаблон есть, но не хватило значения переменной — отправка остановлена. */
 	readonly skippedNoTemplateData: number;
+	/** Кого именно обошли, по одной записи на пациента и причину. См. MAX_NAMED_REMINDER_SKIPS. */
+	readonly skipped: readonly ReminderSkip[];
 	readonly problems: string[];
 };
 
@@ -142,6 +172,13 @@ export async function scheduleAppointmentReminders(
 		skippedNoTemplateData: 0,
 		problems: [] as string[]
 	};
+	/*
+	 * Ключ — пациент и причина. При двух порогах оповещения (за 24 и за 2 часа)
+	 * один и тот же пациент обходится дважды, и счётчики честно считают оба раза,
+	 * но в списке для обзвона фамилия должна стоять один раз: звонить всё равно
+	 * нужно один раз.
+	 */
+	const namedSkips = new Map<string, ReminderSkip>();
 
 	const settingsFilter = [eq(communicationSettings.appointmentReminderEnabled, true)];
 	if (options.organizationId) {
@@ -155,15 +192,24 @@ export async function scheduleAppointmentReminders(
 	for (const { organizationId } of enabledRows) {
 		report.organizations += 1;
 		try {
-			await scheduleForOrganization(organizationId, now, report);
+			await scheduleForOrganization(organizationId, now, report, namedSkips);
 		} catch (error) {
-			report.problems.push(
-				`Организация ${organizationId}: ${error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200)}`
-			);
+			const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
+			/*
+			 * Идентификатор организации остаётся в журнале сервера и уходит из текста
+			 * для человека: администратор клиники видел строку вида «Организация
+			 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
+			 * именно идентификатор.
+			 */
+			console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
+			report.problems.push(`Напоминания поставить не удалось: ${detail}`);
 		}
 	}
 
-	return report;
+	return {
+		...report,
+		skipped: [...namedSkips.values()].slice(0, MAX_NAMED_REMINDER_SKIPS)
+	};
 }
 
 async function scheduleForOrganization(
@@ -176,7 +222,8 @@ async function scheduleForOrganization(
 		skippedNoChannel: number;
 		skippedNoTemplateData: number;
 		problems: string[];
-	}
+	},
+	namedSkips: Map<string, ReminderSkip>
 ): Promise<void> {
 	const [settingsRow] = await db
 		.select({
@@ -208,9 +255,16 @@ async function scheduleForOrganization(
 		if (!templateByChannel.has(template.channel)) templateByChannel.set(template.channel, template);
 	}
 	if (templateByChannel.size === 0) {
+		/*
+		 * Без идентификатора организации в тексте (он ушёл в журнал сервера) и без
+		 * «Ни одно напоминание не отправлено»: напоминания не ОТПРАВЛЯЮТСЯ этим
+		 * кодом, а ставятся в очередь, и прежняя фраза описывала не то, что здесь
+		 * произошло. Сказано то, что администратору нужно сделать.
+		 */
+		console.error(`[reminders] нет активного шаблона «Подтверждение приёма», организация ${organizationId}`);
 		report.problems.push(
-			`Организация ${organizationId}: напоминания включены, но нет активного шаблона с назначением ` +
-				"«Подтверждение приёма». Ни одно напоминание не отправлено."
+			"Напоминания включены, но нет ни одного активного шаблона с назначением «Подтверждение приёма» — " +
+				"отправлять нечем. Создайте шаблон для нужного канала в разделе «Шаблоны сообщений» ниже."
 		);
 		return;
 	}
@@ -336,12 +390,55 @@ async function scheduleForOrganization(
 				templateByChannel
 			});
 
-			if (outcome === "queued") report.queued += 1;
-			else if (outcome === "duplicate") report.alreadyQueued += 1;
-			else if (outcome === "no_template_data") report.skippedNoTemplateData += 1;
-			else report.skippedNoChannel += 1;
+			/*
+			 * Switch с ветвью, которая не компилируется, если появился новый итог.
+			 * Прежняя цепочка if/else заканчивалась безусловным
+			 * `else report.skippedNoChannel += 1`, то есть новый итог молча посчитался
+			 * бы «нет канала». И оба счётчика пропусков до сих пор не выходили наружу
+			 * вообще: ни в `problems`, ни в текст на экране — пациент без телефона
+			 * просто исчезал из отчёта.
+			 */
+			switch (outcome) {
+				case "queued":
+					report.queued += 1;
+					break;
+				case "duplicate":
+					report.alreadyQueued += 1;
+					break;
+				case "no_template_data":
+					report.skippedNoTemplateData += 1;
+					rememberSkip(namedSkips, appointment.patientId, {
+						patientName: patient.fullName.trim(),
+						reason: "no_template_data",
+						appointmentAt: appointment.startsAt.toISOString()
+					});
+					break;
+				case "no_channel":
+					report.skippedNoChannel += 1;
+					rememberSkip(namedSkips, appointment.patientId, {
+						patientName: patient.fullName.trim(),
+						reason: "no_channel",
+						appointmentAt: appointment.startsAt.toISOString()
+					});
+					break;
+				default: {
+					const unhandled: never = outcome;
+					throw new Error(`Неизвестный итог постановки напоминания: ${String(unhandled)}`);
+				}
+			}
 		}
 	}
+}
+
+/**
+ * Один пациент, один приём, одна причина — одна строка для обзвона. Порог
+ * оповещения в ключ не входит: если клиника напоминает и за сутки, и за два часа,
+ * звонить всё равно нужно один раз. А вот время приёма входит — два разных приёма
+ * одного пациента это два разных повода позвонить.
+ */
+function rememberSkip(namedSkips: Map<string, ReminderSkip>, patientId: string, skip: ReminderSkip): void {
+	const key = `${patientId}|${skip.reason}|${skip.appointmentAt}`;
+	if (!namedSkips.has(key)) namedSkips.set(key, skip);
 }
 
 type ReminderOutcome = "queued" | "duplicate" | "no_channel" | "no_template_data";
