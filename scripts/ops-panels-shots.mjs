@@ -345,6 +345,19 @@ const PANELS = [
       // Замер подсказки «следующее действие» в списке: на снимке она оказалась
       // чёрной плашкой с чёрным текстом. Считанные значения точнее, чем догадки
       // по картинке.
+      // Ширины ключевых контейнеров раздела: по снимку не отличить «сетка
+      // схлопнулась» от «панель узкая» — а лечится это в разных местах.
+      const widthOf = (selector) => {
+        const node = document.querySelector(selector);
+        return node ? Math.round(node.getBoundingClientRect().width) : -1;
+      };
+      const widths =
+        "окно " + window.innerWidth +
+        ", .patients-panel " + widthOf(".patients-panel") +
+        ", .patients-main-grid " + widthOf(".patients-main-grid") +
+        ", .patient-list " + widthOf(".patient-list") +
+        ", .patient-clinical-grid " + widthOf(".patient-clinical-grid");
+
       const chip = document.querySelector(".patient-next-action");
       let chipStyle = "плашка не найдена";
       if (chip) {
@@ -356,7 +369,7 @@ const PANELS = [
           " | --srf-chip-soft: " + getComputedStyle(root).getPropertyValue("--srf-chip-soft").trim();
       }
       return (
-        "клик: " + Boolean(hit) + ", открыт: " + openedName + ", карточка отрисована: " + overview +
+        "ширины: " + widths + " | клик: " + Boolean(hit) + ", карточка отрисована: " + overview +
         ", маршрут: " + api + ", подсказка: " + chipStyle
       );
     })()`,

@@ -15,7 +15,7 @@
  *   npx tsx src/scripts/seedOpsScreenshotDemo.ts --clean   — удалить без остатка
  */
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { appointmentActionCodes, communicationCampaigns } from "../db/communicationsSchema.js";
 import { patientDuplicateDecisions } from "../db/patientsSchema.js";
@@ -65,6 +65,61 @@ function appointmentId(index: number): string {
 	return `d0000000-0000-4000-8000-0000000${String(200 + index).padStart(5, "0")}`;
 }
 
+/**
+ * Добивка: удалить строки демонстрационной клиники из ВСЕХ остальных таблиц,
+ * где есть колонка organization_id.
+ *
+ * ЗАЧЕМ ЭТО, ЕСЛИ ВЫШЕ ВСЁ ПЕРЕЧИСЛЕНО ПОИМЁННО. Список поимённых удалений
+ * ломается каждый раз, когда в системе появляется новая таблица со ссылкой на
+ * организацию: пересев падает с «violates foreign key constraint», и снимки
+ * перестают сниматься вовсе. За сутки это случилось дважды — сначала из-за
+ * решений по дублям, потом из-за журнала действий, а следом из-за
+ * recent_patient_history, куда строки попали вообще не из этого скрипта.
+ * Перечислять дальше — значит чинить одно и то же раз в неделю.
+ *
+ * Список таблиц берётся из каталога базы, а не из кода: он не может отстать.
+ * Несколько проходов нужны из-за связей МЕЖДУ этими таблицами — строка может
+ * не удалиться, пока жива ссылающаяся на неё. Проходы прекращаются, когда
+ * очередной не удалил ничего: значит либо всё чисто, либо осталось то, что
+ * нельзя убрать этим способом, и об этом честно сообщается.
+ *
+ * Опасности для чужих данных нет: условие всегда одно — организация ORG_ID,
+ * созданная этим же скриптом.
+ */
+async function sweepRemainingOrganizationRows(): Promise<void> {
+	const SAFE_TABLE = /^[a-z_][a-z0-9_]*$/;
+	const tables = await db.execute<{ table_name: string }>(sql`
+		SELECT table_name
+		FROM information_schema.columns
+		WHERE table_schema = 'public'
+		  AND column_name = 'organization_id'
+		  AND table_name <> 'organizations'
+		ORDER BY table_name
+	`);
+
+	let remaining = tables.rows.map((row) => row.table_name).filter((name) => SAFE_TABLE.test(name));
+
+	for (let pass = 0; pass < 5 && remaining.length > 0; pass += 1) {
+		const stillBlocked: string[] = [];
+		for (const table of remaining) {
+			try {
+				await db.execute(sql.raw(`DELETE FROM "${table}" WHERE organization_id = '${ORG_ID}'`));
+			} catch {
+				// Мешает ссылка из другой таблицы — вернёмся к ней следующим проходом.
+				stillBlocked.push(table);
+			}
+		}
+		if (stillBlocked.length === remaining.length) break;
+		remaining = stillBlocked;
+	}
+
+	if (remaining.length > 0) {
+		console.error(
+			`Не удалось очистить таблицы: ${remaining.join(", ")}. Демонстрационная организация может не удалиться.`
+		);
+	}
+}
+
 async function clean(): Promise<void> {
 	// Порядок обратный зависимостям: сначала то, что ссылается.
 	await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
@@ -91,6 +146,8 @@ async function clean(): Promise<void> {
 	 * после появления маршрутов правки сотрудника и кресла.
 	 */
 	await db.delete(auditEvents).where(eq(auditEvents.organizationId, ORG_ID));
+
+	await sweepRemainingOrganizationRows();
 	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 	// В stderr, а не в stdout: stdout этого скрипта — строго JSON с токенами, его
 	// перенаправляют в .ops-shot-tokens.json. Любая проза в stdout делает файл
