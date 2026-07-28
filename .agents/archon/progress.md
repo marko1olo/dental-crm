@@ -1052,3 +1052,83 @@ Precedent followed deliberately: `scripts/test-edge-cases-wave16.mjs` and its `s
 deleted earlier in this campaign for the same reasons. Real coverage of the same ground is provided by the
 behavioural route gate, which probes 438 routes and 187 mutating ones against a genuinely absent
 credential — strictly stronger than a fabricated tenant id and a hardcoded secret.
+
+## BB3 — SOUND_WITH_NITS. THE BEST PACKET OF THE CAMPAIGN, AND THE ATTACK ON IT WAS THE BEST REVIEW.
+
+Eleven adversarial hypotheses, every one DISPROVED — meaning the attack tried hard and failed. What makes
+this review worth keeping as the standard:
+
+- **It beat the caching trap the lead has been bitten by.** Not content with `npm run typecheck`, it re-ran
+  under `cd apps/web && npx tsc -b --force` to defeat `tsbuildinfo` caching. TRUE_EXIT=0 both ways.
+- **It re-derived the inventory with a DIFFERENT instrument** than the builder's AST walk — plain grep
+  against the parent blob — and got the eight `priceRub` literals at exactly `:368 :376 :386 :394 :403
+  :411 :421 :430` with values 4000 5500 6000 12500 35000 12000 5000 28000. Line for line identical. It also
+  confirmed the builder's own correction to the lead's brief: **8 assignment sites but only 5 DISTINCT
+  fabricated ids.**
+- **It proved the tests are revert-proof by reimplementing them from scratch** (`critic-ast-revert.mjs`) and
+  running against both blobs: at the parent both assertions FAIL, at HEAD both PASS. And it checked the
+  comment-exclusion was not a loophole — the surviving textual mentions are all inside docblocks
+  documenting the defect history.
+- **It walked reachability twice, link by link**: `App.tsx:3738 currentView==="patients"` → `:3770
+  <PatientsView>` → `PatientsView.tsx:497 <OdontogramModule>` → `OdontogramModule.tsx:740
+  <TreatmentEstimator>`; and independently `VisitView.tsx:505` → `VisitOdontogramTab.tsx:45` → the same
+  module. The edited footer sits in the component's MAIN return, behind no conditional.
+- **It driver-verified five fixes the brief never asked for**, each a real defect: a deactivated service no
+  longer priced; the `candidates[0]` fallback gone, so «Консультация» no longer prices a carious tooth; the
+  «хирург» over-match gone, so «Удаление зуба хирургическое» is no longer billed as a surgical navigation
+  guide; float money gone (300.01+300.05+300.07 → 90013 kopecks, not 900.1299999999999); a whitespace
+  `priceId` trimmed to null.
+- **Zero arithmetic in the new module.** A grep for `/ 100|* 100|Math.round|Math.floor|toFixed|parseFloat|
+  parseInt|Number(` over `treatmentEstimatorPricing.ts` returns NOTHING — every money operation delegates
+  to the shared kopecks module. `1500.50` → exactly `150050` kopecks, verified by the critic's own driver.
+- **§3 verified by captured output, not by reading**: no Latin characters in any user message, correct
+  Russian plural agreement («зубы 11, 71» vs «зуб 21»), the message names «Настройки → Прайс», and no money
+  or raw float is interpolated. «Сохранить» is genuinely `disabled={isSaving || blockedReason !== null}`
+  with a second guard inside `savePlan`.
+- **It independently re-measured the organizations and got 2, not 4** — the third separate confirmation of
+  the lead's error.
+
+The decomposition is the part to imitate: all money, the server-response coercion, service matching and the
+totals moved into `treatmentEstimatorPricing.ts`, a **React-free** module, *because* the component cannot be
+loaded in `node:test` (its import chain pulls a stylesheet and the run dies on
+`ERR_UNKNOWN_FILE_EXTENSION`). Money must be testable before it is rendered. That is §5 decomposition done
+for a reason, not for tidiness.
+
+## AU1 — NEEDS_REWORK. THE FIX FOR «A FAILED SEND LOOKED LIKE SUCCESS» DOES NOT COVER THE COMMON CASE.
+
+Audited read-only, reproduced at the parent. What it fixed is real and must not be undone: all five catch
+blocks now build a red `role="alert"` notice with a specific Russian hint, red from theme tokens
+(`dente-operations.css:471-475` over `var(--bad-bg)`). What it did not fix:
+
+`dispatcher.ts:375-383` reports SEVEN fields — claimed, sent, retried, failed, suppressed, deferred,
+releasedStuck. `MessageDeliveryConsole.tsx:376` declares FOUR and branches on three. **`retried` is the
+provider-refusal outcome**: `dispatcher.ts:640-664` rewrites the row to `queued`, attempts+1, sets
+`lastErrorMessage`, returns "retried" — never "failed". Gateway down with five claimed gives
+`{claimed:5, sent:0, retried:5, failed:0}`; the web computes `kind = report.failed > 0 ? "fail" : "done"`,
+resolves to **"done"**, and prints «Отправлено: 0 сообщений» in the calm grey `role="status"` box.
+
+And one thing got **worse**: the parent printed `claimed`, so `claimed=5` beside `sent=0` was the single
+on-screen trace that five messages were taken and none left. The new text dropped `claimed` entirely. The
+second press then sees `claimed===0` (rows backed off by a future `nextAttemptAt`, `dispatcher.ts:418`) and
+invites the administrator to queue MORE.
+
+Reminders drop patients silently: `appointmentReminders.ts:43-53` counts `skippedNoChannel` and
+`skippedNoTemplateData`, incremented at `:339-342`, but `problems.push` occurs at only two sites (`:160`,
+`:211`) — **the skipped counts never enter `problems`.** Ten appointments with three patients lacking a
+phone yields «Поставлено напоминаний: 7» and silence about the three. Both `problems.push` sites also
+prefix «Организация ${organizationId}», printing a raw tenant UUID to a dentist.
+
+All of it is now ordered as cycle-13 packet CC1.
+
+## THE FIXTURE-ORGANIZATION TRAP HAS NOW CAUGHT TWO INDEPENDENT PARTIES
+
+`apps/api/src/tests/support/fixtureOrganizations.ts:55` declares `FIXTURE_UUID_PREFIX = "dce70000"` and
+`:79-80` lists `dce70000-…-0901` and `dce70000-…-0902` as `LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS`, with
+`:67-69` describing one as debris from an aborted dictation test run. **The lead published «4
+organizations» from these; a recon agent then published «4 organizations» again, independently, in the very
+finding meant to answer the split-by-tenant demand** — and re-asserted it while correcting somebody else
+about organizations. Its critic ran the recon's OWN probe script verbatim and got 2.
+
+So this is not carelessness, it is a trap in the data: **this database contains rows that look like clinics
+and are test fixtures.** The only defence is to exclude the fixture prefixes explicitly and to state which
+ids were excluded. That requirement is now written into the cycle-13 law.
