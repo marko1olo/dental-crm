@@ -2,19 +2,48 @@ import { Link as LinkIcon, Plus, Search, UserPlus, Users } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { panelStateText, type PanelSubject } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 
 export type PatientFamilyCardProps = {
 	patientId: string | null;
 	patientName: string | null;
 	familyData: any | null;
+	/**
+	 * Отказ ЧТЕНИЯ семьи, а не её отсутствие. null — читали успешно (в том числе
+	 * получили честный 404 «пациент не в семье»); объект — ответ не прочитан, и
+	 * состав семьи с балансом неизвестен. Разделять обязательно: без этого признака
+	 * карточка на любой сбой писала «Пациент не состоит в семейной группе» и
+	 * предлагала создать вторую семью тому, у кого она уже есть.
+	 */
+	loadFailure?: { status: number | null } | null;
+	/** Перечитать семью после отказа. */
+	onRetryLoad?: () => void;
 	onFamilyDataChanged: () => void;
+};
+
+/**
+ * Тексты состояний семейного счёта. Отказ чтения здесь стоит денег: и «нет
+ * семьи», и «семья не прочитана» выглядят как пустая карточка, но во втором
+ * случае у пациента может быть общий кошелёк с родственниками.
+ */
+const FAMILY_SUBJECT: PanelSubject = {
+	notLoadedTitle: "Семейный счет не прочитан",
+	accusative: "семейный счет пациента",
+	emptyTitle: "Пациент не состоит в семейной группе",
+	emptyHint:
+		"Семья нужна, когда за лечение платят из общего кошелька: родители за детей, супруги друг за друга.",
+	failureConsequence:
+		"Не создавайте семью по этому экрану: возможно, пациент уже в ней состоит, и появится второй общий счет. Сначала обновите.",
 };
 
 export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	patientId,
 	patientName,
 	familyData,
+	loadFailure = null,
+	onRetryLoad,
 	onFamilyDataChanged,
 }) => {
 	const [isCreating, setIsCreating] = useState(false);
@@ -252,11 +281,25 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						))}
 					</div>
 				</>
+			) : loadFailure ? (
+				/*
+				 * Отказ чтения ВМЕСТО пустоты и без кнопок «Создать семью» и
+				 * «Привязать»: пока неизвестно, есть ли у пациента семья, любое из
+				 * этих действий может завести ему второй общий счёт.
+				 */
+				<div className="mt-3">
+					<PanelLoadFailure
+						subject={FAMILY_SUBJECT}
+						status={loadFailure.status}
+						onRetry={onRetryLoad ?? onFamilyDataChanged}
+					/>
+				</div>
 			) : (
 				<div className="mt-3">
 					<p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-						Пациент не состоит в семейной группе. Вы можете создать новую семью
-						или привязать его к существующей.
+						{panelStateText(FAMILY_SUBJECT, { phase: "empty" }).title}.{" "}
+						{panelStateText(FAMILY_SUBJECT, { phase: "empty" }).hint} Создайте
+						новую семью или привяжите пациента к существующей.
 					</p>
 
 					{isCreating ? (
