@@ -7,6 +7,7 @@ import { useWebsocket } from "../../hooks/useWebsocket";
 import type { PanelSubject } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { paymentMethodLabels } from "../../workspaceUiLabels";
 import "./FamilyWalletPanel.css";
 
 interface FamilyMember {
@@ -54,6 +55,18 @@ const WALLET_PANEL_SUBJECT: PanelSubject = {
  */
 const PATIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/*
+ * Чем можно внести аванс на семейный счёт.
+ *
+ * Список сужен намеренно. Сервер принимает ещё «online» и «other»
+ * (familyTopupSchema, routes/finance_family.ts), но у стойки маленькой клиники
+ * аванс вносят наличными, картой или переводом; лишние кнопки на кассе — это
+ * лишний повод выбрать не то. Подписи берём из общего словаря экрана, чтобы
+ * способ назывался одинаково здесь, в форме приёма оплаты и в истории оплат.
+ */
+type FamilyTopupMethod = "cash" | "card" | "bank_transfer";
+const FAMILY_TOPUP_METHODS: readonly FamilyTopupMethod[] = ["cash", "card", "bank_transfer"];
+
 interface FamilyWalletPanelProps {
 	patientId: string;
 	remainingDebtRub: number;
@@ -74,6 +87,12 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
 	const [topupAmount, setTopupAmount] = useState<number>(0);
+	/*
+	 * Чем внесли аванс. Способ НЕ гасится при смене пациента: это настройка
+	 * рабочего места кассира, а не данные пациента, — так же как способ оплаты в
+	 * форме приёма оплаты (components/finance/paymentComposerReset.ts).
+	 */
+	const [topupMethod, setTopupMethod] = useState<FamilyTopupMethod>("cash");
 	/*
 	 * ПОЛЕ СУММЫ СПИСАНИЯ НАЧИНАЕТСЯ ПУСТЫМ, А НЕ С ДОЛГА ПАЦИЕНТА.
 	 *
@@ -321,6 +340,12 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					patientId,
 					familyGroupId: family.id,
 					amountRub: topupAmount,
+					// БЫЛО: способ не отправлялся вовсе, а сервер подставляет «cash»
+					// по умолчанию (familyTopupSchema, routes/finance_family.ts). Семья
+					// вносила аванс картой, в журнал платежей попадали наличные — и
+					// вечером наличных в ящике оказывалось меньше, чем в отчёте, ровно
+					// на сумму такого пополнения. Причину сверки было не найти.
+					method: topupMethod,
 					clientMutationId: topupMutationIdRef.current,
 				}),
 			});
@@ -476,6 +501,23 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						placeholder="0"
 						disabled={isToppingUp}
 					/>
+					{/* Чем внесли аванс. БЫЛО: способ не спрашивали и не отправляли, а
+					    сервер записывал в журнал наличные. Вечером наличных в ящике
+					    не хватало ровно на сумму пополнения картой. */}
+					<div className="quick-chips-row" aria-label="Чем внесли аванс">
+						{FAMILY_TOPUP_METHODS.map((methodKey) => (
+							<button
+								key={methodKey}
+								type="button"
+								className={`quick-chip quick-chip--sm ${topupMethod === methodKey ? "active" : ""}`}
+								aria-pressed={topupMethod === methodKey}
+								onClick={() => setTopupMethod(methodKey)}
+								disabled={isToppingUp}
+							>
+								{paymentMethodLabels[methodKey]}
+							</button>
+						))}
+					</div>
 				</div>
 				<div className="family-wallet-btn-container">
 					<button
