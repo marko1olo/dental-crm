@@ -590,3 +590,38 @@ use, and the lead has already been burned once by filenames that promised a stat
 The «Тепло» theme entirely; mobile dark entirely; mobile light for 6 of 11 views (the run died during
 mobile). Two honest failure diagnostics were written (`ПУСТО_НЕ_ОТКРЫЛСЯ_*`). No verdict is offered on
 those surfaces.
+
+### F.6 — THE LEAD TRIED TO DEMOLISH ITS OWN FINDING AND FAILED. IT IS REAL.
+Before dispatching a packet the lead attacked F.2 itself, to avoid sending an agent after a capture
+artefact. Four candidate mechanisms, each tested and each RULED OUT:
+
+1. **A token that resolves in light but not in night** — ruled out. `node scripts/check-css-tokens.mjs`
+   exits 0: «Все var() разрешаются: каждое имя объявлено, либо его запас не светлый литерал.»
+2. **Text and background painted the same colour** — ruled out. `premium.css` styles the panel body with
+   `background: var(--glass-panel); color: var(--text-primary)`, and it defines BOTH for all three themes:
+   light `rgba(255,255,255,0.95)` + `#0f1e1b`; dark `rgba(16,26,25,0.80)` + `#e9f2ef`; night
+   `rgba(28,23,20,0.82)` + `#f1e8dd`. Every pair is legible.
+3. **A rule hiding content under a dark scope** — ruled out. No `[data-theme="night"|"dark"]` rule in any
+   stylesheet sets `display:none`, `opacity:0`, `visibility:hidden` or `height:0`.
+4. **A crashed view swallowed silently** — ruled out twice over. `workspaceRouteErrorBoundary.tsx:151-180`
+   renders a real Russian panel on error — heading, a «не открылось» pill, «Раздел временно не открылся»,
+   a support reference and two buttons — so a caught throw would be VISIBLE, not void. And the Suspense
+   fallback at `App.tsx:3589` is not blank either: it carries «Снимки пациента» and a «загрузка» pill, so
+   a stuck lazy chunk would also be visible.
+
+**Then the artefact hypothesis died on a measurement the lead had not thought of.** Byte sizes of all
+eleven dark frames from the same sequential loop:
+
+    imaging 61,451  ← the defect
+    schedule 118,707 · visit 124,571 · patients 136,184 · analytics 153,225 · finance 187,177
+    settings 187,318 · marketing 188,547 · communications 190,018 · documents 196,956 · shift 199,110
+
+**Ten of eleven dark views rendered fully. Imaging alone is less than half the next smallest.** A
+mid-transition frame would strike views at random; it would not single out the one view whose LIGHT
+counterpart is the largest of the set (176 KB, the most content of any view). The frames are taken by one
+loop, in order, with the same readiness assertion applied to each.
+
+**So: the observation is confirmed and now strongly supported, and the mechanism is genuinely unknown.**
+Every mechanism testable from source has been eliminated by the lead. That is precisely why the packet's
+first duty is to REPRODUCE, and why it is told that reporting the finding as unreproducible is a full
+success rather than a failure — the remaining explanations require running the thing, not reading it.
