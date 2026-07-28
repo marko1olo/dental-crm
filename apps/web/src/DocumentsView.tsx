@@ -3,6 +3,7 @@ import { isoDateLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
+import { appendChipToText } from "./components/documents/documentChipText";
 import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
 import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
 import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
@@ -188,6 +189,14 @@ export function DocumentsView(props: DocumentsViewProps) {
     xrayPregnancyStatusOptions,
     xrayStudyTypeOptions
   } = props;
+  // БЫЛО: этот экран доставал из хранилища документов 814 полей, а пользовался
+  // 641. Остальные 173 остались после переноса семи форм в
+  // components/documents/forms/**: формы читают свои значения и сеттеры из
+  // хранилища сами, а родитель продолжал объявлять полное состояние форм,
+  // которых он больше не рисует. Компилятор такое не ловит (`noUnusedLocals`
+  // в tsconfig.base.json не включён), поэтому имя поля жило в двух местах:
+  // здесь и в форме. Ровно так расходятся две копии одной правды — правка
+  // доходит до одной и молча минует другую.
   const {
     attendanceDiagnosisDisclosureExcluded,
     attendanceEndedAt,
@@ -249,17 +258,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     paymentFiscalReceiptNumber,
     paymentPayerFullName,
     paymentPayerIdentityDocument,
-    personalDataActions,
-    personalDataAutomatedDecisionAllowed,
-    personalDataCategories,
-    personalDataConsentGivenAt,
-    personalDataCrossBorderAllowed,
-    personalDataMedicalProcessingAcknowledged,
-    personalDataPurposes,
-    personalDataRetentionPeriod,
-    personalDataRevocationChannel,
-    personalDataTransferRules,
-    personalDataVoluntaryConsentConfirmed,
     refundAccountantDecision,
     refundAction,
     refundAmountRub,
@@ -271,17 +269,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     refundRecipientFullName,
     refundRecipientIdentityDocument,
     refundSelectedPaymentId,
-    refusalAlternatives,
-    refusalClinicalIndication,
-    refusalConfirmedAt,
-    refusalConsequencesUnderstood,
-    refusalDoctorFullName,
-    refusalEmergencyCareExplained,
-    refusalExplainedRisks,
-    refusalIntervention,
-    refusalPatientReason,
-    refusalSecondOpinionOffered,
-    refusalUrgentWarningSigns,
     releaseAccessExpiresAt,
     releaseChannel,
     releaseDeliveredAt,
@@ -350,17 +337,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setOutpatient025uRhFactor,
     setOutpatient025uThirdPartyDataChecked,
     setOutpatient025uWorkOrStudyPlace,
-    setPersonalDataActions,
-    setPersonalDataAutomatedDecisionAllowed,
-    setPersonalDataCategories,
-    setPersonalDataConsentGivenAt,
-    setPersonalDataCrossBorderAllowed,
-    setPersonalDataMedicalProcessingAcknowledged,
-    setPersonalDataPurposes,
-    setPersonalDataRetentionPeriod,
-    setPersonalDataRevocationChannel,
-    setPersonalDataTransferRules,
-    setPersonalDataVoluntaryConsentConfirmed,
     setRefundAccountantDecision,
     setRefundAction,
     setRefundAmountRub,
@@ -371,17 +347,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setRefundReason,
     setRefundRecipientFullName,
     setRefundRecipientIdentityDocument,
-    setRefusalAlternatives,
-    setRefusalClinicalIndication,
-    setRefusalConfirmedAt,
-    setRefusalConsequencesUnderstood,
-    setRefusalDoctorFullName,
-    setRefusalEmergencyCareExplained,
-    setRefusalExplainedRisks,
-    setRefusalIntervention,
-    setRefusalPatientReason,
-    setRefusalSecondOpinionOffered,
-    setRefusalUrgentWarningSigns,
     setReleaseAccessExpiresAt,
     setReleaseChannel,
     setReleaseDeliveredAt,
@@ -397,8 +362,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setTaxDocumentYear,
     selectedDocumentKind,
     setSelectedDocumentKind,
-    isDocumentIngesting,
-    setIsDocumentIngesting,
   } = useDocumentStore();
   // БЫЛО: здесь стояла ТРЕТЬЯ подписка на весь стор документов, не
   // извлекавшая НИ ОДНОГО поля: `const { } = useDocumentStore();`.
@@ -406,18 +369,6 @@ export function DocumentsView(props: DocumentsViewProps) {
   // каждое нажатие клавиши в любом поле документа перерисовывало этот
   // компонент (287 КБ разметки) лишний раз — просто впустую.
   const {
-    anesthesiaAllergyRestrictionsChecked,
-    anesthesiaAllergyStatus,
-    anesthesiaAnesthetic,
-    anesthesiaConsentConfirmed,
-    anesthesiaDoseMl,
-    anesthesiaDoseTime,
-    anesthesiaMethod,
-    anesthesiaReaction,
-    anesthesiaRestrictionNotes,
-    anesthesiaRisksExplained,
-    anesthesiaVasoconstrictor,
-    anesthesiaZone,
     completedActAccepted,
     completedActContractNumber,
     completedActDate,
@@ -435,21 +386,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     completedActTotalRub,
     documentCreateSavingKind,
     documentStatusSavingId,
-    informedConsentAftercare,
-    informedConsentAlternatives,
-    informedConsentAnesthesia,
-    informedConsentConfirmedAt,
-    informedConsentDiagnosisOrIndication,
-    informedConsentDoctorFullName,
-    informedConsentExpectedBenefit,
-    informedConsentIntervention,
-    informedConsentMaterialNotes,
-    informedConsentQuestionsAnswered,
-    informedConsentRisks,
-    informedConsentRisksUnderstood,
-    informedConsentToothOrArea,
-    informedConsentTrustedContact,
-    informedConsentWithdrawUnderstood,
     installmentScheduleAccepted,
     installmentScheduleBaseDocumentTitle,
     installmentScheduleDate,
@@ -558,16 +494,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     paymentReceiptPaymentsVerified,
     paymentReceiptPurpose,
     paymentReceiptTaxSupportRequested,
-    photoVideoAnonymizationConfirmed,
-    photoVideoClinicalRecordUseConfirmed,
-    photoVideoColleagueConsultationAllowed,
-    photoVideoEducationUseAllowed,
-    photoVideoLabTransferAllowed,
-    photoVideoMarketingUseAllowed,
-    photoVideoMaterials,
-    photoVideoRecognizablePublicationAllowed,
-    photoVideoRevocationChannel,
-    photoVideoScopeNotes,
     postVisitAllowedAfter,
     postVisitCareTopic,
     postVisitClinicContactInstruction,
@@ -593,22 +519,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     prescriptionMedication,
     prescriptionSafetyNotes,
     prescriptionUrgentContactReason,
-    procedureConsentAftercare,
-    procedureConsentAlternatives,
-    procedureConsentAnesthesia,
-    procedureConsentConfirmedAt,
-    procedureConsentDiagnosisOrIndication,
-    procedureConsentDoctorFullName,
-    procedureConsentExactProcedureConfirmed,
-    procedureConsentLocalFormAttached,
-    procedureConsentMaterials,
-    procedureConsentPatientRiskFactors,
-    procedureConsentProcedureName,
-    procedureConsentProcedureType,
-    procedureConsentQuestionsAnswered,
-    procedureConsentRisksUnderstood,
-    procedureConsentSpecificRisks,
-    procedureConsentToothOrArea,
     recordExtractComplaintAndAnamnesis,
     recordExtractDiagnosis,
     recordExtractDoctorFullName,
@@ -623,18 +533,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     recordExtractSourceVisitIds,
     recordExtractThirdPartyDataChecked,
     recordExtractTreatmentProvided,
-    setAnesthesiaAllergyRestrictionsChecked,
-    setAnesthesiaAllergyStatus,
-    setAnesthesiaAnesthetic,
-    setAnesthesiaConsentConfirmed,
-    setAnesthesiaDoseMl,
-    setAnesthesiaDoseTime,
-    setAnesthesiaMethod,
-    setAnesthesiaReaction,
-    setAnesthesiaRestrictionNotes,
-    setAnesthesiaRisksExplained,
-    setAnesthesiaVasoconstrictor,
-    setAnesthesiaZone,
     setCompletedActAccepted,
     setCompletedActContractNumber,
     setCompletedActDate,
@@ -651,21 +549,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setCompletedActServicePeriodStart,
     setCompletedActServicesSummary,
     setCompletedActTotalRub,
-    setInformedConsentAftercare,
-    setInformedConsentAlternatives,
-    setInformedConsentAnesthesia,
-    setInformedConsentConfirmedAt,
-    setInformedConsentDiagnosisOrIndication,
-    setInformedConsentDoctorFullName,
-    setInformedConsentExpectedBenefit,
-    setInformedConsentIntervention,
-    setInformedConsentMaterialNotes,
-    setInformedConsentQuestionsAnswered,
-    setInformedConsentRisks,
-    setInformedConsentRisksUnderstood,
-    setInformedConsentToothOrArea,
-    setInformedConsentTrustedContact,
-    setInformedConsentWithdrawUnderstood,
     setInstallmentScheduleAccepted,
     setInstallmentScheduleBaseDocumentTitle,
     setInstallmentScheduleDate,
@@ -774,15 +657,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setPaymentReceiptPaymentsVerified,
     setPaymentReceiptPurpose,
     setPaymentReceiptTaxSupportRequested,
-    setPhotoVideoAnonymizationConfirmed,
-    setPhotoVideoClinicalRecordUseConfirmed,
-    setPhotoVideoColleagueConsultationAllowed,
-    setPhotoVideoEducationUseAllowed,
-    setPhotoVideoLabTransferAllowed,
-    setPhotoVideoMarketingUseAllowed,
-    setPhotoVideoRecognizablePublicationAllowed,
-    setPhotoVideoRevocationChannel,
-    setPhotoVideoScopeNotes,
     setPostVisitAllowedAfter,
     setPostVisitClinicContactInstruction,
     setPostVisitDoctorFullName,
@@ -805,22 +679,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setPrescriptionMedication,
     setPrescriptionSafetyNotes,
     setPrescriptionUrgentContactReason,
-    setProcedureConsentAftercare,
-    setProcedureConsentAlternatives,
-    setProcedureConsentAnesthesia,
-    setProcedureConsentConfirmedAt,
-    setProcedureConsentDiagnosisOrIndication,
-    setProcedureConsentDoctorFullName,
-    setProcedureConsentExactProcedureConfirmed,
-    setProcedureConsentLocalFormAttached,
-    setProcedureConsentMaterials,
-    setProcedureConsentPatientRiskFactors,
-    setProcedureConsentProcedureName,
-    setProcedureConsentProcedureType,
-    setProcedureConsentQuestionsAnswered,
-    setProcedureConsentRisksUnderstood,
-    setProcedureConsentSpecificRisks,
-    setProcedureConsentToothOrArea,
     setRecordExtractComplaintAndAnamnesis,
     setRecordExtractDiagnosis,
     setRecordExtractDoctorFullName,
@@ -837,17 +695,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setRecordExtractTreatmentProvided,
     setSelectedPaymentReceiptIds,
     setSelectedTaxPaymentIds,
-    setTaxApplicationAuthorityDocument,
-    setTaxApplicationContact,
-    setTaxApplicationDeliveryChannel,
-    setTaxApplicationDuplicateWarningAccepted,
-    setTaxApplicationForm,
-    setTaxApplicationRelationship,
-    setTaxApplicationRequestedAt,
-    setTaxApplicationTaxpayerBirthDate,
-    setTaxApplicationTaxpayerFullName,
-    setTaxApplicationTaxpayerIdentityDocument,
-    setTaxApplicationTaxpayerInn,
     setTaxDocumentPayerInn,
     setTreatmentAcceptanceAcceptedAt,
     setTreatmentAcceptanceAlternativesUnderstood,
@@ -924,17 +771,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     setXrayRequestedBy,
     setXraySafetyNotes,
     setXrayStudyType,
-    taxApplicationAuthorityDocument,
-    taxApplicationContact,
-    taxApplicationDeliveryChannel,
-    taxApplicationDuplicateWarningAccepted,
-    taxApplicationForm,
-    taxApplicationRelationship,
-    taxApplicationRequestedAt,
-    taxApplicationTaxpayerBirthDate,
-    taxApplicationTaxpayerFullName,
-    taxApplicationTaxpayerIdentityDocument,
-    taxApplicationTaxpayerInn,
     treatmentAcceptanceAcceptedAt,
     treatmentAcceptanceAlternativesUnderstood,
     treatmentAcceptanceClinicalGoal,
@@ -1313,10 +1149,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           key={chip}
                           type="button"
                           className="quick-chip quick-chip--sm"
-                          onClick={() => {
-                            const current = paidContractCareReason.trim();
-                            setPaidContractCareReason(current ? `${current}, ${chip.toLowerCase()}` : chip);
-                          }}
+                          onClick={() => setPaidContractCareReason(appendChipToText(paidContractCareReason, chip))}
                         >
                           + {chip}
                         </button>
@@ -1579,10 +1412,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           key={chip}
                           type="button"
                           className="quick-chip quick-chip--sm"
-                          onClick={() => {
-                            const current = treatmentEstimateTreatmentBasis.trim();
-                            setTreatmentEstimateTreatmentBasis(current ? `${current}, ${chip.toLowerCase()}` : chip);
-                          }}
+                          onClick={() => setTreatmentEstimateTreatmentBasis(appendChipToText(treatmentEstimateTreatmentBasis, chip))}
                         >
                           + {chip}
                         </button>
@@ -1621,10 +1451,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           key={chip}
                           type="button"
                           className="quick-chip quick-chip--sm"
-                          onClick={() => {
-                            const current = treatmentEstimateExcludedItems.trim();
-                            setTreatmentEstimateExcludedItems(current ? `${current}, ${chip.toLowerCase()}` : chip);
-                          }}
+                          onClick={() => setTreatmentEstimateExcludedItems(appendChipToText(treatmentEstimateExcludedItems, chip))}
                         >
                           + {chip}
                         </button>
@@ -1640,10 +1467,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           key={chip}
                           type="button"
                           className="quick-chip quick-chip--sm"
-                          onClick={() => {
-                            const current = treatmentEstimatePaymentMilestoneNotes.trim();
-                            setTreatmentEstimatePaymentMilestoneNotes(current ? `${current}, ${chip.toLowerCase()}` : chip);
-                          }}
+                          onClick={() => setTreatmentEstimatePaymentMilestoneNotes(appendChipToText(treatmentEstimatePaymentMilestoneNotes, chip))}
                         >
                           + {chip}
                         </button>

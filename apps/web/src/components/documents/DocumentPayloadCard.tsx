@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
  * Карточка формы документа: заголовок, пояснение и складной блок ручной правки.
  *
  * ОДНА И ТА ЖЕ РАЗМЕТКА БЫЛА ПОВТОРЕНА 28 РАЗ В DocumentsView.tsx, вместе с
- * четырьмя объектами `style={{ … }}` на каждой копии. Эти inline-стили не
+ * ТРЕМЯ объектами `style={{ … }}` на каждой копии (на `<details>`, на
+ * `<summary>` и на блоке содержимого) — 13 свойств. Эти inline-стили не
  * рисовали ничего: в styles/dente-redesign.css:1262-1287 те же свойства
  * объявлены с `!important`, а важное авторское объявление сильнее атрибута
  * style. То есть 28 копий задавали `borderRadius: 8px`, `marginTop: 16px`,
@@ -14,7 +15,7 @@ import type { ReactNode } from "react";
  *
  * Поэтому здесь остались только классы. Внешний вид не меняется — он и раньше
  * приходил из CSS; проверка равенства свойств живёт в
- * tests/documentPayloadForms.test.tsx и упадёт, если из CSS уберут `!important`.
+ * tests/documentPayloadForms.test.ts и упадёт, если из CSS уберут `!important`.
  */
 export interface DocumentPayloadCardProps {
 	/** Название документа, как его видит администратор или врач. */

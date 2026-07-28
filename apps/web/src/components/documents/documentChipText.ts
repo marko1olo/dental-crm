@@ -8,7 +8,10 @@
  * восемь мест, где легко разойтись в мелочи (например, потерять `.trim()` и
  * получить «Кариес , пульпит»).
  *
- * Поведение сохранено дословно; проверки — в tests/documentPayloadForms.test.tsx.
+ * Поведение сохранено дословно; проверки — в tests/documentPayloadForms.test.ts.
+ * Все восемь мест переведены на эту функцию: четыре в форме отказа
+ * (components/documents/forms/MedicalInterventionRefusalForm.tsx) и четыре,
+ * оставшиеся в DocumentsView.tsx — договор оказания услуг и смета.
  */
 export function appendChipToText(current: string, chip: string): string {
 	const base = current.trim();

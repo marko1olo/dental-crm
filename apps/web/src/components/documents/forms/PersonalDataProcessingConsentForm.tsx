@@ -1,3 +1,4 @@
+import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 
@@ -5,13 +6,14 @@ import { DocumentPayloadCard } from "../DocumentPayloadCard";
  * Оператор персональных данных: реквизиты клиники, которые форма только
  * показывает. Поля заполняются в настройках клиники, здесь они read-only — как
  * и было в DocumentsView.tsx.
+ *
+ * Тип НЕ объявляется здесь заново. Раньше рядом стоял свой `DocumentClinicOperator`
+ * с теми же четырьмя строками — вторая копия реквизитов клиники, которая молча
+ * разошлась бы с настоящим черновиком профиля при первом же переименовании поля.
+ * `Pick` от `ClinicProfileDraft` (AppHelpers.tsx) даёт ровно те же четыре
+ * обязательных строки и ломает сборку здесь, если поле переименуют там.
  */
-export interface DocumentClinicOperator {
-	legalName: string;
-	clinicName: string;
-	inn: string;
-	address: string;
-}
+export type DocumentClinicOperator = Pick<ClinicProfileDraft, "legalName" | "clinicName" | "inn" | "address">;
 
 export interface PersonalDataProcessingConsentFormProps {
 	/** Черновик профиля клиники: оператор, ИНН и адрес для согласия на ПДн. */

@@ -1,10 +1,41 @@
 import fs from "node:fs";
+import path from "node:path";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+
+/**
+ * Формы документов больше не живут одним файлом: семь из них вынесены в
+ * apps/web/src/components/documents/**. Проверка читала только DocumentsView.tsx
+ * и поэтому объявляла пропавшей подсказку «12 цифр, если есть» — текст никуда не
+ * делся, он ПЕРЕЕХАЛ. Такое падение опаснее, чем кажется: в красной проверке не
+ * видно настоящей регрессии. Каталог читается целиком, а не поимённо, чтобы
+ * следующий вынесенный файл не ронял проверку заново.
+ */
+function documentComponentSources(directory) {
+	const collected = [];
+	let entries = [];
+	try {
+		entries = fs.readdirSync(directory, { withFileTypes: true });
+	} catch {
+		return collected;
+	}
+	for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+		const full = path.join(directory, entry.name);
+		if (entry.isDirectory()) {
+			collected.push(...documentComponentSources(full));
+			continue;
+		}
+		if (full.endsWith(".tsx") || full.endsWith(".ts")) {
+			collected.push(fs.readFileSync(full, "utf8"));
+		}
+	}
+	return collected;
+}
 
 const source = [
 	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
 	readAppLogicSourceSync(),
 	fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
+	...documentComponentSources("apps/web/src/components/documents"),
 	fs.readFileSync("apps/web/src/store/documentStore.ts", "utf8"),
 	fs.readFileSync("apps/web/src/CommunicationsView.tsx", "utf8"),
 	fs.readFileSync("apps/web/src/communicationTaskData.ts", "utf8"),
@@ -586,22 +617,32 @@ const hiddenDocumentPayloadCards =
 	source.match(
 		/className="document-payload-card" hidden=\{selectedDocumentKind !==/g,
 	) ?? [];
-const documentPayloadCardCount = (
-	source.match(/className="document-payload-card"/g) ?? []
-).length;
-const conditionallyMountedPayloadCardCount = (
+/*
+ * Считаются ВИДЫ ДОКУМЕНТОВ, а не теги <article>. Раньше проверка требовала
+ * «не меньше 28 раз className="document-payload-card"», и это работало только
+ * пока каждый вид держал свою копию оболочки карточки. Шесть видов перешли на
+ * общий DocumentPayloadCard — копий стало 21 вместо 28, и проверка покраснела
+ * на том, что разметку перестали дублировать. Смысл требования был другой:
+ * каждый вид документа монтируется только при своём выборе, а не рисуется
+ * всегда и прячется атрибутом hidden. Именно это и проверяется теперь.
+ */
+const payloadKindMounts =
+	source.match(/\{selectedDocumentKind === "[^"]+" \? \(/g) ?? [];
+const inlineCardMounts =
 	source.match(
 		/\{selectedDocumentKind === "[^"]+" \? \(\s+<article className="document-payload-card">/g,
-	) ?? []
-).length;
+	) ?? [];
+const extractedFormMounts =
+	source.match(/\{selectedDocumentKind === "[^"]+" \? \(\s+<[A-Z][A-Za-z0-9]*Form\b/g) ??
+	[];
 if (hiddenDocumentPayloadCards.length) {
 	missing.push(
 		"document payload cards must be conditionally mounted instead of rendered as hidden DOM",
 	);
 }
 if (
-	documentPayloadCardCount < 28 ||
-	conditionallyMountedPayloadCardCount !== documentPayloadCardCount
+	payloadKindMounts.length < 28 ||
+	inlineCardMounts.length + extractedFormMounts.length !== payloadKindMounts.length
 ) {
 	missing.push(
 		"every structured document payload card must be mounted only for the selected document kind",
