@@ -1,52 +1,52 @@
 # S6-speech-audio-rework — state
 
-STATUS: DEFECT CONFIRMED
+STATUS: DONE
 TIME: 2026-07-28
-HEAD at start: 723e09fa3e237f94a38288f0a89210240a5b96e6
+HEAD at start:  723e09fa3e237f94a38288f0a89210240a5b96e6
+HEAD at finish: c17243a4714c9c784f0e574ddbe836d5dbac0b90 (соседние агенты коммитят в ту же ветку)
 
 ## Packet
 Rework of R6 (AssemblyAI polling cap + undeleted patient audio).
 Spec: .agents/archon/packets/R6-speech-audio-retention/review.md
-Claim: AssemblyAI polling / provider-deletion modules R6 touched + its node:test.
 Gate: npm run typecheck -w @dental/api
 
 ## Authority read (complete)
-.agents/AGENTS.md, .agents/INDEX.md, .agents/ARCHITECTURE.md (speech section §38-53),
+.agents/AGENTS.md, .agents/INDEX.md, .agents/ARCHITECTURE.md (speech section),
 R6 review.md, R6 handoff.md, R6 state.md.
 
 ## Git state at start
-Claimed source files CLEAN (`git status --porcelain apps/api/src/speech/gateway.ts
-apps/api/src/routes/system.ts apps/api/src/speech/tests/assemblyAiRetention.test.ts` -> empty).
-Dirty elsewhere (other agents): apps/web/src/DocumentsView.tsx, store/documentStore.ts, styles/main.css,
-apps/api/.data/*.json, tsbuildinfo, scratch/. NOT MINE, not touched.
+Claimed source files CLEAN. Dirty and NOT mine, never touched: apps/web/src/DocumentsView.tsx,
+store/documentStore.ts, styles/main.css, apps/api/.data/*.json, tsbuildinfo, scratch/,
+apps/api/src/routes/telegram.ts (its typecheck error appeared and vanished on its own — neighbour's edit).
 
-## DEFECTS CONFIRMED at real lines (HEAD 723e09fa3)
+## DEFECTS CONFIRMED at real lines (pre-fix)
+F1 gateway.ts:1732-1734 + :1749-1751 -> :1754 — one 429/408/5xx/dropped socket abandoned a LIVE job and
+   deleted it. keyPool.ts:602-608 + :590-595 -> retryable -> key rotation -> second full audio upload.
+   test:279-300 locked the destructive shape in as intended.
+F2 system.ts:397 — promised visibility that does not exist (`rg -n providerWarnings apps/web/src` = 0).
+F3 REVIEW WRONG: docs/05-speech-transcription-plan.md untracked at HEAD (deleted in 99bba4e0c).
+   Tracked catalog is .env.example.
+F5 system.ts:392-398 exclusive branches dropped the one-shot caveat on a mixed chain.
+F6 gateway.ts:1756 `if (failure)` swallowed a falsy thrown value.
 
-F1 (BLOCKING, reviewer item 1) — gateway.ts:1732-1734 `if (!pollResponse.ok) { failure = ...; break; }`
-and :1749-1751 `catch (error) { failure = error; }` -> :1754 `await removeRemoteArtifacts();`.
-One 429/408/5xx/dropped socket on ANY poll aborts a live job inside the budget and deletes it.
-keyPool.ts:602-608 `providerHttpError` marks 429/408/5xx/401/403 retryable ->
-keyPool.ts:590-595 `shouldTryNextProviderKey` true -> full re-upload on another key.
-Test `обрыв связи посреди опроса тоже удаляет аудио...` (test:279-300) locks the destructive shape in.
+## Timeline
+- STARTED
+- AUTHORITY READ
+- DEFECT CONFIRMED (all of the above, at real lines)
+- EDIT WRITTEN (gateway.ts poll tolerance + abandonment report + failure !== null; system.ts sentence
+  narrowed and mixed chain; .env.example env catalog)
+- GATE PASSED (npm run typecheck -w @dental/api -> TYPECHECK_EXIT=0, zero errors)
+- COMMITTED 5e18cb3689721cb8be3477ee085f52a49529ee7c
+- PROVEN (assemblyAiRetention.test.ts 11/11 pass, exit 0; no network egress in output)
+- COMMITTED 3d4090cfccc2bfae927489ce76059abfcd578eeb (test rewrite + 4 new cases)
+- PROVEN (speechRetentionStatement.test.ts 3/3 pass via app.inject, shared server untouched)
+- COMMITTED 6649fc02a99a0463d57310a91c81204119f5add3 (route statement test)
+- Full suite: run1 949/949/0 EXIT=0, run2 952/951/1 (two DB-backed foreign files; both green in
+  isolation 9/9 and 7/7), run3 952/952/0 EXIT=0
+- Encoding CLEAN at delivered HEAD, counts re-measured (F4 closed)
+- DONE — handoff.md written
 
-F2 (reviewer item 2) — system.ts:397 promises «попадает в предупреждения фрагмента».
-`rg -n providerWarnings apps/web/src` = 0 hits (re-verified myself). Not visible to the doctor.
-
-F3 (reviewer item 3) — CORRECTION TO THE REVIEW: docs/05-speech-transcription-plan.md is NOT TRACKED
-at HEAD (`git ls-files` -> 0; deleted from the index in 99bba4e0c). The tracked env catalog is
-`.env.example` (git grep DENTAL_SPEECH_PROVIDER_TIMEOUT_MS HEAD -> .env.example lines 74-109).
-
-F5 — system.ts:392-398 exclusive branch drops the one-shot sentence on a mixed chain. Confirmed.
-F6 — gateway.ts:1756 `if (failure) throw failure;` swallows a falsy thrown value. Confirmed.
-
-## Plan
-1. gateway.ts: ASSEMBLYAI_POLL_FAILURE_TOLERANCE (numberFromEnv, default 3), inner try/catch per poll,
-   tolerate recoverable poll failures inside the budget, surface abandonment via warnings + console.error,
-   `failure !== null`.
-2. system.ts: narrow the retention sentence to where the record actually lands; emit both sentences on a
-   mixed chain.
-3. .env.example: register the 7 ASSEMBLYAI_* knobs + changed meaning of ASSEMBLYAI_POLL_ATTEMPTS.
-4. Test: invert the poll-drop assertion, add 429-then-completed (no re-upload), add tolerance-exhausted.
-
-## Next actions
-- write edits -> typecheck -> COMMIT (pathspec) -> tests -> handoff.
+## Claim extension, declared
+.env.example (24 comment lines, review item 3 — its named file is untracked) and a new sibling test
+file speechRetentionStatement.test.ts (route proof could not live in the pure unit file without tying it
+to DATABASE_URL through routes/system.ts -> db/client.ts).
