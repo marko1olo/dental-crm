@@ -13,13 +13,6 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
-import { CustomExaminationFormCatalogsWidget } from "./components/clinical/CustomExaminationFormCatalogsWidget";
-import { EgiszMultipleDiagnosesWidget } from "./components/clinical/EgiszMultipleDiagnosesWidget";
-import { ExtendedOdontogramStatesWidget } from "./components/clinical/ExtendedOdontogramStatesWidget";
-import { NonDentalExaminationFormsWidget } from "./components/clinical/NonDentalExaminationFormsWidget";
-import { VisitExaminationPhotoLinksWidget } from "./components/clinical/VisitExaminationPhotoLinksWidget";
-import { DiagnocatAiFindingsWidget } from "./components/integrations/DiagnocatAiFindingsWidget";
-import { Mkb10AutoDirectoriesWidget } from "./components/integrations/Mkb10AutoDirectoriesWidget";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
@@ -1468,14 +1461,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
         {/* min(380px, 100%): без него колонка остаётся 380px даже когда
             контейнер уже — на телефоне карточки вылезали за правый край и
             обрезались. Замерено: контейнер 364px, колонка 380px. */}
-        <div style={{ marginTop: "32px", marginBottom: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "16px", padding: "0 16px" }}>
-          <CustomExaminationFormCatalogsWidget />
-          <EgiszMultipleDiagnosesWidget />
-          <ExtendedOdontogramStatesWidget />
-          <NonDentalExaminationFormsWidget />
-          <VisitExaminationPhotoLinksWidget />
-          <DiagnocatAiFindingsWidget />
-          <Mkb10AutoDirectoriesWidget />
-        </div>
+        {/*
+          ЗДЕСЬ ВНИЗУ ЭКРАНА ПРИЁМА СТОЯЛИ СЕМЬ ПУСТЫХ БЛОКОВ. Проверено живыми
+          запросами при открытой смене:
+            • «Справочники форм осмотра», «Сопутствующие диагнозы ЕГИСЗ»,
+              «Расширенные состояния зубов», «Нестоматологические формы осмотра»,
+              «Находки Diagnocat» — все пять отвечают пустым списком всегда:
+              таблицы существуют, писателя нет ни у одной;
+            • «Связи снимков с осмотром» и «Справочники МКБ-10» отвечают 404 —
+              маршрутов не существует вовсе.
+          Экран приёма — рабочее место врача во время лечения. Семь пустых
+          карточек внизу приучают пролистывать эту область не глядя, и однажды
+          там окажется что-то важное.
+
+          Что из этого реально работает и где оно есть: зубная формула —
+          в одонтограмме выше на этом же экране (маршруты /api/odontogram/*);
+          снимки — в разделе изображений; диагнозы ставятся в самой карте
+          приёма.
+          ДОЛГ, с причиной: интеграции Diagnocat (нет ключей и вызовов API),
+          выгрузки ЕГИСЗ по сопутствующим диагнозам (нет писателя) и
+          пользовательских форм осмотра (нет ни модели, ни экрана настройки).
+          Возвращать эти блоки имеет смысл вместе с работающей начинкой, а не
+          раньше.
+        */}
 </>;
 }

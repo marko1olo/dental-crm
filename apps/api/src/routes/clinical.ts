@@ -170,27 +170,13 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     return reply.code(200).send(await new ClinicalRouter().listTasks(orgId, patientId));
   });
 
-	// COMPETITOR FEATURE #19: прием::пользовательские_справочники_бланков_форма_043у
-	app.get("/api/clinical/custom-examination-form-catalogs", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getCustomExaminationFormCatalogsFromDb } = await import("../db/customExaminationFormCatalogsQuery.js");
-		return reply.status(200).send(await getCustomExaminationFormCatalogsFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE #31: прием::случаи_обслуживания_без_выбора_зубов
-	app.get("/api/clinical/non-dental-examination-forms", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getNonDentalExaminationFormsFromDb } = await import("../db/nonDentalExaminationFormsQuery.js");
-		return reply.status(200).send(await getNonDentalExaminationFormsFromDb(orgId));
-	});
+	/*
+	 * Маршруты «пользовательские справочники бланков» и «формы осмотра без выбора
+	 * зубов» удалены вместе со своими блоками с экрана приёма: обе таблицы
+	 * отвечали пустым списком всегда — писателя нет ни у одной, экрана настройки
+	 * этих форм тоже нет. ДОЛГ: пользовательские формы осмотра требуют модели
+	 * полей и экрана редактора; возвращать блоки имеет смысл вместе с ними.
+	 */
 
 	// COMPETITOR FEATURE #34: план_лечения::управление_этапами_и_автоархивация
 	app.get("/api/documents/treatment-plan-stages", async (request, reply) => {
@@ -214,27 +200,16 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getScheduleTimeReservationsFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #39: интеграции::diagnocat_ии_анализ_снимков_и_автоформула
-	app.get("/api/integrations/diagnocat-findings", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getDiagnocatAiFindingsFromDb } = await import("../db/diagnocatAiFindingsQuery.js");
-		return reply.status(200).send(await getDiagnocatAiFindingsFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE #40: прием::зубная_формула_пломба_кариес_и_детская_формула
-	app.get("/api/clinical/extended-odontogram-states", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getExtendedOdontogramStatesFromDb } = await import("../db/extendedOdontogramStatesQuery.js");
-		return reply.status(200).send(await getExtendedOdontogramStatesFromDb(orgId));
-	});
+	/*
+	 * Маршрут «находки Diagnocat» удалён вместе со своим блоком: таблица пуста
+	 * всегда, потому что интеграции нет — ни ключей, ни единого вызова API
+	 * Diagnocat в проекте. ДОЛГ: подключение внешнего анализа снимков.
+	 *
+	 * Маршрут «расширенные состояния зубов» удалён по другой причине: зубная
+	 * формула в системе РАБОТАЕТ, но живёт в одонтограмме (/api/odontogram/*) и
+	 * показывается на том же экране приёма выше. Пустой блок рядом с работающей
+	 * формулой — это второй, ложный источник правды о состоянии зубов.
+	 */
 
 
 	// COMPETITOR FEATURE #48: расписание::буфер_обмена_в_расписании_для_быстрого_переноса
