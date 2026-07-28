@@ -452,11 +452,35 @@ export function VisiographAnalyzer() {
     : [];
   const criticalCount = toothStatesArray.filter(t => t.state === 'treatment' || t.state === 'watch').length;
 
+  // ── Цвета: только имена, объявленные в темах ─────────────────────────────
+  // БЫЛО: по всей разметке ниже стояли var(--border), var(--surface),
+  // var(--bg-inset), var(--text), var(--text-muted) — ни одно из этих имён не
+  // объявлено ни в styles/main.css, ни в styles/dente-redesign.css, ни в
+  // styles/token-aliases.css (проверено поиском объявлений по всем .css в
+  // apps/: ноль совпадений). Объявление с неизвестной переменной браузер молча
+  // отбрасывает, и свойство берёт наследуемое либо начальное значение:
+  // border-шорткат откатывался к border-style: none, поэтому рамка карточки,
+  // разделитель шапки, рамки кнопок, пунктир зоны загрузки, обводка чипов,
+  // линии между разделами отчёта и рамки строк истории НЕ рисовались вообще;
+  // background откатывался к transparent, поэтому подложки шапки, зоны
+  // загрузки и нейтральных чипов исчезали; а color НАСЛЕДУЕТСЯ, поэтому
+  // «приглушённый» текст рисовался полным цветом --ink — приглушение как
+  // способ отделить второстепенное от главного не работало, и на чипе
+  // состояния 'план' пропадали сразу фон, рамка и приглушение.
+  // Заменено на токены темы, объявленные для светлой, тёмной и ночной тем:
+  //   --border → --line (сплошные рамки и разделители),
+  //              --line-strong для пунктира зоны загрузки — так пунктир задан
+  //              во всех остальных css проекта;
+  //   --surface → --paper; --bg-inset → --paper-soft;
+  //   --text → --ink; --text-muted → --muted.
+  // Псевдонимы в token-aliases.css намеренно НЕ добавлены: --text-muted стоит в
+  // чужих файлах в форме var(--text-muted, #718096) — объявив это имя, я молча
+  // сменил бы цвет в правилах, где сейчас работает запас.
   return (
     <details className="visiograph-analyzer-details" style={{ marginBottom: '12px' }}>
       <summary style={{
         display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-        padding: '8px 0', userSelect: 'none', listStyle: 'none', color: 'var(--text-muted)',
+        padding: '8px 0', userSelect: 'none', listStyle: 'none', color: 'var(--muted)',
         width: 'fit-content'
       }}>
         <ScanLine size={18} style={{ color: 'var(--teal)' }} />
@@ -478,9 +502,9 @@ export function VisiographAnalyzer() {
       </summary>
 
       <div style={{
-        border: '1px solid var(--border)',
+        border: '1px solid var(--line)',
         borderRadius: '14px',
-        background: 'var(--surface)',
+        background: 'var(--paper)',
         marginTop: '10px',
         overflow: 'hidden',
       }}>
@@ -488,8 +512,8 @@ export function VisiographAnalyzer() {
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 16px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-inset)',
+          borderBottom: '1px solid var(--line)',
+          background: 'var(--paper-soft)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Bot size={16} style={{ color: 'var(--teal)' }} />
@@ -511,9 +535,13 @@ export function VisiographAnalyzer() {
                   disabled={!voicesReady && !isSpeaking}
                   title={isSpeaking ? 'Стоп' : 'Озвучить'}
                   style={{
+                    // Пока идёт озвучивание, кнопка залита --teal. Белая иконка
+                    // на нём в тёмной теме (#2dd4bf) давала контраст 1.86 —
+                    // ровно та же поломка, что уже описана выше у счётчика
+                    // снимков. --on-teal подобран под эту заливку в каждой теме.
                     background: isSpeaking ? 'var(--teal)' : 'transparent',
-                    color: isSpeaking ? 'white' : 'var(--text-muted)',
-                    border: '1px solid var(--border)', borderRadius: '8px',
+                    color: isSpeaking ? 'var(--on-teal)' : 'var(--muted)',
+                    border: '1px solid var(--line)', borderRadius: '8px',
                     padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                     fontSize: '0.8rem', transition: 'all 0.2s',
                   }}
@@ -524,8 +552,8 @@ export function VisiographAnalyzer() {
                   onClick={handlePrint}
                   title="Печать"
                   style={{
-                    background: 'transparent', color: 'var(--text-muted)',
-                    border: '1px solid var(--border)', borderRadius: '8px',
+                    background: 'transparent', color: 'var(--muted)',
+                    border: '1px solid var(--line)', borderRadius: '8px',
                     padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                     fontSize: '0.8rem', transition: 'all 0.2s',
                   }}
@@ -536,8 +564,8 @@ export function VisiographAnalyzer() {
                   onClick={handleClear}
                   title="Закрыть результат"
                   style={{
-                    background: 'transparent', color: 'var(--text-muted)',
-                    border: '1px solid var(--border)', borderRadius: '8px',
+                    background: 'transparent', color: 'var(--muted)',
+                    border: '1px solid var(--line)', borderRadius: '8px',
                     padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                     fontSize: '0.8rem',
                   }}
@@ -559,12 +587,12 @@ export function VisiographAnalyzer() {
               onDragLeave={handleDragLeave}
               onClick={() => !isAnalyzing && fileInputRef.current?.click()}
               style={{
-                border: `2px dashed ${isDragOver ? 'var(--teal)' : 'var(--border)'}`,
+                border: `2px dashed ${isDragOver ? 'var(--teal)' : 'var(--line-strong)'}`,
                 borderRadius: '12px',
                 padding: '28px 20px',
                 textAlign: 'center',
                 cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                background: isDragOver ? 'var(--teal-soft)' : 'var(--bg-inset)',
+                background: isDragOver ? 'var(--teal-soft)' : 'var(--paper-soft)',
                 transition: 'all 0.25s ease',
                 opacity: isAnalyzing ? 0.7 : 1,
               }}
@@ -580,18 +608,18 @@ export function VisiographAnalyzer() {
               {isAnalyzing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <Loader2 size={36} className="animate-spin" style={{ color: 'var(--teal)' }} />
-                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>Анализируем снимок...</p>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--ink)' }}>Анализируем снимок...</p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>
                     ИИ-модель обрабатывает данные. Обычно 10–25 секунд.
                   </p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                  <UploadCloud size={36} style={{ color: isDragOver ? 'var(--teal)' : 'var(--text-muted)' }} />
-                  <p style={{ margin: 0, fontWeight: 600, color: isDragOver ? 'var(--teal)' : 'var(--text)' }}>
+                  <UploadCloud size={36} style={{ color: isDragOver ? 'var(--teal)' : 'var(--muted)' }} />
+                  <p style={{ margin: 0, fontWeight: 600, color: isDragOver ? 'var(--teal)' : 'var(--ink)' }}>
                     {isDragOver ? 'Отпустите снимок' : 'Перетащите снимок или нажмите'}
                   </p>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--muted)' }}>
                     Прицельный снимок (JPG, PNG, BMP). ИИ найдёт кариес, периодонтит, обновит формулу зубов.
                   </p>
                   <button
@@ -609,8 +637,13 @@ export function VisiographAnalyzer() {
           {/* Error state */}
           {error && (
             <div style={{
-              padding: '12px 16px', background: 'var(--error-surface, #fff0f0)',
-              color: 'var(--error, #c62828)', borderRadius: '10px',
+              // БЫЛО: var(--error-surface, #fff0f0) и var(--error, #c62828).
+              // Оба имени не объявлены ни в одной теме, поэтому всегда работал
+              // запас — светло-розовая плашка со светлой темы держалась и в
+              // тёмной, и в ночной. --bad-bg/--bad-fg объявлены во всех трёх
+              // темах; в светлой они дают тот же смысл, что прежние литералы.
+              padding: '12px 16px', background: 'var(--bad-bg)',
+              color: 'var(--bad-fg)', borderRadius: '10px',
               display: 'flex', alignItems: 'flex-start', gap: '10px',
               fontSize: '0.88rem', marginTop: currentScan ? '0' : '12px',
             }}>
@@ -631,14 +664,14 @@ export function VisiographAnalyzer() {
 
               {/* Image viewer */}
               {currentImageUrl && (
-                <div style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                <div style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <ShadowAnalystImageSlider imageUrl={currentImageUrl} enhanced={true} />
                 </div>
               )}
 
               {/* Saving indicator */}
               {isSaving && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Loader2 size={12} className="animate-spin" /> Сохранение в карту пациента...
                 </div>
               )}
@@ -646,7 +679,7 @@ export function VisiographAnalyzer() {
               {/* Tooth states badges */}
               {toothStatesArray.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>
                     Зубы из анализа ({toothStatesArray.length} поз.) · обновлено в формуле
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -657,9 +690,9 @@ export function VisiographAnalyzer() {
                         <span key={code} style={{
                           display: 'inline-flex', alignItems: 'center', gap: '4px',
                           padding: '3px 10px', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 600,
-                          background: isCritical ? 'var(--rust, #c62828)' : isDone ? 'var(--teal-soft)' : 'var(--bg-inset)',
-                          color: isCritical ? 'white' : isDone ? 'var(--teal)' : 'var(--text-muted)',
-                          border: `1px solid ${isCritical ? 'transparent' : isDone ? 'var(--teal)' : 'var(--border)'}`,
+                          background: isCritical ? 'var(--rust, #c62828)' : isDone ? 'var(--teal-soft)' : 'var(--paper-soft)',
+                          color: isCritical ? 'white' : isDone ? 'var(--teal)' : 'var(--muted)',
+                          border: `1px solid ${isCritical ? 'transparent' : isDone ? 'var(--teal)' : 'var(--line)'}`,
                         }}>
                           {isCritical ? <AlertTriangle size={10} /> : <CheckCircle2 size={10} />}
                           {code}
@@ -673,25 +706,25 @@ export function VisiographAnalyzer() {
 
               {/* AI Report sections */}
               {reportSections.length > 0 && (
-                <div style={{ border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid var(--line)', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{
-                    padding: '10px 14px', background: 'var(--bg-inset)',
+                    padding: '10px 14px', background: 'var(--paper-soft)',
                     display: 'flex', alignItems: 'center', gap: '8px',
-                    borderBottom: '1px solid var(--border)',
+                    borderBottom: '1px solid var(--line)',
                   }}>
                     <Sparkles size={14} style={{ color: 'var(--teal)' }} />
                     <span style={{ fontWeight: 600, fontSize: '0.88rem' }}>Полный отчёт ShadowAnalyst</span>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: 'auto' }}>
                       {new Date(currentScan.capturedAt).toLocaleDateString('ru-RU')}
                     </span>
                   </div>
                   {reportSections.map((section, idx) => (
-                    <div key={idx} style={{ borderBottom: idx < reportSections.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <div key={idx} style={{ borderBottom: idx < reportSections.length - 1 ? '1px solid var(--line)' : 'none' }}>
                       <button
                         onClick={() => setActiveSection(activeSection === idx ? null : idx)}
                         style={{
                           width: '100%', textAlign: 'left', padding: '10px 14px',
-                          background: activeSection === idx ? 'var(--bg-inset)' : 'transparent',
+                          background: activeSection === idx ? 'var(--paper-soft)' : 'transparent',
                           border: 'none', cursor: 'pointer',
                           display: 'flex', alignItems: 'center', gap: '8px',
                           transition: 'background 0.15s',
@@ -704,7 +737,7 @@ export function VisiographAnalyzer() {
                           style={{
                             transform: activeSection === idx ? 'rotate(180deg)' : 'none',
                             transition: 'transform 0.2s',
-                            color: 'var(--text-muted)',
+                            color: 'var(--muted)',
                           }}
                         />
                       </button>
@@ -714,7 +747,7 @@ export function VisiographAnalyzer() {
                             padding: '8px 14px 14px 34px',
                             fontSize: '0.87rem',
                             lineHeight: 1.65,
-                            color: 'var(--text)',
+                            color: 'var(--ink)',
                           }}
                           dangerouslySetInnerHTML={{ __html: renderMarkdown(section.content) }}
                         />
@@ -730,7 +763,7 @@ export function VisiographAnalyzer() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
                   padding: '9px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem',
-                  background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)',
+                  background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)',
                   transition: 'all 0.2s',
                 }}
               >
@@ -748,7 +781,7 @@ export function VisiographAnalyzer() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
                   background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: '0.85rem', color: 'var(--text-muted)', padding: '4px 0',
+                  fontSize: '0.85rem', color: 'var(--muted)', padding: '4px 0',
                   fontWeight: 500,
                 }}
               >
@@ -768,22 +801,22 @@ export function VisiographAnalyzer() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: '10px',
                         padding: '10px 12px', borderRadius: '8px',
-                        border: '1px solid var(--border)', background: 'var(--bg-inset)',
+                        border: '1px solid var(--line)', background: 'var(--paper-soft)',
                         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
                       }}
                     >
                       <div style={{
                         width: '36px', height: '36px', borderRadius: '6px',
-                        background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: '1px solid var(--border)', flexShrink: 0,
+                        background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '1px solid var(--line)', flexShrink: 0,
                       }}>
                         <ScanLine size={16} style={{ color: 'var(--teal)' }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)' }}>
                           {scan.originalFilename ?? 'Снимок'}
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '2px' }}>
                           {new Date(scan.capturedAt).toLocaleDateString('ru-RU')} ·{' '}
                           {scan.aiToothStates ? Object.keys(scan.aiToothStates).length : 0} зубов
                           {scan.aiSummary && (
@@ -791,7 +824,7 @@ export function VisiographAnalyzer() {
                           )}
                         </div>
                       </div>
-                      <ZoomIn size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                      <ZoomIn size={14} style={{ color: 'var(--muted)', flexShrink: 0 }} />
                     </button>
                   ))}
                 </div>
