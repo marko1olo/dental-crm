@@ -433,8 +433,29 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
               ? featureDistinguishes(insight.nextBestAction, featureSalience.prevailingNextAction)
               : false;
             return (
+              /*
+                РАМКА ФОКУСА СНЯТА С РАЗМЕТКИ, А НЕ ПОТЕРЯНА.
+
+                БЫЛО: `focus:ring-2 focus:ring-teal-600 focus:outline-none`.
+                Палитра Tailwind в проекте не переопределена — файла
+                tailwind.config.* в дереве нет вовсе, `@theme` в листах стилей
+                тоже нет, — поэтому `teal-600` это стоковый холодный
+                oklch(60% 0.118 184.704) во всех трёх темах. Токен --teal при
+                этом #0d9488 в светлой, #2dd4bf в тёмной и ТЁПЛЫЙ #e0a458 в
+                ночной: её включают в вечернюю смену, чтобы экран не бил синим.
+
+                И это была вторая рамка. Свой focus-visible на токене у строки
+                уже есть — dente-redesign.css, «Глобальные focus-visible для всех
+                интерактивных элементов»: `outline: 2px solid var(--teal)
+                !important`. `!important` авторского листа бьёт `outline-style:
+                none` из Tailwind независимо от порядка подключения, поэтому
+                `focus:outline-none` ничего не гасил, а `ring` рисовался тенью
+                ПОВЕРХ правильной рамки: с клавиатуры — двойной контур, мышью —
+                только холодный стоковый (вариант `focus:` это `:focus`, а
+                `:focus-visible` на нажатие мышью не срабатывает).
+              */
               <article
-                className={`patient-row focus:ring-2 focus:ring-teal-600 focus:outline-none ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
+                className={`patient-row ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
                 key={patient.id}
                 role="button"
                 tabIndex={0}
@@ -474,7 +495,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 <button
                   aria-label={`Открыть карточку пациента: ${patient.fullName}`}
                   aria-pressed={patientIsSelected}
-                  className="round-link focus:ring-2 focus:ring-teal-600 focus:outline-none"
+                  /* Рамку фокуса даёт .round-link:focus-visible на токене темы —
+                     см. пояснение у строки выше. Заодно возвращается проверка
+                     scripts/smoke-daily-surfaces-keyboard-accessibility.mjs: она
+                     ищет ровно className="round-link", и приписанные к классу
+                     стоковые классы Tailwind её гасили. */
+                  className="round-link"
                   type="button"
                   title={`Открыть карточку пациента: ${patient.fullName}`}
                   onClick={(e) => { e.stopPropagation(); setSelectedPatientId(patient.id); }}

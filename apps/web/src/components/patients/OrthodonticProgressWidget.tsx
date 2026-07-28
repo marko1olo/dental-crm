@@ -369,7 +369,26 @@ export function OrthodonticProgressWidget({
 							<button
 								type="submit"
 								disabled={saving}
-								className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-colors"
+								/*
+									ГЛАВНАЯ КНОПКА ВИДЖЕТА БЫЛА ХОЛОДНОЙ В ТЁПЛОЙ НОЧНОЙ ТЕМЕ.
+
+									БЫЛО: `bg-teal-600 hover:bg-teal-700 text-white`. Палитра
+									Tailwind в проекте не переопределена — файла tailwind.config.*
+									в дереве нет вовсе, `@theme` в листах стилей тоже нет, — значит
+									teal-600 это стоковый холодный oklch(60% 0.118 184.704)
+									одинаково в светлой, тёмной и ночной. Токен --teal при этом
+									#0d9488 в светлой, #2dd4bf в тёмной и ТЁПЛЫЙ #e0a458 в ночной:
+									её включают в вечернюю смену, чтобы экран не бил синим.
+
+									ПОЧЕМУ --teal-dark, А НЕ --teal. Пара «фон --teal-dark + текст
+									--on-teal» проходит норму во всех трёх темах, а пара с --teal в
+									светлой даёт 3.74:1 при норме 4.5:1 — то же решение и по той же
+									причине, что у кнопки ящика листа ожидания (ffdad856a).
+									Наведение — яркостью, а не вторым цветом: brightness двигает фон
+									и текст вместе и контраст не теряет. transition-all вместо
+									transition-colors потому, что brightness это фильтр, а не цвет.
+								*/
+								className="flex-1 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] rounded-lg p-2.5 font-semibold text-xs flex justify-center items-center gap-2 border-0 cursor-pointer transition-all"
 							>
 								{saving ? (
 									"Сохранение..."
@@ -417,7 +436,11 @@ export function OrthodonticProgressWidget({
 								<button
 									type="button"
 									onClick={handleStartEdit}
-									className="mt-2 bg-transparent border border-teal-500 text-teal-600 dark:text-teal-400 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors"
+									/* Вариант dark: здесь не спасал: он честно переведён на data-theme и
+									   в ночной теме срабатывает, но dark:text-teal-400 — это тоже
+									   стоковый холодный цвет, а не --teal. Токены меняются по теме сами,
+									   поэтому второй вариант больше не нужен. */
+									className="mt-2 bg-transparent border border-[var(--teal-ring)] text-[var(--teal-dark)] px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-[var(--teal-surface)] transition-colors"
 								>
 									{/* БЫЛО: «Добавить орто-трекер (JSONB)» — на кнопке, которую жмёт
 									    врач, стояло название типа данных в базе. */}
@@ -428,7 +451,7 @@ export function OrthodonticProgressWidget({
 							<div className="flex flex-col gap-4">
 								<div className="flex justify-between items-start">
 									<div className="flex items-center gap-2.5">
-										<div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950 flex items-center justify-center text-teal-600 dark:text-teal-400">
+										<div className="w-10 h-10 rounded-xl bg-[var(--teal-soft)] flex items-center justify-center text-[var(--teal-dark)]">
 											<Smile size={20} />
 										</div>
 										<div>
@@ -456,7 +479,7 @@ export function OrthodonticProgressWidget({
 												/ {totalAligners}
 											</span>
 										</span>
-										<span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
+										<span className="text-xs font-semibold text-[var(--teal-dark)]">
 											{progressPercent}%
 										</span>
 									</div>
@@ -466,7 +489,7 @@ export function OrthodonticProgressWidget({
 											initial={{ width: 0 }}
 											animate={{ width: `${progressPercent}%` }}
 											transition={{ duration: 1, ease: "easeOut" }}
-											className="h-full bg-teal-500 rounded-full"
+											className="h-full bg-[var(--teal)] rounded-full"
 										/>
 									</div>
 								</div>
