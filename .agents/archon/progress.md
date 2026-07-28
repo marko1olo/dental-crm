@@ -622,3 +622,77 @@ improvement and the write-before-read removal.
 
 Not reverting: V1's measured `rectMs` win is real, and a revert would restore the original overlap.
 The area is FROZEN to patching until the redesign packet lands.
+
+## THE CORNER: THE 0.5 THRESHOLD IS MATHEMATICALLY INCAPABLE. REDESIGN CONFIRMED.
+
+Cycle 6 closed 11/12 (only `attack:V4` died on credits). The second V1 review proved the architectural
+call harder than the lead had argued it, with live injection rather than reasoning:
+
+**1. The builder's DISPUTE of the previous reviewer was CONFIRMED.** The reserve landed **zero** times at
+≤840 px, not twice. Re-derived independently: `main.css:13013` is unlayered (brace-walked with comments
+stripped; `@layer legacy` spans 417–655 and 14353–end, so 13013 falls outside), therefore specificity
+decides and `.app-shell` (0,1,0) beats a bare `main` (0,0,1). An agent overturned a reviewer with
+evidence. That path works.
+
+**2. The F1 remedy is arithmetically inert.** The reviewer injected the incoming-call toast's exact
+geometry and semantics into the live page (`role=dialog`, 384×224, `z-index:999999`, matching
+`IncomingCallToast.tsx:67`) and fired the very `resize` event the dock registers. **Lift stayed 0** —
+share 0.089 at 390×844, 0.155 at 1600×1100. Controls in the same run prove the machinery is live: the
+same div at 384×60 → lift 60 px; a 160×44 button → lift 46 px. Running the shipped `cornerBlocksTarget`
+across heights: share crosses 0.5 only at ≤69 px. The toast has a header row, a caller block and a
+script list — a ≥120 px floor. **`CORNER_OBSTACLE_BLOCK_SHARE = 0.5` from fix 2 disabled the remedy
+fix 1 shipped.**
+
+**3. THE FINDING THAT ENDS THE DESIGN.** For an equal-height target, covered share is
+`barWidth / targetWidth`. So **≥0.5 is structurally unreachable for any target wider than the bar
+itself** — above 336 px at 390×844 (bar 168) and above 556 px at 1600×1100 (bar 278). Measured on real
+elements: `button.primary-button` «Запись» is **364×44 on four of five routes**, giving a maximum share
+of 168·44/(364·44) = **0.4615 — permanently un-yieldable.** The function's own doc comment defends the
+0.5 constant by citing a small Save button, and the packet never measured a real button width.
+**A threshold that cannot fire on the product's own primary button is not a safety mechanism.** No amount
+of tuning fixes this; the geometry forbids it.
+
+**4. The performance headline was misattributed**, confirmed from the builder's own intermediate artifact:
+fix 1 alone took hit tests from 295 to 405/385/615 (+37 %/+31 %/+108 %) and `rectMs` to −64 %/−50 %/−90 %,
+not the published −98 %/−96 %/−93 %. Both headline numbers were completed by fix 2's threshold
+suppressing re-sampling — i.e. by the same behaviour change that produced failures 2 and 3. The 1600 hit
+regression reproduces across four independent runs (+17 % to +41 %).
+
+**5. The new CSS gate does go red** for U4's exact rule and for a deleted consumer — but stays green for a
+consumer in an unscanned `.css` directory, for the consumer moved back onto the outer box (it never
+checks WHICH element), and for two declarations on one line (line-based counter).
+
+### Standing decision, unchanged and now proven
+No third patch. **Cycle 8 gets a redesign**: the corner stops floating over content. Narrow screens →
+its actions live in the bottom navigation (labelled, good, protect it). Wide screens → the header. No
+obstacle sampling, no lifting, no per-pass geometry, no reserve padding, and no coverage threshold —
+because the threshold is the thing that cannot work. Keep from V1: the `rectMs` improvement and the
+write-before-read removal, both real.
+
+## CYCLE 7 — dispatched, run `wf_210e8a1a-07d`, script `.agents/archon/cycle7.workflow.js`
+
+First cycle authored under the Director's standing constitution and the amended `.agents/AGENTS.md §7a`.
+
+**§7a compliance — the lead was violating it.** «One writer per gate»: `npm run typecheck`,
+`npm run build`, migrations and seeds all touch shared state (`dist/`, `apps/web/tsconfig.tsbuildinfo`,
+generated `packages/shared/dist/`, the single PostgreSQL on 5432). For six cycles three-to-four agents
+per wave ran `npm run typecheck -w @dental/web` concurrently — and that command **writes**
+`tsconfig.tsbuildinfo`. Likely source of the "errors in files I do not own" noise I had been attributing
+to foreign edits. Corrected: agents run only their own single test file via
+`node --import tsx --test`; the lead owns typecheck/build/suite/migrations and runs them serially; a
+packet needing a build stops and records a blocker instead of taking the gate.
+Also added per §7a: role, why-delegated, owned scope, **forbidden scope**, evidence standard, and the
+explicit statement that subagent output is evidence and not authority.
+And a defect in the lead's own prompt assembly: the reused preamble had accumulated cycle-5 corrections,
+so the prompt simultaneously said "build freely" and "the build is not yours", plus a dead reference to
+six `AnamnesisField` errors that no longer exist. An explicit supersession list now heads the block —
+contradictory instructions in one prompt are a direct cause of an agent doing the wrong thing.
+
+| # | Packet | Why |
+|---|---|---|
+| W1 | Hollow query modules, honest census via ast-grep | The lead's own "45 of 50" was a regex artefact; the method is the deliverable |
+| W2 | `clinicMode` must really hide things | Default is `network_clinic` — a solo dentist gets a network-clinic surface |
+| W3 | Five unreachable views, 4,689 lines | `App.tsx` free for the first time; route the real ones, delete the facades |
+| W4 | Human error/empty/loading text | §3; the product already contains the standard to copy |
+| W5 | Capture pipeline asserts `data-theme` | A light-theme plate was byte-identical to the night one |
+| W6 | One monolith, really split | Every extracted component imported and used in the same commit, or it is an orphan |
