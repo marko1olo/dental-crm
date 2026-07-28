@@ -1,15 +1,9 @@
-import {
-	Calendar,
-	DollarSign,
-	FlaskConical,
-	Link,
-	Plus,
-	Trash2,
-} from "lucide-react";
+import { Calendar, FlaskConical, Link, Plus, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { showToast } from "../GlobalToast";
 
@@ -202,6 +196,30 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 	const handleCreateOrder = async (e: React.FormEvent) => {
 		e.preventDefault();
+		/*
+			ЦЕНА РАБОТЫ СЧИТАЛАСЬ ЦЕЛЫМИ РУБЛЯМИ И МОЛЧА ТЕРЯЛАСЬ.
+
+			ЧТО БЫЛО СЛОМАНО. Сумма уходила на сервер как parseInt(priceRub):
+			«12500,50» превращалось в 12500 (parseInt читает до запятой), «12 500»
+			с пробелом — в 12, а «двенадцать тысяч» — в NaN, то есть в null.
+
+			ЧТО ВИДЕЛ ВРАЧ. Всплывало «Заказ успешно создан», и наряд действительно
+			создавался — но с ценой, которой врач не вводил, или совсем без цены.
+			Разбирается это через месяц при сверке с лабораторией.
+
+			ЧТО СТАЛО. Разбор суммы один на всё приложение —
+			normalizeRubAmountInput: он понимает пробелы и запятую и держит копейки.
+			Непонятная сумма больше не превращается в null втихую: заказ не уходит,
+			а экран говорит, что поправить.
+		*/
+		const priceRubValue = normalizeRubAmountInput(priceRub);
+		if (priceRub.trim() && priceRubValue === null) {
+			showToast(
+				"Стоимость непонятна. Впишите сумму цифрами, например 12500 или 12500,50 — и создайте наряд заново.",
+				"error",
+			);
+			return;
+		}
 		try {
 			const res = await fetch("/api/clinical/lab-orders", {
 				method: "POST",
@@ -216,7 +234,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					colorVita,
 					dueDate: dueDate || null,
 					clinicalNotes,
-					priceRub: priceRub ? parseInt(priceRub) : null,
+					priceRub: priceRubValue,
 				}),
 			});
 
@@ -401,10 +419,18 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Стоимость (₽)</label>
+						<label className="text-xs text-slate-400">Стоимость, ₽</label>
+						{/*
+							Было type="number". Такое поле в русском браузере не принимает
+							запятую: «12500,50» стирается в пустоту прямо под рукой, и наряд
+							уходит без цены. Обычное текстовое поле с цифровой клавиатурой на
+							телефоне принимает и «12 500», и «12500,50» — разбирает их
+							normalizeRubAmountInput при отправке.
+						*/}
 						<input
-							type="number"
-							placeholder="0"
+							type="text"
+							inputMode="decimal"
+							placeholder="например 12500"
 							value={priceRub}
 							onChange={(e) => setPriceRub(e.target.value)}
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
@@ -549,12 +575,24 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 								</div>
 
 								<div className="flex items-center gap-2">
-									{order.priceRub && (
-										<span className="font-semibold text-teal-400 flex items-center gap-0.5 mr-2">
-											<DollarSign className="w-3.5 h-3.5" />
-											{order.priceRub.toLocaleString()} ₽
+									{/*
+										ДЕНЬГИ ТОЛЬКО ЧЕРЕЗ money(). Было
+										`order.priceRub.toLocaleString() ₽` — это формат браузера,
+										а не клиники: копейки терялись (12500.5 печаталось как
+										«12 500,5»), а на английской раскладке системы выходило
+										«12,500 ₽». И знак доллара рядом с рублями стоял тоже:
+										иконка DollarSign убрана, money() сам ставит ₽.
+
+										Условие было `order.priceRub && (...)`: при цене 0 такое
+										выражение возвращает 0, и React честно печатал в строке
+										одинокий «0» без подписи. Теперь ноль — это «0 ₽», а
+										«цены нет» (null) по-прежнему не показывается вовсе.
+									*/}
+									{order.priceRub !== null && order.priceRub !== undefined ? (
+										<span className="font-semibold text-teal-400 mr-2">
+											{money(order.priceRub)}
 										</span>
-									)}
+									) : null}
 									<select
 										value={order.status}
 										onChange={(e) =>
