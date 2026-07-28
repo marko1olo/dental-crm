@@ -502,3 +502,66 @@ edited away.
 
 Every packet must report `measurements` as a first-class field this cycle — a performance or census
 claim without a reproducible number is an opinion.
+
+## CYCLE 5 CLOSED — 12/12, no deaths. U1 and U6 SOUND_WITH_NITS, four returned NEEDS_REWORK.
+
+Run `wf_4b457d07-e96`. Both gates green afterwards (api 0, web 0 — the second author landed the
+`AnamnesisField` import, so that pre-existing red is gone).
+
+### CORRECTION TO THE RECORD — a commit in this repo describes a defect that does not reproduce
+Commit `1f65d674b` claims «подписание приёма с пустой полки увеличивало остаток материала» and that a
+0-deduction rule became a deduction of 1. **The U5 reviewer proved neither reproduces at
+`1f65d674b^`:** the empty shelf returned `400 TransactionFailed` with stock 0, and the 0-rule deducted 0.
+
+**The real defect was different and worse:** a **negative `quantity_to_deduct` raised stock from 10 to
+16** and wrote a positive `auto_deduct` row, and a 0-rule wrote a junk 0-quantity movement row.
+
+**The lead relayed that false subject line to the user as fact**, having read the commit subject without
+verifying it — the exact failure this campaign exists to remove, produced by me rather than caught by
+me. History is not being rewritten (the commit is pushed and a second author commits continuously); the
+correction is recorded here, where the claim is read, and packet V2 carries it into the packet handoff.
+
+### What the reviewers proved this cycle
+- **U1 (SOUND_WITH_NITS) — the strongest review of the campaign.** The reviewer rebuilt the pre-fix
+  state in an out-of-repo scratch tree with only `identity.ts` reverted and **reproduced the original
+  defect end-to-end** (tests 6, pass 4, fail 2, true exit 1) — proving the committed test can actually
+  go red. It then attacked with a forged-secret token, an expired token, a cross-tenant header, a
+  ghost organization UUID absent from `organizations`, a padded header value, a different header case,
+  and a raw socket using a lowercase verb to dodge method uppercasing. All refused.
+  It also **disproved a dossier claim**: `apply-dev-env.ps1` does not "reopen the hole in one run" — the
+  script has a `MissingEndCurlyBrace` ParserError and never executed; all three `.env` md5s were
+  byte-identical before and after.
+- **U2 built the behavioural gate and the lead verified it personally:** 481 route-table entries, 479
+  probed, 186 mutating, 450 challenged, 553 ms, exit 0 — replacing a hardcoded table of 14 files with
+  expected identifier counts. It declares its own blind spots (WebSocket upgrade points) rather than
+  hiding them, and it immediately found a new class: **two routes validate the request body before
+  checking rights** (`auth.ts:278-281` vs `283-292`; `auth.ts:331-337` vs `339-348`).
+- **U4 closed the FAB overlap and introduced a regression doing it:** the corner reserve is applied
+  twice at ≤840 px, so **~304 px of an 844 px phone viewport becomes reserve**, and the layout pass runs
+  every scroll frame forcing 2 full layouts plus 5 hit tests. The lead reported that packet as a clean
+  win before the review landed — premature, and corrected here.
+
+### Lead work this cycle
+- `71bbbb9e3` — the boot security banner listed «код портала по умолчанию 0000» **unconditionally**
+  while the live server answers 401 to that code. An operator reads that line to understand the risk of
+  their deployment and got a list that did not match the server. Replaced with the one real remaining
+  relaxation, with its exact condition (`portal.ts:270`, `developerLogFallback`). Verified by rebuild:
+  the banner now prints the truth, and build churn in git is 0.
+- Found via that same banner that **a stale `dist` had hidden three separate defects** this campaign:
+  a smoke green against a pre-fix build, this banner, and a route fix that never shipped through
+  `npm start`. Cycle 6 packet V4 turns that into a dist-freshness gate.
+
+## CYCLE 6 — dispatched, run `wf_196d8593-267`, script `.agents/archon/cycle6.workflow.js`
+
+| # | Packet | Why |
+|---|---|---|
+| V1 | Corner reserve applied twice; 304 px of 844 px lost | The cure took a third of the phone; also a per-scroll-frame layout pass |
+| V2 | Correct the false inventory defect record | A commit describes a defect that does not reproduce; the true one is a negative deduction raising stock |
+| V3 | CSS-token guard misreads its own input | `.foo--bar:hover` read as a declaration; commented-out mentions silence real offenders |
+| V4 | Harden the 479-route gate | **Add a dist-freshness gate** — a stale dist has hidden three defects; plus fail on level≥40 log records |
+| V5 | Authorise before validating | Anonymous callers learn whether an employee exists and the exact PIN policy |
+| V6 | 45 % dead width at 720×1100 | Half the width renders nothing at the tightest breakpoint |
+
+**Assembly note for future cycles:** cycle 6 failed to launch once with
+`Identifier 'REWORK_RULES' has already been declared` — the LAW preamble inherited from cycle 4 already
+carried that constant. When reusing the preamble, check for identifier collisions before launching.
