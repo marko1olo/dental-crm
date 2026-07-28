@@ -10,6 +10,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { countLabel } from "../../lib/russianPlural";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { localDayKey, summarizeCashDay } from "./cashDaySummary";
 
@@ -53,14 +54,22 @@ const METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
 	other: Coins,
 };
 
-/** Русское склонение: 1 оплата, 2 оплаты, 5 оплат. */
+/**
+ * «1 оплата, 2 оплаты, 5 оплат».
+ *
+ * БЫЛО: здесь лежала своя копия правила согласования — те же ветки на 11–14 и на
+ * последнюю цифру, переписанные заново. Общий countLabel (lib/russianPlural.ts)
+ * прямо запрещает такие копии: правило согласования одно, а второй его владелец
+ * — это два разных ответа на один вопрос через полгода. Копия к тому же была
+ * тише: ошибись в ней кто-нибудь, и сверка кассы писала бы «11 оплата», причём
+ * общий модуль и его проверки остались бы зелёными.
+ *
+ * Здесь остаются только сами слова — они у каждого счётного места свои.
+ * Импортировать общий модуль безопасно: он листовой, без единого импорта, и
+ * стилей за собой не тянет.
+ */
 function paymentsCountLabel(count: number): string {
-	const lastTwo = count % 100;
-	const last = count % 10;
-	if (lastTwo >= 11 && lastTwo <= 14) return `${count} оплат`;
-	if (last === 1) return `${count} оплата`;
-	if (last >= 2 && last <= 4) return `${count} оплаты`;
-	return `${count} оплат`;
+	return countLabel(count, "оплата", "оплаты", "оплат");
 }
 
 export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProps) {
