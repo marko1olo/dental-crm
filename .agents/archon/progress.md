@@ -1132,3 +1132,47 @@ about organizations. Its critic ran the recon's OWN probe script verbatim and go
 So this is not carelessness, it is a trap in the data: **this database contains rows that look like clinics
 and are test fixtures.** The only defence is to exclude the fixture prefixes explicitly and to state which
 ids were excluded. That requirement is now written into the cycle-13 law.
+
+## CYCLE 14 — THE SMALL-UNIT HYPOTHESIS FAILED, BUT THE AGENT COMMITTED ANYWAY
+
+**The hypothesis:** six agents in a row had died without committing, so the lead blamed the ~15 KB preamble
+for eating their credit window and rebuilt the cycle script at 14 KB — a 2 KB law, one packet, one file,
+with an explicit «commit as soon as it compiles».
+
+**The hypothesis was wrong.** The 14 KB single-packet run died too: 43 tool uses, 92,639 tokens, 8.5
+minutes, `agents_done: 0`. Brief size was not the binding constraint — the credit pool is simply dry.
+Recorded so nobody re-runs this experiment expecting a different answer.
+
+**But the durability contract worked, and the LEAD misread it.** The workflow reported
+`agents_done: 0` and «failed: Credit balance is too low», and the lead relayed that as «no commit» to the
+Director. Then it measured git: commit `d0c0d196d` «fix(документы): отказ по деньгам печатал
+900.1299999999999 вместо 900.13» is in history, and **zero raw money interpolations remain at HEAD.** The
+agent finished the work, committed it, and died before returning a result.
+
+**`agents_done: 0` means the agent returned no RESULT. It does not mean the agent did no WORK.** That is the
+eighth wrong claim the lead has made tonight, and it is the same class as the other seven: trusting a status
+field or a remembered number instead of measuring the repository. **Standing rule: after any wave, the
+verdict comes from `git log` and a grep at HEAD, never from the workflow's own summary.**
+
+### THE LEAD REVIEWED THE COMMIT ITSELF, SINCE ITS REVIEWER NEVER RAN
+- **No comparison was touched** — the diff contains no change to `!==`, `===` or `moneyRubEquals`. That was
+  the REVERT-grade condition and it holds. The comparisons still compare integer kopecks with no epsilon.
+- **`строка ${index + 1}` is still raw**, exactly as ordered: a line number is not money.
+- **No `руб. ₽` double unit** — it used `kopecksToNumericString`, not `formatKopecksRu`.
+- **Attribution clean** — `git log -1 --format=%(trailers)` is empty.
+- **The defect is genuinely fixed**, verified by the lead against the built shared module:
+  `1500.5 → «1500.50»` and the known drifting sum `900.1299999999999 → «900.13»`.
+
+### DEBT THE BRIEF DID NOT ANTICIPATE, FOUND BY THE LEAD AFTER THE FACT
+`parseKopecks` **throws** on a non-finite number: `NaN` and `Infinity` both raise «Денежное значение не
+является числом». Every one of these 11 call sites sits inside a REJECTION-MESSAGE builder, so a non-finite
+value would convert a graceful HTTP 409 («сумма не совпадает») into an unhandled 500 — the clinic would get
+no explanation at all instead of a wrong number. Measured: `null` and `undefined` are safe (both yield
+«0.00»); only `NaN` and `Infinity` throw.
+
+**Not fixed, and the reason is stated rather than hidden.** Reachability is unproven: most of these values
+arrive through zod-validated payloads, but `facts.plannedAmountRub` and `facts.paidAmountRub` are summed
+server-side from database rows and are not schema-checked. Closing it properly means a non-throwing
+`moneyRubText()` helper beside the existing `moneyRubEquals` — one owner, delegating to the shared module,
+and it would also shorten eleven very long lines. That is a bounded packet, not a lead one-liner, and it is
+recorded here rather than left to be rediscovered.
