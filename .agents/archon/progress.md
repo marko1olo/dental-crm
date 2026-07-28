@@ -696,3 +696,29 @@ contradictory instructions in one prompt are a direct cause of an agent doing th
 | W4 | Human error/empty/loading text | §3; the product already contains the standard to copy |
 | W5 | Capture pipeline asserts `data-theme` | A light-theme plate was byte-identical to the night one |
 | W6 | One monolith, really split | Every extracted component imported and used in the same commit, or it is an orphan |
+
+## INCIDENT — the lead contaminated a commit a THIRD time, with the rule he wrote himself
+
+`a457fb49f` was meant to carry two paths: the deletion of
+`apps/web/src/components/schedule/ExternalScheduleActionLogsWidget.tsx` and its unmount from
+`ScheduleView.tsx`. It also carries **the deletion of
+`apps/web/src/components/documents/NdflTaxCalculatorsWidget.tsx`**, which was sitting staged in the
+shared index from another author.
+
+**Cause: I ran `git commit -F <msg>` without `-- <paths>`.** I authored the rule that forbids exactly
+this — it is in every cycle script as «ALWAYS COMMIT WITH AN EXPLICIT PATHSPEC» — and I omitted it.
+This is the third time I personally have done it (after `8c87dcd93` and the `dist` untracking attempt).
+
+**Damage: bounded, and HEAD is NOT broken.** `git grep -n "NdflTaxCalculatorsWidget" HEAD` returns no
+live import — only prose in `apps/api/src/tests/webCallsExistingRoutes.test.ts:57,257`, where the other
+author documents that they deleted the widget «вместе с обещанием». So the deletion was intended by its
+author; I committed it early, under a message about a different widget. Their matching test edit is
+still uncommitted, so their change is now half-landed. The web gate was green before and after
+(`npm run typecheck -w @dental/web` → 0 errors; the worktree already lacked the file when I ran it).
+
+**Not amended:** the commit is pushed and a second author commits continuously. Recorded here instead.
+
+**Procedural fix, on me:** printing `git diff --cached --name-only` in the SAME command as the commit is
+useless — I saw the contamination in the output only after it had happened. From now on the sequence is
+three separate steps: stage → inspect the staged list → commit **with a pathspec**. The pathspec alone
+would have prevented it regardless of what else was in the index.
