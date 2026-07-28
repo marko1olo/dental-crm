@@ -17,6 +17,7 @@ import {
 	type PanelSubject,
 	panelStateText,
 } from "../../lib/panelStateText";
+import { countLabel } from "../../lib/russianPlural";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -591,14 +592,39 @@ export const OdontogramModule = ({
 			});
 
 			if (!res.ok) {
+				/*
+				 * БЫЛО: «Ошибка сохранения одонтограммы. Изменения отменены.» —
+				 * жаргон вместо русского названия, ни причины, ни следующего шага, а
+				 * код ответа выбрасывался. Медсестре с истёкшим доступом (403) и врачу
+				 * при сбое сервера (500) нужны разные действия, и главное — человек
+				 * должен понять, ЧТО именно не сохранилось: отметка на схеме
+				 * откатилась, и он вправе думать, что просто промахнулся по зубу.
+				 */
+				const rawBody = await res.text();
+				console.error(`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`);
 				setTeethData(previousTeethData);
-				showToast("Ошибка сохранения одонтограммы. Изменения отменены.", "error");
+				showToast(
+					`${actionFailureToast(
+						`Отметка «${TOOTH_STATE_LABELS[state]}» на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не сохранена`,
+						res.status,
+					)} На схеме вернулось прежнее состояние.`,
+					"error",
+					15000,
+				);
 				return;
 			}
 		} catch (err) {
-			console.error("[Odontogram Save Batch Error]:", err);
+			console.error("[tooth states batch] запрос не выполнен", err);
 			setTeethData(previousTeethData);
-			showToast("Сетевой сбой при сохранении зубной формулы. Изменения отменены.", "error");
+			showToast(
+				`${actionFailureToast(
+					`Отметка «${TOOTH_STATE_LABELS[state]}» на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не сохранена`,
+					// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+					null,
+				)} На схеме вернулось прежнее состояние.`,
+				"error",
+				15000,
+			);
 			return;
 		}
 
