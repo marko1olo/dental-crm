@@ -212,6 +212,30 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	// Номер запроса вместо флага cancelled: тот же счётчик защищает и повторную
 	// загрузку по кнопке, и обновление после списания, а не только первый показ.
 	const requestGenerationRef = useRef(0);
+	/*
+	 * ЧЕЙ КОШЕЛЁК СЕЙЧАС НА ЭКРАНЕ.
+	 *
+	 * Одного счётчика запросов не хватало, и вот почему. Счётчик задаёт только
+	 * ПОРЯДОК: применяется ответ на самый последний запрос. А самый последний
+	 * запрос мог оказаться запросом по ПРЕЖНЕМУ пациенту. Обновление после
+	 * успешного списания вызывает loadFamily из того замыкания, в котором нажали
+	 * кнопку, — то есть с прежним patientId; номер поколения такой запрос берёт в
+	 * момент вызова и потому становится «самым свежим».
+	 *
+	 * Что из этого выходило. Администратор нажимал «Списать с баланса» у Иванова,
+	 * связь медленная, и не дожидаясь ответа переключался на Петрова. Ответ по
+	 * списанию приходил, обновление уходило по ИВАНОВУ и перебивало уже начатую
+	 * загрузку Петрова. На экране Петрова оказывался баланс семьи Иванова —
+	 * чужие деньги как свои, — и следующее списание кассир считал по этому
+	 * балансу. Подпись «Оплата за:» при этом молча исчезала (Петрова нет в списке
+	 * членов чужой семьи), но объяснения этому на экране не было.
+	 *
+	 * Поэтому ответ применяется только если он про того пациента, который на
+	 * экране сейчас. Проверка добавлена внутрь isStale, а не отдельной ветвью:
+	 * isStale уже стоит перед КАЖДЫМ применением ответа, и новое условие
+	 * автоматически действует во всех этих местах, включая ветку отказа.
+	 */
+	const selectedPatientIdRef = useRef(patientId);
 
 	/**
 	 * Одна загрузка на все случаи: первый показ, кнопка «Повторить» и обновление
@@ -231,7 +255,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const loadFamily = useCallback(async () => {
 		const generation = requestGenerationRef.current + 1;
 		requestGenerationRef.current = generation;
-		const isStale = () => requestGenerationRef.current !== generation;
+		// Устарел не только тот ответ, поверх которого уже пошёл новый запрос, но и
+		// любой ответ про пациента, которого на экране больше нет.
+		const isStale = () =>
+			requestGenerationRef.current !== generation ||
+			selectedPatientIdRef.current !== patientId;
 		setIsLoading(true);
 		try {
 			const res = await fetch(`/api/finance/family/patient/${patientId}`, {
@@ -260,6 +288,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	}, [patientId]);
 
 	useEffect(() => {
+		// Кто на экране — записывается ДО начала загрузки: на это значение смотрит
+		// isStale, решая, можно ли применить пришедший ответ.
+		selectedPatientIdRef.current = patientId;
 		// БЫЛО: без защиты от гонки. Ответ по пациенту А мог прийти позже ответа
 		// по Б, и списание уходило в семью А со ссылкой на пациента Б.
 		setFamily(null);
@@ -280,7 +311,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// Ответ по прежнему пациенту применять уже нельзя.
 			requestGenerationRef.current += 1;
 		};
-	}, [isPatientDatabaseId, loadFamily]);
+	}, [isPatientDatabaseId, loadFamily, patientId]);
 
 	// Sync balance with WS
 	const wsUrl = (() => {
