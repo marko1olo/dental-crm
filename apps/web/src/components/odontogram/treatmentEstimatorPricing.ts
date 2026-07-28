@@ -167,21 +167,49 @@ export function estimatorRulesForTooth(
 
 /** Почему у строки сметы нет цены. */
 export type EstimatorPriceIssueKind =
-	/** Прайс клиники пуст целиком. */
+	/** Прайс клиники пуст целиком — в нём нет ни одной услуги. */
 	| "catalog_empty"
+	/**
+	 * Подходящая услуга в прайсе ЕСТЬ, но клиника её выключила.
+	 *
+	 * Отдельная причина, а не «нет в прайсе»: действия у них разные. «Нет» лечится
+	 * добавлением услуги, а выключенную услугу надо ВКЛЮЧИТЬ — и совет «добавьте
+	 * её» заставил бы завести в прайсе второй экземпляр того, что там уже есть.
+	 */
+	| "service_disabled"
 	/** В прайсе нет подходящей услуги. */
 	| "not_in_catalog"
 	/** Подходящих услуг несколько — выбирает врач, не программа. */
 	| "ambiguous"
 	/** Услуга найдена, но цена у неё не указана или испорчена. */
-	| "price_missing";
+	| "price_missing"
+	/**
+	 * В строке ЕСТЬ сумма, но услуги прайса за ней нет.
+	 *
+	 * Не то же самое, что «нет цены», и раньше называлось именно так: строка с
+	 * пустым `priceId` попадала в отказ сохранения с фразой «лечение без цены из
+	 * вашего прайса» — при том что сумма стояла у неё на экране. Врач читал про
+	 * отсутствующую цену и видел цену.
+	 *
+	 * Состояние приходит с сервера: apps/api/src/routes/odontogram.ts:135-143
+	 * (`splitStoredPriceId`) отдаёт пустой `priceId`, если сохранённая склейка
+	 * начинается с «::», а схема записи там же (:94) — `z.string().trim().min(1)`,
+	 * то есть `priceId` из двух двоеточий она принимает.
+	 */
+	| "service_unlinked";
 
 export interface EstimatorPriceIssue {
 	readonly kind: EstimatorPriceIssueKind;
 	/** Название лечения человеческими словами: «лечение кариеса». */
 	readonly humanName: string;
-	/** Сколько услуг прайса подошло — для «ambiguous». */
+	/** Сколько услуг прайса подошло — для «ambiguous» и «service_disabled». */
 	readonly matches: number;
+	/**
+	 * Как услуга называется в самом прайсе. Заполняется, когда программа знает
+	 * ровно одну такую услугу, — чтобы человек нашёл в прайсе именно её строку, а
+	 * не искал по описанию лечения.
+	 */
+	readonly catalogTitle?: string;
 }
 
 /**
@@ -244,20 +272,37 @@ function catalogPriceRub(service: PlanPriceCatalogItem): number | null {
 /**
  * Услуга прайса под правило — либо ровно одна, либо ни одной с названной
  * причиной. «Любая из раздела» больше не выбирается никогда.
+ *
+ * ПОЧЕМУ СОВПАДЕНИЯ ИЩУТСЯ ПО ВСЕМУ ПРАЙСУ, А ФИЛЬТР `active` ПРИМЕНЯЕТСЯ ПОСЛЕ.
+ *
+ * Здесь стояло `catalog.filter(s => s.active)` ПЕРЕД поиском, и выключенная
+ * услуга становилась невидимой совсем. Из этого выходили две неправды сразу.
+ *
+ * Первая: клиника, выключившая прайс целиком (так выглядит прайс, который ещё
+ * готовят к открытию), получала причину «прайс пуст» и совет «заполните прайс» —
+ * при полном прайсе. Вторая, хуже: если нужная услуга выключена, а остальные
+ * включены, причиной становилось «такой услуги нет в вашем прайсе. Добавьте
+ * её» — и человек по этому совету завёл бы ВТОРУЮ такую же услугу вместо того,
+ * чтобы включить имеющуюся.
+ *
+ * Поэтому совпадения ищутся по всему прайсу, а разделение идёт потом: в смету
+ * выключенная услуга по-прежнему не попадает (клиника её не оказывает, и цену её
+ * пациенту называть нельзя), но сказано о ней ПРАВДУ.
  */
 export function resolveEstimatorService(
 	rule: EstimatorRule,
 	catalog: readonly PlanPriceCatalogItem[],
 ): EstimatorResolution {
-	// Выключенная услуга в смету не попадает: клиника её уже не оказывает.
-	const activeCatalog = catalog.filter((service) => service.active);
-	const matches = activeCatalog.filter((service) => {
+	const matched = catalog.filter((service) => {
 		if (service.category !== rule.match.category) return false;
 		const title = normalizeTitle(service.title);
 		return rule.match.keywords.some((keyword) =>
 			title.includes(normalizeTitle(keyword)),
 		);
 	});
+	// Выключенная услуга в смету не попадает: клиника её уже не оказывает.
+	const matches = matched.filter((service) => service.active);
+	const disabled = matched.filter((service) => !service.active);
 
 	const single = matches.length === 1 ? matches[0] : undefined;
 	if (single) {
@@ -273,8 +318,26 @@ export function resolveEstimatorService(
 							kind: "price_missing",
 							humanName: rule.match.humanName,
 							matches: 1,
+							catalogTitle: single.title,
 						}
 					: null,
+		};
+	}
+
+	// Подходящая услуга есть, но она выключена — включить, а не заводить вторую.
+	if (matches.length === 0 && disabled.length > 0) {
+		const onlyDisabled = disabled.length === 1 ? disabled[0] : undefined;
+		return {
+			serviceId: null,
+			serviceTitle: null,
+			priceRub: null,
+			category: null,
+			issue: {
+				kind: "service_disabled",
+				humanName: rule.match.humanName,
+				matches: disabled.length,
+				...(onlyDisabled ? { catalogTitle: onlyDisabled.title } : {}),
+			},
 		};
 	}
 
@@ -287,7 +350,10 @@ export function resolveEstimatorService(
 			kind:
 				matches.length > 1
 					? "ambiguous"
-					: activeCatalog.length === 0
+					: // «Пуст» — это про ВЕСЬ прайс, как и написано у самой причины.
+						// Раньше здесь стояла длина списка включённых услуг, и полный, но
+						// выключенный прайс объявлялся пустым.
+						catalog.length === 0
 						? "catalog_empty"
 						: "not_in_catalog",
 			humanName: rule.match.humanName,
@@ -499,10 +565,21 @@ export function planItemFromServer(raw: unknown): PlanItem | null {
 		discount: finiteOr(item.discount, 0),
 		phase: finiteOr(item.phase, 1),
 		...(typeof item.isAuto === "boolean" ? { isAuto: item.isAuto } : {}),
+		/*
+		 * Причина у строки с сервера ставится по ТОМУ, ЧЕГО НЕ ХВАТАЕТ ИМЕННО ЕЙ.
+		 *
+		 * Здесь стояла одна проверка на цену, и строка с суммой, но без позиции
+		 * прайса оставалась `issue: null` — то есть «всё в порядке». Дальше она
+		 * считалась в «Итого» как посчитанная, на экране не имела ни одной пометки,
+		 * и при этом попадала в отказ сохранения с текстом про отсутствующую цену.
+		 * Три места говорили о ней три разных вещи.
+		 */
 		issue:
 			price === null
 				? { kind: "price_missing", humanName: name, matches: 0 }
-				: null,
+				: priceId === null
+					? { kind: "service_unlinked", humanName: name, matches: 0 }
+					: null,
 	};
 }
 
@@ -706,6 +783,103 @@ export function estimatorTotals(
 	};
 }
 
+/** Как панель прочитала сохранённый план — те же три состояния, что в компоненте. */
+export type EstimatorPlanReadPhase = "loading" | "ready" | "failed";
+
+/**
+ * Что стоит в строке итога.
+ *
+ * `kind: "sum"` — сумму печатать МОЖНО. `kind: "instead"` — сумма не заявляется
+ * вовсе, и вместо неё стоит фраза. Разделение сделано типом, а не соглашением:
+ * иначе разметка снова сможет напечатать ноль там, где считать было нечего.
+ */
+export type EstimatorTotalView = {
+	/** Подпись слева от суммы. */
+	readonly caption: string;
+	/** Приписка под суммой. null — приписки нет. */
+	readonly note: string | null;
+} & (
+	| { readonly kind: "sum"; readonly payableKopecks: Kopecks }
+	| { readonly kind: "instead"; readonly instead: string }
+);
+
+/**
+ * Строка итога сметы.
+ *
+ * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО. Условие в разметке было `pricedRows === 0 &&
+ * incompleteRows > 0`, и оно закрывало ровно один случай — план из строк, ни у
+ * одной из которых нет цены. При ПУСТОМ наборе строк оба числа равны нулю,
+ * условие не срабатывало, и печаталось «Итого по плану: 0 ₽».
+ *
+ * Хуже того, строка итога стоит в главном возврате компонента, ни за одним
+ * условием чтения, а набор строк обнуляется на каждую загрузку. Поэтому то же
+ * «Итого по плану: 0 ₽» печаталось, ПОКА план читается, и — главное — когда план
+ * прочитать НЕ УДАЛОСЬ: панель прямо над этим местом сообщала «Позиции плана
+ * лечения не загружены», а под ней стоял итог, утверждающий сумму по плану,
+ * которого никто не видел. Ноль вместо неизвестной величины запрещён
+ * (.agents/AGENTS.md, анти-хардкод), и здесь он ещё и противоречил соседней
+ * строке экрана.
+ *
+ * Правило теперь одно: сумма заявляется ТОЛЬКО когда план прочитан и хотя бы
+ * одна строка посчитана. Во всех прочих состояниях на месте суммы стоит фраза о
+ * том, что происходит.
+ *
+ * У отказа чтения приписки нет намеренно: причина и следующий шаг уже написаны в
+ * панели отказа выше, а звать «Повторить» отсюда нельзя — эту кнопку рисует
+ * PanelLoadFailure только при некоторых кодах ответа (:64), и на 404 или 422 её
+ * там нет. Кнопка, обещанная текстом и отсутствующая на экране, — такая же
+ * неправда, как выдуманная цена.
+ */
+export function estimatorTotalView(
+	totals: EstimatorTotals,
+	rowCount: number,
+	phase: EstimatorPlanReadPhase,
+): EstimatorTotalView {
+	if (phase === "loading") {
+		return {
+			kind: "instead",
+			caption: "Итого по плану:",
+			instead: "План ещё читается",
+			note: null,
+		};
+	}
+	if (phase === "failed") {
+		return {
+			kind: "instead",
+			caption: "Итого по плану:",
+			instead: "План не прочитан",
+			note: null,
+		};
+	}
+	if (totals.pricedRows === 0) {
+		return rowCount === 0
+			? {
+					kind: "instead",
+					caption: "Итого по плану:",
+					instead: "Пока ничего не добавлено",
+					note: null,
+				}
+			: {
+					kind: "instead",
+					caption: "Итого по плану:",
+					instead: "Считать пока нечего",
+					note: "Ни у одной строки плана нет цены из вашего прайса",
+				};
+	}
+	return {
+		kind: "sum",
+		caption:
+			totals.incompleteRows > 0
+				? "Итого, без непосчитанного:"
+				: "Итого по плану:",
+		payableKopecks: totals.payableKopecks,
+		note:
+			totals.incompleteRows > 0
+				? "Итог неполный: в плане есть лечение без цены из прайса"
+				: null,
+	};
+}
+
 /* ──────────────────── ЧЕЛОВЕЧЕСКИЕ ОБЪЯСНЕНИЯ ──────────────────── */
 
 /** Куда идти за прайсом. Название раздела — как в интерфейсе (AppHelpers). */
@@ -785,6 +959,21 @@ export function estimatorIssueMessages(items: readonly PlanItem[]): string[] {
 					`«${issue.humanName}»${where}: такой услуги нет в вашем прайсе. Добавьте её в ${PRICE_LIST_PLACE} — и в смете появится ваша цена. Пока цены нет, строку сохранить нельзя, но зуб и лечение она показывает верно.`,
 				);
 				break;
+			case "service_disabled":
+				/*
+				 * Выключенная услуга — отдельная новость, и совет у неё обратный.
+				 *
+				 * До этого такая строка объявлялась либо «прайс пуст», либо «такой
+				 * услуги нет — добавьте её»: по второму совету человек завёл бы в
+				 * прайсе ВТОРУЮ такую же услугу, а первый советовал заполнять
+				 * заполненный прайс.
+				 */
+				messages.push(
+					issue.catalogTitle
+						? `«${issue.humanName}»${where}: такая услуга в вашем прайсе есть — «${issue.catalogTitle}», — но она выключена, поэтому в смету не берётся. Включите её в ${PRICE_LIST_PLACE}, и появится ваша цена. Заводить вторую такую же услугу не нужно.`
+						: `«${issue.humanName}»${where}: подходящие услуги в вашем прайсе есть (${issue.matches}), но все выключены, поэтому в смету не берутся. Включите нужную в ${PRICE_LIST_PLACE}, и появится ваша цена.`,
+				);
+				break;
 			case "ambiguous":
 				messages.push(
 					`«${issue.humanName}»${where}: в вашем прайсе несколько подходящих услуг (${issue.matches}). Какую из них поставить пациенту — решает врач, а не программа. Уточните названия в ${PRICE_LIST_PLACE}, чтобы под это лечение подходила ровно одна услуга.`,
@@ -795,6 +984,29 @@ export function estimatorIssueMessages(items: readonly PlanItem[]): string[] {
 					`«${issue.humanName}»${where}: у услуги в прайсе не указана цена. Впишите её в ${PRICE_LIST_PLACE} — считать смету по неизвестной цене программа не станет.`,
 				);
 				break;
+			case "service_unlinked":
+				messages.push(
+					`«${issue.humanName}»${where}: сумма в строке сохранена, а услуги прайса за ней нет — сервер такую строку не примет. Уберите строку корзиной и отметьте зуб на схеме заново: смета подставит услугу из вашего прайса вместе с ценой.`,
+				);
+				break;
+			case "catalog_empty":
+				// Пустой прайс — одна фраза на весь план, она собрана выше по
+				// emptyCatalogNeeds. Сюда такая строка не попадает.
+				break;
+			default: {
+				/*
+				 * Новая причина обязана получить фразу.
+				 *
+				 * Ровно этого здесь не было, и цена ошибки уже известна: причина
+				 * «услуга выключена» появилась в типе без ветки в этом switch, и
+				 * строка молча оставалась БЕЗ ОБЪЯСНЕНИЯ — а вместе с ней исчезал и
+				 * весь блок объяснений, потому что разметка рисует его по
+				 * непустому списку. Теперь такую причину не пропустит компилятор.
+				 */
+				const unhandled: never = issue.kind;
+				void unhandled;
+				break;
+			}
 		}
 	}
 	return messages;
@@ -804,6 +1016,80 @@ export function estimatorIssueMessages(items: readonly PlanItem[]): string[] {
 export interface EstimatorSaveBlock {
 	rows: PlanItem[];
 	message: string;
+}
+
+/** Чего строке не хватает, чтобы сервер её принял. */
+export type EstimatorRowBlockReason =
+	/** Нет читаемой цены. */
+	| "no_price"
+	/** Цена есть, а позиции прайса за ней нет. */
+	| "no_service";
+
+/**
+ * Почему сервер не примет ИМЕННО эту строку. null — примет.
+ *
+ * ОДИН владелец правила «сервер возьмёт строку». Оно требуется в трёх местах:
+ * запретить сохранение, не собрать тело запроса и пометить строку на экране. До
+ * этого условие было выписано в двух из них по отдельности, и они уже разошлись
+ * в смысле: отказ сохранения объяснял ЛЮБУЮ незасчитанную строку отсутствием
+ * цены, хотя строка без позиции прайса цену показывать может.
+ *
+ * Порядок причин важен для текста: «нет цены» — беда более глубокая, и если
+ * нет ни цены, ни услуги, человеку надо говорить сначала про цену.
+ */
+export function estimatorRowBlock(
+	item: PlanItem,
+): EstimatorRowBlockReason | null {
+	if (item.price === null || !Number.isFinite(item.price) || item.price < 0) {
+		return "no_price";
+	}
+	if (!item.priceId) return "no_service";
+	return null;
+}
+
+/**
+ * Короткая пометка на строке сметы: почему её нельзя посчитать или сохранить.
+ * null — со строкой всё в порядке, и помечать её нечем.
+ *
+ * Зачем пометка отдельно от объяснений сверху: блок объяснений говорит про
+ * лечение вообще («коронки нет в прайсе»), а человек смотрит на строку и должен
+ * видеть, какая именно из четырёх строк мешает сохранить план. Строка с суммой,
+ * но без позиции прайса не имела на экране ни одного признака — она выглядела
+ * посчитанной и молча блокировала сохранение всего плана.
+ */
+export function estimatorRowMark(
+	item: PlanItem,
+	money: EstimatorRowMoney,
+): string | null {
+	if (!money.known) return rowIssueMark(item.issue);
+	return estimatorRowBlock(item) === "no_service" ? "нет услуги прайса" : null;
+}
+
+function rowIssueMark(issue: EstimatorPriceIssue | null | undefined): string {
+	// Причина названа своими словами: строка без услуги в прайсе и строка с
+	// испорченной суммой требуют от человека разных действий.
+	if (!issue) return "сумма в плане не читается";
+	switch (issue.kind) {
+		case "catalog_empty":
+			return "прайс ещё не заполнен";
+		case "service_disabled":
+			return "услуга выключена в прайсе";
+		case "not_in_catalog":
+			return "нет в вашем прайсе";
+		case "ambiguous":
+			return "подходит несколько услуг";
+		case "price_missing":
+			return "в прайсе не указана цена";
+		case "service_unlinked":
+			return "нет услуги прайса";
+		default: {
+			// Новую причину без пометки компилятор дальше не пропустит; в рантайме
+			// общая правда лучше пустого места рядом с ценой.
+			const unhandled: never = issue.kind;
+			void unhandled;
+			return "цены нет";
+		}
+	}
 }
 
 /**
@@ -818,30 +1104,54 @@ export interface EstimatorSaveBlock {
  * Выбрасывать такие строки молча тоже нельзя: человек нажал «Сохранить» и
  * получил бы план без части лечения, ничего об этом не узнав.
  */
-export function estimatorSaveBlock(
-	items: readonly PlanItem[],
-): EstimatorSaveBlock | null {
-	const rows = items.filter(
-		(item) =>
-			!item.priceId ||
-			item.price === null ||
-			!Number.isFinite(item.price) ||
-			item.price < 0,
-	);
-	if (rows.length === 0) return null;
-
+function namedRows(rows: readonly PlanItem[]): string {
 	const named = rows.map((row) => {
 		const label = row.issue?.humanName ?? row.name;
 		return row.toothNumber !== undefined
 			? `«${label}» (зуб ${row.toothNumber})`
 			: `«${label}»`;
 	});
-	const unique = [...new Set(named)];
+	return [...new Set(named)].join(", ");
+}
+
+export function estimatorSaveBlock(
+	items: readonly PlanItem[],
+): EstimatorSaveBlock | null {
+	/*
+	 * Строки разделены по ТОМУ, ЧЕГО ИМ НЕ ХВАТАЕТ, и действия названы разные.
+	 *
+	 * Прежде здесь был один список и одна фраза «лечение без цены из вашего
+	 * прайса» на всех. Про строку с сохранённой суммой, но без позиции прайса это
+	 * была прямая неправда: сумма стояла у неё на экране, и совет «добавьте эти
+	 * услуги в прайс» ей не помогал — услуга-то в прайсе может быть, потеряна
+	 * связь строки с ней.
+	 */
+	const noPrice: PlanItem[] = [];
+	const noService: PlanItem[] = [];
+	for (const item of items) {
+		const reason = estimatorRowBlock(item);
+		if (reason === "no_price") noPrice.push(item);
+		else if (reason === "no_service") noService.push(item);
+	}
+	const rows = [...noPrice, ...noService];
+	if (rows.length === 0) return null;
+
+	const parts: string[] = [];
+	if (noPrice.length > 0) {
+		parts.push(
+			`в смете есть лечение без цены из вашего прайса — ${namedRows(noPrice)}. Добавьте эти услуги в ${PRICE_LIST_PLACE} и сохраните снова`,
+		);
+	}
+	if (noService.length > 0) {
+		parts.push(
+			`у строк есть сумма, но нет услуги прайса — ${namedRows(noService)}. Уберите их корзиной и отметьте зуб на схеме заново: смета подставит услугу из вашего прайса вместе с ценой`,
+		);
+	}
 	const message =
-		`План не сохранён: в смете есть лечение без цены из вашего прайса — ${unique.join(", ")}. ` +
+		`План не сохранён: ${parts.join(". Кроме того, ")}. ` +
 		`Сервер не принимает строку сметы без услуги прайса, поэтому отказ пришёл бы на весь план. ` +
-		`Добавьте эти услуги в ${PRICE_LIST_PLACE} и сохраните снова — или уберите строку корзиной, чтобы сохранить остальное. Набранные позиции остались на экране.`;
-	return { rows: [...rows], message };
+		`Можно и просто убрать спорную строку корзиной, чтобы сохранить остальное. Набранные позиции остались на экране.`;
+	return { rows, message };
 }
 
 /**
@@ -870,16 +1180,22 @@ export interface EstimatorItemForApi {
 }
 
 export function estimatorItemForApi(item: PlanItem): EstimatorItemForApi | null {
-	if (!item.priceId) return null;
-	if (item.price === null || !Number.isFinite(item.price) || item.price < 0) {
-		return null;
-	}
+	// Правило «сервер возьмёт строку» одно и живёт в estimatorRowBlock. Второй
+	// строкой не проверка, а сужение типов: в PlanItem и цена, и позиция прайса
+	// допускают null, и компилятор обязан это увидеть здесь, а не поверить.
+	if (estimatorRowBlock(item) !== null) return null;
+	const { priceId, price } = item;
+	if (priceId === null || price === null) return null;
 	return {
 		...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
-		priceId: item.priceId,
+		priceId,
 		name: item.name,
 		quantity: item.quantity,
-		price: item.price,
+		// Именно суженный `price`, а не `item.price`: проверка выше сузила локальную
+		// переменную из разбора, а обращение через `item` компилятор по-прежнему
+		// видит как `number | null`. Значение то же, но тип обязан это ВИДЕТЬ —
+		// иначе сужение написано и не работает.
+		price,
 		discount: item.discount,
 		phase: item.phase,
 		...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),

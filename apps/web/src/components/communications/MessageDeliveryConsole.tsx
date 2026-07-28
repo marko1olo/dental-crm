@@ -23,7 +23,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { countLabel } from "../../AppHelpers";
+import {
+	describeDispatchReport,
+	describeReminderReport,
+	failNotice,
+	formatMoment,
+	type DispatchReport,
+	type Notice,
+	type ReminderScheduleReport
+} from "./deliveryReportNotice.js";
 
 type ChannelCode = "sms" | "email" | "whatsapp" | "telegram" | "vk" | "max";
 
@@ -165,13 +173,6 @@ function timeToMinutes(value: string): number | null {
 	return hours * 60 + minutes;
 }
 
-function formatMoment(value: string | null): string {
-	if (!value) return "—";
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) return "—";
-	return parsed.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
-
 async function readJson<T>(response: Response): Promise<T> {
 	const payload = (await response.json().catch(() => null)) as unknown;
 	if (!response.ok) {
@@ -184,24 +185,13 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
-/**
- * ПОЧЕМУ РАЗДЕЛЕНО НА ВИДЫ. БЫЛО СЛОМАНО: и удача, и отказ писались в одно поле
- * `notice` и выводились одинаковой серой строкой с role="status". Администратор
- * нажимал «Отправить из очереди», сервер отвечал отказом, а на экране появлялась
- * такая же спокойная строка, как после успешной отправки, — «Сервер ответил
- * 500». Человек считал, что сообщения ушли, и не отправлял их повторно: письма
- * и SMS не доходили до пациентов, а на экране всё выглядело сделанным.
- * Теперь отказ идёт красным блоком и через role="alert", и к нему всегда
- * прикладывается подсказка, что делать дальше.
+/*
+ * `Notice`, `failNotice`, `formatMoment` и — главное — весь разбор отчётов сервера
+ * живут в ./deliveryReportNotice.ts. Здесь их больше нет намеренно: текст итога
+ * собирался прямо в обработчиках кнопок, и собирался неполно (сервер возвращал семь
+ * счётчиков, обработчик читал четыре), а проверить это можно было только глазами в
+ * браузере. Вынесенные чистые функции проверяются обычным тестом.
  */
-type Notice = { kind: "done" | "fail"; text: string };
-
-/** Отказ: сначала понятная человеку подсказка, потом причина от сервера. */
-function failNotice(error: unknown, hint: string): Notice {
-	const reason = error instanceof Error ? error.message : String(error);
-	return { kind: "fail", text: `${hint} Причина: ${reason}` };
-}
-
 export function MessageDeliveryConsole() {
 	const [gateways, setGateways] = useState<GatewayStatus | null>(null);
 	const [templates, setTemplates] = useState<TemplateItem[]>([]);
@@ -373,33 +363,16 @@ export function MessageDeliveryConsole() {
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({ batchSize: 25 })
 			});
-			const data = await readJson<{ report: { claimed: number; sent: number; failed: number; suppressed: number } }>(
-				response
-			);
-			const report = data.report;
-			if (report.claimed === 0) {
-				// БЫЛО: «Разобрано 0: отправлено 0, ошибок 0, не отправлено 0» — из
-				// этого нельзя понять, сломалось что-то или отправлять было нечего.
-				setNotice({
-					kind: "done",
-					text: "Отправлять было нечего: в очереди нет сообщений, готовых к отправке. Они появятся после кнопки «Поставить напоминания» или после запуска рассылки."
-				});
-			} else {
-				const parts = [`Отправлено: ${countLabel(report.sent, "сообщение", "сообщения", "сообщений")}.`];
-				if (report.failed > 0) {
-					parts.push(
-						`Не ушло из-за ошибки: ${report.failed}. Причина по каждому — в журнале ниже, кнопкой «Повторить» можно попробовать снова.`
-					);
-				}
-				if (report.suppressed > 0) {
-					parts.push(
-						`Отправлять не стали: ${report.suppressed} (тихие часы, нет согласия или нет адреса) — эти в журнале со состоянием «Не отправлено».`
-					);
-				}
-				// Красным, если хоть одно сообщение не ушло из-за ошибки: такой разбор
-				// требует действия, а не спокойной серой строки.
-				setNotice({ kind: report.failed > 0 ? "fail" : "done", text: parts.join(" ") });
-			}
+			const data = await readJson<{ report: DispatchReport }>(response);
+			/*
+			 * Весь разбор — в describeDispatchReport. Здесь нарочно не осталось ни одной
+			 * ветки: прежний код читал четыре поля из семи и вычислял вид итога как
+			 * `failed > 0 ? "fail" : "done"`. Самый частый отказ в жизни — недоступный
+			 * шлюз — даёт failed = 0 и retried = 5, то есть «done»: пять сообщений
+			 * взяты из очереди, ни одно не ушло, а на экране спокойная серая строка
+			 * «Отправлено: 0 сообщений.»
+			 */
+			setNotice(describeDispatchReport(data.report));
 			await loadAll();
 		} catch (error) {
 			setNotice(
@@ -418,18 +391,18 @@ export function MessageDeliveryConsole() {
 		setNotice(null);
 		try {
 			const response = await fetch("/api/communications/reminders/run", { method: "POST" });
-			const data = await readJson<{ report: { queued: number; alreadyQueued: number; problems: string[] } }>(response);
-			const report = data.report;
-			// БЫЛО: при любой помехе на экран уходили ТОЛЬКО строки problems, а
-			// сколько напоминаний реально встало в очередь — не показывалось. Человек
-			// видел жалобу и ставил напоминания повторно, не зная, что часть уже
-			// поставлена. Теперь итог называется всегда, помехи идут после него.
-			const done = `Поставлено напоминаний: ${report.queued}. Уже стояли в очереди: ${report.alreadyQueued}.`;
-			setNotice(
-				report.problems.length > 0
-					? { kind: "fail", text: `${done} Но не для всех: ${report.problems.join(" ")}` }
-					: { kind: "done", text: done }
-			);
+			const data = await readJson<{ report: ReminderScheduleReport }>(response);
+			/*
+			 * БЫЛО ДВА ВРАНЬЯ. Первое: `skippedNoChannel` и `skippedNoTemplateData`
+			 * сервер считал, но на экран они не попадали никак — десять приёмов, трое
+			 * пациентов без телефона, и клиника читала спокойное «Поставлено
+			 * напоминаний: 7» без единого признака, что трое о приёме не узнают.
+			 * Второе: приставка «Но не для всех:» подставлялась и при `queued === 0`,
+			 * давая «Поставлено напоминаний: 0. Но не для всех: …».
+			 * Оба случая теперь разбирает describeReminderReport, и она же называет
+			 * пациентов по имени — чтобы администратор знал, кому звонить.
+			 */
+			setNotice(describeReminderReport(data.report));
 			await loadAll();
 		} catch (error) {
 			setNotice(
