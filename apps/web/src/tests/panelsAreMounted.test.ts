@@ -156,17 +156,99 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
  * несмонтированный компонент идёт в DECLARED_UNMOUNTED с проверенной причиной
  * либо подключается; дописать его сюда нельзя.
  *
- * Что здесь видно из самой переписи, без дополнительных утверждений:
- * десять записей components/workspace/onboarding/** и OnboardingSetupWizard.tsx —
- * это ОДНА ветка: её корень OnboardingPreview.tsx не импортирует никто, и всё
- * поддерево висит на нём. Отдельный владелец есть у
- * components/documents/DocumentUkepSignButton.tsx — он записан исключением с
- * причиной в src/tests/documentsViewDecomposition.test.ts, и обе проверки теперь
- * говорят о нём одно и то же.
+ * Что здесь видно из самой переписи, без дополнительных утверждений: отдельный
+ * владелец есть у components/documents/DocumentUkepSignButton.tsx — он записан
+ * исключением с причиной в src/tests/documentsViewDecomposition.test.ts, и обе
+ * проверки теперь говорят о нём одно и то же.
+ *
+ * Одиннадцать записей семишагового мастера первого запуска — OnboardingPreview,
+ * OnboardingSetupWizard, семь шагов и два блока SharedOnboardingUI — из списка
+ * УШЛИ вместе с файлами. Разбор ветки и таблица замен по каждому шагу стоят ниже,
+ * на месте, где были их строки долга.
  */
 const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	"GuestLabPortal.tsx:GuestLabPortal",
-	"OnboardingPreview.tsx:OnboardingPreview",
+	/*
+	 * СЕМИШАГОВЫЙ МАСТЕР ПЕРВОГО ЗАПУСКА УДАЛЁН — 2013 строк, одиннадцать записей.
+	 * Здесь стояли OnboardingPreview.tsx, корень
+	 * components/workspace/OnboardingSetupWizard.tsx и всё поддерево onboarding/**.
+	 *
+	 * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Это был ВТОРОЙ мастер первого запуска рядом с
+	 * живым. Живой лежит в App.tsx:2081, гасится ключом dental-crm:onboarding:v1
+	 * (AppHelpers.tsx:691, читается App.tsx:2009) и действительно перекрывает
+	 * экран новой клиники — именно его клиника видит при первом входе.
+	 * Семишаговый читал ДРУГОЙ ключ (dente-onboarding-draft-v1) и не рендерился
+	 * нигде: его единственный импортёр OnboardingPreview.tsx не импортировал
+	 * никто, а обещанный в его шапке адрес #onboarding-preview не существует —
+	 * main.tsx монтирует AppShell и разбора хеша не делает вовсе.
+	 *
+	 * Пока обе копии лежали в дереве, каждая правка первого запуска делалась
+	 * вслепую: инженер правил ту, которую человек не видит. Это уже случилось —
+	 * коммит ab3312595 описывает, как предыдущий пакет починил выбор роли в
+	 * ТРЕТЬЕЙ, тоже недостижимой копии и заверил правку меткой достижимости.
+	 *
+	 * Мастер не просто не работал — он сообщил бы об успехе, не сохранив ничего.
+	 * Замерено в процессе через app.inject, а не через дев-сервер на 4100, который
+	 * отдаёт устаревший код: его запрос POST /api/workspace/onboarding/complete
+	 * уходил БЕЗ заголовков авторизации и получал HTTP 401 {"error":"Unauthorized"}.
+	 * Клиент ответ не проверял вовсе: catch только console.error, дальше
+	 * безусловные setFadeOut(true) и onComplete(). Администратор нажимал «Запустить
+	 * DENTE», видел плавное угасание и считал клинику настроенной. Тем же прогоном
+	 * замерено, что POST /api/system/analyze-legacy-db отвечает 404: адреса,
+	 * который звал Step7Migration, на сервере нет.
+	 *
+	 * ЗАМЕНА ПОКАЗАНА ПО КАЖДОМУ ИЗ СЕМИ ШАГОВ — без этого удалять было нельзя.
+	 *   Step1 «специализации» и Step3 «модули» → Настройки → «Модули»
+	 *     (SettingsView.tsx:1539 → SettingsModulesTab → WorkspaceFeaturesSelector).
+	 *     Замена ШИРЕ: 23 флага против 7. Собственное значение Step1
+	 *     (clinicSchedule.specs) не читает никто.
+	 *   Step2, кресла → Настройки → «Клиника», «Кресла и кабинеты»
+	 *     (SettingsClinicTab.tsx:728, смонтирована SettingsView.tsx:1503). Замена
+	 *     шире: именованные кресла и график на каждое против ползунка-счётчика.
+	 *   Step2, часы работы → там же: начало и окончание рабочего дня и отметки
+	 *     рабочих дней (SettingsClinicTab.tsx:353-370). Настройка доходила до базы,
+	 *     но публичный виджет записи её формат не понимал и отдавал пациентам
+	 *     09:00–17:30 вместо 08:00–20:00, а по закрытым субботам принимал записи.
+	 *     Починено вместе с этим разбором, доказательство —
+	 *     apps/api/src/tests/routes/publicBookingWorkHoursProof.ts.
+	 *   Step4 «фирменный стиль» → замены нет, и ВОЗМОЖНОСТИ тоже нет. THEME_COLORS
+	 *     встречался только внутри самой ветки, а слова theme в
+	 *     routes/workspaceProfile.ts нет вовсе: шаг красил сам себя и на сервер
+	 *     цвет не отправлял. Терять нечего.
+	 *   Step5 «сотрудники» → Настройки → «Сотрудники» (SettingsView.tsx:1501).
+	 *     Процент врача, которого во вкладке нет, теперь задаётся на экране
+	 *     выплат — там, где и написано «не задана»
+	 *     (pages/DoctorPayoutDashboard.tsx); доказательство —
+	 *     apps/api/src/tests/routes/doctorCommissionRateProof.ts. Специальность
+	 *     шага возможностью не была: в нагрузку маршрута
+	 *     (workspaceProfile.ts:723) поле специальности не входило вовсе, а чтение
+	 *     сотрудника жёстко отдаёт ["universal"] (db/settingsQuery.ts:122).
+	 *     ОСТАЁТСЯ ДОЛГОМ телефон сотрудника: шаг его собирал и маршрут писал, а в
+	 *     достижимой форме добавления поля нет. Сервер принять его умеет
+	 *     (createStaffMemberInDb), то есть это поле формы, а не новая возможность.
+	 *   Step6 «реквизиты» → Настройки → «Клиника»: ИНН (SettingsClinicTab.tsx:392),
+	 *     ОГРН (:401), адрес, поиск реквизитов по ИНН (:490). Замена шире.
+	 *   Step7 «перенос данных» → Настройки → «Импорт», MigrationWizard
+	 *     (SettingsView.tsx:1574). Замена не «тоже есть», а ЕДИНСТВЕННАЯ
+	 *     работающая: Step7 звал единственный адрес, которого НЕ СУЩЕСТВУЕТ (см.
+	 *     замер 404 выше), тогда как все семь маршрутов /api/migration/*, которые
+	 *     зовёт MigrationWizard, отвечают 401 — то есть существуют и доводят
+	 *     перенос до исполнения и отката.
+	 *
+	 * Спасать внутри ветки было нечего, и два места выглядели готовыми лишь на
+	 * вид. Загрузка логотипа была целиком фальшивой: onClick вызывал
+	 * setTimeout(() => setLogoUploaded(true), 1500) без файлового ввода и без
+	 * запроса, а через 1,5 с экран писал «Логотип загружен»; поля logoUploaded не
+	 * было даже в нагрузке. В итоговой колонке жёстко печаталось «4521 пац.» при
+	 * migrationStatus === "done", тогда как настоящее число лежало в
+	 * detectedSummary.patientsFound.
+	 *
+	 * Живой мастер App.tsx:2081 НЕ ТРОНУТ: он достижим и работает. Обратная
+	 * декомпозиция — вынести его из App.tsx в компоненты — остаётся долгом,
+	 * заведённым в коммите ab3312595. Таблица стилей styles/onboarding-wizard.css
+	 * тоже НЕ тронута: её классы (onboarding-fullscreen, onboarding-shell,
+	 * wizard-mode-grid) принадлежат живому мастеру, а не удалённой ветке.
+	 */
 	"components/AudioWaveform.tsx:AudioWaveform",
 	"components/Badge.tsx:Badge",
 	"components/HelpHUD.tsx:HelpHUD",
@@ -236,16 +318,6 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	"components/settings/SingleSessionEnforcementsWidget.tsx:SingleSessionEnforcementsWidget",
 	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/visit/VisitDictation.tsx:VisitDictation",
-	"components/workspace/OnboardingSetupWizard.tsx:OnboardingSetupWizard",
-	"components/workspace/onboarding/steps/Step1Specializations.tsx:Step1Specializations",
-	"components/workspace/onboarding/steps/Step2Infrastructure.tsx:Step2Infrastructure",
-	"components/workspace/onboarding/steps/Step3Modules.tsx:Step3Modules",
-	"components/workspace/onboarding/steps/Step4Branding.tsx:Step4Branding",
-	"components/workspace/onboarding/steps/Step5Staff.tsx:Step5Staff",
-	"components/workspace/onboarding/steps/Step6Legal.tsx:Step6Legal",
-	"components/workspace/onboarding/steps/Step7Migration.tsx:Step7Migration",
-	"components/workspace/onboarding/ui/SharedOnboardingUI.tsx:GlassCard",
-	"components/workspace/onboarding/ui/SharedOnboardingUI.tsx:SliderControl",
 	"components/workspace/shift/RoleFocusStrip.tsx:RoleFocusStrip",
 	"components/workspace/shift/ShiftIntelligence.tsx:ShiftIntelligence",
 ];
@@ -256,7 +328,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 29;
+const LEGACY_BACKLOG_CEILING = 18;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {
