@@ -45,6 +45,20 @@ export const PERMISSIONS = [
 	"finance.write",
 	// Отчёты и аналитика
 	"analytics.read",
+	/*
+	 * Зарплата: выплаты врачам, ставки, удержания за материалы.
+	 *
+	 * ЗАЧЕМ ОТДЕЛЬНОЕ ПРАВО, А НЕ analytics.read. Выплаты нельзя вешать на
+	 * аналитику: analytics.read выдан administrator (ресепшен) и НЕ выдан doctor.
+	 * На этом праве администратор смены увидел бы зарплаты всех врачей клиники, а
+	 * сам врач не увидел бы даже свою. Это ровно наоборот к тому, как зарплата
+	 * устроена в клинике.
+	 *
+	 * payroll.read — выплаты всех врачей клиники. payroll.read.own — только свои
+	 * строки, фильтр по doctor_user_id ставится на СЕРВЕРЕ, а не в интерфейсе.
+	 */
+	"payroll.read",
+	"payroll.read.own",
 	// Склад и лаборатория
 	"inventory.read",
 	"inventory.write",
@@ -80,13 +94,15 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"clinical.read",
 		"finance.read", "finance.write",
 		"analytics.read",
+		// Управляющий считает зарплату врачей — это его работа.
+		"payroll.read",
 		"inventory.read", "inventory.write",
 		"settings.read",
 		"communications.read", "communications.write",
 	],
 
 	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату.
-	// Медицинскую документацию не правит.
+	// Зарплаты врачей не видит — ни чужие, ни свои: он не врач.
 	administrator: [
 		"schedule.read", "schedule.write",
 		"patients.read", "patients.write",
@@ -104,6 +120,8 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"patients.read", "patients.write",
 		"clinical.read", "clinical.write",
 		"inventory.read",
+		// Свою выработку и свою выплату врач видит; чужие — нет.
+		"payroll.read.own",
 		"egisz.submit",
 		// Врач видит переписку с пациентом, но рассылки не запускает.
 		"communications.read",
