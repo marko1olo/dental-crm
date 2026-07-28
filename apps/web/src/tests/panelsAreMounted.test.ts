@@ -281,7 +281,55 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 */
 	"components/AudioWaveform.tsx:AudioWaveform",
 	"components/Badge.tsx:Badge",
-	"components/HelpHUD.tsx:HelpHUD",
+	/*
+	 * HelpHUD и TourEngine УДАЛЕНЫ вместе со своими таблицами стилей, поэтому двух
+	 * строк здесь больше нет. Разбор стоит один раз, здесь, за оба файла: они
+	 * работали только в паре.
+	 *
+	 * ПАРА БЫЛА ЗАМКНУТА САМА НА СЕБЯ. HelpHUD рассылал CustomEvent("START_TOUR"),
+	 * слушал его только TourEngine, и импортёров не было ни у одного. Монтирование
+	 * одного не давало ни одной точки входа: обучение открыть было нечем.
+	 *
+	 * ПОЧЕМУ ЭТО НЕ ДОЛГ, А СНОС — РЕШИЛ ЗАМЕР СЕЛЕКТОРОВ. Из десяти шагов пяти не
+	 * за что зацепиться, и это проверено поиском по всему apps/web/src:
+	 *   .schedule-create-btn, .clinical-scheduler, .odontogram-card (трижды) —
+	 *     встречаются ТОЛЬКО в самом TourEngine.tsx, в живой вёрстке их нет;
+	 *   .odontogram-treatment-area — живёт только в components/odontogram/odontogram.css,
+	 *     ни один .tsx этот класс не рендерит;
+	 *   button[style*="Групповой выбор"] — русский текст в атрибуте style не
+	 *     встречается никогда;
+	 *   [className*="treatment"] — атрибута className в HTML не существует, React
+	 *     печатает class.
+	 * Промах гасил ВСЁ, кроме затемнения: и подсветка, и выноска с текстом, точками
+	 * и кнопкой «Далее» стояли под {targetRect && …}, а .tour-engine-backdrop — это
+	 * rgba(0, 0, 0, 0.45) на весь экран с z-index 9999. То есть два тура из пяти —
+	 * «Расписание визитов» и «Зубная формула», самые ходовые экраны смены — давали
+	 * затемнённый экран без единой буквы и без кнопки; выйти только Esc или щелчком
+	 * по пустому месту.
+	 *
+	 * СОДЕРЖИМОЕ HelpHUD БЫЛО ЛОЖНЫМ ТОЖЕ, замерено построчно:
+	 *   «Alt + S — Сохранить план лечения»: altKey во всём apps/web/src — ноль
+	 *     совпадений, сочетания не существует;
+	 *   «Ctrl + F — Поиск пациента»: обработчика нет, а живой глобальный поиск это
+	 *     Ctrl/Cmd + K (components/CommandPalette.tsx:19, components/Omnibar.tsx:68) —
+	 *     подсказка называла неверную клавишу и умалчивала работающую;
+	 *   «Нажмите кнопку „Сбросить кэш“ в тулбаре»: единственное вхождение этих слов
+	 *     во всём дереве было в самом HelpHUD, кнопки не существует — врача с чёрным
+	 *     экраном КТ отправляли к ней;
+	 *   роли печатались латиницей: Doctor и Admin в русском интерфейсе.
+	 *
+	 * Обучение клинике нужно, но возвращается оно НОВЫМ файлом против живой вёрстки
+	 * и с тестом достижимости, а не подъёмом этой пары: довести её до рабочего вида
+	 * значит переписать содержимое и пять селекторов, то есть написать функцию
+	 * заново. Ложная помощь дороже отсутствующей — она тратит время смены и
+	 * подрывает доверие к остальным подсказкам.
+	 *
+	 * Таблицы стилей HelpHUD.css и TourEngine.css удалены вместе с компонентами:
+	 * их импортировали только они сами, и ни один класс (help-hud-*, tour-*) не
+	 * рендерит ни один другой файл. Общие таблицы не тронуты: --brand-400 и
+	 * --brand-500, на которые эти листы ссылались, остаются нужны живым файлам
+	 * (ScannerView.css, styles/main.css, settings/SettingsMessengersTab.css).
+	 */
 	"components/Odontogram.tsx:Odontogram",
 	/*
 	 * QrGatewayPanel удалён, поэтому строки здесь больше нет.
@@ -308,7 +356,6 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * (PublicBookingWidget заявлен долгом выше), затем настоящий идентификатор
 	 * организации в клиенте.
 	 */
-	"components/TourEngine.tsx:TourEngine",
 	"components/crm/CustomCrmTaskTypesWidget.tsx:CustomCrmTaskTypesWidget",
 	"components/dicom/DicomToolbar.tsx:DicomToolbar",
 	"components/dicom/ViewportOverlays.tsx:ViewportOverlays",
@@ -358,7 +405,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 17;
+const LEGACY_BACKLOG_CEILING = 15;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {
