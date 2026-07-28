@@ -722,3 +722,47 @@ still uncommitted, so their change is now half-landed. The web gate was green be
 useless — I saw the contamination in the output only after it had happened. From now on the sequence is
 three separate steps: stage → inspect the staged list → commit **with a pathspec**. The pathspec alone
 would have prevented it regardless of what else was in the index.
+
+## STABILITY BASELINE — 2026-07-28, every gate measured by the lead in ONE pass
+
+First time in the campaign that the entire gate set was run end to end and all of it was green. Every
+number below is a TRUE exit code from a command the lead ran itself, not an agent's claim.
+
+| gate | command | result |
+|---|---|---|
+| API alive | `curl /api/health` | **200** |
+| Web alive | `curl :5173` | **200** |
+| api typecheck | `npm run typecheck -w @dental/api` | exit 0, **0** errors |
+| web typecheck | `npm run typecheck -w @dental/web` | exit 0, **0** errors |
+| api suite | `npm test -w @dental/api` | exit 0, **996 / 996**, 162 suites |
+| web suite | `npm test -w @dental/web` | exit 0, **620 / 620**, 98 suites |
+| encoding | `npm run smoke:web-text-encoding` | exit 0, **0** mojibake |
+| api build | `npm run build -w @dental/api` | exit 0, **0** git churn |
+| route gate | `node scripts/smoke-clinical-mutation-guard.mjs` | exit 0, `ok: true`, **438** entries / **436** probed / **187** mutating / **407** challenged / `staleOutputCount: 0` / `missingOutputCount: 0` |
+| HEAD consistency | every file deleted in the last 25 commits, whole-repo `git grep` | **zero** dangling references |
+
+### The route gate went RED first, and that was the guard working
+On the first pass it exited 1 and refused to run at all:
+«СБОРКА УСТАРЕЛА: проверка подняла бы apps/api/dist/server.js, собранный до правок исходников, и её
+вывод относился бы к прошлому состоянию кода.» It then listed **6 sources newer than their build output**
+(`server.ts`, `schema.ts`, `routes/clinical.ts`, `routes/workspaceProfile.ts`,
+`services/communications/dispatcher.ts`, `utils/telegramChatRef.ts`) and **2 compilable files with no
+build output at all** (`routes/waitlistMatches.ts`, `services/schedule/waitlistMatching.ts` — new files
+someone added and never built).
+
+That is the dist-freshness guard ordered in cycle 6 after a stale `dist` had hidden four separate
+defects. Without it, this run would have probed **yesterday's** compiled server and reported green — the
+exact fabrication class the campaign exists to remove. The lead rebuilt (its gate under §7a, and free of
+git churn now that `dist` is untracked) and the gate then passed honestly.
+
+Note the guard's message quality: it names what is stale, by how much, and the single command that fixes
+it. That is §3 applied to a developer tool, and it is why the guard was worth building rather than
+merely tightening the old identifier-counting one.
+
+### What this baseline does and does not prove
+PROVEN: the tree compiles on both workspaces, 1,616 tests pass, the encoding guard is clean, the built
+output matches source, every mutating route refuses an unauthenticated caller, and no deletion has left
+a dangling reference.
+NOT PROVEN by any of it: that a dentist's day works end to end. The gates are necessary and not
+sufficient — the two price lists (Y1) and the inert clinic mode (Y2) are both invisible to every gate in
+that table, which is precisely why they survived this long.
