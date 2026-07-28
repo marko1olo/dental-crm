@@ -16575,30 +16575,29 @@ html.dark .clinic-profile-form-grid textarea,
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.omnibar-trigger-btn {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 1.5rem;
-  z-index: 9998;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background-color: var(--teal-dark);
-  color: white;
-  border: none;
-  border-radius: 9999px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
-  outline: none;
-  transition: background-color 0.2s;
-}
+/*
+  Здесь стояли правила .omnibar-trigger-btn и .omnibar-trigger-btn:hover.
+  Удалены: класс не носит ни один элемент во всём apps/web/src, а правило
+  продолжало уезжать в собранный бандл (два вхождения в dist/assets/*.css).
 
-.omnibar-trigger-btn:hover {
-  background-color: var(--teal);
-}
+  ОТКУДА СИРОТА. Переделка плавающего угла (коммит f0121f0c2) перенесла кнопку
+  омнибара в .dnt-actions__control внутри нижней навигации и шапки, удалив
+  floatingCorner целиком — 1196 строк. Но проверка полноты удаления искала имена
+  файлов и токенов, а имена КЛАССОВ перенесённых кнопок не проверила, поэтому
+  правило пережило свой элемент.
+
+  ПОЧЕМУ ЭТО НЕ КОСМЕТИКА. Правило объявляло position: fixed, bottom: 1.5rem,
+  left: 1.5rem, z-index: 9998 — то есть ровно ту плавающую кнопку поверх
+  содержимого, которую переделка и убирала. Новый файл
+  components/workspaceActions/workspaceActions.css начинается словами «ЗДЕСЬ НЕТ
+  И НЕ ДОЛЖНО ПОЯВИТЬСЯ position: fixed», и пока это правило лежало в main.css,
+  любой агент, повесивший класс обратно, мгновенно вернул бы дефект — с
+  z-index 9998, то есть поверх всего.
+
+  Проверено перед удалением: в main.css двенадцать классов с position: fixed,
+  одиннадцать законны (skip-link, оверлеи модалок и шторок, sidebar,
+  omnibar-overlay), носителей нет только у этого.
+*/
 
 /* AUTH SHAKE ANIMATION */
 .animate-shake {
