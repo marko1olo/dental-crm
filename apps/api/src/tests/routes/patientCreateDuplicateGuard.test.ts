@@ -7,6 +7,12 @@ import { organizations, patients } from "../../db/schema.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations
+} from "../support/fixtureOrganizations.js";
 
 /**
  * СОЗДАНИЕ КАРТЫ ПАЦИЕНТА ОДНИМ ФИО ОБХОДИЛО СЕРВЕРНЫЙ ЗАПРЕТ ДУБЛЕЙ.
@@ -25,6 +31,16 @@ import { signToken } from "../../utils/cryptoHelper.js";
  * getPatientsFromDb и сравнивает с ним. На моке проверялся бы мок. Тест создаёт
  * СВОЮ организацию и удаляет её целиком в after — чужих данных не касается.
  *
+ * ПОЧЕМУ ИДЕНТИФИКАТОРЫ СЧИТАЮТСЯ, А НЕ ВПИСАНЫ. Раньше здесь стояли
+ * `dce70000-…-0901` и `dce70000-…-0911` — ровно те же значения, что в
+ * speechTranscribeChunkAccess.test.ts, и организация ещё и совпадала с
+ * portalOtp.test.ts. `node --test` гоняет файлы параллельно, поэтому `after`
+ * соседа удалял засеянного «Тихонова» посреди этого теста: запрет дублей
+ * сравнивать было не с чем, и он честно отвечал 201 на «вторую» карту. Хуже
+ * того, при совпадении первичного ключа `onConflictDoNothing` молча оставлял
+ * чужого пациента из теста диктовки. Теперь блок выводится из имени файла —
+ * выдать его второму файлу нельзя, см. tests/support/fixtureOrganizations.ts.
+ *
  * ГРАНИЦА, КОТОРУЮ ТЕСТ ОХРАНЯЕТ С ДВУХ СТОРОН:
  *   - вторая карта по одному ФИО отклоняется (409) и объяснение называет выход;
  *   - полный тёзка с другим телефоном или другой датой рождения по-прежнему
@@ -38,16 +54,12 @@ import { signToken } from "../../utils/cryptoHelper.js";
  *   cd apps/api && node --import tsx --test src/tests/routes/patientCreateDuplicateGuard.test.ts
  */
 
-const ORG_ID = "dce70000-0000-4000-8000-000000000901";
-const EXISTING_PATIENT_ID = "dce70000-0000-4000-8000-000000000911";
+const FIXTURE = "patientCreateDuplicateGuard";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const EXISTING_PATIENT_ID = fixtureUuid(FIXTURE, 2);
 const EXISTING_NAME = "Тихонов Аркадий Валентинович";
 const EXISTING_PHONE = "+7 916 400-70-80";
 const EXISTING_BIRTH_DATE = "1969-05-21";
-
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
-}
 
 describe("создание карты пациента: запрет дублей", () => {
 	let app: FastifyInstance;
@@ -67,28 +79,30 @@ describe("создание карты пациента: запрет дубле�
 		};
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника запрета дублей" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: EXISTING_PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: EXISTING_NAME,
-					birthDate: EXISTING_BIRTH_DATE,
-					phone: EXISTING_PHONE
-				})
-				.onConflictDoNothing();
+			// Уборка НА ВХОДЕ, а не только на выходе: прогон, убитый снаружи, до
+			// after не доходит и оставляет свою клинику в живой базе. Вместе со
+			// своей снимается и общая клиника прежнего блока — она осталась
+			// именно от таких обрывов и больше никому не принадлежит.
+			await purgeFixtureOrganizations([ORG_ID, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника запрета дублей" });
+			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+			// Раньше он молчал, и тест шёл с чужой строкой вместо своей.
+			await db.insert(patients).values({
+				id: EXISTING_PATIENT_ID,
+				organizationId: ORG_ID,
+				fullName: EXISTING_NAME,
+				birthDate: EXISTING_BIRTH_DATE,
+				phone: EXISTING_PHONE
+			});
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});
 
 	after(async () => {
-		if (databaseAvailable) {
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-		}
+		if (databaseAvailable) await purgeFixtureOrganizations([ORG_ID]);
 		await app.close();
 	});
 

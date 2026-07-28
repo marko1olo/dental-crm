@@ -1,13 +1,18 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
+import { organizations, patients, visits } from "../../db/schema.js";
 import { registerSpeechRoutes } from "../../routes/speech.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { resetSpeechTranscriptionCacheForRestart } from "../../speech/storage.js";
+import {
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations
+} from "../support/fixtureOrganizations.js";
 
 /**
  * POST /api/speech/transcribe-chunk — единственный эндпоинт диктовки, который ПИШЕТ
@@ -30,17 +35,22 @@ import { resetSpeechTranscriptionCacheForRestart } from "../../speech/storage.js
  *
  * Внешний провайдер не вызывается: передается только localTranscript без audioBase64,
  * gateway.ts:2018-2021 в этом случае сохраняет текст как fallback_text и не выходит в сеть.
+ *
+ * ПОЧЕМУ ИДЕНТИФИКАТОРЫ СЧИТАЮТСЯ, А НЕ ВПИСАНЫ. Организация `dce70000-…-0901` и
+ * пациент `dce70000-…-0911` были здесь ровно те же, что в
+ * patientCreateDuplicateGuard.test.ts, а `dce70000-…-0902`, названный тут второй
+ * клиникой, в portalOtp.test.ts был ПАЦИЕНТОМ. Файлы идут параллельно, поэтому
+ * уборка «пациентов организации 0901» в конце этого файла сносила чужие строки:
+ * тест дублей терял засеянного пациента и получал 201 вместо 409, а удаление
+ * пациента личного кабинета валилось на portal_otp_codes_patient_id_fkey.
+ * Блок теперь выводится из имени файла, см. tests/support/fixtureOrganizations.ts.
  */
 
-const ORG_A = "dce70000-0000-4000-8000-000000000901";
-const ORG_B = "dce70000-0000-4000-8000-000000000902";
-const PATIENT_A = "dce70000-0000-4000-8000-000000000911";
-const VISIT_A = "dce70000-0000-4000-8000-000000000921";
-
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
-}
+const FIXTURE = "speechTranscribeChunkAccess";
+const ORG_A = fixtureUuid(FIXTURE, 1);
+const ORG_B = fixtureUuid(FIXTURE, 2);
+const PATIENT_A = fixtureUuid(FIXTURE, 3);
+const VISIT_A = fixtureUuid(FIXTURE, 4);
 
 function chunkPayload(overrides: Record<string, unknown> = {}) {
 	return {
@@ -77,36 +87,32 @@ describe("доступ к записи фрагмента диктовки", () 
 		tokenOrgB = signToken({ organizationId: ORG_B }, secret);
 
 		try {
-			await db
-				.insert(organizations)
-				.values([
-					{ id: ORG_A, name: "Клиника диктовки А" },
-					{ id: ORG_B, name: "Клиника диктовки Б" }
-				])
-				.onConflictDoNothing();
+			// Уборка НА ВХОДЕ: прогон, убитый снаружи, до after не доходит и
+			// оставляет свои клиники в живой базе — именно так там и осталась
+			// «Клиника диктовки Б» из прежнего общего блока, который снимается здесь же.
+			await purgeFixtureOrganizations([ORG_A, ORG_B, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
+			await db.insert(organizations).values([
+				{ id: ORG_A, name: "Клиника диктовки А" },
+				{ id: ORG_B, name: "Клиника диктовки Б" }
+			]);
+			// Без onConflictDoNothing: раньше он молча оставлял чужую строку с тем же
+			// первичным ключом, и тест шёл по данным соседнего файла.
 			await db
 				.insert(patients)
-				.values({ id: PATIENT_A, organizationId: ORG_A, fullName: "Гордеев Илья Максимович", birthDate: "1988-03-17" })
-				.onConflictDoNothing();
-			await db
-				.insert(visits)
-				.values({ id: VISIT_A, organizationId: ORG_A, patientId: PATIENT_A, status: "draft" })
-				.onConflictDoNothing();
+				.values({ id: PATIENT_A, organizationId: ORG_A, fullName: "Гордеев Илья Максимович", birthDate: "1988-03-17" });
+			await db.insert(visits).values({ id: VISIT_A, organizationId: ORG_A, patientId: PATIENT_A, status: "draft" });
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});
 
 	after(async () => {
-		if (databaseAvailable) {
-			await db.delete(aiJobs).where(eq(aiJobs.organizationId, ORG_A));
-			await db.delete(aiJobs).where(eq(aiJobs.organizationId, ORG_B));
-			await db.delete(visits).where(eq(visits.organizationId, ORG_A));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_A));
-			await db.delete(organizations).where(eq(organizations.id, ORG_A));
-			await db.delete(organizations).where(eq(organizations.id, ORG_B));
-		}
+		// Каталожная уборка сама выводит порядок удаления из ссылок. Поимённый
+		// список до этой правки перечислял aiJobs, visits и patients руками и
+		// потому ломался на ai_jobs_visit_id_visits_id_fk, когда задание ИИ
+		// дописывалось уже после удаления приёма.
+		if (databaseAvailable) await purgeFixtureOrganizations([ORG_A, ORG_B]);
 		resetSpeechTranscriptionCacheForRestart();
 		await app.close();
 		process.env = originalEnv;

@@ -5,6 +5,12 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal.js";
+import {
+	LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+} from "../support/fixtureOrganizations.js";
 
 /**
  * Одноразовый код входа в личный кабинет пациента.
@@ -20,21 +26,25 @@ import { portalRoutes } from "../../routes/portal.js";
  * ЗАЧЕМ ПО ЖИВОЙ БАЗЕ. Одноразовость обеспечивается условным UPDATE в
  * PostgreSQL, срок годности — сравнением timestamptz на стороне базы, а
  * ограничение CHECK на code_hash тоже живёт в базе. На моках проверялся бы мок.
+ *
+ * ПОЧЕМУ ИДЕНТИФИКАТОРЫ СЧИТАЮТСЯ, А НЕ ВПИСАНЫ. Здесь стояла организация
+ * `dce70000-…-0901`, та же самая, что в patientCreateDuplicateGuard.test.ts и в
+ * speechTranscribeChunkAccess.test.ts, а пациент `dce70000-…-0902` совпадал с
+ * ОРГАНИЗАЦИЕЙ теста диктовки. Файлы идут параллельно, и получалось так:
+ * `after` соседа удалял организацию `…-0901`, после чего вставка пациента здесь
+ * падала на `patients_organization_id_organizations_id_fk`, а соседняя уборка
+ * «пациентов организации 0901» сносила пациента `…-0902` вместе с ссылками на
+ * него и валилась на `portal_otp_codes_patient_id_fkey`. Блок теперь выводится
+ * из имени файла, см. tests/support/fixtureOrganizations.ts.
  */
 
-const ORG_ID = "dce70000-0000-4000-8000-000000000901";
-const PATIENT_ID = "dce70000-0000-4000-8000-000000000902";
+const FIXTURE = "portalOtp";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const PATIENT_ID = fixtureUuid(FIXTURE, 2);
 // Суффикс проверен запросом: ни одного другого пациента с такими цифрами нет.
 // Маршрут требует ровно одного совпадения, неоднозначность он отвергает.
 const PATIENT_PHONE = "+7 913 770-41-58";
 const UNKNOWN_PHONE = "+7 999 888-77-66";
-
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(
-		message,
-	);
-}
 
 describe("одноразовый код входа в личный кабинет", () => {
 	let app: FastifyInstance;
@@ -119,33 +129,34 @@ describe("одноразовый код входа в личный кабине�
 		await app.ready();
 
 		try {
+			// Уборка НА ВХОДЕ: прерванный прогон до after не доходит, а выданные им
+			// коды входа ссылаются на пациента и не дают его удалить. Общая клиника
+			// прежнего блока снимается тем же вызовом — она осталась от таких обрывов.
+			await purgeFixtureOrganizations([
+				ORG_ID,
+				...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS,
+			]);
 			await db
 				.insert(organizations)
-				.values({ id: ORG_ID, name: "Клиника личного кабинета" })
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Портнов Олег Иванович",
-					phone: PATIENT_PHONE,
-				})
-				.onConflictDoNothing();
+				.values({ id: ORG_ID, name: "Клиника личного кабинета" });
+			// Без onConflictDoNothing: молчащий конфликт первичного ключа и оставлял
+			// тест работать с чужой строкой вместо своей.
+			await db.insert(patients).values({
+				id: PATIENT_ID,
+				organizationId: ORG_ID,
+				fullName: "Портнов Олег Иванович",
+				phone: PATIENT_PHONE,
+			});
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});
 
 	after(async () => {
-		if (databaseAvailable) {
-			await db
-				.delete(portalOtpCodes)
-				.where(eq(portalOtpCodes.patientId, PATIENT_ID));
-			await db.delete(patients).where(eq(patients.id, PATIENT_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-		}
+		// Каталожная уборка снимает и коды входа, и пациента, и саму организацию:
+		// порядок удаления она выводит из ссылок, а не из порядка строк здесь.
+		if (databaseAvailable) await purgeFixtureOrganizations([ORG_ID]);
 		await app?.close();
 		process.env = originalEnv;
 	});
