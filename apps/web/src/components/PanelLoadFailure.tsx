@@ -19,7 +19,22 @@ export const PanelLoadFailure: React.FC<{
 	subject: PanelSubject;
 	/** Код ответа сервера; null — до сервера не дошли вовсе. */
 	status: number | null;
-	onRetry?: () => void;
+	/**
+	 * Как перечитать данные. ОБЯЗАТЕЛЬНЫЙ, и это не строгость ради строгости.
+	 *
+	 * БЫЛО `onRetry?`, и решение «показывать ли кнопку повтора» принималось
+	 * ДВАЖДЫ: один раз в panelRetryLabel по коду ответа, второй раз здесь — по
+	 * тому, передал ли вызывающий обработчик. Два владельца одного решения
+	 * расходятся в обе стороны. Панель, забывшая передать onRetry, печатала
+	 * «повторите» без кнопки, которой можно повторить; панель, передавшая его,
+	 * рисовала «Повторить» рядом с «сервер не знает такого раздела». Теперь
+	 * обработчик — это данные (чем повторять), а решение (повторять ли вообще)
+	 * принимает panelRetryLabel и только он.
+	 *
+	 * Все семь мест вызова передавали его и раньше, так что обязательность
+	 * ничего не сломала — она закрыла первую из двух расходимостей.
+	 */
+	onRetry: () => void;
 	className?: string;
 }> = ({ subject, status, onRetry, className = "" }) => {
 	const text = panelStateText(subject, { phase: "failed", status });
@@ -34,13 +49,25 @@ export const PanelLoadFailure: React.FC<{
 				<div className="font-semibold">{text.title}</div>
 				<div className="mt-0.5">{text.hint}</div>
 			</div>
-			{onRetry && (
+			{/*
+				ОДНО решение, и принимает его `panelRetryLabel` по коду ответа: есть
+				подпись — есть кнопка, нет подписи — нет и кнопки.
+
+				БЫЛО: кнопка «Повторить» рисовалась по одному факту наличия `onRetry`.
+				Рядом с «сервер не знает такого раздела — сообщите администратору»
+				она предлагала действие, которое не сработает никогда, а после
+				«войдите в смену заново» выглядела альтернативой входу. Когда кнопки
+				нет, следующий шаг остаётся в самом тексте отказа выше — 404, 400 и
+				422 заканчиваются словами «сообщите администратору», поэтому экран не
+				превращается в тупик без выхода.
+			*/}
+			{text.retryLabel && (
 				<button
 					type="button"
 					onClick={onRetry}
 					className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
 				>
-					<RefreshCw size={13} aria-hidden="true" /> Повторить
+					<RefreshCw size={13} aria-hidden="true" /> {text.retryLabel}
 				</button>
 			)}
 		</div>

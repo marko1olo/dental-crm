@@ -65,8 +65,17 @@ export type PanelState =
  * панелью: «задачи по пациенту» знает виджет задач, а не этот модуль.
  */
 export interface PanelSubject {
-	/** Именительный падеж, множественное число, с большой буквы: «Задачи по пациенту». */
-	readonly title: string;
+	/**
+	 * Первая часть предложения об отказе, целиком и с согласованием:
+	 * «Задачи по пациенту не загружены», «Статус блокировки не прочитан».
+	 *
+	 * ЗАЧЕМ ЦЕЛОЙ СТРОКОЙ. Здесь стояло `title` («Задачи по пациенту»), а модуль
+	 * дописывал «не загружены» сам. Для трёх сегодняшних панелей форма совпала
+	 * случайно: все три названия — множественного числа. Любое название в
+	 * единственном («Статус») дало бы «Статус не загружены». Согласование живёт
+	 * рядом с существительным, поэтому ошибиться в нём больше негде.
+	 */
+	readonly notLoadedTitle: string;
 	/** Винительный падеж, строчными: «задачи по пациенту» — встанет после «Загружаем …». */
 	readonly accusative: string;
 	/** Заголовок честной пустоты: «Задач по пациенту пока нет». */
@@ -84,8 +93,17 @@ export interface PanelText {
 	readonly phase: PanelPhase;
 	readonly title: string;
 	readonly hint: string;
-	/** Только у отказа: имеет смысл предложить «Повторить». */
-	readonly retryable: boolean;
+	/**
+	 * Подпись кнопки повтора, либо `null` — если повторять тот же запрос
+	 * бессмысленно.
+	 *
+	 * БЫЛО: `retryable: boolean`, всегда `true` при отказе, и его никто не читал —
+	 * `PanelLoadFailure` рисовал «Повторить» по одному факту наличия `onRetry`.
+	 * Кнопка предлагала повтор рядом с текстом «сервер не знает такого раздела —
+	 * сообщите администратору», где повтор не поможет никогда. Теперь решение
+	 * одно, читается разметкой и проверяется тестом.
+	 */
+	readonly retryLabel: string | null;
 }
 
 /** До сервера не дошли: сеть, выключенный сервер клиники, обрыв. */
@@ -110,11 +128,35 @@ export function requestFailureCause(status: number | null): string {
 	if (status === 409) return "данные успел изменить кто-то другой — обновите страницу, чтобы увидеть свежие";
 	if (status === 413) return "запрос оказался слишком большим для сервера — уменьшите объём и повторите";
 	if (status === 429) return "запросов подряд было слишком много — подождите полминуты и повторите";
-	if (status === 400 || status === 422) return "сервер не принял запрос — обновите страницу и повторите";
+	// БЫЛО: «сервер не принял запрос — обновите страницу и повторите». Обновление
+	// страницы соберёт ровно тот же запрос и получит ровно тот же отказ: 400 и 422
+	// означают, что запрос не подходит серверу, а не что серверу сейчас плохо.
+	// Обещание, которое не может сработать, — тот же дефект, что голый код ответа.
+	if (status === 400 || status === 422) {
+		return "сервер не принял такой запрос — повторение не поможет, сообщите администратору";
+	}
 	if (status >= 500) {
 		return "сервер не смог выполнить запрос — повторите через минуту, а если повторится, сообщите администратору";
 	}
 	return "ответ сервера непонятен — повторите, а если повторится, сообщите администратору";
+}
+
+/**
+ * Подпись кнопки повтора — или `null`, если повторять нечего.
+ *
+ * Правило одно: кнопка живёт только там, где ТОТ ЖЕ запрос может однажды
+ * ответить иначе. Отсутствующий раздел (404) и не подходящий серверу запрос
+ * (400/422/413) так не отвечают никогда, поэтому кнопки там нет вовсе. После
+ * отказа по доступу (401/403) повтор осмыслен, но лишь после входа — об этом и
+ * говорит подпись, иначе кнопка выглядит альтернативой входу.
+ */
+export function panelRetryLabel(status: number | null): string | null {
+	if (status === null || status === 0) return "Повторить";
+	if (status === 401 || status === 403) return "Я вошёл — прочитать снова";
+	if (status === 404) return null;
+	if (status === 400 || status === 422 || status === 413) return null;
+	if (status === 409) return "Обновить";
+	return "Повторить";
 }
 
 /**
@@ -138,17 +180,17 @@ export function panelStateText(subject: PanelSubject, state: PanelState): PanelT
 			phase: "loading",
 			title: `Загружаем ${subject.accusative}…`,
 			hint: "Это займёт пару секунд.",
-			retryable: false,
+			retryLabel: null,
 		};
 	}
 	if (state.phase === "empty") {
-		return { phase: "empty", title: subject.emptyTitle, hint: subject.emptyHint, retryable: false };
+		return { phase: "empty", title: subject.emptyTitle, hint: subject.emptyHint, retryLabel: null };
 	}
 	return {
 		phase: "failed",
-		title: `${subject.title} не загружены: ${requestFailureCause(state.status)}.`,
+		title: `${subject.notLoadedTitle}: ${requestFailureCause(state.status)}.`,
 		hint: subject.failureConsequence,
-		retryable: true,
+		retryLabel: panelRetryLabel(state.status),
 	};
 }
 
@@ -170,4 +212,118 @@ export function actionFailureToast(action: string, status: number | null): strin
  */
 export function unconfirmedActionToast(action: string): string {
 	return `${action}: сервер принял запрос, но не подтвердил результат — обновите страницу и проверьте, как всё сохранилось.`;
+}
+
+/* ==================================================================== */
+/*  ОКНО РАСПОЗНАВАНИЯ ДИКТОВКИ — те же три состояния, те же правила      */
+/* ==================================================================== */
+
+/**
+ * Контексты диктовки, которые СЕРВЕР действительно умеет разбирать.
+ *
+ * Это зеркало живого контракта, а не список пожеланий:
+ *   `apps/api/src/routes/ai.ts` — `z.enum(["schedule","patient","visit"])`;
+ *   `apps/api/src/ai/dictationParser.ts` — `ParserContext` из тех же трёх;
+ *   `apps/api/src/ai/localDictationParser.ts` — ветки тех же трёх, слова «цена»
+ *   и «прайс» в нём не встречаются ни разу.
+ *
+ * ЗАЧЕМ ЭТОТ СПИСОК СУЩЕСТВУЕТ. Окно распознавания предлагало кнопку
+ * «ИИ-Анализ» и для прайс-листа, а сервер на `type:"prices"` отвечает отказом
+ * разбора запроса — всегда, для любого текста. Пользователю при этом
+ * сообщалось «обновите страницу и повторите»: обещание, которое не может
+ * сработать ни при каком обновлении. Пока разбора цен на сервере нет, кнопки
+ * тоже нет — иначе экран отправляет человека по кругу.
+ */
+export const SERVER_PARSED_DICTATION_CONTEXTS = ["schedule", "patient", "visit"] as const;
+
+export type ServerParsedDictationContext = (typeof SERVER_PARSED_DICTATION_CONTEXTS)[number];
+
+/** Все контексты окна распознавания. «prices» разбирается только на клиенте. */
+export type DictationContext = ServerParsedDictationContext | "prices";
+
+export function serverParsesDictation(context: DictationContext): boolean {
+	return (SERVER_PARSED_DICTATION_CONTEXTS as readonly string[]).includes(context);
+}
+
+/**
+ * Состояние окна распознавания. Отличается от `resolvePanelPhase` одним:
+ * пока идёт разбор, показывается разбор, даже если прошлый результат ещё на
+ * экране, — иначе нажатая кнопка не даёт вообще никакого отклика.
+ */
+export function resolveDictationPhase(input: {
+	readonly isParsing: boolean;
+	readonly hasFailure: boolean;
+	readonly isEmpty: boolean;
+}): PanelPhaseOrReady {
+	if (input.isParsing) return "loading";
+	if (input.hasFailure) return "failed";
+	if (input.isEmpty) return "empty";
+	return "ready";
+}
+
+/**
+ * Пусто ли распознанное. Своё правило на каждый контекст: в приёме пусто — это
+ * «ни зубов, ни записей», в прайсе — «нет названия услуги».
+ *
+ * `isAiTask` пустотой НЕ считается: это распознанное «фраза сложная», у него
+ * свой текст и свой следующий шаг.
+ */
+export function isDictationResultEmpty(context: DictationContext, data: unknown): boolean {
+	if (!data || typeof data !== "object") return true;
+	const row = data as Record<string, unknown>;
+	if (row.isAiTask === true) return false;
+	if (context === "prices") return !row.serviceName;
+	if (context === "visit") {
+		const teeth = Array.isArray(row.toothUpdates) ? row.toothUpdates.length : 0;
+		const notes = row.emkUpdates && typeof row.emkUpdates === "object"
+			? Object.keys(row.emkUpdates as Record<string, unknown>).length
+			: 0;
+		return teeth === 0 && notes === 0;
+	}
+	return Object.keys(row).length === 0;
+}
+
+/**
+ * Ничего не распознано. Раньше здесь стояло «Пусто...» и «Не удалось
+ * распознать детали. Попробуйте еще раз или используйте ИИ.» — то есть факт без
+ * следующего шага. Теперь каждая строка показывает, КАК надо сказать: пример
+ * важнее объяснения, потому что диктуют вслух и с первого раза.
+ */
+export function dictationEmptyHint(context: DictationContext): string {
+	if (context === "schedule") {
+		return "Ни пациента, ни времени в сказанном не нашлось. Скажите одной фразой, кого и когда записать — например: «Запиши Иванову на вторник в десять утра».";
+	}
+	if (context === "patient") {
+		return "Данные пациента не распознаны. Скажите фамилию, имя и телефон — например: «Иванова Мария Петровна, девять два семь один два три четыре пять шесть семь».";
+	}
+	if (context === "visit") {
+		return "Ни зубов, ни записей приёма не распознано. Назовите номер зуба и что с ним сделано — например: «Двадцать шестой, пломба».";
+	}
+	return "Название услуги не распознано. Скажите название и цену одной фразой — например: «Лечение кариеса, четыре тысячи пятьсот».";
+}
+
+/**
+ * Фраза распознана как слишком сложная для обычного разбора.
+ *
+ * БЫЛО: на экран выводился сам текст запроса к языковой модели, шрифтом
+ * пишущей машинки, под заголовком «Сгенерированный промпт (Готов к отправке)».
+ * Врачу он не говорит ничего, а следующий шаг из него не следует. Шаг зависит
+ * от того, умеет ли сервер разбирать этот контекст вообще.
+ */
+export function dictationComplexHint(context: DictationContext): string {
+	if (serverParsesDictation(context)) {
+		return "Фраза сложная — обычным разбором её не понять. Нажмите «ИИ-Анализ»: разберёт сервер клиники. Или скажите короче и проще.";
+	}
+	return "Фраза сложная — обычным разбором её не понять. Скажите короче: сначала название услуги, потом цену. Либо закройте окно и заполните поля вручную.";
+}
+
+/** Идёт разбор. Название модели («Llama-3 анализирует...») человеку не сообщается. */
+export const DICTATION_PARSING_TITLE = "Разбираем надиктованное…";
+
+/**
+ * Разбор на сервере не удался. Причина — общая с панелями, поэтому кода ответа
+ * в ней нет ни в одной ветке, а следующий шаг здесь есть всегда: ручной ввод.
+ */
+export function dictationFailureText(status: number | null): string {
+	return `Разобрать надиктованное не удалось: ${requestFailureCause(status)}. Пока можно закрыть окно и ввести данные вручную.`;
 }

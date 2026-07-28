@@ -91,7 +91,9 @@ export type WhatsappSettingsLoadState =
  * в разметке: именно решение «что показать при отказе» и ошибалось.
  */
 export const WHATSAPP_SETTINGS_PANEL_SUBJECT: PanelSubject = {
-	title: "Настройки WhatsApp",
+	// Целая согласованная строка: слова «не загружены» больше не дописывает общий
+	// модуль, поэтому число и род называет тот, кто знает существительное.
+	notLoadedTitle: "Настройки WhatsApp не загружены",
 	accusative: "настройки WhatsApp",
 	emptyTitle: "WhatsApp ещё не подключён",
 	emptyHint:

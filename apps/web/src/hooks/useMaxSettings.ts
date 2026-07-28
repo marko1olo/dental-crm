@@ -93,7 +93,9 @@ export type MaxSettingsLoadState =
  * в разметке: именно решение «что показать при отказе» и ошибалось.
  */
 export const MAX_SETTINGS_PANEL_SUBJECT: PanelSubject = {
-	title: "Настройки MAX",
+	// Целая согласованная строка: слова «не загружены» больше не дописывает общий
+	// модуль, поэтому число и род называет тот, кто знает существительное.
+	notLoadedTitle: "Настройки MAX не загружены",
 	accusative: "настройки MAX",
 	emptyTitle: "MAX ещё не подключён",
 	emptyHint:

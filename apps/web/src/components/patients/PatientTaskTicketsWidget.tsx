@@ -29,7 +29,7 @@ import { PanelLoadFailure } from "../PanelLoadFailure";
  * выдавался за пустой.
  */
 const TICKETS_SUBJECT: PanelSubject = {
-	title: "Задачи по пациенту",
+	notLoadedTitle: "Задачи по пациенту не загружены",
 	accusative: "задачи по пациенту",
 	emptyTitle: "Нет активных задач по пациенту",
 	emptyHint: "Задачи помогают администраторам и врачам не забыть о важных делах: перезвонить, дослать документы, проверить самочувствие.",

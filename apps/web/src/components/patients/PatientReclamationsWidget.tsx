@@ -31,7 +31,7 @@ import { PanelLoadFailure } from "../PanelLoadFailure";
  * «Рекламации и осложнения отсутствуют» врачу, у пациента которого они есть.
  */
 const RECLAMATIONS_SUBJECT: PanelSubject = {
-	title: "Рекламации и осложнения",
+	notLoadedTitle: "Рекламации и осложнения не загружены",
 	accusative: "рекламации и осложнения по пациенту",
 	emptyTitle: "Рекламации и осложнения отсутствуют",
 	emptyHint: "Если пациент жалуется на результат лечения, зафиксируйте это здесь — тогда история будет видна врачу и руководителю.",
@@ -220,13 +220,31 @@ export function PatientReclamationsWidget({
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
-				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4"
+				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 flex flex-wrap items-start gap-3"
 			>
 				<PanelLoadFailure
 					subject={RECLAMATIONS_SUBJECT}
 					status={failureStatus}
 					onRetry={fetchReclamations}
+					className="flex-1 min-w-[16rem]"
 				/>
+				{/*
+					БЫЛО: этот возврат содержал ТОЛЬКО строку отказа. Оба вызова
+					`setIsAdding(true)` живут в ветках «пусто» и «данные есть», поэтому
+					при отказе чтения `isAdding` не мог стать true никогда — упавшее
+					ЧТЕНИЕ отбирало возможность ЗАПИСИ. Это две независимые операции:
+					при обрыве сети или сбое сервера врач всё равно обязан иметь
+					возможность зафиксировать осложнение, а не остаться со списком,
+					который не читается. Обещания «сохранится» здесь нет намеренно:
+					отказ записи виджет озвучит своим уведомлением.
+				*/}
+				<button
+					type="button"
+					onClick={() => setIsAdding(true)}
+					className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+				>
+					+ Фиксировать
+				</button>
 			</div>
 		);
 	}
@@ -309,6 +327,19 @@ export function PatientReclamationsWidget({
 			</div>
 
 			<div className="p-5 bg-white dark:bg-slate-900">
+				{/*
+					Форма открыта, а список не прочитан — это состояние тоже надо
+					называть: иначе, нажав «Фиксировать» на упавшем чтении, оператор
+					увидит пустой журнал под формой и решит, что осложнений нет.
+				*/}
+				{phase === "failed" && (
+					<PanelLoadFailure
+						subject={RECLAMATIONS_SUBJECT}
+						status={failureStatus}
+						onRetry={fetchReclamations}
+						className="mb-5"
+					/>
+				)}
 				<AnimatePresence>
 					{isAdding && (
 						<motion.form
