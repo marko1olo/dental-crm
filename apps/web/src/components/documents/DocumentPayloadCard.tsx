@@ -22,17 +22,26 @@ export interface DocumentPayloadCardProps {
 	title: string;
 	/** Одна строка о том, что именно фиксирует форма. */
 	description: string;
+	/**
+	 * Предупреждение над складным блоком: то, что человек обязан прочесть, НЕ
+	 * разворачивая поля. Внутрь `<details>` такое ставить нельзя — свёрнутый блок
+	 * его прячет, и получается предупреждение, которого никто не видит. Ровно так
+	 * стоит перечень нехваток у договора платных услуг (DocumentsView.tsx:1159),
+	 * там карточка выписана руками; этот слот избавляет от второй такой копии.
+	 */
+	notice?: ReactNode;
 	/** Поля формы: они и раньше лежали внутри складного блока. */
 	children: ReactNode;
 }
 
-export function DocumentPayloadCard({ title, description, children }: DocumentPayloadCardProps) {
+export function DocumentPayloadCard({ title, description, notice, children }: DocumentPayloadCardProps) {
 	return (
 		<article className="document-payload-card">
 			<div>
 				<h3>{title}</h3>
 				<p>{description}</p>
 			</div>
+			{notice ?? null}
 			<details className="document-manual-override">
 				<summary>✏️ Ручная корректировка полей (развернуть)</summary>
 				<div className="document-payload-collapsed-content">{children}</div>

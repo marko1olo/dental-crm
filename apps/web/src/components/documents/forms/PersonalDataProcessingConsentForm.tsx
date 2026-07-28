@@ -1,6 +1,10 @@
 import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
+import {
+	CLINIC_REQUISITES_LOCATION,
+	personalDataOperatorRequisitesReview,
+} from "../personalDataOperatorRequisites";
 
 /**
  * Оператор персональных данных: реквизиты клиники, которые форма только
@@ -23,8 +27,14 @@ export interface PersonalDataProcessingConsentFormProps {
 /**
  * Согласие на обработку персональных данных: цели, категории, передачи, отзыв.
  * Вынесено из DocumentsView.tsx дословно.
+ *
+ * Сверху карточки — разбор реквизитов оператора. Разбор в
+ * personalDataOperatorRequisites.ts, там же записано, что именно видел
+ * администратор до него: три пустые серые рамки и отказ по одной позиции за
+ * нажатие, без указания экрана, на котором эти реквизиты заполняют.
  */
 export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: PersonalDataProcessingConsentFormProps) {
+	const operatorReview = personalDataOperatorRequisitesReview(clinicProfileDraft);
 	const {
 		personalDataActions,
 		personalDataAutomatedDecisionAllowed,
@@ -54,6 +64,34 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 		<DocumentPayloadCard
 			title="Согласие на ПДн"
 			description="Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона."
+			notice={
+				operatorReview.problems.length > 0 ? (
+					<div
+						className="schedule-create-missing document-operator-requisites-missing"
+						role="status"
+						aria-live="polite"
+						style={{ marginTop: "12px" }}
+					>
+						<strong>
+							Согласие на ПДн не создастся: у клиники не хватает {operatorReview.problems.length} из{" "}
+							{operatorReview.requiredCount} реквизитов оператора. Вписать их в самом согласии нельзя —
+							они приходят из профиля клиники:
+						</strong>
+						<ul>
+							{operatorReview.problems.map((problem) => (
+								<li key={problem.field}>
+									{problem.label} — {problem.hint}
+								</li>
+							))}
+						</ul>
+						<small>
+							Заполните их в «{CLINIC_REQUISITES_LOCATION}», сохраните и вернитесь сюда — предупреждение
+							исчезнет само. Если в настройках реквизиты уже стоят, значит они не загрузились: обновите
+							страницу и откройте раздел заново.
+						</small>
+					</div>
+				) : null
+			}
 		>
 			<div className="document-payload-row">
 				<label>
@@ -61,17 +99,25 @@ export function PersonalDataProcessingConsentForm({ clinicProfileDraft }: Person
 					<input
 						value={clinicProfileDraft.legalName || clinicProfileDraft.clinicName}
 						readOnly
-						placeholder="заполните юридический профиль клиники"
+						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>
 				</label>
 				<label>
 					ИНН оператора
-					<input value={clinicProfileDraft.inn} readOnly placeholder="из настроек клиники" />
+					<input
+						value={clinicProfileDraft.inn}
+						readOnly
+						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+					/>
 				</label>
 			</div>
 			<label>
 				Адрес оператора
-				<input value={clinicProfileDraft.address} readOnly placeholder="из настроек клиники" />
+				<input
+					value={clinicProfileDraft.address}
+					readOnly
+					placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
+				/>
 			</label>
 			<label>
 				Цели обработки
