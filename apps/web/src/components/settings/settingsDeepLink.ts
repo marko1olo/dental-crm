@@ -25,6 +25,7 @@
  */
 
 import { settingsTabs, type SettingsTab } from "../../AppHelpers";
+import { type AppView, viewLabels } from "../../workspaceShell";
 
 /** Часть адреса после `#`: `settings/telegram`. */
 export function settingsTabHash(tab: SettingsTab): string {
@@ -58,3 +59,29 @@ export function openSettingsTab(tab: SettingsTab): void {
  * идентификатор — отсюда.
  */
 export const MESSENGERS_SETTINGS_TAB: SettingsTab = "telegram";
+
+/* ==================================================================== */
+/*  ПЕРЕХОД В РАЗДЕЛ РАБОЧЕГО МЕСТА — по тем же правилам                  */
+/* ==================================================================== */
+
+/**
+ * Открыть раздел рабочего места («Аналитика», «Связь» и прочие).
+ *
+ * Цель — `AppView`, а не строка: список разделов объявлен в `workspaceShell`, и
+ * `viewFromHash` пропускает только перечисленное в нём, а всё остальное молча
+ * превращает в «Смену». То есть опечатка отправила бы человека не туда без
+ * единого сообщения — ровно как с вкладками настроек.
+ */
+export function openWorkspaceView(view: AppView): void {
+	if (typeof window === "undefined") return;
+	window.location.hash = view;
+}
+
+/**
+ * Подпись раздела — из того же справочника, по которому подписано меню рабочего
+ * места. Совет «смотрите в разделе …» обязан называть раздел так, как он назван в
+ * меню: «Связь», а не «Сообщения»; «Аналитика», а не «Отчёты».
+ */
+export function workspaceViewTitle(view: AppView): string {
+	return viewLabels[view];
+}

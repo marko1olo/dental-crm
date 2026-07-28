@@ -27,10 +27,12 @@ import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
 
 import { settingsTabs } from "../../AppHelpers";
+import { appViews, viewLabels } from "../../workspaceShell";
 import {
 	MESSENGERS_SETTINGS_TAB,
 	settingsTabHash,
 	settingsTabTitle,
+	workspaceViewTitle,
 } from "./settingsDeepLink";
 
 const settingsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -103,6 +105,19 @@ describe("типизированный переход на вкладку нас
 	});
 });
 
+describe("переход в раздел рабочего места", () => {
+	test("«Аналитика» есть в списке разделов: иначе переход выкинет на «Смену»", () => {
+		assert.ok(appViews.includes("analytics"));
+	});
+
+	test("подпись раздела совпадает с подписью в меню рабочего места", () => {
+		// В тексте вкладки «Отчёты» раздел назван по этой подписи, а не словом
+		// «Отчёты»: в меню он подписан иначе, и совет обязан называть его так же.
+		assert.equal(workspaceViewTitle("analytics"), viewLabels.analytics);
+		assert.equal(workspaceViewTitle("communications"), "Связь");
+	});
+});
+
 describe("ссылки внутри раздела настроек", () => {
 	test("каждый адрес settings/<вкладка> назван в списке вкладок", () => {
 		const broken: string[] = [];
@@ -134,6 +149,8 @@ describe("ссылки внутри раздела настроек", () => {
  */
 const RETIRED_MISSING_ROUTES: readonly string[] = [
 	"/api/clinic/marketing-settings",
+	"/api/clinic/reporting-settings",
+	"/api/reporting/token/generate",
 ];
 
 describe("разобранные несуществующие адреса не возвращаются", () => {
