@@ -99,3 +99,11 @@
 .family-wallet-loading {
 	@apply text-slate-500 dark:text-slate-400 text-sm p-4 flex items-center gap-2;
 }
+
+/* Объяснение, почему «Списать с баланса» не нажимается. Тон предупреждения, а не
+   ошибки: ничего ещё не сломалось, человеку просто нужно поправить сумму.
+   Оформление — теми же утилитами, что и остальная панель, чтобы на экране кассы
+   не появилось второго языка сообщений. */
+.family-wallet-hint {
+	@apply mt-3 text-sm leading-relaxed text-amber-800 dark:text-amber-200;
+}

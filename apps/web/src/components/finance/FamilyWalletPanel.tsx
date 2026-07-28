@@ -30,11 +30,13 @@ interface FamilyGroup {
 /**
  * Как называть содержимое панели в сообщении об отказе.
  *
- * Заголовок во множественном числе: panelStateText склеивает его со словами
- * «не загружены», и «Семейный кошелёк не загружены» было бы косноязычием.
+ * Отказ называется целой согласованной строкой. Раньше здесь стояло название
+ * («Данные семейного кошелька»), а слова «не загружены» дописывал общий модуль —
+ * и согласование держалось на том, что название случайно оказалось во
+ * множественном числе. Теперь согласование живёт рядом с существительным.
  */
 const WALLET_PANEL_SUBJECT: PanelSubject = {
-	title: "Данные семейного кошелька",
+	notLoadedTitle: "Данные семейного кошелька не загружены",
 	accusative: "семейный кошелёк",
 	emptyTitle: "Пациент не входит в семью",
 	emptyHint: "Семейный счёт появится, когда пациента добавят в семейную группу.",
@@ -72,7 +74,26 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
 	const [topupAmount, setTopupAmount] = useState<number>(0);
-	const [amount, setAmount] = useState<number>(remainingDebtRub || 0);
+	/*
+	 * ПОЛЕ СУММЫ СПИСАНИЯ НАЧИНАЕТСЯ ПУСТЫМ, А НЕ С ДОЛГА ПАЦИЕНТА.
+	 *
+	 * БЫЛО: useState(remainingDebtRub || 0). Две беды сразу.
+	 *
+	 * Первая: начальное значение useState берётся ОДИН раз за жизнь компонента, а
+	 * панель при переходе к другому пациенту не размонтируется — меняется только
+	 * patientId. В поле оставался долг ПРЕДЫДУЩЕГО человека. Администратор
+	 * открывал Иванова с долгом 15 000 ₽, переключался на Петрова, у которого
+	 * долг 1 000 ₽, нажимал «Списать с баланса» — и с семейного счёта Петрова
+	 * уходило 15 000 ₽. Ровно та же подстановка чужих денег, от которой уже
+	 * защищён сброс формы приёма оплаты (components/finance/paymentComposerReset.ts).
+	 *
+	 * Вторая: подставленная сумма в кассе опасна и сама по себе. Пациент платит
+	 * часть, а одно нажатие по привычке списывает весь долг целиком.
+	 *
+	 * Теперь сумму подставляет только явное нажатие по кнопке «Долг: N ₽» — тем
+	 * же приёмом, что и в форме приёма оплаты выше на этом же экране.
+	 */
+	const [amount, setAmount] = useState<number>(0);
 	// Ключ идемпотентности живёт между повторами: без него повторная отправка
 	// после обрыва связи зачислила бы деньги дважды.
 	const topupMutationIdRef = useRef<string | null>(null);
@@ -136,6 +157,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		// по Б, и списание уходило в семью А со ссылкой на пациента Б.
 		setFamily(null);
 		setLoadFailure(null);
+		// Обе денежные суммы гасим при смене пациента: набранное для прежнего
+		// человека к новому не относится, а поле с чужой суммой выглядит как
+		// только что набранное.
+		setAmount(0);
+		setTopupAmount(0);
 		if (!isPatientDatabaseId) {
 			// Пациент не выбран — грузить нечего, и висящая «Загрузка…» здесь
 			// была бы обещанием, которое ничем не закончится.
@@ -175,6 +201,36 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const parsedBalance = Number(family?.balance ?? 0);
 	const balanceVal = Number.isFinite(parsedBalance) ? parsedBalance : 0;
 	const animatedBalance = useCountUp(balanceVal, 1000);
+
+	/*
+	 * Сколько предложить списать одним нажатием.
+	 *
+	 * Долг приходит с копейками (billingSummary.totalDueRub), а журнал платежей
+	 * хранит целые рубли (payments.amount_rub — integer), поэтому округляем. Ровно
+	 * то же округление и та же подпись стоят у кнопки «Долг» в форме приёма оплаты
+	 * (PaymentCapture): на одном экране одна и та же сумма обязана выглядеть
+	 * одинаково, иначе расхождение читается как ошибка в данных.
+	 * ДОЛГ (сервер): пока amount_rub целый, долг с копейками нельзя закрыть
+	 * ни этой кнопкой, ни обычной оплатой — остаток вида «0,50 ₽» не гасится.
+	 */
+	const debtSuggestionRub = Math.round(
+		Number.isFinite(remainingDebtRub) ? Math.max(0, remainingDebtRub) : 0,
+	);
+
+	/*
+	 * Почему кнопка «Списать с баланса» погасла.
+	 *
+	 * БЫЛО: кнопка просто не нажималась — при сумме больше баланса и при дробной
+	 * сумме. Проверки с понятными словами лежат внутри handlePay, но до них дело
+	 * не доходит: отключённая кнопка не даёт кликнуть, и подсказка не появляется
+	 * никогда. Для администратора это неотличимо от «программа сломалась».
+	 */
+	const payBlockReason =
+		amount > 0 && !Number.isInteger(amount)
+			? "Списание проходит только целыми рублями — уберите копейки из суммы."
+			: amount > balanceVal && amount > 0
+				? `На семейном счету только ${money(balanceVal)}. Спишите не больше этой суммы, остальное примите обычной оплатой или пополните счёт.`
+				: null;
 
 	const handlePay = async () => {
 		// БЫЛО: только `if (!family) return`. Отключение кнопки через isPaying
@@ -354,10 +410,31 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						className="family-wallet-input"
 						value={amount || ""}
 						onChange={(e) => setAmount(Number(e.target.value))}
-						placeholder="0.00"
+						/* БЫЛО: подсказка «0.00» обещала копейки, которые сервер
+						   отклоняет: списание проходит только целыми рублями. */
+						placeholder="0"
 						disabled={isPaying}
+						min={1}
+						step={1}
 						max={balanceVal}
+						aria-invalid={payBlockReason ? true : undefined}
+						aria-describedby={payBlockReason ? "family-withdraw-hint" : undefined}
 					/>
+					{/* Долг подставляется ТОЛЬКО нажатием, а не сам. Кнопка нужна,
+					    чтобы администратору не приходилось переписывать сумму глазами
+					    из сводки выше — самая частая причина ошибки на рубль. */}
+					{debtSuggestionRub > 0 && (
+						<div className="quick-chips-row">
+							<button
+								type="button"
+								className="quick-chip quick-chip--sm"
+								onClick={() => setAmount(debtSuggestionRub)}
+								disabled={isPaying}
+							>
+								Долг: {money(debtSuggestionRub)}
+							</button>
+						</div>
+					)}
 				</div>
 				<div className="family-wallet-btn-container">
 					<button
@@ -371,6 +448,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					</button>
 				</div>
 			</div>
+			{payBlockReason && (
+				<p className="family-wallet-hint" id="family-withdraw-hint" role="status">
+					{payBlockReason}
+				</p>
+			)}
 
 			{/* Пополнение. БЫЛО: интерфейса и эндпоинта пополнения не существовало,
 			    баланс мог только уменьшаться — поэтому он всегда оставался нулевым,
