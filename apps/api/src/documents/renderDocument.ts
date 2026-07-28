@@ -1,7 +1,12 @@
 import {
   documentKindMetadata,
+  formatKopecksRu,
+  kopecksToNumericString,
   legacyTaxDeductionCertificateMaxYear,
   legacyTaxDeductionCertificateMinYear,
+  parseKopecks,
+  splitKopecks,
+  sumKopecks,
   taxDeductionCertificateMinYear,
   type ClinicalToothRow,
   type ClinicProfile,
@@ -54,8 +59,43 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+/**
+ * Целые копейки → рубли числом, для тех мест, где сумма дальше уходит в rub().
+ *
+ * Через строку numeric(12, 2) намеренно: это единственный способ получить из
+ * копеек ровно то же число, которое лежит в денежной колонке базы, не заводя
+ * второй способ считать деньги. Арифметика остаётся в @dental/shared.
+ */
+function rublesFromKopecks(kopecks: number): number {
+  return Number(kopecksToNumericString(kopecks));
+}
+
+/**
+ * Денежная сумма для печатной формы: «1 500 руб.» и «1 500,50 руб.».
+ *
+ * Раньше здесь стоял `value.toLocaleString("ru-RU")`, и это давало два дефекта
+ * в одной строке. Копеечная сумма печаталась с одним знаком — «600,6 руб.»
+ * вместо «600,60 руб.». А сумма, пришедшая из сложения в плавающей точке,
+ * молча пряталась: toLocaleString округляет до трёх знаков, поэтому
+ * 1110.9999999999995 выглядело как «1 111 руб.», хотя проверки выдачи в этом же
+ * файле сравнивали именно исходное дробное значение и документ не выдавали.
+ *
+ * Теперь сумма приводится к целым копейкам (parseKopecks из @dental/shared) и
+ * печатается ровно. Копейки показываются только когда они есть, поэтому для
+ * целых рублей вывод не изменился ни на один байт.
+ *
+ * Нечисловое значение — это не «0 руб.»: оно печатается как «не указана», а эта
+ * строка входит в unresolvedPlaceholderPatterns, то есть документ с такой суммой
+ * не выдаётся, вместо того чтобы уйти пациенту с «NaN руб.».
+ */
 function rub(value: number | null) {
-  return value === null ? "не указана" : `${value.toLocaleString("ru-RU")} руб.`;
+  if (value === null || !Number.isFinite(value)) return "не указана";
+  const numeric = kopecksToNumericString(parseKopecks(value));
+  const negative = numeric.startsWith("-");
+  const [wholeRubles, fractionKopecks] = numeric.replace("-", "").split(".");
+  const grouped = Number(wholeRubles).toLocaleString("ru-RU");
+  const amount = fractionKopecks === "00" ? grouped : `${grouped},${fractionKopecks}`;
+  return `${negative ? "-" : ""}${amount} руб.`;
 }
 
 function issuedDate(document: GeneratedDocument) {
@@ -651,8 +691,31 @@ const treatmentPlanItemStatusLabels: Record<TreatmentPlanItem["status"], string>
   cancelled: "отменено"
 };
 
+/**
+ * Итог по строке плана лечения в целых копейках.
+ *
+ * Цена и скидка приводятся к копейкам, поэтому вычитание идёт целыми числами:
+ * 1010.10 * 1 - 0 больше не даёт 1010.1000000000001.
+ *
+ * Количество в базе объявлено как numeric(10, 2) (apps/api/src/db/schema.ts:458),
+ * хотя контракт требует целое. Падать на дробном количестве нельзя — документ
+ * тогда вообще не отрендерится, — поэтому дробный случай округляется до целой
+ * копейки и это отмечено здесь явно, а не спрятано. Целое количество считается
+ * точно и никакого округления не проходит.
+ */
+function treatmentPlanItemTotalKopecks(item: TreatmentPlanItem): number {
+  const unitPriceKopecks = parseKopecks(item.unitPriceRub);
+  const discountKopecks = parseKopecks(item.discountRub);
+  const quantity = Number(item.quantity);
+  if (!Number.isFinite(quantity)) return 0;
+  const grossKopecks = Number.isInteger(quantity)
+    ? unitPriceKopecks * quantity
+    : Math.round(unitPriceKopecks * quantity);
+  return Math.max(0, grossKopecks - discountKopecks);
+}
+
 function treatmentPlanItemTotalRub(item: TreatmentPlanItem) {
-  return Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
+  return rublesFromKopecks(treatmentPlanItemTotalKopecks(item));
 }
 
 function serviceCatalogMap(context: DocumentRenderContext) {
@@ -676,12 +739,26 @@ function financialDocumentTreatmentItems(document: GeneratedDocument, context: D
   });
 }
 
-function treatmentPlanTotalRub(document: GeneratedDocument, context: DocumentRenderContext) {
-  const total = financialDocumentTreatmentItems(document, context).reduce(
-    (sum, item) => sum + treatmentPlanItemTotalRub(item),
-    0
+/**
+ * Сумма плана лечения в целых копейках, либо сумма самого документа, если строк
+ * плана нет. Сложение идёт целыми числами через sumKopecks, поэтому «больше
+ * нуля» и последующее сравнение с оплатами не зависят от порядка слагаемых.
+ */
+function treatmentPlanTotalKopecks(document: GeneratedDocument, context: DocumentRenderContext): number | null {
+  const totalKopecks = sumKopecks(
+    financialDocumentTreatmentItems(document, context).map(treatmentPlanItemTotalKopecks)
   );
-  return total > 0 ? total : document.totalAmountRub;
+  if (totalKopecks > 0) return totalKopecks;
+  const documentTotalRub = document.totalAmountRub;
+  if (documentTotalRub === null || documentTotalRub === undefined || !Number.isFinite(documentTotalRub)) {
+    return null;
+  }
+  return parseKopecks(documentTotalRub);
+}
+
+function treatmentPlanTotalRub(document: GeneratedDocument, context: DocumentRenderContext) {
+  const totalKopecks = treatmentPlanTotalKopecks(document, context);
+  return totalKopecks === null ? null : rublesFromKopecks(totalKopecks);
 }
 
 function financialServiceRows(document: GeneratedDocument, context: DocumentRenderContext, includeStatus = false) {
@@ -697,7 +774,7 @@ function financialServiceRows(document: GeneratedDocument, context: DocumentRend
       const title = service?.title ?? item.serviceId;
       const code = service?.code ? `${service.code} ` : "";
       const tooth = item.toothCode ? `зуб ${item.toothCode}` : "без привязки к зубу";
-      const discount = item.discountRub > 0 ? rub(item.discountRub) : "нет";
+      const discount = parseKopecks(item.discountRub) > 0 ? rub(item.discountRub) : "нет";
       const statusCell = includeStatus ? `<td>${escapeHtml(treatmentPlanItemStatusLabels[item.status])}</td>` : "";
       return `<tr>
         <td>${escapeHtml(`${code}${title}`)}</td>
@@ -719,24 +796,53 @@ function financialServiceTable(document: GeneratedDocument, context: DocumentRen
     </table>`;
 }
 
-function paidTotalForDocument(document: GeneratedDocument, context: DocumentRenderContext) {
-  return paidPaymentsForDocument(document, context).reduce((total, payment) => total + payment.amountRub, 0);
+/** Фактически оплачено по документу, в целых копейках. Точное сложение. */
+function paidTotalKopecksForDocument(document: GeneratedDocument, context: DocumentRenderContext): number {
+  return sumKopecks(paidPaymentsForDocument(document, context).map((payment) => parseKopecks(payment.amountRub)));
 }
 
+function paidTotalForDocument(document: GeneratedDocument, context: DocumentRenderContext) {
+  return rublesFromKopecks(paidTotalKopecksForDocument(document, context));
+}
+
+/**
+ * Строки графика оплат.
+ *
+ * Здесь было два дефекта, оба от плавающей точки. Остаток считался как
+ * `total - paid` на дробных числах, поэтому полностью оплаченный план давал
+ * остаток 4.5e-13 вместо нуля; условие `remainingRub > 0` срабатывало, а
+ * `Math.ceil(4.5e-13 / 2)` печатало пациенту требование доплатить 1 руб. Второй
+ * дефект — деление пополам: половины считались в рублях с округлением вверх, и
+ * их сумма не была равна остатку.
+ *
+ * Теперь остаток — вычитание целых копеек (ноль это ровно ноль), а деление идёт
+ * через splitKopecks, который гарантирует, что сумма частей РАВНА остатку.
+ */
 function installmentRows(document: GeneratedDocument, context: DocumentRenderContext) {
-  const totalRub = treatmentPlanTotalRub(document, context) ?? document.totalAmountRub ?? 0;
-  const paidRub = paidTotalForDocument(document, context);
-  const remainingRub = Math.max(0, totalRub - paidRub);
+  const totalKopecks = treatmentPlanTotalKopecks(document, context) ?? 0;
+  const paidKopecks = paidTotalKopecksForDocument(document, context);
+  const remainingKopecks = Math.max(0, totalKopecks - paidKopecks);
   const rows: string[] = [];
-  if (paidRub > 0) {
-    rows.push(`<tr><td>Оплачено по сохраненным платежам</td><td>${escapeHtml(rub(paidRub))}</td><td>оплачено</td></tr>`);
+  if (paidKopecks > 0) {
+    rows.push(
+      `<tr><td>Оплачено по сохраненным платежам</td><td>${escapeHtml(
+        rub(rublesFromKopecks(paidKopecks))
+      )}</td><td>оплачено</td></tr>`
+    );
   }
-  if (remainingRub > 0) {
-    const firstPart = Math.ceil(remainingRub / 2);
-    const secondPart = remainingRub - firstPart;
-    rows.push(`<tr><td>Следующий платеж до ближайшего визита</td><td>${escapeHtml(rub(firstPart))}</td><td>план</td></tr>`);
-    if (secondPart > 0) {
-      rows.push(`<tr><td>Финальный платеж до выдачи акта</td><td>${escapeHtml(rub(secondPart))}</td><td>план</td></tr>`);
+  if (remainingKopecks > 0) {
+    const [firstPartKopecks, secondPartKopecks] = splitKopecks(remainingKopecks, 2);
+    rows.push(
+      `<tr><td>Следующий платеж до ближайшего визита</td><td>${escapeHtml(
+        rub(rublesFromKopecks(firstPartKopecks))
+      )}</td><td>план</td></tr>`
+    );
+    if (secondPartKopecks > 0) {
+      rows.push(
+        `<tr><td>Финальный платеж до выдачи акта</td><td>${escapeHtml(
+          rub(rublesFromKopecks(secondPartKopecks))
+        )}</td><td>план</td></tr>`
+      );
     }
   }
   return rows.length ? rows.join("") : `<tr><td>План полностью оплачен</td><td>${escapeHtml(rub(0))}</td><td>оплачено</td></tr>`;
@@ -879,10 +985,23 @@ function taxPaymentCodeLabel(code: "1" | "2" | null) {
   return code === "2" ? "2 - дорогостоящее" : "1 - обычное";
 }
 
+/**
+ * Сумма расходов по коду услуги для справки КНД 1151156, в целых копейках.
+ *
+ * Справка уходит в налоговую, поэтому сумма обязана быть точной до копейки: до
+ * этого сложение шло в плавающей точке, и десять оплат по 1010.10 руб. давали
+ * 10101.000000000002.
+ */
+function taxPaymentSumKopecks(payments: Payment[], code: "1" | "2"): number {
+  return sumKopecks(
+    payments
+      .filter((payment) => taxPaymentCode(payment) === code)
+      .map((payment) => parseKopecks(payment.amountRub))
+  );
+}
+
 function taxPaymentSum(payments: Payment[], code: "1" | "2") {
-  return payments
-    .filter((payment) => taxPaymentCode(payment) === code)
-    .reduce((total, payment) => total + payment.amountRub, 0);
+  return rublesFromKopecks(taxPaymentSumKopecks(payments, code));
 }
 
 function firstTaxPayment(payments: Payment[]): Payment | null {
@@ -1161,7 +1280,11 @@ function paymentDateLabel(payment: Payment) {
 
 function paidPaymentsForDocument(document: GeneratedDocument, context: DocumentRenderContext): Payment[] {
   const matchingPayments = (context.payments ?? []).filter(
-    (payment) => payment.patientId === document.patientId && payment.status === "paid" && payment.amountRub > 0
+    (payment) =>
+      payment.patientId === document.patientId &&
+      payment.status === "paid" &&
+      Number.isFinite(payment.amountRub) &&
+      parseKopecks(payment.amountRub) > 0
   );
   if (document.kind === "payment_receipt" && document.payload?.paymentReceipt?.selectedPaymentIds.length) {
     const selectedPaymentIds = new Set(document.payload.paymentReceipt.selectedPaymentIds);
@@ -1252,15 +1375,36 @@ function paymentReceiptSelectionBlockReason(document: GeneratedDocument, context
     if (document.visitId && payment.visitId !== document.visitId) {
       return "Платежная квитанция содержит платеж не из выбранного визита.";
     }
-    if (payment.status !== "paid" || payment.amountRub <= 0) {
+    if (payment.status !== "paid" || !Number.isFinite(payment.amountRub) || parseKopecks(payment.amountRub) <= 0) {
       return "Платежная квитанция может включать только проведенные положительные оплаты.";
     }
     selectedPayments.push(payment);
   }
 
-  const actualTotalRub = selectedPayments.reduce((total, payment) => total + payment.amountRub, 0);
-  if (actualTotalRub !== payload.totalPaidRub) {
-    return `Платежная квитанция: сумма ${payload.totalPaidRub} руб. не совпадает с выбранными оплатами ${actualTotalRub} руб.`;
+  /**
+   * Сумма квитанции сверяется в целых копейках.
+   *
+   * Здесь стояло строгое сравнение двух дробных чисел, и сложение шло в
+   * плавающей точке. Двадцать оплат по 55.55 руб. давали 1110.9999999999995
+   * вместо 1111, десять по 1010.10 — 10101.000000000002 вместо 10101, и
+   * квитанция на верную сумму не выдавалась вообще: клиника видела отказ
+   * «сумма 1111 руб. не совпадает с выбранными оплатами 1110.9999999999995 руб.»
+   * и не могла ничего с ним сделать.
+   *
+   * Допуск (эпсилон) здесь был бы неверным решением, а не более мягким: это
+   * гейт выдачи платёжного документа, и допуск, принимающий 1110.9999999999995
+   * за 1111, принял бы и настоящее расхождение в одну копейку. Поэтому сумма
+   * каждой оплаты переводится в целые копейки по её собственному десятичному
+   * значению (ровно то, что лежит в numeric(12, 2)), складывается целыми
+   * числами, и сравнение остаётся строгим: 111099 против 111100 по-прежнему
+   * блокирует выдачу.
+   */
+  const actualTotalKopecks = sumKopecks(selectedPayments.map((payment) => parseKopecks(payment.amountRub)));
+  const declaredTotalKopecks = parseKopecks(payload.totalPaidRub);
+  if (actualTotalKopecks !== declaredTotalKopecks) {
+    return `Платежная квитанция: указана сумма ${formatKopecksRu(declaredTotalKopecks)}, а выбранные оплаты дают ${formatKopecksRu(
+      actualTotalKopecks
+    )}. Исправьте сумму в квитанции или измените набор выбранных оплат.`;
   }
 
   const actualReceiptNumbers = new Set(
@@ -2318,7 +2462,9 @@ function paymentInvoice(document: GeneratedDocument, context: DocumentRenderCont
 function paymentReceipt(document: GeneratedDocument, context: DocumentRenderContext) {
   const payload = document.payload?.paymentReceipt as PaymentReceiptPayload | undefined;
   const documentPayments = paidPaymentsForDocument(document, context);
-  const paidRub = documentPayments.reduce((total, payment) => total + payment.amountRub, 0);
+  const paidRub = rublesFromKopecks(
+    sumKopecks(documentPayments.map((payment) => parseKopecks(payment.amountRub)))
+  );
   if (payload) {
     const payerTaxRows = payload.taxSupportRequested
       ? `${row("Дата рождения", present(payload.payerBirthDate) ?? "не указана")}
@@ -2440,7 +2586,17 @@ function installmentPaymentSchedule(document: GeneratedDocument, context: Docume
     <table>
       ${row("Общая сумма плана", rub(treatmentPlanTotalRub(document, context)))}
       ${row("Оплачено", rub(paidTotalForDocument(document, context)))}
-      ${row("Остаток", rub(Math.max(0, (treatmentPlanTotalRub(document, context) ?? document.totalAmountRub ?? 0) - paidTotalForDocument(document, context))))}
+      ${row(
+        "Остаток",
+        rub(
+          rublesFromKopecks(
+            Math.max(
+              0,
+              (treatmentPlanTotalKopecks(document, context) ?? 0) - paidTotalKopecksForDocument(document, context)
+            )
+          )
+        )
+      )}
       ${row("Связанный договор/план", document.title)}
     </table>
     <h2>Платежи</h2>
@@ -3857,13 +4013,27 @@ function documentIssueBlockReasonRaw(
 
   if (metadata.requiresPaidRecord && metadata.group !== "tax") {
     const paidPayments = paidPaymentsForDocument(document, context);
-    const paidTotalRub = paidPayments.reduce((total, payment) => total + payment.amountRub, 0);
+    /**
+     * Потолок возврата тоже считается в целых копейках.
+     *
+     * Раньше сумма оплат складывалась в плавающей точке, поэтому возврат ровно
+     * той суммы, которую пациент заплатил, отклонялся: двадцать оплат по
+     * 55.55 руб. давали потолок 1110.9999999999995, и возврат 1111 руб.
+     * оказывался «больше фактически оплаченной суммы». Клиника не могла вернуть
+     * деньги, которые сама же приняла.
+     */
+    const paidTotalKopecks = sumKopecks(paidPayments.map((payment) => parseKopecks(payment.amountRub)));
     const refundPayload = document.payload?.paymentRefundCorrection;
     if (!paidPayments.length) {
       return "Для этого документа нужен хотя бы один сохраненный оплаченный платеж в выбранном визите или документе.";
     }
-    if (document.kind === "payment_refund_correction_request" && refundPayload && refundPayload.amountRub > paidTotalRub) {
-      return "Сумма возврата или коррекции не может превышать фактически оплаченную сумму по выбранному визиту.";
+    if (document.kind === "payment_refund_correction_request" && refundPayload) {
+      const refundKopecks = parseKopecks(refundPayload.amountRub);
+      if (refundKopecks > paidTotalKopecks) {
+        return `Сумма возврата ${formatKopecksRu(refundKopecks)} больше фактически оплаченной ${formatKopecksRu(
+          paidTotalKopecks
+        )} по выбранному визиту. Уменьшите сумму возврата или добавьте в документ остальные оплаты визита.`;
+      }
     }
     if (
       (document.kind === "payment_receipt" || document.kind === "payment_refund_correction_request") &&
