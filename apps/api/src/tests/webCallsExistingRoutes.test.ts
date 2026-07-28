@@ -34,8 +34,14 @@ const webSrc = path.resolve(apiSrc, "../../web/src");
  * когда адрес починен или вызов удалён, строку убирают отсюда.
  */
 const KNOWN_MISSING: readonly string[] = [
+	/*
+	 * Отсюда убраны ещё две строки, которые больше НИКЕМ не вызываются:
+	 * /api/clinical/visit-examination-photo-links и
+	 * /api/integrations/mkb10-auto-directories. Их звали пустые блоки с экрана
+	 * приёма, и блоки удалены вместе с обещанием. Список долга обязан быть
+	 * правдой: адрес, которого никто не зовёт, — не долг, а мусор в списке.
+	 */
 	// Виджеты «конкурентного паритета»: ни маршрута, ни писателя в таблице.
-	"/api/clinical/visit-examination-photo-links",
 	"/api/crm/bulk-image-operation-logs",
 	// Отсюда убраны как починенные: /api/crm/patient-communication-timelines
 	// (виджет переведён на communication-timelines у пациента) и
@@ -43,7 +49,6 @@ const KNOWN_MISSING: readonly string[] = [
 	// archive-status у пациента).
 	"/api/crm/patient-duplicate-merge-queues",
 	"/api/integrations/egisz-blank-permissions",
-	"/api/integrations/mkb10-auto-directories",
 	"/api/integrations/yandex-calendar-syncs",
 	"/api/marketing/family-recommendation-sources",
 	"/api/schedule/external-schedule-action-logs",
@@ -246,7 +251,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 28,
+			KNOWN_MISSING.length <= 26,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);
