@@ -303,7 +303,6 @@ import {
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
-import { preloadWorkspaceView, scheduleIdleWorkspacePreload } from "./workspacePreload";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
@@ -369,7 +368,6 @@ import {
 } from "./workspaceUiLabels";
 const ImagingView = lazy(() => import("./ImagingView").then((module) => ({ default: module.ImagingView })));
 const VisitView = lazy(() => import("./VisitView").then((module) => ({ default: module.VisitView })));
-const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
 const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
 const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
 const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));

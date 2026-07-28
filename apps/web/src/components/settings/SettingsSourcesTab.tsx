@@ -18,12 +18,10 @@ import {
 	ScanSearch,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { CtPlanningToolsPanel } from "../../ctPlanningTools";
 
 type MprClinicalPreset =
 	import("../../mprClinicalStatus").MprClinicalPresetFitTarget;
 
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type StringTokenGroup = { title: string; items: string[] };

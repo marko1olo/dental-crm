@@ -740,7 +740,6 @@ import {
 	mprSlicePresetFractions,
 	resolveMprKeyboardAdjustment,
 } from "./utils/math/mprMath";
-import { viewLabels as workspaceViewLabels } from "./workspaceShell";
 
 type MprAxisVisualizerStyle = CSSProperties & {
 	"--mpr-axis-deg": string;

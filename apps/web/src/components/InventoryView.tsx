@@ -13,7 +13,6 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { money } from "../AppHelpers";
-import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import type { InventoryItem } from "./inventory/useInventoryLogic";

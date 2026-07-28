@@ -18,8 +18,6 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { emptyVisitNoteForm } from "../AppHelpers";
-import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
 import { useVisitStore } from "../store/visitStore";
 import {

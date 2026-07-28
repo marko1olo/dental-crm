@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { UserCheck } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
