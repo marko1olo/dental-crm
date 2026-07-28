@@ -95,11 +95,17 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
          * Сервер уже говорит по-русски и по делу: «Неверный PIN-код.» (401),
          * «Сначала выполните вход в кабинет клиники.» (401 ClinicAuthRequired),
          * «Необходимо указать сотрудника и ввести PIN-код.» (400)
-         * — apps/api/src/routes/auth.ts:174-211. Его формулировку и показываем.
+         * — apps/api/src/routes/auth.ts:174-211. Его формулировку и показываем,
+         * но только если она действительно по-русски: обработчика ненайденного
+         * адреса у API нет, и на несовпадение версий Fastify отвечает своим
+         * английским «Route POST:/api/auth/staff/unlock not found». Ровно такую же
+         * проверку делает сам сервер, прежде чем показать человеку текст
+         * исключения (apps/api/src/server.ts:226-233).
          * Своя причина нужна там, где сервер ничего внятного не прислал: тогда
          * берём общий разбор кода ответа, тот же что у остальных панелей.
          */
-        const serverMessage = typeof payload?.message === 'string' ? payload.message.trim() : '';
+        const rawMessage = typeof payload?.message === 'string' ? payload.message.trim() : '';
+        const serverMessage = /[А-Яа-яЁё]/.test(rawMessage) ? rawMessage : '';
         failUnlock(serverMessage || actionFailureToast('Смена не открыта', response.status));
         return;
       }

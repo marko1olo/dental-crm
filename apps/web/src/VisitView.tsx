@@ -454,7 +454,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </div>
               )}
               <div className="dictation-header">
-                <Mic aria-hidden="true" className={isServerVoiceRecording ? "recording-icon-pulse" : ""} style={{ color: isServerVoiceRecording ? 'var(--red-500)' : undefined }} />
+                {/*
+                  Инлайновый color: var(--red-500) убран. Имя --red-500 не
+                  объявлено ни в одном файле стилей, то есть красить микрофон оно
+                  не могло. Красным он всё-таки был — но по другой причине:
+                  .recording-icon-pulse задаёт color: var(--bad-fg) !important
+                  (styles/dente-redesign.css:586), а объявление с !important
+                  сильнее инлайнового. Дальше держим цвет там же, в классе, иначе
+                  следующий читатель поверит несуществующей переменной.
+                */}
+                <Mic aria-hidden="true" className={isServerVoiceRecording ? "recording-icon-pulse" : ""} />
                 <div>
                   <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     Диктовка врача
@@ -1109,10 +1118,33 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                     <Check aria-hidden="true" /> {visitNoteActionLabel}
                   </button>
                 ) : null}
+                {/*
+                  ПЛАШКА «ОСТАЛОСЬ ЗАПОЛНИТЬ» ОФОРМЛЯЕТСЯ КЛАССОМ, А НЕ ИНЛАЙНОМ.
+
+                  Здесь стояли инлайновые стили с именами --amber-50, --amber-200,
+                  --amber-800 и --amber-900. Ни одно из них не объявлено ни в
+                  styles/dente-redesign.css, ни в styles/token-aliases.css, ни в
+                  main.css (там эти имена встречаются только с запасным значением:
+                  var(--amber-50, #fffbeb)). Неизвестное имя в var() делает всё
+                  объявление недействительным, и оно НЕ откатывается к правилу из
+                  каскада: background и border берут начальное значение, то есть
+                  прозрачный фон и полное отсутствие рамки. Класс
+                  .visit-note-missing (main.css:10697) при этом задаёт ровно то,
+                  что инлайн пытался повторить, — фон #fff8ef, рамку #e7c68e,
+                  радиус, отступы и цвет текста #744d18. Инлайн его перебивал и
+                  ломал: единственная подсказка о том, чего не хватает для
+                  сохранения приёма, рисовалась без плашки, вплотную к соседнему
+                  тексту. Тот же блок в components/visit/VisitEmkTab.tsx:292-306
+                  оформлен без инлайна и выглядит правильно.
+
+                  marginTop тоже убран: .ai-draft — сетка с gap 12px, а у
+                  .visit-note-missing стоит grid-column: 1 / -1, то есть отступ уже
+                  есть и 1rem поверх него был двойным.
+                */}
                 {(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
-                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite" style={{ marginTop: '1rem', background: 'var(--amber-50)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--amber-200)' }}>
-                    <strong style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--amber-900)' }}>Чтобы сохранить запись приема, осталось:</strong>
-                    <ul style={{ margin: 0, paddingLeft: '1.5rem', color: 'var(--amber-800)' }}>
+                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
+                    <strong>Чтобы сохранить запись приема, осталось:</strong>
+                    <ul>
                       {(visitNoteAcceptMissingSteps || []).map((step: any) => (
                         <li key={step}>{step}</li>
                       ))}

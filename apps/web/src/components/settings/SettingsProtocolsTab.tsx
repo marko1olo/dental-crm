@@ -2,9 +2,45 @@ import type { ProtocolTemplate } from "@dental/shared";
 import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast, NO_RESPONSE_CAUSE } from "../../lib/panelStateText";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import "./SettingsProtocolsTab.css";
+
+/**
+ * Отказ сервера человеческими словами.
+ *
+ * БЫЛО: `data.message || "Ошибка сохранения шаблона"` и `"Ошибка удаления"` —
+ * ни причины, ни того, что делать. Хуже, что формулировка сервера бралась без
+ * разбора: у API нет обработчика ненайденного адреса (apps/api/src/server.ts,
+ * setNotFoundHandler отсутствует), поэтому Fastify сам отвечает английским
+ * «Route POST:/api/settings/protocols not found» — и администратор клиники
+ * читал бы именно это.
+ *
+ * Поэтому формулировку сервера берём только если она действительно по-русски:
+ * ровно такую же проверку делает сам сервер в publicApiErrorMessage
+ * (apps/api/src/server.ts:226-233), прежде чем показать текст исключения
+ * человеку. Иначе причину называем по коду ответа общими для всех панелей
+ * словами из lib/panelStateText.ts.
+ */
+async function refusalMessage(response: Response, action: string): Promise<string> {
+	let serverMessage = "";
+	try {
+		const payload = (await response.json()) as { message?: unknown };
+		if (typeof payload.message === "string") serverMessage = payload.message.trim();
+	} catch {
+		// Тело не разобралось (HTML прокси, пустой ответ) — причина будет по коду.
+	}
+	if (serverMessage && /[А-Яа-яЁё]/.test(serverMessage)) {
+		return `${action}: ${serverMessage}`;
+	}
+	// Код ответа и техническая строка нужны поддержке, а не человеку у стойки.
+	console.error(
+		`[SettingsProtocolsTab] ${response.url} ответил ${response.status}: ${serverMessage || "без сообщения"}`,
+	);
+	return actionFailureToast(action, response.status);
+}
 
 export function SettingsProtocolsTab() {
 	const appLogic = useAppLogicContext();
@@ -78,15 +114,20 @@ export function SettingsProtocolsTab() {
 			});
 
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message || "Ошибка сохранения шаблона");
+				setError(await refusalMessage(res, "Шаблон не сохранён"));
+				return;
 			}
 
 			// Reload page to refresh dashboard state
 			window.location.reload();
 		} catch (err: any) {
+			/*
+			 * Сюда попадает только обрыв до ответа. БЫЛО: `err.message ||
+			 * "Неизвестная ошибка"`, то есть в красной плашке появлялся английский
+			 * текст исключения браузера («Failed to fetch»).
+			 */
 			console.error(err);
-			setError(err.message || "Неизвестная ошибка");
+			setError(`Шаблон не сохранён: ${NO_RESPONSE_CAUSE}.`);
 		} finally {
 			setLoading(false);
 		}
@@ -105,11 +146,17 @@ export function SettingsProtocolsTab() {
 			});
 
 			if (!res.ok) {
-				throw new Error("Ошибка удаления");
+				// БЫЛО: «Ошибка удаления» на любой отказ — от нехватки прав до
+				// недоступного сервера. Шаблон при этом остаётся на месте.
+				showToast(await refusalMessage(res, "Шаблон не удалён"), "error");
+				setLoading(false);
+				return;
 			}
 			window.location.reload();
 		} catch (err: any) {
-			showToast(err.message, "error");
+			// БЫЛО: `err.message` — английский текст исключения браузера.
+			console.error(err);
+			showToast(`Шаблон не удалён: ${NO_RESPONSE_CAUSE}.`, "error");
 			setLoading(false);
 		}
 	};
@@ -288,6 +335,36 @@ export function SettingsProtocolsTab() {
 				</button>
 			</div>
 
+			{/*
+				ТРИ СОСТОЯНИЯ ВМЕСТО ОДНОГО.
+
+				БЫЛО: сразу `typedProtocolTemplates.map(...)`. У клиники без шаблонов
+				под заголовком не было НИЧЕГО — ни «шаблонов нет», ни подсказки, зачем
+				они нужны и с чего начать. Пустая вкладка выглядела как незагруженная.
+
+				Ветка «загружаем» — защита, а не наблюдаемое состояние: сегодня
+				App.tsx:2333 не пускает в рабочую оболочку без загруженного dashboard,
+				но тип у него нullable, и вкладка не должна утверждать «шаблонов нет»,
+				если данных клиники у неё вообще нет.
+			*/}
+			{!dashboard ? (
+				<EmptyState
+					icon={<ClipboardCheck aria-hidden="true" />}
+					title="Загружаем шаблоны протоколов..."
+					description="Это займёт пару секунд."
+				/>
+			) : typedProtocolTemplates.length === 0 ? (
+				<EmptyState
+					icon={<ClipboardCheck aria-hidden="true" />}
+					title="Шаблонов приёма пока нет"
+					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Создайте первый — по одному на частый приём, например «Лечение кариеса» и «Осмотр»."
+					action={
+						<button className="primary-button" type="button" onClick={handleCreateNew}>
+							<Plus size={16} /> Добавить шаблон
+						</button>
+					}
+				/>
+			) : (
 			<div className="protocol-settings-grid">
 				{typedProtocolTemplates.map((template) => (
 					<article className="protocol-settings-card" key={template.id}>
@@ -325,22 +402,39 @@ export function SettingsProtocolsTab() {
 								type="button"
 								onClick={() => handleEdit(template)}
 								title="Редактировать"
+								aria-label={`Редактировать шаблон «${template.title}»`}
 							>
 								<Edit2 size={16} />
 							</button>
+							{/*
+								КНОПКА УДАЛЕНИЯ СНОВА КРАСНАЯ.
+
+								БЫЛО: className="danger-button" и цвета
+								var(--dente-red-10) / var(--dente-red-60). Правила
+								.danger-button нет ни в одном файле стилей, а имён
+								--dente-red-* не существует нигде в проекте: неизвестное
+								имя делает объявление недействительным, поэтому фон
+								становился прозрачным (background не наследуется), а
+								значок Trash2 — обычным цветом текста. Кнопка удаления
+								выглядела ровно как нейтральная иконка, ни одним пикселем
+								не предупреждая, что она сносит шаблон.
+
+								СТАЛО: форма и размер от .secondary-button — те же, что у
+								«Редактировать», без своей рамки и padding поверх, — а
+								цвета из объявленных семантических токенов --bad-bg и
+								--bad-fg (styles/dente-redesign.css:30, есть во всех трёх
+								темах).
+							*/}
 							<button
-								className="danger-button"
+								className="secondary-button"
 								type="button"
 								style={{
-									padding: "0.5rem",
-									backgroundColor: "var(--dente-red-10)",
-									color: "var(--dente-red-60)",
-									border: "none",
-									borderRadius: "0.5rem",
-									cursor: "pointer",
+									backgroundColor: "var(--bad-bg)",
+									color: "var(--bad-fg)",
 								}}
 								onClick={() => handleDelete(template.id)}
 								title="Удалить"
+								aria-label={`Удалить шаблон «${template.title}»`}
 								disabled={loading}
 							>
 								<Trash2 size={16} />
@@ -349,6 +443,7 @@ export function SettingsProtocolsTab() {
 					</article>
 				))}
 			</div>
+			)}
 		</section>
 	);
 }
