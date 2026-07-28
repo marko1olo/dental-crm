@@ -7,7 +7,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
@@ -81,15 +81,25 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		}
 	}, [doctors, doctorId]);
 
+	/*
+		Чей список мы показываем прямо сейчас. Нужен потому, что ответ сервера по
+		ПРОШЛОМУ пациенту приходит уже после переключения карточки: без этой
+		отметки он спокойно затирал список нового пациента чужими нарядами.
+	*/
+	const shownPatientIdRef = useRef(patientId);
+
 	const fetchOrders = async () => {
+		const requestedPatientId = patientId;
 		try {
 			setIsLoading(true);
 			const res = await fetch(
-				`/api/clinical/lab-orders?patientId=${patientId}`,
+				`/api/clinical/lab-orders?patientId=${requestedPatientId}`,
 				{
 					headers: readHeaders(),
 				},
 			);
+			// Пока ждали ответ, врач ушёл в другую карту — этот ответ уже не про неё.
+			if (shownPatientIdRef.current !== requestedPatientId) return;
 			if (res.ok) {
 				const data = await res.json();
 				setOrders(Array.isArray(data) ? data : []);
@@ -97,13 +107,45 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		} catch (e) {
 			console.error("Failed to load lab orders", e);
 		} finally {
-			setIsLoading(false);
+			if (shownPatientIdRef.current === requestedPatientId) {
+				setIsLoading(false);
+			}
 		}
 	};
 
+	/*
+		ПАНЕЛЬ НЕ ПЕРЕСОЗДАЁТСЯ ПРИ СМЕНЕ ПАЦИЕНТА, И ЭТО СТОИЛО БЫ ЧУЖОГО НАРЯДА.
+
+		ЧТО БЫЛО СЛОМАНО. Панель стоит в карточке приёма (VisitDiagnosticsTab) как
+		<LabOrdersPanel patientId={activePatient.id} /> — без key. React такой
+		компонент не пересоздаёт, он лишь отдаёт ему новый patientId, а всё
+		внутреннее состояние остаётся от ПРЕДЫДУЩЕГО пациента: и поля наряда, и
+		уже загруженный список.
+
+		ЧТО ВИДЕЛ ВРАЧ. Набрал по Петрову «зуб 16, цирконий, 25 000, уступ
+		пришеечный», не отправил, перешёл в карту Сидорова — и увидел на экране
+		Сидорова заполненный наряд Петрова. Кнопка «Создать наряд ЗТЛ» отправляет
+		patientId Сидорова: зуб, цена и примечание уезжают в лабораторию под чужим
+		именем. Список ниже врал так же — под именем Сидорова висели наряды
+		Петрова, и «удалить» со сменой статуса в этих строках работали по
+		настоящим, то есть по чужим, заказам.
+
+		ЧТО СТАЛО. Смена пациента чистит и список, и поля наряда. Пустой список
+		честнее заряженного чужим. «Лечащий врач» намеренно не сбрасывается: это
+		выбор смены, а не свойство пациента, и он всё равно тут же вернулся бы к
+		первому врачу из списка.
+	*/
 	useEffect(() => {
+		shownPatientIdRef.current = patientId;
+		setOrders([]);
+		setToothFdi("");
+		setDueDate("");
+		setClinicalNotes("");
+		setPriceRub("");
+		setMaterial("zirconia");
+		setColorVita("A3");
 		if (patientId) {
-			fetchOrders();
+			void fetchOrders();
 		}
 	}, [patientId]);
 
