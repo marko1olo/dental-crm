@@ -33,6 +33,11 @@ import {
   ScanLine,
   ChevronDown
 } from 'lucide-react';
+// Общее правило FDI, а не свой список: «зуб 99» и «зуб 0» — это мусор, и
+// проверять его надо тем же кодом, что смета и одонтограмма.
+import { isValidFdiToothNumber } from '@dental/shared';
+// Русское склонение счётного слова: «1 зуб», «2 зуба», «5 зубов».
+import { countLabel } from '../../AppHelpers';
 import { usePatientStore, type ToothStatus } from '../../store/patientStore';
 import { ShadowAnalystImageSlider } from './ShadowAnalystImageSlider';
 import { PanelLoadFailure } from '../PanelLoadFailure';
@@ -204,6 +209,20 @@ export function VisiographAnalyzer() {
    * страницы исчезало — врач считал, что оно в карте.
    */
   const [saveFailure, setSaveFailure] = useState<string | null>(null);
+  /*
+   * Что РЕАЛЬНО легло в зубную формулу, и о чём помощник сказал непонятно.
+   * Нужны раздельно, потому что заголовок под снимком утверждал «обновлено в
+   * формуле» про ВСЕ присланные позиции, включая непонятые и с мусорным номером
+   * зуба, — то есть про зубы, которых он не трогал.
+   */
+  const [appliedToothCodes, setAppliedToothCodes] = useState<string[]>([]);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
+  /*
+   * Снимок открыт из архива, а не разобран сейчас. Тогда про зубную формулу
+   * ничего не утверждаем: этот разбор применялся когда-то раньше, и сказать
+   * «внесено сейчас» или «не внесено» — соврать в обе стороны.
+   */
+  const [isHistoryView, setIsHistoryView] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
@@ -318,6 +337,9 @@ export function VisiographAnalyzer() {
     setIsAnalyzing(true);
     setError(null);
     setSaveFailure(null);
+    setAppliedToothCodes([]);
+    setApplyNotice(null);
+    setIsHistoryView(false);
     setCurrentScan(null);
     setCurrentImageUrl(null);
 
@@ -378,14 +400,41 @@ export function VisiographAnalyzer() {
         return;
       }
 
+      /*
+       * ПРИМЕНЕНИЕ НАХОДОК К ЗУБНОЙ ФОРМУЛЕ.
+       *
+       * БЫЛО: `AI_TO_ODONTOGRAM[state] ?? 'Caries'`. Любое НЕузнанное описание
+       * состояния — опечатка модели, новое слово, пустая строка — становилось
+       * диагнозом «Кариес» в карте пациента. Это выдуманный факт о пациенте: по
+       * нему потом строится план лечения и смета. Незнакомое слово означает
+       * «непонятно», а не «кариес», поэтому теперь такой зуб в формулу НЕ
+       * пишется вовсе, а врачу называется отдельно — он посмотрит сам.
+       *
+       * БЫЛО: `parseInt(code, 10)` + проверка только на NaN. «0», «99», «12abc»
+       * проходили и заводили в формуле ключ, которого нет ни в одном ряду FDI.
+       * Теперь номер проверяется общим правилом FDI.
+       */
+      const appliedCodes: string[] = [];
+      const skippedCodes: string[] = [];
       if (aiResult.toothStates && Object.keys(aiResult.toothStates).length > 0) {
         for (const [code, state] of Object.entries(aiResult.toothStates)) {
-          const toothNum = parseInt(code, 10);
-          if (!isNaN(toothNum)) {
-            const mapped = AI_TO_ODONTOGRAM[state] ?? 'Caries';
-            setToothStatus(toothNum, mapped);
+          // Number, а не parseInt: parseInt('12abc') = 12, и мусор проходил.
+          const toothNum = Number(code.trim());
+          const mapped = AI_TO_ODONTOGRAM[state];
+          if (!isValidFdiToothNumber(toothNum) || !mapped) {
+            skippedCodes.push(code);
+            console.warn(`[VisiographAnalyzer] находка не применена: зуб «${code}», состояние «${state}»`);
+            continue;
           }
+          setToothStatus(toothNum, mapped);
+          appliedCodes.push(code);
         }
+      }
+      setAppliedToothCodes(appliedCodes);
+      if (skippedCodes.length > 0) {
+        setApplyNotice(
+          `Помощник описал непонятно ${countLabel(skippedCodes.length, 'зуб', 'зуба', 'зубов')} (${skippedCodes.join(', ')}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
+        );
       }
 
       // 5. Save to DB (async, non-blocking)
@@ -522,6 +571,15 @@ export function VisiographAnalyzer() {
   const loadHistoryScan = async (scan: XrayScan) => {
     setCurrentScan(scan);
     setCurrentImageUrl(null);
+    /*
+     * Признаки прошлого разбора гасим: applyNotice, список внесённых зубов и
+     * отказ записи относились к снимку, который разбирали сейчас. Без сброса
+     * плашка «заключение не сохранено» висела бы над чужим снимком из архива.
+     */
+    setIsHistoryView(true);
+    setAppliedToothCodes([]);
+    setApplyNotice(null);
+    setSaveFailure(null);
     // Fetch full scan with image
     try {
       const res = await fetch(`/api/xray/scans/${scan.id}`);
@@ -861,11 +919,40 @@ export function VisiographAnalyzer() {
                 </div>
               )}
 
+              {/*
+                * Непонятые находки. Отдельной строкой и до плашек: врач должен
+                * узнать, что часть зубов помощник описал так, что в формулу их не
+                * внесли, — иначе он решит, что снимок разобран целиком.
+                */}
+              {applyNotice && (
+                <div
+                  role="status"
+                  style={{
+                    padding: '10px 14px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                    borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                  <div>{applyNotice}</div>
+                </div>
+              )}
+
               {/* Tooth states badges */}
               {toothStatesArray.length > 0 && (
                 <div>
+                  {/*
+                    * Считаем ТОЛЬКО применённые. Раньше здесь стояло
+                    * `toothStatesArray.length` с подписью «обновлено в формуле»,
+                    * и непонятая находка или зуб с мусорным номером считались
+                    * внесёнными, хотя формулу никто не менял.
+                    */}
                   <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 600 }}>
-                    Зубы из анализа ({toothStatesArray.length} поз.) · обновлено в формуле
+                    {isHistoryView
+                      ? `Зубы из этого разбора: ${toothStatesArray.length} поз.`
+                      : appliedToothCodes.length > 0
+                        ? `Внесено в зубную формулу: ${countLabel(appliedToothCodes.length, 'зуб', 'зуба', 'зубов')} из ${toothStatesArray.length}`
+                        : `Зубы из анализа (${toothStatesArray.length} поз.) · в формулу не внесены`}
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {toothStatesArray.map(({ code, state }) => {

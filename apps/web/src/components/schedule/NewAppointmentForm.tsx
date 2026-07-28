@@ -61,6 +61,18 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<unknown>(null);
   const [showHints, setShowHints] = useState(false);
+  /*
+    Чего надиктованная фраза требует, а форма создания записи сделать не может.
+    Раньше таких случаев не существовало на экране: их молча превращали в
+    черновик новой записи. Разбор помнится строкой, а не готовым текстом,
+    чтобы текст жил в разметке рядом с остальными подсказками.
+  */
+  const [smartActionNote, setSmartActionNote] = useState<{
+    kind: "cancel" | "reschedule" | "newPatient";
+    /** Что именно распознано. Нужно потому, что строку ввода после применения стирают. */
+    patientName: string;
+    patientPhone: string;
+  } | null>(null);
 
   /*
     Правило «чего не хватает записи» одно на всё приложение и лежит в
@@ -121,6 +133,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 e.preventDefault();
                 const parsed = smartBookingParser(smartInputText, dashboard);
                 setSmartParsedData(parsed);
+                // Подсказка от прошлой фразы к новой не относится и снимается.
+                setSmartActionNote(null);
                 setShowSmartPreview(true);
                 setShowHints(false);
               }
@@ -133,6 +147,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
               setSmartInputText(text);
               const parsed = smartBookingParser(text, dashboard);
               setSmartParsedData(parsed);
+              // Подсказка от прошлой фразы к новой не относится и снимается.
+              setSmartActionNote(null);
               setShowSmartPreview(true);
               setShowHints(false);
             }}
@@ -145,9 +161,74 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             rawText={smartInputText}
             type="schedule"
             onApply={(data: Record<string, string> | null) => {
+              /*
+                ОТМЕНА И ПЕРЕНОС — ЭТО НЕ СОЗДАНИЕ ЗАПИСИ.
+
+                ЧТО БЫЛО СЛОМАНО. Разбор фразы возвращает поле action со
+                значениями "create" | "cancel" | "reschedule"
+                (lib/smartBookingParser.ts), и предпросмотр честно рисует его
+                человеку: красная плашка «ОТМЕНА ЗАПИСИ», синяя «ПЕРЕНОС
+                ЗАПИСИ» (SmartParsePreview.tsx). Здесь это поле не читали
+                ВООБЩЕ. Любое применение набивало черновик НОВОЙ записи и
+                раскрывало форму создания.
+
+                ЧТО ВИДЕЛ АДМИНИСТРАТОР. Говорит в микрофон «отмени Петрова на
+                завтра в 14:00», на экране красным «ОТМЕНА ЗАПИСИ» и «Пациент:
+                Найдено в базе», нажимает «Применить» — и отмены не происходит:
+                запись остаётся в расписании, а рядом стоит заряженная кнопка
+                «Создать запись» с тем же Петровым. Нажатие давало ВТОРУЮ
+                запись вместо отмены первой. Пациент, который отменил приём,
+                остаётся в списке на обзвон и числится ожидаемым; его время
+                администратор никому не отдаёт, потому что видит его занятым.
+
+                ЧТО СТАЛО. Черновик создания больше не набивается по фразе
+                отмены и переноса. Экран прямо говорит, что распознано и где
+                это делается, а надиктованный текст НЕ стирается: человек
+                должен видеть, что он сказал, чтобы не диктовать заново.
+
+                ДОЛГ. Довести отмену и перенос до самой записи одним движением
+                (найти приём и открыть его редактор) — следующим шагом, здесь
+                нет ни списка приёмов, ни openAppointmentEditor.
+              */
+              const parsedAction = String(data?.action ?? "create");
+              const parsedPatientName = String(data?.patientName ?? "");
+              const parsedPatientPhone = String(data?.patientPhone ?? "");
+              if (parsedAction === "cancel" || parsedAction === "reschedule") {
+                setSmartActionNote({
+                  kind: parsedAction === "cancel" ? "cancel" : "reschedule",
+                  patientName: parsedPatientName,
+                  patientPhone: parsedPatientPhone
+                });
+                setShowSmartPreview(false);
+                return;
+              }
+              /*
+                НАДИКТОВАННЫЙ НОВЫЙ ПАЦИЕНТ ИСЧЕЗАЛ БЕЗ СЛЕДА. Разбор умеет
+                вытащить из фразы имя и телефон человека, которого в базе ещё
+                нет (patientName / patientPhone), и предпросмотр показывает их
+                строкой «Пациент (ИИ): Сидоров Иван». Применить их было некуда:
+                в черновике записи есть только patientId — ссылка на карту,
+                которой у нового человека нет. Имя и телефон просто пропадали,
+                а внизу формы появлялось «выберите пациента», и администратор
+                не понимал, куда делся продиктованный им человек.
+                Заводить карту отсюда нельзя: создание пациента живёт в разделе
+                «Пациенты», выдумывать второй путь в базу — хуже потери. Поэтому
+                прямо говорим, что распознано и что сделать.
+              */
+              setSmartActionNote(
+                !data?.patientId && parsedPatientName
+                  ? { kind: "newPatient", patientName: parsedPatientName, patientPhone: parsedPatientPhone }
+                  : null
+              );
               if (data) {
                 if (data.patientId) updateNewAppointmentDraft("patientId", data.patientId);
                 if (data.doctorUserId) updateNewAppointmentDraft("doctorUserId", data.doctorUserId);
+                /*
+                  Ассистент распознаётся («с медсестрой Ивановой»), но раньше
+                  здесь терялся молча: в предпросмотре его нет, в черновик он
+                  не попадал. Поле в черновике есть, переносим.
+                */
+                if (data.assistantUserId) updateNewAppointmentDraft("assistantUserId", data.assistantUserId);
                 if (data.startsAt) updateNewAppointmentDraft("startsAt", data.startsAt);
                 if (data.endsAt) updateNewAppointmentDraft("endsAt", data.endsAt);
                 if (data.reason || data.service) updateNewAppointmentDraft("reason", (data.reason || data.service) ?? "");
@@ -165,6 +246,49 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             onClose={() => setShowSmartPreview(false)}
           />
         </div>
+        {smartActionNote ? (
+          /*
+            Что распознано и где это делается. Класс schedule-create-missing —
+            тот же, которым форма перечисляет нехватку полей, чтобы подсказка
+            выглядела как остальные подсказки, а не как новый вид сообщения.
+            role="status" и aria-live: сообщение появляется после нажатия, а не
+            при загрузке, — программа чтения с экрана должна его прочитать.
+          */
+          <div className="schedule-create-missing" id="smart-booking-action-note" role="status" aria-live="polite">
+            {smartActionNote.kind === "cancel" ? (
+              <>
+                <strong>Это отмена записи, а не новая запись.</strong>
+                <p>
+                  Отменить приём отсюда нельзя: эта форма только записывает. Найдите нужный приём в
+                  расписании ниже, нажмите на нём «Изменить», в строке «Статус» выберите «Отменён» и
+                  нажмите «Сохранить запись». Освободившееся время сразу станет свободным окном.
+                </p>
+              </>
+            ) : smartActionNote.kind === "reschedule" ? (
+              <>
+                <strong>Это перенос записи, а не новая запись.</strong>
+                <p>
+                  Переносить приём нужно на нём самом, иначе у пациента окажется два приёма вместо
+                  одного. Найдите приём в расписании ниже, нажмите «Изменить», поставьте новые
+                  «Начало» и «Окончание» и нажмите «Сохранить запись».
+                </p>
+              </>
+            ) : (
+              <>
+                <strong>
+                  Такого пациента в базе нет{smartActionNote.patientName ? `: ${smartActionNote.patientName}` : ""}
+                  {smartActionNote.patientPhone ? `, телефон ${smartActionNote.patientPhone}` : ""}.
+                </strong>
+                <p>
+                  Записать можно только человека, у которого уже есть карта, — поэтому имя и телефон в
+                  запись не подставлены, чтобы не выдать их за проверенные. Время и услуга из вашей
+                  фразы в форму перенесены. Заведите карту в разделе «Пациенты», вернитесь сюда и
+                  выберите его в строке «Пациент».
+                </p>
+              </>
+            )}
+          </div>
+        ) : null}
         <div className="flex justify-between items-center flex-wrap gap-2 pt-1">
           <div className="flex gap-3 items-center">
             <button

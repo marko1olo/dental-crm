@@ -304,6 +304,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   }, [draft]);
 
   /*
+    Запоминаем, что зубную формулу уже открывали: ниже вкладка после этого
+    только скрывается, но не размонтируется, чтобы не терялся набранный
+    дневник приёма. Подробнее — в комментарии у самой вкладки.
+  */
+  const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(false);
+  React.useEffect(() => {
+    if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
+  }, [visitSubViewTab]);
+
+  /*
     ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
 
     Было: пока dashboard не пришёл, activePatient пуст, и экран уверенно
@@ -465,8 +475,33 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
               </div>
             )}
 
-            {visitSubViewTab === "odontogram" && (
-              <div style={{ margin: "16px 0" }}>
+            {/*
+              ВКЛАДКА «ЗУБНАЯ ФОРМУЛА» НЕ РАЗМОНТИРУЕТСЯ, А ПРЯЧЕТСЯ — ИНАЧЕ
+              ТЕРЯЕТСЯ НАПИСАННЫЙ ДНЕВНИК ПРИЁМА.
+
+              БЫЛО: `visitSubViewTab === "odontogram" && (...)`. Уход с вкладки
+              размонтировал VisitOdontogramTab вместе с дневником приёма
+              (VisitDiaryEditor), а его хук useVisitDiaryLogic в cleanup делает
+              setDiary(EMPTY_DIARY) и гасит автосохранение. Автосохранение там —
+              интервал 30 секунд, финального сохранения при выходе нет. Значит
+              врач писал анамнез и status localis, нажимал вкладку «ЭМК» — и
+              всё, набранное после последнего тика, исчезало. Хуже того, уйти с
+              вкладки можно было не своими руками: эффект выше сам переводит на
+              «ЭМК», как только собран черновик, а кнопки диктовки стоят ниже
+              вкладок и доступны с любой из них. При возврате дневник заново
+              читался с сервера и показывал старую версию — экран выглядел
+              исправным, и понять, что текст пропал, было нельзя.
+
+              Теперь вкладка монтируется при первом открытии и дальше только
+              скрывается: состояние дневника и его автосохранение продолжают
+              жить. Заранее не монтируем — иначе дневник читался бы с сервера у
+              каждого приёма, даже если врач в формулу не заходил.
+            */}
+            {odontogramTabWasOpened && (
+              <div
+                style={{ margin: "16px 0", display: visitSubViewTab === "odontogram" ? undefined : "none" }}
+                aria-hidden={visitSubViewTab !== "odontogram"}
+              >
                 <VisitOdontogramTab activePatient={activePatient} activeAppointment={activeAppointment} dashboard={dashboard} />
               </div>
             )}
