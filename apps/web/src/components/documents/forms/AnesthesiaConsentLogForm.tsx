@@ -8,6 +8,29 @@ import type { DocumentVisitHints } from "./documentFormTypes";
  *
  * Вынесено из DocumentsView.tsx дословно. Аллергоанамнез остаётся пустым и
  * заполняется врачом — за это отвечает AnamnesisField, а не хранилище.
+ *
+ * ПОЛЕ «ЗОНА»: СЕРАЯ ПОДСКАЗКА ВЫГЛЯДЕЛА ЗАПОЛНЕННЫМ ПОЛЕМ, А ДОКУМЕНТ ОТКАЗЫВАЛ.
+ *
+ * В подписи пустого поля стояла зона лечения приёма — «зуб 46». Врач видел в
+ * рамке «зуб 46», считал поле заполненным, ставил три отметки и нажимал
+ * «Создать выбранный документ» — и получал «Заполните поле: анестезия, зона».
+ * Проверка журнала (validateAnesthesiaConsentLog в documentValidators.ts:1107)
+ * требует именно ЗНАЧЕНИЕ поля и зону приёма не подставляет.
+ *
+ * Обмана добавляло соседство: в информированном и процедурном согласиях та же
+ * серая зона в подписи поля — правда, там проверка честно берёт зону приёма,
+ * если поле пустое (documentValidators.ts:717 и :791). Один и тот же вид на
+ * экране означал в трёх формах две разные вещи, и отличить их можно было только
+ * по отказу после нажатия.
+ *
+ * Теперь в подписи стоит пример, а зона приёма подставляется НАСТОЯЩИМ нажатием
+ * — ровно так же, как отрицательный ответ в аллергоанамнезе рядом. Кнопка видна,
+ * только пока поле пустое и пока приём вообще даёт зону.
+ *
+ * Класс кнопки взят у AnamnesisField: это единственный в приложении вид кнопки
+ * «заполнить пустое поле одним нажатием», а правки в styles/* этой задаче не
+ * разрешены. Ничего специфичного для анамнеза в нём нет
+ * (styles/main.css:11425-11439) — только рамка, отступы и выравнивание влево.
  */
 export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<DocumentVisitHints, "inferredTreatmentArea">) {
 	const {
@@ -37,6 +60,13 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 		setAnesthesiaZone,
 	} = useDocumentStore();
 
+	/**
+	 * Зона приёма, которую есть смысл предлагать нажатием: только пока поле пустое.
+	 * Затирать набранное кнопкой нельзя — врач мог уточнить зону руками.
+	 */
+	const zoneOfferedFromVisit =
+		anesthesiaZone.trim() === "" ? (inferredTreatmentArea ?? "").trim() : "";
+
 	return (
 		<DocumentPayloadCard title="Журнал анестезии" description="Перед созданием: метод, препарат, зона, доза и реакция.">
 			<label>
@@ -65,7 +95,20 @@ export function AnesthesiaConsentLogForm({ inferredTreatmentArea }: Pick<Documen
 			</label>
 			<label>
 				Зона
-				<input value={anesthesiaZone} onChange={(event) => setAnesthesiaZone(event.target.value)} placeholder={inferredTreatmentArea || "FDI / зона"} />
+				<input
+					value={anesthesiaZone}
+					onChange={(event) => setAnesthesiaZone(event.target.value)}
+					placeholder="например: 46 или нижняя челюсть справа"
+				/>
+				{zoneOfferedFromVisit ? (
+					<button
+						type="button"
+						className="document-anamnesis-quick"
+						onClick={() => setAnesthesiaZone(zoneOfferedFromVisit)}
+					>
+						Подставить зону приёма: {zoneOfferedFromVisit}
+					</button>
+				) : null}
 			</label>
 			<AnamnesisField
 				label="Аллергоанамнез"
