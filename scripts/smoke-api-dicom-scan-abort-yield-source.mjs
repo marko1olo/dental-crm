@@ -1,4 +1,4 @@
-﻿import { readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 const imagingSource = await readFile("apps/api/src/routes/imaging.ts", "utf8");
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));

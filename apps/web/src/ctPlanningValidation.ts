@@ -1,4 +1,4 @@
-﻿import type { CtPlanningImplantModelPlan } from "./ctPlanningImplantModel";
+import type { CtPlanningImplantModelPlan } from "./ctPlanningImplantModel";
 import type { CtPlanningMeasurementPlan } from "./ctPlanningMeasurementPlan";
 import type { CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
 

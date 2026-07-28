@@ -7,7 +7,7 @@ const {chromium} = require('playwright');
   await p.goto('http://localhost:5173/');
   
   // Go to patients
-  await p.click('nav a:nth-child(2)'); // Пациенты
+  await p.click('nav a:nth-child(2)'); // РџР°С†РёРµРЅС‚С‹
   await p.waitForTimeout(500);
   
   // Click first patient
@@ -15,7 +15,7 @@ const {chromium} = require('playwright');
   await p.waitForTimeout(500);
   
   // Create visit
-  await p.click('button:has-text("Начать прием")');
+  await p.click('button:has-text("РќР°С‡Р°С‚СЊ РїСЂРёРµРј")');
   await p.waitForTimeout(1000);
   
   // Scroll to EMK

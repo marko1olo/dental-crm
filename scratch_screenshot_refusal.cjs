@@ -6,10 +6,10 @@ const {chromium} = require('playwright');
   const OUT = 'C:/Users/Admin/.gemini/antigravity/brain/68ee88bd-584a-4a7f-948f-9353d73ce6fe/scratch/screenshots/final_documents_refusal_chips.png';
   await p.goto('http://localhost:5173/');
   
-  await p.click('nav a:has-text("Документы")');
+  await p.click('nav a:has-text("Р”РѕРєСѓРјРµРЅС‚С‹")');
   await p.waitForSelector('.quick-doc-picker');
   
-  await p.click('button:has-text("Создать документ")');
+  await p.click('button:has-text("РЎРѕР·РґР°С‚СЊ РґРѕРєСѓРјРµРЅС‚")');
   await p.waitForTimeout(500);
   
   await p.click('.quick-doc-more-toggle'); // Open details

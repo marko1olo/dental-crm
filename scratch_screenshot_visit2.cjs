@@ -16,8 +16,8 @@ const {chromium} = require('playwright');
   await p.click('.patient-list article:first-child');
   await p.waitForTimeout(500);
   
-  // Create visit - there is a button 'Начать прием' but we can just use CSS selector
-  await p.click('button:has-text("Начать прием"), .patient-action-start-visit');
+  // Create visit - there is a button 'РќР°С‡Р°С‚СЊ РїСЂРёРµРј' but we can just use CSS selector
+  await p.click('button:has-text("РќР°С‡Р°С‚СЊ РїСЂРёРµРј"), .patient-action-start-visit');
   await p.waitForTimeout(1000);
   
   // Scroll to EMK tabs

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, KeyRound, ArrowRight, User } from 'lucide-react';
 import { showToast } from '../GlobalToast';
 

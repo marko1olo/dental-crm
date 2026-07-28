@@ -1,4 +1,4 @@
-﻿import { Dashboard, StaffMember, Chair, StaffWorkingDay } from "@dental/shared";
+import { Dashboard, StaffMember, Chair, StaffWorkingDay } from "@dental/shared";
 
 interface ResourceRequirements {
   doctorId: string;

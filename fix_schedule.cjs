@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 let content = fs.readFileSync('apps/web/src/ScheduleView.tsx', 'utf8');
 
 // Wrap new appointment editor

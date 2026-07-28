@@ -1,4 +1,4 @@
-﻿
+
   // ─── SaaS Registration (New Clinic + Owner) ──────────────────────────────────
   app.post('/api/auth/register', async (request: FastifyRequest, reply: FastifyReply) => {
     const { clinicName, ownerName, email, password } = (request.body as any) ?? {};

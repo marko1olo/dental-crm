@@ -29,7 +29,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Try to click schedule
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Çàïèñ"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("Ð—Ð°Ð¿Ð¸Ñ"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
@@ -38,7 +38,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Patients
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Ïàöè"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("ÐŸÐ°Ñ†Ð¸"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
@@ -47,7 +47,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Imaging
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Ñíèì"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("Ð¡Ð½Ð¸Ð¼"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
@@ -56,7 +56,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Visit
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Ïðèåì") || el.textContent?.trim().startsWith("Ïðè¸ì"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("ÐŸÑ€Ð¸ÐµÐ¼") || el.textContent?.trim().startsWith("ÐŸÑ€Ð¸Ñ‘Ð¼"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
@@ -65,7 +65,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Finance
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Îïëàò"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("ÐžÐ¿Ð»Ð°Ñ‚"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
@@ -74,7 +74,7 @@ const outDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-405
   // Settings
   await page.evaluate(() => {
     const all = Array.from(document.querySelectorAll("button, a"));
-    const btn = all.find(el => el.textContent?.trim().startsWith("Íàñòð"));
+    const btn = all.find(el => el.textContent?.trim().startsWith("ÐÐ°ÑÑ‚Ñ€"));
     if (btn) btn.click();
   });
   await new Promise(r => setTimeout(r, 1500));
