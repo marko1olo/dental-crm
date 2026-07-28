@@ -60,13 +60,59 @@ export type WaitlistMatchReport = {
 };
 
 /**
- * Разбор желаемых интервалов. Поле хранится как jsonb без схемы, поэтому здесь
- * принимаются только те формы, которые действительно встречаются, а на всё
- * прочее ответ «время не ограничено» — это честнее, чем выдумать ограничение и
- * не показать подходящего человека.
+ * Дни недели в написаниях, которые могут прийти. Источник правды о формате —
+ * только zod-схема POST /api/waitlist (`{day: string, slot: string}`), а какие
+ * именно строки туда кладут, не задано: единственный писатель —
+ * WaitlistDrawer.tsx — отправляет пустой массив. Поэтому распознаются
+ * распространённые написания, а незнакомое считается «день не важен».
  *
- * Понимаются: массив строк «10:00-13:00», массив объектов {from, to} и одна
- * строка. Всё остальное — без ограничения.
+ * 0 — воскресенье, как в Date.getDay().
+ */
+const WEEKDAY_NAMES: Readonly<Record<string, number>> = {
+	вс: 0, воскресенье: 0, sunday: 0, sun: 0,
+	пн: 1, понедельник: 1, monday: 1, mon: 1,
+	вт: 2, вторник: 2, tuesday: 2, tue: 2,
+	ср: 3, среда: 3, wednesday: 3, wed: 3,
+	чт: 4, четверг: 4, thursday: 4, thu: 4,
+	пт: 5, пятница: 5, friday: 5, fri: 5,
+	сб: 6, суббота: 6, saturday: 6, sat: 6
+};
+
+/**
+ * День недели из строки. Понимает название, номер и дату в виде YYYY-MM-DD.
+ * null — «не разобрали», то есть ограничения по дню нет.
+ */
+export function parsePreferredWeekday(raw: unknown): number | null {
+	if (typeof raw === "number") return raw >= 0 && raw <= 6 ? raw : null;
+	if (typeof raw !== "string") return null;
+	const value = raw.trim().toLowerCase();
+	if (!value) return null;
+
+	const byName = WEEKDAY_NAMES[value];
+	if (byName !== undefined) return byName;
+
+	if (/^[0-6]$/.test(value)) return Number(value);
+
+	// Конкретная дата: «2026-07-29». Из неё день недели выводится однозначно.
+	const asDate = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : null;
+	if (asDate && !Number.isNaN(asDate.getTime())) return asDate.getDay();
+
+	return null;
+}
+
+/**
+ * Разбор желаемых интервалов. Поле хранится как jsonb, и его форма задана только
+ * zod-схемой POST /api/waitlist: массив `{day, slot}`. Что именно лежит в slot,
+ * схема не уточняет, а единственный писатель отправляет пустой массив, поэтому
+ * фактических данных для сверки нет.
+ *
+ * Здесь принимаются те формы, которые реально могут прийти, и ничего не
+ * выдумывается: незнакомое значение означает «время не ограничено». Это честнее
+ * обратного — придуманное ограничение спрятало бы подходящего человека, и
+ * клиника потеряла бы запись, не узнав об этом.
+ *
+ * Понимаются: `{day, slot}` (slot как «10:00-13:00» или «10:00»), строка
+ * «10:00-13:00», объект `{from, to}`.
  */
 export function parsePreferredRanges(raw: unknown): { fromMinute: number; toMinute: number }[] {
 	const toMinutes = (value: string): number | null => {
@@ -98,6 +144,27 @@ export function parsePreferredRanges(raw: unknown): { fromMinute: number; toMinu
 		}
 		if (item && typeof item === "object") {
 			const record = item as Record<string, unknown>;
+
+			// Форма из zod-схемы POST /api/waitlist: {day, slot}.
+			if (typeof record.slot === "string") {
+				const asPair = fromPair(record.slot);
+				if (asPair) {
+					collected.push(asPair);
+					continue;
+				}
+				/*
+				 * Одно время вместо интервала («10:00»). Считаем его началом
+				 * получаса: администратор, назвавший «10:00», имел в виду это время,
+				 * а не «в любой момент дня». Полчаса — самый короткий приём в
+				 * прайсе, поэтому окно, начинающееся в этот же полчас, ему подходит.
+				 */
+				const single = toMinutes(record.slot);
+				if (single !== null) {
+					collected.push({ fromMinute: single, toMinute: single + 30 });
+					continue;
+				}
+			}
+
 			const start = typeof record.from === "string" ? toMinutes(record.from) : null;
 			const end = typeof record.to === "string" ? toMinutes(record.to) : null;
 			if (start !== null && end !== null && end > start) collected.push({ fromMinute: start, toMinute: end });
@@ -158,10 +225,27 @@ export async function findWaitlistMatches(slot: FreedSlot, limit = 20): Promise<
 	const now = new Date();
 	const slotStartMinute = slot.startsAt.getHours() * 60 + slot.startsAt.getMinutes();
 
+	/** День недели окна. 0 — воскресенье, как в Date.getDay(). */
+	const slotWeekday = slot.startsAt.getDay();
+
 	const matches: WaitlistMatch[] = rows.map((row) => {
 		const sameDoctor = Boolean(slot.doctorUserId && row.preferredDoctorId === slot.doctorUserId);
 		const ranges = parsePreferredRanges(row.preferredTimeRanges);
-		const timeFits = slotFitsRanges(slotStartMinute, ranges);
+		/*
+		 * ДЕНЬ НЕДЕЛИ УЧИТЫВАЕТСЯ, а не игнорируется. В первой редакции подбор
+		 * смотрел только на время суток, потому что я не сверился с фактическим
+		 * контрактом поля: в zod-схеме POST /api/waitlist это массив {day, slot},
+		 * то есть день там есть. Без его учёта человек, просивший вторник, попадал
+		 * в подбор на пятничное окно — и звонок был бы потрачен впустую.
+		 *
+		 * Если день не разобрался ни у одной записи — ограничения нет, подходит
+		 * любой: выдуманное ограничение хуже отсутствующего.
+		 */
+		const wantedWeekdays = (Array.isArray(row.preferredTimeRanges) ? row.preferredTimeRanges : [])
+			.map((item) => (item && typeof item === "object" ? parsePreferredWeekday((item as Record<string, unknown>).day) : null))
+			.filter((day): day is number => day !== null);
+		const dayFits = wantedWeekdays.length === 0 || wantedWeekdays.includes(slotWeekday);
+		const timeFits = dayFits && slotFitsRanges(slotStartMinute, ranges);
 		const waitingDays = Math.max(
 			0,
 			Math.floor((now.getTime() - new Date(row.createdAt).getTime()) / (24 * 60 * 60 * 1000))
@@ -171,7 +255,8 @@ export async function findWaitlistMatches(slot: FreedSlot, limit = 20): Promise<
 		const parts: string[] = [];
 		if (sameDoctor) parts.push("ждёт этого же врача");
 		else if (row.preferredDoctorId) parts.push("просил другого врача");
-		if (ranges.length === 0) parts.push("время не ограничивал");
+		if (!dayFits) parts.push("просил другой день недели");
+		else if (ranges.length === 0) parts.push("время не ограничивал");
 		else if (timeFits) parts.push("это время ему подходит");
 		else parts.push("просил другое время");
 		if (row.priorityLevel === "high") parts.push("отмечен как срочный");

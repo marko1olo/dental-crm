@@ -9,7 +9,46 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { parsePreferredRanges, slotFitsRanges } from "../services/schedule/waitlistMatching.js";
+import { parsePreferredRanges, parsePreferredWeekday, slotFitsRanges } from "../services/schedule/waitlistMatching.js";
+
+/*
+ * Эти проверки появились после сверки с ФАКТИЧЕСКИМ контрактом. В первой
+ * редакции разбор понимал «10:00-13:00» и {from, to} — формы, которые я
+ * предположил. А zod-схема POST /api/waitlist задаёт другое: массив
+ * {day: string, slot: string}. То есть подбор не понимал того, что пишет
+ * единственный писатель, и вдобавок игнорировал день недели — человек,
+ * просивший вторник, попадал в подбор на пятничное окно.
+ */
+describe("контракт поля из POST /api/waitlist", () => {
+	test("форма {day, slot} с интервалом понимается", () => {
+		assert.deepEqual(parsePreferredRanges([{ day: "вт", slot: "10:00-13:00" }]), [
+			{ fromMinute: 600, toMinute: 780 }
+		]);
+	});
+
+	test("одно время в slot считается началом получаса, а не всем днём", () => {
+		// «10:00» означает это время, а не «когда угодно»: полчаса — самый
+		// короткий приём в прайсе.
+		assert.deepEqual(parsePreferredRanges([{ day: "пн", slot: "10:00" }]), [{ fromMinute: 600, toMinute: 630 }]);
+	});
+
+	test("день недели читается из названия, номера и даты", () => {
+		assert.equal(parsePreferredWeekday("вторник"), 2);
+		assert.equal(parsePreferredWeekday("ВТ"), 2);
+		assert.equal(parsePreferredWeekday("tuesday"), 2);
+		assert.equal(parsePreferredWeekday(2), 2);
+		// Конкретная дата: 29 июля 2026 — среда.
+		assert.equal(parsePreferredWeekday("2026-07-29"), 3);
+	});
+
+	test("незнакомый день не превращается в ограничение", () => {
+		// Иначе человека спрячет из подбора выдуманное правило.
+		assert.equal(parsePreferredWeekday("как получится"), null);
+		assert.equal(parsePreferredWeekday(""), null);
+		assert.equal(parsePreferredWeekday(9), null);
+		assert.equal(parsePreferredWeekday(null), null);
+	});
+});
 
 describe("желаемое время в листе ожидания", () => {
 	test("строка «10:00-13:00» понимается", () => {
