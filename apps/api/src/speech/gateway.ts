@@ -1701,44 +1701,64 @@ export async function transcribeAssemblyAi(input: {
   const startedAt = Date.now();
   let intervalMs = policy.firstIntervalMs;
   let pollCount = 0;
+  let completed: ProviderTranscript | null = null;
+  let failure: unknown = null;
 
-  while (pollCount < policy.maxAttempts) {
-    const elapsedMs = Date.now() - startedAt;
-    if (elapsedMs >= policy.budgetMs) break;
-    await waitBetweenPolls(Math.max(1, Math.min(intervalMs, policy.budgetMs - elapsedMs)));
-    intervalMs = Math.min(intervalMs * 2, policy.maxIntervalMs);
-    pollCount += 1;
+  // Итог опроса собирается в переменные, а не разбрасывается по return/throw
+  // внутри цикла: удаление аудио у провайдера обязано произойти РОВНО ОДИН раз и
+  // на КАЖДОМ выходе, включая обрыв связи посреди опроса. Ранняя версия этого
+  // патча удаляла на четырёх выходах и пропускала пятый — упавший запрос опроса
+  // уносил управление наружу, и голос пациента оставался у провайдера молча.
+  try {
+    while (pollCount < policy.maxAttempts) {
+      const elapsedMs = Date.now() - startedAt;
+      if (elapsedMs >= policy.budgetMs) break;
+      await waitBetweenPolls(Math.max(1, Math.min(intervalMs, policy.budgetMs - elapsedMs)));
+      intervalMs = Math.min(intervalMs * 2, policy.maxIntervalMs);
+      pollCount += 1;
 
-    const pollResponse = await fetchWithProviderTimeout(`${baseUrl}/v2/transcript/${encodeURIComponent(transcriptId)}`, {
-      headers: { Authorization: input.apiKey }
-    });
-    const pollPayload = (await pollResponse.json().catch(() => ({}))) as {
-      status?: string;
-      text?: string;
-      confidence?: number;
-      error?: string;
-    };
-    if (!pollResponse.ok) {
-      await removeRemoteArtifacts();
-      throw providerHttpError(pollResponse.status, pollResponse.statusText, pollPayload.error);
+      const pollResponse = await fetchWithProviderTimeout(
+        `${baseUrl}/v2/transcript/${encodeURIComponent(transcriptId)}`,
+        {
+          headers: { Authorization: input.apiKey }
+        }
+      );
+      const pollPayload = (await pollResponse.json().catch(() => ({}))) as {
+        status?: string;
+        text?: string;
+        confidence?: number;
+        error?: string;
+      };
+      if (!pollResponse.ok) {
+        failure = providerHttpError(pollResponse.status, pollResponse.statusText, pollPayload.error);
+        break;
+      }
+      if (pollPayload.status === "completed") {
+        completed = {
+          text: pollPayload.text?.trim() ?? "",
+          confidence: typeof pollPayload.confidence === "number" ? pollPayload.confidence : null,
+          warnings: []
+        };
+        break;
+      }
+      if (pollPayload.status === "error") {
+        failure = new Error("AssemblyAI не вернул готовый текст; локальный черновик сохранен, повторите отправку позже.");
+        break;
+      }
     }
-    if (pollPayload.status === "completed") {
-      const text = pollPayload.text?.trim() ?? "";
-      const confidence = typeof pollPayload.confidence === "number" ? pollPayload.confidence : null;
-      await removeRemoteArtifacts();
-      return { text, confidence, warnings: [] };
-    }
-    if (pollPayload.status === "error") {
-      await removeRemoteArtifacts();
-      throw new Error("AssemblyAI не вернул готовый текст; локальный черновик сохранен, повторите отправку позже.");
-    }
+  } catch (error) {
+    failure = error;
   }
+
+  const waitedMs = Date.now() - startedAt;
+  await removeRemoteArtifacts();
+
+  if (failure) throw failure;
+  if (completed) return completed;
 
   // Бюджет ожидания исчерпан. Идентификатор задания нигде не хранится, поэтому
   // ни один повтор до него уже не дотянется — оставлять аудио у провайдера значит
   // держать голос пациента снаружи без единого шанса им воспользоваться.
-  const waitedMs = Date.now() - startedAt;
-  await removeRemoteArtifacts();
   throw new SpeechAsyncJobTimeoutError({ providerLabel, waitedMs, pollCount });
 }
 

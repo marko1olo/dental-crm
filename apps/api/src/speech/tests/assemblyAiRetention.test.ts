@@ -56,6 +56,8 @@ type StubScript = {
   transcriptCreateStatus?: number;
   /** HTTP-код ответа на удаление. */
   deleteStatus?: number;
+  /** Обрыв связи на этом по счёту опросе (1 = на первом). */
+  pollThrowsOnAttempt?: number;
 };
 
 function installFetchStub(script: StubScript): FetchStub {
@@ -90,6 +92,12 @@ function installFetchStub(script: StubScript): FetchStub {
 
     if (url === `${assemblyAiHost}/v2/transcript/${stubTranscriptId}` && method === "GET") {
       state.pollCount += 1;
+      if (script.pollThrowsOnAttempt === state.pollCount) {
+        // Формулировка намеренно не похожа на сетевую аварию: на сообщения вида
+        // "fetch failed" fetchWithProviderTimeout поднимает SOCKS5-туннель и
+        // повторяет запрос МИМО этой подмены, то есть тест уходил бы в сеть.
+        throw new Error("stub: опрос прерван");
+      }
       if (script.neverCompletes || state.pollCount <= script.processingPolls) {
         return new Response(JSON.stringify({ status: "processing" }), { status: 200 });
       }
@@ -266,6 +274,29 @@ describe("AssemblyAI: бюджет ожидания задания и удале
     assert.strictEqual(warnings.length, 1);
     assert.match(warnings[0] ?? "", /аудио загружено, но задание распознавания не создано/);
     assert.match(warnings[0] ?? "", /остаётся у источника/);
+  });
+
+  it("обрыв связи посреди опроса тоже удаляет аудио у провайдера, а не бросает его там", async () => {
+    process.env.ASSEMBLYAI_POLL_TIMEOUT_MS = "60000";
+    process.env.ASSEMBLYAI_POLL_INTERVAL_MS = "1";
+    const stub = installFetchStub({ processingPolls: 5, pollThrowsOnAttempt: 2 });
+    const warnings: string[] = [];
+
+    const error = await transcribeAssemblyAi({
+      apiKey: stubApiKey,
+      audio: stubAudio,
+      mimeType: "audio/webm",
+      language: "ru",
+      warnings
+    }).then(
+      () => null,
+      (thrown: unknown) => thrown
+    );
+
+    assert.ok(error instanceof Error);
+    assert.match(error.message, /опрос прерван/);
+    assert.strictEqual(stub.pollCount, 2, "падение должно случиться на втором опросе");
+    assert.strictEqual(stub.deleteCount, 1, "упавший опрос не имеет права оставлять аудио у провайдера");
   });
 
   it("неверный ASSEMBLYAI_API_BASE_URL не подменяется молча на публичный хост", async () => {
