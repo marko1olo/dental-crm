@@ -113,6 +113,28 @@ import { showToast } from "./components/GlobalToast";
 
 import { useVisitStore, type ToothState } from "./store/visitStore";
 
+/**
+ * Есть ли у исследования файл снимка на сервере.
+ *
+ * ЧТО БЫЛО. «Добавить снимок вручную» создаёт карточку исследования БЕЗ файла:
+ * запрос POST /api/imaging/studies уходит без storagePath. Разбор снимка на
+ * сервере первым делом проверяет storagePath и без него отвечает 422
+ * «У исследования не указан файл снимка» — разбирать нечего. На экране это
+ * выглядело как сломанная кнопка: врач добавил снимок, нажал «Разобрать снимок
+ * помощником» и получил отказ, а причину ему нигде не назвали — карточка без
+ * файла ничем не отличалась от карточки с файлом, потому что вместо снимка обе
+ * показывают нарисованную заглушку preview.svg.
+ *
+ * СТАЛО: отсутствие файла видно ДО нажатия — в ленте снимков и под
+ * просмотрщиком, — а кнопка разбора выключена с объяснением. Прикрепить файл к
+ * уже созданной карточке программа пока не умеет (в API нет такого маршрута),
+ * поэтому подсказка ведёт туда, где файл действительно попадает на сервер, —
+ * в импорт снимков.
+ */
+function imagingStudyHasFile(study: any): boolean {
+  return typeof study?.storagePath === "string" && study.storagePath.trim().length > 0;
+}
+
 type ImagingViewProps = Record<string, any>;
 
 export function ImagingView(props: ImagingViewProps) {
@@ -298,8 +320,25 @@ export function ImagingView(props: ImagingViewProps) {
     return "watch";
   };
 
+  /*
+   * Файл выбранного снимка. Без него разбор невозможен, и это надо сказать
+   * врачу до нажатия кнопки, а не показывать отказ сервера постфактум.
+   */
+  const selectedStudyHasFile = imagingStudyHasFile(selectedImagingStudy);
+
   const handleAnalyzeAI = async () => {
     if (!selectedImagingStudy) return;
+    /*
+     * Запрос к серверу без файла заведомо вернёт 422. Не тратим его и сразу
+     * называем причину: раньше врач видел только отказ без объяснения.
+     */
+    if (!selectedStudyHasFile) {
+      showToast(
+        "Разбирать нечего: к этой карточке не загружен файл снимка. Добавьте снимок через импорт снимков.",
+        "error",
+      );
+      return;
+    }
     const studyId = selectedImagingStudy.id;
     setIsAnalyzingAI(true);
     try {
@@ -634,11 +673,28 @@ export function ImagingView(props: ImagingViewProps) {
                         <span>
                           {selectedImagingStudy ? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode ?? selectedImagingStudy.region}` : "Локальные файлы DICOM (КТ)"}
                         </span>
+                        {/*
+                          Карточка без файла: честно говорим, что разбирать нечего.
+                          Раньше здесь стояла активная кнопка разбора, сервер отвечал
+                          422, и врач видел отказ без причины.
+                        */}
+                        {selectedImagingStudy && !selectedStudyHasFile ? (
+                          <p data-testid="imaging-study-file-missing" style={{ color: "var(--warning-color)" }}>
+                            Файл снимка не загружен — разобрать нечего. Карточка добавлена вручную,
+                            изображения на сервере нет. Загрузите снимок через импорт снимков: к уже
+                            созданной карточке файл прикрепить пока нельзя.
+                          </p>
+                        ) : null}
                         <button
                           type="button"
                           className={selectedStudySummary ? "secondary-button" : "primary-button"}
-                          disabled={isAnalyzingAI || !selectedImagingStudy}
+                          disabled={isAnalyzingAI || !selectedImagingStudy || !selectedStudyHasFile}
                           onClick={handleAnalyzeAI}
+                          title={
+                            selectedImagingStudy && !selectedStudyHasFile
+                              ? "Разбор недоступен: к карточке не загружен файл снимка"
+                              : "Разобрать снимок помощником"
+                          }
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', maxWidth: 'fit-content' }}
                         >
                           <Bot aria-hidden="true" size={16} />
@@ -959,6 +1015,17 @@ export function ImagingView(props: ImagingViewProps) {
                           {formatShortDate(study.capturedAt)}
                         </p>
                         <span>{imagingSourceLabels[study.sourceKind]} · {study.sourceName}</span>
+                        {/*
+                          Метка «без файла»: карточки, добавленные вручную, снимка не
+                          содержат, и вместо изображения выше стоит нарисованная
+                          заглушка. Без метки врач не отличал такую карточку от
+                          настоящего снимка и узнавал правду только после отказа разбора.
+                        */}
+                        {!imagingStudyHasFile(study) ? (
+                          <span data-testid="imaging-row-file-missing" style={{ color: "var(--warning-color)" }}>
+                            Файл снимка не загружен — разбор недоступен
+                          </span>
+                        ) : null}
                       </div>
                       <div className="imaging-row-actions">
                         <button
