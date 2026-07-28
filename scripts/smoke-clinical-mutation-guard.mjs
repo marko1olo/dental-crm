@@ -90,10 +90,38 @@ function readSource(sourcePath) {
 	return readFileSync(sourcePath, "utf8");
 }
 
+/**
+ * Считает НАСТОЯЩИЕ вызовы охранника, а не упоминания его имени.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Раньше здесь стояло
+ * `(source.match(/requireClinicalMutationAccess/g) ?? []).length - 1`:
+ * счёт всех текстовых вхождений минус одно за импорт. Любое упоминание имени в
+ * комментарии засчитывалось как охраняемый маршрут. Так и вышло: в
+ * apps/api/src/routes/speech.ts настоящих вызовов охранника мутаций осталось
+ * ОДИН вместо двух, но появился JSDoc, объясняющий выбор охранника, — и
+ * проверка осталась зелёной, потому что считала прозу. Гейт, который охраняет
+ * прозу вместо кода, не охраняет ничего.
+ *
+ * Поэтому: сначала убираем блочные комментарии и строки-комментарии, затем
+ * считаем только вхождения вида `имя(` — то есть вызовы. Импорт формы
+ * `requireClinicalMutationAccess,` больше не считается вовсе, и вычитать
+ * единицу не нужно.
+ */
+function countGuardCalls(source, guardName) {
+	const withoutBlockComments = source.replace(/\/\*[\s\S]*?\*\//g, "");
+	const codeOnly = withoutBlockComments
+		.split("\n")
+		.filter((line) => {
+			const trimmed = line.trimStart();
+			return !trimmed.startsWith("//") && !trimmed.startsWith("*");
+		})
+		.join("\n");
+	return (codeOnly.match(new RegExp(`${guardName}\\s*\\(`, "g")) ?? []).length;
+}
+
 for (const [sourcePath, expectedGuardCount] of guardedSources) {
 	const source = readSource(sourcePath);
-	const guardCount =
-		(source.match(/requireClinicalMutationAccess/g) ?? []).length - 1;
+	const guardCount = countGuardCalls(source, "requireClinicalMutationAccess");
 	assert(
 		guardCount >= expectedGuardCount,
 		`${sourcePath} must guard ${expectedGuardCount} protected route(s), found ${guardCount}`,
@@ -102,8 +130,7 @@ for (const [sourcePath, expectedGuardCount] of guardedSources) {
 
 for (const [sourcePath, expectedGuardCount] of guardedReadSources) {
 	const source = readSource(sourcePath);
-	const guardCount =
-		(source.match(/requireClinicalReadAccess/g) ?? []).length - 1;
+	const guardCount = countGuardCalls(source, "requireClinicalReadAccess");
 	assert(
 		guardCount >= expectedGuardCount,
 		`${sourcePath} must guard ${expectedGuardCount} protected read route(s), found ${guardCount}`,
