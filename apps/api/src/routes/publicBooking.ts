@@ -95,6 +95,47 @@ function resolveDaySchedule(
 			: null;
 
 	if (!day) {
+		/*
+		 * ФОРМАТ НАСТРОЕК КЛИНИКИ — тот, который пишет единственный ДОСТИЖИМЫЙ
+		 * писатель колонки: Настройки → «Клиника», поля «начало рабочего дня»,
+		 * «окончание» и отметки рабочих дней (SettingsClinicTab.tsx:353-370) →
+		 * db/settingsQuery.ts:176. Он кладёт
+		 * { workdayStart: "08:00", workdayEnd: "20:00", workingDays: [1..5],
+		 *   appointmentBufferMinutes: 15 }.
+		 *
+		 * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Именно этого формата здесь не было. Ниже
+		 * разбирались раскладка по дням недели и формат мастера первого запуска
+		 * ({ workHours: [8, 20] }), а формат настроек проваливался в запас
+		 * 09:00–18:00. Значение при этом доходило до базы и читалось обратно, то
+		 * есть в интерфейсе выглядело сохранённым: клиника считала, что её график
+		 * 08:00–20:00 задан, а пациентам виджет отдавал 09:00–17:30 — утренние и
+		 * вечерние слоты, самые нужные работающим людям, не показывались вовсе.
+		 * Список рабочих дней игнорировался целиком, и клиника, закрытая по
+		 * субботам, получала субботние записи: пациент приезжал к закрытой двери.
+		 *
+		 * Разбирается ПЕРВЫМ, потому что это формат живого экрана настроек;
+		 * формат мастера ниже остаётся ради строк, записанных им раньше.
+		 */
+		const workdayOpen = clockToMinutes(schedule?.workdayStart);
+		const workdayClose = clockToMinutes(schedule?.workdayEnd);
+		if (workdayOpen !== null && workdayClose !== null && workdayClose > workdayOpen) {
+			const settingsWorkingDays = Array.isArray(schedule?.workingDays)
+				? (schedule.workingDays as unknown[]).map((value) => Number(value))
+				: null;
+			return {
+				// Пустой список рабочих дней — не «работаем всегда». Схема настроек
+				// требует от одного до семи дней, поэтому его отсутствие означает
+				// «дни не заданы», и здесь безопаснее Пн–Сб с выходным воскресеньем,
+				// как в общем запасе ниже, чем открытая клиника семь дней в неделю.
+				isWorking:
+					settingsWorkingDays && settingsWorkingDays.length > 0
+						? settingsWorkingDays.includes(weekday)
+						: weekday !== 0,
+				openMinute: workdayOpen,
+				closeMinute: workdayClose,
+			};
+		}
+
 		// Онбординг (routes/workspaceProfile.ts) сохраняет расписание в другом
 		// формате: { workHours: [8, 20], workingDays: [1..5] }. Раньше читатель
 		// искал только ключи вида "monday", не находил их НИКОГДА и подставлял
