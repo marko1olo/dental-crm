@@ -1,5 +1,37 @@
 import { z } from "zod";
 
+/**
+ * Денежная сумма в рублях с копейками.
+ *
+ * Раньше суммы объявлялись `z.number().int()`, и клиника не могла принять ни
+ * 1500,50, ни 0,50: дробное значение отвергалось на входе схемой, а колонка в
+ * базе была integer. Теперь копейки допустимы, но строго две: три знака после
+ * запятой — это не деньги, а ошибка ввода или сломанный расчёт, и молча
+ * округлять их нельзя.
+ *
+ * Проверка идёт на копейках целым числом. Сравнение вида `value % 0.01 === 0`
+ * на двоичной плавающей точке неверно: 1500.5 % 0.01 не ноль.
+ *
+ * Объявление стоит в самом начале файла намеренно. Схемы — обычные значения, и
+ * ссылка на них из объекта, объявленного выше по файлу, падает при загрузке
+ * модуля, а не при сборке. Прайс услуг и заказы в лабораторию описаны в первой
+ * трети файла, поэтому деньги обязаны быть определены раньше всех.
+ */
+const kopecksAreExact = (value: number) =>
+  Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
+
+export const moneyRubSchema = z
+  .number()
+  .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
+
+export const positiveMoneyRubSchema = moneyRubSchema.refine((value) => value > 0, {
+  message: "сумма должна быть больше нуля"
+});
+
+export const nonNegativeMoneyRubSchema = moneyRubSchema.refine((value) => value >= 0, {
+  message: "сумма не может быть отрицательной"
+});
+
 export const patientStatusSchema = z.enum(["active", "archived"]);
 export type PatientStatus = z.infer<typeof patientStatusSchema>;
 
@@ -1602,7 +1634,15 @@ export const serviceCatalogItemSchema = z.object({
   aliases: z.array(z.string()).default([]),
   category: serviceCategorySchema,
   specialty: dentalSpecialtySchema,
-  basePriceRub: z.number().int().nonnegative(),
+  /*
+   * Цена услуги — с копейками.
+   *
+   * Было z.number().int(): прайс клиники не мог содержать ни 1500,50, ни
+   * 990,99. Дробную цену отвергала схема, а колонка service_catalog_items.
+   * base_price_rub в базе была integer. Прайс — то, из чего вырастает счёт
+   * пациенту, и округление начиналось прямо здесь.
+   */
+  basePriceRub: nonNegativeMoneyRubSchema,
   durationMinutes: z.number().int().positive(),
   taxDeductible: z.boolean(),
   active: z.boolean()
@@ -1690,8 +1730,9 @@ export const dentalPricelistItemSchema = z.object({
   brand: z.string().nullable(),
   toothScope: z.string().nullable(),
   unit: z.string(),
-  priceRub: z.number().int().nonnegative().nullable(),
-  priceMaxRub: z.number().int().nonnegative().nullable(),
+  /* Разбор строки прайса: цена и её верхняя граница тоже с копейками. */
+  priceRub: nonNegativeMoneyRubSchema.nullable(),
+  priceMaxRub: nonNegativeMoneyRubSchema.nullable(),
   durationMinutes: z.number().int().positive().nullable(),
   confidence: z.number().min(0).max(1),
   warnings: z.array(z.string()),
@@ -1931,33 +1972,6 @@ export const fiscalReceiptDetailsSchema = z.object({
   operationType: z.enum(["income", "income_return"]).nullable().optional()
 });
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
-
-/**
- * Денежная сумма в рублях с копейками.
- *
- * Раньше суммы объявлялись `z.number().int()`, и клиника не могла принять ни
- * 1500,50, ни 0,50: дробное значение отвергалось на входе схемой, а колонка в
- * базе была integer. Теперь копейки допустимы, но строго две: три знака после
- * запятой — это не деньги, а ошибка ввода или сломанный расчёт, и молча
- * округлять их нельзя.
- *
- * Проверка идёт на копейках целым числом. Сравнение вида `value % 0.01 === 0`
- * на двоичной плавающей точке неверно: 1500.5 % 0.01 не ноль.
- */
-const kopecksAreExact = (value: number) =>
-  Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
-
-export const moneyRubSchema = z
-  .number()
-  .refine(kopecksAreExact, { message: "сумма указывается с точностью до копейки" });
-
-export const positiveMoneyRubSchema = moneyRubSchema.refine((value) => value > 0, {
-  message: "сумма должна быть больше нуля"
-});
-
-export const nonNegativeMoneyRubSchema = moneyRubSchema.refine((value) => value >= 0, {
-  message: "сумма не может быть отрицательной"
-});
 
 export const paymentSchema = z.object({
   id: z.string().uuid(),

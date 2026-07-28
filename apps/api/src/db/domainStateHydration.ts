@@ -656,8 +656,25 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			aliases: [],
 			category: service.category,
 			specialty: service.specialty,
-			// base_price_rub — numeric, драйвер отдаёт строку вида "1200.00".
-			basePriceRub: Math.max(0, Math.round(Number(service.basePriceRub) || 0)),
+			/*
+			 * Цена услуги идёт с копейками.
+			 *
+			 * Здесь стояло Math.round: цена 1 500,50 ₽, честно лежащая в колонке
+			 * numeric(10,2), превращалась на экране в 1 501 ₽. Это самая живая из
+			 * потерь копейки во всей программе — прайс читает и главный экран, и
+			 * план лечения, и счёт пациенту. Округление вверх ещё и делало клинику
+			 * дороже, чем она есть.
+			 *
+			 * Округление появилось не на пустом месте: схема прайса требовала целое
+			 * число (z.number().int()), и без округления разбор отбросил бы строку
+			 * целиком. Схема теперь принимает копейки, поэтому округление не просто
+			 * лишнее — оно вредное.
+			 *
+			 * Number() остаётся: колонка services.base_price_rub объявлена numeric
+			 * с mode "number", но соседние таблицы прайса пока без него, и лишнее
+			 * приведение числа к числу ничего не стоит.
+			 */
+			basePriceRub: Math.max(0, Number(service.basePriceRub) || 0),
 			durationMinutes: Math.max(1, service.durationMinutes),
 			taxDeductible: service.taxDeductible,
 			active: service.active,

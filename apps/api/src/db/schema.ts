@@ -371,8 +371,17 @@ export const serviceCatalogItems = pgTable("service_catalog_items", {
   title: text("title").notNull(),
   category: serviceCategory("category").notNull().default("other"),
   specialty: dentalSpecialty("specialty").notNull().default("universal"),
-  basePriceRub: integer("base_price_rub").notNull(),
-  priceRub: integer("price_rub").notNull(),
+  /*
+   * Прайс клиники хранит копейки.
+   *
+   * Было integer: услугу за 1 500,50 ₽ занести было нельзя вовсе — не
+   * округлялось при выводе, а отвергалось базой на записи. Обязателен
+   * mode: "number": без него drizzle отдаёт numeric строкой независимо от
+   * настроек драйвера, цена приходит как "1500.50", и сложение цен становится
+   * склейкой строк.
+   */
+  basePriceRub: numeric("base_price_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+  priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
   durationMinutes: integer("duration_minutes").notNull().default(30),
   taxDeductible: boolean("tax_deductible").notNull().default(true),
   taxDeductionCode: text("tax_deduction_code"),
@@ -410,7 +419,7 @@ export const treatmentScenarios = pgTable("treatment_scenarios", {
   title: text("title").notNull(),
   strategy: treatmentPlanScenarioStrategy("strategy").notNull().default("standard"),
   priority: treatmentPlanScenarioPriority("priority").notNull().default("balanced"),
-  totalRub: integer("total_rub").notNull(),
+  totalRub: numeric("total_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
   durationMonths: integer("duration_months").notNull().default(0),
   visitCount: integer("visit_count").notNull().default(1),
   includedServiceIdsJson: text("included_service_ids_json").notNull().default("[]"),
@@ -496,7 +505,7 @@ export const generatedDocuments = pgTable("generated_documents", {
   status: documentStatus("status").notNull().default("draft"),
   title: text("title").notNull(),
   storagePath: text("storage_path"),
-  totalAmountRub: integer("total_amount_rub"),
+  totalAmountRub: numeric("total_amount_rub", { precision: 12, scale: 2, mode: "number" }),
   taxYear: integer("tax_year"),
   taxPayerInn: text("tax_payer_inn"),
   payloadJson: text("payload_json"),
@@ -1319,7 +1328,7 @@ export const labOrders = pgTable("lab_orders", {
   clinicalNotes: text("clinical_notes"),
   labComments: text("lab_comments"),
   attachedImageUrl: text("attached_image_url"),
-  priceRub: integer("price_rub"),
+  priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -1506,7 +1515,7 @@ export const insuranceContracts = pgTable("insurance_contracts", {
   coverageSurgeryPct: numeric("coverage_surgery_pct", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
   coverageOrthoPct: numeric("coverage_ortho_pct", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
   coverageHygienePct: numeric("coverage_hygiene_pct", { precision: 5, scale: 2, mode: "number" }).notNull().default(0),
-  annualLimitRub: integer("annual_limit_rub"),
+  annualLimitRub: numeric("annual_limit_rub", { precision: 12, scale: 2, mode: "number" }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -2055,7 +2064,16 @@ export const services = pgTable("services", {
   code: text("code"),
   category: serviceCategory("category").notNull().default("therapy"),
   specialty: dentalSpecialty("specialty").notNull().default("universal"),
-  basePriceRub: numeric("base_price_rub", { precision: 10, scale: 2 }).notNull().default("0"),
+  /*
+   * mode: "number" обязателен.
+   *
+   * Без него drizzle отдаёт numeric строкой вида "1500.50" независимо от
+   * настроек драйвера — это его собственное преобразование, а не поведение
+   * postgres. Строка дальше молча складывается с другими строками вместо
+   * сложения чисел, и это не ловится типами, потому что склейка строк
+   * допустима.
+   */
+  basePriceRub: numeric("base_price_rub", { precision: 10, scale: 2, mode: "number" }).notNull().default(0),
   durationMinutes: integer("duration_minutes").notNull().default(30),
   taxDeductible: boolean("tax_deductible").notNull().default(true),
   active: boolean("active").notNull().default(true),
@@ -2516,9 +2534,16 @@ export const migrationReconciliations = pgTable("migration_reconciliations", {
   balanced: boolean("balanced").notNull(),
   checksJson: jsonb("checks_json").$type<MigrationReconciliationCheck[]>().notNull(),
   entityBreakdownJson: jsonb("entity_breakdown_json").$type<MigrationEntityBreakdown[]>().notNull(),
-  sourceMoneyTotalRub: integer("source_money_total_rub"),
-  loadedMoneyTotalRub: integer("loaded_money_total_rub"),
-  quarantinedMoneyTotalRub: integer("quarantined_money_total_rub"),
+  /*
+   * Сверка переноса из старой программы: копейки здесь важнее всего.
+   *
+   * Сверка существует ровно затем, чтобы поймать расхождение. При integer
+   * разница меньше рубля исчезала на каждой строке, и вывод «сошлось» мог
+   * скрывать потерянные копейки — хуже, чем честное расхождение.
+   */
+  sourceMoneyTotalRub: numeric("source_money_total_rub", { precision: 12, scale: 2, mode: "number" }),
+  loadedMoneyTotalRub: numeric("loaded_money_total_rub", { precision: 12, scale: 2, mode: "number" }),
+  quarantinedMoneyTotalRub: numeric("quarantined_money_total_rub", { precision: 12, scale: 2, mode: "number" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => {
   return {
