@@ -28,6 +28,8 @@ import {
   createChairSchema,
   createStaffMemberSchema,
   dentalSpecialtySchema,
+  documentKindSchema,
+  imagingStudyKindSchema,
   nonNegativeMoneyRubSchema,
   serviceCategorySchema,
   staffMemberSchema,
@@ -46,6 +48,13 @@ import {
   ServiceCatalogStorageDisabledError,
   updateServiceCatalogItemInDb
 } from "../db/pricelistQuery.js";
+import {
+  createProtocolTemplateInDb,
+  deleteProtocolTemplateInDb,
+  ProtocolTemplateNotFoundError,
+  ProtocolTemplateStorageDisabledError,
+  updateProtocolTemplateInDb
+} from "../db/protocolTemplateQuery.js";
 import { z } from "zod";
 
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
@@ -164,6 +173,87 @@ const updateServiceCatalogItemSchema = z.object({
 type CreateServiceCatalogItemInput = z.infer<typeof createServiceCatalogItemSchema>;
 type UpdateServiceCatalogItemInput = z.infer<typeof updateServiceCatalogItemSchema>;
 
+/**
+ * Шаблон протокола приёма: POST /api/settings/protocols и
+ * PUT /api/settings/protocols/:templateId.
+ *
+ * ПЕРЕЧИСЛЕНИЯ ЗДЕСЬ ОБЯЗАТЕЛЬНЫ, А НЕ ЖЕЛАТЕЛЬНЫ. Чтение экранов прогоняет
+ * строку через protocolTemplateSchema и МОЛЧА выбрасывает не прошедшую
+ * (db/domainStateHydration.ts:787). Виды документов и снимков проверяются там
+ * теми же documentKindSchema и imagingStudyKindSchema. Шаблон с незнакомым видом
+ * документа записался бы в базу и исчез с экрана без следа — администратор
+ * увидел бы «сохранено» и пустое место. Поэтому те же перечисления стоят на входе.
+ *
+ * Границы длин — защита от неограниченного ввода, а не клиническое правило:
+ * колонки объявлены как text. Название и причина визита — 240 знаков, как у
+ * остальных названий в этом файле; заготовки жалоб, статуса и плана — 20 000, это
+ * страница текста, которой протокол и является. Списки ограничены 64 позициями:
+ * протокол на приём, а не справочник.
+ */
+const PROTOCOL_TEXT_LIMIT = 20_000;
+const PROTOCOL_LIST_LIMIT = 64;
+
+const protocolTemplateFields = {
+  specialty: dentalSpecialtySchema,
+  title: z.string().trim().min(1).max(240),
+  visitReason: z.string().trim().max(240),
+  defaultDurationMinutes: z.number().int().positive().max(1440),
+  complaintPrompt: z.string().max(PROTOCOL_TEXT_LIMIT),
+  objectiveTemplate: z.string().max(PROTOCOL_TEXT_LIMIT),
+  treatmentPlanTemplate: z.string().max(PROTOCOL_TEXT_LIMIT),
+  diagnosisHints: z.array(z.string().trim().max(500)).max(PROTOCOL_LIST_LIMIT),
+  requiredDocuments: z.array(documentKindSchema).max(PROTOCOL_LIST_LIMIT),
+  suggestedImaging: z.array(imagingStudyKindSchema).max(PROTOCOL_LIST_LIMIT),
+  safetyWarnings: z.array(z.string().trim().max(500)).max(PROTOCOL_LIST_LIMIT)
+};
+
+/**
+ * Создание шаблона. Обязательно только название: остальное — заготовки, и пустая
+ * заготовка это осмысленное состояние («подсказки нет»), в отличие от шаблона без
+ * имени, который нельзя выбрать на приёме.
+ *
+ * Значения по умолчанию совпадают с тем, что подставляет форма
+ * (SettingsProtocolsTab.tsx:68-80), чтобы шаблон, сохранённый сразу после
+ * «Добавить шаблон», лёг в базу ровно таким, каким его показали оператору.
+ */
+const createProtocolTemplateSchema = z.object({
+  specialty: protocolTemplateFields.specialty.default("universal"),
+  title: protocolTemplateFields.title,
+  visitReason: protocolTemplateFields.visitReason.default(""),
+  defaultDurationMinutes: protocolTemplateFields.defaultDurationMinutes.default(30),
+  complaintPrompt: protocolTemplateFields.complaintPrompt.default(""),
+  objectiveTemplate: protocolTemplateFields.objectiveTemplate.default(""),
+  treatmentPlanTemplate: protocolTemplateFields.treatmentPlanTemplate.default(""),
+  diagnosisHints: protocolTemplateFields.diagnosisHints.default([]),
+  requiredDocuments: protocolTemplateFields.requiredDocuments.default([]),
+  suggestedImaging: protocolTemplateFields.suggestedImaging.default([]),
+  safetyWarnings: protocolTemplateFields.safetyWarnings.default([])
+});
+
+/**
+ * Правка шаблона: интерфейс шлёт весь объект целиком, включая id,
+ * organizationId и updatedAt (SettingsProtocolsTab.tsx:86 — `{ ...template }`).
+ * Незаявленные ключи zod отбрасывает, и это здесь важно как защита: клиника
+ * берётся из подписанного токена, и organizationId из тела запроса не должен
+ * иметь ни одного шанса на неё повлиять.
+ */
+const updateProtocolTemplateSchema = z.object({
+  specialty: protocolTemplateFields.specialty.optional(),
+  title: protocolTemplateFields.title.optional(),
+  visitReason: protocolTemplateFields.visitReason.optional(),
+  defaultDurationMinutes: protocolTemplateFields.defaultDurationMinutes.optional(),
+  complaintPrompt: protocolTemplateFields.complaintPrompt.optional(),
+  objectiveTemplate: protocolTemplateFields.objectiveTemplate.optional(),
+  treatmentPlanTemplate: protocolTemplateFields.treatmentPlanTemplate.optional(),
+  diagnosisHints: protocolTemplateFields.diagnosisHints.optional(),
+  requiredDocuments: protocolTemplateFields.requiredDocuments.optional(),
+  suggestedImaging: protocolTemplateFields.suggestedImaging.optional(),
+  safetyWarnings: protocolTemplateFields.safetyWarnings.optional()
+});
+
+type CreateProtocolTemplateInput = z.infer<typeof createProtocolTemplateSchema>;
+type UpdateProtocolTemplateInput = z.infer<typeof updateProtocolTemplateSchema>;
+
 type SettingsPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false; error?: { format: () => unknown } };
 };
@@ -236,6 +326,17 @@ const serviceCatalogUpdateNotFoundMessage =
   "Услуга не изменена: услуга не найдена в прайсе этой клиники.";
 const serviceCatalogDeactivateNotFoundMessage =
   "Услуга не отключена: услуга не найдена в прайсе этой клиники.";
+const protocolTemplateRouteValidationMessage = "Шаблон не сохранён: выберите шаблон протокола.";
+const protocolTemplateCreateValidationMessage =
+  "Шаблон не создан: заполните название, выберите специальность, длительность приёма и допустимые виды документов и снимков.";
+const protocolTemplateUpdateValidationMessage =
+  "Шаблон не сохранён: проверьте название, специальность, длительность приёма и допустимые виды документов и снимков.";
+const protocolTemplateEmptyUpdateMessage = "Шаблон не сохранён: не переданы поля для изменения.";
+const protocolTemplateCreateNotFoundMessage = "Шаблон не создан: клиника не найдена.";
+const protocolTemplateUpdateNotFoundMessage =
+  "Шаблон не сохранён: шаблон не найден в этой клинике.";
+const protocolTemplateDeleteNotFoundMessage = "Шаблон не удалён: шаблон не найден в этой клинике.";
+const protocolTemplateDeleteRejectedMessage = "Шаблон не удалён: проверьте выбранный шаблон.";
 
 function parseSettingsPayload<T>(schema: SettingsPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
@@ -387,6 +488,40 @@ function serviceCatalogMutationRejection(
   return reply.code(409).send({
     error: `${errorCode}Rejected`,
     reason: "service_mutation_rejected",
+    message: rejectedMessage
+  });
+}
+
+/**
+ * Отказы шаблонов протоколов. Три исхода разведены по той же причине, что у
+ * прайса: «писать некуда» (503) — отказ сервера, «шаблона нет» (404) — отказ по
+ * выбору, остальное (409) — отказ по переданным полям.
+ */
+function protocolTemplateMutationRejection(
+  reply: FastifyReply,
+  error: unknown,
+  notFoundMessage: string,
+  rejectedMessage: string,
+  errorCode: string
+) {
+  if (error instanceof ProtocolTemplateStorageDisabledError) {
+    return reply.code(503).send({
+      error: "ProtocolTemplateStorageUnavailable",
+      reason: "state_persistence_off",
+      message: error.message
+    });
+  }
+  if (error instanceof ProtocolTemplateNotFoundError) {
+    return reply.code(404).send({
+      error: `${errorCode}NotFound`,
+      reason: "protocol_template_not_found",
+      message: notFoundMessage
+    });
+  }
+  console.error("[настройки] шаблон протокола не изменён:", error);
+  return reply.code(409).send({
+    error: `${errorCode}Rejected`,
+    reason: "protocol_template_mutation_rejected",
     message: rejectedMessage
   });
 }
@@ -971,6 +1106,121 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         serviceCatalogDeactivateNotFoundMessage,
         serviceCatalogUpdateValidationMessage,
         "ServiceCatalogDeactivate"
+      );
+    }
+  });
+
+  /* ─── ШАБЛОНЫ ПРОТОКОЛОВ ПРИЁМА ───────────────────────────────────────────
+   *
+   * Интерфейс зовёт эти адреса из вкладки «Настройки → Протоколы»
+   * (components/settings/SettingsProtocolsTab.tsx:104, 105, 141). Маршрутов не
+   * было ни одного: Fastify отвечал
+   * «Route POST:/api/settings/protocols not found» — и это написано прямо в
+   * комментарии той вкладки, то есть дефект знали и обходили текстом отказа.
+   * Администратор клиники заполнял форму на десять полей, жал «Сохранить» и
+   * читал «Шаблон не сохранён».
+   *
+   * Шаблон протокола подставляет врачу на приёме причину визита, длительность,
+   * заготовку жалоб, объективного статуса и плана лечения, список обязательных
+   * документов и нужных снимков. Без записи клиника не могла ни завести свой
+   * протокол, ни исправить пришедший с посевом.
+   */
+  app.post("/api/settings/protocols", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const input = parseSettingsPayload<CreateProtocolTemplateInput>(
+      createProtocolTemplateSchema,
+      request.body
+    );
+    if (!input) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: protocolTemplateCreateValidationMessage
+      });
+    }
+    try {
+      const created = await createProtocolTemplateInDb(orgId, input);
+      return reply.code(201).send(created);
+    } catch (error) {
+      return protocolTemplateMutationRejection(
+        reply,
+        error,
+        protocolTemplateCreateNotFoundMessage,
+        protocolTemplateCreateValidationMessage,
+        "ProtocolTemplateCreate"
+      );
+    }
+  });
+
+  app.put("/api/settings/protocols/:templateId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { templateId?: string };
+    if (!params.templateId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: protocolTemplateRouteValidationMessage
+      });
+    }
+    const input = parseSettingsPayload<UpdateProtocolTemplateInput>(
+      updateProtocolTemplateSchema,
+      request.body
+    );
+    if (!input) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: protocolTemplateUpdateValidationMessage
+      });
+    }
+    // Тело из одних неизвестных полей после разбора неотличимо от пустого. Ответ
+    // 200 на запрос, который ничего не меняет, означал бы, что администратор
+    // считает шаблон исправленным, а на приёме подставится прежний.
+    if (Object.keys(input).length === 0) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: protocolTemplateEmptyUpdateMessage
+      });
+    }
+    try {
+      const updated = await updateProtocolTemplateInDb(orgId, params.templateId, input);
+      return updated;
+    } catch (error) {
+      return protocolTemplateMutationRejection(
+        reply,
+        error,
+        protocolTemplateUpdateNotFoundMessage,
+        protocolTemplateUpdateValidationMessage,
+        "ProtocolTemplateUpdate"
+      );
+    }
+  });
+
+  /**
+   * Удаление шаблона. Настоящее, а не отключение: на protocol_templates.id не
+   * ссылается ни одна таблица и признака активности у шаблона нет, поэтому рвать
+   * нечего — в отличие от услуги прайса, за которой стоят позиции лечения и
+   * счёта. Экран обещает оператору именно удаление.
+   */
+  app.delete("/api/settings/protocols/:templateId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { templateId?: string };
+    if (!params.templateId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: protocolTemplateRouteValidationMessage
+      });
+    }
+    try {
+      const deleted = await deleteProtocolTemplateInDb(orgId, params.templateId);
+      return deleted;
+    } catch (error) {
+      return protocolTemplateMutationRejection(
+        reply,
+        error,
+        protocolTemplateDeleteNotFoundMessage,
+        protocolTemplateDeleteRejectedMessage,
+        "ProtocolTemplateDelete"
       );
     }
   });
