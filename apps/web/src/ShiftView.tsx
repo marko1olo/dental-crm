@@ -561,7 +561,10 @@ export function ShiftView({
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: queue.role === activeQueueRole ? "var(--teal-dark)" : "var(--muted)" }}>
                               <UserCheck size={14} aria-hidden="true" />
-                              {staffRoleLabels?.[queue.role] ?? queue.role}
+                              {/* Третий такой же случай: без словаря подписей
+                                  заголовком карточки становился ключ роли —
+                                  doctor, admin — латиницей и заглавными. */}
+                              {staffRoleLabels?.[queue.role] ?? "роль не подписана"}
                             </span>
                             {/* Голое число рядом с названием роли: глазами видно, что
                                 это счётчик, а вслух читалось «АДМИНИСТРАТОР 3».
