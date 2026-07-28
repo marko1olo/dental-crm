@@ -1,6 +1,6 @@
 # V2-inventory-false-record — state
 
-STATUS: STARTED (2026-07-28)
+STATUS: DONE (2026-07-28)
 
 Packet: V2-inventory-false-record
 Lane: CLINICAL / MONEY
@@ -73,4 +73,18 @@ Gate: npm run typecheck -w @dental/api
   network against the running server. Live token auth WORKS (review §5 note is stale).
 - COMMITTED 27cdd0bb4 (harness live-HTTP mode).
 - PROVEN. Record correction written into U5 handoff.md + state.md, V2 handoff.md written.
-- NEXT: commit the docs (commitmsg3.txt), then DONE.
+- COMMITTED 40486bfa8 (packet docs + U5 record correction).
+- COMMITTED 647c7010e (marker note on U5/commitmsg2.txt, which carries the false text verbatim).
+- FINAL RE-RUN on the committed tree: npm run typecheck -w @dental/api exit 0;
+  diarySigningCeremony.test.ts tests 9 / pass 9 / fail 0 exit 0.
+- Encoding check on all 10 touched files: no BOM, 0 mojibake lines.
+- Working tree clean for apps/api/src and both packet dirs (only other packets' untracked
+  review.md files and U5's live-api-proof.ts remain — not mine).
+- DONE.
+
+## Files left on disk
+state.md, handoff.md, commitmsg.txt, commitmsg2.txt, commitmsg3.txt, commitmsg4.txt.
+Repeatable measurement lives in the repo as apps/api/src/tests/routes/diaryDeductionProof.ts
+(run: cd apps/api && node --import tsx src/tests/routes/diaryDeductionProof.ts;
+add V2_API_BASE=http://127.0.0.1:4100 for the network run). No temp files left:
+apps/api/src/_v2tmp deleted, no scratch, no dist staged.
