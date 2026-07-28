@@ -919,3 +919,75 @@ editing it.** The three-step discipline (stage → inspect `git diff --cached --
 pathspec) protects against a foreign *index*, not against a foreign *working tree*. Amending is
 impossible — the commit is pushed and a second author commits continuously. So the record is corrected
 here instead. **Step 0 is now: `git status --porcelain -- <path>` before the first edit.**
+
+## CYCLE 11 FINAL VERDICTS — ALL FOUR REVIEWS SURVIVED ON DISK EVEN THOUGH THREE AGENTS DIED
+
+The workflow reported three reviewers as failed on credits. **All four `review.md` files nonetheless
+exist, 14–34 KB each**, because the brief ordered findings written to disk AS THEY GO. That instruction
+is now proven load-bearing twice over: builders survive by committing early, reviewers survive by writing
+early. AA4's reviewer died mid-sentence and still delivered the most valuable finding of the cycle.
+
+| packet | verdict | disposition |
+|---|---|---|
+| AA1 panel contract | NEEDS_REWORK (documentation-scoped: "the code is right") | debt recorded; false comment fixed by lead |
+| AA2 guard root cause | **SOUND_WITH_NITS** | accepted; reversion proven to fail the test |
+| AA3 money contract | NEEDS_REWORK | NOT reverted — reasoning below; one finding fixed by lead |
+| AA4 invented prices | (reviewer died before writing the verdict line) → **lead assigns NEEDS_REWORK** | its S-B finding fixed by lead |
+
+### THE LEAD MISREPORTED AA3 AS "REVERT" TO THE DIRECTOR. IT IS NEEDS_REWORK.
+`grep -m1 -o "SOUND_WITH_NITS\|NEEDS_REWORK\|REVERT\|SOUND"` matched the word **REVERT in prose** — the
+reviewer was describing what would *qualify* as revert-grade. The actual line is `## VERDICT: NEEDS_REWORK`.
+**A sloppy instrument produced a false measurement, which is precisely what this campaign fails packets
+for.** The pleasant consequence: the reviewer independently reached the same NEEDS_REWORK the lead reasoned
+its way to, so there was never a lead override of a reviewer verdict.
+
+### WHY AA3 WAS NOT REVERTED, RECORDED SO IT CAN BE CHALLENGED
+Reverting would restore 38 contract fields that **REJECT** `1500.50` — a universal blocker: no clinic
+could enter a price with kopecks, ever. The widening introduces *conditional* failures, each closable
+forward. The same reviewer's own measurements support keeping it: **price regressions introduced: ZERO**,
+no previously-correct price moved, and zero counters converted (`count`, `quantity`, `durationMonths`,
+`visitCount`, `taxYear` all untouched inside the same hunks; all 40 changed keys are money-named). The
+reviewer also found the parent was *worse* than reported: «Реставрация 1500,505» returned **505 roubles**
+for a 1500,50 service.
+
+### WHAT THE LEAD FIXED FROM THESE REVIEWS, WITH PROOF
+1. **`guards.ts` was a SECOND OWNER of the float-comparison defect already fixed in `renderDocument.ts`** —
+   three raw `!==` money comparisons (:371 receipt gate, :795 installments, :825 completed-works act).
+   Measured: three kopeck-exact payments 300.01 + 300.05 + 300.07 sum to `900.1299999999999` in one order
+   and `900.13` in the other; client and server sum in independent orders. **A legitimate three-payment
+   receipt was refused**, and the doctor read two numbers the eye cannot distinguish. Fixed in integer
+   kopecks — no epsilon. Proven: old gate rejects the legitimate case; new gate accepts both orderings and
+   **still rejects 900.12 and 900.14**, so a real one-kopeck discrepancy is still caught.
+2. **The FDI tooth rule existed only on the server**, so no client could honour it. AA4's commit began
+   sending `toothNumber`; the client filtered on `Number.isFinite`, so 19 passed and the server rejected
+   the **whole treatment plan** with a generic message. Moved to `packages/shared` (52 valid teeth), all
+   three sides updated synchronously, one message text for both. Proven by run: 19, 20, 29, 30, 39, 40,
+   49, 50, 99, 1.5 and **`null`** were all let through before and are all blocked now — `Number(null)` is
+   0 and `isFinite(0)` is true, so a missing tooth number was being sent as **zero**.
+3. **The mounted `TreatmentEstimator` read `svc.priceRub`, a field the price list does not have** (it is
+   `basePriceRub`). A clinic that FILLED its price list got `undefined` → «0 ₽» and a save refusal; a
+   clinic that filled nothing fell through to **eight** hardcoded demo prices. **Filling in your prices
+   made the product worse.** Fixed by typing the catalogue so `s.priceRub` is now a build error. Verified
+   every link: `pricelistQuery.ts:137` and `sampleData.ts` both emit `basePriceRub`; no source emits
+   `priceRub`. Mounted in TWO routed views (PatientsView and VisitView → VisitOdontogramTab).
+
+### GATES AT THIS POINT, EVERY NUMBER A TRUE EXIT CODE OF A COMMAND THE LEAD RAN
+`npm run build -w @dental/shared` 0 · `npm run build -w @dental/api` 0 · `typecheck -w @dental/api`
+**0 errors** · `typecheck -w @dental/web` **0 errors** · `smoke:web-text-encoding` 0 ·
+`smoke-clinical-mutation-guard.mjs` **ok:true**, 438 routes probed, 187 mutating,
+`staleOutputCount: 0`, `missingOutputCount: 0`, `warnings: []`.
+
+### NEW BACKLOG FROM THE ROUTE GATE'S OWN OUTPUT (not previously recorded)
+`payloadBeforeAuthorisation` names two routes that validate input BEFORE checking authorisation:
+`POST /api/auth/clinic/set-password` (`auth.ts:278-281` before `:283-292`) and
+`POST /api/auth/staff/set-pin` (`auth.ts:331-337` before `:339-348`). The second is the worse one: it
+confirms **whether a staff member exists** to an unauthenticated caller. Also standing: the gate cannot
+check WebSocket authorisation at all — `app.inject` performs no Upgrade handshake, so
+`HEAD /api/ws/schedule` reaches the socket handler and dies on `socket.close`. Socket auth is unproven.
+
+### STILL OPEN FROM AA3, NOT CLOSED AND NOT HIDDEN
+`analyzer.ts:733-737` `asNumberOrNull` does `Math.round`, destroying kopecks in the `groq_json` parser
+mode — same file, 350 lines below AA3's fix; it cannot simply be widened because `:770` uses it for
+`durationMinutes`, correctly an integer. `analyzer.ts:442` leaves «Отбеливание 12000-» in a service title
+on price ranges. `migration.ts:291-293` has three money fields with no kopeck precision at all.
+`guards.ts:660,:671,:685` still print widened sums into Russian text unformatted.
