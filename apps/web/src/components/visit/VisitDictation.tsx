@@ -3,6 +3,13 @@ import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { AiOrchestrator } from "../../lib/aiOrchestrator";
+import {
+	DICTATION_NOTHING_TO_APPLY_NOTE,
+	DICTATION_WRITE_FAILED_NOTE,
+	dictationAppliedNote,
+	dictationEmkEntries,
+	dictationToothUpdates,
+} from "./dictationApplyPlan";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
@@ -47,9 +54,24 @@ export function VisitDictation() {
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
+	/*
+	 * Честный ответ на нажатие «Применить»: что именно легло в карту приёма, а
+	 * когда переносить было нечего — прямо об этом. Раньше окно просто
+	 * закрывалось, и врач считал, что осмотр записан (см. onApply ниже).
+	 */
+	const [smartApplyNote, setSmartApplyNote] = useState<string | null>(null);
 
-	const appendToEMKField = (k: string, v: string) => {
-		if (!k || !v || !updateVisitNoteField) return;
+	const openSmartPreview = (parsed: any) => {
+		setSmartApplyNote(null);
+		setSmartParsedData(parsed);
+		setShowSmartPreview(true);
+		setShowHints(false);
+	};
+
+	// Возвращает признак «текст действительно ушёл в поле карты»: без него
+	// невозможно отличить перенос от тихого отказа (см. onApply ниже).
+	const appendToEMKField = (k: string, v: string): boolean => {
+		if (!k || !v || !updateVisitNoteField) return false;
 		const field = k as any;
 		if (savedVisitNoteForm && typeof (savedVisitNoteForm as any)[field] === "string") {
 			const current = (savedVisitNoteForm as any)[field] as string;
@@ -58,6 +80,7 @@ export function VisitDictation() {
 		} else {
 			updateVisitNoteField(field, v);
 		}
+		return true;
 	};
 
 	return (
@@ -141,16 +164,14 @@ export function VisitDictation() {
 								e.preventDefault();
 								const orchestratorResult =
 									AiOrchestrator.processEmkDictation(transcript);
-								const parsed =
+								openSmartPreview(
 									orchestratorResult.source === "local_algorithm"
 										? orchestratorResult.data
 										: {
 												isAiTask: true,
 												prompt: orchestratorResult.suggestedPrompt,
-											};
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
+											},
+								);
 							}
 						}}
 						placeholder={typeof window !== "undefined" && (window.innerWidth <= 860 || 'ontouchstart' in window) ? "Диктуйте или введите текст приема..." : "Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"}
@@ -220,18 +241,41 @@ export function VisitDictation() {
 					rawText={transcript}
 					type="visit"
 					onApply={(data: any) => {
-						if (data) {
-							if (data.toothUpdates) {
-								data.toothUpdates.forEach((t: any) =>
-									setToothState(t.code, t.state),
-								);
-							}
-							if (data.emkUpdates) {
-								Object.entries(data.emkUpdates).forEach(([k, v]) => {
-									if (v) appendToEMKField(k, v as string);
-								});
-							}
+						/*
+						 * БЫЛО: что бы ни лежало в data, окно закрывалось молча. А когда
+						 * местный разбор не справился, там лежит {isAiTask, prompt} — ни
+						 * зубов, ни полей ЭМК. Врач в перчатках диктовал осмотр, жал
+						 * «Применить», окно исчезало — и он был уверен, что приём записан.
+						 * В карте не появлялось НИ ОДНОЙ буквы: ни жалоб, ни диагноза.
+						 * Так же тихо уходило в никуда «применение» пустого разбора.
+						 * Теперь считаем, что реально перенесено, и отвечаем словами.
+						 */
+						const toothUpdates = dictationToothUpdates(data);
+						const emkEntries = dictationEmkEntries(data);
+
+						if (!toothUpdates.length && !emkEntries.length) {
+							setSmartApplyNote(DICTATION_NOTHING_TO_APPLY_NOTE);
+							return;
 						}
+
+						toothUpdates.forEach((tooth) =>
+							setToothState(tooth.code, tooth.state),
+						);
+						const writtenFields = emkEntries.filter(([key, value]) =>
+							appendToEMKField(key, value),
+						);
+
+						if (!writtenFields.length && !toothUpdates.length) {
+							setSmartApplyNote(DICTATION_WRITE_FAILED_NOTE);
+							return;
+						}
+
+						setSmartApplyNote(
+							dictationAppliedNote(
+								writtenFields.map(([key]) => key),
+								toothUpdates.length,
+							),
+						);
 						setShowSmartPreview(false);
 					}}
 					onManual={() => setShowSmartPreview(false)}
@@ -265,16 +309,14 @@ export function VisitDictation() {
 
 						const orchestratorResult =
 							AiOrchestrator.processEmkDictation(newText);
-						const parsed =
+						openSmartPreview(
 							orchestratorResult.source === "local_algorithm"
 								? orchestratorResult.data
 								: {
 										isAiTask: true,
 										prompt: orchestratorResult.suggestedPrompt,
-									};
-						setSmartParsedData(parsed);
-						setShowSmartPreview(true);
-						setShowHints(false);
+									},
+						);
 					}}
 				/>
 
@@ -284,16 +326,14 @@ export function VisitDictation() {
 					onClick={() => {
 						const orchestratorResult =
 							AiOrchestrator.processEmkDictation(transcript);
-						const parsed =
+						openSmartPreview(
 							orchestratorResult.source === "local_algorithm"
 								? orchestratorResult.data
 								: {
 										isAiTask: true,
 										prompt: orchestratorResult.suggestedPrompt,
-									};
-						setSmartParsedData(parsed);
-						setShowSmartPreview(true);
-						setShowHints(false);
+									},
+						);
 					}}
 					disabled={!hasVisitTranscriptText}
 					aria-describedby={
@@ -376,6 +416,17 @@ export function VisitDictation() {
 					</div>
 				</details>
 
+				{smartApplyNote ? (
+					<div
+						className="dictation-action-guidance"
+						data-testid="dictation-apply-note"
+						role="status"
+						aria-live="polite"
+						style={{ width: "100%" }}
+					>
+						{smartApplyNote}
+					</div>
+				) : null}
 				{!hasVisitTranscriptText ? (
 					<div
 						className="dictation-action-guidance"
