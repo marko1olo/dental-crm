@@ -272,6 +272,45 @@ describe("closing the contour is what cornerstone does, and it moves the curve",
 		assert.strictEqual(archPortion.length, 127);
 	});
 
+	test("the wrap-around run is 21 vertices and ~36 % of the polyline the old code walked", () => {
+		// This is the size of the defect b4292f74d fixed, measured on one baseline
+		// instead of two. Before that commit `resamplePolylineByArcLength` walked the
+		// CLOSED polyline as if it were open, so the share of the output columns that
+		// showed tongue and palate is the wrap-around run as a fraction of THAT
+		// polyline: (closed - archPortion) / closed.
+		//
+		// The R2 handoff instead quoted «40.8 % длины развёртки» = (closed - OPEN) /
+		// closed, mixing the open rendering into a statement about the closed one.
+		// Both are above the C5 review's ~30 % estimate, so the substance held; the
+		// number did not, and the correct one is asserted here.
+		const closed = cornerstonePolyline(ELLIPSE_HANDLES, true);
+		const open = cornerstonePolyline(ELLIPSE_HANDLES, false);
+		const { archPortion, splitIndex } = archPortionOfClosed(
+			closed,
+			ELLIPSE_HANDLES[6]!,
+		);
+		assert.strictEqual(closed.length - 1 - splitIndex, 21);
+
+		const closedTotalMm = polylineLengthMm(closed);
+		const tailFraction =
+			(closedTotalMm - polylineLengthMm(archPortion)) / closedTotalMm;
+		assert.ok(
+			tailFraction > 0.34 && tailFraction < 0.39,
+			`wrap-around run is ${(tailFraction * 100).toFixed(1)} % of the closed polyline`,
+		);
+		assert.ok(
+			tailFraction > 0.3,
+			"the C5 review's ~30 % estimate was optimistic and must stay so",
+		);
+
+		const mixedFraction =
+			(closedTotalMm - polylineLengthMm(open)) / closedTotalMm;
+		assert.ok(
+			mixedFraction > tailFraction,
+			`the mixed-baseline figure ${(mixedFraction * 100).toFixed(1)} % should exceed the single-baseline ${(tailFraction * 100).toFixed(1)} %`,
+		);
+	});
+
 	test("closing changes the arch itself, not just the tail", () => {
 		// This is why the OPEN spline is not a usable baseline: it is not the same
 		// arch drawn plus a tail, it is a different arch. A closed Catmull-Rom uses
@@ -375,12 +414,16 @@ describe("the measurement itself, printed so it can be quoted", () => {
 			);
 			const seenMm = polylineLengthMm(archPortion);
 			const built = reconstruction(fixture.handles);
+			const closedTotalMm = polylineLengthMm(closed);
 			lines.push(
 				[
 					`${fixture.name}  handles=${fixture.handles.length}`,
 					`closed pts=${closed.length} split=${splitIndex}`,
+					`closed FULL len=${closedTotalMm.toFixed(4)} mm`,
 					`SEEN arch (closed portion) len=${seenMm.toFixed(4)} mm`,
+					`wrap-around run: pts=${closed.length - 1 - splitIndex} len=${(closedTotalMm - seenMm).toFixed(4)} mm = ${(((closedTotalMm - seenMm) / closedTotalMm) * 100).toFixed(1)} % of the closed polyline`,
 					`open spline len=${polylineLengthMm(open).toFixed(4)} mm`,
+					`R2's mixed-baseline share (closed-OPEN)/closed=${(((closedTotalMm - polylineLengthMm(open)) / closedTotalMm) * 100).toFixed(1)} %`,
 					`reconstruction len=${built.lengthMm.toFixed(4)} mm cols=${built.curve.length}`,
 					`shortfall vs SEEN=${(((seenMm - built.lengthMm) / seenMm) * 100).toFixed(2)} %`,
 					`max col->SEEN segment dev=${maxDeviationMm(built.curve, archPortion).toFixed(4)} mm`,
