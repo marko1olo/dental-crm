@@ -30,6 +30,7 @@ import { MessageSquare, PhoneOutgoing } from "lucide-react";
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
+import { countLabel } from "../../lib/russianPlural";
 import { formatShortDate, formatTime } from "../../utils/formatting";
 
 type CommunicationDirection = "inbound" | "outbound";
@@ -155,19 +156,20 @@ function formatDay(value: string | null): string | null {
 }
 
 /**
- * Русское согласование числа с существительным. Наивное «до пяти — обращения,
- * дальше — обращений» врёт на 21, 22, 101: получалось «22 обращений». Правило
- * ровно такое, как в языке: 1, 21, 31 — единственное; 2-4, 22-24 — «обращения»;
- * 11-14 и всё остальное — «обращений».
+ * ЗДЕСЬ ЛЕЖАЛА СВОЯ ФУНКЦИЯ СОГЛАСОВАНИЯ `pluralRu` — вторая копия правила,
+ * которое уже живёт в `lib/russianPlural.ts` (`countLabel`) и которым пользуется
+ * весь остальной интерфейс. Правило согласования одно, а два его владельца — это
+ * два разных ответа на один вопрос через полгода: поправят «11 обращений» в одном
+ * месте, а второе останется врать. Копия удалена, счётные слова идут через общую
+ * функцию; сам модуль листовой и стилей за собой не тащит.
+ *
+ * Счётчики из ответа приводим к целому неотрицательному здесь: общая countLabel
+ * считает остатки от деления и на дробном или отрицательном числе дала бы
+ * бессмыслицу, а прежняя местная копия это отсекала.
  */
-function pluralRu(count: number, one: string, few: string, many: string): string {
-	const absolute = Math.abs(Math.trunc(count));
-	const lastTwo = absolute % 100;
-	if (lastTwo >= 11 && lastTwo <= 14) return many;
-	const last = absolute % 10;
-	if (last === 1) return one;
-	if (last >= 2 && last <= 4) return few;
-	return many;
+function countFromServer(value: unknown): number {
+	const parsed = Number(value ?? 0);
+	return Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : 0;
 }
 
 /**
@@ -202,9 +204,9 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 	const entries = log?.entries ?? [];
 	const periodStart = formatDay(log?.firstEventAt ?? null);
 	const periodEnd = formatDay(log?.lastEventAt ?? null);
-	const needsCallCount = Number(log?.needsCallCount ?? 0);
+	const needsCallCount = countFromServer(log?.needsCallCount);
 	const lastNeedsCall = formatMoment(log?.lastNeedsCallAt ?? null);
-	const total = Number(log?.totalEvents ?? 0);
+	const total = countFromServer(log?.totalEvents);
 
 	return (
 		<div
@@ -220,7 +222,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 				    срока — число, из которого нельзя сделать ни одного вывода. */}
 				{!loading && !error && total > 0 && periodStart && periodEnd ? (
 					<span className="text-xs text-slate-500 dark:text-slate-400">
-						{total} {pluralRu(total, "обращение", "обращения", "обращений")} с {periodStart} по {periodEnd}
+						{countLabel(total, "обращение", "обращения", "обращений")} с {periodStart} по {periodEnd}
 					</span>
 				) : null}
 			</div>
@@ -250,8 +252,8 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 						<div className="mb-3 p-3 rounded-lg border flex items-start gap-2 text-xs bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800">
 							<PhoneOutgoing className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
 							<span>
-								Машина отправить не смогла: {needsCallCount}{" "}
-								{pluralRu(needsCallCount, "обращение ждёт", "обращения ждут", "обращений ждут")} звонка
+								Машина отправить не смогла:{" "}
+								{countLabel(needsCallCount, "обращение ждёт", "обращения ждут", "обращений ждут")} звонка
 								руками{lastNeedsCall ? `, последнее — ${lastNeedsCall}` : ""}. Позвоните пациенту и
 								закройте задачу в разделе «{COMMUNICATIONS_SECTION_TITLE}».
 							</span>
