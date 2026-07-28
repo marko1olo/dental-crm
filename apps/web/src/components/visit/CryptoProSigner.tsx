@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Lock, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Lock, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
@@ -10,6 +10,64 @@ interface CryptoProSignerProps {
 	onLock: (certThumbprint: string, signature: string) => Promise<void>;
 }
 
+/*
+  ПОДПИСАНИЕ ДНЕВНИКА ПРИЁМА. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО.
+
+  1. Отказ подписания показывался через alert() с текстом ошибки от плагина —
+     по-английски: «CryptoPro plugin is not available.», «PIN code is required
+     for Rutoken signing», «Cannot create object». Врач у кресла читал латиницу
+     и не понимал ни причины, ни что делать. Теперь причина называется словами
+     по-русски прямо в окне подписания, а машинный текст уходит в консоль.
+  2. Подписать носителем Рутокен было НЕВОЗМОЖНО. Поле ПИН-кода показывалось
+     только для простой подписи, а lib/cryptopro.ts для Рутокена требует ПИН
+     обязательно и без него бросает исключение. То есть выбор сертификата с
+     Рутокена всегда заканчивался ошибкой на английском. Теперь для таких
+     сертификатов поле ПИН-кода носителя показывается.
+  3. Кнопка «Подписать» не блокировалась на время запроса: двойной клик отправлял
+     два подписания одной записи.
+  4. Простая подпись принимала любой ввод: проверка была `if (!pinCode)`, то есть
+     одной цифры хватало. ПИН сотрудника во всём продукте — четыре цифры
+     (components/auth/AcceptInvite.tsx, settings/SettingsStaffTab.tsx).
+  5. Пустой список сертификатов выглядел одинаково и когда носитель не вставлен,
+     и когда плагин не установлен, и когда сертификатов действительно нет:
+     getCertificates() в lib/cryptopro.ts глотает любую ошибку и возвращает
+     пустой список. Теперь рядом со списком написано, что проверить.
+  6. Дата подписания печаталась как new Date(lockedAt!) — при отсутствии даты
+     врач видел «Invalid Date» под словом «Подписано».
+  7. Окно не закрывалось клавишей Escape, хотя перекрывало весь экран.
+
+  ДОЛГ ВЕДУЩЕМУ, НУЖЕН СЕРВЕР. «Простая ЭП» отправляет в подпись строку
+  `PIN:<четыре цифры>`, и маршрут /api/diaries/:id/lock складывает её в поле
+  подписи как есть. Это не подпись: ПИН сотрудника хранится открытым текстом
+  рядом с записью, которую он «подписывает», и проверку такая запись не выдержит.
+  Нужен серверный обмен: клиент отправляет ПИН на проверку, сервер сверяет его с
+  хешем ПИНа сотрудника и сам формирует отметку о подписании (кто, когда, каким
+  способом). До этого простая подпись годится только для внутреннего порядка, но
+  не как юридическая.
+*/
+
+/** Человеческая причина отказа. Машинный текст плагина на экран не выносим. */
+function readableSigningFailure(error: unknown): string {
+	const raw = error instanceof Error ? error.message : String(error ?? "");
+	const text = raw.toLowerCase();
+	if (text.includes("rutoken") && text.includes("pin")) {
+		return "Носитель Рутокен не принял ПИН-код. Проверьте раскладку и введите ПИН-код носителя заново.";
+	}
+	if (text.includes("device id")) {
+		return "Носитель Рутокен не определился. Выньте и вставьте его заново, затем обновите список сертификатов.";
+	}
+	if (text.includes("rutoken") && text.includes("not available")) {
+		return "Модуль работы с Рутокеном не отвечает. Проверьте, что носитель вставлен и его драйвер установлен.";
+	}
+	if (text.includes("cryptopro") || text.includes("plugin")) {
+		return "КриптоПро на этом компьютере не отвечает. Проверьте, что программа установлена и расширение браузера включено.";
+	}
+	if (text.includes("cancel") || text.includes("отмен")) {
+		return "Подписание отменено. Запись не подписана, набранный текст на месте.";
+	}
+	return "Подписать не удалось: программа подписи вернула отказ. Запись не подписана, набранный текст на месте. Повторите попытку или подпишите простой подписью по ПИН-коду.";
+}
+
 export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	diaryHash,
 	isLocked,
@@ -17,72 +75,122 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	onLock,
 }) => {
 	const [certificates, setCertificates] = useState<CertificateInfo[]>([]);
+	const [certificatesLoaded, setCertificatesLoaded] = useState(false);
 	const [selectedCert, setSelectedCert] = useState("");
 	const [isLoadingCerts, setIsLoadingCerts] = useState(false);
 	const [showPinDialog, setShowPinDialog] = useState(false);
 	const [pinCode, setPinCode] = useState("");
 	const [signatureType, setSignatureType] = useState<"crypto" | "pin">("pin");
+	const [isSigning, setIsSigning] = useState(false);
+	const [failureText, setFailureText] = useState<string | null>(null);
+
+	// Окно перекрывает весь экран, поэтому обязано закрываться Escape.
+	useEffect(() => {
+		if (!showPinDialog) return;
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape" && !isSigning) closeDialog();
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [showPinDialog, isSigning]);
+
+	const closeDialog = () => {
+		setShowPinDialog(false);
+		setFailureText(null);
+		// ПИН не держим в памяти дольше самого подписания.
+		setPinCode("");
+	};
 
 	const loadCertificates = async () => {
 		setIsLoadingCerts(true);
+		setFailureText(null);
 		try {
 			const certs = await signatureService.getCertificates();
 			setCertificates(certs);
+			setCertificatesLoaded(true);
 			if (certs.length > 0) setSelectedCert(certs[0]?.thumbprint ?? "");
 		} catch (error) {
-			console.error("Ошибка загрузки сертификатов:", error);
+			console.error("[ЭЦП] список сертификатов не прочитан:", error);
+			setCertificates([]);
+			setCertificatesLoaded(true);
+			setFailureText(readableSigningFailure(error));
 		} finally {
 			setIsLoadingCerts(false);
 		}
 	};
 
+	const selectedCertInfo = certificates.find((c) => c.thumbprint === selectedCert);
+	// Рутокен без ПИН-кода носителя подписать нельзя — так устроен lib/cryptopro.ts.
+	const needsTokenPin =
+		selectedCertInfo?.provider === "rutoken" || selectedCertInfo?.deviceId !== undefined;
+
 	const handleConfirmLock = async () => {
+		if (isSigning) return;
+		setFailureText(null);
+
 		if (signatureType === "crypto") {
 			if (!selectedCert) {
-				alert("Выберите сертификат для подписания");
+				setFailureText("Сначала выберите сертификат из списка.");
 				return;
 			}
 			if (!diaryHash) {
-				alert("Нет данных для подписания");
+				setFailureText(
+					"Подписывать пока нечего: дневник не сохранён на сервере. Закройте окно, нажмите «Сохранить черновик» и повторите подписание.",
+				);
 				return;
 			}
+			if (needsTokenPin && pinCode.length === 0) {
+				setFailureText("Введите ПИН-код носителя Рутокен.");
+				return;
+			}
+			setIsSigning(true);
 			try {
-				// Use Rutoken if deviceId exists (rutoken heuristic is inside signatureService)
-				const certInfo = certificates.find(
-					(c) => c.thumbprint === selectedCert,
-				);
 				const { signatureBase64 } = await signatureService.signData(
 					selectedCert,
 					diaryHash,
 					pinCode,
-					certInfo?.deviceId,
+					selectedCertInfo?.deviceId,
 				);
-
 				await onLock(selectedCert, signatureBase64);
-				setShowPinDialog(false);
-			} catch (err: any) {
-				alert(`Ошибка подписания: ${err.message}`);
+				closeDialog();
+			} catch (error) {
+				console.error("[ЭЦП] подписание не выполнено:", error);
+				setFailureText(readableSigningFailure(error));
+			} finally {
+				setIsSigning(false);
 			}
-		} else {
-			if (!pinCode) {
-				alert("Введите PIN-код для простой ЭП");
-				return;
-			}
+			return;
+		}
+
+		if (pinCode.length !== 4) {
+			setFailureText("ПИН-код сотрудника — четыре цифры. Введите все четыре.");
+			return;
+		}
+		setIsSigning(true);
+		try {
 			await onLock("PIN_SIGNATURE", `PIN:${pinCode}`);
-			setShowPinDialog(false);
+			closeDialog();
+		} catch (error) {
+			console.error("[ЭЦП] простое подписание не выполнено:", error);
+			setFailureText(readableSigningFailure(error));
+		} finally {
+			setIsSigning(false);
 		}
 	};
 
 	if (isLocked) {
+		/* Дата может не прийти: раньше здесь стоял new Date(lockedAt!) и врач видел
+		   «Invalid Date» под словом «Подписано». */
+		const signedAtText = lockedAt ? new Date(lockedAt).toLocaleString("ru-RU") : null;
 		return (
 			<div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
 				<ShieldCheck className="w-4 h-4 text-emerald-500" />
 				<div>
 					<div className="text-xs font-medium text-emerald-400">
-						Подписано ЭЦП и защищено
+						Подписано и защищено от правок
 					</div>
 					<div className="text-[10px] text-emerald-500/70">
-						{new Date(lockedAt!).toLocaleString("ru-RU")}
+						{signedAtText ?? "время подписания уточняется"}
 					</div>
 				</div>
 			</div>
@@ -93,7 +201,10 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		<>
 			<button
 				type="button"
-				onClick={() => setShowPinDialog(true)}
+				onClick={() => {
+					setFailureText(null);
+					setShowPinDialog(true);
+				}}
 				className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl transition-colors border border-zinc-700"
 			>
 				<Lock className="w-4 h-4" />
@@ -116,22 +227,31 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 						<div className="flex gap-2 mb-6 p-1 bg-zinc-950 rounded-lg border border-zinc-800">
 							<button
 								type="button"
-								onClick={() => setSignatureType("pin")}
-								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+								disabled={isSigning}
+								onClick={() => {
+									setSignatureType("pin");
+									setFailureText(null);
+									// Поле ПИН общее для двух способов: чужой остаток не переносим.
+									setPinCode("");
+								}}
+								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
 									signatureType === "pin"
 										? "bg-zinc-800 text-white shadow-sm"
 										: "text-zinc-500 hover:text-zinc-300"
 								}`}
 							>
-								Простая ЭП (ПИН)
+								Простая подпись (ПИН)
 							</button>
 							<button
 								type="button"
+								disabled={isSigning}
 								onClick={() => {
 									setSignatureType("crypto");
+									setFailureText(null);
+									setPinCode("");
 									loadCertificates();
 								}}
-								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+								className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-60 ${
 									signatureType === "crypto"
 										? "bg-zinc-800 text-white shadow-sm"
 										: "text-zinc-500 hover:text-zinc-300"
@@ -144,18 +264,25 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 						{signatureType === "pin" ? (
 							<div className="mb-6">
 								<label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
-									Ваш PIN-код сотрудника
+									Ваш ПИН-код сотрудника
 								</label>
 								<input
 									type="password"
+									inputMode="numeric"
+									autoComplete="off"
 									maxLength={4}
-									className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-rose-500 focus:outline-none"
+									disabled={isSigning}
+									className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
 									value={pinCode}
-									onChange={(e) =>
-										setPinCode(e.target.value.replace(/\D/g, ""))
-									}
+									onChange={(e) => {
+										setPinCode(e.target.value.replace(/\D/g, ""));
+										setFailureText(null);
+									}}
 									placeholder="••••"
 								/>
+								<p className="mt-2 text-[11px] text-zinc-500">
+									Четыре цифры — тот же ПИН, которым вы входите в смену.
+								</p>
 							</div>
 						) : (
 							<div className="mb-6 space-y-4">
@@ -166,47 +293,106 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									<select
 										className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:ring-2 focus:ring-rose-500 focus:outline-none"
 										value={selectedCert}
-										onChange={(e) => setSelectedCert(e.target.value)}
-										disabled={isLoadingCerts}
+										onChange={(e) => {
+											setSelectedCert(e.target.value);
+											setFailureText(null);
+										}}
+										disabled={isLoadingCerts || isSigning}
 									>
 										{isLoadingCerts ? (
-											<option>Загрузка сертификатов...</option>
+											<option>Читаем сертификаты…</option>
 										) : certificates.length === 0 ? (
-											<option value="">Нет доступных сертификатов</option>
+											<option value="">Сертификаты не найдены</option>
 										) : (
 											certificates.map((c) => (
 												<option key={c.thumbprint} value={c.thumbprint}>
 													{c.name} (до{" "}
-													{new Date(c.validTo).toLocaleDateString()})
+													{new Date(c.validTo).toLocaleDateString("ru-RU")})
 												</option>
 											))
 										)}
 									</select>
+									{/*
+										Пустой список раньше выглядел одинаково для трёх разных
+										причин, потому что getCertificates() глотает ошибки. Пишем,
+										что проверить, — иначе врач решает, что подписать нечем.
+									*/}
+									{!isLoadingCerts && certificatesLoaded && certificates.length === 0 ? (
+										<p className="mt-2 text-[11px] text-amber-400">
+											Ни одного сертификата не видно. Проверьте: носитель Рутокен
+											вставлен, КриптоПро установлен, расширение браузера включено.
+											Затем нажмите «Обновить список». Подписать приём можно и
+											простой подписью по ПИН-коду.
+										</p>
+									) : null}
 									<button
 										type="button"
 										onClick={loadCertificates}
-										className="mt-2 text-xs text-rose-400 hover:text-rose-300"
+										disabled={isLoadingCerts || isSigning}
+										className="mt-2 text-xs text-rose-400 hover:text-rose-300 disabled:opacity-60"
 									>
-										Обновить список
+										{isLoadingCerts ? "Обновляю…" : "Обновить список"}
 									</button>
 								</div>
+
+								{/*
+									Для Рутокена ПИН носителя обязателен — без него подписание
+									всегда падало с английской ошибкой, а поля ввода не было.
+								*/}
+								{needsTokenPin ? (
+									<div>
+										<label className="block text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
+											ПИН-код носителя Рутокен
+										</label>
+										<input
+											type="password"
+											autoComplete="off"
+											disabled={isSigning}
+											className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:opacity-60"
+											value={pinCode}
+											onChange={(e) => {
+												setPinCode(e.target.value);
+												setFailureText(null);
+											}}
+											placeholder="ПИН носителя"
+										/>
+									</div>
+								) : null}
 							</div>
 						)}
+
+						{failureText ? (
+							<div
+								role="alert"
+								aria-live="assertive"
+								className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-200 text-xs leading-relaxed"
+							>
+								{failureText}
+							</div>
+						) : null}
 
 						<div className="flex gap-3 pt-2">
 							<button
 								type="button"
-								onClick={() => setShowPinDialog(false)}
-								className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors"
+								onClick={closeDialog}
+								disabled={isSigning}
+								className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl transition-colors disabled:opacity-60"
 							>
 								Отмена
 							</button>
 							<button
 								type="button"
 								onClick={handleConfirmLock}
-								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20"
+								disabled={isSigning}
+								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
 							>
-								Подписать
+								{isSigning ? (
+									"Подписываю…"
+								) : (
+									<>
+										<CheckCircle2 className="w-4 h-4" /> Подписать
+									</>
+								)}
 							</button>
 						</div>
 					</div>
