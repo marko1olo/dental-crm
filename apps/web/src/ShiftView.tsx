@@ -583,6 +583,20 @@ export function PatientCockpit({
           <div className="patient-facts" style={{ marginTop: "8px", fontSize: "13px", color: "var(--muted)" }}>
             <span>Выберите пациента в списке или расписании, чтобы увидеть его данные.</span>
           </div>
+          {/*
+            Та же правка, что на экране приёма: подсказка называла раздел, но
+            попасть в него из неё было нельзя. Якоря — тот же механизм, что у
+            бокового меню (workspaceShell.tsx:388), второго способа навигации не
+            заводим.
+          */}
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
+            <a className="secondary-button" href="#patients">
+              Выбрать пациента
+            </a>
+            <a className="text-button" href="#schedule">
+              Открыть записи
+            </a>
+          </div>
         </div>
       </section>
     );
