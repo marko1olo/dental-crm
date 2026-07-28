@@ -9,7 +9,7 @@
  * `background` — прозрачная плашка. Ни tsc, ни Vite, ни один тест такого не
  * видят; находят глазами на конкретном экране в конкретной теме.
  *
- * ОТКУДА ПРОВЕРКА. В шапке apps/web/src/styles/token-aliases.css записано
+ * ОТКУДА ПРОВЕРКА. В шапке apps/web/src/styles/token-aliases.css было записано
  * «19 переменных, 56 вхождений», посчитанные разовым скриптом
  * scratch/scan-undefined-tokens.mjs. Разовый скрипт ничего не охраняет: число в
  * комментарии устаревает молча, а новые неизвестные имена добавляются свободно.
@@ -25,6 +25,36 @@
  *   4. Учитываются объявления через @property и имена, выставляемые из JS через
  *      style.setProperty и инлайновые стили, — иначе они дали бы ложную тревогу.
  *
+ * ИСПРАВЛЕНО 28.07.2026 — ПРОВЕРКА ОШИБАЛАСЬ В СВОЮ ПОЛЬЗУ И МОЛЧА ПРОЩАЛА ИМЕНА.
+ *   A. Объявление ищется только там, где оно может стоять по синтаксису CSS:
+ *      сразу после `{`, после `;`, после `}` вложенного правила или в самом
+ *      начале файла. Прежнее выражение /(--[\w-]+)\s*:/ не было привязано ни к
+ *      чему и читало суффикс BEM-класса перед псевдоклассом как объявление:
+ *      `.auth-pin-btn--danger:hover` давало «--danger объявлен». Так проверка
+ *      прощала себе 7 имён — --danger, --secondary, --button, --ok, --warn,
+ *      --bad, --info — из которых --danger не объявлен нигде в репозитории и
+ *      используется без запаса в apps/web/src/styles/main.css. Четыре из семи
+ *      (--ok, --warn, --bad, --info) — это опечатки от настоящих токенов
+ *      палитры (--ok-fg, --bad-bg и т. д.), то есть дыра стояла ровно под теми
+ *      именами, которые вероятнее всего написать неверно.
+ *   B. Имена, выставляемые из JS, берутся из синтаксического дерева TypeScript,
+ *      а не текстовым поиском по файлу. Текстовый поиск не отличал код от
+ *      комментария: закомментированное упоминание `"--name":` в любом .ts/.tsx
+ *      навсегда помечало имя объявленным и глушило настоящее нарушение.
+ *
+ * ЧЕГО ПРОВЕРКА НЕ ВИДИТ, И ЭТО ОСОЗНАННО.
+ *   - Имя, собранное в рантайме: setProperty(`--x-${i}`, …) или
+ *     setProperty(имяИзПеременной, …). Статически такого имени в коде нет.
+ *   - Значения не вычисляются: var(--a, var(--b)) проверяется на наличие
+ *     объявлений, а не на итоговый цвет.
+ *   - Объявление внутри блока компонента (`.card { --gap: 1rem }`) считается
+ *     объявлением. Это законный приём, а не тема; отдельная проверка «токен
+ *     объявлен вне тем» здесь не делается — она дала бы шум на всех
+ *     компонентных переменных.
+ *   - Файл с синтаксической ошибкой парсер разбирает частично, поэтому пока
+ *     чужой файл правится, имя из сломанного участка может потеряться. Это
+ *     даёт ложную тревогу, а не пропуск: направление отказа безопасное.
+ *
  * Запуск:  node scripts/check-css-tokens.mjs
  * Код возврата 1, если найдено хоть одно вхождение, — годится для pre-commit и CI.
  */
@@ -32,6 +62,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const webSrc = join(repoRoot, "apps/web/src");
@@ -39,6 +70,17 @@ const webSrc = join(repoRoot, "apps/web/src");
 const PRIMARY_SCOPE = "apps/web/src/styles/";
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".vite"]);
+
+/**
+ * Объявление кастомного свойства стоит только в начале declaration: после `{`,
+ * после `;`, после `}` вложенного правила или в начале файла. Привязка
+ * обязательна — без неё выражение матчит `.block--элемент:hover` (см. пункт A
+ * в шапке). Флаг `m` не нужен: перевод строки покрыт `\s*` после привязки, а
+ * селектор, начинающийся с `--`, в CSS невозможен.
+ */
+const CSS_DECLARATION = /(?:^|[{;}])\s*(--[\w-]+)\s*:/g;
+const CSS_AT_PROPERTY = /@property\s+(--[\w-]+)/g;
+const CSS_VAR_USE = /\bvar\(\s*(--[\w-]+)/g;
 
 function* walk(directory, extensions) {
 	for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -56,7 +98,8 @@ const asRepoPath = (filePath) => relative(repoRoot, filePath).replaceAll("\\", "
 
 /**
  * Вырезает /* ... *​/ , сохраняя смещения: каждый вырезанный символ заменяется
- * пробелом, переводы строк остаются на местах. Так номера строк не сдвигаются.
+ * пробелом, переводы строк остаются на местах. Так номера строк не сдвигаются,
+ * и содержимое комментария не может подделать привязку объявления.
  */
 function blankComments(source) {
 	let result = "";
@@ -110,19 +153,57 @@ function hasFallbackAt(source, openParenIndex) {
 	return false;
 }
 
+/** Строковый литерал с именем кастомного свойства -> само имя, иначе null. */
+function customPropertyLiteral(node) {
+	if (!node) return null;
+	if (!ts.isStringLiteral(node) && !ts.isNoSubstitutionTemplateLiteral(node)) return null;
+	return node.text.startsWith("--") ? node.text : null;
+}
+
+/**
+ * Имена, которые код выставляет из JS. Разбор идёт по дереву TypeScript, а не
+ * текстом: комментарии для парсера — trivia, поэтому закомментированный код
+ * физически не может пометить имя объявленным. Учитываются три позиции:
+ *   { "--x": value }          — ключ инлайнового стиля (и вычисляемый ["--x"]);
+ *   { "--x": string }         — то же поле в типе стиля (CSSProperties & {...});
+ *   el.style.setProperty("--x", …).
+ */
+function collectJsCustomProperties(filePath, source) {
+	const scriptKind = filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+	const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, false, scriptKind);
+	const names = new Set();
+	const visit = (node) => {
+		if (ts.isPropertyAssignment(node) || ts.isPropertySignature(node)) {
+			const key = ts.isComputedPropertyName(node.name) ? node.name.expression : node.name;
+			const name = customPropertyLiteral(key);
+			if (name) names.add(name);
+		} else if (ts.isCallExpression(node)) {
+			const callee = node.expression;
+			const isSetProperty =
+				(ts.isPropertyAccessExpression(callee) && callee.name.text === "setProperty") ||
+				(ts.isIdentifier(callee) && callee.text === "setProperty");
+			if (isSetProperty) {
+				const name = customPropertyLiteral(node.arguments[0]);
+				if (name) names.add(name);
+			}
+		}
+		ts.forEachChild(node, visit);
+	};
+	ts.forEachChild(sourceFile, visit);
+	return names;
+}
+
 const cssFiles = [...walk(webSrc, [".css"])];
 
-// 1. Объявления: обычные `--x:` и `@property --x`.
+// 1. Объявления: обычные `--x:` в позиции declaration и `@property --x`.
 const definedInCss = new Map(); // имя -> файлы, где объявлено
 for (const filePath of cssFiles) {
 	const source = blankComments(readFileSync(filePath, "utf8"));
-	for (const match of source.matchAll(/(--[\w-]+)\s*:/g)) {
-		if (!definedInCss.has(match[1])) definedInCss.set(match[1], new Set());
-		definedInCss.get(match[1]).add(asRepoPath(filePath));
-	}
-	for (const match of source.matchAll(/@property\s+(--[\w-]+)/g)) {
-		if (!definedInCss.has(match[1])) definedInCss.set(match[1], new Set());
-		definedInCss.get(match[1]).add(asRepoPath(filePath));
+	for (const pattern of [CSS_DECLARATION, CSS_AT_PROPERTY]) {
+		for (const match of source.matchAll(pattern)) {
+			if (!definedInCss.has(match[1])) definedInCss.set(match[1], new Set());
+			definedInCss.get(match[1]).add(asRepoPath(filePath));
+		}
 	}
 }
 
@@ -130,9 +211,7 @@ for (const filePath of cssFiles) {
 //    стили { "--x": … }. Без этого они дали бы ложную тревогу.
 const definedInJs = new Set();
 for (const filePath of walk(webSrc, [".ts", ".tsx"])) {
-	const source = readFileSync(filePath, "utf8");
-	for (const match of source.matchAll(/setProperty\(\s*["'`](--[\w-]+)["'`]/g)) definedInJs.add(match[1]);
-	for (const match of source.matchAll(/["'`](--[\w-]+)["'`]\s*:/g)) definedInJs.add(match[1]);
+	for (const name of collectJsCustomProperties(filePath, readFileSync(filePath, "utf8"))) definedInJs.add(name);
 }
 
 // 3. Использования: каждое var() отдельно, с местом и признаком запаса.
@@ -146,7 +225,7 @@ for (const filePath of cssFiles) {
 	const source = blankComments(raw);
 	const toLine = lineIndex(source);
 	const repoPath = asRepoPath(filePath);
-	for (const match of source.matchAll(/\bvar\(\s*(--[\w-]+)/g)) {
+	for (const match of source.matchAll(CSS_VAR_USE)) {
 		const name = match[1];
 		totalUses += 1;
 		usedNames.add(name);
