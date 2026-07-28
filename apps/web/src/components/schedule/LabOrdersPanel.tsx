@@ -59,7 +59,30 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			: denteAdminSecretRequestHeaders(extra);
 	const liveStatus = useAppStore((state) => (state as any).labOrderStatuses?.[patientId]);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+	/*
+		Первая отрисовка — уже загрузка, а не пустота: запрос уходит сразу после
+		неё. Раньше кадр между ними успевал показать «Нет активных заказов ЗТЛ».
+	*/
+	const [isLoading, setIsLoading] = useState(Boolean(patientId));
+	/*
+		ОТКАЗ СЕРВЕРА ПОКАЗЫВАЛСЯ КАК «НЕТ ЗАКАЗОВ».
+
+		ЧТО БЫЛО СЛОМАНО. Загрузка списка проверяла `if (res.ok)` и на любом другом
+		ответе не делала НИЧЕГО: ни сообщения, ни следа. Ошибка сети попадала в
+		catch и уходила в console.error — туда врач не смотрит. Список при этом
+		оставался пустым, и экран говорил «Нет активных заказов ЗТЛ».
+
+		ЧТО ВИДЕЛ ВРАЧ. Коронка заказана и делается в лаборатории, но сервер
+		ответил отказом (истёк доступ, упала база, нет сети) — на экране ровно то
+		же, что у пациента без заказов. Дальше врач либо заказывает ту же коронку
+		ВТОРОЙ раз, либо говорит пациенту «ничего не заказано». Отсюда и деньги, и
+		сорванный приём под установку.
+
+		ЧТО СТАЛО. Три раздельных состояния: идёт загрузка; отказ — человеческим
+		текстом, с прямым предупреждением не заказывать повторно и кнопкой
+		повторить; честная пустота — с указанием, откуда здесь берутся наряды.
+	*/
+	const [loadError, setLoadError] = useState<string | null>(null);
 
 	// Form state for new ZTL order
 	const [toothFdi, setToothFdi] = useState("");
@@ -88,6 +111,16 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	*/
 	const shownPatientIdRef = useRef(patientId);
 
+	/** Отказ сервера словами, которые понятны без обучения. Кода состояния мало. */
+	const loadFailureText = (status: number): string => {
+		if (status === 401 || status === 403)
+			return "Нет прав смотреть заказы в лабораторию: доступ к карте закрыт или истёк вход.";
+		if (status === 404) return "Раздел заказов в лабораторию не отвечает.";
+		if (status >= 500)
+			return "Программа не смогла получить список заказов: сбой на сервере клиники.";
+		return `Программа не смогла получить список заказов (ответ ${status}).`;
+	};
+
 	const fetchOrders = async () => {
 		const requestedPatientId = patientId;
 		try {
@@ -103,9 +136,16 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			if (res.ok) {
 				const data = await res.json();
 				setOrders(Array.isArray(data) ? data : []);
+				setLoadError(null);
+			} else {
+				setLoadError(loadFailureText(res.status));
 			}
 		} catch (e) {
 			console.error("Failed to load lab orders", e);
+			if (shownPatientIdRef.current !== requestedPatientId) return;
+			setLoadError(
+				"Программа не смогла связаться с сервером клиники, чтобы получить список заказов.",
+			);
 		} finally {
 			if (shownPatientIdRef.current === requestedPatientId) {
 				setIsLoading(false);
@@ -138,6 +178,8 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	useEffect(() => {
 		shownPatientIdRef.current = patientId;
 		setOrders([]);
+		// Отказ по прошлому пациенту к новому не относится.
+		setLoadError(null);
 		setToothFdi("");
 		setDueDate("");
 		setClinicalNotes("");
@@ -421,15 +463,47 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 
 			{/* Orders List */}
 			<div className="space-y-2">
+				{loadError ? (
+					<div
+						role="alert"
+						className="border border-rose-500/40 bg-rose-500/10 rounded-xl p-3 text-[13px] text-rose-200 space-y-2"
+					>
+						<p className="font-semibold m-0">{loadError}</p>
+						<p className="m-0 text-rose-100/90">
+							Это не значит, что заказов нет: список просто не пришёл. Не
+							заказывайте работу повторно, пока список не откроется, — иначе
+							лаборатория сделает и выставит её дважды. Нажмите «Попробовать
+							снова», а если не открывается — уточните состояние работы у
+							зуботехника по телефону.
+						</p>
+						<button
+							type="button"
+							onClick={() => void fetchOrders()}
+							disabled={isLoading}
+							className="py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 disabled:opacity-60 text-rose-100 border border-rose-500/40 rounded-lg font-semibold transition-colors"
+						>
+							{isLoading ? "Загружаем…" : "Попробовать снова"}
+						</button>
+					</div>
+				) : null}
+
 				{isLoading && orders.length === 0 ? (
 					<div className="text-center py-4 text-xs text-slate-400">
-						Загрузка...
+						Загрузка…
 					</div>
-				) : orders.length === 0 ? (
+				) : orders.length === 0 && !loadError ? (
 					<div className="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-700/60 rounded-xl">
-						Нет активных заказов ЗТЛ
+						{/*
+							Честная пустота: сказано, что список пришёл и он пуст, и откуда
+							здесь вообще берутся наряды. Без второй строки «нет заказов»
+							читается как «не загрузилось».
+						*/}
+						Заказов в зуботехническую лабораторию по этому пациенту пока нет.
+						<br />
+						Первый появится здесь сразу после того, как вы заполните наряд выше и
+						нажмёте «Создать наряд ЗТЛ».
 					</div>
-				) : (
+				) : orders.length > 0 ? (
 					<div className="space-y-2">
 						{orders.map((order) => (
 							<div
@@ -522,7 +596,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							</div>
 						))}
 					</div>
-				)}
+				) : null}
 			</div>
 		</div>
 	);
