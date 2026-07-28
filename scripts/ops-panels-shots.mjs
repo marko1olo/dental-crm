@@ -177,17 +177,30 @@ socket.on("message", (raw) => {
   }
 });
 
+/**
+ * Запас времени на ответ браузера.
+ *
+ * Тридцати секунд хватало на тихой машине. На общей — восемь участков правят
+ * дерево, идут наборы тестов, рядом живёт headless-браузер — снимок страницы во
+ * всю высоту в них не укладывается, и прогон падал с «нет ответа» на середине.
+ * Съёмка кадра вынесена в отдельный, больший запас: она единственная тяжёлая
+ * команда здесь, остальным лишнее ожидание ни к чему.
+ */
+const REPLY_TIMEOUT_MS = 45_000;
+const SCREENSHOT_TIMEOUT_MS = 120_000;
+
 function send(method, params = {}) {
   const id = ++messageId;
+  const timeoutMs = method === "Page.captureScreenshot" ? SCREENSHOT_TIMEOUT_MS : REPLY_TIMEOUT_MS;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
     setTimeout(() => {
       if (pending.has(id)) {
         pending.delete(id);
-        reject(new Error(`${method}: нет ответа`));
+        reject(new Error(`${method}: нет ответа за ${Math.round(timeoutMs / 1000)} с`));
       }
-    }, 30000);
+    }, timeoutMs);
   });
 }
 
@@ -628,6 +641,15 @@ function isThemeDrift(error) {
   return /ожидалась тема/i.test(String(error?.message ?? error));
 }
 
+/**
+ * Браузер не ответил в срок. Под нагрузкой это не поломка сценария и не дефект
+ * приложения: страница занята, а вкладка после такого чаще всего заклинена.
+ * Лечится тем же, чем перезагрузка, — возвратом в известное состояние.
+ */
+function isNoReply(error) {
+  return /нет ответа за \d+ с/i.test(String(error?.message ?? error));
+}
+
 async function withReloadRecovery(label, run, attempts = 3) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -642,9 +664,11 @@ async function withReloadRecovery(label, run, attempts = 3) {
         await sleep(400);
         continue;
       }
-      if (!isContextDestroyed(error)) throw error;
+      if (!isContextDestroyed(error) && !isNoReply(error)) throw error;
       console.log(
-        `  ↻ ${label}: страница перезагрузилась (горячая перезагрузка Vite при правке исходников), восстанавливаю и повторяю — попытка ${attempt + 1} из ${attempts}`,
+        isNoReply(error)
+          ? `  ↻ ${label}: браузер не ответил в срок (машина загружена), возвращаю страницу в рабочее состояние и повторяю — попытка ${attempt + 1} из ${attempts}`
+          : `  ↻ ${label}: страница перезагрузилась (горячая перезагрузка Vite при правке исходников), восстанавливаю и повторяю — попытка ${attempt + 1} из ${attempts}`,
       );
       await restoreSession();
     }
