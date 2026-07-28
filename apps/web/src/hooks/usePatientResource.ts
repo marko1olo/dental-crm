@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { panelFailureCause } from "../lib/panelStateText";
 
 /**
  * Загрузка ресурса, привязанного к конкретному пациенту.
@@ -31,6 +32,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * адрес, 500 на сбой запроса) раньше оставлял пустое значение, и виджет
  * показывал «данных нет». Это ложь: данные могут быть, их не удалось
  * получить. Виджет обязан показать отказ, а не выдать его за пустоту.
+ *
+ * ЧЕТВЁРТАЯ ПРИЧИНА, ПОЧЕМУ ЭТОТ ФАЙЛ ПРАВИЛСЯ СНОВА. Текст отказа был
+ * «Сервер ответил ошибкой 500. Данные не загружены.» — и три виджета карточки
+ * печатали его дословно. Голый код состояния администратору не говорит ни что
+ * случилось, ни что делать; номер нужен разработчику и уходит в console.error.
+ * Формулировки живут в одном месте — lib/panelStateText.ts.
+ *
+ * `failureStatus` отдаётся рядом с `error`, чтобы виджет мог собрать своё
+ * предложение через `panelStateText` и назвать последствие отказа по-своему:
+ * «осложнения не прочитаны» и «задачи не прочитаны» — разные по цене вещи.
  */
 export function usePatientResource<T>(
 	patientId: string | null | undefined,
@@ -41,12 +52,16 @@ export function usePatientResource<T>(
 	data: T;
 	setData: React.Dispatch<React.SetStateAction<T>>;
 	isLoading: boolean;
+	/** Готовая человеческая причина отказа с точкой на конце, либо null. */
 	error: string | null;
+	/** Код ответа сервера при отказе; null — до сервера не дошли или отказа не было. */
+	failureStatus: number | null;
 	reload: () => void;
 } {
 	const [data, setData] = useState<T>(emptyValue);
 	const [isLoading, setIsLoading] = useState<boolean>(Boolean(patientId));
 	const [error, setError] = useState<string | null>(null);
+	const [failureStatus, setFailureStatus] = useState<number | null>(null);
 	const [reloadToken, setReloadToken] = useState(0);
 
 	// Функции приходят новыми на каждом рендере. Держим их в ref, иначе
@@ -62,6 +77,7 @@ export function usePatientResource<T>(
 			setData(emptyRef.current);
 			setIsLoading(false);
 			setError(null);
+			setFailureStatus(null);
 			return;
 		}
 
@@ -69,6 +85,7 @@ export function usePatientResource<T>(
 		setData(emptyRef.current);
 		setIsLoading(true);
 		setError(null);
+		setFailureStatus(null);
 
 		const controller = new AbortController();
 		let cancelled = false;
@@ -81,7 +98,10 @@ export function usePatientResource<T>(
 				});
 				if (cancelled) return;
 				if (!res.ok) {
-					setError(`Сервер ответил ошибкой ${res.status}. Данные не загружены.`);
+					// Код состояния нужен поддержке, а не оператору: он в консоли.
+					console.error(`[usePatientResource ${patientId}] ответ ${res.status} на ${urlRef.current(patientId)}`);
+					setFailureStatus(res.status);
+					setError(`${panelFailureCause(res.status)}.`);
 					return;
 				}
 				const parsed = (await res.json()) as T;
@@ -93,7 +113,10 @@ export function usePatientResource<T>(
 				if (cancelled) return;
 				if ((requestError as Error)?.name === "AbortError") return;
 				console.error(`[usePatientResource ${patientId}]`, requestError);
-				setError("Не удалось связаться с сервером. Данные не загружены.");
+				// null означает «до сервера не дошли вовсе» — это другая причина
+				// и другое действие, чем любой ответ сервера.
+				setFailureStatus(null);
+				setError(`${panelFailureCause(null)}.`);
 			} finally {
 				if (!cancelled) setIsLoading(false);
 			}
@@ -107,5 +130,5 @@ export function usePatientResource<T>(
 
 	const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
-	return { data, setData, isLoading, error, reload };
+	return { data, setData, isLoading, error, failureStatus, reload };
 }

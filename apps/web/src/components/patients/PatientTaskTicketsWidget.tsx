@@ -13,7 +13,23 @@ import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
+import { actionFailureToast, panelStateText, type PanelSubject } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+
+/**
+ * Тексты трёх состояний списка. Прежде состояний было два: «загружается» ничего
+ * не показывало, а отказ сервера попадал в ту же ветку, что честная пустота, и
+ * показывал «Нет активных задач по пациенту» — то есть непрочитанный список
+ * выдавался за пустой.
+ */
+const TICKETS_SUBJECT: PanelSubject = {
+	title: "Задачи по пациенту",
+	accusative: "задачи по пациенту",
+	emptyTitle: "Нет активных задач по пациенту",
+	emptyHint: "Задачи помогают администраторам и врачам не забыть о важных делах: перезвонить, дослать документы, проверить самочувствие.",
+	failureConsequence: "Задачи могут быть — их не удалось прочитать. Не планируйте день по этому списку, пока он не обновится.",
+};
 
 export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const { dashboard, auth } = useAppLogicContext();
@@ -32,6 +48,10 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		data: rawTickets,
 		setData: setTickets,
 		isLoading,
+		// БЫЛО: отказ чтения из хука не забирался, и пустой список от упавшего
+		// запроса печатался как «Нет активных задач по пациенту».
+		error: loadFailure,
+		failureStatus,
 		reload: fetchTickets,
 	} = usePatientResource<any[]>(
 		patientId,
@@ -64,11 +84,19 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				fetchTickets();
 				showToast("Задача успешно создана", "success");
 			} else {
-				showToast("Ошибка при создании задачи", "error");
+				// Поля формы очищаются только в успешной ветке выше, поэтому
+				// обещание «текст остался» правдиво.
+				showToast(
+					`${actionFailureToast("Задача не создана", res.status)} Введённый текст остался в форме.`,
+					"error",
+				);
 			}
 		} catch (e) {
-			console.error(e);
-			showToast("Ошибка сети", "error");
+			console.error("[PatientTaskTicketsWidget add]", e);
+			showToast(
+				`${actionFailureToast("Задача не создана", null)} Введённый текст остался в форме.`,
+				"error",
+			);
 		}
 	};
 
@@ -93,11 +121,21 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				},
 			);
 			if (!res.ok) {
-				showToast("Ошибка при обновлении статуса", "error");
+				// Галочка уже переставлена оптимистично, поэтому сообщение обязано
+				// сказать, что показанное значение вернулось к прежнему.
+				showToast(
+					`${actionFailureToast("Отметка о выполнении не сохранена", res.status)} В списке возвращено прежнее значение.`,
+					"error",
+				);
 				fetchTickets(); // Revert on failure
 			}
 		} catch (e) {
-			console.error(e);
+			// БЫЛО: молчаливый откат. Галочка возвращалась сама, без объяснения.
+			console.error("[PatientTaskTicketsWidget toggle]", e);
+			showToast(
+				`${actionFailureToast("Отметка о выполнении не сохранена", null)} В списке возвращено прежнее значение.`,
+				"error",
+			);
 			fetchTickets();
 		}
 	};
@@ -116,10 +154,19 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 				showToast("Задача удалена", "success");
 				setTickets(tickets.filter((t) => t.id !== ticketId));
 			} else {
-				showToast("Ошибка при удалении", "error");
+				showToast(
+					`${actionFailureToast("Задача не удалена", res.status)} Она осталась в списке.`,
+					"error",
+				);
 			}
 		} catch (e) {
-			console.error(e);
+			// БЫЛО: только console.error. Оператор подтвердил удаление, задача
+			// осталась на месте, и об этом не сообщалось.
+			console.error("[PatientTaskTicketsWidget delete]", e);
+			showToast(
+				`${actionFailureToast("Задача не удалена", null)} Она осталась в списке.`,
+				"error",
+			);
 		}
 	};
 
@@ -231,14 +278,32 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					)}
 				</AnimatePresence>
 
-				{!isLoading && tickets.length === 0 && !isAdding && (
+				{/*
+					Отказ чтения показывается вместо пустоты, а не вместе с ней:
+					«задач нет» и «задачи не прочитаны» — разные утверждения.
+				*/}
+				{loadFailure && !isAdding && (
+					<PanelLoadFailure
+						subject={TICKETS_SUBJECT}
+						status={failureStatus}
+						onRetry={fetchTickets}
+					/>
+				)}
+
+				{isLoading && !loadFailure && tickets.length === 0 && !isAdding && (
+					<div className="py-4 text-xs text-slate-500 dark:text-slate-400">
+						{panelStateText(TICKETS_SUBJECT, { phase: "loading" }).title}
+					</div>
+				)}
+
+				{!isLoading && !loadFailure && tickets.length === 0 && !isAdding && (
 					<div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
 						<Clock size={32} className="mx-auto mb-3 opacity-50" />
 						<p className="m-0 text-sm font-medium text-slate-900 dark:text-white">
-							Нет активных задач по пациенту
+							{panelStateText(TICKETS_SUBJECT, { phase: "empty" }).title}
 						</p>
-						<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400">
-							Задачи помогают администраторам и врачам не забыть о важных делах.
+						<p className="mt-1 mb-0 text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">
+							{panelStateText(TICKETS_SUBJECT, { phase: "empty" }).hint}
 						</p>
 					</div>
 				)}

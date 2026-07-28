@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import { requestFailureCause } from './lib/panelStateText';
 
+/**
+ * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО В ТЕКСТАХ (правится вместе с packet W4).
+ *
+ * 1. Любой отказ разбора речи объяснялся врачу так:
+ *    «Ошибка API (Локальный режим): Подключите ключи в .env для реального
+ *    LLM-парсинга». Три беды в одной строке: слова `.env`, «API» и
+ *    «LLM-парсинг» врачу не значат ничего; причина ВЫДУМАНА — эта же строка
+ *    показывалась при обрыве сети и при отказе сервера, где ключи ни при чём;
+ *    и что делать дальше, регистратор из неё узнать не мог.
+ *
+ * 2. «Пусто...» вместо состояния. Ни что случилось, ни что сказать в микрофон.
+ *
+ * 3. «Llama-3 анализирует...» — название чужой модели как индикатор загрузки.
+ *    Оно меняется вместе с настройкой провайдера и врачу ничего не сообщает.
+ */
 export interface SmartParsePreviewProps {
   isVisible: boolean;
   parsedData: any; // e.g. from smartBookingParser
@@ -34,11 +50,18 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: rawText, type })
       });
-      if (!response.ok) throw new Error("Ошибка при обращении к ИИ");
+      if (!response.ok) {
+        // Код состояния нужен поддержке и остаётся в консоли; человеку идёт
+        // причина словами. Причину не выдумываем: она берётся из ответа.
+        console.error(`[SmartParsePreview] /api/ai/parse-dictation ответил ${response.status}`);
+        setAiError(`Разобрать надиктованное не удалось: ${requestFailureCause(response.status)}. Пока можно ввести данные вручную.`);
+        return;
+      }
       const data = await response.json();
       setInternalData(data);
     } catch (err: any) {
-      setAiError("Ошибка API (Локальный режим): Подключите ключи в .env для реального LLM-парсинга");
+      console.error("[SmartParsePreview] /api/ai/parse-dictation", err);
+      setAiError(`Разобрать надиктованное не удалось: ${requestFailureCause(null)}. Пока можно ввести данные вручную.`);
     } finally {
       setIsAiLoading(false);
     }
@@ -144,7 +167,11 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           </div>
         )}
 </div>;
-    if (!data || !data.serviceName) return <div className="text-sm text-slate-500">Пусто... Назовите услугу и цену.</div>;
+    if (!data || !data.serviceName) return (
+      <div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+        Название услуги не распознано. Скажите название и цену одной фразой — например: «Лечение кариеса, 4500».
+      </div>
+    );
     return (
       <div className="space-y-2 text-sm">
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-2 rounded text-xs font-semibold flex justify-between items-center mb-2">
@@ -179,7 +206,11 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           </div>
         )}
 </div>;
-    if (!data || Object.keys(data).length === 0) return <div className="text-sm text-slate-500">Пусто...</div>;
+    if (!data || Object.keys(data).length === 0) return (
+      <div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+        Данные пациента не распознаны. Скажите фамилию, имя и телефон — например: «Иванова Мария Петровна, 9271234567».
+      </div>
+    );
     return (
       <div className="space-y-2 text-sm">
         {data.fullName && (
@@ -218,7 +249,11 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         )}
 </div>;
     if (!data || (!data.toothUpdates?.length && !Object.keys(data.emkUpdates || {}).length)) {
-      return <div className="text-sm text-slate-500">Не удалось распознать приём...</div>;
+      return (
+        <div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          Ни зубов, ни записей приёма не распознано. Назовите номер зуба и что с ним сделано — например: «Двадцать шестой, пломба».
+        </div>
+      );
     }
     return (
       <div className="space-y-2 text-sm max-h-[300px] overflow-y-auto pr-2">
@@ -259,7 +294,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
       return (
         <div className="flex flex-col items-center justify-center p-6 space-y-3">
           <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-purple-700 font-medium">Llama-3 анализирует...</p>
+          <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Разбираем надиктованное…</p>
         </div>
       );
     }
@@ -269,7 +304,15 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
       case "patient": return renderPatientPreview(internalData);
       case "visit": return renderVisitPreview(internalData);
       case "prices": return renderPricesPreview(internalData);
-      default: return <div className="text-sm text-slate-500">Неизвестный контекст диктовки: {type}</div>;
+      // Внутреннее имя контекста наружу не показываем: оператору оно ничего не
+      // говорит. Оно уходит в консоль, а на экран — что делать дальше.
+      default:
+        console.error(`[SmartParsePreview] неизвестный контекст диктовки: ${type}`);
+        return (
+          <div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+            Здесь диктовка пока не работает. Заполните поля вручную и сообщите администратору клиники.
+          </div>
+        );
     }
   };
 

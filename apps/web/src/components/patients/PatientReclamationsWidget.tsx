@@ -14,7 +14,25 @@ import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
+import { actionFailureToast, panelStateText, type PanelSubject } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+
+/**
+ * Что показывать вместо списка. Заведено здесь, а не в разметке, потому что
+ * «журнал осложнений не прочитан» и «осложнений нет» — противоположные
+ * утверждения, и раньше виджет печатал второе вместо первого: при отказе
+ * сервера список приходил пустым, и заголовок сообщал
+ * «Рекламации и осложнения отсутствуют» врачу, у пациента которого они есть.
+ */
+const RECLAMATIONS_SUBJECT: PanelSubject = {
+	title: "Рекламации и осложнения",
+	accusative: "рекламации и осложнения по пациенту",
+	emptyTitle: "Рекламации и осложнения отсутствуют",
+	emptyHint: "Если пациент жалуется на результат лечения, зафиксируйте это здесь — тогда история будет видна врачу и руководителю.",
+	failureConsequence:
+		"Не считайте, что осложнений нет: журнал не прочитан. Перед разговором с пациентом обновите список.",
+};
 
 export function PatientReclamationsWidget({
 	patientId,
@@ -39,6 +57,10 @@ export function PatientReclamationsWidget({
 		data: rawReclamations,
 		setData: setReclamations,
 		isLoading,
+		// БЫЛО: отказ чтения не забирался из хука вовсе, и пустой список от
+		// упавшего запроса превращался в «осложнений нет».
+		error: loadFailure,
+		failureStatus,
 		reload: fetchReclamations,
 	} = usePatientResource<any[]>(
 		patientId,
@@ -71,11 +93,19 @@ export function PatientReclamationsWidget({
 				fetchReclamations();
 				showToast("Рекламация зафиксирована", "success");
 			} else {
-				showToast("Ошибка при фиксации", "error");
+				// Форма не очищается при отказе, поэтому обещание «текст остался»
+				// правдиво: сброс полей стоит только в успешной ветке выше.
+				showToast(
+					`${actionFailureToast("Рекламация не зафиксирована", res.status)} Введённый текст остался в форме.`,
+					"error",
+				);
 			}
 		} catch (e) {
-			console.error(e);
-			showToast("Ошибка сети", "error");
+			console.error("[PatientReclamationsWidget add]", e);
+			showToast(
+				`${actionFailureToast("Рекламация не зафиксирована", null)} Введённый текст остался в форме.`,
+				"error",
+			);
 		}
 	};
 
@@ -100,7 +130,12 @@ export function PatientReclamationsWidget({
 				},
 			);
 			if (!res.ok) {
-				showToast("Ошибка при обновлении статуса", "error");
+				// Строка уже перекрашена оптимистично, поэтому сообщение обязано
+				// сказать, что показанное значение вернулось к прежнему.
+				showToast(
+					`${actionFailureToast("Статус инцидента не изменён", res.status)} В списке возвращено прежнее значение.`,
+					"error",
+				);
 				fetchReclamations();
 			} else {
 				showToast(
@@ -111,7 +146,13 @@ export function PatientReclamationsWidget({
 				);
 			}
 		} catch (e) {
-			console.error(e);
+			console.error("[PatientReclamationsWidget toggle]", e);
+			// БЫЛО: молчаливый откат. Оператор нажал «Урегулировано», строка
+			// вернулась в прежний вид, и почему — не сообщалось.
+			showToast(
+				`${actionFailureToast("Статус инцидента не изменён", null)} В списке возвращено прежнее значение.`,
+				"error",
+			);
 			fetchReclamations();
 		}
 	};
@@ -135,10 +176,19 @@ export function PatientReclamationsWidget({
 				showToast("Рекламация удалена", "success");
 				setReclamations(reclamations.filter((r) => r.id !== recId));
 			} else {
-				showToast("Ошибка при удалении", "error");
+				showToast(
+					`${actionFailureToast("Рекламация не удалена", res.status)} Запись осталась в карте.`,
+					"error",
+				);
 			}
 		} catch (e) {
-			console.error(e);
+			// БЫЛО: только console.error. Оператор подтвердил безвозвратное
+			// удаление, запись осталась на месте, и об этом ему не сказали.
+			console.error("[PatientReclamationsWidget delete]", e);
+			showToast(
+				`${actionFailureToast("Рекламация не удалена", null)} Запись осталась в карте.`,
+				"error",
+			);
 		}
 	};
 
@@ -150,25 +200,62 @@ export function PatientReclamationsWidget({
 		(t: any) => t.status === "under_review",
 	).length;
 
-	if (reclamations.length === 0 && !isAdding && !isLoading) {
+	/*
+	 * Три состояния разведены и идут в этом порядке: отказ важнее пустоты,
+	 * пустота отличается от загрузки. Прежде проверка была одна —
+	 * `length === 0 && !isLoading` — и накрывала оба нештатных случая
+	 * заголовком «Рекламации и осложнения отсутствуют».
+	 */
+	if (loadFailure && !isAdding) {
+		return (
+			<div
+				data-testid="patient-reclamations-widget"
+				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4"
+			>
+				<PanelLoadFailure
+					subject={RECLAMATIONS_SUBJECT}
+					status={failureStatus}
+					onRetry={fetchReclamations}
+				/>
+			</div>
+		);
+	}
+
+	if (isLoading && reclamations.length === 0 && !isAdding) {
+		return (
+			<div
+				data-testid="patient-reclamations-widget"
+				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 text-xs text-slate-500 dark:text-slate-400"
+			>
+				{panelStateText(RECLAMATIONS_SUBJECT, { phase: "loading" }).title}
+			</div>
+		);
+	}
+
+	if (reclamations.length === 0 && !isAdding) {
+		const emptyText = panelStateText(RECLAMATIONS_SUBJECT, { phase: "empty" });
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
 				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 			>
-				<div className="panel-heading flex justify-between items-center p-4 bg-transparent m-0">
-					<div className="flex items-center gap-2.5 text-slate-500 dark:text-slate-400">
-						<div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+				<div className="panel-heading flex flex-wrap justify-between items-start gap-3 p-4 bg-transparent m-0">
+					<div className="flex items-start gap-2.5 text-slate-500 dark:text-slate-400 min-w-0">
+						<div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
 							<ShieldAlert size={16} />
 						</div>
-						<h3 className="text-sm font-semibold m-0 text-slate-900 dark:text-white">
-							Рекламации и осложнения отсутствуют
-						</h3>
+						<div className="min-w-0">
+							<h3 className="text-sm font-semibold m-0 text-slate-900 dark:text-white">
+								{emptyText.title}
+							</h3>
+							{/* Пустота без подсказки — тупик: непонятно, зачем этот блок здесь. */}
+							<p className="text-xs m-0 mt-1 leading-relaxed break-words">{emptyText.hint}</p>
+						</div>
 					</div>
 					<button
 						type="button"
 						onClick={() => setIsAdding(true)}
-						className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+						className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
 					>
 						+ Фиксировать
 					</button>

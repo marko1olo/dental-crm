@@ -2,7 +2,30 @@ import React, { useEffect, useRef, useState } from "react";
 import { ShieldAlert, Archive, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
+import {
+	actionFailureToast,
+	panelStateText,
+	unconfirmedActionToast,
+	type PanelSubject,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+
+/**
+ * Отказ чтения здесь дороже, чем в любом другом виджете карточки: пустой ответ
+ * даёт `isBlacklisted === false`, то есть экран утверждает «пациент не
+ * заблокирован» и предлагает кнопку «Добавить в черный список» человеку,
+ * который в списке уже может быть. Администратор по такому экрану запишет на
+ * приём того, кому запись запрещена.
+ */
+const BLACKLIST_SUBJECT: PanelSubject = {
+	title: "Блокировка записи и черный список",
+	accusative: "статус блокировки записи",
+	emptyTitle: "Пациент не в архиве, запрет записи не установлен",
+	emptyHint: "Блокировка нужна, когда записывать пациента нельзя: долг, агрессия, отказ от лечения. Она действует во всех клиниках сети.",
+	failureConsequence:
+		"Не считайте пациента разблокированным по этому экрану: статус не прочитан. Обновите его перед записью на приём.",
+};
 
 export interface ArchiveReasonItem {
 	id: string;
@@ -28,6 +51,10 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	const {
 		data: reasons,
 		isLoading: loading,
+		// БЫЛО: отказ чтения из хука не забирался вовсе. Пустой список от
+		// упавшего запроса читался как «не заблокирован».
+		error: loadFailure,
+		failureStatus,
 		reload,
 	} = usePatientResource<ArchiveReasonItem[]>(
 		patientId,
@@ -50,7 +77,13 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	const patientIdRef = useRef(patientId);
 	patientIdRef.current = patientId;
 
+	/*
+	 * `false` здесь — значение по умолчанию, а не прочитанный факт. Поэтому
+	 * оно имеет право попадать на экран только когда статус действительно
+	 * прочитан: при отказе чтения виджет показывает отказ и не даёт кнопку.
+	 */
 	const isBlacklisted = optimisticBlacklist ?? (reasons[0]?.isBookingBlocked ?? false);
+	const statusUnknown = Boolean(loadFailure) && optimisticBlacklist === null;
 
 	// Блокировка записи действует на всю сеть клиник, поэтому подтверждение
 	// обязано называть пациента поимённо, а не «пациента».
@@ -77,12 +110,23 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			// БЫЛО: ни .catch, ни проверки res.ok. При отказе сервера кнопка
 			// просто ничего не делала — оператор считал, что заблокировал.
 			if (!res.ok) {
-				showToast("Не удалось изменить статус блокировки", "error");
+				showToast(
+					actionFailureToast(
+						newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+						res.status,
+					),
+					"error",
+				);
 				return;
 			}
 			const data = await res.json().catch(() => ({}) as Record<string, unknown>);
 			if (!(data.success || data.isBlacklisted !== undefined)) {
-				showToast("Сервер не подтвердил изменение статуса", "error");
+				showToast(
+					unconfirmedActionToast(
+						newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+					),
+					"error",
+				);
 				return;
 			}
 			// Пациента могли переключить, пока запрос был в пути: тогда ответ
@@ -99,7 +143,13 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			);
 		} catch (error) {
 			console.error("[PatientArchiveAndBlacklistWidget apply error]:", error);
-			showToast("Сетевая ошибка при изменении статуса", "error");
+			showToast(
+				actionFailureToast(
+					newStatus ? "Пациент не добавлен в черный список" : "Блокировка записи не снята",
+					null,
+				),
+				"error",
+			);
 		} finally {
 			setIsApplying(false);
 		}
@@ -109,14 +159,18 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 		<div
 			data-testid="patient-archive-blacklist-widget"
 			className={`p-4 rounded-xl border my-4 shadow-sm transition-all duration-200 text-slate-900 dark:text-slate-100 ${
-				isBlacklisted
+				// Красный фон — утверждение «этот пациент заблокирован». При
+				// непрочитанном статусе такого утверждения делать нельзя.
+				isBlacklisted && !statusUnknown
 					? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800"
 					: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
 			}`}
 		>
 			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
 				<div className="flex items-center space-x-2">
-					<ShieldAlert className={`w-5 h-5 ${isBlacklisted ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`} />
+					<ShieldAlert
+						className={`w-5 h-5 ${isBlacklisted && !statusUnknown ? "text-rose-600 dark:text-rose-400" : "text-amber-500"}`}
+					/>
 					<h3 className="font-semibold text-sm">
 						Блокировка записи и черный список
 					</h3>
@@ -129,31 +183,45 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 			</div>
 
 			<div className="space-y-3">
-				<p className="text-xs text-slate-500 dark:text-slate-400">
-					Управление блокировкой записи на прием и внесением пациента в черный список.
-				</p>
-				<div className="flex items-center space-x-2">
-					<button
-						type="button"
-						onClick={() => setConfirmModalOpen(true)}
-						// Пока статус не загружен, isBlacklisted равен false по
-						// умолчанию: нажатие в этот момент предлагало бы «добавить
-						// в ЧС» пациента, который в нём уже есть.
-						disabled={loading || isApplying}
-						title={isBlacklisted ? "Снять блокировку записи" : "Заблокировать запись и добавить в ЧС"}
-						className={`px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-							isBlacklisted
-								? "bg-emerald-600 hover:bg-emerald-700 text-white"
-								: "bg-rose-600 hover:bg-rose-700 text-white"
-						}`}
-					>
-						{loading
-							? "Загрузка статуса…"
-							: isBlacklisted
-								? "Восстановить из черного списка"
-								: "Добавить в черный список"}
-					</button>
-				</div>
+				{statusUnknown ? (
+					/*
+						Отказ чтения вместо кнопки, а не рядом с ней: кнопка
+						подписана по значению isBlacklisted, а оно здесь неизвестно.
+					*/
+					<PanelLoadFailure subject={BLACKLIST_SUBJECT} status={failureStatus} onRetry={reload} />
+				) : (
+					<>
+						<p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">
+							{isBlacklisted
+								? "Запись на прием заблокирована во всех клиниках сети. Снимите блокировку, если причина больше не действует."
+								: panelStateText(BLACKLIST_SUBJECT, { phase: "empty" }).hint}
+						</p>
+						<div className="flex items-center space-x-2">
+							<button
+								type="button"
+								onClick={() => setConfirmModalOpen(true)}
+								// Пока статус не загружен, isBlacklisted равен false по
+								// умолчанию: нажатие в этот момент предлагало бы «добавить
+								// в ЧС» пациента, который в нём уже есть.
+								disabled={loading || isApplying}
+								title={isBlacklisted ? "Снять блокировку записи" : "Заблокировать запись и добавить в ЧС"}
+								className={`px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+									isBlacklisted
+										? "bg-emerald-600 hover:bg-emerald-700 text-white"
+										: "bg-rose-600 hover:bg-rose-700 text-white"
+								}`}
+							>
+								{/* На кнопке короткая подпись: полная формулировка состояния
+									растягивает кнопку и ломает ряд. */}
+								{loading
+									? "Читаем статус…"
+									: isBlacklisted
+										? "Восстановить из черного списка"
+										: "Добавить в черный список"}
+							</button>
+						</div>
+					</>
+				)}
 			</div>
 
 			{confirmModalOpen && (
