@@ -45,6 +45,14 @@ const patientMissingRouteMessage = "Пациент не выбран. Откро
 const patientNotFoundMessage = "Пациент не найден. Обновите список пациентов и выберите актуальную карту.";
 const patientDuplicateMessage =
   "Похожая карта пациента уже есть. Найдите пациента по ФИО или телефону и обновите существующую карточку.";
+/**
+ * Отказ для случая «заводят по одному ФИО, а карта с таким ФИО уже есть».
+ * Текст обязан назвать и причину, и выход: иначе полного тёзку — а они в
+ * картотеке настоящие — завести станет нельзя вовсе, и регистратор начнёт
+ * дописывать к фамилии «2», что и есть дубль под другим именем.
+ */
+const patientNameOnlyDuplicateMessage =
+  "Карта с таким ФИО уже есть в этой клинике. Откройте её вместо создания второй: приёмы, оплаты, снимки и документы одного человека должны лежать в одной карте, иначе справка для налогового вычета посчитается по половине платежей. Если это другой человек, добавьте телефон или дату рождения — с ними карта создастся.";
 
 /**
  * Идентификатор карты пациента в адресе. Колонки patients.id и
@@ -98,11 +106,51 @@ function normalizePatientPhoneForDuplicate(value: string | null | undefined): st
   return digits.length >= 5 ? digits : "";
 }
 
-function findPatientDuplicate(patientsList: any[], input: PatientDuplicateInput, ignoredPatientId?: string) {
+/**
+ * ЗАПРЕТ ДУБЛЕЙ ВЫКЛЮЧАЛСЯ САМ, КОГДА ОН НУЖЕН БОЛЬШЕ ВСЕГО.
+ *
+ * Предикат ниже требовал совпадения имени И (даты рождения ИЛИ телефона).
+ * Но карточку в картотеке заводят одним ФИО: поля телефона и даты рождения в
+ * шапке экрана скрыты (`display: none`, apps/web/src/PatientsView.tsx), и в
+ * запрос уходят `phone: null`, `birthDate: null` — createPatientSchema обоих
+ * пускает как `.nullable().optional()`. Тогда `sameBirthDate = false` и
+ * `samePhone = false`, значит `false || false = false`: сравнивать было нечем,
+ * и сервер отвечал 201 Created на вторую карту того же человека.
+ *
+ * Цена ровно эта: регистратор, попавший в поле создания вместо поля поиска,
+ * получает второго «того же» пациента без предупреждения. Дальше приёмы,
+ * оплаты, снимки и документы расходятся по двум картам, а справка для
+ * налогового вычета считается по половине платежей.
+ *
+ * `requireDistinguishingData` включается ТОЛЬКО на создании (POST). На
+ * обновлении (PUT) его включать нельзя: у карты, где ни телефона, ни даты
+ * рождения нет, а в клинике есть тёзка, стало бы невозможно сохранить даже
+ * заметку — сервер отвечал бы 409 на собственные же данные.
+ *
+ * Полные тёзки остаются заводимыми: как только в запросе есть телефон ИЛИ дата
+ * рождения, работает прежнее правило, и человек с другим номером или другой
+ * датой рождения проходит. Это то же разделение, что закреплено в
+ * src/tests/routes/patientDuplicates.test.ts: «полные тёзки с разными датами
+ * рождения — разные люди».
+ */
+type PatientDuplicateOptions = {
+  requireDistinguishingData?: boolean;
+};
+
+function findPatientDuplicate(
+  patientsList: any[],
+  input: PatientDuplicateInput,
+  ignoredPatientId?: string,
+  options: PatientDuplicateOptions = {}
+) {
   const inputName = normalizePatientNameForDuplicate(input.fullName);
   const inputBirthDate = (input.birthDate ?? "").trim();
   const inputPhone = normalizePatientPhoneForDuplicate(input.phone);
   if (!inputName && !inputBirthDate && !inputPhone) return null;
+
+  // Отличить нового человека от уже заведённого нечем: в запросе только имя.
+  const nothingToDistinguishBy = !inputBirthDate && !inputPhone;
+  const nameAloneIsDuplicate = options.requireDistinguishingData === true && nothingToDistinguishBy;
 
   return (
     patientsList.find((patient) => {
@@ -116,9 +164,23 @@ function findPatientDuplicate(patientsList: any[], input: PatientDuplicateInput,
       // подтвердить, что это разные люди. Совпадение имени теперь обязательно:
       // это оставляет защиту от настоящих дублей (один человек заведён дважды),
       // но перестаёт блокировать разных людей одной семьи.
+      if (nameAloneIsDuplicate && sameName) return true;
       return (sameName && sameBirthDate) || (sameName && samePhone);
     }) ?? null
   );
+}
+
+/**
+ * Отказ по дублю. Когда сравнивать было нечем кроме имени, объяснение другое:
+ * общий текст «найдите пациента по ФИО или телефону» здесь читается как «ищите
+ * сами, чем — не скажем», а регистратору нужно знать, что делать с настоящим
+ * тёзкой.
+ */
+function sendPatientNameOnlyDuplicate(reply: FastifyReply) {
+  return reply.code(409).send({
+    error: "PatientNameDuplicateError",
+    message: patientNameOnlyDuplicateMessage
+  });
 }
 
 function sendPatientDuplicate(reply: FastifyReply) {
@@ -243,8 +305,14 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientCreateValidationMessage });
     }
     const dbPatients = await getPatientsFromDb(orgId);
-    const duplicate = findPatientDuplicate(dbPatients, input);
-    if (duplicate) return sendPatientDuplicate(reply);
+    const duplicate = findPatientDuplicate(dbPatients, input, undefined, { requireDistinguishingData: true });
+    if (duplicate) {
+      // Один и тот же ответ 409, но объяснения разные: во что упёрся оператор —
+      // в совпадение имени с телефоном/датой или в то, что кроме имени в
+      // запросе не было ничего.
+      const nothingButName = !(input.birthDate ?? "").trim() && !normalizePatientPhoneForDuplicate(input.phone);
+      return nothingButName ? sendPatientNameOnlyDuplicate(reply) : sendPatientDuplicate(reply);
+    }
     try {
       const patient = await createPatientInDb(orgId, input);
       return reply.code(201).send(patientSchema.parse(patient));
