@@ -50,6 +50,38 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 
 			if (!res.ok) throw new Error("Failed to save loyalty tier");
 
+			/*
+			 * БЫЛО: ответ сервера не читался вовсе — сразу зелёное «Статус
+			 * лояльности обновлен».
+			 *
+			 * А статус не сохраняется никогда. Поля loyaltyTier нет в
+			 * patientAdministrativeProfileBaseSchema
+			 * (packages/shared/src/index.ts), и zod вырезает незнакомые ключи в обе
+			 * стороны: на записи маршрут PUT /api/patients/:id/administrative-profile
+			 * отбрасывает его из тела, на чтении patientSchema отбрасывает его из
+			 * ответа. Маршрут при этом отвечает 200 — «принял».
+			 *
+			 * Что видел администратор: выбрал «Золото», получил подтверждение, а
+			 * значок после перечитывания карточки снова показывает «Базовый». Жал
+			 * второй и третий раз с тем же результатом. Хуже другое: он успевал
+			 * сказать пациенту про скидку 10%, которой в программе нет.
+			 *
+			 * Проверяем по тому, что ответил сервер: маршрут возвращает сохранённого
+			 * пациента (patientSchema.parse(patient)), значит сохранённое значение
+			 * видно прямо здесь. Если статуса в ответе нет — говорим об этом прямо.
+			 * Когда поле появится в схеме, успешная ветка заработает сама.
+			 */
+			const saved = await res.json().catch(() => null);
+			const savedTier = saved?.administrativeProfile?.loyaltyTier ?? null;
+			if (savedTier !== tier) {
+				showToast(
+					`Статус «${LOYALTY_CONFIG[tier].label}» не сохранён: программа пока не хранит это поле, и в карточке останется «${currentLoyalty.label}». Скидку назначьте вручную при оплате, а договорённость запишите в заметку к пациенту.`,
+					"error",
+				);
+				await loadDashboard();
+				return;
+			}
+
 			showToast("Статус лояльности обновлен", "success");
 			await loadDashboard();
 		} catch (err) {
@@ -110,8 +142,15 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 					{currentLoyalty.label}
 				</span>
 
+				{/*
+					Значок скидки — это пометка для сотрудников, а не расчёт: ни один
+					модуль программы loyaltyTier не читает (проверено поиском по apps и
+					packages), в счёт и в оплату эта скидка не подставляется. Раньше
+					«-10%» стояло без оговорок и читалось как «скидка уже действует».
+				*/}
 				{currentLoyalty.discountPct > 0 && (
 					<span
+						title="Программа эту скидку не считает: назначьте её вручную при оплате"
 						style={{
 							fontSize: "11px",
 							fontWeight: 700,
@@ -174,6 +213,13 @@ export function PatientLoyaltyHeader({ patientId }: { patientId: string }) {
 									)}
 								</button>
 							))}
+							{/* Прямая оговорка там, где выбирают статус: без неё цифры «-5%,
+							    -10%, -15%» выглядят как готовый расчёт, а считать скидку
+							    придётся человеку при оплате. */}
+							<p className="m-0 mt-1 px-3 py-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+								Это пометка для сотрудников. Скидка сама в счёт не подставляется
+								— назначьте её вручную при оплате.
+							</p>
 						</motion.div>
 					</>
 				)}
