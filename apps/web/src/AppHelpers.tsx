@@ -1002,14 +1002,86 @@ export function saveDocumentPaymentSelection(
   }
 }
 
-export function todayDateInputValue(): string {
-  return new Date().toISOString().slice(0, 10);
+/**
+ * Календарный день в виде «ГГГГ-ММ-ДД»: в поясе клиники, если он известен, иначе
+ * в местном поясе машины. День по UTC не возвращается никогда — см. разбор у
+ * todayDateInputValue.
+ */
+export function calendarDayInTimeZone(moment: Date, timeZone?: string | null): string {
+  if (timeZone) {
+    try {
+      // en-CA даёт ISO-подобный вид ГГГГ-ММ-ДД. Тот же приём, что на сервере в
+      // routes/dayConfirmations.ts: готовой функции «мгновение → местная дата» в
+      // стандартной библиотеке нет.
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(moment);
+    } catch {
+      // Пояс не разобран — считаем по местному. Пустая дата в поле медицинского
+      // документа хуже даты, посчитанной по поясу рабочей машины.
+    }
+  }
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${moment.getFullYear()}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`;
 }
 
-export function dateInputValuePlusDays(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+/**
+ * Сдвиг календарного дня на целое число суток.
+ *
+ * Считается КАЛЕНДАРНО, а не прибавлением 24 часов: в поясе с переходом на
+ * зимнее время сутки длятся 25 часов, и 24 прибавленных часа не доводят до
+ * следующей даты. Перенос через конец месяца и года делает сам `Date.UTC`: день
+ * 32 в июле он превращает в 1 августа.
+ *
+ * `toISOString` здесь законен и трогать его не надо: и запись, и чтение идут в
+ * UTC, где сутки ровно 24 часа всегда. Ошибкой он становится там, где в UTC
+ * ЧИТАЮТ момент, собранный по местному времени.
+ */
+export function shiftCalendarDay(day: string, days: number): string {
+  const [year, month, date] = day.split("-").map((value) => Number.parseInt(value, 10));
+  if (!year || !month || !date) return day;
+  return new Date(Date.UTC(year, month - 1, date + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * Сегодняшнее число для поля ввода типа `date`.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Стояло `new Date().toISOString().slice(0, 10)` — это день по
+ * UTC. У ВСЕХ российских поясов смещение положительное (Москва +3, Самара +4 —
+ * пояс по умолчанию в схеме, Камчатка +12), поэтому день по UTC отстаёт от
+ * местного каждую ночь: в Москве с 00:00 до 03:00, в Самаре до 04:00, на
+ * Камчатке — половину суток. Это не про переход на летнее время, который Россия
+ * отменила в 2014 году; это срабатывает у каждой клиники, каждый день.
+ *
+ * ЧЕМ ВРЕДНО. Отсюда заполняются даты медицинских документов: дата открытия
+ * карты 025/у и период выписки из медкарты (emptyOutpatient025uDocumentDraftFields,
+ * emptyMedicalRecordExtractDocumentDraftFields — оба черновика становятся
+ * начальным состоянием документа). Карта 025/у — форма государственного учёта,
+ * выписка — основание для страховой и для суда. Документ с датой на день раньше
+ * факта расходится с картой, и заметить это можно только вручную.
+ *
+ * И правильный расчёт того же дня в проекте УЖЕ БЫЛ — documentLogic.ts,
+ * withDocumentCreationTimestamps собирает день из местных полей `Date`. Но он
+ * заполняет только ПУСТЫЕ поля, а предзаполненное неверное число пустым не
+ * является: верный расчёт молча уступал неверному. Сторож
+ * tests/documentCreationTimestamps.test.ts это не ловил, потому что вызывает
+ * функцию с явно пустым полем и рабочего пути не проходит.
+ *
+ * Пояс клиники передаётся, когда вызывающий его знает
+ * (`dashboard.clinicSettings.profile.timezone`). Параметр необязательный
+ * намеренно: подпись расширена, а не изменена, поэтому ни один существующий
+ * вызов не пришлось трогать.
+ */
+export function todayDateInputValue(timeZone?: string | null): string {
+  return calendarDayInTimeZone(new Date(), timeZone);
+}
+
+/** То же число, сдвинутое на `days` календарных суток: сроки оплаты и графики платежей. */
+export function dateInputValuePlusDays(days: number, timeZone?: string | null): string {
+  return shiftCalendarDay(calendarDayInTimeZone(new Date(), timeZone), days);
 }
 
 export function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
