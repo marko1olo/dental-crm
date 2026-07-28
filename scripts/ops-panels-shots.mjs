@@ -268,12 +268,23 @@ async function waitForWorkspace(timeoutMs = 45000) {
     const state = await evaluate(`
       (() => {
         const body = document.body;
-        if (!body) return { ready: false, login: false, wizard: false, noBody: true };
+        if (!body) return { ready: false, login: false, wizard: false, shiftLock: false, noBody: true };
         const sidebar = document.querySelector('.sidebar, nav .nav-item');
         const text = body.textContent || "";
         const login = text.includes("ВХОД В ЛИЧНЫЙ КАБИНЕТ");
         const wizard = text.includes("Быстрая настройка CRM Dente");
-        return { ready: Boolean(sidebar) && !login && !wizard, login, wizard, noBody: false };
+        /*
+         * Экран разблокировки смены — ОТДЕЛЬНОЕ состояние, и его надо называть.
+         * Он перекрывает кабинет целиком, бокового меню на нём нет, поэтому
+         * прежняя проверка сообщала «меню не отрисовалось» — то есть отправляла
+         * искать дефект вёрстки там, где программа просто не пускает внутрь.
+         * Его же экран, снятый под именем раздела, уже попадал в доказательства:
+         * файлы patients_*_full.png содержали не картотеку, а этот замок.
+         */
+        const shiftLock =
+          Boolean(document.querySelector(".auth-staff-grid, .auth-staff-card")) ||
+          text.includes("ВЫБЕРИТЕ СВОЙ ПРОФИЛЬ ДЛЯ РАЗБЛОКИРОВКИ СМЕНЫ");
+        return { ready: Boolean(sidebar) && !login && !wizard && !shiftLock, login, wizard, shiftLock, noBody: false };
       })()
     `);
     lastState = state;
@@ -291,7 +302,10 @@ async function waitForWorkspace(timeoutMs = 45000) {
       ? "показан экран входа — токены в .ops-shot-tokens.json устарели, пересоздайте их сидом"
       : lastState?.wizard
         ? "поверх экрана остался мастер первого запуска"
-        : "боковое меню кабинета не отрисовалось";
+        : lastState?.shiftLock
+          ? "программа стоит на экране разблокировки смены и внутрь не пускает — это не дефект вёрстки, " +
+            "а закрытый вход: список сотрудников на нём пуст либо не прочитан"
+          : "боковое меню кабинета не отрисовалось";
   throw new Error(`Рабочий кабинет не открылся за ${Math.round(timeoutMs / 1000)} с: ${reason}. Снимать нечего.`);
 }
 
@@ -693,17 +707,57 @@ async function shootPanel(testId, fileName, theme) {
   return true;
 }
 
-async function shootViewport(fileName, theme) {
-  const themeState = await assertThemeBeforeShot(theme, fileName);
+/**
+ * СНИМОК РАЗДЕЛА ОБЯЗАН ДОКАЗАТЬ, ЧТО ЭТО ТОТ САМЫЙ РАЗДЕЛ.
+ *
+ * Проверка темы (assertThemeBeforeShot) закрывала только один вид подлога:
+ * ночные пиксели под именем light_*. ВТОРОЙ вид оставался открытым — чужой
+ * ЭКРАН под именем раздела, и он уже случился. Файлы patients_light_full.png,
+ * patients_dark_full.png, patients_night_full.png содержали не картотеку, а
+ * экран разблокировки смены с текстом «В клинике пока нет ни одного
+ * действующего сотрудника»: раздел требует открытой смены, а в
+ * демонстрационной клинике снимков сотрудников нет. Три файла лежали как
+ * доказательство вида картотеки в трёх темах, и по ним делались выводы о
+ * вёрстке экрана, которого на них нет.
+ *
+ * Поэтому здесь передаётся признак раздела — селектор узла, который есть
+ * только на нём. Не нашли: кадр всё равно записывается, но под именем с
+ * пометкой _ПУСТО, то есть попасть в доказательства под чистым именем он
+ * больше не может. Пометка та же, что у ненайденной панели: способ отличать
+ * диагностический кадр от плиты в проекте уже есть, второго не нужно.
+ */
+async function assertSectionOnScreen(marker, fileName) {
+  if (!marker) return null;
+  const found = await evaluate(`Boolean(document.querySelector(${JSON.stringify(marker)}))`);
+  if (found) return null;
+  const onScreen = await evaluate(`(document.body?.innerText || "").replace(/\\s+/g, " ").trim().slice(0, 160)`);
+  console.log(`  ✗ ${fileName}: на экране не тот раздел (нет узла ${marker})`);
+  console.log(`     видно вместо него: ${onScreen}`);
+  for (const error of pageErrors.slice(-3)) console.log(`     ошибка страницы: ${error.split("\n")[0]}`);
+  return onScreen || "раздел не опознан";
+}
+
+async function shootViewport(fileName, theme, marker = null) {
+  const wrongSection = await assertSectionOnScreen(marker, fileName);
+  const name = wrongSection ? fileName.replace(/\.png$/, "_ПУСТО.png") : fileName;
+  const themeState = await assertThemeBeforeShot(theme, name);
   const shot = await send("Page.captureScreenshot", { format: "png" });
-  await writeShot(fileName, shot.data, theme, themeState, "весь экран");
+  await writeShot(name, shot.data, theme, themeState, wrongSection ? "НЕ ТОТ РАЗДЕЛ: " + wrongSection : "весь экран");
 }
 
 /** Снимок области страницы: раздел целиком, во всю высоту и с уменьшением. */
-async function shootClipped(fileName, theme, clip) {
-  const themeState = await assertThemeBeforeShot(theme, fileName);
+async function shootClipped(fileName, theme, clip, marker = null) {
+  const wrongSection = await assertSectionOnScreen(marker, fileName);
+  const name = wrongSection ? fileName.replace(/\.png$/, "_ПУСТО.png") : fileName;
+  const themeState = await assertThemeBeforeShot(theme, name);
   const shot = await send("Page.captureScreenshot", { format: "png", clip, captureBeyondViewport: true });
-  await writeShot(fileName, shot.data, theme, themeState, `высота ${clip.height}, масштаб ${clip.scale}`);
+  await writeShot(
+    name,
+    shot.data,
+    theme,
+    themeState,
+    wrongSection ? "НЕ ТОТ РАЗДЕЛ: " + wrongSection : `высота ${clip.height}, масштаб ${clip.scale}`,
+  );
 }
 
 const PANELS = [
@@ -944,7 +998,7 @@ await withReloadRecovery("finance/весь раздел", async () => {
   await goToView("finance");
   await sleep(2200);
   const financeHeight = await evaluate("Math.min(document.body.scrollHeight, 9000)");
-  await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 });
+  await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 }, ".finance-split, .finance-list, [data-testid=\"finance-planning\"]");
 });
 
 /**
@@ -961,7 +1015,7 @@ for (const theme of THEMES) {
     await applyTheme(theme);
     await goToView("patients");
     await sleep(1800);
-    await shootViewport(`patients_${theme}_full.png`, theme);
+    await shootViewport(`patients_${theme}_full.png`, theme, ".patients-panel, .patient-list, .patients-main-grid");
   });
 }
 
@@ -978,7 +1032,7 @@ await withReloadRecovery("communications/весь раздел", async () => {
   await sleep(2500);
 
   const pageHeight = await evaluate("Math.min(document.body.scrollHeight, 12000)");
-  await shootClipped("communications_full.png", "light", { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 });
+  await shootClipped("communications_full.png", "light", { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 }, "[data-testid=\"communications-view\"], .communications-summary-grid");
 });
 
 socket.close();
