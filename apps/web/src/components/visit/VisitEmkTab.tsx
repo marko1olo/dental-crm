@@ -6,6 +6,7 @@ import { VisitFlowProgress } from "./VisitFlowProgress";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldLabel, visitSaveReceiptText } from "../../AppHelpers";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 
 /**
@@ -101,6 +102,28 @@ export function VisitEmkTab() {
 	 * искать, куда пропала запись.
 	 */
 	const fieldsUnavailable = allFields.length === 0;
+
+	/*
+	 * БЫЛО: под щитом печаталось `(draft.warnings ?? []).join(" ")`. Когда разбор
+	 * возвращает черновик без предупреждений, это пустая строка: врач видел
+	 * иконку и пустое место рядом — панель молчала о том, собран ли черновик и
+	 * что делать дальше. Ровно этот же дефект уже правили у последней ветки
+	 * (пустой doctorSummary), а у первой он остался.
+	 */
+	const draftWarningsText = (draft?.warnings ?? [])
+		.filter((warning: unknown): warning is string => typeof warning === "string" && warning.trim().length > 0)
+		.join(" ");
+	const draftNoteText =
+		draftWarningsText ||
+		"Нейро-черновик собран, замечаний к нему нет. Проверьте поля выше и сохраните запись приёма.";
+
+	/*
+	 * Сколько записей ждут отправки — счётное слово склоняется общим countLabel,
+	 * иначе выходит «1 записей». Раньше строка не называла ни числа, ни того, что
+	 * записи уже целы: врач читал «серверная синхронизация ожидает» и не понимал,
+	 * потеряна работа или нет.
+	 */
+	const pendingSavesText = `Ждут отправки на сервер клиники: ${countLabel(Number(pendingVisitSaveCount) || 0, "запись приёма", "записи приёма", "записей приёма")}. Всё сохранено на этом компьютере, ничего не потеряно — как только связь появится, отправка пойдёт сама. Ждать не обязательно: нажмите «Отправить сейчас».`;
 
 	return (
 				<section
@@ -331,11 +354,11 @@ export function VisitEmkTab() {
 							*/}
 							<p>
 								{draft
-									? (draft.warnings ?? []).join(" ")
+									? draftNoteText
 									: isVisitNoteDirty
 										? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
 										: pendingVisitSaveCount
-											? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
+											? pendingSavesText
 											: lastVisitSaveReceipt
 												? visitSaveReceiptText(lastVisitSaveReceipt)
 												: (dashboard?.activeVisit?.doctorSummary ||
@@ -348,7 +371,9 @@ export function VisitEmkTab() {
 									onClick={() => void flushPendingVisitSaves({ silent: false })}
 									disabled={isPendingVisitSyncing}
 								>
-									{isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
+									{/* «Синхронизировать» — не то слово для врача у кресла: кнопка
+									    отправляет отложенные записи на сервер клиники. */}
+									{isPendingVisitSyncing ? "Отправляю" : "Отправить сейчас"}
 								</button>
 							) : null}
 							{draft || isVisitNoteDirty ? (
