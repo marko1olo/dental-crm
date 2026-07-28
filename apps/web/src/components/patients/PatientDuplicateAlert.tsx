@@ -17,7 +17,7 @@
  */
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import {
@@ -47,13 +47,31 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 
 	const auth = appLogic?.auth;
 
+	// Кто открыт прямо сейчас. Нужен, чтобы ответ по прежнему пациенту не осел на
+	// карточке следующего: запросы возвращаются не в том порядке, в каком уходили.
+	const patientIdRef = useRef(patientId);
+	patientIdRef.current = patientId;
+
 	const load = useCallback(async () => {
+		const requestedPatientId = patientId;
 		try {
 			const headers = auth ? auth.denteClinicalReadHeaders() : {};
-			setCandidates(await fetchDuplicatesForPatient(patientId, headers));
+			const fresh = await fetchDuplicatesForPatient(requestedPatientId, headers);
+			/*
+			 * БЫЛО: результат ставился без этой проверки. Пока список дублей
+			 * Иванова был в пути, администратор успевал открыть карточку Петровой —
+			 * и дубли Иванова показывались как дубли Петровой. Кнопка «Перенести
+			 * сюда» рядом с ними сливает ОТКРЫТУЮ карточку с показанной:
+			 * keepPatientId берётся текущий, mergePatientId — из показанной пары.
+			 * То есть по чужому списку объединялись две карточки разных людей, а
+			 * это перенос приёмов, оплат и снимков, который вручную не разбирается.
+			 */
+			if (patientIdRef.current !== requestedPatientId) return;
+			setCandidates(fresh);
 		} catch {
 			// Молча: это подсказка, а не основная работа карточки. Красная плашка
 			// «не удалось проверить дубли» поверх приёма мешала бы лечить.
+			if (patientIdRef.current !== requestedPatientId) return;
 			setCandidates([]);
 		}
 	}, [patientId, auth]);
@@ -62,20 +80,51 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 		void load();
 	}, [load]);
 
+	/*
+	 * БЫЛО: при переключении карточки сбрасывался только список дублей, и то
+	 * лишь когда приходил новый ответ. Сообщение о результате и, главное,
+	 * открытое подтверждение переноса оставались от прежнего пациента.
+	 *
+	 * Чем это опасно. `confirmKey` — ключ ПАРЫ, а пара у двух карточек одного
+	 * человека одна и та же. Администратор нажимал «Перенести сюда» на карточке
+	 * Иванова (останется Иванов), не подтверждал, открывал вторую карточку того же
+	 * человека — и там уже стояло раскрытое подтверждение с кнопкой «Подтвердить
+	 * перенос», но теперь оно оставляло ВТОРУЮ карточку и поглощало первую, то
+	 * есть выполняло обратное тому, что человек подтверждал. Слияние карточек
+	 * обратно не разбирается.
+	 *
+	 * Заодно уходит сообщение вида «Объединено: перенесено 3 приёма», которое
+	 * висело на карточке уже другого пациента как отчёт о его слиянии.
+	 */
+	const [shownPatientId, setShownPatientId] = useState(patientId);
+	if (shownPatientId !== patientId) {
+		setShownPatientId(patientId);
+		setCandidates([]);
+		setNotice(null);
+		setConfirmKey(null);
+		setBusyKey(null);
+	}
+
 	async function merge(candidate: DuplicateCandidate) {
 		const key = duplicatePairKey(candidate);
+		// Кого сливаем — решено ДО ожидания ответа, дальше это не пересчитывается.
+		const keepPatientId = patientId;
 		setBusyKey(key);
 		try {
-			const other = otherSideOf(candidate, patientId);
+			const other = otherSideOf(candidate, keepPatientId);
 			const headers = auth ? auth.denteClinicalMutationHeaders() : {};
 			const result = await mergeDuplicatePair(
-				{ keepPatientId: patientId, mergePatientId: other.patientId, reason: "Объединено из карточки пациента" },
+				{ keepPatientId, mergePatientId: other.patientId, reason: "Объединено из карточки пациента" },
 				headers
 			);
+			// Отчёт о слиянии принадлежит той карточке, из которой его запустили.
+			// Без этой проверки он появлялся на карточке уже другого пациента.
+			if (patientIdRef.current !== keepPatientId) return;
 			setNotice(result.summary);
 			setConfirmKey(null);
 			await load();
 		} catch (error) {
+			if (patientIdRef.current !== keepPatientId) return;
 			setNotice(error instanceof Error ? error.message : String(error));
 		} finally {
 			setBusyKey(null);
@@ -84,6 +133,7 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 
 	async function dismiss(candidate: DuplicateCandidate) {
 		const key = duplicatePairKey(candidate);
+		const decidedOnPatientId = patientId;
 		setBusyKey(key);
 		try {
 			const headers = auth ? auth.denteClinicalMutationHeaders() : {};
@@ -95,9 +145,12 @@ export const PatientDuplicateAlert: React.FC<{ patientId: string }> = ({ patient
 				},
 				headers
 			);
+			// Тот же случай: ответ по чужой карточке на ней и остаётся.
+			if (patientIdRef.current !== decidedOnPatientId) return;
 			setNotice(result.message);
 			await load();
 		} catch (error) {
+			if (patientIdRef.current !== decidedOnPatientId) return;
 			setNotice(error instanceof Error ? error.message : String(error));
 		} finally {
 			setBusyKey(null);
