@@ -11,8 +11,13 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
+import {
+	dictationApplyMessage,
+	dictationApplyPlanFromResponseBody,
+} from "./dictationToothUpdates";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
@@ -802,36 +807,64 @@ export const OdontogramModule = ({
 					try {
 						const res = await fetch("/api/ai/parse-dictation", {
 							method: "POST",
-							headers: { "Content-Type": "application/json" },
+							/*
+							 * БЫЛО: только Content-Type, без секрета смены. Маршрут закрыт
+							 * requireClinicalReadAccess (apps/api/src/routes/ai.ts:191), то
+							 * есть на настроенном сервере диктовка получала 403 ВСЕГДА, и
+							 * врач видел «Ошибка при обращении к серверу ИИ» без причины.
+							 * Все остальные запросы этого файла шлют этот заголовок.
+							 */
+							headers: denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+							}),
 							body: JSON.stringify({ text, type: "visit" }),
 						});
-						if (res.ok) {
-							const data = await res.json();
-							if (data && data.action === "update_tooth" && data.payload) {
-								const { code, state } = data.payload;
-								updateToothState([parseInt(code)], state || "caries");
-								showToast(`AI: Зуб ${code} обновлен (${state})`, "success");
-							} else if (
-								data &&
-								data.toothUpdates &&
-								Array.isArray(data.toothUpdates)
-							) {
-								data.toothUpdates.forEach((tu: any) => {
-									updateToothState([parseInt(tu.code)], tu.state);
-								});
-								showToast(
-									`AI: Зубы обновлены: ${data.toothUpdates.map((t: any) => t.code).join(", ")}`,
-									"success",
-								);
-							} else {
-								showToast("AI: Команда не распознана", "warning");
-							}
-						} else {
-							showToast("Ошибка при обращении к серверу ИИ", "error");
+						// Тело читается строкой: на пустом теле res.json() бросает
+						// исключение, и отказ превращался в «Не удалось обработать».
+						const rawBody = await res.text();
+						if (!res.ok) {
+							console.error(`[dictation parse] ${res.status} ${rawBody.slice(0, 300)}`);
+							showToast(
+								`${actionFailureToast("Надиктованное не разобрано", res.status)} Схема не изменена — отметьте зубы вручную.`,
+								"error",
+								12000,
+							);
+							return;
 						}
+						/*
+						 * Разбор ответа вынесен в ./dictationToothUpdates.ts и проверяется
+						 * node:test. БЫЛО: `const { code, state } = data.payload` — таких
+						 * полей в payload нет (они внутри payload.toothUpdates), поэтому
+						 * в формулу уходил зуб NaN, а врач читал зелёное
+						 * «AI: Зуб undefined обновлен (undefined)» и не получал ничего.
+						 */
+						const plan = dictationApplyPlanFromResponseBody(rawBody);
+						if (plan === null) {
+							console.error(`[dictation parse] ${res.status}: ответ не по контракту`);
+							showToast(
+								"Надиктованное не разобрано: ответ сервера непонятен — повторите, а если повторится, сообщите администратору. Схема не изменена.",
+								"error",
+								12000,
+							);
+							return;
+						}
+						const message = dictationApplyMessage(plan);
+						/*
+						 * Сначала запись, потом сообщение: updateToothState сам откатит
+						 * формулу и скажет об отказе, если сервер её не принял. Показать
+						 * «отмечено» до ответа сервера значило бы обещать за него.
+						 */
+						for (const item of plan.applied) {
+							await updateToothState([item.toothNumber], item.state);
+						}
+						showToast(message.text, message.tone, message.tone === "success" ? 6000 : 15000);
 					} catch (e) {
-						console.error("Dictation parse failed", e);
-						showToast("Не удалось обработать голосовую команду", "error");
+						console.error("[dictation parse] запрос не выполнен", e);
+						showToast(
+							`${actionFailureToast("Надиктованное не разобрано", null)} Схема не изменена — отметьте зубы вручную.`,
+							"error",
+							12000,
+						);
 					}
 				}}
 			/>
