@@ -193,16 +193,15 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * планом работают двое, — не для одиночной практики.
 	 */
 
-	// COMPETITOR FEATURE #37: расписание::резервирование_времени_в_сетке
-	app.get("/api/schedule/time-reservations", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getScheduleTimeReservationsFromDb } = await import("../db/scheduleTimeReservationsQuery.js");
-		return reply.status(200).send(await getScheduleTimeReservationsFromDb(orgId));
-	});
+	/*
+	 * Два маршрута расписания удалены вместе со своими модулями и блоками:
+	 *   /api/schedule/time-reservations               schedule_time_reservations
+	 *   /api/schedule/cancellation-reasons-two-level  cancellation_reasons_two_level
+	 * Писателей нет, строк в живой базе нет. Забронировать кресло было нечем,
+	 * а справочник причин отмены негде заполнить: экрана редактирования этих
+	 * причин в системе не существует. Причина отмены спрашивается на самой
+	 * отмене записи, и это работающий путь.
+	 */
 
 	/*
 	 * Маршрут «находки Diagnocat» удалён вместе со своим блоком: таблица пуста
@@ -344,17 +343,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 		const { getCustomCrmTaskTypesFromDb } = await import("../db/customCrmTaskTypesQuery.js");
 		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE #56: расписание::двухуровневые_причины_отмены_клиника_пациент
-	app.get("/api/schedule/cancellation-reasons-two-level", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getCancellationReasonsTwoLevelFromDb } = await import("../db/cancellationReasonsTwoLevelQuery.js");
-		return reply.status(200).send(await getCancellationReasonsTwoLevelFromDb(orgId));
 	});
 
 	/*

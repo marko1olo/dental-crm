@@ -1,7 +1,5 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
-import { ScheduleTimeReservationsWidget } from "./components/schedule/ScheduleTimeReservationsWidget";
-import { CancellationReasonsTwoLevelWidget } from "./components/schedule/CancellationReasonsTwoLevelWidget";
 import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
 import { EmptyState } from "./components/EmptyState";
@@ -687,8 +685,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 писателя, только чтение. Обещанное действие теперь есть на самой
                 записи кнопкой «Повторить».
               */}
-              <ScheduleTimeReservationsWidget />
-              <CancellationReasonsTwoLevelWidget />
+              {/*
+                Здесь стояли <ScheduleTimeReservationsWidget /> и
+                <CancellationReasonsTwoLevelWidget />: «Активные технические
+                брони кресел отсутствуют» и двухуровневый справочник причин
+                отмены. У таблиц schedule_time_reservations и
+                cancellation_reasons_two_level во всём проекте нет ни одного
+                писателя, в живой базе по нулю строк — заполниться они не могли.
+                Забронировать кресло было нечем, справочник причин негде
+                заполнить. Причина отмены записи спрашивается на самой отмене.
+              */}
               <ExternalScheduleActionLogsWidget />
             </div>
     </div>
