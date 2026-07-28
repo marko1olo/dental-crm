@@ -1,7 +1,7 @@
 import { Link as LinkIcon, Plus, Search, UserPlus, Users } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 
 export type PatientFamilyCardProps = {
@@ -26,6 +26,15 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 
 	const [loading, setLoading] = useState(false);
 	const [searchLoading, setSearchLoading] = useState(false);
+	/*
+	 * БЫЛО: отказ поиска нигде не хранился. Ветка `if (res.ok)` без `else` и
+	 * `catch` с одним console.error оставляли searchResults пустым, а разметка
+	 * печатала «Семьи не найдены» — то есть упавший запрос выдавался за
+	 * достоверный ответ «такой семьи нет». Администратор по этому экрану создавал
+	 * ВТОРУЮ семью с тем же названием, и общий счёт родственников расходился на
+	 * два.
+	 */
+	const [searchFailed, setSearchFailed] = useState(false);
 
 	useEffect(() => {
 		if (isLinking && searchQuery.length >= 2) {
@@ -40,10 +49,18 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					);
 					if (res.ok) {
 						const data = await res.json();
-						setSearchResults(data);
+						// Не массив — тоже не ответ: .map по такому значению уронил бы
+						// карточку целиком.
+						setSearchResults(Array.isArray(data) ? data : []);
+						setSearchFailed(!Array.isArray(data));
+					} else {
+						setSearchResults([]);
+						setSearchFailed(true);
 					}
 				} catch (e) {
 					console.error("Family search failed", e);
+					setSearchResults([]);
+					setSearchFailed(true);
 				} finally {
 					setSearchLoading(false);
 				}
@@ -51,8 +68,38 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			return () => clearTimeout(delayFn);
 		} else if (isLinking && searchQuery.length < 2) {
 			setSearchResults([]);
+			setSearchFailed(false);
 		}
 	}, [searchQuery, isLinking]);
+
+	/*
+	 * БЫЛО: ни одно поле этой карточки не сбрасывалось при переключении пациента.
+	 * Виджет получает patientId пропсом и не размонтируется (PatientOverviewTab
+	 * рендерит его без key), поэтому оставались открытыми и заряженными и форма
+	 * создания семьи, и поиск с найденными семьями.
+	 *
+	 * Цена ошибки здесь выше, чем в заметке: семья — это ОБЩИЙ ДЕНЕЖНЫЙ СЧЁТ.
+	 * Администратор набирал «Семья Ивановых» на карточке Иванова, отвлекался,
+	 * открывал карточку Петровой и нажимал «Создать» — создавалась семья с
+	 * названием «Семья Ивановых», где ГЛАВОЙ становилась Петрова
+	 * (headPatientId: patientId берётся текущий), и она же к ней привязывалась.
+	 * Тот же путь у «Привязать»: список найденных семей от прошлого пациента
+	 * оставался на экране, и клик по строке привязывал к чужой семье уже другого
+	 * человека — деньги и скидки двух посторонних людей сходились на один счёт.
+	 *
+	 * Сброс в фазе рендера, а не в useEffect: эффект срабатывает после отрисовки,
+	 * и чужое название семьи успело бы мигнуть на новой карточке.
+	 */
+	const [formPatientId, setFormPatientId] = useState(patientId);
+	if (formPatientId !== patientId) {
+		setFormPatientId(patientId);
+		setIsCreating(false);
+		setIsLinking(false);
+		setNewFamilyName("");
+		setSearchQuery("");
+		setSearchResults([]);
+		setSearchFailed(false);
+	}
 
 	if (!patientId) return null;
 
@@ -127,6 +174,31 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 		}
 	};
 
+	/*
+	 * БЫЛО: `{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽`. Три
+	 * дефекта в одной строке денег:
+	 *   1. Нет поля balance (или оно null) — parseFloat даёт NaN, и на экране
+	 *      семейного счёта стояло «NaN ₽».
+	 *   2. Голый toLocaleString печатает не больше трёх знаков дроби и без
+	 *      обязательных двух: 1500,5 выводилось «1 500,5 ₽», а полтинник в такой
+	 *      записи читается как пять копеек.
+	 *   3. Правило одно на всю программу: деньги идут через money() из
+	 *      AppHelpers, иначе форматов столько же, сколько экранов.
+	 * Ноль вместо непрочитанного баланса тоже не годится: «0 ₽» на семейном счёте
+	 * — это утверждение, что денег нет, и по нему возьмут оплату наличными вместо
+	 * списания с общего счёта. Поэтому неизвестное значение так и называется.
+	 */
+	const familyBalanceRaw = familyData?.balance;
+	const familyBalanceNumber =
+		typeof familyBalanceRaw === "string"
+			? Number(familyBalanceRaw)
+			: familyBalanceRaw;
+	const familyBalanceKnown =
+		familyBalanceRaw !== null &&
+		familyBalanceRaw !== undefined &&
+		familyBalanceRaw !== "" &&
+		Number.isFinite(Number(familyBalanceNumber));
+
 	return (
 		<div
 			data-testid="patient-family-card"
@@ -145,9 +217,19 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						<span className="text-xs font-medium text-slate-600 dark:text-slate-400">
 							Баланс семьи:
 						</span>
-						<span className="text-base font-bold text-sky-600 dark:text-sky-400">
-							{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽
-						</span>
+						{familyBalanceKnown ? (
+							<span className="text-base font-bold text-sky-600 dark:text-sky-400">
+								{money(Number(familyBalanceNumber))}
+							</span>
+						) : (
+							<span
+								className="text-xs font-semibold text-amber-700 dark:text-amber-400 text-right"
+								title="Сервер не прислал сумму по этой семье"
+							>
+								Баланс не прочитан. Откройте раздел «Деньги», чтобы увидеть
+								сумму.
+							</span>
+						)}
 					</div>
 					<div className="flex flex-col gap-2">
 						<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -227,11 +309,22 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 										Поиск...
 									</div>
 								)}
+								{/* Отказ поиска и честное «не найдено» — разные утверждения, и
+								    раньше оба печатались одной строкой «Семьи не найдены». */}
+								{!searchLoading && searchFailed && (
+									<div className="text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-2.5 leading-relaxed">
+										Поиск семей не выполнен: не получилось связаться с сервером.
+										Не считайте, что такой семьи нет — повторите поиск через
+										минуту, иначе появится вторая семья с тем же названием.
+									</div>
+								)}
 								{!searchLoading &&
+									!searchFailed &&
 									searchQuery.length >= 2 &&
 									searchResults.length === 0 && (
 										<div className="text-xs text-slate-400 text-center py-2">
-											Семьи не найдены
+											Семьи с таким названием не найдены. Проверьте написание
+											или создайте новую семью.
 										</div>
 									)}
 								{searchResults.map((f) => (
