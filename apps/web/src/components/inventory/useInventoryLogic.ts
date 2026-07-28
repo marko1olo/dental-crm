@@ -335,6 +335,19 @@ export function useInventoryLogic(organizationId: string) {
 	const isAdjustingStockRef = useRef(false);
 	const [isAdjustingStock, setIsAdjustingStock] = useState(false);
 
+	/*
+	 * Отказ сервера надо помнить, а не только мигнуть уведомлением.
+	 *
+	 * БЫЛО: при неудачном запросе остатков показывался toast и всё. Список
+	 * оставался пустым, признак загрузки снимался — и экран рисовал «Склад пуст.
+	 * Добавьте первый материал.» Уведомление гаснет через секунды, а ложь на
+	 * экране остаётся: кладовщик читал «пусто» при живом складе и заносил
+	 * материалы заново поверх настоящих остатков, удваивая позиции.
+	 *
+	 * Текст храним готовым к показу, человеческим, с подсказкой что делать.
+	 */
+	const [loadError, setLoadError] = useState<string | null>(null);
+
 	const fetchItems = async () => {
 		try {
 			setIsLoading(true);
@@ -344,11 +357,25 @@ export function useInventoryLogic(organizationId: string) {
 			if (res.ok) {
 				const data = await res.json();
 				setItems(Array.isArray(data) ? data.map(inventoryItemFromServer) : []);
+				setLoadError(null);
 			} else {
+				/*
+				 * Просроченный вход и молчащий сервер лечатся по-разному, поэтому
+				 * разделены: в первом случае помогает только новый вход, во втором —
+				 * повтор запроса.
+				 */
+				setLoadError(
+					res.status === 401 || res.status === 403
+						? "Склад не показан: доступ к остаткам не подтверждён. Войдите в кабинет заново."
+						: "Склад не отвечает, остатки не загружены. Нажмите «Повторить»; если не поможет — сообщите администратору.",
+				);
 				showToast("Ошибка загрузки склада", "error");
 			}
 		} catch (e) {
 			console.error(e);
+			setLoadError(
+				"Нет связи с сервером, остатки не загружены. Проверьте интернет и нажмите «Повторить».",
+			);
 			showToast("Ошибка загрузки склада", "error");
 		} finally {
 			setIsLoading(false);
@@ -577,6 +604,7 @@ export function useInventoryLogic(organizationId: string) {
 		items,
 		filteredItems,
 		isLoading,
+		loadError,
 		auth,
 		dashboard,
 		searchQuery,

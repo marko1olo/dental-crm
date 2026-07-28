@@ -68,6 +68,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const {
 		items,
 		isLoading,
+		loadError,
 		auth,
 		dashboard,
 		scannedBarcode,
@@ -781,11 +782,57 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 												список пустым. Кладовщик читал «склад пуст» и заносил
 												материалы заново поверх настоящих остатков.
 											*/}
-											{!organizationId
-												? "Склад не загружен: клиника не определена. Обновите страницу или войдите в кабинет заново — добавлять материалы сейчас нельзя, настоящие остатки не показаны."
-												: searchQuery
-													? "Материалы не найдены по запросу"
-													: "Склад пуст. Добавьте первый материал."}
+											{/*
+												Отказ сервера — отдельное состояние, а не пустота.
+
+												При упавшем запросе список остаётся пустым, и здесь
+												показывалось «Склад пуст. Добавьте первый материал.»
+												Уведомление об ошибке к этому времени уже погасло, так
+												что экран прямо предлагал занести материалы заново
+												поверх настоящих остатков. Теперь видно, что остатки не
+												загружены, и есть чем повторить запрос.
+											*/}
+											{loadError ? (
+												<span
+													style={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: 14,
+													}}
+												>
+													<AlertTriangle
+														size={22}
+														style={{ color: "var(--tomato)" }}
+													/>
+													<span style={{ color: "var(--ink)", fontSize: 15 }}>
+														{loadError}
+													</span>
+													<button
+														type="button"
+														onClick={() => fetchItems()}
+														disabled={isLoading}
+														style={{
+															padding: "10px 20px",
+															borderRadius: 8,
+															border: `1px solid ${borderColor}`,
+															background: paperSoftBg,
+															color: "var(--ink)",
+															fontWeight: 600,
+															fontSize: 14,
+															cursor: isLoading ? "wait" : "pointer",
+														}}
+													>
+														{isLoading ? "Загружаем..." : "Повторить"}
+													</button>
+												</span>
+											) : !organizationId ? (
+												"Склад не загружен: клиника не определена. Обновите страницу или войдите в кабинет заново — добавлять материалы сейчас нельзя, настоящие остатки не показаны."
+											) : searchQuery ? (
+												"Материалы не найдены по запросу"
+											) : (
+												"Склад пуст. Добавьте первый материал."
+											)}
 										</td>
 									</tr>
 								) : (
