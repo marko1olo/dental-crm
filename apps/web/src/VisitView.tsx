@@ -1,5 +1,6 @@
 import { PatientAvatar } from './components/PatientAvatar';
 import { EmptyState } from './components/EmptyState';
+import { countLabel } from './AppHelpers';
 import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
@@ -280,13 +281,20 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </div>
               </div>
               <div className="visit-focus-status">
+                {/* Было «4 предупр.» — сокращение ради экономии трёх букв. */}
                 <span className={safeVisitWarnings.length ? "" : "ready"}>
-                  {safeVisitWarnings.length ? `${safeVisitWarnings.length} предупр.` : "спокойно"}
+                  {safeVisitWarnings.length
+                    ? countLabel(safeVisitWarnings.length, "предупреждение", "предупреждения", "предупреждений")
+                    : "спокойно"}
                 </span>
                 <strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
+                {/* Было «1 снимка · 0 документа»: счёт без склонения читается
+                    как ошибка программы. */}
                 <p>
                   {visitCloseChecklist ? `${visitCloseChecklist.score}% готовности` : "статус закрытия не рассчитан"} ·{" "}
-                  предупреждения не останавливают прием · {safeImagingStudies.length} снимка · {safeUsableDocuments.length} документа
+                  предупреждения не останавливают прием ·{" "}
+                  {countLabel(safeImagingStudies.length, "снимок", "снимка", "снимков")} ·{" "}
+                  {countLabel(safeUsableDocuments.length, "документ", "документа", "документов")}
                 </p>
               </div>
               <div className="visit-focus-actions">

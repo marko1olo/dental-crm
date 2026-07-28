@@ -1697,10 +1697,11 @@ export function buildBrowserMigrationDiscovery(input: {
       const sourceKind = browserMigrationSourceKindFromStats(stats);
       const fingerprint = browserPickedFolderFingerprint(`${input.rootName}:${stats.folderKey}:${matchedFiles}:${stats.totalBytes}`);
       const reasons: string[] = [];
-      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} файлов старой базы`);
-      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} файлов резервной копии`);
-      if (stats.tableFiles) reasons.push(`${stats.tableFiles} табличных выгрузок`);
-      if (stats.archiveFiles) reasons.push(`${stats.archiveFiles} архивов`);
+      // Счёт со склонением: «1 файлов старой базы» читается как ошибка программы.
+      if (stats.databaseFiles) reasons.push(`${countLabel(stats.databaseFiles, "файл", "файла", "файлов")} старой базы`);
+      if (stats.dumpFiles) reasons.push(`${countLabel(stats.dumpFiles, "файл", "файла", "файлов")} резервной копии`);
+      if (stats.tableFiles) reasons.push(`${countLabel(stats.tableFiles, "табличная выгрузка", "табличные выгрузки", "табличных выгрузок")}`);
+      if (stats.archiveFiles) reasons.push(`${countLabel(stats.archiveFiles, "архив", "архива", "архивов")}`);
       if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} признаков снимков или серий КТ`);
       if (stats.imageFiles) reasons.push(`${stats.imageFiles} изображений`);
       if (stats.modelFiles) reasons.push(`${stats.modelFiles} 3D-моделей зубов`);
@@ -2509,6 +2510,22 @@ export function money(value: number | string | null) {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits
   })} ₽`;
+}
+
+/**
+ * Русское склонение счётного слова: 1 приём, 2 приёма, 5 приёмов.
+ *
+ * Нужна везде, где рядом с числом стоит существительное. Без неё на экранах
+ * появляется «1 снимка», «0 документа», «21 записей» — читается как ошибка
+ * программы, и доверие к остальным цифрам падает.
+ */
+export function countLabel(count: number, one: string, few: string, many: string): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return `${count} ${many}`;
+  if (last === 1) return `${count} ${one}`;
+  if (last >= 2 && last <= 4) return `${count} ${few}`;
+  return `${count} ${many}`;
 }
 
 /**

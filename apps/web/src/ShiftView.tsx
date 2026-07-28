@@ -19,7 +19,7 @@ import {
 import { useState, useMemo } from "react";
 import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
-import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
+import { countLabel, formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -38,16 +38,9 @@ function calendarDateOfInstant(value: unknown): string | null {
  */
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
-/** Русское склонение счётного слова: 1 прием, 2 приема, 5 приемов. */
-function countLabel(count: number, one: string, few: string, many: string): string {
-  const lastTwo = count % 100;
-  const last = count % 10;
-  if (lastTwo >= 11 && lastTwo <= 14) return `${count} ${many}`;
-  if (last === 1) return `${count} ${one}`;
-  if (last >= 2 && last <= 4) return `${count} ${few}`;
-  return `${count} ${many}`;
-}
-
+/* Склонение счётного слова живёт в AppHelpers: оно понадобилось уже на трёх
+   экранах, и три копии разошлись бы так же, как разошлись правила «чего не
+   хватает записи». */
 function appointmentsCountLabel(count: number): string {
   return countLabel(count, "прием", "приема", "приемов");
 }

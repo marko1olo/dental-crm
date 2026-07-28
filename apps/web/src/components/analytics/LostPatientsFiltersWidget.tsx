@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { countLabel } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 interface LostPatientItem {
@@ -72,7 +73,7 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 							<div>
 								<div className="text-sm font-bold text-slate-900 dark:text-white">{item.patientName}</div>
 								<div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
-									Телефон: <span className="font-mono font-bold text-slate-900 dark:text-white">{item.phone}</span> · Нет визитов: <span className="text-amber-600 dark:text-amber-400 font-bold">{item.daysSinceLastVisit} дней</span>
+									Телефон: <span className="font-mono font-bold text-slate-900 dark:text-white">{item.phone}</span> · Нет визитов: <span className="text-amber-600 dark:text-amber-400 font-bold">{countLabel(item.daysSinceLastVisit, "день", "дня", "дней")}</span>
 								</div>
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
