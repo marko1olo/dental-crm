@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { showToast } from "../GlobalToast";
 
 export interface InventoryItem {
@@ -437,7 +438,32 @@ export function useInventoryLogic(organizationId: string) {
 	const handleSaveItem = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!formData.name.trim()) return;
-		const unitCost = Math.max(0, parseFloat(formData.unitCostRub) || 0);
+		/*
+		 * Цена читается общей normalizeRubAmountInput, и мусор больше не становится нулём.
+		 *
+		 * БЫЛО: `parseFloat(formData.unitCostRub) || 0`. Поле цены объявлено
+		 * type="number", а подсказка в нём предлагала ввести «12,50» — с запятой,
+		 * как пишут цену по-русски. Для type="number" запятая делает содержимое
+		 * недопустимым, и браузер отдаёт из value ПУСТУЮ строку, хотя набранное
+		 * человек в поле видит. Дальше parseFloat("") давал NaN, `|| 0` тихо
+		 * превращал его в ноль — материал сохранялся бесплатным. Ноль в цене
+		 * никто не замечает: себестоимость лечения занижена, стоимость склада
+		 * занижена, жалоб нет.
+		 *
+		 * Пустая цена по-прежнему значит «цену не задавали» и уходит нулём. А вот
+		 * набранное, но неразобранное значение — это отказ с объяснением, а не
+		 * молчаливый ноль: терять введённую цену нельзя.
+		 */
+		const typedCost = formData.unitCostRub.trim();
+		const parsedCost = typedCost ? normalizeRubAmountInput(typedCost) : 0;
+		if (parsedCost === null) {
+			showToast(
+				"Цену укажите цифрами, копейки после запятой: 12,50",
+				"error",
+			);
+			return;
+		}
+		const unitCost = parsedCost;
 		/*
 		 * Пустой порог — это ноль, а не пятёрка.
 		 *

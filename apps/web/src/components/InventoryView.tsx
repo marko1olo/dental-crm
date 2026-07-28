@@ -1274,10 +1274,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									>
 										Цена за единицу (₽)
 									</label>
+									{/*
+									  Поле цены принимает запятую, а не глотает её.
+
+									  Стояло type="number" при подсказке «например 12,50». Запятая
+									  делает содержимое такого поля недопустимым, и браузер отдаёт
+									  из value пустую строку — набранная цена видна человеку, но в
+									  программу не попадает и сохраняется нулём. Обычное текстовое
+									  поле сохраняет введённое как есть; разбирает его общая
+									  normalizeRubAmountInput при сохранении, там же и «12.50».
+									  inputMode="decimal" оставляет на телефоне цифровую клавиатуру.
+									*/}
 									<input
-										type="number"
-										min="0"
-										step="0.01"
+										type="text"
+										inputMode="decimal"
 										value={formData.unitCostRub}
 										onChange={(e) =>
 											setFormData({ ...formData, unitCostRub: e.target.value })
