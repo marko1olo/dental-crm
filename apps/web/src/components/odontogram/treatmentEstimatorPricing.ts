@@ -436,10 +436,38 @@ const ESTIMATOR_RULE_SAMPLES: Partial<
  * не должен. Для них опознание остаётся прежним, по `priceId`, поэтому
  * сохранённый план после перезагрузки не удваивается и не пропадает.
  */
+/**
+ * Чем помечена снятая корзиной автоматическая строка.
+ *
+ * ЗАЧЕМ ЭТО СУЩЕСТВУЕТ. Пересборка ниже возвращала снятую строку обратно:
+ * подбор смотрит только на зубную формулу, а формула про снятие ничего не знает.
+ * Врач нажимал корзину на «Коронка, зуб 26», отмечал ЛЮБОЙ другой зуб — и строка
+ * появлялась в смете снова, потому что список зубов в этот момент пересоздаётся и
+ * эффект подбора идёт заново. Корзина выглядела рабочей, а лечение и его цена
+ * возвращались в документ, который подписывает пациент.
+ *
+ * Ключ считается и по номеру зуба, и по происхождению строки: снятие «коронки на
+ * 26» не должно убирать коронку с 36-го.
+ */
+export function estimatorDismissalKeys(item: PlanItem): string[] {
+	if (item.toothNumber === undefined) return [];
+	const keys: string[] = [];
+	if (item.suggestion) keys.push(`${item.toothNumber}:подбор:${item.suggestion}`);
+	// Строки из сохранённого плана ключа подбора не несут — сервер о нём не
+	// знает. Для них опознание по позиции прайса, как и в самой пересборке.
+	if (item.priceId) keys.push(`${item.toothNumber}:прайс:${item.priceId}`);
+	return keys;
+}
+
 export function reconcileAutoSuggestions(
 	previous: readonly PlanItem[],
 	teeth: readonly EstimatorToothInput[],
 	catalog: readonly PlanPriceCatalogItem[],
+	/**
+	 * Что врач снял корзиной вручную. Такие строки подбор больше не возвращает —
+	 * до перезагрузки карточки пациента, где смета читается с сервера заново.
+	 */
+	dismissed: ReadonlySet<string> = new Set(),
 ): { items: PlanItem[]; changed: boolean } {
 	/** Какой ключ автоподбора отвечает за услугу прайса — для строк с сервера. */
 	const keysByServiceId = new Map<string, Set<EstimatorSuggestionKey>>();
@@ -504,6 +532,16 @@ export function reconcileAutoSuggestions(
 							item.priceId === resolution.serviceId)),
 			);
 			if (alreadyThere) continue;
+			/*
+			 * Снятое корзиной обратно не возвращается. Проверяются оба ключа: по
+			 * подбору (строка родилась здесь) и по позиции прайса (строка пришла из
+			 * сохранённого плана и ключа подбора не несёт).
+			 */
+			const wasDismissed =
+				dismissed.has(`${tooth.toothNumber}:подбор:${rule.key}`) ||
+				(resolution.serviceId !== null &&
+					dismissed.has(`${tooth.toothNumber}:прайс:${resolution.serviceId}`));
+			if (wasDismissed) continue;
 			items.push(planItemFromRule(rule, tooth, catalog));
 			changed = true;
 		}

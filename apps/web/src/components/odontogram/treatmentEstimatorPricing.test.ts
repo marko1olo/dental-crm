@@ -28,6 +28,7 @@ import {
 	type EstimatorToothInput,
 	type PlanItem,
 	estimatorContractFrom,
+	estimatorDismissalKeys,
 	estimatorIssueMessages,
 	estimatorItemForApi,
 	estimatorRowMoney,
@@ -565,6 +566,60 @@ test("повторный подбор не удваивает строку и н
 	);
 	assert.equal(noPriceAgain.changed, false);
 	assert.equal(noPriceAgain.items.length, 1);
+});
+
+test("снятая корзиной строка не возвращается в смету при следующей отметке зуба", () => {
+	/*
+	 * БЫЛО: подбор смотрит только на зубную формулу, а формула про снятие не
+	 * знает. Врач снимал корзиной коронку на 26, отмечал любой другой зуб — и
+	 * коронка с ценой возвращалась в документ для подписи пациентом.
+	 */
+	const catalog = [
+		service("svc-crown", "Коронка керамическая", "prosthetics", 25000),
+		service("svc-caries", "Лечение кариеса", "therapy", 2000),
+	];
+	const teeth = [tooth(26, "Crown")];
+	const first = reconcileAutoSuggestions([], teeth, catalog);
+	assert.equal(first.items.length, 1);
+	const removed = first.items[0];
+	assert.ok(removed);
+
+	// Врач снял строку корзиной: панель запоминает ключи снятия.
+	const dismissed = new Set(estimatorDismissalKeys(removed));
+	assert.ok(dismissed.size > 0, "снятие обязано чем-то запоминаться");
+
+	// Тот же зуб в той же формуле плюс отметка на другом зубе.
+	const afterAnotherTooth = reconcileAutoSuggestions(
+		[],
+		[tooth(26, "Crown"), tooth(11, "Caries")],
+		catalog,
+		dismissed,
+	);
+	assert.deepEqual(
+		afterAnotherTooth.items.map((item) => item.toothNumber),
+		[11],
+		"снятая коронка на 26 вернулась в смету",
+	);
+});
+
+test("снятие на одном зубе не убирает то же лечение на другом", () => {
+	const catalog = [service("svc-crown", "Коронка керамическая", "prosthetics", 25000)];
+	const first = reconcileAutoSuggestions([], [tooth(26, "Crown")], catalog);
+	const removed = first.items[0];
+	assert.ok(removed);
+	const dismissed = new Set(estimatorDismissalKeys(removed));
+
+	const other = reconcileAutoSuggestions([], [tooth(36, "Crown")], catalog, dismissed);
+	assert.equal(other.items.length, 1, "коронка на 36 снята вместе с коронкой на 26");
+	assert.equal(other.items[0]?.toothNumber, 36);
+});
+
+test("без списка снятого подбор работает как прежде", () => {
+	// Четвёртый параметр необязателен: старые вызовы обязаны вести себя так же.
+	const catalog = [service("svc-caries", "Лечение кариеса", "therapy", 2000)];
+	const result = reconcileAutoSuggestions([], [tooth(11, "Caries")], catalog);
+	assert.equal(result.items.length, 1);
+	assert.equal(result.changed, true);
 });
 
 test("строка, добавленная врачом руками, автоподбором не удаляется", () => {

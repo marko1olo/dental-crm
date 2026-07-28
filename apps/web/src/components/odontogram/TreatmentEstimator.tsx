@@ -22,6 +22,7 @@ import {
 	type EstimatorContract,
 	type PlanItem,
 	estimatorContractFrom,
+	estimatorDismissalKeys,
 	estimatorIssueMessages,
 	estimatorItemForApi,
 	estimatorRowMoney,
@@ -136,6 +137,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [contractFailure, setContractFailure] = useState<{ status: number | null } | null>(null);
 	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
 	const [reloadToken, setReloadToken] = useState(0);
+	/**
+	 * Что врач снял корзиной. Без этого списка автоподбор возвращал снятую
+	 * строку в смету при следующей же отметке любого зуба: подбор идёт от зубной
+	 * формулы, а формула про снятие не знает. Корзина выглядела рабочей, а
+	 * лечение с ценой возвращалось в документ для подписи пациентом.
+	 */
+	const [dismissedSuggestions, setDismissedSuggestions] = useState<ReadonlySet<string>>(
+		() => new Set<string>(),
+	);
 
 	const { dashboard } = useAppLogicContext();
 	/*
@@ -219,6 +229,17 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		setItems([]);
 		setSignatureUrl(null);
 		setPlanLoad({ phase: "loading" });
+		/*
+		 * Снятое у прошлого пациента не переносится на следующего: панель не
+		 * размонтируется (PatientsView.tsx монтирует карту без key), и без сброса
+		 * снятая у Иванова коронка не предлагалась бы Петрову.
+		 *
+		 * Окно подписи закрывается по той же причине. Оно оставалось открытым при
+		 * смене карточки, и подпись, поставленная за прошлого пациента, ложилась в
+		 * план НОВОГО — а «ПОДПИСАНО» на экране выглядело как его подпись.
+		 */
+		setDismissedSuggestions(new Set<string>());
+		setShowSignModal(false);
 
 		const loadPlan = async () => {
 			let status: number | null = null;
@@ -304,10 +325,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				prevItems,
 				currentTeeth,
 				catalog,
+				dismissedSuggestions,
 			);
 			return changed ? nextItems : prevItems;
 		});
-	}, [currentTeeth, dashboard?.serviceCatalog]);
+	}, [currentTeeth, dashboard?.serviceCatalog, dismissedSuggestions]);
 
 	/*
 	 * Итог, объяснения и запрет сохранения считаются от состояния, а не хранятся
@@ -415,7 +437,23 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	};
 
 	const removeItem = (idx: number) => {
+		const removed = items[idx];
 		setItems(items.filter((_, i) => i !== idx));
+		/*
+		 * Снятие запоминается, иначе автоподбор вернёт строку обратно при
+		 * следующей отметке любого зуба — список зубов в этот момент
+		 * пересоздаётся, и эффект подбора идёт заново по той же формуле.
+		 * Запоминаются только строки, привязанные к зубу: строку, добавленную
+		 * руками, подбор и не возвращает.
+		 */
+		if (!removed) return;
+		const keys = estimatorDismissalKeys(removed);
+		if (keys.length === 0) return;
+		setDismissedSuggestions((prev) => {
+			const next = new Set(prev);
+			for (const key of keys) next.add(key);
+			return next;
+		});
 	};
 
 	const setPhase = (idx: number, phase: number) => {
