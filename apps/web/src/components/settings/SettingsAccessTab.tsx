@@ -3,6 +3,12 @@ import { UserCheck, ShieldCheck, Mail, Link as LinkIcon, Check } from "lucide-re
 import { showToast } from "../GlobalToast";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { StaffRole } from "@dental/shared";
+import { actionFailureToast } from "../../lib/panelStateText";
+import {
+  INVITABLE_STAFF_ROLES,
+  inviteRoleTitle,
+  parseInviteCreationPayload,
+} from "./settingsInviteRoles";
 /*
  * Импорта SingleSessionEnforcementsWidget здесь больше нет намеренно: панель
  * нечем заполнить. Причина подробно — в конце разметки, у места, откуда она
@@ -30,7 +36,13 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
 
   // Hooks MUST be called before any conditional returns (React Rules of Hooks)
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('doctor');
+  /*
+   * Роль приглашения типизирована `StaffRole`, а не строкой. Раньше здесь стояло
+   * `useState('doctor')`, а список в разметке предлагал значение «admin», которого
+   * в схеме ролей нет; чем это кончалось для прав нового сотрудника — разобрано в
+   * ./settingsInviteRoles.ts.
+   */
+  const [inviteRole, setInviteRole] = useState<StaffRole>('doctor');
   const [inviteLink, setInviteLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -39,27 +51,62 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
 
   const handleGenerateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) {
-      showToast('Введите email', 'warning');
+    /*
+     * «Введите email» ничего не говорило о том, зачем он нужен. Адрес — это то,
+     * куда сотрудник получит ссылку и по чему он потом входит.
+     */
+    if (!inviteEmail.trim()) {
+      showToast('Укажите рабочий адрес почты сотрудника — по нему он войдёт в программу', 'warning');
       return;
     }
     setLoading(true);
     setCopied(false);
+    /* Прошлая ссылка убирается сразу: иначе при отказе на экране остаётся
+       ссылка от предыдущего приглашения, и её отправят не тому человеку. */
+    setInviteLink('');
     try {
       const staffToken = localStorage.getItem('dente_staff_token') || '';
       const response = await fetch('/api/auth/invites/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-dente-staff-token': staffToken },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole })
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Ошибка генерации');
-      
-      const fullUrl = window.location.origin + data.inviteLink;
-      setInviteLink(fullUrl);
-      showToast('Приглашение создано!', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Не удалось создать приглашение', 'error');
+      /*
+       * Тело читается строкой один раз и разбирается чистой функцией. Раньше
+       * `await response.json()` стоял ДО проверки `response.ok`: на пустом теле и
+       * на HTML от прокси он бросал исключение, и администратору печаталось
+       * английское «Unexpected token '<' ... is not valid JSON».
+       */
+      const raw = await response.text();
+      const outcome = parseInviteCreationPayload(response.status, raw);
+      if (!outcome.ok) {
+        console.error('[приглашение] не создано, ответ', outcome.status);
+        showToast(
+          outcome.message ??
+            actionFailureToast(
+              `Приглашение для ${inviteEmail.trim()} не создано`,
+              outcome.status,
+            ),
+          'error',
+        );
+        return;
+      }
+      setInviteLink(window.location.origin + outcome.inviteLink);
+      /*
+       * БЫЛО «Приглашение создано!» — и всё. Администратор не знал, что дальше:
+       * письмо программа не отправляет, ссылку надо передать самому.
+       */
+      showToast(
+        `Ссылка для ${inviteRoleTitle(inviteRole).toLowerCase()} готова — скопируйте её и передайте сотруднику, она действует 7 дней`,
+        'success',
+      );
+    } catch (err) {
+      // Текст исключения наружу не идёт: он английский («Failed to fetch»).
+      console.error('[приглашение] запрос не дошёл до сервера', err);
+      showToast(
+        actionFailureToast(`Приглашение для ${inviteEmail.trim()} не создано`, null),
+        'error',
+      );
     } finally {
       setLoading(false);
     }
@@ -107,16 +154,33 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
                   disabled={loading}
                   className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex-1 min-w-[200px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
+                {/*
+                  РОЛИ БЕРУТСЯ ИЗ СПИСКА РОЛЕЙ, А НЕ ПИШУТСЯ ЗДЕСЬ РУКАМИ.
+
+                  Здесь стояли четыре строки, набранные вручную, и одна из них
+                  отправляла роль «admin», которой в системе не существует
+                  (настоящая — «administrator»). Сервер роль не проверяет и пишет
+                  её в учётную запись как есть, а фильтр разделов по неизвестной
+                  роли отдаёт ВСЕ разделы: приглашённый администратор получал
+                  права владельца. Роли «Управляющий» в списке не было вовсе,
+                  хотя права для неё описаны. Разбор целиком —
+                  в ./settingsInviteRoles.ts.
+                */}
+                {/* Подпись у поля не было вовсе: aria-label, а не скрытый <label>,
+                    чтобы не зависеть от того, собран ли класс sr-only. */}
                 <select
+                  id="invite-role"
+                  aria-label="Роль нового сотрудника"
                   value={inviteRole}
-                  onChange={e => setInviteRole(e.target.value)}
+                  onChange={e => setInviteRole(e.target.value as StaffRole)}
                   disabled={loading}
                   className="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 min-w-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 >
-                  <option value="doctor">Врач</option>
-                  <option value="admin">Администратор</option>
-                  <option value="assistant">Ассистент</option>
-                  <option value="owner">Владелец</option>
+                  {INVITABLE_STAFF_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {inviteRoleTitle(role)}
+                    </option>
+                  ))}
                 </select>
                 <button
                   type="submit"

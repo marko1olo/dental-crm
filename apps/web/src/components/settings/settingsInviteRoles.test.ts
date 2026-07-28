@@ -1,0 +1,122 @@
+/**
+ * Роль в приглашении обязана быть настоящей ролью, иначе новый сотрудник
+ * получает НЕ те права.
+ *
+ * Проверяется то, что было сломано: список ролей в форме приглашения был набран
+ * руками и предлагал значение «admin», которого нет в `staffRoleSchema`. Сервер
+ * роль не проверяет, а фильтр разделов по неизвестной роли отдаёт все разделы —
+ * приглашённый администратор получал права владельца.
+ */
+
+import { staffRoleSchema } from "@dental/shared";
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
+
+import { getFilteredAppViews } from "../../workspaceShell";
+import { staffRoleLabels } from "../../workspaceUiLabels";
+import {
+	INVITABLE_STAFF_ROLES,
+	inviteLinkForClipboard,
+	inviteRoleTitle,
+	parseInviteCreationPayload,
+} from "./settingsInviteRoles";
+
+describe("роли, на которые можно пригласить", () => {
+	test("каждая роль есть в схеме ролей", () => {
+		for (const role of INVITABLE_STAFF_ROLES) {
+			assert.doesNotThrow(
+				() => staffRoleSchema.parse(role),
+				`«${role}» не роль: сервер запишет её в учётную запись как есть`,
+			);
+		}
+	});
+
+	test("«admin» больше не предлагается: такой роли не существует", () => {
+		assert.ok(!(INVITABLE_STAFF_ROLES as readonly string[]).includes("admin"));
+		assert.throws(() => staffRoleSchema.parse("admin"));
+	});
+
+	test("ни одна роль системы не пропущена — иначе её нельзя пригласить", () => {
+		const invitable = new Set<string>(INVITABLE_STAFF_ROLES);
+		for (const role of staffRoleSchema.options) {
+			assert.ok(invitable.has(role), `роль «${role}» пригласить нельзя`);
+		}
+	});
+
+	test("у каждой роли есть подпись по-русски, без латиницы", () => {
+		for (const role of INVITABLE_STAFF_ROLES) {
+			const title = inviteRoleTitle(role);
+			assert.ok(title && title.length > 0, `у «${role}» нет подписи`);
+			assert.doesNotMatch(title, /[A-Za-z]/, `латиница в подписи «${title}»`);
+			assert.equal(title, staffRoleLabels[role]);
+		}
+	});
+
+	/**
+	 * Тот самый шаг, который превращал опечатку в лишние права: фильтр разделов
+	 * по неизвестной роли доходит до `return Array.from(appViews)`.
+	 */
+	test("роль вне схемы дала бы больше разделов, чем администратору", () => {
+		const asAdministrator = getFilteredAppViews("administrator");
+		const asUnknownRole = getFilteredAppViews("admin" as never);
+		assert.ok(
+			asUnknownRole.length > asAdministrator.length,
+			"если это перестанет быть верным, объяснение в settingsInviteRoles.ts надо переписать, а не удалять проверку",
+		);
+		assert.ok(!asAdministrator.includes("visit"));
+		assert.ok(asUnknownRole.includes("visit"));
+	});
+});
+
+describe("ответ на создание приглашения", () => {
+	test("403 — отказ, и текст сервера сохраняется", () => {
+		const outcome = parseInviteCreationPayload(
+			403,
+			'{"error":"Forbidden","message":"Нет прав на приглашение сотрудников."}',
+		);
+		assert.equal(outcome.ok, false);
+		assert.equal(
+			outcome.ok === false && outcome.message,
+			"Нет прав на приглашение сотрудников.",
+		);
+	});
+
+	test("HTML от прокси не роняет разбор и не даёт английского текста", () => {
+		const outcome = parseInviteCreationPayload(502, "<html>Bad Gateway</html>");
+		assert.equal(outcome.ok, false);
+		assert.equal(outcome.ok === false && outcome.message, null);
+	});
+
+	test("пустое тело на отказе — отказ без придуманной причины", () => {
+		const outcome = parseInviteCreationPayload(500, "");
+		assert.equal(outcome.ok, false);
+		assert.equal(outcome.ok === false && outcome.message, null);
+	});
+
+	test("успех без inviteLink — тоже отказ, иначе скопируют .../undefined", () => {
+		const outcome = parseInviteCreationPayload(200, '{"ok":true}');
+		assert.equal(outcome.ok, false);
+	});
+
+	test("успех с ссылкой разобран", () => {
+		const outcome = parseInviteCreationPayload(
+			200,
+			'{"ok":true,"inviteLink":"/#/auth/accept-invite?token=abc"}',
+		);
+		assert.equal(outcome.ok, true);
+		assert.equal(
+			outcome.ok === true && outcome.inviteLink,
+			"/#/auth/accept-invite?token=abc",
+		);
+	});
+
+	test("полный адрес собирается из адреса клиники и пути сервера", () => {
+		assert.equal(
+			inviteLinkForClipboard(
+				"https://clinic.example",
+				"/#/auth/accept-invite?token=abc",
+			),
+			"https://clinic.example/#/auth/accept-invite?token=abc",
+		);
+	});
+});
