@@ -18,7 +18,39 @@ import {
 	taxDeductionApplicationPayloadSchema,
 	taxDeductionCertificateMinYear,
 	type Visit,
+	kopecksToNumericString,
+	parseKopecks,
+	sumKopecks,
 } from "@dental/shared";
+
+/**
+ * Сравнение денег до копейки, и печать денег человеку.
+ *
+ * ЗАЧЕМ ЭТО ПОЯВИЛОСЬ. Три проверки ниже сравнивали рублёвые суммы через `!==`
+ * на числах с плавающей точкой, и одна из них — ворота выдачи платёжной
+ * квитанции. Замерено, а не рассуждение: три оплаты по 300.01, 300.05 и 300.07
+ * — каждая ровная до копейки и каждая законная по контракту — дают
+ * 900.1299999999999 в одном порядке сложения и 900.13 в другом. Клиент
+ * складывает оплаты в порядке своего списка, сервер — в порядке
+ * `selectedPaymentIds`; порядки независимы, поэтому расхождение возможно на
+ * живых данных, а не в теории.
+ *
+ * Итог для клиники был такой: законная квитанция на три оплаты НЕ выдавалась, а
+ * человек читал «сумма 900.1299999999999 руб. не совпадает с выбранными
+ * оплатами 900.13 руб.» — два числа, которые глазом не различить.
+ *
+ * Здесь НЕ вводится допуск epsilon: он спрятал бы и настоящее расхождение в одну
+ * копейку, а это ворота денежного документа. Сравнение идёт в ЦЕЛЫХ копейках,
+ * то есть остаётся строгим, и «ровно на копейку меньше» по-прежнему отбивается.
+ *
+ * Второй владелец этой же болезни уже был найден и починен в
+ * `renderDocument.ts` — этот файл нёс свою отдельную копию, поэтому правка там
+ * его не касалась. Считать деньги здесь теперь нечем, кроме
+ * `packages/shared/src/utils/money.ts`; третьей копии не создаётся.
+ */
+function moneyRubEquals(kopecks: number, rub: number): boolean {
+	return kopecks === parseKopecks(rub);
+}
 
 type DocumentVisit = Pick<Visit, "id" | "patientId">;
 type DocumentPatient = Pick<Patient, "id">;
@@ -330,12 +362,11 @@ export function paymentReceiptSelectionErrorForDocument(
 		selectedPayments.push(payment);
 	}
 
-	const selectedTotalRub = selectedPayments.reduce(
-		(total, payment) => total + payment.amountRub,
-		0,
+	const selectedTotalKopecks = sumKopecks(
+		selectedPayments.map((payment) => parseKopecks(payment.amountRub)),
 	);
-	if (selectedTotalRub !== payload.totalPaidRub) {
-		return `Платежная квитанция: сумма ${payload.totalPaidRub} руб. не совпадает с выбранными оплатами ${selectedTotalRub} руб.`;
+	if (!moneyRubEquals(selectedTotalKopecks, payload.totalPaidRub)) {
+		return `Платежная квитанция: сумма ${kopecksToNumericString(parseKopecks(payload.totalPaidRub))} руб. не совпадает с выбранными оплатами ${kopecksToNumericString(selectedTotalKopecks)} руб.`;
 	}
 
 	const actualReceiptNumbers = new Set(
@@ -755,12 +786,13 @@ function installmentScheduleMismatchReason(
 		return `График рассрочки: остаток ${payload.remainingAmountRub} руб. не совпадает с суммой минус предоплатой ${expectedRemainingRub} руб.`;
 	}
 
-	const installmentsTotalRub = payload.installments.reduce(
-		(total, installment) => total + installment.amountRub,
-		0,
+	const installmentsTotalKopecks = sumKopecks(
+		payload.installments.map((installment) =>
+			parseKopecks(installment.amountRub),
+		),
 	);
-	if (installmentsTotalRub !== payload.remainingAmountRub) {
-		return `График рассрочки: сумма платежей ${installmentsTotalRub} руб. не совпадает с остатком ${payload.remainingAmountRub} руб.`;
+	if (!moneyRubEquals(installmentsTotalKopecks, payload.remainingAmountRub)) {
+		return `График рассрочки: сумма платежей ${kopecksToNumericString(installmentsTotalKopecks)} руб. не совпадает с остатком ${kopecksToNumericString(parseKopecks(payload.remainingAmountRub))} руб.`;
 	}
 
 	return plannedFactsTotalMismatchReason(
@@ -788,8 +820,10 @@ function completedWorksActMismatchReason(
 	payload: CompletedWorksActPayload,
 	facts: DocumentCreationFacts,
 ): string | null {
-	if (payload.totalByActRub !== payload.paidRub) {
-		return `Акт выполненных работ: сумма акта ${payload.totalByActRub} руб. не совпадает с оплаченной суммой ${payload.paidRub} руб.`;
+	if (
+		!moneyRubEquals(parseKopecks(payload.totalByActRub), payload.paidRub)
+	) {
+		return `Акт выполненных работ: сумма акта ${kopecksToNumericString(parseKopecks(payload.totalByActRub))} руб. не совпадает с оплаченной суммой ${kopecksToNumericString(parseKopecks(payload.paidRub))} руб.`;
 	}
 	return (
 		paidFactsTotalMismatchReason(
