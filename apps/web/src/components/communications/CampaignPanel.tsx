@@ -79,6 +79,21 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
+/**
+ * ПОЧЕМУ У СООБЩЕНИЯ ЕСТЬ ВИД. БЫЛО СЛОМАНО: и «Рассылка создана», и отказ
+ * сервера писались в одно поле notice и выводились одинаковой серой строкой с
+ * role="status". Администратор нажимал «Запустить», получал «Сервер ответил 500»
+ * таким же спокойным текстом, как подтверждение, и уходил в уверенности, что
+ * рассылка пошла. Теперь отказ — красный блок с role="alert" и подсказкой.
+ */
+type Notice = { kind: "done" | "fail"; text: string };
+
+/** Отказ: сначала понятная человеку подсказка, потом причина от сервера. */
+function failNotice(error: unknown, hint: string): Notice {
+	const reason = error instanceof Error ? error.message : String(error);
+	return { kind: "fail", text: `${hint} Причина: ${reason}` };
+}
+
 function formatMoment(value: string | null): string {
 	if (!value) return "—";
 	const parsed = new Date(value);
@@ -91,7 +106,7 @@ export function CampaignPanel() {
 	const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
 	const [templates, setTemplates] = useState<TemplateOption[]>([]);
 	const [loadError, setLoadError] = useState<string | null>(null);
-	const [notice, setNotice] = useState<string | null>(null);
+	const [notice, setNotice] = useState<Notice | null>(null);
 	const [busy, setBusy] = useState(false);
 
 	const [title, setTitle] = useState("");
@@ -102,6 +117,9 @@ export function CampaignPanel() {
 
 	const [previewFor, setPreviewFor] = useState<string | null>(null);
 	const [preview, setPreview] = useState<CampaignPreview | null>(null);
+	// Отдельная ошибка предпросмотра: см. openPreview — без неё на месте
+	// предпросмотра навсегда оставалась полоса загрузки.
+	const [previewError, setPreviewError] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		setLoadError(null);
@@ -147,26 +165,42 @@ export function CampaignPanel() {
 				body: JSON.stringify({ title, templateId, scope, criteria: buildCriteria() })
 			});
 			const data = await readJson<{ campaign: CampaignItem }>(response);
-			setNotice("Рассылка создана. Проверьте предпросмотр перед запуском.");
+			setNotice({ kind: "done", text: "Рассылка создана. Проверьте предпросмотр перед запуском." });
 			setTitle("");
 			await load();
 			// Сразу открыть предпросмотр: запускать вслепую не нужно.
 			await openPreview(data.campaign.id);
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			// Название специально НЕ очищается: оно очищается только при удаче, иначе
+			// человек теряет набранное и заполняет форму заново.
+			setNotice(
+				failNotice(
+					error,
+					"Рассылка не создана, никому ничего не отправлено. Заполненное ниже не пропало — исправьте и нажмите ещё раз."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
 	}
 
+	/**
+	 * БЫЛО СЛОМАНО: при отказе сервера предпросмотр оставался в состоянии
+	 * загрузки НАВСЕГДА — preview так и был null, а на его месте крутилась полоса
+	 * ops-skeleton с aria-hidden. Отличить «считаем получателей» от «не удалось
+	 * посчитать» было нельзя, причина уходила в общую строку наверху панели, мимо
+	 * глаз. Администратор либо ждал впустую, либо запускал рекламную рассылку не
+	 * увидев, сколько людей её получит и сколько это стоит.
+	 */
 	async function openPreview(campaignId: string) {
 		setPreviewFor(campaignId);
 		setPreview(null);
+		setPreviewError(null);
 		try {
 			const response = await fetch(`/api/communications/campaigns/${campaignId}/preview`);
 			setPreview(await readJson<CampaignPreview>(response));
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			setPreviewError(error instanceof Error ? error.message : String(error));
 		}
 	}
 
@@ -176,16 +210,25 @@ export function CampaignPanel() {
 		try {
 			const response = await fetch(`/api/communications/campaigns/${campaignId}/${action}`, { method: "POST" });
 			const data = await readJson<{ queued?: number; alreadyQueued?: number; cancelledMessages?: number }>(response);
-			setNotice(
-				action === "launch"
-					? `Поставлено в очередь: ${data.queued ?? 0}. Уже стояли: ${data.alreadyQueued ?? 0}. ` +
+			setNotice({
+				kind: "done",
+				text:
+					action === "launch"
+						? `Поставлено в очередь: ${data.queued ?? 0}. Уже стояли: ${data.alreadyQueued ?? 0}. ` +
 							"Отправка идёт через общую очередь и подчиняется тихим часам."
-					: `Снято с очереди: ${data.cancelledMessages ?? 0}. Уже отправленное осталось в журнале.`
-			);
+						: `Снято с очереди: ${data.cancelledMessages ?? 0}. Уже отправленное осталось в журнале.`
+			});
 			await load();
 			if (previewFor === campaignId) await openPreview(campaignId);
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			setNotice(
+				failNotice(
+					error,
+					action === "launch"
+						? "Рассылка не запущена: в очередь ничего не поставлено, пациентам ничего не ушло. Проверьте предпросмотр и попробуйте ещё раз."
+						: "Рассылка не остановлена — она продолжает отправляться. Попробуйте ещё раз."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -212,9 +255,15 @@ export function CampaignPanel() {
 			</div>
 
 			{notice ? (
-				<p className="ops-notice" role="status" aria-live="polite">
-					{notice}
-				</p>
+				notice.kind === "fail" ? (
+					<p className="ops-notice ops-notice--error" role="alert">
+						{notice.text}
+					</p>
+				) : (
+					<p className="ops-notice" role="status" aria-live="polite">
+						{notice.text}
+					</p>
+				)
 			) : null}
 
 			{campaigns.length === 0 ? (
@@ -318,11 +367,35 @@ export function CampaignPanel() {
 			{previewFor ? (
 				<div className="ops-preview">
 					<h3 className="ops-section-title">Предпросмотр</h3>
-					{preview === null ? (
-						<div className="ops-skeleton" aria-hidden="true">
-							<span className="ops-skeleton__line" />
-							<span className="ops-skeleton__line" />
-						</div>
+					{previewError !== null ? (
+						/* Три состояния на месте предпросмотра: считаем — не удалось с
+						   подсказкой и повтором — посчитано. Раньше отказ выглядел как
+						   вечная загрузка. */
+						<>
+							<p className="ops-notice ops-notice--error" role="alert">
+								Не удалось посчитать получателей: {previewError}. Пока не посчитано, запускать рассылку не стоит — неизвестно,
+								сколько человек её получит и сколько это будет стоить.
+							</p>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={() => void openPreview(previewFor)}
+							>
+								Посчитать ещё раз
+							</button>
+						</>
+					) : preview === null ? (
+						<>
+							<div className="ops-skeleton" aria-hidden="true">
+								<span className="ops-skeleton__line" />
+								<span className="ops-skeleton__line" />
+							</div>
+							{/* Полоса загрузки помечена aria-hidden — без этой строки человек с
+							    чтением вслух не узнаёт, что идёт подсчёт. */}
+							<p className="ops-hint" role="status" aria-live="polite">
+								Считаем получателей…
+							</p>
+						</>
 					) : (
 						<>
 							<p className="ops-hint">
