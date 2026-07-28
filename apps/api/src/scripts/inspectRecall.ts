@@ -28,15 +28,15 @@ const query = db
 		status: patients.status,
 		lastCompletedAt: sql<
 			Date | null
-		>`(SELECT max(a.starts_at) FROM ${appointments} a WHERE a.patient_id = ${patients.id} AND a.status = 'completed')`.as(
+		>`(SELECT max(a.starts_at) FROM ${appointments} a WHERE a.patient_id = ${patients}."id" AND a.status = 'completed')`.as(
 			"last_completed_at"
 		),
 		futureAppointments: sql<number>`(
 			SELECT count(*) FROM ${appointments} a
-			WHERE a.patient_id = ${patients.id} AND a.starts_at > now()
+			WHERE a.patient_id = ${patients}."id" AND a.starts_at > now()
 			  AND a.status IN ('planned','confirmed','arrived','in_treatment')
 		)`.as("future_appointments"),
-		totalAppointments: sql<number>`(SELECT count(*) FROM ${appointments} a WHERE a.patient_id = ${patients.id})`.as(
+		totalAppointments: sql<number>`(SELECT count(*) FROM ${appointments} a WHERE a.patient_id = ${patients}."id")`.as(
 			"total_appointments"
 		)
 	})
