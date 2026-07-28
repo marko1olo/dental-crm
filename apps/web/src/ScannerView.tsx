@@ -81,7 +81,24 @@ export function ScannerView() {
 	const { auth } = useAppLogicContext();
 	const [barcode, setBarcode] = useState("");
 	const [autoclaveId, setAutoclaveId] = useState("");
-	const [status, setStatus] = useState<"passed" | "failed">("passed");
+	/*
+	 * РЕЗУЛЬТАТ ОБРАБОТКИ НЕ ПОДСТАВЛЕН ЗАРАНЕЕ.
+	 *
+	 * Здесь стояло `useState("passed")`, то есть поле «Результат» при открытии
+	 * экрана уже утверждало «Обработан». Рабочий цикл его не касается вообще:
+	 * фокус ставится на штрих-код (эффект ниже), физический сканер печатает код
+	 * и жмёт Enter, форма уходит. Значит клиника могла записать в журнал
+	 * стерилизации всю партию лотков как обработанные, ни разу не подтвердив
+	 * это своей рукой — а именно этим журналом она отчитывается перед проверкой
+	 * и по нему решают, можно ли брать инструмент.
+	 *
+	 * Пустое значение — не выбранное. Отправка без выбора не даёт: сервер ждёт
+	 * z.enum(["passed","failed"]) (apps/api/src/routes/sterilization.ts:9-14) и
+	 * на пустой строке ответил бы разбором схемы, а не человеческим текстом.
+	 * Выбранный результат сохраняется для следующего лотка — партию обрабатывают
+	 * подряд, и он всё время виден в поле над штрих-кодом.
+	 */
+	const [status, setStatus] = useState<"" | "passed" | "failed">("");
 	const [isScanning, setIsScanning] = useState(false);
 	const [logs, setLogs] = useState<SterilizationLog[]>([]);
 	const [isLoadingLogs, setIsLoadingLogs] = useState(true);
@@ -161,6 +178,13 @@ export function ScannerView() {
 		if (!autoclaveId.trim()) {
 			showToast(
 				"Укажите автоклав: без названия аппарата запись в журнал не имеет смысла",
+				"error",
+			);
+			return;
+		}
+		if (!status) {
+			showToast(
+				"Выберите результат: лоток прошёл обработку или забракован. Журнал стерилизации отвечает именно на этот вопрос, поэтому заранее он не заполнен",
 				"error",
 			);
 			return;
@@ -252,9 +276,17 @@ export function ScannerView() {
 							<span className="scanner-field-label">Результат</span>
 							<select
 								value={status}
-								onChange={(e) => setStatus(e.target.value as "passed" | "failed")}
+								onChange={(e) =>
+									setStatus(e.target.value as "" | "passed" | "failed")
+								}
 								className="scanner-select"
 							>
+								{/*
+									Пустой вариант остаётся в списке: без него браузер показал бы
+									первый вариант «Обработан», хотя выбора ещё не было, — та же
+									ложь на экране, только без значения в состоянии.
+								*/}
+								<option value="">Не выбрано</option>
 								<option value="passed">Обработан</option>
 								<option value="failed">Брак</option>
 							</select>

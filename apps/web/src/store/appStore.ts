@@ -276,7 +276,31 @@ export const useAppStore = create<AppStore>((set) => ({
   setNewChairHasMicroscope: (val) => set({ newChairHasMicroscope: val }),
   newChairHasSurgeryKit: false,
   setNewChairHasSurgeryKit: (val) => set({ newChairHasSurgeryKit: val }),
-  newRuleTitle: "Кариес требует снимок и изоляцию",
+  /*
+   * КОНСТРУКТОР КЛИНИЧЕСКИХ ПРАВИЛ НАЧИНАЕТСЯ ПУСТЫМ.
+   *
+   * Здесь стояло готовое правило: название «Кариес требует снимок и изоляцию»,
+   * текст предупреждения и четыре идентификатора услуг вида "svc-therapy-caries".
+   *
+   * Что было сломано этими четырьмя идентификаторами. Такие id есть только в
+   * демонстрационном наборе (apps/api/src/sampleData.ts:598); услуги настоящей
+   * клиники лежат в базе с UUID (schema.ts:2089-2090
+   * `uuid("id").defaultRandom()`). Сопоставление в конструкторе идёт по строгому
+   * равенству id: SettingsRulesTab.tsx:296-308 ищет
+   * `serviceCatalog.find((s) => s.id === newRuleTriggerServiceId)?.title ?? ""`.
+   * Ни одна услуга не находилась, поэтому все четыре поля выглядели ПУСТЫМИ, а в
+   * состоянии лежали несуществующие id — и уходили на сервер как есть
+   * (useAppLogic.tsx:10963-10973: `triggerServiceIds: [newRuleTriggerServiceId]`).
+   * Администратор заполнял название, жал «Создать правило», получал «сохранено»
+   * — и правило не срабатывало никогда, потому что его услуги-триггера не
+   * существует. Проверка перед отправкой требует только название,
+   * предупреждение и текст для пациента (useAppLogic.tsx:10938-10947), про
+   * услуги она не спрашивает.
+   *
+   * Пустые значения не создают правило-призрак: поля показывают свои подсказки,
+   * а выбор услуги из каталога подставляет настоящий id.
+   */
+  newRuleTitle: "",
   setNewRuleTitle: (val) => set({ newRuleTitle: val }),
   newRuleAction: "add_required_service",
   setNewRuleAction: (val) => set({ newRuleAction: val }),
@@ -288,19 +312,41 @@ export const useAppStore = create<AppStore>((set) => ({
   setNewRuleSpecialty: (val) => set({ newRuleSpecialty: val }),
   newRuleCategory: "therapy",
   setNewRuleCategory: (val) => set({ newRuleCategory: val }),
-  newRuleTriggerServiceId: "svc-therapy-caries",
+  newRuleTriggerServiceId: "",
   setNewRuleTriggerServiceId: (val) => set({ newRuleTriggerServiceId: val }),
-  newRuleRequiredServiceId: "svc-therapy-cofferdam",
+  newRuleRequiredServiceId: "",
   setNewRuleRequiredServiceId: (val) => set({ newRuleRequiredServiceId: val }),
-  newRuleCompletedServiceId: "svc-therapy-caries",
+  newRuleCompletedServiceId: "",
   setNewRuleCompletedServiceId: (val) => set({ newRuleCompletedServiceId: val }),
-  newRuleBlockedServiceId: "svc-prosthetics-crown",
+  newRuleBlockedServiceId: "",
   setNewRuleBlockedServiceId: (val) => set({ newRuleBlockedServiceId: val }),
-  newRuleWarningText: "Проверьте обязательные условия до закрытия приема.",
+  newRuleWarningText: "",
   setNewRuleWarningText: (val) => set({ newRuleWarningText: val }),
-  releaseProtectionNote: "личность получателя проверена, лишние данные третьих лиц исключены",
+  /*
+   * ЗАМЕТКА О ЗАЩИТЕ ПЕРЕДАЧИ ДОКУМЕНТОВ НЕ ЗАПОЛНЯЕТСЯ ЗА КЛИНИКУ.
+   *
+   * Здесь стояло «личность получателя проверена, лишние данные третьих лиц
+   * исключены» — то есть в расписку о выдаче медицинских документов заранее
+   * вписывалось утверждение, что личность проверили. Оно уходит в документ как
+   * есть (documentLogic.ts:1224 `deliveryProtectionNote`), и подписывает его
+   * клиника. Проверял ли кто-нибудь паспорт получателя, программа не знает.
+   * Поле обязательно (documentValidators.ts:1546-1549), поэтому пустое значение
+   * не теряется молча: оператор получит человеческое требование заполнить его.
+   */
+  releaseProtectionNote: "",
   setReleaseProtectionNote: (val) => set({ releaseProtectionNote: val }),
-  communicationNote: "Пациенту передана информация, задача закрыта.",
+  /*
+   * ЗАМЕТКА О ЗАКРЫТИИ ЗАДАЧИ СВЯЗИ ТОЖЕ НЕ ЗАПОЛНЯЕТСЯ ЗА СОТРУДНИКА.
+   *
+   * Здесь стояло «Пациенту передана информация, задача закрыта.» Стор не
+   * персистится (обычный zustand create), поэтому эта строка возвращалась в поле
+   * при КАЖДОЙ загрузке страницы — даже если администратор один раз исправил
+   * текст. Запись попадает в журнал клиники (useAppLogic.tsx:12838) как
+   * утверждение сотрудника о том, что он говорил с пациентом; программа этого
+   * не знает. При пустом поле там же подставляется нейтральное «Задача связи
+   * закрыта.» — факт закрытия задачи, а не выдуманный разговор.
+   */
+  communicationNote: "",
   setCommunicationNote: (val) => set({ communicationNote: val }),
   /*
    * ПОЛЯ ИМПОРТА НАЧИНАЮТСЯ ПУСТЫМИ.
