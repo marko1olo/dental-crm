@@ -11211,8 +11211,26 @@ export function useAppLogic(): any {
 		);
 	}
 
+	/*
+	 * Сумма, вписанная руками в поле документа.
+	 *
+	 * Раньше все такие поля разбирались как `Number(текст.replace(/[^\d]/g,""))`
+	 * — оставались одни цифры. «1500,50» превращалось в 150050: договор на
+	 * полторы тысячи становился договором на сто пятьдесят тысяч, и ошибка
+	 * ничем не выдавала себя, потому что поле выглядело принятым.
+	 *
+	 * Теперь работает тот же разбор, что и в кассе: копейки через запятую или
+	 * точку, разделители разрядов и знак рубля отбрасываются, три знака после
+	 * запятой не принимаются. Непонятный текст даёт ноль, а ноль означает
+	 * «руками не задано» — подставится расчётная сумма, как и прежде.
+	 */
+	function manualRubAmount(value: string): number {
+		const withoutCurrency = value.replace(/₽|руб\.?/gi, "");
+		return normalizeRubAmountInput(withoutCurrency) ?? 0;
+	}
+
 	function paidContractTotalRubValue(): number {
-		const manual = Number(paidContractTotalRub.replace(/[^\d]/g, ""));
+		const manual = manualRubAmount(paidContractTotalRub);
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
@@ -11244,7 +11262,7 @@ export function useAppLogic(): any {
 	}
 
 	function completedActPaidRubValue(): number {
-		const manual = Number(completedActPaidRub.replace(/[^\d]/g, ""));
+		const manual = manualRubAmount(completedActPaidRub);
 		if (manual > 0) return manual;
 		return activePaidPaymentsForVisit().reduce(
 			(total, payment) => total + payment.amountRub,
@@ -11326,7 +11344,7 @@ export function useAppLogic(): any {
 	}
 
 	function treatmentEstimateTotalRubValue(): number {
-		const manual = Number(treatmentEstimateTotalRub.replace(/[^\d]/g, ""));
+		const manual = manualRubAmount(treatmentEstimateTotalRub);
 		return manual > 0 ? manual : paymentInvoiceTotalRubValue();
 	}
 
@@ -11418,12 +11436,12 @@ export function useAppLogic(): any {
 	}
 
 	function installmentScheduleTotalRubValue(): number {
-		const manual = Number(installmentScheduleTotalRub.replace(/[^\d]/g, ""));
+		const manual = manualRubAmount(installmentScheduleTotalRub);
 		return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
 	}
 
 	function installmentSchedulePrepaidRubValue(): number {
-		const manual = Number(installmentSchedulePrepaidRub.replace(/[^\d]/g, ""));
+		const manual = manualRubAmount(installmentSchedulePrepaidRub);
 		if (manual > 0) return manual;
 		return activePaidPaymentsForVisit().reduce(
 			(total, payment) => total + payment.amountRub,

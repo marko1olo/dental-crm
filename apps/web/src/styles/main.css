@@ -11241,6 +11241,34 @@ html.dark .emk-tab-button.active,
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/*
+ * Быстрая вставка отрицательного ответа в поле анамнеза.
+ *
+ * Поле пустое, пока врач не спросил пациента. Кнопка видна только у пустого
+ * поля и вписывает готовую фразу в одно нажатие, чтобы честность не
+ * превращалась в пять одинаковых предложений, набранных руками за приём.
+ */
+.document-anamnesis-field {
+  display: grid;
+  gap: 6px;
+}
+
+.document-anamnesis-quick {
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  justify-self: start;
+  min-height: 34px;
+  padding: 6px 12px;
+}
+
+.document-anamnesis-quick:hover {
+  border-color: var(--teal);
+}
+
 .document-payload-actions {
   align-items: center;
   display: flex;

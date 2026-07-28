@@ -3,6 +3,7 @@ import { isoDateLabel } from "./AppHelpers";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
+import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { TreatmentPlanLockTokensWidget } from "./components/documents/TreatmentPlanLockTokensWidget";
 import { TreatmentPlanPrintOdontogramWidget } from "./components/documents/TreatmentPlanPrintOdontogramWidget";
 import { TreatmentPlanStagesWidget } from "./components/documents/TreatmentPlanStagesWidget";
@@ -1335,7 +1336,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <div className="document-payload-row">
                     <label>
                       Сумма договора
-                      <input inputMode="numeric" value={paidContractTotalRub} onChange={(event) => setPaidContractTotalRub(event.target.value)} placeholder={String(paidContractTotalRubValue() || "")} />
+                      <input inputMode="numeric" value={paidContractTotalRub} onChange={(event) => setPaidContractTotalRub(event.target.value)} placeholder={paidContractTotalRubValue() ? money(paidContractTotalRubValue()) : "сумма цифрами, копейки после запятой"} />
                     </label>
                     <label>
                       Ответственный врач
@@ -1468,7 +1469,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         inputMode="numeric"
                         value={completedActTotalRub}
                         onChange={(event) => setCompletedActTotalRub(event.target.value)}
-                        placeholder={String(treatmentAcceptancePlannedTotalRub() || "")}
+                        placeholder={treatmentAcceptancePlannedTotalRub() ? money(treatmentAcceptancePlannedTotalRub()) : "сумма цифрами, копейки после запятой"}
                       />
                     </label>
                     <label>
@@ -1477,7 +1478,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         inputMode="numeric"
                         value={completedActPaidRub}
                         onChange={(event) => setCompletedActPaidRub(event.target.value)}
-                        placeholder={String(completedActPaidRubValue() || "")}
+                        placeholder={completedActPaidRubValue() ? money(completedActPaidRubValue()) : "сумма цифрами, копейки после запятой"}
                       />
                     </label>
                   </div>
@@ -1596,7 +1597,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         inputMode="numeric"
                         value={treatmentEstimateTotalRub}
                         onChange={(event) => setTreatmentEstimateTotalRub(event.target.value)}
-                        placeholder={String(treatmentEstimateTotalRubValue() || "")}
+                        placeholder={treatmentEstimateTotalRubValue() ? money(treatmentEstimateTotalRubValue()) : "сумма цифрами, копейки после запятой"}
                       />
                     </label>
                     <label>
@@ -1947,11 +1948,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <div className="document-payload-row">
                     <label>
                       Общая сумма
-                      <input inputMode="numeric" value={installmentScheduleTotalRub} onChange={(event) => setInstallmentScheduleTotalRub(event.target.value)} placeholder={String(installmentScheduleTotalRubValue() || "")} />
+                      <input inputMode="numeric" value={installmentScheduleTotalRub} onChange={(event) => setInstallmentScheduleTotalRub(event.target.value)} placeholder={installmentScheduleTotalRubValue() ? money(installmentScheduleTotalRubValue()) : "сумма цифрами, копейки после запятой"} />
                     </label>
                     <label>
                       Предоплата
-                      <input inputMode="numeric" value={installmentSchedulePrepaidRub} onChange={(event) => setInstallmentSchedulePrepaidRub(event.target.value)} placeholder={String(installmentSchedulePrepaidRubValue() || "")} />
+                      <input inputMode="numeric" value={installmentSchedulePrepaidRub} onChange={(event) => setInstallmentSchedulePrepaidRub(event.target.value)} placeholder={installmentSchedulePrepaidRubValue() ? money(installmentSchedulePrepaidRubValue()) : "сумма цифрами, копейки после запятой"} />
                     </label>
                   </div>
                   <label>
@@ -2175,26 +2176,29 @@ export function DocumentsView(props: DocumentsViewProps) {
                       rows={2}
                     />
                   </label>
-                  <label>
-                    Аллергии и нежелательные реакции
-                    <textarea value={intakeAllergyStatus} onChange={(event) => setIntakeAllergyStatus(event.target.value)} rows={2} />
-                  </label>
-                  <label>
-                    Постоянные препараты
-                    <textarea
-                      value={intakeCurrentMedications}
-                      onChange={(event) => setIntakeCurrentMedications(event.target.value)}
-                      rows={2}
-                    />
-                  </label>
-                  <label>
-                    Хронические заболевания
-                    <textarea
-                      value={intakeChronicConditions}
-                      onChange={(event) => setIntakeChronicConditions(event.target.value)}
-                      rows={2}
-                    />
-                  </label>
+                  <AnamnesisField
+                    label="Аллергии и нежелательные реакции"
+                    value={intakeAllergyStatus}
+                    onChange={setIntakeAllergyStatus}
+                    placeholder="на что бывала реакция: препараты, латекс, металлы, анестетики"
+                    denialText="Аллергии и нежелательные реакции со слов пациента не отмечены."
+                  />
+                  <AnamnesisField
+                    label="Постоянные препараты"
+                    value={intakeCurrentMedications}
+                    onChange={setIntakeCurrentMedications}
+                    placeholder="что пациент принимает постоянно и в какой дозе"
+                    denialText="Постоянные препараты со слов пациента не принимает."
+                    denialLabel="Со слов пациента — не принимает"
+                  />
+                  <AnamnesisField
+                    label="Хронические заболевания"
+                    value={intakeChronicConditions}
+                    onChange={setIntakeChronicConditions}
+                    placeholder="диабет, гипертония, гепатит, эпилепсия и другое"
+                    denialText="Хронические заболевания со слов пациента отрицает."
+                    denialLabel="Со слов пациента — отрицает"
+                  />
                   <div className="document-payload-row">
                     <label>
                       Беременность/лактация
@@ -2218,18 +2222,22 @@ export function DocumentsView(props: DocumentsViewProps) {
                       />
                     </label>
                   </div>
-                  <label>
-                    Антикоагулянты и кровотечения
-                    <textarea value={intakeAnticoagulants} onChange={(event) => setIntakeAnticoagulants(event.target.value)} rows={2} />
-                  </label>
-                  <label>
-                    Инфекционные риски
-                    <textarea
-                      value={intakeInfectiousRiskNotes}
-                      onChange={(event) => setIntakeInfectiousRiskNotes(event.target.value)}
-                      rows={2}
-                    />
-                  </label>
+                  <AnamnesisField
+                    label="Антикоагулянты и кровотечения"
+                    value={intakeAnticoagulants}
+                    onChange={setIntakeAnticoagulants}
+                    placeholder="варфарин, ксарелто, аспирин; были ли долгие кровотечения"
+                    denialText="Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает."
+                    denialLabel="Со слов пациента — не принимает"
+                  />
+                  <AnamnesisField
+                    label="Инфекционные риски"
+                    value={intakeInfectiousRiskNotes}
+                    onChange={setIntakeInfectiousRiskNotes}
+                    placeholder="гепатит, ВИЧ, туберкулёз и другое, о чём сообщил пациент"
+                    denialText="Инфекционные риски со слов пациента не заявлены."
+                    denialLabel="Со слов пациента — не заявлены"
+                  />
                   <label>
                     Сердце, давление, диабет и системные риски
                     <textarea
@@ -2379,7 +2387,12 @@ export function DocumentsView(props: DocumentsViewProps) {
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Планируемое вмешательство
-                    <textarea value={informedConsentIntervention} onChange={(event) => setInformedConsentIntervention(event.target.value)} rows={2} />
+                    <textarea
+                      value={informedConsentIntervention}
+                      onChange={(event) => setInformedConsentIntervention(event.target.value)}
+                      placeholder="что именно делаем: например, лечение кариеса зуба 36 с постановкой пломбы"
+                      rows={2}
+                    />
                   </label>
                   <div className="document-payload-row">
                     <label>
@@ -2428,7 +2441,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </label>
                   <label>
                     Кому можно сообщать медицинские сведения
-                    <input value={informedConsentTrustedContact} onChange={(event) => setInformedConsentTrustedContact(event.target.value)} />
+                    <input
+                      value={informedConsentTrustedContact}
+                      onChange={(event) => setInformedConsentTrustedContact(event.target.value)}
+                      placeholder="кому пациент разрешил сообщать сведения, или «никому»"
+                    />
                   </label>
                   <label>
                     Разъясненные риски
@@ -2505,7 +2522,12 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </div>
                   <label>
                     Процедура или этап
-                    <textarea value={procedureConsentProcedureName} onChange={(event) => setProcedureConsentProcedureName(event.target.value)} rows={2} />
+                    <textarea
+                      value={procedureConsentProcedureName}
+                      onChange={(event) => setProcedureConsentProcedureName(event.target.value)}
+                      placeholder="название процедуры: например, удаление зуба 48"
+                      rows={2}
+                    />
                   </label>
                   <div className="document-payload-row">
                     <label>
@@ -2541,14 +2563,15 @@ export function DocumentsView(props: DocumentsViewProps) {
                       <input value={procedureConsentMaterials} onChange={(event) => setProcedureConsentMaterials(event.target.value)} />
                     </label>
                   </div>
-                  <label>
-                    Персональные факторы риска пациента
-                    <textarea
-                      value={procedureConsentPatientRiskFactors}
-                      onChange={(event) => setProcedureConsentPatientRiskFactors(event.target.value)}
-                      rows={3}
-                    />
-                  </label>
+                  <AnamnesisField
+                    label="Персональные факторы риска пациента"
+                    value={procedureConsentPatientRiskFactors}
+                    onChange={setProcedureConsentPatientRiskFactors}
+                    placeholder="что именно у этого пациента: аллергия, антикоагулянты, диабет, беременность"
+                    denialText="Аллергии, постоянные препараты, хронические заболевания, беременность, антикоагулянты и инфекционные риски уточнены перед процедурой, значимых факторов не выявлено."
+                    denialLabel="Опрошен, значимых факторов нет"
+                    rows={3}
+                  />
                   <label>
                     Процедурные риски
                     <textarea
@@ -2644,7 +2667,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         inputMode="numeric"
                         value={treatmentPlanEstimatedTotalRub}
                         onChange={(event) => setTreatmentPlanEstimatedTotalRub(event.target.value)}
-                        placeholder={String(treatmentAcceptancePlannedTotalRub() || "")}
+                        placeholder={treatmentAcceptancePlannedTotalRub() ? money(treatmentAcceptancePlannedTotalRub()) : "сумма цифрами, копейки после запятой"}
                       />
                     </label>
                   </div>
@@ -2774,7 +2797,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         inputMode="numeric"
                         value={treatmentAcceptanceEstimatedTotalRub}
                         onChange={(event) => setTreatmentAcceptanceEstimatedTotalRub(event.target.value)}
-                        placeholder={String(treatmentAcceptancePlannedTotalRub() || "")}
+                        placeholder={treatmentAcceptancePlannedTotalRub() ? money(treatmentAcceptancePlannedTotalRub()) : "сумма цифрами, копейки после запятой"}
                       />
                     </label>
                     <label>
@@ -3046,37 +3069,65 @@ export function DocumentsView(props: DocumentsViewProps) {
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Метод
-                    <input value={anesthesiaMethod} onChange={(event) => setAnesthesiaMethod(event.target.value)} />
+                    <input
+                      value={anesthesiaMethod}
+                      onChange={(event) => setAnesthesiaMethod(event.target.value)}
+                      placeholder="например: инфильтрационная"
+                    />
                   </label>
                   <label>
                     Препарат
-                    <input value={anesthesiaAnesthetic} onChange={(event) => setAnesthesiaAnesthetic(event.target.value)} />
+                    <input
+                      value={anesthesiaAnesthetic}
+                      onChange={(event) => setAnesthesiaAnesthetic(event.target.value)}
+                      placeholder="например: артикаин 4%"
+                    />
                   </label>
                   <label>
                     Вазоконстриктор
-                    <input value={anesthesiaVasoconstrictor} onChange={(event) => setAnesthesiaVasoconstrictor(event.target.value)} />
+                    <input
+                      value={anesthesiaVasoconstrictor}
+                      onChange={(event) => setAnesthesiaVasoconstrictor(event.target.value)}
+                      placeholder="например: 1:100000 или «без вазоконстриктора»"
+                    />
                   </label>
                   <label>
                     Зона
                     <input value={anesthesiaZone} onChange={(event) => setAnesthesiaZone(event.target.value)} placeholder={inferredTreatmentArea || "FDI / зона"} />
                   </label>
-                  <label>
-                    Аллергоанамнез
-                    <textarea value={anesthesiaAllergyStatus} onChange={(event) => setAnesthesiaAllergyStatus(event.target.value)} rows={2} />
-                  </label>
+                  <AnamnesisField
+                    label="Аллергоанамнез"
+                    value={anesthesiaAllergyStatus}
+                    onChange={setAnesthesiaAllergyStatus}
+                    placeholder="была ли реакция на анестетики и какая"
+                    denialText="Аллергия на местные анестетики со слов пациента не отмечена."
+                  />
                   <div className="document-payload-row">
                     <label>
                       Время
-                      <input value={anesthesiaDoseTime} onChange={(event) => setAnesthesiaDoseTime(event.target.value)} />
+                      <input
+                        value={anesthesiaDoseTime}
+                        onChange={(event) => setAnesthesiaDoseTime(event.target.value)}
+                        placeholder="время введения, часы:минуты"
+                      />
                     </label>
                     <label>
                       Доза, мл
-                      <input value={anesthesiaDoseMl} onChange={(event) => setAnesthesiaDoseMl(event.target.value)} />
+                      <input
+                        value={anesthesiaDoseMl}
+                        onChange={(event) => setAnesthesiaDoseMl(event.target.value)}
+                        placeholder="например: 1,7"
+                      />
                     </label>
                   </div>
                   <label>
                     Реакция
-                    <textarea value={anesthesiaReaction} onChange={(event) => setAnesthesiaReaction(event.target.value)} rows={2} />
+                    <textarea
+                      value={anesthesiaReaction}
+                      onChange={(event) => setAnesthesiaReaction(event.target.value)}
+                      placeholder="заполняется после введения"
+                      rows={2}
+                    />
                   </label>
                   <label>
                     Ограничения
@@ -4380,7 +4431,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input
                       value={refundRecipientFullName}
                       onChange={(event) => setRefundRecipientFullName(event.target.value)}
-                      placeholder={paymentPayerFullName || activePatient.fullName}
+                      placeholder={paymentPayerFullName || activePatient?.fullName || "фамилия, имя и отчество получателя"}
                     />
                   </label>
                   <label>
@@ -4388,7 +4439,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input
                       value={refundRecipientIdentityDocument}
                       onChange={(event) => setRefundRecipientIdentityDocument(event.target.value)}
-                      placeholder={paymentPayerIdentityDocument || activePatient.administrativeProfile?.identityDocument || "паспорт"}
+                      placeholder={paymentPayerIdentityDocument || activePatient?.administrativeProfile?.identityDocument || "паспорт"}
                     />
                   </label>
                   <label>

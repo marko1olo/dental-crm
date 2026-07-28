@@ -1741,20 +1741,31 @@ const createTaxSlice = (set: any) => ({
 const createIntakeAndConsentSlice = (set: any) => ({
   intakeChiefComplaint: "",
   setIntakeChiefComplaint: createSetter(set, "intakeChiefComplaint"),
-  intakeAllergyStatus:
-    "Аллергии и нежелательные реакции со слов пациента не отмечены.",
+  /*
+   * Анамнез начинается пустым.
+   *
+   * Здесь лежали готовые фразы «со слов пациента не отмечены», «не принимает»,
+   * «отрицает». Врач мог ни разу не открыть анкету, а документ уходил на
+   * подпись с отрицательным аллергоанамнезом, которого никто не собирал.
+   * Подписанная анкета — доказательство, что пациента опросили; заранее
+   * вписанное отрицание превращает её в подделку, а при настоящей аллергии —
+   * в прямую угрозу.
+   *
+   * Формулировки никуда не делись: их вставляет кнопка «Со слов пациента —
+   * нет» в components/documents/AnamnesisField.tsx. Разница в том, что теперь
+   * их вписывает врач, а не хранилище за него.
+   */
+  intakeAllergyStatus: "",
   setIntakeAllergyStatus: createSetter(set, "intakeAllergyStatus"),
-  intakeCurrentMedications:
-    "Постоянные препараты со слов пациента не принимает.",
+  intakeCurrentMedications: "",
   setIntakeCurrentMedications: createSetter(set, "intakeCurrentMedications"),
-  intakeChronicConditions: "Хронические заболевания со слов пациента отрицает.",
+  intakeChronicConditions: "",
   setIntakeChronicConditions: createSetter(set, "intakeChronicConditions"),
   intakePregnancyStatus: "unknown",
   setIntakePregnancyStatus: createSetter(set, "intakePregnancyStatus"),
-  intakeAnticoagulants:
-    "Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает.",
+  intakeAnticoagulants: "",
   setIntakeAnticoagulants: createSetter(set, "intakeAnticoagulants"),
-  intakeInfectiousRiskNotes: "Инфекционные риски со слов пациента не заявлены.",
+  intakeInfectiousRiskNotes: "",
   setIntakeInfectiousRiskNotes: createSetter(set, "intakeInfectiousRiskNotes"),
   intakeCardioEndocrineNotes:
     "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством.",
@@ -1765,8 +1776,15 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setIntakeAdditionalNotes: createSetter(set, "intakeAdditionalNotes"),
   intakeAccuracyConfirmed: false,
   setIntakeAccuracyConfirmed: createSetter(set, "intakeAccuracyConfirmed"),
-  informedConsentIntervention:
-    "Стоматологическое вмешательство по согласованному плану",
+  /*
+   * Название вмешательства пустое.
+   *
+   * Стояло «Стоматологическое вмешательство по согласованному плану» — то есть
+   * согласие получено на всё сразу. Смысл информированного согласия в том, что
+   * названо конкретное вмешательство; общая формулировка обнуляет документ,
+   * при этом выглядит заполненной. Подсказка в пустом поле осталась.
+   */
+  informedConsentIntervention: "",
   setInformedConsentIntervention: createSetter(set, "informedConsentIntervention"),
   informedConsentToothOrArea: "",
   setInformedConsentToothOrArea: createSetter(set, "informedConsentToothOrArea"),
@@ -1779,8 +1797,15 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setInformedConsentAnesthesia: createSetter(set, "informedConsentAnesthesia"),
   informedConsentMaterialNotes: "",
   setInformedConsentMaterialNotes: createSetter(set, "informedConsentMaterialNotes"),
-  informedConsentTrustedContact:
-    "не разрешаю сообщать медицинские сведения третьим лицам",
+  /*
+   * Кому можно сообщать сведения — выбор пациента, а не наш.
+   *
+   * Стояло «не разрешаю сообщать медицинские сведения третьим лицам». Пациент,
+   * который как раз хотел вписать жену или взрослого сына, подписывал запрет,
+   * о котором его не спрашивали, — а клиника потом не имела права ответить на
+   * звонок родственника.
+   */
+  informedConsentTrustedContact: "",
   setInformedConsentTrustedContact: createSetter(set, "informedConsentTrustedContact"),
   informedConsentRisks:
     "боль, отек, кровотечение или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного приема или изменения плана лечения\nограниченный прогноз при исходном состоянии зубов и тканей",
@@ -1804,7 +1829,8 @@ const createIntakeAndConsentSlice = (set: any) => ({
   procedureConsentProcedureType:
     initialUiPreferences.procedureConsentProcedureType,
   setProcedureConsentProcedureType: createSetter(set, "procedureConsentProcedureType"),
-  procedureConsentProcedureName: "Лечение зуба по согласованному плану",
+  /* Пустое по той же причине, что informedConsentIntervention выше. */
+  procedureConsentProcedureName: "",
   setProcedureConsentProcedureName: createSetter(set, "procedureConsentProcedureName"),
   procedureConsentToothOrArea: "",
   setProcedureConsentToothOrArea: createSetter(set, "procedureConsentToothOrArea"),
@@ -1814,8 +1840,14 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setProcedureConsentAnesthesia: createSetter(set, "procedureConsentAnesthesia"),
   procedureConsentMaterials: "",
   setProcedureConsentMaterials: createSetter(set, "procedureConsentMaterials"),
-  procedureConsentPatientRiskFactors:
-    "аллергии, постоянные препараты и хронические заболевания уточнены перед процедурой\nбеременность, антикоагулянты и инфекционные риски уточнены перед процедурой",
+  /*
+   * Факторы риска пациента — пусто.
+   *
+   * Стояло «аллергии, постоянные препараты и хронические заболевания уточнены
+   * перед процедурой». Это не список рисков, а утверждение, что опрос
+   * проведён. Документ подтверждал сам себя.
+   */
+  procedureConsentPatientRiskFactors: "",
   setProcedureConsentPatientRiskFactors: createSetter(set, "procedureConsentPatientRiskFactors"),
   procedureConsentSpecificRisks:
     "боль, отек, кровоточивость или временный дискомфорт\nнеобходимость повторного приема, коррекции или изменения плана\nаллергическая реакция на препараты или материалы",
@@ -1852,7 +1884,16 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setPhotoVideoClinicalRecordUseConfirmed: createSetter(set, "photoVideoClinicalRecordUseConfirmed"),
   photoVideoAnonymizationConfirmed: false,
   setPhotoVideoAnonymizationConfirmed: createSetter(set, "photoVideoAnonymizationConfirmed"),
-  photoVideoMaterials: ["intraoral_photo", "xray", "scan"],
+  /*
+   * Ни одна категория материалов не отмечена заранее.
+   *
+   * Стояли сразу три: внутриротовое фото, рентген и скан. Пациент подписывал
+   * согласие на съёмку и передачу материалов, которых ему не перечисляли, — а
+   * отметки выглядели так, будто он их проставил сам. Согласие на обработку
+   * изображений отзывается и оспаривается в первую очередь, и первым же
+   * вопросом будет, кто поставил галочки.
+   */
+  photoVideoMaterials: [],
   setPhotoVideoMaterials: createSetter(set, "photoVideoMaterials"),
   photoVideoRevocationChannel:
     "письменное заявление в клинике или защищенное обращение через портал пациента",
@@ -2355,28 +2396,40 @@ const createClinicalSlice = (set: any) => ({
   setPostVisitUrgentSignsUnderstood: createSetter(set, "postVisitUrgentSignsUnderstood"),
   postVisitTelegramSafe: false,
   setPostVisitTelegramSafe: createSetter(set, "postVisitTelegramSafe"),
-  anesthesiaMethod: "Инфильтрационная / проводниковая",
+  /*
+   * Журнал анестезии начинается пустым.
+   *
+   * Здесь стояли конкретный препарат «Артикаин 4%», вазоконстриктор
+   * «1:100000», доза «1.7» мл, метод и запись «Без особенностей» в графе
+   * реакции. Врач мог не открыть форму — и получал протокол с препаратом,
+   * который не вводил, дозой, которую не набирал, и оценкой реакции,
+   * выставленной до инъекции. При разборе осложнения такой протокол хуже, чем
+   * его отсутствие.
+   *
+   * Время тоже вычислялось один раз при загрузке страницы и больше никогда не
+   * обновлялось: вкладку открыли утром — вечерний протокол уносил утренний час
+   * как время введения. Пусть врач впишет фактическое.
+   *
+   * Все прежние формулировки остались подсказками в пустых полях
+   * (DocumentsView.tsx), аллергоанамнез — кнопкой в AnamnesisField.
+   */
+  anesthesiaMethod: "",
   setAnesthesiaMethod: createSetter(set, "anesthesiaMethod"),
-  anesthesiaAnesthetic: "Артикаин 4%",
+  anesthesiaAnesthetic: "",
   setAnesthesiaAnesthetic: createSetter(set, "anesthesiaAnesthetic"),
-  anesthesiaVasoconstrictor: "1:100000",
+  anesthesiaVasoconstrictor: "",
   setAnesthesiaVasoconstrictor: createSetter(set, "anesthesiaVasoconstrictor"),
   anesthesiaZone: "",
   setAnesthesiaZone: createSetter(set, "anesthesiaZone"),
-  anesthesiaAllergyStatus:
-    "Аллергия на местные анестетики со слов пациента не отмечена.",
+  anesthesiaAllergyStatus: "",
   setAnesthesiaAllergyStatus: createSetter(set, "anesthesiaAllergyStatus"),
   anesthesiaRestrictionNotes: "",
   setAnesthesiaRestrictionNotes: createSetter(set, "anesthesiaRestrictionNotes"),
-  anesthesiaDoseTime: (() =>
-    new Date().toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }))(),
+  anesthesiaDoseTime: "",
   setAnesthesiaDoseTime: createSetter(set, "anesthesiaDoseTime"),
-  anesthesiaDoseMl: "1.7",
+  anesthesiaDoseMl: "",
   setAnesthesiaDoseMl: createSetter(set, "anesthesiaDoseMl"),
-  anesthesiaReaction: "Без особенностей",
+  anesthesiaReaction: "",
   setAnesthesiaReaction: createSetter(set, "anesthesiaReaction"),
   anesthesiaRisksExplained: false,
   setAnesthesiaRisksExplained: createSetter(set, "anesthesiaRisksExplained"),
