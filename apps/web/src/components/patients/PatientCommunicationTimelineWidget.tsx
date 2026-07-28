@@ -34,6 +34,26 @@ import { formatShortDate, formatTime } from "../../utils/formatting";
 
 type CommunicationDirection = "inbound" | "outbound";
 
+/**
+ * Имя раздела, куда панель отправляет за продолжением работы.
+ *
+ * ЗДЕСЬ СТОЯЛО «Общение» — раздела с таким названием в программе НЕТ. Реестр
+ * разделов один: workspaceShell.tsx, viewLabels — там `communications: "Связь"`,
+ * а «Обращения» это совсем другой раздел (`leads`, заявки до записи), и у
+ * отдельного врача с одним кабинетом он вообще убран из меню
+ * (getVisibleRailViews). То есть указание «закройте задачу в разделе «Общение»»
+ * посылало администратора искать пункт меню, которого не существует ни в одном
+ * режиме клиники, — по инструкции, выданной рядом с задачей «позвонить руками».
+ *
+ * «Связь» открыта всем ролям и во всех режимах (getFilteredAppViews), поэтому
+ * ссылаться на неё можно без оговорок. Импортировать viewLabels из
+ * workspaceShell.tsx здесь нельзя: тот модуль тянет контекст рабочего места и
+ * соседние виджеты, и карточка пациента получила бы новый цикл зависимостей
+ * (в apps/web/src их и без того 107 — .agents/AGENTS.md, пункт 11). Значение
+ * продублировано осознанно, вместе с адресом источника правды.
+ */
+const COMMUNICATIONS_SECTION_TITLE = "Связь";
+
 /** Строка журнала в том виде, в каком её отдаёт сервер. */
 interface PatientCommunicationEntry {
 	id: string;
@@ -233,7 +253,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 								Машина отправить не смогла: {needsCallCount}{" "}
 								{pluralRu(needsCallCount, "обращение ждёт", "обращения ждут", "обращений ждут")} звонка
 								руками{lastNeedsCall ? `, последнее — ${lastNeedsCall}` : ""}. Позвоните пациенту и
-								закройте задачу в разделе «Общение».
+								закройте задачу в разделе «{COMMUNICATIONS_SECTION_TITLE}».
 							</span>
 						</div>
 					) : null}
@@ -283,7 +303,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{ patientId: string }>
 							{log.truncated ? (
 								<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
 									Показаны не все обращения: {entries.length} из {total}, начиная с самого свежего.
-									Полная переписка — в разделе «Общение».
+									Полная переписка — в разделе «{COMMUNICATIONS_SECTION_TITLE}».
 								</p>
 							) : null}
 							<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
