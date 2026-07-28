@@ -59,17 +59,40 @@ Compile gate: npm run typecheck -w @dental/web
     C:/Users/Admin/AppData/Local/Temp/r2-panoramic-proof -> tests 54 / pass 31 / fail 23, including
     `the return sweep survived at {"x":25.88,"y":11.0}` and
     `reported arch length 147.0583190833509 mm is not the open arch 91.13262102074131 mm`.
-  * RUNTIME probe against installed cornerstone 5.1.3 CatmullRomSpline: open polyline 127 points /
-    91.968 mm, the same control points with `closed = true` -> 148 points / 155.288 mm ending back at
-    (-28, 11). +40.8% of the polyline was the return sweep. F1 is runtime-proven, not just static.
+  * RUNTIME probe against installed cornerstone 5.1.3 CatmullRomSpline: open polyline 127 points,
+    the same control points with `closed = true` -> 148 points ending back at (-28, 11), closing gap
+    exactly 0. F1 is runtime-proven, not just static.
+    MM DIGITS WITHDRAWN BY S4 (`91.968 / 155.288`, `+40.8%`): this probe's control points were never
+    recorded, so none of them is re-derivable from the repository. On the repo's own fixtures, now
+    pinned by `apps/web/src/tests/panoramicArchVsCornerstone.test.ts`: open 90.8752 mm, closed
+    154.2189 mm, wrap-around run 21 vertices / 56.2250 mm = 36.5% of the polyline the pre-fix code
+    actually walked (TRACED_ARCH: 91.6719 / 156.5652 / 57.4126 mm = 36.7%). The withdrawn `40.8%` was
+    (closed - OPEN)/closed, a mixed baseline. Substance unchanged and still worse than the C5
+    review's ~30% estimate.
   * RUNTIME probe against installed cornerstone 5.1.3 VoxelManager: `createImageVolumeVoxelManager`
     -> `getScalarData() THREW: No scalar data available` even with all slices decoded and cached;
     `getCompleteScalarDataArray()` -> Int16Array length 48 = 4*4*3 with the right per-slice values.
     `readVolumeScalarData` against that real manager: all decoded -> ready len=48; one slice missing
     -> volume_not_ready; legacy-only accessor -> volume_not_ready and no throw escapes.
-  * Fallback cost measured: HEAD reconstruction 91.9670 mm vs cornerstone's own open polyline
-    91.9684 mm (0.002%); max distance from any output column to the drawn curve 0.3879 mm.
+  * Fallback cost: WITHDRAWN IN FULL BY PACKET S4. The claim was "HEAD reconstruction 91.9670 mm vs
+    cornerstone's own open polyline 91.9684 mm (0.002%); max distance from any output column to the
+    drawn curve 0.3879 mm". Wrong on both halves: the OPEN polyline is a baseline this same packet
+    proves can never reach `buildPanoramicArch` (a finished SplineROI is always closed,
+    `SplineROITool.js:245-269`), and `0.3879 mm` is a column->nearest-VERTEX metric whose floor is
+    half the baseline's own vertex spacing (0.3606 mm), so it could not have reported less.
+    Re-derived against the curve the dentist actually sees (the arch portion of the CLOSED polyline),
+    pinned by `apps/web/src/tests/panoramicArchVsCornerstone.test.ts`, 15 tests, EXIT=0:
+    reconstruction is 7.26% shorter (97.9939 -> 90.8755 mm, archHandles(7)) and 7.54% shorter
+    (99.1526 -> 91.6748 mm, TRACED_ARCH); max column deviation 4.0081 mm and 4.0460 mm, i.e. ~16 CBCT
+    voxels, not "under two". Against the analytic semi-ellipse the fixture models (91.1333 mm) the
+    reconstruction is 0.5802 mm off and cornerstone's closed rendering 3.6448 mm off, so the geometry
+    was left alone deliberately: it is the most accurate of the three candidate curves.
 - DONE — handoff.md written.
+- CORRECTED 2026-07-28 by packet S4 (`.agents/archon/packets/S4-panoramic-claim`) after review
+  `.agents/archon/packets/R2-panoramic-rework/review.md` returned NEEDS_REWORK on two false statements
+  this packet added to the record. No panorama code was changed; the review required the geometry to be
+  left alone. See "ПОПРАВКИ ПАКЕТА S4" in handoff.md for all five corrections, and debts 8-10 there
+  for the three items PART 6 required to be declared.
 
 ## Files
 - EDIT apps/web/src/components/dicom/panoramicArch.ts
