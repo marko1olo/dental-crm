@@ -551,6 +551,43 @@ async function shootClipped(fileName, theme, clip) {
 
 const PANELS = [
   { view: "schedule", testId: "day-confirmations-panel", slug: "callList" },
+  {
+    view: "schedule",
+    testId: "waitlist-drawer",
+    slug: "waitlist",
+    // Лист ожидания открывается кнопкой в шапке расписания. До этого экран
+    // существовал, но не был смонтирован нигде: попасть в него было нельзя,
+    // поэтому очередь всегда оставалась пустой. Снимок обязан доказывать
+    // ровно это — что кнопка есть и что она открывает настоящий ящик, а не
+    // что файл лежит в репозитории.
+    prepare: `(async () => {
+      const button = [...document.querySelectorAll("button")].find(
+        (node) => node.textContent?.trim() === "Лист ожидания",
+      );
+      if (button) button.click();
+      await new Promise((done) => setTimeout(done, 1500));
+      const drawer = document.querySelector('[data-testid="waitlist-drawer"]');
+      // Маршрут проверяется отдельно от вёрстки: пустой ящик при 200 — это
+      // верное поведение (очередь пуста), а пустой ящик при 401/404 — дефект,
+      // и по картинке эти два случая не отличить.
+      let api = "не проверялся";
+      try {
+        const response = await fetch("/api/waitlist");
+        const body = response.ok ? await response.json() : null;
+        const rows = Array.isArray(body?.items) ? body.items.length
+          : Array.isArray(body?.waitlist) ? body.waitlist.length
+          : Array.isArray(body) ? body.length : "форма ответа неизвестна";
+        api = response.status + " записей: " + rows;
+      } catch (error) {
+        api = "запрос упал: " + error.message;
+      }
+      return (
+        "кнопка найдена: " + Boolean(button) +
+        ", ящик открыт: " + Boolean(drawer) +
+        ", маршрут: " + api
+      );
+    })()`,
+  },
   { view: "communications", testId: "message-delivery-console", slug: "delivery" },
   { view: "communications", testId: "campaign-panel", slug: "campaigns" },
   { view: "analytics", testId: "manager-reports-panel", slug: "reports" },

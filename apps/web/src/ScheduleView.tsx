@@ -1,7 +1,15 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
+import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import { EmptyState } from "./components/EmptyState";
-import { appointmentScheduleMissingFields } from "./AppHelpers";
+/*
+ * auth — обычный экспорт модуля, читающий токен из localStorage, а не значение
+ * из контекста. Он нужен здесь потому, что этот экран отрисован ВЫШЕ
+ * AppLogicProvider (см. комментарий у useScheduleRealtime): useAppLogicContext()
+ * тут пуст, и ящик листа ожидания без переданного auth уходил бы на сервер без
+ * заголовков — то есть получал 401 и выглядел бы вечно пустым.
+ */
+import { appointmentScheduleMissingFields, auth } from "./AppHelpers";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
@@ -172,6 +180,37 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   } = useSettingsStore();
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  /** Открыт ли лист ожидания. Экран есть, а войти в него было неоткуда. */
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  /**
+   * Сколько человек стоит в очереди. Число живёт на кнопке, потому что очередь
+   * — это то, о чём забывают: администратор открывает лист ожидания, только
+   * если видит, что там кто-то есть. Перечитывается при закрытии ящика: именно
+   * там очередь и меняют.
+   */
+  const [waitlistCount, setWaitlistCount] = useState(0);
+  /*
+   * Отказ сервера здесь молчит намеренно: единственное последствие — кнопка без
+   * числа, а ругаться на весь экран из-за счётчика значит мешать работе.
+   * Настоящее сообщение об отказе показывает сам ящик, когда его открывают.
+   */
+  useEffect(() => {
+    if (waitlistOpen) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/waitlist", { headers: auth.denteClinicalReadHeaders() });
+        if (!response.ok) return;
+        const rows = await response.json();
+        if (!cancelled) setWaitlistCount(Array.isArray(rows) ? rows.length : 0);
+      } catch {
+        /* Сеть отвалилась: кнопка остаётся без числа, но открывается. */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [waitlistOpen]);
   const [useManualSelects, setUseManualSelects] = useState(false);
 
 
@@ -398,6 +437,29 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                   onClick={() => setScheduleDateFilter(todayScheduleDate())}
                 >
                   Сегодня
+                </button>
+                {/*
+                  Лист ожидания. Экран управления очередью (WaitlistDrawer) был
+                  написан и работает с настоящими маршрутами /api/waitlist, но
+                  НИГДЕ не был смонтирован: попасть в него из интерфейса было
+                  нельзя. Поэтому очередь всегда оставалась пустой, а подбор
+                  кандидатов на освободившееся окно — бесполезным: предлагать
+                  было некого.
+                  Кнопка стоит в шапке раздела, а не в пустом состоянии
+                  расписания: сначала она стояла именно там, и снимок показал,
+                  что увидеть её можно только в день без единой записи — то
+                  есть ровно тогда, когда очередь не нужна.
+                  Число рядом — не украшение. Про очередь вспоминают, только
+                  если видно, что в ней кто-то стоит; кнопка без числа
+                  осталась бы такой же ненайденной, как ненайденный экран.
+                */}
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => setWaitlistOpen(true)}
+                  title="Пациенты, которые ждут свободного окна"
+                >
+                  Лист ожидания{waitlistCount > 0 ? ` · ${waitlistCount}` : ""}
                 </button>
               </div>
             </div>
@@ -723,6 +785,28 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 ненужной, но файл правит другой автор, поэтому не тронут.
               */}
             </div>
+
+      {/*
+        Ящик листа ожидания. Он существовал и умел всё нужное — добавить, снять,
+        перевести в запись, — но не был смонтирован ни в одном экране, поэтому
+        очередь нельзя было заполнить, а подбор кандидатов на освободившееся окно
+        всегда оказывался пустым.
+        Функции черновика новой записи передаются как есть: из листа ожидания
+        человека переводят в запись, и делается это тем же редактором, что и
+        обычная запись, — иначе появился бы второй путь создания приёма.
+        auth передаётся явно и это не формальность: ящик умеет брать его из
+        AppLogicContext, но этот экран отрисован ВЫШЕ AppLogicProvider, контекст
+        здесь пуст — и без пропса запрос ушёл бы без заголовков, получил 401, а
+        ящик молча показал бы пустую очередь.
+      */}
+      <WaitlistDrawer
+        isOpen={waitlistOpen}
+        onClose={() => setWaitlistOpen(false)}
+        updateNewAppointmentDraft={updateNewAppointmentDraft}
+        focusNewAppointmentEditor={focusNewAppointmentEditor}
+        dashboard={dashboard}
+        auth={auth}
+      />
     </div>
   );
 }
