@@ -132,6 +132,36 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 
 	if (!patientId) return null;
 
+	/*
+	 * К какой семье пациент привязан ПО МНЕНИЮ СЕРВЕРА. Нужна, потому что ответ
+	 * 200 на привязку здесь ничего не подтверждает.
+	 *
+	 * Привязка идёт запросом PUT /api/patients/:id с полем familyGroupId, а в
+	 * updatePatientSchema (packages/shared/src/index.ts) этого поля нет — там
+	 * только fullName, birthDate, phone, email, notes. Zod вырезает незнакомые
+	 * ключи, маршрут отвечает 200 «принял», и пациент остаётся ни в какой семье.
+	 * Ни один маршрут в apps/api/src/routes вообще не записывает
+	 * patients.familyGroupId, а именно по этому полю GET
+	 * /api/finance/family/patient/:patientId решает, состоит пациент в семье или
+	 * нет. Поэтому единственная честная проверка — перечитать семью пациента и
+	 * сравнить с той, куда его только что «привязали». 404 означает «ни в какой».
+	 */
+	const familyIdOfPatient = async (
+		checkedPatientId: string,
+	): Promise<string | null> => {
+		try {
+			const res = await fetch(
+				`/api/finance/family/patient/${checkedPatientId}`,
+				{ headers: denteAdminSecretRequestHeaders() },
+			);
+			if (!res.ok) return null;
+			const data = await res.json().catch(() => null);
+			return data && typeof data.id === "string" ? data.id : null;
+		} catch {
+			return null;
+		}
+	};
+
 	const handleCreateFamily = async () => {
 		if (!newFamilyName.trim()) {
 			showToast("Введите название семьи", "error");
@@ -166,6 +196,25 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			});
 			if (!linkRes.ok) throw new Error("Семья создана, но пациент не привязан");
 
+			/*
+			 * БЫЛО: здесь сразу шло зелёное «Семья успешно создана». Ответ 200 на
+			 * привязку это не подтверждает (см. familyIdOfPatient выше), и на самом
+			 * деле пациент в семью не попадал: карточка после перечитывания снова
+			 * писала «Пациент не состоит в семейной группе». Администратор нажимал
+			 * «Создать» второй и третий раз — и каждый раз в базе появлялась ещё одна
+			 * пустая семья, ни к кому не привязанная.
+			 */
+			const attachedFamilyId = await familyIdOfPatient(patientId);
+			if (!attachedFamilyId || attachedFamilyId !== family.id) {
+				showToast(
+					"Семья создана, но пациент к ней не привязан: привязка не сохранилась. Не нажимайте «Создать» повторно — появится ещё одна пустая семья. Сообщите администратору, сама собой привязка не появится.",
+					"error",
+				);
+				setIsCreating(false);
+				onFamilyDataChanged();
+				return;
+			}
+
 			showToast("Семья успешно создана", "success");
 			setNewFamilyName("");
 			setIsCreating(false);
@@ -191,6 +240,24 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!linkRes.ok) throw new Error("Ошибка при привязке пациента к семье");
+
+			/*
+			 * БЫЛО: «Успешно привязан к семье» по одному коду 200. Привязка не
+			 * сохраняется вовсе (см. familyIdOfPatient выше), то есть это сообщение
+			 * было неправдой всегда: администратор считал, что теперь платит общий
+			 * семейный счёт, а пациент оставался сам по себе.
+			 */
+			const attachedFamilyId = await familyIdOfPatient(patientId);
+			if (attachedFamilyId !== familyId) {
+				showToast(
+					"Пациент к семье не привязан: привязка не сохранилась. Оплату по семейному счёту за него провести не получится — сообщите администратору.",
+					"error",
+				);
+				setIsLinking(false);
+				setSearchQuery("");
+				onFamilyDataChanged();
+				return;
+			}
 
 			showToast("Успешно привязан к семье", "success");
 			setIsLinking(false);
