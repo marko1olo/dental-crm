@@ -6720,8 +6720,16 @@ export async function commitImagingImport(orgId: string, input: { sourceName: st
       sourceKind: row.sourceKind,
       sourceName: row.sourceName,
       storagePath: row.filePath,
-      capturedAt: row.capturedAt ?? undefined,
-      aiSummary: `Импортировано из ${row.sourceName}. Требует проверки снимка и привязки к ЭМК.`
+      capturedAt: row.capturedAt ?? undefined
+      /*
+       * Здесь в aiSummary записывалось «Импортировано из …. Требует проверки
+       * снимка и привязки к ЭМК». Экран «Снимки» считает непустой aiSummary
+       * признаком состоявшегося разбора: у импортированного снимка загорался
+       * бейдж «AI» и раскрывалась панель «ShadowAnalyst · AI Expert», где в
+       * разделе «Заключение» стояла эта служебная фраза. Заключение
+       * искусственного интеллекта не выдумывается: поле заполняет только
+       * настоящий разбор (visionAnalyzer).
+       */
     });
     return study.id;
   }));
