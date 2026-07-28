@@ -1,41 +1,67 @@
 import React, { useEffect, useState } from "react";
 import { countLabel } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	fetchWidgetList,
+	numberOrNull,
+	textOr,
+	type WidgetListState,
+} from "./analyticsWidgetData";
 
+/**
+ * Элемент после нормализации. `daysSinceLastVisit` объявлен `number | null`:
+ * БЫЛО `countLabel(item.daysSinceLastVisit, …)`, и на отсутствующем поле в
+ * интерфейс попадала строка «undefined дней» — `undefined % 100` даёт NaN, и ни
+ * одна ветка склонения этого не ловит.
+ */
 interface LostPatientItem {
-	id: string;
-	organizationId: string;
-	patientName: string;
-	phone: string;
-	daysSinceLastVisit: number;
-	hasFutureAppointment: boolean;
-	hasActiveCrmTask: boolean;
-	createdAt: string;
+	readonly key: string;
+	readonly patientName: string;
+	readonly phone: string;
+	readonly daysSinceLastVisit: number | null;
+}
+
+function toLostPatientItem(row: Record<string, unknown>): LostPatientItem {
+	return {
+		key: textOr(row.id, ""),
+		patientName: textOr(row.patientName, "Имя пациента не указано"),
+		phone: textOr(row.phone, "телефон не указан"),
+		daysSinceLastVisit: numberOrNull(row.daysSinceLastVisit),
+	};
 }
 
 export const LostPatientsFiltersWidget: React.FC = () => {
 	const appLogic = (useAppLogicContext() || {}) as any;
 	const authContext = appLogic?.auth;
-	const [patients, setPatients] = useState<LostPatientItem[]>([]);
-	const [loading, setLoading] = useState<boolean>(true);
+	const [state, setState] = useState<WidgetListState<LostPatientItem>>({ status: "loading" });
 
 	useEffect(() => {
+		let mounted = true;
+		const controller = new AbortController();
 		const headers = authContext
 			? authContext.denteClinicalReadHeaders()
 			// Без контекста авторизации заголовок организации не подставляем:
 			// глобальная обёртка fetch (lib/apiAuthFetch.ts) добавит токен кабинета,
 			// а без него сервер обязан ответить 401, а не выдать чужую клинику.
 			: {};
-		fetch("/api/analytics/lost-patients-filters", { headers })
-			.then((res) => res.json())
-			.then((data) => {
-				setPatients(Array.isArray(data) ? data : []);
-				setLoading(false);
-			})
-			.catch((err) => {
-				console.error("[LostPatientsFiltersWidget fetch error]:", err);
-				setLoading(false);
-			});
+		setState({ status: "loading" });
+		void fetchWidgetList(
+			"/api/analytics/lost-patients-filters",
+			headers,
+			toLostPatientItem,
+			controller.signal,
+		).then((result) => {
+			if (!mounted || controller.signal.aborted) return;
+			setState(
+				result.ok
+					? { status: "ready", items: result.items }
+					: { status: "error", message: result.message },
+			);
+		});
+		return () => {
+			mounted = false;
+			controller.abort();
+		};
 	}, [authContext]);
 
 	return (
@@ -55,25 +81,48 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 				</span>
 			</div>
 
-			{loading ? (
+			{/* Состояние 1 — загрузка. */}
+			{state.status === "loading" && (
 				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
 					Загрузка списка потерянных пациентов...
 				</div>
-			) : patients.length === 0 ? (
+			)}
+
+			{/*
+				Состояние 2 — запрос не удался. БЫЛО: `res.json()` без проверки
+				`res.ok`, поэтому 401 и 500 показывались как «Потерянных пациентов не
+				обнаружено» — самый вредный вид вранья на этом экране: список
+				обзвона выглядел пустым, потому что запрос провалился.
+			*/}
+			{state.status === "error" && (
+				<div role="status" className="text-sm py-3 text-center text-amber-700 dark:text-amber-300">
+					{state.message}
+				</div>
+			)}
+
+			{/* Состояние 3 — запрос удался, данных нет. */}
+			{state.status === "ready" && state.items.length === 0 && (
 				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
 					Потерянных пациентов не обнаружено.
 				</div>
-			) : (
+			)}
+
+			{state.status === "ready" && state.items.length > 0 && (
 				<div className="space-y-3">
-					{patients.map((item) => (
+					{state.items.map((item, idx) => (
 						<div
-							key={item.id}
+							key={item.key || `lost-patient-${idx}`}
 							className="p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
 						>
 							<div>
 								<div className="text-sm font-bold text-slate-900 dark:text-white">{item.patientName}</div>
 								<div className="text-xs mt-1 text-slate-600 dark:text-slate-300">
-									Телефон: <span className="font-mono font-bold text-slate-900 dark:text-white">{item.phone}</span> · Нет визитов: <span className="text-amber-600 dark:text-amber-400 font-bold">{countLabel(item.daysSinceLastVisit, "день", "дня", "дней")}</span>
+									Телефон: <span className="font-mono font-bold text-slate-900 dark:text-white">{item.phone}</span> · Нет визитов:{" "}
+									<span className="text-amber-600 dark:text-amber-400 font-bold">
+										{item.daysSinceLastVisit === null
+											? "срок не определён"
+											: countLabel(Math.round(item.daysSinceLastVisit), "день", "дня", "дней")}
+									</span>
 								</div>
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
