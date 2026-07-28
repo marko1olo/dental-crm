@@ -279,8 +279,29 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * тоже НЕ тронута: её классы (onboarding-fullscreen, onboarding-shell,
 	 * wizard-mode-grid) принадлежат живому мастеру, а не удалённой ветке.
 	 */
-	"components/AudioWaveform.tsx:AudioWaveform",
-	"components/Badge.tsx:Badge",
+	/*
+	 * AudioWaveform и Badge УДАЛЕНЫ. Оба — вынесенные копии без владельца, у обоих
+	 * оригинал остался на месте.
+	 *
+	 * AudioWaveform дублировал живой индикатор уровня микрофона:
+	 * components/VoiceAssistantUI.tsx:196 рисует полосы через
+	 * voiceMeterHeights(volume, VOICE_METER_BARS) поверх собственного AnalyserNode, и
+	 * расчёт высот закреплён прогоном
+	 * components/workspaceActions/workspaceActionsPlacement.test.ts. Сирота при этом
+	 * НЕ ЗАРАБОТАЛА БЫ, будь она смонтирована: цвет полос по умолчанию задан как
+	 * color = "var(--red-500)" и попадает прямо в ctx.fillStyle холста, а холст
+	 * переменные CSS не разрешает — присваивание неразбираемого значения молча
+	 * игнорируется, и остаётся начальный чёрный. На тёмной панели записи это полосы,
+	 * которых не видно. Имя --red-500 к тому же не объявлено ни в одной таблице тем
+	 * (единственное объявление — локальное, в components/LeadsKanbanView.css); о нём
+	 * уже написано в VisitView.tsx:604, где такой же инлайновый цвет убрали.
+	 *
+	 * Badge — презентационный примитив без клинической функции. Его классы
+	 * .dnt-badge* не рендерит ни один живой .tsx: в дереве они встречаются только в
+	 * самом Badge.tsx и в описании стилей styles/dente-redesign.css:181-199. Живые
+	 * плашки на экранах написаны своими классами и Tailwind-наборами, то есть замена
+	 * не «тоже есть», а «уже везде».
+	 */
 	/*
 	 * HelpHUD и TourEngine УДАЛЕНЫ вместе со своими таблицами стилей, поэтому двух
 	 * строк здесь больше нет. Разбор стоит один раз, здесь, за оба файла: они
@@ -379,8 +400,30 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * организации в клиенте.
 	 */
 	"components/crm/CustomCrmTaskTypesWidget.tsx:CustomCrmTaskTypesWidget",
-	"components/dicom/DicomToolbar.tsx:DicomToolbar",
-	"components/dicom/ViewportOverlays.tsx:ViewportOverlays",
+	/*
+	 * DicomToolbar и ViewportOverlays УДАЛЕНЫ. Тулбар просмотрщика КТ и подписи
+	 * поверх срезов — вынесенные копии, а оригиналы остались inline в живом
+	 * components/dicom/Cornerstone3DViewer.tsx (смонтирован из ImagingView).
+	 *
+	 * DicomToolbar — 606 строк, которые выглядели рабочим инструментом врача и не
+	 * участвовали в отрисовке ни секунды: правка в них не доходила до человека.
+	 * Живой просмотрщик держит У СЕБЯ ровно те состояния, которые сирота просила
+	 * пропсами — panorexThickness (:55), blendMode (:56), activeTool (:57), — и
+	 * рисует свой тулбар: Crosshairs, SplineROI, Probe (HU), Implant, ползунок
+	 * «Толщина (ОПТГ)» и переключатель mip/average.
+	 *
+	 * ViewportOverlays было ОПАСНО монтировать как есть, и это решающее: :31-32
+	 * задавали значения по умолчанию patientName = "Иванов И. И." и
+	 * patientDate = "05.07.2026". Подпись поверх рентгенограммы — то, по чему врач
+	 * сверяет, ЧЕЙ это снимок; правдоподобное чужое ФИО хуже пустого поля, потому
+	 * что пустое видно. Сверх этого весь текст подписей латиницей в русском
+	 * интерфейсе: AXIAL, WL, WW, Zoom, FOV, «3D Volume Rendering», «Preset:
+	 * CT-Bone».
+	 *
+	 * Расширять полосу подписей над срезами (WL/WW, толщина, зум, поле обзора) —
+	 * это правка живого Cornerstone3DViewer с настоящим пациентом, а не подъём этой
+	 * сироты с выдуманным.
+	 */
 	"components/documents/DocumentUkepSignButton.tsx:DocumentUkepSignButton",
 	"components/integrations/DadataGeocodedAddressesWidget.tsx:DadataGeocodedAddressesWidget",
 	"components/integrations/LandingFieldMappingsWidget.tsx:LandingFieldMappingsWidget",
@@ -478,7 +521,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 11;
+const LEGACY_BACKLOG_CEILING = 7;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {
