@@ -91,6 +91,17 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
   );
   const newAppointmentReadyToCreate = newAppointmentMissingSteps.length === 0;
 
+  /**
+   * Что сказать человеку, если запись не создалась. Сервер не всегда присылает
+   * текст, а состояние «error» без объяснения — это та же пустота, из-за которой
+   * кнопку жмут повторно.
+   */
+  const createFailureText =
+    newAppointmentError ||
+    (newAppointmentSaveState === "error"
+      ? "Запись не создана: сервер отказал и причины не назвал. Проверьте, что программа клиники запущена и есть сеть, затем повторите."
+      : null);
+
   return (
     <div className="appointment-create-wrapper" aria-label="Создание записи">
       {/*
@@ -336,6 +347,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                  строку, поэтому первые два пункта словами, остальное числом, а
                  полный список остаётся в подсказке. */
               <span
+                id="new-appointment-create-missing-short"
                 className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs"
                 title={`Осталось: ${newAppointmentMissingSteps.join("; ")}`}
               >
@@ -346,18 +358,48 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 })()}
               </span>
             )}
+            {/* aria-describedby у кнопки ниже ведёт на видимую строку «Осталось: …»
+                рядом с ней. Раньше он указывал на подробный список внизу формы
+                ручного ввода — а тот существует в разметке только когда форма
+                раскрыта, то есть ссылка висела в пустоту как раз при свёрнутой
+                форме, когда объяснение нужнее всего. */}
             <button
               type="button"
               onClick={() => void createAppointmentFromDraft()}
               disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
               aria-busy={newAppointmentSaveState === "saving" || undefined}
-              aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
+              aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing-short" : undefined}
               className="primary-button px-3.5 py-1.5 min-h-[32px] bg-sky-600 hover:bg-sky-700 text-white rounded-md flex items-center text-xs font-semibold disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
             >
               <Plus size={15} aria-hidden="true" className="mr-1" /> Создать запись
             </button>
           </div>
         </div>
+        {/*
+          ОТКАЗ ПРИ СОЗДАНИИ ЗАПИСИ БЫЛ НЕ ВИДЕН ВООБЩЕ.
+
+          ЧТО БЫЛО СЛОМАНО. Текст ошибки (newAppointmentError) рисовался ровно в
+          одном месте — в строке действий формы ручного ввода, внутри
+          `{showCreateForm && (...)}`. А форма ручного ввода по умолчанию свёрнута,
+          и кнопка «Создать запись» живёт СНАРУЖИ неё, в этом блоке. Значит при
+          свёрнутой форме отказ сервера не отрисовывался нигде.
+
+          ЧТО ВИДЕЛ АДМИНИСТРАТОР. Заполнил запись словами, у кнопки загорелось
+          «✓ Готово к созданию», нажал «Создать запись» — и НИЧЕГО. Ни записи в
+          расписании, ни объяснения. Нажимал ещё раз, потом ещё; при отказе по
+          накладке или по правам так можно жать до конца смены. Пациенту в трубку
+          говорят «записал вас на три», а записи нет.
+
+          ЧТО СТАЛО. Сообщение об отказе стоит рядом с кнопкой, которая его
+          вызвала, и видно при любом состоянии формы. Если сервер отказал, но
+          текста не дал, — говорим это словами, а не пустотой. Из строки действий
+          свёрнутой формы дубликат убран: у сообщения один владелец.
+        */}
+        {createFailureText ? (
+          <p className="save-error" role="alert">
+            {createFailureText}
+          </p>
+        ) : null}
       </div>
 
       {showCreateForm && (
@@ -567,7 +609,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             </div>
           ) : null}
           <div className="appointment-editor-actions">
-            {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
+            {/* Сообщение об отказе показывается у самой кнопки «Создать запись»,
+                выше и вне этой формы: она свёрнута по умолчанию, и здесь отказ
+                был не виден. Второй копии тексту не нужно. */}
             <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
               Сбросить
             </button>
