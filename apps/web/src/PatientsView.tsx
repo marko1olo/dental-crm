@@ -2,7 +2,7 @@ import { PatientAvatar } from './components/PatientAvatar';
 import { EmptyState } from './components/EmptyState';
 import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { formatPhoneNumber } from './utils/inputSanitation';
 import type { CSSProperties, ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -14,6 +14,7 @@ import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
+import { featureDistinguishes, patientListFeatureSalience } from "./components/patients/patientListFeatureSalience";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
@@ -159,6 +160,23 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
       setSelectedPatientId(filteredPatients[0].id);
     }
   }, [selectedPatientId, filteredPatients, setSelectedPatientId]);
+
+  /*
+   * Преобладающее по клинике считается по ВСЕЙ клинике, а не по отфильтрованному
+   * списку: от того, что регистратор набрал в поиске, «обычное для клиники»
+   * меняться не должно. patientInsightById собран из dashboard.patientInsights —
+   * это все пациенты клиники, поэтому дополнительных данных не требуется.
+   * Само правило и тексты — в components/patients/patientListFeatureSalience.ts,
+   * рядом с прогоном.
+   */
+  const featureSalience = useMemo(
+    () =>
+      patientListFeatureSalience({
+        insights: Array.from(patientInsightById.values()),
+        riskLabels: patientInsightRiskLabels,
+      }),
+    [patientInsightById, patientInsightRiskLabels],
+  );
 
   const patientNameReady = newPatientName.trim().length > 0;
   const patientCreatePhoneIssue = newPatientPhone.trim().length > 0 && newPatientPhone.replace(/\D/g, "").length < 5;
@@ -383,15 +401,40 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
         </p>
       ) : null}
 
+      {/*
+        ОБЩЕЕ ДЛЯ КЛИНИКИ — ОДНОЙ СТРОКОЙ НАД СПИСКОМ, А НЕ СЕМНАДЦАТЬ РАЗ В
+        СТРОКАХ. Иначе состояние клиники читается как примета каждого пациента, и
+        различающие признаки — остаток по деньгам, снимок на проверку — тонут
+        среди повторов. Текст называет число: «у 14 из 17», а не «у большинства».
+      */}
+      {featureSalience.notices.map((notice) => (
+        <p className="patients-clinic-wide-notice" key={notice} role="status" aria-live="polite">
+          {notice}
+        </p>
+      ))}
+
       <div className="patients-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 320px) 1fr', gap: '16px', marginTop: '16px' }}>
         {/* Left Column: Patient List */}
         <div className="patient-list">
           {filteredPatients.map((patient) => {
             const insight = patientInsightById.get(patient.id);
             const patientIsSelected = selectedPatient?.id === patient.id;
+            /*
+              Метка риска, цветная полоса слева и надпись о действии рисуются
+              ТОЛЬКО когда отличаются от преобладающего по клинике. Полоса шла
+              от класса risk-* и стояла у всех 17 строк без исключения: жёлтая у
+              14, красная у 3, ни одной строки без цвета. Теперь цвет означает
+              «этот пациент не как остальные», а не «в клинике нет документов».
+            */
+            const riskDistinguishes = insight
+              ? featureDistinguishes(insight.riskLevel, featureSalience.prevailingRiskLevel)
+              : false;
+            const nextActionDistinguishes = insight
+              ? featureDistinguishes(insight.nextBestAction, featureSalience.prevailingNextAction)
+              : false;
             return (
-              <article 
-                className={`patient-row focus:ring-2 focus:ring-teal-600 focus:outline-none ${insight ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`} 
+              <article
+                className={`patient-row focus:ring-2 focus:ring-teal-600 focus:outline-none ${insight && riskDistinguishes ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
                 key={patient.id}
                 role="button"
                 tabIndex={0}
@@ -407,11 +450,24 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 <div>
                   <h3>{patient.fullName}</h3>
                   <p>{patient.phone ?? "Телефон не указан"}</p>
-                  {insight ? (
+                  {insight && (riskDistinguishes || nextActionDistinguishes || insight.balanceDueRub) ? (
+                    /*
+                      Классы у плашек явные, а не «первый ребёнок / не первый».
+                      Позиционные селекторы в main.css при скрытии метки риска
+                      отдавали её оформление плашке остатка по деньгам — то есть
+                      сумма долга начинала выглядеть меткой риска. Класс от
+                      порядка отрисовки не зависит.
+                    */
                     <div className="patient-row-meta">
-                      <span>{patientInsightRiskLabels[insight.riskLevel]}</span>
-                      <strong className="patient-next-action">{insight.nextBestAction}</strong>
-                      {insight.balanceDueRub ? <span>{money(insight.balanceDueRub)}</span> : null}
+                      {riskDistinguishes ? (
+                        <span className="patient-risk-label">{patientInsightRiskLabels[insight.riskLevel]}</span>
+                      ) : null}
+                      {nextActionDistinguishes ? (
+                        <strong className="patient-next-action">{insight.nextBestAction}</strong>
+                      ) : null}
+                      {insight.balanceDueRub ? (
+                        <span className="patient-row-chip">{money(insight.balanceDueRub)}</span>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>

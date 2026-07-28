@@ -2150,14 +2150,19 @@ body.dark-mode .onboarding-draft-strip span {
   padding: 5px 8px;
 }
 
+/* БЫЛО `.patient-row-meta span:first-child` — оформление метки риска доставалось
+   тому, кто оказался первым в строке. Метка теперь рисуется только когда
+   отличает пациента от остальных (apps/web/src/PatientsView.tsx), и на строках
+   без неё первой становилась плашка остатка по деньгам: сумма долга выглядела
+   меткой риска. Класс от порядка отрисовки не зависит. */
 .risk-watch .patient-insight-head span,
-.patient-row.risk-watch .patient-row-meta span:first-child {
+.patient-row.risk-watch .patient-row-meta .patient-risk-label {
   background: #f4ead8;
   color: #744d18;
 }
 
 .risk-high .patient-insight-head span,
-.patient-row.risk-high .patient-row-meta span:first-child {
+.patient-row.risk-high .patient-row-meta .patient-risk-label {
   background: #f5e0dc;
   color: #7d2c25;
 }
@@ -9627,25 +9632,59 @@ body.dark-mode .onboarding-draft-strip span {
   margin-top: 8px;
 }
 
+/* ЭТО НЕ КНОПКА, И ТЕПЕРЬ ОНА НЕ ВЫГЛЯДИТ КНОПКОЙ.
+
+   БЫЛО: `border-radius: 999px`, рамка, `font-weight: 900`, `display: inline-flex`
+   и подложка — то есть полный вид кнопки на элементе <strong>, у которого нет ни
+   onClick, ни role, ни tabIndex. Курсор над ним ещё и превращался в палец от
+   `.patient-row { cursor: pointer }`. Нажатие всплывало в выбор пациента:
+   регистратор жал «Закрыть недостающие документы», видел, что документы не
+   закрылись, и жал ещё раз. Настоящая кнопка в строке одна — круглая со
+   стрелкой, и она делает ровно то же, что клик по строке.
+
+   Кнопкой этот элемент сделать нечем: массового оформления недостающих
+   документов в продукте нет, а рисовать кнопку под несуществующее действие —
+   это тот же дефект с другой стороны. Поэтому снято оформление: подпись
+   осталась подписью. Подложку и рамку убираем целиком, вес — до обычного
+   акцента; цвет остаётся токеном темы. */
 .patient-next-action {
-  /* Было #f7fbf9 при color: var(--ink) — в тёмной теме контраст 1.00,
-     подсказка «Закрыть недостающие документы» не читалась вовсе. */
-  background: var(--srf-chip-soft);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  background: none;
+  border: none;
   color: var(--ink);
-  display: inline-flex;
+  display: inline;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.2;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: 0;
 }
 
-.patient-row-meta span:not(:first-child) {
-  background: #f7fbf9;
+/* Плашка остатка по деньгам. БЫЛО `span:not(:first-child)` — позиционный
+   селектор, который при скрытой метке риска не срабатывал вовсе и оставлял сумму
+   долга в оформлении метки риска. Заодно фон переведён с литерала #f7fbf9 на
+   токен: литерал давал контраст 3.09:1 в тёмной теме и 3.25:1 в ночной при норме
+   4.5:1 для мелкого полужирного, то есть единственная цифра про деньги в строке
+   пациента не читалась в вечернюю смену. Токен тот же, что строкой выше, — ни
+   одного нового цвета. */
+.patient-row-meta .patient-row-chip {
+  background: var(--srf-chip-soft);
   border: 1px solid var(--line);
   color: var(--muted);
+}
+
+/* Факт уровня клиники — одной строкой над списком. Оформление то же, что у
+   подсказки быстрого создания: это сообщение о состоянии, а не ошибка. */
+.patients-clinic-wide-notice {
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--amber);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 8px;
+  padding: 9px 10px;
 }
 
 .round-link {
