@@ -54,6 +54,39 @@ export function PatientReclamationsWidget({
 	const [newProposedAction, setNewProposedAction] = useState("");
 	const [doctorId, setDoctorId] = useState("");
 
+	/*
+	 * БЫЛО: при переключении карточки сбрасывался только СПИСОК (это делает
+	 * usePatientResource), а открытая форма фиксации осложнения — нет. Виджет не
+	 * размонтируется: PatientOverviewTab рендерит его как
+	 * <PatientReclamationsWidget patientId={selectedPatientId} /> без key, то есть
+	 * это тот же самый компонент с тем же состоянием.
+	 *
+	 * Что видел администратор: начал записывать жалобу пациента Иванова, выбрал
+	 * лечащего врача, не сохранил, открыл карточку Петровой — и под её фамилией
+	 * стоит уже заряженная форма с текстом про Иванова. Нажатие «Зафиксировать в
+	 * карту» отправляло этот текст на /api/patients/<Петрова>/reclamations, то
+	 * есть осложнение приписывалось человеку, у которого его не было. Это уже не
+	 * косметика: рекламация — основание для гарантии, возврата и разбора с врачом.
+	 *
+	 * Сброс сделан в фазе рендера, а не в useEffect: useEffect срабатывает ПОСЛЕ
+	 * отрисовки, и чужой текст успел бы мигнуть на экране новой карточки.
+	 * Молча терять набранное тоже нельзя, поэтому ниже показывается строка о том,
+	 * что текст не перенесён и не сохранён.
+	 */
+	const [formPatientId, setFormPatientId] = useState(patientId);
+	const [draftDropped, setDraftDropped] = useState(false);
+	if (formPatientId !== patientId) {
+		setFormPatientId(patientId);
+		const hadDraft = Boolean(
+			newComplicationDetails.trim() || newProposedAction.trim() || doctorId,
+		);
+		setIsAdding(false);
+		setNewComplicationDetails("");
+		setNewProposedAction("");
+		setDoctorId("");
+		setDraftDropped(hadDraft);
+	}
+
 	// БЫЛО: ручная загрузка без сброса состояния и без отмены запроса. При
 	// переключении пациента на его карточке оставались осложнения и
 	// претензии предыдущего — это уже не косметика, а приписывание чужого
@@ -211,6 +244,29 @@ export function PatientReclamationsWidget({
 	).length;
 
 	/*
+	 * Честное сообщение о выброшенном черновике. Без него сброс формы превратился
+	 * бы в тихую потерю набранного текста — второй обман экрана вместо первого.
+	 * Показывается во всех четырёх состояниях виджета, потому что сразу после
+	 * переключения карточки виджет уходит в «загружается», а не в список.
+	 */
+	const draftDroppedNotice = draftDropped ? (
+		<div className="mb-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+			<span className="min-w-[14rem] flex-1">
+				Вы открыли другую карточку. Набранная жалоба не перенесена сюда и не
+				сохранена — чужое осложнение не должно попасть в эту карту. Если запись
+				нужна, вернитесь к прежнему пациенту и внесите её заново.
+			</span>
+			<button
+				type="button"
+				onClick={() => setDraftDropped(false)}
+				className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
+			>
+				Понятно
+			</button>
+		</div>
+	) : null;
+
+	/*
 	 * Три состояния разведены и идут в этом порядке: отказ важнее пустоты,
 	 * пустота отличается от загрузки. Прежде проверка была одна —
 	 * `length === 0 && !isLoading` — и накрывала оба нештатных случая
@@ -222,6 +278,9 @@ export function PatientReclamationsWidget({
 				data-testid="patient-reclamations-widget"
 				className="panel-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 flex flex-wrap items-start gap-3"
 			>
+				{draftDroppedNotice ? (
+					<div className="w-full">{draftDroppedNotice}</div>
+				) : null}
 				<PanelLoadFailure
 					subject={RECLAMATIONS_SUBJECT}
 					status={failureStatus}
@@ -255,6 +314,7 @@ export function PatientReclamationsWidget({
 				data-testid="patient-reclamations-widget"
 				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 text-xs text-slate-500 dark:text-slate-400"
 			>
+				{draftDroppedNotice}
 				{panelStateText(RECLAMATIONS_SUBJECT, { phase: "loading" }).title}
 			</div>
 		);
@@ -267,6 +327,9 @@ export function PatientReclamationsWidget({
 				data-testid="patient-reclamations-widget"
 				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-0 overflow-hidden"
 			>
+				{draftDroppedNotice ? (
+					<div className="px-4 pt-4">{draftDroppedNotice}</div>
+				) : null}
 				<div className="panel-heading flex flex-wrap justify-between items-start gap-3 p-4 bg-transparent m-0">
 					<div className="flex items-start gap-2.5 text-slate-500 dark:text-slate-400 min-w-0">
 						<div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
@@ -327,6 +390,7 @@ export function PatientReclamationsWidget({
 			</div>
 
 			<div className="p-5 bg-white dark:bg-slate-900">
+				{draftDroppedNotice}
 				{/*
 					Форма открыта, а список не прочитан — это состояние тоже надо
 					называть: иначе, нажав «Фиксировать» на упавшем чтении, оператор

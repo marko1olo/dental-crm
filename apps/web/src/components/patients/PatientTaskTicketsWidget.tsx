@@ -47,6 +47,36 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 	const [newDescription, setNewDescription] = useState("");
 	const [assignedToId, setAssignedToId] = useState("");
 
+	/*
+	 * БЫЛО: при переключении карточки сбрасывался только СПИСОК задач (это делает
+	 * usePatientResource), а открытая форма создания задачи — нет. Виджет не
+	 * размонтируется: PatientOverviewTab рендерит его без key, значит это тот же
+	 * компонент с тем же состоянием.
+	 *
+	 * Что видел администратор: набрал «перезвонить по отёку, дослать снимок» для
+	 * Иванова, назначил сотрудника, не создал задачу, открыл карточку Петровой —
+	 * и форма стоит заряженная чужим текстом. Кнопка «Создать задачу» отправляла
+	 * её на /api/patients/<Петрова>/tickets: задача про одного человека
+	 * оказывалась в карте другого, и звонок уходил не тому.
+	 *
+	 * Сброс в фазе рендера, а не в useEffect: эффект срабатывает после отрисовки,
+	 * и чужой текст успел бы мигнуть на новой карточке. Тихо терять набранное
+	 * тоже нельзя — ниже об этом сообщается прямо в виджете.
+	 */
+	const [formPatientId, setFormPatientId] = useState(patientId);
+	const [draftDropped, setDraftDropped] = useState(false);
+	if (formPatientId !== patientId) {
+		setFormPatientId(patientId);
+		const hadDraft = Boolean(
+			newTitle.trim() || newDescription.trim() || assignedToId,
+		);
+		setIsAdding(false);
+		setNewTitle("");
+		setNewDescription("");
+		setAssignedToId("");
+		setDraftDropped(hadDraft);
+	}
+
 	// БЫЛО: ручная загрузка без сброса состояния и без отмены запроса —
 	// задачи предыдущего пациента оставались на карточке следующего.
 	const {
@@ -220,6 +250,26 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 			</div>
 
 			<div className="p-5 bg-white dark:bg-slate-900">
+				{/*
+					Честное сообщение о выброшенном черновике: без него сброс формы стал бы
+					тихой потерей набранного текста — один обман экрана вместо другого.
+				*/}
+				{draftDropped && (
+					<div className="mb-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+						<span className="min-w-[14rem] flex-1">
+							Вы открыли другую карточку. Начатая задача не перенесена сюда и не
+							сохранена — чужое поручение не должно попасть в эту карту. Если
+							задача нужна, вернитесь к прежнему пациенту и создайте её заново.
+						</span>
+						<button
+							type="button"
+							onClick={() => setDraftDropped(false)}
+							className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1 font-semibold text-amber-900 cursor-pointer dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100"
+						>
+							Понятно
+						</button>
+					</div>
+				)}
 				<AnimatePresence>
 					{isAdding && (
 						<motion.form
