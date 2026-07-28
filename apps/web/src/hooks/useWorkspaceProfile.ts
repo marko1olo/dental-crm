@@ -19,7 +19,10 @@ import { applyClinicModeToFlags, resolveClinicMode } from "../lib/clinicCapabili
  * denteAdminSecretRequestHeaders отправляет оба токена и уже используется в
  * проекте для таких запросов — четвёртый вариант заголовков не заводим.
  */
-import { denteAdminSecretRequestHeaders } from "../AppHelpers";
+// Repointed 2026-07-28 at the import-free module. This single line was the runtime edge that
+// closed AppHelpers -> workspaceShell -> useWorkspaceProfile -> AppHelpers, a real static cycle
+// madge never printed. Nothing else here reaches AppHelpers.
+import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types

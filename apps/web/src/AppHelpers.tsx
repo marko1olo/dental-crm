@@ -303,6 +303,7 @@ import {
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
@@ -4092,23 +4093,17 @@ export function saveUiPreferences(preferences: UiPreferencesInput): UiPreference
   return persistUiPreferences(withSavedUiPreferenceTimestamp(preferences));
 }
 
-export function denteAdminSecretRequestHeaders(extra: Record<string, string> = {}, adminSecret?: string): Record<string, string> {
-  const secret = adminSecret?.trim();
-  const headers = secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : { ...extra };
-  
-  if (typeof window !== 'undefined') {
-    const clinicToken = localStorage.getItem("dente_clinic_token");
-    const staffToken = localStorage.getItem("dente_staff_token");
-    if (clinicToken) {
-      headers["x-dente-clinic-token"] = clinicToken;
-    }
-    if (staffToken) {
-      headers["x-dente-staff-token"] = staffToken;
-    }
-  }
-  
-  return headers;
-}
+// Перенесено в ./lib/denteRequestHeaders (модуль без импортов) 2026-07-28. Эта функция была
+// единственным рантайм-ребром, замыкавшим цикл
+// AppHelpers.tsx:305 -> workspaceShell.tsx:32 -> hooks/useWorkspaceProfile.ts:22 -> AppHelpers,
+// которого madge не печатал. Реэкспорт оставлен намеренно: 15 вызывающих файлов и два мёртвых
+// импорта (App.tsx, useAppLogic.tsx) компилируются без правок, поэтому миграция идёт по файлу за
+// раз, а не одним свипом на 17 файлов. Полное обоснование — в шапке нового модуля.
+//
+// Импорт, а не только реэкспорт: `export { x } from "./y"` НЕ вносит имя в локальную область, а у
+// этого файла есть два собственных вызова функции ниже. Typecheck поймал это сразу — TS2552 на
+// обоих. Новый модуль не имеет импортов вообще, поэтому это ребро не может замкнуть никакой цикл.
+export { denteAdminSecretRequestHeaders };
 
 export async function loadServerUiPreferences(adminSecret?: string): Promise<UiPreferences | null> {
   const response = await fetch(uiPreferencesServerPath, {
