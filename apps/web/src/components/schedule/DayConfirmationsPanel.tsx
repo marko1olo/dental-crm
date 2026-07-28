@@ -74,10 +74,43 @@ const appointmentStatusLabels: Record<string, string> = {
 	no_show: "Не пришёл"
 };
 
-function tomorrowIsoDate(): string {
-	const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-	const pad = (value: number) => String(value).padStart(2, "0");
-	return `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+/**
+ * Адрес запроса за днём. Пустая просьба означает «день назови сам».
+ *
+ * ЧТО БЫЛО СЛОМАНО, И ПОЧЕМУ ЭТО ХУЖЕ, ЧЕМ ВЫГЛЯДЕЛО. Здесь стояла своя функция
+ * tomorrowIsoDate: к текущему моменту прибавлялись 24 часа, и результат
+ * раскладывался местными полями Date. Две ошибки в четырёх строках.
+ *
+ * Первая — сутки не всегда равны 24 часам. В день перехода на зимнее время их
+ * 25, и прибавленные 24 часа НЕ доводят до следующей календарной даты: список
+ * «на завтра» молча становится списком на сегодня.
+ *
+ * Вторая — день считался в поясе БРАУЗЕРА, а не в поясе клиники. Планшет
+ * регистратуры с неверно выставленным поясом давал не тот день без единого
+ * сообщения на экране.
+ *
+ * И главное: панель ВСЕГДА посылала явную дату, поэтому серверный расчёт
+ * «даты нет — считаю завтра в поясе клиники» (routes/dayConfirmations.ts,
+ * tomorrowInTimeZone) в рабочем пути не исполнялся ни разу. Правильный ответ на
+ * сервере был, а администратор получал посчитанный браузером.
+ *
+ * Теперь день для начальной загрузки клиент не считает вообще: за первым
+ * запросом даты нет, и сервер отвечает днём, посчитанным календарно в поясе
+ * клиники. Второй ответ на тот же вопрос не нужен.
+ */
+export function dayConfirmationsRequestPath(requestedDate: string): string {
+	const base = "/api/schedule/day-confirmations";
+	const trimmed = requestedDate.trim();
+	return trimmed ? `${base}?date=${encodeURIComponent(trimmed)}` : base;
+}
+
+/**
+ * Какой день показать в поле ввода: выбранный человеком, а пока никто не выбрал
+ * — тот, который назвал сервер. Пустое поле возвращает управление серверу, то
+ * есть снова к завтрашнему дню клиники.
+ */
+export function dayConfirmationsShownDay(requestedDate: string, loaded: { date: string } | null): string {
+	return requestedDate.trim() || loaded?.date || "";
 }
 
 function formatTime(value: string, timeZone: string): string {
@@ -103,7 +136,8 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export function DayConfirmationsPanel() {
-	const [date, setDate] = useState(tomorrowIsoDate);
+	// Пусто — день ещё не выбирали, его назовёт сервер в поясе клиники.
+	const [requestedDate, setRequestedDate] = useState("");
 	const [data, setData] = useState<DayConfirmations | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -115,7 +149,7 @@ export function DayConfirmationsPanel() {
 		setLoading(true);
 		setError(null);
 		try {
-			const response = await fetch(`/api/schedule/day-confirmations?date=${encodeURIComponent(date)}`);
+			const response = await fetch(dayConfirmationsRequestPath(requestedDate));
 			setData(await readJson<DayConfirmations>(response));
 			// Отметки «обзвонил» относятся к загруженному дню и при смене даты
 			// сбрасываются: иначе они переносятся на другой список.
@@ -126,7 +160,7 @@ export function DayConfirmationsPanel() {
 		} finally {
 			setLoading(false);
 		}
-	}, [date]);
+	}, [requestedDate]);
 
 	useEffect(() => {
 		void load();
@@ -174,7 +208,13 @@ export function DayConfirmationsPanel() {
 			<div className="ops-toolbar">
 				<span className="ops-field">
 					<label htmlFor="confirmations-date">День</label>
-					<input id="confirmations-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+					{/* До первой загрузки поле пусто: день назовёт сервер в поясе клиники. */}
+					<input
+						id="confirmations-date"
+						type="date"
+						value={dayConfirmationsShownDay(requestedDate, data)}
+						onChange={(event) => setRequestedDate(event.target.value)}
+					/>
 				</span>
 				<button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
 					{loading ? "Обновляю…" : "Обновить"}
