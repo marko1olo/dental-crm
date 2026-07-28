@@ -46,6 +46,29 @@ import { postVisitCarePresets } from "../postVisitCareData";
 
 const initialUiPreferences = loadUiPreferences();
 
+/*
+ * Памятка после приёма берётся из ТОЙ ЖЕ темы, что стоит в селекте.
+ *
+ * Тема бралась из сохранённых настроек оператора
+ * (initialUiPreferences.postVisitCareTopic), а девять полей текста были жёстко
+ * прибиты к пресету filling_restoration. Если в настройках сохранена другая тема
+ * — удаление, имплантация, гигиена — врач получал памятку, где тема одна, а
+ * текст от другого вмешательства: процедура «Пломба / композитная реставрация»,
+ * ограничения, питание и тревожные признаки от пломбы. В документ уходит и тема
+ * (careTopic), и текст, а весь блок памятки свёрнут в <details>, поэтому
+ * расхождение не видно, пока его не раскроют.
+ *
+ * Единственный писатель этих девяти полей — applyPostVisitCarePreset в
+ * useAppLogic.tsx, и он берёт ровно postVisitCarePresets[тема]. Начальное
+ * состояние теперь делает то же самое: один источник правды.
+ *
+ * Индексация безопасна: loadUiPreferences проверяет тему по списку допустимых
+ * значений и при мусоре возвращает filling_restoration, а postVisitCarePresets
+ * объявлен как Record<PostVisitCareTopic, …>, то есть покрывает все темы.
+ */
+const initialPostVisitCarePreset =
+  postVisitCarePresets[initialUiPreferences.postVisitCareTopic];
+
 function createSetter(set: any, key: string) {
   return (val: any) =>
     set((state: any) => ({
@@ -2366,8 +2389,28 @@ const createClinicalSlice = (set: any) => ({
   treatmentPlanGoals:
     "устранить жалобы пациента\nвосстановить функцию и герметичность\nснизить риск осложнений и повторного обращения",
   setTreatmentPlanGoals: createSetter(set, "treatmentPlanGoals"),
+  /*
+   * Сумма этапа не подставляется — ячейка пустая.
+   *
+   * Каждая строка оканчивалась на «| 0», и вред не только в том, что в плане
+   * печаталось «0 руб.». Ноль ОБЕЗВРЕЖИВАЛ единственный предохранитель выдачи:
+   * сервер не даёт выдать документ, в котором остались незаполненные места
+   * (documentHasUnresolvedPlaceholders ищет среди прочего «не указана»), а
+   * пустая сумма этапа печатается ровно как «не указана». Пустое поле выдачу
+   * остановило бы, подставленный ноль проходил молча — и пациент получал план
+   * лечения, где каждый этап стоит ноль рублей.
+   *
+   * Разборщик treatmentPlanStageRows (useAppLogic.tsx) отдаёт
+   * estimatedAmountRub: null, когда ячейка суммы пуста, и 0, когда в ней стоит
+   * «0»: защиты рядом нет, ?? стоит только на названии этапа, услугах, сроке и
+   * заметках.
+   *
+   * Скелет этапов оставлен: это заготовка структуры, а не утверждение о
+   * деньгах, и валидатор требует хотя бы одну строку. Замыкающая «|» показывает,
+   * куда вписать сумму; формат строки подсказан под полем в DocumentsView.tsx.
+   */
   treatmentPlanStages:
-    "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения | 0\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены | 0",
+    "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения |\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации |\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены |",
   setTreatmentPlanStages: createSetter(set, "treatmentPlanStages"),
   treatmentPlanEstimatedTotalRub: "",
   setTreatmentPlanEstimatedTotalRub: createSetter(set, "treatmentPlanEstimatedTotalRub"),
@@ -2408,8 +2451,14 @@ const createClinicalSlice = (set: any) => ({
   setTreatmentAcceptanceDiagnosisSummary: createSetter(set, "treatmentAcceptanceDiagnosisSummary"),
   treatmentAcceptanceTeethOrArea: "",
   setTreatmentAcceptanceTeethOrArea: createSetter(set, "treatmentAcceptanceTeethOrArea"),
+  /*
+   * То же, что у treatmentPlanStages выше, и здесь цена важнее: этот документ
+   * пациент подписывает как согласие на СУММУ. Строки оканчивались на «| 0», и
+   * согласование уходило с этапами по нулю рублей, минуя проверку выдачи, —
+   * пустая ячейка печатается как «не указана» и выдачу останавливает.
+   */
   treatmentAcceptanceStages:
-    "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения | 0\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | 0",
+    "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения |\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники |\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа |",
   setTreatmentAcceptanceStages: createSetter(set, "treatmentAcceptanceStages"),
   treatmentAcceptanceEstimatedTotalRub: "",
   setTreatmentAcceptanceEstimatedTotalRub: createSetter(set, "treatmentAcceptanceEstimatedTotalRub"),
@@ -2441,8 +2490,8 @@ const createClinicalSlice = (set: any) => ({
   setTreatmentAcceptanceRevisionAcknowledged: createSetter(set, "treatmentAcceptanceRevisionAcknowledged"),
   postVisitCareTopic: initialUiPreferences.postVisitCareTopic,
   setPostVisitCareTopic: createSetter(set, "postVisitCareTopic"),
-  postVisitProcedureName:
-    postVisitCarePresets.filling_restoration.procedureName,
+  /* Девять полей ниже — пресет ВЫБРАННОЙ темы; пояснение у initialPostVisitCarePreset. */
+  postVisitProcedureName: initialPostVisitCarePreset.procedureName,
   setPostVisitProcedureName: createSetter(set, "postVisitProcedureName"),
   postVisitToothOrArea: "",
   setPostVisitToothOrArea: createSetter(set, "postVisitToothOrArea"),
@@ -2454,31 +2503,26 @@ const createClinicalSlice = (set: any) => ({
   setPostVisitManualEdited: createSetter(set, "postVisitManualEdited"),
   postVisitPresetFeedback: "",
   setPostVisitPresetFeedback: createSetter(set, "postVisitPresetFeedback"),
-  postVisitAllowedAfter: postVisitCarePresets.filling_restoration.allowedAfter,
+  postVisitAllowedAfter: initialPostVisitCarePreset.allowedAfter,
   setPostVisitAllowedAfter: createSetter(set, "postVisitAllowedAfter"),
-  postVisitRestrictions:
-    postVisitCarePresets.filling_restoration.temporaryRestrictions,
+  postVisitRestrictions: initialPostVisitCarePreset.temporaryRestrictions,
   setPostVisitRestrictions: createSetter(set, "postVisitRestrictions"),
   postVisitMedicationAndRinsePlan:
-    postVisitCarePresets.filling_restoration.medicationAndRinsePlan,
+    initialPostVisitCarePreset.medicationAndRinsePlan,
   setPostVisitMedicationAndRinsePlan: createSetter(set, "postVisitMedicationAndRinsePlan"),
-  postVisitHygieneInstructions:
-    postVisitCarePresets.filling_restoration.hygieneInstructions,
+  postVisitHygieneInstructions: initialPostVisitCarePreset.hygieneInstructions,
   setPostVisitHygieneInstructions: createSetter(set, "postVisitHygieneInstructions"),
   postVisitNutritionInstructions:
-    postVisitCarePresets.filling_restoration.nutritionInstructions,
+    initialPostVisitCarePreset.nutritionInstructions,
   setPostVisitNutritionInstructions: createSetter(set, "postVisitNutritionInstructions"),
-  postVisitUrgentWarningSigns:
-    postVisitCarePresets.filling_restoration.urgentWarningSigns,
+  postVisitUrgentWarningSigns: initialPostVisitCarePreset.urgentWarningSigns,
   setPostVisitUrgentWarningSigns: createSetter(set, "postVisitUrgentWarningSigns"),
-  postVisitFollowUpAt:
-    postVisitCarePresets.filling_restoration.plannedFollowUpAt,
+  postVisitFollowUpAt: initialPostVisitCarePreset.plannedFollowUpAt,
   setPostVisitFollowUpAt: createSetter(set, "postVisitFollowUpAt"),
   postVisitClinicContactInstruction:
     "связаться с клиникой по телефону или через Telegram-бот клиники",
   setPostVisitClinicContactInstruction: createSetter(set, "postVisitClinicContactInstruction"),
-  postVisitTelegramSummary:
-    postVisitCarePresets.filling_restoration.telegramSummary,
+  postVisitTelegramSummary: initialPostVisitCarePreset.telegramSummary,
   setPostVisitTelegramSummary: createSetter(set, "postVisitTelegramSummary"),
   postVisitPrintedCopyReceived: false,
   setPostVisitPrintedCopyReceived: createSetter(set, "postVisitPrintedCopyReceived"),
