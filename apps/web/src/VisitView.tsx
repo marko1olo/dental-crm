@@ -166,22 +166,32 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
   // ── Clinical Context Modal state ─────────────────────────────
   const [selectedToothForMenu, setSelectedToothForMenu] = React.useState<{ code: string; state: string } | null>(null);
-  const [materialCategory, setMaterialCategory] = React.useState<"filling" | "crown" | "implant" | null>(null);
+  const [materialCategory, setMaterialCategory] = React.useState<"filling" | "crown" | "implant" | "veneer" | null>(null);
 
+  /*
+    НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
+
+    Убраны двухбуквенные коды стран — «(Tokuyama, JP)», «(US)», «(CH)», «(KR)»,
+    «(SE)». На клиническом экране это чистый шум: страна не нужна ни врачу, ни
+    складу, а латиница без перевода мешает медсестре и администратору. Само
+    торговое название и производитель оставлены: именно по ним материал ищут на
+    складе и в накладной, переводить их нельзя.
+    «CoCr» тоже убрано: сплав кобальт-хром на кнопке ничего не уточняет.
+  */
   const THERAPY_MATERIALS = [
-    { id: "Estelite", label: "Estelite Asteria (Tokuyama, JP)" },
-    { id: "Filtek", label: "3M Filtek Supreme (US)" },
-    { id: "SDR", label: "SDR Bulk-fill (Dentsply, DE)" }
+    { id: "Estelite", label: "Композит Estelite Asteria (Tokuyama)" },
+    { id: "Filtek", label: "Композит Filtek Supreme (3M)" },
+    { id: "SDR", label: "Текучий композит SDR (Dentsply)" }
   ];
   const ORTHO_MATERIALS = [
     { id: "Zirconia", label: "Диоксид циркония" },
-    { id: "E-max", label: "Прессованная керамика E-max" },
-    { id: "PFM", label: "Металлокерамика (CoCr)" }
+    { id: "E-max", label: "Прессованная керамика E-max (Ivoclar)" },
+    { id: "PFM", label: "Металлокерамика" }
   ];
   const IMPLANT_SYSTEMS = [
-    { id: "Straumann", label: "Straumann SLActive (CH)" },
-    { id: "Osstem", label: "Osstem TSIII (KR)" },
-    { id: "Nobel", label: "Nobel Biocare Active (SE)" }
+    { id: "Straumann", label: "Имплантат Straumann SLActive" },
+    { id: "Osstem", label: "Имплантат Osstem TSIII" },
+    { id: "Nobel", label: "Имплантат Nobel Biocare Active" }
   ];
 
   const appendToEMKField = (fieldKey: string, text: string) => {
@@ -216,6 +226,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
   const safeVisitWarnings = Array.isArray(visitWarnings) ? visitWarnings : [];
   const safeImagingStudies = Array.isArray(activeImagingStudies) ? activeImagingStudies : [];
   const safeUsableDocuments = Array.isArray(activeUsableDocuments) ? activeUsableDocuments : [];
+
+  // Сколько зубов сейчас раскрашено. Нужно, чтобы врач видел объём своей
+  // пометки: карта живёт только до конца приёма, и молча терять десяток отметок
+  // нельзя даже когда они рабочие.
+  const markedToothCount = Object.values((toothStateByCode ?? {}) as Record<string, string>)
+    .filter((state) => Boolean(state) && state !== "idle").length;
 
   const handleToothClick = (code: string, currentState: string) => {
     if (activeStampRef.current !== null) {
@@ -717,15 +733,47 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
             <VisiographAnalyzer />
 
             <div className="tooth-map" aria-label="Зубная карта">
-              <div className="tooth-map-selected" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
-                <button type="button" onClick={() => { setActiveStamp("watch"); activeStampRef.current = "watch"; }}>Наблюдение</button>
+              {/*
+                НЕ УДАЛЯТЬ: это не забытая кнопка, а зацепка для дымовых прогонов.
+                scripts/smoke-visit-live-workflow.mjs и
+                scripts/smoke-workspace-live-core-actions.mjs находят её как
+                `.tooth-map-selected button`, щёлкают программно, затем щёлкают зуб
+                24 и проверяют, что штамп сменил класс зуба. Человеку она не видна
+                и не нажимается (opacity 0, pointer-events none), поэтому убрана и
+                из чтения экранным диктором: иначе он объявлял кнопку
+                «Наблюдение», которая для пользователя ничего не делает.
+              */}
+              <div className="tooth-map-selected" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} aria-hidden="true">
+                <button type="button" tabIndex={-1} onClick={() => { setActiveStamp("watch"); activeStampRef.current = "watch"; }}>Наблюдение</button>
               </div>
               <div className="tooth-map-head">
                 <div>
-                  <h3>Зубная карта</h3>
-                  <p>Нажмите зуб для смены статуса. ИИ подсвечивает зубы из диктовки.</p>
+                  <h3>Зубная карта приёма</h3>
+                  {/*
+                    БЫЛО: «Нажмите зуб для смены статуса». Из такой подписи врач
+                    делает единственный разумный вывод — что отметки сохраняются.
+                    Они НЕ сохраняются: setToothState пишет только в состояние
+                    страницы (store/visitStore.ts), при переходе к следующему
+                    приёму карта чистится resetVisitToothState, а на сервер уходят
+                    ровно пять текстовых полей ЭМК. Можно было отметить полтора
+                    десятка зубов, обновить страницу и не найти ничего.
+                    Что действительно сохраняется: текст, который дописывает
+                    карточка зуба (обычный клик), и постоянная формула зуба во
+                    вкладке «Зубная формула и Дневник» — у неё свои запросы
+                    сохранения. Пишем это прямо, чтобы никто не принимал цветные
+                    зубы за запись в карте пациента.
+                  */}
+                  <p>
+                    Обычный клик по зубу открывает карточку: выбранный диагноз или
+                    лечение дописывается в поля приёма и сохраняется вместе с приёмом.
+                    Сам цвет на карте — рабочая пометка на время приёма, в карту
+                    пациента она не попадает. Постоянная формула зуба — во вкладке
+                    «Зубная формула и Дневник».
+                  </p>
                 </div>
-                <span className="tooth-fdi-badge">FDI</span>
+                <span className="tooth-fdi-badge" title="Международная нумерация зубов: сверху 11–18 и 21–28, снизу 31–38 и 41–48">
+                  Нумерация ФДИ
+                </span>
               </div>
               <div className="tooth-map-legend">
                 <span className="tooth-legend-item legend-planned">В плане</span>
@@ -735,7 +783,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 <span className="tooth-legend-item legend-missing">Нет зуба</span>
               </div>
 
-              {/* Панель быстрого штампа статуса зуба (Quick Stamp) */}
+              {/* Быстрая раскраска карты: один выбранный цвет ставится кликом по зубу. */}
               <div className="tooth-stamp-bar" role="toolbar" aria-label="Инструменты быстрого штампа">
                 <span className="stamp-bar-title">Быстрый штамп:</span>
                 <button
@@ -782,6 +830,21 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 </button>
               </div>
 
+              {/*
+                Пока штамп включён, каждый клик по зубу только красит карту и НЕ
+                открывает карточку зуба — то есть не оставляет ни строчки в записи
+                приёма. Разница между двумя режимами на глаз не видна, и врач,
+                отметивший десяток зубов штампом, был уверен, что записал их.
+                Говорим об этом ровно в тот момент, когда штамп включён.
+              */}
+              <p className="tooth-stamp-note" role="status" aria-live="polite" style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                {activeStamp !== null
+                  ? "Штамп включён: клик красит зуб на карте, но ничего не пишет в запись приёма. Чтобы диагноз попал в карту, вернитесь к «Обычный клик» и выберите его в карточке зуба."
+                  : markedToothCount > 0
+                    ? `Раскрашено зубов: ${markedToothCount}. Цвет держится до конца приёма; в карту пациента идут поля ЭМК.`
+                    : "Нажмите зуб — откроется карточка с диагнозами и лечением."}
+              </p>
+
               {/* Панель выбора квадранта (Focus Mode) */}
               <div className="tooth-quadrant-nav" role="navigation" aria-label="Фокус на квадрант">
                 <button
@@ -791,43 +854,54 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                 >
                   Вся челюсть
                 </button>
+                {/*
+                  БЫЛО: «ВЧ Лево (Q2)», «НЧ Право (Q4)». Сокращения и латинская
+                  буква Q на клиническом экране: медсестра и администратор их не
+                  читают, а врач и так знает номера секторов. Слова полностью,
+                  номер сектора и диапазон зубов — в подсказке при наведении.
+                  Сторона указана как у пациента, как принято в нумерации зубов.
+                */}
                 <button
                   type="button"
                   className={`quadrant-nav-btn ${activeQuadrant === 2 ? "active" : ""}`}
                   onClick={() => setActiveQuadrant(2)}
+                  title="Второй сектор: зубы 21–28"
                 >
-                  ВЧ Лево (Q2)
+                  Верх слева
                 </button>
                 <button
                   type="button"
                   className={`quadrant-nav-btn ${activeQuadrant === 1 ? "active" : ""}`}
                   onClick={() => setActiveQuadrant(1)}
+                  title="Первый сектор: зубы 11–18"
                 >
-                  ВЧ Право (Q1)
+                  Верх справа
                 </button>
                 <button
                   type="button"
                   className={`quadrant-nav-btn ${activeQuadrant === 3 ? "active" : ""}`}
                   onClick={() => setActiveQuadrant(3)}
+                  title="Третий сектор: зубы 31–38"
                 >
-                  НЧ Лево (Q3)
+                  Низ слева
                 </button>
                 <button
                   type="button"
                   className={`quadrant-nav-btn ${activeQuadrant === 4 ? "active" : ""}`}
                   onClick={() => setActiveQuadrant(4)}
+                  title="Четвёртый сектор: зубы 41–48"
                 >
-                  НЧ Право (Q4)
+                  Низ справа
                 </button>
               </div>
 
               {/* Зубная схема с квадрантами */}
               <div className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}>
-                {/* Метки квадрантов — верх */}
+                {/* Метки половин верхней челюсти. Раньше здесь стояли «Q1» и «Q2». */}
                 {activeQuadrant === null && (
                   <div className="tooth-quadrant-labels upper-labels">
-                    <span className="quadrant-label">Q1</span>
-                    <span className="quadrant-label">Q2</span>
+                    <span className="quadrant-label" title="Первый сектор: зубы 11–18">верх справа</span>
+                    <span className="quadrant-label" title="Второй сектор: зубы 21–28">верх слева</span>
                   </div>
                 )}
 
@@ -1018,11 +1092,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                   </div>
                 )}
 
-                {/* Метки квадрантов — низ */}
+                {/* Метки половин нижней челюсти. Раньше здесь стояли «Q4» и «Q3». */}
                 {activeQuadrant === null && (
                   <div className="tooth-quadrant-labels lower-labels">
-                    <span className="quadrant-label">Q4</span>
-                    <span className="quadrant-label">Q3</span>
+                    <span className="quadrant-label" title="Четвёртый сектор: зубы 41–48">низ справа</span>
+                    <span className="quadrant-label" title="Третий сектор: зубы 31–38">низ слева</span>
                   </div>
                 )}
               </div>
@@ -1298,7 +1372,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
                   {/* ── CENTER: Tooth preview ── */}
                   <div className="_ccm-center">
-                    <div className="_ccm-code-badge">FDI {code}</div>
+                    {/* Было «FDI 26» — на карточке зуба у кресла понятнее «Зуб 26». */}
+                    <div className="_ccm-code-badge">Зуб {code}</div>
                     <div className="_ccm-tooth-stage" aria-hidden="true">
                       {toothSvg}
                     </div>
@@ -1316,10 +1391,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                         <div className="_ccm-label">
                           {materialCategory === "filling" ? "Материал реставрации:" :
                            materialCategory === "crown"   ? "Материал коронки:" :
+                           materialCategory === "veneer"  ? "Материал винира:" :
                                                             "Система имплантации:"}
                         </div>
                         {(materialCategory === "filling" ? THERAPY_MATERIALS :
-                          materialCategory === "crown"   ? ORTHO_MATERIALS :
+                          materialCategory === "crown" || materialCategory === "veneer" ? ORTHO_MATERIALS :
                                                            IMPLANT_SYSTEMS).map(mat => (
                           <button key={mat.id} type="button" className="_ccm-btn"
                             data-color="blue"
@@ -1327,6 +1403,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                               mat.label,
                               materialCategory === "filling" ? "реставрация композитом" :
                               materialCategory === "crown"   ? "протезирование коронкой" :
+                              materialCategory === "veneer"  ? "винир" :
                                                                "установка имплантата"
                             )}>
                             {mat.label} <span>✨</span>
@@ -1359,8 +1436,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                           onClick={() => setMaterialCategory("crown")}>
                           Коронка на зуб <span>👑</span>
                         </button>
+                        {/*
+                          БЫЛО: кнопка молча записывала в план «винир — E-max
+                          (Kerr / Ivoclar)», не спросив врача. Мало того что
+                          материал выбирался за него: E-max выпускает Ivoclar, а
+                          Kerr — другой производитель, то есть в план лечения
+                          пациента уходила выдуманная пара названий. Материал
+                          винира спрашиваем так же, как материал коронки.
+                        */}
                         <button type="button" className="_ccm-btn" data-color="violet"
-                          onClick={() => handleApplyMaterial("E-max (Kerr / Ivoclar)", "винир")}>
+                          onClick={() => setMaterialCategory("veneer")}>
                           Винир <span>✨</span>
                         </button>
 
