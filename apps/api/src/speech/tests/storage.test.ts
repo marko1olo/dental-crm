@@ -1,10 +1,15 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
-import { and, eq, like, ne } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
-import { aiJobs, patients, visits } from "../../db/schema.js";
+import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
+import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  acquireSpeechDurableTestLock,
+  type SpeechDurableTestLock
+} from "../../tests/support/speechDurableTestLock.js";
 import {
   SpeechChunkOrganizationScopeError,
   assembleSpeechRecording,
@@ -17,8 +22,38 @@ import {
 /**
  * Граница перезапуска процесса проверяется на настоящей PostgreSQL: фрагмент
  * пишется, горячий кэш обнуляется как при новом процессе, и текст читается
- * обратно из базы. Идентификаторы приема и клиники берутся запросом, а не
- * прописываются в коде.
+ * обратно из базы.
+ *
+ * ПОЧЕМУ КЛИНИКИ ЗДЕСЬ СВОИ, А НЕ «ПЕРВЫЙ ПРИЕМ ИЗ БАЗЫ».
+ *
+ * Прежде этот файл начинал с `.from(visits).limit(1)` и брал вторую клинику как
+ * «пациент любой другой организации». Точно так же поступали
+ * `storageRestoreCeiling.test.ts` и `storageIdentity.test.ts`, то есть все три
+ * получали ОДНУ И ТУ ЖЕ пару клиник, а `node --test` гоняет файлы параллельными
+ * процессами против одной живой базы. Восстановление ранжирует записи
+ * `row_number() OVER (PARTITION BY organization_id ORDER BY updated_at DESC)` и
+ * берёт первые `DENTAL_SPEECH_CACHED_RECORDINGS` в каждой клинике. Тест ниже
+ * ставит этот предел равным ОДНОЙ записи и требует, чтобы этой одной была его
+ * собственная; сосед ставил две и требовал своих двух. Кто засеял свежее — тот и
+ * вытеснил соседа, поэтому набор упавших тестов плавал от прогона к прогону:
+ * `listSpeechTranscriptionChunks(...).length` давал 0 вместо 1, и выглядело это
+ * как дефект восстановления, которого нет.
+ *
+ * Своя пара клиник выводится из ИМЕНИ ФАЙЛА (`fixtureUuid`, разбор — в
+ * `tests/support/fixtureOrganizations.ts`), поэтому выдать один блок двум файлам
+ * нельзя: для этого им пришлось бы совпасть именем. Ранг записи внутри своей
+ * клиники теперь зависит только от порядка тестов ЭТОГО файла.
+ *
+ * Вторым слоем берётся консультационная блокировка PostgreSQL
+ * (`acquireSpeechDurableTestLock`): над рангом по клинике стоит общий на всю базу
+ * предел восстановления, и его измеряет `storageRestoreCeiling.test.ts`. Свежие
+ * строки, которые пишет этот файл, забирали бы тот предел себе, поэтому файлы,
+ * пишущие долговременные записи диктовки, проходят по одному. Разбор — в
+ * `tests/support/speechDurableTestLock.ts`.
+ *
+ * Утверждения тестов не ослаблены: та же граница перезапуска, тот же запрет на
+ * съедание лимита чужими строками `voice_transcription`, та же межклиничная
+ * граница кэша. Изменилось только то, чьи строки лежат в базе в момент замера.
  */
 
 const dictationText = "Жалобы на боль в зубе 26 при накусывании. Перкуссия слабоположительная.";
@@ -26,10 +61,22 @@ const durableRecordingPathPrefix = "speech-recording://";
 
 type SpeechChunkInput = Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">;
 
-let clinicalScope: { visitId: string; patientId: string; organizationId: string } | null = null;
-let otherClinicScope: { patientId: string; organizationId: string } | null = null;
-const createdRecordingIds: string[] = [];
-const createdForeignJobIds: string[] = [];
+const FIXTURE = "speechStorage";
+const ORG_MAIN = fixtureUuid(FIXTURE, 1);
+/**
+ * Вторая клиника нужна для проверки, что бюджет кэша принадлежит клинике, а не
+ * всей базе. Приема у неё нет намеренно: клиника фрагмента определяется и по
+ * пациенту.
+ */
+const ORG_OTHER = fixtureUuid(FIXTURE, 2);
+const PATIENT_MAIN = fixtureUuid(FIXTURE, 3);
+const VISIT_MAIN = fixtureUuid(FIXTURE, 4);
+const PATIENT_OTHER = fixtureUuid(FIXTURE, 5);
+
+const clinicalScope = { visitId: VISIT_MAIN, patientId: PATIENT_MAIN, organizationId: ORG_MAIN };
+const otherClinicScope = { patientId: PATIENT_OTHER, organizationId: ORG_OTHER };
+
+let durableLock: SpeechDurableTestLock | null = null;
 
 /**
  * Лимиты кэша читаются из окружения на каждом вызове, поэтому границу
@@ -63,8 +110,8 @@ function buildChunkInput(overrides: Partial<SpeechChunkInput> & { recordingId: s
   return {
     chunkIndex: 0,
     source: "visit",
-    patientId: clinicalScope?.patientId ?? null,
-    visitId: clinicalScope?.visitId ?? null,
+    patientId: clinicalScope.patientId,
+    visitId: clinicalScope.visitId,
     providerId: "none",
     providerLabel: "Локальный текст браузера",
     mimeType: "audio/webm",
@@ -92,42 +139,46 @@ function buildChunkInput(overrides: Partial<SpeechChunkInput> & { recordingId: s
 }
 
 before(async () => {
-  const [visit] = await db
-    .select({ id: visits.id, patientId: visits.patientId, organizationId: visits.organizationId })
-    .from(visits)
-    .limit(1);
-  assert.ok(visit, "в базе нет ни одного приема: тест диктовки нечем привязать к клинике");
-  clinicalScope = { visitId: visit.id, patientId: visit.patientId, organizationId: visit.organizationId };
+  // Блокировка берётся ПЕРВОЙ, до любой записи в базу: свежие строки этого файла
+  // видны общему пределу восстановления, который измеряет соседний файл.
+  durableLock = await acquireSpeechDurableTestLock();
 
-  // Вторая клиника нужна для проверки, что бюджет кэша принадлежит клинике, а не
-  // всей базе. Берётся пациент любой ДРУГОЙ организации: у второй клиники в базе
-  // может не быть приемов, а клиника фрагмента определяется и по пациенту.
-  const [otherPatient] = await db
-    .select({ id: patients.id, organizationId: patients.organizationId })
-    .from(patients)
-    .where(ne(patients.organizationId, visit.organizationId))
-    .limit(1);
-  assert.ok(otherPatient, "в базе только одна организация: межклиничную границу кэша проверить нечем");
-  otherClinicScope = { patientId: otherPatient.id, organizationId: otherPatient.organizationId };
+  // Уборка НА ВХОДЕ: прогон, убитый снаружи (Ctrl+C, закрытая труба), до after не
+  // доходит и оставляет свои клиники в живой базе. Наследовать оттуда записи
+  // диктовки нельзя — они сдвинули бы ранг записи внутри клиники.
+  await purgeFixtureOrganizations([ORG_MAIN, ORG_OTHER]);
+  await db.insert(organizations).values([
+    { id: ORG_MAIN, name: "Клиника хранения диктовки" },
+    { id: ORG_OTHER, name: "Соседняя клиника хранения диктовки" }
+  ]);
+  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+  // ключом, и тест пошёл бы по данным соседнего файла.
+  await db.insert(patients).values([
+    { id: PATIENT_MAIN, organizationId: ORG_MAIN, fullName: "Тарасова Инна Петровна", birthDate: "1979-05-12" },
+    { id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Крылов Артём Игоревич", birthDate: "1985-11-03" }
+  ]);
+  await db
+    .insert(visits)
+    .values({ id: VISIT_MAIN, organizationId: ORG_MAIN, patientId: PATIENT_MAIN, status: "draft" });
 });
 
 after(async () => {
-  for (const recordingId of createdRecordingIds) {
-    await db.delete(aiJobs).where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`));
-  }
-  for (const jobId of createdForeignJobIds) {
-    await db.delete(aiJobs).where(eq(aiJobs.id, jobId));
-  }
+  // Каталожная уборка снимает и записи диктовки, и чужую строку
+  // voice_transcription, вставленную ниже: она выводит порядок удаления из ссылок
+  // в information_schema, а поимённый список таблиц устаревал бы при появлении
+  // любой новой таблицы со ссылкой на организацию.
+  await purgeFixtureOrganizations([ORG_MAIN, ORG_OTHER]);
   resetSpeechTranscriptionCacheForRestart();
+  // Сначала блокировка, потом пул: pool.end() ждёт возврата всех выданных
+  // клиентов и на удержанном соединении блокировки не завершился бы.
+  await durableLock?.release();
   await pool.end();
 });
 
 describe("хранение расшифровок диктовки", () => {
   it("текст переживает перезапуск процесса и читается из PostgreSQL", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-restart-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     resetSpeechTranscriptionCacheForRestart();
     const chunk = await recordSpeechTranscriptionChunk(buildChunkInput({ recordingId }));
@@ -161,9 +212,7 @@ describe("хранение расшифровок диктовки", () => {
 
   it("собранный текст лежит в ai_jobs как voice_transcription и читается обычным SQL", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-sql-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     resetSpeechTranscriptionCacheForRestart();
     await recordSpeechTranscriptionChunk(buildChunkInput({ recordingId }));
@@ -197,10 +246,7 @@ describe("хранение расшифровок диктовки", () => {
   });
 
   it("одна запись диктовки даёт одну строку, а не строку на каждый фрагмент", async () => {
-    const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-single-row-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     resetSpeechTranscriptionCacheForRestart();
     for (let chunkIndex = 0; chunkIndex < 4; chunkIndex += 1) {
@@ -249,9 +295,7 @@ describe("хранение расшифровок диктовки", () => {
    */
   it("вытеснение из кэша не затирает продиктованный текст в PostgreSQL", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-merge-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
     const lines = ["Жалобы: боль зуб 26.", "Диагноз K04.0 пульпит.", "План: эндодонтическое лечение."];
 
     await withEnv({ DENTAL_SPEECH_CACHED_CHUNKS_PER_RECORDING: "1" }, async () => {
@@ -295,9 +339,7 @@ describe("хранение расшифровок диктовки", () => {
    */
   it("чужие строки voice_transcription не съедают лимит восстановления", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-foreign-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     resetSpeechTranscriptionCacheForRestart();
     await recordSpeechTranscriptionChunk(buildChunkInput({ recordingId }));
@@ -318,7 +360,6 @@ describe("хранение расшифровок диктовки", () => {
       })
       .returning({ id: aiJobs.id });
     assert.ok(foreignJob, "не удалось создать чужую строку voice_transcription");
-    createdForeignJobIds.push(foreignJob.id);
 
     await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
       resetSpeechTranscriptionCacheForRestart();
@@ -332,13 +373,9 @@ describe("хранение расшифровок диктовки", () => {
   });
 
   it("поток диктовок одной клиники не вытесняет расшифровку другой", async () => {
-    const scope = clinicalScope;
     const other = otherClinicScope;
-    assert.ok(scope);
-    assert.ok(other);
     const ownRecordingId = `test-org-own-${randomUUID()}`;
     const otherRecordingId = `test-org-other-${randomUUID()}`;
-    createdRecordingIds.push(ownRecordingId, otherRecordingId);
 
     await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
       resetSpeechTranscriptionCacheForRestart();
@@ -379,9 +416,7 @@ describe("хранение расшифровок диктовки", () => {
    */
   it("несохранённый фрагмент остаётся в памяти сверх лимита и несёт предупреждение", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-undurable-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
     const missingVisitId = randomUUID();
 
     await withEnv({ DENTAL_SPEECH_CACHED_CHUNKS_PER_RECORDING: "1" }, async () => {
@@ -431,9 +466,7 @@ describe("хранение расшифровок диктовки", () => {
    */
   it("неизвестная уверенность распознавания не выдаётся молча за нулевую", async () => {
     const scope = clinicalScope;
-    assert.ok(scope);
     const recordingId = `test-confidence-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     resetSpeechTranscriptionCacheForRestart();
     const base = buildChunkInput({ recordingId, transcript: "Локальный текст браузера без оценки уверенности." });

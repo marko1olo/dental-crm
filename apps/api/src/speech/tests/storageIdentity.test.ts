@@ -4,7 +4,12 @@ import { randomUUID } from "node:crypto";
 import { and, eq, like } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
-import { aiJobs, visits } from "../../db/schema.js";
+import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
+import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  acquireSpeechDurableTestLock,
+  type SpeechDurableTestLock
+} from "../../tests/support/speechDurableTestLock.js";
 import {
   SpeechChunkIdentityConflictError,
   listSpeechTranscriptionChunks,
@@ -25,7 +30,30 @@ import {
  * из памяти она молча перестала работать, а слияние с сохранённым конвертом
  * личность не перепроверяло.
  *
- * Приемы и пациенты берутся запросом к базе, а не прописываются в коде.
+ * ПОЧЕМУ КЛИНИКА ЗДЕСЬ СВОЯ, А НЕ «ПЕРВЫЕ ПРИЕМЫ ИЗ БАЗЫ».
+ *
+ * Прежде файл выбирал два приема разных пациентов одной клиники запросом к базе.
+ * То же самое делали `storage.test.ts` и `storageRestoreCeiling.test.ts`, поэтому
+ * все три писали долговременные записи диктовки в ОДНУ клинику, а `node --test`
+ * гоняет файлы параллельными процессами против одной живой базы. Соседи ставят
+ * предел восстановления в одну-две записи на клинику и требуют, чтобы этими
+ * записями были ИХ собственные; каждая строка, записанная здесь, свежее и
+ * вытесняла их из ранга. Набор упавших тестов из-за этого плавал от прогона к
+ * прогону, причём падали соседи, а не этот файл.
+ *
+ * Своя клиника выводится из ИМЕНИ ФАЙЛА (`fixtureUuid`, разбор — в
+ * `tests/support/fixtureOrganizations.ts`): выдать один блок двум файлам нельзя,
+ * для этого им пришлось бы совпасть именем. Плюс консультационная блокировка
+ * PostgreSQL (`acquireSpeechDurableTestLock`) — над рангом по клинике стоит общий
+ * на всю базу предел восстановления, и он глобален по определению, поэтому файлы,
+ * пишущие такие строки, проходят по одному. Разбор — в
+ * `tests/support/speechDurableTestLock.ts`.
+ *
+ * Блокировка защищает и аудит всей таблицы ниже: пока он идёт, ни один соседний
+ * файл не может дописать в `ai_jobs` строку диктовки.
+ *
+ * Утверждения тестов не ослаблены: тот же сценарий PROBE 2, тот же аудит по всей
+ * таблице без сужения по клинике, тот же разбор уже смешанной строки.
  */
 
 const durableRecordingPathPrefix = "speech-recording://";
@@ -35,16 +63,27 @@ const visitBText = "Прием Б: жалобы на скол пломбы в з
 
 type SpeechChunkInput = Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">;
 
-type ClinicalPair = {
-  organizationId: string;
-  visitA: string;
-  patientA: string;
-  visitB: string;
-  patientB: string;
+const FIXTURE = "speechStorageIdentity";
+const ORG = fixtureUuid(FIXTURE, 1);
+const PATIENT_A = fixtureUuid(FIXTURE, 2);
+const PATIENT_B = fixtureUuid(FIXTURE, 3);
+const VISIT_A = fixtureUuid(FIXTURE, 4);
+const VISIT_B = fixtureUuid(FIXTURE, 5);
+
+/**
+ * Два приема РАЗНЫХ пациентов в ОДНОЙ клинике: только так воспроизводится
+ * слияние двух медицинских записей в одну строку. Разные клиники сюда не годятся —
+ * фрагмент чужой клиники отсекается раньше, на определении организации.
+ */
+const clinicalPair = {
+  organizationId: ORG,
+  visitA: VISIT_A,
+  patientA: PATIENT_A,
+  visitB: VISIT_B,
+  patientB: PATIENT_B
 };
 
-let clinicalPair: ClinicalPair | null = null;
-const createdRecordingIds: string[] = [];
+let durableLock: SpeechDurableTestLock | null = null;
 
 /**
  * Лимиты кэша читаются из окружения на каждом вызове, поэтому границу вытеснения
@@ -128,43 +167,46 @@ function envelopeIdentities(inputText: string | null): { visitIds: string[]; pat
 }
 
 before(async () => {
-  const rows = await db
-    .select({ id: visits.id, patientId: visits.patientId, organizationId: visits.organizationId })
-    .from(visits)
-    .limit(200);
-  const first = rows[0];
-  assert.ok(first, "в базе нет ни одного приема: сценарий двух приемов нечем воспроизвести");
-  const second = rows.find(
-    (row) => row.organizationId === first.organizationId && row.patientId !== first.patientId
-  );
-  assert.ok(
-    second,
-    "в клинике нет двух приемов разных пациентов: межпациентное слияние нечем воспроизвести"
-  );
-  clinicalPair = {
-    organizationId: first.organizationId,
-    visitA: first.id,
-    patientA: first.patientId,
-    visitB: second.id,
-    patientB: second.patientId
-  };
+  // Блокировка берётся ПЕРВОЙ, до любой записи в базу: свежие строки этого файла
+  // видны общему пределу восстановления, который измеряет соседний файл, и аудиту
+  // всей таблицы ниже.
+  durableLock = await acquireSpeechDurableTestLock();
+
+  // Уборка НА ВХОДЕ: прогон, убитый снаружи (Ctrl+C, закрытая труба), до after не
+  // доходит. Здесь это особенно важно — последний тест умышленно создаёт строку со
+  // смешанным конвертом, и остаться она не должна: аудит всей таблицы принял бы её
+  // за незакрытый дефект.
+  await purgeFixtureOrganizations([ORG]);
+  await db.insert(organizations).values({ id: ORG, name: "Клиника личности записи диктовки" });
+  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+  // ключом, и тест пошёл бы по данным соседнего файла.
+  await db.insert(patients).values([
+    { id: PATIENT_A, organizationId: ORG, fullName: "Ковалёва Мария Сергеевна", birthDate: "1983-07-24" },
+    { id: PATIENT_B, organizationId: ORG, fullName: "Мельник Павел Олегович", birthDate: "1976-02-15" }
+  ]);
+  await db.insert(visits).values([
+    { id: VISIT_A, organizationId: ORG, patientId: PATIENT_A, status: "draft" },
+    { id: VISIT_B, organizationId: ORG, patientId: PATIENT_B, status: "draft" }
+  ]);
 });
 
 after(async () => {
-  for (const recordingId of createdRecordingIds) {
-    await db.delete(aiJobs).where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`));
-  }
+  // Каталожная уборка снимает записи диктовки вместе с клиникой и делает это
+  // ВНУТРИ блокировки: оставленные строки достались бы следующему файлу как свежие
+  // чужие записи и забрали бы общий предел восстановления.
+  await purgeFixtureOrganizations([ORG]);
   resetSpeechTranscriptionCacheForRestart();
+  // Сначала блокировка, потом пул: pool.end() ждёт возврата всех выданных
+  // клиентов и на удержанном соединении блокировки не завершился бы.
+  await durableLock?.release();
   await pool.end();
 });
 
 describe("личность записи диктовки", () => {
   it("после вытеснения из кэша фрагмент чужого приема отклоняется, а не сливается в одну запись", async () => {
     const pair = clinicalPair;
-    assert.ok(pair);
     const recordingId = `test-identity-${randomUUID()}`;
     const decoyRecordingId = `test-identity-decoy-${randomUUID()}`;
-    createdRecordingIds.push(recordingId, decoyRecordingId);
 
     await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
       resetSpeechTranscriptionCacheForRestart();
@@ -275,9 +317,7 @@ describe("личность записи диктовки", () => {
    */
   it("одновременные фрагменты двух приемов не собираются в одну строку", async () => {
     const pair = clinicalPair;
-    assert.ok(pair);
     const recordingId = `test-identity-race-${randomUUID()}`;
-    createdRecordingIds.push(recordingId);
 
     const results = await Promise.allSettled([
       recordSpeechTranscriptionChunk(
@@ -354,10 +394,8 @@ describe("личность записи диктовки", () => {
    */
   it("уже смешанная строка не теряет текст и объявляет о ручном разборе", async () => {
     const pair = clinicalPair;
-    assert.ok(pair);
     const recordingId = `test-identity-legacy-${randomUUID()}`;
     const decoyRecordingId = `test-identity-legacy-decoy-${randomUUID()}`;
-    createdRecordingIds.push(recordingId, decoyRecordingId);
 
     await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
       resetSpeechTranscriptionCacheForRestart();

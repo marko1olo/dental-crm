@@ -13,6 +13,7 @@ import {
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations
 } from "../support/fixtureOrganizations.js";
+import { acquireSpeechDurableTestLock, type SpeechDurableTestLock } from "../support/speechDurableTestLock.js";
 
 /**
  * POST /api/speech/transcribe-chunk — единственный эндпоинт диктовки, который ПИШЕТ
@@ -44,6 +45,16 @@ import {
  * тест дублей терял засеянного пациента и получал 201 вместо 409, а удаление
  * пациента личного кабинета валилось на portal_otp_codes_patient_id_fkey.
  * Блок теперь выводится из имени файла, см. tests/support/fixtureOrganizations.ts.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ЕЩЁ И БЛОКИРОВКА БАЗЫ. Успешная запись фрагмента ниже создаёт в
+ * ai_jobs долговременную строку диктовки (kind = voice_transcription,
+ * input_storage_path `speech-recording://…`). Такие строки конкурируют за ОБЩИЙ на
+ * весь процесс предел восстановления, который измеряет
+ * speech/tests/storageRestoreCeiling.test.ts: он ставит предел равным двум и требует,
+ * чтобы под ним оказались записи двух ЕГО клиник, а порядок отбора пускает туда
+ * самые свежие записи ЛЮБЫХ клиник. Своя клиника от этого не спасает — проверяемый
+ * ресурс глобален. Поэтому все файлы, пишущие такие строки, проходят по одному;
+ * разбор механизма в tests/support/speechDurableTestLock.ts.
  */
 
 const FIXTURE = "speechTranscribeChunkAccess";
@@ -71,6 +82,7 @@ describe("доступ к записи фрагмента диктовки", () 
 	const originalEnv = { ...process.env };
 	let tokenOrgA = "";
 	let tokenOrgB = "";
+	let durableLock: SpeechDurableTestLock | null = null;
 
 	before(async () => {
 		process.env.NODE_ENV = "development";
@@ -90,6 +102,10 @@ describe("доступ к записи фрагмента диктовки", () 
 			// Уборка НА ВХОДЕ: прогон, убитый снаружи, до after не доходит и
 			// оставляет свои клиники в живой базе — именно так там и осталась
 			// «Клиника диктовки Б» из прежнего общего блока, который снимается здесь же.
+			// Блокировка берётся ДО первой записи в базу и внутри того же try, что и
+			// засев: при недоступной базе соединение не выдаётся вообще, и файл обязан
+			// уйти по тому же пути, что при провале засева, а не упасть в before.
+			durableLock = await acquireSpeechDurableTestLock();
 			await purgeFixtureOrganizations([ORG_A, ORG_B, ...LEGACY_SHARED_FIXTURE_ORGANIZATION_IDS]);
 			await db.insert(organizations).values([
 				{ id: ORG_A, name: "Клиника диктовки А" },
@@ -114,6 +130,10 @@ describe("доступ к записи фрагмента диктовки", () 
 		// дописывалось уже после удаления приёма.
 		if (databaseAvailable) await purgeFixtureOrganizations([ORG_A, ORG_B]);
 		resetSpeechTranscriptionCacheForRestart();
+		// Блокировка снимается ПОСЛЕ уборки: оставленные строки диктовки достались бы
+		// следующему файлу как свежие чужие записи и забрали бы общий предел
+		// восстановления. Не снять её вовсе нельзя — очередь встала бы до конца прогона.
+		await durableLock?.release();
 		await app.close();
 		process.env = originalEnv;
 	});

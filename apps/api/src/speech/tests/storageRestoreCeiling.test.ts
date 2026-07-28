@@ -1,10 +1,15 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
-import { eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { SpeechTranscriptionChunk } from "@dental/shared";
 import { db, pool } from "../../db/client.js";
-import { aiJobs, patients, visits } from "../../db/schema.js";
+import { aiJobs, organizations, patients, visits } from "../../db/schema.js";
+import { fixtureUuid, purgeFixtureOrganizations } from "../../tests/support/fixtureOrganizations.js";
+import {
+  acquireSpeechDurableTestLock,
+  type SpeechDurableTestLock
+} from "../../tests/support/speechDurableTestLock.js";
 import {
   assembleSpeechRecording,
   ensureSpeechTranscriptionChunksRestored,
@@ -32,8 +37,38 @@ import {
  * две записи. Без первого замера утверждение «предел работает» было бы
  * непроверяемым: две записи могли бы означать, что в базе их всего две.
  *
- * Идентификаторы клиник, приемов и пациентов берутся запросом к базе, а не
- * прописываются в коде.
+ * ПОЧЕМУ ЗДЕСЬ ДВА СЛОЯ ИЗОЛЯЦИИ, А НЕ ОДИН.
+ *
+ * Прежде этот файл брал клинику запросом «первый прием из базы»
+ * (`.from(visits).limit(1)`) и вторую — «пациент любой другой организации». То же
+ * самое делали `storage.test.ts` и `storageIdentity.test.ts`, то есть все три
+ * получали ОДНУ И ТУ ЖЕ пару клиник, а `node --test` гоняет файлы параллельными
+ * процессами против одной живой базы. Дальше сталкивались два требования:
+ * `storage.test.ts` ставил предел одной записи на клинику и требовал, чтобы этой
+ * одной была его собственная, а здешний первый замер ставит две и требует своих
+ * двух. Кто засеял свежее — тот и вытеснил соседа из ранга по клинике, поэтому
+ * набор упавших тестов плавал от прогона к прогону, а причина выглядела как
+ * дефект восстановления, которого нет.
+ *
+ * СЛОЙ 1 — своя пара клиник, выведенная из имени файла (`fixtureUuid`, см.
+ * `tests/support/fixtureOrganizations.ts`). Он закрывает ранг ВНУТРИ клиники:
+ * `row_number() OVER (PARTITION BY organization_id)` считается по строкам одной
+ * организации, и пока в неё пишет только этот файл, «моя запись самая свежая в
+ * моей клинике» — утверждение о собственных данных.
+ *
+ * СЛОЙ 2 — консультационная блокировка PostgreSQL (`acquireSpeechDurableTestLock`).
+ * Она нужна ровно из-за второй половины первого теста: общий предел
+ * `DENTAL_SPEECH_RESTORED_RECORDINGS_TOTAL` действует на ВСЮ базу, порядок отбора
+ * `(recording_rank ASC, updated_at DESC)` пускает под него самые свежие записи
+ * ранга 1 ЛЮБЫХ клиник, поэтому чужая свежая строка в чужой клинике забирает
+ * предел целиком, а `organizations.size === 2` получает ноль вместо двух.
+ * Своей клиникой это не лечится: проверяемый ресурс глобален по определению.
+ * Разбор механизма — в `tests/support/speechDurableTestLock.ts`.
+ *
+ * Утверждения тестов при этом не ослаблены ни одним символом: измеряется тот же
+ * общий потолок на всю базу, та же справедливость между клиниками и тот же
+ * замер прежнего поведения. Изменилось только то, ЧЬИ строки лежат в базе в
+ * момент замера.
  */
 
 const durableRecordingPathPrefix = "speech-recording://";
@@ -41,9 +76,18 @@ const budgetWarningMarker = "общего предела памяти серве
 
 type SpeechChunkInput = Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">;
 
-let ownScope: { visitId: string; patientId: string; organizationId: string } | null = null;
-let otherScope: { patientId: string; organizationId: string } | null = null;
-const createdRecordingIds: string[] = [];
+const FIXTURE = "speechStorageRestoreCeiling";
+const ORG_OWN = fixtureUuid(FIXTURE, 1);
+const ORG_OTHER = fixtureUuid(FIXTURE, 2);
+const PATIENT_OWN = fixtureUuid(FIXTURE, 3);
+const VISIT_OWN = fixtureUuid(FIXTURE, 4);
+/** У соседней клиники приема нет намеренно: клиника фрагмента определяется и по пациенту. */
+const PATIENT_OTHER = fixtureUuid(FIXTURE, 5);
+
+const ownScope = { visitId: VISIT_OWN, patientId: PATIENT_OWN, organizationId: ORG_OWN };
+const otherScope = { patientId: PATIENT_OTHER, organizationId: ORG_OTHER };
+
+let durableLock: SpeechDurableTestLock | null = null;
 
 async function withEnv(values: Record<string, string>, run: () => Promise<void>): Promise<void> {
   const previous = new Map<string, string | undefined>();
@@ -66,8 +110,8 @@ function buildChunkInput(overrides: Partial<SpeechChunkInput> & { recordingId: s
   return {
     chunkIndex: 0,
     source: "visit",
-    patientId: ownScope?.patientId ?? null,
-    visitId: ownScope?.visitId ?? null,
+    patientId: ownScope.patientId,
+    visitId: ownScope.visitId,
     providerId: "none",
     providerLabel: "Локальный текст браузера",
     mimeType: "audio/webm",
@@ -101,7 +145,6 @@ async function seedRecording(
   transcripts: string[]
 ): Promise<string> {
   const recordingId = `test-ceiling-${label}-${randomUUID()}`;
-  createdRecordingIds.push(recordingId);
   for (const [chunkIndex, transcript] of transcripts.entries()) {
     await recordSpeechTranscriptionChunk(
       buildChunkInput({
@@ -117,30 +160,36 @@ async function seedRecording(
 }
 
 before(async () => {
-  const [visit] = await db
-    .select({ id: visits.id, patientId: visits.patientId, organizationId: visits.organizationId })
-    .from(visits)
-    .limit(1);
-  assert.ok(visit, "в базе нет ни одного приема: потолок восстановления не на чем измерить");
-  ownScope = { visitId: visit.id, patientId: visit.patientId, organizationId: visit.organizationId };
+  // Блокировка берётся ПЕРВОЙ, до любой записи в базу: измеряется общий на всю
+  // базу потолок, и окно замера обязано начинаться раньше собственного засева.
+  durableLock = await acquireSpeechDurableTestLock();
 
-  const [otherPatient] = await db
-    .select({ id: patients.id, organizationId: patients.organizationId })
-    .from(patients)
-    .where(ne(patients.organizationId, visit.organizationId))
-    .limit(1);
-  assert.ok(
-    otherPatient,
-    "в базе только одна организация: рост памяти по числу арендаторов проверить нечем"
-  );
-  otherScope = { patientId: otherPatient.id, organizationId: otherPatient.organizationId };
+  // Уборка НА ВХОДЕ: прогон, убитый снаружи (Ctrl+C, закрытая труба), до after не
+  // доходит и оставляет свои клиники в живой базе. Наследовать их нельзя —
+  // старые записи диктовки исказили бы и ранг по клинике, и общий потолок.
+  await purgeFixtureOrganizations([ORG_OWN, ORG_OTHER]);
+  await db.insert(organizations).values([
+    { id: ORG_OWN, name: "Клиника потолка восстановления" },
+    { id: ORG_OTHER, name: "Соседняя клиника потолка восстановления" }
+  ]);
+  // Без onConflictDoNothing: он молча оставил бы чужую строку с тем же первичным
+  // ключом, и тест пошёл бы по данным соседнего файла.
+  await db.insert(patients).values([
+    { id: PATIENT_OWN, organizationId: ORG_OWN, fullName: "Ефимова Ольга Дмитриевна", birthDate: "1981-04-09" },
+    { id: PATIENT_OTHER, organizationId: ORG_OTHER, fullName: "Носов Кирилл Андреевич", birthDate: "1990-09-21" }
+  ]);
+  await db.insert(visits).values({ id: VISIT_OWN, organizationId: ORG_OWN, patientId: PATIENT_OWN, status: "draft" });
 });
 
 after(async () => {
-  for (const recordingId of createdRecordingIds) {
-    await db.delete(aiJobs).where(eq(aiJobs.inputStoragePath, `${durableRecordingPathPrefix}${recordingId}`));
-  }
+  // Каталожная уборка снимает записи диктовки вместе с клиникой и делает это
+  // ВНУТРИ блокировки: оставленные строки достались бы следующему файлу как
+  // свежие чужие записи ранга 1 и снова забрали бы общий предел.
+  await purgeFixtureOrganizations([ORG_OWN, ORG_OTHER]);
   resetSpeechTranscriptionCacheForRestart();
+  // Сначала блокировка, потом пул: pool.end() ждёт возврата всех выданных
+  // клиентов и на удержанном соединении блокировки не завершился бы.
+  await durableLock?.release();
   await pool.end();
 });
 
@@ -148,8 +197,6 @@ describe("потолок памяти восстановления расшиф�
   it("общее число поднятых записей не растёт с числом клиник", async () => {
     const own = ownScope;
     const other = otherScope;
-    assert.ok(own);
-    assert.ok(other);
 
     resetSpeechTranscriptionCacheForRestart();
     const ownFirst = await seedRecording("own-1", { patientId: own.patientId, visitId: own.visitId }, [
@@ -235,7 +282,6 @@ describe("потолок памяти восстановления расшиф�
 
   it("запись, не влезающая в бюджет фрагментов, не поднимается половиной и не теряет текст", async () => {
     const own = ownScope;
-    assert.ok(own);
 
     resetSpeechTranscriptionCacheForRestart();
     const lines = ["Жалобы: боль зуб 36.", "Диагноз K04.0 пульпит.", "План: эндодонтическое лечение."];
@@ -311,7 +357,6 @@ describe("потолок памяти восстановления расшиф�
 
   it("символьный бюджет отказывает длинной записи и оставляет её в базе целой", async () => {
     const own = ownScope;
-    assert.ok(own);
 
     resetSpeechTranscriptionCacheForRestart();
     const longTranscript = "Развернутый протокол осмотра и лечения. ".repeat(120);
