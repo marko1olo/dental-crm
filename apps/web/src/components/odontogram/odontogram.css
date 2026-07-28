@@ -620,10 +620,20 @@
 	padding: 16px;
 }
 
+/* Рядом со значком загрузки теперь стоят слова, поэтому строка вертикальная и
+   выровнена по центру: крутящийся кружок без подписи не говорит, чего ждать. */
 .history-loading {
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
 	padding: 32px 0;
+}
+
+.history-loading-text {
+	font-size: 13px;
+	color: var(--odontogram-ink-muted);
+	text-align: center;
 }
 
 .spinner {
@@ -635,11 +645,25 @@
 	animation: spin 1s linear infinite;
 }
 
+/* Честная пустота: заголовок плюс подсказка, откуда здесь берутся записи.
+   Панель узкая (320px), поэтому длинная подсказка обязана переноситься. */
 .history-empty {
 	text-align: center;
-	padding: 32px 0;
+	padding: 32px 4px;
 	color: var(--odontogram-ink-muted);
 	font-size: 14px;
+}
+
+.history-empty-title {
+	font-weight: 600;
+	color: var(--odontogram-ink);
+	margin-bottom: 6px;
+}
+
+.history-empty-hint {
+	font-size: 13px;
+	line-height: 1.5;
+	overflow-wrap: break-word;
 }
 
 .history-timeline {
