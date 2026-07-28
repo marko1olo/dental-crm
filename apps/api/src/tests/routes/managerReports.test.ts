@@ -377,6 +377,74 @@ describe("отчёты руководителю", () => {
 		assert.ok(body.note.includes("назначено минус оплачено"));
 	});
 
+	/**
+	 * ПЕРЕПЛАТА — отдельное число, а не исчезнувшая строка.
+	 *
+	 * Отрицательный долг отчёт отбрасывал фильтром, и пациент, заплативший больше
+	 * назначенного, пропадал из всех отчётов, продолжая уменьшать долг ВСЕЙ
+	 * клиники на главном экране (там одно вычитание по клинике). Так на живой базе
+	 * возникло расхождение 51 400 ₽ против 53 000 ₽ — ровно две переплаты по 800 ₽.
+	 *
+	 * Проверяется именно то, что ломается незаметно: итог долга не поехал,
+	 * переплата названа суммой и пациентом, и переплативший НЕ попал в должники.
+	 * Сумма с копейками взята намеренно — деньги точны до копейки.
+	 */
+	test("переплата названа отдельно, а долг от неё не поехал", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		// У «нового» пациента нет ни одной позиции лечения, значит любая оплата
+		// делает его баланс отрицательным.
+		const [prepayment] = await db
+			.insert(payments)
+			.values({ organizationId: ORG_ID, patientId: PATIENT_NEW, amountRub: 4_500.5, status: "paid", paidAt: inPeriod })
+			.returning({ id: payments.id });
+
+		try {
+			const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+			assert.equal(response.statusCode, 200, response.body);
+			const body = JSON.parse(response.body);
+
+			// Долг считается прежним выражением: способ подсчёта не менялся.
+			assert.equal(body.totalDebtRub, 20_000, JSON.stringify(body));
+			assert.equal(body.totalPrepaidRub, 4_500.5, JSON.stringify(body.prepayments));
+
+			const prepaid = body.prepayments.find((row: { patientId: string }) => row.patientId === PATIENT_NEW);
+			assert.equal(prepaid?.prepaidRub, 4_500.5);
+			assert.equal(prepaid?.patientName, "Новый Пациент Петрович");
+
+			// Переплативший не должник: попасть в дебиторку он не имеет права.
+			assert.equal(
+				body.rows.find((row: { patientId: string }) => row.patientId === PATIENT_NEW),
+				undefined
+			);
+
+			/*
+			 * Пробелы нормализуются: разряды в русской локали Intl разделяет
+			 * неразрывным пробелом U+00A0, и сравнение с обычным пробелом падало бы
+			 * на тексте, который человек видит правильным. Копейки при этом
+			 * проверяются буквально — «4 500,5» вместо «4 500,50» в сумме денег
+			 * считается ошибкой.
+			 */
+			const noteText = String(body.note).replace(/\s/g, " ");
+			assert.ok(noteText.includes("вернуть 4 500,50 ₽"), noteText);
+			assert.ok(noteText.includes("20 000,00"), noteText);
+			assert.ok(noteText.includes("15 499,50"), noteText);
+		} finally {
+			await db.delete(payments).where(eq(payments.id, prepayment?.id ?? ""));
+		}
+	});
+
+	test("переплат нет — отчёт говорит это прямо, а не молчит", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+		const body = JSON.parse(response.body);
+
+		assert.equal(body.totalPrepaidRub, 0, JSON.stringify(body.prepayments));
+		assert.deepEqual(body.prepayments, []);
+		assert.ok(body.note.includes("Переплат нет"), body.note);
+	});
+
 	test("загрузка по дням недели и часам заполнена", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 

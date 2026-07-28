@@ -86,7 +86,19 @@ type ReportsSummary = {
 		isEmpty: boolean;
 	};
 	patientFlow: { points: { bucket: string; newPatients: number; returningPatients: number }[]; newTotal: number; returningTotal: number };
-	receivables: { totalDebtRub: number; byBucket: Record<string, number>; debtors: number };
+	receivables: {
+		totalDebtRub: number;
+		byBucket: Record<string, number>;
+		debtors: number;
+		/*
+		 * Переплаты приходят из /api/reports/summary с 2026-07-28. Поля
+		 * необязательные: старый ответ сервера (клиника обновляет веб раньше API)
+		 * их не содержит, и блок переплат тогда просто не выводится — вместо
+		 * «клиника должна вернуть undefined ₽».
+		 */
+		totalPrepaidRub?: number;
+		prepayments?: { patientId: string; patientName: string; prepaidRub: number }[];
+	};
 	isEmpty: boolean;
 };
 
@@ -576,6 +588,51 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 										</li>
 									))}
 							</ul>
+						)}
+
+						{/* ── Переплаты: клиника должна вернуть ────────────────────── */}
+						{(summary.receivables.totalPrepaidRub ?? 0) > 0 && (
+							<>
+								<h3 className="ops-section-title">Переплаты: клиника должна вернуть</h3>
+								{/*
+								  * Разметка — та же таблица, что у врачей и кресел выше
+								  * (`ops-table` в styles/dente-operations.css), с `data-label`
+								  * для узких экранов. Своих классов здесь нет намеренно:
+								  * придуманный `ops-list__row` в таблице стилей не описан и
+								  * дал бы неоформленный блок.
+								  */}
+								<div className="ops-table-wrap">
+									<table className="ops-table">
+										<thead>
+											<tr>
+												<th scope="col">Пациент</th>
+												<th scope="col">Переплата</th>
+											</tr>
+										</thead>
+										<tbody>
+											{(summary.receivables.prepayments ?? []).map((row) => (
+												<tr key={row.patientId}>
+													<td className="ops-strong" data-label="Пациент">
+														{row.patientName}
+													</td>
+													<td className="ops-num" data-label="Переплата">
+														{money(row.prepaidRub)}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<p className="ops-hint">
+									Эти пациенты заплатили больше назначенного — всего{" "}
+									{money(summary.receivables.totalPrepaidRub ?? 0)}. На главном экране сумма к оплате считается
+									по всей клинике одним вычитанием, поэтому переплата там уже зачтена в долг других пациентов:
+									долг {money(summary.receivables.totalDebtRub)} минус переплаты{" "}
+									{money(summary.receivables.totalPrepaidRub ?? 0)} и есть та сумма, которую показывает главный
+									экран. Верните деньги или зачтите их в счёт следующего приёма — иначе долг клиники
+									продолжит выглядеть меньше, чем он есть.
+								</p>
+							</>
 						)}
 
 						<p className="ops-hint">

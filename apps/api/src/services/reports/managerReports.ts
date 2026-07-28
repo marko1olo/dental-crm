@@ -791,22 +791,65 @@ export type ReceivablesRow = {
 	readonly bucket: ReceivablesBucket;
 };
 
+/**
+ * Деньги в тексте для человека — всегда с копейками.
+ *
+ * `toLocaleString("ru-RU")` без параметров печатает 3 100,5 вместо 3 100,50:
+ * в примечании к отчёту о деньгах это выглядит как другая сумма.
+ */
+function rubToKopeckText(value: number): string {
+	return value.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Пациент заплатил больше, чем ему назначено: клиника должна ему, а не он ей. */
+export type ReceivablesPrepaymentRow = {
+	readonly patientId: string;
+	readonly patientName: string;
+	readonly prepaidRub: number;
+};
+
 export type ReceivablesReport = {
 	readonly rows: ReceivablesRow[];
 	readonly totalDebtRub: number;
 	readonly byBucket: Readonly<Record<ReceivablesBucket, number>>;
+	/** Переплаты по каждому пациенту, суммой от крупной к мелкой. */
+	readonly prepayments: ReceivablesPrepaymentRow[];
+	/** Сколько всего клиника должна вернуть пациентам. */
+	readonly totalPrepaidRub: number;
 	readonly note: string;
 	readonly isEmpty: boolean;
 };
 
 /**
- * Дебиторка: кто и сколько не доплатил.
+ * Дебиторка: кто и сколько не доплатил — и кто переплатил.
  *
  * Долг = назначено минус оплачено, как это считает db/domainStateHydration.ts.
  * Считается на дату отчёта, а не за период: долг не «возникает в марте», он
  * просто есть. Срок определяется по самой ранней неоплаченной позиции; позиции
  * без визита датировать нечем — они попадают в отдельную корзину, а не
  * приписываются к «текущим».
+ *
+ * ПОЧЕМУ ЗДЕСЬ ПОЯВИЛИСЬ ПЕРЕПЛАТЫ. Отрицательный долг этот отчёт отбрасывал
+ * фильтром `debtRub >= minDebtRub`, и переплативший пациент просто исчезал из
+ * всех отчётов. При этом главный экран (`buildBillingSummary`, sampleData.ts)
+ * вычитает оплаченное из назначенного ПО ВСЕЙ КЛИНИКЕ одним действием, то есть
+ * чужая переплата молча уменьшает чей-то долг. Так и появилось расхождение,
+ * измеренное на живой базе: 51 400 ₽ на главном экране против 53 000 ₽ в
+ * дебиторке — разница ровно в двух переплатах по 800 ₽. Ни один экран не
+ * говорил, что клиника должна двум людям деньги.
+ *
+ * Проверено повторно сквозным прогоном (tests/routes/chainWeldProof.ts): оплата
+ * 1 500,50 ₽ пациенту без назначенного лечения уменьшила долг всей клиники на
+ * главном экране и не изменила дебиторку.
+ *
+ * Способ подсчёта долга здесь НЕ менялся: `totalDebtRub` и корзины считаются
+ * прежним выражением, иначе разошлись бы ещё сильнее. Добавлено недостающее
+ * понятие — переплата отдельным числом, с которым числа двух экранов сходятся:
+ * долг − переплаты = сумма, которую показывает главный экран.
+ *
+ * Переплаты берутся по ОБЪЕДИНЕНИЮ пациентов из позиций лечения и из платежей:
+ * пациент, заплативший вперёд до любых назначений, в позициях лечения не
+ * встречается вовсе, и по одной таблице его переплату не увидеть.
  */
 export async function receivables(
 	organizationId: string,
@@ -838,23 +881,43 @@ export async function receivables(
 		.groupBy(payments.patientId);
 	const paidByPatient = new Map(paidRows.map((row) => [row.patientId, Number(row.paidRub)]));
 
-	const debtors = plannedRows
-		.map((row) => ({
-			patientId: row.patientId,
-			debtRub: Number(row.plannedRub) - (paidByPatient.get(row.patientId) ?? 0),
-			oldestChargeAt: row.oldestChargeAt ? new Date(row.oldestChargeAt) : null,
-			hasUndated: Number(row.undatedItems) > 0
-		}))
+	// Баланс по каждому пациенту, который есть хотя бы в одной из двух таблиц.
+	// Положительный — долг, отрицательный — переплата.
+	const plannedByPatient = new Map(plannedRows.map((row) => [row.patientId, row]));
+	const balances = [...new Set<string>([...plannedByPatient.keys(), ...paidByPatient.keys()])].map((patientId) => {
+		const planned = plannedByPatient.get(patientId);
+		const oldestChargeAt = planned?.oldestChargeAt ? new Date(planned.oldestChargeAt) : null;
+		return {
+			patientId,
+			debtRub: Number(planned?.plannedRub ?? 0) - (paidByPatient.get(patientId) ?? 0),
+			oldestChargeAt,
+			hasUndated: Number(planned?.undatedItems ?? 0) > 0
+		};
+	});
+
+	const debtors = balances
 		.filter((row) => row.debtRub >= minDebtRub)
 		.sort((left, right) => right.debtRub - left.debtRub)
 		.slice(0, limit);
 
-	if (debtors.length === 0) {
+	// Порог тот же, что у долга: копеечные хвосты округления не выдаём за
+	// обязательство клиники вернуть деньги.
+	const overpaid = balances
+		.filter((row) => -row.debtRub >= minDebtRub)
+		.sort((left, right) => left.debtRub - right.debtRub)
+		.slice(0, limit);
+	// До копейки, а не до рубля: суммы numeric(12,2) складываются в двоичной
+	// плавающей точке, и без округления итог печатается как 1600.0000000000002.
+	const totalPrepaidRub = Math.round(overpaid.reduce((total, row) => total - row.debtRub, 0) * 100) / 100;
+
+	if (debtors.length === 0 && overpaid.length === 0) {
 		return {
 			rows: [],
 			totalDebtRub: 0,
 			byBucket: { current: 0, up_to_30: 0, up_to_90: 0, over_90: 0, undated: 0 },
-			note: "Долгов нет.",
+			prepayments: [],
+			totalPrepaidRub: 0,
+			note: "Долгов нет, переплат тоже нет.",
 			isEmpty: true
 		};
 	}
@@ -893,13 +956,30 @@ export async function receivables(
 		};
 	});
 
+	const prepayments: ReceivablesPrepaymentRow[] = overpaid.map((row) => ({
+		patientId: row.patientId,
+		patientName: names.get(row.patientId) ?? "Пациент вне картотеки",
+		prepaidRub: Math.round(-row.debtRub * 100) / 100
+	}));
+
+	const totalDebtRub = Math.round(rows.reduce((total, row) => total + row.debtRub, 0) * 100) / 100;
+
 	return {
 		rows,
-		totalDebtRub: rows.reduce((total, row) => total + row.debtRub, 0),
+		totalDebtRub,
 		byBucket,
+		prepayments,
+		totalPrepaidRub,
 		note:
 			"Долг = назначено минус оплачено, на дату отчёта. Срок — по самой ранней позиции лечения; " +
-			"позиции без привязки к приёму датировать нечем, они в отдельной корзине.",
+			"позиции без привязки к приёму датировать нечем, они в отдельной корзине. " +
+			(totalPrepaidRub > 0
+				? `Переплаты показаны отдельно: клиника должна вернуть ${rubToKopeckText(totalPrepaidRub)} ₽ ` +
+					`${prepayments.length} пациент(ам). На главном экране сумма к оплате считается по всей клинике одним ` +
+					`вычитанием, поэтому там переплаты уже зачтены в долг других пациентов: ` +
+					`${rubToKopeckText(totalDebtRub)} − ${rubToKopeckText(totalPrepaidRub)} = ` +
+					`${rubToKopeckText(Math.round((totalDebtRub - totalPrepaidRub) * 100) / 100)} ₽.`
+				: "Переплат нет: ни один пациент не заплатил больше назначенного."),
 		isEmpty: false
 	};
 }

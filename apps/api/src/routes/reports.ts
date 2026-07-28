@@ -211,7 +211,20 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			appointments: funnel,
 			reminderEffect: reminders,
 			patientFlow: flow,
-			receivables: { totalDebtRub: debts.totalDebtRub, byBucket: debts.byBucket, debtors: debts.rows.length },
+			/*
+			 * Переплаты идут в сводку вместе с долгом. Без них экран показывал долг
+			 * 53 000 ₽, а главный экран — 51 400 ₽, и разницу (две переплаты по
+			 * 800 ₽) не объяснял никто: деньги пациентов молча зачитывались в чужой
+			 * долг. `prepayments` несёт имена и суммы — иначе неизвестно, кому
+			 * возвращать.
+			 */
+			receivables: {
+				totalDebtRub: debts.totalDebtRub,
+				byBucket: debts.byBucket,
+				debtors: debts.rows.length,
+				totalPrepaidRub: debts.totalPrepaidRub,
+				prepayments: debts.prepayments
+			},
 			// Признак пустоты по всем разделам сразу: интерфейс должен различать
 			// «данных за период нет» и «все показатели равны нулю».
 			isEmpty: revenue.isEmpty && doctors.isEmpty && chairs.isEmpty && funnel.isEmpty && flow.isEmpty

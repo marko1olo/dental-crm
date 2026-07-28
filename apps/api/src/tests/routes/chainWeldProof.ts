@@ -50,6 +50,8 @@ type MoneySnapshot = {
 	readonly dueRub: number;
 	readonly receivablesTotalRub: number;
 	readonly receivablesRows: number;
+	readonly prepaidTotalRub: number;
+	readonly prepaidRows: number;
 	readonly doctorRevenueRub: number;
 	readonly unattributedRevenueRub: number;
 };
@@ -91,12 +93,15 @@ async function readMoney(app: FastifyInstance, clinicToken: string, staffToken: 
 		dueRub: money(summary.totalDueRub),
 		receivablesTotalRub: money(receivables.totalDebtRub),
 		receivablesRows: (receivables.rows ?? []).length,
+		prepaidTotalRub: money(receivables.totalPrepaidRub),
+		prepaidRows: (receivables.prepayments ?? []).length,
 		doctorRevenueRub: money(doctorRevenueRub),
 		unattributedRevenueRub: money(doctors.unattributedRevenueRub),
 	};
 	console.log(
 		`[${label}] дашборд: назначено=${snapshot.plannedRub} оплачено=${snapshot.paidRub} долг=${snapshot.dueRub}; ` +
 			`дебиторка: итог=${snapshot.receivablesTotalRub} должников=${snapshot.receivablesRows}; ` +
+			`переплаты: итог=${snapshot.prepaidTotalRub} пациентов=${snapshot.prepaidRows}; ` +
 			`врачи: выручка по врачам=${snapshot.doctorRevenueRub} не отнесено=${snapshot.unattributedRevenueRub}` +
 			` (HTTP ${dashboardResponse.statusCode}/${receivablesResponse.statusCode}/${doctorsResponse.statusCode})`,
 	);
@@ -349,9 +354,26 @@ async function main(): Promise<void> {
 		);
 		console.log(
 			`РАСХОЖДЕНИЕ ФОРМУЛ ДОЛГА: дашборд вычел мои ${money(after.paidRub - before.paidRub)} ₽ из долга ВСЕЙ клиники ` +
-				`(${before.dueRub} -> ${after.dueRub}), а дебиторка не изменилась (${after.receivablesTotalRub}): ` +
-				"переплата этого пациента молча зачлась в чужой долг и ни на одном экране не названа.",
+				`(${before.dueRub} -> ${after.dueRub}), а итог дебиторки не изменился (${after.receivablesTotalRub}).`,
 		);
+		console.log(
+			`ПЕРЕПЛАТА ТЕПЕРЬ НАЗВАНА: отчёт дебиторки показывает переплаты ${before.prepaidTotalRub} -> ${after.prepaidTotalRub} ₽ ` +
+				`у ${after.prepaidRows} пациент(ов). Сходимость с главным экраном: долг ${after.receivablesTotalRub} − ` +
+				`переплаты ${after.prepaidTotalRub} = ${money(after.receivablesTotalRub - after.prepaidTotalRub)}, ` +
+				`долг главного экрана = ${after.dueRub}.`,
+		);
+		const receivablesBody = await app.inject({
+			method: "GET",
+			url: "/api/reports/receivables",
+			headers: { "x-dente-staff-token": staffToken },
+		});
+		if (receivablesBody.statusCode === 200) {
+			const parsedReceivables = JSON.parse(receivablesBody.body);
+			for (const row of parsedReceivables.prepayments ?? []) {
+				console.log(`   переплата: ${row.patientName} — ${money(row.prepaidRub)} ₽`);
+			}
+			console.log(`   примечание отчёта: ${parsedReceivables.note}`);
+		}
 		const patientDebt = await firstRow<Record<string, unknown>>(
 			sql`select
 			      coalesce((select sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0))
