@@ -12,7 +12,7 @@ import {
 	patients,
 	users
 } from "../../db/schema.js";
-import { dayBoundsInTimeZone, registerDayConfirmationRoutes } from "../../routes/dayConfirmations.js";
+import { dayBoundsInTimeZone, registerDayConfirmationRoutes, tomorrowInTimeZone } from "../../routes/dayConfirmations.js";
 
 /**
  * Утренний обзвон.
@@ -68,6 +68,46 @@ describe("границы дня в часовом поясе клиники", ()
 		assert.equal(bounds.to.getTime() - bounds.from.getTime(), 24 * 60 * 60 * 1000 - 1);
 	});
 
+	/*
+	 * ДЕНЬ ПЕРЕХОДА НА ЗИМНЕЕ ВРЕМЯ — 25 ЧАСОВ, И ИМЕННО ОН ЛОМАЛ ОБЗВОН.
+	 *
+	 * Прежний расчёт прибавлял к текущему моменту 24 часа и форматировал
+	 * результат в поясе клиники. В сутки длиной 25 часов прибавленные 24 часа не
+	 * доводят до следующей календарной даты, и список «на завтра» молча
+	 * становился списком на СЕГОДНЯ: администратор обзванивал не тот день, а
+	 * завтрашние приёмы оставались без подтверждения. Один раз в год, тихо, без
+	 * ошибки на экране.
+	 *
+	 * Момент выбран проверяемый: 2026-11-01T04:30:00Z в America/New_York — это
+	 * 1 ноября 00:30 по местному времени, а переход происходит в 02:00 того же
+	 * дня. Прежний расчёт давал здесь 2026-11-01.
+	 */
+	test("в сутках длиной 25 часов завтра всё равно завтра", () => {
+		const beforeFallBack = new Date("2026-11-01T04:30:00.000Z");
+		assert.equal(tomorrowInTimeZone("America/New_York", beforeFallBack), "2026-11-02");
+
+		// Тот же момент прежним способом — чтобы разница была видна, а не
+		// принималась на слово.
+		const shiftedByDay = new Intl.DateTimeFormat("en-CA", {
+			timeZone: "America/New_York",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit"
+		}).format(new Date(beforeFallBack.getTime() + 24 * 60 * 60 * 1000));
+		assert.equal(shiftedByDay, "2026-11-01", "проверяемый пример перестал быть примером: 24 часа больше не отстают");
+	});
+
+	test("переход через конец месяца и года не теряет день", () => {
+		// 31 июля в Москве: завтра — август, а не «32 июля» и не сегодня.
+		assert.equal(tomorrowInTimeZone("Europe/Moscow", new Date("2026-07-31T20:00:00.000Z")), "2026-08-01");
+		// 23:30 по Москве 31 декабря: в UTC ещё старый год.
+		assert.equal(tomorrowInTimeZone("Europe/Moscow", new Date("2026-12-31T20:30:00.000Z")), "2027-01-01");
+	});
+
+	test("неизвестный пояс не роняет обзвон, а отвечает сутками вперёд по UTC", () => {
+		assert.equal(tomorrowInTimeZone("Марс/Олимп", new Date("2026-07-28T10:00:00.000Z")), "2026-07-29");
+	});
+
 	test("испорченная дата и неизвестный пояс не роняют разбор", () => {
 		assert.equal(dayBoundsInTimeZone("не дата", "Europe/Moscow"), null);
 		assert.equal(dayBoundsInTimeZone("2026-07-28", "Марс/Олимп"), null);
@@ -78,16 +118,30 @@ describe("список подтверждений на день", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
 	const originalEnv = { ...process.env };
-	// Приёмы ставятся на завтра: обзвон делают накануне, и это же значение по
-	// умолчанию у маршрута.
-	const tomorrowNoon = new Date(Date.now() + 24 * 60 * 60 * 1000);
-	tomorrowNoon.setUTCHours(9, 0, 0, 0);
-	const isoDate = new Intl.DateTimeFormat("en-CA", {
+	/*
+	 * Приёмы ставятся на завтра: обзвон делают накануне, и это же значение по
+	 * умолчанию у маршрута.
+	 *
+	 * ЧЕМ БЫЛА ПЛОХА ПРЕЖНЯЯ ФИКСТУРА. Она брала `Date.now() + 24 ч` и добивала
+	 * момент до 09:00 ПО UTC. Это откатывало момент назад, и когда дата в UTC
+	 * отстаёт от даты в Москве — то есть каждый день с 21:00 до 24:00 UTC — тест
+	 * ждал СЕГОДНЯШНЮЮ дату и падал на верном ответе маршрута. Три часа в сутки
+	 * набор был красным без единой правки в коде: ровно тот случайно красный
+	 * сторож, который обесценивает весь набор.
+	 *
+	 * Дата считается КАЛЕНДАРНО и НЕЗАВИСИМО от маршрута: своё форматирование,
+	 * своё прибавление дня. Позвать `tomorrowInTimeZone` было бы проще, но тогда
+	 * утверждение «по умолчанию берётся завтрашний день» проверяло бы функцию
+	 * сама на себя и не заметило бы её поломки.
+	 */
+	const moscowToday = new Intl.DateTimeFormat("en-CA", {
 		timeZone: "Europe/Moscow",
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit"
-	}).format(tomorrowNoon);
+	}).format(new Date());
+	const [moscowYear, moscowMonth, moscowDay] = moscowToday.split("-").map((value) => Number.parseInt(value, 10));
+	const isoDate = new Date(Date.UTC(moscowYear!, moscowMonth! - 1, moscowDay! + 1)).toISOString().slice(0, 10);
 
 	before(async () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
@@ -118,9 +172,17 @@ describe("список подтверждений на день", () => {
 				])
 				.onConflictDoNothing();
 
+			/*
+			 * Приёмы привязываются К САМОЙ ДАТЕ, а не к «сейчас плюс сутки»: 09:00
+			 * UTC — это 12:00 по Москве того же календарного дня, и четыре приёма со
+			 * сдвигом 0-3 часа заведомо попадают в московские сутки isoDate. Прежний
+			 * якорь считался от текущего момента и в трёх часах суток уезжал на
+			 * предыдущий день вместе с ожидаемой датой.
+			 */
+			const dayAnchor = new Date(`${isoDate}T09:00:00.000Z`);
 			const slot = (offsetHours: number) => ({
-				startsAt: new Date(tomorrowNoon.getTime() + offsetHours * 3_600_000),
-				endsAt: new Date(tomorrowNoon.getTime() + offsetHours * 3_600_000 + 3_600_000)
+				startsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000),
+				endsAt: new Date(dayAnchor.getTime() + offsetHours * 3_600_000 + 3_600_000)
 			});
 
 			await db

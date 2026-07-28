@@ -81,17 +81,52 @@ export function dayBoundsInTimeZone(date: string, timeZone: string): { from: Dat
 	return { from, to };
 }
 
-/** Завтрашняя дата в поясе клиники — обзвон делают накануне. */
-function tomorrowInTimeZone(timeZone: string, now = new Date()): string {
-	const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+/** Дата в поясе клиники в виде ГГГГ-ММ-ДД. null — пояс неизвестен. */
+function dateInTimeZone(timeZone: string, moment: Date): string | null {
 	try {
 		// en-CA даёт ISO-подобный формат ГГГГ-ММ-ДД.
 		return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
-			tomorrow
+			moment
 		);
 	} catch {
-		return tomorrow.toISOString().slice(0, 10);
+		return null;
 	}
+}
+
+/**
+ * Следующий календарный день. Перенос через конец месяца и года делает сам
+ * `Date.UTC`: день 32 в июле он превращает в 1 августа.
+ */
+function nextCalendarDay(date: string): string {
+	const [year, month, day] = date.split("-").map((value) => Number.parseInt(value, 10));
+	if (!year || !month || !day) return date;
+	return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+}
+
+/**
+ * Завтрашняя дата в поясе клиники — обзвон делают накануне.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Здесь к текущему моменту прибавлялись 24 часа, и результат
+ * форматировался в поясе клиники. Сутки не всегда равны 24 часам: в день
+ * перехода на зимнее время их 25, и прибавленные 24 часа не доводят до
+ * следующей календарной даты. Для клиники в таком поясе список «на завтра»
+ * молча становился списком на СЕГОДНЯ — администратор обзванивал не тот день,
+ * а завтрашние приёмы оставались без подтверждения.
+ *
+ * Проверяемый пример: момент 2026-11-01T04:30:00Z в America/New_York — это
+ * 1 ноября 00:30 по местному времени, сутки в этот день длиной 25 часов.
+ * Прежний расчёт давал 2026-11-01, то есть сегодня.
+ *
+ * Теперь дата считается КАЛЕНДАРНО: берётся сегодняшняя дата в поясе клиники и
+ * к ней прибавляется один день. Длина суток на это не влияет вообще.
+ */
+export function tomorrowInTimeZone(timeZone: string, now = new Date()): string {
+	const today = dateInTimeZone(timeZone, now);
+	// Пояс неизвестен — прежнее поведение: сутки вперёд по UTC. Здесь это
+	// единственный доступный ответ, и он честнее отказа: маршрут обязан вернуть
+	// список хотя бы за какой-то день.
+	if (!today) return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	return nextCalendarDay(today);
 }
 
 function badRequest(reply: FastifyReply, message: string) {
