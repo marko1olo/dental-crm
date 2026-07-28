@@ -1,7 +1,8 @@
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../AppHelpers";
-import { realVisitFieldId, visitOwnedPlanItems } from "./completedServicesPlan";
+import { visitOwnedPlanItems } from "./completedServicesPlan";
+import { realVisitFieldId } from "./visitIdentity";
 
 /*
   ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО — ВСЁ СРАЗУ.

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { NIL_UUID, realVisitFieldId, visitOwnedPlanItems } from "./completedServicesPlan";
+import { visitOwnedPlanItems } from "./completedServicesPlan";
+import { NIL_UUID, realVisitFieldId } from "./visitIdentity";
 
 /**
  * ЧТО ОХРАНЯЕТ ЭТОТ ФАЙЛ. Список «Отметка выполненного по плану лечения» внутри
@@ -68,11 +69,4 @@ describe("позиции плана для отметки выполненног
 		assert.deepEqual(visitOwnedPlanItems([null, undefined, {}], "пациент-А"), []);
 	});
 
-	it("идентификатор приёма читается без мусора", () => {
-		assert.equal(realVisitFieldId("  приём-1  "), "приём-1");
-		assert.equal(realVisitFieldId(NIL_UUID), null);
-		assert.equal(realVisitFieldId(""), null);
-		assert.equal(realVisitFieldId(undefined), null);
-		assert.equal(realVisitFieldId(42), null);
-	});
 });
