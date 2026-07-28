@@ -329,7 +329,7 @@ export function WaitlistDrawer(props: Props) {
 					onClick={() => setIsMinimized(false)}
 					className="bg-[var(--paper)] border border-[var(--line-strong)] shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-[var(--paper-soft)] transition-colors"
 				>
-					<Calendar className="w-5 h-5 text-teal-400" />
+					<Calendar className="w-5 h-5 text-[var(--teal)]" />
 					<span className="text-[var(--ink)] font-medium">
 						Лист ожидания (Свернут)
 					</span>
@@ -345,7 +345,7 @@ export function WaitlistDrawer(props: Props) {
 				{/* Header */}
 				<div className="p-6 border-b border-[var(--line)] flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<Calendar className="w-5 h-5 text-teal-400" />
+						<Calendar className="w-5 h-5 text-[var(--teal)]" />
 						<h3 className="text-lg font-semibold tracking-wide">
 							Лист ожидания
 						</h3>
@@ -388,7 +388,7 @@ export function WaitlistDrawer(props: Props) {
 						className="bg-[var(--paper-soft)] rounded-xl p-4 border border-[var(--line)] space-y-4"
 					>
 						<h4 className="text-sm font-semibold text-[var(--ink-2)] flex items-center gap-2">
-							<UserPlus className="w-4 h-4 text-teal-400" />
+							<UserPlus className="w-4 h-4 text-[var(--teal)]" />
 							Добавить в очередь
 						</h4>
 
@@ -399,7 +399,7 @@ export function WaitlistDrawer(props: Props) {
 							<select
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
-								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-teal-500"
+								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								required
 							>
 								<option value="">-- Выберите пациента --</option>
@@ -418,7 +418,7 @@ export function WaitlistDrawer(props: Props) {
 							<select
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
-								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-teal-500"
+								className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-lg p-2 text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 							>
 								<option value="">-- Любой врач --</option>
 								{doctors.map((d: any) => (
@@ -455,9 +455,34 @@ export function WaitlistDrawer(props: Props) {
 							</div>
 						</div>
 
+						{/*
+							ГЛАВНОЕ ДЕЙСТВИЕ ЯЩИКА БРАЛО ЦВЕТ НЕ ИЗ ТЕМЫ.
+
+							Здесь стояли стоковые классы Tailwind (bg-teal-500, текст
+							#1e293b). Палитра Tailwind в проекте не переопределена, поэтому
+							кнопка красилась одинаково во всех трёх темах. Измерено по
+							снимкам .dente-ops-shots/*_waitlist.png: кнопка #00bba7 в
+							светлой, тёмной И ночной, тогда как подложка ящика уходит с
+							#e2e8f0 на #2a3847 и на тёплый #342d26, а иконка пустого
+							состояния рядом честно меняется с #0f766e на #14b8a6 и на тёплый
+							#cf9146. То есть в ночной теме — она ТЁПЛАЯ, а не просто тёмная —
+							самый громкий элемент панели оставался холодной бирюзой. И даже
+							в светлой теме кнопка была мимо палитры: --teal там #0d9488, а на
+							экране #00bba7.
+
+							ПОЧЕМУ ИМЕННО --teal-dark, А НЕ --teal. Пара «фон --teal-dark +
+							текст --on-teal» даёт контраст 5.47:1 в светлой, 6.81:1 в тёмной,
+							6.60:1 в ночной — при норме 4.5:1 для полужирного текста 14px.
+							Пара с --teal провалила бы светлую тему: белый на #0d9488 — 3.74:1.
+							Починка темы не имеет права стоить читаемости.
+
+							Наведение сделано яркостью, а не вторым цветом: --teal светлее
+							--teal-dark во всех трёх темах, но текст на нём теряет контраст,
+							а brightness двигает фон и текст вместе.
+						*/}
 						<button
 							type="submit"
-							className="w-full py-2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-[#1e293b] font-bold rounded-lg text-sm transition-colors shadow-md shadow-teal-500/10"
+							className="w-full py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-sm transition-all shadow-md shadow-[var(--teal-surface)]"
 						>
 							Добавить в очередь
 						</button>
@@ -500,7 +525,7 @@ export function WaitlistDrawer(props: Props) {
 											);
 											e.dataTransfer.effectAllowed = "copy";
 										}}
-										className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-4 flex flex-col gap-3 hover:border-teal-500/50 cursor-grab active:cursor-grabbing transition-colors"
+										className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-4 flex flex-col gap-3 hover:border-[var(--teal-ring)] cursor-grab active:cursor-grabbing transition-colors"
 									>
 										<div className="flex justify-between items-start">
 											<div>
@@ -532,7 +557,7 @@ export function WaitlistDrawer(props: Props) {
 										<div className="flex gap-2 mt-1">
 											<button
 												onClick={() => handleBook(item)}
-												className="flex-1 py-1.5 px-3 bg-teal-500/15 hover:bg-teal-500/25 active:bg-teal-500/35 text-teal-400 font-semibold rounded-lg text-xs transition-colors border border-teal-500/20"
+												className="flex-1 py-1.5 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-lg text-xs transition-colors border border-[var(--teal-ring)]"
 											>
 												Записать на прием
 											</button>

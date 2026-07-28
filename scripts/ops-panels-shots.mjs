@@ -77,19 +77,41 @@ process.on("exit", () => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function getPageTarget(retries = 40) {
+/**
+ * Ждём вкладку, УЖЕ ОТКРЫТУЮ НА ПРИЛОЖЕНИИ, а не первую попавшуюся.
+ *
+ * ЧТО ЛОМАЛОСЬ. Браузер отдаёт вкладку в /json/list раньше, чем она уходит с
+ * about:blank на переданный в командной строке адрес. Первое же обращение
+ * сценария — запись токенов входа в window.localStorage, а на about:blank
+ * хранилище недоступно по происхождению: страница бросает отказ доступа. Наружу
+ * это выглядело как «Ошибка в странице: Uncaught» без единого слова о причине,
+ * то есть снимков нет и непонятно почему. Гонку видно только под нагрузкой
+ * машины, когда браузер запускается медленнее обычного.
+ *
+ * Молчаливого запаса здесь нет: если вкладки на приложении не появилось,
+ * сценарий обязан сказать, ЧТО он вместо неё видел.
+ */
+async function getPageTarget(retries = 60) {
+  let lastSeen = [];
   for (let attempt = 0; attempt < retries; attempt += 1) {
     try {
       const response = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
       const targets = await response.json();
-      const page = targets.find((target) => target.type === "page");
+      lastSeen = targets.filter((target) => target.type === "page").map((target) => target.url);
+      const page = targets.find((target) => target.type === "page" && String(target.url).startsWith(webBaseUrl));
       if (page) return page;
     } catch {
       /* браузер ещё поднимается */
     }
     await sleep(1000);
   }
-  throw new Error("Отладочный порт браузера не отвечает");
+  if (lastSeen.length === 0) {
+    throw new Error(`Отладочный порт браузера ${cdpPort} не отдал ни одной вкладки за ${retries} с. Браузер не запустился.`);
+  }
+  throw new Error(
+    `Вкладка на ${webBaseUrl} не открылась за ${retries} с. Открытые вкладки: ${lastSeen.join(", ")}. ` +
+      "Проверьте, отвечает ли веб-сервер разработки.",
+  );
 }
 
 const pageTarget = await getPageTarget();
@@ -149,7 +171,17 @@ function send(method, params = {}) {
 async function evaluate(expression) {
   const result = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
   if (result.exceptionDetails) {
-    throw new Error(`Ошибка в странице: ${result.exceptionDetails.text}`);
+    /*
+     * exceptionDetails.text у V8 — почти всегда голое «Uncaught», без причины.
+     * Настоящее сообщение лежит в exception.description; выражение печатается
+     * первой строкой, потому что в сценарии таких вызовов десятки и по одному
+     * «Uncaught» не понять, какой из них упал.
+     */
+    const details = result.exceptionDetails;
+    const reason =
+      details.exception?.description || details.exception?.value || details.text || "исключение без описания";
+    const firstLine = expression.trim().split("\n")[0].slice(0, 120);
+    throw new Error(`Ошибка в странице: ${reason}\n  выражение: ${firstLine}`);
   }
   return result.result?.value;
 }
