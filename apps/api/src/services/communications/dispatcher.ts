@@ -26,7 +26,7 @@
  *   5. Зависшие захваты (процесс упал посреди отправки) возвращаются в очередь.
  */
 
-import { and, eq, inArray, isNotNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, lt, lte, notInArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	clinics,
@@ -372,14 +372,51 @@ export type DispatchOptions = {
 	readonly now?: Date;
 };
 
+/**
+ * Итог прохода по очереди. Каждая захваченная строка попадает РОВНО в один из
+ * счётчиков итога (`sent`, `retried`, `failed`, `suppressed`, `notConfigured`,
+ * `deferred`), поэтому их сумма всегда равна `claimed`. На это свойство опирается
+ * интерфейс: «взято N, ушло M» — и всё, что между ними, обязано быть названо.
+ *
+ * ПОЧЕМУ `notConfigured` ОТДЕЛЁН ОТ `suppressed`. В базе оба пишутся статусом
+ * `suppressed` (processRow ниже), и до сих пор оба попадали в один счётчик, а
+ * интерфейс называл их одинаково: «отправлять не стали — тихие часы, нет
+ * согласия или нет адреса». Но «пациент отказался» — это решение, которое
+ * выполнено правильно, а «SMS-шлюз не настроен» (channelRouter.ts:151-152 →
+ * deliveryPolicy.ts:191-193) — незаконченная настройка: сообщения не уйдут
+ * никогда, пока администратор не заведёт ключи доступа. Показывать это как
+ * спокойное решение — врать про работу, которой не было.
+ */
 export type DispatchReport = {
 	readonly claimed: number;
 	readonly sent: number;
+	/** Шлюз отказал по преходящей причине: строка вернулась в очередь с выдержкой. */
 	readonly retried: number;
 	readonly failed: number;
+	/** Осознанный отказ отправлять: нет согласия, суточный предел, реклама в тихие часы. */
 	readonly suppressed: number;
+	/** Отправлять нечем: канал не настроен. Требует действия администратора, а не ожидания. */
+	readonly notConfigured: number;
 	readonly deferred: number;
 	readonly releasedStuck: number;
+	/**
+	 * ОСТАТОК ОЧЕРЕДИ ПОСЛЕ ПРОХОДА — то, что этот проход НЕ брал, потому что срок
+	 * ещё не наступил. Строки, обработанные прямо сейчас, из обоих счётчиков
+	 * исключены, поэтому они не повторяют `retried` и `deferred`, а добавляют к ним.
+	 *
+	 * ЗАЧЕМ. `claimBatch` берёт только `nextAttemptAt <= now`, а отказ шлюза и тихие
+	 * часы отодвигают срок в будущее, оставляя статус `queued`. Поэтому ВТОРОЕ
+	 * нажатие «Отправить из очереди» после отказа видит `claimed === 0` — ровно то
+	 * же число, что и у клиники с пустой очередью. Интерфейс печатал в обоих
+	 * случаях спокойное «Отправлять было нечего», пока сообщения лежали
+	 * неотправленными. Различить эти два состояния по одному `claimed` нельзя, а по
+	 * общему числу строк в статусе `queued` — тоже: там же лежат сообщения,
+	 * заранее назначенные на будущее, и тогда обычная работа выглядела бы аварией.
+	 * Поэтому остаток разделён по причине.
+	 */
+	readonly awaitingRetry: number;
+	/** Ждёт назначенного времени: попыток ещё не было (отложенная рассылка, тихие часы). */
+	readonly awaitingSchedule: number;
 };
 
 type OutboxRow = typeof communicationOutbox.$inferSelect;
@@ -439,6 +476,38 @@ async function claimBatch(
 			)
 			.returning();
 	});
+}
+
+/**
+ * Что осталось лежать в очереди со сроком в будущем. `handledIds` — строки этого
+ * прохода: они уже названы своими счётчиками (`retried`, `deferred`), и считать их
+ * второй раз значило бы показать администратору удвоенное число.
+ *
+ * Разделение по `attempts` — не косметика. `attempts > 0` значит «пробовали, не
+ * ушло, ждём повторной попытки»: сообщение не дошло до человека, и об этом нельзя
+ * молчать. `attempts = 0` значит «время ещё не пришло» — назначенная на будущее
+ * рассылка или сервисное сообщение, отложенное тихими часами (markDeferred меняет
+ * только срок и не увеличивает счётчик попыток). Второе — нормальная работа, и
+ * красить её в красный было бы такой же ложью, как прятать первое в серое.
+ */
+async function countQueueRemainder(
+	now: Date,
+	organizationId: string | null,
+	handledIds: readonly string[]
+): Promise<{ awaitingRetry: number; awaitingSchedule: number }> {
+	const scope = [eq(communicationOutbox.status, "queued" as const), gt(communicationOutbox.nextAttemptAt, now)];
+	if (organizationId) scope.push(eq(communicationOutbox.organizationId, organizationId));
+	if (handledIds.length > 0) scope.push(notInArray(communicationOutbox.id, [...handledIds]));
+
+	const [row] = await db
+		.select({
+			awaitingRetry: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} > 0))::int`,
+			awaitingSchedule: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} = 0))::int`
+		})
+		.from(communicationOutbox)
+		.where(and(...scope));
+
+	return { awaitingRetry: Number(row?.awaitingRetry ?? 0), awaitingSchedule: Number(row?.awaitingSchedule ?? 0) };
 }
 
 async function loadConsents(organizationId: string, patientIds: string[]): Promise<Map<string, ConsentRecord[]>> {
@@ -528,6 +597,12 @@ async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now
 }
 
 /**
+ * Что стало с одной строкой очереди. Ровно один из этих итогов на строку —
+ * счётчики отчёта складываются в `claimed` без остатка.
+ */
+export type RowOutcome = "sent" | "retried" | "failed" | "suppressed" | "not_configured" | "deferred";
+
+/**
  * Одна строка очереди: проверки, отправка, запись итога. Возвращает, что
  * именно произошло, — отчёт собирается вызывающим.
  */
@@ -540,7 +615,7 @@ async function processRow(
 		readonly sentToday: Map<string, number>;
 		readonly now: Date;
 	}
-): Promise<"sent" | "retried" | "failed" | "suppressed" | "deferred"> {
+): Promise<RowOutcome> {
 	const { credentials, settings, now } = context;
 	const channel = row.channel as CommunicationChannelCode;
 	const scope = row.scope as CommunicationConsentScope;
@@ -677,7 +752,15 @@ async function processRow(
 		})
 		.where(eq(communicationOutbox.id, row.id));
 
-	return outcome.kind === "suppressed" ? "suppressed" : "failed";
+	/*
+	 * В базу пишется статус `suppressed`, а в отчёт — `not_configured`. Это не
+	 * рассинхронизация: `decideAfterFailure` возвращает `suppressed` только по
+	 * `isSuppressingErrorClass` (deliveryPolicy.ts:191-193), то есть строго при
+	 * `not_configured`. Класс ошибки остаётся в строке (`lastErrorClass`), а
+	 * отчёт называет причину отдельным счётчиком, чтобы «шлюз не настроен» не
+	 * пряталось среди осознанных отказов.
+	 */
+	return outcome.kind === "suppressed" ? "not_configured" : "failed";
 }
 
 /**
@@ -693,8 +776,25 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 	const organizationScope = options.organizationId ?? null;
 	const releasedStuck = await releaseStuckLocks(now, stuckLockMinutes, organizationScope);
 	const claimed = await claimBatch(now, batchSize, workerId, organizationScope);
-	const report = { claimed: claimed.length, sent: 0, retried: 0, failed: 0, suppressed: 0, deferred: 0, releasedStuck };
-	if (claimed.length === 0) return report;
+	const handledIds = claimed.map((row) => row.id);
+	const report = {
+		claimed: claimed.length,
+		sent: 0,
+		retried: 0,
+		failed: 0,
+		suppressed: 0,
+		notConfigured: 0,
+		deferred: 0,
+		releasedStuck,
+		awaitingRetry: 0,
+		awaitingSchedule: 0
+	};
+	if (claimed.length === 0) {
+		// Пустой проход — единственный случай, когда остаток очереди и есть весь
+		// ответ: без него «взято 0» у клиники с пятью неотправленными сообщениями
+		// выглядит так же, как у клиники, которой нечего отправлять.
+		return { ...report, ...(await countQueueRemainder(now, organizationScope, handledIds)) };
+	}
 
 	// Строки пачки могут принадлежать разным организациям: учётные данные,
 	// настройки и согласия читаются по одному разу на организацию.
@@ -719,11 +819,36 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 		for (const row of rows) {
 			try {
 				const outcome = await processRow(row, { credentials, settings, consents, sentToday, now });
-				if (outcome === "sent") report.sent += 1;
-				else if (outcome === "retried") report.retried += 1;
-				else if (outcome === "failed") report.failed += 1;
-				else if (outcome === "suppressed") report.suppressed += 1;
-				else report.deferred += 1;
+				/*
+				 * Switch, а не цепочка if/else с «остальное — deferred». Прежняя
+				 * цепочка сваливала в `deferred` любой итог, которого не знала: добавь
+				 * новый — и он тихо посчитался бы отложенным. Здесь недостающая ветка
+				 * не компилируется.
+				 */
+				switch (outcome) {
+					case "sent":
+						report.sent += 1;
+						break;
+					case "retried":
+						report.retried += 1;
+						break;
+					case "failed":
+						report.failed += 1;
+						break;
+					case "suppressed":
+						report.suppressed += 1;
+						break;
+					case "not_configured":
+						report.notConfigured += 1;
+						break;
+					case "deferred":
+						report.deferred += 1;
+						break;
+					default: {
+						const unhandled: never = outcome;
+						throw new Error(`Неизвестный итог отправки: ${String(unhandled)}`);
+					}
+				}
 			} catch (error) {
 				// Непредвиденный сбой не должен оставить строку захваченной
 				// навсегда: возвращаем её в очередь с записанной причиной.
@@ -745,5 +870,8 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 		}
 	}
 
-	return report;
+	// Остаток считается ПОСЛЕ прохода и с исключением обработанных строк: пачка
+	// ограничена `batchSize`, поэтому «взято 25» ещё не значит «в очереди больше
+	// ничего нет», и администратор должен знать, что осталось.
+	return { ...report, ...(await countQueueRemainder(now, organizationScope, handledIds)) };
 }
