@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
-import { registerVisitRoutes, sendVisitDraftMutationError } from "../../routes/visits.js";
+import { registerVisitRoutes, sendVisitDraftMutationError, sendVisitOpenError } from "../../routes/visits.js";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
@@ -165,5 +165,61 @@ describe("visits routes integration", () => {
 
 		assert.strictEqual(sent.statusCode, 409);
 		assert.strictEqual(sent.body.reason, "visit_draft_rejected");
+	});
+
+	/*
+	 * ОТКРЫТИЕ ПРИЁМА ПО ЗАПИСИ РАСПИСАНИЯ.
+	 *
+	 * Проверяются ровно две вещи, которые ломаются незаметно: разбор отказа
+	 * (текст обязан назвать причину И действие — иначе врач у кресла жмёт одно и
+	 * то же, как это было с «Обновите рабочий экран и выберите актуальный прием»
+	 * при отсутствии способа выбрать приём) и барьер токена. Успешное открытие
+	 * ходит в базу и проверено сквозным прогоном
+	 * apps/api/src/tests/routes/chainWeldProof.ts, а не здесь.
+	 */
+	test("sendVisitOpenError: запись не найдена -> 404 appointment_not_found", () => {
+		const { reply, sent } = captureReply();
+		sendVisitOpenError(new Error("Запись не найдена"), reply);
+
+		assert.strictEqual(sent.statusCode, 404);
+		assert.strictEqual(sent.body.error, "AppointmentNotFound");
+		assert.strictEqual(sent.body.reason, "appointment_not_found");
+		assert.match(sent.body.message, /Обновите расписание/);
+	});
+
+	test("sendVisitOpenError: запись без пациента -> 409 appointment_without_patient", () => {
+		const { reply, sent } = captureReply();
+		sendVisitOpenError(new Error("У записи нет пациента"), reply);
+
+		assert.strictEqual(sent.statusCode, 409);
+		assert.strictEqual(sent.body.reason, "appointment_without_patient");
+		assert.match(sent.body.message, /выберите пациента/);
+	});
+
+	test("sendVisitOpenError: отменённая запись -> 409 appointment_closed", () => {
+		const { reply, sent } = captureReply();
+		sendVisitOpenError(new Error("Запись отменена"), reply);
+
+		assert.strictEqual(sent.statusCode, 409);
+		assert.strictEqual(sent.body.reason, "appointment_closed");
+		assert.match(sent.body.message, /Создайте новую запись/);
+	});
+
+	test("sendVisitOpenError: незнакомая ошибка -> 409 visit_open_rejected, а не падение", () => {
+		const { reply, sent } = captureReply();
+		sendVisitOpenError("строка вместо ошибки", reply);
+
+		assert.strictEqual(sent.statusCode, 409);
+		assert.strictEqual(sent.body.reason, "visit_open_rejected");
+	});
+
+	test("POST /api/appointments/:appointmentId/visit без токена кабинета -> 401", async () => {
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/appointments/123e4567-e89b-12d3-a456-426614174002/visit",
+		});
+
+		assert.strictEqual(response.statusCode, 401);
+		assert.strictEqual(JSON.parse(response.body).error, "AuthRequired");
 	});
 });

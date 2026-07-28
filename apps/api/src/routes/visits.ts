@@ -20,6 +20,28 @@ const visitDraftNotFoundMessage = "Прием не найден. Обновит�
 const visitDraftAutosaveClosedMessage = "Черновик приема не сохранен: этот прием уже недоступен для изменений.";
 const visitDraftAcceptClosedMessage = "Черновик приема не принят: этот прием уже недоступен для изменений.";
 const visitDraftMutationRejectedMessage = "Черновик приема не изменен: обновите прием и повторите действие.";
+/*
+ * ИЗМЕРЕНО, а не предположено (apps/api/src/tests/routes/chainWeldProof.ts, шаг 9,
+ * свой процесс, живая база): POST /api/visits/:id/draft/accept подписывает прием
+ * в базе (visits.status становится 'signed'), после чего сборка ответа падает —
+ * acceptVisitDraftInDb возвращает {acceptedVisitId, newRevision}, а
+ * acceptVisitDraftResponseSchema требует {visit, visitCloseChecklist,
+ * saveReceipt}. Исключение разбора попадало в общий catch и превращалось в 409
+ * «Черновик приема не изменен: обновите прием и повторите действие».
+ *
+ * Для врача это была ложь дважды: прием УЖЕ подписан, а предложенное действие
+ * («повторите») упирается в 409 «этот прием уже недоступен для изменений» —
+ * карта закрыта, а врач считает, что не сохранилась, и переписывает ее заново
+ * или зовет администратора. Текст ниже говорит фактическое состояние и
+ * единственное полезное действие. Сама сборка полного ответа — долг: карточку
+ * закрытия приема (visitCloseChecklist) в apps/api строит единственная функция
+ * buildVisitCloseChecklist() в sampleData.ts, и она читает модульное общее
+ * состояние, а не конкретный визит. Второй такой построитель заводить нельзя —
+ * это ровно та болезнь, из которой выросли четыре разных расчета долга.
+ */
+const visitDraftAcceptResponseIncompleteMessage =
+  "Прием подписан и сохранен в карте пациента, но рабочий экран не получил карточку закрытия приема. " +
+  "Повторно подписывать не нужно: обновите рабочий экран, чтобы увидеть подписанный прием.";
 
 function visitRequestBody(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -72,9 +94,113 @@ export function sendVisitDraftMutationError(error: unknown, reply: FastifyReply,
 
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
-import { getVisitDraftAutosaveFromDb, upsertVisitDraftAutosaveInDb, acceptVisitDraftInDb } from "../db/visitsQuery.js";
+import {
+  getVisitDraftAutosaveFromDb,
+  upsertVisitDraftAutosaveInDb,
+  acceptVisitDraftInDb,
+  openVisitForAppointmentInDb
+} from "../db/visitsQuery.js";
+import { wsBroker } from "../services/websocketBroker.js";
+
+const visitOpenAppointmentNotFoundMessage =
+  "Прием не открыт: запись не найдена в этой клинике. Обновите расписание и выберите актуальную строку.";
+const visitOpenPatientMissingMessage =
+  "Прием не открыт: в записи не указан пациент. Откройте запись в расписании, выберите пациента и повторите.";
+const visitOpenAppointmentClosedMessage =
+  "Прием не открыт: запись отменена или отмечена как неявка. Создайте новую запись в расписании.";
+const visitOpenFailedMessage = "Прием не открыт: повторите действие, а если не поможет — обновите рабочий экран.";
+
+/**
+ * Отказы открытия приёма — коды и тексты в одном месте.
+ *
+ * Тексты называют причину И действие: «обновите расписание» без причины
+ * заставляло врача у кресла нажимать одно и то же, пока не позовут
+ * администратора.
+ */
+export function sendVisitOpenError(error: unknown, reply: FastifyReply) {
+  const message = error instanceof Error ? error.message.trim() : "";
+  if (message === "Запись не найдена") {
+    return reply.code(404).send({
+      error: "AppointmentNotFound",
+      reason: "appointment_not_found",
+      message: visitOpenAppointmentNotFoundMessage
+    });
+  }
+  if (message === "У записи нет пациента") {
+    return reply.code(409).send({
+      error: "VisitOpenRejected",
+      reason: "appointment_without_patient",
+      message: visitOpenPatientMissingMessage
+    });
+  }
+  if (message === "Запись отменена") {
+    return reply.code(409).send({
+      error: "VisitOpenRejected",
+      reason: "appointment_closed",
+      message: visitOpenAppointmentClosedMessage
+    });
+  }
+  return reply.code(409).send({
+    error: "VisitOpenRejected",
+    reason: "visit_open_rejected",
+    message: visitOpenFailedMessage
+  });
+}
 
 export async function registerVisitRoutes(app: FastifyInstance) {
+  /**
+   * Открыть приём по записи расписания — недостающее звено цепочки.
+   *
+   * Барьер тот же, что у автосохранения и подписания карты приёма в этом файле:
+   * токен рабочего кабинета клиники. Отдельного секрета администратора здесь
+   * быть не должно — открывает приём врач у кресла, а не администратор, и
+   * записи в `visits` этим же токеном уже делают PUT автосохранения и POST
+   * подписания ниже.
+   *
+   * Повторный вызов возвращает тот же приём с `created: false` — см.
+   * db/visitsQuery.ts, почему второй визит по одной записи недопустим.
+   */
+  app.post("/api/appointments/:appointmentId/visit", async (request, reply) => {
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
+    const { appointmentId } = request.params as { appointmentId?: string };
+    if (!appointmentId) {
+      return reply.code(400).send({
+        error: "VisitOpenValidationError",
+        message: "Прием не открыт: не передана запись расписания. Откройте строку расписания и повторите."
+      });
+    }
+
+    try {
+      const result = await openVisitForAppointmentInDb(orgId, appointmentId);
+      if (result.created) {
+        /*
+         * Рассылаем APPOINTMENT_UPDATED, а не новый тип события: клиент
+         * фильтрует сообщения множеством SCHEDULE_EVENTS
+         * (apps/web/src/hooks/useScheduleRealtime.ts), поэтому неизвестный тип
+         * молча отбросился бы. У записи появился открытый приём — расписание
+         * коллеги должно это увидеть, не дожидаясь перезагрузки страницы.
+         */
+        wsBroker.broadcastToOrganization(orgId, {
+          type: "APPOINTMENT_UPDATED",
+          payload: { appointmentId, visitId: result.visit.id }
+        });
+      }
+      return reply.code(result.created ? 201 : 200).send({
+        success: true,
+        created: result.created,
+        visit: result.visit
+      });
+    } catch (error) {
+      return sendVisitOpenError(error, reply);
+    }
+  });
+
   app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
@@ -135,11 +261,33 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     );
     if (!input) return;
 
+    let result: Awaited<ReturnType<typeof acceptVisitDraftInDb>>;
     try {
-      const result = await acceptVisitDraftInDb(orgId, input);
-      return acceptVisitDraftResponseSchema.parse(result);
+      result = await acceptVisitDraftInDb(orgId, input);
     } catch (error) {
       return sendVisitDraftMutationError(error, reply, "accept");
     }
+
+    /*
+     * Разбор ответа отделен от подписания намеренно: после успешного
+     * acceptVisitDraftInDb прием в базе уже подписан, и отвечать «не изменен,
+     * повторите» на committed запись нельзя (см. комментарий у
+     * visitDraftAcceptResponseIncompleteMessage).
+     */
+    const response = acceptVisitDraftResponseSchema.safeParse(result);
+    if (!response.success) {
+      request.log.error(
+        { visitId: result.acceptedVisitId, revision: result.newRevision, issues: response.error.issues },
+        "Прием подписан, но ответ маршрута не собран по контракту acceptVisitDraftResponseSchema"
+      );
+      return reply.code(500).send({
+        error: "VisitDraftAcceptResponseIncomplete",
+        reason: "visit_signed_response_incomplete",
+        visitId: result.acceptedVisitId,
+        revision: result.newRevision,
+        message: visitDraftAcceptResponseIncompleteMessage
+      });
+    }
+    return response.data;
   });
 }
