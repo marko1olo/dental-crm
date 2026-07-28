@@ -11,6 +11,7 @@ import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import type { PanelSubject } from "../../lib/panelStateText";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { paymentMethodLabels } from "../../workspaceUiLabels";
@@ -50,6 +51,30 @@ const WALLET_PANEL_SUBJECT: PanelSubject = {
 	failureConsequence:
 		"Не считайте, что семейного счёта нет: баланс не прочитан. Пока он не загрузился, списывать с него нельзя — примите оплату обычным способом или повторите загрузку.",
 };
+
+/**
+ * ОТКАЗ СЕРВЕРА ЧЕЛОВЕЧЕСКИМИ СЛОВАМИ.
+ *
+ * БЫЛО: `showToast(err.message || "Ошибка оплаты", "error")` — сообщение сервера
+ * выводилось в кассу как есть. Маршрут семейного счёта на любой внутренней
+ * ошибке отвечает `message: err.message || "Internal Server Error"`
+ * (apps/api/src/routes/finance_family.ts, ветки catch у /family/pay и
+ * /family/topup), то есть администратору всплывало английское «Internal Server
+ * Error» или текст ошибки драйвера базы. Ни что случилось с деньгами, ни что
+ * делать дальше из такого сообщения не узнать, а списание с семейного счёта —
+ * это оплата лечения: не поняв отказ, администратор берёт ту же сумму второй раз
+ * другим способом или не берёт вовсе.
+ *
+ * Своё сообщение сервера показываем ТОЛЬКО когда в нём есть русские буквы: такие
+ * фразы написаны нашим же маршрутом по делу, и «Недостаточно средств на семейном
+ * балансе» (402) полезнее любой общей формулировки. Всё остальное — английский
+ * текст исключения — заменяем подсказкой по коду ответа, той же, что показывают
+ * панели загрузки: она всегда говорит, что делать.
+ */
+function refusalToast(action: string, status: number, message: unknown): string {
+	const serverText = typeof message === "string" ? message.trim() : "";
+	return /[а-яё]/i.test(serverText) ? serverText : actionFailureToast(action, status);
+}
 
 /**
  * Идентификатор пациента в базе — uuid (patients.id). Когда пациент не выбран,
@@ -360,7 +385,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}) as { message?: string });
-				showToast(err.message || "Ошибка оплаты", "error");
+				showToast(
+					refusalToast("Списание с семейного счёта не прошло", res.status, err.message),
+					"error",
+				);
 				return;
 			}
 			// Списание прошло — следующее получит новый ключ.
@@ -375,7 +403,17 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// сообщение не дошло.
 			void loadFamily();
 		} catch (e) {
-			showToast("Сетевая ошибка", "error");
+			// БЫЛО: «Сетевая ошибка» — жаргон без действия, и вдобавок неправда о
+			// деньгах. Запрос оборвался, значит НЕ известно, успел ли сервер списать:
+			// утверждать «не прошло» здесь нельзя. Поэтому сказано ровно то, что
+			// известно — ответ не получен, — и предложено повторить: повтор уходит с
+			// тем же ключом идемпотентности (payMutationIdRef не сбрасывается в этой
+			// ветке), поэтому второго списания не будет.
+			console.error("[family wallet] списание не получило ответа сервера:", e);
+			showToast(
+				actionFailureToast("Ответ по списанию с семейного счёта не получен", null),
+				"error",
+			);
 		} finally {
 			setIsPaying(false);
 		}
@@ -412,8 +450,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				}),
 			});
 			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				showToast(err.message || "Не удалось пополнить счёт", "error");
+				const err = await res.json().catch(() => ({}) as { message?: string });
+				showToast(
+					refusalToast("Пополнение семейного счёта не прошло", res.status, err.message),
+					"error",
+				);
 				return;
 			}
 			// Зачисление прошло — следующее пополнение получит новый ключ.
@@ -423,8 +464,15 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			showToast(`Семейный счёт пополнен на ${money(topupAmount)}`, "success");
 			setTopupInput("");
 			void loadFamily();
-		} catch {
-			showToast("Сетевая ошибка", "error");
+		} catch (e) {
+			// То же, что у списания: оборванный запрос не говорит, зачислены деньги
+			// или нет. Повтор безопасен по тому же ключу идемпотентности
+			// (topupMutationIdRef в этой ветке не сбрасывается).
+			console.error("[family wallet] пополнение не получило ответа сервера:", e);
+			showToast(
+				actionFailureToast("Ответ по пополнению семейного счёта не получен", null),
+				"error",
+			);
 		} finally {
 			setIsToppingUp(false);
 		}
