@@ -1,6 +1,7 @@
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../AppHelpers";
+import { realVisitFieldId, visitOwnedPlanItems } from "./completedServicesPlan";
 
 /*
   ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО — ВСЁ СРАЗУ.
@@ -84,13 +85,47 @@ function completedLineOf(item: any): string {
 
 export const CompletedServicesChecklist: React.FC = () => {
 	const context = (useAppLogicContext() || {}) as any;
-	const { activeTreatmentPlanItems = [], visitNoteForm = {}, updateVisitNoteField } = context;
+	const { visitNoteForm = {}, updateVisitNoteField, dashboard, activeVisitPatient } = context;
+
+	/*
+	  СПИСОК ПОКАЗЫВАЛ ПЛАН ЛЕЧЕНИЯ ДРУГОГО ПАЦИЕНТА.
+
+	  БЫЛО: позиции брались из контекстного `activeTreatmentPlanItems`, а он
+	  отфильтрован по `documentPatient` (useAppLogic.tsx:4949), где
+	  `documentPatient = selectedPatient ?? activePatient`, а
+	  `selectedPatient = выбранный в списке пациентов ?? activePatient`
+	  (hooks/domains/usePatientLogic.ts:136-145). Выбор пациента в разделе
+	  «Пациенты» живёт дальше своего раздела, приём его не сбрасывает.
+
+	  Что это значило у кресла. Врач идёт по приёму пациента А, но в списке
+	  пациентов открытым остался пациент Б — и здесь, внутри карты приёма
+	  пациента А, перечислен план лечения ПАЦИЕНТА Б с его ценами. Галочка
+	  дописывает строку «Выполнено: <услуга пациента Б> — 4 500,00 ₽» в поле
+	  «План» приёма пациента А, откуда она уходит в его ЭМК и в кассу.
+	  Зеркальный случай так же плох: у пациента А план есть, а список уверенно
+	  писал «У этого пациента нет согласованного плана лечения», потому что
+	  плана нет у пациента Б.
+
+	  ТЕПЕРЬ: хозяин списка — пациент ОТКРЫТОГО ПРИЁМА, и никто другой. Позиции
+	  фильтруем сами, от того же источника (`dashboard.treatmentPlanItems`),
+	  по идентификатору пациента приёма. Контекстный `activeTreatmentPlanItems`
+	  здесь сознательно не используется: он уже сужен по чужому пациенту, и
+	  повторный фильтр по нему дал бы пустой список там, где план есть.
+	  Правило вынесено в completedServicesPlan.ts и закрыто тестом.
+	*/
+	const visitPatientId = realVisitFieldId(dashboard?.activeVisit?.patientId);
+	const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
+	const visitIsOpen = Boolean(visitPatientId && visitId);
+	const visitPatientName =
+		typeof activeVisitPatient?.fullName === "string" && activeVisitPatient.fullName.trim()
+			? activeVisitPatient.fullName.trim()
+			: null;
 
 	// Отменённые позиции отмечать нечего — их не делают.
-	const planItems = React.useMemo(() => {
-		const items = Array.isArray(activeTreatmentPlanItems) ? activeTreatmentPlanItems : [];
-		return items.filter((item: any) => item?.status !== "cancelled");
-	}, [activeTreatmentPlanItems]);
+	const planItems = React.useMemo(
+		() => visitOwnedPlanItems(dashboard?.treatmentPlanItems, visitPatientId),
+		[dashboard?.treatmentPlanItems, visitPatientId],
+	);
 
 	const planText: string = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
 	const planLines = React.useMemo(
@@ -120,6 +155,30 @@ export const CompletedServicesChecklist: React.FC = () => {
 		updateVisitNoteField("treatmentPlan", base ? `${base}\n${line}` : line);
 	};
 
+	/*
+	  Приём не открыт — отмечать некуда: отметка дописывается в поле «План»
+	  ЭТОГО приёма, а без приёма её не примет и сохранение (оно требует
+	  идентификатор приёма). Раньше в этом случае показывался план лечения
+	  выбранного в списке пациента, и врач отмечал услуги в никуда.
+	*/
+	if (!visitIsOpen) {
+		return (
+			<div
+				data-testid="completed-services-checklist"
+				className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3"
+			>
+				<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
+					Отметка выполненного по плану лечения
+				</h4>
+				<p className="m-0 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
+					Приём ещё не открыт, поэтому отмечать выполненное не по чему: отметка
+					записывается в карту конкретного приёма. Запишите пациента и начните приём
+					в разделе «Записи» — план лечения появится здесь списком с ценами.
+				</p>
+			</div>
+		);
+	}
+
 	if (planItems.length === 0) {
 		return (
 			<div
@@ -130,7 +189,9 @@ export const CompletedServicesChecklist: React.FC = () => {
 					Отметка выполненного по плану лечения
 				</h4>
 				<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
-					У этого пациента нет согласованного плана лечения — отмечать пока нечего.
+					{visitPatientName
+						? `У пациента ${visitPatientName} нет согласованного плана лечения — отмечать пока нечего.`
+						: "У пациента этого приёма нет согласованного плана лечения — отмечать пока нечего."}{" "}
 					План собирают в карточке пациента, и после этого его услуги появятся здесь
 					списком с ценами.
 				</p>
@@ -146,9 +207,11 @@ export const CompletedServicesChecklist: React.FC = () => {
 			<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
 				Отметка выполненного по плану лечения
 			</h4>
+			{/* Чей это план — написано прямо: список берётся у пациента открытого приёма. */}
 			<p className="m-0 mb-2 text-xs text-slate-500 dark:text-slate-400">
-				Отмеченное дописывается строкой «Выполнено…» в поле «План» этого приёма —
-				там его видно и там его можно поправить руками.
+				{visitPatientName ? `План пациента ${visitPatientName}. ` : ""}Отмеченное
+				дописывается строкой «Выполнено…» в поле «План» этого приёма — там его видно и
+				там его можно поправить руками.
 			</p>
 			<div className="flex flex-col gap-1.5">
 				{planItems.map((item: any, index: number) => {
