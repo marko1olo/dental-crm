@@ -1,5 +1,8 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
+import { useCallback } from "react";
+import { money as formatMoney } from "./AppHelpers";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
@@ -75,20 +78,90 @@ type FinanceViewProps = {
   treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
 };
 
+/*
+ * ПОЧЕМУ У РАЗДЕЛА ТЕПЕРЬ ЕСТЬ ТИП, А БЫЛО `any`.
+ *
+ * Перечень свойств выше был объявлен и НЕ применён: параметр функции стоял
+ * `any`. Из-за этого любая опечатка или переименование свойства в месте вызова
+ * (App.tsx) проходила молча, а раздел брал значение по умолчанию из строк ниже.
+ * Цена ошибки на экране кассы: `onRecordPayment` подменяется пустой функцией —
+ * и «Принять оплату» перестаёт что-либо отправлять, оставаясь на вид рабочей
+ * кнопкой; `money` подменяется, и суммы начинают печататься в другом виде, чем
+ * на соседних экранах.
+ *
+ * Partial, а не полный тип: значения по умолчанию ниже как раз и означают
+ * «свойство может не прийти». Опечатку и несовпадение типа Partial ловит
+ * (в JSX лишние свойства запрещены), а именно от них защита и нужна.
+ */
+type FinanceViewComponentProps = Partial<FinanceViewProps>;
+
+/*
+ * Пустой словарь подписей.
+ *
+ * Все словари подписей приходят из App.tsx и в живом приложении заполнены.
+ * Пустой нужен только чтобы раздел не падал, если его смонтируют без них: тогда
+ * на месте подписи будет пусто (React ничего не рисует для undefined), а не
+ * слово «undefined». Приведение типа неизбежно: Record с обязательными ключами
+ * пустым объектом не описывается.
+ */
+const noLabels = <Key extends string>(): Record<Key, string> => ({}) as Record<Key, string>;
+
+/*
+ * Нулевая финансовая сводка.
+ *
+ * БЫЛО: `{ totalPaidRub: 0, totalDueRub: 0, outstandingPaidRub: 0 }`. Поля
+ * outstandingPaidRub в сводке не существует вовсе (billingSummarySchema,
+ * packages/shared/src/index.ts), а четырёх настоящих полей не хватало. На экран
+ * это не попадало только потому, что дочерняя панель подставляет `?? 0` каждому
+ * полю, — то есть код лгал о форме данных и ждал, когда кто-нибудь на эту ложь
+ * положится. Держалось это ровно на том же `any` в параметре функции.
+ */
+const EMPTY_BILLING_SUMMARY: Dashboard["billingSummary"] = {
+  totalPlannedRub: 0,
+  totalDiscountRub: 0,
+  totalPaidRub: 0,
+  totalDueRub: 0,
+  taxDeductionEligibleRub: 0,
+  draftDocumentAmountRub: 0,
+  openTreatmentItems: 0,
+  unpaidDocuments: 0
+};
+
+/*
+ * Нулевая сводка клинических правил. БЫЛО `{}`, а панель предупреждений читает
+ * `summary.unresolved` и `summary.coveredRules` без проверки — в строке
+ * «N требуют внимания · M закрыты» на месте чисел оказывалось пусто.
+ */
+const EMPTY_CLINICAL_RULE_SUMMARY: Dashboard["clinicalRuleSummary"] = {
+  activeRules: 0,
+  evaluatedRules: 0,
+  unresolved: 0,
+  blockers: 0,
+  warnings: 0,
+  requiredServices: 0,
+  coveredRules: 0
+};
+
 export function FinanceView({
   activePayments = [],
   activeTreatmentPlanItems = [],
   activeTreatmentPlanScenarios = [],
-  billingSummary = { totalPaidRub: 0, totalDueRub: 0, outstandingPaidRub: 0 },
+  billingSummary = EMPTY_BILLING_SUMMARY,
   clinicalRuleEvaluations = [],
-  clinicalRuleActionLabels = {},
-  clinicalRuleSeverityLabels = {},
-  clinicalRuleSummary = {},
-  dashboard = {},
+  clinicalRuleActionLabels = noLabels(),
+  clinicalRuleSeverityLabels = noLabels(),
+  clinicalRuleSummary = EMPTY_CLINICAL_RULE_SUMMARY,
+  dashboard,
   documentPatient = null,
   formatDateTime = (val: string) => val || "",
   isPaymentSaving = false,
-  money = (val: number | null) => typeof val === "number" ? `${val.toLocaleString("ru-RU")} ₽` : "0 ₽",
+  /*
+   * БЫЛО своё форматирование: `${val.toLocaleString("ru-RU")} ₽`. Оно печатает
+   * 1500.5 как «1 500,5 ₽», и полтинник в такой записи читается как пять копеек.
+   * Общий money() из AppHelpers показывает «1 500,50 ₽» — и ровно так же те же
+   * суммы выглядят в форме приёма оплаты и в семейном кошельке на этом экране.
+   */
+  money = formatMoney,
   onCreateDocument,
   onGoToDocuments = () => {},
   onGoToPrices = () => {},
@@ -105,7 +178,7 @@ export function FinanceView({
   paymentFiscalReceiptUrl = "",
   paymentFiscalReceiptLabel = () => "",
   paymentMethod = "cash",
-  paymentMethodLabels = {},
+  paymentMethodLabels = noLabels(),
   paymentPatientContextMessage = "",
   paymentPatientContextReady = true,
   paymentPayerBirthDate = "",
@@ -114,9 +187,9 @@ export function FinanceView({
   paymentPayerInn = "",
   paymentPayerRelationship = "",
   paymentTaxDeductionCode = "",
-  scenarioPriorityLabels = {},
-  scenarioStrategyLabels = {},
-  serviceCategoryLabels = {},
+  scenarioPriorityLabels = noLabels(),
+  scenarioStrategyLabels = noLabels(),
+  serviceCategoryLabels = noLabels(),
   serviceTitle = (id: string) => id,
   setPaymentAmount = () => {},
   setPaymentFiscalCashierName = () => {},
@@ -133,9 +206,35 @@ export function FinanceView({
   setPaymentPayerInn = () => {},
   setPaymentPayerRelationship = () => {},
   setPaymentTaxDeductionCode = () => {},
-  staffRoleLabels = {},
-  treatmentStatusLabels = {}
-}: any) {
+  staffRoleLabels = noLabels(),
+  treatmentStatusLabels = noLabels()
+}: FinanceViewComponentProps) {
+  /*
+   * ЗАЧЕМ РАЗДЕЛУ ОБЩИЙ КОНТЕКСТ. Списание с семейного счёта уходит прямо из
+   * панели кошелька и создаёт настоящий платёж (POST /api/finance/family/pay
+   * вставляет строку в payments). Долг пациента на этом экране считается из
+   * dashboard.payments, а дашборд после такого списания никто не перечитывал:
+   * сообщения PAYMENT_CREATED веб-часть не слушает вовсе. Администратор списывал
+   * 15 000 ₽ с семейного счёта, видел в сводке прежний «Остаток 15 000 ₽» и
+   * прежний список платежей — и брал те же деньги второй раз, наличными.
+   * Перечитываем дашборд после успешного списания.
+   */
+  const appLogic = useAppLogicContext();
+  const loadDashboard = appLogic?.loadDashboard;
+  const reloadAfterFamilyPayment = useCallback(() => {
+    void loadDashboard?.();
+  }, [loadDashboard]);
+
+  /*
+   * Обработчик создания документа передаётся ниже только когда он есть.
+   *
+   * Журнал платежей решает по наличию этого свойства, рисовать ли кнопку
+   * «Справка ИФНС»: кнопка, которая ничего не вызывает, — обманутый оператор.
+   * Явное `undefined` при exactOptionalPropertyTypes считается переданным
+   * значением, поэтому свойство именно отсутствует, а не равно undefined.
+   */
+  const createDocumentProp = onCreateDocument ? { onCreateDocument } : {};
+
   const focusPaymentCapture = () => {
     const amountInput = document.getElementById("payment-amount-input") as HTMLInputElement | null;
     const paymentCapture = document.getElementById("payment-capture");
@@ -230,7 +329,7 @@ export function FinanceView({
 
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
-        onCreateDocument={onCreateDocument}
+        {...createDocumentProp}
         documents={dashboard?.documents ?? []}
         formatDateTime={formatDateTime}
         money={money}
@@ -266,7 +365,19 @@ export function FinanceView({
         второе — поля процента у сотрудника; ни того, ни другого в базе нет.
       */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <FamilyWalletPanel patientId={documentPatient?.id ?? "pat-1"} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
+        {/* БЫЛО: `documentPatient?.id ?? "pat-1"` — остаток удалённых демо-данных.
+            Такого пациента в базе нет ни у одной клиники: запрос по нему может
+            ответить только ошибкой приведения типа (uuid), и на экране финансов
+            без выбранного пациента появлялась бы ложная тревога «баланс не
+            прочитан». Панель это отсекает по виду идентификатора, но подставлять
+            чужой номер, надеясь на проверку в другом файле, нельзя: снимут
+            проверку — уйдёт запрос. Пустая строка честно означает «пациент не
+            выбран». */}
+        <FamilyWalletPanel
+          patientId={documentPatient?.id ?? ""}
+          remainingDebtRub={billingSummary?.totalDueRub ?? 0}
+          onPaymentSuccess={reloadAfterFamilyPayment}
+        />
       </div>
     </div>
   );
