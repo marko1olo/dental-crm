@@ -495,7 +495,7 @@ try {
 					...releasePayload.medicalDocumentReleaseReceipt,
 					sourceRequestDocumentId: issuedCopyRequestId,
 					recipientAuthority:
-						"Ð´Ð¾Ð²ÐµÑ€ÐµÐ½Ð½Ð¾Ðµ Ð»Ð¸Ñ†Ð¾ Ð±ÐµÐ· ÑÐ¾Ð²Ð¿Ð°Ð´Ð°ÑŽÑ‰ÐµÐ³Ð¾ Ð·Ð°Ð¿Ñ€Ð¾ÑÐ°",
+						"доверенное лицо без совпадающего запроса",
 					deliveredAt: "2026-05-20T12:25:00.000+04:00",
 				},
 			},

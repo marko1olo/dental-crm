@@ -331,8 +331,11 @@ for (const formCase of patientFormCases) {
 		`${formCase.kind}: HTML must contain document title`,
 	);
 	assert(
-		issuedHtml.includes("Отметка о подписании") ||
-			issuedHtml.includes("ÐžÑ‚Ð¼ÐµÑ‚ÐºÐ° Ð¾ Ð¿Ð¾Ð´Ð¿Ð¸ÑÐ°Ð½Ð¸Ð¸"),
+		// The mojibake alternative that used to sit here was removed 2026-07-28: it
+		// accepted the same text re-encoded through cp1252, so this assertion passed
+		// even when the API served corrupted Russian to a patient - masking the exact
+		// defect the encoding rules exist to catch. Assert the correct text only.
+		issuedHtml.includes("Отметка о подписании"),
 		`${formCase.kind}: HTML must include signature attestation block`,
 	);
 	for (const fragment of formCase.fragments) {

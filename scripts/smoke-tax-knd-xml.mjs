@@ -996,7 +996,7 @@ try {
 		"issued tax XML after live payment mutation must reuse immutable XML bytes",
 	);
 	assert(
-		!issuedXmlAfterMutationResponse.body.includes('ÐšÐ¾Ð´ÐÐž="7777"'),
+		!issuedXmlAfterMutationResponse.body.includes('КодНО="7777"'),
 		"issued XML must not use later tax office code after snapshot",
 	);
 	assertNoMojibake(
