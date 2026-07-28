@@ -991,3 +991,64 @@ mode — same file, 350 lines below AA3's fix; it cannot simply be widened becau
 `durationMinutes`, correctly an integer. `analyzer.ts:442` leaves «Отбеливание 12000-» in a service title
 on price ranges. `migration.ts:291-293` has three money fields with no kopeck precision at all.
 `guards.ts:660,:671,:685` still print widened sums into Russian text unformatted.
+
+## THE clinic_mode FINDING IS NOW CLOSED, AND THE LEAD'S RECORD OF IT WAS STALE
+
+Measured against the live database at this dispatch, through `.env`'s `DATABASE_URL`:
+
+| id | clinic_mode | name |
+|---|---|---|
+| `4a3420d1-6ffb…` | **one_chair** | «Стоматология, 1 кабинет» — the real clinic |
+| `d0000000-0000…` | **small_clinic** | «Демо-клиника для снимков» — the screenshot fixture |
+
+Earlier tonight this ledger recorded that **both** organizations carried `clinic_mode='demo'` — a value
+outside `clinicModeSchema`, coerced to `one_chair` by `.catch()` at `domainStateHydration.ts:350`. That was
+true when written and is **no longer true**: both rows now hold legal enum values, and the real clinic's
+value (`one_chair`) matches what the coercion used to fabricate. A fleet packet normalised it. The entry
+above is superseded, not deleted, so the correction is auditable.
+
+**The standing lesson is about ledgers, not about clinic_mode:** a dossier entry is a measurement with a
+timestamp, not a fact. This is the fourth stale statement caught tonight — after «4 organizations», the
+«REVERT» verdict, and a probe configuration whose comment described pre-fix code.
+
+## A DEAD AGENT'S DELETION SAT IN THE SHARED INDEX ALL NIGHT, AND IT WAS INCOMPLETE
+
+Two files had been `git rm`-ed hours ago by an agent that died before committing:
+`apps/api/src/db/rebookingConversionRulesQuery.ts` and
+`apps/web/src/components/analytics/RebookingConversionRulesWidget.tsx`. They showed up in every
+`git diff --cached` inspection of the night, and the lead's pathspec discipline correctly kept them out of
+eleven commits. **HEAD was never broken** — at HEAD both the module and its importer exist; only the index
+and working tree carried the removal.
+
+The agent's own work was good and its reasoning is preserved in `routes/clinical.ts`: the route
+`/api/hr/rebooking-conversion-rules` was **live and answered HTTP 200 with an empty array**, which is more
+dangerous than a 404, because `rebooking_conversion_rules` has zero writers anywhere in `apps/api/src` and
+**0 rows in the live database** (re-measured at this dispatch). A screen that shows an empty table forever
+teaches the clinic that it has no data, rather than that the feature does not exist.
+
+### BUT IT LEFT A BROKEN SMOKE IN `scripts/`, WHICH IS THE EXACT HOLE THE STANDING RULE NAMES
+`scripts/test-edge-cases-wave8.mjs` probed `/api/hr/rebooking-conversion-rules` and asserted **200**. The
+rule «after ANY deletion check the WHOLE REPO, not just `apps/`» exists in this ledger *because this
+already happened once* and broke `smoke:wave16` at load. It happened again, in the same directory.
+
+The smoke was worse than merely stale, and it is now **deleted along with its `smoke:wave8` npm script**:
+1. **Three of its five target routes no longer exist** — `/api/finance/pricelist-payrolls`,
+   `/api/hr/rebooking-conversion-rules` and `/api/schedule/clipboard-items` were all deleted as hollow. It
+   asserted 200 on all three.
+2. **It asserted the defect.** Returning HTTP 200 with an empty array for a writerless table IS the hollow
+   -route bug. This test certified that behaviour as correct, so deleting the routes made the test fight
+   the fix.
+3. **`VALID_ORG = "00000000-0000-0000-0000-000000000001"` DOES NOT EXIST** — `select count(*) … = 0`.
+   Every «200 valid org» assertion passed against a **non-existent tenant**. A 200 for a tenant that does
+   not exist proves the route *ignores* the tenant, which is the opposite of the assertion's stated intent.
+4. It hardcoded `"x-dente-admin-secret": "dev-secret"` and depended on the dev-only `x-organization-id`
+   header path — the very unverified-identity path a recon packet is investigating right now.
+5. **`smoke:all` was therefore RED**, because `scripts/run-smoke-suite.mjs:16` enumerates every
+   `smoke:`-prefixed script from `package.json` dynamically. Removing the entry removes it from the suite
+   with no dangling reference, verified by `git grep` over the whole repo. **Deleting this test repairs
+   `smoke:all`.**
+
+Precedent followed deliberately: `scripts/test-edge-cases-wave16.mjs` and its `smoke:wave16` script were
+deleted earlier in this campaign for the same reasons. Real coverage of the same ground is provided by the
+behavioural route gate, which probes 438 routes and 187 mutating ones against a genuinely absent
+credential — strictly stronger than a fabricated tenant id and a hardcoded secret.
