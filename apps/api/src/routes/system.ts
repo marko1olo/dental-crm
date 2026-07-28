@@ -9,6 +9,7 @@ import {
   type LocalBridgeUsePath,
   type LocalBridgeUsePlan,
   type LocalBridgeUsePlanStep,
+  type SpeechGatewayProvider,
   type SpeechGatewayStatus
 } from "@dental/shared";
 import { buildPersistentStateExport, getPersistentStateIntegrityReport } from "../persistentState.js";
@@ -383,19 +384,41 @@ function planStep(
  *
  * СТАЛО: текст описывает разные маршруты по-разному, потому что они и есть разные.
  * Асинхронный AssemblyAI создаёт объект на своей стороне — его шлюз теперь удаляет
- * запросом DELETE, а неудачу удаления показывает в предупреждениях фрагмента.
- * Остальные источники получают аудио внутри одного запроса: сервер клиники его не
- * хранит (в базу уходит только текст), но их собственную политику хранения CRM не
- * контролирует и обещать за неё не может.
+ * запросом DELETE, а неудачу удаления записывает туда, где она действительно
+ * оказывается. Остальные источники получают аудио внутри одного запроса: сервер
+ * клиники его не хранит (в базу уходит только текст), но их собственную политику
+ * хранения CRM не контролирует и обещать за неё не может.
+ *
+ * Две правки после разбора:
+ *  • Фраза «попадает в предупреждения фрагмента» обещала клинике видимость,
+ *    которой нет: `chunk.quality.providerWarnings` не отрисовывает ни один
+ *    компонент в `apps/web` (`rg -n providerWarnings apps/web/src` -> 0 попаданий),
+ *    врач видит только уровень качества «Требует проверки». Текст теперь называет
+ *    настоящие адреса записи: журнал сервера, карточка фрагмента и строка `ai_jobs`.
+ *  • Ветки были взаимоисключающими, поэтому появление AssemblyAI в цепочке
+ *    стирало честную оговорку про одноразовые источники, хотя Groq/OpenAI из той же
+ *    цепочки никуда не девались. Смешанная цепочка теперь получает ОБА
+ *    утверждения — по одному на каждый вид маршрута.
  */
 function serverAudioRetentionDetail(speech: SpeechGatewayStatus): string {
-  const asyncUploadProvider =
-    speech.providerId === "assemblyai_async" || speech.fallbackProviderIds.includes("assemblyai_async");
+  const chainProviderIds: SpeechGatewayProvider[] = speech.fallbackProviderIds.length
+    ? [...speech.fallbackProviderIds]
+    : [speech.providerId];
+  const hasAsyncUploadProvider = chainProviderIds.includes("assemblyai_async");
+  const hasOneShotProvider = chainProviderIds.some((providerId) => providerId !== "assemblyai_async");
   const base =
     "Сервер клиники использует резервные маршруты распознавания и не хранит присланное аудио: в базу записывается только текст.";
-  return asyncUploadProvider
-    ? `${base} Загруженное в ${providerLabelForRetention(speech)} аудио и расшифровку сервер удаляет отдельным запросом сразу после обработки; если удаление не прошло, это попадает в предупреждения фрагмента.`
-    : `${base} Аудио уходит источнику внутри одного запроса и удаляется по его собственной политике хранения, которой CRM не управляет.`;
+  const asyncSentence = `Загруженное в ${providerLabelForRetention(
+    speech
+  )} аудио и расшифровку сервер удаляет отдельным запросом сразу после обработки; неудачу удаления он записывает в журнал сервера, в карточку фрагмента и в строку задания ai_jobs, и такой фрагмент помечается как требующий проверки, но отдельной надписи об оставшемся аудио на экране приёма нет — удалять запись придётся в панели источника.`;
+  const oneShotSentence =
+    "Аудио уходит источнику внутри одного запроса и удаляется по его собственной политике хранения, которой CRM не управляет.";
+  const sentences = [
+    base,
+    ...(hasAsyncUploadProvider ? [asyncSentence] : []),
+    ...(hasOneShotProvider ? [oneShotSentence] : [])
+  ];
+  return sentences.join(" ");
 }
 
 function providerLabelForRetention(speech: SpeechGatewayStatus): string {

@@ -233,6 +233,18 @@ export class SpeechAsyncJobTimeoutError extends Error {
   }
 }
 
+/**
+ * Признаки запроса, который не доехал: обрыв сокета, DNS, сетевой таймаут. Такая
+ * ошибка говорит о канале, а не о содержимом задания у провайдера.
+ */
+const transientNetworkFailurePattern =
+  /fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/;
+
+function looksLikeTransientNetworkFailure(error: unknown): boolean {
+  const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
+  return transientNetworkFailurePattern.test(message);
+}
+
 function speechProviderFailureReason(error: unknown): string {
   if (error instanceof SpeechAsyncJobTimeoutError) {
     return `задание распознавания не завершилось за ${Math.round(error.waitedMs / 1000)} сек. после ${
@@ -246,8 +258,7 @@ function speechProviderFailureReason(error: unknown): string {
     if (error.statusCode && error.statusCode >= 500) return "у источника временный сбой";
     if (error.statusCode) return "источник отклонил аудиофрагмент";
   }
-  const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
-  if (/fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/.test(message)) {
+  if (looksLikeTransientNetworkFailure(error)) {
     return "нет устойчивого соединения с источником распознавания";
   }
   return "источник распознавания не вернул готовый текст";
@@ -1504,11 +1515,20 @@ function assemblyAiBaseUrl(): string {
   return configured.replace(/\/+$/, "");
 }
 
+/** Ответ `GET /v2/transcript/{id}`: состояние задания и готовый текст, когда он есть. */
+type AssemblyAiPollPayload = {
+  status?: string;
+  text?: string;
+  confidence?: number;
+  error?: string;
+};
+
 type AssemblyAiPollPolicy = {
   budgetMs: number;
   firstIntervalMs: number;
   maxIntervalMs: number;
   maxAttempts: number;
+  failureTolerance: number;
 };
 
 /**
@@ -1527,6 +1547,14 @@ type AssemblyAiPollPolicy = {
  * двух десятков запросов, а не трёхсот. `ASSEMBLYAI_POLL_ATTEMPTS` сохранён как
  * потолок числа опросов для тех, кто уже задал его в окружении; по умолчанию он
  * выводится из бюджета и не срабатывает раньше времени.
+ *
+ * ВНИМАНИЕ ДЛЯ РАЗВЁРНУТЫХ КЛИНИК: смысл `ASSEMBLYAI_POLL_ATTEMPTS` изменился.
+ * Раньше 15 означало «15 опросов по 1000 мс», то есть ровно 15 секунд. Теперь это
+ * только потолок числа опросов поверх бюджета времени, а интервал растёт, поэтому
+ * `ASSEMBLYAI_POLL_ATTEMPTS=15` при дефолтных интервалах даёт около 180 секунд
+ * (1+2+4+8 и дальше по 15 с), а не 15 и не 300. Кто хочет прежние 15 секунд —
+ * задаёт `ASSEMBLYAI_POLL_TIMEOUT_MS=15000`; кто хочет полный бюджет — снимает
+ * `ASSEMBLYAI_POLL_ATTEMPTS`. Полный перечень настроек лежит в `.env.example`.
  */
 function assemblyAiPollPolicy(): AssemblyAiPollPolicy {
   const budgetMs = numberFromEnv("ASSEMBLYAI_POLL_TIMEOUT_MS", 300_000);
@@ -1536,8 +1564,35 @@ function assemblyAiPollPolicy(): AssemblyAiPollPolicy {
     budgetMs,
     firstIntervalMs,
     maxIntervalMs,
-    maxAttempts: numberFromEnv("ASSEMBLYAI_POLL_ATTEMPTS", Math.max(1, Math.ceil(budgetMs / firstIntervalMs)))
+    maxAttempts: numberFromEnv("ASSEMBLYAI_POLL_ATTEMPTS", Math.max(1, Math.ceil(budgetMs / firstIntervalMs))),
+    // Math.max(1, ...) не декорация: numberFromEnv округляет вниз, поэтому
+    // дробное значение вида 0.5 дало бы ноль и запретило бы любой опрос.
+    failureTolerance: Math.max(1, numberFromEnv("ASSEMBLYAI_POLL_FAILURE_TOLERANCE", 3))
   };
+}
+
+/**
+ * Можно ли считать неудачу ОДНОГО опроса задания поводом продолжать ожидание.
+ *
+ * БЫЛО: любой не-2xx ответ опроса и любое брошенное исключение убивали задание,
+ * которое в этот момент было живо у провайдера, и код тут же удалял расшифровку.
+ * 429 на третьем опросе из двадцати четырёх уносил диктовку приёма безвозвратно,
+ * хотя провайдер закончил бы её на пятом. Для очередного асинхронного провайдера
+ * это не редкость, а самый вероятный способ потерять текст.
+ *
+ * 429/408/5xx и обрыв канала описывают КОНКРЕТНЫЙ ЗАПРОС, а не судьбу задания:
+ * задание у провайдера продолжает считаться, и следующий опрос его увидит.
+ * 401/403 (доступ отклонён), 404 (задания больше нет) и 4xx-ошибки формата
+ * повторять бессмысленно — они терминальны, и там задание действительно нужно
+ * закрывать вместе с удалением аудио.
+ */
+function isRecoverablePollFailure(error: unknown): boolean {
+  if (error instanceof SpeechProviderRequestError) {
+    if (error.timedOut || error.rateLimited) return true;
+    const statusCode = error.statusCode;
+    return statusCode === 408 || (statusCode !== null && statusCode >= 500);
+  }
+  return looksLikeTransientNetworkFailure(error);
 }
 
 function assemblyAiDeleteTimeoutMs(): number {
@@ -1636,6 +1691,32 @@ function reportRemoteArtifactDeletion(input: {
   input.warnings.push(warning);
 }
 
+/**
+ * Живое задание, от которого CRM отказалась, обязано быть названо вслух.
+ *
+ * Молчание здесь и было вторым дефектом того же класса: цикл опроса выходил
+ * наружу, расшифровка удалялась, а в предупреждениях фрагмента не оставалось ни
+ * слова о том, что текст приёма существовал у провайдера и был брошен. Сообщение
+ * уходит и в журнал сервера, и в предупреждения фрагмента — то есть в ответ API,
+ * в сборку записи и в строку `ai_jobs`.
+ */
+function reportAbandonedRemoteJob(input: {
+  providerLabel: string;
+  consecutiveFailures: number;
+  pollCount: number;
+  failure: unknown;
+  budgetExhausted: boolean;
+  warnings: string[];
+}): void {
+  const reason = speechProviderFailureReason(input.failure);
+  const cause = input.budgetExhausted
+    ? `бюджет ожидания истёк, а последние неудачные опросы (${input.consecutiveFailures}) так и не прошли: ${reason}`
+    : `${input.consecutiveFailures} опроса задания подряд не прошли: ${reason}`;
+  const warning = `${input.providerLabel}: ${cause} (всего опросов ${input.pollCount}). Задание распознавания у источника оставалось в работе, но CRM прекратила ожидание и запрашивает удаление задания вместе с загруженным аудио, поэтому текст этого фрагмента получить уже нельзя — отправьте фрагмент заново.`;
+  console.error(`[SpeechGateway] ${warning}`);
+  input.warnings.push(warning);
+}
+
 export async function transcribeAssemblyAi(input: {
   apiKey: string;
   audio: Buffer;
@@ -1709,6 +1790,15 @@ export async function transcribeAssemblyAi(input: {
   // на КАЖДОМ выходе, включая обрыв связи посреди опроса. Ранняя версия этого
   // патча удаляла на четырёх выходах и пропускала пятый — упавший запрос опроса
   // уносил управление наружу, и голос пациента оставался у провайдера молча.
+  //
+  // Выход из цикла разрешён только на ТЕРМИНАЛЬНОМ исходе: готовый текст,
+  // `status:"error"` у провайдера, исчерпанный бюджет, неповторяемая ошибка или
+  // исчерпанный запас неудачных опросов. Разовый 429/408/5xx или оборванный сокет
+  // терминальным исходом НЕ является: задание у провайдера в этот момент живо, и
+  // раньше именно такой единичный сбой уносил всю диктовку — а после появления
+  // удаления уносил её безвозвратно.
+  let consecutivePollFailures = 0;
+  let lastPollFailure: unknown = null;
   try {
     while (pollCount < policy.maxAttempts) {
       const elapsedMs = Date.now() - startedAt;
@@ -1717,22 +1807,56 @@ export async function transcribeAssemblyAi(input: {
       intervalMs = Math.min(intervalMs * 2, policy.maxIntervalMs);
       pollCount += 1;
 
-      const pollResponse = await fetchWithProviderTimeout(
-        `${baseUrl}/v2/transcript/${encodeURIComponent(transcriptId)}`,
-        {
-          headers: { Authorization: input.apiKey }
+      let pollPayload: AssemblyAiPollPayload;
+      try {
+        const pollResponse = await fetchWithProviderTimeout(
+          `${baseUrl}/v2/transcript/${encodeURIComponent(transcriptId)}`,
+          {
+            headers: { Authorization: input.apiKey }
+          }
+        );
+        const parsedPayload = (await pollResponse.json().catch(() => ({}))) as AssemblyAiPollPayload;
+        if (!pollResponse.ok) {
+          throw providerHttpError(pollResponse.status, pollResponse.statusText, parsedPayload.error);
         }
-      );
-      const pollPayload = (await pollResponse.json().catch(() => ({}))) as {
-        status?: string;
-        text?: string;
-        confidence?: number;
-        error?: string;
-      };
-      if (!pollResponse.ok) {
-        failure = providerHttpError(pollResponse.status, pollResponse.statusText, pollPayload.error);
-        break;
+        pollPayload = parsedPayload;
+      } catch (pollError) {
+        lastPollFailure = pollError;
+        if (!isRecoverablePollFailure(pollError)) {
+          failure = pollError;
+          break;
+        }
+        consecutivePollFailures += 1;
+        // Запас считается «столько подряд неудачных опросов терпим»: при значении 3
+        // первые три сбоя не трогают задание, отказ наступает на четвёртом.
+        if (consecutivePollFailures > policy.failureTolerance) {
+          reportAbandonedRemoteJob({
+            providerLabel,
+            consecutiveFailures: consecutivePollFailures,
+            pollCount,
+            failure: pollError,
+            budgetExhausted: false,
+            warnings: input.warnings
+          });
+          failure = pollError;
+          break;
+        }
+        // Задание живо, бюджет не исчерпан: интервал уже удвоен выше, поэтому
+        // следующий опрос придёт позже и не добьёт источник, который ограничил
+        // запросы. Запись о самом сбое уходит в журнал сервера, а врача не
+        // трогаем: восстановившийся опрос не повод переводить фрагмент в review.
+        console.warn(
+          `[SpeechGateway] ${providerLabel}: опрос задания N ${pollCount} не прошёл (${speechProviderFailureReason(
+            pollError
+          )}); задание живо, ожидание продолжается, запас неудачных опросов ${consecutivePollFailures}/${
+            policy.failureTolerance
+          }.`
+        );
+        continue;
       }
+
+      consecutivePollFailures = 0;
+      lastPollFailure = null;
       if (pollPayload.status === "completed") {
         completed = {
           text: pollPayload.text?.trim() ?? "",
@@ -1750,10 +1874,26 @@ export async function transcribeAssemblyAi(input: {
     failure = error;
   }
 
+  // Бюджет кончился на серии неудачных опросов: врач обязан узнать, что ожидание
+  // упёрлось в отказы запросов, а не в медлительность источника.
+  if (failure === null && completed === null && consecutivePollFailures > 0 && lastPollFailure !== null) {
+    reportAbandonedRemoteJob({
+      providerLabel,
+      consecutiveFailures: consecutivePollFailures,
+      pollCount,
+      failure: lastPollFailure,
+      budgetExhausted: true,
+      warnings: input.warnings
+    });
+  }
+
   const waitedMs = Date.now() - startedAt;
   await removeRemoteArtifacts();
 
-  if (failure) throw failure;
+  // `failure !== null`, а не `if (failure)`: брошенное значение вида 0, "" или
+  // undefined иначе подменялось бы истёкшим ожиданием — то есть ложной причиной
+  // отказа, ровно тем классом дефекта, который этот модуль и вычищает.
+  if (failure !== null) throw failure;
   if (completed) return completed;
 
   // Бюджет ожидания исчерпан. Идентификатор задания нигде не хранится, поэтому
