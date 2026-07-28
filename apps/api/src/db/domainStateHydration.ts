@@ -140,6 +140,21 @@ function parseJsonObject<T>(value: unknown, fallback: T): T {
 export interface DomainStateHydrationReport {
 	organizationId: string;
 	mode: "in_memory" | "database";
+	/**
+	 * Нашлась ли организация сессии в базе.
+	 *
+	 * ЗАЧЕМ ОТДЕЛЬНОЕ ПОЛЕ, А НЕ СТРОКА В `warnings`. Раньше об этом сообщала
+	 * только строка предупреждения, и единственный её читатель печатал её в
+	 * журнал сервера, после чего отдавал клиенту ответ как при успехе. Отказ,
+	 * доступный лишь как текст в списке текстов, читать никто не станет: решение
+	 * «отдавать данные или отказать» должно приниматься по значению, а не по
+	 * совпадению подстроки. Чем это кончилось — см. `dashboardQuery.ts` и
+	 * `tests/routes/dashboardOrphanClinicSession.test.ts`.
+	 *
+	 * В режиме без базы всегда `true`: там источник истины — сами доменные
+	 * массивы, и искать организацию негде.
+	 */
+	organizationFound: boolean;
 	counts: Record<string, number>;
 	skipped: Record<string, number>;
 	warnings: string[];
@@ -211,6 +226,7 @@ async function hydrateDomainStateFromDbUnsynchronized(
 	const report: DomainStateHydrationReport = {
 		organizationId,
 		mode: inMemoryMode() ? "in_memory" : "database",
+		organizationFound: true,
 		counts: {},
 		skipped: {},
 		warnings: [],
@@ -339,10 +355,42 @@ async function hydrateDomainStateFromDbUnsynchronized(
 	const organization = organizationRows[0];
 	const clinic = clinicRows[0];
 
+	/*
+	 * ОРГАНИЗАЦИИ СЕССИИ В БАЗЕ НЕТ — ВЫХОДИМ ДО ЕДИНОЙ ПРАВКИ ОБЩЕГО СОСТОЯНИЯ.
+	 *
+	 * БЫЛО: работа продолжалась. Дальше по файлу `replaceAll` заменял сотрудников,
+	 * пациентов и всё прочее ПУСТЫМИ списками, а `clinicProfile` не сбрасывался —
+	 * ветка else ниже только добавляла предупреждение. Доменные коллекции в
+	 * sampleData.ts общие на процесс, поэтому в профиле оставались реквизиты
+	 * последней прочитанной клиники, и наружу уходила химера: чужое название,
+	 * чужой ИНН и ОГРН — при нулях в сотрудниках и пациентах.
+	 *
+	 * Замерено в живом браузере 29.07.2026: сессия организации
+	 * 00000000-0000-0000-0000-000000000001 (её в базе нет) получила HTTP 200 с
+	 * profile.organizationId 4a3420d1-…, clinicName «Стоматология, 1 кабинет»,
+	 * inn 631234567890, ogrn 318631300000000 — и пустыми списками людей. Из этого
+	 * профиля печатаются договоры, счёта и справки для налогового вычета, а
+	 * пустой список сотрудников закрывал вход в программу: экран разблокировки
+	 * смены сообщал «в клинике нет ни одного действующего сотрудника».
+	 *
+	 * Пустой результат — это НЕ ответ на «такой клиники нет». Поэтому здесь не
+	 * подчищаются коллекции (это отдало бы «клинику без данных» как факт), а
+	 * работа прекращается: вызывающий обязан отказать. Общее состояние остаётся
+	 * тем, каким было, и в ответ не попадает ничего.
+	 */
+	if (!organization) {
+		report.organizationFound = false;
+		report.warnings.push(
+			"Организация сессии не найдена в базе: данные клиники не читались и ответ отдавать нельзя. " +
+				"Так бывает, когда база пересоздана, а ключ входа выдан для прежней или для другой установки программы.",
+		);
+		return report;
+	}
+
 	// ── Профиль клиники ───────────────────────────────────────────────────────
 	// БЫЛО: ИНН "1234567890", адрес "Default Address", телефон "+70000000000" —
 	// выдуманные реквизиты, которые попадали в договоры и справки для ФНС.
-	if (organization) {
+	{
 		clinicProfile.organizationId = organization.id;
 		clinicProfile.clinicName = organization.name;
 		clinicProfile.legalName = organization.name;
@@ -365,10 +413,6 @@ async function hydrateDomainStateFromDbUnsynchronized(
 		clinicProfile.timezone = validScheduleTimeZone(clinic?.timezone);
 		clinicProfile.updatedAt = isoOrNow(organization.updatedAt);
 		report.counts.clinicProfile = 1;
-	} else {
-		report.warnings.push(
-			"Организация не найдена в базе: реквизиты клиники остались прежними. Документы могут уйти с чужими данными.",
-		);
 	}
 
 	// ── Сотрудники ────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { getDashboardFromDb } from "../db/dashboardQuery.js";
+import { ClinicOrganizationMissingError, getDashboardFromDb } from "../db/dashboardQuery.js";
 import { requireOrganizationId } from "../security/identity.js";
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
@@ -15,6 +15,35 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     try {
       return await getDashboardFromDb(orgId);
     } catch (error) {
+      /*
+       * КЛИНИКИ ИЗ СЕССИИ В БАЗЕ НЕТ — ЭТО ОТКАЗ ПО ДОСТУПУ, А НЕ СБОЙ БАЗЫ.
+       *
+       * БЫЛО: такой сессии отдавалась пустая сводка с кодом 200, и в программу
+       * становилось невозможно войти — экран разблокировки смены сообщал «в
+       * клинике нет ни одного действующего сотрудника», хотя сотрудники есть, а
+       * не найдена сама клиника. Ниже стоящая ветка ответила бы 500 «Повторите
+       * позже»: сервер при этом исправен, и повтор не поможет никогда.
+       *
+       * 401 выбран сознательно: ключ входа указывает на клинику, которой нет, то
+       * есть непригоден, и единственный путь дальше — войти заново. Текст
+       * начинается словами «Требуется авторизация рабочего кабинета клиники» —
+       * той же формулировкой, что и отказ без токена (security/identity.ts), —
+       * потому что это одна и та же беда для человека за стойкой: сессия не
+       * годится. Клиника и её идентификатор в ответ не попадают.
+       */
+      if (error instanceof ClinicOrganizationMissingError) {
+        request.log.warn(
+          { organizationId: orgId },
+          "[Dashboard] Клиника из сессии отсутствует в базе: отдан отказ вместо пустой сводки"
+        );
+        return reply.code(401).send({
+          error: "ClinicSessionOrganizationMissing",
+          message:
+            "Требуется авторизация рабочего кабинета клиники: клиника из вашей сессии не найдена в базе. " +
+            "Войдите в кабинет клиники заново. Если это повторится, сообщите администратору: " +
+            "ключ входа выдан для прежней или для другой установки программы."
+        });
+      }
       // Раньше текст ошибки БД уходил клиенту (details: e.message) — это
       // раскрывало структуру базы и пути на сервере.
       request.log.error({ err: error }, "[Dashboard] Ошибка получения данных из БД");

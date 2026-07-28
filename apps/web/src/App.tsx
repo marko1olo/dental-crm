@@ -2036,18 +2036,46 @@ export function App() {
 
   // Show staff PIN pad if clinic authed but no staff session (or after lock)
   if (!staffAuthed || showStaffPinPad) {
-    if (!dashboard) {
-      return <AppLoadingState message="Загрузка данных клиники..." />;
-    }
+    /*
+     * ЭКРАН СМЕНЫ ПОКАЗЫВАЕТСЯ ДАЖЕ БЕЗ ДАННЫХ КЛИНИКИ, И ЭТО ОСОЗНАННО.
+     *
+     * БЫЛО: `if (!dashboard) return <AppLoadingState message="Загрузка данных
+     * клиники..." />`. Сводка клиники может не прийти НИКОГДА — например когда
+     * клиника из сессии отсутствует в базе и сервер отвечает отказом (см.
+     * apps/api/src/routes/dashboard.ts). Тогда «Загрузка данных клиники...»
+     * висела вечно: ни причины, ни выхода, ни даже кнопки «выйти из аккаунта
+     * клиники». Честные экраны отказа в этом файле есть, но стоят НИЖЕ этой
+     * ветки и потому недостижимы, пока смена не открыта.
+     *
+     * Теперь состояние списка сотрудников называет сам экран смены: он умеет
+     * показать загрузку, отказ с причиной и повтором, честную пустоту и людей —
+     * и во всех четырёх случаях рядом остаётся выход из аккаунта клиники, то
+     * есть путь наружу существует всегда.
+     *
+     * `?? []` здесь НЕ ВОЗВРАЩАТЬ. Именно он превращал непрочитанный список в
+     * пустой, и экран советовал заводить кадры клинике, у которой в базе трое
+     * действующих сотрудников. Охраняется tests/staffUnlockListState.test.ts.
+     */
     return (
       <StaffPinPad
-        staffMembers={dashboard.clinicSettings?.staff ?? []}
+        staffMembers={dashboard ? dashboard.clinicSettings?.staff : undefined}
+        staffListLoading={!dashboard && !error && !accessUnlockRequired}
+        /*
+         * Код ответа берётся из того, что о неудаче известно здесь, и не
+         * выдумывается: отказ по доступу — 401; сводка пришла, а списка в ней нет
+         * — 200 («ответ сервера непонятен»); до сервера не дошли — null.
+         */
+        staffListStatus={accessUnlockRequired ? 401 : dashboard ? 200 : null}
         onUnlockSuccess={(user) => {
           setActiveStaffUser(user);
           setStaffAuthed(true);
           setShowStaffPinPad(false);
         }}
         onClinicLogout={handleClinicLogout}
+        onRetryStaffList={() => {
+          setError(null);
+          void loadDashboard();
+        }}
       />
     );
   }

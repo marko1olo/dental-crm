@@ -1,15 +1,48 @@
 import React, { useState } from 'react';
 import { Lock, UserCheck, Delete, LogOut } from 'lucide-react';
 import { showToast } from '../GlobalToast';
-import { actionFailureToast, NO_RESPONSE_CAUSE } from '../../lib/panelStateText';
+import { PanelLoadFailure } from '../PanelLoadFailure';
+import { actionFailureToast, NO_RESPONSE_CAUSE, panelStateText } from '../../lib/panelStateText';
+import {
+  resolveStaffUnlockListState,
+  resolveStaffUnlockPhase,
+  STAFF_UNLOCK_LIST_SUBJECT,
+} from './staffUnlockState';
 
 interface StaffPinPadProps {
-  staffMembers: any[];
+  /**
+   * Список сотрудников КАК ПРИШЁЛ, без подстановок.
+   *
+   * Тип `unknown`, а не `any[]`, и это главное в этом интерфейсе. Раньше здесь
+   * стояло `any[]`, а `App.tsx` дописывал `?? []`, чтобы тип сошёлся, — и тем
+   * самым превращал «список не прочитан» в «список прочитан и пуст». Экран
+   * сообщал «в клинике нет ни одного действующего сотрудника» при трёх
+   * действующих сотрудниках в базе, и войти в программу было нельзя вообще.
+   * Отсутствие списка обязано доехать сюда как отсутствие.
+   */
+  staffMembers: unknown;
+  /** Сводка клиники ещё едет: список отсутствует закономерно, это не отказ. */
+  staffListLoading: boolean;
+  /**
+   * Код ответа, по которому не удалось прочитать список; `null` — до сервера не
+   * дошли вовсе. Нужен, чтобы причина отказа называлась словами из общего
+   * словаря, а не выдумывалась здесь.
+   */
+  staffListStatus: number | null;
   onUnlockSuccess: (user: any) => void;
   onClinicLogout: () => void;
+  /** Перечитать данные клиники: единственный способ повторить, кроме перезахода. */
+  onRetryStaffList: () => void;
 }
 
-export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: StaffPinPadProps) {
+export function StaffPinPad({
+  staffMembers,
+  staffListLoading,
+  staffListStatus,
+  onUnlockSuccess,
+  onClinicLogout,
+  onRetryStaffList,
+}: StaffPinPadProps) {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [pin, setPin] = useState('');
   const [errorShake, setErrorShake] = useState(false);
@@ -23,7 +56,18 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
    */
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const activeStaff = Array.isArray(staffMembers) ? staffMembers.filter(m => m?.active ?? true) : [];
+  /*
+   * Три состояния списка вместо двух, и решение о них живёт НЕ в разметке.
+   *
+   * БЫЛО: `Array.isArray(staffMembers) ? staffMembers.filter(m => m?.active ?? true) : []`
+   * плюс ветка `activeStaff.length === 0` ниже. Правило было размазано по двум
+   * местам, проверить его было нечем, и `?? []` в App.tsx сводил оба состояния в
+   * одно. Теперь правило — функция без React, и её охраняет
+   * tests/staffUnlockListState.test.ts.
+   */
+  const listState = resolveStaffUnlockListState(staffMembers);
+  const listPhase = resolveStaffUnlockPhase({ isLoading: staffListLoading, list: listState });
+  const activeStaff = listState.phase === 'ready' ? listState.activeStaff : [];
 
   /** Один отказ — одна причина: и в уведомлении, и на экране, и в стёртом PIN. */
   const failUnlock = (message: string) => {
@@ -168,24 +212,49 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
 
           <div className="auth-staff-grid">
             {/*
+              ЧЕТЫРЕ СОСТОЯНИЯ, А НЕ ДВА.
+
               БЫЛО: «Список сотрудников загружается или пуст» — два разных
-              состояния одной строкой, причём «загружается» здесь невозможно:
-              App.tsx показывает этот экран только после загрузки данных клиники
-              (App.tsx:2026-2032, до этого висит AppLoadingState). Сотрудник читал
-              «загружается» и ждал того, что никогда не произойдёт.
+              состояния одной строкой. Потом это разделили на «не пришёл с
+              сервера» и «сотрудников нет», но первая ветка была НЕДОСТИЖИМА:
+              App.tsx подставлял `?? []`, и любой непрочитанный список приходил
+              сюда пустым массивом. Экран советовал заводить кадры клинике, у
+              которой в базе трое действующих сотрудников, и войти в программу
+              было нельзя.
+
+              Текст отказа берётся из общего словаря панелей и рисуется общим
+              компонентом: второй язык ошибок на экране входа путал бы сильнее
+              самого отказа. Кнопка «Выйти из аккаунта клиники» ниже остаётся
+              видимой во всех состояниях — при отказе это второй путь наружу,
+              кроме повтора.
             */}
-            {!Array.isArray(staffMembers) ? (
-              <div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
-                Список сотрудников не пришёл с сервера. Обновите страницу; если список так и не появится, сообщите администратору клиники.
+            {listPhase === 'loading' ? (
+              <div
+                className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full"
+                role="status"
+                aria-live="polite"
+              >
+                {panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: 'loading' }).title}
               </div>
-            ) : activeStaff.length === 0 ? (
+            ) : listPhase === 'failed' ? (
+              <PanelLoadFailure
+                subject={STAFF_UNLOCK_LIST_SUBJECT}
+                status={staffListStatus}
+                onRetry={onRetryStaffList}
+                className="col-span-full"
+              />
+            ) : listPhase === 'empty' ? (
               <div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
-                В клинике пока нет ни одного действующего сотрудника. Добавьте людей в разделе «Настройки → Кадры» — без сотрудника смену открыть нельзя.
+                {panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: 'empty' }).title}.{' '}
+                {panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: 'empty' }).hint}
               </div>
             ) : (
               activeStaff.map((staff) => {
                 const isSelected = selectedUser?.id === staff.id;
-                const initials = staff.fullName ? staff.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2) : '??';
+                const fullName = typeof staff.fullName === 'string' ? staff.fullName : '';
+                const initials = fullName
+                  ? fullName.split(' ').filter(Boolean).map((part) => part[0]).join('').slice(0, 2)
+                  : '??';
                 return (
                   <button
                     key={staff.id}
@@ -202,8 +271,14 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
                       {initials}
                     </div>
                     <div className="auth-staff-info">
-                      <div className="auth-staff-name">{staff.fullName}</div>
-                      <div className="auth-staff-role">{staff.role}</div>
+                      {/*
+                        Имя и роль приводятся к строке здесь, а не берутся как есть.
+                        Список приходит с сервера, и запись со странным значением в
+                        этих полях должна показаться странной записью, а не уронить
+                        отрисовку всего экрана входа.
+                      */}
+                      <div className="auth-staff-name">{fullName || 'Без имени'}</div>
+                      <div className="auth-staff-role">{typeof staff.role === 'string' ? staff.role : ''}</div>
                     </div>
                   </button>
                 );

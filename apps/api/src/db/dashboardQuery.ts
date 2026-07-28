@@ -45,6 +45,31 @@ function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
 }
 
+/**
+ * Клиники из сессии в базе нет.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНЫЙ ТИП ОШИБКИ. Маршрут ловит любое исключение и отвечает 500
+ * «Не удалось загрузить сводку. Повторите позже.» — для этого случая это ложь
+ * дважды: сервер исправен, и повтор не поможет никогда. Отдельный тип позволяет
+ * маршруту ответить отказом по доступу и назвать причину, не разбирая текст
+ * сообщения.
+ *
+ * ПОЧЕМУ НЕ ПУСТАЯ СВОДКА. Раньше отдавалась именно она, и это закрывало вход в
+ * программу: экран разблокировки смены читал пустой список сотрудников как
+ * «сотрудников в клинике нет» и внутрь не пускал, а в реквизитах ответа
+ * оставались данные последней прочитанной чужой клиники. Разбор целиком —
+ * `db/domainStateHydration.ts` и `tests/routes/dashboardOrphanClinicSession.test.ts`.
+ */
+export class ClinicOrganizationMissingError extends Error {
+  readonly organizationId: string;
+
+  constructor(organizationId: string) {
+    super("Клиника из сессии не найдена в базе данных.");
+    this.name = "ClinicOrganizationMissingError";
+    this.organizationId = organizationId;
+  }
+}
+
 export async function getDashboardFromDb(organizationId: string): Promise<Dashboard> {
   if (useInMemory()) {
     return buildDashboard();
@@ -53,6 +78,17 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
   const report = await hydrateDomainStateFromDb(organizationId);
   for (const warning of report.warnings) {
     console.warn(`[DashboardQuery] ${warning}`);
+  }
+  /*
+   * Проверка стоит ДО buildDashboard(), а не после.
+   *
+   * buildDashboard() собирает сводку из доменных коллекций, общих на процесс. Для
+   * ненайденной клиники гидратация их сознательно не трогает, поэтому вызов
+   * собрал бы сводку из данных ПРЕДЫДУЩЕГО запроса — то есть чужой клиники. Это
+   * не «пустой ответ», а подмена, и допускать её нельзя даже на один кадр.
+   */
+  if (!report.organizationFound) {
+    throw new ClinicOrganizationMissingError(organizationId);
   }
 
   const dashboard = buildDashboard();
