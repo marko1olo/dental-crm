@@ -396,6 +396,26 @@ export function AppointmentCard(props: AppointmentCardProps) {
                 </div>
               ) : null}
             </div>
+            {/*
+              ПРАВКА ВРЕМЕНИ ПРИЁМА МОЛЧА ПРОПАДАЛА ПРИ ЗАКРЫТИИ.
+
+              ЧТО БЫЛО СЛОМАНО. Признак «в черновике есть несохранённые изменения»
+              сюда передаётся (appointmentDirty, считается в ScheduleView), но в
+              карточке не использовался НИ РАЗУ: подпись у кнопки всегда говорила
+              «Ждет сохранения» — и когда правок нет, и когда администратор
+              переставил время, но не сохранил.
+
+              ЧТО ВИДЕЛ АДМИНИСТРАТОР. Открыл «Настроить», переставил начало с
+              14:00 на 15:00, отвлёкся на звонок, нажал «Закрыть» — правка исчезла
+              без единого слова, а в расписании осталось 14:00. Пациенту при этом
+              уже сказали «перенесли на три». Приём сорван, а на экране всё ровно.
+
+              ЧТО СТАЛО. Подпись говорит правду: «Изменения не сохранены», когда
+              они есть, и «Изменений нет», когда их нет. «Закрыть» с
+              несохранёнными правками спрашивает подтверждение — потерять их можно
+              только осознанно. Классы подписи не тронуты: оформление живёт в
+              чужих таблицах стилей.
+            */}
             <span className={`save-state save-state-${appointmentSaveState}`}>
               {appointmentSaveState === "saving"
                 ? "Сохраняю"
@@ -403,9 +423,27 @@ export function AppointmentCard(props: AppointmentCardProps) {
                   ? "Сохранено"
                   : appointmentSaveState === "error"
                     ? "Ошибка сохранения"
-                    : "Ждет сохранения"}
+                    : appointmentDirty
+                      ? "Изменения не сохранены"
+                      : "Изменений нет"}
             </span>
-            <button className="secondary-button" type="button" disabled={appointmentSaveState === "saving"} aria-busy={appointmentSaveState === "saving" || undefined} onClick={() => closeAppointmentEditor(appointment.id)}>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={appointmentSaveState === "saving"}
+              aria-busy={appointmentSaveState === "saving" || undefined}
+              onClick={() => {
+                if (
+                  appointmentDirty &&
+                  !window.confirm(
+                    "Изменения этой записи не сохранены. Закрыть и потерять их?"
+                  )
+                ) {
+                  return;
+                }
+                closeAppointmentEditor(appointment.id);
+              }}
+            >
               Закрыть
             </button>
             <button
