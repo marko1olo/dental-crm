@@ -4779,9 +4779,88 @@ function mutableStateSnapshot(): DentalMutableState {
 	};
 }
 
-function persistMutableState(): void {
+/**
+ * Сохранение снимка состояния: одна запись на пачку изменений, а не на каждое.
+ *
+ * БЫЛО. persistMutableState() из 31 места вызывал savePersistentState()
+ * синхронно, прямо в обработчике запроса. Одна такая запись — это два полных
+ * JSON.stringify всего состояния (первый ради контрольной суммы, второй ради
+ * файла), копия предыдущего файла в каталог резервных копий, чтение этого
+ * каталога, удаление устаревших копий, запись и переименование. Замерено на
+ * этом репозитории (медиана из 10 прогонов, повтор алгоритма
+ * persistentState.ts:242 в каталог вне репозитория):
+ *   • 3 пациента, файл 236 648 Б      → 4,61 мс на один вызов;
+ *   • 10 000 пациентов, 5 803 929 Б   → 49,54 мс на один вызов и 11,6 МБ
+ *     дискового ввода-вывода (сам файл плюс его резервная копия).
+ * Один вебхук Telegram или одно сохранение приёма дают три-пять таких вызовов
+ * подряд, и каждый блокировал цикл событий до ответа клиенту.
+ *
+ * СТАЛО. Вызов помечает состояние изменённым и заводит один таймер. Все
+ * вызовы, пришедшие до его срабатывания, сливаются в одну запись, и запись
+ * происходит уже после ответа клиенту. Окно фиксированное, а не продлеваемое
+ * при каждом изменении: устаревание снимка ограничено сверху окном при любой
+ * нагрузке, тогда как продлеваемое окно при непрерывном потоке изменений не
+ * записало бы файл вообще никогда.
+ *
+ * Окно по умолчанию — 250 мс, то есть пятикратная стоимость одной записи на
+ * клинике в 10 000 пациентов по замеру выше: даже при непрерывных изменениях
+ * на сохранение состояния уходит не больше пятой части времени цикла
+ * событий. Переопределяется DENTAL_STATE_FLUSH_DELAY_MS, значение 0
+ * возвращает синхронную запись на каждое изменение.
+ */
+const defaultStateFlushDelayMs = 250;
+
+function stateFlushDelayMs(): number {
+	const raw = process.env.DENTAL_STATE_FLUSH_DELAY_MS?.trim();
+	if (!raw) return defaultStateFlushDelayMs;
+	const parsed = Number(raw);
+	// Мусор в переменной окружения не должен молча превращаться в ноль: это
+	// вернуло бы синхронную запись на каждое действие, и никто бы не заметил.
+	if (!Number.isFinite(parsed) || parsed < 0) return defaultStateFlushDelayMs;
+	return Math.floor(parsed);
+}
+
+let pendingStateFlushTimer: NodeJS.Timeout | null = null;
+let mutableStateDirty = false;
+
+/**
+ * Немедленно записать отложенный снимок, если он есть.
+ *
+ * Нужен на завершении процесса: gracefulShutdown в server.ts:531 доходит до
+ * process.exit(0), поэтому обработчик exit ниже дописывает последние
+ * изменения, и корректная остановка сервера ничего не теряет.
+ */
+export function flushPersistentStateNow(): void {
+	if (pendingStateFlushTimer) {
+		clearTimeout(pendingStateFlushTimer);
+		pendingStateFlushTimer = null;
+	}
+	if (!mutableStateDirty) return;
+	mutableStateDirty = false;
 	savePersistentState(mutableStateSnapshot());
 }
+
+function persistMutableState(): void {
+	mutableStateDirty = true;
+	const delayMs = stateFlushDelayMs();
+	if (delayMs === 0) {
+		flushPersistentStateNow();
+		return;
+	}
+	if (pendingStateFlushTimer) return;
+	pendingStateFlushTimer = setTimeout(() => {
+		pendingStateFlushTimer = null;
+		if (mutableStateDirty) {
+			mutableStateDirty = false;
+			savePersistentState(mutableStateSnapshot());
+		}
+	}, delayMs);
+	// Таймер не удерживает процесс: одноразовые скрипты и тесты должны
+	// завершаться сразу, а несохранённое допишет обработчик exit.
+	pendingStateFlushTimer.unref();
+}
+
+process.on("exit", flushPersistentStateNow);
 
 const defaultPostVisitCheckupDelayHoursByTopic: DenteTelegramBotSettings["postVisitCheckupDelayHoursByTopic"] =
 	{
