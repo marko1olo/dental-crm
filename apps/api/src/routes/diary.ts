@@ -231,10 +231,23 @@ async function runDiarySigningCeremony(
 						.for("update");
 					if (!inv) continue;
 
+					// БЫЛО: `Number(rule.quantityToDeduct || 1)` и
+					// `Number(inv.stockQuantity || inv.currentQty || 0)`.
+					// `||` не отличает «нет значения» от настоящего нуля:
+					//  - правило со списанием 0 превращалось в списание 1;
+					//  - ПУСТАЯ полка (stock_quantity = 0) считалась «значение не
+					//    задано», остаток брался из устаревшей колонки current_qty,
+					//    проверка достаточности проходила, и склад после подписания
+					//    ВЫРАСТАЛ с нуля. В живой базе stock_quantity имеет тип
+					//    integer, поэтому драйвер отдаёт настоящий 0, а не строку "0",
+					//    и ветка срабатывала. Теперь ноль — это ноль.
 					const qtyToDeduct =
-						Number(rule.quantityToDeduct || 1) * Number(item.quantity || 1);
-					const currentStock = Number(inv.stockQuantity || inv.currentQty || 0);
-					if (currentStock < qtyToDeduct) {
+						Number(rule.quantityToDeduct ?? 1) * Number(item.quantity ?? 1);
+					const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+					// Нечисловой или неположительный расход не является списанием:
+					// строка движения на 0 или NaN только засоряет журнал склада.
+					if (!Number.isFinite(qtyToDeduct) || qtyToDeduct <= 0) continue;
+					if (!Number.isFinite(currentStock) || currentStock < qtyToDeduct) {
 						throw new DiarySigningError(
 							"InsufficientStock",
 							`Недостаточно материалов: ${inv.name}`,
