@@ -516,6 +516,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     integrationStatusLabels,
     isBrowserImagingFolderPicking,
     isBrowserMigrationScanning,
+    isChairCreating,
     isClinicPublicLookupLoading,
     isClinicalRuleSaving,
     isDicomFirstFramePreviewing,
@@ -547,6 +548,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     isPersistenceExporting,
     // isPricelistAnalyzing,
     isRecognitionLoading,
+    isStaffCreating,
     isSmartImportCommitting,
     isSmartImportLoading,
     isSmartReportLoading,
@@ -912,8 +914,17 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   const imagingImportInputReady = (imagingImportText || "").trim().length > 0;
   const patientImportInputReady = (importText || "").trim().length > 0;
   const localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
-  const newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
-  const newChairReadyToCreate = (newChairName || "").trim().length > 0;
+  /*
+    Флаг «готово к созданию» обязан учитывать выполняющийся запрос, иначе кнопка остаётся активной до
+    ответа сервера и второй клик создаёт дубль сотрудника или кресла. Защищённая версия живёт в
+    useAppLogic, но её здесь недостаточно: `settingsProps` ниже собирается как `Record<string, any>`,
+    где `...appLogic` приносит защищённое значение, `...derivations` перекрывает его своей копией без
+    защиты, а явные ключи в конце объекта перекрывают ещё раз — последний ключ выигрывает. Поэтому
+    защиту надо ставить именно здесь: это то значение, которое уезжает и в кнопки этого файла, и в
+    SettingsClinicTab, где персонал добавляют на самом деле. Типы молчат из-за `Record<string, any>`.
+  */
+  const newStaffReadyToCreate = (newStaffName || "").trim().length > 0 && !isStaffCreating;
+  const newChairReadyToCreate = (newChairName || "").trim().length > 0 && !isChairCreating;
   const adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
   const adminSecretScopeWarning =
     settingsTab === "telegram"
