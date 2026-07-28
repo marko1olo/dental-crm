@@ -1,3 +1,4 @@
+import type { ServiceCatalogItem } from "@dental/shared";
 import { AlertTriangle, Calculator, FileText, Loader2, PenTool, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -299,14 +300,34 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			let newItems = [...prevItems];
 			let changed = false;
 
-			const catalog = dashboard?.serviceCatalog || [];
+			/*
+			 * Прайс клиники, названный своим типом, а не any.
+			 *
+			 * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО. Ниже смета читала цену как `svc.priceRub`, а у
+			 * позиции прайса такого поля НЕТ: в контракте она называется
+			 * `basePriceRub` (packages/shared/src/index.ts, serviceCatalogItemSchema),
+			 * и в базе это колонка service_catalog_items.base_price_rub. Компилятор
+			 * молчал, потому что каталог приходил из контекста как any, и обращение к
+			 * несуществующему полю на any законно.
+			 *
+			 * ПОСЛЕДСТВИЕ БЫЛО ВЫВЕРНУТЫМ НАИЗНАНКУ. Клиника, которая ЗАПОЛНИЛА свой
+			 * прайс, получала undefined в цене — то есть «0 ₽» в смете и отказ при
+			 * сохранении плана. Клиника, которая прайс НЕ заполнила, проваливалась в
+			 * запасные объекты ниже и получала правдоподобные выдуманные цены. То
+			 * есть заполнить свой прайс означало сделать программу хуже.
+			 *
+			 * Тип здесь стоит не для порядка: он делает этот класс ошибки
+			 * невозможным. Обращение к `s.priceRub` на ServiceCatalogItem теперь
+			 * ошибка сборки, а не тихий undefined.
+			 */
+			const catalog: ServiceCatalogItem[] = dashboard?.serviceCatalog ?? [];
 
 			// Helper to find service by category and keywords
 			const findService = (
 				category: string,
 				isBaby: boolean,
 				keywords: string[],
-			) => {
+			): ServiceCatalogItem | undefined => {
 				const candidates = catalog.filter((s) => s.category === category);
 				let best = candidates.find((s) =>
 					keywords.some((k) => s.title.toLowerCase().includes(k)),
@@ -314,6 +335,29 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				if (!best && candidates.length > 0) best = candidates[0]; // fallback to any in category
 				return best;
 			};
+
+			/*
+			 * Цена услуги из прайса клиники, либо из запасного объекта.
+			 *
+			 * Запасные объекты ниже несут захардкоженные `priceRub`, и это отдельный,
+			 * НЕ закрытый здесь дефект: восемь выдуманных цен (4000, 5500, 6000,
+			 * 12500, 35000, 12000, 5000, 28000) и восемь выдуманных идентификаторов
+			 * услуг вида "service_caries_01", которые уходят на сервер при
+			 * сохранении. Убрать их нельзя одной правкой: PlanItem.price объявлен
+			 * непустым числом, а честное «цены нет» требует нулевого варианта в семи
+			 * местах вывода плюс человеческого объяснения по §3 — «Услуги «Коронка из
+			 * диоксида циркония» нет в вашем прайсе, добавьте её, чтобы посчитать
+			 * план». Это отдельный пакет, и он заявлен долгом, а не спрятан.
+			 *
+			 * Здесь закрывается ровно та половина, из-за которой ЗАПОЛНЕННЫЙ прайс не
+			 * работал. Ноль по умолчанию не подставляется: подстановка выдуманного
+			 * нуля вместо неизвестной величины запрещена прямо, и если обе формы
+			 * молчат, цена остаётся неопределённой и это видно.
+			 */
+			const servicePriceRub = (
+				service: ServiceCatalogItem | { priceRub: number },
+			): number =>
+				"basePriceRub" in service ? service.basePriceRub : service.priceRub;
 
 			const cariesServiceBaby = findService("therapy", true, [
 				"кариес",
@@ -449,7 +493,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							priceId: svc.id,
 							name: svc.title + surfaceSuffix,
 							quantity: 1,
-							price: svc.priceRub,
+							price: servicePriceRub(svc),
 							discount: 0,
 							phase: 1,
 						});
@@ -471,7 +515,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							priceId: implantService.id,
 							name: implantService.title,
 							quantity: 1,
-							price: implantService.priceRub,
+							price: servicePriceRub(implantService),
 							discount: 0,
 							phase: 2,
 						});
@@ -481,7 +525,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							priceId: guideService.id,
 							name: guideService.title,
 							quantity: 1,
-							price: guideService.priceRub,
+							price: servicePriceRub(guideService),
 							discount: 0,
 							phase: 2,
 						});
@@ -501,7 +545,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							priceId: svc.id,
 							name: svc.title + surfaceSuffix,
 							quantity: 1,
-							price: svc.priceRub,
+							price: servicePriceRub(svc),
 							discount: 0,
 							phase: 1,
 						});
@@ -521,7 +565,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							priceId: svc.id,
 							name: svc.title,
 							quantity: 1,
-							price: svc.priceRub,
+							price: servicePriceRub(svc),
 							discount: 0,
 							phase: 3,
 						});
