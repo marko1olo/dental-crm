@@ -340,4 +340,138 @@ describe("личность записи диктовки", () => {
     console.log(`SPEECH ROWS SCANNED: ${rows.length}`);
     assert.deepStrictEqual(mixed, [], "в базе есть строки диктовки с текстом двух приемов");
   });
+
+  /**
+   * Строка, УЖЕ смешанная прежним дефектом. Такие конверты существуют: ревьюер
+   * получил их прогоном. Правка обязана вести себя с ними так:
+   *   1. не уничтожать чужой текст (разделить два приема автоматически нельзя —
+   *      это угадывание в медицинской документации);
+   *   2. сказать об этом в предупреждениях строки, чтобы разбор сделал человек;
+   *   3. не принимать в неё НОВЫЕ чужие фрагменты.
+   * Конверт портится здесь тем же способом, каким его портил дефект: в него
+   * дописывается полный фрагмент другого приема и другого пациента.
+   * Тест идёт последним и удаляет свою строку сам, иначе он сломал бы аудит выше.
+   */
+  it("уже смешанная строка не теряет текст и объявляет о ручном разборе", async () => {
+    const pair = clinicalPair;
+    assert.ok(pair);
+    const recordingId = `test-identity-legacy-${randomUUID()}`;
+    const decoyRecordingId = `test-identity-legacy-decoy-${randomUUID()}`;
+    createdRecordingIds.push(recordingId, decoyRecordingId);
+
+    await withEnv({ DENTAL_SPEECH_CACHED_RECORDINGS: "1" }, async () => {
+      resetSpeechTranscriptionCacheForRestart();
+      await recordSpeechTranscriptionChunk(
+        buildChunkInput({
+          recordingId,
+          chunkIndex: 0,
+          visitId: pair.visitA,
+          patientId: pair.patientA,
+          transcript: visitAText
+        })
+      );
+
+      const before = await readDurableRow(recordingId, pair.organizationId);
+      assert.ok(before, "строка расшифровки не найдена в ai_jobs");
+      const envelope = JSON.parse(before.inputText ?? "{}") as { chunks: unknown[] };
+      envelope.chunks.push({
+        ...buildChunkInput({
+          recordingId,
+          chunkIndex: 1,
+          visitId: pair.visitB,
+          patientId: pair.patientB,
+          transcript: visitBText
+        }),
+        id: randomUUID(),
+        organizationId: pair.organizationId,
+        recordingId,
+        createdAt: new Date().toISOString()
+      });
+      await db
+        .update(aiJobs)
+        .set({ inputText: JSON.stringify(envelope), resultText: `${visitAText}\n${visitBText}` })
+        .where(durableRowFilter(recordingId, pair.organizationId));
+
+      // Кэш записи опустошается вытеснением: иначе чужой фрагмент поднялся бы в
+      // память при восстановлении и быстрый отказ по кэшу сработал бы раньше.
+      resetSpeechTranscriptionCacheForRestart();
+      await recordSpeechTranscriptionChunk(
+        buildChunkInput({
+          recordingId: decoyRecordingId,
+          chunkIndex: 0,
+          visitId: pair.visitA,
+          patientId: pair.patientA,
+          transcript: "Другая запись той же клиники, занимающая бюджет кэша."
+        })
+      );
+      assert.strictEqual(
+        listSpeechTranscriptionChunks(recordingId).length,
+        0,
+        "смешанная запись осталась в памяти: проверка по сохранённому конверту не воспроизводится"
+      );
+
+      await recordSpeechTranscriptionChunk(
+        buildChunkInput({
+          recordingId,
+          chunkIndex: 2,
+          visitId: pair.visitA,
+          patientId: pair.patientA,
+          transcript: visitASecondText
+        })
+      );
+
+      const [row] = await db
+        .select({
+          visitId: aiJobs.visitId,
+          patientId: aiJobs.patientId,
+          resultText: aiJobs.resultText,
+          inputText: aiJobs.inputText,
+          warnings: aiJobs.warnings
+        })
+        .from(aiJobs)
+        .where(durableRowFilter(recordingId, pair.organizationId))
+        .limit(1);
+      assert.ok(row, "строка расшифровки исчезла");
+      assert.ok(
+        (row.resultText ?? "").includes(visitBText),
+        "текст чужого приема удалён из строки: это уничтожение медицинского текста"
+      );
+      assert.ok(
+        (row.resultText ?? "").includes(visitASecondText),
+        "своя новая диктовка не попала в строку"
+      );
+      assert.strictEqual(row.visitId, pair.visitA, "подпись строки ушла к другому приему");
+      assert.strictEqual(row.patientId, pair.patientA, "подпись строки ушла к другому пациенту");
+      assert.strictEqual(
+        JSON.parse(row.inputText ?? "{}").chunks.length,
+        3,
+        "конверт потерял фрагменты"
+      );
+      assert.ok(
+        (row.warnings ?? []).some((warning) => warning.includes("разобрать вручную")),
+        `строка не объявляет о смешанном тексте: ${JSON.stringify(row.warnings)}`
+      );
+
+      // Новый чужой фрагмент в такую строку всё равно не принимается.
+      await assert.rejects(
+        () =>
+          recordSpeechTranscriptionChunk(
+            buildChunkInput({
+              recordingId,
+              chunkIndex: 3,
+              visitId: pair.visitB,
+              patientId: pair.patientB,
+              transcript: "Прием Б: продолжение осмотра."
+            })
+          ),
+        (error: unknown) => {
+          assert.ok(error instanceof SpeechChunkIdentityConflictError);
+          return true;
+        }
+      );
+
+      // Смешанная строка удаляется здесь же: она умышленно создана этим тестом.
+      await db.delete(aiJobs).where(durableRowFilter(recordingId, pair.organizationId));
+    });
+  });
 });
