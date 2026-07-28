@@ -52,6 +52,61 @@ function moneyRubEquals(kopecks: number, rub: number): boolean {
 	return kopecks === parseKopecks(rub);
 }
 
+/** Заглушка суммы, которую напечатать не удалось: форма денег сохранена, значение — нет. */
+const MONEY_TEXT_UNPRINTABLE = "?.??";
+
+/**
+ * Печать рублёвой суммы в текст отказа. НЕ БРОСАЕТ, никогда.
+ *
+ * ЗАЧЕМ ЭТО ПОЯВИЛОСЬ. Все одиннадцать мест, где этот файл печатает деньги,
+ * находятся ВНУТРИ построения сообщения об отказе. `parseKopecks` по контракту
+ * бросает на NaN, на Infinity и на строке, не похожей на деньги — «Денежное
+ * значение не является числом: NaN». Для расчёта это верно: повреждённые деньги
+ * должны останавливать работу. Но здесь расчёт уже закончен, решение отказать
+ * принято, и осталась одна задача — объяснить отказ человеку. Исключение из
+ * построителя фразы уносит объяснение целиком: вежливый 409 «сумма не совпадает»
+ * превращается в 500 без текста, и клиника не узнаёт даже того, что документ
+ * отбит по сумме. Это строго хуже дефекта, который починили сами одиннадцать
+ * конверсий.
+ *
+ * Считать деньги здесь по-прежнему нечем, кроме
+ * `packages/shared/src/utils/money.ts`: функция только оборачивает `parseKopecks`
+ * и `kopecksToNumericString`. Второй реализации денег не возникает — их в этом
+ * репозитории уже находили дважды, и одна отказывала законной квитанции.
+ *
+ * ЗАГЛУШКА — НЕ НОЛЬ. `0.00` было бы ложью, причём неотличимой от правды:
+ * `parseKopecks(null)` законно даёт `0.00` для отсутствующей суммы, поэтому
+ * повреждённое значение обязано выглядеть иначе, иначе врач пойдёт искать ноль,
+ * которого в данных нет. «undefined руб.» — тоже не объяснение, а мусор.
+ * `?.??` держит форму денежного слота прямо перед «руб.», читается как «сумму
+ * напечатать не удалось» и ни с одной настоящей суммой не путается.
+ *
+ * Сравнения этим не затронуты: они идут в целых копейках без допуска и обязаны
+ * бросать на повреждённых деньгах, а не печатать заглушку.
+ */
+export function moneyRubText(rub: string | number | null | undefined): string {
+	try {
+		return kopecksToNumericString(parseKopecks(rub));
+	} catch {
+		return MONEY_TEXT_UNPRINTABLE;
+	}
+}
+
+/**
+ * То же для уже посчитанных копеек (результат `sumKopecks`).
+ *
+ * Отдельный вход, а не признак-единица в одной подписи: перевод копеек в рубли
+ * ради общей сигнатуры вернул бы деление в денежный путь. Реализация та же самая,
+ * из `@dental/shared`.
+ */
+export function moneyKopecksText(kopecks: number): string {
+	try {
+		return kopecksToNumericString(kopecks);
+	} catch {
+		return MONEY_TEXT_UNPRINTABLE;
+	}
+}
+
 type DocumentVisit = Pick<Visit, "id" | "patientId">;
 type DocumentPatient = Pick<Patient, "id">;
 type DocumentTreatmentPlanItem = Pick<
@@ -366,7 +421,7 @@ export function paymentReceiptSelectionErrorForDocument(
 		selectedPayments.map((payment) => parseKopecks(payment.amountRub)),
 	);
 	if (!moneyRubEquals(selectedTotalKopecks, payload.totalPaidRub)) {
-		return `Платежная квитанция: сумма ${kopecksToNumericString(parseKopecks(payload.totalPaidRub))} руб. не совпадает с выбранными оплатами ${kopecksToNumericString(selectedTotalKopecks)} руб.`;
+		return `Платежная квитанция: сумма ${moneyRubText(payload.totalPaidRub)} руб. не совпадает с выбранными оплатами ${moneyKopecksText(selectedTotalKopecks)} руб.`;
 	}
 
 	const actualReceiptNumbers = new Set(
@@ -482,12 +537,12 @@ export function paymentRefundCorrectionSelectionErrorForDocument(
 		);
 		const refundableRub = payment.amountRub - alreadyRefundedRub;
 		if (refundableRub <= 0) {
-			return `По чеку на ${kopecksToNumericString(parseKopecks(payment.amountRub))} руб. уже возвращено ${kopecksToNumericString(parseKopecks(alreadyRefundedRub))} руб. Свободного остатка для возврата нет.`;
+			return `По чеку на ${moneyRubText(payment.amountRub)} руб. уже возвращено ${moneyRubText(alreadyRefundedRub)} руб. Свободного остатка для возврата нет.`;
 		}
 		if (payload.amountRub > refundableRub) {
 			return alreadyRefundedRub > 0
-				? `Сумма возврата (${kopecksToNumericString(parseKopecks(payload.amountRub))} руб.) превышает остаток по чеку: из ${kopecksToNumericString(parseKopecks(payment.amountRub))} руб. уже возвращено ${kopecksToNumericString(parseKopecks(alreadyRefundedRub))} руб., доступно ${kopecksToNumericString(parseKopecks(refundableRub))} руб.`
-				: `Сумма возврата (${kopecksToNumericString(parseKopecks(payload.amountRub))} руб.) не может превышать сумму исходного чека (${kopecksToNumericString(parseKopecks(payment.amountRub))} руб.).`;
+				? `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) превышает остаток по чеку: из ${moneyRubText(payment.amountRub)} руб. уже возвращено ${moneyRubText(alreadyRefundedRub)} руб., доступно ${moneyRubText(refundableRub)} руб.`
+				: `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) не может превышать сумму исходного чека (${moneyRubText(payment.amountRub)} руб.).`;
 		}
 		if (!payment.fiscalReceiptNumber?.trim()) {
 			return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";
@@ -686,7 +741,7 @@ function financialServiceLinesMismatchReason(
 	for (const [index, line] of lines.entries()) {
 		const expectedTotalRub = expectedFinancialLineTotal(line);
 		if (Math.abs(line.totalRub - expectedTotalRub) > 0.01) {
-			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${kopecksToNumericString(parseKopecks(expectedTotalRub))} руб. по количеству, цене и скидке; передано ${kopecksToNumericString(parseKopecks(line.totalRub))} руб.`;
+			return `${documentLabel}: строка ${index + 1} должна иметь сумму ${moneyRubText(expectedTotalRub)} руб. по количеству, цене и скидке; передано ${moneyRubText(line.totalRub)} руб.`;
 		}
 	}
 	return null;
@@ -700,7 +755,7 @@ function financialServiceLinesGrandTotalMismatchReason(
 	const linesTotalRub = financialLinesTotal(lines);
 	const targetRub = Math.round(totalAmountRub * 100) / 100;
 	if (Math.abs(linesTotalRub - targetRub) > 0.01) {
-		return `${documentLabel}: общий итог ${kopecksToNumericString(parseKopecks(totalAmountRub))} руб. не совпадает с суммой строк ${kopecksToNumericString(parseKopecks(linesTotalRub))} руб.`;
+		return `${documentLabel}: общий итог ${moneyRubText(totalAmountRub)} руб. не совпадает с суммой строк ${moneyRubText(linesTotalRub)} руб.`;
 	}
 	return null;
 }
@@ -714,7 +769,7 @@ function plannedFactsTotalMismatchReason(
 		facts.plannedAmountRub > 0 &&
 		payloadTotalRub !== facts.plannedAmountRub
 	) {
-		return `${documentLabel}: сумма ${kopecksToNumericString(parseKopecks(payloadTotalRub))} руб. не совпадает с актуальным планом лечения ${kopecksToNumericString(parseKopecks(facts.plannedAmountRub))} руб.`;
+		return `${documentLabel}: сумма ${moneyRubText(payloadTotalRub)} руб. не совпадает с актуальным планом лечения ${moneyRubText(facts.plannedAmountRub)} руб.`;
 	}
 	return null;
 }
@@ -725,7 +780,7 @@ function paidFactsTotalMismatchReason(
 	documentLabel: string,
 ): string | null {
 	if (facts.paidAmountRub > 0 && payloadTotalRub !== facts.paidAmountRub) {
-		return `${documentLabel}: сумма ${kopecksToNumericString(parseKopecks(payloadTotalRub))} руб. не совпадает с реально оплаченным контекстом ${kopecksToNumericString(parseKopecks(facts.paidAmountRub))} руб.`;
+		return `${documentLabel}: сумма ${moneyRubText(payloadTotalRub)} руб. не совпадает с реально оплаченным контекстом ${moneyRubText(facts.paidAmountRub)} руб.`;
 	}
 	return null;
 }
@@ -783,7 +838,7 @@ function installmentScheduleMismatchReason(
 		payload.totalAmountRub - payload.prepaidAmountRub,
 	);
 	if (payload.remainingAmountRub !== expectedRemainingRub) {
-		return `График рассрочки: остаток ${kopecksToNumericString(parseKopecks(payload.remainingAmountRub))} руб. не совпадает с суммой минус предоплатой ${kopecksToNumericString(parseKopecks(expectedRemainingRub))} руб.`;
+		return `График рассрочки: остаток ${moneyRubText(payload.remainingAmountRub)} руб. не совпадает с суммой минус предоплатой ${moneyRubText(expectedRemainingRub)} руб.`;
 	}
 
 	const installmentsTotalKopecks = sumKopecks(
@@ -792,7 +847,7 @@ function installmentScheduleMismatchReason(
 		),
 	);
 	if (!moneyRubEquals(installmentsTotalKopecks, payload.remainingAmountRub)) {
-		return `График рассрочки: сумма платежей ${kopecksToNumericString(installmentsTotalKopecks)} руб. не совпадает с остатком ${kopecksToNumericString(parseKopecks(payload.remainingAmountRub))} руб.`;
+		return `График рассрочки: сумма платежей ${moneyKopecksText(installmentsTotalKopecks)} руб. не совпадает с остатком ${moneyRubText(payload.remainingAmountRub)} руб.`;
 	}
 
 	return plannedFactsTotalMismatchReason(
@@ -823,7 +878,7 @@ function completedWorksActMismatchReason(
 	if (
 		!moneyRubEquals(parseKopecks(payload.totalByActRub), payload.paidRub)
 	) {
-		return `Акт выполненных работ: сумма акта ${kopecksToNumericString(parseKopecks(payload.totalByActRub))} руб. не совпадает с оплаченной суммой ${kopecksToNumericString(parseKopecks(payload.paidRub))} руб.`;
+		return `Акт выполненных работ: сумма акта ${moneyRubText(payload.totalByActRub)} руб. не совпадает с оплаченной суммой ${moneyRubText(payload.paidRub)} руб.`;
 	}
 	return (
 		paidFactsTotalMismatchReason(
