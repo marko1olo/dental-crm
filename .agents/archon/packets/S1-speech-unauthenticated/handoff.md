@@ -197,6 +197,34 @@ asymmetry may not be unique» — по этому цензу это не под�
 `git diff --cached --name-only` — посторонних файлов в нём не было. `apps/api/dist/**`,
 `apps/api/.data/*.json` не стадились.
 
+## Переподтверждение после ухода HEAD (S2 переписал файл, от которого я завислю)
+
+Между моими коммитами в ветку легли `d6c1eed82` и `f11f64153` (пакет S2). `d6c1eed82` изменил
+**`apps/api/src/speech/storage.ts`** (202 строки) — тот самый файл, чей
+`resolveSpeechChunkOrganizationId` определяет организацию сохраняемого фрагмента, то есть прямая
+зависимость моей правки. Поэтому все проверки прогнаны ПОВТОРНО на HEAD `cb15cdec9` уже с правкой S2:
+
+- `node --import tsx --test apps/api/src/tests/routes/speechTranscribeChunkAccess.test.ts`
+  → `tests 7 | pass 7 | fail 0 | skipped 0`, exit 0
+- `npm run typecheck -w @dental/api` → exit 0
+- `npm test -w @dental/api` → `tests 931 | pass 931 | fail 0 | skipped 0`, exit 0
+  (931, а не 925: S2 добавил свой набор `speech/tests/storageIdentity.test.ts`)
+
+Мой гейт присутствует на HEAD: `git grep -n` находит
+`requireClinicalMutationContext(request, reply, "speech chunk transcribe")` в
+`apps/api/src/routes/speech.ts:266`. Конфликта с S2 нет: он правил storage-слой, я — маршрут.
+
+## Отступление от брифинга, признаю сам
+
+Брифинг требовал префикс `[ARCHON] ` в теме коммита. Мои три коммита (`8f4d42fe3`, `46bed6dba`,
+`cb15cdec9`) ушли БЕЗ этого префикса — недосмотр мой, тема и тело в остальном соответствуют
+(Conventional Commits, русская область и тема, названа суть дефекта, а не активность).
+
+Историю НЕ переписываю осознанно: `8f4d42fe3` и `46bed6dba` уже не последние — поверх них лежат
+коммиты другого агента (`d6c1eed82`, `f11f64153`), и любой rebase/amend переписал бы ЧУЖИЕ коммиты
+и сменил бы их хеши в общей ветке. Цена исправления префикса несоизмеримо ниже цены порчи чужой
+работы, поэтому оставляю как есть и сообщаю. Если лид хочет префикс — это его вызов на его условиях.
+
 ## Коллизия (сообщаю, не исправляю)
 
 `apps/api/src/server.ts` в состоянии ` M` — грязный НЕ мной, я его не открывал на запись, не

@@ -50,5 +50,17 @@ accessGuard.ts and server.ts NOT touched.
 (settings.ts:383/387). Conclusion: the speech asymmetry was UNIQUE — contradicts the packet's
 hypothesis. Method and all five false-positive iterations documented in handoff.md.
 
+## Re-verified after HEAD moved (S2 rewrote speech/storage.ts, my dependency)
+At HEAD cb15cdec9, with S2's d6c1eed82 storage rewrite in the tree:
+- my node:test -> 7/7 pass, 0 skipped, exit 0
+- npm run typecheck -w @dental/api -> exit 0
+- npm test -w @dental/api -> 931/931 pass, exit 0 (931 not 925: S2 added storageIdentity.test.ts)
+- git grep confirms my guard present at apps/api/src/routes/speech.ts:266
+
+## Deviation I am disclosing
+My three commits lack the required '[ARCHON] ' subject prefix. NOT rewriting history: another
+agent's commits (d6c1eed82, f11f64153) sit on top of mine, so any rebase/amend would rewrite THEIR
+commits and change their hashes on the shared branch. Reported instead of risking that.
+
 ## Files left on disk
 state.md, commitmsg.txt, commitmsg-test.txt, handoff.md — all in this packet dir.
