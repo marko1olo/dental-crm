@@ -1766,8 +1766,26 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setIntakeAnticoagulants: createSetter(set, "intakeAnticoagulants"),
   intakeInfectiousRiskNotes: "",
   setIntakeInfectiousRiskNotes: createSetter(set, "intakeInfectiousRiskNotes"),
-  intakeCardioEndocrineNotes:
-    "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством.",
+  /*
+   * Системные риски начинаются пустыми — как аллергии и препараты выше.
+   *
+   * Это была единственная непустая графа здоровья во всём блоке: «Сердечно-
+   * сосудистые, эндокринные и иные системные риски требуют уточнения врачом
+   * перед вмешательством». В анкете она печаталась в строке «Сердце, давление,
+   * диабет и системные риски», то есть в графе ОТВЕТА пациента, хотя это
+   * заметка врача самому себе, а не то, что человек рассказал.
+   *
+   * Хуже, что непустое умолчание обезврежило предохранитель: проверка
+   * requiredDocumentField(intakeCardioEndocrineNotes, "анкета, системные
+   * риски") в documentValidators.ts не могла сработать никогда, и анкета уходила
+   * на подпись с незаполненной графой о сердце и диабете. Теперь пусто, и
+   * создание документа требует ответа.
+   *
+   * Долг (чужой файл): у поля в DocumentsView.tsx нет ни подсказки в пустом
+   * поле, ни кнопки «Со слов пациента — нет», которые есть у соседей через
+   * AnamnesisField. Пустая графа без подсказки — шаг назад по понятности.
+   */
+  intakeCardioEndocrineNotes: "",
   setIntakeCardioEndocrineNotes: createSetter(set, "intakeCardioEndocrineNotes"),
   intakeEmergencyContact: "",
   setIntakeEmergencyContact: createSetter(set, "intakeEmergencyContact"),
@@ -1869,9 +1887,23 @@ const createIntakeAndConsentSlice = (set: any) => ({
   setProcedureConsentExactProcedureConfirmed: createSetter(set, "procedureConsentExactProcedureConfirmed"),
   procedureConsentRisksUnderstood: false,
   setProcedureConsentRisksUnderstood: createSetter(set, "procedureConsentRisksUnderstood"),
-  photoVideoLabTransferAllowed: true,
+  /*
+   * Ни одно разрешение в согласии на фото и видео не проставлено заранее.
+   *
+   * Две галочки из семи — «Можно передавать в зуботехническую лабораторию» и
+   * «Можно показывать коллегам для консультации» — открывались уже
+   * отмеченными, а остальные пять были пусты. Пациент подписывал согласие на
+   * передачу своих снимков в лабораторию и показ коллегам, о котором его не
+   * спрашивали, и по виду формы отличить его отметку от нашей невозможно.
+   * validatePhotoVideoConsent не требует ни одного разрешения, поэтому ничто
+   * не мешало выдать документ с чужим выбором.
+   *
+   * Разрешения остаются доступны в один клик: галочки на месте
+   * (components/documents/forms/PhotoVideoConsentForm.tsx), их ставит человек.
+   */
+  photoVideoLabTransferAllowed: false,
   setPhotoVideoLabTransferAllowed: createSetter(set, "photoVideoLabTransferAllowed"),
-  photoVideoColleagueConsultationAllowed: true,
+  photoVideoColleagueConsultationAllowed: false,
   setPhotoVideoColleagueConsultationAllowed: createSetter(set, "photoVideoColleagueConsultationAllowed"),
   photoVideoEducationUseAllowed: false,
   setPhotoVideoEducationUseAllowed: createSetter(set, "photoVideoEducationUseAllowed"),
