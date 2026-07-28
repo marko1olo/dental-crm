@@ -23,10 +23,15 @@ typedRecognitionJob.warnings.map((warning) => (
                       <span key={warning}>{aiRecognitionWarningText(warning)}</span>
 */
 import { useState, useEffect } from "react";
-import { DadataGeocodedAddressesWidget } from "./components/integrations/DadataGeocodedAddressesWidget";
+/*
+ * Импортов DadataGeocodedAddressesWidget и SingleSessionEnforcementsWidget
+ * здесь больше нет намеренно: обе панели физически нечем заполнить. Причины
+ * подробно — у места, где они монтировались, в конце этого файла (ищи
+ * «Отсюда убраны две панели»). Не возвращай импорт, не прочитав тот
+ * комментарий.
+ */
 import { EgiszBlankPermissionsWidget } from "./components/integrations/EgiszBlankPermissionsWidget";
 import { YandexCalendarSyncsWidget } from "./components/integrations/YandexCalendarSyncsWidget";
-import { SingleSessionEnforcementsWidget } from "./components/settings/SingleSessionEnforcementsWidget";
 
 import type {
   AiRecognitionJob,
@@ -1559,11 +1564,38 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         ) : null}
         {settingsTab === "audit" ? <SettingsAuditTab {...settingsProps} settingsTab={settingsTab} /> : null}
 
+        {/*
+          Отсюда убраны две панели, которые нечем заполнить.
+
+          Этот блок висит под КАЖДОЙ вкладкой настроек, поэтому цена пустой
+          карточки здесь максимальная: её видит владелец на любом экране и
+          перестаёт верить живым числам рядом.
+
+          «DaData: геокодирование и проверка адресов пациентов» обещала
+          стандартизацию адреса, которого в карточке пациента не существует: нет
+          ни колонки адреса, ни поля в форме. Чтобы она хоть раз что-то
+          показала, нужны колонка, поле ввода, платный внешний сервис и решение
+          по 152-ФЗ о передаче адреса пациента наружу.
+
+          «Контроль единственного параллельного входа» обещала не журнал, а
+          вытеснение сессии — колонку «Токен сессии» и плашку «Вытеснена
+          предыдущая». Вытеснения в системе нет: токены подписанные и stateless,
+          на сервере не хранятся, хранилища сессий и отзыва токенов нет вовсе.
+          Подотчётность в кабинете уже дают PIN сотрудника и журнал аудита
+          (вкладка «Аудит»).
+
+          Проверено поиском по всему репозиторию: в dadata_geocoded_addresses и
+          single_session_enforcements нет ни одной вставки — только SELECT в
+          apps/api/src/db/*Query.ts. Значит в любой клинике, сколько бы она ни
+          работала, обе панели показывали «данных нет».
+
+          Не возвращать, пока не появится код, который в эти таблицы пишет.
+          Файлы виджетов пока на месте — их снимает ведущий отдельным коммитом
+          вместе с серверной частью.
+        */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DadataGeocodedAddressesWidget />
           <EgiszBlankPermissionsWidget />
           <YandexCalendarSyncsWidget />
-          <SingleSessionEnforcementsWidget />
         </div>
       </div>
     </motion.section>

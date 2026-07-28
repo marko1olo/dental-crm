@@ -19,7 +19,11 @@ import "./SettingsRulesTab.css";
 import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
-import { CustomCrmTaskTypesWidget } from "../crm/CustomCrmTaskTypesWidget";
+/*
+ * Импорта CustomCrmTaskTypesWidget здесь больше нет намеренно: панель нечем
+ * заполнить. Причина подробно — в конце разметки, у места, откуда она убрана.
+ * Не возвращай импорт, не прочитав тот комментарий.
+ */
 
 const clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
@@ -567,7 +571,25 @@ export function SettingsRulesTab() {
 				</div>
 			</section>
 
-			<CustomCrmTaskTypesWidget />
+			{/*
+				Здесь стоял «Конструктор типов задач» (CustomCrmTaskTypesWidget).
+				Убран: заполнить его нечем. В таблице custom_crm_task_types на весь
+				репозиторий ноль вставок — только SELECT в
+				apps/api/src/db/customCrmTaskTypesQuery.ts, ни экрана создания, ни
+				формы, ни импорта. Панель писала «Типы задач отсутствуют» в любой
+				клинике и в любой день, причём в настройках, то есть ровно там, где
+				владелец и ждёт, что сможет что-то настроить, — обещание без кнопки
+				хуже отсутствия обещания.
+
+				По сути кабинету на два кресла отдельные типы задач и не нужны:
+				готовых назначений задач хватает.
+
+				Вкладка «Правила» от этого не пустеет: выше остаются сводка правил,
+				конструктор клинических правил и библиотека правил — они пишутся
+				настоящими роутами.
+
+				Вернуть можно только вместе с экраном создания типа задачи.
+			*/}
 		</div>
 	);
 }

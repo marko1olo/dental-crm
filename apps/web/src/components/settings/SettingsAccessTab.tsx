@@ -3,7 +3,11 @@ import { UserCheck, ShieldCheck, Mail, Link as LinkIcon, Check } from "lucide-re
 import { showToast } from "../GlobalToast";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { StaffRole } from "@dental/shared";
-import { SingleSessionEnforcementsWidget } from "./SingleSessionEnforcementsWidget";
+/*
+ * Импорта SingleSessionEnforcementsWidget здесь больше нет намеренно: панель
+ * нечем заполнить. Причина подробно — в конце разметки, у места, откуда она
+ * убрана. Не возвращай импорт, не прочитав тот комментарий.
+ */
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
@@ -211,7 +215,25 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
                 </article>
               ))}
             </div>
-            <SingleSessionEnforcementsWidget />
+            {/*
+              Здесь стояла панель «Контроль единственного параллельного входа»
+              (SingleSessionEnforcementsWidget). Убрана: она обещала не журнал
+              входов, а ВЫТЕСНЕНИЕ сессии — колонку «Токен сессии» и плашку
+              «Вытеснена предыдущая». Такого механизма в системе нет: токены
+              подписанные и stateless, на сервере не хранятся, хранилища сессий
+              и отзыва токенов не существует. В таблице
+              single_session_enforcements на весь репозиторий ноль вставок —
+              только SELECT в apps/api/src/db/singleSessionEnforcementsQuery.ts,
+              поэтому панель писала «Активных параллельных сессий не
+              обнаружено» в любой клинике и в любой день.
+
+              Подотчётность на вкладке доступов держат вещи выше: приглашение
+              сотрудника по ссылке, рабочие профили и права ролей; кто что
+              сделал — вкладка «Аудит», вход под своим PIN — настройки команды.
+
+              Вернуть можно только вместе с настоящим вытеснением сессий:
+              серверным хранилищем токенов и их отзывом.
+            */}
           </section>
   );
 }
