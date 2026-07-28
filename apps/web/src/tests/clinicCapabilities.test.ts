@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { StaffRole } from "@dental/shared";
 import {
 	clinicCapabilities,
 	describeHiddenCapabilities,
 	hasCapability,
+	resolveClinicMode,
+	visibleStaffRoles,
 	type ClinicCapability,
 	type ClinicMode
 } from "../lib/clinicCapabilities.js";
@@ -92,4 +95,92 @@ test("скрытое перечисляется словами — для объ
 	assert.ok(hiddenForSolo.includes("рассылки по базе пациентов"), JSON.stringify(hiddenForSolo));
 	assert.ok(hiddenForSolo.includes("занятость кресел"), JSON.stringify(hiddenForSolo));
 	assert.deepEqual(describeHiddenCapabilities("network_clinic"), []);
+});
+
+test("раздел продвижения скрыт только у отдельного врача", () => {
+	// Продвижением занимается тот, у кого есть кому его поручить. У отдельного
+	// врача уже скрыты рассылки по базе — раздел продвижения уходит по той же
+	// причине, чтобы правило не расходилось само с собой.
+	assert.equal(hasCapability("solo_doctor", "marketingSection"), false);
+	assert.equal(hasCapability("one_chair", "marketingSection"), true);
+	assert.equal(hasCapability("small_clinic", "marketingSection"), true);
+	assert.equal(hasCapability("network_clinic", "marketingSection"), true);
+	assert.ok(describeHiddenCapabilities("solo_doctor").includes("раздел продвижения и отзывов"));
+});
+
+test("неизвестное значение режима не превращается в режим", () => {
+	/*
+	 * ЗАЧЕМ. В store/settingsStore.ts поле clinicMode по умолчанию равнялось
+	 * "network_clinic" — неизвестный режим подменялся самым крупным из четырёх.
+	 * Одно место должно отвечать на неизвестное значение null, иначе подстановка
+	 * заводится заново при каждом новом потребителе.
+	 */
+	assert.equal(resolveClinicMode("solo_doctor"), "solo_doctor");
+	assert.equal(resolveClinicMode("network_clinic"), "network_clinic");
+	assert.equal(resolveClinicMode(undefined), null);
+	assert.equal(resolveClinicMode(null), null);
+	assert.equal(resolveClinicMode(""), null);
+	// Значение из старой записи в базе, которого нет в перечислении.
+	assert.equal(resolveClinicMode("single"), null);
+	assert.equal(resolveClinicMode("network"), null);
+	// Имя свойства прототипа не должно проходить за режим.
+	assert.equal(resolveClinicMode("toString"), null);
+	assert.equal(resolveClinicMode(42), null);
+});
+
+const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];
+
+test("роли предлагаются только те, что при этом режиме существуют", () => {
+	/*
+	 * Переключатель роли в шапке предлагал все пять ролей всегда. У отдельного
+	 * врача нет ни ассистента, ни администратора, ни управляющего: три кнопки из
+	 * пяти предлагали переключиться на несуществующего сотрудника.
+	 *
+	 * Списки печатаются: смысл правки виден сравнением составов, а не тем, что
+	 * проверка прошла.
+	 */
+	const solo = visibleStaffRoles(roleFocusOrder, "solo_doctor");
+	const oneChair = visibleStaffRoles(roleFocusOrder, "one_chair");
+	console.log(`  отдельный врач: ${solo.join(", ")}`);
+	console.log(`  один кабинет:   ${oneChair.join(", ")}`);
+	console.log(`  малая клиника:  ${visibleStaffRoles(roleFocusOrder, "small_clinic").join(", ")}`);
+	console.log(`  сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`);
+
+	assert.deepEqual(solo, ["doctor", "owner"]);
+	// Управляющий над одним кабинетом — тоже никто, а ассистент уже возможен.
+	assert.deepEqual(oneChair, ["doctor", "administrator", "assistant", "owner"]);
+	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "small_clinic"), roleFocusOrder);
+	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "network_clinic"), roleFocusOrder);
+});
+
+test("сокращение ролей не отрезает владельца — иначе режим нельзя вернуть", () => {
+	// Роль задаёт состав разделов, и «Настройки» есть не у каждой роли. Если у
+	// режима не останется роли, которая открывает настройки, сменить режим
+	// обратно будет нечем: это ловушка, а не упрощение.
+	const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+	for (const mode of modes) {
+		const roles = visibleStaffRoles(roleFocusOrder, mode);
+		assert.ok(roles.length > 0, `${mode}: не осталось ни одной роли`);
+		assert.ok(roles.includes("owner"), `${mode}: владелец убран из переключателя`);
+	}
+});
+
+test("набор ролей растёт от отдельного врача к сети, и порядок не переставляется", () => {
+	const modes: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+	const sizes = modes.map((mode) => visibleStaffRoles(roleFocusOrder, mode).length);
+	for (let index = 1; index < sizes.length; index += 1) {
+		assert.ok((sizes[index] ?? 0) >= (sizes[index - 1] ?? 0), `${modes[index]}: ролей меньше, чем у ${modes[index - 1]}`);
+	}
+	// Порядок задан частотой использования в AppHelpers, а не алфавитом.
+	for (const mode of modes) {
+		const roles = visibleStaffRoles(roleFocusOrder, mode);
+		const positions = roles.map((role) => roleFocusOrder.indexOf(role));
+		assert.deepEqual(positions, [...positions].sort((a, b) => a - b), `${mode}: порядок ролей переставлен`);
+	}
+});
+
+test("неизвестный режим не отнимает ни одной роли", () => {
+	assert.deepEqual(visibleStaffRoles(roleFocusOrder, null), roleFocusOrder);
+	assert.deepEqual(visibleStaffRoles(roleFocusOrder, undefined), roleFocusOrder);
+	assert.deepEqual(visibleStaffRoles(roleFocusOrder, "legacy_mode" as ClinicMode), roleFocusOrder);
 });

@@ -82,6 +82,22 @@ const CAPABILITIES_BY_MODE: Readonly<Record<ClinicMode, readonly ClinicCapabilit
 	network_clinic: FULL
 };
 
+/** Перечень режимов одним списком — по нему проверяется чужое значение. */
+export const clinicModes: readonly ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+
+/**
+ * Известен ли режим.
+ *
+ * Проверять принадлежность через `value in CAPABILITIES_BY_MODE` нельзя, и это
+ * не теория: оператор `in` идёт по цепочке прототипов, поэтому строка
+ * "toString" проходила за режим клиники, а таблица возвращала на неё функцию
+ * Object.prototype.toString вместо списка возможностей — и следующий же
+ * `.includes` падал. Сравнение со списком такой дыры не имеет.
+ */
+function isClinicMode(value: unknown): value is ClinicMode {
+	return typeof value === "string" && (clinicModes as readonly string[]).includes(value);
+}
+
 /**
  * Режим неизвестен — показываем всё.
  *
@@ -91,8 +107,8 @@ const CAPABILITIES_BY_MODE: Readonly<Record<ClinicMode, readonly ClinicCapabilit
  * пропавший будут искать.
  */
 export function clinicCapabilities(mode: ClinicMode | null | undefined): readonly ClinicCapability[] {
-	if (!mode) return FULL;
-	return CAPABILITIES_BY_MODE[mode] ?? FULL;
+	if (!isClinicMode(mode)) return FULL;
+	return CAPABILITIES_BY_MODE[mode];
 }
 
 export function hasCapability(mode: ClinicMode | null | undefined, capability: ClinicCapability): boolean {
@@ -129,8 +145,7 @@ export function describeHiddenCapabilities(mode: ClinicMode | null | undefined):
  * на месте использования — значит завести второй ответ на тот же вопрос.
  */
 export function resolveClinicMode(value: unknown): ClinicMode | null {
-	if (typeof value !== "string") return null;
-	return value in CAPABILITIES_BY_MODE ? (value as ClinicMode) : null;
+	return isClinicMode(value) ? value : null;
 }
 
 /**
@@ -167,8 +182,7 @@ const ROLES_BY_MODE: Readonly<Record<ClinicMode, readonly StaffRole[]>> = {
  * что и у возможностей: пропавшую кнопку будут искать, лишнюю просто заметят.
  */
 export function visibleStaffRoles(order: readonly StaffRole[], mode: ClinicMode | null | undefined): StaffRole[] {
-	if (!mode) return [...order];
+	if (!isClinicMode(mode)) return [...order];
 	const allowed = ROLES_BY_MODE[mode];
-	if (!allowed) return [...order];
 	return order.filter((role) => allowed.includes(role));
 }
