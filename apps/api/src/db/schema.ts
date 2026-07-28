@@ -29,6 +29,7 @@ import type {
   MigrationFieldLineage,
   MigrationMappingSnapshot,
   MigrationReconciliationCheck,
+  ClinicMode,
   PatientAdministrativeProfile,
   StaffRole,
   TaxXmlSnapshot,
@@ -208,6 +209,38 @@ export const imagingSourceKind = pgEnum("imaging_source_kind", [
 ]);
 export const imagingStudyStatus = pgEnum("imaging_study_status", ["available", "needs_review", "failed"]);
 
+/**
+ * Режим клиники у организации, которая ещё не проходила мастер первого запуска.
+ *
+ * ЗАЧЕМ ИМЕНОВАННАЯ КОНСТАНТА, А НЕ СТРОКА В `.default()`. Тип берётся из
+ * `clinicModeSchema` (packages/shared/src/index.ts:797) — единственного
+ * перечисления режимов, у которого есть Zod-схема и таблица возможностей в
+ * интерфейсе. Здесь стояло `.default("demo")`, а рядом комментарий
+ * «demo, single, network»: третий словарь, которого нет больше нигде. Ни одно из
+ * этих значений в перечисление не входило, поэтому КАЖДАЯ организация рождалась
+ * вне контракта, а при чтении молча подменялась (см. миграцию 0140). С
+ * аннотацией типа опечатка или четвёртый словарь не компилируются вовсе.
+ *
+ * ПОЧЕМУ «ОДИН КАБИНЕТ», А НЕ «ОТДЕЛЬНЫЙ ВРАЧ». Умолчание достаётся клинике, про
+ * которую ещё ничего не известно. `solo_doctor` убирает рассылки по базе, разрез
+ * по врачам, занятость кресел, продвижение и воронку обращений — то есть по
+ * отсутствию данных отнял бы разделы у клиники, которая просто не успела завести
+ * сотрудников. `one_chair` — самый узкий режим, который оставляет отчёты
+ * руководителю и настройки, то есть те экраны, через которые клиника себя и
+ * настраивает. Мастер первого запуска перезаписывает это значение вычисленным по
+ * ответам (routes/workspaceProfile.ts, clinicModeFromOnboarding).
+ *
+ * ПОЧЕМУ ЭКСПОРТИРУЕТСЯ. Границы чтения обязаны отвечать на непрошедшее проверку
+ * значение тем же режимом, что стоит умолчанием колонки, иначе одна и та же
+ * организация окажется в разных режимах на разных экранах — ровно это и было:
+ * db/domainStateHydration.ts сводил неизвестное к "one_chair", а
+ * db/settingsQuery.ts к "solo_doctor". Одна константа вместо двух литералов.
+ * Экспорт из модуля схемы безопасен: drizzle перебирает переданный объект схемы и
+ * берёт только таблицы и relations, всё остальное пропускает
+ * (node_modules/drizzle-orm/relations.js:123-124).
+ */
+export const DEFAULT_CLINIC_MODE: ClinicMode = "one_chair";
+
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -225,7 +258,18 @@ export const organizations = pgTable("organizations", {
   bankDetails: text("bank_details"),
   signatoryName: text("signatory_name"),
   signatoryTitle: text("signatory_title"),
-  clinicMode: text("clinic_mode").notNull().default("demo"), // demo, single, network
+  /*
+   * Режим клиники: solo_doctor | one_chair | small_clinic | network_clinic.
+   * Словарь один, и он живёт в clinicModeSchema (packages/shared) — здесь его
+   * копии нет намеренно. Ограничение organizations_clinic_mode_known (миграция
+   * 0140) не даёт базе хранить ничего другого.
+   *
+   * Тип колонки остаётся text, а не `$type<ClinicMode>()`: приведение типа
+   * убедило бы читателя, что проверять прочитанное не нужно, а именно доверие к
+   * этой колонке без проверки и спрятало дефект. Проверка на границе чтения
+   * обязательна (db/domainStateHydration.ts, db/settingsQuery.ts).
+   */
+  clinicMode: text("clinic_mode").notNull().default(DEFAULT_CLINIC_MODE),
   clinicSchedule: jsonb("clinic_schedule"),
   /*
    * Какие модули включены у этой клиники.

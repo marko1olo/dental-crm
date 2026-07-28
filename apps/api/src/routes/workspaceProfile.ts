@@ -6,6 +6,7 @@
  * POST /api/workspace/onboarding/complete — mark onboarding as done
  */
 
+import type { ClinicMode } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
@@ -99,6 +100,63 @@ export function workspaceFlagsFromStorage(stored: unknown): WorkspaceFeatureFlag
     else if (typeof fallback === "string" && typeof value === "string" && value) result[key] = value;
   }
   return result as unknown as WorkspaceFeatureFlags;
+}
+
+/**
+ * Ответы мастера первого запуска, по которым можно судить о размере клиники.
+ * Ровно то, что присылает `components/workspace/onboarding/useOnboardingLogic.ts`
+ * (handleLaunch): число рабочих мест и список сотрудников.
+ */
+export interface OnboardingScale {
+  chairs?: number;
+  staff?: unknown;
+}
+
+/**
+ * Режим клиники по ответам мастера первого запуска.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Здесь стояло `clinicMode: (payload.chairs || 1) === 1 ?
+ * "single" : "network"`. Ни "single", ни "network" не входят в перечисление
+ * режимов (`clinicModeSchema`, packages/shared/src/index.ts:797) — по которому
+ * этот же режим потом разбирается на чтении и по которому интерфейс решает, какие
+ * разделы показать. То есть мастер первого запуска, единственное место, где
+ * клиника заявляет свой размер, писал в базу значение, не существующее в
+ * контракте. Дальше оно молча подменялось при чтении (db/domainStateHydration.ts
+ * и db/settingsQuery.ts подменяли по-разному), поэтому ошибка не всплывала
+ * нигде — просто у всех клиник получалось одинаковое меню.
+ *
+ * ПРАВИЛО. Считается только по тому, что мастер РЕАЛЬНО спрашивает:
+ *
+ *   рабочих мест больше одного            -> small_clinic
+ *   одно место и заявлен один человек     -> solo_doctor
+ *   одно место, людей больше или неясно   -> one_chair
+ *
+ * ПОЧЕМУ НИКОГДА НЕ network_clinic. Сеть — это несколько адресов, а про филиалы
+ * мастер не спрашивает вовсе: в его шагах есть специализации, кресла, часы,
+ * модули, оформление, сотрудники и реквизиты — и ни одного вопроса про второй
+ * адрес. Выводить сеть из числа кресел значило бы выдумать признак, которого в
+ * ответах нет (.agents/AGENTS.md §10). Сеть выставляется на вкладке настроек
+ * клиники, где режим выбирается прямо.
+ *
+ * ПОЧЕМУ РОЛИ СОТРУДНИКОВ НЕ РАЗБИРАЮТСЯ. Мастер присылает роль русской подписью
+ * («Врач», «Ассистент», «Администратор» — steps/Step5Staff.tsx:180-182), а не
+ * значением перечисления. Сверяться с этими подписями значило бы вшить текст
+ * интерфейса в решение о режиме и сломать его при первой правке подписи. На
+ * вопрос «работает ли человек один» отвечает количество, и его достаточно.
+ *
+ * ПОЧЕМУ ВОЗВРАЩАЕТСЯ null, А НЕ РЕЖИМ ПО УМОЛЧАНИЮ. Если число рабочих мест не
+ * пришло, размер клиники неизвестен. Подставить вместо неизвестного какое-нибудь
+ * значение — значит перезаписать то, что клиника уже выбрала в настройках, чужой
+ * догадкой. На неизвестное колонка отвечает своим умолчанием (db/schema.ts,
+ * DEFAULT_CLINIC_MODE), а обработчик просто не трогает поле.
+ */
+export function clinicModeFromOnboarding(payload: OnboardingScale): ClinicMode | null {
+  const chairs = typeof payload.chairs === "number" && Number.isFinite(payload.chairs) ? payload.chairs : null;
+  if (chairs === null) return null;
+  if (chairs > 1) return "small_clinic";
+  const declaredPeople = Array.isArray(payload.staff) ? payload.staff.length : null;
+  if (declaredPeople === 1) return "solo_doctor";
+  return "one_chair";
 }
 
 export type PresetName =
@@ -671,6 +729,18 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
       typeof payload === "object" &&
       Object.keys(payload).length > 0
     ) {
+      /*
+       * Режим считается ДО транзакции и отдельной функцией: правило продуктовое
+       * («какого размера эта клиника»), проверяется тестом на самой функции, а не
+       * отрисовкой мастера, и не должно быть выражением внутри `.set()`, где его
+       * прошлая версия писала значение вне перечисления.
+       *
+       * null означает «мастер не сказал, сколько рабочих мест» — тогда поле не
+       * трогается вовсе, чтобы не перезаписать выбранный в настройках режим
+       * догадкой.
+       */
+      const derivedClinicMode = clinicModeFromOnboarding(payload);
+
       try {
         await db.transaction(async (tx) => {
         // 1. Update organizations
@@ -681,7 +751,7 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
             inn: payload.legal?.inn || null,
             ogrn: payload.legal?.ogrn || null,
             legalAddress: payload.legal?.address || null,
-            clinicMode: (payload.chairs || 1) === 1 ? "single" : "network",
+            ...(derivedClinicMode ? { clinicMode: derivedClinicMode } : {}),
             clinicSchedule: {
               workHours: payload.workHours || [9, 18],
               specs: payload.specs || ["therapy"]
