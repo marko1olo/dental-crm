@@ -23,6 +23,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { countLabel } from "../../AppHelpers";
+
 type ChannelCode = "sms" | "email" | "whatsapp" | "telegram" | "vk" | "max";
 
 type GatewayStatus = {
@@ -182,6 +184,24 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
+/**
+ * ПОЧЕМУ РАЗДЕЛЕНО НА ВИДЫ. БЫЛО СЛОМАНО: и удача, и отказ писались в одно поле
+ * `notice` и выводились одинаковой серой строкой с role="status". Администратор
+ * нажимал «Отправить из очереди», сервер отвечал отказом, а на экране появлялась
+ * такая же спокойная строка, как после успешной отправки, — «Сервер ответил
+ * 500». Человек считал, что сообщения ушли, и не отправлял их повторно: письма
+ * и SMS не доходили до пациентов, а на экране всё выглядело сделанным.
+ * Теперь отказ идёт красным блоком и через role="alert", и к нему всегда
+ * прикладывается подсказка, что делать дальше.
+ */
+type Notice = { kind: "done" | "fail"; text: string };
+
+/** Отказ: сначала понятная человеку подсказка, потом причина от сервера. */
+function failNotice(error: unknown, hint: string): Notice {
+	const reason = error instanceof Error ? error.message : String(error);
+	return { kind: "fail", text: `${hint} Причина: ${reason}` };
+}
+
 export function MessageDeliveryConsole() {
 	const [gateways, setGateways] = useState<GatewayStatus | null>(null);
 	const [templates, setTemplates] = useState<TemplateItem[]>([]);
@@ -190,7 +210,7 @@ export function MessageDeliveryConsole() {
 	const [settings, setSettings] = useState<CommunicationSettings | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
-	const [notice, setNotice] = useState<string | null>(null);
+	const [notice, setNotice] = useState<Notice | null>(null);
 	const [statusFilter, setStatusFilter] = useState<string>("");
 
 	const [draftTitle, setDraftTitle] = useState("");
@@ -300,11 +320,20 @@ export function MessageDeliveryConsole() {
 						body: JSON.stringify(payload)
 					});
 			await readJson(response);
-			setNotice(editingId ? "Шаблон обновлён." : "Шаблон создан.");
+			setNotice({ kind: "done", text: editingId ? "Шаблон обновлён." : "Шаблон создан." });
 			resetDraft();
 			await loadAll();
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			// Черновик специально НЕ очищается: набранный текст должен остаться на
+			// экране, чтобы человек исправил его и отправил снова, а не набирал заново.
+			setNotice(
+				failNotice(
+					error,
+					editingId
+						? "Шаблон не сохранён, остались прежние правки. Текст ниже не пропал — исправьте и нажмите сохранить ещё раз."
+						: "Шаблон не создан. Текст ниже не пропал — исправьте и нажмите сохранить ещё раз."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -316,10 +345,20 @@ export function MessageDeliveryConsole() {
 		try {
 			const response = await fetch(`/api/communications/outbox/${outboxId}/${action}`, { method: "POST" });
 			await readJson(response);
-			setNotice(action === "cancel" ? "Сообщение отменено." : "Сообщение возвращено в очередь.");
+			setNotice({
+				kind: "done",
+				text: action === "cancel" ? "Сообщение отменено." : "Сообщение возвращено в очередь."
+			});
 			await loadAll();
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			setNotice(
+				failNotice(
+					error,
+					action === "cancel"
+						? "Сообщение не отменено — оно осталось в очереди и может уйти пациенту. Обновите журнал и попробуйте ещё раз."
+						: "Сообщение не возвращено в очередь — оно осталось неотправленным. Попробуйте ещё раз."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -337,13 +376,38 @@ export function MessageDeliveryConsole() {
 			const data = await readJson<{ report: { claimed: number; sent: number; failed: number; suppressed: number } }>(
 				response
 			);
-			setNotice(
-				`Разобрано ${data.report.claimed}: отправлено ${data.report.sent}, ошибок ${data.report.failed}, ` +
-					`не отправлено ${data.report.suppressed}.`
-			);
+			const report = data.report;
+			if (report.claimed === 0) {
+				// БЫЛО: «Разобрано 0: отправлено 0, ошибок 0, не отправлено 0» — из
+				// этого нельзя понять, сломалось что-то или отправлять было нечего.
+				setNotice({
+					kind: "done",
+					text: "Отправлять было нечего: в очереди нет сообщений, готовых к отправке. Они появятся после кнопки «Поставить напоминания» или после запуска рассылки."
+				});
+			} else {
+				const parts = [`Отправлено: ${countLabel(report.sent, "сообщение", "сообщения", "сообщений")}.`];
+				if (report.failed > 0) {
+					parts.push(
+						`Не ушло из-за ошибки: ${report.failed}. Причина по каждому — в журнале ниже, кнопкой «Повторить» можно попробовать снова.`
+					);
+				}
+				if (report.suppressed > 0) {
+					parts.push(
+						`Отправлять не стали: ${report.suppressed} (тихие часы, нет согласия или нет адреса) — эти в журнале со состоянием «Не отправлено».`
+					);
+				}
+				// Красным, если хоть одно сообщение не ушло из-за ошибки: такой разбор
+				// требует действия, а не спокойной серой строки.
+				setNotice({ kind: report.failed > 0 ? "fail" : "done", text: parts.join(" ") });
+			}
 			await loadAll();
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			setNotice(
+				failNotice(
+					error,
+					"Из очереди ничего не отправлено, сообщения остались на месте. Попробуйте ещё раз; если повторяется — проверьте настройку каналов выше."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -355,14 +419,25 @@ export function MessageDeliveryConsole() {
 		try {
 			const response = await fetch("/api/communications/reminders/run", { method: "POST" });
 			const data = await readJson<{ report: { queued: number; alreadyQueued: number; problems: string[] } }>(response);
+			const report = data.report;
+			// БЫЛО: при любой помехе на экран уходили ТОЛЬКО строки problems, а
+			// сколько напоминаний реально встало в очередь — не показывалось. Человек
+			// видел жалобу и ставил напоминания повторно, не зная, что часть уже
+			// поставлена. Теперь итог называется всегда, помехи идут после него.
+			const done = `Поставлено напоминаний: ${report.queued}. Уже стояли в очереди: ${report.alreadyQueued}.`;
 			setNotice(
-				data.report.problems.length > 0
-					? data.report.problems.join(" ")
-					: `Поставлено напоминаний: ${data.report.queued}. Уже стояли: ${data.report.alreadyQueued}.`
+				report.problems.length > 0
+					? { kind: "fail", text: `${done} Но не для всех: ${report.problems.join(" ")}` }
+					: { kind: "done", text: done }
 			);
 			await loadAll();
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			setNotice(
+				failNotice(
+					error,
+					"Напоминания не поставлены — пациенты о завтрашних приёмах не узнают. Попробуйте ещё раз."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -379,9 +454,16 @@ export function MessageDeliveryConsole() {
 			});
 			const data = await readJson<{ settings: CommunicationSettings }>(response);
 			setSettings(data.settings);
-			setNotice("Правила рассылки сохранены.");
+			setNotice({ kind: "done", text: "Правила рассылки сохранены." });
 		} catch (error) {
-			setNotice(error instanceof Error ? error.message : String(error));
+			// Отдельно сказано, что на экране осталось прежнее правило: иначе человек
+			// уходит с экрана в уверенности, что тихие часы или предел уже изменены.
+			setNotice(
+				failNotice(
+					error,
+					"Правила не сохранены, на сервере осталось прежнее. Попробуйте ещё раз — переключатели ниже показывают то, что действует сейчас."
+				)
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -434,9 +516,15 @@ export function MessageDeliveryConsole() {
 			</div>
 
 			{notice ? (
-				<p className="ops-notice" role="status" aria-live="polite">
-					{notice}
-				</p>
+				notice.kind === "fail" ? (
+					<p className="ops-notice ops-notice--error" role="alert">
+						{notice.text}
+					</p>
+				) : (
+					<p className="ops-notice" role="status" aria-live="polite">
+						{notice.text}
+					</p>
+				)
 			) : null}
 
 			{/*
