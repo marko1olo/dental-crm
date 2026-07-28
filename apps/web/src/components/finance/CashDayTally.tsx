@@ -72,12 +72,17 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 	 */
 	const [countedCashInput, setCountedCashInput] = useState("");
 
-	// Ключ дня считается на каждый показ: смена может пережить полночь, и итог
-	// обязан переехать в новые сутки вместе с ней.
-	const summary = useMemo(
-		() => summarizeCashDay(payments, localDayKey(new Date()) ?? ""),
-		[payments],
-	);
+	/*
+	 * Ключ дня берётся ВНЕ запоминания и входит в его зависимости.
+	 *
+	 * Смена переживает полночь: программу не перезагружают в 00:00. Если считать
+	 * ключ внутри useMemo с зависимостью только от платежей, итог остался бы
+	 * вчерашним до первой новой оплаты — и вечерняя сверка сложилась бы с чужими
+	 * сутками. Здесь ключ пересчитывается при каждом показе, и после полуночи
+	 * первый же показ переносит итог в новые сутки.
+	 */
+	const dayKey = localDayKey(new Date()) ?? "";
+	const summary = useMemo(() => summarizeCashDay(payments, dayKey), [payments, dayKey]);
 
 	const isLoaded = payments !== undefined;
 	const hasAnything =
