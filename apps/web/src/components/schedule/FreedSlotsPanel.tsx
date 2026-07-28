@@ -73,8 +73,24 @@ export const FreedSlotsPanel: React.FC = () => {
 
 	const [report, setReport] = useState<FreedSlotsReport | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	/** Кому уже позвонили. След на смену, а не запись в карточке. */
+	/**
+	 * Кому уже позвонили. След на смену, а не запись в карточке.
+	 *
+	 * ОТМЕТКА ЖИВЁТ ПАРОЙ «ОКНО + ПАЦИЕНТ», А НЕ ОДНИМ ПАЦИЕНТОМ.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО. В наборе лежал только patientId. Один и тот же человек из
+	 * листа ожидания стоит первым кандидатом сразу к нескольким освободившимся
+	 * окнам — это обычное дело: он ждёт запись, а за день отменились два приёма.
+	 *
+	 * ЧТО ВИДЕЛ АДМИНИСТРАТОР. Позвонил по первому окну, нажал «Позвонил» — и во
+	 * ВТОРОЙ строке у того же человека сразу встало «Позвонили ✓», хотя про второе
+	 * окно ему никто не говорил. Второе окно администратор пропускает как
+	 * отработанное, и час кресла уходит в пустоту молча.
+	 */
 	const [called, setCalled] = useState<Set<string>>(new Set());
+	/** Ключ отметки: окно и человек вместе. Один звонок — про одно окно. */
+	const calledKey = (slotId: string, patientId: string | null | undefined) =>
+		`${slotId}|${patientId ?? ""}`;
 	/** Какое окно раскрыто: остальные показывают только сводку. */
 	const [openSlot, setOpenSlot] = useState<string | null>(null);
 
@@ -171,7 +187,7 @@ export const FreedSlotsPanel: React.FC = () => {
 														<span className="ops-strong">{best?.patientName}</span>
 														<span className="ops-note">{best?.phone ?? "телефон не указан"}</span>
 														<span className="ops-note">{best?.reason}</span>
-														{called.has(best?.patientId ?? "") ? (
+														{called.has(calledKey(slot.appointmentId, best?.patientId)) ? (
 															<span className="ops-note">Позвонили ✓</span>
 														) : (
 															<button
@@ -179,7 +195,11 @@ export const FreedSlotsPanel: React.FC = () => {
 																type="button"
 																disabled={!best?.phone}
 																onClick={() =>
-																	setCalled((previous) => new Set(previous).add(best?.patientId ?? ""))
+																	setCalled((previous) =>
+																		new Set(previous).add(
+																			calledKey(slot.appointmentId, best?.patientId)
+																		)
+																	)
 																}
 															>
 																Позвонил
