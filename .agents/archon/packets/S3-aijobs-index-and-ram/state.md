@@ -48,9 +48,48 @@ is impossible here. Plain CREATE UNIQUE INDEX IF NOT EXISTS.
 - [x] DEFECT CONFIRMED (both)
 - [x] EDIT WRITTEN
 - [x] GATE PASSED — `npm run typecheck -w @dental/api` TYPECHECK_EXIT=0
-- [ ] COMMITTED <hash>
+- [x] COMMITTED b46ddf7b4c20d76d750233afb929e2b7afe0349d (7 files, exactly mine, gitleaks clean)
 - [ ] PROVEN
 - [ ] DONE
+
+## Commit note
+`git commit -F <msg> -- <paths>` FAILS on untracked paths ("did not match any file(s) known to git").
+New files must be `git add`ed individually FIRST, then committed with the same pathspec. The first
+attempt therefore committed nothing at all (index verified empty afterwards, no foreign files swept).
+
+## PROOFS RUN (all outputs quoted in handoff.md)
+DB VERIFIED  seed 5000 probe rows -> `SEEDED 5000 probe rows across 2 organizations, then ANALYZE ai_jobs`
+DB VERIFIED  BEFORE index, real pre-migration state, 5000 rows:
+  `Limit (cost=0.00..251.00 ...) -> Seq Scan on ai_jobs`
+  `Filter: ((organization_id = '4a3420d1-...'::uuid) AND (input_storage_path = 'speech-recording://s3-index-probe-100'))`
+  `Rows Removed by Filter: 100`  `Buffers: shared hit=9`
+DB VERIFIED  `npm run db:migrate:check` -> `[migrate] будет применён: 0134_ai_jobs_recording_path_index.sql`
+             `Всего файлов: 92, к применению: 1, уже было: 91.` exit 0
+DB VERIFIED  `npm run db:migrate` -> `[migrate] применён: 0134_ai_jobs_recording_path_index.sql` exit 0
+DB VERIFIED  AFTER index, same predicate, same 5000 rows:
+  `Index Scan using ai_jobs_organization_storage_path_key on ai_jobs (cost=0.28..8.30)`
+  worst-case (physically last) row: `Buffers: shared hit=3`, Execution Time 0.013 ms
+  same row with index scans disabled in-session (reproduces the pre-index plan):
+  `Seq Scan ... Rows Removed by Filter: 4999  Buffers: shared hit=176` Execution Time 0.437 ms
+DB VERIFIED  pg_indexes now: ai_jobs_organization_storage_path_key + ai_jobs_pkey
+DB VERIFIED  _dente_migrations row: 0134_ai_jobs_recording_path_index.sql
+             sha256 a6d197df4a131a08ad3b43309a05a08d966540b39562b4c03d4b1821ae2ed023
+DB VERIFIED  duplicate refused: `code=23505 constraint=ai_jobs_organization_storage_path_key`;
+             three NULL-path rows in one organization still accepted (db/aiQuery.ts unaffected)
+DB VERIFIED  cleanup: `DELETED 5000 probe rows; probe rows left: 0; ai_jobs rows now: 0`
+UNIT VERIFIED  src/speech/tests/storageRestoreCeiling.test.ts -> tests 3 pass 3 fail 0, exit 0
+UNIT VERIFIED  no regression: storage.test.ts 9/9/0 exit 0; storageRestoreRetry.test.ts 3/3/0 exit 0
+TYPECHECK VERIFIED  `npm run typecheck -w @dental/api` exit 0 (before and after the test file)
+
+## Second HEAD move
+b46ddf7b4 -> d6c1eed82 (packet S2 committed its identity fix to storage.ts). The ceiling test ran
+against a working tree whose storage.ts is byte-identical to HEAD (`git diff` on it is empty), so the
+UNIT claim is against HEAD code, not against uncommitted work.
+S2 has `apps/api/src/speech/tests/storageIdentity.test.ts` STAGED (A) in the shared index. NOT MINE,
+NOT unstaged, NOT reset — my commits use an explicit pathspec so it stays staged for S2.
+
+## About to run next
+Commit the test file + updated probe with explicit pathspec, then write handoff.md.
 
 ## HEAD moved under me
 40dd853f -> 8f4d42fe3 (packet S1 committed apps/api/src/routes/speech.ts; storage.ts untouched at HEAD,
