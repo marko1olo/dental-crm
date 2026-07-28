@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   Megaphone,
   MessageSquare,
-  Mic,
   Package,
   PackageSearch,
   Plus,
@@ -32,7 +31,7 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { type ClinicMode, describeHiddenCapabilities, hasCapability, resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { useThemeStore, type ThemeMode } from "./store/themeStore";
-import { clinicModeLabels } from "./workspaceUiLabels";
+import { clinicModeLabels, workspaceTopbarLabels } from "./workspaceUiLabels";
 
 
 /*
@@ -488,6 +487,14 @@ type WorkspaceTopbarProps = {
   clinicName: string;
   onGoToDictation: () => void;
   onGoToSchedule: () => void;
+  /**
+   * ДОЛГ, А НЕ ЖИВОЕ ПОЛЕ. Больше не читается: ярлык врача на приём переведён на
+   * `onGoToDictation`, который делает то же самое плюс ставит курсор в поле
+   * диктовки (см. строку действий ниже). Поле оставлено только потому, что его
+   * по-прежнему передаёт `App.tsx:2390-2392`, а этот файл в объём правки не
+   * входит: убрать его нужно с двух сторон одновременно, иначе вызывающая
+   * сторона перестанет собираться.
+   */
   onGoToVisit: () => void;
   onReopenOnboarding: () => void;
   onRoleChange: (role: StaffRole) => void;
@@ -505,7 +512,6 @@ export function WorkspaceTopbar({
   clinicName,
   onGoToDictation,
   onGoToSchedule,
-  onGoToVisit,
   onReopenOnboarding,
   onRoleChange,
   onViewIntent,
@@ -546,9 +552,9 @@ export function WorkspaceTopbar({
           <p className="eyebrow">{formattedDate.replace(" г.", "").replace(",", " ·")}</p>
           <h1>{clinicName}</h1>
         </div>
-        <details className="workspace-role-switcher" aria-label="Рабочий режим">
+        <details className="workspace-role-switcher" aria-label={workspaceTopbarLabels.role.region}>
           <summary>
-            <span>Роль</span>
+            <span>{workspaceTopbarLabels.role.caption}</span>
             <strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
           </summary>
           <div className="role-switcher-options">
@@ -558,7 +564,7 @@ export function WorkspaceTopbar({
                 key={role}
                 type="button"
                 aria-pressed={selectedWorkspaceRole === role}
-                aria-label={`Рабочий режим: ${staffRoleLabels[role]}`}
+                aria-label={`${workspaceTopbarLabels.role.region}: ${staffRoleLabels[role]}`}
                 onClick={(event) => {
                   onRoleChange(role);
                   event.currentTarget.closest("details")?.removeAttribute("open");
@@ -571,6 +577,32 @@ export function WorkspaceTopbar({
         </details>
         <RecentPatientHistoryWidget compactDropdown />
       </div>
+      {/*
+        ПОРЯДОК В ЭТОЙ СТРОКЕ — И ЕСТЬ ГАРАНТИЯ, ЧТО «ЗАПИСЬ» НЕ УЕДЕТ НА ВТОРУЮ
+        СТРОКУ. Это не стиль и не вкус, а следствие правил переноса.
+
+        `.top-actions` получает право на перенос от
+        `components/workspaceActions/workspaceActions.css:38` — селектор
+        `.topbar .top-actions:has(> .dnt-actions-mount--header)` (специфичность
+        0,3,0) перебивает `.top-actions` из `styles/dente-redesign.css:391`
+        (0,1,0). Сам `.topbar` переноса не имеет, а `.top-actions` сжимаема, и
+        рядом стоит `.topbar-context` с `flex-wrap: wrap !important`
+        (`dente-redesign.css:1046-1051`). Значит перенос зависит НЕ от ширины
+        экрана, а от длины названия клиники и подписи роли: длинное название
+        переносит строку на любом мониторе.
+
+        Перенос всегда сбрасывает вниз ПОСЛЕДНИЕ элементы. Раньше последними
+        стояли «Запись» и красный замок — то есть вниз уезжало главное действие
+        продукта. Теперь последними стоят ровно те две кнопки, которые сама
+        таблица стилей уже прячет на узком экране («Настроить» и «Заблокировать»
+        несут `.compact-top-button`, скрытый в `dente-redesign.css:610` и `:624`).
+        Отсюда два следствия, и оба проверяемы по CSS:
+          — до 1140px в строке остаются только группа, «Прием» и «Запись», и
+            переносить нечего;
+          — от 1141px вниз может уехать только то, что таблица стилей и так
+            считает необязательным.
+        «Запись» не может оказаться перенесённой ни при какой ширине.
+      */}
       <div className="top-actions">
         {/*
           ГРУППА ДЕЙСТВИЙ ПОМОЩНИКА (поиск, голос, справка) — ОДИН элемент, а не
@@ -580,12 +612,9 @@ export function WorkspaceTopbar({
           `components/workspaceActions/workspaceActionsPlacement.ts`), поэтому он
           удалён, а действия переехали в существующую фурнитуру.
 
-          Место выбрано ПЕРВЫМ в строке намеренно. У топбара уже была
-          зафиксированная беда: шесть несгруппированных кнопок без иерархии.
-          Группа приходит сюда как одна сегментированная единица с общей рамкой
-          и встаёт ДО кнопок клиники, поэтому инструменты помощника читаются
-          отдельным блоком, а главное действие «Запись» остаётся последним и
-          самым правым.
+          Место выбрано ПЕРВЫМ в строке намеренно: группа приходит одной
+          сегментированной единицей с общей рамкой, поэтому инструменты помощника
+          читаются отдельным блоком и не участвуют в переносе.
 
           Это ЕДИНСТВЕННАЯ точка монтажа группы на весь проект. На узком экране
           она сама вставляет свой контейнер в живую нижнюю навигацию и рисует в
@@ -594,59 +623,103 @@ export function WorkspaceTopbar({
         */}
         <WorkspaceActionsMount />
 
-        {showAdministrationTopActions ? (
-          <a
-            className="icon-button"
-            href="#settings"
-            title="Настройки импорта и экспорта"
-            aria-label="Настройки импорта и экспорта"
-            onPointerEnter={() => onViewIntent?.("settings")}
-            onFocus={() => onViewIntent?.("settings")}
-            onTouchStart={() => onViewIntent?.("settings")}
-          >
-            <Database aria-hidden="true" />
-          </a>
-        ) : null}
-        {showAdministrationTopActions ? (
-          <button className="secondary-button compact-top-button" type="button" onClick={onReopenOnboarding}>
-            <ClipboardCheck aria-hidden="true" /> Настроить
-          </button>
-        ) : null}
+        {/*
+          ЯРЛЫК ВРАЧА НА ПРИЁМ. Ведёт `onGoToDictation`, а не `onGoToVisit`, и это
+          осознанная замена, а не описка.
+
+          Здесь раньше стояли ДВА элемента: подписанная «Прием» (переход в приём)
+          и безымянная кнопка-микрофон (переход в приём ПЛЮС курсор в поле
+          диктовки). Второе — надмножество первого, то есть в строке лежали две
+          кнопки в один и тот же раздел, причём у более полезной не было подписи.
+          Микрофон удалён, его единственная собственная способность —
+          фокус на поле диктовки — досталась подписанной кнопке.
+
+          Кнопка показывается только врачу и только когда он не в приёме
+          (`showDoctorVisitShortcut`, useAppLogic.tsx:13721-13722). Остальные роли
+          в приём не ходят: `getFilteredAppViews` не содержит `visit` для
+          администратора, управляющего и ассистента, и охранник маршрута
+          (useAppLogic.tsx:4380-4386) вернул бы их на «Смену».
+        */}
         {showDoctorVisitShortcut ? (
-          <button className="secondary-button daily-top-button" type="button" onClick={onGoToVisit}>
-            <ClipboardCheck aria-hidden="true" /> Прием
-          </button>
-        ) : null}
-        <button
-          aria-label="Открыть диктовку приема"
-          className="icon-button top-dictation-button"
-          type="button"
-          title="Голосовая заметка"
-          onClick={onGoToDictation}
-        >
-          <Mic aria-hidden="true" />
-        </button>
-        {onLockSession ? (
           <button
-            aria-label="Заблокировать сессию"
-            className="icon-button top-lock-button"
+            className="secondary-button daily-top-button"
             type="button"
-            title="Заблокировать сессию"
-            onClick={onLockSession}
+            title={workspaceTopbarLabels.visit.title}
+            onPointerEnter={() => onViewIntent?.("visit")}
+            onFocus={() => onViewIntent?.("visit")}
+            onTouchStart={() => onViewIntent?.("visit")}
+            onClick={onGoToDictation}
           >
-            <Lock aria-hidden="true" size={20} />
+            <ClipboardCheck aria-hidden="true" /> {workspaceTopbarLabels.visit.label}
           </button>
         ) : null}
+
+        {/* ГЛАВНОЕ ДЕЙСТВИЕ. Стоит перед необязательными кнопками именно для того,
+            чтобы перенос забирал их, а не его (обоснование — в шапке строки). */}
         <button
           className="primary-button"
           type="button"
+          title={workspaceTopbarLabels.book.title}
           onPointerEnter={() => onViewIntent?.("schedule")}
           onFocus={() => onViewIntent?.("schedule")}
           onTouchStart={() => onViewIntent?.("schedule")}
           onClick={onGoToSchedule}
         >
-          <Plus aria-hidden="true" /> Запись
+          <Plus aria-hidden="true" /> {workspaceTopbarLabels.book.label}
         </button>
+
+        {/*
+          НЕОБЯЗАТЕЛЬНЫЕ КНОПКИ — ПОСЛЕДНИМИ, потому что перенос забирает
+          последних. Обе несут `.compact-top-button` и потому скрыты до 1140px:
+          там строка гарантированно однорядная.
+
+          Отсюда же удалён безымянный значок базы данных со ссылкой на
+          `#settings`. Он рисовался тем же глифом `Database`, что и пункт
+          «Настройки» бокового меню (`sidebarIcons.settings` выше), вёл по тому же
+          адресу, и его имя для программы чтения с экрана обещало «настройки
+          импорта и экспорта», которых один хеш `#settings` не открывает. Роли,
+          которым он вообще показывался (администратор, управляющий, владелец —
+          useAppLogic.tsx:13716-13720), все имеют подписанный пункт «Настройки» в
+          боковом меню: `getFilteredAppViews` содержит `settings` для каждой из
+          них, а `viewsHiddenByFeatureFlags` этот раздел не отнимает никогда.
+          То есть удалён дубль, а не путь.
+        */}
+        {showAdministrationTopActions ? (
+          <button
+            className="secondary-button compact-top-button"
+            type="button"
+            title={workspaceTopbarLabels.setup.title}
+            onClick={onReopenOnboarding}
+          >
+            <ClipboardCheck aria-hidden="true" /> {workspaceTopbarLabels.setup.label}
+          </button>
+        ) : null}
+
+        {/*
+          ЗАМОК РАБОЧЕГО МЕСТА. Изменены две вещи, и обе — дефекты, а не отделка.
+
+          1. ПОЯВИЛАСЬ ВИДИМАЯ ПОДПИСЬ. Это был значок без слов: смысл жил в
+             `title`, то есть на касании не жил вообще.
+          2. УБРАН КЛАСС `.top-lock-button`, а вместе с ним аварийный красный
+             (`dente-redesign.css:274` — `color: var(--bad-fg) !important`).
+             Красный в палитре означает опасность; запереть рабочее место в конце
+             смены — обычное безопасное действие, и его цвет отбирал внимание у
+             «Записи», стоявшей рядом. Класс удалён, а не перекрыт: `!important`
+             из таблицы стилей не перебить ни утилитой Tailwind, ни `style`.
+             `.compact-top-button` сохраняет прежнее скрытие на узком экране
+             (`dente-redesign.css:610` и `:624` перечисляют его наравне с бывшим
+             `.top-lock-button`).
+        */}
+        {onLockSession ? (
+          <button
+            className="secondary-button compact-top-button"
+            type="button"
+            title={workspaceTopbarLabels.lock.title}
+            onClick={onLockSession}
+          >
+            <Lock aria-hidden="true" /> {workspaceTopbarLabels.lock.label}
+          </button>
+        ) : null}
       </div>
     </header>
   );
