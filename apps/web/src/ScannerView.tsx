@@ -10,6 +10,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { requestFailureCause } from "./lib/panelStateText";
 import "./ScannerView.css";
 
 /**
@@ -67,7 +68,13 @@ async function accessFailureMessage(response: Response, prefix: string): Promise
 	if (response.status === 401 || response.status === 403) {
 		return `${prefix}: нет доступа. Войдите в кабинет клиники заново.`;
 	}
-	return `${prefix}: сервер ответил кодом ${response.status}. Список ниже неполный.`;
+	/*
+	 * БЫЛО: «сервер ответил кодом 500». Номер ответа не говорит человеку ни что
+	 * случилось, ни что делать; он нужен поддержке и остаётся в консоли.
+	 * Формулировки причин общие с остальными панелями — lib/panelStateText.ts.
+	 */
+	console.error(`[ScannerView] ${response.url} ответил ${response.status}`);
+	return `${prefix}: ${requestFailureCause(response.status)}.`;
 }
 
 export function ScannerView() {
