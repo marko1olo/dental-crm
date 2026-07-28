@@ -445,7 +445,27 @@ export function ImagingView(props: ImagingViewProps) {
                     multiple
                     style={{ display: "none" }}
                     accept={browserImagingFileInputAccept}
-                    onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
+                    onChange={(event) => {
+                      /*
+                       * ЧТО БЫЛО. Значение этого поля не сбрасывалось никогда.
+                       * Обработчик handleBrowserDirectoryInputChange чистит только
+                       * поле выбора ПАПКИ (browserDirectoryInputRef), а это —
+                       * отдельное поле кнопки «Файлы». Браузер не выдаёт событие
+                       * change, если выбран тот же файл, что и в прошлый раз:
+                       * врач нажимал «Файлы», выбирал тот же снимок и не получал
+                       * ничего — ни статуса, ни ошибки. Кнопка выглядела сломанной,
+                       * а обойти это можно было только перезагрузкой страницы.
+                       *
+                       * Сброс делается ПОСЛЕ разбора выбранных файлов: очистка
+                       * value обнуляет список файлов у поля, поэтому чистить его
+                       * до конца обработки нельзя. Ссылка на поле берётся
+                       * синхронно — после await у события её уже не спросить.
+                       */
+                      const input = event.currentTarget;
+                      void Promise.resolve(handleBrowserDirectoryInputChange(input.files)).finally(() => {
+                        input.value = "";
+                      });
+                    }}
                   />
                   <button
                     className="primary-button"
