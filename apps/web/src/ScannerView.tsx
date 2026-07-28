@@ -43,6 +43,33 @@ function formatLogTime(value: string): string {
 	return parsed.toLocaleString("ru-RU");
 }
 
+/**
+ * Отказ доступа человеческими словами, с различением двух разных отказов.
+ *
+ * Все три адреса журнала закрыты guard-ом requireResolvedStaffOrAdminOrganizationId
+ * (apps/api/src/accessGuard.ts:115): ему недостаточно токена кабинета, нужен вход
+ * сотрудника. Проверено запросом к живому серверу: с одним токеном кабинета адрес
+ * отвечает 401 StaffAuthRequired, с обоими — 200. Это два разных действия
+ * пользователя, поэтому «нет доступа» здесь не годится: сказать надо, что войти
+ * нужно именно сотрудником по PIN, иначе он будет перезаходить в кабинет по кругу.
+ */
+async function accessFailureMessage(response: Response, prefix: string): Promise<string> {
+	let code = "";
+	try {
+		const payload = (await response.json()) as { error?: unknown };
+		if (typeof payload.error === "string") code = payload.error;
+	} catch {
+		// Тело не разобралось — останется код ответа.
+	}
+	if (code === "StaffAuthRequired") {
+		return `${prefix}: журнал ведётся от имени сотрудника. Войдите по PIN в разделе смены — записи в журнале подписываются именно им.`;
+	}
+	if (response.status === 401 || response.status === 403) {
+		return `${prefix}: нет доступа. Войдите в кабинет клиники заново.`;
+	}
+	return `${prefix}: сервер ответил кодом ${response.status}. Список ниже неполный.`;
+}
+
 export function ScannerView() {
 	const { auth } = useAppLogicContext();
 	const [barcode, setBarcode] = useState("");
@@ -68,11 +95,7 @@ export function ScannerView() {
 				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!res.ok) {
-				setLoadError(
-					res.status === 401 || res.status === 403
-						? "Журнал стерилизации не показан: нет доступа. Войдите в кабинет клиники заново."
-						: `Журнал стерилизации не загружен, сервер ответил кодом ${res.status}. Список ниже неполный.`,
-				);
+				setLoadError(await accessFailureMessage(res, "Журнал стерилизации не показан"));
 				return;
 			}
 			const data: unknown = await res.json();
@@ -154,14 +177,9 @@ export function ScannerView() {
 			if (!res.ok) {
 				/*
 				 * БЫЛО: «Ошибка валидации лотка» на любой отказ, включая отсутствие
-				 * доступа и недоступный сервер. Лоток при этом ни при чём.
+				 * входа сотрудника и недоступный сервер. Лоток при этом ни при чём.
 				 */
-				showToast(
-					res.status === 401 || res.status === 403
-						? "Нет прав на запись в журнал стерилизации: войдите под сотрудником клиники."
-						: `Запись в журнал не создана, сервер ответил кодом ${res.status}.`,
-					"error",
-				);
+				showToast(await accessFailureMessage(res, "Запись в журнал не создана"), "error");
 				return;
 			}
 

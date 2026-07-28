@@ -108,13 +108,13 @@ function reachableFromEntry(): Set<string> {
  */
 function registeredAppViews(): string[] {
 	const source = readSource("workspaceShell.tsx");
-	const declaration = /export const appViews = \[([^\]]*)\] as const;/.exec(source);
+	const declaration = /export const appViews = \[([^\]]*)\] as const;/.exec(source)?.[1] ?? "";
 	assert.ok(
-		declaration?.[1],
+		declaration,
 		"В workspaceShell.tsx не найдено объявление `export const appViews = [...] as const;` — " +
 			"реестр разделов переехал или переименован, и этот страж больше ничего не охраняет",
 	);
-	const views = [...(declaration[1] as string).matchAll(/"([^"]+)"/g)].map((match) => match[1] as string);
+	const views = [...declaration.matchAll(/"([^"]+)"/g)].map((match) => match[1] as string);
 	assert.ok(views.length >= 11, `реестр разделов разобран неполно: ${views.length} записей`);
 	return views;
 }
