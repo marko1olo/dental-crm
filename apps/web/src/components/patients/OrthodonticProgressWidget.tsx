@@ -3,6 +3,7 @@ import { Calendar, Save, Smile, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 
@@ -144,8 +145,26 @@ export function OrthodonticProgressWidget({
 				},
 			);
 
-			if (!resAdmin.ok)
-				throw new Error("Failed to save patient administrative profile");
+			/*
+			 * БЫЛО: `throw new Error("Failed to save patient administrative profile")`
+			 * и один общий текст «Не удалось сохранить изменения». Он не говорил ни
+			 * почему, ни что делать, и врач жал «Сохранить» снова и снова.
+			 *
+			 * А повторять здесь бесполезно: сервер отвечает 400. В схеме
+			 * административного профиля orthodonticProgress объявлен строкой
+			 * (packages/shared/src/index.ts, z.string().max(500)), а виджет отправляет
+			 * объект с номерами капп — разбор не проходит. Причина отказа берётся из
+			 * общей формулировки по коду ответа: для 400 она прямо говорит, что
+			 * повторение не поможет и нужен администратор. Схему правит ведущий, это
+			 * не наш файл; экран обязан хотя бы не врать и не гонять по кругу.
+			 */
+			if (!resAdmin.ok) {
+				showToast(
+					`${actionFailureToast("Отсчёт капп не сохранён", resAdmin.status)} Пока запишите этап лечения в заметку к пациенту.`,
+					"error",
+				);
+				return;
+			}
 
 			// Убираем старую техническую запись из заметок, если она там была.
 			// БЫЛО: ответ на этот запрос не проверялся вовсе, и при его отказе врач
@@ -176,7 +195,12 @@ export function OrthodonticProgressWidget({
 			setIsEditing(false);
 			await loadDashboard();
 		} catch (err) {
-			showToast("Не удалось сохранить изменения", "error");
+			// Сюда попадают только обрывы связи: отказы сервера разобраны выше.
+			console.error("[OrthodonticProgressWidget save]", err);
+			showToast(
+				`${actionFailureToast("Отсчёт капп не сохранён", null)} Пока запишите этап лечения в заметку к пациенту.`,
+				"error",
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -208,8 +232,14 @@ export function OrthodonticProgressWidget({
 				},
 			);
 
-			if (!resAdmin.ok)
-				throw new Error("Failed to clear patient administrative profile");
+			// Тот же отказ, что и при сохранении, и так же бесполезно повторять.
+			if (!resAdmin.ok) {
+				showToast(
+					`${actionFailureToast("Отсчёт капп не убран", resAdmin.status)} Каппы остались в карточке.`,
+					"error",
+				);
+				return;
+			}
 
 			// Тот же непроверенный ответ, что и при сохранении: «удалено» показывалось
 			// даже когда служебный хвост остался в заметках.
@@ -238,7 +268,11 @@ export function OrthodonticProgressWidget({
 			setIsEditing(false);
 			await loadDashboard();
 		} catch (err) {
-			showToast("Не удалось сбросить трекер", "error");
+			console.error("[OrthodonticProgressWidget reset]", err);
+			showToast(
+				`${actionFailureToast("Отсчёт капп не убран", null)} Каппы остались в карточке.`,
+				"error",
+			);
 		} finally {
 			setSaving(false);
 		}
