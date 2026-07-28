@@ -766,3 +766,72 @@ a dangling reference.
 NOT PROVEN by any of it: that a dentist's day works end to end. The gates are necessary and not
 sufficient — the two price lists (Y1) and the inert clinic mode (Y2) are both invisible to every gate in
 that table, which is precisely why they survived this long.
+
+## CORRECTION — THE LEAD REPORTED "4 ORGANIZATIONS" TWICE. THE REAL NUMBER IS 2.
+
+An R2 critique challenged the figure and it was right. Re-measured by the lead:
+
+| id | clinic_mode | name |
+|---|---|---|
+| `4a3420d1-6ffb…` | **demo** | «Стоматология, 1 кабинет» — the REAL organization |
+| `d0000000-0000…` | demo | «Демо-клиника для снимков» — a FIXTURE |
+
+**The extra organizations were transient fixtures created by `seedOpsScreenshotDemo.ts` — which the lead
+ran itself to do the §6 visual verification.** So the lead polluted the database it was measuring, then
+quoted the polluted count to the Director as ground truth. Twice.
+
+**The finding itself survives and is actually cleaner:** the REAL organization «Стоматология, 1 кабинет»
+also carries `clinic_mode='demo'`, i.e. a value outside `clinicModeSchema`, coerced to `one_chair` by
+`domainStateHydration.ts:350`. The defect is confirmed on a genuine clinic, not only on fixtures. What was
+wrong was the scale ("every one of four"), not the existence.
+
+### THE HAZARD THIS CREATES FOR EVERY AGENT, AND IT IS THE LEAD'S FAULT
+`seedOpsScreenshotDemo.ts:1-16` says in its own header that it writes temporary data for panel captures
+and that `--clean` removes the organization wholesale. Running the capture pipeline therefore **injects a
+whole clinic's worth of rows** that a later read-only agent measures as production truth. Measured split:
+
+- `payments`: 8 rows, **100 % fixture**, all inside 29 ms (`12:13:58.688` → `.717`)
+- `tooth_states`: 25 rows, **100 % the real organization**
+- `visits`, `appointments`, `treatment_items`, `communication_outbox`: fixture-only
+
+**So any statement that joins visits (fixture) with tooth_states (real) is meaningless at any sample
+size.** The R2 dossier drew exactly that conclusion — «teeth get marked, the record is not written» — and
+the critique correctly killed it. It also killed «0 of 8 payments carry a fiscal receipt number, so nobody
+fills them»: that is a property of the seeder's hardcoded column list, not of human behaviour.
+
+**Standing rule this produces:** a row count is only evidence when it is split by `organization_id` and
+the fixture organization is excluded. And after any capture run the lead must record that the database is
+polluted, or clean it. The screenshot seeder and the database census cannot share a database silently.
+
+### What does NOT change
+`service_catalog_items = 0` and the compiled-in demo catalogue (packet Y1) is a **code-path** fact:
+`domainStateHydration.ts:775` only replaces the catalogue `if (serviceRecords.length > 0)`, and
+`pricelistQuery.ts:23` reads the table directly. That holds regardless of how many organizations exist.
+Likewise the float-equality receipt gate and the 38-of-45 integer money schemas are source facts.
+
+## CYCLE 9 REVIEW — Y3's MOUNT GUARD IS LARGELY A FACADE. NEEDS_REWORK, and the reviewer earned it.
+
+The deletion half was clean (proved: zero Cyrillic UI text lost across 176 extracted strings, zero
+dangling references repo-wide, no churn swept in). The GUARD half does not do what it claims:
+
+1. **False census.** An independent `@babel/parser` count finds **198** exported JSX-bearing components;
+   the guard's `ast-grep` pattern matches **159**. The 39-component gap is `export const X: React.FC = …`
+   plus one return-typed function. **Three components are orphaned right now and unreported**:
+   `components/ConsentTemplateEditor.tsx:4`, `pages/PublicBookingWidget.tsx:46`,
+   `components/plan/ComparativePlannerDashboard.tsx:125` — zero importers, zero dynamic imports.
+2. **The allowlist has no reason validation, and the packet claimed it did.** A fixture with
+   `reason: ""` still prints `[НАРУШЕНИЕ]` and then reports `нарушений 0`, exit 0. Worse:
+   `{ path: "apps/web/src", reason: "" }` silences **all 31 violations in four lines** — cheaper than the
+   `--root` escape hatch the commit message boasts of not shipping.
+3. **The guard is wired to no gate at all.** `grep -c reachability package.json` → 0; no CI; `npm run lint`
+   is `check:encoding && typecheck`. Its own test is unreferenced and takes **4m33s**, not the claimed
+   11–23 s.
+4. **Two second owners already existed**, both running inside `npm test -w @dental/web`:
+   `tests/panelsAreMounted.test.ts` (same `AppRouter.tsx` incident, hand-lists 7 panels) and
+   `tests/documentsViewDecomposition.test.ts` (suite literally named «в каталоге документов нет
+   незамеченных сирот»). Direct contradiction: `DocumentUkepSignButton` is a `[НАРУШЕНИЕ]` in the new
+   guard and an accepted exception **with a written reason** in the old test. Three panels the old test
+   protects are `React.FC`-annotated and therefore invisible to the new one.
+
+Also recorded by that reviewer: `npm test -w @dental/web` is **620 tests, 618 pass, 2 FAIL**, both in
+`lib/panelStateText.test.ts` — the neighbour's in-flight contract migration, not Y3's doing.
