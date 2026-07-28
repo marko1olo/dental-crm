@@ -276,10 +276,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // окружения ключевой путь недоступен вовсе.
   app.post("/api/auth/clinic/set-password", async (request: FastifyRequest, reply: FastifyReply) => {
     const body = (request.body as { organizationId?: string; newPassword?: string; adminKey?: string }) ?? {};
-    if (!body.newPassword || String(body.newPassword).length < 8) {
-      return reply.code(400).send({ error: "ValidationError", message: "Новый пароль должен быть не короче 8 символов." });
-    }
 
+    // СНАЧАЛА ПРАВА, ПОТОМ ТЕЛО.
+    // БЫЛО: длина нового пароля проверялась до проверки прав. Аноним отправлял
+    // {"newPassword":"1"} и по коду ответа читал политику паролей клиники
+    // (400 «не короче 8 символов»), а по имени поля — форму запроса на смену
+    // пароля. Разные ответы на разные тела превращали закрытый маршрут в
+    // справочник. Теперь тело не влияет на отказ: без прав ответ ровно один и
+    // тот же при любом содержимом, а вся работа по разбору тела выполняется
+    // только для того, кто имеет право её вызвать.
+    // adminKey читается из тела — это учётные данные, а не проверяемое поле.
     const identity = getRequestIdentity(request);
     const isOrgAdmin =
       !!identity.organizationId &&
@@ -292,6 +298,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!isOrgAdmin && !hasValidSetupKey) {
       await authFailureDelay();
       return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены пароля клиники." });
+    }
+
+    // Порядок проверок тела для авторизованного вызова сохранён дословно:
+    // сначала пароль, затем организация, затем запрет чужой организации.
+    if (!body.newPassword || String(body.newPassword).length < 8) {
+      return reply.code(400).send({ error: "ValidationError", message: "Новый пароль должен быть не короче 8 символов." });
     }
 
     // Администратор организации может менять пароль ТОЛЬКО своей организации.
@@ -324,13 +336,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // и целевой сотрудник обязан принадлежать той же организации.
   app.post("/api/auth/staff/set-pin", async (request: FastifyRequest, reply: FastifyReply) => {
     const body = (request.body as { userId?: string; newPin?: string; adminKey?: string }) ?? {};
-    if (!body.userId) {
-      return reply.code(400).send({ error: "ValidationError", message: "Не указан сотрудник." });
-    }
-    if (!body.newPin || !/^\d{4,12}$/.test(String(body.newPin))) {
-      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
-    }
 
+    // СНАЧАЛА ПРАВА, ПОТОМ ТЕЛО — по той же причине, что и в set-password.
+    // БЫЛО: аноним получал 400 «Не указан сотрудник.» на пустое тело и
+    // 400 «PIN должен состоять из 4–12 цифр.» на PIN неверной формы, то есть
+    // узнавал обязательные поля и политику PIN раньше, чем сервер выяснял, имеет
+    // ли он право менять PIN вообще. Теперь без прав возвращается один и тот же
+    // отказ независимо от тела, и по нему нельзя отличить «нет прав» от
+    // «тело неверной формы».
     const identity = getRequestIdentity(request);
     const isOrgAdmin =
       !!identity.organizationId &&
@@ -343,6 +356,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!isOrgAdmin && !hasValidSetupKey) {
       await authFailureDelay();
       return reply.code(403).send({ error: "Forbidden", message: "Недостаточно прав для смены PIN сотрудника." });
+    }
+
+    // Порядок проверок тела для авторизованного вызова сохранён дословно:
+    // сначала отсутствие сотрудника, затем форма PIN.
+    if (!body.userId) {
+      return reply.code(400).send({ error: "ValidationError", message: "Не указан сотрудник." });
+    }
+    if (!body.newPin || !/^\d{4,12}$/.test(String(body.newPin))) {
+      return reply.code(400).send({ error: "ValidationError", message: "PIN должен состоять из 4–12 цифр." });
     }
 
     if (isOrgAdmin) {
