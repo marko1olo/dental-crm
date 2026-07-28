@@ -40,7 +40,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
@@ -125,7 +125,29 @@ const browserPath = [
 ].find((candidate) => existsSync(candidate));
 if (!browserPath) throw new Error("Браузер не найден");
 
-const tmpProfile = path.join(process.env.TEMP || "C:/tmp", "dente-shot-profile");
+/*
+ * Профиль браузера СВЕЖИЙ на каждый прогон, а не общий.
+ *
+ * Прежде все прогоны делили один каталог «dente-shot-profile». Этой ночью
+ * сценарий падал трижды посреди работы — на медленном разделе, на зависшей
+ * отрисовке, — и каждый раз оставлял этот профиль в неизвестном состоянии. После
+ * этого запуск начал умирать сразу: первый же Runtime.evaluate не получал ответа
+ * за 30 секунд, а процессов браузера в системе не оставалось вовсе, то есть он
+ * не поднимался и молча уходил.
+ *
+ * Это тот же класс дефекта, который уже был здесь починен для свёрнутого меню:
+ * состояние, унаследованное от упавшего прогона, ломает следующий. Лечится
+ * одинаково — не наследовать. Профиль одноразовый, поэтому его каталог уникален
+ * по времени старта и удаляется перед созданием, если такой уже есть.
+ *
+ * Каталог лежит в TEMP и содержит только кэш безголового браузера: ни исходников,
+ * ни данных проекта здесь нет.
+ */
+const tmpProfile = path.join(
+  process.env.TEMP || "C:/tmp",
+  `dente-shot-profile-${runStartedAt.replace(/[:.]/g, "-")}`,
+);
+await rm(tmpProfile, { recursive: true, force: true }).catch(() => {});
 await mkdir(tmpProfile, { recursive: true });
 
 const browser = spawn(
