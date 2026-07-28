@@ -1,6 +1,35 @@
+/**
+ * ПОЧЕМУ ЗДЕСЬ НЕ ОБЩИЕ ХЕЛПЕРЫ ИЗ accessGuard.ts.
+ *
+ * Отсюда были удалены импорты requireClinicalMutationAccess и
+ * requireClinicalReadAccess: они не вызывались ни в одном обработчике, а по
+ * строке импорта файл выглядел защищённым общим гейтом. Каждый обработчик ниже
+ * проверяет подпись токена кабинета сам и берёт организацию ТОЛЬКО из
+ * проверенной подписью полезной нагрузки.
+ *
+ * Свести это на общий путь нельзя, пока не закрыты два расхождения:
+ *
+ * 1. security/identity.ts:112-115 (unverifiedOrganizationUsable) для любого
+ *    нечитающего метода возвращает true, поэтому requireOrganizationId на GET
+ *    отдаёт организацию, названную самим клиентом в заголовке x-organization-id
+ *    (identity.ts:174-180), если включён DENTE_DEV_ALLOW_HEADER_ORG=1. Запись
+ *    этой дырой уже закрыта, чтение — нет. Здесь три GET-обработчика, и они
+ *    отдают картотеку, историю звонков и переписки, запрет записи. Токен-only
+ *    проверка ниже такой заголовок не принимает ни при какой переменной среды.
+ *
+ * 2. requireClinicalReadAccess/requireClinicalMutationAccess (accessGuard.ts:26,
+ *    accessGuard.ts:56) — это гейт секрета администратора клиники
+ *    (x-dente-admin-secret), а не гейт арендатора. Пока DENTE_CLINICAL_ADMIN_SECRET
+ *    не задан, они пропускают всех; как только он задан, они отвечают 403. Ни один
+ *    вызов карточки пациента этот заголовок не присылает: AppHelpers.tsx:6143-6156
+ *    добавляет его только когда adminSecret передан явно, а все вызовы к
+ *    /api/patients/** передают лишь токен кабинета. То есть переход на общий гейт
+ *    отдал бы 403 на весь раздел «Пациенты» в первой же установке с секретом.
+ *
+ * Чинить нужно общий путь, а не эти обработчики: строгий код сносить нельзя.
+ */
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPatientSchema, patientSchema, updatePatientAdministrativeProfileSchema, updatePatientSchema } from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 
 type PatientPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -104,6 +133,62 @@ function hasIncompleteRepresentativeIdentity(value: PatientRepresentativeInput):
 
   if (!hasRepresentativeFact) return false;
   return !hasText(value.legalRepresentativeFullName) || !hasText(value.legalRepresentativeRelationship);
+}
+
+/**
+ * Строка таблицы patient_archive_reasons_and_blacklists в том минимуме, который
+ * нужен для отбора по пациенту. patient_id пустой у строк, созданных до
+ * миграции drizzle/0136_patient_archive_patient_id.sql: колонка там объявлена
+ * nullable намеренно, потому что старым строкам связь с пациентом взять негде.
+ */
+type PatientArchiveRowLike = {
+  isBookingBlocked: boolean;
+  patientId: string | null;
+  patientName: string | null;
+};
+
+/**
+ * Оставляет из строк архива и черного списка клиники только те, что относятся к
+ * указанному пациенту.
+ *
+ * БЫЛО: GET /api/patients/:patientId/archive-status отдавал строки ВСЕЙ клиники.
+ * db/patientArchiveReasonsAndBlacklistsQuery.ts:7 принимает пациента под именем
+ * `_patientId` и не использует его вовсе, а маршрут отправлял результат как есть.
+ * Оба виджета карточки читают ответ как статус выбранного пациента:
+ * components/patients/PatientArchiveAndBlacklistWidget.tsx:86 берёт
+ * reasons[0].isBookingBlocked, а components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx:106
+ * печатает каждую строку с ФИО и причиной. Достаточно одного человека в черном
+ * списке, чтобы карточка КАЖДОГО пациента клиники показала «Запись на прием
+ * заблокирована», предложила кнопку «Восстановить из черного списка» — и заодно
+ * показала ФИО и причину блокировки посторонних людей. Это ровно тот же дефект,
+ * что уже был исправлен ниже для communication-timelines.
+ *
+ * Связь по имени применяется ТОЛЬКО к строкам без patient_id. Строку с чужим
+ * patient_id тезка не забирает: иначе снятие блокировки у однофамильца снимало
+ * бы её у настоящего нарушителя.
+ */
+export function selectPatientArchiveRows<T extends PatientArchiveRowLike>(
+  rows: readonly T[],
+  patientId: string,
+  patientFullName: string | null | undefined
+): T[] {
+  const normalizedPatientName = normalizePatientNameForDuplicate(patientFullName);
+  return rows.filter((row) => {
+    if (row.patientId) return row.patientId === patientId;
+    if (!normalizedPatientName) return false;
+    return normalizePatientNameForDuplicate(row.patientName) === normalizedPatientName;
+  });
+}
+
+/**
+ * Запрещена ли пациенту запись по его строкам архива. Учитывается флаг
+ * is_booking_blocked, а не сам факт наличия строки — так же, как в
+ * db/patientArchiveReasonsAndBlacklistsQuery.ts:isPatientBookingBlocked,
+ * который решает запрет при записи на приём. Иначе карточка утверждала бы одно,
+ * а расписание делало другое.
+ */
+export function patientArchiveRowsBlockBooking(rows: readonly PatientArchiveRowLike[]): boolean {
+  return rows.some((row) => row.isBookingBlocked === true);
 }
 
 import { verifyToken } from "../utils/cryptoHelper.js";
@@ -283,10 +368,29 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     const payload = verifyToken(clinicToken, TOKEN_SECRET());
     if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
     const orgId = payload.organizationId as string;
-    const { patientId } = request.params as { patientId: string };
+    const { patientId } = request.params as { patientId?: string };
+    if (!patientId) return sendPatientRouteValidationError(reply);
 
-    const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
-    return reply.status(200).send(await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId));
+    try {
+      // Карточка чужого или удалённого пациента раньше отвечала пустым списком,
+      // то есть «этот человек не заблокирован». Отсутствие пациента и отсутствие
+      // блокировки — разные ответы, и путать их нельзя.
+      const patient = await getPatientByIdFromDb(orgId, patientId);
+      if (!patient) return sendPatientNotFound(reply);
+
+      const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
+      const clinicRows = await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId);
+      return reply.status(200).send(selectPatientArchiveRows(clinicRows, patientId, patient.fullName));
+    } catch (e) {
+      // Пустой список вместо отказа читается виджетом как «пациент чист», и
+      // администратор запишет на приём того, кому запись запрещена.
+      request.log.error({ err: e }, "[Patients] Ошибка чтения архива и черного списка");
+      return reply.code(500).send({
+        error: "PatientArchiveStatusUnavailable",
+        message:
+          "Не удалось прочитать запрет записи по этой карте. Не считайте пациента разрешённым к записи: повторите чтение перед записью на приём."
+      });
+    }
   });
 
   app.post("/api/patients/:patientId/archive-status", async (request, reply) => {
@@ -296,20 +400,69 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     const payload = verifyToken(clinicToken, TOKEN_SECRET());
     if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
     const orgId = payload.organizationId as string;
-    const { patientId } = request.params as { patientId: string };
-    
-    // Parse the body
-    const body = request.body as any;
-    if (!body || typeof body.isBlacklisted !== 'boolean') {
-        return reply.code(400).send({ error: "ValidationError", message: "isBlacklisted boolean is required" });
+    const { patientId } = request.params as { patientId?: string };
+    if (!patientId) return sendPatientRouteValidationError(reply);
+
+    const body = request.body as { isBlacklisted?: unknown } | null | undefined;
+    if (!body || typeof body.isBlacklisted !== "boolean") {
+      // БЫЛО: «isBlacklisted boolean is required» — имя поля запроса на экране
+      // администратора вместо того, что от него требуется.
+      return reply.code(400).send({
+        error: "ValidationError",
+        message: "Не указано действие: запретить пациенту запись на приём или снять запрет."
+      });
     }
+    const requestedBlacklisted = body.isBlacklisted;
 
-    const { setPatientArchiveStatusInDb } = await import("../db/patientArchiveReasonsAndBlacklistsQuery.js");
-    const { getPatientByIdFromDb } = await import("../db/patientsQuery.js");
-    const patient = await getPatientByIdFromDb(orgId, patientId);
-    if (!patient) return reply.code(404).send({ error: "PatientNotFound" });
+    try {
+      const { getPatientArchiveReasonsAndBlacklistsFromDb, setPatientArchiveStatusInDb } = await import(
+        "../db/patientArchiveReasonsAndBlacklistsQuery.js"
+      );
+      const patient = await getPatientByIdFromDb(orgId, patientId);
+      if (!patient) return sendPatientNotFound(reply);
 
-    await setPatientArchiveStatusInDb(orgId, patientId, body.isBlacklisted, patient.fullName);
-    return reply.status(200).send({ success: true, isBlacklisted: body.isBlacklisted });
+      const rowsBefore = selectPatientArchiveRows(
+        await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
+        patientId,
+        patient.fullName
+      );
+      // Повторное нажатие кнопки не должно плодить строки: setPatientArchiveStatusInDb
+      // вставляет запись безусловно, а карточка после отправки перечитывает статус
+      // и снова показывает ту же кнопку.
+      if (patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted) {
+        return reply.status(200).send({ success: true, isBlacklisted: requestedBlacklisted });
+      }
+
+      await setPatientArchiveStatusInDb(orgId, patientId, requestedBlacklisted, patient.fullName);
+
+      // БЫЛО: маршрут отвечал { success: true } сразу после вызова записи, а
+      // setPatientArchiveStatusInDb гасит ЛЮБУЮ ошибку базы в пустой catch и
+      // оставляет запрет только в памяти процесса. Карточка показывала «Пациент
+      // добавлен в черный список. Запись на прием заблокирована», запрет исчезал
+      // при перезапуске сервера, и никто об этом не узнавал. Отвечаем успехом
+      // только после того, как база подтвердила новое состояние.
+      const rowsAfter = selectPatientArchiveRows(
+        await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
+        patientId,
+        patient.fullName
+      );
+      if (patientArchiveRowsBlockBooking(rowsAfter) !== requestedBlacklisted) {
+        return reply.code(500).send({
+          error: "PatientArchiveStatusNotSaved",
+          message: requestedBlacklisted
+            ? "Запрет записи не сохранён в базе. Пациент по-прежнему доступен для записи на приём — повторите действие."
+            : "Снятие запрета не сохранено в базе. Пациенту по-прежнему запрещена запись на приём — повторите действие."
+        });
+      }
+
+      return reply.status(200).send({ success: true, isBlacklisted: requestedBlacklisted });
+    } catch (e) {
+      request.log.error({ err: e }, "[Patients] Ошибка сохранения запрета записи");
+      return reply.code(500).send({
+        error: "PatientArchiveStatusNotSaved",
+        message:
+          "Не удалось сохранить запрет записи. Откройте карту заново и проверьте текущий запрет перед повторной попыткой."
+      });
+    }
   });
 }
