@@ -88,8 +88,26 @@ UNIT claim is against HEAD code, not against uncommitted work.
 S2 has `apps/api/src/speech/tests/storageIdentity.test.ts` STAGED (A) in the shared index. NOT MINE,
 NOT unstaged, NOT reset — my commits use an explicit pathspec so it stays staged for S2.
 
-## About to run next
-Commit the test file + updated probe with explicit pathspec, then write handoff.md.
+## COMMITTED (test)
+1acbb98d718879bc4adff928a4499554c4ebc85d — 4 files, exactly mine, gitleaks clean.
+
+## RAM measurement (ram-probe.mjs, --expose-gc)
+FIRST ATTEMPT WAS INVALID and is recorded so nobody repeats it: resetting the cache immediately after
+importing storage.ts does not give a cold cache, because the module-level `void ensure...()` fires an
+un-awaited restore that repopulates the array before the baseline is taken. That produced a 70 KB delta
+for 4 000 000 characters. Root cause fixed by joining the in-flight restore FIRST, then resetting.
+Valid run: 2000 chunks x 2000 Cyrillic chars -> heapUsed delta 12 031 712 B (11.47 MiB),
+3.008 B per character, 6015.9 B per chunk, ~2016 B per chunk OBJECT.
+Worst case at shipped defaults = 64e6 x 2 B + 48000 x 2016 B = 224 768 000 B = 214.4 MiB,
+INDEPENDENT of tenant count. Pre-fix, same measured constant: ~1.88 GiB PER ORGANIZATION x tenants.
+
+## Database left as found
+ai_jobs: 0 rows (both probe row sets deleted by their own source_label marker). The index remains --
+it is the deliverable.
+
+## Log
+- [x] PROVEN
+- [x] DONE (handoff.md written)
 
 ## HEAD moved under me
 40dd853f -> 8f4d42fe3 (packet S1 committed apps/api/src/routes/speech.ts; storage.ts untouched at HEAD,
