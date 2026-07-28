@@ -138,6 +138,115 @@ async function seed(): Promise<void> {
 		}
 	]);
 
+	/*
+	 * Пациенты, которых пора звать обратно. Нужны, чтобы список возврата было на
+	 * чём проверить: у остальных демонстрационных пациентов приёмы свежие, и
+	 * список выходил пустым — а пустой список не показывает ни полос, ни
+	 * сортировки, ни того, как выглядит «скорее всего ушёл».
+	 */
+	const RECALL_DUE = "d0000000-0000-4000-8000-0000000009b1";
+	const RECALL_OVERDUE = "d0000000-0000-4000-8000-0000000009b2";
+	const RECALL_LOST = "d0000000-0000-4000-8000-0000000009b3";
+	const RECALL_NEVER = "d0000000-0000-4000-8000-0000000009b4";
+
+	await db.insert(patients).values([
+		{
+			id: RECALL_DUE,
+			organizationId: ORG_ID,
+			fullName: "Зорина Татьяна Львовна",
+			birthDate: "1985-03-14",
+			phone: "+7 916 300-10-31",
+			email: "zorina@example.ru"
+		},
+		{
+			id: RECALL_OVERDUE,
+			organizationId: ORG_ID,
+			fullName: "Лапин Егор Дмитриевич",
+			birthDate: "1978-11-02",
+			phone: "+7 916 300-10-32",
+			email: null
+		},
+		{
+			id: RECALL_LOST,
+			organizationId: ORG_ID,
+			fullName: "Ветрова Ирина Павловна",
+			birthDate: "1966-07-21",
+			phone: "+7 916 300-10-33",
+			email: null
+		},
+		{
+			id: RECALL_NEVER,
+			organizationId: ORG_ID,
+			fullName: "Сомов Артур Вадимович",
+			birthDate: "1992-05-05",
+			phone: "+7 916 300-10-34",
+			email: null
+		}
+	]);
+
+	const monthsAgo = (months: number): Date => {
+		const date = new Date(now.getTime());
+		date.setMonth(date.getMonth() - months);
+		return date;
+	};
+
+	await db.insert(appointments).values([
+		// Восемь месяцев назад — пора на профилактику.
+		{
+			id: "d0000000-0000-4000-8000-0000000009c1",
+			organizationId: ORG_ID,
+			patientId: RECALL_DUE,
+			doctorUserId: DOCTOR_A,
+			chairId: CHAIR_A,
+			status: "completed" as const,
+			startsAt: monthsAgo(8),
+			endsAt: new Date(monthsAgo(8).getTime() + 60 * 60_000)
+		},
+		// Четырнадцать месяцев — пропущен осмотр.
+		{
+			id: "d0000000-0000-4000-8000-0000000009c2",
+			organizationId: ORG_ID,
+			patientId: RECALL_OVERDUE,
+			doctorUserId: DOCTOR_B,
+			chairId: CHAIR_B,
+			status: "completed" as const,
+			startsAt: monthsAgo(14),
+			endsAt: new Date(monthsAgo(14).getTime() + 60 * 60_000)
+		},
+		// Тридцать месяцев — скорее всего лечится в другом месте.
+		{
+			id: "d0000000-0000-4000-8000-0000000009c3",
+			organizationId: ORG_ID,
+			patientId: RECALL_LOST,
+			doctorUserId: DOCTOR_A,
+			chairId: CHAIR_A,
+			status: "completed" as const,
+			startsAt: monthsAgo(30),
+			endsAt: new Date(monthsAgo(30).getTime() + 60 * 60_000)
+		},
+		// Записывался дважды и оба раза не пришёл: завершённых приёмов нет вовсе.
+		{
+			id: "d0000000-0000-4000-8000-0000000009c4",
+			organizationId: ORG_ID,
+			patientId: RECALL_NEVER,
+			doctorUserId: DOCTOR_B,
+			chairId: CHAIR_B,
+			status: "no_show" as const,
+			startsAt: monthsAgo(3),
+			endsAt: new Date(monthsAgo(3).getTime() + 60 * 60_000)
+		},
+		{
+			id: "d0000000-0000-4000-8000-0000000009c5",
+			organizationId: ORG_ID,
+			patientId: RECALL_NEVER,
+			doctorUserId: DOCTOR_B,
+			chairId: CHAIR_B,
+			status: "cancelled" as const,
+			startsAt: monthsAgo(2),
+			endsAt: new Date(monthsAgo(2).getTime() + 60 * 60_000)
+		}
+	]);
+
 	await db.insert(patients).values(
 		PATIENT_NAMES.map((fullName, index) => ({
 			id: patientId(index),

@@ -305,6 +305,7 @@ const PANELS = [
   { view: "communications", testId: "message-delivery-console", slug: "delivery" },
   { view: "communications", testId: "campaign-panel", slug: "campaigns" },
   { view: "analytics", testId: "manager-reports-panel", slug: "reports" },
+  { view: "analytics", testId: "recall-list-panel", slug: "recall" },
   { view: "patients", testId: "patient-duplicate-merge-queues-widget", slug: "duplicates" },
   {
     view: "patients",

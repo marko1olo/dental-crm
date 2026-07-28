@@ -14,8 +14,8 @@ import {
   MapPin,
   Globe
 } from "lucide-react";
-import { LostPatientsFiltersWidget } from "./components/analytics/LostPatientsFiltersWidget";
 import { RebookingConversionRulesWidget } from "./components/analytics/RebookingConversionRulesWidget";
+import { RecallListPanel } from "./components/patients/RecallListPanel";
 import { FamilyRecommendationSourcesWidget } from "./components/marketing/FamilyRecommendationSourcesWidget";
 import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
 
@@ -390,9 +390,23 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
         </div>
       ) : null}
 
+      {/*
+        Возврат пациентов. Стоит перед мелкими виджетами и во всю ширину: это
+        единственный блок раздела, по которому в клинике действительно работают
+        руками — звонят и приглашают.
+      */}
+      <div className="mt-8">
+        <RecallListPanel />
+      </div>
+
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <FamilyRecommendationSourcesWidget />
-        <LostPatientsFiltersWidget />
+        {/*
+          LostPatientsFiltersWidget убран отсюда: он читал таблицу
+          lost_patients_filters, в которую в проекте никто не пишет — список был
+          снимком, сделанным неизвестно когда, и обновиться не мог. Живой расчёт
+          стоит выше.
+        */}
         <RebookingConversionRulesWidget />
         <LandingFieldMappingsWidget />
         <CustomCrmTaskTypesWidget />

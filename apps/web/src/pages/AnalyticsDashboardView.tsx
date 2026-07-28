@@ -22,7 +22,7 @@ import {
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
-import { LostPatientsFiltersWidget } from "../components/analytics/LostPatientsFiltersWidget";
+import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
 import { EmptyState } from "../components/EmptyState.js";
 import {
@@ -505,9 +505,19 @@ export function AnalyticsDashboardView() {
 						на экране и при пустом периоде дашборда: их данные приходят
 						из другого запроса и могут быть непустыми.
 					*/}
+					{/*
+						Возврат пациентов считается по текущим данным и показывается во
+						всю ширину. Прежний LostPatientsFiltersWidget убран отсюда: он
+						читал таблицу lost_patients_filters, в которую в проекте никто не
+						пишет, — то есть показывал снимок, сделанный неизвестно когда, и
+						на двух экранах давал бы разные ответы на один вопрос.
+					*/}
+					<div className="mt-6">
+						<RecallListPanel />
+					</div>
+
 					<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<ConfirmationPerformanceReportsWidget />
-						<LostPatientsFiltersWidget />
 						<RebookingConversionRulesWidget />
 					</div>
 				</>

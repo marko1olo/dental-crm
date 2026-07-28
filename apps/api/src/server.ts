@@ -55,6 +55,7 @@ import { registerCommunicationReceiptRoutes } from "./routes/communicationReceip
 import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmentActions.js";
 import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
+import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -473,6 +474,11 @@ export async function createDenteApiApp(options: {
   // /api/crm/patient-duplicate-merge-queues — такого маршрута не существует
   // (проверено запросом, 404), а искать дубли в проекте было нечем.
   await registerPatientDuplicateRoutes(app);
+
+  // Возврат пациентов. Экран «потерянные пациенты» читал таблицу
+  // lost_patients_filters, в которую никто ничего не пишет: список был снимком,
+  // сделанным неизвестно когда. Здесь он считается по текущим данным.
+  await registerPatientRecallRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

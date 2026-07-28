@@ -28,7 +28,8 @@ const MOUNTED_PANELS = [
 	{ component: "ManagerReportsPanel", file: "components/reports/ManagerReportsPanel.tsx" },
 	{ component: "MessageDeliveryConsole", file: "components/communications/MessageDeliveryConsole.tsx" },
 	{ component: "CampaignPanel", file: "components/communications/CampaignPanel.tsx" },
-	{ component: "PatientDuplicateAlert", file: "components/patients/PatientDuplicateAlert.tsx" }
+	{ component: "PatientDuplicateAlert", file: "components/patients/PatientDuplicateAlert.tsx" },
+	{ component: "RecallListPanel", file: "components/patients/RecallListPanel.tsx" }
 ];
 
 function readSource(relativePath: string): string {
