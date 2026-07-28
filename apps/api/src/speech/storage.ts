@@ -18,10 +18,15 @@ function numberFromEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
+/**
+ * Фрагмент не принадлежит этой записи диктовки. Причина называется полями
+ * («другой прием», «другой пациент»), но БЕЗ идентификаторов: сообщение может
+ * уйти наружу, а врачу роут отдаёт свой текст.
+ */
 export class SpeechChunkIdentityConflictError extends Error {
   readonly statusCode = 409;
-  constructor() {
-    super("Фрагмент принадлежит другой записи");
+  constructor(detail?: string) {
+    super(detail ? `Фрагмент принадлежит другой записи: ${detail}` : "Фрагмент принадлежит другой записи");
     this.name = "SpeechChunkIdentityConflictError";
   }
 }
@@ -386,16 +391,42 @@ function shouldReplaceSpeechTranscriptionChunk(
   return nextTranscript.length > existingTranscript.length && next.status !== "failed";
 }
 
-function speechChunkRetryIdentityMatches(
-  existing: SpeechTranscriptionChunk,
-  next: Omit<SpeechTranscriptionChunk, "id" | "organizationId" | "createdAt">
-): boolean {
+/**
+ * Личность записи диктовки: чей прием, чей пациент, откуда диктуют и на каком
+ * языке. Все фрагменты одной recordingId обязаны совпадать по всем четырём
+ * полям, иначе в одной строке ai_jobs окажется медицинский текст двух приемов.
+ *
+ * Тип берётся от самого фрагмента, чтобы правило нельзя было применить к
+ * половине полей: и сохранённый конверт, и горячий кэш, и входящий фрагмент
+ * сравниваются ОДНОЙ функцией.
+ */
+type SpeechRecordingIdentity = Pick<SpeechTranscriptionChunk, "source" | "patientId" | "visitId" | "language">;
+
+function speechRecordingIdentityMatches(left: SpeechRecordingIdentity, right: SpeechRecordingIdentity): boolean {
   return (
-    existing.source === next.source &&
-    existing.patientId === next.patientId &&
-    existing.visitId === next.visitId &&
-    existing.language === next.language
+    left.source === right.source &&
+    left.patientId === right.patientId &&
+    left.visitId === right.visitId &&
+    left.language === right.language
   );
+}
+
+/**
+ * Чем именно фрагмент не подошёл записи. Без идентификаторов: строка уходит в
+ * сообщение об ошибке, а идентификаторы приема и пациента остаются в логе.
+ */
+function speechIdentityDivergence(owner: SpeechRecordingIdentity, next: SpeechRecordingIdentity): string {
+  const fields = [
+    owner.visitId !== next.visitId ? "прием" : "",
+    owner.patientId !== next.patientId ? "пациент" : "",
+    owner.source !== next.source ? "источник диктовки" : "",
+    owner.language !== next.language ? "язык" : ""
+  ].filter(Boolean);
+  return fields.join(", ");
+}
+
+function describeSpeechRecordingIdentity(identity: SpeechRecordingIdentity): string {
+  return `прием ${identity.visitId ?? "не указан"}, пациент ${identity.patientId ?? "не указан"}, источник ${identity.source}, язык ${identity.language}`;
 }
 
 /**
@@ -608,6 +639,11 @@ async function loadDurableRecordingEnvelope(recordingId: string, organizationId:
  * при пределе в один фрагмент result_text терял первую строку диктовки.
  * Кто из двух версий одного номера лучше, решает тот же порядок, по которому
  * повторное распознавание заменяет фрагмент в памяти.
+ *
+ * ЛИЧНОСТЬ ЗАПИСИ ЗДЕСЬ УЖЕ ПРОВЕРЕНА: обе стороны слияния отбирает
+ * persistSpeechRecording, и обе принадлежат одному приему и одному пациенту.
+ * Слияние по одному номеру фрагмента без такой проверки и давало одну строку с
+ * текстом двух приемов.
  */
 function mergeDurableAndCachedChunks(
   storedChunks: SpeechTranscriptionChunk[],
@@ -645,10 +681,85 @@ function clearCachedDurableFailureWarnings(recordingId: string): void {
   }
 }
 
-async function persistSpeechRecording(recordingId: string, organizationId: string): Promise<void> {
+/**
+ * Отклонённый фрагмент убирается из горячего кэша.
+ *
+ * ПОЧЕМУ ЭТО НЕ ТИХАЯ ПОТЕРЯ ТЕКСТА: запрос завершается ошибкой 409, то есть
+ * фрагмент НЕ ПРИНЯТ и остаётся у клиента (локальная очередь браузера удаляет
+ * фрагмент только после успешного ответа). Обратный вариант хуже: чужой
+ * фрагмент, оставленный в памяти, не попадёт ни в одну строку (сборка берёт
+ * только фрагменты своей личности), в базу не уйдёт никогда, а вытеснение
+ * выбросит его МОЛЧА — ключ вытеснения общий для recordingId#chunkIndex, и
+ * сохранение фрагмента своей записи с тем же номером делает чужой фрагмент
+ * «подтверждённо сохранённым».
+ *
+ * durableChunkKeys здесь не трогается намеренно: ключ описывает пару
+ * (recordingId, chunkIndex) и может принадлежать законному фрагменту записи.
+ * Ключи без живого фрагмента вычищает trimSpeechTranscriptionChunkRetention.
+ */
+function forgetCachedSpeechChunk(chunk: SpeechTranscriptionChunk): void {
+  const index = speechTranscriptionChunks.findIndex((cached) => cached.id === chunk.id);
+  if (index >= 0) speechTranscriptionChunks.splice(index, 1);
+}
+
+/**
+ * Кому принадлежит запись по СОХРАНЁННОМУ конверту: фрагменту с наименьшим
+ * номером. Он же подписывает строку ai_jobs — speechRecordingRecoveryFromChunks
+ * берёт patientId/visitId из sortedChunks[0], а persistSpeechRecording пишет их
+ * в колонки. То есть личность записи и подпись строки — одна величина, а не две
+ * независимые, и разойтись они не могут.
+ */
+function storedRecordingOwner(storedChunks: SpeechTranscriptionChunk[]): SpeechTranscriptionChunk | null {
+  let owner: SpeechTranscriptionChunk | null = null;
+  for (const chunk of storedChunks) {
+    if (!owner || chunk.chunkIndex < owner.chunkIndex) owner = chunk;
+  }
+  return owner;
+}
+
+/**
+ * ЛИЧНОСТЬ ЗАПИСИ ПРОВЕРЯЕТСЯ ЗДЕСЬ, ПО СОХРАНЁННОМУ КОНВЕРТУ — по тому же
+ * источнику, который читает слияние.
+ *
+ * ЧТО БЫЛО СЛОМАНО: проверка личности стояла ТОЛЬКО над горячим кэшем
+ * (recordSpeechTranscriptionChunk), а кэшу разрешено терять фрагменты —
+ * вытеснение выбрасывает всё, что уже в базе. Как только запись уходила из
+ * памяти, проверка молча перестала работать, а слияние объединяло конверт по
+ * номеру фрагмента, не глядя на прием и пациента. Результат воспроизведён
+ * прогоном на живой базе: одна строка ai_jobs с текстом двух приемов
+ * («Прием А: …\nПрием Б: …») под пациентом первого, потому что подпись строки
+ * берётся из фрагмента с наименьшим номером и после слияния это всегда
+ * сохранённый фрагмент. Проверка над кэшем оставлена как быстрый отказ до
+ * похода в базу, но гарантия — эта, потому что вытеснить сохранённый конверт
+ * нельзя.
+ *
+ * ФРАГМЕНТЫ ЧУЖОЙ ЛИЧНОСТИ, УЖЕ ЛЕЖАЩИЕ В КОНВЕРТЕ (следствие прежнего
+ * дефекта), НЕ УДАЛЯЮТСЯ: уничтожать медицинский текст нельзя, а разделить его
+ * на два приема автоматически — значит угадывать. Такая строка получает
+ * предупреждение о необходимости ручного разбора, а новые чужие фрагменты в неё
+ * уже не попадут.
+ */
+async function persistSpeechRecording(trigger: SpeechTranscriptionChunk, organizationId: string): Promise<void> {
+  const recordingId = trigger.recordingId;
   const stored = await loadDurableRecordingEnvelope(recordingId, organizationId);
+  const owner = storedRecordingOwner(stored.chunks);
+  if (owner && !speechRecordingIdentityMatches(owner, trigger)) {
+    forgetCachedSpeechChunk(trigger);
+    console.error(
+      `[SpeechStorage] Фрагмент ${trigger.chunkIndex} записи ${recordingId} отклонен: запись сохранена как ${describeSpeechRecordingIdentity(owner)}, а фрагмент пришёл как ${describeSpeechRecordingIdentity(trigger)}.`
+    );
+    throw new SpeechChunkIdentityConflictError(
+      `у сохранённой записи другой ${speechIdentityDivergence(owner, trigger)}`
+    );
+  }
+
+  const identity = owner ?? trigger;
+  const foreignStoredChunks = stored.chunks.filter((chunk) => !speechRecordingIdentityMatches(chunk, identity));
   const chunks = withoutDurableFailureWarnings(
-    mergeDurableAndCachedChunks(stored.chunks, listSpeechTranscriptionChunks(recordingId))
+    mergeDurableAndCachedChunks(
+      stored.chunks,
+      listSpeechTranscriptionChunks(recordingId).filter((chunk) => speechRecordingIdentityMatches(chunk, identity))
+    )
   );
   if (chunks.length === 0) return;
 
@@ -672,6 +783,9 @@ async function persistSpeechRecording(recordingId: string, organizationId: strin
     resultText: assembly.transcript,
     warnings: uniqueStrings([
       ...speechConfidenceDisclosures(chunks, confidence),
+      foreignStoredChunks.length > 0
+        ? `В конверте записи есть фрагменты другого приема или пациента: ${foreignStoredChunks.length}. Текст сохранен как есть и не удалён, но запись нужно разобрать вручную — разделить медицинский текст двух приемов автоматически нельзя.`
+        : "",
       stored.unreadableChunks.length > 0
         ? `Записей конверта, не прошедших проверку схемы: ${stored.unreadableChunks.length}; они сохранены как есть и не потеряны.`
         : "",
@@ -959,43 +1073,48 @@ export async function recordSpeechTranscriptionChunk(
 ): Promise<SpeechTranscriptionChunk> {
   await ensureSpeechTranscriptionChunksRestored();
 
-  const identityConflict = speechTranscriptionChunks.find(
-    (chunk) => chunk.recordingId === input.recordingId && !speechChunkRetryIdentityMatches(chunk, input)
+  /**
+   * Быстрый отказ по горячему кэшу: он экономит поход в базу, но НИЧЕГО не
+   * гарантирует — кэшу разрешено быть пустым, вытеснение выбрасывает из него
+   * всё, что уже сохранено. Гарантию даёт та же проверка внутри очереди записи,
+   * над сохранённым конвертом (persistSpeechRecording). Отдельной проверки на
+   * фрагмент с тем же номером больше нет: он тоже лежит в кэше этой записи и
+   * попадает под эту же проверку.
+   */
+  const cachedConflict = speechTranscriptionChunks.find(
+    (chunk) => chunk.recordingId === input.recordingId && !speechRecordingIdentityMatches(chunk, input)
   );
-  if (identityConflict) {
-    throw new SpeechChunkIdentityConflictError();
+  if (cachedConflict) {
+    throw new SpeechChunkIdentityConflictError(
+      `у записи в памяти сервера другой ${speechIdentityDivergence(cachedConflict, input)}`
+    );
   }
 
   const existingIndex = speechTranscriptionChunks.findIndex(
     (chunk) => chunk.recordingId === input.recordingId && chunk.chunkIndex === input.chunkIndex
   );
+  const existing = existingIndex >= 0 ? speechTranscriptionChunks[existingIndex] : undefined;
 
-  if (existingIndex >= 0) {
-    const existing = speechTranscriptionChunks[existingIndex];
-    if (existing && !speechChunkRetryIdentityMatches(existing, input)) {
-      throw new SpeechChunkIdentityConflictError();
-    }
-    if (existing && !shouldReplaceSpeechTranscriptionChunk(existing, input)) {
+  if (existing) {
+    if (!shouldReplaceSpeechTranscriptionChunk(existing, input)) {
       // Повтор не улучшил фрагмент, но прошлая запись в базу могла не пройти.
       // Используем повтор как ещё одну попытку сохранить текст.
       return await withDurableSpeechRecording(existing, existing.organizationId);
     }
-    if (existing) {
-      const chunk: SpeechTranscriptionChunk = {
-        ...existing,
-        ...input,
-        id: existing.id,
-        organizationId: existing.organizationId,
-        createdAt: existing.createdAt,
-        warnings: uniqueStrings([
-          ...input.warnings,
-          `Повторное распознавание улучшило аудиофрагмент: ${existing.status}/${speechChunkQuality(existing).level} -> ${input.status}/${input.quality.level}.`
-        ]).slice(0, 12)
-      };
-      speechTranscriptionChunks.splice(existingIndex, 1, chunk);
-      durableChunkKeys.delete(speechChunkKey(chunk.recordingId, chunk.chunkIndex));
-      return await withDurableSpeechRecording(chunk, chunk.organizationId);
-    }
+    const chunk: SpeechTranscriptionChunk = {
+      ...existing,
+      ...input,
+      id: existing.id,
+      organizationId: existing.organizationId,
+      createdAt: existing.createdAt,
+      warnings: uniqueStrings([
+        ...input.warnings,
+        `Повторное распознавание улучшило аудиофрагмент: ${existing.status}/${speechChunkQuality(existing).level} -> ${input.status}/${input.quality.level}.`
+      ]).slice(0, 12)
+    };
+    speechTranscriptionChunks.splice(existingIndex, 1, chunk);
+    durableChunkKeys.delete(speechChunkKey(chunk.recordingId, chunk.chunkIndex));
+    return await withDurableSpeechRecording(chunk, chunk.organizationId);
   }
 
   const organizationId = await resolveSpeechChunkOrganizationId(input);
@@ -1025,12 +1144,17 @@ async function withDurableSpeechRecording(
   if (durableChunkKeys.has(key)) return chunk;
 
   try {
-    await queueDurableRecordingWrite(chunk.recordingId, () => persistSpeechRecording(chunk.recordingId, organizationId));
+    await queueDurableRecordingWrite(chunk.recordingId, () => persistSpeechRecording(chunk, organizationId));
     // Запись прошла — прежнее предупреждение о том, что текст только в памяти,
     // стало неправдой и снимается, иначе оно висело бы на сохранённой записи.
     clearCachedDurableFailureWarnings(chunk.recordingId);
     return chunk;
   } catch (error) {
+    // Несовпадение личности записи — это отказ ЗАПРОСУ, а не сбой хранилища.
+    // Отдать фрагмент чужого приема врачу как «сохранено, но с предупреждением»
+    // нельзя: клиент счёл бы фрагмент принятым и выбросил бы его из локальной
+    // очереди. Ошибка уходит наверх и превращается в 409 на роуте.
+    if (error instanceof SpeechChunkIdentityConflictError) throw error;
     const reason = error instanceof Error ? error.message : "неизвестная ошибка записи";
     console.error(`[SpeechStorage] Расшифровка ${chunk.recordingId} не сохранена в базу:`, error);
     chunk.warnings = uniqueStrings([
