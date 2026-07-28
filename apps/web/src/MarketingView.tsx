@@ -1,6 +1,6 @@
 import "./styles/marketing.css";
 import { useState } from "react";
-import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { buildReviewReplyDraft } from "./components/marketing/reviewReplyDraft";
 import {
   MessageSquare,
   ThumbsUp,
@@ -170,39 +170,79 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
   };
 
   const [newKeyInput, setNewKeyInput] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [draftWarnings, setDraftWarnings] = useState<string[]>([]);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
+  /*
+    БЫЛО: кнопка звала AiOrchestrator.processMarketingReview, тот всегда отвечает
+    «нужна языковая модель», модели в продукте нет — и на экран под заголовком
+    «Готовый ответ (с SEO-ключами)» выводился служебный промпт для нейросети,
+    вместе со строкой «Верни JSON: { "replyText": "твой ответ" }». Ниже стояла
+    кнопка «Скопировать» и подпись «вставьте в Яндекс.Карты или 2ГИС», то есть
+    владельца прямо звали опубликовать это под отзывом пациента. Плюс фальшивая
+    задержка 600 мс изображала обращение к серверу, которого не было.
+    СТАЛО: черновик собирается здесь же, мгновенно и без сети, из тональности,
+    названия клиники, телефона главврача и SEO-ключей — разбор в
+    components/marketing/reviewReplyDraft.ts. Ничего про сам приём не выдумывает.
+  */
   const handleGenerate = () => {
-    if (!reviewText.trim()) return;
-    setIsAiLoading(true);
-    setAiError(null);
-    setGeneratedReply("");
-
-    const orchestratorResult = AiOrchestrator.processMarketingReview(reviewText, tone, clinicName, customSeoKeys);
-    
-    // Simulate AI LLM Request Fallback (Since we are in local UI mode)
-    setTimeout(() => {
-       if (orchestratorResult.source === "llm_required") {
-          // Demo fallback text showing the generated prompt
-          const fallbackText = "--- ДЕМО-РЕЖИМ (LLM не подключена) ---\nГенерируемый промпт:\n" + orchestratorResult.suggestedPrompt;
-          setGeneratedReply(fallbackText);
-       }
-       setIsAiLoading(false);
-    }, 600);
+    const draft = buildReviewReplyDraft({
+      reviewText,
+      tone,
+      clinicName,
+      chiefDoctorPhone: phone,
+      seoKeys: customSeoKeys
+    });
+    if (!draft) {
+      setGeneratedReply("");
+      setDraftWarnings([]);
+      return;
+    }
+    setCopied(false);
+    setCopyError(null);
+    setGeneratedReply(draft.text);
+    setDraftWarnings(draft.warnings);
   };
 
+  /*
+    БЫЛО: navigator.clipboard.writeText(...).then(...) без проверки и без .catch.
+    Клиники часто открывают CRM по локальному адресу вида http://192.168.1.10 —
+    это не защищённый контекст, и там navigator.clipboard просто НЕ СУЩЕСТВУЕТ.
+    Обращение к .writeText у undefined бросало исключение прямо из обработчика
+    нажатия, его ловила граница ошибок раздела, и вместо маркетинга появлялось
+    «Раздел временно не открылся»: человек нажал «скопировать» и потерял экран
+    вместе с набранным отзывом. Если же буфер есть, но браузер отказал в доступе,
+    обещание отклонялось молча — кнопка выглядела мёртвой.
+    СТАЛО: отказ буфера — это подсказка «выделите текст и скопируйте вручную»,
+    а текст ответа теперь лежит в редактируемом поле, откуда это возможно.
+  */
   const handleCopy = () => {
     if (!generatedReply) return;
-    navigator.clipboard.writeText(generatedReply).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
+    const clipboard = navigator.clipboard;
+    if (!clipboard || typeof clipboard.writeText !== "function") {
+      setCopyError(
+        "Браузер не разрешает копировать в буфер по этому адресу. Выделите текст ответа мышкой и скопируйте сами: Ctrl+C."
+      );
+      return;
+    }
+    clipboard
+      .writeText(generatedReply)
+      .then(() => {
+        setCopyError(null);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      })
+      .catch((copyFailure) => {
+        console.warn("[Маркетинг] Буфер обмена отказал:", copyFailure);
+        setCopyError("Скопировать не получилось. Выделите текст ответа мышкой и скопируйте сами: Ctrl+C.");
+      });
   };
 
   const clearAll = () => {
     setReviewText("");
     setGeneratedReply("");
+    setDraftWarnings([]);
+    setCopyError(null);
     setCopied(false);
   };
 
@@ -389,10 +429,10 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
               className="primary-button"
               type="button"
               onClick={handleGenerate}
-              disabled={!reviewText.trim() || isAiLoading}
+              disabled={!reviewText.trim()}
             >
               <MessageSquare aria-hidden="true" />
-              Сгенерировать ответ
+              Составить черновик ответа
             </button>
             {generatedReply ? (
               <button className="secondary-button" type="button" onClick={clearAll}>
@@ -404,7 +444,13 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           {generatedReply ? (
             <div className="marketing-result">
               <div className="marketing-result-header">
-                <p className="eyebrow">Готовый ответ (с SEO-ключами)</p>
+                {/*
+                  Заголовок был «Готовый ответ (с SEO-ключами)» — и это была
+                  неправда дважды: ответ был не готовый (служебный промпт) и без
+                  ключей. Теперь честно: это заготовка, её надо прочитать и
+                  дописать под свой случай, поле для этого редактируемое.
+                */}
+                <p className="eyebrow">Черновик ответа — прочитайте и поправьте под свой случай</p>
                 <button
                   type="button"
                   className={`icon-button ${copied ? "copied" : ""}`}
@@ -415,10 +461,32 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
                   {copied ? <CheckCircle2 aria-hidden="true" className="text-emerald-600 dark:text-emerald-400" /> : <Copy aria-hidden="true" />}
                 </button>
               </div>
-              <p className="marketing-reply-text">{generatedReply}</p>
+              <textarea
+                className="text-input marketing-reply-text"
+                aria-label="Черновик ответа на отзыв, его можно править"
+                rows={7}
+                value={generatedReply}
+                onChange={(e) => {
+                  setGeneratedReply(e.target.value);
+                  setCopied(false);
+                }}
+                style={{ resize: "vertical", fontFamily: "inherit", width: "100%" }}
+              />
+              {draftWarnings.length > 0 ? (
+                <ul className="text-xs text-[var(--muted,#94a3b8)] mt-2 pl-5 space-y-1">
+                  {draftWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {copyError ? (
+                <p className="text-xs text-[var(--danger,#e63946)] mt-2 font-bold" role="alert">
+                  {copyError}
+                </p>
+              ) : null}
               {copied ? (
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-bold">
-                  ✓ Скопировано в буфер — вставьте в Яндекс.Карты или 2ГИС
+                  ✓ Скопировано в буфер — перечитайте перед отправкой и вставьте в Яндекс.Карты или 2ГИС
                 </p>
               ) : null}
             </div>
