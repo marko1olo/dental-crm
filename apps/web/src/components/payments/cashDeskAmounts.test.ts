@@ -8,6 +8,7 @@ import {
 	rubAmountForInput,
 	sumRubAmounts,
 	toKopecks,
+	unreadablePaymentsWarning,
 } from "./cashDeskAmounts";
 
 /**
@@ -184,6 +185,36 @@ describe("sumRubAmounts", () => {
 			totalRub: 1500,
 			unreadableCount: 2,
 		});
+	});
+});
+
+describe("unreadablePaymentsWarning", () => {
+	/*
+	 * Счётное слово согласуется общей countLabel. Склеенная руками строка дала бы
+	 * «2 платёж не разобран» — надпись, которая читается как ошибка программы, и
+	 * доверие к самому итогу, к деньгам, падает вместе с ней.
+	 */
+	it("согласует число с существительным и глаголом", () => {
+		assert.match(unreadablePaymentsWarning(1), /^1 платёж не попал в итог/);
+		assert.match(unreadablePaymentsWarning(2), /^2 платежа не попали в итог/);
+		assert.match(unreadablePaymentsWarning(5), /^5 платежей не попали в итог/);
+		// 11–14 всегда множественное, поблажка для «один» тут не действует.
+		assert.match(unreadablePaymentsWarning(11), /^11 платежей не попали в итог/);
+		assert.match(unreadablePaymentsWarning(21), /^21 платёж не попал в итог/);
+	});
+
+	it("подсказывает, что делать, а не только что всё плохо", () => {
+		assert.ok(unreadablePaymentsWarning(3).includes("журнале оплат"));
+	});
+
+	it("молчит, когда разобрано всё", () => {
+		assert.equal(unreadablePaymentsWarning(0), "");
+		assert.equal(unreadablePaymentsWarning(-1), "");
+		assert.equal(unreadablePaymentsWarning(Number.NaN), "");
+	});
+
+	it("в тексте нет латиницы", () => {
+		assert.ok(!/[A-Za-z]/.test(unreadablePaymentsWarning(4)));
 	});
 });
 
