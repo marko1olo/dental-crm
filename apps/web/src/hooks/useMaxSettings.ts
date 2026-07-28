@@ -113,6 +113,35 @@ export const MAX_SETTINGS_SAVE_BLOCKED_MESSAGE =
 export const MAX_SETTINGS_SAVE_WHILE_LOADING_MESSAGE =
 	"Настройки не сохранены: настройки MAX ещё читаются с сервера. Дождитесь загрузки — иначе ваши правки перезапишутся тем, что придёт с сервера.";
 
+/** Решение «можно ли сохранять» и человеческий текст запрета. */
+export type MaxSaveGuardVerdict =
+	| { readonly allowed: true }
+	| { readonly allowed: false; readonly message: string };
+
+/**
+ * Можно ли отправлять черновики на сервер.
+ *
+ * Правило вынесено из хука по той же причине, по которой resolvePanelPhase
+ * вынесен из разметки в lib/panelStateText.ts: ошибались именно в нём, а здесь
+ * его проверяет обычный node:test, без React и браузера.
+ *
+ * Порядок ветвей обязателен: пока чтение идёт, «дождитесь загрузки» — точная
+ * подсказка, а «нажмите Обновить» отправила бы администратора жать кнопку,
+ * которая и так нажата.
+ */
+export function maxSaveGuardVerdict(input: {
+	readonly loading: boolean;
+	readonly draftsSeeded: boolean;
+}): MaxSaveGuardVerdict {
+	if (input.loading) {
+		return { allowed: false, message: MAX_SETTINGS_SAVE_WHILE_LOADING_MESSAGE };
+	}
+	if (!input.draftsSeeded) {
+		return { allowed: false, message: MAX_SETTINGS_SAVE_BLOCKED_MESSAGE };
+	}
+	return { allowed: true };
+}
+
 /** Итог чтения без React и fetch: разбирается и проверяется отдельно от них. */
 export type MaxSettingsLoadOutcome =
 	| { readonly ok: true; readonly settings: MaxSettings | null }
@@ -344,20 +373,18 @@ export function useMaxSettings() {
 
 	// Пока настройки не прочитаны, черновики — не «то, что в клинике», а
 	// инициализаторы, и отправлять их нельзя.
-	const canSave = draftsSeeded && !loading && saveState !== "saving";
+	const canSave =
+		maxSaveGuardVerdict({ loading, draftsSeeded }).allowed &&
+		saveState !== "saving";
 
 	const save = useCallback(async () => {
 		// ЗАПРЕТ СОХРАНЕНИЯ НЕПРОЧИТАННЫХ НАСТРОЕК. Проверка стоит до fetch
 		// намеренно: панель может разблокировать кнопку по своему признаку
 		// изменений, а цена ошибки здесь — стёртый webhookUrl и стёртый роутинг.
-		if (loading) {
+		const verdict = maxSaveGuardVerdict({ loading, draftsSeeded });
+		if (!verdict.allowed) {
 			setSaveState("error");
-			setSaveError(MAX_SETTINGS_SAVE_WHILE_LOADING_MESSAGE);
-			return;
-		}
-		if (!draftsSeeded) {
-			setSaveState("error");
-			setSaveError(MAX_SETTINGS_SAVE_BLOCKED_MESSAGE);
+			setSaveError(verdict.message);
 			return;
 		}
 		setSaveState("saving");

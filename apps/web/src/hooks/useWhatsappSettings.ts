@@ -111,6 +111,38 @@ export const WHATSAPP_SETTINGS_SAVE_BLOCKED_MESSAGE =
 export const WHATSAPP_SETTINGS_SAVE_WHILE_LOADING_MESSAGE =
 	"Настройки не сохранены: настройки WhatsApp ещё читаются с сервера. Дождитесь загрузки — иначе ваши правки перезапишутся тем, что придёт с сервера.";
 
+/** Решение «можно ли сохранять» и человеческий текст запрета. */
+export type WhatsappSaveGuardVerdict =
+	| { readonly allowed: true }
+	| { readonly allowed: false; readonly message: string };
+
+/**
+ * Можно ли отправлять черновики на сервер.
+ *
+ * Правило вынесено из хука по той же причине, по которой resolvePanelPhase
+ * вынесен из разметки в lib/panelStateText.ts: ошибались именно в нём, а здесь
+ * его проверяет обычный node:test, без React и браузера.
+ *
+ * Порядок ветвей обязателен: пока чтение идёт, «дождитесь загрузки» — точная
+ * подсказка, а «нажмите Обновить» отправила бы администратора жать кнопку,
+ * которая и так нажата.
+ */
+export function whatsappSaveGuardVerdict(input: {
+	readonly loading: boolean;
+	readonly draftsSeeded: boolean;
+}): WhatsappSaveGuardVerdict {
+	if (input.loading) {
+		return {
+			allowed: false,
+			message: WHATSAPP_SETTINGS_SAVE_WHILE_LOADING_MESSAGE,
+		};
+	}
+	if (!input.draftsSeeded) {
+		return { allowed: false, message: WHATSAPP_SETTINGS_SAVE_BLOCKED_MESSAGE };
+	}
+	return { allowed: true };
+}
+
 /** Итог чтения без React и fetch: разбирается и проверяется отдельно от них. */
 export type WhatsappSettingsLoadOutcome =
 	| { readonly ok: true; readonly settings: WhatsappSettings | null }
@@ -352,21 +384,19 @@ export function useWhatsappSettings() {
 
 	// Пока настройки не прочитаны, черновики — не «то, что в клинике», а
 	// инициализаторы, и отправлять их нельзя.
-	const canSave = draftsSeeded && !loading && saveState !== "saving";
+	const canSave =
+		whatsappSaveGuardVerdict({ loading, draftsSeeded }).allowed &&
+		saveState !== "saving";
 
 	const save = useCallback(async () => {
 		// ЗАПРЕТ СОХРАНЕНИЯ НЕПРОЧИТАННЫХ НАСТРОЕК. Проверка стоит до fetch
 		// намеренно: панель разблокирует кнопку по своему признаку изменений, а
 		// цена ошибки здесь — стёртые Phone Number ID, verify-токен, список
 		// функций и роутинг.
-		if (loading) {
+		const verdict = whatsappSaveGuardVerdict({ loading, draftsSeeded });
+		if (!verdict.allowed) {
 			setSaveState("error");
-			setSaveError(WHATSAPP_SETTINGS_SAVE_WHILE_LOADING_MESSAGE);
-			return;
-		}
-		if (!draftsSeeded) {
-			setSaveState("error");
-			setSaveError(WHATSAPP_SETTINGS_SAVE_BLOCKED_MESSAGE);
+			setSaveError(verdict.message);
 			return;
 		}
 		setSaveState("saving");
