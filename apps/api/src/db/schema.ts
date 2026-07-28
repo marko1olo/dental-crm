@@ -388,9 +388,15 @@ export const treatmentItems = pgTable("treatment_items", {
   toothCode: text("tooth_code"),
   title: text("title").notNull(),
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
-  priceRub: integer("price_rub").notNull(),
-  unitPriceRub: integer("unit_price_rub").notNull(),
-  discountRub: integer("discount_rub").notNull().default(0),
+  /*
+   * Рубли с копейками (миграция 0135). `mode: "number"` обязателен: без него
+   * drizzle отдаёт numeric строкой независимо от разбора типов в драйвере, и
+   * арифметика над суммой склеит строки вместо сложения. Подробнее — у
+   * payments.amountRub и в apps/api/src/db/moneyTypeParsers.ts.
+   */
+  priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+  unitPriceRub: numeric("unit_price_rub", { precision: 12, scale: 2, mode: "number" }).notNull(),
+  discountRub: numeric("discount_rub", { precision: 12, scale: 2, mode: "number" }).notNull().default(0),
   status: treatmentPlanItemStatus("status").notNull().default("proposed"),
   plannedDoctorUserId: uuid("planned_doctor_user_id").references(() => users.id),
   plannedChairId: uuid("planned_chair_id").references(() => chairs.id),

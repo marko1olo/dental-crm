@@ -93,7 +93,7 @@ export async function revenueTimeline(
 	const rows = await db
 		.select({
 			bucket: sql<string>`to_char(${truncated}, 'YYYY-MM-DD')`,
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`,
+			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
 			paymentCount: sql<number>`count(*)::int`,
 			payingPatients: sql<number>`count(distinct ${payments.patientId})::int`
 		})
@@ -170,7 +170,7 @@ export async function doctorPerformance(scope: ReportScope): Promise<DoctorPerfo
 	const revenueRows = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`
+			revenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`
 		})
 		.from(payments)
 		.leftJoin(visits, eq(payments.visitId, visits.id))
@@ -726,14 +726,20 @@ export async function serviceSales(scope: ReportScope, limit = 50): Promise<Serv
 	// Выражение используется и в выборке, и в сортировке, поэтому объявлено один
 	// раз: `orderBy(sql`2 desc`)` по номеру столбца отсортировал бы по
 	// количеству, и LIMIT отрезал бы самые дорогие услуги вместо самых мелких.
-	const lineTotal = sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::int`;
+	/*
+	 * Было `::int`. Количество объявлено numeric(10,2), а цена с миграции 0135
+	 * хранится с копейками: приведение к целому округляло итог по услуге.
+	 * Проверено на базе: половина услуги за 6 805,50 ₽ давала в отчёте 3 403
+	 * вместо 3 402,75.
+	 */
+	const lineTotal = sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`;
 
 	const rows = await db
 		.select({
 			title: treatmentItems.title,
 			quantity: sql<number>`coalesce(sum(greatest(${treatmentItems.quantity}, 1)), 0)::int`,
 			plannedRub: lineTotal,
-			discountRub: sql<number>`coalesce(sum(${treatmentItems.discountRub}), 0)::int`
+			discountRub: sql<number>`coalesce(sum(${treatmentItems.discountRub}), 0)::numeric(12,2)`
 		})
 		.from(treatmentItems)
 		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
@@ -813,7 +819,7 @@ export async function receivables(
 	const plannedRows = await db
 		.select({
 			patientId: treatmentItems.patientId,
-			plannedRub: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::int`,
+			plannedRub: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
 			oldestChargeAt: sql<Date | null>`min(${visits.createdAt})`,
 			undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`
 		})
@@ -825,7 +831,7 @@ export async function receivables(
 	const paidRows = await db
 		.select({
 			patientId: payments.patientId,
-			paidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int`
+			paidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`
 		})
 		.from(payments)
 		.where(and(eq(payments.organizationId, organizationId), eq(payments.status, "paid")))

@@ -197,7 +197,7 @@ async function futureAppointmentPatientIds(organizationId: string, now: Date): P
  */
 async function debtByPatient(organizationId: string): Promise<Map<string, number>> {
 	const paidRows = await db
-		.select({ patientId: payments.patientId, total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::int` })
+		.select({ patientId: payments.patientId, total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)` })
 		.from(payments)
 		.where(and(eq(payments.organizationId, organizationId), eq(payments.status, "paid")))
 		.groupBy(payments.patientId);
@@ -205,7 +205,13 @@ async function debtByPatient(organizationId: string): Promise<Map<string, number
 	const plannedRows = await db
 		.select({
 			patientId: treatmentItems.patientId,
-			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::int`
+			/*
+			 * Было `::int`. Количество объявлено numeric(10,2) — половина услуги,
+			 * треть курса, — а цена с миграции 0135 хранится с копейками.
+			 * Приведение к целому срезало копейки у суммы долга, по которой потом
+			 * отбирают, кому напомнить об оплате.
+			 */
+			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * greatest(${treatmentItems.quantity}, 1) - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`
 		})
 		.from(treatmentItems)
 		.where(and(eq(treatmentItems.organizationId, organizationId), ne(treatmentItems.status, "cancelled")))

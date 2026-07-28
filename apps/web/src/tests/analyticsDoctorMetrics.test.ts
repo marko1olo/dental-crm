@@ -47,19 +47,19 @@ test("прибыль: NaN и Infinity считаются неизвестным�
 
 test("прибыль: знак и тон берутся из настоящего числа", () => {
 	const positive = formatMarginCell(120_000);
-	assert.equal(positive.text, "+120K ₽");
+	assert.equal(positive.text, "+120,0 тыс. ₽");
 	assert.equal(positive.tone, "positive");
 	assert.equal(metricToneClass(positive.tone), "text-[var(--ok-fg)]");
 	assert.equal(positive.title, undefined, "у посчитанного числа объяснять нечего");
 
 	// Убыток не имеет права печататься со знаком «+».
 	const smallLoss = formatMarginCell(-420);
-	assert.equal(smallLoss.text, "-420 ₽");
+	assert.equal(smallLoss.text, "−420 ₽");
 	assert.equal(smallLoss.tone, "negative");
 	assert.equal(metricToneClass(smallLoss.tone), "text-[var(--bad-fg)]");
 
 	const bigLoss = formatMarginCell(-5_000);
-	assert.equal(bigLoss.text, "-5K ₽");
+	assert.equal(bigLoss.text, "−5,0 тыс. ₽");
 	assert.equal(bigLoss.tone, "negative");
 
 	// Ноль — посчитанный результат, а не отсутствие данных: прочерком не подменяется.
@@ -68,14 +68,36 @@ test("прибыль: знак и тон берутся из настоящег�
 	assert.equal(zero.tone, "neutral");
 });
 
+/* Разряды русская локаль разделяет неразрывным пробелом, в новых ICU — узким. */
+const plainMoney = (value: string) => value.replace(/[   ]/g, " ");
+
 test("формат суммы: сокращение считается по модулю, знак стоит впереди", () => {
 	// БЫЛО: +5000 печаталось как «5K ₽», а -5000 — как «-5000 ₽».
-	assert.equal(formatRub(5_000), "5K ₽");
-	assert.equal(formatRub(-5_000), "-5K ₽");
-	assert.equal(formatRub(2_400_000), "2.4M ₽");
-	assert.equal(formatRub(-2_400_000), "-2.4M ₽");
-	assert.equal(formatRub(999), "999 ₽");
-	assert.equal(formatRub(0), "0 ₽");
+	assert.equal(plainMoney(formatRub(5_000)), "5,0 тыс. ₽");
+	assert.equal(plainMoney(formatRub(-5_000)), "−5,0 тыс. ₽");
+	assert.equal(plainMoney(formatRub(2_400_000)), "2,4 млн ₽");
+	assert.equal(plainMoney(formatRub(-2_400_000)), "−2,4 млн ₽");
+	assert.equal(plainMoney(formatRub(999)), "999 ₽");
+	assert.equal(plainMoney(formatRub(0)), "0 ₽");
+});
+
+test("формат суммы: округление до целых тысяч больше не врёт", () => {
+	/*
+	 * БЫЛО: (abs/1000).toFixed(0) давало «1K ₽» для 1 400 и «2K ₽» для 1 500 —
+	 * ошибка до половины суммы в плитке «Выручка».
+	 */
+	assert.equal(plainMoney(formatRub(1_400)), "1,4 тыс. ₽");
+	assert.equal(plainMoney(formatRub(1_500)), "1,5 тыс. ₽");
+	assert.equal(plainMoney(formatRub(9_900)), "9,9 тыс. ₽");
+});
+
+test("формат суммы: копейки видны, латиницы нет", () => {
+	// БЫЛО: с переводом оплат на копейки 950,75 печаталось как «950.75 ₽».
+	assert.equal(plainMoney(formatRub(950.75)), "950,75 ₽");
+	assert.equal(plainMoney(formatRub(0.5)), "0,50 ₽");
+	for (const value of [999, 1_500, 2_400_000]) {
+		assert.ok(!/[A-Za-z]/.test(formatRub(value)), `латиница в «${formatRub(value)}»`);
+	}
 });
 
 test("успешность: неизвестное значение не красится красным", () => {
