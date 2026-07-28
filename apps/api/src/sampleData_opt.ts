@@ -4064,8 +4064,15 @@ function decryptTelegramChatTransportRef(chatTransportRef: string | null | undef
   const [version, ivRaw, tagRaw, encryptedRaw] = chatTransportRef.split(".");
   if (version !== "v1" || !ivRaw || !tagRaw || !encryptedRaw) return null;
   try {
-    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
-    decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
+    // authTagLength обязателен: без него setAuthTag принимает у GCM тег длиной
+    // 4..16 байт, а chatTransportRef приходит извне — 4-байтовый тег снижает
+    // сложность подделки с 2^128 до 2^32 (semgrep gcm-no-tag-length). Тот же
+    // фикс уже стоял в sampleData.ts и в utils/telegramChatRef.ts.
+    const iv = Buffer.from(ivRaw, "base64url");
+    const tag = Buffer.from(tagRaw, "base64url");
+    if (iv.length !== 12 || tag.length !== 16) return null;
+    const decipher = createDecipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
+    decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(Buffer.from(encryptedRaw, "base64url")), decipher.final()]).toString("utf8");
   } catch {
     return null;

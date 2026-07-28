@@ -92,7 +92,11 @@ Use these exclusively. Blind terminal navigation is banned.
 
 **11. THE ARCHITECTURAL DEPENDENCY DOCTRINE (madge & tokei)**
 - AI agents often create circular dependencies during massive refactors.
-- You are equipped with `madge`. Run `madge --circular .` to prove you haven't created dependency death-loops.
+- You are equipped with `madge`, but **`madge --circular .` does not work here and must not be used as proof.** Measured 2026-07-28: pointed at a directory without `--extensions` it processes **0 files** and prints "No circular dependency found" — a false all-clear. Pointed at the repo root as written, it walks `apps/web/dist/assets/*.js` and returns 140+ cycles in built bundles, which says nothing about source. Working invocation:
+  ```bash
+  npx madge --circular --extensions ts,tsx apps/api/src apps/web/src
+  ```
+- **Measured baseline, 2026-07-28: 116 real cycles — 9 in `apps/api/src`, 107 in `apps/web/src`.** They exist precisely because this rule's command never detected anything. Do not treat the number as a target to game: the point is that a refactor must not add to it. The API set is small and legible — seven of the nine are `routes/documents.ts` importing its own `routes/documents/*` children, which import back; the other two are `services/communications/deliveryPolicy.ts` and `channelRouter.ts`.
 - You are equipped with `tokei`. Use it to audit codebase size and complexity before rewriting.
 
 **12. THE SEMANTIC GIT DOCTRINE**

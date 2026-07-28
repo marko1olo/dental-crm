@@ -17,6 +17,9 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 const CHAT_REF_VERSION = "v1";
+/** AES-GCM: 96-битный IV и полный 128-битный тег. Обе длины проверяются явно. */
+const GCM_IV_BYTES = 12;
+const GCM_TAG_BYTES = 16;
 
 /** 32-байтовый ключ base64, 64-символьный hex или произвольная парольная фраза. */
 export function telegramChatEncryptionKey(env: NodeJS.ProcessEnv = process.env): Buffer | null {
@@ -37,8 +40,8 @@ export function encryptTelegramChatId(chatId: string | null | undefined, env: No
 	const key = telegramChatEncryptionKey(env);
 	if (!key) return null;
 
-	const iv = randomBytes(12);
-	const cipher = createCipheriv("aes-256-gcm", key, iv);
+	const iv = randomBytes(GCM_IV_BYTES);
+	const cipher = createCipheriv("aes-256-gcm", key, iv, { authTagLength: GCM_TAG_BYTES });
 	const encrypted = Buffer.concat([cipher.update(chatId, "utf8"), cipher.final()]);
 	const tag = cipher.getAuthTag();
 	return `${CHAT_REF_VERSION}.${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
@@ -55,9 +58,18 @@ export function decryptTelegramChatId(
 	const [version, ivRaw, tagRaw, encryptedRaw] = chatTransportRef.split(".");
 	if (version !== CHAT_REF_VERSION || !ivRaw || !tagRaw || !encryptedRaw) return null;
 
+	// Длина тега проверяется явно, а не оставляется на усмотрение Node.
+	// Без authTagLength setAuthTag принимает у GCM любой тег длиной 4..16 байт, а
+	// chatTransportRef приходит извне — атакующий подсунул бы 4-байтовый тег и
+	// сложность подделки упала бы с 2^128 до 2^32 (semgrep gcm-no-tag-length).
+	// Существующие значения не ломаются: getAuthTag() всегда отдаёт 16 байт.
+	const iv = Buffer.from(ivRaw, "base64url");
+	const tag = Buffer.from(tagRaw, "base64url");
+	if (iv.length !== GCM_IV_BYTES || tag.length !== GCM_TAG_BYTES) return null;
+
 	try {
-		const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
-		decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
+		const decipher = createDecipheriv("aes-256-gcm", key, iv, { authTagLength: GCM_TAG_BYTES });
+		decipher.setAuthTag(tag);
 		return Buffer.concat([decipher.update(Buffer.from(encryptedRaw, "base64url")), decipher.final()]).toString("utf8");
 	} catch {
 		// Подменённый или испорченный шифртекст не проходит проверку тега.
