@@ -17,7 +17,7 @@
  * обзвон из «всех по списку» в «этих шестерых».
  */
 
-import { and, asc, eq, gte, like, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
@@ -148,32 +148,70 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 		// Имена пациентов и врачей, состояние напоминаний и отметки переходов по
 		// ссылке — по одному запросу на всё, а не по запросу на строку.
-		const patientRows = await db
-			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
-			.from(patients)
-			.where(eq(patients.organizationId, context.organizationId));
+		//
+		// И КАЖДЫЙ ИЗ ЭТИХ ЗАПРОСОВ ОГРАНИЧЕН ЭТИМ ДНЁМ. Раньше они были ограничены
+		// только организацией: чтобы подписать ~30 строк, читалась вся картотека
+		// клиники, весь исходящий журнал за все годы и все коды подтверждения. То
+		// есть утренний обзвон на 30 приёмов дорожал линейно с возрастом клиники и
+		// на второй год работы стоил вдвое, хотя приёмов в дне столько же.
+		// Идентификаторы дня уже собраны выше, поэтому отбор идёт по ним.
+		const dayPatientIds = [
+			...new Set(appointmentRows.map((row) => row.patientId).filter((id): id is string => !!id))
+		];
+		const dayDoctorIds = [
+			...new Set(appointmentRows.map((row) => row.doctorUserId).filter((id): id is string => !!id))
+		];
+		const dayAppointmentIds = appointmentRows.map((row) => row.id);
+
+		const patientRows =
+			dayPatientIds.length > 0
+				? await db
+						.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+						.from(patients)
+						.where(and(eq(patients.organizationId, context.organizationId), inArray(patients.id, dayPatientIds)))
+				: [];
 		const patientById = new Map(patientRows.map((row) => [row.id, row]));
 
-		const staffRows = await db
-			.select({ id: users.id, fullName: users.fullName })
-			.from(users)
-			.where(eq(users.organizationId, context.organizationId));
+		const staffRows =
+			dayDoctorIds.length > 0
+				? await db
+						.select({ id: users.id, fullName: users.fullName })
+						.from(users)
+						.where(and(eq(users.organizationId, context.organizationId), inArray(users.id, dayDoctorIds)))
+				: [];
 		const staffById = new Map(staffRows.map((row) => [row.id, row.fullName]));
 
-		const reminderRows = await db
-			.select({
-				dedupeKey: communicationOutbox.dedupeKey,
-				status: communicationOutbox.status,
-				channel: communicationOutbox.channel,
-				sentAt: communicationOutbox.sentAt,
-				deliveredAt: communicationOutbox.deliveredAt,
-				lastErrorMessage: communicationOutbox.lastErrorMessage,
-				receiptDetail: communicationOutbox.receiptDetail
-			})
-			.from(communicationOutbox)
-			.where(
-				and(eq(communicationOutbox.organizationId, context.organizationId), like(communicationOutbox.dedupeKey, "reminder:%"))
-			);
+		// Ключ напоминания детерминирован — `reminder:<приём>:<часов>`, — поэтому
+		// вместо «все напоминания организации» спрашиваются напоминания именно этих
+		// приёмов. Условие построено как ИЛИ из префиксов, а не как один LIKE по
+		// всей таблице: результат тот же по построению (отбрасываются ровно те
+		// строки, которые прежний код читал, разбирал и затем ни разу не искал в
+		// карте), но из базы в процесс больше не переносится весь журнал рассылок.
+		// ЗАМЕРЕНО: индексом префиксы всё равно не обслуживаются — при пробном
+		// индексе (organization_id, dedupe_key text_pattern_ops) в BEGIN…ROLLBACK
+		// планировщик оставил оба LIKE в Filter, а в Index Cond ушёл только
+		// organization_id. Поэтому индекс сюда не добавлен: он был бы украшением.
+		// Выигрыш здесь в объёме перенесённых и разобранных строк, а не в чтении.
+		const reminderRows =
+			dayAppointmentIds.length > 0
+				? await db
+						.select({
+							dedupeKey: communicationOutbox.dedupeKey,
+							status: communicationOutbox.status,
+							channel: communicationOutbox.channel,
+							sentAt: communicationOutbox.sentAt,
+							deliveredAt: communicationOutbox.deliveredAt,
+							lastErrorMessage: communicationOutbox.lastErrorMessage,
+							receiptDetail: communicationOutbox.receiptDetail
+						})
+						.from(communicationOutbox)
+						.where(
+							and(
+								eq(communicationOutbox.organizationId, context.organizationId),
+								or(...dayAppointmentIds.map((id) => like(communicationOutbox.dedupeKey, `reminder:${id}:%`)))
+							)
+						)
+				: [];
 
 		type ReminderInfo = {
 			state: ReminderState;
@@ -202,10 +240,23 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			}
 		}
 
-		const codeRows = await db
-			.select({ appointmentId: appointmentActionCodes.appointmentId, usedAt: appointmentActionCodes.usedAt })
-			.from(appointmentActionCodes)
-			.where(eq(appointmentActionCodes.organizationId, context.organizationId));
+		// Коды подтверждения — только этих приёмов. Отбор попадает на индекс
+		// appointment_action_codes_appointment_action_unique (appointment_id, action),
+		// то есть перестаёт быть полным чтением таблицы. Условие по организации
+		// оставлено первым: код чужой клиники не должен пролезть даже при ошибке
+		// в идентификаторах приёмов.
+		const codeRows =
+			dayAppointmentIds.length > 0
+				? await db
+						.select({ appointmentId: appointmentActionCodes.appointmentId, usedAt: appointmentActionCodes.usedAt })
+						.from(appointmentActionCodes)
+						.where(
+							and(
+								eq(appointmentActionCodes.organizationId, context.organizationId),
+								inArray(appointmentActionCodes.appointmentId, dayAppointmentIds)
+							)
+						)
+				: [];
 		const clickedAtByAppointment = new Map<string, Date>();
 		for (const row of codeRows) {
 			if (!row.usedAt) continue;
