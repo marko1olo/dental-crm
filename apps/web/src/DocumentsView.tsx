@@ -4,6 +4,8 @@ import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { appendChipToText } from "./components/documents/documentChipText";
+import { PaidContractRequiredFieldsPanel } from "./components/documents/PaidContractRequiredFieldsPanel";
+import { paidContractRequiredFieldsReview } from "./components/documents/paidContractRequiredFields";
 import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
 import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
 import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
@@ -49,6 +51,14 @@ const EXTRACT_DIAGNOSIS_CHIPS = ["Кариес", "Пульпит", "Период
 const EXTRACT_TREATMENT_CHIPS = ["Препарирование", "Пломбирование", "Экстирпация пульпы", "Удаление зуба", "Профессиональная гигиена", "Консультация"];
 const EXTRACT_REC_CHIPS = ["Осмотр через 6 месяцев", "Рентген-контроль", "Санация полости рта", "Консультация ортопеда", "Прием НПВС при болях"];
 const REFUND_REASON_CHIPS = ["Ошибка при оплате", "Отказ от продолжения лечения", "Оплата авансом", "Медицинские противопоказания"];
+/*
+  Подпись блока с полями договора. Одна на две разметки: рамка «чего не хватает»
+  отправляет человека именно в этот блок, поэтому название не должно расходиться.
+  Раньше блок назывался «Ручная корректировка полей» — слово «корректировка»
+  обещает необязательную доводку, а внутри лежат восемнадцать полей, без которых
+  договор не создаётся.
+*/
+const PAID_CONTRACT_FIELDS_BLOCK_TITLE = "Обязательные поля договора";
 
 function humanizeDocumentAuditText(value: string): string {
   return value
@@ -892,6 +902,44 @@ export function DocumentsView(props: DocumentsViewProps) {
   const documentIssueMissingGuidanceId = "document-issue-missing-guidance";
   const documentVoidMissingGuidanceId = "document-void-missing-guidance";
   const selectedDocumentNeedsPayload = structuredPayloadDocumentKinds.has(selectedDocumentKind);
+  /*
+    Чего не хватает договору платных услуг. Считается здесь один раз, потому что
+    нужно в двух местах разметки: в рамке со всем перечнем и в счётчике у подписи
+    блока полей. Для остальных видов документов не считается вовсе.
+
+    Подстановки повторяют запасы из useAppLogic (paidContractCustomerFullNameValue
+    и соседние): пустое поле заказчика закрывается пациентом приёма, пустой состав
+    услуг — планом лечения, пустой врач — врачом приёма. Без этого перечень просил
+    бы вписать то, что программа подставит сама.
+  */
+  const paidContractRequired =
+    selectedDocumentKind === "paid_medical_services_contract"
+      ? paidContractRequiredFieldsReview({
+          contractNumber: paidContractNumber,
+          serviceStart: paidContractServiceStart,
+          serviceEnd: paidContractServiceEnd,
+          customerFullName: paidContractCustomerFullName,
+          patientFullName: documentPatient?.fullName ?? "",
+          careReason: paidContractCareReason,
+          visitComplaint: dashboard?.activeVisit?.complaint ?? "",
+          serviceScope: paidContractServiceScope,
+          visitTreatmentPlan: dashboard?.activeVisit?.treatmentPlan ?? "",
+          visitDoctorSummary: dashboard?.activeVisit?.doctorSummary ?? "",
+          totalRub: paidContractTotalRubValue(),
+          paymentTerms: paidContractPaymentTerms,
+          priceChangeRules: paidContractPriceChangeRules,
+          freeCareNotice: paidContractFreeCareNotice,
+          recommendationWarning: paidContractRecommendationWarning,
+          refundTerms: paidContractRefundTerms,
+          warrantyTerms: paidContractWarrantyTerms,
+          doctorFullName: paidContractDoctorFullName,
+          activeDoctorFullName: activeDoctor?.fullName ?? "",
+          clinicInfoConfirmed: paidContractClinicInfoConfirmed,
+          serviceListConfirmed: paidContractServiceListConfirmed,
+          paidBasisConfirmed: paidContractPaidBasisConfirmed,
+          writtenChangesConfirmed: paidContractWrittenChangesConfirmed,
+        })
+      : null;
   function releaseSourceRequestOptionLabel(document: MedicalCopyRequestSourceDocument): string {
     const request = document.chainSummary?.medicalRecordCopyRequest;
     const requestedDocuments = (request?.requestedDocumentTypes ?? [])
@@ -1107,8 +1155,24 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Договор платных медицинских услуг</h3>
                     <p>Фиксация номера, сроков, состава услуг, стоимости, порядка оплаты и обязательных уведомлений пациента до лечения.</p>
                   </div>
+                  {paidContractRequired ? (
+                    <PaidContractRequiredFieldsPanel
+                      review={paidContractRequired}
+                      fieldsBlockTitle={PAID_CONTRACT_FIELDS_BLOCK_TITLE}
+                    />
+                  ) : null}
   <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>
+      {/*
+        В подписи стоит счётчик нехваток: сам блок свёрнут, и без счётчика
+        человек не понимал, что разворачивать его обязательно.
+      */}
+      ✏️ {PAID_CONTRACT_FIELDS_BLOCK_TITLE}
+      {paidContractRequired?.missing.length
+        ? ` — не хватает ${paidContractRequired.missing.length}`
+        : " — всё заполнено"}
+      {" (развернуть)"}
+    </summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
