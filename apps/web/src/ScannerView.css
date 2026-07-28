@@ -91,6 +91,94 @@
 	margin: 0;
 }
 
+/*
+ * ПОЛЯ «АВТОКЛАВ» И «РЕЗУЛЬТАТ» БЫЛИ БЕЗ ОФОРМЛЕНИЯ ВООБЩЕ.
+ *
+ * Разметка ссылалась на .scanner-select-group и .scanner-select, а в этом файле
+ * таких правил не было ни одного: два системных элемента управления стояли в
+ * потоке рядом со крупным полем штрих-кода. Заодно у полей не было подписей —
+ * различить «Автоклав» и «Результат» можно было только по содержимому списка.
+ *
+ * Правила ниже написаны на теми же токенами, что и остальной файл, и на реальном
+ * механизме тем проекта — [data-theme], а не prefers-color-scheme. Существующие
+ * блоки выше используют prefers-color-scheme, из-за чего их тёмные варианты не
+ * срабатывают при переключении темы в приложении: это отдельный долг, записанный
+ * в отчёте, а не то, что стоит менять вслепую без снимка экрана.
+ */
+.scanner-select-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	width: 100%;
+	max-width: 400px;
+}
+
+.scanner-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1 1 10rem;
+	min-width: 0;
+}
+
+.scanner-field-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--slate-600);
+}
+[data-theme="dark"] .scanner-field-label,
+[data-theme="night"] .scanner-field-label {
+	color: var(--slate-400);
+}
+
+.scanner-select {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 12px 14px;
+	font-size: 1rem;
+	font-family: inherit;
+	border-radius: 12px;
+	border: 2px solid var(--slate-300);
+	background: var(--slate-50);
+	color: var(--slate-900);
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+.scanner-select:focus {
+	outline: none;
+	border-color: var(--brand-500);
+	box-shadow: 0 0 0 4px var(--brand-100);
+}
+[data-theme="dark"] .scanner-select,
+[data-theme="night"] .scanner-select {
+	background: var(--paper);
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.scanner-load-error {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	border-radius: 12px;
+	border: 1px solid var(--rust);
+	background: var(--rust-soft);
+	color: var(--rust);
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
+.scanner-load-error p {
+	margin: 0;
+	flex: 1 1 14rem;
+	min-width: 0;
+}
+
+.scanner-cell-right {
+	text-align: right;
+}
+
 .scanner-input {
 	padding: 16px 24px;
 	font-size: 1.25rem;
@@ -301,6 +389,12 @@
 	}
 	.scanner-title {
 		font-size: 1.4rem;
+	}
+	.scanner-select-group {
+		max-width: none;
+	}
+	.scanner-cell-right {
+		text-align: left;
 	}
 	.scanner-grid-header {
 		display: none; /* Hide tabular header on mobile */

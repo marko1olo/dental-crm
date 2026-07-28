@@ -15,18 +15,41 @@ import {
   Megaphone,
   MessageSquare,
   Mic,
+  Package,
+  PackageSearch,
   Plus,
   ReceiptText,
+  ScanLine,
   Stethoscope,
   TrendingUp,
+  UserPlus,
   Users,
   Lock,
   ChevronsLeft} from "lucide-react";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { type ClinicMode, hasCapability, resolveClinicMode, visibleStaffRoles } from "./lib/clinicCapabilities";
 import { useThemeStore, type ThemeMode } from "./store/themeStore";
 
 
-export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
+/*
+ * РЕЕСТР РАЗДЕЛОВ — ЕДИНСТВЕННЫЙ СПИСОК, ДЕЛАЮЩИЙ РАЗДЕЛ ДОСТИЖИМЫМ.
+ *
+ * Раздела нет, пока его нет здесь: AppHelpers.viewFromHash() сверяет первый
+ * сегмент хеша именно с этим массивом и на незнакомом значении молча откатывает
+ * на «Смену».
+ *
+ * Отсюда следует обратное правило, и оно стоило трёх готовых разделов. Склад
+ * (1487 строк), журнал стерилизации и воронка обращений были дописаны целиком,
+ * вместе с рабочими маршрутами сервера, — но в реестре их не было, в цепочке
+ * отрисовки App.tsx тоже. Единственным файлом, который их упоминал, был
+ * AppRouter.tsx, помеченный в собственной шапке как мёртвый и не импортированный
+ * никем; он удалён. Открыть эти разделы не мог никто: ни по меню, ни по адресу.
+ *
+ * Связка «реестр → ветка в App.tsx → workspacePreload.ts» закрыта тестом
+ * tests/panelsAreMounted.test.ts: запись здесь без ветки отрисовки валит сборку.
+ */
+export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "inventory", "scanner", "leads", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
 
 export const viewLabels: Record<AppView, string> = {
@@ -39,6 +62,9 @@ export const viewLabels: Record<AppView, string> = {
   finance: "Оплаты",
   analytics: "Аналитика",
   communications: "Связь",
+  inventory: "Склад",
+  scanner: "Стерилизация",
+  leads: "Обращения",
   settings: "Настройки",
   marketing: "Маркетинг/SEO"
 };
@@ -53,6 +79,9 @@ export const viewHints: Record<AppView, string> = {
   finance: "оплаты и долги",
   analytics: "отчеты и воронки",
   communications: "сообщения и задачи",
+  inventory: "материалы, остатки и сроки",
+  scanner: "лотки и журнал автоклава",
+  leads: "звонки и заявки до записи",
   settings: "клиника, импорт и доступы",
   marketing: "продвижение и отзывы"
 };
@@ -80,6 +109,9 @@ export const sidebarIcons: Record<AppView, LucideIcon> = {
   finance: CreditCard,
   analytics: BarChart3,
   communications: MessageSquare,
+  inventory: Package,
+  scanner: ScanLine,
+  leads: UserPlus,
   settings: Database,
   marketing: Megaphone
 };
@@ -100,6 +132,9 @@ export const actionIcons: Record<AppView, LucideIcon> = {
   finance: ReceiptText,
   analytics: TrendingUp,
   communications: MessageSquare,
+  inventory: PackageSearch,
+  scanner: ScanLine,
+  leads: UserPlus,
   settings: Database,
   marketing: Megaphone
 };
@@ -114,23 +149,74 @@ export function ActionIcon({ section }: { section: AppView }) {
   return <Glyph aria-hidden="true" />;
 }
 
+/**
+ * ПРАВО ОТКРЫТЬ раздел. Именно это, а не видимость в меню: результат работает
+ * охранником маршрута в useAppLogic (`if (!allowedViews.includes(currentView))`
+ * — принудительный возврат на «Смену»). Поэтому режим клиники здесь сознательно
+ * НЕ участвует: спрятать раздел в меню и запретить его открыть — разные вещи, а
+ * запрет означал бы, что раздела больше нет.
+ */
 export function getFilteredAppViews(role: StaffRole): AppView[] {
+  /*
+   * Кому какие из трёх новых разделов открыты — по тому, кто этим занят в
+   * кабинете, а не «всем на всякий случай»:
+   *   склад — врач видит остаток и срок годности материала, которым лечит;
+   *     ассистент ведёт приход и списание; администратор закупает;
+   *   стерилизация — лотки готовит ассистент, он же ведёт журнал автоклава;
+   *     врач связывает лоток с приёмом, поэтому раздел открыт и ему;
+   *   обращения — звонки и заявки до записи ведёт администратор и управляющий.
+   * Это не только меню: список работает охранником маршрута (см. шапку), и
+   * забытый здесь раздел выбросит открывшего его на «Смену».
+   */
   if (role === "doctor") {
-    return ["shift", "schedule", "patients", "imaging", "visit", "documents", "analytics", "communications"];
+    return ["shift", "schedule", "patients", "imaging", "visit", "documents", "analytics", "communications", "inventory", "scanner"];
   }
   if (role === "assistant") {
-    return ["shift", "schedule", "patients", "imaging", "documents", "communications"];
+    return ["shift", "schedule", "patients", "imaging", "documents", "communications", "inventory", "scanner"];
   }
   if (role === "administrator") {
-    return ["schedule", "patients", "documents", "finance", "analytics", "communications", "settings"];
+    return ["schedule", "patients", "documents", "finance", "analytics", "communications", "inventory", "leads", "settings"];
   }
   if (role === "manager") {
-    return ["schedule", "patients", "finance", "analytics", "communications", "settings"];
+    return ["schedule", "patients", "finance", "analytics", "communications", "leads", "settings"];
   }
   if (role === "owner") {
     return Array.from(appViews);
   }
   return Array.from(appViews);
+}
+
+/**
+ * ЧТО ПОКАЗАТЬ В МЕНЮ. Право роли, пересечённое с тем, что осмысленно при этом
+ * размере клиники.
+ *
+ * Отдельный врач получал ту же рельсу из одиннадцати разделов, что и сеть
+ * филиалов: режим клиники до этой правки не влиял на меню вообще — оно
+ * фильтровалось только по роли. «Маркетинг/SEO» отсюда уходит по той же причине,
+ * по которой у отдельного врача уже скрыты рассылки по базе: продвижением
+ * занимается тот, у кого есть кому его поручить.
+ *
+ * Разделы лечения не трогаются: снимки, приём, документы, оплаты нужны врачу
+ * ровно так же, как клинике. Прячется организационная обвязка, не клиника.
+ *
+ * Раздел остаётся доступным по адресу (#marketing) и возвращается в меню при
+ * смене режима в настройках: это скрытие, а не удаление.
+ */
+export function getVisibleRailViews(role: StaffRole, mode: ClinicMode | null): AppView[] {
+  const allowedByRole = getFilteredAppViews(role);
+  if (hasCapability(mode, "marketingSection")) return allowedByRole;
+  /*
+   * «Обращения» уходят вместе с «Маркетингом» и по той же причине: воронка
+   * заявок до записи — это работа привлечения. У отдельного врача обращение
+   * приходит звонком и в ту же минуту становится записью; наполнять канбан из
+   * пяти столбцов ему нечем, а пустая доска на рельсе — это лишний раздел.
+   *
+   * Своей возможности воронка намеренно не получает: правило то же самое, а два
+   * имени для одного правила разъезжаются при первой же правке одного из них.
+   * Раздел остаётся достижимым по адресу #leads и возвращается в меню при смене
+   * режима в настройках — это скрытие, а не удаление.
+   */
+  return allowedByRole.filter((view) => view !== "marketing" && view !== "leads");
 }
 
 export function WorkspaceSidebar({
@@ -146,7 +232,15 @@ export function WorkspaceSidebar({
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) {
-  const allowedViews = getFilteredAppViews(role);
+  /*
+   * Режим читается из того же ответа сервера, по которому решают рассылки
+   * (CommunicationsView) и отчёты руководителю (ManagerReportsPanel), — второго
+   * источника правды не заводим. Вне провайдера контекст возвращает пустой
+   * объект, режим оказывается null, и меню показывается целиком: пока режим не
+   * известен, отнимать разделы нельзя.
+   */
+  const clinicMode = resolveClinicMode(useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode);
+  const allowedViews = getVisibleRailViews(role, clinicMode);
 
   /*
    * Широкую подпись .nav-copy таблица стилей прячет в двух случаях:
@@ -305,6 +399,15 @@ export function WorkspaceTopbar({
     weekday: "long"
   }).format(new Date(`${todayIso}T12:00:00`));
 
+  /*
+   * Порядок ролей приходит из AppHelpers (roleFocusOrder) и содержит все пять.
+   * У отдельного врача ассистента, администратора и управляющего нет: три из
+   * пяти кнопок предлагали переключиться на сотрудника, которого не существует.
+   * Какие роли при режиме есть — решает таблица в lib/clinicCapabilities.ts.
+   */
+  const clinicMode = resolveClinicMode(useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode);
+  const availableRoles = visibleStaffRoles(roleFocusOrder, clinicMode);
+
   return (
     <header className="topbar">
       <div className="topbar-context">
@@ -318,7 +421,7 @@ export function WorkspaceTopbar({
             <strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
           </summary>
           <div className="role-switcher-options">
-            {roleFocusOrder.map((role) => (
+            {availableRoles.map((role) => (
               <button
                 className={selectedWorkspaceRole === role ? "active" : ""}
                 key={role}

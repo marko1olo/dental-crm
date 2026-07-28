@@ -395,9 +395,22 @@ const PatientCockpit = lazy(() => import("./ShiftView").then((module) => ({ defa
 const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
 const AnalyticsDashboardView = lazy(() => import("./pages/AnalyticsDashboardView").then((module) => ({ default: module.AnalyticsDashboardView })));
 /*
- * Панели вставлены сюда, а не в AppRouter.tsx: тот файл никто не импортирует —
- * это мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
- * Выяснилось только на снимке живого экрана.
+ * Склад, журнал стерилизации и воронка обращений: три готовых раздела, которые до
+ * этой правки нельзя было открыть ничем. Они были подключены только в
+ * AppRouter.tsx — мёртвом файле, который не импортировал никто, — а в реестре
+ * workspaceShell.appViews их не было, поэтому и адрес #inventory откатывался на
+ * «Смену». Маршруты сервера при этом живые: routes/inventory.ts,
+ * routes/sterilization.ts и routes/leads.ts зарегистрированы в server.ts.
+ * AppRouter.tsx удалён вместе с двумя лежавшими в нём пустышками (зарплаты и
+ * омниканальный инбокс — их адреса на сервере отвечают 404).
+ */
+const InventoryView = lazy(() => import("./components/InventoryView").then((module) => ({ default: module.InventoryView })));
+const ScannerView = lazy(() => import("./ScannerView").then((module) => ({ default: module.ScannerView })));
+const LeadsKanbanView = lazy(() => import("./components/leads/LeadsKanbanView").then((module) => ({ default: module.LeadsKanbanView })));
+/*
+ * Панели вставлены сюда, а не в AppRouter.tsx: тот файл никто не импортировал —
+ * это был мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
+ * Выяснилось только на снимке живого экрана. Файл удалён.
  */
 const DayConfirmationsPanel = lazy(() =>
   import("./components/schedule/DayConfirmationsPanel").then((module) => ({ default: module.DayConfirmationsPanel })),
@@ -4743,6 +4756,47 @@ export function App() {
                 clinicName={dashboard.clinicName}
                 clinicPhone={clinicProfileDraft?.phone ?? ""}
               />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
+        ) : null}
+
+        {/*
+          ТРИ РАЗДЕЛА, КОТОРЫЕ БЫЛО НЕЧЕМ ОТКРЫТЬ.
+
+          Склад, журнал стерилизации и воронка обращений отрисовывались только из
+          AppRouter.tsx — файла, помеченного в собственной шапке как мёртвый и не
+          импортированного ни одним модулем. Экраны проходили сборку и типы,
+          сервер отвечал по их адресам, но на экран они не попадали никогда.
+          Ветки перенесены сюда, в ту же цепочку по currentView, что и остальные
+          разделы, и под ту же границу ошибок: поломка внутри раздела не должна
+          уносить рабочее место.
+        */}
+        {currentView === "inventory" ? (
+          <WorkspaceRouteErrorBoundary view="inventory" label={viewLabels.inventory} panelClassName="panel inventory-panel" panelId="inventory">
+            <Suspense fallback={<AppLoadingState message="Загрузка склада" />}>
+              {/*
+                Организация берется из профиля клиники — того же поля, по которому
+                работают остальные разделы. Выдуманный UUID здесь не подставляется:
+                пока профиль не пришел, экран склада показывает свое пустое
+                состояние с объяснением, а не чужие остатки.
+              */}
+              <InventoryView organizationId={dashboard.clinicSettings?.profile?.organizationId ?? ""} />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
+        ) : null}
+
+        {currentView === "scanner" ? (
+          <WorkspaceRouteErrorBoundary view="scanner" label={viewLabels.scanner} panelClassName="panel scanner-panel" panelId="scanner">
+            <Suspense fallback={<AppLoadingState message="Загрузка журнала стерилизации" />}>
+              <ScannerView />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
+        ) : null}
+
+        {currentView === "leads" ? (
+          <WorkspaceRouteErrorBoundary view="leads" label={viewLabels.leads} panelClassName="panel leads-panel" panelId="leads">
+            <Suspense fallback={<AppLoadingState message="Загрузка обращений" />}>
+              <LeadsKanbanView />
             </Suspense>
           </WorkspaceRouteErrorBoundary>
         ) : null}

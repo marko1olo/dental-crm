@@ -13,6 +13,16 @@ const workspaceViewPreloaders: Partial<
 	shift: () => import("./ShiftView"),
 	imaging: () => import("./ImagingView"),
 	visit: () => import("./VisitView"),
+	inventory: () => import("./components/InventoryView"),
+	scanner: () => import("./ScannerView"),
+	leads: () => import("./components/leads/LeadsKanbanView"),
+	/*
+	 * «Аналитика» была единственным из одиннадцати старых разделов без строки
+	 * здесь: раздел объявлен в реестре и отрисован в App.tsx, но его модуль не
+	 * предзагружался никогда — и это самый тяжёлый экран приложения (recharts).
+	 * Нашлось новым стражем в tests/panelsAreMounted.test.ts, а не глазами.
+	 */
+	analytics: () => import("./pages/AnalyticsDashboardView"),
 };
 
 const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
@@ -26,6 +36,15 @@ const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
 	communications: ["patients"],
 	settings: ["schedule", "marketing"],
 	marketing: ["settings", "schedule"],
+	/*
+	 * Соседи по рабочему сценарию, а не по алфавиту: со склада идут за правилами
+	 * списания в приём, из журнала стерилизации — к остаткам лотков на складе,
+	 * из воронки обращений — сразу записывать пациента.
+	 */
+	inventory: ["scanner", "visit"],
+	scanner: ["inventory"],
+	leads: ["schedule", "patients"],
+	analytics: ["finance"],
 };
 
 type IdlePreloadWindow = Window &

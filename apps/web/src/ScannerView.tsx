@@ -2,49 +2,139 @@ import { motion } from "framer-motion";
 import {
 	Activity,
 	Box,
-	Calendar,
 	CheckCircle2,
 	ScanLine,
 	XCircle,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import "./ScannerView.css";
 
+/**
+ * Запись журнала стерилизации в том виде, в каком её отдаёт сервер.
+ *
+ * Раньше журнал лежал в `any[]`, и разметка читала `log.autoclaveId || "ОСНОВНОЙ"`:
+ * лоток, обработанный в резервном автоклаве, в журнале выглядел бы как основной,
+ * если бы поле не пришло. В журнале стерилизации это не косметика — по нему
+ * отвечают на вопрос, каким аппаратом обработан инструмент.
+ *
+ * Поля повторяют колонки sterilization_logs (apps/api/src/db/schema.ts:1704) и
+ * ответ GET /api/sterilization/logs, который возвращает строки таблицы целиком.
+ */
+type SterilizationLog = {
+	id: string;
+	barcode: string;
+	autoclaveId: string | null;
+	status: "passed" | "failed";
+	timestamp: string;
+};
+
+function isSterilizationLog(value: unknown): value is SterilizationLog {
+	if (!value || typeof value !== "object") return false;
+	const row = value as Record<string, unknown>;
+	return typeof row.id === "string" && typeof row.barcode === "string";
+}
+
+function formatLogTime(value: string): string {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return "время не указано";
+	return parsed.toLocaleString("ru-RU");
+}
+
 export function ScannerView() {
 	const { auth } = useAppLogicContext();
 	const [barcode, setBarcode] = useState("");
-	const [autoclaveId, setAutoclaveId] = useState("ОСНОВНОЙ");
+	const [autoclaveId, setAutoclaveId] = useState("");
 	const [status, setStatus] = useState<"passed" | "failed">("passed");
 	const [isScanning, setIsScanning] = useState(false);
-	const [logs, setLogs] = useState<any[]>([]);
+	const [logs, setLogs] = useState<SterilizationLog[]>([]);
+	const [isLoadingLogs, setIsLoadingLogs] = useState(true);
+	/*
+	 * Текст ошибки загрузки журнала. Без него единственной реакцией на недоступный
+	 * сервер был console.error, а на экране оставалось «Журнал пуст. Начните
+	 * сканирование» — то же самое, что видит клиника в свой первый день. Пустой
+	 * журнал стерилизации и незагруженный журнал стерилизации — разные вещи: по
+	 * первому отвечают проверяющему, по второму зовут админа.
+	 */
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	useEffect(() => {
-		// Auto-focus input for physical barcode scanners
-		if (inputRef.current) inputRef.current.focus();
-		loadLogs();
-	}, []);
-
 	const loadLogs = async () => {
+		setIsLoadingLogs(true);
 		try {
 			const res = await fetch("/api/sterilization/logs", {
 				headers: auth.denteClinicalReadHeaders(),
 			});
-			if (res.ok) {
-				const data = await res.json();
-				setLogs(Array.isArray(data) ? data : []);
+			if (!res.ok) {
+				setLoadError(
+					res.status === 401 || res.status === 403
+						? "Журнал стерилизации не показан: нет доступа. Войдите в кабинет клиники заново."
+						: `Журнал стерилизации не загружен, сервер ответил кодом ${res.status}. Список ниже неполный.`,
+				);
+				return;
 			}
-		} catch (e) {
-			console.error(e);
+			const data: unknown = await res.json();
+			setLogs(Array.isArray(data) ? data.filter(isSterilizationLog) : []);
+			setLoadError(null);
+		} catch (error) {
+			console.error(error);
+			setLoadError(
+				"Журнал стерилизации не загружен: нет связи с сервером. Список ниже неполный.",
+			);
+		} finally {
+			setIsLoadingLogs(false);
 		}
 	};
 
+	useEffect(() => {
+		// Поле под фокусом сразу: физический сканер печатает штрих-код как клавиатура.
+		inputRef.current?.focus();
+		void loadLogs();
+	}, []);
+
+	/*
+	 * СПИСОК АВТОКЛАВОВ БЕРЁТСЯ ИЗ ЖУРНАЛА, А НЕ ИЗ ЗАШИТЫХ ТРЁХ НАЗВАНИЙ.
+	 *
+	 * Здесь стоял <select> с «ОСНОВНОЙ», «РЕЗЕРВНЫЙ» и «MELAtronic 23». Ни одна
+	 * клиника не обязана иметь именно такой парк: у кого-то один автоклав с другим
+	 * именем, у кого-то четыре. Справочника автоклавов в базе нет — колонка
+	 * autoclave_id это свободный текст, поэтому единственный честный источник
+	 * подсказок это те аппараты, которые в журнале уже встречались. Название
+	 * вводится текстом, встречавшиеся подставляются из datalist, а последний
+	 * использованный подставляется в поле сам: подряд обрабатывают в одном аппарате.
+	 */
+	const knownAutoclaves = useMemo(() => {
+		const seen: string[] = [];
+		for (const log of logs) {
+			const name = log.autoclaveId?.trim();
+			if (name && !seen.includes(name)) seen.push(name);
+		}
+		return seen;
+	}, [logs]);
+
+	useEffect(() => {
+		if (autoclaveId.trim()) return;
+		const lastUsed = knownAutoclaves[0];
+		if (lastUsed) setAutoclaveId(lastUsed);
+	}, [knownAutoclaves, autoclaveId]);
+
 	const handleScan = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isScanning) return;
 		if (!barcode.trim()) return;
+		/*
+		 * Сервер требует непустой autoclaveId (zod min(1)) и на пустом отвечает 400
+		 * с разбором схемы. Проверяем здесь, чтобы сказать это словами, а не кодом.
+		 */
+		if (!autoclaveId.trim()) {
+			showToast(
+				"Укажите автоклав: без названия аппарата запись в журнал не имеет смысла",
+				"error",
+			);
+			return;
+		}
 
 		setIsScanning(true);
 
@@ -56,21 +146,39 @@ export function ScannerView() {
 				}),
 				body: JSON.stringify({
 					barcode: barcode.trim(),
-					autoclaveId,
+					autoclaveId: autoclaveId.trim(),
 					status,
 				}),
 			});
 
-			if (!res.ok) throw new Error("Scan rejected");
+			if (!res.ok) {
+				/*
+				 * БЫЛО: «Ошибка валидации лотка» на любой отказ, включая отсутствие
+				 * доступа и недоступный сервер. Лоток при этом ни при чём.
+				 */
+				showToast(
+					res.status === 401 || res.status === 403
+						? "Нет прав на запись в журнал стерилизации: войдите под сотрудником клиники."
+						: `Запись в журнал не создана, сервер ответил кодом ${res.status}.`,
+					"error",
+				);
+				return;
+			}
 
-			showToast("Успешное сканирование лотка", "success");
+			showToast(
+				status === "passed"
+					? `Лоток ${barcode.trim()} записан как обработанный`
+					: `Лоток ${barcode.trim()} записан как брак — инструмент использовать нельзя`,
+				status === "passed" ? "success" : "warning",
+			);
 			setBarcode("");
-			loadLogs();
-		} catch (err) {
-			showToast("Ошибка валидации лотка", "error");
+			void loadLogs();
+		} catch (error) {
+			console.error(error);
+			showToast("Нет связи с сервером: запись в журнал не создана", "error");
 		} finally {
 			setIsScanning(false);
-			if (inputRef.current) inputRef.current.focus();
+			inputRef.current?.focus();
 		}
 	};
 
@@ -83,48 +191,49 @@ export function ScannerView() {
 		>
 			<div className="scanner-header">
 				<ScanLine size={32} color="var(--teal)" />
-				<h1
-					className="scanner-title"
-					style={{
-						fontSize: "1.75rem",
-						fontWeight: 700,
-						margin: 0,
-						color: "var(--ink)",
-					}}
-				>
-					Сканер Стерилизации
-				</h1>
+				<h1 className="scanner-title">Стерилизация инструментов</h1>
 			</div>
 
 			<div className="scanner-card">
-				{/* Animated Laser */}
+				{/* Луч сканера: анимация показывает, что запрос ушёл. */}
 				<div className={`scanner-laser ${isScanning ? "active" : ""}`} />
 
 				<form onSubmit={handleScan} className="scanner-form">
 					<p className="scanner-hint">
-						Наведите сканер на штрих-код лотка с инструментами или введите
-						вручную.
+						Наведите сканер на штрих-код лотка с инструментами или введите код
+						вручную. Запись попадёт в журнал автоклава — по нему отчитываются
+						перед проверкой.
 					</p>
 
 					<div className="scanner-select-group">
-						<select
-							value={autoclaveId}
-							onChange={(e) => setAutoclaveId(e.target.value)}
-							className="scanner-select"
-						>
-							<option value="ОСНОВНОЙ">Основной автоклав</option>
-							<option value="РЕЗЕРВНЫЙ">Резервный автоклав</option>
-							<option value="MELAtronic 23">MELAtronic 23</option>
-						</select>
+						<label className="scanner-field">
+							<span className="scanner-field-label">Автоклав</span>
+							<input
+								type="text"
+								list="scanner-known-autoclaves"
+								value={autoclaveId}
+								onChange={(e) => setAutoclaveId(e.target.value)}
+								placeholder="Название аппарата, например MELAtronic 23"
+								className="scanner-select"
+							/>
+							<datalist id="scanner-known-autoclaves">
+								{knownAutoclaves.map((name) => (
+									<option key={name} value={name} />
+								))}
+							</datalist>
+						</label>
 
-						<select
-							value={status}
-							onChange={(e) => setStatus(e.target.value as "passed" | "failed")}
-							className="scanner-select"
-						>
-							<option value="passed">Успешно</option>
-							<option value="failed">Брак</option>
-						</select>
+						<label className="scanner-field">
+							<span className="scanner-field-label">Результат</span>
+							<select
+								value={status}
+								onChange={(e) => setStatus(e.target.value as "passed" | "failed")}
+								className="scanner-select"
+							>
+								<option value="passed">Обработан</option>
+								<option value="failed">Брак</option>
+							</select>
+						</label>
 					</div>
 
 					<input
@@ -132,7 +241,8 @@ export function ScannerView() {
 						type="text"
 						value={barcode}
 						onChange={(e) => setBarcode(e.target.value)}
-						placeholder="Штрих-код (например, TRAY-1049)"
+						placeholder="Штрих-код лотка, например TRAY-1049"
+						aria-label="Штрих-код лотка"
 						className="scanner-input"
 					/>
 					<button
@@ -140,7 +250,7 @@ export function ScannerView() {
 						disabled={isScanning || !barcode.trim()}
 						className="scanner-btn"
 					>
-						{isScanning ? "Сканирование..." : "Привязать лоток"}
+						{isScanning ? "Записываем..." : "Записать лоток в журнал"}
 					</button>
 				</form>
 			</div>
@@ -150,24 +260,42 @@ export function ScannerView() {
 					<Activity size={20} color="var(--teal)" /> Журнал стерилизации
 				</h3>
 
-				{logs.length > 0 ? (
+				{loadError ? (
+					<div className="scanner-load-error" role="alert">
+						<p>{loadError}</p>
+						<button type="button" className="secondary-button" onClick={() => void loadLogs()}>
+							Повторить
+						</button>
+					</div>
+				) : null}
+
+				{isLoadingLogs && logs.length === 0 ? (
+					<div className="scanner-empty" aria-busy="true">
+						<p>Загружаем журнал...</p>
+					</div>
+				) : logs.length > 0 ? (
 					<div className="scanner-grid">
 						<div className="scanner-grid-header">
 							<div>Штрих-код</div>
 							<div>Автоклав</div>
 							<div>Статус</div>
-							<div style={{ textAlign: "right" }}>Время</div>
+							<div className="scanner-cell-right">Время</div>
 						</div>
 						{logs.map((log) => (
 							<div className="scanner-log-row" key={log.id}>
 								<div className="log-barcode">{log.barcode}</div>
 								<div className="log-autoclave">
-									<Box size={16} /> {log.autoclaveId || "ОСНОВНОЙ"}
+									<Box size={16} />{" "}
+									{/*
+										БЫЛО: `log.autoclaveId || "ОСНОВНОЙ"` — отсутствие названия
+										аппарата в журнале выдавалось за конкретный аппарат.
+									*/}
+									{log.autoclaveId?.trim() || "аппарат не указан"}
 								</div>
 								<div>
 									{log.status === "passed" ? (
 										<span className="badge-success">
-											<CheckCircle2 size={16} /> Успешно
+											<CheckCircle2 size={16} /> Обработан
 										</span>
 									) : (
 										<span className="badge-error">
@@ -175,15 +303,16 @@ export function ScannerView() {
 										</span>
 									)}
 								</div>
-								<div className="log-time">
-									{new Date(log.timestamp).toLocaleString("ru-RU")}
-								</div>
+								<div className="log-time">{formatLogTime(log.timestamp)}</div>
 							</div>
 						))}
 					</div>
-				) : (
+				) : loadError ? null : (
 					<div className="scanner-empty">
-						<p>Журнал пуст. Начните сканирование.</p>
+						<p>
+							В журнале пока нет записей. Отсканируйте первый лоток — запись
+							появится здесь и останется как подтверждение обработки.
+						</p>
 					</div>
 				)}
 			</div>

@@ -52,7 +52,19 @@ const duplicatesOf = (entries: Array<[string, unknown]>): string[] => {
 
 describe("workspace navigation rail mapping", () => {
 	it("registers at least the eleven shipped views", () => {
-		assert.equal(appViews.length, 11);
+		/*
+		 * Was assert.equal(appViews.length, 11) while the test name said "at
+		 * least". The registry then grew to fourteen: inventory, scanner and
+		 * leads were finished views no route ever reached, so routing them turned
+		 * a green test red for the one change it should have welcomed. The floor
+		 * is what this test defends; the per-view guards below make growth safe,
+		 * together with tests/panelsAreMounted.test.ts, which fails when a
+		 * registered view has no branch in App.tsx.
+		 */
+		assert.ok(
+			appViews.length >= 11,
+			`the rail lost a shipped view: ${appViews.length} registered`,
+		);
 		assert.equal(new Set(appViews).size, appViews.length);
 	});
 

@@ -19,8 +19,50 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
-import { useThemeStore } from "../../store/themeStore";
 import { showToast } from "../GlobalToast";
+
+/*
+ * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
+ * запись из воронки идёт тем же путём, что запись из расписания, и сервер
+ * проверяет и врача, и кресло по своей организации (routes/leads.ts, ветка
+ * convert). Поля объявлены ровно те, что читает разметка.
+ */
+type BookableDoctor = { id: string; fullName?: string; name?: string; role?: string; active?: boolean };
+type BookableChair = { id: string; name: string };
+
+/**
+ * Причина отказа сервера человеческими словами.
+ *
+ * Сервер уже отвечает по-русски там, где проверяет расписание («Кресло уже занято
+ * другой записью в это время»), — эту строку и показываем. Остальные ответы это
+ * короткие коды, у них перевод здесь. Общего «Ошибка записи» не остаётся ни в
+ * одной ветке: администратор должен понять, что именно исправить.
+ */
+async function bookingFailureMessage(response: Response): Promise<string> {
+	let payload: { error?: unknown; message?: unknown } = {};
+	try {
+		payload = (await response.json()) as typeof payload;
+	} catch {
+		// Тело не разобралось — остаётся код ответа, он и уйдёт в текст ниже.
+	}
+	if (typeof payload.message === "string" && payload.message.trim() && payload.message !== "Internal Server Error") {
+		return payload.message;
+	}
+	const code = typeof payload.error === "string" ? payload.error : "";
+	if (code === "DoctorNotFound") {
+		return "Выбранный врач больше не работает в клинике: выберите другого в списке.";
+	}
+	if (code === "ChairNotFound") {
+		return "Выбранное кресло удалено из настроек клиники: выберите другое.";
+	}
+	if (code === "Lead not found" || response.status === 404) {
+		return "Обращение уже удалено или записано кем-то другим: обновите доску.";
+	}
+	if (response.status === 401 || response.status === 403) {
+		return "Нет прав на запись пациентов: войдите под сотрудником с доступом к расписанию.";
+	}
+	return `Запись не создана, сервер ответил кодом ${response.status}. Обращение осталось в прежнем столбце.`;
+}
 
 const COLUMNS: {
 	id: Lead["status"];
@@ -68,8 +110,9 @@ export function LeadsKanbanView() {
 		updateLeadDetails,
 		addLead,
 		isLoading,
+		error: loadError,
 	} = useLeadsStore();
-	const { auth } = useAppLogicContext();
+	const { auth, dashboard } = useAppLogicContext();
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
 	// Filters
@@ -79,9 +122,9 @@ export function LeadsKanbanView() {
 	// Convert Modal State
 	const [isConvertOpen, setIsConvertOpen] = useState(false);
 	const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
-	const [staff, setStaff] = useState<any[]>([]);
-	const [chairs, setChairs] = useState<any[]>([]);
-	const [organizationId, setOrganizationId] = useState("");
+	const [staff, setStaff] = useState<BookableDoctor[]>([]);
+	const [chairs, setChairs] = useState<BookableChair[]>([]);
+	const [isBooking, setIsBooking] = useState(false);
 	const [selectedDoctorId, setSelectedDoctorId] = useState("");
 	const [selectedChairId, setSelectedChairId] = useState("");
 	const [appointmentDate, setAppointmentDate] = useState("");
@@ -96,6 +139,18 @@ export function LeadsKanbanView() {
 		source: "",
 		expectedRevenue: "",
 	});
+
+	/*
+	 * Длительность приёма берётся из настроек клиники, а не из зашитого часа:
+	 * defaultVisitMinutes — обязательное поле профиля (clinicProfileSchema), по
+	 * нему же считает длительность форма записи. Запись из воронки не должна
+	 * назначать час там, где клиника работает по тридцать минут.
+	 *
+	 * Пока настройки не пришли, значение неизвестно — и подставлять вместо него
+	 * шестьдесят нельзя: это выдуманное число попало бы в реальную запись
+	 * расписания. Запись в таком состоянии не отправляется, причина сказана.
+	 */
+	const visitMinutes = dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
 
 	const { lastMessage } = useWebsocket(
 		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
@@ -114,45 +169,46 @@ export function LeadsKanbanView() {
 	useEffect(() => {
 		fetchLeads();
 
-		async function loadMeta() {
-			try {
-				const userRes = await fetch("/api/auth/user/me", {
-					headers: auth.denteClinicalReadHeaders(),
-				});
-				if (userRes.ok) {
-					const userData = await userRes.json();
-					setOrganizationId(
-						userData.organizationId || "00000000-0000-0000-0000-000000000000",
-					);
-				}
-				const dbRes = await fetch("/api/dashboard", {
-					headers: auth.denteClinicalReadHeaders(),
-				});
-				if (dbRes.ok) {
-					const dashboard = await dbRes.json();
-					if (dashboard.clinicSettings) {
-						const doctors = (dashboard.clinicSettings.staff || []).filter(
-							(s: any) =>
-								s.role === "doctor" || s.role === "Врач" || s.role === "admin",
-						);
-						setStaff(doctors);
-						setChairs(dashboard.clinicSettings.chairs || []);
-
-						if (doctors.length > 0) setSelectedDoctorId(doctors[0].id);
-						if (dashboard.clinicSettings.chairs?.length > 0)
-							setSelectedChairId(dashboard.clinicSettings.chairs[0].id);
-					}
-				}
-			} catch (e) {
-				console.error("Failed to load metadata", e);
-			}
-		}
-		loadMeta();
-
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
 		setAppointmentDate(tomorrow.toISOString().split("T")[0] ?? "");
 	}, []);
+
+	/*
+	 * ВРАЧИ И КРЕСЛА БЕРУТСЯ ИЗ УЖЕ ЗАГРУЖЕННЫХ НАСТРОЕК, А НЕ ДВУМЯ СВОИМИ
+	 * ЗАПРОСАМИ.
+	 *
+	 * Здесь стоял отдельный вызов /api/dashboard — второй полный ответ дашборда
+	 * ради двух списков, которые лежат в общем контексте с момента входа, — и
+	 * вызов /api/auth/user/me, из которого брался organizationId только для того,
+	 * чтобы положить его в тело запроса записи. Сервер это поле игнорирует: он
+	 * определяет организацию по токену (routes/leads.ts, requireResolved…), а при
+	 * неудаче обоих запросов в тело уходил выдуманный
+	 * "00000000-0000-0000-0000-000000000000". Подставленный нулевой UUID — это
+	 * ровно тот случай, когда неизвестное значение выдаётся за известное.
+	 *
+	 * Отбор врачей — тот же, что в расписании и в форме записи (8 мест в проекте):
+	 * активный сотрудник с ролью «врач» или «владелец». Прежний фильтр сравнивал
+	 * роль со строками "Врач" и "admin", которых в перечислении ролей нет вообще
+	 * (owner | doctor | administrator | assistant | manager), и не смотрел на
+	 * признак активности: уволенный врач оставался в списке, а сервер отвечал на
+	 * него DoctorNotFound — «Ошибка записи лида» без объяснения.
+	 */
+	useEffect(() => {
+		const clinicStaff = (dashboard?.clinicSettings?.staff ?? []) as BookableDoctor[];
+		const clinicChairs = (dashboard?.clinicSettings?.chairs ?? []) as BookableChair[];
+		const doctors = clinicStaff.filter(
+			(member) => member.active !== false && (member.role === "doctor" || member.role === "owner"),
+		);
+		setStaff(doctors);
+		setChairs(clinicChairs);
+		setSelectedDoctorId((current) =>
+			current && doctors.some((doctor) => doctor.id === current) ? current : (doctors[0]?.id ?? ""),
+		);
+		setSelectedChairId((current) =>
+			current && clinicChairs.some((chair) => chair.id === current) ? current : (clinicChairs[0]?.id ?? ""),
+		);
+	}, [dashboard?.clinicSettings?.staff, dashboard?.clinicSettings?.chairs]);
 
 	const handleDragStart = (e: React.DragEvent, id: string) => {
 		e.dataTransfer.setData("leadId", id);
@@ -179,12 +235,29 @@ export function LeadsKanbanView() {
 
 	const handleConvertSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!convertingLeadId) return;
+		if (!convertingLeadId || isBooking) return;
 
+		if (!visitMinutes) {
+			showToast(
+				"Настройки клиники ещё не загружены: длительность приема неизвестна. Обновите страницу и повторите.",
+				"error",
+			);
+			return;
+		}
 		const startDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
-		const endDateTime = new Date(startDateTime.getTime() + 3600000);
+		if (Number.isNaN(startDateTime.getTime())) {
+			showToast("Проверьте дату и время приема", "error");
+			return;
+		}
+		const endDateTime = new Date(startDateTime.getTime() + visitMinutes * 60000);
 
+		setIsBooking(true);
 		try {
+			/*
+			 * organizationId в теле не отправляется: сервер определяет организацию
+			 * по токену кабинета и присланное поле игнорирует. Отправлять его — значит
+			 * делать вид, что клиент решает, в какой клинике создать пациента.
+			 */
 			const res = await fetch(`/api/leads/${convertingLeadId}/convert`, {
 				method: "POST",
 				headers: auth.denteClinicalReadHeaders({
@@ -195,20 +268,29 @@ export function LeadsKanbanView() {
 					appointmentEnd: endDateTime.toISOString(),
 					chairId: selectedChairId,
 					doctorId: selectedDoctorId,
-					organizationId:
-						organizationId || "00000000-0000-0000-0000-000000000000",
 				}),
 			});
 
-			if (!res.ok) throw new Error("Failed to convert lead");
-			showToast("Лид успешно записан на прием (Создан Пациент)", "success");
+			if (!res.ok) {
+				/*
+				 * БЫЛО: любая неудача превращалась в «Ошибка записи лида». Сервер при
+				 * этом называет причину — занятое кресло, уволенный врач, чужая
+				 * организация, — и администратору нужна именно она, иначе он жмет
+				 * кнопку повторно до потери доверия к разделу.
+				 */
+				showToast(await bookingFailureMessage(res), "error");
+				return;
+			}
+			showToast("Обращение записано на прием, карточка пациента создана", "success");
 			setIsConvertOpen(false);
 			setConvertingLeadId(null);
 			updateLeadStatus(convertingLeadId, "consult_booked");
 			fetchLeads();
 		} catch (e) {
 			console.error(e);
-			showToast("Ошибка записи лида", "error");
+			showToast("Нет связи с сервером: запись не создана", "error");
+		} finally {
+			setIsBooking(false);
 		}
 	};
 
@@ -378,6 +460,32 @@ export function LeadsKanbanView() {
 					</div>
 				</div>
 			</div>
+
+			{/*
+				СБОЙ ЗАГРУЗКИ БОЛЬШЕ НЕ ВЫГЛЯДИТ КАК ПУСТАЯ ВОРОНКА.
+
+				Хранилище (store/leadsStore.ts) записывает причину в error, но доска
+				её не показывала: при недоступном сервере или истёкшем токене все пять
+				столбцов оставались пустыми с подписью «Перетащите сюда». Это читается
+				как «обращений нет» — администратор закрывает раздел и не звонит
+				никому, хотя заявки на месте.
+			*/}
+			{loadError ? (
+				<div
+					role="alert"
+					className="mb-4 rounded-xl border border-[var(--rust)] bg-[var(--rust-soft)] px-4 py-3 text-[0.8125rem] leading-relaxed text-[var(--rust)]"
+				>
+					<strong>Обращения не загружены.</strong> Показанные столбцы неполные — не
+					считайте их пустыми. Проверьте связь с сервером и нажмите «Повторить».
+					<button
+						type="button"
+						className="secondary-button ml-3 mt-2 inline-flex"
+						onClick={() => fetchLeads()}
+					>
+						Повторить
+					</button>
+				</div>
+			) : null}
 
 			{/* KANBAN BOARD */}
 			<div
@@ -717,13 +825,25 @@ export function LeadsKanbanView() {
 									}}
 									required
 								>
-									{staff.length === 0 && <option value="">Нет врачей</option>}
 									{staff.map((s) => (
 										<option key={s.id} value={s.id}>
 											{s.fullName || s.name}
 										</option>
 									))}
 								</select>
+								{/*
+									БЫЛО: пункт «Нет врачей» и включённая кнопка записи. Врача
+									выбрать нечем, отправка уходила с пустым doctorId, zod отвечал
+									400, и администратор видел «Ошибка записи лида» — про врача ни
+									слова. Теперь сказано, что делать и куда идти.
+								*/}
+								{staff.length === 0 ? (
+									<p className="m-0 text-xs leading-relaxed text-[var(--rust)]">
+										В клинике нет ни одного активного врача. Добавьте врача в
+										разделе «Настройки» → «Сотрудники», тогда обращение можно будет
+										записать на прием.
+									</p>
+								) : null}
 							</div>
 
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -742,13 +862,18 @@ export function LeadsKanbanView() {
 									}}
 									required
 								>
-									{chairs.length === 0 && <option value="">Нет кресел</option>}
 									{chairs.map((c) => (
 										<option key={c.id} value={c.id}>
 											{c.name}
 										</option>
 									))}
 								</select>
+								{chairs.length === 0 ? (
+									<p className="m-0 text-xs leading-relaxed text-[var(--rust)]">
+										В клинике не заведено ни одного кресла. Добавьте кресло в
+										разделе «Настройки» → «Кресла».
+									</p>
+								) : null}
 							</div>
 
 							<div style={{ display: "flex", gap: 12 }}>
@@ -807,13 +932,23 @@ export function LeadsKanbanView() {
 							<button
 								type="submit"
 								className="primary-button"
+								disabled={isBooking || staff.length === 0 || chairs.length === 0 || !visitMinutes}
+								title={
+									staff.length === 0
+										? "Нет активного врача — записать некому"
+										: chairs.length === 0
+											? "Нет кресла — записывать некуда"
+											: !visitMinutes
+												? "Настройки клиники ещё не загружены"
+												: "Создать пациента и запись в расписании"
+								}
 								style={{
 									marginTop: 8,
 									width: "100%",
 									justifyContent: "center",
 								}}
 							>
-								Подтвердить запись
+								{isBooking ? "Записываем..." : "Подтвердить запись"}
 							</button>
 						</form>
 					</motion.div>
