@@ -19,9 +19,7 @@ import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientCommunicationTimelineWidget } from "./PatientCommunicationTimelineWidget";
 import { PatientArchiveAndBlacklistWidget } from "./PatientArchiveAndBlacklistWidget";
-import { PatientServiceLineagesWidget } from "../crm/PatientServiceLineagesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "../crm/PatientDuplicateMergeQueuesWidget";
-import { BulkImageOperationLogsWidget } from "../crm/BulkImageOperationLogsWidget";
 
 
 
@@ -141,9 +139,6 @@ export function PatientOverviewTab() {
 						/>
 					)}
 
-					{selectedPatientId && (
-						<PatientServiceLineagesWidget patientId={selectedPatientId} />
-					)}
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && (
@@ -172,10 +167,6 @@ export function PatientOverviewTab() {
 
 					{selectedPatientId && (
 						<PatientDuplicateMergeQueuesWidget />
-					)}
-
-					{selectedPatientId && (
-						<BulkImageOperationLogsWidget />
 					)}
 				</div>
 			</div>

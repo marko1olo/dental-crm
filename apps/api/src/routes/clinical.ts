@@ -359,17 +359,13 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * было, — прямая неправда в финансовом разделе.
 	 */
 
-	// COMPETITOR FEATURE #55: пациенты::вкладка_приемы_рабочий_стол_администратора
-	app.get("/api/crm/patient-service-lineages", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { patientId } = request.query as { patientId?: string };
-		const { getPatientServiceLineagesFromDb } = await import("../db/patientServiceLineagesQuery.js");
-		return reply.status(200).send(await getPatientServiceLineagesFromDb(orgId, patientId));
-	});
+	/*
+	 * /api/crm/patient-service-lineages удалён вместе с модулем и панелью в
+	 * карточке пациента: у patient_service_lineages нет ни одного писателя,
+	 * в живой базе ноль строк. Преемственность услуг («какая услуга выросла
+	 * из какой») требует связи между позициями плана лечения, которой в модели
+	 * нет — ДОЛГ начинается с этой связи, а не с панели над пустой таблицей.
+	 */
 
 	// COMPETITOR FEATURE #54: маркетинг::маппинг_полей_лендингов_и_лид_форм
 	app.get("/api/integrations/landing-field-mappings", async (request, reply) => {

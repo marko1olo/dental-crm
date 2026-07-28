@@ -15,10 +15,8 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
-import { BulkImageOperationLogsWidget } from "./components/crm/BulkImageOperationLogsWidget";
 import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
-import { PatientServiceLineagesWidget } from "./components/crm/PatientServiceLineagesWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type PatientInsight = Dashboard["patientInsights"][number];
@@ -679,10 +677,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
               карточка показывает чужие звонки и чужие блокировки. */}
           <PatientArchiveReasonsAndBlacklistsWidget patientId={selectedPatientId} />
           <PatientCommunicationTimelinesWidget patientId={selectedPatientId} />
-          <BulkImageOperationLogsWidget />
+          {/*
+            Отсюда убраны <BulkImageOperationLogsWidget /> и
+            <PatientServiceLineagesWidget />. Журнал массовых операций со
+            снимками звал /api/crm/bulk-image-operation-logs, которого на
+            сервере вообще нет — ответ 404, а обёртка превращала его в пустой
+            список. Преемственность услуг читала patient_service_lineages: ни
+            одного писателя во всём проекте, ноль строк в живой базе. Обе
+            панели занимали место в сетке и не могли показать ничего.
+          */}
           <CustomCrmTaskTypesWidget />
           <PatientDuplicateMergeQueuesWidget />
-          <PatientServiceLineagesWidget />
         </div>
       </div>
     </div>
