@@ -18,7 +18,10 @@ import {
 import "./SettingsRulesTab.css";
 import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
+import { CLINICAL_RULES_GATE } from "./settingsModuleGate";
 /*
  * Импорта CustomCrmTaskTypesWidget здесь больше нет намеренно: панель нечем
  * заполнить. Причина подробно — в конце разметки, у места, откуда она убрана.
@@ -100,6 +103,22 @@ export function SettingsRulesTab() {
 	const typedServiceCategories = Object.keys(
 		typedServiceCategoryLabels,
 	) as ServiceCategory[];
+
+	/*
+	 * ПАНЕЛЬ СПРАШИВАЕТ ТОТ ЖЕ ПРИЗНАК, ЧТО И КНОПКА ЕЁ ВКЛАДКИ.
+	 *
+	 * Кнопку «Правила» отсеивает `if (!flags.hasClinicalRules)` в SettingsView, а
+	 * панель признака не спрашивала вовсе — и открывалась по адресу
+	 * `#settings/rules` при выключенном модуле. Владелец выключал «Клинические
+	 * правила» на вкладке «Модули», нажимал «Назад» и снова видел полностью
+	 * рабочий экран правил. Источник признака тот же (useWorkspaceProfile),
+	 * поэтому разойтись им больше негде. Проверка стоит ПОСЛЕ всех хуков: правила
+	 * хуков React не позволяют выйти раньше их вызова.
+	 */
+	const flags = useWorkspaceProfile();
+	if (!flags.hasClinicalRules) {
+		return <SettingsModuleDisabled gate={CLINICAL_RULES_GATE} />;
+	}
 
 	return (
 		<div className="rules-studio-container animate-fade-in">

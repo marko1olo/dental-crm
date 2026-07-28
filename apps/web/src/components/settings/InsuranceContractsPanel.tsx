@@ -13,7 +13,10 @@ import { Edit2, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { actionFailureToast, panelStateText } from "../../lib/panelStateText";
+import { SettingsModuleDisabled } from "./SettingsModuleDisabled";
+import { INSURANCE_CONTRACTS_GATE } from "./settingsModuleGate";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -52,6 +55,10 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const { auth } = mergedProps;
 	const {} = derivations;
+	/* Признак модуля нужен и разметке (ниже), и загрузке: при выключенном ДМС
+	   запрос за договорами уходил бы в никуда при каждом открытии адреса. */
+	const flags = useWorkspaceProfile();
+	const insuranceEnabled = flags.hasInsuranceCoPay;
 
 	const [contracts, setContracts] = useState<InsuranceContract[]>([]);
 	/*
@@ -99,8 +106,9 @@ export const InsuranceContractsPanel: React.FC = () => {
 	}, [auth]);
 
 	useEffect(() => {
-		fetchContracts();
-	}, [fetchContracts]);
+		if (!insuranceEnabled) return;
+		void fetchContracts();
+	}, [fetchContracts, insuranceEnabled]);
 
 	const openAddModal = () => {
 		setEditingContract(null);
@@ -228,6 +236,21 @@ export const InsuranceContractsPanel: React.FC = () => {
 			showToast(actionFailureToast(failedAction, null), "error");
 		}
 	};
+
+	/*
+	 * ПАНЕЛЬ СПРАШИВАЕТ ТОТ ЖЕ ПРИЗНАК, ЧТО И КНОПКА ЕЁ ВКЛАДКИ.
+	 *
+	 * Кнопку «Страховые» отсеивает `if (!flags.hasInsuranceCoPay)` в SettingsView,
+	 * а панель признака не спрашивала — и открывалась по адресу
+	 * `#settings/insurance` при выключенном ДМС. Клиника, не работающая по ДМС,
+	 * видела экран договоров, которого в её меню нет. Источник признака тот же
+	 * (useWorkspaceProfile), поэтому разойтись им больше негде. Выход стоит ПОСЛЕ
+	 * всех хуков: правила хуков React не позволяют вернуться раньше их вызова —
+	 * поэтому сам признак прочитан выше, вместе с остальными хуками.
+	 */
+	if (!insuranceEnabled) {
+		return <SettingsModuleDisabled gate={INSURANCE_CONTRACTS_GATE} />;
+	}
 
 	const coverageCategories: Array<{
 		label: string;
