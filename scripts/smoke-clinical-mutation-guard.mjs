@@ -683,13 +683,19 @@ const summary = {
 	warnings,
 };
 
-console.log(JSON.stringify(summary, null, 2));
-
+const reportLines = [JSON.stringify(summary, null, 2)];
 if (failures.length > 0) {
-	console.error(`\nПРОВАЛЕНО ПРОВЕРОК: ${failures.length}`);
-	for (const failure of failures) console.error(`  - ${failure}`);
-	process.exitCode = 1;
-	throw new Error(
-		`Защита маршрутов не подтверждена: ${failures.length} нарушений (см. список выше)`,
+	reportLines.push(`\nПРОВАЛЕНО ПРОВЕРОК: ${failures.length}`);
+	for (const failure of failures) reportLines.push(`  - ${failure}`);
+	reportLines.push(
+		`\nЗащита маршрутов не подтверждена: ${failures.length} нарушений.`,
 	);
 }
+// Поток дописывается до конца, и только потом процесс завершается принудительно.
+// Без явного выхода прогон висит ~10 секунд: пул PostgreSQL и таймеры,
+// поднятые настоящим приложением, держат цикл событий, а в наборе смоуков это
+// время умножается на количество скриптов.
+await new Promise((resolve) => {
+	process.stdout.write(`${reportLines.join("\n")}\n`, resolve);
+});
+process.exit(failures.length > 0 ? 1 : 0);
