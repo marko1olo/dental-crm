@@ -121,6 +121,23 @@ export function useInventoryLogic(organizationId: string) {
 	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
 
 	/*
+	 * Выбор услуги очищает форму под ней.
+	 *
+	 * БЫЛО: смена услуги в верхнем списке меняла только саму услугу. Материал и
+	 * количество, набранные для предыдущей, оставались в форме заряженными — а
+	 * форма стоит прямо под этим списком и выглядит как настройки уже НОВОЙ
+	 * услуги. Администратор выбирал «Анестетик, 3 шт.» для одной услуги, не
+	 * сохранял, переключался на другую и нажимал «Добавить»: правило уходило на
+	 * чужую услугу. Дальше анестетик молча списывается на приёмах, где его не
+	 * используют, а там, где используют, не списывается вовсе.
+	 */
+	const selectService = (serviceId: string) => {
+		setSelectedServiceId(serviceId);
+		setSelectedInventoryItemId("");
+		setQuantityToDeduct("1");
+	};
+
+	/*
 	 * Отказ при загрузке правил списания надо помнить отдельно от пустоты.
 	 *
 	 * БЫЛО: на упавший запрос показывался toast, а список правил оставался
@@ -752,6 +769,7 @@ export function useInventoryLogic(organizationId: string) {
 		setActiveSubTab,
 		selectedServiceId,
 		setSelectedServiceId,
+		selectService,
 		rulesList,
 		isLoadingRules,
 		rulesError,

@@ -76,7 +76,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		activeSubTab,
 		setActiveSubTab,
 		selectedServiceId,
-		setSelectedServiceId,
+		selectService,
 		rulesList,
 		isLoadingRules,
 		rulesError,
@@ -170,9 +170,14 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					>
 						🛠️ Выберите услугу для настройки правил списания
 					</h3>
+					{/*
+					  Смена услуги очищает форму под ней: набранные для прошлой услуги
+					  материал и количество оставались заряженными и уходили в новую
+					  услугу одним нажатием.
+					*/}
 					<select
 						value={selectedServiceId}
-						onChange={(e) => setSelectedServiceId(e.target.value)}
+						onChange={(e) => selectService(e.target.value)}
 						style={{
 							padding: "10px 12px",
 							borderRadius: 8,
