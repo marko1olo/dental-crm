@@ -85,9 +85,18 @@ export function Omnibar() {
 
      Портал в body для раскрытого окна поиска обязателен и остаётся.
      Omnibar монтируется внутри <section class="workspace">, у которой задан
-     backdrop-filter: blur(12px) saturate(1.8). Ненулевой backdrop-filter
-     создаёт контейнерный блок для потомков с position: fixed, поэтому
-     `fixed inset-0` растягивался по секции, а не по экрану.
+     backdrop-filter. ИСТОЧНИК, чтобы это больше не искали: `premium.css:147`
+     перечисляет `.workspace` первым селектором правила, объявляющего на
+     `premium.css:172` `backdrop-filter: var(--glass-blur) saturate(180%)`, где
+     `--glass-blur: blur(12px)` (`premium.css:14/60/106` — по одному объявлению
+     на тему). Браузер приводит это к `blur(12px) saturate(1.8)`, поэтому поиск
+     по литералу «saturate(1.8)» в styles/*.css НИЧЕГО НЕ НАХОДИТ, хотя свойство
+     реально применено. Проверено на живой странице: вычисленный
+     `backdrop-filter` у `section.workspace` равен `blur(12px) saturate(1.8)` на
+     390x844, 840x900 и 1600x1100 (`scratch/probe-corner-reserve.mjs`).
+     Ненулевой backdrop-filter создаёт контейнерный блок для потомков с
+     position: fixed, поэтому `fixed inset-0` растягивался по секции, а не по
+     экрану.
      Замерено, scratch/probe-fixed-containing-block.mjs:
        окно 1600x1100 — секция ровно 1100 высотой, попадание в угол было
          правильным ПО СОВПАДЕНИЮ;

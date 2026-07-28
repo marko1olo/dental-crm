@@ -4,8 +4,8 @@ import "./cornerDock.css";
 import { cornerDockLabels } from "./cornerDockLabels.js";
 import {
 	CORNER_BAR_SLOTS,
-	CORNER_SLOT_ORDER,
 	type CornerObstacleCandidate,
+	type CornerPassTrigger,
 	type CornerRect,
 	type CornerSlotId,
 	computeCornerBarClearance,
@@ -13,7 +13,9 @@ import {
 	computeCornerReserve,
 	cornerSamplePoints,
 	isCornerObstacle,
-	resolveCornerPlacement,
+	liftCornerRect,
+	resolveCornerPlacementSampled,
+	shouldRunCornerPass,
 } from "./cornerDockLayout.js";
 
 /**
@@ -51,8 +53,22 @@ interface DockDom {
 let dockDom: DockDom | null = null;
 let refCount = 0;
 let frame = 0;
+let deferTimer: ReturnType<typeof setTimeout> | null = null;
+let lastPassAt: number | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let contentObserver: ResizeObserver | null = null;
 let observedBar: Element | null = null;
+
+/**
+ * Что уже записано в стили. Нужно, чтобы НЕ писать то же самое значение снова:
+ * запись пользовательского свойства, от которого зависит `bottom`, помечает
+ * layout грязным, и следующий `getBoundingClientRect()` в том же кадре
+ * превращается в принудительный пересчёт. В покое здесь не пишется ничего.
+ */
+let appliedLift = 0;
+let appliedClearance: number | null = null;
+let appliedReserve: number | null = null;
+let appliedCompact = false;
 
 function buildDom(): DockDom {
 	const host = document.createElement("div");
@@ -166,81 +182,137 @@ function collectObstacles(
 	return obstacles;
 }
 
+/**
+ * Восстанавливает исходное (не поднятое) положение панели из уже измеренного.
+ * Подъём задан только через `bottom`, поэтому вычитание — точная обратная
+ * операция. Раньше здесь стояла запись `--corner-dock-lift: 0px` перед чтением
+ * геометрии: она помечала layout грязным и делала следующий
+ * `getBoundingClientRect()` принудительным пересчётом в каждом кадре прокрутки.
+ * Смысл замера «всегда от исходного положения» сохранён полностью — изменился
+ * только способ его получить.
+ */
+function measureRestingFootprint(bar: HTMLElement): CornerRect {
+	return liftCornerRect(toRect(bar.getBoundingClientRect()), -appliedLift);
+}
+
 function applyLayout(): void {
 	const dom = dockDom;
 	if (!dom) return;
 	const { host, bar } = dom;
 	const rootStyle = document.documentElement.style;
+	lastPassAt = performance.now();
 
 	const viewportHeight = window.innerHeight;
 	const gutter = readGutterPx(host);
 	const bottomBar = findBottomBar();
 	const barClearance = computeCornerBarClearance({
 		viewportHeight,
-		bottomBarTop: bottomBar
-			? bottomBar.getBoundingClientRect().top
-			: null,
+		bottomBarTop: bottomBar ? bottomBar.getBoundingClientRect().top : null,
 	});
-	host.style.setProperty(VAR_BAR_CLEARANCE, `${barClearance}px`);
+	if (barClearance !== appliedClearance) {
+		host.style.setProperty(VAR_BAR_CLEARANCE, `${barClearance}px`);
+		appliedClearance = barClearance;
+	}
 
-	// Замер всегда идёт от исходного положения: состояние угла — чистая функция
-	// от текущей раскладки страницы, поэтому подъём не может сам себя раскачать.
-	host.style.setProperty(VAR_LIFT, "0px");
-	host.dataset.cornerDensity = "comfortable";
+	// Компактный режим меняет РАЗМЕР панели, а не только её положение, поэтому
+	// обратной арифметикой его не снять: здесь запись действительно нужна. Она
+	// делается только когда угол уже сжат, то есть в редком случае.
+	if (appliedCompact) {
+		host.dataset.cornerDensity = "comfortable";
+		appliedCompact = false;
+	}
 
-	let footprint = toRect(bar.getBoundingClientRect());
+	let footprint = measureRestingFootprint(bar);
 	let barHeight = footprint.bottom - footprint.top;
 	if (barHeight <= 0) {
 		// Панель пуста: угол ничего не занимает и ничего не резервирует.
-		rootStyle.setProperty(VAR_RESERVE, "0px");
+		if (appliedReserve !== 0) {
+			rootStyle.setProperty(VAR_RESERVE, "0px");
+			appliedReserve = 0;
+		}
 		return;
 	}
 
-	let maxLift = computeCornerMaxLift({
-		viewportHeight,
-		barHeight,
-		gutter,
-		barClearance,
-	});
-	let placement = resolveCornerPlacement({
-		footprint,
-		obstacles: collectObstacles(host, footprint, bottomBar),
-		maxLift,
-	});
+	const solve = (): ReturnType<typeof resolveCornerPlacementSampled> =>
+		resolveCornerPlacementSampled({
+			footprint,
+			maxLift: computeCornerMaxLift({
+				viewportHeight,
+				barHeight,
+				gutter,
+				barClearance,
+			}),
+			// Мишени снимаются в ТОМ положении, которое проверяется, а не только в
+			// исходном: иначе подъём мог сесть на кнопку, которую никто не мерил.
+			sample: (lift) =>
+				collectObstacles(host, liftCornerRect(footprint, lift), bottomBar),
+		});
+
+	let placement = solve().placement;
 
 	if (placement.compact) {
 		// Один-единственный повторный проход: компактный режим уменьшает след,
 		// после чего свободное положение может найтись. Дальше не идём — иначе
 		// это уже цикл, а не решение.
 		host.dataset.cornerDensity = "compact";
-		footprint = toRect(bar.getBoundingClientRect());
+		appliedCompact = true;
+		// Подъём в стилях сейчас соответствует appliedLift, обратная арифметика
+		// по-прежнему верна: сжатие меняет высоту панели, но не её `bottom`.
+		footprint = measureRestingFootprint(bar);
 		barHeight = footprint.bottom - footprint.top;
-		maxLift = computeCornerMaxLift({
-			viewportHeight,
-			barHeight,
-			gutter,
-			barClearance,
-		});
-		placement = resolveCornerPlacement({
-			footprint,
-			obstacles: collectObstacles(host, footprint, bottomBar),
-			maxLift,
-		});
+		placement = solve().placement;
 	}
 
-	host.style.setProperty(VAR_LIFT, `${placement.lift}px`);
-	rootStyle.setProperty(
-		VAR_RESERVE,
-		`${computeCornerReserve({ barHeight, gutter, barClearance })}px`,
-	);
+	if (placement.lift !== appliedLift) {
+		host.style.setProperty(VAR_LIFT, `${placement.lift}px`);
+		appliedLift = placement.lift;
+	}
+	const reserve = computeCornerReserve({ barHeight, gutter, barClearance });
+	if (reserve !== appliedReserve) {
+		rootStyle.setProperty(VAR_RESERVE, `${reserve}px`);
+		appliedReserve = reserve;
+	}
 }
 
-function schedule(): void {
-	if (frame || !dockDom) return;
-	frame = window.requestAnimationFrame(() => {
-		frame = 0;
-		applyLayout();
+function runPass(): void {
+	frame = 0;
+	applyLayout();
+}
+
+/**
+ * Планирует проход раскладки.
+ *
+ * `immediate` — изменение размера окна, панели или состава слотов: пользователь
+ * ждёт немедленной реакции.
+ * `stream` — прокрутка и рост содержимого страницы: поток событий частотой в
+ * кадр. Такие проходы ограничены `CORNER_STREAM_INTERVAL_MS`, а последний
+ * обязательно догоняется отложенной попыткой, поэтому в покое решение точное.
+ */
+function schedule(trigger: CornerPassTrigger = "immediate"): void {
+	if (!dockDom) return;
+	const decision = shouldRunCornerPass({
+		now: performance.now(),
+		lastRunAt: lastPassAt,
+		trigger,
 	});
+	if (!decision.run) {
+		if (deferTimer !== null) return;
+		deferTimer = setTimeout(() => {
+			deferTimer = null;
+			schedule(trigger);
+		}, decision.deferMs);
+		return;
+	}
+	if (frame) return;
+	frame = window.requestAnimationFrame(runPass);
+}
+
+function scheduleStream(): void {
+	schedule("stream");
+}
+
+function scheduleImmediate(): void {
+	schedule("immediate");
 }
 
 function syncBarObservation(): void {
@@ -255,14 +327,30 @@ function syncBarObservation(): void {
 function attach(): void {
 	if (dockDom) return;
 	dockDom = buildDom();
-	window.addEventListener("resize", schedule);
-	// capture: страница прокручивается внутри `.workspace`, а не в окне, и
-	// событие scroll от вложенного контейнера не всплывает.
-	window.addEventListener("scroll", schedule, { capture: true, passive: true });
-	resizeObserver = new ResizeObserver(schedule);
+	appliedLift = 0;
+	appliedClearance = null;
+	appliedReserve = null;
+	appliedCompact = false;
+	lastPassAt = null;
+	window.addEventListener("resize", scheduleImmediate);
+	// capture: прокрутка внутри вложенного контейнера не всплывает до window, а
+	// какой именно контейнер везёт страницу, у разных экранов по-разному:
+	// замерено, что `.workspace` объявляет `overflow-y: auto`, но не ограничен по
+	// высоте (scrollHeight == clientHeight), и на списке пациентов прокручивается
+	// сам документ. Слушать в фазе перехвата — единственный способ не зависеть от
+	// этого различия.
+	window.addEventListener("scroll", scheduleStream, {
+		capture: true,
+		passive: true,
+	});
+	// Размер самой панели и высота навигации — немедленная реакция: их меняет
+	// пользователь, а не поток прокрутки.
+	resizeObserver = new ResizeObserver(scheduleImmediate);
 	resizeObserver.observe(dockDom.host);
-	resizeObserver.observe(document.body);
 	syncBarObservation();
+	// Рост содержимого страницы — тот же поток, что и прокрутка.
+	contentObserver = new ResizeObserver(scheduleStream);
+	contentObserver.observe(document.body);
 	applyLayout();
 }
 
@@ -271,12 +359,20 @@ function detach(): void {
 		window.cancelAnimationFrame(frame);
 		frame = 0;
 	}
-	window.removeEventListener("resize", schedule);
-	window.removeEventListener("scroll", schedule, { capture: true });
+	if (deferTimer !== null) {
+		clearTimeout(deferTimer);
+		deferTimer = null;
+	}
+	window.removeEventListener("resize", scheduleImmediate);
+	window.removeEventListener("scroll", scheduleStream, { capture: true });
 	resizeObserver?.disconnect();
 	resizeObserver = null;
+	contentObserver?.disconnect();
+	contentObserver = null;
 	observedBar = null;
+	lastPassAt = null;
 	document.documentElement.style.removeProperty(VAR_RESERVE);
+	appliedReserve = null;
 	dockDom?.host.remove();
 	dockDom = null;
 }
@@ -327,6 +423,3 @@ export function CornerDockSlot({
 	if (!target) return null;
 	return createPortal(children, target);
 }
-
-/** Экспорт для тестов и для проверки контракта: полный список слотов угла. */
-export const cornerDockSlots = CORNER_SLOT_ORDER;

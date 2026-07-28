@@ -1,20 +1,24 @@
 import { strict as assert } from "node:assert";
+import { readFileSync, readdirSync } from "node:fs";
+import { basename, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	CORNER_BAR_SLOTS,
+	CORNER_MAX_SOLVE_PASSES,
 	CORNER_SLOT_ORDER,
+	CORNER_STREAM_INTERVAL_MS,
 	type CornerRect,
 	computeCornerBarClearance,
 	computeCornerMaxLift,
 	computeCornerReserve,
 	cornerOverlapArea,
-	cornerRectsOverlap,
 	cornerSamplePoints,
 	isCornerObstacle,
-	isCornerSlotId,
 	liftCornerRect,
 	resolveCornerPlacement,
-	sortCornerSlots,
+	resolveCornerPlacementSampled,
+	shouldRunCornerPass,
 } from "./cornerDockLayout.js";
 import {
 	VOICE_METER_BARS,
@@ -32,6 +36,14 @@ function rect(
 }
 
 describe("порядок слотов плавающего угла", () => {
+	// ЧТО ЗДЕСЬ НЕ ПРОВЕРЯЕТСЯ, чтобы это не выглядело покрытием, которым не
+	// является: сам порядок узлов в DOM. Гарантию даёт цикл
+	// `for (const slot of CORNER_BAR_SLOTS) bar.append(makeSlot(slot))` в
+	// `CornerDock.tsx`, а DOM в node:test отсутствует. Ниже закреплён вход этого
+	// цикла — массив, от которого порядок и зависит. Прежний тест сортировал
+	// слоты функцией `sortCornerSlots`, которую продакшен не вызывал НИ РАЗУ, и
+	// заявлял это как покрытие независимости от порядка монтирования; функция
+	// удалена вместе с заявкой.
 	it("накладка идёт выше панели, а микрофон стоит ближе всех к углу", () => {
 		assert.deepEqual([...CORNER_SLOT_ORDER], [
 			"notice",
@@ -42,37 +54,16 @@ describe("порядок слотов плавающего угла", () => {
 		assert.deepEqual([...CORNER_BAR_SLOTS], ["search", "help", "voice"]);
 	});
 
-	it("порядок не зависит от порядка монтирования компонентов", () => {
-		// VoiceAssistantUI монтируется в App.tsx раньше Omnibar, поэтому без
-		// сортировки микрофон оказывался левее плашки поиска.
-		assert.deepEqual(sortCornerSlots(["voice", "help", "search"]), [
-			"search",
-			"help",
-			"voice",
-		]);
-		assert.deepEqual(sortCornerSlots(["voice", "notice"]), ["notice", "voice"]);
-	});
-
-	it("дубликаты слотов не удваивают панель", () => {
-		assert.deepEqual(sortCornerSlots(["voice", "voice", "search"]), [
-			"search",
-			"voice",
-		]);
-	});
-
-	it("посторонний идентификатор слотом угла не является", () => {
-		assert.equal(isCornerSlotId("voice"), true);
-		assert.equal(isCornerSlotId("notice"), true);
-		assert.equal(isCornerSlotId("toast"), false);
+	it("накладка не входит в панель: её геометрия не участвует в резерве", () => {
+		assert.equal(CORNER_BAR_SLOTS.includes("notice"), false);
+		for (const slot of CORNER_BAR_SLOTS) {
+			assert.equal(CORNER_SLOT_ORDER.includes(slot), true);
+		}
 	});
 });
 
 describe("пересечения прямоугольников", () => {
 	it("касание границами пересечением не считается", () => {
-		assert.equal(
-			cornerRectsOverlap(rect(0, 0, 10, 10), rect(10, 0, 20, 10)),
-			false,
-		);
 		assert.equal(cornerOverlapArea(rect(0, 0, 10, 10), rect(10, 0, 20, 10)), 0);
 	});
 
@@ -143,6 +134,25 @@ describe("что считается мишенью под панелью", () =>
 			false,
 		);
 	});
+
+	it("тост входящего звонка — мишень, хотя это div с tabindex -1", () => {
+		// `IncomingCallToast.tsx:67` — `<div role="dialog" tabindex="-1">` шириной
+		// 24rem, прибитый в тот же угол с z-index 999999, то есть ВЫШЕ дока. Пока
+		// роль диалога не считалась мишенью, панель ему не уступала и тост просто
+		// накрывал микрофон, справку и поиск на каждом входящем звонке.
+		assert.equal(
+			isCornerObstacle({
+				...base,
+				tagName: "DIV",
+				role: "dialog",
+				tabIndex: -1,
+				width: 384,
+				height: 220,
+			}),
+			true,
+		);
+		assert.equal(isCornerObstacle({ ...base, role: "alertdialog" }), true);
+	});
 });
 
 describe("просвет над нижней навигацией", () => {
@@ -182,6 +192,33 @@ describe("просвет над нижней навигацией", () => {
 });
 
 describe("резерв места в потоке страницы", () => {
+	// Входы ниже — НЕ выдумка: это значения, снятые с живой страницы
+	// (scratch/probe-corner-reserve.mjs, экран #patients, тема light).
+	// 390x844 и 840x900: высота панели 48px (все три кнопки 3rem после
+	// f50f7f67d), отступ 1rem = 16px на <=840px, измеренная высота
+	// `.dnt-bottom-nav` 64px. 1600x1100: отступ 1.5rem = 24px, навигации нет.
+	it("резерв на 390x844 равен 144px", () => {
+		assert.equal(
+			computeCornerReserve({ barHeight: 48, gutter: 16, barClearance: 64 }),
+			144,
+		);
+	});
+
+	it("резерв на пороге 840px равен тем же 144px", () => {
+		// Порог оболочки: навигация ещё есть, отступ ещё 1rem.
+		assert.equal(
+			computeCornerReserve({ barHeight: 48, gutter: 16, barClearance: 64 }),
+			144,
+		);
+	});
+
+	it("на широком экране навигации нет и резерв равен 96px", () => {
+		assert.equal(
+			computeCornerReserve({ barHeight: 48, gutter: 24, barClearance: 0 }),
+			96,
+		);
+	});
+
 	it("резерв покрывает панель, отступы и навигацию", () => {
 		assert.equal(
 			computeCornerReserve({ barHeight: 56, gutter: 24, barClearance: 0 }),
@@ -198,6 +235,47 @@ describe("резерв места в потоке страницы", () => {
 			computeCornerReserve({ barHeight: 0, gutter: 24, barClearance: 64 }),
 			0,
 		);
+	});
+
+	/**
+	 * ГЛАВНАЯ ПРОВЕРКА ПАКЕТА V1.
+	 *
+	 * Арифметика резерва была верна и до правки — сломано было ЧИСЛО ПРИМЕНЕНИЙ.
+	 * Одна и та же переменная стояла в двух правилах, попадающих во вложенные
+	 * друг в друга боксы (`main` и `.workspace`), и пустой низ удваивался. Тест
+	 * читает НАСТОЯЩИЕ файлы стилей и считает потребителей переменной: их должно
+	 * быть ровно столько же, сколько элементов, а элемент один.
+	 */
+	it("переменную резерва читает ровно ОДНО правило во всех стилях проекта", () => {
+		const stylesDir = fileURLToPath(new URL("../../styles", import.meta.url));
+		const cornerDir = fileURLToPath(new URL(".", import.meta.url));
+		const files: string[] = [];
+		for (const dir of [stylesDir, cornerDir]) {
+			for (const name of readdirSync(dir)) {
+				if (name.endsWith(".css")) files.push(join(dir, name));
+			}
+		}
+		assert.ok(files.length >= 2, "файлы стилей не найдены");
+
+		const consumers: string[] = [];
+		for (const file of files) {
+			// Комментарии вырезаются: переменная упомянута в них по-русски не раз,
+			// но упоминание не является применением.
+			const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+			for (const line of css.split("\n")) {
+				if (line.includes("var(--corner-dock-reserve-block")) {
+					consumers.push(`${basename(file)}: ${line.trim()}`);
+				}
+			}
+		}
+		assert.equal(
+			consumers.length,
+			1,
+			`резерв должен применяться один раз, найдено ${consumers.length}:\n${consumers.join("\n")}`,
+		);
+		// И применяется он к колонке контента, а не к внешней оболочке: оболочка
+		// содержит колонку, поэтому два отступа сложились бы.
+		assert.match(consumers[0] ?? "", /padding-bottom/);
 	});
 });
 
@@ -264,8 +342,8 @@ describe("уступание интерактивному контенту", () 
 		});
 		assert.deepEqual(placement, { lift: 36, compact: false });
 		assert.equal(
-			cornerRectsOverlap(liftCornerRect(footprint, placement.lift), save),
-			false,
+			cornerOverlapArea(liftCornerRect(footprint, placement.lift), save),
+			0,
 		);
 	});
 
@@ -279,8 +357,8 @@ describe("уступание интерактивному контенту", () 
 		});
 		for (const obstacle of [save, sign]) {
 			assert.equal(
-				cornerRectsOverlap(liftCornerRect(footprint, placement.lift), obstacle),
-				false,
+				cornerOverlapArea(liftCornerRect(footprint, placement.lift), obstacle),
+				0,
 			);
 		}
 		assert.equal(placement.compact, false);
@@ -341,6 +419,190 @@ describe("уступание интерактивному контенту", () 
 			maxLift: 470,
 		});
 		assert.deepEqual(first, second);
+	});
+});
+
+describe("проверка ВЫБРАННОГО положения, а не только исходного", () => {
+	// Столбик кнопок панели плана лечения: нижняя кнопка видна из исходного
+	// положения, верхняя — только когда панель уже поднялась. Именно этот случай
+	// прежний код пропускал: список мишеней снимался один раз при подъёме 0,
+	// поэтому подъём мог сесть ровно на вторую кнопку и вернуть compact: false с
+	// нулевым РАСЧЁТНЫМ пересечением при реальном наложении.
+	const footprint = rect(1376, 1016, 1576, 1076);
+	const lower = rect(1430, 1040, 1520, 1078);
+	const upper = rect(1430, 986, 1520, 1036);
+
+	it("мишень, видимая только из поднятого положения, всё равно учитывается", () => {
+		const asked: number[] = [];
+		const result = resolveCornerPlacementSampled({
+			footprint,
+			maxLift: 470,
+			sample: (lift) => {
+				asked.push(lift);
+				// Из исходного положения видна только нижняя кнопка.
+				if (lift === 0) return [lower];
+				// Стоит подняться — и в кадре замера появляется верхняя.
+				return [upper];
+			},
+		});
+
+		// Наивное решение по одному снимку дало бы ровно 36 и посадило панель на
+		// верхнюю кнопку. Проверяем, что так НЕ вышло.
+		const naive = resolveCornerPlacement({
+			footprint,
+			obstacles: [lower],
+			maxLift: 470,
+		});
+		assert.deepEqual(naive, { lift: 36, compact: false });
+		assert.notEqual(result.placement.lift, naive.lift);
+
+		const finalRect = liftCornerRect(footprint, result.placement.lift);
+		assert.equal(cornerOverlapArea(finalRect, lower), 0);
+		assert.equal(cornerOverlapArea(finalRect, upper), 0);
+		assert.equal(result.placement.compact, false);
+		// Цепочка замеров целиком: исходное положение, положение по первому
+		// решению, и положение по второму — последнее подтверждает, что там пусто.
+		assert.deepEqual(asked, [0, 36, 90]);
+		assert.equal(result.placement.lift, 90);
+		assert.equal(result.sampleCount, 3);
+		assert.equal(result.obstacles.length, 2);
+		// Итоговое положение обязано быть среди измеренных, иначе гарантии нет.
+		assert.ok(asked.includes(result.placement.lift));
+	});
+
+	it("свободный угол стоит ровно один снимок: платить за проверку не за что", () => {
+		let calls = 0;
+		const result = resolveCornerPlacementSampled({
+			footprint,
+			maxLift: 470,
+			sample: () => {
+				calls += 1;
+				return [];
+			},
+		});
+		assert.deepEqual(result.placement, { lift: 0, compact: false });
+		// Подъём нулевой — это положение уже измерено, досъём не нужен.
+		assert.equal(calls, 1);
+		assert.equal(result.sampleCount, 1);
+	});
+
+	it("число снимков ограничено: бесконечно доснимать нельзя", () => {
+		let calls = 0;
+		// Худший вход: каждый снимок приносит НОВУЮ мишень прямо под панелью.
+		const result = resolveCornerPlacementSampled({
+			footprint,
+			maxLift: 470,
+			sample: (lift) => {
+				calls += 1;
+				return [rect(1376, 1016 - lift - 30, 1576, 1076 - lift)];
+			},
+		});
+		assert.ok(
+			calls <= CORNER_MAX_SOLVE_PASSES,
+			`снимков ${calls} при пределе ${CORNER_MAX_SOLVE_PASSES}`,
+		);
+		assert.equal(result.sampleCount, calls);
+		assert.ok(result.placement.lift <= 470);
+	});
+
+	it("повторный снимок без новых мишеней решение не меняет", () => {
+		const result = resolveCornerPlacementSampled({
+			footprint,
+			maxLift: 470,
+			// Одна и та же мишень в обоих снимках: список не растёт.
+			sample: () => [lower],
+		});
+		assert.deepEqual(result.placement, { lift: 36, compact: false });
+		assert.equal(result.obstacles.length, 1);
+		assert.equal(result.sampleCount, 2);
+	});
+
+	it("детерминированность сохраняется: тот же вход — тот же выход", () => {
+		const make = () =>
+			resolveCornerPlacementSampled({
+				footprint,
+				maxLift: 470,
+				sample: (lift) => (lift === 0 ? [lower] : [upper]),
+			});
+		assert.deepEqual(make().placement, make().placement);
+	});
+});
+
+describe("цена проходов раскладки на прокрутке", () => {
+	it("немедленный повод не ждёт никогда", () => {
+		assert.deepEqual(
+			shouldRunCornerPass({ now: 1000, lastRunAt: 999, trigger: "immediate" }),
+			{ run: true, deferMs: 0 },
+		);
+	});
+
+	it("первый проход потока идёт сразу", () => {
+		assert.deepEqual(
+			shouldRunCornerPass({ now: 0, lastRunAt: null, trigger: "stream" }),
+			{ run: true, deferMs: 0 },
+		);
+	});
+
+	it("проход потока внутри интервала откладывается на остаток", () => {
+		const decision = shouldRunCornerPass({
+			now: 1030,
+			lastRunAt: 1000,
+			trigger: "stream",
+		});
+		assert.equal(decision.run, false);
+		assert.equal(decision.deferMs, CORNER_STREAM_INTERVAL_MS - 30);
+	});
+
+	it("после интервала проход потока разрешён", () => {
+		assert.deepEqual(
+			shouldRunCornerPass({
+				now: 1000 + CORNER_STREAM_INTERVAL_MS,
+				lastRunAt: 1000,
+				trigger: "stream",
+			}),
+			{ run: true, deferMs: 0 },
+		);
+	});
+
+	it("отложенная попытка всегда положительна: молчания в покое не будет", () => {
+		const decision = shouldRunCornerPass({
+			now: 1099.5,
+			lastRunAt: 1000,
+			trigger: "stream",
+		});
+		assert.equal(decision.run, false);
+		assert.ok(decision.deferMs >= 1, `deferMs ${decision.deferMs}`);
+	});
+
+	/**
+	 * ЧИСЛО, А НЕ МНЕНИЕ.
+	 *
+	 * Замер в браузере на HEAD 8ff0ba18e (390x844, список пациентов, 120 кадров
+	 * прокрутки) дал 59 полных проходов и 295 вызовов
+	 * `document.elementsFromPoint` — 2.46 попадания на кадр, на каждом экране у
+	 * каждого пользователя. Здесь прогоняется та же длительность через политику и
+	 * проверяется, что проходов стало кратно меньше.
+	 */
+	it("120 кадров прокрутки дают не 59 проходов, а не больше 21", () => {
+		const frameMs = 1000 / 60;
+		let lastRunAt: number | null = null;
+		let passes = 0;
+		for (let i = 0; i < 120; i += 1) {
+			const now = i * frameMs;
+			const decision = shouldRunCornerPass({
+				now,
+				lastRunAt,
+				trigger: "stream",
+			});
+			if (decision.run) {
+				passes += 1;
+				lastRunAt = now;
+			}
+		}
+		assert.ok(passes <= 21, `проходов ${passes}, ожидалось не больше 21`);
+		assert.ok(passes >= 19, `проходов ${passes}: политика молчит слишком долго`);
+		// Замеренная база — 59 проходов на те же 120 кадров.
+		assert.ok(passes * 2 < 59, `сокращение меньше двух раз: ${passes} из 59`);
 	});
 });
 

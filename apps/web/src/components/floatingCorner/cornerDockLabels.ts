@@ -5,8 +5,6 @@
  * JSX больше не пишется: подписи угла берутся отсюда.
  */
 
-import type { CornerSlotId } from "./cornerDockLayout.js";
-
 export const cornerDockLabels = {
 	/** Подпись самого региона для скринридера. */
 	region: "Плавающие действия",
@@ -135,11 +133,3 @@ export const cornerVoiceCommands: Record<
 /** Предупреждение под списком команд вкладки диктовки ЭМК. */
 export const cornerVoiceVisitNote =
 	"Совет: убедитесь, что открыта вкладка приёма (ЭМК), чтобы текст диктовки автоматически распределился по медицинским полям.";
-
-/** Человекочитаемое имя слота — для подписи региона и для отладки контракта. */
-export const cornerSlotLabels: Record<CornerSlotId, string> = {
-	notice: "Временные подсказки",
-	search: "Поиск",
-	help: "Справка",
-	voice: "Диктовка",
-};

@@ -11,7 +11,17 @@
  *
  * КОНТРАКТ РЕГИОНА
  * 1. В углу существует ровно один хост-элемент и ровно один stacking context.
- *    Никто больше не имеет права ставить `position: fixed` в правый нижний угол.
+ *    ЧЕСТНАЯ ОГОВОРКА (исправляет неверное утверждение, которое стояло здесь
+ *    раньше — «никто больше не имеет права ставить `position: fixed` в правый
+ *    нижний угол»): такого запрета в проекте нет и его нельзя объявить
+ *    комментарием. На момент правки в этом же углу живут ещё два чужих
+ *    `position: fixed`: `components/IncomingCallToast.tsx:67`
+ *    (`bottom-6 right-6 z-[999999]`, шире дока и НАД ним по слою) и
+ *    `components/schedule/WaitlistDrawer.tsx:188` (`bottom-4 right-4 z-50`).
+ *    Оба находятся вне этого модуля, поэтому контракт обращается с ними как с
+ *    обычным содержимым страницы: они попадают в список мишеней и панель им
+ *    уступает подъёмом (см. п.5 и `INTERACTIVE_ROLES`, куда добавлены роли
+ *    диалога — именно из-за тоста звонка).
  * 2. Хост состоит из двух частей:
  *    - ПАНЕЛЬ УПРАВЛЕНИЯ (`bar`) — постоянно видимая строка из слотов
  *      `search`, `help`, `voice` (слева направо; `voice` — основное действие и
@@ -34,6 +44,17 @@
  *    и только если такой высоты в пределах нижней половины экрана не
  *    существует — переходит в компактный режим (иконки без подписей), чтобы
  *    уменьшить собственный след.
+ * 6. Мишени проверяются в ТОМ положении, которое панель займёт, а не только в
+ *    исходном. Раньше список мишеней снимался один раз при подъёме 0, и
+ *    выбранный подъём мог поставить панель на кнопку, которую никто не мерил:
+ *    панель лечения — это СТОЛБИК кнопок, и уступив нижней, панель садилась на
+ *    следующую. Поэтому решение ищется `resolveCornerPlacementSampled`:
+ *    выбранное положение доснимается и, если там нашлась новая мишень, решение
+ *    пересчитывается. Множество мишеней только растёт, число досъёмов ограничено
+ *    `CORNER_MAX_SOLVE_PASSES`, поэтому процесс конечен и детерминирован.
+ * 7. Резерв в потоке страницы применяется РОВНО ОДИН РАЗ и ровно к одному
+ *    элементу — колонке контента (`.workspace`). Наложение двух резервов на
+ *    вложенные боксы даёт двойной пустой низ, и именно за это пакет U4 вернули.
  *
  * Модуль намеренно не знает про DOM: здесь только арифметика и порядок, чтобы
  * их можно было проверить тестом (`cornerDockLayout.test.ts`).
@@ -93,27 +114,6 @@ export interface CornerPoint {
 	readonly y: number;
 }
 
-export function isCornerSlotId(value: string): value is CornerSlotId {
-	return (CORNER_SLOT_ORDER as readonly string[]).includes(value);
-}
-
-/**
- * Сортирует произвольный набор слотов в порядке контракта. Порядок монтирования
- * компонентов на результат не влияет — это и есть смысл единственного владельца.
- */
-export function sortCornerSlots(
-	slots: readonly CornerSlotId[],
-): CornerSlotId[] {
-	const seen = new Set<CornerSlotId>(slots);
-	return CORNER_SLOT_ORDER.filter((slot) => seen.has(slot));
-}
-
-export function cornerRectsOverlap(a: CornerRect, b: CornerRect): boolean {
-	return (
-		a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
-	);
-}
-
 /** Площадь пересечения. Ноль, если прямоугольники не пересекаются. */
 export function cornerOverlapArea(a: CornerRect, b: CornerRect): number {
 	const width = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -121,7 +121,13 @@ export function cornerOverlapArea(a: CornerRect, b: CornerRect): number {
 	return width > 0 && height > 0 ? width * height : 0;
 }
 
-/** Поднимает прямоугольник на `lift` пикселей вверх. */
+/**
+ * Поднимает прямоугольник на `lift` пикселей вверх. Отрицательный `lift` — точная
+ * обратная операция: ею владелец региона восстанавливает исходное положение
+ * панели из уже измеренного поднятого, вместо того чтобы обнулять подъём в
+ * стилях и заново читать геометрию. Подъём задан только через `bottom`, то есть
+ * является чистым переносом, поэтому обратная операция точна, а не приблизительна.
+ */
 export function liftCornerRect(rect: CornerRect, lift: number): CornerRect {
 	return {
 		left: rect.left,
@@ -164,11 +170,22 @@ const INTERACTIVE_TAGS = new Set([
 	"textarea",
 ]);
 
-/** Роли ARIA, которыми размечают нативно неинтерактивные элементы. */
+/**
+ * Роли ARIA, которыми размечают нативно неинтерактивные элементы.
+ *
+ * `dialog` и `alertdialog` здесь не для красоты. `IncomingCallToast.tsx:67` —
+ * это `<div role="dialog" tabindex="-1">` шириной 24rem, прибитый в тот же угол
+ * с `z-index: 999999`, то есть ВЫШЕ дока. Без этих двух ролей тост не считался
+ * мишенью (`div` нет среди тегов, `tabIndex` -1), панель не уступала, и тост
+ * просто накрывал микрофон, справку и поиск на каждом входящем звонке — ровно
+ * тот отказ, ради устранения которого регион и заведён.
+ */
 const INTERACTIVE_ROLES = new Set([
+	"alertdialog",
 	"button",
 	"checkbox",
 	"combobox",
+	"dialog",
 	"link",
 	"menuitem",
 	"option",
@@ -224,6 +241,21 @@ export function computeCornerBarClearance(input: {
  * Сколько места по вертикали страница обязана оставить под угол, чтобы любой
  * её элемент можно было прокрутить выше панели. Считается по панели управления;
  * временная накладка сюда не входит.
+ *
+ * ЭТО ЧИСЛО ПРИМЕНЯЕТСЯ РОВНО ОДИН РАЗ, к одному элементу — колонке контента.
+ * Значение публикуется в `--corner-dock-reserve-block`, и в CSS проекта есть
+ * ровно один потребитель этой переменной (`dente-redesign.css`, правило
+ * `.app-shell.dente-redesign .workspace`). Если потребителей станет два и они
+ * окажутся вложенными друг в друга, пустой низ удвоится: `box-sizing:
+ * border-box` у внешнего бокса срежет видимую высоту внутреннего на `reserve`,
+ * а внутренний добавит ещё `reserve` своего отступа.
+ *
+ * Подъём (`lift`) в резерв НЕ входит намеренно. Подъём — это ответ на живую
+ * мишень под панелью: то, что оказалось под ПОДНЯТОЙ панелью, уже проверено
+ * `resolveCornerPlacementSampled` и мишенью не является, а перекрывать текст и
+ * фон контракт разрешает (п.5). Включение `lift` в резерв раздуло бы хвостовой
+ * отступ на величину до `computeCornerMaxLift` на каждом экране, где внизу есть
+ * закреплённый элемент.
  */
 export function computeCornerReserve(input: {
 	readonly barHeight: number;
@@ -309,4 +341,154 @@ export function resolveCornerPlacement(
 	}
 
 	return { lift: fallbackLift, compact: true };
+}
+
+/**
+ * Сколько раз за одно решение разрешено снимать мишени. Первый снимок — в
+ * исходном положении, остальные — проверка выбранного положения.
+ */
+export const CORNER_MAX_SOLVE_PASSES = 3;
+
+/** Ключ прямоугольника: одна и та же мишень не должна попасть в список дважды. */
+function cornerRectKey(rect: CornerRect): string {
+	return `${rect.left}:${rect.top}:${rect.right}:${rect.bottom}`;
+}
+
+export interface CornerSampledSolveInput {
+	/** Прямоугольник панели без подъёма. */
+	readonly footprint: CornerRect;
+	/** Верхняя граница подъёма из `computeCornerMaxLift`. */
+	readonly maxLift: number;
+	/**
+	 * Снять мишени для панели, поднятой на `lift`. Вызывающий (слой DOM) сам
+	 * решает, как их искать; здесь важно только то, что снимок берётся ИМЕННО в
+	 * том положении, которое проверяется.
+	 */
+	readonly sample: (lift: number) => readonly CornerRect[];
+}
+
+export interface CornerSampledSolveResult {
+	readonly placement: CornerPlacement;
+	/** Сколько раз вызвана `sample`. Это и есть цена решения в попаданиях. */
+	readonly sampleCount: number;
+	/** Итоговый список мишеней — для проверки и отладки контракта. */
+	readonly obstacles: readonly CornerRect[];
+}
+
+/**
+ * Решение с ПРОВЕРКОЙ ВЫБРАННОГО ПОЛОЖЕНИЯ.
+ *
+ * Было: мишени снимались один раз при подъёме 0, и `resolveCornerPlacement`
+ * перебирал все подъёмы по этому одному списку. Всё, что висело выше угла и не
+ * попало ни в одну точку замера, было невидимо — подъём мог поставить панель
+ * ровно на другую кнопку и вернуть `compact: false` с нулевым расчётным
+ * пересечением.
+ *
+ * Стало: выбранное положение доснимается. Найденные там новые мишени добавляются
+ * в список, решение пересчитывается. Множество мишеней только растёт, значит
+ * подъём монотонен, а число досъёмов ограничено `CORNER_MAX_SOLVE_PASSES` —
+ * зацикливание невозможно. При `lift === 0` досъёма нет вообще: это положение
+ * уже измерено, и в подавляющем большинстве кадров цена остаётся прежней.
+ *
+ * ОСТАТОЧНЫЙ ПРЕДЕЛ, честно: если каждый новый снимок открывает ещё одну ранее
+ * невидимую мишень, цикл упирается в `CORNER_MAX_SOLVE_PASSES` и возвращает
+ * положение, которое доснять уже не успел. Такой вход — не столбик кнопок, а
+ * непрерывная лестница мишеней с шагом в высоту панели; в этом случае решение
+ * остаётся приблизительным, но конечным, и `sampleCount` показывает, что предел
+ * был достигнут (`sampleCount === CORNER_MAX_SOLVE_PASSES`). Альтернатива —
+ * снимать всю полосу подъёма сразу — стоит десятки попаданий на кадр на КАЖДОМ
+ * экране ради входа, который на реальных страницах не встречается.
+ */
+export function resolveCornerPlacementSampled(
+	input: CornerSampledSolveInput,
+): CornerSampledSolveResult {
+	const obstacles: CornerRect[] = [];
+	const seen = new Set<string>();
+	const add = (rects: readonly CornerRect[]): number => {
+		let added = 0;
+		for (const rect of rects) {
+			const key = cornerRectKey(rect);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			obstacles.push(rect);
+			added += 1;
+		}
+		return added;
+	};
+
+	add(input.sample(0));
+	let sampleCount = 1;
+	let placement = resolveCornerPlacement({
+		footprint: input.footprint,
+		obstacles,
+		maxLift: input.maxLift,
+	});
+
+	while (sampleCount < CORNER_MAX_SOLVE_PASSES && placement.lift > 0) {
+		const added = add(input.sample(placement.lift));
+		sampleCount += 1;
+		if (added === 0) break;
+		const next = resolveCornerPlacement({
+			footprint: input.footprint,
+			obstacles,
+			maxLift: input.maxLift,
+		});
+		if (next.lift === placement.lift && next.compact === placement.compact) {
+			placement = next;
+			break;
+		}
+		placement = next;
+	}
+
+	return { placement, sampleCount, obstacles };
+}
+
+/**
+ * Как часто разрешено пересчитывать раскладку по потоковым событиям.
+ *
+ * Прокрутка — единственный код-путь угла, гарантированно живой на каждом экране
+ * у каждого пользователя. Замерено в браузере на HEAD 8ff0ba18e (окно 390x844,
+ * список пациентов, 120 кадров прокрутки): 59 полных проходов, 295 вызовов
+ * `document.elementsFromPoint`, то есть 2.46 попадания на кадр, и каждый проход
+ * писал `--corner-dock-lift` перед чтением `getBoundingClientRect()`, то есть
+ * заказывал принудительный пересчёт layout.
+ *
+ * 100 мс = не чаще 10 Гц. Компромисс осознанный: посреди прокрутки контент и так
+ * едет, и панель имеет право на 100 мс устаревшего решения; зато после остановки
+ * прокрутки отложенный проход обязательно случается (см. `deferMs`), поэтому в
+ * покое решение всегда точное. Изменения размера окна и самой панели идут как
+ * `immediate` и ждать не обязаны.
+ */
+export const CORNER_STREAM_INTERVAL_MS = 100;
+
+export type CornerPassTrigger = "immediate" | "stream";
+
+export interface CornerPassDecision {
+	/** Считать раскладку сейчас (в ближайшем кадре анимации). */
+	readonly run: boolean;
+	/**
+	 * Если считать сейчас нельзя — через сколько миллисекунд вернуться к решению.
+	 * Ноль при `run: true`. Именно это поле даёт проход «после остановки
+	 * прокрутки»: последнее событие потока планирует отложенную попытку, и она
+	 * срабатывает, когда поток стих.
+	 */
+	readonly deferMs: number;
+}
+
+/**
+ * Пускать ли проход раскладки. Чистая функция от времени — поэтому её можно
+ * проверить тестом, а не профилировщиком.
+ */
+export function shouldRunCornerPass(input: {
+	readonly now: number;
+	readonly lastRunAt: number | null;
+	readonly trigger: CornerPassTrigger;
+	readonly intervalMs?: number;
+}): CornerPassDecision {
+	if (input.trigger === "immediate") return { run: true, deferMs: 0 };
+	if (input.lastRunAt === null) return { run: true, deferMs: 0 };
+	const interval = input.intervalMs ?? CORNER_STREAM_INTERVAL_MS;
+	const elapsed = input.now - input.lastRunAt;
+	if (elapsed >= interval) return { run: true, deferMs: 0 };
+	return { run: false, deferMs: Math.max(1, Math.ceil(interval - elapsed)) };
 }
