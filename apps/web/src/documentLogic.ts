@@ -13,10 +13,104 @@ import {
 
 export type DocumentState = Record<string, any>;
 
+/**
+ * Поля отметки времени в документах и вид, в котором их ждёт разметка.
+ *
+ * ЧТО БЫЛО. Все они вычислялись в хранилище ОДИН РАЗ при загрузке модуля
+ * выражением вида `(() => new Date().toLocaleString("ru-RU"))()`. Значение
+ * равнялось моменту открытия страницы и больше никогда не обновлялось: ни один
+ * код не звал соответствующие сеттеры вне обработчиков ввода. Администратор
+ * открывал вкладку утром, вечером создавал договор — «Подписано», «Дата
+ * подтверждения согласия», «Дата и время выдачи расписки» несли утренний час.
+ * Отличить подставленное от введённого человеком нельзя: поле выглядит
+ * заполненным. Для документа, который подписывают, это подделка отметки времени.
+ *
+ * ЧТО СТАЛО. В хранилище поля пусты, а настоящее время подставляется здесь — в
+ * момент создания документа. Это и есть честное значение: отметка равна тому
+ * моменту, когда документ действительно составлен. Врач по-прежнему может
+ * вписать своё время руками, и тогда оно не трогается.
+ *
+ * Три вида записи, потому что разметка ждёт разные: дата с временем для отметок
+ * подписи и выдачи, только дата для номерных документов, «ГГГГ-ММ-ДД» для полей
+ * ввода типа date.
+ */
+const DOCUMENT_TIMESTAMP_FIELDS: Array<
+  [field: string, shape: "dateTime" | "date" | "isoDate" | "dateTimeLocal"]
+> = [
+  ["informedConsentConfirmedAt", "dateTime"],
+  ["procedureConsentConfirmedAt", "dateTime"],
+  ["paidContractSignedAt", "dateTime"],
+  ["paymentReceiptDate", "dateTime"],
+  ["warrantyIssuedAt", "dateTime"],
+  ["treatmentEstimateSignedAt", "dateTime"],
+  ["treatmentPlanPlannedAt", "dateTime"],
+  ["treatmentAcceptanceAcceptedAt", "dateTime"],
+  ["postVisitPerformedAt", "dateTime"],
+  ["minorConsentSignedAt", "dateTime"],
+  ["recordExtractIssuedAt", "dateTime"],
+  ["paidContractDate", "date"],
+  ["paymentInvoiceDate", "date"],
+  ["installmentScheduleDate", "date"],
+  ["completedActDate", "date"],
+  ["treatmentEstimateDate", "date"],
+  ["personalDataConsentGivenAt", "dateTime"],
+  ["refusalConfirmedAt", "dateTime"],
+  ["copyRequestRequestedAt", "dateTime"],
+  ["attendanceIssuedAt", "dateTime"],
+  ["releaseDeliveredAt", "dateTime"],
+  ["outpatient025uOpenedAt", "isoDate"],
+  ["recordExtractPeriodStart", "isoDate"],
+  ["recordExtractPeriodEnd", "isoDate"],
+  /*
+   * Поле ввода типа datetime-local ждёт «ГГГГ-ММ-ДДTчч:мм», а не русскую запись.
+   * Подставить сюда «28.07.2026, 14:30» значит показать пустое поле: браузер
+   * молча отбрасывает значение, которое не разбирает.
+   */
+  ["taxApplicationRequestedAt", "dateTimeLocal"],
+];
+
+/**
+ * Подставить настоящее время в пустые отметки документа.
+ *
+ * Вызывается один раз при создании документа и ДО проверки полей: пустая
+ * обязательная дата иначе упёрлась бы в валидатор и потребовала от человека
+ * вписать то, что программа знает сама.
+ *
+ * Значения, введённые руками, не трогаются — только пустые. Возвращается новый
+ * объект: хранилище остаётся пустым, чтобы следующий документ снова получил своё
+ * время, а не время предыдущего.
+ */
+export function withDocumentCreationTimestamps(state: DocumentState): DocumentState {
+  const now = new Date();
+  const asDateTime = now.toLocaleString("ru-RU");
+  const asDate = now.toLocaleDateString("ru-RU");
+  /*
+   * Календарный день по местному времени. toISOString() отдаёт день по UTC и при
+   * положительном смещении часового пояса вечером даёт УЖЕ ЗАВТРАШНЮЮ дату:
+   * в Самаре (+04:00) после 20:00 карта 025/у открывалась бы завтрашним числом.
+   */
+  const asIsoDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const asDateTimeLocal = `${asIsoDate}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  const filled: DocumentState = { ...state };
+  for (const [field, shape] of DOCUMENT_TIMESTAMP_FIELDS) {
+    const current = filled[field];
+    if (typeof current === "string" && current.trim() !== "") continue;
+    if (shape === "dateTime") filled[field] = asDateTime;
+    else if (shape === "date") filled[field] = asDate;
+    else if (shape === "dateTimeLocal") filled[field] = asDateTimeLocal;
+    else filled[field] = asIsoDate;
+  }
+  return filled;
+}
+
 export function documentPayloadForKind(
   kind: GeneratedDocument["kind"],
-  state: DocumentState,
+  incomingState: DocumentState,
 ): DocumentPayload | null {
+  // Те же чистые помощники, что и в проверке: сборщик достаёт их из состояния.
+  const state = withDocumentHelpers(incomingState);
   const {
     paidContractNumber,
     paidContractDate,
@@ -1213,6 +1307,50 @@ export function documentPayloadForKind(
   return null;
 }
 
+/**
+ * Чистые помощники, которых валидаторы и сборщики ждут прямо в состоянии.
+ *
+ * ЧТО БЫЛО. Все 55 валидаторов в documentValidators.ts достают
+ * requiredDocumentField и confirmedDocumentLiteral ИЗ ОБЪЕКТА СОСТОЯНИЯ:
+ * `const { paidContractNumber, ..., requiredDocumentField } = state;`. А
+ * состояние — это хранилище документов (useDocumentStore), и таких функций в нём
+ * нет и никогда не было: они объявлены внутри useAppLogic.
+ *
+ * Что видел пользователь: нажимает «Создать выбранный документ» — и не
+ * происходит НИЧЕГО. В консоли «requiredDocumentField is not a function»,
+ * документ не создаётся, сообщения об ошибке нет. Проверено живьём на виде
+ * «Согласие» (scratch/verify-document-timestamps.mjs): число документов в базе не
+ * менялось. Через структурные валидаторы проходят 31 вид документов из 71 — то
+ * есть договор, акт, смета, счёт, расписка, анкета, налоговое заявление и все
+ * согласия.
+ *
+ * ПОЧЕМУ ТАК, А НЕ ПРАВКОЙ 55 ФУНКЦИЙ. Обе функции чистые: одна возвращает текст
+ * «Заполните поле», другая бросает исключение при неподтверждённом условии.
+ * Держать их в состоянии не было причины. Подставляем их на входе — состояние
+ * перечисляется ПОСЛЕ, поэтому если однажды их начнут передавать явно, переданное
+ * победит и здесь ничего менять не придётся.
+ *
+ * ЧТО ЭТИМ НЕ ЛЕЧИТСЯ. Валидаторы и сборщики ждут из состояния ещё и десятки
+ * вычисляемых значений вида completedActTotalRubValue — они действительно живут в
+ * useAppLogic и подставить их здесь нечем. Виды документов, которым они нужны,
+ * упрутся в ту же ошибку, только с другим именем. Это отдельная работа, и она
+ * записана долгом.
+ */
+function requiredDocumentField(value: string, label: string): string | null {
+  return String(value ?? "").trim() ? null : `Заполните поле: ${label}.`;
+}
+
+function confirmedDocumentLiteral(value: boolean, label: string): true {
+  if (!value) {
+    throw new Error(`Не подтверждено обязательное условие документа: ${label}.`);
+  }
+  return true;
+}
+
+function withDocumentHelpers(state: DocumentState): DocumentState {
+  return { requiredDocumentField, confirmedDocumentLiteral, ...state };
+}
+
 export function validateDocumentPayloadForKind(
   kind: GeneratedDocument["kind"],
   state: DocumentState,
@@ -1220,7 +1358,7 @@ export function validateDocumentPayloadForKind(
   if (!structuredPayloadDocumentKinds.has(kind)) return null;
   const validator = documentPayloadValidators[kind];
   if (validator) {
-    return validator(state);
+    return validator(withDocumentHelpers(state));
   }
   return null;
 }

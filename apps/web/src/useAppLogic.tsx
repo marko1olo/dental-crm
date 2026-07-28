@@ -740,6 +740,7 @@ import {
 import {
 	documentPayloadForKind,
 	validateDocumentPayloadForKind,
+	withDocumentCreationTimestamps,
 } from "./documentLogic";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 import { usePatientLogic } from "./hooks/domains/usePatientLogic";
@@ -12002,12 +12003,24 @@ export function useAppLogic(): any {
 		const amountSource = documentAmountSource(kind);
 		const metadata = documentKindMetadata[kind];
 		const isTaxDocument = metadata.group === "tax";
-		const payloadError = validateDocumentPayloadForKind(kind, documentState);
+		/*
+		 * Отметки времени подставляются здесь, в момент создания документа.
+		 *
+		 * В хранилище они пусты. Раньше они вычислялись один раз при загрузке
+		 * страницы и несли время открытия вкладки: договор, созданный вечером,
+		 * уходил на подпись с утренним часом. Заполняем ДО проверки полей — иначе
+		 * пустая обязательная дата упёрлась бы в валидатор и потребовала вписать
+		 * руками то, что программа знает сама.
+		 *
+		 * Введённое человеком не трогается, заполняются только пустые поля.
+		 */
+		const documentStateForCreation = withDocumentCreationTimestamps(documentState);
+		const payloadError = validateDocumentPayloadForKind(kind, documentStateForCreation);
 		if (payloadError) {
 			setError(payloadError);
 			return;
 		}
-		const documentPayload = documentPayloadForKind(kind, documentState);
+		const documentPayload = documentPayloadForKind(kind, documentStateForCreation);
 		if (
 			(kind === "tax_deduction_certificate" ||
 				kind === "tax_deduction_registry") &&

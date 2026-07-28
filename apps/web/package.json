@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "test": "node --import tsx --import ./testCssStub.mjs --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
