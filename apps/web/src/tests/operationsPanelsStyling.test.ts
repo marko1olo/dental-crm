@@ -27,6 +27,18 @@ const OPERATIONS_PANELS = [
 	"components/reports/ManagerReportsPanel.tsx"
 ];
 
+/**
+ * Вложенные блоки рабочих панелей: своей рамки `panel ops-panel` у них нет —
+ * они рисуются ВНУТРИ панели из списка выше, и вторая рамка дала бы панель в
+ * панели. Всё остальное к ним применяется ровно так же: зашитый цвет ломает
+ * тёмную тему независимо от того, кто отрисовал обёртку.
+ *
+ * Таблица выплат врачам живёт внутри «Отчётов руководителю» и раньше рисовалась
+ * Tailwind-утилитами с подстановками вида `text-[var(--danger,#e11d48)]` — то
+ * есть с зашитым цветом, который этот страж и должен ловить.
+ */
+const NESTED_OPERATIONS_BLOCKS = ["pages/DoctorPayoutDashboard.tsx"];
+
 const STYLESHEET = "styles/dente-operations.css";
 
 function read(relativePath: string): string {
@@ -38,10 +50,35 @@ const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/g;
 
 test("в рабочих панелях нет зашитых цветов", () => {
 	// Зашитый цвет — это сломанная тёмная тема. Все цвета берутся из переменных.
-	for (const panel of OPERATIONS_PANELS) {
+	for (const panel of [...OPERATIONS_PANELS, ...NESTED_OPERATIONS_BLOCKS]) {
 		const source = read(panel);
 		const matches = source.match(HEX_COLOR) ?? [];
 		assert.deepEqual(matches, [], `${panel}: найдены цвета ${matches.join(", ")}`);
+	}
+});
+
+test("во вложенных блоках оформление классами и таблица разворачивается в карточки", () => {
+	for (const block of NESTED_OPERATIONS_BLOCKS) {
+		const source = read(block);
+
+		const inlineStyles = source.match(/style=\{\{/g) ?? [];
+		assert.deepEqual(
+			inlineStyles,
+			[],
+			`${block}: оформление в атрибуте style — перенесите в dente-operations.css`
+		);
+
+		// Вложенный блок не заводит вторую рамку панели.
+		assert.ok(
+			!source.includes('className="panel ops-panel"'),
+			`${block}: вложенный блок не должен объявлять свою панель — получится панель в панели`
+		);
+
+		if (!source.includes("<table")) continue;
+		// У стойки планшет чаще в портретной ориентации: без подписей колонок
+		// таблица на узком экране теряет смысл (см. CSS-правило content: attr(data-label)).
+		assert.ok(source.includes("data-label="), `${block}: у ячеек таблицы нет data-label`);
+		assert.ok(source.includes('className="ops-num"'), `${block}: числовые колонки не помечены ops-num`);
 	}
 });
 

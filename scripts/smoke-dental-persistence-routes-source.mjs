@@ -20,10 +20,21 @@ const invoiceSplitModal = readFileSync(
 	"apps/web/src/pages/InvoiceSplitPaymentModal.tsx",
 	"utf8",
 );
-const financialDashboard = readFileSync(
-	"apps/web/src/pages/FinancialDashboard.tsx",
-	"utf8",
-);
+/*
+ * ЗДЕСЬ ЧИТАЛСЯ apps/web/src/pages/FinancialDashboard.tsx — экран удалён.
+ *
+ * Это был фасад: он принимал пропс `metrics: FinancialMetrics`, которого не
+ * производил никто во всём дереве, и его не импортировал ни один файл. Три
+ * проверки ниже запрещали ему выдумывать демо-счёт; вместе с файлом запрещать
+ * стало нечего. Ссылку на удалённый файл оставлять нельзя: readFileSync упал бы
+ * с ENOENT и увёл бы проверку в отказ по несуществующей причине.
+ *
+ * ОСТАВШИЙСЯ ДОЛГ, НЕ МОЙ: этот скрипт УЖЕ падает выше, на строке с
+ * InvoiceSplitPaymentModal.tsx, — и InvoiceSplitPaymentModal, и
+ * ThermalReceiptSimulator удалены коммитом c4f2b9240, а их чтения и проверки
+ * здесь остались. Пока их не уберут, `npm run
+ * smoke:dental-persistence-routes-source` не доходит ни до одной проверки.
+ */
 const thermalReceipt = readFileSync(
 	"apps/web/src/pages/ThermalReceiptSimulator.tsx",
 	"utf8",
@@ -134,21 +145,8 @@ requireIn(
 	"Split-payment modal reads must send tenant/session headers.",
 );
 
-forbidIn(
-	financialDashboard,
-	"demo-invoice-id",
-	"Financial dashboard must not fabricate demo invoices for empty tenants.",
-);
-forbidIn(
-	financialDashboard,
-	"для теста",
-	"Financial dashboard must not label production invoice UI as a test fixture.",
-);
-forbidIn(
-	financialDashboard,
-	"assuming we have patients",
-	"Financial dashboard must not depend on assumed fixture patients.",
-);
+// Три проверки про FinancialDashboard удалены вместе с экраном: они запрещали
+// ему выдумывать демо-счёт, а выдумывать теперь некому.
 forbidIn(
 	thermalReceipt,
 	"????",
