@@ -30,11 +30,43 @@ const DEFAULT_STATS: MarketingStats = {
 
 type ReviewTone = "positive" | "negative" | "neutral";
 
+/*
+  ПОЧЕМУ ПОЯВИЛИСЬ ЭТИ ДВЕ ОБЁРТКИ. Всё, что вводят на этом экране (телефон
+  главврача, рейтинги площадок, SEO-ключи), лежит только в localStorage браузера,
+  и обращались к нему напрямую. Если браузер запретил хранилище — заблокированы
+  cookie, жёсткий приватный режим, переполнена квота, — то бросает САМ вызов
+  localStorage.getItem. А стоял он в инициализаторе useState, то есть исключение
+  летело при первой отрисовке и уносило весь раздел: владелец видел «Раздел
+  временно не открылся» вместо маркетинга, и починить это из интерфейса было
+  нечем. Запись бросала так же, но уже на каждое нажатие клавиши в поле.
+  Теперь отказ хранилища означает только «не запомнится до перезагрузки», а не
+  потерю раздела и не потерю набранного текста.
+*/
+function readStored(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn(`[Маркетинг] Хранилище браузера недоступно для чтения (${key}):`, e);
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn(`[Маркетинг] Не удалось сохранить «${key}» в хранилище браузера:`, e);
+  }
+}
+
 export function MarketingView({ clinicName, clinicPhone }: { clinicName: string; clinicPhone: string }) {
   const [customSeoKeys, setCustomSeoKeys] = useState(() => {
     try {
-      const saved = localStorage.getItem("dental_crm_mkt_seo_keys");
-      if (saved) return JSON.parse(saved);
+      const saved = readStored("dental_crm_mkt_seo_keys");
+      const parsed = saved ? JSON.parse(saved) : null;
+      // Читаем чужой JSON из браузера: массивом он быть не обязан. Если там
+      // объект или строка, дальше .map/.filter уронили бы весь раздел.
+      if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string")) return parsed as string[];
     } catch (e) {
       console.warn("[Marketing] Failed to parse saved SEO keys from localStorage:", e);
     }
@@ -48,26 +80,45 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
     if (!val.trim()) return;
     const updated = [...customSeoKeys, val.trim()];
     setCustomSeoKeys(updated);
-    localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+    writeStored("dental_crm_mkt_seo_keys", JSON.stringify(updated));
   };
 
   const handleRemoveSeoKey = (val: string) => {
-    const updated = customSeoKeys.filter(k => k !== val);
+    const updated = customSeoKeys.filter((k: string) => k !== val);
     setCustomSeoKeys(updated);
-    localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+    writeStored("dental_crm_mkt_seo_keys", JSON.stringify(updated));
   };
 
   const [reviewText, setReviewText] = useState("");
   const [tone, setTone] = useState<ReviewTone>("positive");
   const [generatedReply, setGeneratedReply] = useState("");
+  /*
+    БЫЛО: если ни в браузере, ни в профиле клиники телефона нет, в поле
+    подставлялось «+7 (800) 000-00-00». Это выдуманный номер, и поле с ним
+    выглядело в точности как заполненное человеком — рамка, чёрный текст, не
+    подсказка. Такой номер попадал в ответ на негативный отзыв («позвоните
+    главврачу»), то есть публично на карточку клиники уходил телефон, по
+    которому никто не ответит. Теперь пусто — это пусто, а как выглядит номер,
+    показывает placeholder ниже.
+  */
   const [phone, setPhone] = useState(() => {
-    return localStorage.getItem("dental_crm_mkt_phone") || clinicPhone || "+7 (800) 000-00-00";
+    return readStored("dental_crm_mkt_phone") || clinicPhone || "";
   });
   
   const [stats, setStats] = useState<MarketingStats>(() => {
     try {
-      const saved = localStorage.getItem("dental_crm_mkt_stats");
-      if (saved) return JSON.parse(saved);
+      const saved = readStored("dental_crm_mkt_stats");
+      const parsed = saved ? JSON.parse(saved) : null;
+      // Достраиваем каждую площадку поверх нулей: сохранённый объект мог
+      // прийти из версии, где Google ещё не было, и stats.google.rating
+      // уронило бы раздел на чтении undefined.
+      if (parsed && typeof parsed === "object") {
+        return {
+          yandex: { ...DEFAULT_STATS.yandex, ...(parsed as MarketingStats).yandex },
+          gis2: { ...DEFAULT_STATS.gis2, ...(parsed as MarketingStats).gis2 },
+          google: { ...DEFAULT_STATS.google, ...(parsed as MarketingStats).google }
+        };
+      }
     } catch (e) {
       console.warn("[Marketing] Failed to parse saved stats from localStorage:", e);
     }
@@ -80,14 +131,42 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setPhone(val);
-    localStorage.setItem("dental_crm_mkt_phone", val);
+    writeStored("dental_crm_mkt_phone", val);
   };
   
   const updateStat = (platform: keyof MarketingStats, field: 'rating' | 'reviews', value: string) => {
     const num = parseFloat(value) || 0;
     const newStats = { ...stats, [platform]: { ...stats[platform], [field]: num } };
     setStats(newStats);
-    localStorage.setItem("dental_crm_mkt_stats", JSON.stringify(newStats));
+    writeStored("dental_crm_mkt_stats", JSON.stringify(newStats));
+  };
+
+  /*
+    ВЫДУМАННАЯ ЦИФРА, КОТОРУЮ ВИДЕЛИ ВСЕ. В карточке «Позиция в поиске» стояло
+    жёстко вписанное в вёрстку «Топ-3 по "стоматология"» — одинаковое у каждой
+    клиники, ни откуда не взятое и ничем не проверяемое. Рядом честная подпись
+    «Укажите актуальные данные вручную», при этом указать было негде: поля ввода
+    в карточке не существовало. То есть владельцу показывали приятную неправду о
+    его собственном продвижении и предлагали её обновить нечем. Позицию в поиске
+    не отдаёт ни одна площадка, её действительно считают руками, поэтому карточку
+    не убрал, а сделал тем, чем она притворялась: два поля, которые владелец
+    заполняет сам, и явная пометка «вы записали», чтобы цифру нельзя было принять
+    за измеренную системой. Хранится там же, где рейтинги — в браузере;
+    ДОЛГ: общего на клинику хранилища для этих цифр нет, нужна таблица и маршрут
+    в apps/api (чужая зона), пока цифры видны только на том компьютере, где их
+    ввели.
+  */
+  const [rankQuery, setRankQuery] = useState(() => readStored("dental_crm_mkt_rank_query") || "");
+  const [rankPlace, setRankPlace] = useState(() => readStored("dental_crm_mkt_rank_place") || "");
+
+  const handleRankQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRankQuery(e.target.value);
+    writeStored("dental_crm_mkt_rank_query", e.target.value);
+  };
+
+  const handleRankPlaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRankPlace(e.target.value);
+    writeStored("dental_crm_mkt_rank_place", e.target.value);
   };
 
   const [newKeyInput, setNewKeyInput] = useState("");
@@ -172,9 +251,30 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           <TrendingUp aria-hidden="true" className="text-[var(--teal-500,#0f766e)]" />
           <div>
             <p className="eyebrow">Позиция в поиске</p>
-            <strong className="text-lg font-bold text-[var(--ink)]">Топ-3 по "стоматология"</strong>
+            <div className="marketing-rating flex gap-2 mt-1 flex-wrap">
+              <input
+                type="text"
+                value={rankQuery}
+                onChange={handleRankQueryChange}
+                placeholder="Запрос, например: стоматология Химки"
+                aria-label="Запрос, по которому проверяли позицию клиники"
+                className="flex-1 min-w-[12rem] px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+              />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={rankPlace}
+                onChange={handleRankPlaceChange}
+                placeholder="Место"
+                aria-label="Какое по счёту место занимает клиника"
+                className="w-20 px-1.5 py-0.5 text-xs rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+              />
+            </div>
             <p className="text-xs text-[var(--muted,#94a3b8)] mt-1">
-              Укажите актуальные данные вручную для отслеживания динамики.
+              {rankQuery.trim() && rankPlace.trim()
+                ? `Вы записали: ${rankPlace} место по запросу «${rankQuery.trim()}». Проверьте заново через месяц — тогда будет видно, растёте вы или падаете.`
+                : "Пока не заполнено. Наберите свой запрос в Яндексе, посчитайте, какой по счёту в списке идёт ваша клиника, и впишите запрос и место. Сама система эту цифру узнать не может — её нигде не отдают."}
             </p>
           </div>
         </article>
