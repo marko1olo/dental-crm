@@ -497,7 +497,16 @@ export function MessageDeliveryConsole() {
 						 * программу.
 						 */
 						<div className="ops-notice ops-notice--error ops-channels-empty" role="alert">
-							<strong>Сообщения сейчас не отправляются: ни один канал связи не подключён.</strong>
+							{/*
+								«НОВЫЕ», а не «сообщения» вообще. Прежняя формулировка
+								утверждала, что сообщения не отправляются, — и тут же под ней в
+								журнале стояли строки «Доставлено» и «Отправлено». Администратор
+								не мог ответить на простой вопрос «письма уходят или нет?»:
+								экран говорил одновременно да и нет. Записи в журнале остаются
+								от периода, когда канал был настроен, и это нормально; неверно
+								было обобщение в баннере.
+							*/}
+							<strong>Новые сообщения сейчас не уйдут: ни один канал связи не подключён.</strong>
 							<p>
 								Телеграм и WhatsApp клиника подключает сама — в настройках. SMS и электронную
 								почту подключает тот, кто устанавливал программу: для них нужны ключи доступа
@@ -514,18 +523,27 @@ export function MessageDeliveryConsole() {
 							</button>
 						</div>
 					) : null}
-					<ul className="quick-chips-row ops-channel-list">
-						{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {
-							const channel = gateways.channels[code];
-							return (
-								<li key={code}>
-									<span className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}>
-										{channelLabels[code] ?? code}: {channel.configured ? "настроен" : "не настроен"}
-									</span>
-								</li>
-							);
-						})}
-					</ul>
+					{/*
+						Список каналов показывается, только когда есть что различать.
+						Когда не подключён НИ ОДИН, шесть одинаковых плашек «не настроен»
+						подряд повторяли красный баннер выше шесть раз. Стена одинаковых
+						предупреждений приучает не читать предупреждения вообще — а
+						следующее может оказаться важным.
+					*/}
+					{configuredChannels.length > 0 ? (
+						<ul className="quick-chips-row ops-channel-list">
+							{(Object.keys(gateways.channels) as ChannelCode[]).map((code) => {
+								const channel = gateways.channels[code];
+								return (
+									<li key={code}>
+										<span className={`ops-state ops-state--${channel.configured ? "ok" : "muted"}`}>
+											{channelLabels[code] ?? code}: {channel.configured ? "настроен" : "не настроен"}
+										</span>
+									</li>
+								);
+							})}
+						</ul>
+					) : null}
 					{gateways.channels.sms.configured ? (
 						<p className="ops-hint">
 							SMS-шлюз: {gateways.channels.sms.provider ?? "—"}

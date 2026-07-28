@@ -25,13 +25,26 @@
 	   навигацию, и не имеет права висеть поверх диалога. */
 	--corner-dock-z: 900;
 	--corner-dock-control: 3rem;
-	--corner-dock-control-primary: 3.5rem;
+	/* Кнопки угла — одна группа, поэтому диаметр у них общий. Отдельный размер
+	   главной кнопки разъезжался с соседями: микрофон выпирал из строки и
+	   опускался ниже остальных, то есть ближе к нижней навигации. */
+	--corner-dock-control-primary: var(--corner-dock-control);
+	/* Нижняя страховка. Измеренный просвет над навигацией всегда побеждает
+	   (max), а это значение работает только там, где замера ещё нет: первый кадр
+	   до rAF и случай, когда навигация отрисована позже угла. Числом высоту
+	   навигации больше никто не подменяет — оно лишь не даёт просвету быть
+	   нулевым на узком экране. */
+	--corner-dock-bar-floor: 0px;
 
 	position: fixed;
 	right: var(--corner-dock-gutter);
 	bottom: calc(
-		var(--corner-dock-gutter) + var(--corner-dock-bar-clearance, 0px) +
-			var(--corner-dock-lift, 0px)
+		var(--corner-dock-gutter) +
+			max(
+				var(--corner-dock-bar-clearance, 0px),
+				var(--corner-dock-bar-floor),
+				env(safe-area-inset-bottom, 0px)
+			) + var(--corner-dock-lift, 0px)
 	);
 	z-index: var(--corner-dock-z);
 	display: flex;
@@ -40,8 +53,10 @@
 	justify-content: flex-end;
 	gap: var(--corner-dock-gap);
 	/* Ширина региона ограничена экраном: русские подписи длиннее английских на
-	   30-50%, и панель обязана переноситься, а не обрезаться. */
-	max-width: calc(100vw - var(--corner-dock-gutter) * 2);
+	   30-50%, и панель обязана переноситься, а не обрезаться. Процент, а не
+	   100vw: vw включает вертикальную полосу прокрутки, поэтому предел
+	   оказывался шире видимой области и строка вылезала за край. */
+	max-width: calc(100% - var(--corner-dock-gutter) * 2);
 	/* Один stacking context на весь угол. */
 	isolation: isolate;
 	/* Сам регион прозрачен для мыши, кликабельны только его жильцы. */
@@ -81,7 +96,8 @@
 	flex-direction: column;
 	align-items: flex-end;
 	gap: var(--corner-dock-gap);
-	max-width: min(24rem, calc(100vw - var(--corner-dock-gutter) * 2));
+	/* Тот же предел, что и у региона: за отступ от края накладка не выходит. */
+	max-width: min(24rem, 100%);
 }
 
 .corner-dock__notice:empty {
@@ -193,8 +209,9 @@
    нашлось: угол уменьшает собственный след, а не лезет поверх кнопки. */
 .corner-dock[data-corner-density="compact"] {
 	--corner-dock-gap: 0.5rem;
+	/* Диаметр один на всю группу: --corner-dock-control-primary объявлен через
+	   var(--corner-dock-control) и уменьшается вместе с ним. */
 	--corner-dock-control: 2.5rem;
-	--corner-dock-control-primary: 2.75rem;
 }
 
 .corner-dock[data-corner-density="compact"] .omnibar-trigger-btn {
@@ -461,6 +478,11 @@
 @media (max-width: 52.5rem) {
 	.corner-dock {
 		--corner-dock-gutter: 1rem;
+		/* Именно здесь появляется нижняя навигация. Пока её высота не измерена,
+		   угол держится выше на эту величину: замер (обычно 60-75px) больше и
+		   перебивает страховку через max(), поэтому число не может опустить угол
+		   на панель — только не дать ему сесть на неё до замера. */
+		--corner-dock-bar-floor: 4.5rem;
 	}
 
 	.corner-dock .omnibar-trigger-btn {
