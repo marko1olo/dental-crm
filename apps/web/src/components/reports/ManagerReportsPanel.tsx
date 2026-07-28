@@ -271,7 +271,16 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								<span className="ops-metric__value">
 									{summary.patientFlow.newTotal} / {summary.patientFlow.returningTotal}
 								</span>
-								<span className="ops-metric__label">первичные / повторные</span>
+								{/*
+									Подпись называет единицу измерения. Было просто «первичные /
+									повторные», и рядом стояла плитка «22 приёмов» — на экране
+									получалось «7 / 0» против «22», то есть видимое противоречие.
+									На деле это разные вещи: здесь считаются УНИКАЛЬНЫЕ ПАЦИЕНТЫ,
+									дошедшие до кресла, а там — все записи любого состояния,
+									включая ещё не состоявшиеся и отменённые. Цифра была верной,
+									врала подпись.
+								*/}
+								<span className="ops-metric__label">пациентов: первичные / повторные</span>
 							</li>
 						</ul>
 
@@ -432,6 +441,16 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 							{formatPercent(summary.appointments.completionRate)} · отменено:{" "}
 							{formatPercent(summary.appointments.cancellationRate)} · неявки:{" "}
 							{formatPercent(summary.appointments.noShowRate)}
+						</p>
+						{/*
+							Доли считаются от ВСЕХ записей периода, включая ещё не
+							состоявшиеся, поэтому в сумме они меньше ста процентов. Без этой
+							строки экран выглядел как ошибка подсчёта: 45 + 14 + 9 = 68, и
+							куда делись остальные — непонятно.
+						*/}
+						<p className="ops-hint">
+							Доли считаются от всех {summary.appointments.total} записей периода. Остаток до 100 % — приёмы,
+							которые ещё не состоялись: они назначены на будущее или ждут подтверждения.
 						</p>
 
 						{/*
