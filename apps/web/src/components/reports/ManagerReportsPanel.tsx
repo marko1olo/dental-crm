@@ -27,8 +27,9 @@
  * Цифры моноширинные: суммы в колонке стоят разряд под разрядом.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { money } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { hasCapability, type ClinicMode } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 import { DoctorPayoutDashboard } from "../../pages/DoctorPayoutDashboard.js";
@@ -176,6 +177,46 @@ export type ManagerReportsPanelProps = {
 };
 
 export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelProps = {}) {
+	/*
+	 * ПОЧЕМУ У ЗАПРОСА СВОДКИ ЕСТЬ ЗАГОЛОВКИ. Раздел был мёртв у заказчика целиком,
+	 * и увидеть это на машине разработчика нельзя.
+	 *
+	 * /api/reports/summary закрыт охраной `apps/api/src/accessGuard.ts`: обработчик
+	 * зовёт местную обёртку `scopeFor` (routes/reports.ts:79), а та —
+	 * `requireClinicalReadContext`. Без заголовка `x-dente-admin-secret` охрана
+	 * отвечает 403 даже при действительных токенах кабинета и сотрудника — проверено
+	 * живьём на отдельном экземпляре API с заданным секретом и выключенными
+	 * лазейками. Панель звала адрес голым fetch, поэтому вместо выручки, врачей,
+	 * кресел, потерь и дебиторки владелец клиники видел одну строку «Отчёт не
+	 * построен: Сервер ответил 403».
+	 *
+	 * Локально этого не видно: в корневом `.env` секрет закомментирован, зато
+	 * включены лазейки DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, и живут они
+	 * только пока NODE_ENV !== "production". Ни типы, ни тесты, ни глаза на этой
+	 * машине такую поломку не показывают — её ловит `npm run check:guarded-headers`.
+	 *
+	 * `auth` берётся ТОЛЬКО из useAppLogicContext(): одноимённые функции из
+	 * AppHelpers.tsx (около строки 6142) сеансовый секрет НЕ подставляют — с ними код
+	 * компилируется, гейт замолкает, а клиника по-прежнему получает 403. Контекстные
+	 * подставляют `clinicalAdminSecretSession` (hooks/domains/useAuthLogic.ts:135).
+	 */
+	const appLogic = useAppLogicContext();
+	/*
+	 * СЕКРЕТ ЧИТАЕТСЯ ЧЕРЕЗ ref, А НЕ ИЗ ЗАМЫКАНИЯ И НЕ ЧЕРЕЗ ЗАВИСИМОСТЬ. Оба
+	 * «прямых» способа здесь ломаются, каждый по-своему:
+	 *   — взять `auth` в замыкание `load` нельзя: функция мемоизирована по
+	 *     [from, to, granularity], и `auth` застыл бы на том отрисовывании, когда
+	 *     секрета в сеансе ещё не было (он появляется после разблокировки раздела) —
+	 *     то есть 403 держался бы до перезагрузки страницы;
+	 *   — дописать `auth` в зависимости `load` нельзя: useAuthLogic возвращает НОВЫЙ
+	 *     объект на каждом отрисовывании (useAppLogic.tsx:2395, без useMemo), поэтому
+	 *     `load` менялся бы каждый раз, а `useEffect(..., [load])` ниже отправлял бы
+	 *     запрос на каждом отрисовывании — бесконечный поток запросов к серверу.
+	 * Ref остаётся одним и тем же объектом, а значение в нём всегда свежее: даже
+	 * мемоизированный `load` прочитает секрет, появившийся уже после него.
+	 */
+	const authRef = useRef(appLogic?.auth);
+	authRef.current = appLogic?.auth;
 	const showDoctorBreakdown = hasCapability(clinicMode, "doctorBreakdown");
 	const showChairUtilisation = hasCapability(clinicMode, "chairUtilisation");
 	const initial = useMemo(() => monthBounds(), []);
@@ -195,7 +236,17 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 				to: new Date(`${to}T23:59:59`).toISOString(),
 				granularity
 			});
-			const response = await fetch(`/api/reports/summary?${query.toString()}`);
+			/*
+			 * Заголовки собираются в момент запроса, а не при создании `load`:
+			 * см. пояснение к authRef выше. Проверка на `auth` — не
+			 * перестраховка: useAppLogicContext() вне провайдера возвращает
+			 * пустой объект (contexts/AppLogicContext.tsx:21), и тогда обращение
+			 * к функции уронило бы весь раздел вместо показа отказа.
+			 */
+			const auth = authRef.current;
+			const readHeaders =
+				auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {};
+			const response = await fetch(`/api/reports/summary?${query.toString()}`, { headers: readHeaders });
 			setSummary(await readJson<ReportsSummary>(response));
 		} catch (loadError) {
 			setSummary(null);
