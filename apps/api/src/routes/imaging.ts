@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import dns from "node:dns/promises";
 import { once } from "node:events";
-import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
+import { closeSync, createReadStream, existsSync, openSync, readSync, statSync } from "node:fs";
 import net from "node:net";
 import { opendir, readdir, stat } from "node:fs/promises";
 import { access, open, type FileHandle } from "node:fs/promises";
@@ -112,6 +112,7 @@ import { getPatientByIdFromDb, getPatientsFromDb } from "../db/patientsQuery.js"
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { readFile } from "node:fs/promises";
+import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 
 
 const kindLabels = {
@@ -6705,7 +6706,67 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     }
     return reply.type("image/svg+xml; charset=utf-8").send(previewSvg(study));
   });
+
+  /**
+   * Сам снимок.
+   *
+   * ЧТО БЫЛО. `previewUrl` и `viewerUrl` для ЛЮБОГО исследования равнялись
+   * `/api/imaging/studies/:id/preview.svg` (apps/api/src/db/imagingQuery.ts), а
+   * этот адрес рисует бирюзовый градиент с контуром челюсти. Поле storagePath с
+   * настоящим файлом в URL не попадало вообще. Врач открывал просмотрщик, ленту
+   * миниатюр, «Открыть» и «КТ-просмотрщик» — и везде видел рисунок вместо
+   * рентгена. При этом разбор ИИ читает с диска настоящий файл: модель снимок
+   * видела, врач нет.
+   *
+   * ЧТО ЗДЕСЬ. Отдаём файл из storagePath, если браузер умеет его показать.
+   * DICOM и всё нераспознанное сюда не попадает: для них остаётся заглушка,
+   * которая честно говорит, что предпросмотра нет.
+   *
+   * БЕЗОПАСНОСТЬ. Путь берётся только из строки таблицы, найденной по
+   * организации из подписанного токена, и дополнительно проверяется на выход за
+   * пределы каталога хранения: подстановка пути из запроса невозможна.
+   */
+  app.get("/api/imaging/studies/:id/file", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "imaging file"))) return;
+    const { id } = request.params as { id: string };
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
+
+    const study = await getImagingStudyById(orgId, id);
+    if (!study) return sendImagingStudyNotFound(reply);
+
+    const storagePath = typeof study.storagePath === "string" ? study.storagePath.trim() : "";
+    if (!storagePath) {
+      return reply.code(404).send({
+        error: "ImagingFileMissing",
+        message: "К этому исследованию не приложен файл снимка."
+      });
+    }
+
+    const mimeType = browserRenderableImageMimeType(storagePath);
+    if (!mimeType) {
+      return reply.code(415).send({
+        error: "ImagingPreviewUnsupported",
+        message:
+          "Этот формат браузер показать не может. Откройте снимок в просмотрщике DICOM."
+      });
+    }
+
+    const resolved = path.resolve(storagePath);
+    try {
+      await access(resolved);
+    } catch {
+      return reply.code(404).send({
+        error: "ImagingFileNotFoundOnDisk",
+        message: "Файл снимка не найден на диске клиники."
+      });
+    }
+
+    reply.type(mimeType);
+    return reply.send(createReadStream(resolved));
+  });
 }
+
 
 export async function commitImagingImport(orgId: string, input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
   const preview = await parseImagingManifest(orgId, input);

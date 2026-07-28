@@ -1,3 +1,4 @@
+import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 /**
  * domainStateHydration.ts — наполнение доменного состояния данными из Postgres.
  *
@@ -626,8 +627,19 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			dicomStudyUid: study.dicomStudyUid ?? null,
 			status: study.status,
 			aiSummary: study.aiSummary ?? null,
-			previewUrl: `/api/imaging/studies/${study.id}/preview.svg`,
-			viewerUrl: `/api/imaging/studies/${study.id}/preview.svg`,
+			/*
+			 * Второе место, где строится ссылка на снимок, — именно оно питает
+			 * дашборд. Правило то же, что в db/imagingQuery.ts: настоящий файл,
+			 * когда браузер способен его показать, иначе заглушка. Держать оба
+			 * места в одном правиле обязательно, иначе экран снова покажет
+			 * нарисованную челюсть вместо рентгена.
+			 */
+			previewUrl: browserRenderableImageMimeType(study.storagePath)
+				? `/api/imaging/studies/${study.id}/file`
+				: `/api/imaging/studies/${study.id}/preview.svg`,
+			viewerUrl: browserRenderableImageMimeType(study.storagePath)
+				? `/api/imaging/studies/${study.id}/file`
+				: `/api/imaging/studies/${study.id}/preview.svg`,
 		})),
 		imagingStudySchema,
 		"imagingStudies",

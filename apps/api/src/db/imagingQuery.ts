@@ -1,3 +1,4 @@
+import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
@@ -53,8 +54,25 @@ function mapImagingStudy(record: typeof schema.imagingStudies.$inferSelect): Ima
     dicomStudyUid: record.dicomStudyUid,
     status: record.status,
     aiSummary: record.aiSummary,
-    previewUrl: `/api/imaging/studies/${record.id}/preview.svg`,
-    viewerUrl: `/api/imaging/studies/${record.id}/preview.svg`
+    /*
+     * ВРАЧ ДОЛЖЕН ВИДЕТЬ СНИМОК, А НЕ РИСУНОК.
+     *
+     * Здесь для любого исследования подставлялся адрес preview.svg — а он
+     * рисует бирюзовый градиент с контуром челюсти. Настоящий файл лежит в
+     * storagePath и в ссылку не попадал вообще: и главный просмотрщик, и лента
+     * миниатюр, и «Открыть», и «КТ-просмотрщик» показывали заглушку. Разбор ИИ
+     * при этом читает файл с диска — снимок видела модель, но не врач.
+     *
+     * Ссылка ведёт на файл, когда браузер способен его показать. Для DICOM и
+     * прочего заглушка остаётся: она честно говорит, что предпросмотра нет, и
+     * это лучше сломанной картинки.
+     */
+    previewUrl: browserRenderableImageMimeType(record.storagePath ?? "")
+      ? `/api/imaging/studies/${record.id}/file`
+      : `/api/imaging/studies/${record.id}/preview.svg`,
+    viewerUrl: browserRenderableImageMimeType(record.storagePath ?? "")
+      ? `/api/imaging/studies/${record.id}/file`
+      : `/api/imaging/studies/${record.id}/preview.svg`
   };
 }
 
