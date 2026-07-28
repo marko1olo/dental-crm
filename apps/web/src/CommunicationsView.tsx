@@ -281,6 +281,14 @@ export function CommunicationsView({
   */
   const journal = summarizeJournal<CommunicationEvent>(dashboard?.communicationEvents);
 
+  /*
+    «Заметка заряжена»: в поле есть непробельный текст, значит при следующем
+    закрытии задачи он уйдёт на сервер. Проверка по trim, а не по длине: строка
+    из пробелов на сервере превратится в «Задача связи закрыта.» и предупреждать
+    о ней не о чем.
+  */
+  const closingNoteArmed = typeof communicationNote === "string" && communicationNote.trim().length > 0;
+
   const communicationSummaryHasNumbers = Boolean(
     (dashboard?.communicationSummary?.openTasks ?? 0) ||
       (dashboard?.communicationSummary?.dueToday ?? 0) ||
@@ -335,15 +343,35 @@ export function CommunicationsView({
         `POST /api/communications/tasks/complete` вместе с taskId. Раньше блок
         висел на экране всегда — и у клиники без единой задачи это была форма
         без объекта: «Заметка закрытия» чего, если закрывать нечего.
+
+        НО ОДНОГО УСЛОВИЯ «ЕСТЬ ЗАДАЧИ» НЕДОСТАТОЧНО. Заметка живёт в состоянии
+        useAppLogic и после закрытия задачи НЕ очищается: закрыли последнюю
+        задачу — блок исчез, а набранный текст остался в состоянии и приложится
+        к следующей задаче, которая появится в очереди. Текст, который уйдёт в
+        журнал клиники, не имеет права быть невидимым, поэтому блок показывается
+        и тогда, когда очередь пуста, но в заметке что-то есть.
       */}
-      {(sortedCommunicationTasks ?? []).length ? (
+      {(sortedCommunicationTasks ?? []).length || closingNoteArmed ? (
       <div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
         <div className="flex justify-between items-center mb-3">
           <div>
             <label htmlFor={communicationNoteInputId} className="text-sm font-semibold text-[var(--ink)] block">
               Что сказал пациент
             </label>
-            <span id={communicationNoteDescriptionId} className="text-xs text-[var(--muted)]">Запись попадёт в задачу, которую вы закроете ниже, и останется в журнале клиники.</span>
+            {/*
+              БЫЛО: «Запись попадёт в задачу, которую вы закроете ниже». Про
+              главное свойство поля не говорилось ничего: заметка одна на весь
+              экран и после закрытия задачи остаётся на месте. Администратор
+              закрывал задачу пациента А с заметкой «перезвонить в пятницу»,
+              потом закрывал задачу пациента Б — и та же фраза уходила в журнал
+              пациента Б. Ложная запись в журнале клиники. Пока очистка после
+              успешного закрытия не сделана в useAppLogic (это вне этого файла),
+              экран обязан хотя бы не умалчивать об этом и дать кнопку очистки.
+            */}
+            <span id={communicationNoteDescriptionId} className="text-xs text-[var(--muted)]">
+              Запись приложится к той задаче, которую вы закроете ниже, и останется в журнале клиники.
+              Если поле пустое, в журнал уйдёт «Задача связи закрыта.»
+            </span>
           </div>
           <SmartMicrophoneButton
             context="general"
@@ -363,6 +391,27 @@ export function CommunicationsView({
           rows={2}
           className="w-full p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm resize-y mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
         />
+        {/*
+          Строка появляется только когда в заметке есть текст, то есть ровно в
+          тот момент, когда она может уйти не тому пациенту. Кнопка очистки —
+          единственный способ убрать заметку, кроме выделения текста руками:
+          после закрытия задачи поле остаётся заполненным.
+        */}
+        {closingNoteArmed ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span className="text-xs font-semibold text-[var(--bad-fg,#b42318)]">
+              Заметка заполнена и приложится к следующей закрытой задаче — даже если она уже про
+              другого пациента.
+            </span>
+            <button
+              type="button"
+              className="secondary-button text-xs"
+              onClick={() => onCommunicationNoteChange("")}
+            >
+              Очистить заметку
+            </button>
+          </div>
+        ) : null}
         <div className="quick-chips-row flex-wrap gap-2">
           <span className="text-xs text-[var(--muted)] self-center mr-1">Шаблоны:</span>
           {["Недозвон", "Обещал оплатить", "Подумает", "Перезвонить позже", "Запрос документов"].map((chip) => (
