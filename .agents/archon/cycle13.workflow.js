@@ -127,6 +127,14 @@ activity, prefixed '[ARCHON] '. Body explains WHY. Voice from HEAD:
     fix(документы): квитанция и возврат на верную сумму отклонялись из-за сложения в плавающей точке
 BANNED words: improve, enhance, update, cleanup, refactor for clarity.
 VERIFY with 'git log -1 --stat': hash, Russian subject intact (not mojibake), ONLY your files.
+**NO TOOL ATTRIBUTION, EVER.** No 'Co-Authored-By: Claude', no '…@anthropic.com' trailer, no «Generated
+with …» footer, no tool name in the subject, body or trailers. This is the owner's standing instruction and
+it has already been violated **220 times — 96 of them in the last 200 commits**, measured by the lead
+tonight. Pushed history is NOT rewritten here, because a second author commits continuously and rewriting
+would destroy their work, so every one of those is permanent and the only available remedy is that it stops
+now. After committing run 'git log -1 --format=%B' and check for 'co-authored', 'anthropic' and 'generated
+with' — expect ZERO. If it landed anyway, report it plainly instead of hoping nobody looks; the lead greps
+for this now.
 
 ═══ PROOF LANGUAGE ═══
   TYPECHECK VERIFIED - exit 0. Proves only that you did not break the build. Never alone.

@@ -126,6 +126,20 @@ Use these exclusively. Blind terminal navigation is banned.
 **12. THE SEMANTIC GIT DOCTRINE**
 - All agent-generated commits MUST strictly follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`).
 - The commit body must explain the *WHY* (the architectural reason), not just the *WHAT*.
+- **NO TOOL ATTRIBUTION IN THE COMMIT, EVER.** No `Co-Authored-By: Claude`, no
+  `Co-Authored-By: <anything>@anthropic.com`, no «Generated with …» footer, no tool name anywhere in the
+  subject, body or trailers. Every commit ships as the repository owner alone.
+
+  This is the owner's standing instruction and it has been violated **220 times**, 96 of them in the last
+  200 commits — measured, not estimated. Pushed history is not rewritten here (a second author commits
+  continuously and rewriting would destroy their work), so the whole cost of the violation is permanent.
+  The only remedy is that it stops now.
+
+  Practical consequence for you: some tooling appends that trailer automatically when a commit message is
+  passed a certain way. **Write the message to a file and commit with `git commit -F <file>`**, then
+  VERIFY with `git log -1 --format=%B | rg -i "co-authored|anthropic|generated with"` and expect zero
+  matches. If your commit landed with the trailer, say so plainly in your report rather than hoping the
+  lead does not look — the lead greps for it now.
 
 ## КРИТИЧЕСКОЕ ПРАВИЛО: КОДИРОВКА ФАЙЛОВ (UTF-8)
 
