@@ -23,6 +23,6 @@ Before starting any task, read these documents to understand the architecture, d
 ## 🚨 Critical Architecture Rules
 
 *   **Zero-Mocks Policy:** Never write mock API responses or UI placeholders. Everything must be fully typed and integrated with database client queries.
-*   **The God-Context Constraint:** `apps/web/src/useAppLogic.tsx` (14,423 lines, counted 2026-07-27 — the old "~18,800" figure was wrong) is a centralized state manager exposing a massive context object. **Do not modify its return block or delete variables without updating all dependent UI files**, as it will immediately break the typecheck of 50+ files.
+*   **The God-Context Constraint:** `apps/web/src/useAppLogic.tsx` (14,557 lines, counted 2026-07-28; 14,423 on 2026-07-27, and the older "~18,800" figure was wrong) is a centralized state manager exposing a massive context object. **Do not modify its return block or delete variables without updating all dependent UI files**, as it will immediately break the typecheck of 50+ files. It grows ~100 lines/day, so recount with `wc -l` rather than quoting this number back.
 *   **UTF-8 Encoding (Mojibake Prevention):** All Russian text in code/JSON must be written strictly using UTF-8. Never use PowerShell here-strings or `node -e` in CLI for Russian strings.
 *   **Local Swarm Rules:** Neighboring agents work concurrently in this same folder. Use specific git adds (`git add apps/web/src/...`) instead of global `git add .` to avoid committing dirty unsaved work from neighboring sessions.

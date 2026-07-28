@@ -37,7 +37,7 @@ Never accept the first layer of truth. AI agents have "tunnel vision". Before an
 - GLOBAL SYSTEM CENSUS: Always mandate a global codebase search (`grep_search`) for legacy systems.
 - EXECUTION CHAIN VERIFICATION: Never assume an algorithm is active just because it exists. Verify the call stack.
 - HISTORICAL CROSS-REFERENCING: Dig deeper if docs and code don't match.
-- AGENT-SCOUT: Do not read entire code files manually. Work efficiently. Use search.
+- AGENT-SCOUT: search before you read. Use `rg`/`fd`/`sg` to find the owning file instead of paging through the tree by hand. Search narrows the candidate set; it does not replace reading the file you are about to change — once a file is an edit target, MANDATORY FULL-FILE COMPREHENSION (below) applies and you read it whole. "Work efficiently" means skip files that are not yours, not skim the one that is.
 
 **7. TEAM HIERARCHY & OPERATIONAL MANDATE**
 - USER: The Director (Vision & Commands).
@@ -45,6 +45,16 @@ Never accept the first layer of truth. AI agents have "tunnel vision". Before an
 - LEAD AGENT (whichever agent the user is talking to, any vendor): owns architecture, critical math, and delegation. No capability lane is reserved for or withheld from a vendor.
 - IMPLEMENTER / SUBAGENT (any vendor): bounded scope, working code plus its evidence. Laziness, corner-cutting, and hallucinated success are failure modes of the ROLE, watch for them in every agent regardless of brand.
 Hold all agents by the throat. Analyze their code surgically. Expose mathematical failures immediately and order strict rewrites.
+
+**7a. DELEGATION, SUBAGENTS & CONCURRENCY**
+Subagents are a normal tool, parallel fans included. No per-task cap; cost is the lead's judgement call.
+- Every assignment states: role; why it is delegated; which files and docs it must read itself; owned read/edit scope; forbidden scope; expected output format; evidence standard; whether file edits are allowed. Hand it the path list, never pasted doc bodies.
+- Subagent output is evidence, never authority. A subagent reporting "0 TypeScript errors", a passing test, or a screenshot proves nothing until the lead re-runs that exact check itself and reads the real output. Fabricated proof is a known, repeated failure mode in this repo — treat every unverified agent claim as `НЕ ПРОВЕРЕНО` (see 8b).
+- One writer per gate. `npm run typecheck`, `npm run build`, migrations, seeds, and Playwright runs all touch shared state — `dist/`, `.tsbuildinfo`, generated `packages/shared/dist/`, and the live PostgreSQL 18 instance on `127.0.0.1:5432`. One agent at a time on any of those. Read-only `rg`/`fd`/`sg`/`tokei`/`madge` parallelizes freely.
+- There is no per-agent database. A subagent running migrations, seeding, or destructive SQL needs explicit scope from the lead and must not run while another agent's tests are live.
+- Concurrent edits go through separate worktrees, or through file lists proven disjoint against `git status --short` first. Per-file `git add` only; never sweep another agent's unfinished work into your commit.
+- `.agents/<role>/` folders (`orchestrator`, `explorer_*`, `worker_*`, `reviewer_*`, `sentinel`, `archon`) are working notes for a role, not authority. This file plus the modular docs it indexes are the constitution; a role folder may not relax, reinterpret, or override them.
+- Do not delegate in order to skip reading a doc the task touches, to outsource the decision itself, or to produce another report once a blocker is already known.
 
 **8. THE RECONNAISSANCE ARSENAL (rg, fd, sg, jq)**
 Never use `cd`, `ls`, or `cat` for search. You are equipped with heavy weaponry:
@@ -106,14 +116,46 @@ Use these exclusively. Blind terminal navigation is banned.
 
 5. **Проверка на мождибаке** — после любого массового изменения файлов запускать:
    ```js
+   // Round-trip test. Definitive: re-encode the decoded text through the
+   // single-byte codec it was misread as, then try to decode THAT as UTF-8.
+   // If it succeeds and yields Cyrillic, the file is double-encoded.
    node -e "
    const fs=require('fs');
-   const c=fs.readFileSync('path/to/file','utf8');
-   const broken=c.split('\n').filter(l=>/[\u0420\u0421][\u0080-\u00FF]/.test(l));
-   console.log('Broken:', broken.length);
+   const t=fs.readFileSync('path/to/file','utf8');
+   let mojibake=false;
+   try {
+     const rec=new TextDecoder('utf-8',{fatal:true}).decode(Buffer.from(t,'latin1'));
+     if (rec!==t && /[\u0400-\u04FF]/.test(rec)) mojibake=true;
+   } catch (e) { /* not decodable as UTF-8 -> not this defect */ }
+   console.log('mojibake:', mojibake);
    "
    ```
-   Ноль — чисто. Больше нуля — файл нужно переписать через `write_to_file`.
+
+   > **The old regex check `/[\u0420\u0421][\u0080-\u00FF]/` was REMOVED from this
+   > step on 2026-07-28 because it is actively dangerous, and the replacement above
+   > is not a style preference.** Measured on the current tree: that regex flags 55
+   > lines in `apps/api/src/routes/documents/pdf.ts` alone and 8 files in total,
+   > while the round-trip test clears every one of them. Every flagged follower is a
+   > legitimate typographic or scientific character \u2014 `\u00B5` `\u00B0` `\u00BB` `\u00B1` `\u00B7` and soft
+   > hyphen \u2014 i.e. ordinary Russian technical text. An agent that ran step 6 on that
+   > output would rewrite 8 files of correct text and call it a repair.
+   >
+   > Baseline from the same measurement: **5093 files scanned, 1121 containing
+   > Cyrillic, 0 confirmed mojibake.** The epidemic named at the top of this section
+   > is cured in the current tree \u2014 treat any new report of it as unproven until the
+   > round-trip test confirms it.
+   >
+   > Separately found and NOT mojibake: 11 files that are not valid UTF-8 at all
+   > (leftover CP1251, e.g. `apps/api/test_trim.ts`, `apps/web/take_screenshots_auth.mjs`,
+   > and several root-level `fix.cjs` / `audit.cjs` / `scratch_*` scripts that also
+   > violate rule 9 on scratch files) and 13 files carrying a UTF-8 BOM, which
+   > `write_to_file` never produces. Those need a rewrite, not a mojibake repair.
+   > Check encoding by counting bytes, never with a text-mode search: the instrument
+   > matters, and a `grep -P` for a Cyrillic range returned zero on files that hold
+   > thousands of Cyrillic bytes on this host.
+
+   `mojibake: false` — чисто. `mojibake: true` — файл переписать через `write_to_file`
+   (пункт 6). Результат регулярки основанием для перезаписи больше не является.
 
 6. **При обнаружении мождибаке** — не пытаться починить алгоритмически через PowerShell или `node -e`. Сразу переписывать файл целиком через `write_to_file` с правильными русскими строками.
 
@@ -129,7 +171,15 @@ Use these exclusively. Blind terminal navigation is banned.
 - `apps/api/` — Fastify backend (TypeScript)
 - `apps/web/` — React frontend (Vite + TypeScript)
 - `apps/web/src/components/` — UI компоненты
-- `apps/web/src/App.tsx` — главный компонент (монолит, ~2400 строк)
+- `apps/web/src/useAppLogic.tsx` — **настоящий монолит и God Context, 14 557 строк**
+  (измерено 2026-07-28). Ограничения на его правку: `.agents/UI_STANDARDS.md` и
+  `.agents/INDEX.md` — трогать return-блок без обновления зависимых файлов нельзя.
+- `apps/web/src/App.tsx` — главный компонент, **4 876 строк** (измерено 2026-07-28;
+  прежняя цифра «~2400» была занижена вдвое и указывала на App.tsx как на монолит,
+  тогда как он третий по размеру)
+- `apps/web/src/AppHelpers.tsx` — 6 158 строк; `components/settings/SmartImportStudio.tsx`
+  — 4 244; `DocumentsView.tsx` — 4 187. Любая цифра размера здесь гниёт: пересчитывай
+  (`wc -l`) прежде чем ссылаться на неё, и обновляй с датой, как в `INDEX.md`.
 - `apps/api/src/db/schema.ts` — Drizzle ORM схема БД
 - `apps/api/src/routes/` — API роуты
 
