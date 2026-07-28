@@ -29,6 +29,7 @@
 import { and, eq, inArray, isNotNull, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+	clinics,
 	communicationOutbox,
 	communicationSettings,
 	patientCommunicationConsents,
@@ -83,8 +84,37 @@ export type ResolvedCommunicationSettings = QuietHoursSettings &
 		readonly appointmentReminderWindowMinutes: number;
 	};
 
+/**
+ * Часовой пояс последней надежды, когда у организации нет ни строки настроек
+ * связи, ни ни одной клиники.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Здесь стояло "Europe/Moscow", а `clinics.timezone`
+ * (db/schema.ts:240) по умолчанию `Europe/Samara`. Два значения по умолчанию для
+ * одного понятия, и расходились они молча. Тихие часы считает именно этот
+ * параметр: deliveryPolicy.ts:89 вызывает minuteOfDayInTimeZone(now,
+ * settings.timezone). А `resolveCommunicationSettings` возвращает эти значения
+ * КАЖДОЙ организации, у которой строки communication_settings ещё нет, то есть
+ * любой новой клинике.
+ *
+ * Последствие для самарской клиники (UTC+4) при расчёте по Москве (UTC+3):
+ *   • тихие часы кончаются в 09:00 — когда в Самаре 09:00, в Москве 08:00,
+ *     политика считает, что тишина ещё идёт, и напоминание уходит на час позже;
+ *   • тихие часы начинаются в 21:00 — когда в Самаре 21:00, в Москве 20:00,
+ *     политика считает, что тишина не началась, и служебное сообщение уходит
+ *     пациенту в его тихий час.
+ * Обе границы неверны, причём в сторону «шлём когда нельзя и молчим когда надо».
+ *
+ * ПОЧЕМУ НЕ ПРОСТО ПОМЕНЯТЬ ЛИТЕРАЛ НА Europe/Samara. Это перенесло бы
+ * произвольный выбор, а не убрало его. Источник правды о часовом поясе —
+ * клиника, поэтому resolveCommunicationSettings теперь спрашивает его у клиники
+ * организации и падает на эту константу лишь тогда, когда клиник нет вовсе.
+ * Значение совпадает с умолчанием `clinics.timezone`, чтобы два умолчания больше
+ * не расходились.
+ */
+export const FALLBACK_COMMUNICATION_TIMEZONE = "Europe/Samara";
+
 export const DEFAULT_COMMUNICATION_SETTINGS: ResolvedCommunicationSettings = {
-	timezone: "Europe/Moscow",
+	timezone: FALLBACK_COMMUNICATION_TIMEZONE,
 	quietHoursStartMinute: 21 * 60,
 	quietHoursEndMinute: 9 * 60,
 	deferServiceInQuietHours: true,
@@ -134,7 +164,32 @@ export async function resolveCommunicationSettings(organizationId: string): Prom
 		.where(eq(communicationSettings.organizationId, organizationId))
 		.limit(1);
 
-	if (!row) return DEFAULT_COMMUNICATION_SETTINGS;
+	/*
+	 * Строки настроек связи у организации может не быть вовсе — так выглядит
+	 * любая только что созданная клиника. Раньше в этом случае возвращались
+	 * умолчания с часовым поясом "Europe/Moscow", хотя `clinics.timezone` по
+	 * умолчанию `Europe/Samara`: тихие часы считались в чужом поясе, и обе их
+	 * границы съезжали на час (разбор — у FALLBACK_COMMUNICATION_TIMEZONE выше).
+	 *
+	 * Источник правды о поясе — клиника, поэтому спрашиваем его у неё. Берём
+	 * самую раннюю клинику организации: у сети их может быть несколько, и пока
+	 * настройки связи одни на организацию, выбор обязан быть определённым, а не
+	 * зависеть от порядка выдачи строк. Если клиник нет ни одной — остаётся
+	 * константа, и она совпадает с умолчанием `clinics.timezone`.
+	 */
+	if (!row) {
+		const [clinic] = await db
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.orderBy(clinics.createdAt)
+			.limit(1);
+
+		return {
+			...DEFAULT_COMMUNICATION_SETTINGS,
+			timezone: clinic?.timezone ?? FALLBACK_COMMUNICATION_TIMEZONE
+		};
+	}
 
 	return {
 		timezone: row.timezone,
