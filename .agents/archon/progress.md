@@ -565,3 +565,60 @@ correction is recorded here, where the claim is read, and packet V2 carries it i
 **Assembly note for future cycles:** cycle 6 failed to launch once with
 `Identifier 'REWORK_RULES' has already been declared` — the LAW preamble inherited from cycle 4 already
 carried that constant. When reusing the preamble, check for identifier collisions before launching.
+
+## CYCLE 6 — TWO STRIKES ON THE FLOATING CORNER. NO THIRD PATCH. REDESIGN.
+
+Run `wf_196d8593-267`: 6/9 done, V4/V5/V6 killed by credits three times (resumed; nothing lost).
+
+### The V1 review is the most destructive of the campaign, and it is right
+It **CONFIRMED the builder's DISPUTE** — the previous reviewer's F2 mechanism was wrong. The reserve
+reached the DOM **zero** times at ≤840 px, not twice: U4's rule matched `<main class="app-shell">` only
+by the TYPE selector `main` (0,0,1), losing to `.app-shell` (0,1,0) at equal importance. An agent
+correctly overturned a reviewer, with a brace-walk of `main.css` proving the enclosing `@media` is
+unlayered so specificity decides. That is the DISPUTE-with-evidence path working exactly as designed.
+
+But it then destroyed the fix on four counts, each measured:
+1. **A NEW regression of the very defect class the packet exists to close.** At 1600×1100 the dock's
+   `.omnibar-trigger-btn` (158×48) covers the Email `<label>` (coveredShare 0.443) and its `<input>`
+   (0.242) — both under the 0.5 yield threshold, so the dock does not move.
+   **`document.elementFromPoint` at the label's centre returns the button: clicking the middle of the
+   Email label opens the omnibar instead of focusing the field.** Proven a regression from the
+   builder's own BEFORE data — the parent lifted 46 px over exactly this element; HEAD sits on it.
+2. **F1 is not closed.** The incoming-call toast (z-index 999999, `p-5` column) yields nothing:
+   coveredShare 0.290 at height 120 px, 0.087 at 400 px — it would need to be ≤69 px tall to reach the
+   0.5 threshold. Packet commit 2 broke what commit 1 claimed to fix, and the 54-test suite missed it
+   because the new test never runs the toast rectangle through `cornerBlocksTarget`.
+3. **The headline "295 → 90 hit tests" is misattributed.** The builder's own intermediate artifact shows
+   fix 1 alone made it *worse*: 405/385/615 against a 295 baseline (+37 %/+31 %/+108 %). The win came
+   from fix 2's area threshold suppressing re-sampling — a behaviour change, not a performance fix.
+   (The `rectMs` improvement is real and reproduces: 19.34→0.27 ms.)
+4. **The user-visible symptom is not closed.** 299 px of trailing dead space at 390×844 — **35 % of the
+   viewport** — because three nested paddings stack: `.patients-panel` 20 + `.work-grid` 96 +
+   `.workspace` 144.
+Plus the new CSS gate is evadable three ways (a consumer in any of the ~35 `.css` files outside the two
+scanned directories; the consumer moved back onto the outer box, since the assertion never checks WHICH
+element; two declarations collapsed onto one line, since the counter is line-based).
+
+### Verified by the lead personally
+I re-ran `scratch/probe-corner-reserve.mjs` myself against the live pair. My numbers match the
+reviewer's exactly: `reserveVar` **144 px at 390×844** and 840×900, 96 px at 1600×1100, `dockHosts` 1 at
+all three. A 144 px reserve on an 844 px phone is 17 % of the screen before the other two paddings are
+counted.
+
+### THE ARCHITECTURAL CALL — the design is wrong, not the implementation
+U4 and V1 are two strikes on the same area. Per the campaign rule, no third patch.
+
+**A floating dock that measures the DOM every pass and lifts itself to dodge obstacles cannot be made
+correct.** It is a heuristic fighting the layout: V1 proved it by *introducing* a click-blocking
+regression on the Email field while removing the previous one. There will always be another element
+under it, and the 0.5 coverage threshold is an arbitrary line that the incoming-call toast already
+walks straight past. The reserve approach compounds it by stacking padding at three nesting levels.
+
+**Cycle 8 gets a REDESIGN packet, not a fix packet.** The corner must stop floating over content:
+on narrow screens its actions belong in the existing bottom navigation — which is genuinely good,
+labelled, with a clear active state — and on wide screens in the header. No obstacle sampling, no
+lifting, no per-pass geometry, no reserve padding. What is worth keeping from V1: the `rectMs`
+improvement and the write-before-read removal.
+
+Not reverting: V1's measured `rectMs` win is real, and a revert would restore the original overlap.
+The area is FROZEN to patching until the redesign packet lands.
