@@ -350,19 +350,49 @@ function classifyMaterial(line: string): MaterialClassification {
   };
 }
 
+/*
+ * Цена строки прайса — вместе с копейками.
+ *
+ * БЫЛО: value.replace(/[^\d]/g, "") выбрасывало ВСЁ, кроме цифр, а затем
+ * Math.round округлял результат до рубля. Копейки исчезали ещё до контракта,
+ * поэтому priceRub, minPriceRub, maxPriceRub и averagePriceRub не могли стать
+ * дробными ни при каком прайсе: клиника вставляла строку «Лечение кариеса
+ * 1500,50» и получала услугу за 1500 ₽, молча, без предупреждения. Хуже того,
+ * при удалении разделителя «1500,50» превращалось бы в 150050 — от этого
+ * спасало только то, что регулярка десятичную часть вообще не захватывала.
+ *
+ * Разделитель разрядов и десятичный разделитель различаются числом цифр после
+ * него: РОВНО ТРИ — это разряды (1.500 = 1500), ОДНА ИЛИ ДВЕ — копейки
+ * (1500,50 = 1500,50; 1500,5 = 1500,50). Другого способа развести их в русском
+ * прайсе нет, и обе записи в прайсах встречаются.
+ */
 function parseMoney(value: string | undefined): number | null {
   if (!value) return null;
-  const normalized = value.replace(/[^\d]/g, "");
-  if (!normalized) return null;
-  const price = Number(normalized);
-  return Number.isFinite(price) && price >= 300 && price <= 2_000_000 ? Math.round(price) : null;
+  const trimmed = value.trim();
+  const decimalMatch = /[.,](\d{1,2})$/.exec(trimmed);
+  // «1500,5» — это 50 копеек, а не 5: дополняем до двух знаков справа.
+  const kopecks = decimalMatch ? (decimalMatch[1] ?? "").padEnd(2, "0") : "00";
+  const rubles = (decimalMatch ? trimmed.slice(0, decimalMatch.index) : trimmed).replace(/[^\d]/g, "");
+  if (!rubles) return null;
+  const price = Number(`${rubles}.${kopecks}`);
+  return Number.isFinite(price) && price >= 300 && price <= 2_000_000
+    ? Math.round(price * 100) / 100
+    : null;
 }
 
 function extractPrice(line: string): { priceRub: number | null; priceMaxRub: number | null } {
   const withoutServiceCodes = line.replace(/\b[A-ZА-Я]?\d{2}\.\d{2}\.\d{3}\b/giu, " ");
   const candidates: Array<{ priceRub: number; priceMaxRub: number | null; explicit: boolean }> = [];
+  /*
+   * Десятичная часть обязана попадать в ЗАХВАТ, иначе parseMoney её никогда не
+   * увидит: раньше регулярка останавливалась на запятой, «1500,50» отдавало
+   * «1500», а отброшенное «50» не проходило нижнюю границу цены и терялось
+   * совсем. `(?:[.,]\d{1,2})?` в обеих альтернативах и в верхней границе
+   * диапазона — это и есть копейки; три цифры после разделителя по-прежнему
+   * читаются как разряды первой альтернативой.
+   */
   const priceRegex =
-    /(?:от\s*)?(\d{1,3}(?:[\s.]\d{3})+|\d{3,7})(?:\s*(?:-|до)\s*(\d{1,3}(?:[\s.]\d{3})+|\d{3,7}))?\s*(₽|руб\.?|р\.?)?/giu;
+    /(?:от\s*)?(\d{1,3}(?:[\s.]\d{3})+(?:[.,]\d{1,2})?|\d{3,7}(?:[.,]\d{1,2})?)(?:\s*(?:-|до)\s*(\d{1,3}(?:[\s.]\d{3})+(?:[.,]\d{1,2})?|\d{3,7}(?:[.,]\d{1,2})?))?\s*(₽|руб\.?|р\.?)?/giu;
   for (const match of withoutServiceCodes.matchAll(priceRegex)) {
     const priceRub = parseMoney(match[1]);
     const priceMaxRub = parseMoney(match[2]);
@@ -384,8 +414,32 @@ function stripPriceFromTitle(line: string): string {
   return normalizeText(
     line
       .replace(/\b[A-ZА-Я]?\d{2}\.\d{2}\.\d{3}\b/giu, " ")
-      .replace(/(?:от\s*)?\d{1,3}(?:[\s.]\d{3})+\s*(?:-|до)?\s*\d{0,3}(?:[\s.]\d{3})?\s*(?:₽|руб\.?|р\.?)?/giu, " ")
-      .replace(/\b\d{3,7}\s*(?:₽|руб\.?|р\.?)\b/giu, " ")
+      /*
+       * Десятичная часть вырезается вместе с ценой. Без неё в названии услуги
+       * оставался бы хвост: «Лечение кариеса 1500,50 руб» превращалось в
+       * «Лечение кариеса ,50» — цена ушла бы в priceRub и одновременно осталась
+       * в названии, которое врач потом видит в каталоге.
+       */
+      .replace(
+        /(?:от\s*)?\d{1,3}(?:[\s.]\d{3})+(?:[.,]\d{1,2})?\s*(?:-|до)?\s*\d{0,3}(?:[\s.]\d{3})?(?:[.,]\d{1,2})?\s*(?:₽|руб\.?|р\.?)?/giu,
+        " "
+      )
+      /*
+       * Замыкающий \b здесь был МЁРТВЫМ и не удалял ничего.
+       *
+       * В JavaScript \b определён через \w, то есть [A-Za-z0-9_]: кириллица и
+       * знак ₽ словными символами НЕ считаются. После «руб», «р» или «₽» по обе
+       * стороны стоит несловный символ, границы слова там не возникает никогда,
+       * и правило не срабатывало ни на «1500 руб.», ни на «1500 ₽», ни на
+       * «1500 р.» — цена оставалась в названии услуги, которое врач видит в
+       * каталоге. Измерено на текущем дереве: ни одна из этих строк не
+       * очищалась.
+       *
+       * Просто убрать \b нельзя — тогда альтернатива `р\.?` откусит первую букву
+       * следующего слова и «1500 рабочих дней» станет «абочих дней». Границу
+       * задаёт явный запрет буквы справа, он работает и для кириллицы.
+       */
+      .replace(/\b\d{3,7}(?:[.,]\d{1,2})?\s*(?:₽|руб\.?|р\.?)(?![А-Яа-яЁёA-Za-z])/giu, " ")
       .replace(/[;|]+$/g, "")
   );
 }
@@ -525,7 +579,13 @@ function summarize(items: DentalPricelistItem[]): DentalPricelistCategorySummary
         pricedCount: prices.length,
         minPriceRub: prices.length ? Math.min(...prices) : null,
         maxPriceRub: prices.length ? Math.max(...prices) : null,
-        averagePriceRub: prices.length ? Math.round(prices.reduce((sum, price) => sum + price, 0) / prices.length) : null,
+        // Среднее по копеечным ценам округляем до КОПЕЙКИ, а не до рубля: min и
+        // max в этой же сводке — дословные копии priceRub строки прайса, и
+        // среднее целым рублём выпадало из их диапазона на глазах у
+        // пользователя (min 1500,50 · max 1500,50 · среднее 1501).
+        averagePriceRub: prices.length
+          ? Math.round((prices.reduce((sum, price) => sum + price, 0) / prices.length) * 100) / 100
+          : null,
         materialKinds: materials,
         brands
       } satisfies DentalPricelistCategorySummary;
