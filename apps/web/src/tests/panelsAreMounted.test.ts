@@ -171,7 +171,31 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	"components/Badge.tsx:Badge",
 	"components/HelpHUD.tsx:HelpHUD",
 	"components/Odontogram.tsx:Odontogram",
-	"components/QrGatewayPanel.tsx:QrGatewayPanel",
+	/*
+	 * QrGatewayPanel удалён, поэтому строки здесь больше нет.
+	 *
+	 * Панель печатала три QR-кода, и все три адреса были выдуманы: домен
+	 * dente.clinic не существует нигде, кроме того файла; идентификатор клиники
+	 * читался из ключа dente_organization_id, у которого во всём репозитории нет
+	 * писателя, то есть у каждой клиники навсегда оставался "demo"; живой
+	 * публичный маршрут ждёт :organizationId в ПУТИ (apps/api/src/server.ts:442),
+	 * а QR передавал ?clinicId параметром; на localhost подставлялся выдуманный
+	 * 192.168.1.15. Сверх этого файл импортировал пакет "qrcode.react", которого
+	 * в проекте нет — монтирование уронило бы сборку всего веб-пакета.
+	 *
+	 * Почему это удаление, а не долг: QR-код непрозрачен. Пустой экран
+	 * администратор видит и понимает, а по картинке нельзя понять, что она
+	 * неверна, — её распечатают и наклеят на стойку регистратуры, и отказ
+	 * проявится на пациенте, решившем, что клиника не работает.
+	 *
+	 * Функция клинике нужна, но возвращается она не этим файлом: сначала
+	 * публичный адрес клиники должен доходить до браузера (на сервере он уже
+	 * есть — DENTE_PUBLIC_BASE_URL с проверяющим читателем
+	 * apps/api/src/services/communications/appointmentActionLinks.ts:77-88, но
+	 * клиенту не отдаётся нигде), затем должен появиться публичный контур
+	 * (PublicBookingWidget заявлен долгом выше), затем настоящий идентификатор
+	 * организации в клиенте.
+	 */
 	"components/TourEngine.tsx:TourEngine",
 	"components/crm/CustomCrmTaskTypesWidget.tsx:CustomCrmTaskTypesWidget",
 	"components/dicom/DicomToolbar.tsx:DicomToolbar",
@@ -205,7 +229,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 32;
+const LEGACY_BACKLOG_CEILING = 31;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {
