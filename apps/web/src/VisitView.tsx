@@ -19,6 +19,10 @@ import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
+// Список разделов роли и их названия берём из реестра разделов, а не переписываем
+// рядом: разъехавшаяся копия — это ровно тот случай, когда шаг закрытия приёма
+// уводит врача на «Смену».
+import { getFilteredAppViews, viewLabels } from "./workspaceShell";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -207,6 +211,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     setMaterialCategory(null);
   };
 
+  // Карточка зуба перекрывает весь экран, а закрывалась только кнопкой и щелчком
+  // по фону. Escape — привычный выход, и он же самый быстрый, когда руки в
+  // перчатках и мышь отложена.
+  React.useEffect(() => {
+    if (!selectedToothForMenu) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeClinicalModal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedToothForMenu]);
+
   const handleSelectDiagnosis = (state: string, text?: string, fieldKey?: string) => {
     if (!selectedToothForMenu) return;
     setToothState(selectedToothForMenu.code, state as any);
@@ -239,6 +255,38 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     } else {
       setSelectedToothForMenu({ code, state: currentState });
     }
+  };
+
+  /*
+    ПЕРЕХОД ПО ШАГУ ЗАКРЫТИЯ ПРИЁМА НЕ ВЫБРАСЫВАЕТ ВРАЧА ИЗ ПРИЁМА.
+
+    БЫЛО: `window.location.hash = task.section` без разбора. Шаги закрытия
+    приходят с сервера и указывают любой раздел из workspaceSectionSchema,
+    включая «finance» и «settings», а роль «врач» ни того, ни другого не имеет
+    (getFilteredAppViews в workspaceShell.tsx). Сторож маршрута в useAppLogic
+    видит недоступный раздел и переводит на «Смену» — то есть врач, нажавший в
+    списке закрытия шаг «взять оплату», молча оказывался на другом экране, без
+    приёма и без единого слова о причине. Проверяем доступность заранее и
+    объясняем, кто этот шаг закрывает.
+  */
+  const openCloseChecklistSection = (task: any) => {
+    const section = typeof task?.section === "string" ? task.section : "";
+    if (!section) {
+      showToast("У этого шага не указан раздел — открыть его автоматически нельзя.", "info");
+      return;
+    }
+    const allowedViews = getFilteredAppViews(selectedWorkspaceRole) as string[];
+    if (!allowedViews.includes(section)) {
+      const sectionTitle = (viewLabels as Record<string, string>)[section] ?? section;
+      const ownerTitle = (staffRoleLabels && staffRoleLabels[task?.ownerRole]) || "другой сотрудник";
+      showToast(
+        `Шаг закрывают в разделе «${sectionTitle}», а он открыт другой роли: ${ownerTitle}. Приём остаётся открытым — попросите закрыть шаг с того рабочего места.`,
+        "info",
+        10000,
+      );
+      return;
+    }
+    window.location.hash = section;
   };
 
   /*
@@ -1230,15 +1278,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
                     className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
                     key={task.id}
                     type="button"
-                    onClick={() => {
-                      window.location.hash = task.section;
-                    }}
+                    onClick={() => openCloseChecklistSection(task)}
                   >
                     <CheckCircle2 aria-hidden="true" />
                     <div>
                       <strong>{task.title}</strong>
                       <p>{task.detail}</p>
-                      <small>{staffRoleLabels[task.ownerRole]} · {task.actionLabel}</small>
+                      <small>{(staffRoleLabels && staffRoleLabels[task.ownerRole]) || "исполнитель не указан"} · {task.actionLabel}</small>
                     </div>
                   </button>
                 ))}

@@ -301,10 +301,11 @@ export function VisitEmkTab() {
 								</div>
 								<p>{draft.quality.nextAction}</p>
 								<div className="visit-draft-signal-row">
+									{/* Было «FDI 36»: в записи приёма понятнее «зуб 36». */}
 									{(draft.quality.detectedToothCodes ?? [])
 										.slice(0, 6)
 										.map((toothCode) => (
-											<span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
+											<span key={`tooth-${toothCode}`}>зуб {toothCode}</span>
 										))}
 									{(draft.quality.signals ?? []).slice(0, 7).map((signal) => (
 										<span key={signal}>{visitDraftSignalLabel(signal)}</span>
