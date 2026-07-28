@@ -12,6 +12,7 @@ import {
 	computeCornerBarClearance,
 	computeCornerMaxLift,
 	computeCornerReserve,
+	cornerBlocksTarget,
 	cornerOverlapArea,
 	cornerSamplePoints,
 	isCornerObstacle,
@@ -152,6 +153,72 @@ describe("что считается мишенью под панелью", () =>
 			true,
 		);
 		assert.equal(isCornerObstacle({ ...base, role: "alertdialog" }), true);
+	});
+});
+
+describe("уступать только тому, что панель реально закрывает", () => {
+	// Геометрия ниже — НЕ выдумка и не «правдоподобные координаты». Это замер
+	// живой страницы: scratch/probe-corner-obstacles.mjs, экран #patients, тема
+	// light. Под панелью лежит `<article class="clickable-card" role="button"
+	// tabindex="0">` — плитка быстрого действия из `.patient-feature-grid`.
+	it("плитка 364x113 на 390x844 перекрыта на 16% — это не помеха", () => {
+		const footprint = rect(206, 708, 374, 756);
+		const card = rect(13, 635, 377, 748);
+		const covered =
+			cornerOverlapArea(footprint, card) / ((377 - 13) * (748 - 635));
+		// Ровно то, что напечатал пробник: coveredShare=0.163.
+		assert.equal(Math.round(covered * 1000) / 1000, 0.163);
+		assert.equal(cornerBlocksTarget(footprint, card), false);
+		// Значит подъёма нет вовсе — панель остаётся в углу.
+		assert.deepEqual(
+			resolveCornerPlacementSampled({
+				footprint,
+				maxLift: 250,
+				sample: (lift) =>
+					cornerBlocksTarget(liftCornerRect(footprint, lift), card)
+						? [card]
+						: [],
+			}).placement,
+			{ lift: 0, compact: false },
+		);
+	});
+
+	it("плитка 399x168 на 840x900 перекрыта на 12% — это не помеха", () => {
+		const footprint = rect(656, 764, 824, 812);
+		const card = rect(428, 696, 827, 864);
+		const covered =
+			cornerOverlapArea(footprint, card) / ((827 - 428) * (864 - 696));
+		assert.equal(Math.round(covered * 100) / 100, 0.12);
+		assert.equal(cornerBlocksTarget(footprint, card), false);
+	});
+
+	it("кнопка «Сохранить» под панелью закрыта целиком — помеха", () => {
+		const footprint = rect(1376, 1016, 1576, 1076);
+		const save = rect(1430, 1030, 1520, 1068);
+		assert.equal(cornerBlocksTarget(footprint, save), true);
+	});
+
+	it("кнопка, задетая краем панели, помехой не считается", () => {
+		const footprint = rect(1376, 1016, 1576, 1076);
+		// Кнопка 90x38, панель накрывает нижние 8px: доля 0.21.
+		const save = rect(1430, 986, 1520, 1024);
+		assert.equal(cornerBlocksTarget(footprint, save), false);
+		// Ровно на половине — уже уступаем.
+		const half = rect(1430, 997, 1520, 1035);
+		assert.equal(cornerBlocksTarget(footprint, half, 0.5), true);
+	});
+
+	it("порог настраиваем, а вырожденная мишень не делит на ноль", () => {
+		const footprint = rect(0, 0, 100, 100);
+		assert.equal(cornerBlocksTarget(footprint, rect(10, 10, 10, 50)), false);
+		assert.equal(
+			cornerBlocksTarget(footprint, rect(50, 50, 250, 150), 0.1),
+			true,
+		);
+		assert.equal(
+			cornerBlocksTarget(footprint, rect(50, 50, 250, 150), 0.9),
+			false,
+		);
 	});
 });
 

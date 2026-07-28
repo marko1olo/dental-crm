@@ -11,6 +11,7 @@ import {
 	computeCornerBarClearance,
 	computeCornerMaxLift,
 	computeCornerReserve,
+	cornerBlocksTarget,
 	cornerSamplePoints,
 	isCornerObstacle,
 	liftCornerRect,
@@ -176,7 +177,13 @@ function collectObstacles(
 			if (bottomBar?.contains(element)) continue;
 			const rect = element.getBoundingClientRect();
 			if (!isCornerObstacle(describeCandidate(element, rect))) continue;
-			obstacles.push(toRect(rect));
+			// Мишень мишенью, но уступать нужно только тому, что панель реально
+			// закрывает. Плитка быстрого действия 364x113 с `role="button"`
+			// перекрывается панелью на 16% и остаётся нажимаемой; а стена таких
+			// плиток раньше уводила панель на 299px вверх, к середине экрана.
+			const target = toRect(rect);
+			if (!cornerBlocksTarget(footprint, target)) continue;
+			obstacles.push(target);
 		}
 	}
 	return obstacles;
