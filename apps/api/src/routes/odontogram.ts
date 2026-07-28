@@ -19,9 +19,15 @@ import { wsBroker } from "../services/websocketBroker.js";
 /**
  * Создаёт таблицу истории, если миграция ещё не применена.
  *
- * Тот же приём, что и в db/patientCommunicationTimelinesQuery.ts: клиника может
- * обновить код раньше, чем выполнит SQL-миграцию, и запись приёма не должна
- * из-за этого падать.
+ * Клиника может обновить код раньше, чем выполнит SQL-миграцию, и запись приёма
+ * не должна из-за этого падать.
+ *
+ * ЗДЕСЬ СТОЯЛА ССЫЛКА «тот же приём, что и в
+ * db/patientCommunicationTimelinesQuery.ts». Она была неверна: в том модуле
+ * никакого CREATE TABLE IF NOT EXISTS не было, он просто читал таблицу без
+ * писателя. Сам модуль удалён вместе с переводом журнала обращений на живой
+ * источник, и ссылаться теперь не на что: этот приём в apps/api/src остался в
+ * единственном экземпляре — здесь.
  */
 let toothStateHistoryTableReady = false;
 async function ensureToothStateHistoryTable(): Promise<void> {
