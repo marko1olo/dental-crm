@@ -250,6 +250,15 @@ export function VisitDictation() {
 				<SmartMicrophoneButton
 					context="visit"
 					onResult={(text) => {
+						// Голосовая диктовка — такая же правка врача, как ручной ввод.
+						// Без этой отметки асинхронное восстановление серверного
+						// черновика (оно приходит уже после начала приёма) видело
+						// «врач ничего не менял» и молча перезаписывало только что
+						// наговоренный текст: врач диктовал, текст исчезал. Снимок для
+						// кнопки «Вернуть» тоже гасим, иначе она вернула бы старый
+						// текст поверх свежей диктовки.
+						visitDraftUserEditedRef.current = true;
+						setClearedTranscriptSnapshot(null);
 						const current = transcript || "";
 						const newText = current ? `${current}\n${text}` : text;
 						setTranscript(newText);
