@@ -542,14 +542,20 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											Зуб {order.toothFdi || "весь рот"}
 										</span>
 										<span className="text-slate-400">·</span>
+										{/*
+											Было «не указ.» — обрубок с точкой, каким программы
+											печатают отчёты, а не каким говорят с людьми. Слово
+											дописано целиком и согласовано по роду: материал не
+											указан, цвет не указан.
+										*/}
 										<span className="text-slate-300">
 											{order.material
 												? (materialLabels[order.material] ?? order.material)
-												: "не указ."}
+												: "материал не указан"}
 										</span>
 										<span className="text-slate-400">·</span>
 										<span className="text-slate-300">
-											Цвет: {order.colorVita || "не указ."}
+											Цвет: {order.colorVita || "не указан"}
 										</span>
 										<span
 											className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${statusColors[order.status]}`}
@@ -562,11 +568,23 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 											«{order.clinicalNotes}»
 										</p>
 									)}
+									{/*
+										Дата печаталась в формате браузера: toLocaleDateString() без
+										языка на системе с английской локалью даёт «7/29/2026», и врач
+										читает месяц как число дня. Срок готовности работы — не то
+										место, где можно угадывать. Пишем по-русски и словами месяца,
+										чтобы спутать было нечем.
+									*/}
 									{order.dueDate && (
 										<div className="text-[11px] text-slate-400 flex items-center gap-1">
 											<Calendar className="w-3.5 h-3.5 text-teal-400/80" />
-											Срок: {new Date(order.dueDate).toLocaleDateString()} в{" "}
-											{new Date(order.dueDate).toLocaleTimeString([], {
+											Срок:{" "}
+											{new Date(order.dueDate).toLocaleDateString("ru-RU", {
+												day: "numeric",
+												month: "long",
+											})}{" "}
+											в{" "}
+											{new Date(order.dueDate).toLocaleTimeString("ru-RU", {
 												hour: "2-digit",
 												minute: "2-digit",
 											})}
@@ -622,7 +640,13 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										className="py-1 px-2.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 rounded-lg font-semibold transition-colors flex items-center gap-1"
 									>
 										<Link className="w-3.5 h-3.5" />
-										Линк
+										{/*
+											Было «Линк» — английское слово русскими буквами, которое
+											на этом экране не объясняет ничего. Кнопка копирует
+											ссылку для зуботехника, о чём и говорит всплывающая
+											подсказка после нажатия.
+										*/}
+										Ссылка технику
 									</button>
 									<button
 										onClick={() => handleDeleteOrder(order.id)}
