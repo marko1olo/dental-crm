@@ -78,6 +78,27 @@ function createSetter(set: any, key: string) {
 
 
 export interface DocumentState {
+  /**
+   * Вернуть все поля форм документов к исходным значениям.
+   *
+   * ЗАЧЕМ. Этот стор — одно глобальное хранилище примерно на восемьсот полей на
+   * ВСЕ виды документов, и функции сброса в нём не было вовсе. Пер-пациентный
+   * черновик заведён ровно у двух видов из тридцати
+   * (`documentPayloadDraftKey` в AppHelpers.tsx: `outpatient_medical_card_025u`
+   * и `medical_record_extract`), остальные формы ничего о пациенте не знают:
+   * `PhotoVideoConsentForm.tsx`, например, не упоминает пациента ни разу.
+   *
+   * Что из этого следовало. Администратор заполнял согласие на фото и видео
+   * пациенту А, в том числе отметку «разрешена узнаваемая публикация»,
+   * переключался на пациента Б — и согласие Б открывалось уже с ответами А.
+   * Дальше документ печатается и подписывается. Это юридический документ с
+   * чужими ответами, то есть худший класс дефектов этого продукта в чистом виде.
+   *
+   * Сброс собирается повторным вызовом фабрик срезов, а не переписыванием
+   * восьмисот имён руками: список полей обязан остаться в одном месте, иначе
+   * добавленное завтра поле молча не попадёт в сброс.
+   */
+  resetDocumentForms: () => void;
   paymentAmount: string;
   paymentMethod: PaymentMethod;
   paymentFiscalReceiptNumber: string;
@@ -2810,6 +2831,53 @@ const createMiscSlice = (set: any) => ({
   setReleaseThirdPartyDataChecked: createSetter(set, "releaseThirdPartyDataChecked"),
 });
 
+/**
+ * Исходные значения ВСЕХ полей форм документов.
+ *
+ * Собирается повторным вызовом тех же фабрик срезов с пустым `set`: настройки
+ * при этом никуда не пишутся, а функции-сеттеры отбрасываются — остаются только
+ * значения. Так список полей живёт в одном месте, и поле, добавленное завтра,
+ * попадёт в сброс само.
+ */
+export function documentFormInitialValues(): Partial<DocumentState> {
+  const noopSet = () => {};
+  const fresh: Record<string, unknown> = {
+    ...createDocumentSlice(noopSet),
+    ...createTaxSlice(noopSet),
+    ...createIntakeAndConsentSlice(noopSet),
+    ...createFinancialSlice(noopSet),
+    ...createClinicalSlice(noopSet),
+    ...createMiscSlice(noopSet),
+  };
+  const values: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fresh)) {
+    if (typeof value !== "function") values[key] = value;
+  }
+  return values as Partial<DocumentState>;
+}
+
+/**
+ * Набрано ли в формах документов хоть что-то, отличное от исходного.
+ *
+ * Нужно, чтобы не пугать человека сообщением о выброшенном черновике, когда
+ * выбрасывать было нечего: предупреждение, которое показывают всегда, перестают
+ * читать, и вместе с ним перестают читать настоящее.
+ */
+export function documentFormHasEntries(state: Record<string, unknown>): boolean {
+  const initial = documentFormInitialValues() as Record<string, unknown>;
+  for (const [key, value] of Object.entries(initial)) {
+    const current = state[key];
+    if (typeof current === "function") continue;
+    /* Массивы и объекты сравниваются по содержимому: ссылки различаются всегда. */
+    if (typeof value === "object" && value !== null) {
+      if (JSON.stringify(current) !== JSON.stringify(value)) return true;
+      continue;
+    }
+    if (current !== value) return true;
+  }
+  return false;
+}
+
 export const useDocumentStore = create<DocumentState>(
   (set) =>
     ({
@@ -2819,5 +2887,6 @@ export const useDocumentStore = create<DocumentState>(
       ...createFinancialSlice(set),
       ...createClinicalSlice(set),
       ...createMiscSlice(set),
+      resetDocumentForms: () => set(documentFormInitialValues() as DocumentState),
     }) as DocumentState,
 );

@@ -1,7 +1,13 @@
 import { CheckCircle2, FileText } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { isoDateLabel } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
-import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
+import { showToast } from "./components/GlobalToast";
+import {
+  documentFormHasEntries,
+  useDocumentStore,
+  type MedicalDocumentReleaseChannel,
+} from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { appendChipToText } from "./components/documents/documentChipText";
 import { PaidContractRequiredFieldsPanel } from "./components/documents/PaidContractRequiredFieldsPanel";
@@ -373,6 +379,46 @@ export function DocumentsView(props: DocumentsViewProps) {
     selectedDocumentKind,
     setSelectedDocumentKind,
   } = useDocumentStore();
+
+  /*
+   * ЧУЖИЕ ОТВЕТЫ В ДОКУМЕНТЕ ДРУГОГО ЧЕЛОВЕКА. Стор документов — одно глобальное
+   * хранилище примерно на восемьсот полей, и сброса в нём не было вовсе.
+   * Пер-пациентный черновик заведён у двух видов из тридцати, остальные формы о
+   * пациенте не знают ничего: `PhotoVideoConsentForm.tsx` не упоминает пациента
+   * ни разу. Администратор заполнял согласие на фото и видео пациенту А, включая
+   * отметку «разрешена узнаваемая публикация», открывал пациента Б — и согласие Б
+   * стояло с ответами А. Дальше документ печатается и подписывается.
+   *
+   * Молча выбрасывать набранное тоже нельзя — это был бы один обман экрана вместо
+   * другого, поэтому о выброшенном сообщается прямо, как это уже сделано в
+   * рекламациях пациента.
+   *
+   * ЧЕСТНАЯ ОГОВОРКА про один кадр: сброс сделан эффектом, а не в фазе отрисовки,
+   * потому что запись в zustand во время отрисовки грозит петлёй перерисовок.
+   * Значит чужие ответы теоретически видны один кадр до сброса. Это несравнимо
+   * лучше прежнего поведения, когда они оставались до перезагрузки страницы, но
+   * это НЕ ноль: полное решение — не рисовать формы, пока пациент формы не
+   * совпал с открытым, и оно требует перестройки отрисовки этого файла.
+   */
+  const documentFormsPatientRef = useRef<string | null>(null);
+  useEffect(() => {
+    const openedPatientId = activePatient?.id ?? null;
+    const previousPatientId = documentFormsPatientRef.current;
+    documentFormsPatientRef.current = openedPatientId;
+    /* Первое открытие карты — сбрасывать нечего и предупреждать не о чем. */
+    if (previousPatientId === null || previousPatientId === openedPatientId) return;
+    const hadEntries = documentFormHasEntries(
+      useDocumentStore.getState() as unknown as Record<string, unknown>,
+    );
+    useDocumentStore.getState().resetDocumentForms();
+    if (hadEntries) {
+      showToast(
+        "Открыта карта другого пациента. Заполненные поля документа не перенесены: чужие ответы не должны попасть в документ. Если документ нужен прежнему пациенту, вернитесь к его карте.",
+        "info",
+      );
+    }
+  }, [activePatient?.id]);
+
   // БЫЛО: здесь стояла ТРЕТЬЯ подписка на весь стор документов, не
   // извлекавшая НИ ОДНОГО поля: `const { } = useDocumentStore();`.
   // Zustand без селектора уведомляет подписчика о любом изменении, поэтому
