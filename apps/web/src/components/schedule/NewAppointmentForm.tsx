@@ -117,12 +117,18 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       <div className="smart-ai-booking" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "16px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "var(--shadow-1)", color: "var(--ink)" }}>
         <div className="flex items-center gap-2">
           <Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
-          <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">Умное бронирование голосом или текстом (AI)</h4>
+          {/*
+            Латиница «(AI)» убрана: на русском экране она ничего не объясняет, а
+            подсказка в поле («Например: Петров на чистку завтра в 12:30») и так
+            показывает, что писать можно словами. Администратору важно название
+            способа, а не название технологии.
+          */}
+          <h4 className="font-semibold text-sm text-sky-600 dark:text-sky-400 m-0 leading-snug">Записать словами: скажите или впишите</h4>
         </div>
         <div className="relative flex-1">
           <input
             type="text"
-            aria-label="Умное бронирование голосом или текстом"
+            aria-label="Записать словами: скажите или впишите"
             value={smartInputText}
             placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
             onFocus={() => setShowHints(true)}

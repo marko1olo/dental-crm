@@ -15,6 +15,12 @@ import { chromium } from "playwright";
 const API = process.env.DENTE_API_URL || "http://127.0.0.1:4100";
 const WEB = process.env.DENTE_WEB_URL || "http://127.0.0.1:5173";
 const OWNER = "e44d32ca-7777-4c00-a001-c88f01b92e21";
+/*
+ * Раздел задаётся переменной: тот же вопрос «застряло или медленно» встал и на
+ * «Приёме», и встанет на других экранах. Отдельный пробник на каждый — это второй
+ * ответ на тот же вопрос, который разойдётся при первой правке.
+ */
+const VIEW = process.env.VIEW || "schedule";
 
 async function req(path, init = {}, attempts = 14) {
 	let last = null;
@@ -64,7 +70,7 @@ try {
 		},
 		{ ct: login.clinicToken, st: unlock.staffToken },
 	);
-	await page.goto(`${WEB}/#schedule`, { waitUntil: "domcontentloaded" });
+	await page.goto(`${WEB}/#${VIEW}`, { waitUntil: "domcontentloaded" });
 	await page.reload({ waitUntil: "domcontentloaded" });
 
 	/** Что видно на экране расписания в этот момент. */
@@ -88,12 +94,42 @@ try {
 		return state;
 	};
 
-	await page.waitForTimeout(4000);
-	const early = await snapshot("через 4 с");
-	await page.waitForTimeout(12000);
-	const late = await snapshot("через 16 с");
-	await page.waitForTimeout(14000);
-	const veryLate = await snapshot("через 30 с");
+	/*
+	 * Замер с шагом в секунду, а не три точки.
+	 *
+	 * Первая редакция смотрела на 4-й, 16-й и 30-й секунде и давала бесполезный
+	 * ответ «где-то между четырьмя и шестнадцатью». Врачу между пациентами разница
+	 * между пятью секундами и пятнадцатью — это разница между «подождал» и
+	 * «программа не работает», поэтому нужна именно секунда готовности.
+	 */
+	let settledAt = null;
+	let previousChars = 0;
+	for (let second = 1; second <= 22; second += 1) {
+		await page.waitForTimeout(1000);
+		const state = await page.evaluate(() => {
+			const text = document.body.innerText || "";
+			return {
+				chars: text.length,
+				loading: /загрузка|Обновляю/i.test(text),
+				skeletons: document.querySelectorAll("[class*='skeleton'], [aria-busy='true']").length,
+			};
+		});
+		const ready = !state.loading && state.skeletons === 0 && state.chars > 1500;
+		if (ready && settledAt === null) {
+			settledAt = second;
+			console.log(`  готов на ${second}-й секунде: знаков ${state.chars}`);
+		}
+		if (second <= 6 || state.chars !== previousChars) {
+			console.log(
+				`  ${second} с: знаков ${state.chars}, скелетонов ${state.skeletons}, надпись загрузки ${state.loading ? "есть" : "нет"}`,
+			);
+		}
+		previousChars = state.chars;
+	}
+	if (settledAt === null) console.log("  за 22 секунды экран так и не стал готовым");
+	const early = { chars: previousChars };
+	const late = early;
+	const veryLate = await snapshot("итог");
 
 	console.log(`\nтекст экрана через 30 с: ${veryLate.head}`);
 	console.log(`\nисключений в консоли: ${errors.length}`);
