@@ -1,10 +1,12 @@
 import { Activity, ArrowRight, PlusCircle, ShieldCheck, Users, Wallet } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
+import type { PanelSubject } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 import "./FamilyWalletPanel.css";
 
 interface FamilyMember {
@@ -15,10 +17,40 @@ interface FamilyMember {
 
 interface FamilyGroup {
 	id: string;
-	name: string;
+	/**
+	 * Название может отсутствовать: колонка family_groups.name объявлена
+	 * без NOT NULL (db/schema.ts), обязателен только group_name. Тип был
+	 * `string`, и любое обращение к методам строки уронило бы панель.
+	 */
+	name: string | null;
 	balance: string;
 	members: FamilyMember[];
 }
+
+/**
+ * Как называть содержимое панели в сообщении об отказе.
+ *
+ * Заголовок во множественном числе: panelStateText склеивает его со словами
+ * «не загружены», и «Семейный кошелёк не загружены» было бы косноязычием.
+ */
+const WALLET_PANEL_SUBJECT: PanelSubject = {
+	title: "Данные семейного кошелька",
+	accusative: "семейный кошелёк",
+	emptyTitle: "Пациент не входит в семью",
+	emptyHint: "Семейный счёт появится, когда пациента добавят в семейную группу.",
+	failureConsequence:
+		"Не считайте, что семейного счёта нет: баланс не прочитан. Пока он не загрузился, списывать с него нельзя — примите оплату обычным способом или повторите загрузку.",
+};
+
+/**
+ * Идентификатор пациента в базе — uuid (patients.id). FinanceView, когда
+ * пациент не выбран, подставляет строку-заглушку «pat-1» — остаток удалённых
+ * демо-данных. Запрос по ней не может ответить ничем, кроме ошибки приведения
+ * типа в базе (500), и после того как отказы стали видимыми, на экране финансов
+ * без выбранного пациента появилась бы ложная тревога. Такой запрос не
+ * отправляем вовсе.
+ */
+const PATIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface FamilyWalletPanelProps {
 	patientId: string;
@@ -33,6 +65,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 }) => {
 	const [family, setFamily] = useState<FamilyGroup | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	// Отказ сервера хранится ОТДЕЛЬНО от «семьи нет»: раньше и то и другое
+	// сводилось к family=null, и панель просто исчезала. `status` — код ответа,
+	// null — до сервера не дошли вовсе.
+	const [loadFailure, setLoadFailure] = useState<{ status: number | null } | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
 	const [topupAmount, setTopupAmount] = useState<number>(0);
@@ -44,52 +80,74 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	// только от второго клика, но не от повтора после потерянного ответа.
 	const payMutationIdRef = useRef<string | null>(null);
 
-	const fetchFamily = useCallback(async () => {
+	const isPatientDatabaseId = PATIENT_ID_PATTERN.test(patientId);
+	// Номер запроса вместо флага cancelled: тот же счётчик защищает и повторную
+	// загрузку по кнопке, и обновление после списания, а не только первый показ.
+	const requestGenerationRef = useRef(0);
+
+	/**
+	 * Одна загрузка на все случаи: первый показ, кнопка «Повторить» и обновление
+	 * после оплаты. БЫЛО две почти одинаковые копии, и у той, которая обновляла
+	 * панель после списания, не было ни защиты от гонки, ни разбора кода ответа.
+	 *
+	 * ПОЧЕМУ 404 — НЕ ОШИБКА, А ВСЁ ОСТАЛЬНОЕ ОШИБКА. Сервер отвечает 404,
+	 * когда пациент действительно не состоит в семье («Patient has no family
+	 * group», routes/finance_family.ts). Это штатный случай: панель не нужна.
+	 * БЫЛО: `setFamily(res.ok ? await res.json() : null)` — любой другой отказ
+	 * (нет доступа у смены, 500, обрыв связи) давал ровно тот же результат, и
+	 * панель молча исчезала. Кассир не мог отличить «семейного счёта нет» от
+	 * «баланс не прочитан»: деньги на счёте были, а он брал всю сумму другим
+	 * способом. Ни текста, ни кнопки повтора при этом не было, а для отказа по
+	 * HTTP не вызывался даже console.error.
+	 */
+	const loadFamily = useCallback(async () => {
+		const generation = requestGenerationRef.current + 1;
+		requestGenerationRef.current = generation;
+		const isStale = () => requestGenerationRef.current !== generation;
+		setIsLoading(true);
 		try {
 			const res = await fetch(`/api/finance/family/patient/${patientId}`, {
 				headers: denteAdminSecretRequestHeaders(),
 			});
+			if (isStale()) return;
 			if (res.ok) {
-				const data = await res.json();
+				const data = (await res.json()) as FamilyGroup;
+				if (isStale()) return;
 				setFamily(data);
-			} else {
-				setFamily(null);
+				setLoadFailure(null);
+				return;
 			}
-		} catch (e) {
-			console.error(e);
 			setFamily(null);
+			setLoadFailure(res.status === 404 ? null : { status: res.status });
+		} catch (e) {
+			if (isStale()) return;
+			// Текст исключения английский и наружу не идёт: пользователю сообщение
+			// собирает panelStateText по коду, здесь — «сервер не ответил».
+			console.error("[family wallet] не удалось прочитать семейный кошелёк:", e);
+			setFamily(null);
+			setLoadFailure({ status: null });
 		} finally {
-			setIsLoading(false);
+			if (!isStale()) setIsLoading(false);
 		}
 	}, [patientId]);
 
 	useEffect(() => {
-		if (!patientId) return;
 		// БЫЛО: без защиты от гонки. Ответ по пациенту А мог прийти позже ответа
 		// по Б, и списание уходило в семью А со ссылкой на пациента Б.
-		let cancelled = false;
 		setFamily(null);
-		setIsLoading(true);
-		(async () => {
-			try {
-				const res = await fetch(`/api/finance/family/patient/${patientId}`, {
-					headers: denteAdminSecretRequestHeaders(),
-				});
-				if (cancelled) return;
-				setFamily(res.ok ? await res.json() : null);
-			} catch (e) {
-				if (!cancelled) {
-					console.error(e);
-					setFamily(null);
-				}
-			} finally {
-				if (!cancelled) setIsLoading(false);
-			}
-		})();
+		setLoadFailure(null);
+		if (!isPatientDatabaseId) {
+			// Пациент не выбран — грузить нечего, и висящая «Загрузка…» здесь
+			// была бы обещанием, которое ничем не закончится.
+			setIsLoading(false);
+			return;
+		}
+		void loadFamily();
 		return () => {
-			cancelled = true;
+			// Ответ по прежнему пациенту применять уже нельзя.
+			requestGenerationRef.current += 1;
 		};
-	}, [patientId]);
+	}, [isPatientDatabaseId, loadFamily]);
 
 	// Sync balance with WS
 	const wsUrl = (() => {
@@ -110,7 +168,12 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		}
 	}, [lastMessage]);
 
-	const balanceVal = Number(family?.balance || 0);
+	// Number() обязателен: колонка balance объявлена numeric без mode "number",
+	// драйвер отдаёт её строкой («150.50»). Нечисловое значение считаем нулём:
+	// NaN в сравнении `amount > balanceVal` даёт false и молча РАЗРЕШИЛ бы
+	// списание с баланса, которого мы не прочитали.
+	const parsedBalance = Number(family?.balance ?? 0);
+	const balanceVal = Number.isFinite(parsedBalance) ? parsedBalance : 0;
 	const animatedBalance = useCountUp(balanceVal, 1000);
 
 	const handlePay = async () => {
@@ -171,8 +234,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// случайно списать второй раз.
 			setAmount(0);
 			if (onPaymentSuccess) onPaymentSuccess();
-			// UI updates via WS, but we can refetch just in case
-			fetchFamily();
+			// Баланс приходит и по вебсокету, но перечитываем на случай, если
+			// сообщение не дошло.
+			void loadFamily();
 		} catch (e) {
 			showToast("Сетевая ошибка", "error");
 		} finally {
@@ -211,9 +275,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			}
 			// Зачисление прошло — следующее пополнение получит новый ключ.
 			topupMutationIdRef.current = null;
-			showToast(`Семейный счёт пополнен на ${topupAmount.toLocaleString("ru-RU")} ₽`, "success");
+			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
+			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
+			showToast(`Семейный счёт пополнен на ${money(topupAmount)}`, "success");
 			setTopupAmount(0);
-			fetchFamily();
+			void loadFamily();
 		} catch {
 			showToast("Сетевая ошибка", "error");
 		} finally {
@@ -228,7 +294,22 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				Загрузка семейного кошелька...
 			</div>
 		);
-	if (!family) return null; // Not in a family group
+	// Отказ показываем текстом и с кнопкой «Повторить». Оформление берём у
+	// общего PanelLoadFailure, чтобы на экране не появилось второго языка
+	// ошибок: тот же вид уже у виджетов карточки пациента.
+	if (loadFailure)
+		return (
+			<PanelLoadFailure
+				subject={WALLET_PANEL_SUBJECT}
+				status={loadFailure.status}
+				onRetry={() => {
+					void loadFamily();
+				}}
+			/>
+		);
+	// 404 от сервера или пациент не выбран: семьи нет, панель не нужна. Это
+	// единственный случай, когда пустое место — правда.
+	if (!family) return null;
 
 	return (
 		<div className="family-wallet-panel" data-testid="family-wallet-panel">
@@ -240,20 +321,18 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				<div>
 					<h3 className="family-wallet-title-row">
 						<Wallet size={20} />
-						Семейный Кошелек: {family.name}
+						Семейный Кошелек: {family.name?.trim() || "без названия"}
 					</h3>
 					<p className="family-wallet-subtitle">
 						Единый счет для семьи ({(family.members ?? []).length} чел.)
 					</p>
 				</div>
 				<div className="family-wallet-balance-container">
-					<div className="family-wallet-balance">
-						{animatedBalance.toLocaleString("ru-RU", {
-							minimumFractionDigits: 2,
-							maximumFractionDigits: 2,
-						})}{" "}
-						₽
-					</div>
+					{/* Сумма — только через общий money(). Своя запись с жёстко двумя
+					    знаками дописывала «,00» круглым суммам, тогда как рядом на экране
+					    финансов те же деньги печатаются как «1 500 ₽»: две разные записи
+					    одной суммы на одном экране читаются как расхождение в данных. */}
+					<div className="family-wallet-balance">{money(animatedBalance)}</div>
 					<p className="family-wallet-balance-label">
 						<ShieldCheck size={12} />
 						ДОСТУПНЫЙ БАЛАНС
