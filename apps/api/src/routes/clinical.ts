@@ -429,16 +429,14 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 * наполнить, быть не должно.
 	 */
 
-	// COMPETITOR FEATURE #23: аналитика::отчет_эффективность_подтверждения_приемов
-	app.get("/api/analytics/confirmation-performance-reports", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getConfirmationPerformanceReportsFromDb } = await import("../db/confirmationPerformanceReportsQuery.js");
-		return reply.status(200).send(await getConfirmationPerformanceReportsFromDb(orgId));
-	});
+	/*
+	 * /api/analytics/confirmation-performance-reports удалён вместе с модулем и
+	 * блоками в аналитике, смене и коммуникациях: у
+	 * confirmation_performance_reports нет ни одного писателя, ноль строк в
+	 * живой базе. Эффективность подтверждения приёмов считается по настоящим
+	 * приёмам в «Обзвоне и подтверждениях» — второй, пустой источник ответа на
+	 * тот же вопрос был хуже, чем его отсутствие.
+	 */
 
 }
 

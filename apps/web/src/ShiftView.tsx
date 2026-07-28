@@ -17,7 +17,6 @@ import {
   Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { ConfirmationPerformanceReportsWidget } from "./components/analytics/ConfirmationPerformanceReportsWidget";
 import { countLabel, formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 
 /** Calendar date in local clinic time. */
@@ -497,9 +496,14 @@ export function ShiftView({
                       <p style={{ fontSize: "12.5px", color: "var(--muted)", margin: "8px 0" }}>Врачей и кресел пока нет в настройках.</p>
                     )}
                   </article>
-                  <div style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
-                    <ConfirmationPerformanceReportsWidget />
-                  </div>
+                  {/*
+                    Здесь стоял <ConfirmationPerformanceReportsWidget />: отчёт
+                    об эффективности подтверждения приёмов из таблицы
+                    confirmation_performance_reports, у которой нет ни одного
+                    писателя и ноль строк в живой базе. Обе карточки выше
+                    считаются по настоящим данным dashboard.shiftIntelligence,
+                    и пустая третья строка под ними только сбивала с толку.
+                  */}
                 </div>
               )}
 

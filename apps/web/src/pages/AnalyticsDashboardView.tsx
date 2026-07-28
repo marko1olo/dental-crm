@@ -22,7 +22,6 @@ import {
 import { countLabel, money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
-import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
 import { EmptyState } from "../components/EmptyState.js";
@@ -560,8 +559,14 @@ export function AnalyticsDashboardView() {
 						<RecallListPanel />
 					</div>
 
+					{/*
+						Отсюда убран ConfirmationPerformanceReportsWidget по той же причине,
+						что и LostPatientsFiltersWidget выше: таблица
+						confirmation_performance_reports не наполняется ничем, писателей
+						ноль, строк в живой базе ноль. Эффективность подтверждения приёмов
+						считается по настоящим приёмам в «Обзвоне и подтверждениях».
+					*/}
 					<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<ConfirmationPerformanceReportsWidget />
 						<RebookingConversionRulesWidget />
 					</div>
 				</>
