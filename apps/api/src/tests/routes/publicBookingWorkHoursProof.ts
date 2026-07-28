@@ -100,28 +100,38 @@ async function buildApp(): Promise<FastifyInstance> {
 
 type Slot = { time: string; startsAt: string; endsAt: string };
 
+/**
+ * Ответ маршрута слотов КАК ЕСТЬ, вместе с кодом.
+ *
+ * Отказ здесь не считается провалом проверки: закрытый день — это законный 409
+ * («В этот день клиника не работает»), а не поломка. Раньше эта функция сама
+ * записывала любой не-200 в расхождения, и когда соседний инженер заменил пустой
+ * массив на честный 409 с причиной и действием, проверка покраснела на УЛУЧШЕНИИ
+ * чужого кода. Решает вызывающий, а не читатель ответа.
+ */
 async function readSlots(
 	app: FastifyInstance,
 	organizationId: string,
 	doctorId: string,
 	date: string,
-): Promise<Slot[] | null> {
+): Promise<{ status: number; slots: Slot[] | null; error: string | null }> {
 	const response = await app.inject({
 		method: "GET",
 		url: `/api/public/booking/${organizationId}/slots/${doctorId}?date=${date}`,
 	});
 	if (response.statusCode !== 200) {
-		console.log(`  слоты ответили HTTP ${response.statusCode}: ${response.body.slice(0, 200)}`);
-		failures += 1;
-		return null;
+		const parsed = JSON.parse(response.body) as { error?: string };
+		return { status: response.statusCode, slots: null, error: parsed.error ?? null };
 	}
-	return JSON.parse(response.body) as Slot[];
+	return { status: 200, slots: JSON.parse(response.body) as Slot[], error: null };
 }
 
-function describe(slots: Slot[] | null): string {
-	if (!slots) return "(отказ)";
-	if (slots.length === 0) return "слотов нет";
-	return `${slots.length} шт., с ${slots[0]?.time} по ${slots[slots.length - 1]?.time}`;
+function describe(answer: { status: number; slots: Slot[] | null; error: string | null }): string {
+	if (!answer.slots) return `HTTP ${answer.status} ${answer.error ?? ""}`.trim();
+	if (answer.slots.length === 0) return "слотов нет";
+	const first = answer.slots[0]?.time;
+	const last = answer.slots[answer.slots.length - 1]?.time;
+	return `${answer.slots.length} шт., с ${first} по ${last}`;
 }
 
 async function prove(app: FastifyInstance, created: string[]): Promise<void> {
@@ -155,9 +165,9 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const beforeSaturday = await readSlots(app, organizationId, doctorId, FUTURE_SATURDAY);
 	console.log(`  понедельник: ${describe(beforeMonday)}`);
 	console.log(`  суббота:     ${describe(beforeSaturday)}`);
-	check("без графика первый слот понедельника", beforeMonday?.[0]?.time, "09:00");
+	check("без графика первый слот понедельника", beforeMonday.slots?.[0]?.time, "09:00");
 	// Запас считает рабочими все дни кроме воскресенья — суббота открыта.
-	check("без графика суббота считается рабочей", (beforeSaturday?.length ?? 0) > 0, true);
+	check("без графика суббота считается рабочей", (beforeSaturday.slots?.length ?? 0) > 0, true);
 
 	console.log("\n=== 2. АДМИНИСТРАТОР ЗАДАЁТ 08:00–20:00, ПН–ПТ ЧЕРЕЗ НАСТРОЙКИ ===");
 	const saved = await app.inject({
@@ -217,12 +227,24 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	console.log(`  понедельник: ${describe(afterMonday)}`);
 	console.log(`  суббота:     ${describe(afterSaturday)}`);
 
-	check("первый слот понедельника — начало рабочего дня клиники", afterMonday?.[0]?.time, "08:00");
+	check("первый слот понедельника — начало рабочего дня клиники", afterMonday.slots?.[0]?.time, "08:00");
 	// Шаг слота — DEFAULT_SLOT_MINUTES = 30 мин, окно закрывается в 20:00,
 	// значит последний старт — 19:30, а всего слотов 12 ч / 30 мин = 24.
-	check("последний слот понедельника укладывается в окончание дня", afterMonday?.[afterMonday.length - 1]?.time, "19:30");
-	check("слотов за 12-часовой день с шагом 30 минут", afterMonday?.length, 24);
-	check("в выходную субботу записи нет", afterSaturday?.length, 0);
+	check(
+		"последний слот понедельника укладывается в окончание дня",
+		afterMonday.slots?.[(afterMonday.slots?.length ?? 0) - 1]?.time,
+		"19:30",
+	);
+	check("слотов за 12-часовой день с шагом 30 минут", afterMonday.slots?.length, 24);
+	/*
+	 * Суббота отмечена выходной, и маршрут обязан сказать это ВСЛУХ. Пустой список
+	 * пациент читает как «всё занято» и ждёт освобождения времени, которого не
+	 * будет; 409 с причиной и действием отправляет его выбрать другой день.
+	 * Сработать эта ветка может только если список рабочих дней из формата
+	 * настроек прочитан — до правки читателя суббота отдавала 18 слотов.
+	 */
+	check("в выходную субботу маршрут отказывает, а не молчит", afterSaturday.status, 409);
+	check("и называет причину отказа", afterSaturday.error, "ClinicClosedThatDay");
 
 	console.log("\n=== 4. ЗАНЯТОЕ ВРЕМЯ ИСКЛЮЧАЕТСЯ, ГРАНИЦЫ ДНЯ СОХРАНЯЮТСЯ ===");
 	const patientId = seeded(
@@ -245,11 +267,15 @@ async function prove(app: FastifyInstance, created: string[]): Promise<void> {
 	const withBusy = await readSlots(app, organizationId, doctorId, FUTURE_MONDAY);
 	console.log(`  понедельник с занятым 08:00: ${describe(withBusy)}`);
 	// Приём занимает час, поэтому исчезают ОБА получасовых слота: 08:00 и 08:30.
-	check("занятый слот 08:00 исчез", withBusy?.some((slot) => slot.time === "08:00"), false);
-	check("перекрытый слот 08:30 тоже исчез", withBusy?.some((slot) => slot.time === "08:30"), false);
-	check("день по-прежнему начинается раньше девяти", withBusy?.[0]?.time, "09:00");
-	check("и по-прежнему кончается в девятнадцать тридцать", withBusy?.[withBusy.length - 1]?.time, "19:30");
-	check("слотов стало на два меньше", withBusy?.length, 22);
+	check("занятый слот 08:00 исчез", withBusy.slots?.some((slot) => slot.time === "08:00"), false);
+	check("перекрытый слот 08:30 тоже исчез", withBusy.slots?.some((slot) => slot.time === "08:30"), false);
+	check("день по-прежнему начинается раньше девяти", withBusy.slots?.[0]?.time, "09:00");
+	check(
+		"и по-прежнему кончается в девятнадцать тридцать",
+		withBusy.slots?.[(withBusy.slots?.length ?? 0) - 1]?.time,
+		"19:30",
+	);
+	check("слотов стало на два меньше", withBusy.slots?.length, 22);
 }
 
 async function cleanup(organizationIds: string[]): Promise<void> {
