@@ -286,6 +286,71 @@ DECLARED DEBT / DISPUTED-with-evidence — a silently ignored item is an automat
 | R5 | telegram: UTC digest dedup, fail-open `scheduledAt`, duplicate photo | dossier §5.7 |
 | R6 | AssemblyAI 15 s cap + provider audio not deleted though `system.ts:409` says it is | dossier §5.7 |
 
+## CYCLE 3 CLOSED — 19 commits, 12/12 agents, no deaths. 4 of 6 returned NEEDS_REWORK.
+
+Run `wf_3b16bb25-3a6`. Both gates green after. R3 (finance) and R4 (DICOM tenant leak) came back
+SOUND_WITH_NITS; R1, R2, R5, R6 returned NEEDS_REWORK. **That rate is not sloppy building — the
+reviewers are driving live probes, `EXPLAIN (ANALYZE, BUFFERS)`, and 200-chunk load tests against the
+real database, and they are finding things the builders genuinely missed.**
+
+### THE FINDING OF THE NIGHT — verified by the lead personally
+`apps/api/src/routes/speech.ts` guards **seven read endpoints** with `requireClinicalReadAccess`
+(lines 151, 156, 161, 166, 179, 197, 213). Line 282 registers the one endpoint that **WRITES clinical
+dictation into a patient's record**:
+```
+app.post("/api/speech/transcribe-chunk", { bodyLimit: speechJsonBodyLimitBytes() }, handleSpeechTranscribeChunk);
+```
+**No guard of any kind.** Lead probe with no token → **HTTP 400**, i.e. the request reached body
+validation without ever being challenged for credentials; an unauthenticated request must get 401. A
+reviewer independently drove it with no token and got **201 Created**, and its writes reached the DB.
+The reads are guarded and the write is not.
+
+### Combined with the R1 reviewer's CONFIRMED live reproduction, this is a patient-safety hole
+The merge unions the stored envelope by `chunkIndex` **without re-checking identity**, and the 409
+identity guard scans **only the hot in-memory cache** — so eviction silently disables it. Reviewer
+PROBE 2 against the real DB, two visits of one organization, cache empty:
+```
+result_text: "VISIT-A DICTATION: patient A complaint.\nVISIT-B DICTATION: patient B complaint."
+envelope visitIds: ["…400","…401"]   patient_id: …101   (patient A)
+```
+The row keeps patient A's label permanently. Reviewer's own framing: pre-R1 the row was relabelled to B
+and A's text destroyed; post-R1 both patients' clinical text is merged into one document.
+
+### Other confirmed findings from the R1 review
+- Per-organization restore removed the global ceiling: `storage.ts:732-747` has no outer LIMIT where the
+  pre-fix query had one. Ceiling is now ~**960 MB per organization**, hydrated eagerly at module import.
+- `ai_jobs` has only `ai_jobs_pkey(id)`. `EXPLAIN` shows a **Seq Scan** on the envelope lookup; measured
+  cost per chunk went 3.3 ms (first 20) → 10.45 ms (last 20), **3.2×**, on an otherwise empty table.
+- A corrupted `input_text` permanently blocks durability for that recording, with no repair path.
+
+### Dossier correction earned by an agent
+**R5 proved the dossier WRONG**: the UTC-keyed Telegram daily-digest dedup it describes **does not exist
+in the live path** (recorded in `0f3bc9c38`). R5 did land a real fix for the duplicate photo
+(`370d2f10f`). Treat §5.7 of the dossier as unverified until each item is confirmed at a live line.
+
+## TWO STRIKES INVOKED — dictation
+
+C4 failed review. R1 reworked it and failed again, and its fix introduced a defect worse than the one it
+closed. Per `.agents/AGENTS.md`-derived campaign rule, **no third patch of the same merge logic is
+authorised.** Cycle 4 attacks the root instead: the missing auth gate (S1) and identity-validated-against-
+a-cache-that-can-vanish (S2), as two separate packets in two separate files.
+
+## CYCLE 4 — dispatched, run `wf_4aefbe51-758`, script `.agents/archon/cycle4.workflow.js`
+
+| # | Packet | Why |
+|---|---|---|
+| S1 | Guard `POST /api/speech/transcribe-chunk` + census every unguarded mutating route (report only) | Unauthenticated write into a clinical record |
+| S2 | Identity checked against the durable envelope, not the hot cache | Two patients' text merging into one record |
+| S3 | Global restore ceiling + composite index on `ai_jobs(organization_id, input_storage_path)` | 960 MB/org and a Seq Scan on every chunk write |
+| S4 | R2 rework: withdraw a measurement taken against a baseline the packet proves impossible | Proof honesty |
+| S5 | R5 rework: fail-open `scheduledAt` | Reminder for next Tuesday sent tonight |
+| S6 | R6 rework: provider audio deletion and the polling cap | `system.ts:409` claims a deletion it does not perform |
+
+**Lead self-inflicted failure, recorded:** cycle 4's first launch died in 16 ms with
+`perOrganizationLimit is not defined` — I wrote `${…}` inside a JS template literal in a packet brief and
+it was parsed as an interpolation. Zero agents ran. Fixed and relaunched via `resumeFromRunId`. Standing
+note for every future script: **escape `${` in brief text**.
+
 ## Lead-owned, not delegated
 
 - [ ] Re-run both capture pipelines, MD5-audit personally, read the unjudged plates
