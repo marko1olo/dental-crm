@@ -24,7 +24,6 @@ import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
-import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
 import { EmptyState } from "../components/EmptyState.js";
 import {
 	formatCompletionRate,
@@ -171,7 +170,14 @@ export function AnalyticsDashboardView() {
 	);
 
 	return (
-		<div className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
+		// id="analytics" — опознавательный признак раздела, а не украшение. Он есть
+		// у всех девяти остальных разделов на их НАСТОЯЩЕМ содержимом; здесь он
+		// стоял только в заглушке Suspense и в панели ошибки, то есть исчезал из
+		// разметки ровно тогда, когда раздел успешно загружался. Из-за этого
+		// проверка готовности в сценарии снимков не могла подтвердить, что открыт
+		// именно этот раздел, — а это тот самый механизм, которым снимок одного
+		// раздела попадает под именем другого.
+		<div id="analytics" className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
 			<header className="analytics-header flex flex-wrap gap-3 justify-between items-center mb-5 pb-3 border-b border-[var(--line)]">
 				<h2 className="m-0 text-xl font-bold text-[var(--ink)]" title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей">Аналитика клиники</h2>
 				<select
@@ -577,9 +583,41 @@ export function AnalyticsDashboardView() {
 						ноль, строк в живой базе ноль. Эффективность подтверждения приёмов
 						считается по настоящим приёмам в «Обзвоне и подтверждениях».
 					*/}
-					<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<RebookingConversionRulesWidget />
-					</div>
+					{/*
+						Здесь стоял блок «Кому засчитана повторная запись» (порог 15 минут:
+						записался сразу после визита — засчитываем врачу, позже —
+						администратору). Удалён вместе с маршрутом
+						/api/hr/rebooking-conversion-rules и его модулем выборки.
+
+						ЧЕМ ФАКТИЧЕСКИ ОТВЕЧАЛ СЕРВЕР: маршрут был живой и отдавал HTTP 200
+						с пустым массивом — всегда. Таблица rebooking_conversion_rules в
+						живой базе содержит 0 строк, и наполнить её нечем: писателей ноль
+						(ни одного db.insert/db.update во всём apps/api/src). То есть врач и
+						администратор видели «Повторных записей пока нет» при 27 приёмах и
+						10 визитах в базе — и делали ложный вывод, что повторных записей нет.
+
+						ПОЧЕМУ НЕ ПЕРЕВЕДЕНО НА ЖИВОЙ РАСЧЁТ: для этой цифры нужны ровно два
+						факта — КОГДА запись создали и КТО её создал. В таблице appointments
+						нет ни одного из них (колонки: id, organization_id, patient_id,
+						doctor_user_id, assistant_user_id, chair_id, status, starts_at,
+						ends_at, reason, comment, is_synced, version). Без created_at задержку
+						«создано через N минут после приёма» взять физически неоткуда, а
+						doctor_user_id — это тот, кто БУДЕТ ЛЕЧИТЬ, а не тот, кто ЗАПИСАЛ;
+						подставить одно вместо другого значит соврать именно в том поле, ради
+						которого блок и существовал. Обход через audit_events тоже закрыт: в
+						живой базе 989 событий аудита и среди них ноль по приёмам, а вызовы
+						appointment_created сидят только в файлах демо-данных, то есть в
+						памяти, а не в базе.
+
+						ДОЛГ (настоящая задача, а не потеря): зачисление повторной записи
+						врачу или администратору — реальный KPI, по нему платят премии.
+						Возвращать блок имеет смысл только вместе с appointments.created_at и
+						appointments.created_by_user_id (либо со записью appointment_created с
+						автором из серверного пути записи — писатель аудита с автором уже
+						есть, это recordAuditEventInDb в apps/api/src/db/auditQuery.ts).
+						После этого KPI считается живьём по appointments + visits + users,
+						и таблица-снимок не нужна вообще.
+					*/}
 				</>
 			)}
 		</div>
