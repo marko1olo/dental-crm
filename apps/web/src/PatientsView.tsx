@@ -5,7 +5,7 @@ import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { formatPhoneNumber } from './utils/inputSanitation';
-import type { ChangeEvent } from "react";
+import type { CSSProperties, ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -62,6 +62,40 @@ export type PatientsViewProps = {
 
 export type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+/*
+ * ОФОРМЛЕНИЕ ВИДИМЫХ ПОЛЕЙ БЫСТРОГО СОЗДАНИЯ.
+ *
+ * Только токены темы, ни одного зашитого цвета: ночная тема в DENTE тёплая,
+ * тёмная — тёмная, и любой литерал вида #fff в одной из них становится светлым
+ * пятном. Размеры в rem, чтобы зона переживала зум браузера, высокое DPI и
+ * удлинение подписей при переводе.
+ *
+ * Почему инлайном, а не отдельными классами: раскладку шапки картотеки держит
+ * apps/web/src/styles/patients-redesign.css, он прямо сейчас в работе у другого
+ * инженера, и второй набор правил на те же узлы из другого файла разошёлся бы с
+ * его набором. Его же комментарий в этом файле оставляет разметку подписей мне.
+ */
+const quickCreateFieldStyle: CSSProperties = {
+	color: "var(--muted)",
+	display: "flex",
+	flexDirection: "column",
+	fontSize: "0.75rem",
+	fontWeight: 700,
+	gap: "0.25rem",
+	minWidth: 0,
+};
+
+const quickCreateInputStyle: CSSProperties = {
+	background: "var(--paper-soft)",
+	border: "1px solid var(--line-strong)",
+	borderRadius: "9px",
+	color: "var(--ink)",
+	fontSize: "0.95rem",
+	minHeight: "2.5rem",
+	padding: "10px 12px",
+	width: "100%",
+};
+
 export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
   const logicContext = useAppLogicContext();
   const props = { ...logicContext, ...rawProps } as PatientsViewProps;
@@ -83,7 +117,21 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
     setNewPatientBirthDate,
   } = usePatientStore();
 
-  const [smartInputText, setSmartInputText] = useState("");
+  /*
+   * ЛОКАЛЬНОЙ КОПИИ ТЕКСТА ЗДЕСЬ БОЛЬШЕ НЕТ.
+   *
+   * БЫЛО: `smartInputText` жил рядом с `newPatientName` из хранилища, и половина
+   * экрана читала одно, половина другое. `value` поля брался из хранилища,
+   * условие Enter — из локальной копии, а `createPatient` чистил только
+   * хранилище. После успешного создания поле выглядело пустым, но Enter в нём
+   * открывал разбор с ФИО только что созданного пациента — прямой второй заход
+   * на ту же карту. Диктовка писала тоже только в локальную копию: закрыл окно
+   * разбора крестиком — «Создать» заводил пациента со старым, набранным раньше
+   * именем, а надиктованное исчезало из вида.
+   *
+   * Источник истины один — `newPatientName` из хранилища: что видно в поле, то и
+   * уйдёт в создание.
+   */
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<ReturnType<typeof parsePatientDictationLocal> | null>(null);
   const [showHints, setShowHints] = useState(false);
@@ -120,6 +168,24 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
     : patientCreatePhoneIssue
       ? "Телефон пациента слишком короткий. Исправьте номер или очистите поле."
       : null;
+  /*
+   * ENTER ТЕПЕРЬ ДЕЛАЕТ ТО, ЧТО ОБЕЩАЕТ.
+   *
+   * Подсказка поля обещала «(Enter)», а Enter создание не выполнял — открывал
+   * окно разбора, после которого требовались ещё «Применить» и «Создать». Здесь
+   * Enter в любом из трёх полей зоны создания заводит карту, ровно как нажатие
+   * «Создать», и подчиняется тем же условиям готовности: пустое ФИО и слишком
+   * короткий телефон не проходят, а причина отказа уже написана под шапкой
+   * (patientCreateGuidance). Повторное нажатие во время создания не отправляет
+   * второй запрос — это же проверяет createPatient.
+   */
+  function handleQuickCreateKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (!patientCreateReady) return;
+    void createPatient();
+  }
+
   const patientCoreNameMissing = patientCoreDraft.fullName.trim().length === 0;
   const patientCoreReadyToSave =
     Boolean(selectedPatient) && patientCoreDirty && patientCoreSaveState !== "saving" && !patientCoreNameMissing;
@@ -164,83 +230,139 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
           />
         </div>
         <div className="smart-create-group">
-          <div className="smart-input-wrapper">
-            <input
-              aria-label="Быстрый ввод пациентов"
-              autoComplete="name"
-              /* БЫЛО: value={smartInputText} — локальная копия. После успешного
-                 создания пациента хранилище очищало newPatientName, а поле
-                 продолжало показывать старое ФИО: кнопка «Создать» оставалась
-                 серой, а подсказка требовала «укажите ФИО пациента», хотя текст
-                 виден. Источник истины теперь один — состояние хранилища. */
-              value={newPatientName}
-              onChange={(event: TextFieldChangeEvent) => {
-                setSmartInputText(event.target.value);
-                setNewPatientName(event.target.value);
-              }}
-              onFocus={() => setShowHints(true)}
-              onBlur={() => setTimeout(() => setShowHints(false), 200)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && smartInputText.trim()) {
-                  e.preventDefault();
-                  const parsed = parsePatientDictationLocal(smartInputText);
-                  setSmartParsedData(parsed);
-                  setShowSmartPreview(true);
-                  setShowHints(false);
-                }
-              }}
-              placeholder="ФИО, телефон, дата рождения (Enter)"
-            />
-            <SmartMicrophoneButton
-              context="patient"
-              onResult={(text) => {
-                setSmartInputText(text);
-                const parsed = parsePatientDictationLocal(text);
-                setSmartParsedData(parsed);
-                setShowSmartPreview(true);
-                setShowHints(false);
-              }}
-              style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
-            />
-            <DictationHints isVisible={showHints} type="patient" />
-            <input
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              title="Телефон нового пациента"
-              placeholder="Телефон пациента"
-              value={newPatientPhone}
-              onChange={(e) => setNewPatientPhone(e.target.value)}
-              style={{ display: "none" }}
-            />
-            <input
-              type="date"
-              autoComplete="bday"
-              title="Дата рождения пациента"
-              placeholder="Дата рождения"
-              value={newPatientBirthDate}
-              onChange={(e) => setNewPatientBirthDate(e.target.value)}
-              style={{ display: "none" }}
-            />
-            <SmartParsePreview 
-              isVisible={showSmartPreview}
-              parsedData={smartParsedData}
-              rawText={smartInputText}
-              type="patient"
-              onApply={(data: Record<string, string | undefined>) => {
-                if (data) {
-                  setNewPatientName(data.fullName || smartInputText);
-                  if (data.phone) setNewPatientPhone(data.phone);
-                  if (data.birthDate) setNewPatientBirthDate(data.birthDate);
-                  if (data.notes) updatePatientCoreDraft("notes", data.notes);
-                }
-                setShowSmartPreview(false);
-                setSmartInputText(data?.fullName || "");
-              }}
-              onManual={() => setShowSmartPreview(false)}
-              onClose={() => setShowSmartPreview(false)}
-            />
+          {/*
+            ТЕЛЕФОН И ДАТА РОЖДЕНИЯ СТОЯЛИ ЗДЕСЬ ЖЕ, НО ПОД `display: none`, И
+            ИЗ-ЗА ЭТОГО НАСТОЯЩЕГО ТЁЗКУ НЕЛЬЗЯ БЫЛО ЗАВЕСТИ С ЭТОГО ЭКРАНА.
+
+            Сервер запрещает вторую карту с тем же ФИО, когда отличить человека
+            нечем, и в отказе прямо называет выход: «Если это другой человек,
+            добавьте телефон или дату рождения — с ними карта создастся»
+            (patientNameOnlyDuplicateMessage, apps/api/src/routes/patients.ts).
+            Оба поля заполнялись только из окна разбора диктовки, то есть текст
+            отказа называл действие, которого на экране не было. Полные тёзки в
+            картотеке — обычное дело: регистратор либо не заводил второго
+            человека вовсе, либо дописывал к фамилии «2» и получал дубль под
+            другим именем — ровно то, от чего запрет и защищает.
+
+            Подписи видимые, а не placeholder: placeholder исчезает с первым
+            символом, и после первого нажатия клавиши поля становятся
+            неразличимы. Подписи связаны через htmlFor/id, а не обёрткой:
+            внутри поля ФИО стоят кнопка микрофона, подсказки диктовки и окно
+            разбора — обёртка <label> вокруг интерактивного содержимого даёт
+            неочевидное поведение при нажатии.
+          */}
+          <div
+            className="smart-create-fields"
+            style={{ alignItems: "flex-end", display: "flex", flex: "1 1 18rem", flexWrap: "wrap", gap: "0.5rem", minWidth: 0 }}
+          >
+            <div style={{ ...quickCreateFieldStyle, flex: "2 1 11rem" }}>
+              <label htmlFor="patient-create-full-name">ФИО нового пациента</label>
+              <div className="smart-input-wrapper">
+                <input
+                  id="patient-create-full-name"
+                  autoComplete="name"
+                  value={newPatientName}
+                  onChange={(event: TextFieldChangeEvent) => setNewPatientName(event.target.value)}
+                  onFocus={() => setShowHints(true)}
+                  onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                  onKeyDown={handleQuickCreateKeyDown}
+                  placeholder="Фамилия Имя Отчество"
+                />
+                <SmartMicrophoneButton
+                  context="patient"
+                  onResult={(text) => {
+                    /* Надиктованное попадает в ВИДИМОЕ поле сразу. Раньше оно
+                       уходило в локальную копию, и пока окно разбора не
+                       подтвердили «Применить», на экране оставалось прежнее
+                       имя — а «Создать» брал именно его. */
+                    setNewPatientName(text);
+                    const parsed = parsePatientDictationLocal(text);
+                    setSmartParsedData(parsed);
+                    setShowSmartPreview(true);
+                    setShowHints(false);
+                  }}
+                  style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
+                />
+                <DictationHints isVisible={showHints} type="patient" />
+                <SmartParsePreview
+                  isVisible={showSmartPreview}
+                  parsedData={smartParsedData}
+                  rawText={newPatientName}
+                  type="patient"
+                  onApply={(data: Record<string, string | undefined>) => {
+                    if (data) {
+                      setNewPatientName(data.fullName || newPatientName);
+                      if (data.phone) setNewPatientPhone(data.phone);
+                      if (data.birthDate) setNewPatientBirthDate(data.birthDate);
+                      if (data.notes) updatePatientCoreDraft("notes", data.notes);
+                    }
+                    setShowSmartPreview(false);
+                  }}
+                  onManual={() => setShowSmartPreview(false)}
+                  onClose={() => setShowSmartPreview(false)}
+                />
+              </div>
+            </div>
+            <div style={{ ...quickCreateFieldStyle, flex: "1 1 9rem" }}>
+              <label htmlFor="patient-create-phone">Телефон</label>
+              <input
+                id="patient-create-phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                title="Телефон нового пациента"
+                placeholder="+7..."
+                value={newPatientPhone}
+                /* Приведение к единому виду — как в карточке пациента ниже:
+                   иначе один и тот же номер лежит в базе в двух написаниях и
+                   поиск по цифрам находит не всех. */
+                onChange={(event: TextFieldChangeEvent) => setNewPatientPhone(formatPhoneNumber(event.target.value))}
+                onKeyDown={handleQuickCreateKeyDown}
+                style={quickCreateInputStyle}
+              />
+            </div>
+            <div style={{ ...quickCreateFieldStyle, flex: "1 1 9rem" }}>
+              <label htmlFor="patient-create-birth-date">Дата рождения</label>
+              <input
+                id="patient-create-birth-date"
+                type="date"
+                autoComplete="bday"
+                title="Дата рождения нового пациента"
+                value={newPatientBirthDate}
+                onChange={(event: TextFieldChangeEvent) => setNewPatientBirthDate(event.target.value)}
+                onKeyDown={handleQuickCreateKeyDown}
+                style={quickCreateInputStyle}
+              />
+            </div>
           </div>
+          {/*
+            РАЗБОР НАБРАННОЙ СТРОКИ СТАЛ ВИДИМЫМ ДЕЙСТВИЕМ.
+
+            БЫЛО: разбор висел на Enter, а подсказка поля обещала «(Enter)» так,
+            что читалось это как «нажми Enter — пациент создан». Enter создание
+            не выполнял: он открывал окно разбора, дальше требовались «Применить»
+            и «Создать» — три шага вместо обещанного одного. Ни одна надпись на
+            экране про разбор не говорила вовсе.
+
+            ТЕПЕРЬ Enter в любом из трёх полей делает то, что обещано, —
+            создаёт карту; а разбор строки вида «Иванов Иван Иванович,
+            +7 916 200-10-20, 10.01.1970» на три поля стал отдельной кнопкой с
+            подписью. Возможность разобрать вставленную строку не потеряна: она
+            перестала быть скрытой.
+          */}
+          <button
+            className="secondary-button"
+            type="button"
+            title="Разобрать набранную строку на ФИО, телефон и дату рождения"
+            onClick={() => {
+              setSmartParsedData(parsePatientDictationLocal(newPatientName));
+              setShowSmartPreview(true);
+              setShowHints(false);
+            }}
+            disabled={!patientNameReady}
+          >
+            Разобрать
+          </button>
           <button
             className="primary-button quick-create-action"
             type="button"
@@ -318,7 +440,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
               className="patient-empty-state"
               icon={<Search size={28} />}
               title="Пациент не найден"
-              description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, введите ФИО выше и нажмите «Создать»."
+              /* БЫЛО «введите ФИО выше»: выше стояли два поля, и оба принимают
+                 ФИО, — указание было неоднозначным ровно там, где регистратор
+                 уже ошибся полем. Теперь названо конкретное поле по его
+                 видимой подписи, а не место на экране: подпись не переезжает
+                 при переносе шапки в колонку на узком экране. */
+              description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, заполните поле «ФИО нового пациента» и нажмите «Создать»."
               glass={false}
               style={{ padding: "24px 16px" }}
             />
