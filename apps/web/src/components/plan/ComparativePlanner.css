@@ -1130,6 +1130,62 @@
 	transform: none;
 }
 
+/*
+ * Объяснение, почему у строки нет цены, и что мешает сохранить план.
+ *
+ * Блок появляется только когда есть о чём сказать, поэтому обычную форму не
+ * утяжеляет. Цвета — токенами (--warn-bg / --warn-fg объявлены во всех темах),
+ * размеры относительные: русская фраза длиннее английской на треть, и текст
+ * обязан переноситься, а не обрезаться.
+ */
+.cpf-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	margin-bottom: 1rem;
+	padding: 0.75rem 0.9rem;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--teal-surface);
+	color: var(--ink);
+	font-size: 0.875rem;
+	line-height: 1.45;
+}
+
+.cpf-notice.is-problem {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
+}
+
+.cpf-notice p {
+	margin: 0 0 0.35rem;
+}
+
+.cpf-notice p:last-child {
+	margin-bottom: 0;
+}
+
+.cpf-notice-icon {
+	flex: 0 0 auto;
+	margin-top: 0.15rem;
+}
+
+/* Подсказка под строкой, для которой цены в прайсе не нашлось. */
+.cpf-row-hint {
+	color: var(--warn-fg);
+	font-size: 0.75rem;
+	line-height: 1.3;
+}
+
+/* Итог не посчитан: у услуги плана испорчена цена. */
+.plan-total-unreadable {
+	margin: 0.5rem 0 0;
+	color: var(--warn-fg);
+	font-size: 0.8125rem;
+	line-height: 1.4;
+}
+
 /* Responsive: stack row columns on mobile */
 @media (max-width: 600px) {
 	.cpf-row {

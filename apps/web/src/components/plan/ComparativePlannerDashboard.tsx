@@ -1,8 +1,10 @@
+import { formatKopecksRu, type Kopecks } from "@dental/shared";
 import {
 	Archive,
 	Check,
 	Download,
 	FileText,
+	Info,
 	MoreVertical,
 	Plus,
 	Printer,
@@ -16,7 +18,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
+import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
 import "./ComparativePlanner.css";
+import {
+	coveragePercentForCategory,
+	insuranceCoverageKopecks,
+	planLineTotalKopecks,
+	planPriceIssueMessages,
+	planTotalKopecks,
+	resolvePlanSuggestions,
+	validateDraftPlanRows,
+} from "./planPricing";
 
 // ─── Backend-aligned types ──────────────────────────────────────────────────
 
@@ -69,6 +81,10 @@ interface DraftServiceRow {
 	name: string;
 	price: string;
 	quantity: string;
+	/** Зуб, из-за которого строка появилась. Уходит в смету отдельным полем. */
+	toothNumber?: number | null;
+	/** Строка пришла из зубной формулы, но цены в прайсе для неё не нашлось. */
+	needsPriceFromCatalog?: boolean;
 }
 
 const makeDraftRow = (): DraftServiceRow => ({
@@ -77,17 +93,26 @@ const makeDraftRow = (): DraftServiceRow => ({
 	name: "",
 	price: "",
 	quantity: "1",
+	toothNumber: null,
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function calcPlanTotal(plan: TreatmentPlan): number {
-	if (!plan.items || plan.items.length === 0) return plan.totalPrice ?? 0;
-	return plan.items.reduce(
-		(acc, item) =>
-			acc + item.price * item.quantity * (1 - (item.discount ?? 0) / 100),
-		0,
-	);
+/**
+ * Итог плана в копейках. null — в плане есть строка с непонятной суммой, и
+ * тогда на экране пишется об этом, а не подставляется ноль.
+ *
+ * Расчёт живёт в ./planPricing.ts: он повторяет серверную формулу
+ * (max(0, цена × количество − скидка в рублях)) и складывает целые копейки,
+ * поэтому показанный итог равен сохранённому.
+ */
+function calcPlanTotalKopecks(plan: TreatmentPlan): Kopecks | null {
+	return planTotalKopecks(plan.items ?? [], plan.totalPrice ?? 0).kopecks;
+}
+
+/** Сумма для человека; неизвестная сумма не притворяется нулём. */
+function moneyOrDash(kopecks: Kopecks | null): string {
+	return kopecks === null ? "сумма не читается" : formatKopecksRu(kopecks);
 }
 
 function statusLabel(status: PlanStatus): string {
@@ -149,6 +174,10 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	const [draftRows, setDraftRows] = useState<DraftServiceRow[]>([
 		makeDraftRow(),
 	]);
+	/** Почему часть строк осталась без цены — человеческими словами. */
+	const [priceNotices, setPriceNotices] = useState<string[]>([]);
+	/** Что мешает сохранить план прямо сейчас. */
+	const [draftProblems, setDraftProblems] = useState<string[]>([]);
 	const [isCreating, setIsCreating] = useState(false);
 	const formRef = useRef<HTMLDivElement>(null);
 
@@ -309,6 +338,8 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	const openCreateForm = () => {
 		setNewPlanName("Комплексный план лечения");
 		setDraftRows([makeDraftRow()]);
+		setPriceNotices([]);
+		setDraftProblems([]);
 		setShowCreateForm(true);
 		setTimeout(
 			() => formRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -316,69 +347,58 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		);
 	};
 
+	/**
+	 * Перенос предложений из зубной формулы в форму сметы.
+	 *
+	 * БЫЛО: если услуги не находилось в прайсе, подставлялась своя цена — 4000,
+	 * 8000, 35000, 15000 и снова 35000 рублей, — а найденной услуге цена всё
+	 * равно не читалась, потому что код брал поле `priceRub`, которого у услуги
+	 * прайса нет (там `basePriceRub`), и падал на `|| "0"`. В смету, которую
+	 * подписывает пациент, уходили суммы, которых клиника не назначала.
+	 *
+	 * СТАЛО: цена только из прайса клиники. Не нашлось — цены нет, строка ждёт
+	 * выбора услуги, а человеку сказано, чего именно не хватает в прайсе.
+	 */
 	const importSuggestions = () => {
 		if (pendingPlanSuggestions.length === 0) return;
 
-		const catalog = dashboard?.serviceCatalog || [];
-		const findService = (
-			category: string,
-			isBaby: boolean,
-			keywords: string[],
-		) => {
-			const candidates = catalog.filter((s: any) => s.category === category);
-			let best = candidates.find((s: any) =>
-				keywords.some((k) => s.title.toLowerCase().includes(k)),
-			);
-			if (!best && candidates.length > 0) best = candidates[0];
-			return best;
-		};
+		const suggestions = pendingPlanSuggestions.map((suggestion) => ({
+			toothNumber: Number(suggestion?.toothNumber),
+			state: String(suggestion?.state ?? ""),
+		}));
 
-		const newRows: DraftServiceRow[] = pendingPlanSuggestions.map((sug) => {
-			const isBaby = sug.toothNumber > 50;
-			let service: any = null;
-			if (sug.state === "Caries") {
-				service = findService("therapy", isBaby, ["кариес"]) || {
-					id: "service_caries",
-					title: "Лечение кариеса",
-					priceRub: 4000,
-				};
-			} else if (sug.state === "Pulpitis") {
-				service = findService("therapy", isBaby, ["пульпит", "эндо"]) || {
-					id: "service_pulpitis",
-					title: "Лечение пульпита",
-					priceRub: 8000,
-				};
-			} else if (sug.state === "Planned_Implant" || sug.state === "Implant") {
-				service = findService("surgery", false, ["имплант", "установка"]) || {
-					id: "service_implant",
-					title: "Установка имплантата",
-					priceRub: 35000,
-				};
-			} else if (sug.state === "Crown") {
-				service = findService("prosthetics", isBaby, ["коронка"]) || {
-					id: "service_crown",
-					title: "Коронка",
-					priceRub: 15000,
-				};
-			} else if (sug.state === "Missing") {
-				service = findService("surgery", false, ["имплант"]) || {
-					id: "service_implant",
-					title: "Установка имплантата",
-					priceRub: 35000,
-				};
-			}
+		const resolved = resolvePlanSuggestions(
+			suggestions.filter((suggestion) =>
+				Number.isFinite(suggestion.toothNumber),
+			),
+			dashboard?.serviceCatalog ?? [],
+		);
 
+		const newRows: DraftServiceRow[] = resolved.map((row) => {
+			const diagnosis =
+				TOOTH_STATE_LABELS[row.state as ToothState] ?? row.state;
 			return {
 				key: Math.random().toString(36).slice(2),
-				priceId: service?.id || "",
-				name: `[Зуб ${sug.toothNumber}] ${service?.title || "Процедура"}`,
-				price: service?.priceRub?.toString() || "0",
+				priceId: row.serviceId ?? "",
+				/*
+				 * Пока услуга не выбрана, в названии стоит диагноз врача, а не
+				 * выдуманная «Процедура»: диагноз — факт из зубной формулы.
+				 */
+				name: row.serviceTitle
+					? `[Зуб ${row.toothNumber}] ${row.serviceTitle}`
+					: `[Зуб ${row.toothNumber}] ${diagnosis}`,
+				/* Неизвестная цена остаётся ПУСТОЙ. Ноль означал бы «бесплатно». */
+				price: row.priceRub === null ? "" : String(row.priceRub),
 				quantity: "1",
+				toothNumber: row.toothNumber,
+				needsPriceFromCatalog: row.priceRub === null,
 			};
 		});
 
 		setNewPlanName("План лечения (из зубной формулы)");
-		setDraftRows(newRows);
+		setDraftRows(newRows.length > 0 ? newRows : [makeDraftRow()]);
+		setPriceNotices(planPriceIssueMessages(resolved));
+		setDraftProblems([]);
 		setShowCreateForm(true);
 		clearPendingPlanSuggestions();
 
@@ -391,6 +411,8 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	const cancelCreateForm = () => {
 		setShowCreateForm(false);
 		setDraftRows([makeDraftRow()]);
+		setPriceNotices([]);
+		setDraftProblems([]);
 	};
 
 	const addDraftRow = () => setDraftRows((prev) => [...prev, makeDraftRow()]);
@@ -400,7 +422,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	const updateDraftRow = (
 		key: string,
-		field: keyof Omit<DraftServiceRow, "key">,
+		/* Только текстовые поля строки: номер зуба и признак «цены нет» правятся
+		 * не вводом, а подбором услуги. */
+		field: "priceId" | "name" | "price" | "quantity",
 		value: string,
 	) =>
 		setDraftRows((prev) =>
@@ -415,16 +439,25 @@ export const ComparativePlannerDashboard: React.FC = () => {
 			return;
 		}
 
-		const validRows = draftRows.filter(
-			(r) => r.name.trim() && parseFloat(r.price) > 0,
-		);
-
-		const items = validRows.map((r) => ({
-			priceId: r.priceId || null,
-			name: r.name.trim(),
-			price: parseFloat(r.price) || 0,
-			quantity: parseInt(r.quantity, 10) || 1,
-		}));
+		/*
+		 * БЫЛО: строки без цены молча отбрасывались (`parseFloat(r.price) > 0`), а
+		 * строка без позиции прайса уходила с `priceId: null`, который контракт
+		 * сервера не принимает, — весь запрос падал с 400 и общей фразой. Теперь
+		 * ни одна заполненная строка не исчезает: человеку названы конкретные
+		 * строки и сказано, что с ними сделать.
+		 */
+		const validation = validateDraftPlanRows(draftRows);
+		if (!validation.ok) {
+			setDraftProblems(validation.problems);
+			showToast(
+				validation.problems[0] ?? "План не сохранён: проверьте строки сметы",
+				"error",
+				9000,
+			);
+			return;
+		}
+		setDraftProblems([]);
+		const items = validation.items;
 
 		setIsCreating(true);
 		try {
@@ -439,14 +472,28 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				},
 			);
 			if (res.ok) {
-				showToast("План создан", "success");
+				showToast(
+					`План создан на сумму ${formatKopecksRu(validation.totalKopecks)}`,
+					"success",
+				);
 				setShowCreateForm(false);
+				setPriceNotices([]);
 				await fetchPlans();
 			} else {
 				const err = await res.json().catch(() => ({}));
+				const serverMessage = (err as { message?: string }).message;
+				setDraftProblems(
+					serverMessage
+						? [serverMessage]
+						: [
+								`Сервер не сохранил план (код ${res.status}). Позиции остались на экране — их не нужно набирать заново.`,
+							],
+				);
 				showToast(
-					(err as { message?: string }).message || "Не удалось создать план",
+					serverMessage ||
+						`Не удалось создать план (код ${res.status}). Позиции остались на экране.`,
 					"error",
+					9000,
 				);
 			}
 		} catch {
@@ -459,7 +506,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	// ── Print & Export ────────────────────────────────────────────────────────
 
 	const handlePrintPlan = (plan: TreatmentPlan) => {
-		const total = calcPlanTotal(plan);
+		const total = calcPlanTotalKopecks(plan);
 		const win = window.open("", "_blank");
 		if (!win) return;
 		win.document.write(`
@@ -477,17 +524,31 @@ export const ComparativePlannerDashboard: React.FC = () => {
           <h1>План лечения: ${plan.name}</h1>
           <p>Статус: ${statusLabel(plan.status)}</p>
           <table>
-            <thead><tr><th>Услуга</th><th>Зуб</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
+            <thead><tr><th>Услуга</th><th>Зуб</th><th>Кол-во</th><th>Цена</th><th>Скидка</th><th>Сумма</th></tr></thead>
             <tbody>
               ${(plan.items || [])
-								.map(
-									(item) =>
-										`<tr><td>${item.name}</td><td>${item.toothNumber ?? "—"}</td><td>${item.quantity}</td><td>${item.price.toLocaleString("ru-RU")} ₽</td><td>${(item.price * item.quantity).toLocaleString("ru-RU")} ₽</td></tr>`,
-								)
+								/*
+								 * Суммы печатаются точными копейками, и «Сумма» — это итог
+								 * строки СО скидкой. Раньше в столбце стояло цена × количество
+								 * без скидки, а «Итого» считалось со скидкой: печатный
+								 * документ не сходился сам с собой. Скидка получила
+								 * собственный столбец: пациент обязан видеть, из чего вышла
+								 * разница, — в рублях, как её и хранит контракт.
+								 */
+								.map((item) => {
+									const lineTotal = planLineTotalKopecks(item);
+									const discount = moneyOrDash(
+										planLineTotalKopecks({
+											price: item.discount ?? 0,
+											quantity: 1,
+										}),
+									);
+									return `<tr><td>${item.name}</td><td>${item.toothNumber ?? "—"}</td><td>${item.quantity}</td><td>${moneyOrDash(planLineTotalKopecks({ price: item.price, quantity: 1 }))}</td><td>${item.discount ? discount : "—"}</td><td>${moneyOrDash(lineTotal)}</td></tr>`;
+								})
 								.join("")}
             </tbody>
           </table>
-          <div class="total">Итого: ${total.toLocaleString("ru-RU")} ₽</div>
+          <div class="total">Итого: ${moneyOrDash(total)}</div>
         </body>
       </html>
     `);
@@ -497,13 +558,24 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	};
 
 	const handleExportCsv = (plan: TreatmentPlan) => {
-		const rows = [["Услуга", "Зуб", "Кол-во", "Цена (₽)", "Фаза"]];
+		/*
+		 * Суммы в файл уходят с двумя знаками и русской запятой: `String(1500.5)`
+		 * давало «1500.5», и в бухгалтерии полтинник читался как пять копеек.
+		 * Значение берётся из целых копеек, поэтому округления здесь нет.
+		 */
+		const csvAmount = (value: number | null | undefined): string => {
+			const kopecks = planLineTotalKopecks({ price: value ?? 0, quantity: 1 });
+			if (kopecks === null) return "";
+			return `${Math.trunc(kopecks / 100)},${String(Math.abs(kopecks) % 100).padStart(2, "0")}`;
+		};
+		const rows = [["Услуга", "Зуб", "Кол-во", "Цена (₽)", "Скидка (₽)", "Фаза"]];
 		for (const item of plan.items || []) {
 			rows.push([
 				item.name,
 				String(item.toothNumber ?? ""),
 				String(item.quantity),
-				String(item.price),
+				csvAmount(item.price),
+				csvAmount(item.discount ?? 0),
 				item.phase ?? "",
 			]);
 		}
@@ -651,6 +723,33 @@ export const ComparativePlannerDashboard: React.FC = () => {
 							/>
 						</div>
 
+						{/*
+						 * Почему часть строк без цены и что делать. Появляется только
+						 * когда есть о чём сказать, поэтому обычную форму не утяжеляет.
+						 */}
+						{priceNotices.length > 0 && (
+							<div className="cpf-notice" role="status">
+								<Info size={16} className="cpf-notice-icon" />
+								<div>
+									{priceNotices.map((notice) => (
+										<p key={notice}>{notice}</p>
+									))}
+								</div>
+							</div>
+						)}
+
+						{draftProblems.length > 0 && (
+							<div className="cpf-notice is-problem" role="alert">
+								<ShieldAlert size={16} className="cpf-notice-icon" />
+								<div>
+									<p>План не сохранён. Поправьте, пожалуйста:</p>
+									{draftProblems.map((problem) => (
+										<p key={problem}>{problem}</p>
+									))}
+								</div>
+							</div>
+						)}
+
 						<div className="cpf-services-header">
 							<span className="cpf-section-label">Услуги</span>
 							<button
@@ -684,6 +783,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 									>
 										<select
 											className="cpf-input"
+											aria-label="Услуга из прайса"
 											value={row.priceId || ""}
 											onChange={(e) => {
 												const val = e.target.value;
@@ -691,14 +791,28 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													(s) => s.id === val,
 												);
 												if (catItem) {
+													/*
+													 * Цена берётся из basePriceRub — денежного поля прайса.
+													 * Раньше здесь стояло `catItem.priceRub`, поля с таким
+													 * именем у услуги прайса нет, и в поле цены попадала
+													 * строка «undefined».
+													 *
+													 * Номер зуба сохраняется в названии: без него строка,
+													 * пришедшая из зубной формулы, теряла привязку к зубу
+													 * при выборе услуги из списка.
+													 */
 													setDraftRows((prev) =>
 														prev.map((r) =>
 															r.key === row.key
 																? {
 																		...r,
 																		priceId: catItem.id,
-																		name: catItem.title,
-																		price: String(catItem.priceRub),
+																		name:
+																			r.toothNumber != null
+																				? `[Зуб ${r.toothNumber}] ${catItem.title}`
+																				: catItem.title,
+																		price: String(catItem.basePriceRub),
+																		needsPriceFromCatalog: false,
 																	}
 																: r,
 														),
@@ -708,10 +822,21 @@ export const ComparativePlannerDashboard: React.FC = () => {
 												}
 											}}
 										>
-											<option value="">-- Выбрать из каталога --</option>
+											<option value="">
+												{(dashboard?.serviceCatalog?.length ?? 0) === 0
+													? "В прайсе нет услуг — заполните прайс"
+													: "Выберите услугу из прайса"}
+											</option>
 											{dashboard?.serviceCatalog?.map((sc) => (
 												<option key={sc.id} value={sc.id}>
-													{sc.title} ({sc.priceRub} ₽)
+													{sc.title} (
+													{moneyOrDash(
+														planLineTotalKopecks({
+															price: sc.basePriceRub,
+															quantity: 1,
+														}),
+													)}
+													)
 												</option>
 											))}
 										</select>
@@ -724,13 +849,24 @@ export const ComparativePlannerDashboard: React.FC = () => {
 												updateDraftRow(row.key, "name", e.target.value)
 											}
 										/>
+										{row.needsPriceFromCatalog && (
+											<span className="cpf-row-hint">
+												Цены нет: выберите услугу из прайса
+											</span>
+										)}
 									</div>
+									{/*
+									 * Поле текстовое, а не числовое: разбор идёт единственным
+									 * разборщиком суммы (apps/web/src/rubAmountInput.ts), который
+									 * принимает и «1500,50», и «1 500.50». Числовое поле в
+									 * русской раскладке запятую просто съедало.
+									 */}
 									<input
 										className="cpf-input cpf-col-price"
-										type="number"
-										min={0}
-										step={1}
-										placeholder="0"
+										type="text"
+										inputMode="decimal"
+										aria-label="Цена услуги в рублях"
+										placeholder="Цена из прайса"
 										value={row.price}
 										onChange={(e) =>
 											updateDraftRow(row.key, "price", e.target.value)
@@ -835,7 +971,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 							{plans.map((plan) => {
 								if (isMobile && plan.id !== activeMobileTab) return null;
 
-								const total = calcPlanTotal(plan);
+								const total = calcPlanTotalKopecks(plan);
 								const isApproved =
 									plan.status === "Approved" || plan.status === "Completed";
 								const isArchived =
@@ -844,20 +980,40 @@ export const ComparativePlannerDashboard: React.FC = () => {
 									plan.status === "Draft" || plan.status === "Active";
 								const isSaving = savingPlanId === plan.id;
 
-								// insurance calculation
-								let insuranceCoverage = 0;
-								let patientCopay = total;
-								if (insuranceActive && insuranceData) {
-									// Simple flat coverage on total (no per-category data in API)
-									const avgPct =
-										(insuranceData.coverageTherapyPct +
-											insuranceData.coverageOrthoPct +
-											insuranceData.coverageHygienePct +
-											insuranceData.coverageSurgeryPct) /
-										4;
-									insuranceCoverage = Math.round((total * avgPct) / 100);
-									patientCopay = total - insuranceCoverage;
-								}
+								/*
+								 * Доля ДМС — построчно, по разделу прайса каждой услуги.
+								 *
+								 * БЫЛО: среднее арифметическое четырёх процентов договора,
+								 * поделённое на четыре. Такой доли не назначал никто, и она
+								 * прямо противоречила значку «Вне покрытия ДМС» на той же
+								 * строке: значок говорил «не покрыто», а «К оплате» всё равно
+								 * уменьшалось на усреднённую долю.
+								 */
+								const insuranceCoverage =
+									insuranceActive && insuranceData && total !== null
+										? insuranceCoverageKopecks(
+												(plan.items ?? []).flatMap((item) => {
+													const lineKopecks = planLineTotalKopecks(item);
+													if (lineKopecks === null) return [];
+													const service = (
+														dashboard?.serviceCatalog ?? []
+													).find(
+														(candidate) =>
+															candidate.id === item.priceId ||
+															candidate.title === item.name,
+													);
+													return [
+														{
+															lineKopecks,
+															category: service?.category ?? null,
+														},
+													];
+												}),
+												insuranceData,
+											)
+										: 0;
+								const patientCopay =
+									total === null ? null : total - insuranceCoverage;
 
 								return (
 									<div
@@ -901,7 +1057,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																</button>
 																<button
 																	onClick={() => {
-																		const text = `${plan.name}\nСтатус: ${statusLabel(plan.status)}\nИтого: ${total.toLocaleString("ru-RU")} ₽`;
+																		const text = `${plan.name}\nСтатус: ${statusLabel(plan.status)}\nИтого: ${moneyOrDash(total)}`;
 																		navigator.clipboard
 																			.writeText(text)
 																			.then(() =>
@@ -939,18 +1095,16 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													<>
 														<div className="price-row total-original">
 															<span>Итого:</span>
-															<span>{total.toLocaleString("ru-RU")} ₽</span>
+															<span>{moneyOrDash(total)}</span>
 														</div>
 														<div className="price-row insurance-share">
 															<span>Покрывает ДМС:</span>
-															<span>
-																−{insuranceCoverage.toLocaleString("ru-RU")} ₽
-															</span>
+															<span>−{formatKopecksRu(insuranceCoverage)}</span>
 														</div>
 														<div className="price-row final-due">
 															<span>К оплате:</span>
 															<span className="price-val">
-																{patientCopay.toLocaleString("ru-RU")} ₽
+																{moneyOrDash(patientCopay)}
 															</span>
 														</div>
 													</>
@@ -958,9 +1112,16 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													<div className="price-row final-due no-insurance">
 														<span>Итого:</span>
 														<span className="price-val">
-															{total.toLocaleString("ru-RU")} ₽
+															{moneyOrDash(total)}
 														</span>
 													</div>
+												)}
+												{total === null && (
+													<p className="plan-total-unreadable">
+														У одной из услуг плана испорчена цена, поэтому итог
+														посчитать нельзя. Откройте план и укажите цену
+														заново.
+													</p>
 												)}
 											</div>
 										</div>
@@ -972,40 +1133,32 @@ export const ComparativePlannerDashboard: React.FC = () => {
 												<p className="plan-no-items">Услуги не добавлены</p>
 											) : (
 												plan.items.map((item) => {
-													let coveragePct = 0;
-													if (insuranceActive && insuranceData) {
-														const service = (
-															dashboard?.serviceCatalog || []
-														).find(
-															(s: any) =>
-																s.id === item.priceId || s.title === item.name,
-														);
-														if (service) {
-															switch (service.category) {
-																case "therapy":
-																	coveragePct =
-																		insuranceData.coverageTherapyPct;
-																	break;
-																case "ortho":
-																	coveragePct = insuranceData.coverageOrthoPct;
-																	break;
-																case "hygiene":
-																	coveragePct =
-																		insuranceData.coverageHygienePct;
-																	break;
-																case "surgery":
-																	coveragePct =
-																		insuranceData.coverageSurgeryPct;
-																	break;
-																default:
-																	coveragePct = 0;
-															}
-														}
-													}
+													/*
+													 * Раздел прайса определяет процент покрытия. Раскладка
+													 * одна и та же для значка на строке и для итога карточки
+													 * (./planPricing.ts), поэтому они больше не могут
+													 * разойтись. Прежний `case "ortho"` не срабатывал
+													 * никогда: раздел называется `orthodontics`.
+													 */
+													const service = (
+														dashboard?.serviceCatalog ?? []
+													).find(
+														(candidate) =>
+															candidate.id === item.priceId ||
+															candidate.title === item.name,
+													);
+													const coveragePct =
+														insuranceActive && insuranceData
+															? coveragePercentForCategory(
+																	service?.category,
+																	insuranceData,
+																)
+															: 0;
 													const isExcluded =
 														insuranceActive &&
-														insuranceData &&
+														insuranceData !== null &&
 														coveragePct === 0;
+													const lineKopecks = planLineTotalKopecks(item);
 
 													return (
 														<div
@@ -1054,13 +1207,33 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																			<ShieldAlert size={14} /> Вне покрытия ДМС
 																		</span>
 																	)}
+																	{/*
+																	 * Скидка показывается рублями, а не процентами:
+																	 * контракт и колонка базы хранят её суммой
+																	 * (treatment_plan_items_new.discount), и прежняя
+																	 * подпись «(−500%)» на скидке в 500 ₽ вводила
+																	 * пациента в заблуждение.
+																	 */}
 																	<span>
-																		{item.price.toLocaleString("ru-RU")} ₽
+																		{moneyOrDash(
+																			planLineTotalKopecks({
+																				price: item.price,
+																				quantity: 1,
+																			}),
+																		)}
 																		{item.quantity > 1
 																			? ` × ${item.quantity}`
 																			: ""}
 																		{item.discount
-																			? ` (−${item.discount}%)`
+																			? ` (скидка ${moneyOrDash(
+																					planLineTotalKopecks({
+																						price: item.discount,
+																						quantity: 1,
+																					}),
+																				)})`
+																			: ""}
+																		{item.discount || item.quantity > 1
+																			? ` = ${moneyOrDash(lineKopecks)}`
 																			: ""}
 																	</span>
 																</p>
