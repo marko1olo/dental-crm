@@ -125,3 +125,11 @@ history is not rewritten for a cosmetic character.
 
 ## DONE
 handoff.md written. R5's handoff.md corrected with a 4-point block naming the false sentences.
+
+## FINAL
+Docs commit e5fffd992 (6 files, all mine: my packet dir + the 25-line correction block in R5/handoff.md).
+HEAD kept moving under me (other packets): 723e09fa3 -> ... -> 87bf14e98.
+`npm run typecheck -w @dental/api` re-run at 87bf14e98 -> TRUE_EXIT=0.
+Mojibake sweep over all 798 added lines of my three commits: 0 cp1252 markers, 0 U+FFFD, 0 legacy.
+Probes under .tmp/ (gitignored) deleted. My files clean vs HEAD.
+STATUS: DONE
