@@ -390,3 +390,68 @@ outlives the condition it recorded becomes a lie.**
   actions are differentiated by confidence («Перенести сюда» at 95 %, «Всё равно перенести сюда» at
   35 %). The footnote explains the method and promises the second card survives as an archival link.
   This is the standard the rest of the product should be held to.
+
+---
+
+# ADDENDUM D — 2026-07-28, lead [ARCHON]: the theme race is CLOSED, and my own audit had a flaw
+
+## D1. MY OWN VERIFICATION WAS WRONG: AN MD5 AUDIT OF A FOLDER IS NOT AN AUDIT OF A RUN
+
+In addendum C I reported the capture batch as «35 files, 33 unique MD5». **Two of those 35 were not
+part of the run.** `diag_analytics.png` and `diag_schedule.png` are dated **07-27 20:15** — seventeen
+hours older than the batch — and **no script in `scripts/` writes a `diag_` prefix at all**
+(`rg -n "diag_" scripts/` returns nothing). They were orphans from an ad-hoc run by something that no
+longer exists, sitting inside the one folder the campaign treats as trustworthy and inflating every
+count taken from it.
+
+I opened `diag_schedule.png`: **it is the login screen**, not the schedule view — a violet gradient over
+a winter photograph with EMAIL / ПАРОЛЬ fields and «Войти в профиль». The Director's rule names this case
+exactly: «скрин логина — не скрин расписания».
+
+**The correction to my method, which matters more than the two files:** scope an audit to the files the
+run actually produced — by timestamp or by the pipeline's own manifest — never to the folder listing.
+`find .dente-ops-shots -name '*.png' -newermt '<run start>'` gives **34** files for the real run and
+isolates the 2 orphans. Both orphans deleted (untracked; nothing in `git ls-files .dente-ops-shots/`).
+
+This is the fifth instance of the same class in this campaign: stale `_ПУСТО` markers, 14 cloned PNGs,
+a stale `apps/api/dist`, a red-by-construction `smoke:wave16`, and now `diag_*`. **An artifact that
+outlives the condition it recorded becomes a lie**, and it lies most effectively inside a folder that
+has a good reputation.
+
+## D2. THE THEME RACE IS FIXED — MEASURED, THEN LOOKED AT
+
+Packet W5 (`f8792f6c9`, `59b685f32`) was still returning NEEDS_REWORK on other counts, but its core
+claim holds and I verified it two ways rather than reading the commit.
+
+**By measurement**, on the fresh 07-28 13:4x run, across all seven panels that have three theme variants:
+
+| panel | light | dark | night |
+|---|---|---|---|
+| duplicateAlert | `93e6129260` | `021c738560` | `4e7b41ae89` |
+| recall | `50ba918ec9` | `9e316ba1f6` | `6c48ff5166` |
+| reports | `e72f0701da` | `5647e38773` | `8da0ef506e` |
+| delivery | `f52286cb8c` | `6449e5d0bf` | `181ad8b593` |
+| campaigns | `e9335229a3` | `dfceec96ec` | `59f4bcdfd9` |
+| callList | `090697e925` | `46639b1cfb` | `742ccd974c` |
+| duplicates | `ebc799c2d1` | `75f40e9185` | `bb27b492fd` |
+
+**Zero collisions.** Previously `light_duplicateAlert` was byte-identical to `night_duplicateAlert`
+(`bdbf6e8a09e4`) and `dark_recall` to `night_recall` (`9e316ba1f6`).
+
+**By eye**, because distinct hashes prove the themes DIFFER, not that «light» is light: I opened
+`light_duplicateAlert.png`. It is a warm cream panel with an amber left border, dark text and white
+buttons — nothing like the dark olive night variant I opened this morning. Tokens do not burn; contrast
+is fine.
+
+## D3. THE DUPLICATES PANEL IS NOW THE BEST-WRITTEN SURFACE IN THE PRODUCT
+
+Worth naming as the standard, because §3 is otherwise the hardest rule to point at concretely:
+- It leads with the CONSEQUENCE, not the mechanism: «Похоже, у этого пациента есть ещё карточки: 2. Пока
+  карточки не объединены, приёмы, оплаты и снимки разложены по разным местам, и долг не виден целиком.»
+- It grades its own confidence: «95 % совпадения» with a green check where ФИО and date of birth match;
+  «35 % совпадения» in amber where only the phone matches.
+- It warns against the trap a naive product would fall into: «Осторожно: Скорее всего это родственники:
+  муж и жена, мать и ребёнок. Объединять нельзя без проверки.»
+- **Its actions are differentiated by confidence** — «Перенести сюда» at 95 %, «Всё равно перенести
+  сюда» at 35 %. The user is told the risk in the verb.
+Every empty, loading and error state in this product should be judged against this panel.
