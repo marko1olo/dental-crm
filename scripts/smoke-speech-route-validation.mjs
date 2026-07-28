@@ -8,6 +8,21 @@ process.env.NODE_ENV = "production";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+/*
+ * Этот смоук проверяет ВАЛИДАЦИЮ полезной нагрузки, а не авторизацию: он ждёт 400
+ * с ограниченным сообщением и без утечки деталей парсера. Значит запрос обязан
+ * дойти до разбора тела, то есть нести настоящие учётные данные клиники.
+ *
+ * Раньше он слал только x-dente-admin-secret. Этого хватало, пока диктовка не
+ * разрешала организацию вовсе. После починки маршрут требует организацию, и такой
+ * запрос честно получает 401 AuthRequired, не дойдя до валидации. Проверка стала
+ * бы красной — и не потому, что валидация сломалась.
+ *
+ * Секрет подписи задаётся здесь же: NODE_ENV=production выше, а в этом режиме
+ * apps/api/src/security/authSecret.ts требует AUTH_TOKEN_SECRET длиной >= 32.
+ */
+process.env.AUTH_TOKEN_SECRET =
+	process.env.AUTH_TOKEN_SECRET ?? "synthetic-smoke-auth-token-secret-32ch";
 
 const routePath = path.resolve("apps/api/dist/routes/speech.js");
 
@@ -66,8 +81,29 @@ app.setErrorHandler((error, _request, reply) => {
 });
 await registerSpeechRoutes(app);
 
+/*
+ * Токен кабинета подписывается тем же примитивом, что и в бою: двухсегментный
+ * HMAC из utils/cryptoHelper, секрет — из routes/auth. Никакого обходного пути
+ * вроде x-organization-id: этот заголовок принимается только при
+ * DENTE_DEV_ALLOW_HEADER_ORG=1, а такой флаг в production роняет загрузку сервера
+ * и сам по себе является дырой (личность помечается verified:false, и её никто
+ * не проверяет). Смоук обязан ходить той же дверью, что и живой клиент.
+ */
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { TOKEN_SECRET } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/routes/auth.js")).href
+);
+
+const smokeOrganizationId = "00000000-0000-4000-8000-0000000000aa";
+
 const clinicalHeaders = {
 	"x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET,
+	"x-dente-clinic-token": signToken(
+		{ organizationId: smokeOrganizationId },
+		TOKEN_SECRET(),
+	),
 	"content-type": "application/json",
 };
 
