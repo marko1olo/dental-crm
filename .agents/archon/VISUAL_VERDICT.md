@@ -334,3 +334,59 @@ desktop capture of those three views at all**), the night theme in any view, the
 **First action for the next lead: `npm run dev`, re-seed the ops tokens, re-run both capture pipelines,
 MD5-audit the output personally, and read the plates.** Until that is done, no visual claim about those
 views may be made by anyone.
+
+---
+
+# ADDENDUM C — 2026-07-28 09:04, lead [ARCHON], a FRESH capture I ran and audited myself
+
+Ran `node scripts/ops-panels-shots.mjs` against the live pair (api 200, web 200) with fresh
+`.ops-shot-tokens.json`. Exit 0. **35 files, 33 unique MD5.** Then opened plates with my own eyes.
+
+## C1. THE LIGHT THEME CAPTURE OF THE DUPLICATES PANEL IS NOT LIGHT
+
+| file | md5 |
+|---|---|
+| `light_duplicateAlert.png` | `bdbf6e8a09e4` |
+| `night_duplicateAlert.png` | `bdbf6e8a09e4` — **byte-identical to light** |
+| `dark_duplicateAlert.png` | `021c73856027` — different |
+
+I opened `night_duplicateAlert.png`: it is a warm dark olive panel with an amber left border. Since
+light is byte-identical to it, **the light-theme run rendered the night panel.**
+
+The tokens are not the problem — all three values exist and differ:
+`token-aliases.css:130` `--srf-chip-soft: #f7fbf9` (light), `:140` `#16211f` (dark),
+`:149` `#1a1714` (night); consumed at `main.css:9583`. The captured surface matches the NIGHT value.
+
+Most likely cause, for whoever takes the packet: the theme is persisted in `localStorage`
+(`dente_theme_mode`, via `store/themeStore.ts` → `applyThemeToRoot` → `root.dataset.theme`), and the
+panel is shot **before the switch to light has been applied** — a race between theme application and
+capture, not a palette defect. Note the pipeline's own log line during the narrow run printed
+`html: класс «dark», data-theme «dark» | --srf-chip-soft: #16211f`, i.e. it *can* read the applied
+theme — so the capture script has the means to assert it and does not.
+
+**Consequence for the campaign: every light-theme plate from this pipeline is suspect until the capture
+asserts `data-theme` immediately before shooting.** That assertion is cheap and belongs in the pipeline.
+
+## C2. STALE `_ПУСТО` ARTIFACTS REMOVED
+
+Four `*_duplicateAlert_ПУСТО.png` files dated **07-27 22:19–22:21** were still on disk while the
+09:03–09:04 run captured that panel successfully. Nothing in `.dente-ops-shots/` is tracked (0 files in
+`git ls-files`), so they were pure untracked residue that would tell the next reviewer the panel cannot
+be captured. Deleted. Same class as the cloned redesign shots and the stale `dist`: **an artifact that
+outlives the condition it recorded becomes a lie.**
+
+## C3. WHAT THE FRESH PLATES CONFIRM AND REFUTE
+
+- **The FAB corner fix is real and visible.** In `narrow_full.png` (720×1100) the three floating
+  buttons now sit in a horizontal row above the bottom navigation and no longer collide with it. The
+  functional defect from addendum B1 — a floating button parked on top of «Сохранить» — is gone at this
+  breakpoint. (The separate reserve regression found by the U4 reviewer is a different question and is
+  packet V1's.)
+- **The 45 % dead width at 720×1100 is STILL OPEN**, confirmed with my own eyes: the right-hand ~45 %
+  of the viewport is one empty bordered container. Packet V6 is aimed correctly.
+- **The copy has genuinely improved and it is worth naming.** The duplicates panel now leads with
+  «Похоже, у этого пациента есть ещё карточки: 2. Пока карточки не объединены, приёмы, оплаты и снимки
+  разложены по разным местам, и долг не виден целиком.» — consequence-first, no jargon — and the
+  actions are differentiated by confidence («Перенести сюда» at 95 %, «Всё равно перенести сюда» at
+  35 %). The footnote explains the method and promises the second card survives as an archival link.
+  This is the standard the rest of the product should be held to.
