@@ -78,6 +78,29 @@ process.on("exit", () => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * ОТВЕТ КОМАНДЫ, ПОТЕРЯННЫЙ ПРИ ПЕРЕЗАГРУЗКЕ СТРАНИЦЫ, — НЕ АВАРИЯ.
+ *
+ * Каждая команда CDP — обещание в `pending`. Когда страница перезагружается,
+ * браузер отвечает отказом сразу на все команды, которые были в полёте, включая
+ * те, чей вызывающий кадр уже размотан восстановлением. Такой отказ никто не
+ * ждёт, и Node убивал процесс необработанным отказом — посреди прогона, который
+ * УЖЕ успешно восстановился и снимал дальше. Измерено: два восстановления
+ * прошли, третий отказ в полёте уронил прогон.
+ *
+ * Здесь такие отказы отбрасываются с отметкой в выводе. Всё остальное по-прежнему
+ * роняет прогон: молча проглоченный отказ команды — это подложный снимок.
+ */
+process.on("unhandledRejection", (reason) => {
+  if (isContextDestroyed(reason)) {
+    console.log("  ↻ отброшен ответ команды, потерянной при перезагрузке страницы");
+    return;
+  }
+  console.error("Необработанный отказ:", reason);
+  process.exitCode = 1;
+  process.exit(1);
+});
+
+/**
  * Ждём вкладку, УЖЕ ОТКРЫТУЮ НА ПРИЛОЖЕНИИ, а не первую попавшуюся.
  *
  * ЧТО ЛОМАЛОСЬ. Браузер отдаёт вкладку в /json/list раньше, чем она уходит с
@@ -202,16 +225,25 @@ if (!existsSync(tokenFile)) {
 }
 const { clinicToken, staffToken } = JSON.parse(await readFile(tokenFile, "utf8"));
 
-await evaluate(`
-  (() => {
-    window.localStorage.setItem("dente_clinic_token", ${JSON.stringify(clinicToken)});
-    window.localStorage.setItem("dente_staff_token", ${JSON.stringify(staffToken)});
-    // Мастер первого запуска перекрывает весь экран: для новой организации он
-    // показывается всегда. Гасим его тем же ключом, что и кнопка «пропустить».
-    window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true }));
-    return true;
-  })()
-`);
+/**
+ * Токены входа в хранилище страницы. Отдельной функцией, потому что то же самое
+ * приходится делать заново после перезагрузки страницы: localStorage выживает,
+ * но сценарий всё равно обязан убедиться в этом сам, а не надеяться.
+ */
+async function applySessionTokens() {
+  await evaluate(`
+    (() => {
+      window.localStorage.setItem("dente_clinic_token", ${JSON.stringify(clinicToken)});
+      window.localStorage.setItem("dente_staff_token", ${JSON.stringify(staffToken)});
+      // Мастер первого запуска перекрывает весь экран: для новой организации он
+      // показывается всегда. Гасим его тем же ключом, что и кнопка «пропустить».
+      window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true }));
+      return true;
+    })()
+  `);
+}
+
+await applySessionTokens();
 await send("Page.navigate", { url: webBaseUrl + "/" });
 
 /**
@@ -221,22 +253,46 @@ await send("Page.navigate", { url: webBaseUrl + "/" });
  */
 async function waitForWorkspace(timeoutMs = 45000) {
   const deadline = Date.now() + timeoutMs;
+  let lastState = null;
   while (Date.now() < deadline) {
+    /*
+     * `document.body?.` — защита стоит ДО обращения, а не после.
+     *
+     * Здесь было `document.body.textContent?.includes(...)`: необязательная
+     * цепочка после свойства не спасает от null у самого `document.body`, а он
+     * бывает null, пока идёт переход на новый документ. Ожидание кабинета
+     * падало с `TypeError: Cannot read properties of null` вместо того, чтобы
+     * подождать ещё раз, — то есть ровно на своём рабочем случае. Проявляется
+     * под нагрузкой машины, когда браузер отвечает медленнее.
+     */
     const state = await evaluate(`
       (() => {
+        const body = document.body;
+        if (!body) return { ready: false, login: false, wizard: false, noBody: true };
         const sidebar = document.querySelector('.sidebar, nav .nav-item');
-        const login = document.body.textContent?.includes("ВХОД В ЛИЧНЫЙ КАБИНЕТ");
-        const wizard = document.body.textContent?.includes("Быстрая настройка CRM Dente");
-        return { ready: Boolean(sidebar) && !login && !wizard, login: Boolean(login), wizard: Boolean(wizard) };
+        const text = body.textContent || "";
+        const login = text.includes("ВХОД В ЛИЧНЫЙ КАБИНЕТ");
+        const wizard = text.includes("Быстрая настройка CRM Dente");
+        return { ready: Boolean(sidebar) && !login && !wizard, login, wizard, noBody: false };
       })()
     `);
+    lastState = state;
     if (state?.ready) return true;
     if (state?.wizard) {
       await evaluate(`window.localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true })); location.reload(); true`);
     }
     await sleep(1200);
   }
-  throw new Error("Рабочий кабинет не открылся: снимать нечего");
+  // Причина отказа называется, а не скрывается: экран входа, мастер первого
+  // запуска и «документ так и не собрался» лечатся совершенно по-разному.
+  const reason = lastState?.noBody
+    ? "страница так и не собрала документ — вероятно, сервер разработки отдаёт ошибку сборки"
+    : lastState?.login
+      ? "показан экран входа — токены в .ops-shot-tokens.json устарели, пересоздайте их сидом"
+      : lastState?.wizard
+        ? "поверх экрана остался мастер первого запуска"
+        : "боковое меню кабинета не отрисовалось";
+  throw new Error(`Рабочий кабинет не открылся за ${Math.round(timeoutMs / 1000)} с: ${reason}. Снимать нечего.`);
 }
 
 await waitForWorkspace();
@@ -371,6 +427,9 @@ async function applyTheme(theme) {
   while (Date.now() < deadline) {
     state = await readThemeState();
     if (state.dataTheme === theme && state.mode === theme && state.tokenCount > 0 && state.empty.length === 0) {
+      // Запоминается только ПОДТВЕРЖДЁННАЯ тема: после перезагрузки восстановить
+      // надо ту, под именем которой пишутся файлы, а не ту, которую попросили.
+      session.theme = theme;
       return state;
     }
     await sleep(150);
@@ -456,6 +515,12 @@ async function assertThemeBeforeShot(theme, fileName) {
   return state;
 }
 
+/**
+ * Что сценарий уже настроил на странице. Нужно, чтобы после перезагрузки
+ * вернуться в то же состояние, а не снимать светлую тему под именем ночной.
+ */
+const session = { theme: null, width: null, height: null };
+
 async function setViewport(width, height) {
   await send("Emulation.setDeviceMetricsOverride", {
     width,
@@ -464,6 +529,66 @@ async function setViewport(width, height) {
     mobile: width < 800,
   });
   currentViewport = `${width}x${height}`;
+  session.width = width;
+  session.height = height;
+}
+
+/**
+ * СТРАНИЦА ПЕРЕЗАГРУЗИЛАСЬ ПОСРЕДИ СЪЁМКИ — И ЭТО НЕ РЕДКОСТЬ.
+ *
+ * Снимки идут через живой сервер разработки Vite. Любая правка исходников
+ * apps/web — вторым инженером, агентом, самим человеком — вызывает горячую
+ * перезагрузку, и браузер уничтожает контекст исполнения страницы. Все команды
+ * CDP после этого отвечают `Execution context was destroyed`, и прогон падал
+ * целиком: на диск попадала часть снимков, а остальные оставались от прошлого
+ * раза. Молча — потому что имена файлов те же.
+ *
+ * Это делало визуальную проверку недоступной ровно тогда, когда она нужнее
+ * всего: в общем дереве, где кто-то правит код. Измерено: прогон падал на
+ * второй теме из трёх, и снимки тёмной и ночной оставались вчерашними.
+ */
+function isContextDestroyed(error) {
+  return /Execution context was destroyed|Cannot find context with specified id|Inspected target navigated or closed|Session with given id not found/i.test(
+    String(error?.message ?? error),
+  );
+}
+
+/** Вернуть страницу в то состояние, в котором её застала перезагрузка. */
+async function restoreSession() {
+  await send("Page.navigate", { url: webBaseUrl + "/" });
+  await sleep(1200);
+  await applySessionTokens();
+  await send("Page.navigate", { url: webBaseUrl + "/" });
+  const ready = await waitForWorkspace();
+  if (!ready) {
+    throw new Error(
+      "После перезагрузки страницы кабинет не открылся: снимать нечего. " +
+        "Проверьте, что веб-сервер разработки на 5173 отвечает и что в исходниках нет ошибки сборки.",
+    );
+  }
+  if (session.width && session.height) await setViewport(session.width, session.height);
+  if (session.theme) await applyTheme(session.theme);
+  await sleep(600);
+}
+
+/**
+ * Повторить работу после перезагрузки. Попыток немного: если страница
+ * перезагружается непрерывно, значит правки идут прямо сейчас, и ждать её
+ * бессмысленно — честнее упасть с этим объяснением, чем снимать дрожащий экран.
+ */
+async function withReloadRecovery(label, run, attempts = 3) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await run();
+    } catch (error) {
+      if (!isContextDestroyed(error) || attempt === attempts) throw error;
+      console.log(
+        `  ↻ ${label}: страница перезагрузилась (горячая перезагрузка Vite при правке исходников), восстанавливаю и повторяю — попытка ${attempt + 1} из ${attempts}`,
+      );
+      await restoreSession();
+    }
+  }
+  throw new Error(`${label}: не удалось выполнить за ${attempts} попыток`);
 }
 
 async function goToView(view) {
@@ -769,21 +894,23 @@ await sleep(2500);
 
 for (const theme of THEMES) {
   console.log(`\nТема: ${theme}`);
-  const applied = await applyTheme(theme);
+  const applied = await withReloadRecovery(`применение темы ${theme}`, () => applyTheme(theme));
   console.log(
     `     применено: data-theme «${applied.dataTheme}», режим «${applied.mode}», класс «${applied.className}», тем-зависимых токенов ${applied.tokenCount} (объявлено в этой теме ${applied.declaredHere}), отпечаток палитры ${applied.fingerprint}`,
   );
 
   for (const panel of PANELS) {
-    const navigation = await goToView(panel.view);
-    await sleep(1600);
-    if (panel.prepare) {
-      const outcome = await evaluate(panel.prepare);
-      console.log(`     подготовка: ${outcome}`);
-      await sleep(1400);
-    }
-    const ok = await shootPanel(panel.testId, `${theme}_${panel.slug}.png`, theme);
-    if (!ok) console.log(`     переход в раздел: ${navigation}`);
+    await withReloadRecovery(`${theme}/${panel.slug}`, async () => {
+      const navigation = await goToView(panel.view);
+      await sleep(1600);
+      if (panel.prepare) {
+        const outcome = await evaluate(panel.prepare);
+        console.log(`     подготовка: ${outcome}`);
+        await sleep(1400);
+      }
+      const ok = await shootPanel(panel.testId, `${theme}_${panel.slug}.png`, theme);
+      if (!ok) console.log(`     переход в раздел: ${navigation}`);
+    });
   }
 }
 
@@ -793,16 +920,18 @@ await setViewport(720, 1100);
 await applyTheme("light");
 await sleep(800);
 for (const panel of PANELS) {
-  await goToView(panel.view);
-  await sleep(1500);
-  if (panel.prepare) {
-    console.log(`     подготовка: ${await evaluate(panel.prepare)}`);
-    await sleep(1400);
-  }
-  await shootPanel(panel.testId, `narrow_${panel.slug}.png`, "light");
+  await withReloadRecovery(`narrow/${panel.slug}`, async () => {
+    await goToView(panel.view);
+    await sleep(1500);
+    if (panel.prepare) {
+      console.log(`     подготовка: ${await evaluate(panel.prepare)}`);
+      await sleep(1400);
+    }
+    await shootPanel(panel.testId, `narrow_${panel.slug}.png`, "light");
+  });
 }
 
-await shootViewport("narrow_full.png", "light");
+await withReloadRecovery("narrow/весь экран", () => shootViewport("narrow_full.png", "light"));
 
 /**
  * Раздел финансов целиком. Нужен после того, как оттуда убрали четыре пустых
@@ -810,11 +939,13 @@ await shootViewport("narrow_full.png", "light");
  */
 console.log("\nРаздел финансов целиком");
 await setViewport(1600, 1000);
-await applyTheme("light");
-await goToView("finance");
-await sleep(2200);
-const financeHeight = await evaluate("Math.min(document.body.scrollHeight, 9000)");
-await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 });
+await withReloadRecovery("finance/весь раздел", async () => {
+  await applyTheme("light");
+  await goToView("finance");
+  await sleep(2200);
+  const financeHeight = await evaluate("Math.min(document.body.scrollHeight, 9000)");
+  await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, height: financeHeight, scale: 0.55 });
+});
 
 /**
  * Карточка пациента во всех трёх темах целиком. Здесь плотнее всего узлы с
@@ -826,10 +957,12 @@ await shootClipped("finance_full.png", "light", { x: 0, y: 0, width: 1600, heigh
 console.log("\nРаздел картотеки целиком: проверка зон Tailwind");
 await setViewport(1600, 1000);
 for (const theme of THEMES) {
-  await applyTheme(theme);
-  await goToView("patients");
-  await sleep(1800);
-  await shootViewport(`patients_${theme}_full.png`, theme);
+  await withReloadRecovery(`patients/${theme}`, async () => {
+    await applyTheme(theme);
+    await goToView("patients");
+    await sleep(1800);
+    await shootViewport(`patients_${theme}_full.png`, theme);
+  });
 }
 
 /**
@@ -838,13 +971,15 @@ for (const theme of THEMES) {
  */
 console.log("\nРаздел коммуникаций целиком");
 await setViewport(1600, 1000);
-await applyTheme("light");
-await sleep(800);
-await goToView("communications");
-await sleep(2500);
+await withReloadRecovery("communications/весь раздел", async () => {
+  await applyTheme("light");
+  await sleep(800);
+  await goToView("communications");
+  await sleep(2500);
 
-const pageHeight = await evaluate("Math.min(document.body.scrollHeight, 12000)");
-await shootClipped("communications_full.png", "light", { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 });
+  const pageHeight = await evaluate("Math.min(document.body.scrollHeight, 12000)");
+  await shootClipped("communications_full.png", "light", { x: 0, y: 0, width: 1600, height: pageHeight, scale: 0.5 });
+});
 
 socket.close();
 
