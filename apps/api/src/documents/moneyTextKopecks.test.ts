@@ -1,0 +1,202 @@
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
+import type {
+  CreateDocumentInput,
+  GeneratedDocument,
+  Patient,
+  Payment,
+  TreatmentPlanItem,
+  Visit
+} from "@dental/shared";
+import {
+  type DocumentCreationFacts,
+  paymentRefundCorrectionSelectionErrorForDocument,
+  plannedAmountRubForDocument,
+  validateDocumentCreation
+} from "./guards.js";
+
+/**
+ * Деньги в тексте отказа — до копейки, а не как их печатает JS.
+ *
+ * ЗАЧЕМ ЭТИ ТЕСТЫ. Сообщения об отказе в `guards.ts` подставляли рублёвое число
+ * в русскую фразу напрямую. Числа в них приходят из сложения и вычитания сумм с
+ * плавающей точкой, поэтому врач читал «уже возвращено 900.1299999999999 руб.»
+ * и «доступно 99.87000000000012 руб.» — в сообщении, вся работа которого
+ * объяснить отказ по денежному документу.
+ *
+ * Набор 300.01 + 300.05 + 300.07 выбран не наугад: именно он даёт
+ * 900.1299999999999 в этом порядке сложения и 900.13 в обратном. Контрольный
+ * замер стоит в каждом тесте прямо перед проверкой сообщения, поэтому дрейф
+ * здесь — измеренный факт, а не предположение.
+ *
+ * Каждый тест проверяет ДВЕ вещи: что в сообщении есть человеческая сумма и что
+ * в нём НЕТ сырого числа. Вторая проверка и есть доказательство: откати печать
+ * через `kopecksToNumericString(parseKopecks(...))` — и она падает.
+ *
+ * Сравнения тесты НЕ проверяют и не закрепляют: они идут в целых копейках без
+ * допуска, и это отдельная гарантия.
+ */
+
+const driftingRefunds = [300.01, 300.05, 300.07];
+/** Ровно то, что даёт прежний код: сложение рублей в плавающей точке. */
+const driftingSumRub = driftingRefunds.reduce((total, amount) => total + amount, 0);
+
+function paidPayment(amountRub: number): Payment {
+  return {
+    id: "payment-1",
+    patientId: "patient-1",
+    visitId: "visit-1",
+    status: "paid",
+    amountRub,
+    fiscalReceiptNumber: "ФЧ-1",
+    fiscalReceiptIssuedAt: "2026-03-01T10:00:00Z"
+  } as unknown as Payment;
+}
+
+function issuedRefund(index: number, amountRub: number): GeneratedDocument {
+  return {
+    id: `refund-${index + 1}`,
+    kind: "payment_refund_correction_request",
+    status: "issued",
+    payload: {
+      paymentRefundCorrection: {
+        selectedPaymentIds: ["payment-1"],
+        amountRub
+      }
+    }
+  } as unknown as GeneratedDocument;
+}
+
+function refundRequest(amountRub: number): CreateDocumentInput {
+  return {
+    patientId: "patient-1",
+    kind: "payment_refund_correction_request",
+    payload: {
+      paymentRefundCorrection: {
+        selectedPaymentIds: ["payment-1"],
+        amountRub,
+        originalFiscalReceiptNumber: "ФЧ-1"
+      }
+    }
+  } as unknown as CreateDocumentInput;
+}
+
+describe("отказ по возврату печатает копейки, а не дрейф double", () => {
+  test("три возврата 300.01 + 300.05 + 300.07 показываются как 900.13, остаток как 99.87", () => {
+    // Контрольный замер: сумма прошлых возвратов действительно дрейфует.
+    assert.equal(driftingSumRub, 900.1299999999999);
+    // И остаток по чеку на 1000 руб. дрейфует вслед за ней.
+    assert.equal(1000 - driftingSumRub, 99.87000000000012);
+
+    const error = paymentRefundCorrectionSelectionErrorForDocument(
+      refundRequest(200),
+      [paidPayment(1000)],
+      driftingRefunds.map((amount, index) => issuedRefund(index, amount))
+    );
+
+    assert.ok(error, "ожидался отказ: 200 руб. больше остатка 99.87 руб.");
+    assert.ok(error.includes("уже возвращено 900.13 руб."), error);
+    assert.ok(error.includes("доступно 99.87 руб."), error);
+    assert.ok(error.includes("из 1000.00 руб."), error);
+    // Доказательство правки: сырых чисел в тексте для человека больше нет.
+    assert.ok(!error.includes("900.1299999999999"), error);
+    assert.ok(!error.includes("99.87000000000012"), error);
+  });
+
+  test("остаток 1.1368683772161603e-13 не уезжает в текст экспонентой", () => {
+    // Чек на 900.13 руб., возвращено 900.1299999999999 — остаток не ноль, а 1e-13.
+    const residueRub = 900.13 - driftingSumRub;
+    assert.equal(residueRub, 1.1368683772161603e-13);
+    assert.ok(residueRub > 0, "остаток по чеку остаётся положительным из-за double");
+
+    const error = paymentRefundCorrectionSelectionErrorForDocument(
+      refundRequest(100),
+      [paidPayment(900.13)],
+      driftingRefunds.map((amount, index) => issuedRefund(index, amount))
+    );
+
+    assert.ok(error, "ожидался отказ: 100 руб. больше копеечного остатка");
+    assert.ok(error.includes("доступно 0.00 руб."), error);
+    // Экспоненциальная запись в денежной фразе — то, что читал врач.
+    assert.ok(!error.includes("e-13"), error);
+  });
+});
+
+describe("отказ по смете печатает копейки", () => {
+  function estimateInput(
+    totalAmountRub: number,
+    lineAmountsRub: readonly number[]
+  ): CreateDocumentInput {
+    return {
+      patientId: "patient-1",
+      visitId: "visit-1",
+      kind: "treatment_cost_estimate",
+      payload: {
+        treatmentCostEstimate: {
+          totalAmountRub,
+          serviceLines: lineAmountsRub.map((amountRub) => ({
+            quantity: 1,
+            unitPriceRub: amountRub,
+            discountRub: 0,
+            totalRub: amountRub
+          }))
+        }
+      }
+    } as unknown as CreateDocumentInput;
+  }
+
+  function factsWithPlanned(plannedAmountRub: number): DocumentCreationFacts {
+    return {
+      patient: { id: "patient-1" } as unknown as Patient,
+      visit: { id: "visit-1", patientId: "patient-1" } as unknown as Visit,
+      paidAmountRub: 0,
+      plannedAmountRub
+    };
+  }
+
+  function planItem(unitPriceRub: number): TreatmentPlanItem {
+    return {
+      patientId: "patient-1",
+      visitId: "visit-1",
+      status: "planned",
+      unitPriceRub,
+      quantity: 1,
+      discountRub: 0
+    } as unknown as TreatmentPlanItem;
+  }
+
+  test("смета 900.13 против дрейфующего плана: оба числа человеческие", () => {
+    const input = estimateInput(900.13, driftingRefunds);
+    // Плановую сумму считает продакшн-код — дрейф не подставлен руками.
+    const plannedAmountRub = plannedAmountRubForDocument(
+      "treatment_cost_estimate",
+      input,
+      driftingRefunds.map(planItem)
+    );
+    assert.equal(plannedAmountRub, 900.1299999999999);
+
+    const result = validateDocumentCreation(input, factsWithPlanned(plannedAmountRub));
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.statusCode, 409);
+    assert.equal(
+      result.error,
+      "Смета лечения: сумма 900.13 руб. не совпадает с актуальным планом лечения 900.13 руб."
+    );
+    assert.ok(!result.error.includes("900.1299999999999"), result.error);
+  });
+
+  test("полтинник печатается как 1500.50, а не как 1500.5", () => {
+    const result = validateDocumentCreation(
+      estimateInput(1500.5, [1500.5]),
+      factsWithPlanned(1400.5)
+    );
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.match(result.error, /сумма 1500\.50 руб\./);
+    assert.match(result.error, /планом лечения 1400\.50 руб\./);
+    // Прежний вид: «сумма 1500.5 руб.» — рубль с одним знаком после точки.
+    assert.doesNotMatch(result.error, /сумма 1500\.5 руб\./);
+    assert.doesNotMatch(result.error, /планом лечения 1400\.5 руб\./);
+  });
+});

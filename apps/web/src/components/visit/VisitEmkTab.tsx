@@ -8,6 +8,12 @@ import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldL
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
+import {
+	forgetVisitFlowResultOwner,
+	rememberVisitFlowResultOwner,
+	visitFlowOwnerKey,
+	visitFlowResultIsForeign,
+} from "./visitFlowResultOwner";
 
 /**
  * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.
@@ -42,7 +48,8 @@ export function VisitEmkTab() {
 		visitNoteActionLabel,
 		visitNoteStatusLabel,
 		visitNoteFieldDefinitions = [],
-		visitNoteAcceptMissingSteps
+		visitNoteAcceptMissingSteps,
+		activePatient
 	} = appLogic;
 
 	/*
@@ -80,6 +87,39 @@ export function VisitEmkTab() {
 	 * buildDraft.
 	 */
 	const visitFlowResult = useVisitStore((state) => state.visitFlowResult);
+	const setVisitFlowResult = useVisitStore((state) => state.setVisitFlowResult);
+
+	/*
+	 * РАЗБОР ПРЕДЫДУЩЕГО ПАЦИЕНТА БОЛЬШЕ НЕ ВИСИТ НА ЭКРАНЕ ТЕКУЩЕГО.
+	 *
+	 * visitFlowResult лежит в общем хранилище визита и записывается один раз —
+	 * после удачного ответа /api/ai/visit-flow. Обнулять его не умеет НИКТО:
+	 * сохранение записи приёма делает setDraft(null) и этого поля не касается,
+	 * смена пациента и смена приёма его тоже не трогают. Врач разбирал приём
+	 * пациента А, начинал приём пациента Б — и под шапкой ЭМК оставалась панель
+	 * «Ассистент обработки приема» с диагнозом ДЛЯ ПАЦИЕНТА, рекомендациями после
+	 * процедуры и предложенными документами пациента А. У кресла это читается как
+	 * разбор текущего человека.
+	 *
+	 * Сам ответ сервера пациента не называет (visitFlowResultSchema — четыре шага
+	 * и общий статус), поэтому владельца запоминаем на клиенте, вне компонента:
+	 * вкладка «ЭМК и Диктовка» размонтируется при уходе на «Зубную формулу», и
+	 * привязка в useRef исчезла бы вместе с ней.
+	 */
+	const visitOwnerKey = visitFlowOwnerKey(activePatient?.id, dashboard?.activeVisit?.id);
+	const visitFlowResultIsOfAnotherVisit = visitFlowResultIsForeign(visitFlowResult, visitOwnerKey);
+
+	React.useEffect(() => {
+		if (!visitFlowResult) return;
+		if (visitFlowResultIsOfAnotherVisit) {
+			// Чужой разбор убираем из хранилища, иначе он вернётся на экран при
+			// следующем переключении вкладок приёма.
+			forgetVisitFlowResultOwner();
+			setVisitFlowResult(null);
+			return;
+		}
+		rememberVisitFlowResultOwner(visitFlowResult, visitOwnerKey);
+	}, [visitFlowResult, visitOwnerKey, visitFlowResultIsOfAnotherVisit, setVisitFlowResult]);
 
 		const emkTabs = [
 		{ id: "all", label: "Все поля" },
@@ -146,7 +186,9 @@ export function VisitEmkTab() {
 								{visitNoteStatusLabel}
 							</span>
 						</div>
-						{visitFlowResult && <VisitFlowProgress result={visitFlowResult} />}
+						{visitFlowResult && !visitFlowResultIsOfAnotherVisit ? (
+							<VisitFlowProgress result={visitFlowResult} />
+						) : null}
 
 						{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
 						<div className="emk-tabs-container" role="tablist">
