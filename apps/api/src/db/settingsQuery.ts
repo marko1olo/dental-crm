@@ -11,8 +11,13 @@ import {
   updateStaffWorkingHours as updateStaffWorkingHoursInMemory,
   createChair as createChairInMemory,
   updateChairWorkingHours as updateChairWorkingHoursInMemory,
-  updateClinicMode as updateClinicModeInMemory
+  updateClinicMode as updateClinicModeInMemory,
+  updateStaffMemberProfile as updateStaffMemberProfileInMemory,
+  deactivateStaffMember as deactivateStaffMemberInMemory,
+  updateChairProfile as updateChairProfileInMemory,
+  deactivateChair as deactivateChairInMemory
 } from "../sampleData.js";
+import type { UpdateStaffMemberProfileInput, UpdateChairProfileInput } from "../sampleData.js";
 
 function useInMemory() {
   return process.env.DENTAL_STATE_PERSISTENCE === "off";
@@ -200,6 +205,52 @@ export async function updateStaffWorkingHoursInDb(organizationId: string, staffI
   await db.update(schema.users).set({ workingHours }).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 
+/**
+ * Правка карточки сотрудника. Пишутся только те поля, которые действительно
+ * есть в таблице users и возвращаются назад через getClinicSettingsFromDb:
+ * иначе интерфейс показывал бы «сохранено», а после перезагрузки — старое
+ * значение. Специальности сюда не входят: столбец users.specialties есть, но
+ * чтение жестко отдает ["universal"], так что запись была бы невидимой.
+ */
+export async function updateStaffMemberProfileInDb(
+  organizationId: string,
+  staffId: string,
+  input: UpdateStaffMemberProfileInput
+) {
+  if (useInMemory()) {
+    updateStaffMemberProfileInMemory(staffId, input);
+    return;
+  }
+  const updateData: { fullName?: string; role?: string; phone?: string | null; email?: string | null; isActive?: boolean } = {};
+  if (input.fullName !== undefined) updateData.fullName = input.fullName;
+  if (input.role !== undefined) updateData.role = input.role;
+  if (input.phone !== undefined) updateData.phone = input.phone;
+  if (input.email !== undefined) updateData.email = input.email;
+  if (input.active !== undefined) updateData.isActive = input.active;
+  if (Object.keys(updateData).length === 0) return;
+  await db
+    .update(schema.users)
+    .set(updateData)
+    .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
+}
+
+/**
+ * Мягкое отключение сотрудника вместо DELETE: на users.id ссылаются приемы
+ * (appointments.doctor_user_id, appointments.assistant_user_id) и медицинские
+ * записи. Физическое удаление либо упало бы на внешнем ключе, либо стерло
+ * авторство лечения. Строка остается, is_active становится false.
+ */
+export async function deactivateStaffMemberInDb(organizationId: string, staffId: string) {
+  if (useInMemory()) {
+    deactivateStaffMemberInMemory(staffId);
+    return;
+  }
+  await db
+    .update(schema.users)
+    .set({ isActive: false })
+    .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
+}
+
 export async function updateStaffCredentialsInDb(
   organizationId: string,
   staffId: string,
@@ -226,4 +277,44 @@ export async function createChairInDb(organizationId: string, input: CreateChair
 export async function updateChairWorkingHoursInDb(organizationId: string, chairId: string, workingHours: any) {
   if (useInMemory()) return updateChairWorkingHoursInMemory(chairId, workingHours);
   await db.update(schema.chairs).set({ workingHours }).where(and(eq(schema.chairs.id, chairId), eq(schema.chairs.organizationId, organizationId)));
+}
+
+/**
+ * Правка кресла. В таблице chairs из карточки кресла хранятся только название
+ * и признак активности, а кабинет, специализация и оснащение читаются как
+ * пустые значения — принимать их означало бы молча терять ввод оператора.
+ */
+export async function updateChairProfileInDb(
+  organizationId: string,
+  chairId: string,
+  input: UpdateChairProfileInput
+) {
+  if (useInMemory()) {
+    updateChairProfileInMemory(chairId, input);
+    return;
+  }
+  const updateData: { name?: string; isActive?: boolean } = {};
+  if (input.name !== undefined) updateData.name = input.name;
+  if (input.active !== undefined) updateData.isActive = input.active;
+  if (Object.keys(updateData).length === 0) return;
+  await db
+    .update(schema.chairs)
+    .set(updateData)
+    .where(and(eq(schema.chairs.id, chairId), eq(schema.chairs.organizationId, organizationId)));
+}
+
+/**
+ * Мягкое отключение кресла вместо DELETE: на chairs.id ссылаются приемы
+ * (appointments.chair_id). Строка остается, is_active становится false, уже
+ * назначенные приемы не теряют привязку к кабинету.
+ */
+export async function deactivateChairInDb(organizationId: string, chairId: string) {
+  if (useInMemory()) {
+    deactivateChairInMemory(chairId);
+    return;
+  }
+  await db
+    .update(schema.chairs)
+    .set({ isActive: false })
+    .where(and(eq(schema.chairs.id, chairId), eq(schema.chairs.organizationId, organizationId)));
 }

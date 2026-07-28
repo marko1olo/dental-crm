@@ -12,8 +12,12 @@ import {
   createStaffMemberInDb,
   updateStaffWorkingHoursInDb,
   updateStaffCredentialsInDb,
+  updateStaffMemberProfileInDb,
+  deactivateStaffMemberInDb,
   createChairInDb,
-  updateChairWorkingHoursInDb
+  updateChairWorkingHoursInDb,
+  updateChairProfileInDb,
+  deactivateChairInDb
 } from "../db/settingsQuery.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 import {
@@ -27,10 +31,38 @@ import {
   updateClinicModeSchema,
   updateClinicProfileSchema,
   updateChairWorkingHoursSchema,
-  updateStaffWorkingHoursSchema
+  updateStaffWorkingHoursSchema,
+  staffRoleSchema
 } from "@dental/shared";
+import { z } from "zod";
 
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
+
+/**
+ * Правка карточки сотрудника: PUT /api/settings/staff/:staffId.
+ *
+ * Все поля необязательны — интерфейс шлет частичное обновление. Принимаются
+ * только те поля, которые реально хранятся в таблице users И возвращаются
+ * назад в getClinicSettingsFromDb. Расписание сюда не входит: у него отдельный
+ * адрес /working-hours, и только там проверяются активные записи за пределами
+ * нового графика.
+ */
+const updateStaffMemberProfileSchema = z.object({
+  fullName: z.string().trim().min(1).max(240).optional(),
+  role: staffRoleSchema.optional(),
+  phone: z.string().trim().max(80).nullable().optional(),
+  email: z.string().trim().email().max(240).nullable().optional(),
+  active: z.boolean().optional()
+});
+
+/**
+ * Правка кресла: PUT /api/settings/chairs/:chairId. В таблице chairs из
+ * карточки кресла хранятся только название и признак активности.
+ */
+const updateChairProfileSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  active: z.boolean().optional()
+});
 
 type SettingsPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false; error?: { format: () => unknown } };
@@ -67,6 +99,25 @@ const chairWorkingHoursConflictMessage =
   "Расписание кресла не сохранено: есть активная запись за пределами нового расписания.";
 const chairWorkingHoursRejectedMessage =
   "Расписание кресла не сохранено: проверьте рабочие дни и активные записи.";
+const staffProfileRouteValidationMessage = "Карточка сотрудника не сохранена: выберите сотрудника.";
+const staffProfileValidationMessage =
+  "Карточка сотрудника не сохранена: проверьте ФИО, роль, телефон и почту в допустимом формате.";
+const staffProfileEmptyUpdateMessage =
+  "Карточка сотрудника не сохранена: не переданы поля для изменения. Расписание меняется отдельным адресом.";
+const staffProfileNotFoundMessage = "Карточка сотрудника не сохранена: сотрудник не найден в этой клинике.";
+const staffProfileRejectedMessage = "Карточка сотрудника не сохранена: проверьте переданные поля.";
+const staffDeactivateRouteValidationMessage = "Сотрудник не отключен: выберите сотрудника.";
+const staffDeactivateNotFoundMessage = "Сотрудник не отключен: сотрудник не найден в этой клинике.";
+const staffDeactivateRejectedMessage = "Сотрудник не отключен: проверьте выбранного сотрудника.";
+const chairProfileRouteValidationMessage = "Карточка кресла не сохранена: выберите кресло.";
+const chairProfileValidationMessage = "Карточка кресла не сохранена: проверьте название кресла.";
+const chairProfileEmptyUpdateMessage =
+  "Карточка кресла не сохранена: не переданы поля для изменения. Расписание меняется отдельным адресом.";
+const chairProfileNotFoundMessage = "Карточка кресла не сохранена: кресло не найдено в этой клинике.";
+const chairProfileRejectedMessage = "Карточка кресла не сохранена: проверьте переданные поля.";
+const chairDeactivateRouteValidationMessage = "Кресло не отключено: выберите кресло.";
+const chairDeactivateNotFoundMessage = "Кресло не отключено: кресло не найдено в этой клинике.";
+const chairDeactivateRejectedMessage = "Кресло не отключено: проверьте выбранное кресло.";
 
 function parseSettingsPayload<T>(schema: SettingsPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
@@ -155,6 +206,55 @@ function chairWorkingHoursRejection(reply: FastifyReply, error: unknown) {
     error: "ChairScheduleRejected",
     reason: "schedule_rejected",
     message: chairWorkingHoursRejectedMessage
+  });
+}
+
+/**
+ * Отказы для карточек сотрудника и кресла. Отдельные тексты на правку и на
+ * отключение: оператору важно видеть, какое именно действие не прошло, а не
+ * общее «ошибка сервера».
+ */
+function staffMutationRejection(
+  reply: FastifyReply,
+  error: unknown,
+  notFoundMessage: string,
+  rejectedMessage: string,
+  errorCode: string
+) {
+  const message = settingsDomainMessage(error);
+  if (message === "Сотрудник не найден.") {
+    return reply.code(404).send({
+      error: `${errorCode}NotFound`,
+      reason: "staff_not_found",
+      message: notFoundMessage
+    });
+  }
+  return reply.code(409).send({
+    error: `${errorCode}Rejected`,
+    reason: "staff_mutation_rejected",
+    message: rejectedMessage
+  });
+}
+
+function chairMutationRejection(
+  reply: FastifyReply,
+  error: unknown,
+  notFoundMessage: string,
+  rejectedMessage: string,
+  errorCode: string
+) {
+  const message = settingsDomainMessage(error);
+  if (message === "Кресло не найдено.") {
+    return reply.code(404).send({
+      error: `${errorCode}NotFound`,
+      reason: "chair_not_found",
+      message: notFoundMessage
+    });
+  }
+  return reply.code(409).send({
+    error: `${errorCode}Rejected`,
+    reason: "chair_mutation_rejected",
+    message: rejectedMessage
   });
 }
 
@@ -342,6 +442,86 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     }
   });
 
+  /**
+   * Правка карточки сотрудника. Интерфейс зовет этот адрес из
+   * updateStaffMember (apps/web/src/useAppLogic.tsx): метод PUT, тело —
+   * частичный набор полей карточки. Маршрута не было вовсе, на сервере жили
+   * только вложенные /credentials и /working-hours, поэтому правка сотрудника
+   * из интерфейса отвечала 404.
+   *
+   * Организация берется из подписанного токена через requireSettingsAccess, а
+   * не из тела запроса, и каждый запрос к базе фильтруется по ней.
+   */
+  app.put("/api/settings/staff/:staffId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { staffId?: string };
+    if (!params.staffId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: staffProfileRouteValidationMessage
+      });
+    }
+    const input = parseSettingsPayload(updateStaffMemberProfileSchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: staffProfileValidationMessage });
+    }
+    // Пустое тело и тело из одних неизвестных полей неотличимы после разбора:
+    // схема отбрасывает лишние ключи. Молча отвечать 200 на запрос, который
+    // ничего не меняет, нельзя — оператор решит, что правка сохранена.
+    if (Object.keys(input).length === 0) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: staffProfileEmptyUpdateMessage });
+    }
+    try {
+      await updateStaffMemberProfileInDb(orgId, params.staffId, input);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.staff.find(s => s.id === params.staffId);
+      if (!updated) throw new Error("Сотрудник не найден.");
+      return staffMemberSchema.parse(updated);
+    } catch (error) {
+      return staffMutationRejection(
+        reply,
+        error,
+        staffProfileNotFoundMessage,
+        staffProfileRejectedMessage,
+        "StaffProfile"
+      );
+    }
+  });
+
+  /**
+   * Отключение сотрудника. Это НЕ физическое удаление: на users.id ссылаются
+   * приемы (doctor_user_id, assistant_user_id) и медицинские записи, поэтому
+   * строка сохраняется, а признак users.is_active становится false. Сотрудник
+   * возвращается в ответе с active: false, история лечения остается с автором.
+   */
+  app.delete("/api/settings/staff/:staffId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { staffId?: string };
+    if (!params.staffId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: staffDeactivateRouteValidationMessage
+      });
+    }
+    try {
+      await deactivateStaffMemberInDb(orgId, params.staffId);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.staff.find(s => s.id === params.staffId);
+      if (!updated) throw new Error("Сотрудник не найден.");
+      return staffMemberSchema.parse(updated);
+    } catch (error) {
+      return staffMutationRejection(
+        reply,
+        error,
+        staffDeactivateNotFoundMessage,
+        staffDeactivateRejectedMessage,
+        "StaffDeactivate"
+      );
+    }
+  });
+
   app.post("/api/settings/chairs", async (request, reply) => {
     const orgId = await requireSettingsAccess(request, reply);
     if (!orgId) return;
@@ -377,6 +557,80 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return chairSchema.parse(updated);
     } catch (error) {
       return chairWorkingHoursRejection(reply, error);
+    }
+  });
+
+  /**
+   * Правка кресла. Принимаются только название и признак активности: больше
+   * ничего из карточки кресла таблица chairs не хранит, а кабинет,
+   * специализация и оснащение читаются из базы как пустые значения. Принять их
+   * значило бы ответить 200 и молча потерять ввод оператора.
+   */
+  app.put("/api/settings/chairs/:chairId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { chairId?: string };
+    if (!params.chairId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: chairProfileRouteValidationMessage
+      });
+    }
+    const input = parseSettingsPayload(updateChairProfileSchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: chairProfileValidationMessage });
+    }
+    if (Object.keys(input).length === 0) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: chairProfileEmptyUpdateMessage });
+    }
+    try {
+      await updateChairProfileInDb(orgId, params.chairId, input);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.chairs.find(c => c.id === params.chairId);
+      if (!updated) throw new Error("Кресло не найдено.");
+      return chairSchema.parse(updated);
+    } catch (error) {
+      return chairMutationRejection(
+        reply,
+        error,
+        chairProfileNotFoundMessage,
+        chairProfileRejectedMessage,
+        "ChairProfile"
+      );
+    }
+  });
+
+  /**
+   * Отключение кресла. Интерфейс зовет этот адрес из deleteChair
+   * (apps/web/src/useAppLogic.tsx): метод DELETE, тела нет. Физического
+   * удаления не происходит — на chairs.id ссылаются приемы
+   * (appointments.chair_id), поэтому строка сохраняется, а chairs.is_active
+   * становится false. Уже назначенные приемы не теряют привязку к кабинету.
+   */
+  app.delete("/api/settings/chairs/:chairId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { chairId?: string };
+    if (!params.chairId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: chairDeactivateRouteValidationMessage
+      });
+    }
+    try {
+      await deactivateChairInDb(orgId, params.chairId);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.chairs.find(c => c.id === params.chairId);
+      if (!updated) throw new Error("Кресло не найдено.");
+      return chairSchema.parse(updated);
+    } catch (error) {
+      return chairMutationRejection(
+        reply,
+        error,
+        chairDeactivateNotFoundMessage,
+        chairDeactivateRejectedMessage,
+        "ChairDeactivate"
+      );
     }
   });
 

@@ -11151,6 +11151,126 @@ export function updateChairWorkingHours(
 	return chair;
 }
 
+/**
+ * Поля карточки сотрудника, которые правит адрес PUT /api/settings/staff/:staffId.
+ *
+ * Расписание сюда намеренно не входит: у него отдельный адрес
+ * /api/settings/staff/:staffId/working-hours, и только там есть проверка на
+ * активные записи за пределами нового графика. Приняв расписание здесь, мы
+ * обошли бы эту проверку и оставили приемы вне рабочего окна врача.
+ */
+export type UpdateStaffMemberProfileInput = {
+	fullName?: string | undefined;
+	role?: StaffMember["role"] | undefined;
+	phone?: string | null | undefined;
+	email?: string | null | undefined;
+	active?: boolean | undefined;
+};
+
+/**
+ * Поля кресла, которые правит адрес PUT /api/settings/chairs/:chairId.
+ *
+ * Только название и признак активности: в таблице chairs больше ничего из
+ * карточки кресла не хранится, а кабинет, специализация и оснащение читаются
+ * из базы как пустые значения. Принимать их значило бы молча терять ввод.
+ */
+export type UpdateChairProfileInput = {
+	name?: string | undefined;
+	active?: boolean | undefined;
+};
+
+export function updateStaffMemberProfile(
+	staffId: string,
+	input: UpdateStaffMemberProfileInput,
+): StaffMember {
+	const member = staffMembers.find((item) => item.id === staffId);
+	if (!member) {
+		throw new Error("Сотрудник не найден.");
+	}
+	if (input.fullName !== undefined) member.fullName = input.fullName.trim();
+	if (input.role !== undefined) {
+		member.role = input.role;
+		// Права привязаны к роли. Смена роли без пересчета прав оставила бы
+		// бывшему администратору доступ к кассе и импортам.
+		const permissions = permissionsForRole(input.role);
+		member.canSignMedicalRecords = permissions.canSignMedicalRecords;
+		member.canManageMoney = permissions.canManageMoney;
+		member.canManageImports = permissions.canManageImports;
+	}
+	if (input.phone !== undefined) member.phone = nullableTrimmed(input.phone);
+	if (input.email !== undefined) member.email = nullableTrimmed(input.email);
+	if (input.active !== undefined) member.active = input.active;
+	member.updatedAt = new Date().toISOString();
+	recordAuditEvent({
+		entityType: "staff_member",
+		entityId: member.id,
+		action: "staff_profile_updated",
+		reason: `${member.fullName}: карточка сотрудника обновлена.`,
+	});
+	return member;
+}
+
+/**
+ * Мягкое отключение сотрудника вместо физического удаления: на строку в users
+ * ссылаются приемы (doctor_user_id, assistant_user_id) и медицинские записи.
+ * Удаление строки либо упало бы на внешнем ключе, либо обезличило историю
+ * лечения — это медицинские данные, их нельзя терять.
+ */
+export function deactivateStaffMember(staffId: string): StaffMember {
+	const member = staffMembers.find((item) => item.id === staffId);
+	if (!member) {
+		throw new Error("Сотрудник не найден.");
+	}
+	member.active = false;
+	member.updatedAt = new Date().toISOString();
+	recordAuditEvent({
+		entityType: "staff_member",
+		entityId: member.id,
+		action: "staff_deactivated",
+		reason: `${member.fullName}: сотрудник отключен, приемы и медицинские записи сохранены.`,
+	});
+	return member;
+}
+
+export function updateChairProfile(
+	chairId: string,
+	input: UpdateChairProfileInput,
+): Chair {
+	const chair = chairs.find((item) => item.id === chairId);
+	if (!chair) {
+		throw new Error("Кресло не найдено.");
+	}
+	if (input.name !== undefined) chair.name = input.name.trim();
+	if (input.active !== undefined) chair.active = input.active;
+	recordAuditEvent({
+		entityType: "chair",
+		entityId: chair.id,
+		action: "chair_profile_updated",
+		reason: `${chair.name}: карточка кресла обновлена.`,
+	});
+	return chair;
+}
+
+/**
+ * Мягкое отключение кресла: на chairs.id ссылаются приемы (appointments.chair_id),
+ * поэтому строка не удаляется, а перестает быть активной. Уже назначенные
+ * приемы остаются на месте и не теряют привязку к кабинету.
+ */
+export function deactivateChair(chairId: string): Chair {
+	const chair = chairs.find((item) => item.id === chairId);
+	if (!chair) {
+		throw new Error("Кресло не найдено.");
+	}
+	chair.active = false;
+	recordAuditEvent({
+		entityType: "chair",
+		entityId: chair.id,
+		action: "chair_deactivated",
+		reason: `${chair.name}: кресло отключено, существующие приемы сохранены.`,
+	});
+	return chair;
+}
+
 function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
 	const normalized = input.inputText
 		.replace(/\r\n/g, "\n")
