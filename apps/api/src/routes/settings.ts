@@ -27,6 +27,9 @@ import {
   clinicSettingsSchema,
   createChairSchema,
   createStaffMemberSchema,
+  dentalSpecialtySchema,
+  nonNegativeMoneyRubSchema,
+  serviceCategorySchema,
   staffMemberSchema,
   uiPreferencesInputSchema,
   uiPreferencesSchema,
@@ -36,6 +39,13 @@ import {
   updateStaffWorkingHoursSchema,
   staffRoleSchema
 } from "@dental/shared";
+import {
+  createServiceCatalogItemInDb,
+  deactivateServiceCatalogItemInDb,
+  ServiceCatalogItemNotFoundError,
+  ServiceCatalogStorageDisabledError,
+  updateServiceCatalogItemInDb
+} from "../db/pricelistQuery.js";
 import { z } from "zod";
 
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
@@ -78,6 +88,81 @@ const updateChairProfileSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   active: z.boolean().optional()
 });
+
+/**
+ * Услуга прайса: POST /api/settings/catalog и PUT /api/settings/catalog/:serviceId.
+ *
+ * Поля и границы взяты из колонок service_catalog_items (db/schema.ts:426), а не
+ * назначены произвольно:
+ *   • base_price_rub / price_rub — numeric(12,2), то есть максимум
+ *     9 999 999 999,99. Отсюда верхняя граница цены: превышение отверг бы сам
+ *     Postgres сообщением на английском, и оператор увидел бы отказ без причины.
+ *     Точность до копейки проверяет общий nonNegativeMoneyRubSchema — прайс это
+ *     основание счёта пациенту, и третий знак после запятой здесь недопустим.
+ *   • duration_minutes — integer, приём длиннее суток в расписание не ставится,
+ *     поэтому предел 1440 минут.
+ *   • category / specialty — те же перечисления, что и у чтения прайса, взяты из
+ *     общего контракта: свой список здесь разошёлся бы с экраном.
+ *
+ * Код услуги: строка, которую клиника использует в своём учёте. Пустая строка
+ * допускается, потому что поле в форме необязательное (SettingsPricesTab.tsx), а
+ * колонка NOT NULL без значения по умолчанию. Выдумывать код за оператора нельзя:
+ * подставленный код попал бы в счёт и в выгрузку как настоящий.
+ */
+const serviceCatalogItemFields = {
+  code: z.string().trim().max(60),
+  title: z.string().trim().min(1).max(240),
+  category: serviceCategorySchema,
+  specialty: dentalSpecialtySchema,
+  /*
+   * Верхняя граница добавляется через refine, а не .max(): общий
+   * nonNegativeMoneyRubSchema — это уже ZodEffects после .refine() на копейки, и
+   * числовых методов у него нет. Проверка копеек при этом сохраняется, а не
+   * подменяется своей.
+   */
+  basePriceRub: nonNegativeMoneyRubSchema.refine((value) => value <= 9_999_999_999.99, {
+    message: "цена услуги не помещается в денежную колонку прайса"
+  }),
+  durationMinutes: z.number().int().positive().max(1440),
+  taxDeductible: z.boolean(),
+  active: z.boolean()
+};
+
+/**
+ * Создание услуги. Код и признаки имеют значения по умолчанию, всё остальное
+ * обязательно: услуга без названия, категории или цены в прайсе бессмысленна, а
+ * подставленная за оператора цена — опасна.
+ */
+const createServiceCatalogItemSchema = z.object({
+  ...serviceCatalogItemFields,
+  code: serviceCatalogItemFields.code.default(""),
+  taxDeductible: serviceCatalogItemFields.taxDeductible.default(true),
+  active: serviceCatalogItemFields.active.default(true)
+});
+
+/** Правка услуги: интерфейс шлёт частичный набор полей. */
+const updateServiceCatalogItemSchema = z.object({
+  code: serviceCatalogItemFields.code.optional(),
+  title: serviceCatalogItemFields.title.optional(),
+  category: serviceCatalogItemFields.category.optional(),
+  specialty: serviceCatalogItemFields.specialty.optional(),
+  basePriceRub: serviceCatalogItemFields.basePriceRub.optional(),
+  durationMinutes: serviceCatalogItemFields.durationMinutes.optional(),
+  taxDeductible: serviceCatalogItemFields.taxDeductible.optional(),
+  active: serviceCatalogItemFields.active.optional()
+});
+
+/*
+ * Разобранные значения объявляются типами.
+ *
+ * parseSettingsPayload выводит свой параметр структурно из формы safeParse, и у
+ * схемы с .default() входной и выходной типы расходятся — вывод сваливается в
+ * unknown по каждому полю. Явный тип возвращает проверку на место: без него
+ * несовпадение имени поля прошло бы компилятор и обнаружилось только на живом
+ * запросе.
+ */
+type CreateServiceCatalogItemInput = z.infer<typeof createServiceCatalogItemSchema>;
+type UpdateServiceCatalogItemInput = z.infer<typeof updateServiceCatalogItemSchema>;
 
 type SettingsPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false; error?: { format: () => unknown } };
@@ -138,6 +223,19 @@ const doctorCommissionRejectedMessage = "Ставка врача не сохра
 const chairDeactivateRouteValidationMessage = "Кресло не отключено: выберите кресло.";
 const chairDeactivateNotFoundMessage = "Кресло не отключено: кресло не найдено в этой клинике.";
 const chairDeactivateRejectedMessage = "Кресло не отключено: проверьте выбранное кресло.";
+const serviceCatalogRouteValidationMessage = "Услуга не сохранена: выберите услугу прайса.";
+const serviceCatalogCreateValidationMessage =
+  "Услуга не создана: заполните название, категорию, специальность, цену с точностью до копейки и длительность приёма.";
+const serviceCatalogUpdateValidationMessage =
+  "Услуга не изменена: проверьте название, категорию, специальность, цену с точностью до копейки и длительность приёма.";
+const serviceCatalogEmptyUpdateMessage =
+  "Услуга не изменена: не переданы поля для изменения.";
+const serviceCatalogCreateNotFoundMessage =
+  "Услуга не создана: клиника не найдена.";
+const serviceCatalogUpdateNotFoundMessage =
+  "Услуга не изменена: услуга не найдена в прайсе этой клиники.";
+const serviceCatalogDeactivateNotFoundMessage =
+  "Услуга не отключена: услуга не найдена в прайсе этой клиники.";
 
 function parseSettingsPayload<T>(schema: SettingsPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
@@ -252,6 +350,43 @@ function staffMutationRejection(
   return reply.code(409).send({
     error: `${errorCode}Rejected`,
     reason: "staff_mutation_rejected",
+    message: rejectedMessage
+  });
+}
+
+/**
+ * Отказы прайса. Три исхода разведены сознательно: «писать некуда» — это отказ
+ * сервера (503), «услуги нет» — отказ по выбору (404), остальное — отказ по
+ * переданным полям (409). Свести их в один текст значило бы отправить оператора
+ * искать опечатку в цене там, где хранение просто отключено.
+ */
+function serviceCatalogMutationRejection(
+  reply: FastifyReply,
+  error: unknown,
+  notFoundMessage: string,
+  rejectedMessage: string,
+  errorCode: string
+) {
+  if (error instanceof ServiceCatalogStorageDisabledError) {
+    return reply.code(503).send({
+      error: "ServiceCatalogStorageUnavailable",
+      reason: "state_persistence_off",
+      message: error.message
+    });
+  }
+  if (error instanceof ServiceCatalogItemNotFoundError) {
+    return reply.code(404).send({
+      error: `${errorCode}NotFound`,
+      reason: "service_not_found",
+      message: notFoundMessage
+    });
+  }
+  // Причина уходит в журнал целиком: без записи отказ по прайсу неотличим от
+  // опечатки оператора, а разбирать его было бы нечем.
+  console.error("[настройки] прайс не изменён:", error);
+  return reply.code(409).send({
+    error: `${errorCode}Rejected`,
+    reason: "service_mutation_rejected",
     message: rejectedMessage
   });
 }
@@ -717,6 +852,125 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         chairDeactivateNotFoundMessage,
         chairDeactivateRejectedMessage,
         "ChairDeactivate"
+      );
+    }
+  });
+
+  /* ─── ПРАЙС УСЛУГ ─────────────────────────────────────────────────────────
+   *
+   * Интерфейс зовёт эти три адреса из createServiceCatalogItem /
+   * updateServiceCatalogItem / deleteServiceCatalogItem
+   * (apps/web/src/useAppLogic.tsx:7420, 7441, 7462), нажимает их вкладка
+   * «Настройки → Прайс» (components/settings/SettingsPricesTab.tsx:185, 187, 206).
+   * Маршрутов не было ни одного: Fastify отвечал
+   * «Route POST:/api/settings/catalog not found», и обёртка показывала
+   * «Не удалось создать услугу: нужный маршрут не найден», после чего форма
+   * закрывалась как после успешного сохранения.
+   *
+   * Клиника получала прайс один раз, при установке (посев мастера первого
+   * запуска), и после этого не могла ни поднять цену, ни добавить услугу, ни
+   * убрать её из продажи. Прайс — основание счёта пациенту, плана лечения,
+   * расчёта стоимости и правил списания материалов.
+   *
+   * Организация берётся из подписанного токена через requireSettingsAccess, а не
+   * из тела запроса, и стоит в условии КАЖДОГО запроса к базе.
+   */
+  app.post("/api/settings/catalog", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const input = parseSettingsPayload<CreateServiceCatalogItemInput>(
+      createServiceCatalogItemSchema,
+      request.body
+    );
+    if (!input) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: serviceCatalogCreateValidationMessage
+      });
+    }
+    try {
+      const created = await createServiceCatalogItemInDb(orgId, input);
+      return reply.code(201).send(created);
+    } catch (error) {
+      return serviceCatalogMutationRejection(
+        reply,
+        error,
+        serviceCatalogCreateNotFoundMessage,
+        serviceCatalogCreateValidationMessage,
+        "ServiceCatalogCreate"
+      );
+    }
+  });
+
+  app.put("/api/settings/catalog/:serviceId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { serviceId?: string };
+    if (!params.serviceId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: serviceCatalogRouteValidationMessage
+      });
+    }
+    const input = parseSettingsPayload<UpdateServiceCatalogItemInput>(
+      updateServiceCatalogItemSchema,
+      request.body
+    );
+    if (!input) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: serviceCatalogUpdateValidationMessage
+      });
+    }
+    // Тело из одних неизвестных полей после разбора неотличимо от пустого: схема
+    // отбрасывает лишние ключи. Ответить 200 на запрос, который ничего не меняет,
+    // нельзя — оператор решит, что новая цена сохранена.
+    if (Object.keys(input).length === 0) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: serviceCatalogEmptyUpdateMessage
+      });
+    }
+    try {
+      const updated = await updateServiceCatalogItemInDb(orgId, params.serviceId, input);
+      return updated;
+    } catch (error) {
+      return serviceCatalogMutationRejection(
+        reply,
+        error,
+        serviceCatalogUpdateNotFoundMessage,
+        serviceCatalogUpdateValidationMessage,
+        "ServiceCatalogUpdate"
+      );
+    }
+  });
+
+  /**
+   * Отключение услуги. Физического удаления не происходит: на
+   * service_catalog_items.id ссылаются позиции лечения и правила списания
+   * материалов. Услуга возвращается с active: false — экран именно это и обещает
+   * оператору в подтверждении: «Связанные счета сохранятся, но услуга уйдет в архив».
+   */
+  app.delete("/api/settings/catalog/:serviceId", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { serviceId?: string };
+    if (!params.serviceId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: serviceCatalogRouteValidationMessage
+      });
+    }
+    try {
+      const deactivated = await deactivateServiceCatalogItemInDb(orgId, params.serviceId);
+      return deactivated;
+    } catch (error) {
+      return serviceCatalogMutationRejection(
+        reply,
+        error,
+        serviceCatalogDeactivateNotFoundMessage,
+        serviceCatalogUpdateValidationMessage,
+        "ServiceCatalogDeactivate"
       );
     }
   });

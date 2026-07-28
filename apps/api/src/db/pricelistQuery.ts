@@ -32,8 +32,13 @@
  * человеческой причиной, чтобы администратор понял, что именно поправить.
  */
 
-import { eq } from "drizzle-orm";
-import { serviceCatalogItemSchema, type ServiceCatalogItem } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import {
+  serviceCatalogItemSchema,
+  type DentalSpecialty,
+  type ServiceCatalogItem,
+  type ServiceCategory
+} from "@dental/shared";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -176,4 +181,210 @@ export async function getServiceCatalogForOrganization(
     .from(schema.serviceCatalogItems)
     .where(eq(schema.serviceCatalogItems.organizationId, organizationId));
   return projectServiceCatalogRows(rows).items;
+}
+
+/* ─── ЗАПИСЬ ПРАЙСА ──────────────────────────────────────────────────────────
+ *
+ * ЗАЧЕМ ЭТО ПОЯВИЛОСЬ. У таблицы service_catalog_items не было ни одного
+ * писателя, кроме посева мастера первого запуска (routes/workspaceProfile.ts).
+ * Чтение работало, контракт был, экран настроек «Прайс» был написан целиком — а
+ * адреса POST/PUT/DELETE /api/settings/catalog на сервере не существовало, и
+ * Fastify отвечал «Route POST:/api/settings/catalog not found». Клиника получала
+ * прайс при установке и больше не могла изменить в нём ни одной цены.
+ * Замер до починки: apps/api/src/tests/routes/serviceCatalogWriteProof.ts.
+ *
+ * Писатели живут здесь, рядом с единственной проекцией: услуга, записанная в
+ * обход projectServiceCatalogRows, могла бы попасть в базу в виде, который
+ * чтение потом молча выбросит, — и оператор увидел бы «сохранено» на строке,
+ * которой нет на экране.
+ */
+
+/** Поля услуги, которые задаёт оператор в настройках прайса. */
+export interface ServiceCatalogItemInput {
+  readonly code: string;
+  readonly title: string;
+  readonly category: ServiceCategory;
+  readonly specialty: DentalSpecialty;
+  readonly basePriceRub: number;
+  readonly durationMinutes: number;
+  readonly taxDeductible: boolean;
+  readonly active: boolean;
+}
+
+/**
+ * Частичная правка: приходит ровно то, что оператор изменил.
+ *
+ * Каждое поле объявлено как `?: T | undefined`, а не через Partial<>: при
+ * exactOptionalPropertyTypes (включён в tsconfig) Partial<> запрещает передавать
+ * поле со значением undefined, а разбор zod-схемы с optional() возвращает именно
+ * такой объект.
+ */
+export type ServiceCatalogItemPatch = {
+  readonly [Field in keyof ServiceCatalogItemInput]?: ServiceCatalogItemInput[Field] | undefined;
+};
+
+/**
+ * Отказ хранилища. Отдельный класс, чтобы маршрут ответил 503 «писать некуда», а
+ * не 409 «проверьте поля»: при DENTAL_STATE_PERSISTENCE=off ошибка не в вводе
+ * оператора, и посылать его искать опечатку было бы ложью.
+ */
+export class ServiceCatalogStorageDisabledError extends Error {
+  constructor() {
+    super(
+      "Прайс не изменён: хранение состояния отключено (DENTAL_STATE_PERSISTENCE=off), " +
+        "поэтому услуги существуют только в памяти процесса и записать их некуда."
+    );
+    this.name = "ServiceCatalogStorageDisabledError";
+  }
+}
+
+/** Услуга не найдена в этой клинике. Текст разбирает маршрут. */
+export class ServiceCatalogItemNotFoundError extends Error {
+  constructor() {
+    super("Услуга не найдена.");
+    this.name = "ServiceCatalogItemNotFoundError";
+  }
+}
+
+/**
+ * Единственная услуга по идентификатору, обязательно в пределах своей клиники.
+ * Фильтр по organizationId стоит в том же условии, что и по id: без него по
+ * прямой ссылке правился бы прайс чужой клиники.
+ */
+async function selectOwnedRow(
+  organizationId: string,
+  serviceId: string
+): Promise<ServiceCatalogRow | null> {
+  const [row] = await db
+    .select()
+    .from(schema.serviceCatalogItems)
+    .where(
+      and(
+        eq(schema.serviceCatalogItems.id, serviceId),
+        eq(schema.serviceCatalogItems.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * Строка прайса → доменная услуга ТОЙ ЖЕ проекцией, что и чтение.
+ *
+ * Если записанная строка проекцию не проходит, наружу идёт причина из rejected, а
+ * не «сохранено»: услуга, которой не будет на экране, — это не успех.
+ */
+function projectSingleRow(row: ServiceCatalogRow): ServiceCatalogItem {
+  const projection = projectServiceCatalogRows([row]);
+  const item = projection.items[0];
+  if (item) return item;
+  const reason = projection.rejected[0]?.reason ?? "строка не соответствует контракту услуги";
+  throw new Error(`Услуга сохранена в базу, но не проходит контракт прайса: ${reason}`);
+}
+
+/**
+ * Обе денежные колонки заполняются одним значением.
+ *
+ * base_price_rub и price_rub объявлены NOT NULL обе, а проекция читает только
+ * base_price_rub. Посев мастера первого запуска (routes/workspaceProfile.ts:826)
+ * пишет в них равные значения, и экран показывает `basePriceRub || priceRub`,
+ * то есть трактует их как замену друг другу. Запись только одной колонки
+ * упала бы на NOT NULL, а запись разных значений создала бы услугу, у которой
+ * цена зависит от того, кто её читает. Расхождение этих двух колонок — долг
+ * схемы, и он назван здесь, а не разведён двумя разными смыслами.
+ */
+function moneyColumns(basePriceRub: number) {
+  return { basePriceRub, priceRub: basePriceRub };
+}
+
+/** Новая услуга прайса. */
+export async function createServiceCatalogItemInDb(
+  organizationId: string,
+  input: ServiceCatalogItemInput
+): Promise<ServiceCatalogItem> {
+  if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+  const [row] = await db
+    .insert(schema.serviceCatalogItems)
+    .values({
+      organizationId,
+      code: input.code,
+      title: input.title,
+      category: input.category,
+      specialty: input.specialty,
+      ...moneyColumns(input.basePriceRub),
+      durationMinutes: input.durationMinutes,
+      taxDeductible: input.taxDeductible,
+      isActive: input.active
+    })
+    .returning();
+  if (!row) throw new Error("Услуга не создана: база не вернула ни одной строки.");
+  return projectSingleRow(row);
+}
+
+/** Правка услуги. Меняются только переданные поля. */
+export async function updateServiceCatalogItemInDb(
+  organizationId: string,
+  serviceId: string,
+  patch: ServiceCatalogItemPatch
+): Promise<ServiceCatalogItem> {
+  if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+  // Существование проверяется ДО обновления: drizzle на несовпавшем условии
+  // вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
+  const existing = await selectOwnedRow(organizationId, serviceId);
+  if (!existing) throw new ServiceCatalogItemNotFoundError();
+
+  const updates: Partial<typeof schema.serviceCatalogItems.$inferInsert> = {};
+  if (patch.code !== undefined) updates.code = patch.code;
+  if (patch.title !== undefined) updates.title = patch.title;
+  if (patch.category !== undefined) updates.category = patch.category;
+  if (patch.specialty !== undefined) updates.specialty = patch.specialty;
+  if (patch.basePriceRub !== undefined) Object.assign(updates, moneyColumns(patch.basePriceRub));
+  if (patch.durationMinutes !== undefined) updates.durationMinutes = patch.durationMinutes;
+  if (patch.taxDeductible !== undefined) updates.taxDeductible = patch.taxDeductible;
+  if (patch.active !== undefined) updates.isActive = patch.active;
+
+  const [row] = await db
+    .update(schema.serviceCatalogItems)
+    .set(updates)
+    .where(
+      and(
+        eq(schema.serviceCatalogItems.id, serviceId),
+        eq(schema.serviceCatalogItems.organizationId, organizationId)
+      )
+    )
+    .returning();
+  if (!row) throw new ServiceCatalogItemNotFoundError();
+  return projectSingleRow(row);
+}
+
+/**
+ * Отключение услуги — НЕ физическое удаление.
+ *
+ * На service_catalog_items.id ссылаются treatment_items.service_id
+ * (db/schema.ts:455) и правила списания материалов
+ * (procedure_material_rules.service_id, routes/inventory.ts:531). DELETE строки
+ * порвал бы историю лечения и уже выставленные счёта. Экран это и обещает
+ * оператору: «Связанные счета сохранятся, но услуга уйдет в архив»
+ * (SettingsPricesTab.tsx:200). Тот же приём уже принят в настройках для
+ * сотрудников и кресел.
+ */
+export async function deactivateServiceCatalogItemInDb(
+  organizationId: string,
+  serviceId: string
+): Promise<ServiceCatalogItem> {
+  if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+  const existing = await selectOwnedRow(organizationId, serviceId);
+  if (!existing) throw new ServiceCatalogItemNotFoundError();
+  const [row] = await db
+    .update(schema.serviceCatalogItems)
+    .set({ isActive: false })
+    .where(
+      and(
+        eq(schema.serviceCatalogItems.id, serviceId),
+        eq(schema.serviceCatalogItems.organizationId, organizationId)
+      )
+    )
+    .returning();
+  if (!row) throw new ServiceCatalogItemNotFoundError();
+  return projectSingleRow(row);
 }
