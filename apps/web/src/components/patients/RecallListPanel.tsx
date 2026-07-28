@@ -87,6 +87,12 @@ export const RecallListPanel: React.FC = () => {
 	const [notice, setNotice] = useState<string | null>(null);
 	const [busyPatient, setBusyPatient] = useState<string | null>(null);
 	const [called, setCalled] = useState<Set<string>>(new Set());
+	/**
+	 * Выбранная полоса. Администратор работает с одной группой за раз: сегодня
+	 * обзванивает тех, кому пора на профилактику, и «ушедшие два года назад» ему
+	 * в этом списке только мешают.
+	 */
+	const [activeBand, setActiveBand] = useState<RecallBand | null>(null);
 
 	const load = useCallback(async () => {
 		setError(null);
@@ -170,16 +176,37 @@ export const RecallListPanel: React.FC = () => {
 					</p>
 				) : (
 					<>
+						{/* Плитки одновременно и итог, и фильтр: повторное нажатие снимает
+						    отбор. Отдельная строка фильтров рядом с теми же числами была
+						    бы дублированием одного и того же на экране. */}
 						<ul className="ops-metrics">
 							{(Object.keys(BAND_TITLES) as RecallBand[])
 								.filter((band) => report.byBand[band] > 0)
 								.map((band) => (
-									<li className={`ops-metric ${band === "due" ? "ops-metric--primary" : ""}`} key={band}>
-										<span className="ops-metric__value">{report.byBand[band]}</span>
-										<span className="ops-metric__label">{BAND_TITLES[band]}</span>
+									<li key={band}>
+										<button
+											type="button"
+											className={`ops-metric ops-metric--button ${band === "due" ? "ops-metric--primary" : ""} ${
+												activeBand === band ? "ops-metric--selected" : ""
+											}`}
+											aria-pressed={activeBand === band}
+											onClick={() => setActiveBand((previous) => (previous === band ? null : band))}
+										>
+											<span className="ops-metric__value">{report.byBand[band]}</span>
+											<span className="ops-metric__label">{BAND_TITLES[band]}</span>
+										</button>
 									</li>
 								))}
 						</ul>
+
+						{activeBand ? (
+							<p className="ops-hint">
+								Показана одна группа: «{BAND_TITLES[activeBand]}».{" "}
+								<button className="link-button" type="button" onClick={() => setActiveBand(null)}>
+									Показать всех
+								</button>
+							</p>
+						) : null}
 
 						<div className="ops-table-wrap">
 							<table className="ops-table">
@@ -193,7 +220,9 @@ export const RecallListPanel: React.FC = () => {
 									</tr>
 								</thead>
 								<tbody>
-									{report.candidates.map((candidate) => {
+									{report.candidates
+										.filter((candidate) => activeBand === null || candidate.band === activeBand)
+										.map((candidate) => {
 										const busy = busyPatient === candidate.patientId;
 										const wasCalled = called.has(candidate.patientId);
 

@@ -151,6 +151,53 @@
   background: var(--paper-soft);
 }
 
+/*
+ * Плитка, работающая фильтром. Отдельная строка фильтров рядом с теми же
+ * числами дублировала бы одно и то же: цифра и есть кнопка.
+ * Ширина 100% и text-align: left — чтобы кнопка не сжималась по содержимому и
+ * стояла в сетке ровно так же, как обычная плитка.
+ */
+.ops-metric--button {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.ops-metric--button:hover {
+  border-color: var(--line-strong);
+}
+
+.ops-metric--button:focus-visible {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Выбранная группа: рамка и подложка, а не только цвет текста — состояние
+   должно читаться и без различения цветов. */
+.ops-metric--selected {
+  border-color: var(--teal);
+  background: var(--teal-surface);
+  box-shadow: inset 0 0 0 1px var(--teal);
+}
+
+/* Ссылка-действие внутри пояснения: «Показать всех». */
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--teal-dark);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--teal);
+}
+
 .ops-metric__value {
   display: block;
   font-size: 24px;
