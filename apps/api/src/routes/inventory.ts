@@ -167,7 +167,22 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		const { adjustment } = request.body;
 		if (typeof adjustment !== "number" || !Number.isFinite(adjustment)) {
-			return reply.status(400).send({ error: "Invalid adjustment value" });
+			return reply.status(400).send({
+				error: "AdjustmentInvalid",
+				message:
+					"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
+			});
+		}
+		if (adjustment === 0) {
+			// БЫЛО: ноль проходил как 200 с обновлённой строкой, при этом строка в
+			// журнал движений не писалась вовсе (условие actualAdjustment !== 0
+			// ниже). То есть сервер отвечал успехом на запрос, который не сделал
+			// ничего, и кладовщик читал «Остаток изменён» на неизменённом остатке.
+			return reply.status(400).send({
+				error: "AdjustmentZero",
+				message:
+					"Количество не указано: ни приход, ни списание не может быть нулевым. Укажите, сколько штук пришло или списано, и повторите.",
+			});
 		}
 
 		// Read-modify-write on stock must be atomic: two concurrent PATCHes would
@@ -191,9 +206,43 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 			if (!item) return { notFound: true as const };
 
-			// Clamp to 0: cannot have negative stock
 			const currentStock = Number(item.stockQuantity ?? 0);
-			const actualAdjustment = Math.max(-currentStock, adjustment);
+
+			/*
+			 * ЧТО БЫЛО СЛОМАНО, И ЭТО НЕ ПРО ТЕКСТ, А ПРО УТРАТУ ДАННЫХ.
+			 *
+			 * Здесь стояло `Math.max(-currentStock, adjustment)`: списание 10 при
+			 * остатке 2 давало списание 2, остаток 0, ответ 200 с обновлённой
+			 * строкой, а в журнал inventoryTransactions уходило -2. Запрошенные 10 не
+			 * сохранялись НИГДЕ. Физически материала нет, по базе остаток обнулился
+			 * «правильно», расход по услугам не сходится, и восстановить, сколько
+			 * списывали на самом деле, уже невозможно — всплывает через недели, на
+			 * инвентаризации, когда спорить не с чем.
+			 *
+			 * Крайний случай был ещё хуже: списание при остатке 0 давало поправку 0,
+			 * ответ 200 с строкой материала и НИ ОДНОЙ строки в журнале, то есть
+			 * успех на запрос, который не сделал ничего.
+			 *
+			 * Экран склада эту дорогу уже закрыл своей проверкой
+			 * (apps/web/src/components/inventory/useInventoryLogic.ts:708-714), но
+			 * граница правды — сервер: офлайн-очередь повторов, внешняя интеграция и
+			 * любой будущий экран приходят прямо сюда. Поэтому отказ стоит здесь.
+			 *
+			 * Списание РОВНО в ноль остаётся законным: отказ только когда просят
+			 * больше, чем лежит на полке.
+			 */
+			if (adjustment < 0 && -adjustment > currentStock) {
+				return {
+					insufficient: {
+						name: item.name,
+						unit: item.unit,
+						currentStock,
+						requested: -adjustment,
+					},
+				} as const;
+			}
+
+			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
 
 			const [updated] = await tx
@@ -225,8 +274,37 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return { updated };
 		});
 
-		if ("notFound" in result) return reply.status(404).send({ error: "Item not found" });
-		if ("failed" in result) return reply.status(500).send({ error: "Failed to update item" });
+		if ("notFound" in result)
+			return reply.status(404).send({
+				error: "ItemNotFound",
+				message:
+					"Этот материал на складе клиники не найден: возможно, его уже удалили из списка. Обновите список склада и повторите — если материал нужен, добавьте его заново.",
+			});
+		if ("insufficient" in result) {
+			// 409, а не 400: запрос сам по себе правильный, ему мешает остаток на
+			// полке. Текст называет материал, остаток, запрошенное количество и
+			// действие; «Приход на склад» — реальная подпись окна прихода в
+			// InventoryView.tsx, поэтому человек не отправляется в несуществующее
+			// место. Единица измерения берётся у самого материала, а не зашивается.
+			const { name, unit, currentStock, requested } = result.insufficient;
+			const measure = unit?.trim() || "шт";
+			return reply.status(409).send({
+				error: "InsufficientStock",
+				message:
+					`Нельзя списать ${requested} ${measure} материала «${name}»: на складе ${currentStock} ${measure}. ` +
+					"Исправьте количество или сначала проведите «Приход на склад» — списание больше остатка сервер не принимает, " +
+					"иначе расход по услугам разойдётся с фактическим и на инвентаризации это уже не восстановить.",
+				itemName: name,
+				currentStock,
+				requested,
+			});
+		}
+		if ("failed" in result)
+			return reply.status(500).send({
+				error: "StockNotSaved",
+				message:
+					"Остаток не сохранён: сервер не смог записать движение по складу. Проверьте остаток в списке склада и повторите операцию; если повторится, сообщите администратору клиники.",
+			});
 		return result.updated;
 	});
 
