@@ -2,6 +2,12 @@ import { Activity, ArrowRight, PlusCircle, ShieldCheck, Users, Wallet } from "lu
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+/*
+ * Разбор набранной суммы — тот же, что в форме приёма оплаты. Второй разбор
+ * рядом с кассой означал бы, что «1500,50» в одном поле и в другом понимается
+ * по-разному.
+ */
+import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import type { PanelSubject } from "../../lib/panelStateText";
@@ -86,7 +92,23 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const [loadFailure, setLoadFailure] = useState<{ status: number | null } | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
-	const [topupAmount, setTopupAmount] = useState<number>(0);
+	/*
+	 * СУММЫ ХРАНЯТСЯ СТРОКОЙ — ТЕМ, ЧТО НАБРАЛ ЧЕЛОВЕК.
+	 *
+	 * БЫЛО: числом, а поля стояли type="number" с `Number(e.target.value)` и
+	 * `Math.trunc(Number(e.target.value))`. Отсюда потеря набранного:
+	 *  • браузер у числового поля отдаёт ПУСТУЮ строку, как только набранное не
+	 *    является числом по его правилам. Русская запятая — именно такой случай:
+	 *    администратор набирал «1500,50», на запятой поле мгновенно пустело
+	 *    (state 0 → value ""), и все набранные цифры исчезали без слов;
+	 *  • Math.trunc молча съедал копейки: «1500.50» превращалось в 1500 прямо
+	 *    под руками, и человек не видел, что сумма изменилась.
+	 * Теперь набранное остаётся на экране как есть, а разбирает его тот же
+	 * normalizeRubAmountInput, что и форма приёма оплаты, — «1500,50» там и здесь
+	 * означает одно и то же. Копейки не отбрасываются молча: сервер их не
+	 * принимает, и об этом сказано словами под полем.
+	 */
+	const [topupInput, setTopupInput] = useState("");
 	/*
 	 * Чем внесли аванс. Способ НЕ гасится при смене пациента: это настройка
 	 * рабочего места кассира, а не данные пациента, — так же как способ оплаты в
@@ -112,7 +134,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * Теперь сумму подставляет только явное нажатие по кнопке «Долг: N ₽» — тем
 	 * же приёмом, что и в форме приёма оплаты выше на этом же экране.
 	 */
-	const [amount, setAmount] = useState<number>(0);
+	const [amountInput, setAmountInput] = useState("");
 	// Ключ идемпотентности живёт между повторами: без него повторная отправка
 	// после обрыва связи зачислила бы деньги дважды.
 	const topupMutationIdRef = useRef<string | null>(null);
@@ -179,8 +201,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		// Обе денежные суммы гасим при смене пациента: набранное для прежнего
 		// человека к новому не относится, а поле с чужой суммой выглядит как
 		// только что набранное.
-		setAmount(0);
-		setTopupAmount(0);
+		setAmountInput("");
+		setTopupInput("");
 		if (!isPatientDatabaseId) {
 			// Пациент не выбран — грузить нечего, и висящая «Загрузка…» здесь
 			// была бы обещанием, которое ничем не закончится.
@@ -222,20 +244,37 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const animatedBalance = useCountUp(balanceVal, 1000);
 
 	/*
+	 * Разбор набранного. null означает «набрано не число» — это НЕ ноль: нулём
+	 * его считать нельзя, иначе непонятная запись выглядела бы как пустое поле.
+	 * Для сравнений с балансом берём 0, а человеку отдельно говорим, что не так.
+	 */
+	const parsedAmount = normalizeRubAmountInput(amountInput);
+	const amount = parsedAmount ?? 0;
+	const amountInvalid = Boolean(amountInput.trim()) && parsedAmount === null;
+	const parsedTopup = normalizeRubAmountInput(topupInput);
+	const topupAmount = parsedTopup ?? 0;
+	const topupInvalid = Boolean(topupInput.trim()) && parsedTopup === null;
+
+	/*
 	 * Сколько предложить списать одним нажатием.
 	 *
 	 * Долг приходит с копейками (billingSummary.totalDueRub), а списание с
 	 * семейного счёта сервер принимает только целым числом рублей: familyPaymentSchema
-	 * требует z.number().int() (routes/finance_family.ts). Поэтому округляем. Ровно
-	 * то же округление и та же подпись стоят у кнопки «Долг» в форме приёма оплаты
-	 * (PaymentCapture): на одном экране одна и та же сумма обязана выглядеть
-	 * одинаково, иначе расхождение читается как ошибка в данных.
+	 * требует z.number().int() (routes/finance_family.ts). Поэтому целое.
+	 *
+	 * ВНИЗ, А НЕ ПО ПРАВИЛАМ ОКРУГЛЕНИЯ. БЫЛО Math.round: долг 1 500,50 ₽
+	 * превращался в кнопку «Долг: 1 501 ₽», и одно нажатие списывало с семейного
+	 * счёта на 50 копеек БОЛЬШЕ, чем человек должен. Программа не имеет права
+	 * брать с пациента деньги, которых он не задолжал, даже полтинник: у семьи
+	 * образуется переплата, которую никто не заметит и не вернёт. Math.floor
+	 * оставляет копейки непогашенными — их видно в остатке долга, и это чинится
+	 * обычной оплатой.
 	 * ДОЛГ (сервер): сама колонка payments.amount_rub копейки уже умеет —
 	 * numeric(12,2) после миграции 0131, — а вот баланс семьи и схема списания
 	 * остались целыми. Пока так, долг вида «1 500,50 ₽» этой кнопкой не закрыть:
 	 * остаток 0,50 ₽ не гасится.
 	 */
-	const debtSuggestionRub = Math.round(
+	const debtSuggestionRub = Math.floor(
 		Number.isFinite(remainingDebtRub) ? Math.max(0, remainingDebtRub) : 0,
 	);
 
@@ -247,12 +286,30 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * не доходит: отключённая кнопка не даёт кликнуть, и подсказка не появляется
 	 * никогда. Для администратора это неотличимо от «программа сломалась».
 	 */
-	const payBlockReason =
-		amount > 0 && !Number.isInteger(amount)
+	const payBlockReason = amountInvalid
+		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
+		: amount > 0 && !Number.isInteger(amount)
 			? "Списание проходит только целыми рублями — уберите копейки из суммы."
 			: amount > balanceVal && amount > 0
 				? `На семейном счету только ${money(balanceVal)}. Спишите не больше этой суммы, остальное примите обычной оплатой или пополните счёт.`
 				: null;
+
+	/*
+	 * То же самое для пополнения.
+	 *
+	 * Работу оборвало исчерпанием лимита ровно здесь: разметка поля пополнения уже
+	 * ссылалась на topupBlockReason, а самой причины ещё не было — сборка не
+	 * проходила. Дописано ведущим по образцу списания выше.
+	 *
+	 * Отличие от списания одно и оно по делу: сверять с балансом нечего — счёт
+	 * пополняют, а не тратят. Остаётся проверка записи и запрет копеек, потому что
+	 * сервер принимает пополнение целыми рублями тем же familyTopupSchema.
+	 */
+	const topupBlockReason = topupInvalid
+		? "Впишите сумму цифрами, копейки после запятой: 1500,50"
+		: topupAmount > 0 && !Number.isInteger(topupAmount)
+			? "Пополнение проходит только целыми рублями — уберите копейки из суммы."
+			: null;
 
 	const handlePay = async () => {
 		// БЫЛО: только `if (!family) return`. Отключение кнопки через isPaying
@@ -312,7 +369,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// Поле суммы обнуляется, иначе после успешного списания в нём
 			// остаётся та же сумма и кнопка снова активна — приглашение
 			// случайно списать второй раз.
-			setAmount(0);
+			setAmountInput("");
 			if (onPaymentSuccess) onPaymentSuccess();
 			// Баланс приходит и по вебсокету, но перечитываем на случай, если
 			// сообщение не дошло.
@@ -364,7 +421,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			// Сумма — через общий money(): своё toLocaleString печатало «1 500,5 ₽»
 			// вместо «1 500,50 ₽», а полтинник в такой записи читается как пять копеек.
 			showToast(`Семейный счёт пополнен на ${money(topupAmount)}`, "success");
-			setTopupAmount(0);
+			setTopupInput("");
 			void loadFamily();
 		} catch {
 			showToast("Сетевая ошибка", "error");
@@ -434,19 +491,22 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					>
 						Сумма списания (₽)
 					</label>
+					{/* type="text" с inputMode="decimal", а не type="number": числовое
+					    поле стирало всё набранное на русской запятой, а на телефоне
+					    inputMode всё равно поднимает цифровую клавиатуру. Разбор — общим
+					    normalizeRubAmountInput, как в форме приёма оплаты. */}
 					<input
 						id="family-withdraw-amount"
-						type="number"
+						type="text"
+						inputMode="decimal"
+						autoComplete="off"
 						className="family-wallet-input"
-						value={amount || ""}
-						onChange={(e) => setAmount(Number(e.target.value))}
+						value={amountInput}
+						onChange={(e) => setAmountInput(e.target.value)}
 						/* БЫЛО: подсказка «0.00» обещала копейки, которые сервер
 						   отклоняет: списание проходит только целыми рублями. */
 						placeholder="0"
 						disabled={isPaying}
-						min={1}
-						step={1}
-						max={balanceVal}
 						aria-invalid={payBlockReason ? true : undefined}
 						aria-describedby={payBlockReason ? "family-withdraw-hint" : undefined}
 					/>
@@ -458,7 +518,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 							<button
 								type="button"
 								className="quick-chip quick-chip--sm"
-								onClick={() => setAmount(debtSuggestionRub)}
+								onClick={() => setAmountInput(String(debtSuggestionRub))}
 								disabled={isPaying}
 							>
 								Долг: {money(debtSuggestionRub)}
@@ -497,14 +557,16 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					</label>
 					<input
 						id="family-topup-amount"
-						type="number"
-						min={1}
-						step={1}
+						type="text"
+						inputMode="decimal"
+						autoComplete="off"
 						className="family-wallet-input"
-						value={topupAmount || ""}
-						onChange={(e) => setTopupAmount(Math.trunc(Number(e.target.value)))}
+						value={topupInput}
+						onChange={(e) => setTopupInput(e.target.value)}
 						placeholder="0"
 						disabled={isToppingUp}
+						aria-invalid={topupBlockReason ? true : undefined}
+						aria-describedby={topupBlockReason ? "family-topup-hint" : undefined}
 					/>
 					{/* Чем внесли аванс. БЫЛО: способ не спрашивали и не отправляли, а
 					    сервер записывал в журнал наличные. Вечером наличных в ящике
