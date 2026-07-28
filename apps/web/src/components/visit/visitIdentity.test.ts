@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import { NIL_UUID, imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
+import { beforeEach, describe, it } from "node:test";
+import {
+	NIL_UUID,
+	commitNoteFormVisit,
+	forgetNoteFormVisit,
+	imagingWriteTarget,
+	peekNoteFormForeignVisit,
+	realVisitFieldId,
+} from "./visitIdentity";
 
 /**
  * ЧТО ОХРАНЯЕТ ЭТОТ ФАЙЛ. Вкладка «Рентгены и Диагностика» экрана «Приём» пишет
@@ -47,5 +54,70 @@ describe("в чью карту ляжет снимок", () => {
 		// Заготовка приёма с нулевым UUID приёмом не считается.
 		assert.equal(imagingWriteTarget("пациент-Б", NIL_UUID), "no-visit");
 		assert.equal(imagingWriteTarget(null, null), "no-visit");
+	});
+});
+
+/**
+ * Форма записи приёма при смене приёма НЕ перечитывается: врач набрал жалобы,
+ * осмотр и диагноз пациента А, не сохранил, открылся приём пациента Б — поля
+ * остались с текстом А, а кнопка «Сохранить» писала его в карту пациента Б.
+ * Здесь проверяется, что расхождение распознаётся и не «рассасывается» само.
+ */
+describe("к какому приёму относится текст в полях ЭМК", () => {
+	beforeEach(() => {
+		forgetNoteFormVisit();
+	});
+
+	/** Один проход панели: рендер читает вердикт, эффект передвигает якорь. */
+	const pass = (openVisitId: string | null, dirty: boolean) => {
+		const verdict = peekNoteFormForeignVisit(openVisitId, dirty);
+		commitNoteFormVisit(openVisitId, dirty);
+		return verdict;
+	};
+
+	it("первый приём за сеанс чужим не считается", () => {
+		assert.equal(pass("приём-А", false), null);
+		// И правка этого же приёма — тоже своя.
+		assert.equal(pass("приём-А", true), null);
+	});
+
+	it("незаписанный текст прошлого приёма распознаётся как чужой", () => {
+		pass("приём-А", true);
+		assert.equal(peekNoteFormForeignVisit("приём-Б", true), "приём-А");
+	});
+
+	it("вердикт держится, пока расхождение не разобрано — в том числе после ухода на другую вкладку", () => {
+		pass("приём-А", true);
+		// Панель перерисовывается много раз, вкладка размонтируется и возвращается:
+		// вердикт обязан остаться тем же, иначе чужой текст снова можно сохранить.
+		assert.equal(pass("приём-Б", true), "приём-А");
+		assert.equal(pass("приём-Б", true), "приём-А");
+		assert.equal(peekNoteFormForeignVisit("приём-Б", true), "приём-А");
+	});
+
+	it("после показа записи открытого приёма расхождение снято", () => {
+		pass("приём-А", true);
+		assert.equal(pass("приём-Б", true), "приём-А");
+		// Врач нажал «Показать запись открытого приёма»: поля совпали с приёмом Б.
+		assert.equal(pass("приём-Б", false), null);
+		// И дальше правки приёма Б — свои.
+		assert.equal(pass("приём-Б", true), null);
+	});
+
+	it("смена приёма без набранного текста ничего не запирает", () => {
+		pass("приём-А", false);
+		assert.equal(pass("приём-Б", false), null);
+		assert.equal(pass("приём-Б", true), null);
+	});
+
+	it("неизвестный приём не отнимает у врача набранный текст", () => {
+		// Обновление дашборда и заготовка с нулевым UUID дают пустой
+		// идентификатор. Считать это сменой пациента нельзя: панель заперла бы
+		// сохранение на ровном месте, а якорь уехал бы в никуда.
+		pass("приём-А", true);
+		assert.equal(pass(null, true), null);
+		assert.equal(pass(realVisitFieldId(NIL_UUID), true), null);
+		// Приём вернулся тем же — текст по-прежнему свой.
+		assert.equal(pass("приём-А", true), null);
 	});
 });

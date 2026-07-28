@@ -4,7 +4,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldLabel, visitSaveReceiptText } from "../../AppHelpers";
+import { visitDraftQualityLabels, visitDraftSignalLabel, visitDraftMissingFieldLabel, visitSaveReceiptText, visitNoteFormFromVisit } from "../../AppHelpers";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
@@ -15,6 +15,11 @@ import {
 	visitFlowResultIsForeign,
 	visitSaveReceiptBelongsToVisit,
 } from "./visitFlowResultOwner";
+import {
+	commitNoteFormVisit,
+	peekNoteFormForeignVisit,
+	realVisitFieldId,
+} from "./visitIdentity";
 
 /**
  * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.
@@ -187,6 +192,37 @@ export function VisitEmkTab() {
 		? lastVisitSaveReceipt
 		: null;
 
+	/*
+	 * НЕЗАПИСАННЫЙ ТЕКСТ ПРЕДЫДУЩЕГО ПРИЁМА БОЛЬШЕ НЕ УХОДИТ В ЧУЖУЮ КАРТУ.
+	 *
+	 * Форма записи приёма лежит в общем хранилище визита и при смене приёма НЕ
+	 * перечитывается: во всём дереве нет ни одного места, где visitNoteForm
+	 * заново собиралась бы из нового dashboard.activeVisit. Врач набрал жалобы,
+	 * осмотр и диагноз пациента А, не сохранил, открылся приём пациента Б — поля
+	 * остались с текстом А, признак «есть правки» стал истинным, панель показала
+	 * «Проверьте правки» и кнопку «Сохранить». Одно нажатие писало жалобы и
+	 * диагноз пациента А в медицинскую карту пациента Б.
+	 *
+	 * Признак «есть правки» сам по себе не отличает это от честной правки
+	 * текущего приёма, поэтому память о том, к какому приёму относится текст,
+	 * держится в visitIdentity.ts — вне компонента, потому что вкладка
+	 * размонтируется при уходе на «Зубную формулу».
+	 */
+	const openVisitId = realVisitFieldId(dashboard?.activeVisit?.id);
+	const noteTextOfAnotherVisit = peekNoteFormForeignVisit(
+		openVisitId,
+		Boolean(isVisitNoteDirty),
+	);
+
+	React.useEffect(() => {
+		commitNoteFormVisit(openVisitId, Boolean(isVisitNoteDirty));
+	}, [openVisitId, isVisitNoteDirty]);
+
+	const setVisitNoteForm = useVisitStore((state) => state.setVisitNoteForm);
+	const showRecordOfOpenVisit = () => {
+		setVisitNoteForm(visitNoteFormFromVisit(dashboard?.activeVisit ?? null));
+	};
+
 	return (
 				<section
 						data-testid="visit-emk-tab"
@@ -208,6 +244,34 @@ export function VisitEmkTab() {
 								{visitNoteStatusLabel}
 							</span>
 						</div>
+						{noteTextOfAnotherVisit ? (
+							<div
+								role="alert"
+								aria-live="assertive"
+								id="visit-note-foreign-text"
+								data-testid="visit-note-foreign-text"
+								className="mt-3 mb-3 p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-sm text-rose-900 dark:text-rose-200"
+							>
+								<strong className="block mb-1">
+									В полях остался текст предыдущего приёма
+								</strong>
+								<p className="m-0">
+									Открыт другой приём
+									{activePatient?.fullName ? ` — ${activePatient.fullName}` : ""}, а в полях
+									лежит незаписанный текст прошлого приёма. Сохранять его отсюда нельзя:
+									жалобы и диагноз уйдут в карту не того человека, а снять такую запись
+									можно только ревизией. Что нужно перенести — скопируйте из полей себе, а
+									затем нажмите кнопку ниже: поля покажут запись открытого приёма.
+								</p>
+								<button
+									type="button"
+									className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+									onClick={showRecordOfOpenVisit}
+								>
+									Показать запись открытого приёма
+								</button>
+							</div>
+						) : null}
 						{visitFlowResult && !visitFlowResultIsOfAnotherVisit ? (
 							<VisitFlowProgress result={visitFlowResult} />
 						) : null}
@@ -417,7 +481,9 @@ export function VisitEmkTab() {
 								Пустота теперь объясняет себя сама.
 							*/}
 							<p>
-								{draft
+								{noteTextOfAnotherVisit
+									? "Сохранение заперто: в полях текст другого приёма. Разберите предупреждение выше."
+									: draft
 									? draftNoteText
 									: isVisitNoteDirty
 										? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
@@ -445,9 +511,17 @@ export function VisitEmkTab() {
 									className="primary-button"
 									type="button"
 									onClick={acceptDraftToVisit}
-									disabled={!visitNoteReadyToAccept || isDraftAccepting}
+									disabled={
+										!visitNoteReadyToAccept ||
+										isDraftAccepting ||
+										Boolean(noteTextOfAnotherVisit)
+									}
 									aria-describedby={
-										!visitNoteReadyToAccept ? "visit-note-missing" : undefined
+										noteTextOfAnotherVisit
+											? "visit-note-foreign-text"
+											: !visitNoteReadyToAccept
+												? "visit-note-missing"
+												: undefined
 									}
 								>
 									<Check aria-hidden="true" /> {visitNoteActionLabel}
