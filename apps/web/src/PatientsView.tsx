@@ -15,7 +15,6 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
-import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
@@ -686,7 +685,23 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             одного писателя во всём проекте, ноль строк в живой базе. Обе
             панели занимали место в сетке и не могли показать ничего.
           */}
-          <CustomCrmTaskTypesWidget />
+          {/*
+            Отсюда убран <CustomCrmTaskTypesWidget /> — «Кастомные типы задач CRM».
+            Он читал GET /api/crm/custom-crm-task-types: маршрут есть и отвечает
+            200, но в таблицу custom_crm_task_types не пишет НИКТО. Во всём
+            репозитории на неё есть ровно две ссылки: миграция
+            drizzle/0077_add_custom_crm_task_types.sql, которая её создаёт, и один
+            SELECT в apps/api/src/db/customCrmTaskTypesQuery.ts. Ни одного INSERT
+            — ни в маршрутах, ни в сидах, ни в скриптах. Поэтому панель показывала
+            «Типы задач отсутствуют» в любой клинике, сколько бы та ни работала, и
+            занимала в стопке место рядом с настоящими цифрами. Та же пустая
+            панель дублировалась ещё на двух экранах — «Маркетинг» и настройки
+            CRM, — то есть одна и та же пустота повторялась трижды.
+            Не возвращайте её, пока не появится писатель: экрана создания типа
+            задачи в продукте нет, заполниться ей нечем. Сам файл виджета не
+            удалён здесь намеренно — остальные его монтирования и серверную часть
+            снимает ведущий одним согласованным коммитом.
+          */}
           <PatientDuplicateMergeQueuesWidget />
         </div>
       </div>
