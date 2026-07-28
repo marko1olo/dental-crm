@@ -5,7 +5,13 @@ import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole 
 import { EmptyState } from "./components/EmptyState";
 import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
+import {
+  journalDirectionLabel,
+  journalEntryNotice,
+  summarizeJournal
+} from "./components/communications/journalDigest";
 import { hasCapability } from "./lib/clinicCapabilities";
+import { countLabel } from "./lib/russianPlural";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -31,13 +37,13 @@ type CommunicationsViewProps = {
   staffRoleLabels: Record<StaffRole, string>;
 };
 
-function ruCount(value: number, forms: [string, string, string]): string {
-  const absolute = Math.abs(value);
-  const lastTwo = absolute % 100;
-  const last = absolute % 10;
-  const form = lastTwo >= 11 && lastTwo <= 14 ? forms[2] : last === 1 ? forms[0] : last >= 2 && last <= 4 ? forms[1] : forms[2];
-  return `${value} ${form}`;
-}
+/*
+  ЗДЕСЬ БЫЛА СВОЯ ФУНКЦИЯ СОГЛАСОВАНИЯ ЧИСЛА `ruCount`. Правило склонения в
+  проекте одно, и владелец у него один — countLabel из lib/russianPlural.ts,
+  который реэкспортирует AppHelpers. Вторая копия того же правила даёт два
+  разных ответа на один вопрос через полгода, поэтому копия убрана, а вызовы
+  переведены на общую функцию (порядок форм тот же: одна, две, пять).
+*/
 
 const communicationTaskOutcomeLabels: Record<CommunicationTaskOutcome, string> = {
   no_answer: "Нет ответа",
@@ -204,12 +210,37 @@ function CommunicationEventRow({
   event: CommunicationEvent;
   formatDateTime: (value: string) => string;
 }) {
+  /*
+    БЫЛО: строка журнала показывала только канал и статус словарём. Доставленное
+    и упавшее сообщение выглядели одинаково, а `direction` не выводился вовсе —
+    ответ пациента было не отличить от отправки клиники. Теперь у каждой записи
+    видно, кто кому, а у неудачных и неподтверждённых — что делать дальше.
+  */
+  const notice = journalEntryNotice(event);
+  const isUndelivered = event.status === "failed" || event.status === "skipped";
   return (
-    <article key={event.id}>
+    <article key={event.id} data-status={event.status}>
       <History aria-hidden="true" />
       <div>
-        <strong>{communicationChannelLabels[event.channel]} · {communicationStatusLabels[event.status]}</strong>
+        <strong>
+          {journalDirectionLabel(event.direction)} · {communicationChannelLabels[event.channel]} ·{" "}
+          <span className={isUndelivered ? "text-[var(--bad-fg,#b42318)] font-semibold" : undefined}>
+            {communicationStatusLabels[event.status]}
+          </span>
+        </strong>
         <p>{event.message} · {formatDateTime(event.createdAt)}</p>
+        {notice ? (
+          <p
+            className={
+              isUndelivered
+                ? "text-xs text-[var(--bad-fg,#b42318)] font-semibold"
+                : "text-xs text-[var(--muted)]"
+            }
+            role={isUndelivered ? "alert" : undefined}
+          >
+            {notice}
+          </p>
+        ) : null}
       </div>
     </article>
   );
@@ -240,6 +271,16 @@ export function CommunicationsView({
   // режим не известен — тогда показывается всё (см. clinicCapabilities).
   const clinicMode = dashboard?.clinicSettings?.profile?.mode ?? null;
 
+  /*
+    Журнал разбирается ДО подстановки пустого массива. Прежняя разметка начинала
+    с `dashboard?.communicationEvents ?? []`, и этим первым же действием теряла
+    различие между «сервер вернул пустой список» и «в ответе списка не было
+    вовсе»: и то и другое превращалось в ноль записей без единого слова на
+    экране. Ответ /api/dashboard на клиенте не проверяется схемой, а приводится
+    (`as Dashboard` в useAppLogic), поэтому отсутствующее поле — не гипотеза.
+  */
+  const journal = summarizeJournal<CommunicationEvent>(dashboard?.communicationEvents);
+
   const communicationSummaryHasNumbers = Boolean(
     (dashboard?.communicationSummary?.openTasks ?? 0) ||
       (dashboard?.communicationSummary?.dueToday ?? 0) ||
@@ -269,12 +310,12 @@ export function CommunicationsView({
         <article className={dashboard?.communicationSummary?.urgentTasks ? "communication-urgent" : ""}>
           <span>Открыто</span>
           <strong>{dashboard?.communicationSummary?.openTasks ?? 0}</strong>
-          <p>{ruCount(dashboard?.communicationSummary?.urgentTasks ?? 0, ["срочная", "срочные", "срочных"])}</p>
+          <p>{countLabel(dashboard?.communicationSummary?.urgentTasks ?? 0, "срочная", "срочные", "срочных")}</p>
         </article>
         <article>
           <span>Сегодня</span>
           <strong>{dashboard?.communicationSummary?.dueToday ?? 0}</strong>
-          <p>{ruCount(dashboard?.communicationSummary?.overdue ?? 0, ["просрочена", "просрочены", "просрочено"])}</p>
+          <p>{countLabel(dashboard?.communicationSummary?.overdue ?? 0, "просрочена", "просрочены", "просрочено")}</p>
         </article>
         <article>
           <span>Подтверждения</span>
@@ -409,22 +450,61 @@ export function CommunicationsView({
             там же его можно менять.
           */}
 
-          <section>
+          {/*
+            ЖУРНАЛ СВЯЗИ. Раньше здесь стояла зелёная плашка `status-confirmed` с
+            одним числом — длиной массива событий, — и список одинаковых строк.
+            Клиника, у которой из двенадцати сообщений три упали с отказом
+            шлюза, видела спокойную зелёную «12»: недоставленное считалось
+            наравне с доставленным и ничем от него не отличалось. Это отказ
+            отправки, показанный как успех, то есть пропущенный приём.
+
+            А когда событий не было или сервер ответил без списка, на месте
+            журнала оставался пустой блок с зелёным нулём — ни строки текста.
+            «Не прочитано» выглядело так же, как «сообщений не было».
+
+            Решение о числах, цвете плашки и текстах трёх состояний вынесено в
+            journalDigest.ts и проверяется node:test — здесь только разметка.
+          */}
+          <section aria-label="Журнал связи">
             <div className="panel-heading">
-              <h3>Журнал</h3>
-              <span className="status-pill status-confirmed">{(dashboard?.communicationEvents ?? []).length}</span>
+              <h3>Журнал связи</h3>
+              <span className={journal.totalPillClass}>{journal.totalLabel}</span>
             </div>
-            <div className="template-list">
-              {(dashboard?.communicationEvents ?? []).map((event) => (
-                <CommunicationEventRow
-                  communicationChannelLabels={communicationChannelLabels}
-                  communicationStatusLabels={communicationStatusLabels}
-                  event={event}
-                  formatDateTime={formatDateTime}
-                  key={event.id}
-                />
-              ))}
-            </div>
+            {journal.undeliveredLabel ? (
+              <p
+                className="text-xs font-semibold text-[var(--bad-fg,#b42318)] mb-2"
+                role="alert"
+              >
+                {journal.undeliveredLabel} — пациенты этого не получили. Причина отказа по каждому
+                сообщению видна в «Отправке сообщений», раздел «Журнал отправки».
+              </p>
+            ) : null}
+            {journal.pendingLabel ? (
+              <p className="text-xs text-[var(--muted)] mb-2">{journal.pendingLabel}.</p>
+            ) : null}
+            {journal.phase === "failed" ? (
+              <div
+                role="alert"
+                className="p-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
+              >
+                <div className="font-semibold">{journal.title}.</div>
+                <div className="mt-0.5">{journal.hint}</div>
+              </div>
+            ) : journal.phase === "empty" ? (
+              <EmptyState title={journal.title} description={journal.hint} className="my-2 py-6" />
+            ) : (
+              <div className="template-list">
+                {journal.entries.map((event) => (
+                  <CommunicationEventRow
+                    communicationChannelLabels={communicationChannelLabels}
+                    communicationStatusLabels={communicationStatusLabels}
+                    event={event}
+                    formatDateTime={formatDateTime}
+                    key={event.id}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         </aside>
       </div>
