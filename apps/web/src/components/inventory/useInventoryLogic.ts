@@ -120,9 +120,23 @@ export function useInventoryLogic(organizationId: string) {
 		useState<string>("");
 	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
 
+	/*
+	 * Отказ при загрузке правил списания надо помнить отдельно от пустоты.
+	 *
+	 * БЫЛО: на упавший запрос показывался toast, а список правил оставался
+	 * пустым — и панель писала «Для этой услуги пока не настроено автоматическое
+	 * списание материалов. При завершении приёма материалы списываться не будут.»
+	 * Это утверждение о том, чего экран не знает, и оно опасно в обе стороны:
+	 * администратор верит, что списания нет, и заводит правило заново — второе
+	 * такое же правило спишет материал дважды за каждый приём; либо наоборот
+	 * закупает материал вручную, считая, что склад его не тронет.
+	 */
+	const [rulesError, setRulesError] = useState<string | null>(null);
+
 	const fetchRules = async (serviceId: string) => {
 		if (!serviceId) {
 			setRulesList([]);
+			setRulesError(null);
 			return;
 		}
 		try {
@@ -136,11 +150,26 @@ export function useInventoryLogic(organizationId: string) {
 			if (res.ok) {
 				const data = await res.json();
 				setRulesList(Array.isArray(data) ? data : []);
+				setRulesError(null);
 			} else {
+				/*
+				 * Список обнуляем и здесь: показывать правила от прошлой услуги, пока
+				 * рядом стоит выбор другой, — значит подсунуть чужие расходники.
+				 */
+				setRulesList([]);
+				setRulesError(
+					res.status === 401 || res.status === 403
+						? "Правила списания не показаны: доступ не подтверждён. Войдите в кабинет заново."
+						: "Правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — нажмите «Повторить».",
+				);
 				showToast("Ошибка загрузки правил", "error");
 			}
 		} catch (e) {
 			console.error(e);
+			setRulesList([]);
+			setRulesError(
+				"Нет связи с сервером: правила списания не загрузились. Неизвестно, списываются материалы по этой услуге или нет — проверьте интернет и нажмите «Повторить».",
+			);
 			showToast("Ошибка загрузки правил", "error");
 		} finally {
 			setIsLoadingRules(false);
@@ -725,6 +754,7 @@ export function useInventoryLogic(organizationId: string) {
 		setSelectedServiceId,
 		rulesList,
 		isLoadingRules,
+		rulesError,
 		selectedInventoryItemId,
 		setSelectedInventoryItemId,
 		quantityToDeduct,

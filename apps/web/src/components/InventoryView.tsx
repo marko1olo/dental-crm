@@ -79,6 +79,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		setSelectedServiceId,
 		rulesList,
 		isLoadingRules,
+		rulesError,
 		selectedInventoryItemId,
 		setSelectedInventoryItemId,
 		quantityToDeduct,
@@ -327,14 +328,63 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								Привязанные расходники
 							</h4>
 
+							{/*
+							  Три состояния, а не два: загрузка, отказ сервера, честная пустота.
+
+							  При упавшем запросе список правил остаётся пустым, и здесь
+							  печаталось «списание не настроено, материалы списываться не
+							  будут» — утверждение о том, чего экран не знает. Администратор
+							  верил и заводил правило заново (второе такое же правило спишет
+							  материал дважды за приём) либо закупал материал вручную, считая,
+							  что склад его не тронет.
+							*/}
 							{isLoadingRules ? (
 								<p style={{ color: "var(--muted)", fontSize: 13 }}>
 									Загрузка правил списания...
 								</p>
+							) : rulesError ? (
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										gap: 10,
+										padding: "12px 14px",
+										borderRadius: 8,
+										background: "rgba(239,68,68,0.12)",
+										border: "1px solid var(--tomato)",
+									}}
+								>
+									<span
+										style={{
+											color: "var(--ink)",
+											fontSize: 13,
+											lineHeight: 1.45,
+										}}
+									>
+										{rulesError}
+									</span>
+									<button
+										type="button"
+										onClick={() => fetchRules(selectedServiceId)}
+										style={{
+											padding: "8px 16px",
+											borderRadius: 8,
+											border: `1px solid ${borderColor}`,
+											background: paperSoftBg,
+											color: "var(--ink)",
+											fontWeight: 600,
+											fontSize: 13,
+											cursor: "pointer",
+										}}
+									>
+										Повторить
+									</button>
+								</div>
 							) : rulesList.length === 0 ? (
 								<p style={{ color: "var(--muted)", fontSize: 13 }}>
 									Для этой услуги пока не настроено автоматическое списание
-									материалов. При завершении приема материалы списываться не
+									материалов. При завершении приёма материалы списываться не
 									будут.
 								</p>
 							) : (
