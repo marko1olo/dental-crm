@@ -19,6 +19,7 @@ import {
 import { useState, useMemo } from "react";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
 import { countLabel } from "./lib/russianPlural";
+import type { Dashboard } from "@dental/shared";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -596,6 +597,33 @@ export function ShiftView({
   );
 }
 
+/**
+ * СРЕДНИЙ УРОВЕНЬ РИСКА НЕ ПОКАЗЫВАЛСЯ НИКОГДА, И ЭТОТ `any` — ПРИЧИНА.
+ *
+ * Пропсы карточки были объявлены как `any`, поэтому компилятор не видел, что
+ * `riskLevel` принимает только `low | watch | high` (patientInsightRiskSchema в
+ * packages/shared/src/index.ts). Сравнение с несуществующим `"medium"` жило в
+ * разметке молча: средний уровень оставался без цвета, а «Смена» выглядела
+ * готовой, скрывая ровно тот случай, ради которого её и открывают утром.
+ *
+ * Типы взяты из формы `Dashboard`, а не переписаны рядом: второе объявление
+ * снова рассинхронизировалось бы с контрактом, что и произошло здесь.
+ */
+type CockpitPatient = Dashboard["patients"][number];
+type CockpitPatientInsight = Dashboard["patientInsights"][number];
+
+export type PatientCockpitProps = {
+  activePatient: CockpitPatient | null | undefined;
+  activePatientInsight: CockpitPatientInsight | null | undefined;
+  dashboard: Dashboard | null | undefined;
+  /* Из этих трёх наборов карточка берёт только количество, поэтому и требует
+     ровно массив: сузить до конкретной сущности значило бы соврать о том, что
+     карточка читает её поля. */
+  activeCommunicationTasks: readonly unknown[];
+  activeImagingStudies: readonly unknown[];
+  activeUsableDocuments: readonly unknown[];
+};
+
 export function PatientCockpit({
   activePatient,
   activePatientInsight,
@@ -603,7 +631,7 @@ export function PatientCockpit({
   activeCommunicationTasks,
   activeImagingStudies,
   activeUsableDocuments
-}: any) {
+}: PatientCockpitProps) {
   if (!activePatient) {
     return (
       <section className="patient-cockpit dnt-cockpit" aria-label="Карточка пациента">
@@ -667,11 +695,20 @@ export function PatientCockpit({
               )}
             </div>
 
+            {/* Сравнивалось с `"medium"`, которого в контракте нет: сервер
+                отдаёт `watch` (apps/api/src/sampleData.ts, ветка расчёта
+                riskLevel), а схема допускает только low | watch | high. Ветка
+                среднего риска не выполнялась ни разу, и пациент «контроль»
+                рисовался как «спокойно» — цветом бумаги. Подпись при этом
+                стояла верная, поэтому дефект и не бросался в глаза. */}
             {activePatientInsight ? (
-              <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`} style={{ padding: "12px 14px", borderRadius: "11px", background: activePatientInsight.riskLevel === "high" ? "var(--bad-bg)" : activePatientInsight.riskLevel === "medium" ? "var(--warn-bg)" : "var(--paper-soft)", border: "1px solid " + (activePatientInsight.riskLevel === "high" ? "var(--bad-fg)" : activePatientInsight.riskLevel === "medium" ? "var(--warn-fg)" : "var(--line)") }}>
+              <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`} style={{ padding: "12px 14px", borderRadius: "11px", background: activePatientInsight.riskLevel === "high" ? "var(--bad-bg)" : activePatientInsight.riskLevel === "watch" ? "var(--warn-bg)" : "var(--paper-soft)", border: "1px solid " + (activePatientInsight.riskLevel === "high" ? "var(--bad-fg)" : activePatientInsight.riskLevel === "watch" ? "var(--warn-fg)" : "var(--line)") }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "7px" }}>
-                  <span style={{ fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: activePatientInsight.riskLevel === "high" ? "var(--bad-fg)" : activePatientInsight.riskLevel === "medium" ? "var(--warn-fg)" : "var(--muted)" }}>
-                    {patientInsightRiskLabels[activePatientInsight.riskLevel as keyof typeof patientInsightRiskLabels]}
+                  <span style={{ fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: activePatientInsight.riskLevel === "high" ? "var(--bad-fg)" : activePatientInsight.riskLevel === "watch" ? "var(--warn-fg)" : "var(--muted)" }}>
+                    {/* Приведение `as keyof typeof` тоже убрано: с типизированными
+                        пропсами ключ и так из того же перечисления, а приведение
+                        как раз и прятало бы новое расхождение. */}
+                    {patientInsightRiskLabels[activePatientInsight.riskLevel]}
                   </span>
                   <strong style={{ fontSize: "12.5px", color: "var(--ink)" }}>{activePatientInsight.nextBestAction}</strong>
                 </div>
