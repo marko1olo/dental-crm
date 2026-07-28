@@ -748,12 +748,26 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					{totals.incompleteRows > 0 ? "Итого, без непосчитанного:" : "Итого по плану:"}
 				</div>
 				<div className="flex flex-col items-end min-w-0">
-					<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
-						{rub(totals.payableKopecks)}
-					</div>
+					{/*
+					  Ни одной посчитанной строки — суммы НЕТ, и ноль вместо неё не
+					  печатается. Складывать было нечего, а «Итого: 0 ₽» под планом из
+					  четырёх процедур читается как «лечение бесплатное». На пустом
+					  прайсе это состояние и работает, то есть оно не редкое.
+					*/}
+					{totals.pricedRows === 0 && totals.incompleteRows > 0 ? (
+						<div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+							Считать пока нечего
+						</div>
+					) : (
+						<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
+							{rub(totals.payableKopecks)}
+						</div>
+					)}
 					{totals.incompleteRows > 0 && (
 						<div className="text-xs font-semibold text-amber-700 dark:text-amber-300 text-right break-words">
-							Итог неполный: в плане есть лечение без цены из прайса
+							{totals.pricedRows === 0
+								? "Ни у одной строки плана нет цены из вашего прайса"
+								: "Итог неполный: в плане есть лечение без цены из прайса"}
 						</div>
 					)}
 				</div>

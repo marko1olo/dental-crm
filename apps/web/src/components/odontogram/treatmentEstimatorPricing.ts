@@ -666,6 +666,16 @@ export interface EstimatorTotals {
 	payableKopecks: Kopecks;
 	/** Строк без читаемой цены. Больше нуля — итог НЕПОЛНЫЙ, и так и сказано. */
 	incompleteRows: number;
+	/**
+	 * Сколько строк вообще удалось посчитать.
+	 *
+	 * Ноль здесь означает, что складывать было НЕЧЕГО, и это единственное
+	 * состояние, в котором `payableKopecks` нельзя печатать как сумму: ноль
+	 * посчитанных строк даёт «0 ₽», а «Итого: 0 ₽» читается как «лечение
+	 * бесплатное». Именно этот случай и работает на пустом прайсе, то есть по
+	 * умолчанию. Число не выдумано — просто предъявлять его как итог нельзя.
+	 */
+	pricedRows: number;
 }
 
 /**
@@ -689,7 +699,11 @@ export function estimatorTotals(
 		}
 		payable.push(money.payableKopecks);
 	}
-	return { payableKopecks: sumKopecks(payable), incompleteRows };
+	return {
+		payableKopecks: sumKopecks(payable),
+		incompleteRows,
+		pricedRows: payable.length,
+	};
 }
 
 /* ──────────────────── ЧЕЛОВЕЧЕСКИЕ ОБЪЯСНЕНИЯ ──────────────────── */

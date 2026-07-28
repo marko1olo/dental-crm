@@ -279,6 +279,24 @@ test("строка без цены не считается нулём, и ито
 
 	assert.equal(totals.payableKopecks, 200_000);
 	assert.equal(totals.incompleteRows, 1, "неполнота итога должна быть видна");
+	assert.equal(totals.pricedRows, 1);
+});
+
+test("на пустом прайсе итога нет вовсе, а не «0 ₽»", () => {
+	// Это состояние по умолчанию: в живой базе service_catalog_items пуст у ОБЕИХ
+	// организаций, то есть каждая смета сегодня идёт именно этим путём.
+	const items = build(
+		[tooth(11, "Caries"), tooth(21, "Crown"), tooth(16, "Planned_Implant")],
+		EMPTY_CATALOG,
+	);
+	const totals = estimatorTotals(items, null);
+
+	assert.equal(items.length, 4);
+	assert.equal(totals.incompleteRows, 4);
+	// Ноль посчитанных строк — единственный признак, по которому разметка обязана
+	// не печатать сумму: «Итого: 0 ₽» под планом из четырёх процедур читается как
+	// «лечение бесплатное», и это тот же выдуманный ноль, только в итоге.
+	assert.equal(totals.pricedRows, 0);
 });
 
 test("скидка вычитается рублями и не уводит строку ниже нуля", () => {
