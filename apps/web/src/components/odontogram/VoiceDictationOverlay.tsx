@@ -1,5 +1,9 @@
 import { Check, Mic, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+	VOICE_DICTATION_UNSUPPORTED_TEXT,
+	voiceDictationErrorText,
+} from "./voiceDictationText";
 
 export function VoiceDictationOverlay({
 	isOpen,
@@ -13,6 +17,38 @@ export function VoiceDictationOverlay({
 	const [isListening, setIsListening] = useState(false);
 	const [transcript, setTranscript] = useState("");
 	const [waves, setWaves] = useState<number[]>([20, 40, 60, 40, 20]);
+	/*
+	 * Почему распознавания нет — отдельно от распознанного текста.
+	 *
+	 * БЫЛО: сообщение «Браузер не поддерживает распознавание речи» записывалось
+	 * в transcript, то есть в речь пациента. Кнопка «Подтвердить» появляется по
+	 * непустому transcript, поэтому она появлялась и здесь — и эту фразу можно
+	 * было отправить на разбор как содержание приёма.
+	 */
+	const [problem, setProblem] = useState<string | null>(null);
+	/*
+	 * Живой объект распознавания. БЫЛО: он был локальной переменной внутри
+	 * эффекта, поэтому кнопка «Остановить запись» до него не доставала и делала
+	 * только setIsListening(false) — микрофон продолжал слушать кабинет, а
+	 * onresult продолжал дописывать текст, который врач уже считал итоговым.
+	 */
+	const recognitionRef = useRef<{ stop: () => void } | null>(null);
+
+	/** Остановить распознавание по-настоящему, а не только погасить полоски. */
+	const stopListening = () => {
+		const recognition = recognitionRef.current;
+		recognitionRef.current = null;
+		if (recognition) {
+			try {
+				recognition.stop();
+			} catch (err) {
+				// Остановка уже остановленного распознавания бросает исключение в
+				// части браузеров. Человеку это не ошибка: запись и так не идёт.
+				console.error("[диктовка] остановка распознавания", err);
+			}
+		}
+		setIsListening(false);
+	};
 
 	useEffect(() => {
 		let recognition: any = null;
@@ -20,6 +56,7 @@ export function VoiceDictationOverlay({
 
 		if (isOpen) {
 			setTranscript("");
+			setProblem(null);
 			setIsListening(true);
 
 			waveInterval = setInterval(() => {
@@ -53,7 +90,10 @@ export function VoiceDictationOverlay({
 				};
 
 				recognition.onerror = (event: any) => {
-					console.error("Speech recognition error", event.error);
+					// Код ошибки английский и остаётся в консоли; врачу идёт причина
+					// словами и следующий шаг.
+					console.error("[диктовка] распознавание речи", event?.error);
+					setProblem(voiceDictationErrorText(event?.error));
 					setIsListening(false);
 				};
 
@@ -61,18 +101,19 @@ export function VoiceDictationOverlay({
 					setIsListening(false);
 				};
 
+				recognitionRef.current = recognition;
 				recognition.start();
 			} else {
-				// Fallback for browsers that don't support SpeechRecognition
-				setTranscript(
-					"Браузер не поддерживает распознавание речи. Используйте текстовый ввод.",
-				);
+				// Браузер без распознавания речи: причина в отдельном состоянии, а не
+				// в тексте распознанного.
+				setProblem(VOICE_DICTATION_UNSUPPORTED_TEXT);
 				setIsListening(false);
 			}
 		}
 
 		return () => {
 			if (waveInterval) clearInterval(waveInterval);
+			recognitionRef.current = null;
 			if (recognition) {
 				recognition.stop();
 			}
@@ -196,12 +237,30 @@ export function VoiceDictationOverlay({
 				>
 					{transcript || (isListening ? "Говорите..." : "")}
 				</p>
+				{/* Причина, по которой диктовать не выходит. БЫЛО: замершее окно без
+				    слов и без кнопок — врач не знал ни что случилось, ни что делать. */}
+				{problem !== null && (
+					<p
+						role="alert"
+						style={{
+							fontSize: 16,
+							lineHeight: 1.5,
+							color: "#ffd7a3",
+							maxWidth: 520,
+							margin: "0 auto",
+						}}
+					>
+						{problem}
+					</p>
+				)}
 			</div>
 
 			<div style={{ display: "flex", gap: 16, marginTop: 40 }}>
 				{isListening && (
 					<button
-						onClick={() => setIsListening(false)}
+						/* БЫЛО: только setIsListening(false) — полоски гасли, а микрофон
+						   продолжал слушать кабинет и дописывать текст. */
+						onClick={stopListening}
 						style={{
 							padding: "16px 32px",
 							borderRadius: 32,
