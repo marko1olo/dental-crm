@@ -539,6 +539,22 @@ export function useInventoryLogic(organizationId: string) {
 
 		const amount = parseInt(adjustAmount);
 		if (isNaN(amount) || amount <= 0) return;
+		/*
+		 * Списать больше, чем лежит на полке, нельзя.
+		 *
+		 * Погашенной кнопки для этого мало: нажатие Enter в поле количества
+		 * отправляет форму мимо кнопки, и запрос с отрицательным остатком уходил
+		 * на сервер. Проверка стоит здесь, потому что это единственная дорога к
+		 * запросу. Отказ объясняем словами — беззвучный `return` выглядел бы как
+		 * сломанная кнопка.
+		 */
+		if (adjustType === "out" && amount > adjustingItem.stockQuantity) {
+			showToast(
+				`Нельзя списать ${amount} шт.: на складе ${adjustingItem.stockQuantity} шт. Исправьте количество или оприходуйте поступление.`,
+				"error",
+			);
+			return;
+		}
 		// Второе нажатие по тому же остатку игнорируем: первый запрос ещё в пути.
 		if (isAdjustingStockRef.current) return;
 		isAdjustingStockRef.current = true;

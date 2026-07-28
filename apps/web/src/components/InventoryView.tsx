@@ -380,6 +380,29 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		);
 	};
 
+	/*
+	 * Предпросмотр движения остатка — честный, без прикрытия нулём.
+	 *
+	 * БЫЛО: строка «Будет: …» считалась через Math.max(0, …). Списание 50 штук
+	 * при остатке 10 рисовало «Будет: 0 шт.» — выглядело как обычная операция, и
+	 * кладовщик нажимал «Списать». В запрос при этом уходило adjustment: -50
+	 * целиком, никакой проверки остатка на экране не было. Ноль в предпросмотре
+	 * прятал ровно то, что человек должен увидеть: списывают больше, чем есть,
+	 * значит либо количество набрано неверно, либо остаток на складе неверный —
+	 * и разбираться надо до записи, а не после.
+	 */
+	const adjustAmountNumber = Number.parseInt(adjustAmount, 10);
+	const adjustHasAmount =
+		Number.isFinite(adjustAmountNumber) && adjustAmountNumber > 0;
+	const adjustDelta =
+		(adjustType === "in" ? 1 : -1) * (adjustHasAmount ? adjustAmountNumber : 0);
+	const adjustResultQuantity = adjustingItem
+		? adjustingItem.stockQuantity + adjustDelta
+		: 0;
+	const adjustExceedsStock = Boolean(
+		adjustingItem && adjustType === "out" && adjustResultQuantity < 0,
+	);
+
 	if (isLoading && items.length === 0) {
 		return (
 			<div
@@ -1511,7 +1534,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								/>
 							</div>
-							{adjustAmount && !isNaN(parseInt(adjustAmount)) && (
+							{adjustHasAmount && (
 								<p
 									style={{
 										margin: 0,
@@ -1522,14 +1545,27 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								>
 									Будет:{" "}
 									<strong style={{ color: "var(--ink)" }}>
-										{Math.max(
-											0,
-											adjustingItem.stockQuantity +
-												(adjustType === "in" ? 1 : -1) *
-													(parseInt(adjustAmount) || 0),
-										)}{" "}
-										шт.
+										{adjustExceedsStock ? 0 : adjustResultQuantity} шт.
 									</strong>
+								</p>
+							)}
+							{adjustExceedsStock && (
+								<p
+									style={{
+										margin: 0,
+										padding: "12px 14px",
+										borderRadius: 8,
+										background: "rgba(239,68,68,0.12)",
+										border: "1px solid var(--tomato)",
+										color: "var(--ink)",
+										fontSize: 14,
+										lineHeight: 1.45,
+									}}
+								>
+									Списываете больше, чем есть на складе: в наличии{" "}
+									{adjustingItem.stockQuantity} шт., списываете{" "}
+									{adjustAmountNumber} шт. Исправьте количество или сначала
+									оприходуйте поступление.
 								</p>
 							)}
 							{/*
@@ -1544,17 +1580,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							*/}
 							<button
 								type="submit"
-								disabled={isAdjustingStock}
+								disabled={isAdjustingStock || adjustExceedsStock}
 								style={{
 									padding: "12px",
 									borderRadius: 8,
 									border: "none",
 									fontWeight: 600,
 									color: "#fff",
-									cursor: isAdjustingStock ? "wait" : "pointer",
+									cursor:
+										isAdjustingStock || adjustExceedsStock
+											? "not-allowed"
+											: "pointer",
 									background: adjustType === "in" ? "#3b82f6" : "var(--tomato)",
 									fontSize: 15,
-									opacity: isAdjustingStock ? 0.6 : 1,
+									opacity: isAdjustingStock || adjustExceedsStock ? 0.6 : 1,
 								}}
 							>
 								{isAdjustingStock
