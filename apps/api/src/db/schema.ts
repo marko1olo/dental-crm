@@ -2012,6 +2012,31 @@ export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Рекламации и осложнения по пациенту — основание для гарантии, возврата и
+ * переделки.
+ *
+ * Экран карточки (PatientReclamationsWidget) умел фиксировать, урегулировать и
+ * удалять инциденты, а сервера под ним не было: живая проверка сети видела на
+ * карточке 404. Имена полей повторяют контракт, который экран уже отправляет —
+ * менять их значило бы ломать работающий клиент. Физическая таблица:
+ * drizzle/0143_patient_reclamations.sql.
+ */
+export const patientReclamations = pgTable("patient_reclamations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull(),
+  // Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а разбор
+  // по его работе обязан остаться в карте.
+  doctorId: uuid("doctor_id"),
+  complicationDetails: text("complication_details").notNull(),
+  proposedAction: text("proposed_action"),
+  status: text("status").notNull().default("under_review"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // patient archive reasons and blacklists
 export const patientArchiveReasonsAndBlacklists = pgTable("patient_archive_reasons_and_blacklists", {
   id: uuid("id").primaryKey().defaultRandom(),

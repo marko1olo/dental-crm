@@ -98,8 +98,23 @@ const KNOWN_MISSING: readonly string[] = [
 	// Строка /api/patients/:param/communications убрана: рабочий адрес всё-таки
 	// есть — /api/patients/:patientId/communication-timelines в routes/patients.ts,
 	// виджет карточки пациента переведён на него.
-	// Рекламации и задачи по пациенту — таблицы есть, маршрутов нет.
-	"/api/patients/:param/reclamations",
+	/*
+	 * Отсюда убрана строка /api/patients/:param/reclamations: маршруты СДЕЛАНЫ,
+	 * все четыре (GET/POST/PUT/DELETE, routes/patients.ts), таблица создана в
+	 * drizzle/0143_patient_reclamations.sql и применена к базе.
+	 *
+	 * И здесь же исправлена неправда: строка стояла с подписью «таблицы есть,
+	 * маршрутов нет». Таблиц не было ни одной — ни patient_reclamations, ни чего
+	 * бы то ни было под задачи по пациенту. Долг, описанный неверно, хуже
+	 * ненайденного: следующий инженер поверил бы, что осталось дописать маршрут на
+	 * готовой таблице, и полез бы искать её в схеме.
+	 *
+	 * Нашла это живая проверка сети scratch/probe-failed-requests.mjs: на карточке
+	 * пациента 404 на GET .../reclamations при полностью готовом экране на 588
+	 * строк. Врач нажимал «Зафиксировать в карту» и не имел ни одного способа
+	 * сохранить претензию, а рекламация — основание для гарантии и возврата.
+	 */
+	// Задачи по пациенту: ни маршрута, ни таблицы. Зовёт PatientTicketsWidget.
 	"/api/patients/:param/tickets"
 	// Строки /api/settings/staff/:param и /api/settings/chairs/:param убраны:
 	// в routes/settings.ts добавлены PUT/DELETE на саму сущность сотрудника и
