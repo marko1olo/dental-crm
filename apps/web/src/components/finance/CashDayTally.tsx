@@ -122,7 +122,14 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 					</p>
 				) : (
 					<>
-						<div className="finance-list" style={{ border: "none", padding: 0 }}>
+						{/* Список строк — той же раскладкой, что история оплат ниже
+						    (.finance-list даёт сетку с отбивкой, .finance-row — строку
+						    «значок · название · сумма»). Своя рамка и своя подложка убраны:
+						    внутри раскрывающегося блока это была бы карточка в карточке. */}
+						<div
+							className="finance-list"
+							style={{ border: "none", padding: 0, background: "transparent" }}
+						>
 							{summary.byMethod.map((row) => {
 								const RowIcon = METHOD_ICONS[row.method] ?? Coins;
 								return (
