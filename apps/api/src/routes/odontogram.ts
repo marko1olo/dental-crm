@@ -1,3 +1,4 @@
+import { fdiToothNumberSchema } from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -79,26 +80,13 @@ const toothStateValues = [
  * но не отображалась в одонтограмме: врач видел строку без зуба, а вмешательство
  * планировалось для несуществующей позиции.
  */
-const VALID_FDI_TOOTH_NUMBERS = new Set<number>([
-	// Постоянные зубы
-	11, 12, 13, 14, 15, 16, 17, 18,
-	21, 22, 23, 24, 25, 26, 27, 28,
-	31, 32, 33, 34, 35, 36, 37, 38,
-	41, 42, 43, 44, 45, 46, 47, 48,
-	// Молочные зубы
-	51, 52, 53, 54, 55,
-	61, 62, 63, 64, 65,
-	71, 72, 73, 74, 75,
-	81, 82, 83, 84, 85,
-]);
-
-const fdiToothNumberSchema = z
-	.number()
-	.int()
-	.refine((value) => VALID_FDI_TOOTH_NUMBERS.has(value), {
-		message:
-			"Недопустимый номер зуба. Система FDI: 11–18, 21–28, 31–38, 41–48 (постоянные), 51–55, 61–65, 71–75, 81–85 (молочные).",
-	});
+/*
+ * Набор и схема переехали в общий контракт (packages/shared, рядом с
+ * clinicalToothRowsSchema). Здесь их держать было нельзя: клиент проверяет то же
+ * правило и с сервера его не видел, поэтому номер 19 проходил проверку сметы и
+ * отклонялся сервером — вместе со ВСЕМ планом лечения. Копии списка не делаем:
+ * скопированный список расходится.
+ */
 
 const batchToothStateSchema = z.object({
 	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),

@@ -1,4 +1,4 @@
-import { formatKopecksRu, type Kopecks } from "@dental/shared";
+import { formatKopecksRu, isValidFdiToothNumber, type Kopecks } from "@dental/shared";
 import {
 	Archive,
 	Check,
@@ -367,9 +367,22 @@ export const ComparativePlannerDashboard: React.FC = () => {
 			state: String(suggestion?.state ?? ""),
 		}));
 
+		/*
+		 * Проверяем НОМЕР ЗУБА по системе FDI, а не просто «это число».
+		 *
+		 * Number.isFinite пропускал 19, 20, 49, 99 — числа, зубами не являющиеся.
+		 * Смета отправляет toothNumber на сервер, сервер проверяет его по FDI и
+		 * отклоняет ВЕСЬ план лечения общим сообщением «План лечения не сохранен:
+		 * проверьте услуги, цены и этапы». Врач терял всю смету из-за одной
+		 * невозможной позиции и не узнавал, из-за какой.
+		 *
+		 * Правило берём из общего контракта, а не переписываем список сюда:
+		 * скопированный список расходится с оригиналом, и в этом проекте
+		 * скопированное вручную объединение разделов уже разошлось и сломало сборку.
+		 */
 		const resolved = resolvePlanSuggestions(
 			suggestions.filter((suggestion) =>
-				Number.isFinite(suggestion.toothNumber),
+				isValidFdiToothNumber(suggestion.toothNumber),
 			),
 			dashboard?.serviceCatalog ?? [],
 		);
