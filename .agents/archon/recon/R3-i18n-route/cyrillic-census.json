@@ -1,0 +1,1005 @@
+{
+  "generatedAt": "2026-07-28T10:57:28.289Z",
+  "root": "C:/Clinic_MVP/dental-crm",
+  "targets": [
+    "apps/api/src",
+    "apps/web/src",
+    "packages/shared/src"
+  ],
+  "stats": {
+    "filesScanned": 782,
+    "filesWithCyr": 651,
+    "totalLines": 323092,
+    "cyrLines": 39654,
+    "cyrLinesCommentOnly": 13759,
+    "cyrLinesStringOnly": 21782,
+    "cyrLinesBareOnly": 3932,
+    "cyrLinesMixed": 181,
+    "cyrCharsComment": 614790,
+    "cyrCharsString": 724342,
+    "cyrCharsBare": 85043
+  },
+  "translatable": {
+    "cyrLinesExcludingCommentOnly": 25895,
+    "distinctStringLiterals": 16393,
+    "distinctJsxTextRuns": 3354,
+    "distinctUnitsCombined": 19316,
+    "totalStringLiteralOccurrences": 25275,
+    "totalJsxOccurrences": 4312,
+    "charsToTranslate": 809385,
+    "charsInComments": 614790
+  },
+  "perTopDir": [
+    {
+      "dir": "apps/api/src",
+      "cyrLines": 19507,
+      "comment": 8143,
+      "string": 10938,
+      "bare": 360,
+      "mixed": 66,
+      "files": 282
+    },
+    {
+      "dir": "apps/web/src",
+      "cyrLines": 18861,
+      "comment": 5456,
+      "string": 9769,
+      "bare": 3522,
+      "mixed": 114,
+      "files": 361
+    },
+    {
+      "dir": "packages/shared/src",
+      "cyrLines": 1286,
+      "comment": 160,
+      "string": 1075,
+      "bare": 50,
+      "mixed": 1,
+      "files": 8
+    }
+  ],
+  "top40Files": [
+    {
+      "file": "apps/api/src/documents/renderDocument.ts",
+      "cyrLines": 1476,
+      "comment": 0,
+      "string": 1475,
+      "bare": 1,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 56868,
+      "charsBare": 18,
+      "lines": 3904
+    },
+    {
+      "file": "apps/api/src/sampleData.ts",
+      "cyrLines": 1229,
+      "comment": 84,
+      "string": 1144,
+      "bare": 0,
+      "mixed": 1,
+      "charsComment": 4092,
+      "charsString": 43143,
+      "charsBare": 6,
+      "lines": 12796
+    },
+    {
+      "file": "packages/shared/src/index.ts",
+      "cyrLines": 1056,
+      "comment": 35,
+      "string": 970,
+      "bare": 50,
+      "mixed": 1,
+      "charsComment": 1570,
+      "charsString": 24010,
+      "charsBare": 1981,
+      "lines": 8237
+    },
+    {
+      "file": "apps/api/src/sampleData_opt.ts",
+      "cyrLines": 1017,
+      "comment": 0,
+      "string": 1016,
+      "bare": 0,
+      "mixed": 1,
+      "charsComment": 0,
+      "charsString": 42912,
+      "charsBare": 6,
+      "lines": 9337
+    },
+    {
+      "file": "apps/api/src/routes/smartImports.ts",
+      "cyrLines": 910,
+      "comment": 12,
+      "string": 790,
+      "bare": 73,
+      "mixed": 35,
+      "charsComment": 521,
+      "charsString": 40642,
+      "charsBare": 2584,
+      "lines": 5944
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsImportsTab.tsx",
+      "cyrLines": 748,
+      "comment": 2,
+      "string": 518,
+      "bare": 214,
+      "mixed": 14,
+      "charsComment": 92,
+      "charsString": 11745,
+      "charsBare": 4860,
+      "lines": 4150
+    },
+    {
+      "file": "apps/web/src/DocumentsView.tsx",
+      "cyrLines": 728,
+      "comment": 15,
+      "string": 223,
+      "bare": 485,
+      "mixed": 5,
+      "charsComment": 664,
+      "charsString": 6722,
+      "charsBare": 10826,
+      "lines": 4188
+    },
+    {
+      "file": "apps/web/src/components/settings/SmartImportStudio.tsx",
+      "cyrLines": 633,
+      "comment": 0,
+      "string": 462,
+      "bare": 161,
+      "mixed": 10,
+      "charsComment": 0,
+      "charsString": 9747,
+      "charsBare": 2915,
+      "lines": 4245
+    },
+    {
+      "file": "apps/web/src/useAppLogic.tsx",
+      "cyrLines": 781,
+      "comment": 175,
+      "string": 600,
+      "bare": 6,
+      "mixed": 0,
+      "charsComment": 7941,
+      "charsString": 18755,
+      "charsBare": 181,
+      "lines": 14571
+    },
+    {
+      "file": "apps/api/src/routes/imaging.ts",
+      "cyrLines": 611,
+      "comment": 105,
+      "string": 476,
+      "bare": 27,
+      "mixed": 3,
+      "charsComment": 5074,
+      "charsString": 25570,
+      "charsBare": 365,
+      "lines": 6810
+    },
+    {
+      "file": "apps/web/src/AppHelpers.tsx",
+      "cyrLines": 571,
+      "comment": 74,
+      "string": 426,
+      "bare": 70,
+      "mixed": 1,
+      "charsComment": 3595,
+      "charsString": 9986,
+      "charsBare": 751,
+      "lines": 6159
+    },
+    {
+      "file": "apps/web/src/components/settings/LegacyMigrationStudio.tsx",
+      "cyrLines": 423,
+      "comment": 0,
+      "string": 384,
+      "bare": 29,
+      "mixed": 10,
+      "charsComment": 0,
+      "charsString": 7171,
+      "charsBare": 814,
+      "lines": 2624
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsAuditTab.tsx",
+      "cyrLines": 424,
+      "comment": 2,
+      "string": 388,
+      "bare": 24,
+      "mixed": 10,
+      "charsComment": 90,
+      "charsString": 7611,
+      "charsBare": 690,
+      "lines": 2169
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsViewHelpers.tsx",
+      "cyrLines": 343,
+      "comment": 0,
+      "string": 332,
+      "bare": 1,
+      "mixed": 10,
+      "charsComment": 0,
+      "charsString": 5877,
+      "charsBare": 153,
+      "lines": 612
+    },
+    {
+      "file": "apps/web/src/documentValidators.ts",
+      "cyrLines": 335,
+      "comment": 0,
+      "string": 335,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 11042,
+      "charsBare": 0,
+      "lines": 1739
+    },
+    {
+      "file": "apps/web/src/App.tsx",
+      "cyrLines": 354,
+      "comment": 95,
+      "string": 78,
+      "bare": 180,
+      "mixed": 1,
+      "charsComment": 4218,
+      "charsString": 1524,
+      "charsBare": 4811,
+      "lines": 4877
+    },
+    {
+      "file": "apps/api/src/routes/telegram.ts",
+      "cyrLines": 291,
+      "comment": 56,
+      "string": 235,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 3213,
+      "charsString": 10847,
+      "charsBare": 0,
+      "lines": 2883
+    },
+    {
+      "file": "apps/api/src/speech/dentalPrompt.ts",
+      "cyrLines": 211,
+      "comment": 0,
+      "string": 211,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 2869,
+      "charsBare": 0,
+      "lines": 369
+    },
+    {
+      "file": "apps/web/src/imagingUiLabels.ts",
+      "cyrLines": 200,
+      "comment": 0,
+      "string": 200,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 2860,
+      "charsBare": 0,
+      "lines": 412
+    },
+    {
+      "file": "apps/web/src/ImagingView.tsx",
+      "cyrLines": 223,
+      "comment": 31,
+      "string": 132,
+      "bare": 56,
+      "mixed": 4,
+      "charsComment": 1202,
+      "charsString": 2950,
+      "charsBare": 1349,
+      "lines": 1351
+    },
+    {
+      "file": "apps/web/src/components/settings/sources/SourcesDicomCapability.tsx",
+      "cyrLines": 195,
+      "comment": 6,
+      "string": 99,
+      "bare": 88,
+      "mixed": 2,
+      "charsComment": 246,
+      "charsString": 2363,
+      "charsBare": 1749,
+      "lines": 1695
+    },
+    {
+      "file": "apps/api/src/ai/postVisitPersonalize.ts",
+      "cyrLines": 195,
+      "comment": 11,
+      "string": 184,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 208,
+      "charsString": 13875,
+      "charsBare": 0,
+      "lines": 409
+    },
+    {
+      "file": "apps/web/src/workspaceUiLabels.ts",
+      "cyrLines": 172,
+      "comment": 2,
+      "string": 170,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 92,
+      "charsString": 1857,
+      "charsBare": 0,
+      "lines": 523
+    },
+    {
+      "file": "apps/api/src/migration/vendorProfiles.ts",
+      "cyrLines": 213,
+      "comment": 48,
+      "string": 164,
+      "bare": 0,
+      "mixed": 1,
+      "charsComment": 2221,
+      "charsString": 4093,
+      "charsBare": 1,
+      "lines": 611
+    },
+    {
+      "file": "apps/web/src/VisitView.tsx",
+      "cyrLines": 223,
+      "comment": 58,
+      "string": 85,
+      "bare": 80,
+      "mixed": 0,
+      "charsComment": 2059,
+      "charsString": 2345,
+      "charsBare": 1139,
+      "lines": 1489
+    },
+    {
+      "file": "apps/api/src/speech/gateway.ts",
+      "cyrLines": 295,
+      "comment": 131,
+      "string": 162,
+      "bare": 1,
+      "mixed": 1,
+      "charsComment": 6666,
+      "charsString": 10509,
+      "charsBare": 15,
+      "lines": 2272
+    },
+    {
+      "file": "apps/api/src/migration/tests/parsers.test.ts",
+      "cyrLines": 171,
+      "comment": 18,
+      "string": 150,
+      "bare": 2,
+      "mixed": 1,
+      "charsComment": 770,
+      "charsString": 3641,
+      "charsBare": 39,
+      "lines": 456
+    },
+    {
+      "file": "apps/api/src/scripts/seedTemplates.ts",
+      "cyrLines": 160,
+      "comment": 10,
+      "string": 150,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 146,
+      "charsString": 10877,
+      "charsBare": 0,
+      "lines": 418
+    },
+    {
+      "file": "apps/web/src/pricelistUiMeta.ts",
+      "cyrLines": 144,
+      "comment": 0,
+      "string": 144,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 1654,
+      "charsBare": 0,
+      "lines": 360
+    },
+    {
+      "file": "apps/api/src/scripts/verify-migration-engine.ts",
+      "cyrLines": 159,
+      "comment": 18,
+      "string": 141,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 823,
+      "charsString": 3394,
+      "charsBare": 0,
+      "lines": 481
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsTelegramTab.tsx",
+      "cyrLines": 134,
+      "comment": 0,
+      "string": 50,
+      "bare": 82,
+      "mixed": 2,
+      "charsComment": 0,
+      "charsString": 1110,
+      "charsBare": 2268,
+      "lines": 1127
+    },
+    {
+      "file": "apps/web/src/ctPlanningCatalog.ts",
+      "cyrLines": 124,
+      "comment": 0,
+      "string": 124,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 2382,
+      "charsBare": 0,
+      "lines": 430
+    },
+    {
+      "file": "apps/web/src/components/settings/SettingsClinicTab.tsx",
+      "cyrLines": 138,
+      "comment": 18,
+      "string": 66,
+      "bare": 53,
+      "mixed": 1,
+      "charsComment": 795,
+      "charsString": 1375,
+      "charsBare": 882,
+      "lines": 885
+    },
+    {
+      "file": "apps/api/src/migration/tests/valueNormalize.test.ts",
+      "cyrLines": 153,
+      "comment": 37,
+      "string": 115,
+      "bare": 1,
+      "mixed": 0,
+      "charsComment": 1504,
+      "charsString": 3156,
+      "charsBare": 28,
+      "lines": 445
+    },
+    {
+      "file": "apps/api/src/ai/visionAnalyzer.ts",
+      "cyrLines": 113,
+      "comment": 0,
+      "string": 113,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 0,
+      "charsString": 11041,
+      "charsBare": 0,
+      "lines": 454
+    },
+    {
+      "file": "apps/api/src/routes/system.ts",
+      "cyrLines": 133,
+      "comment": 21,
+      "string": 112,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 1111,
+      "charsString": 8881,
+      "charsBare": 0,
+      "lines": 709
+    },
+    {
+      "file": "apps/api/src/migration/tests/mapping.test.ts",
+      "cyrLines": 123,
+      "comment": 19,
+      "string": 103,
+      "bare": 1,
+      "mixed": 0,
+      "charsComment": 828,
+      "charsString": 2772,
+      "charsBare": 32,
+      "lines": 326
+    },
+    {
+      "file": "apps/web/src/tests/documentPayloadForms.test.ts",
+      "cyrLines": 128,
+      "comment": 24,
+      "string": 104,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 984,
+      "charsString": 3111,
+      "charsBare": 0,
+      "lines": 329
+    },
+    {
+      "file": "apps/api/src/documents/guards.ts",
+      "cyrLines": 113,
+      "comment": 12,
+      "string": 101,
+      "bare": 0,
+      "mixed": 0,
+      "charsComment": 620,
+      "charsString": 8802,
+      "charsBare": 0,
+      "lines": 1215
+    },
+    {
+      "file": "apps/api/src/scripts/verify-migration-http.ts",
+      "cyrLines": 144,
+      "comment": 44,
+      "string": 99,
+      "bare": 0,
+      "mixed": 1,
+      "charsComment": 2221,
+      "charsString": 1987,
+      "charsBare": 4,
+      "lines": 486
+    }
+  ],
+  "longestUnits": [
+    {
+      "len": 9972,
+      "count": 1,
+      "t": "Ты — ведущий челюстно-лицевой рентгенолог и эксперт по дентальной 2D-диагностике (визиографии). Твоя задача — провести точный, клинически обоснованный анализ пр"
+    },
+    {
+      "len": 9392,
+      "count": 1,
+      "t": "Ты — ведущий челюстно-лицевой рентгенолог и эксперт по дентальной 2D-диагностике (визиографии). Твоя задача — провести точный, клинически обоснованный анализ пр"
+    },
+    {
+      "len": 7894,
+      "count": 1,
+      "t": "} <!-- ВТОРАЯ СТРАНИЦА: Инфографика гигиены зубов --> <div class=\"full-hygiene-guide\"> <h2>✨ Ежедневный ритуал гигиены зубов</h2> <p style=\"font-size: 11px; col"
+    },
+    {
+      "len": 5312,
+      "count": 1,
+      "t": "<style> /* Page setup and general overrides */ @page { size: A4; margin: 8mm 10mm 8mm 10mm !important; } body { margin: 0 !important; padding: 0 !important; fon"
+    },
+    {
+      "len": 4753,
+      "count": 1,
+      "t": ", }}> {isCritical ? <AlertTriangle size={10} /> : <CheckCircle2 size={10} />} {code} <span style={{ opacity: 0.75, fontWeight: 400 }}>·{STATE_LABELS[state] ?? s"
+    },
+    {
+      "len": 4522,
+      "count": 1,
+      "t": "Ты — главный редактор медицинских заключений и старший рентгенолог. Твоя задача — проверить черновой отчет ИИ-ассистента по прицельному 2D-снимку (1–3 зуба) и с"
+    },
+    {
+      "len": 4235,
+      "count": 1,
+      "t": ")); return { name: sheet.name, columns: parsed.columns, rows: parsed.rows, suspectRowNumbers: findSuspectRows(parsed.rows, parsed.raggedRowNumbers) }; }); retur"
+    },
+    {
+      "len": 3891,
+      "count": 1,
+      "t": "); win.document.close(); win.print(); }; // ── Clear ─────────────────────────────────────────────────────────────── const handleClear = () => { setCurrentScan("
+    },
+    {
+      "len": 3542,
+      "count": 1,
+      "t": ", borderRadius: '12px', padding: '28px 20px', textAlign: 'center', cursor: isAnalyzing ? 'not-allowed' : 'pointer', background: isDragOver ? 'var(--teal-soft)' "
+    },
+    {
+      "len": 3078,
+      "count": 1,
+      "t": "- Здоровые зубы — это 90% вашей работы дома и 10% работы врача. - УТРО: Сначала ЗАВТРАК (до еды можно прополоскать рот водой). Чистим зубы щёткой (3-4 мин) выме"
+    },
+    {
+      "len": 2760,
+      "count": 1,
+      "t": "Вы — ведущий стоматолог-эксперт клиники DENTE. Ваша задача — проанализировать клинический план лечения пациента и составить: 1. Понятный, заботливый, убедительн"
+    },
+    {
+      "len": 1956,
+      "count": 1,
+      "t": "); } finally { database?.close(); } } /** * Выбирает таблицу, которая скорее всего содержит пациентов. * * Решение по имени и по колонкам одновременно: имя «pat"
+    },
+    {
+      "len": 1528,
+      "count": 1,
+      "t": "Вы — профессиональный стоматолог-ассистент клиники DENTE. Ваша задача — преобразовать разговорную диктовку врача по результатам приема в структурированную запис"
+    },
+    {
+      "len": 1428,
+      "count": 1,
+      "t": "~]/g, '').replace(/\\[.*?\\]\\(.*?\\)/g, ''); const utterance = new SpeechSynthesisUtterance(cleanText); utterance.lang = 'ru-RU'; utterance.rate = 0.95; utterance."
+    },
+    {
+      "len": 1060,
+      "count": 1,
+      "t": "} onClick={handleSpeak} title={isSpeaking ? 'Остановить озвучку' : (voicesReady ? 'Озвучить отчёт' : 'Загрузка голоса...')} disabled={!voicesReady && !isSpeakin"
+    },
+    {
+      "len": 975,
+      "count": 1,
+      "t": "/\\bDICOMDIR\\b|(?:sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|dexis|gendex"
+    },
+    {
+      "len": 933,
+      "count": 2,
+      "t": "/1c|1с|\\.1cd\\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\\s*офис|denta\\s*office|clinic\\s*cards|cliniccards|dental\\s*4\\s*windows|d4w|dental4windows|dent"
+    },
+    {
+      "len": 898,
+      "count": 1,
+      "t": "} Если колонка не соответствует ни одному полю, верните для неё targetField \"ignore\". ВАЖНЫЕ ОГРАНИЧЕНИЯ: - Вы НЕ видите значений колонок и не должны их предпол"
+    },
+    {
+      "len": 868,
+      "count": 1,
+      "t": "/g, '\"\"')}\"`; } /** * Открывает базу только на чтение. * * Отдельная функция, потому что вызывается из трёх мест и везде обязана * открывать одинаково: любой не"
+    },
+    {
+      "len": 864,
+      "count": 1,
+      "t": "); let offset = 0; for (;;) { const chunk = select.all(batchRows, offset) as Array<Record<string, unknown>>; if (chunk.length === 0) break; const rows = chunk.m"
+    },
+    {
+      "len": 796,
+      "count": 1,
+      "t": "'`]([^\"'`]+)[\"'`]/g; for (const file of collectFiles(path.join(apiSrc, \"routes\"), [\".ts\"])) { if (file.endsWith(\".test.ts\")) continue; const source = readFileSy"
+    },
+    {
+      "len": 744,
+      "count": 1,
+      "t": "Пациент;Телефон;Модальность;КодИсследования;КодСерии;НомерСреза;ОписаниеСерии;Дата;Путь\\nИванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;1.2.643.5.1.20260512.1;1"
+    },
+    {
+      "len": 742,
+      "count": 1,
+      "t": "/^(жалобы|жалоба|без жалоб|жалобы отрицает|повод|пациент жалуется|жалуется|пациент отмечает|отмечает|беспокоит|беспокоят|анамнез|аллергологический анамнез|аллер"
+    },
+    {
+      "len": 740,
+      "count": 1,
+      "t": "~\\[\\]]/g, '').replace(/\\n{2,}/g, '. '); const utterance = new SpeechSynthesisUtterance(cleanText); utterance.lang = 'ru-RU'; utterance.rate = 0.9; const voices "
+    },
+    {
+      "len": 708,
+      "count": 1,
+      "t": "/(?:стомат|клиник|dental|denta|dent|stom|clinic|mis|crm|пациент|patient|1c|1с|миграц|migration|стар|old|legacy).*(?:backup|backups|export|exports|archive|архив|"
+    }
+  ],
+  "mostRepeatedUnits": [
+    {
+      "count": 125,
+      "len": 15,
+      "t": "база недоступна"
+    },
+    {
+      "count": 77,
+      "len": 4,
+      "t": "Врач"
+    },
+    {
+      "count": 47,
+      "len": 3,
+      "t": "нет"
+    },
+    {
+      "count": 46,
+      "len": 6,
+      "t": "готово"
+    },
+    {
+      "count": 45,
+      "len": 7,
+      "t": "пациент"
+    },
+    {
+      "count": 38,
+      "len": 4,
+      "t": "ОПТГ"
+    },
+    {
+      "count": 36,
+      "len": 7,
+      "t": "Пациент"
+    },
+    {
+      "count": 35,
+      "len": 20,
+      "t": "Иванов Иван Иванович"
+    },
+    {
+      "count": 31,
+      "len": 4,
+      "t": "} мм"
+    },
+    {
+      "count": 30,
+      "len": 7,
+      "t": "Телефон"
+    },
+    {
+      "count": 30,
+      "len": 6,
+      "t": "Иванов"
+    },
+    {
+      "count": 30,
+      "len": 15,
+      "t": "резервная копия"
+    },
+    {
+      "count": 28,
+      "len": 4,
+      "t": "врач"
+    },
+    {
+      "count": 28,
+      "len": 9,
+      "t": "Документы"
+    },
+    {
+      "count": 27,
+      "len": 4,
+      "t": "КЛКТ"
+    },
+    {
+      "count": 24,
+      "len": 3,
+      "t": "ФИО"
+    },
+    {
+      "count": 24,
+      "len": 42,
+      "t": "✏️ Ручная корректировка полей (развернуть)"
+    },
+    {
+      "count": 23,
+      "len": 6,
+      "t": "кариес"
+    },
+    {
+      "count": 23,
+      "len": 7,
+      "t": "Терапия"
+    },
+    {
+      "count": 23,
+      "len": 4,
+      "t": "стоп"
+    },
+    {
+      "count": 22,
+      "len": 13,
+      "t": "Дата рождения"
+    },
+    {
+      "count": 22,
+      "len": 9,
+      "t": "коффердам"
+    },
+    {
+      "count": 21,
+      "len": 13,
+      "t": "Администратор"
+    },
+    {
+      "count": 21,
+      "len": 11,
+      "t": "Иванов Иван"
+    },
+    {
+      "count": 20,
+      "len": 7,
+      "t": "пульпит"
+    },
+    {
+      "count": 20,
+      "len": 6,
+      "t": "Отмена"
+    },
+    {
+      "count": 20,
+      "len": 17,
+      "t": "нужно подключение"
+    },
+    {
+      "count": 20,
+      "len": 14,
+      "t": "нужна выгрузка"
+    },
+    {
+      "count": 20,
+      "len": 13,
+      "t": "ручной разбор"
+    },
+    {
+      "count": 20,
+      "len": 15,
+      "t": "номер источника"
+    },
+    {
+      "count": 19,
+      "len": 15,
+      "t": "Лечение кариеса"
+    },
+    {
+      "count": 19,
+      "len": 7,
+      "t": "телефон"
+    },
+    {
+      "count": 19,
+      "len": 18,
+      "t": "Конфиденциальность"
+    },
+    {
+      "count": 19,
+      "len": 4,
+      "t": "План"
+    },
+    {
+      "count": 19,
+      "len": 5,
+      "t": "Текст"
+    },
+    {
+      "count": 18,
+      "len": 13,
+      "t": "Удаление зуба"
+    },
+    {
+      "count": 18,
+      "len": 10,
+      "t": "Получатель"
+    },
+    {
+      "count": 18,
+      "len": 16,
+      "t": "внешний просмотр"
+    },
+    {
+      "count": 18,
+      "len": 13,
+      "t": "архив снимков"
+    },
+    {
+      "count": 18,
+      "len": 10,
+      "t": "Расписание"
+    }
+  ],
+  "distinctUnitsByBucket": [
+    {
+      "bucket": "web-ui-surface",
+      "distinctUnits": 7550
+    },
+    {
+      "bucket": "test-fixture",
+      "distinctUnits": 2770
+    },
+    {
+      "bucket": "competitor-import-pattern",
+      "distinctUnits": 2528
+    },
+    {
+      "bucket": "legal-document-template",
+      "distinctUnits": 1915
+    },
+    {
+      "bucket": "api-route-message",
+      "distinctUnits": 1553
+    },
+    {
+      "bucket": "seed-demo-data",
+      "distinctUnits": 1276
+    },
+    {
+      "bucket": "llm-prompt",
+      "distinctUnits": 1040
+    },
+    {
+      "bucket": "shared-enum-dictionary",
+      "distinctUnits": 1003
+    },
+    {
+      "bucket": "api-other",
+      "distinctUnits": 668
+    },
+    {
+      "bucket": "web-ui-dictionary",
+      "distinctUnits": 627
+    },
+    {
+      "bucket": "api-script-cli",
+      "distinctUnits": 420
+    }
+  ],
+  "distinctUserFacingUnits": 10314,
+  "userFacingUnitStats": {
+    "count": 10314,
+    "totalChars": 366534,
+    "medianChars": 22,
+    "under30chars": 6443,
+    "over120chars": 265
+  },
+  "roleBuckets": [
+    {
+      "bucket": "web-ui-surface",
+      "files": 297,
+      "translatableLines": 9298,
+      "commentLines": 4625,
+      "charsTranslatable": 227500
+    },
+    {
+      "bucket": "competitor-import-pattern",
+      "files": 31,
+      "translatableLines": 3434,
+      "commentLines": 1758,
+      "charsTranslatable": 105452
+    },
+    {
+      "bucket": "test-fixture",
+      "files": 139,
+      "translatableLines": 3150,
+      "commentLines": 2266,
+      "charsTranslatable": 90134
+    },
+    {
+      "bucket": "seed-demo-data",
+      "files": 6,
+      "translatableLines": 2361,
+      "commentLines": 155,
+      "charsTranslatable": 98132
+    },
+    {
+      "bucket": "legal-document-template",
+      "files": 27,
+      "translatableLines": 2207,
+      "commentLines": 229,
+      "charsTranslatable": 86009
+    },
+    {
+      "bucket": "api-route-message",
+      "files": 49,
+      "translatableLines": 1498,
+      "commentLines": 1658,
+      "charsTranslatable": 70762
+    },
+    {
+      "bucket": "llm-prompt",
+      "files": 19,
+      "translatableLines": 1181,
+      "commentLines": 416,
+      "charsTranslatable": 65572
+    },
+    {
+      "bucket": "shared-enum-dictionary",
+      "files": 3,
+      "translatableLines": 1052,
+      "commentLines": 151,
+      "charsTranslatable": 26708
+    },
+    {
+      "bucket": "web-ui-dictionary",
+      "files": 5,
+      "translatableLines": 716,
+      "commentLines": 2,
+      "charsTranslatable": 11068
+    },
+    {
+      "bucket": "api-other",
+      "files": 65,
+      "translatableLines": 638,
+      "commentLines": 2286,
+      "charsTranslatable": 20005
+    },
+    {
+      "bucket": "api-script-cli",
+      "files": 10,
+      "translatableLines": 360,
+      "commentLines": 213,
+      "charsTranslatable": 8043
+    }
+  ]
+}

@@ -1,0 +1,4217 @@
+{
+  "filesParsed": 225,
+  "functionsIndexed": 2815,
+  "writerFunctions": 390,
+  "closureRounds": 4,
+  "routesFound": 291,
+  "readRoutes": 116,
+  "stateChangingReads": [
+    {
+      "verb": "GET",
+      "routePath": "/api/ai/recognition-jobs",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 62,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/analytics/dashboard",
+      "file": "apps/api/src/routes/analytics.ts",
+      "line": 24,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/audit/logs",
+      "file": "apps/api/src/routes/audit.ts",
+      "line": 38,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/auth/status",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 244,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/auth/user/me",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 643,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/clinical/tasks",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 160,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/single-session-enforcements",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 269,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/dadata-addresses",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 280,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/hr/recent-patients",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 312,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireStaffIdentity"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/crm/custom-task-types",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 356,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/landing-field-mappings",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 389,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/crm/custom-crm-task-types",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 400,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/dadata-geocoded-addresses",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 411,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/analytics/lost-patients-filters",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 432,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/variables",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 202,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/templates",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 211,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/settings",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 355,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/consents/:patientId",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 429,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/outbox",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 519,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 731,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns/:campaignId/preview",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 795,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns/:campaignId/progress",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 847,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/gateway-status",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 896,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/dashboard",
+      "file": "apps/api/src/routes/dashboard.ts",
+      "line": 6,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/schedule/day-confirmations",
+      "file": "apps/api/src/routes/dayConfirmations.ts",
+      "line": 102,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/diaries/visit/:visitId",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 406,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/diaries/:id/revisions",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 426,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/dicomweb/studies/:studyUid/series/:seriesUid/instances/:instanceUid",
+      "file": "apps/api/src/routes/dicomweb.ts",
+      "line": 285,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/audit-facts",
+      "file": "apps/api/src/routes/documents/auditFacts.ts",
+      "line": 59,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/routes/documents.ts#buildDocumentAuditFacts"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/html",
+      "file": "apps/api/src/routes/documents/html.ts",
+      "line": 60,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/pdf",
+      "file": "apps/api/src/routes/documents/pdf.ts",
+      "line": 63,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot",
+        "apps/api/src/routes/documents.ts#renderIssuedHtmlToPdf"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/treatment-plan-pdf",
+      "file": "apps/api/src/routes/documents/pdf.ts",
+      "line": 109,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot",
+        "apps/api/src/routes/documents.ts#renderIssuedHtmlToPdf"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/egisz/multiple-diagnoses",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 163,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/egisz/visits/:visitId/cda",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 192,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/attachments/:attachmentId/download",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 86,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/files/visits/:visitId/attachments",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 120,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 119,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family/:familyGroupId",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 161,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family/patient/:patientId",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 191,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/dicom/workbench-bundles",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6366,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6507,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/viewer-session",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6520,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/imagingQuery.ts#getOrCreateImagingViewerSession"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/preview.svg",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6694,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/file",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6729,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/planning/load",
+      "file": "apps/api/src/routes/imaging_planning.ts",
+      "line": 89,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/insurance/contracts",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 17,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/insurance/contracts/:contractId",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 40,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 48,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId/rules/:serviceId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 362,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/clinical/lab-orders",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 29,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/leads",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 35,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/max/settings",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 99,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/max/status",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 208,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 147,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 154,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId/quarantine",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 214,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId/reconciliation.csv",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 232,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 451,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId/reconciliation",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 464,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId/reconciliation.csv",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 509,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/worker/status",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 546,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/tooth-states",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 213,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/treatment-plans",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 360,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/duplicates",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 64,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/duplicates",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 80,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/recall-candidates",
+      "file": "apps/api/src/routes/patientRecall.ts",
+      "line": 44,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 120,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/communication-timelines",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 256,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/archive-status",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 279,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/me",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 568,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireAuthTokenSecret"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/documents/:documentId/html",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 636,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireAuthTokenSecret",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/p/:code",
+      "file": "apps/api/src/routes/publicAppointmentActions.ts",
+      "line": 260,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/publicAppointmentActions.ts#handle"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/revenue",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 105,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/doctors",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 112,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/chairs",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 119,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/appointments",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 129,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/reminder-effect",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 140,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/patient-flow",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 147,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/services",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 154,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/schedule-load",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 161,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/receivables",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 173,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/summary",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 192,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/clinic",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 324,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/preferences",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 331,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/sterilization/logs",
+      "file": "apps/api/src/routes/sterilization.ts",
+      "line": 17,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/persistence/export",
+      "file": "apps/api/src/routes/system.ts",
+      "line": 682,
+      "inlineWrites": [
+        "drizzle: insert(audit_events) @apps/api/src/routes/system.ts:686"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2648,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status/:organizationId",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2650,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status/:organizationId/:botConfigId",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2661,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/telegram",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2678,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/link-codes",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2795,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/sampleData.ts#buildDenteTelegramLinkCodeList"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/templates",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 14,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId",
+        "apps/api/src/scripts/seedTemplates.ts#ensureClinicalTemplatesSeeded"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/templates/:id",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 42,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/odontogram/tooth-history/:patientId/:toothId",
+      "file": "apps/api/src/routes/toothHistory.ts",
+      "line": 16,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/visits/:visitId/draft/autosave",
+      "file": "apps/api/src/routes/visits.ts",
+      "line": 78,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/waitlist",
+      "file": "apps/api/src/routes/waitlist.ts",
+      "line": 33,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/schedule/freed-slots",
+      "file": "apps/api/src/routes/waitlistMatches.ts",
+      "line": 40,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/appointments/:appointmentId/waitlist-matches",
+      "file": "apps/api/src/routes/waitlistMatches.ts",
+      "line": 125,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/whatsapp/settings",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 139,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/whatsapp/status",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 249,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/workspace/profile",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 504,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/workspace/chairs",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 518,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/xray/scans",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 206,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/xray/scans/:id",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 227,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    }
+  ],
+  "allRoutes": [
+    {
+      "verb": "GET",
+      "routePath": "/api/ai/recognition-jobs",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 62,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ai/recognition-jobs",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 76,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId",
+        "apps/api/src/db/aiQuery.ts#createAiRecognitionJobInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ai/visit-note-draft",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 129,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId",
+        "apps/api/src/ai/visitDraft.ts#buildVisitDraftFromTranscript"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ai/treatment-plan-personalize",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 158,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/ai/treatmentPlanPersonalize.ts#personalizeTreatmentPlan"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ai/post-visit-personalize",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 171,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ai/parse-dictation",
+      "file": "apps/api/src/routes/ai.ts",
+      "line": 190,
+      "inlineWrites": [
+        "drizzle: insert(imaging_annotations) @apps/api/src/routes/ai.ts:235"
+      ],
+      "calledWriters": [
+        "apps/api/src/ai/dictationParser.ts#parseDictationWithLLM"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/analytics/dashboard",
+      "file": "apps/api/src/routes/analytics.ts",
+      "line": 24,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/audit/logs",
+      "file": "apps/api/src/routes/audit.ts",
+      "line": 38,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/clinic/login",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 80,
+      "inlineWrites": [
+        "drizzle: insert(audit_events) @apps/api/src/routes/auth.ts:158"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/staff/unlock",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 174,
+      "inlineWrites": [
+        "drizzle: insert(audit_events) @apps/api/src/routes/auth.ts:221"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/auth/status",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 244,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/clinic/set-password",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 277,
+      "inlineWrites": [
+        "drizzle: update(organizations) @apps/api/src/routes/auth.ts:319",
+        "drizzle: insert(audit_events) @apps/api/src/routes/auth.ts:321"
+      ],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#getRequestIdentity"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/staff/set-pin",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 337,
+      "inlineWrites": [
+        "drizzle: update(users) @apps/api/src/routes/auth.ts:382",
+        "drizzle: insert(audit_events) @apps/api/src/routes/auth.ts:385"
+      ],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#getRequestIdentity"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/setup/init",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 399,
+      "inlineWrites": [
+        "drizzle: insert(organizations) @apps/api/src/routes/auth.ts:423",
+        "drizzle: insert(users) @apps/api/src/routes/auth.ts:443"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/register",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 466,
+      "inlineWrites": [
+        "drizzle: insert(organizations) @apps/api/src/routes/auth.ts:489",
+        "drizzle: insert(users) @apps/api/src/routes/auth.ts:491"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/login",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 510,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/invites/create",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 567,
+      "inlineWrites": [
+        "drizzle: insert(user_invitations) @apps/api/src/routes/auth.ts:581"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/invites/accept",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 594,
+      "inlineWrites": [
+        "drizzle: update(user_invitations) @apps/api/src/routes/auth.ts:609",
+        "drizzle: insert(users) @apps/api/src/routes/auth.ts:621",
+        "drizzle: update(user_invitations) @apps/api/src/routes/auth.ts:632"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/auth/user/me",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 643,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/user/update-password",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 669,
+      "inlineWrites": [
+        "drizzle: update(users) @apps/api/src/routes/auth.ts:689"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/auth/user/update-pin",
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 695,
+      "inlineWrites": [
+        "drizzle: update(users) @apps/api/src/routes/auth.ts:715"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/billing/payments",
+      "file": "apps/api/src/routes/billing.ts",
+      "line": 179,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId",
+        "apps/api/src/db/billingQuery.ts#createPaymentInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/clinical/rules/evaluate",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 46,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/clinical/rules",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 75,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/clinicalQuery.ts#createClinicalRuleInDb"
+      ]
+    },
+    {
+      "verb": "PATCH",
+      "routePath": "/api/clinical/rules/:ruleId",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 87,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/clinicalQuery.ts#updateClinicalRuleInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/clinical/phase-completions",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 109,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/clinical/tasks",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 160,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/single-session-enforcements",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 269,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/dadata-addresses",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 280,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/hr/recent-patients",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 312,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireStaffIdentity"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/hr/recent-patients",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 329,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireStaffIdentity",
+        "apps/api/src/db/recentPatientHistoryQuery.ts#recordPatientViewInDb (dynamic import)"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/crm/custom-task-types",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 356,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/landing-field-mappings",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 389,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/crm/custom-crm-task-types",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 400,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/integrations/dadata-geocoded-addresses",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 411,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/analytics/lost-patients-filters",
+      "file": "apps/api/src/routes/clinical.ts",
+      "line": 432,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/receipts/smsru",
+      "file": "apps/api/src/routes/communicationReceipts.ts",
+      "line": 64,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/services/communications/deliveryReceipts.ts#applyReceipts"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/tasks/complete",
+      "file": "apps/api/src/routes/communications.ts",
+      "line": 13,
+      "inlineWrites": [
+        "drizzle: update(communication_tasks) @apps/api/src/routes/communications.ts:35",
+        "drizzle: insert(communication_events) @apps/api/src/routes/communications.ts:43"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/variables",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 202,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/templates",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 211,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/templates",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 237,
+      "inlineWrites": [
+        "drizzle: insert(communication_templates) @apps/api/src/routes/communicationsOutbox.ts:254"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "PATCH",
+      "routePath": "/api/communications/templates/:templateId",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 272,
+      "inlineWrites": [
+        "drizzle: update(communication_templates) @apps/api/src/routes/communicationsOutbox.ts:299"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/templates/preview",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 317,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/settings",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 355,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/communications/settings",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 362,
+      "inlineWrites": [
+        "drizzle: insert(communication_settings) @apps/api/src/routes/communicationsOutbox.ts:416"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/consents/:patientId",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 429,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/communications/consents/:patientId",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 463,
+      "inlineWrites": [
+        "drizzle: insert(patient_communication_consents) @apps/api/src/routes/communicationsOutbox.ts:485"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/outbox",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 519,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/outbox",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 562,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/dispatcher.ts#enqueueMessage"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/outbox/:outboxId/cancel",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 635,
+      "inlineWrites": [
+        "drizzle: update(communication_outbox) @apps/api/src/routes/communicationsOutbox.ts:645"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/outbox/:outboxId/retry",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 666,
+      "inlineWrites": [
+        "drizzle: update(communication_outbox) @apps/api/src/routes/communicationsOutbox.ts:675"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/outbox/dispatch",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 700,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/dispatcher.ts#dispatchDueMessages"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/reminders/run",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 720,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/appointmentReminders.ts#scheduleAppointmentReminders"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 731,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/campaigns",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 760,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/campaigns.ts#createCampaign"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns/:campaignId/preview",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 795,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/campaigns/:campaignId/launch",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 810,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/campaigns.ts#launchCampaign"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/communications/campaigns/:campaignId/cancel",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 831,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/campaigns.ts#cancelCampaign"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/campaigns/:campaignId/progress",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 847,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/communications/gateway-status",
+      "file": "apps/api/src/routes/communicationsOutbox.ts",
+      "line": 896,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/dashboard",
+      "file": "apps/api/src/routes/dashboard.ts",
+      "line": 6,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/schedule/day-confirmations",
+      "file": "apps/api/src/routes/dayConfirmations.ts",
+      "line": 102,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/diaries/visit/:visitId",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 406,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/diaries/:id/revisions",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 426,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/diaries",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 453,
+      "inlineWrites": [
+        "drizzle: update(visit_diaries) @apps/api/src/routes/diary.ts:496",
+        "drizzle: insert(visit_diaries) @apps/api/src/routes/diary.ts:539"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId",
+        "apps/api/src/routes/diary.ts#runDiarySigningCeremony"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/diaries/:id/lock",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 603,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId",
+        "apps/api/src/routes/diary.ts#runDiarySigningCeremony"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/diaries/:id/revise",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 668,
+      "inlineWrites": [
+        "drizzle: insert(visit_diary_revisions) @apps/api/src/routes/diary.ts:734",
+        "drizzle: update(visit_diaries) @apps/api/src/routes/diary.ts:745"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/diaries/sync-progress",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 780,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/treatment-plans/:planId/signature",
+      "file": "apps/api/src/routes/diary.ts",
+      "line": 786,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/dicomweb/studies/:studyUid/series/:seriesUid/instances/:instanceUid",
+      "file": "apps/api/src/routes/dicomweb.ts",
+      "line": 285,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/audit-facts",
+      "file": "apps/api/src/routes/documents/auditFacts.ts",
+      "line": 59,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/routes/documents.ts#buildDocumentAuditFacts"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/documents",
+      "file": "apps/api/src/routes/documents/create.ts",
+      "line": 60,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#createGeneratedDocumentInDb"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/html",
+      "file": "apps/api/src/routes/documents/html.ts",
+      "line": 60,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/documents/:id/issue",
+      "file": "apps/api/src/routes/documents/issue.ts",
+      "line": 55,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#issueGeneratedDocumentInDb",
+        "apps/api/src/security/identity.ts#getRequestIdentity"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/pdf",
+      "file": "apps/api/src/routes/documents/pdf.ts",
+      "line": 63,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot",
+        "apps/api/src/routes/documents.ts#renderIssuedHtmlToPdf"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/documents/:id/treatment-plan-pdf",
+      "file": "apps/api/src/routes/documents/pdf.ts",
+      "line": 109,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot",
+        "apps/api/src/routes/documents.ts#renderIssuedHtmlToPdf"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/documents/:id/sign",
+      "file": "apps/api/src/routes/documents/sign.ts",
+      "line": 8,
+      "inlineWrites": [
+        "drizzle: update(generated_documents) @apps/api/src/routes/documents/sign.ts:94"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/documents/:id/sign-ukep",
+      "file": "apps/api/src/routes/documents/signUkep.ts",
+      "line": 8,
+      "inlineWrites": [
+        "drizzle: update(generated_documents) @apps/api/src/routes/documents/signUkep.ts:90"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/documents/:id/void",
+      "file": "apps/api/src/routes/documents/void.ts",
+      "line": 59,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/documentQuery.ts#voidGeneratedDocumentInDb",
+        "apps/api/src/security/identity.ts#getRequestIdentity"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/clinical/egisz/integration-status",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 79,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/clinical/egisz/validate-doctor-snils",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 123,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/egisz/multiple-diagnoses",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 163,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/egisz/visits/:visitId/cda",
+      "file": "apps/api/src/routes/egisz.ts",
+      "line": 192,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/:patientId/attachments",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 24,
+      "inlineWrites": [
+        "fs: createWriteStream() @apps/api/src/routes/files.ts:60",
+        "drizzle: insert(attachments) @apps/api/src/routes/files.ts:67"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/attachments/:attachmentId/download",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 86,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/files/visits/:visitId/attachments",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 120,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/files/visits/:visitId/attachments",
+      "file": "apps/api/src/routes/files.ts",
+      "line": 143,
+      "inlineWrites": [
+        "fs: createWriteStream() @apps/api/src/routes/files.ts:160",
+        "drizzle: insert(attachments) @apps/api/src/routes/files.ts:165"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 119,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family/:familyGroupId",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 161,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/finance/family/patient/:patientId",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 191,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/finance/family",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 233,
+      "inlineWrites": [
+        "drizzle: insert(family_groups) @apps/api/src/routes/finance_family.ts:271"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/finance/family/:id",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 291,
+      "inlineWrites": [
+        "drizzle: update(family_groups) @apps/api/src/routes/finance_family.ts:330"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/finance/family/:id",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 351,
+      "inlineWrites": [
+        "drizzle: delete(family_groups) @apps/api/src/routes/finance_family.ts:373"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/finance/family/pay",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 394,
+      "inlineWrites": [
+        "drizzle: update(family_groups) @apps/api/src/routes/finance_family.ts:477",
+        "drizzle: insert(payments) @apps/api/src/routes/finance_family.ts:483"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/finance/family/topup",
+      "file": "apps/api/src/routes/finance_family.ts",
+      "line": 526,
+      "inlineWrites": [
+        "drizzle: update(family_groups) @apps/api/src/routes/finance_family.ts:608",
+        "drizzle: insert(payments) @apps/api/src/routes/finance_family.ts:616"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/visiograph-ai",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6224,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/ai/visiograph.ts#analyzeVisiographImage"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/imports/preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6239,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/series-preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6257,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicomweb/check",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6275,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/viewer-launch-manifest",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6287,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/viewer-tool-state",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6299,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/render-cache-plan",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6311,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/workstation-readiness",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6323,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/viewer-workbench-manifest",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6335,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/workbench-bundles",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6347,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/imagingQuery.ts#saveDicomWorkbenchBundle"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/dicom/workbench-bundles",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6366,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/local-folder-discovery",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6388,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/local-organizer/scan-preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6400,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/folder-series-preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6412,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/first-frame-preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6427,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/dicom/folder-workup-plan",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6439,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/imports/commit",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6454,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/routes/imaging.ts#commitImagingImport"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/folders/scan-preview",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6472,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6507,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/viewer-session",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6520,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/imagingQuery.ts#getOrCreateImagingViewerSession"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/imaging/studies/:id/viewer-session",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6538,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/imagingQuery.ts#saveImagingViewerSession"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/studies",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6565,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/db/imagingQuery.ts#createImagingStudyInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/studies/:id/analyze",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6614,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/ai/visionAnalyzer.ts#analyzeImagingStudy",
+        "apps/api/src/db/imagingQuery.ts#updateImagingStudyAiSummaryInDb"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/preview.svg",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6694,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/studies/:id/file",
+      "file": "apps/api/src/routes/imaging.ts",
+      "line": 6729,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imaging/planning/save",
+      "file": "apps/api/src/routes/imaging_planning.ts",
+      "line": 23,
+      "inlineWrites": [
+        "drizzle: update(patient_ct_plannings) @apps/api/src/routes/imaging_planning.ts:61",
+        "drizzle: insert(patient_ct_plannings) @apps/api/src/routes/imaging_planning.ts:71"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/imaging/planning/load",
+      "file": "apps/api/src/routes/imaging_planning.ts",
+      "line": 89,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/patients/intake",
+      "file": "apps/api/src/routes/imports.ts",
+      "line": 323,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/patients/preview",
+      "file": "apps/api/src/routes/imports.ts",
+      "line": 337,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/patients/commit",
+      "file": "apps/api/src/routes/imports.ts",
+      "line": 351,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/routes/imports.ts#commitPatientImport"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/ingestion/extract",
+      "file": "apps/api/src/routes/ingestion.ts",
+      "line": 30,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/insurance/contracts",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 17,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/insurance/contracts/:contractId",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 40,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/insurance/contracts",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 68,
+      "inlineWrites": [
+        "drizzle: insert(insurance_contracts) @apps/api/src/routes/insurance.ts:103"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/insurance/contracts/:contractId",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 124,
+      "inlineWrites": [
+        "drizzle: update(insurance_contracts) @apps/api/src/routes/insurance.ts:171"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/insurance/contracts/:contractId",
+      "file": "apps/api/src/routes/insurance.ts",
+      "line": 202,
+      "inlineWrites": [
+        "drizzle: update(insurance_contracts) @apps/api/src/routes/insurance.ts:227"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 48,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/:organizationId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 74,
+      "inlineWrites": [
+        "drizzle: insert(inventory_items) @apps/api/src/routes/inventory.ts:130"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PATCH",
+      "routePath": "/:organizationId/:itemId/stock",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 152,
+      "inlineWrites": [
+        "drizzle: update(inventory_items) @apps/api/src/routes/inventory.ts:199",
+        "drizzle: insert(inventory_transactions) @apps/api/src/routes/inventory.ts:215"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/:organizationId/:itemId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 234,
+      "inlineWrites": [
+        "drizzle: update(inventory_items) @apps/api/src/routes/inventory.ts:304"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/:organizationId/:itemId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 330,
+      "inlineWrites": [
+        "drizzle: delete(inventory_items) @apps/api/src/routes/inventory.ts:357"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId/rules/:serviceId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 362,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/:organizationId/rules",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 419,
+      "inlineWrites": [
+        "drizzle: update(procedure_material_rules) @apps/api/src/routes/inventory.ts:487",
+        "drizzle: insert(procedure_material_rules) @apps/api/src/routes/inventory.ts:497"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/:organizationId/rules/:ruleId",
+      "file": "apps/api/src/routes/inventory.ts",
+      "line": 510,
+      "inlineWrites": [
+        "drizzle: delete(procedure_material_rules) @apps/api/src/routes/inventory.ts:543"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/clinical/lab-orders",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 29,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/clinical/lab-orders",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 78,
+      "inlineWrites": [
+        "drizzle: insert(lab_orders) @apps/api/src/routes/lab.ts:136"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/clinical/lab-orders/:id",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 174,
+      "inlineWrites": [
+        "drizzle: update(lab_orders) @apps/api/src/routes/lab.ts:217"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/clinical/lab-orders/:id",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 251,
+      "inlineWrites": [
+        "drizzle: delete(lab_orders) @apps/api/src/routes/lab.ts:261"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/portal/lab-order/:token",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 277,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/portal/lab-order/:token/status",
+      "file": "apps/api/src/routes/lab.ts",
+      "line": 302,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/db/labQuery.ts#updateLabOrderStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/leads",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 35,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/leads",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 50,
+      "inlineWrites": [
+        "drizzle: insert(crm_leads) @apps/api/src/routes/leads.ts:59"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PATCH",
+      "routePath": "/api/leads/:id/status",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 70,
+      "inlineWrites": [
+        "drizzle: update(crm_leads) @apps/api/src/routes/leads.ts:91"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/leads/:id",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 106,
+      "inlineWrites": [
+        "drizzle: update(crm_leads) @apps/api/src/routes/leads.ts:117"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/leads/:id",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 132,
+      "inlineWrites": [
+        "drizzle: delete(crm_leads) @apps/api/src/routes/leads.ts:142"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/leads/:id/convert",
+      "file": "apps/api/src/routes/leads.ts",
+      "line": 156,
+      "inlineWrites": [
+        "drizzle: insert(patients) @apps/api/src/routes/leads.ts:203",
+        "drizzle: update(crm_leads) @apps/api/src/routes/leads.ts:230"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/db/appointmentsQuery.ts#createAppointmentInDb"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/max/settings",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 99,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/max/settings",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 140,
+      "inlineWrites": [
+        "drizzle: update(dente_max_bot_configs) @apps/api/src/routes/max.ts:183",
+        "drizzle: insert(dente_max_bot_configs) @apps/api/src/routes/max.ts:188"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/max/status",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 208,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/max/webhook",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 253,
+      "inlineWrites": [
+        "drizzle: insert(messenger_inbound_events) @apps/api/src/routes/max.ts:281"
+      ],
+      "calledWriters": [
+        "apps/api/src/services/messengerIngestion.ts#processInboundEvents"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/max/send",
+      "file": "apps/api/src/routes/max.ts",
+      "line": 300,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/analyze",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 100,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/migration/engine.ts#analyzeSource"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/run",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 126,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/identity.ts#getRequestIdentity",
+        "apps/api/src/migration/engine.ts#runMigration"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 147,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 154,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId/quarantine",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 214,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/runs/:runId/reconciliation.csv",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 232,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/rollback",
+      "file": "apps/api/src/routes/migration.ts",
+      "line": 277,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/identity.ts#getRequestIdentity",
+        "apps/api/src/migration/engine.ts#rollbackRun"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/upload",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 199,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/migration/uploadStore.ts#storeUploadStream",
+        "apps/api/src/migration/streamStage.ts#detectSourceShape",
+        "apps/api/src/migration/uploadStore.ts#deleteUpload",
+        "apps/api/src/security/identity.ts#getRequestIdentity",
+        "apps/api/src/migration/runStore.ts#createRun"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/:runId/map",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 316,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/migration/phases.ts#mapRunPhase"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/:runId/stage",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 360,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/migration/phases.ts#stageRunPhase"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/:runId/execute",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 391,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/migration/runStore.ts#enqueueRun"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 451,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId/reconciliation",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 464,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/:runId/reconciliation.csv",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 509,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/migration/worker/status",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 546,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/discover",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 566,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/migration/dicom/inspect",
+      "file": "apps/api/src/routes/migrationRuns.ts",
+      "line": 643,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/tooth-states",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 213,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/:patientId/tooth-states/batch",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 237,
+      "inlineWrites": [
+        "drizzle: delete(tooth_states) @apps/api/src/routes/odontogram.ts:299",
+        "drizzle: insert(tooth_state_history) @apps/api/src/routes/odontogram.ts:316",
+        "drizzle: insert(tooth_states) @apps/api/src/routes/odontogram.ts:331"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId",
+        "apps/api/src/security/identity.ts#getRequestIdentity"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/treatment-plans",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 360,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/:patientId/treatment-plans",
+      "file": "apps/api/src/routes/odontogram.ts",
+      "line": 379,
+      "inlineWrites": [
+        "drizzle: update(treatment_plans) @apps/api/src/routes/odontogram.ts:438",
+        "drizzle: delete(treatment_plan_items_new) @apps/api/src/routes/odontogram.ts:456",
+        "drizzle: insert(treatment_plans) @apps/api/src/routes/odontogram.ts:460",
+        "drizzle: insert(treatment_plan_items_new) @apps/api/src/routes/odontogram.ts:479"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/duplicates",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 64,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/duplicates",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 80,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/duplicates/merge",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 99,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/security/identity.ts#getRequestIdentity",
+        "apps/api/src/services/patients/patientMerge.ts#mergePatients"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/duplicates/dismiss",
+      "file": "apps/api/src/routes/patientDuplicates.ts",
+      "line": 133,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/security/identity.ts#getRequestIdentity",
+        "apps/api/src/services/patients/patientMerge.ts#dismissDuplicatePair"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/recall-candidates",
+      "file": "apps/api/src/routes/patientRecall.ts",
+      "line": 44,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/recall-candidates/invite",
+      "file": "apps/api/src/routes/patientRecall.ts",
+      "line": 67,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalMutationContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown",
+        "apps/api/src/services/communications/dispatcher.ts#enqueueMessage"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 120,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 139,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/patientsQuery.ts#createPatientInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/patients/:patientId",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 163,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/patientsQuery.ts#updatePatientInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/patients/:patientId/administrative-profile",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 199,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/patientsQuery.ts#updatePatientAdministrativeProfileInDb"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/communication-timelines",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 256,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/patients/:patientId/archive-status",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 279,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/patients/:patientId/archive-status",
+      "file": "apps/api/src/routes/patients.ts",
+      "line": 292,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts#setPatientArchiveStatusInDb (dynamic import)"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/auth/send-otp",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 250,
+      "inlineWrites": [
+        "drizzle: delete(portal_otp_codes) @apps/api/src/routes/portal.ts:327",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:343",
+        "drizzle: insert(portal_otp_codes) @apps/api/src/routes/portal.ts:356",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:380",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:411",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:442"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/auth/verify-otp",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 451,
+      "inlineWrites": [
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:506",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:516",
+        "drizzle: update(portal_otp_codes) @apps/api/src/routes/portal.ts:538"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireAuthTokenSecret"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/me",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 568,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireAuthTokenSecret"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/documents/:documentId/html",
+      "file": "apps/api/src/routes/portal.ts",
+      "line": 636,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireAuthTokenSecret",
+        "apps/api/src/db/documentQuery.ts#readIssuedDocumentSnapshot"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/pricelist/analyze",
+      "file": "apps/api/src/routes/pricelist.ts",
+      "line": 26,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId",
+        "apps/api/src/pricelist/analyzer.ts#analyzePricelist"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/p/:code",
+      "file": "apps/api/src/routes/publicAppointmentActions.ts",
+      "line": 260,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/publicAppointmentActions.ts#handle"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId/doctors",
+      "file": "apps/api/src/routes/publicBooking.ts",
+      "line": 248,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/:organizationId/slots/:doctorId",
+      "file": "apps/api/src/routes/publicBooking.ts",
+      "line": 278,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/:organizationId/book",
+      "file": "apps/api/src/routes/publicBooking.ts",
+      "line": 396,
+      "inlineWrites": [
+        "drizzle: insert(patients) @apps/api/src/routes/publicBooking.ts:565",
+        "drizzle: insert(appointments) @apps/api/src/routes/publicBooking.ts:578"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/revenue",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 105,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/doctors",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 112,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/chairs",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 119,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/appointments",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 129,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/reminder-effect",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 140,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/patient-flow",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 147,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/services",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 154,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/schedule-load",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 161,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/receivables",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 173,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/reports/summary",
+      "file": "apps/api/src/routes/reports.ts",
+      "line": 192,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/reports.ts#scopeFor"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/appointments",
+      "file": "apps/api/src/routes/schedule.ts",
+      "line": 167,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/appointmentsQuery.ts#createAppointmentInDb"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/clinic",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 324,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/preferences",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 331,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/preferences",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 338,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#saveUiPreferencesInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/clinic/mode",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 351,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateClinicModeInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/clinic/profile",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 363,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateClinicProfileInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/staff",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 379,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#createStaffMemberInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/staff/:staffId/credentials",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 394,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateStaffCredentialsInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/staff/:staffId/working-hours",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 420,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateStaffWorkingHoursInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/staff/:staffId",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 455,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateStaffMemberProfileInDb"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/settings/staff/:staffId",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 498,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#deactivateStaffMemberInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/chairs",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 525,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#createChairInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/chairs/:chairId/working-hours",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 538,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateChairWorkingHoursInDb"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/chairs/:chairId",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 569,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#updateChairProfileInDb"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/settings/chairs/:chairId",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 610,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/settings.ts#requireSettingsAccess",
+        "apps/api/src/db/settingsQuery.ts#deactivateChairInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/reset-demo",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 637,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/settings/reset-zero",
+      "file": "apps/api/src/routes/settings.ts",
+      "line": 641,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/preview",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5595,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/local-source-discovery",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5609,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/local-source-workup",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5621,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/local-source-probe",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5633,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/migration-autopilot",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5645,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/migration-autopilot/report.csv",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5659,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/clinic-public-lookup",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5678,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/report.csv",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5690,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/report.safe.csv",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5709,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/imports/smart/commit",
+      "file": "apps/api/src/routes/smartImports.ts",
+      "line": 5728,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId",
+        "apps/api/src/routes/imports.ts#commitPatientImport",
+        "apps/api/src/routes/imaging.ts#commitImagingImport"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/sterilization/logs",
+      "file": "apps/api/src/routes/sterilization.ts",
+      "line": 17,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/sterilization/scan",
+      "file": "apps/api/src/routes/sterilization.ts",
+      "line": 33,
+      "inlineWrites": [
+        "drizzle: insert(sterilization_logs) @apps/api/src/routes/sterilization.ts:56"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/sterilization/link",
+      "file": "apps/api/src/routes/sterilization.ts",
+      "line": 74,
+      "inlineWrites": [
+        "drizzle: update(visit_diaries) @apps/api/src/routes/sterilization.ts:103"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/persistence/verify",
+      "file": "apps/api/src/routes/system.ts",
+      "line": 667,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/local-bridges/readiness",
+      "file": "apps/api/src/routes/system.ts",
+      "line": 672,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/local-bridges/use-plans",
+      "file": "apps/api/src/routes/system.ts",
+      "line": 677,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/system/persistence/export",
+      "file": "apps/api/src/routes/system.ts",
+      "line": 682,
+      "inlineWrites": [
+        "drizzle: insert(audit_events) @apps/api/src/routes/system.ts:686"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2648,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status/:organizationId",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2650,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/status/:organizationId/:botConfigId",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2661,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/settings/telegram",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2678,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/settings/telegram",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2680,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/sampleData.ts#updateDenteTelegramBotSettings",
+        "apps/api/src/routes/telegram.ts#buildStatus"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/feature-plan",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2702,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/outbox",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2706,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/telegram/outbox/:itemId/send",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2718,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#executeTelegramOutboxSend"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/telegram/outbox/send-due",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2733,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/telegram.ts#executeDenteTelegramOutboxDueBatch"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/telegram/link-codes",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2750,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/sampleData.ts#createDenteTelegramLinkCode"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/link-codes",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2795,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/sampleData.ts#buildDenteTelegramLinkCodeList"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/telegram/chat-links",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2812,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/telegram/chat-links/:linkId/revoke",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2829,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/sampleData.ts#revokeDenteTelegramChatLink"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/telegram/messages/preview",
+      "file": "apps/api/src/routes/telegram.ts",
+      "line": 2854,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/:organizationId/webhook",
+      "file": "apps/api/src/routes/telephony.ts",
+      "line": 12,
+      "inlineWrites": [
+        "drizzle: insert(crm_leads) @apps/api/src/routes/telephony.ts:75"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/:organizationId/sms/webhook",
+      "file": "apps/api/src/routes/telephony.ts",
+      "line": 109,
+      "inlineWrites": [
+        "drizzle: insert(patients) @apps/api/src/routes/telephony.ts:151",
+        "drizzle: insert(communication_events) @apps/api/src/routes/telephony.ts:168"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/templates",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 14,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId",
+        "apps/api/src/scripts/seedTemplates.ts#ensureClinicalTemplatesSeeded"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/templates/:id",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 42,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/templates",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 63,
+      "inlineWrites": [
+        "drizzle: insert(visit_templates) @apps/api/src/routes/templates.ts:84"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/templates/:id",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 105,
+      "inlineWrites": [
+        "drizzle: delete(visit_templates) @apps/api/src/routes/templates.ts:126"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/templates/seed",
+      "file": "apps/api/src/routes/templates.ts",
+      "line": 138,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#resolveOrganizationId",
+        "apps/api/src/scripts/seedTemplates.ts#ensureClinicalTemplatesSeeded"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/odontogram/tooth-history/:patientId/:toothId",
+      "file": "apps/api/src/routes/toothHistory.ts",
+      "line": 16,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/visits/:visitId/draft/autosave",
+      "file": "apps/api/src/routes/visits.ts",
+      "line": 78,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/visits/:visitId/draft/autosave",
+      "file": "apps/api/src/routes/visits.ts",
+      "line": 96,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/visitsQuery.ts#upsertVisitDraftAutosaveInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/visits/:visitId/draft/accept",
+      "file": "apps/api/src/routes/visits.ts",
+      "line": 121,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/auth.ts#TOKEN_SECRET",
+        "apps/api/src/db/visitsQuery.ts#acceptVisitDraftInDb"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/public/:organizationId/vk/webhook",
+      "file": "apps/api/src/routes/vk.ts",
+      "line": 19,
+      "inlineWrites": [
+        "drizzle: insert(patients) @apps/api/src/routes/vk.ts:70",
+        "drizzle: insert(communication_events) @apps/api/src/routes/vk.ts:84"
+      ],
+      "calledWriters": []
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/waitlist",
+      "file": "apps/api/src/routes/waitlist.ts",
+      "line": 33,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/waitlist",
+      "file": "apps/api/src/routes/waitlist.ts",
+      "line": 72,
+      "inlineWrites": [
+        "drizzle: insert(appointment_waitlists) @apps/api/src/routes/waitlist.ts:131"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/waitlist/:id",
+      "file": "apps/api/src/routes/waitlist.ts",
+      "line": 166,
+      "inlineWrites": [
+        "drizzle: update(appointment_waitlists) @apps/api/src/routes/waitlist.ts:200"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/waitlist/:id",
+      "file": "apps/api/src/routes/waitlist.ts",
+      "line": 234,
+      "inlineWrites": [
+        "drizzle: delete(appointment_waitlists) @apps/api/src/routes/waitlist.ts:244"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/schedule/freed-slots",
+      "file": "apps/api/src/routes/waitlistMatches.ts",
+      "line": 40,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/appointments/:appointmentId/waitlist-matches",
+      "file": "apps/api/src/routes/waitlistMatches.ts",
+      "line": 125,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireClinicalReadContext",
+        "apps/api/src/security/permissions.ts#enforcePermissionWhenStaffKnown"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/whatsapp/settings",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 139,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "PUT",
+      "routePath": "/api/whatsapp/settings",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 181,
+      "inlineWrites": [
+        "drizzle: update(dente_whatsapp_bot_configs) @apps/api/src/routes/whatsapp.ts:224",
+        "drizzle: insert(dente_whatsapp_bot_configs) @apps/api/src/routes/whatsapp.ts:229"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedStaffOrAdminOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/whatsapp/status",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 249,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/whatsapp/webhook",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 284,
+      "inlineWrites": [],
+      "calledWriters": []
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/whatsapp/send",
+      "file": "apps/api/src/routes/whatsapp.ts",
+      "line": 464,
+      "inlineWrites": [
+        "drizzle: insert(communication_events) @apps/api/src/routes/whatsapp.ts:548"
+      ],
+      "calledWriters": [
+        "apps/api/src/accessGuard.ts#requireResolvedOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/workspace/profile",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 504,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/workspace/chairs",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 518,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/workspace/profile",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 532,
+      "inlineWrites": [
+        "drizzle: update(organizations) @apps/api/src/routes/workspaceProfile.ts:574"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/workspace/preset/:name",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 588,
+      "inlineWrites": [
+        "drizzle: update(organizations) @apps/api/src/routes/workspaceProfile.ts:638"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId",
+        "apps/api/src/routes/workspaceProfile.ts#seedDemoDataForPreset"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/workspace/onboarding/complete",
+      "file": "apps/api/src/routes/workspaceProfile.ts",
+      "line": 655,
+      "inlineWrites": [
+        "drizzle: update(organizations) @apps/api/src/routes/workspaceProfile.ts:677",
+        "drizzle: insert(users) @apps/api/src/routes/workspaceProfile.ts:696",
+        "drizzle: insert(doctor_commissions) @apps/api/src/routes/workspaceProfile.ts:709",
+        "drizzle: insert(service_catalog_items) @apps/api/src/routes/workspaceProfile.ts:771",
+        "drizzle: insert(clinics) @apps/api/src/routes/workspaceProfile.ts:784",
+        "drizzle: insert(chairs) @apps/api/src/routes/workspaceProfile.ts:797",
+        "drizzle: update(organizations) @apps/api/src/routes/workspaceProfile.ts:802",
+        "drizzle: update(organizations) @apps/api/src/routes/workspaceProfile.ts:809",
+        "drizzle: insert(service_catalog_items) @apps/api/src/routes/workspaceProfile.ts:931",
+        "drizzle: insert(visit_templates) @apps/api/src/routes/workspaceProfile.ts:1003"
+      ],
+      "calledWriters": [
+        "apps/api/src/routes/workspaceProfile.ts#resolveOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/xray/scans",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 99,
+      "inlineWrites": [
+        "drizzle: insert(xray_scans) @apps/api/src/routes/xray.ts:120"
+      ],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "POST",
+      "routePath": "/api/xray/scans/:id/analyze",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 144,
+      "inlineWrites": [
+        "drizzle: update(xray_scans) @apps/api/src/routes/xray.ts:171",
+        "drizzle: update(xray_scans) @apps/api/src/routes/xray.ts:184",
+        "drizzle: update(xray_scans) @apps/api/src/routes/xray.ts:197"
+      ],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId",
+        "apps/api/src/ai/visiograph.ts#analyzeVisiographImage"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/xray/scans",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 206,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/xray/scans/:id",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 227,
+      "inlineWrites": [],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "DELETE",
+      "routePath": "/api/xray/scans/:id",
+      "file": "apps/api/src/routes/xray.ts",
+      "line": 249,
+      "inlineWrites": [
+        "drizzle: delete(xray_scans) @apps/api/src/routes/xray.ts:257"
+      ],
+      "calledWriters": [
+        "apps/api/src/security/identity.ts#requireOrganizationId"
+      ]
+    },
+    {
+      "verb": "GET",
+      "routePath": "/api/health",
+      "file": "apps/api/src/server.ts",
+      "line": 360,
+      "inlineWrites": [],
+      "calledWriters": []
+    }
+  ]
+}

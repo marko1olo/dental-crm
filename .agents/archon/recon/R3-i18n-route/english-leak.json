@@ -1,0 +1,510 @@
+{
+  "generatedAt": "2026-07-28T10:52:58.842Z",
+  "filesScanned": 209,
+  "totalJsxTextNodes": 2582,
+  "cyrillicNodes": 2462,
+  "latinOnlyNodes": 105,
+  "distinctLeakCandidates": 58,
+  "list": [
+    {
+      "text": "Calculating Trilinear Interpolation...",
+      "at": "apps/web/src/components/dicom/PanoramicRendererWindow.tsx:178",
+      "count": 1,
+      "residue": [
+        "Calculating",
+        "Trilinear",
+        "Interpolation"
+      ]
+    },
+    {
+      "text": "0 && dicomFirstFrameCurrentIndex",
+      "at": "apps/web/src/components/settings/LegacyMigrationStudio.tsx:1609",
+      "count": 5,
+      "residue": [
+        "dicomFirstFrameCurrentIndex"
+      ]
+    },
+    {
+      "text": "0 && stats.scannedFolders",
+      "at": "apps/web/src/useAppLogic.tsx:9292",
+      "count": 1,
+      "residue": [
+        "stats",
+        "scannedFolders"
+      ]
+    },
+    {
+      "text": "Consent Template Editor",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:41",
+      "count": 1,
+      "residue": [
+        "Consent",
+        "Template",
+        "Editor"
+      ]
+    },
+    {
+      "text": "0 && progressPercentage",
+      "at": "apps/web/src/components/PatientJourneyTimeline.tsx:166",
+      "count": 1,
+      "residue": [
+        "progressPercentage"
+      ]
+    },
+    {
+      "text": "DENTE: financialBalance",
+      "at": "apps/web/src/components/workspace/onboarding/steps/Step7Migration.tsx:289",
+      "count": 1,
+      "residue": [
+        "financialBalance"
+      ]
+    },
+    {
+      "text": "Executive BI Analytics",
+      "at": "apps/web/src/App.tsx:4182",
+      "count": 1,
+      "residue": [
+        "Executive",
+        "Analytics"
+      ]
+    },
+    {
+      "text": "Landing Webhook Mapper",
+      "at": "apps/web/src/components/integrations/LandingFieldMappingsWidget.tsx:45",
+      "count": 1,
+      "residue": [
+        "Landing",
+        "Webhook",
+        "Mapper"
+      ]
+    },
+    {
+      "text": "CSV, SQL, Firebird, 1C",
+      "at": "apps/web/src/components/workspace/onboarding/steps/Step7Migration.tsx:153",
+      "count": 1,
+      "residue": [
+        "SQL",
+        "Firebird"
+      ]
+    },
+    {
+      "text": "Meta Business Console",
+      "at": "apps/web/src/components/settings/WhatsappSettingsPanel.tsx:286",
+      "count": 1,
+      "residue": [
+        "Meta",
+        "Business",
+        "Console"
+      ]
+    },
+    {
+      "text": "Surgical Module Logs",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:547",
+      "count": 1,
+      "residue": [
+        "Surgical",
+        "Module",
+        "Logs"
+      ]
+    },
+    {
+      "text": "Straumann Bone Level",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:221",
+      "count": 1,
+      "residue": [
+        "Straumann",
+        "Bone",
+        "Level"
+      ]
+    },
+    {
+      "text": "Nobel Biocare Active",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:222",
+      "count": 1,
+      "residue": [
+        "Nobel",
+        "Biocare",
+        "Active"
+      ]
+    },
+    {
+      "text": "Webhook Verify Token",
+      "at": "apps/web/src/components/settings/WhatsappSettingsPanel.tsx:148",
+      "count": 1,
+      "residue": [
+        "Webhook",
+        "Verify",
+        "Token"
+      ]
+    },
+    {
+      "text": "3D Volume Rendering",
+      "at": "apps/web/src/components/dicom/ViewportOverlays.tsx:82",
+      "count": 1,
+      "residue": [
+        "Volume",
+        "Rendering"
+      ]
+    },
+    {
+      "text": "RAM Watchdog Active",
+      "at": "apps/web/src/components/system/SystemRamWatchdogsWidget.tsx:43",
+      "count": 1,
+      "residue": [
+        "RAM",
+        "Watchdog",
+        "Active"
+      ]
+    },
+    {
+      "text": "0 && scannedFolders",
+      "at": "apps/web/src/useAppLogic.tsx:8983",
+      "count": 1,
+      "residue": [
+        "scannedFolders"
+      ]
+    },
+    {
+      "text": "| React.FocusEvent",
+      "at": "apps/web/src/components/VisitDiaryEditor.tsx:142",
+      "count": 1,
+      "residue": [
+        "React",
+        "FocusEvent"
+      ]
+    },
+    {
+      "text": "DENTE Setup Wizard",
+      "at": "apps/web/src/components/workspace/OnboardingSetupWizard.tsx:78",
+      "count": 1,
+      "residue": [
+        "Setup",
+        "Wizard"
+      ]
+    },
+    {
+      "text": "WhatsApp Business",
+      "at": "apps/web/src/components/settings/SettingsMessengersTab.tsx:83",
+      "count": 2,
+      "residue": [
+        "Business"
+      ]
+    },
+    {
+      "text": "AI Auto-Protocol",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:552",
+      "count": 1,
+      "residue": [
+        "Auto-Protocol"
+      ]
+    },
+    {
+      "text": "⇧+L-Click: Zoom",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:264",
+      "count": 1,
+      "residue": [
+        "L-Click",
+        "Zoom"
+      ]
+    },
+    {
+      "text": "business.max.ru",
+      "at": "apps/web/src/components/settings/MaxSettingsPanel.tsx:220",
+      "count": 1,
+      "residue": [
+        "business"
+      ]
+    },
+    {
+      "text": "Phone Number ID",
+      "at": "apps/web/src/components/settings/WhatsappSettingsPanel.tsx:115",
+      "count": 1,
+      "residue": [
+        "Phone",
+        "Number"
+      ]
+    },
+    {
+      "text": "DENTE: fullName",
+      "at": "apps/web/src/components/workspace/onboarding/steps/Step7Migration.tsx:264",
+      "count": 1,
+      "residue": [
+        "fullName"
+      ]
+    },
+    {
+      "text": "void | Promise",
+      "at": "apps/web/src/CommunicationsView.tsx:22",
+      "count": 6,
+      "residue": [
+        "void",
+        "Promise"
+      ]
+    },
+    {
+      "text": "AsyncIterable",
+      "at": "apps/web/src/AppHelpers.tsx:522",
+      "count": 1,
+      "residue": [
+        "AsyncIterable"
+      ]
+    },
+    {
+      "text": "DENTE CRM-MIS",
+      "at": "apps/web/src/components/auth/AcceptInvite.tsx:64",
+      "count": 4,
+      "residue": [
+        "CRM-MIS"
+      ]
+    },
+    {
+      "text": "Tooth Numbers",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:54",
+      "count": 1,
+      "residue": [
+        "Tooth",
+        "Numbers"
+      ]
+    },
+    {
+      "text": "Save Template",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:75",
+      "count": 1,
+      "residue": [
+        "Save",
+        "Template"
+      ]
+    },
+    {
+      "text": "Print Consent",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:76",
+      "count": 1,
+      "residue": [
+        "Print",
+        "Consent"
+      ]
+    },
+    {
+      "text": "Patient Name",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:53",
+      "count": 1,
+      "residue": [
+        "Patient",
+        "Name"
+      ]
+    },
+    {
+      "text": "CORTICAL TAP",
+      "at": "apps/web/src/components/dicom/BoneQualityPanel.tsx:176",
+      "count": 1,
+      "residue": [
+        "CORTICAL",
+        "TAP"
+      ]
+    },
+    {
+      "text": "Osstem TSIII",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:220",
+      "count": 1,
+      "residue": [
+        "Osstem",
+        "TSIII"
+      ]
+    },
+    {
+      "text": "R-Click: W/L",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:262",
+      "count": 1,
+      "residue": [
+        "R-Click"
+      ]
+    },
+    {
+      "text": "M-Click: Pan",
+      "at": "apps/web/src/components/dicom/DicomToolbar.tsx:263",
+      "count": 1,
+      "residue": [
+        "M-Click",
+        "Pan"
+      ]
+    },
+    {
+      "text": "Webhook URL",
+      "at": "apps/web/src/components/settings/WhatsappSettingsPanel.tsx:160",
+      "count": 1,
+      "residue": [
+        "Webhook"
+      ]
+    },
+    {
+      "text": "Total Cost",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:55",
+      "count": 1,
+      "residue": [
+        "Total",
+        "Cost"
+      ]
+    },
+    {
+      "text": "UNDERDRILL",
+      "at": "apps/web/src/components/dicom/BoneQualityPanel.tsx:171",
+      "count": 1,
+      "residue": [
+        "UNDERDRILL"
+      ]
+    },
+    {
+      "text": "DaData API",
+      "at": "apps/web/src/components/integrations/DadataGeocodedAddressesWidget.tsx:50",
+      "count": 1,
+      "residue": [
+        "DaData"
+      ]
+    },
+    {
+      "text": "logic.step",
+      "at": "apps/web/src/components/workspace/OnboardingSetupWizard.tsx:235",
+      "count": 1,
+      "residue": [
+        "logic",
+        "step"
+      ]
+    },
+    {
+      "text": "admin123",
+      "at": "apps/web/src/components/auth/ClinicLogin.tsx:119",
+      "count": 1,
+      "residue": [
+        "admin"
+      ]
+    },
+    {
+      "text": "SAGITTAL",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:539",
+      "count": 1,
+      "residue": [
+        "SAGITTAL"
+      ]
+    },
+    {
+      "text": "Webhook:",
+      "at": "apps/web/src/components/integrations/LandingFieldMappingsWidget.tsx:72",
+      "count": 1,
+      "residue": [
+        "Webhook"
+      ]
+    },
+    {
+      "text": "Enhanced",
+      "at": "apps/web/src/ImagingView.tsx:697",
+      "count": 1,
+      "residue": [
+        "Enhanced"
+      ]
+    },
+    {
+      "text": "Promise",
+      "at": "apps/web/src/AppHelpers.tsx:516",
+      "count": 12,
+      "residue": [
+        "Promise"
+      ]
+    },
+    {
+      "text": "Insert:",
+      "at": "apps/web/src/components/ConsentTemplateEditor.tsx:52",
+      "count": 1,
+      "residue": [
+        "Insert"
+      ]
+    },
+    {
+      "text": "CORONAL",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:543",
+      "count": 1,
+      "residue": [
+        "CORONAL"
+      ]
+    },
+    {
+      "text": "Kell K1",
+      "at": "apps/web/src/DocumentsView.tsx:2919",
+      "count": 1,
+      "residue": [
+        "Kell"
+      ]
+    },
+    {
+      "text": "Bot ID",
+      "at": "apps/web/src/components/settings/MaxSettingsPanel.tsx:95",
+      "count": 1,
+      "residue": [
+        "Bot"
+      ]
+    },
+    {
+      "text": "Google",
+      "at": "apps/web/src/MarketingView.tsx:169",
+      "count": 1,
+      "residue": [
+        "Google"
+      ]
+    },
+    {
+      "text": "Action",
+      "at": "apps/web/src/SmartParsePreview.tsx:105",
+      "count": 3,
+      "residue": [
+        "Action"
+      ]
+    },
+    {
+      "text": "AXIAL",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:535",
+      "count": 1,
+      "residue": [
+        "AXIAL"
+      ]
+    },
+    {
+      "text": "MIP",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:478",
+      "count": 2,
+      "residue": [
+        "MIP"
+      ]
+    },
+    {
+      "text": "AVG",
+      "at": "apps/web/src/components/dicom/Cornerstone3DViewer.tsx:485",
+      "count": 2,
+      "residue": [
+        "AVG"
+      ]
+    },
+    {
+      "text": "PRO",
+      "at": "apps/web/src/components/leads/LeadsKanbanView.tsx:405",
+      "count": 1,
+      "residue": [
+        "PRO"
+      ]
+    },
+    {
+      "text": "RVG",
+      "at": "apps/web/src/components/settings/SettingsClinicTab.tsx:755",
+      "count": 1,
+      "residue": [
+        "RVG"
+      ]
+    },
+    {
+      "text": "FDI",
+      "at": "apps/web/src/VisitView.tsx:684",
+      "count": 1,
+      "residue": [
+        "FDI"
+      ]
+    }
+  ]
+}

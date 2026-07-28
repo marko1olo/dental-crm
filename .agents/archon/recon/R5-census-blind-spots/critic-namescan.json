@@ -1,0 +1,2299 @@
+{
+ "dead": [],
+ "alive": [
+  {
+   "table": "organizations",
+   "ident": "organizations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\alter_db.mjs",
+    "apps\\api\\migrate.ts",
+    "apps\\api\\migrate_pglite.cjs",
+    "apps\\api\\src\\audit.ts",
+    "apps\\api\\src\\db\\billingQuery.ts",
+    "apps\\api\\src\\db\\documentQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\imagingQuery.ts",
+    "apps\\api\\src\\db\\pricelistQuery.ts",
+    "apps\\api\\src\\db\\settingsQuery.ts",
+    "apps\\api\\src\\routes\\ai.ts",
+    "apps\\api\\src\\routes\\auth.ts",
+    "apps\\api\\src\\routes\\billing.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\communications.ts",
+    "apps\\api\\src\\routes\\dicomweb.test.ts",
+    "apps\\api\\src\\routes\\dicomweb.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\imaging.ts",
+    "apps\\api\\src\\routes\\imports.ts",
+    "apps\\api\\src\\routes\\migration.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\publicBooking.ts",
+    "apps\\api\\src\\routes\\settings.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\system.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\patch-owner-credentials.ts",
+    "apps\\api\\src\\scripts\\seedAuth.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\seedPglite.ts",
+    "apps\\api\\src\\scripts\\seedTemplates.ts",
+    "apps\\api\\src\\scripts\\setup-fresh-db.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\services\\tests\\recallScheduler.test.ts",
+    "apps\\api\\src\\speech\\storage.ts",
+    "apps\\api\\src\\speech\\tests\\storage.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreCeiling.test.ts",
+    "apps\\api\\src\\tests\\ai.test.ts",
+    "apps\\api\\src\\tests\\dispatcherConsentGate.test.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\clinical.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\deliveryReceipts.test.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts",
+    "apps\\api\\src\\tests\\routes\\portalOtp.test.ts",
+    "apps\\api\\src\\tests\\routes\\speechTranscribeChunkAccess.test.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts",
+    "apps\\api\\src\\tests\\security\\unverifiedOrganizationMutation.test.ts",
+    "apps\\api\\temp-auth-routes.ts",
+    "apps\\api\\test-db.ts",
+    "apps\\web\\src\\hooks\\useWorkspaceProfile.ts",
+    "apps\\web\\src\\lib\\clinicCapabilities.ts",
+    "apps\\web\\src\\tests\\clinicCapabilities.test.ts",
+    "benchmark_biAnalytics.ts",
+    "scripts\\smoke-clinical-rule-contract.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "clinics",
+   "ident": "clinics",
+   "files": [
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\migrate.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\settingsQuery.ts",
+    "apps\\api\\src\\pricelist\\analyzer.ts",
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\publicBooking.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "users",
+   "ident": "users",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    ".postgres\\pgAdmin 4\\docs\\en_US\\html\\searchindex.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\browser\\server_groups\\servers\\databases\\schemas\\tables\\static\\js\\table.ui.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\browser\\server_groups\\servers\\roles\\static\\js\\role.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\dashboard\\static\\js\\WelcomeDashboard.jsx",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\app.bundle.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\debugger.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\erd_tool.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\psql_tool.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\schema_diff.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\sqleditor.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\vendor.main.js",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\tools\\user_management\\static\\js\\UserManagementDialog.jsx",
+    "apps\\api\\add-egisz-schema.cjs",
+    "apps\\api\\create_new_tables_pglite.ts",
+    "apps\\api\\src\\db\\appointmentsQuery.ts",
+    "apps\\api\\src\\db\\clinicalTasksQuery.ts",
+    "apps\\api\\src\\db\\documentQuery.test.ts",
+    "apps\\api\\src\\db\\documentQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\settingsQuery.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\auth.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\routes\\documents\\issue.ts",
+    "apps\\api\\src\\routes\\documents\\void.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\lab.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\publicBooking.ts",
+    "apps\\api\\src\\routes\\settings.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\sterilization.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\routes\\waitlist.ts",
+    "apps\\api\\src\\routes\\waitlistMatches.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\patch-owner-credentials.ts",
+    "apps\\api\\src\\scripts\\seedAuth.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\seedPglite.ts",
+    "apps\\api\\src\\scripts\\setup-fresh-db.ts",
+    "apps\\api\\src\\security\\permissions.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\tests\\enumContractDrift.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts",
+    "apps\\api\\temp-auth-routes.ts",
+    "apps\\api\\test-db.js",
+    "apps\\api\\test-db.ts",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\tests\\documentPayloadForms.test.ts",
+    "scripts\\smoke-clinical-rule-panel-source.mjs",
+    "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs",
+    "scripts\\smoke-import-contracts.mjs",
+    "scripts\\smoke-patients-usability-source.mjs",
+    "scripts\\smoke-schedule-view-source.mjs",
+    "scripts\\smoke-web-code-split-source.mjs",
+    "scripts\\smoke-workspace-shell-source.mjs"
+   ]
+  },
+  {
+   "table": "user_invitations",
+   "ident": "userInvitations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\auth.ts",
+    "apps\\api\\temp-auth-routes.ts",
+    "apps\\api\\test-db.ts"
+   ]
+  },
+  {
+   "table": "chairs",
+   "ident": "chairs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\appointmentsQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\settingsQuery.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\reports.ts",
+    "apps\\api\\src\\routes\\settings.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts",
+    "apps\\api\\src\\tests\\webCallsExistingRoutes.test.ts",
+    "apps\\web\\src\\App.tsx",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\leads\\LeadsKanbanView.tsx",
+    "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx",
+    "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx",
+    "apps\\web\\src\\components\\schedule\\NewAppointmentForm.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsClinicTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\components\\workspace\\onboarding\\steps\\Step2Infrastructure.tsx",
+    "apps\\web\\src\\components\\workspace\\onboarding\\useOnboardingLogic.ts",
+    "apps\\web\\src\\components\\workspace\\OnboardingSetupWizard.tsx",
+    "apps\\web\\src\\hooks\\domains\\useScheduleLogic.ts",
+    "apps\\web\\src\\lib\\schedulingAlgorithms.ts",
+    "apps\\web\\src\\lib\\smartBookingParser.test.ts",
+    "apps\\web\\src\\lib\\smartBookingParser.ts",
+    "apps\\web\\src\\ScheduleView.tsx",
+    "apps\\web\\src\\SettingsView.tsx",
+    "apps\\web\\src\\tests\\appointmentMissingFields.test.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\useSettingsDerivations.tsx",
+    "apps\\web\\src\\visitSpecialtyData.ts",
+    "apps\\web\\temp_tests\\testParser.ts",
+    "apps\\web\\test-parsers.ts",
+    "apps\\web\\tests\\smartParsers.test.ts",
+    "artifacts\\compiled2.js",
+    "deep_test_ai.ts",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-onboarding-configuration-source.mjs",
+    "scripts\\smoke-schedule-configuration.mjs",
+    "scripts\\smoke-settings-admin-guard.mjs",
+    "scripts\\smoke-settings-persistence-file.mjs",
+    "scripts\\smoke-settings-preferences.mjs",
+    "scripts\\smoke-settings-route-validation.mjs",
+    "scripts\\smoke-settings-view-source.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs",
+    "scripts\\smoke-workspace-live-settings-actions.mjs",
+    "scripts\\visual_audit.cjs"
+   ]
+  },
+  {
+   "table": "patients",
+   "ident": "patients",
+   "files": [
+    ".dente-ops-shots\\backup\\dispatcher.ts",
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    ".tmp\\v4-review\\gate-level-probe.mjs",
+    ".tmp\\v4-review\\gate-noflag.mjs",
+    ".tmp\\v4-review\\parent-gate-raw.mjs",
+    ".tmp\\v4-review\\parent-gate.mjs",
+    "apps\\api\\add-egisz-schema.cjs",
+    "apps\\api\\append-schema.cjs",
+    "apps\\api\\create_new_tables_pglite.ts",
+    "apps\\api\\src\\db\\appointmentsQuery.ts",
+    "apps\\api\\src\\db\\billingQuery.ts",
+    "apps\\api\\src\\db\\clinicalTasksQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\labQuery.ts",
+    "apps\\api\\src\\db\\lostPatientsFiltersQuery.ts",
+    "apps\\api\\src\\db\\patientArchiveReasonsAndBlacklistsQuery.ts",
+    "apps\\api\\src\\db\\patientCommunicationTimelinesQuery.ts",
+    "apps\\api\\src\\db\\patientsQuery.ts",
+    "apps\\api\\src\\db\\recentPatientHistoryQuery.ts",
+    "apps\\api\\src\\db\\tests\\billingQuery.test.ts",
+    "apps\\api\\src\\ingestion\\documentExtractor.ts",
+    "apps\\api\\src\\migration\\discovery.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\formats\\sqlite.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\parsers\\index.ts",
+    "apps\\api\\src\\migration\\parsers\\structured.ts",
+    "apps\\api\\src\\migration\\tests\\parsers.test.ts",
+    "apps\\api\\src\\migration\\uploadStore.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\files.ts",
+    "apps\\api\\src\\routes\\finance_family.ts",
+    "apps\\api\\src\\routes\\imaging.ts",
+    "apps\\api\\src\\routes\\imaging_planning.ts",
+    "apps\\api\\src\\routes\\imports.ts",
+    "apps\\api\\src\\routes\\lab.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\max.ts",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\patientDuplicates.ts",
+    "apps\\api\\src\\routes\\patientRecall.ts",
+    "apps\\api\\src\\routes\\patients.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\publicBooking.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\speech.ts",
+    "apps\\api\\src\\routes\\telephony.ts",
+    "apps\\api\\src\\routes\\tests\\imaging.test.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\routes\\vk.ts",
+    "apps\\api\\src\\routes\\waitlist.ts",
+    "apps\\api\\src\\routes\\whatsapp.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\inspectRecall.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts",
+    "apps\\api\\src\\security\\permissions.ts",
+    "apps\\api\\src\\server.ts",
+    "apps\\api\\src\\services\\clinical\\ClinicalRouter.test.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\audience.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\services\\patients\\duplicateDetection.ts",
+    "apps\\api\\src\\services\\patients\\patientMerge.ts",
+    "apps\\api\\src\\services\\patients\\recallCandidates.ts",
+    "apps\\api\\src\\services\\recallScheduler.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\services\\schedule\\waitlistMatching.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\services\\tests\\recallScheduler.test.ts",
+    "apps\\api\\src\\speech\\storage.ts",
+    "apps\\api\\src\\speech\\tests\\storage.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreCeiling.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreRetry.test.ts",
+    "apps\\api\\src\\telegram\\legacyMocks.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\db\\patientsQuery.test.ts",
+    "apps\\api\\src\\tests\\dispatcherConsentGate.test.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routeHookScope.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\deliveryReceipts.test.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientArchiveStatusScope.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts",
+    "apps\\api\\src\\tests\\routes\\portalOtp.test.ts",
+    "apps\\api\\src\\tests\\routes\\speechTranscribeChunkAccess.test.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts",
+    "apps\\api\\src\\tests\\webCallsExistingRoutes.test.ts",
+    "apps\\web\\audit_capture.cjs",
+    "apps\\web\\capture_ui.mjs",
+    "apps\\web\\public\\sw.js",
+    "apps\\web\\src\\App.tsx",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\analytics\\LostPatientsFiltersWidget.tsx",
+    "apps\\web\\src\\components\\CommandPalette.tsx",
+    "apps\\web\\src\\components\\crm\\PatientArchiveReasonsAndBlacklistsWidget.tsx",
+    "apps\\web\\src\\components\\crm\\PatientCommunicationTimelinesWidget.tsx",
+    "apps\\web\\src\\components\\crm\\PatientDuplicateMergeQueuesWidget.tsx",
+    "apps\\web\\src\\components\\finance\\FamilyWalletPanel.tsx",
+    "apps\\web\\src\\components\\HelpHUD.tsx",
+    "apps\\web\\src\\components\\IncomingCallToast.tsx",
+    "apps\\web\\src\\components\\odontogram\\OdontogramModule.tsx",
+    "apps\\web\\src\\components\\odontogram\\TreatmentEstimator.tsx",
+    "apps\\web\\src\\components\\Omnibar.tsx",
+    "apps\\web\\src\\components\\PatientJourneyTimeline.tsx",
+    "apps\\web\\src\\components\\patients\\OrthodonticProgressWidget.tsx",
+    "apps\\web\\src\\components\\patients\\PatientArchiveAndBlacklistWidget.tsx",
+    "apps\\web\\src\\components\\patients\\PatientCommunicationTimelineWidget.tsx",
+    "apps\\web\\src\\components\\patients\\PatientFamilyCard.tsx",
+    "apps\\web\\src\\components\\patients\\PatientLoyaltyHeader.tsx",
+    "apps\\web\\src\\components\\patients\\PatientOverviewTab.tsx",
+    "apps\\web\\src\\components\\patients\\PatientReclamationsWidget.tsx",
+    "apps\\web\\src\\components\\patients\\PatientTaskTicketsWidget.tsx",
+    "apps\\web\\src\\components\\patients\\RecallListPanel.tsx",
+    "apps\\web\\src\\components\\plan\\ComparativePlannerDashboard.tsx",
+    "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx",
+    "apps\\web\\src\\components\\schedule\\NewAppointmentForm.tsx",
+    "apps\\web\\src\\components\\schedule\\WaitlistDrawer.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsViewHelpers.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\components\\TourEngine.tsx",
+    "apps\\web\\src\\components\\VoiceAssistantUI.tsx",
+    "apps\\web\\src\\components\\workspace\\RecentPatientHistoryWidget.tsx",
+    "apps\\web\\src\\DocumentsView.tsx",
+    "apps\\web\\src\\hooks\\domains\\usePatientLogic.ts",
+    "apps\\web\\src\\hooks\\domains\\useScheduleLogic.ts",
+    "apps\\web\\src\\hooks\\usePatientResource.ts",
+    "apps\\web\\src\\lib\\aiOrchestrator.ts",
+    "apps\\web\\src\\lib\\patientDuplicatesApi.ts",
+    "apps\\web\\src\\lib\\smartBookingParser.test.ts",
+    "apps\\web\\src\\lib\\smartBookingParser.ts",
+    "apps\\web\\src\\lib\\test-debug.ts",
+    "apps\\web\\src\\lib\\test-parser-deep.ts",
+    "apps\\web\\src\\main.tsx",
+    "apps\\web\\src\\MarketingView.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\PatientsView.tsx",
+    "apps\\web\\src\\ScheduleView.tsx",
+    "apps\\web\\src\\ShiftView.tsx",
+    "apps\\web\\src\\tests\\apiAuthFetch.test.ts",
+    "apps\\web\\src\\tests\\appointmentMissingFields.test.ts",
+    "apps\\web\\src\\tests\\panelsAreMounted.test.ts",
+    "apps\\web\\src\\tests\\patientsWidgetsGridColumns.test.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\workspacePreload.ts",
+    "apps\\web\\src\\workspaceShell.tsx",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "apps\\web\\src\\__tests__\\clinicModeSurface.test.ts",
+    "apps\\web\\take_screenshots2.mjs",
+    "apps\\web\\take_screenshots_auth.mjs",
+    "apps\\web\\temp_tests\\testParser.ts",
+    "apps\\web\\test-parsers.ts",
+    "apps\\web\\tests\\smartParsers.test.ts",
+    "artifacts\\compiled2.js",
+    "auditUI.mjs",
+    "audit_screenshots.cjs",
+    "audit_screenshots2.cjs",
+    "fix.cjs",
+    "fix.js",
+    "measure.js",
+    "measure_perf.cjs",
+    "measure_perf.mjs",
+    "move_cards.cjs",
+    "packages\\shared\\src\\index.ts",
+    "patch_app.cjs",
+    "patch_sample.cjs",
+    "scratch_screenshot_visit.cjs",
+    "scratch_screenshot_visit2.cjs",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\census-hollow-query-modules.test.mjs",
+    "scripts\\comprehensive-visual-audit.mjs",
+    "scripts\\dente-redesign-shots.mjs",
+    "scripts\\detect-overflows.mjs",
+    "scripts\\fast-audit.mjs",
+    "scripts\\generate-real-layout-proofs.cjs",
+    "scripts\\generate-wave12-individual-proofs.cjs",
+    "scripts\\ops-panels-shots.mjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\screenshot-all-views.mjs",
+    "scripts\\screenshot-docs.mjs",
+    "scripts\\smoke-ai-recognition-scope.mjs",
+    "scripts\\smoke-api-text-encoding.mjs",
+    "scripts\\smoke-clinical-mutation-guard.mjs",
+    "scripts\\smoke-core-route-validation.mjs",
+    "scripts\\smoke-daily-surfaces-keyboard-accessibility.mjs",
+    "scripts\\smoke-dental-persistence-routes-source.mjs",
+    "scripts\\smoke-document-lifecycle.mjs",
+    "scripts\\smoke-document-zip-redaction.mjs",
+    "scripts\\smoke-imaging-study-visit-scope.mjs",
+    "scripts\\smoke-import-contracts.mjs",
+    "scripts\\smoke-onboarding-configuration-source.mjs",
+    "scripts\\smoke-patient-administrative-profile.mjs",
+    "scripts\\smoke-patient-create-contract.mjs",
+    "scripts\\smoke-patient-forms-lifecycle.mjs",
+    "scripts\\smoke-patients-usability-source.mjs",
+    "scripts\\smoke-payment-idempotency.mjs",
+    "scripts\\smoke-schedule-configuration.mjs",
+    "scripts\\smoke-schedule-view-source.mjs",
+    "scripts\\smoke-settings-admin-guard.mjs",
+    "scripts\\smoke-settings-persistence-file.mjs",
+    "scripts\\smoke-settings-preferences.mjs",
+    "scripts\\smoke-speech-clinical-scope.mjs",
+    "scripts\\smoke-tax-certificate-duplicate-issue.mjs",
+    "scripts\\smoke-tax-knd-xml.mjs",
+    "scripts\\smoke-telegram-validation.mjs",
+    "scripts\\smoke-visit-workflow-forms-lifecycle.mjs",
+    "scripts\\smoke-web-render-gating-source.mjs",
+    "scripts\\smoke-web-service-worker-runtime.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs",
+    "scripts\\smoke-workspace-live-routes.mjs",
+    "scripts\\smoke-workspace-shell-source.mjs",
+    "scripts\\takeScreenshots.ts",
+    "scripts\\take_screenshots.mjs",
+    "scripts\\test-edge-cases-wave12.mjs",
+    "scripts\\test-edge-cases-wave9.mjs",
+    "scripts\\visual-audit.cjs",
+    "scripts\\visual-audit2.cjs",
+    "scripts\\visual-audit3.cjs",
+    "scripts\\visual_audit.cjs",
+    "take_screenshots.cjs",
+    "test_loop_perf.cjs"
+   ]
+  },
+  {
+   "table": "patient_consents",
+   "ident": "patientConsents",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts"
+   ]
+  },
+  {
+   "table": "appointments",
+   "ident": "appointments",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    ".tmp\\v4-review\\census-noflag.mjs",
+    ".tmp\\v4-review\\parent-census.mjs",
+    "apps\\api\\src\\db\\appointmentsQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\lostPatientsFiltersQuery.ts",
+    "apps\\api\\src\\db\\settingsQuery.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\publicBooking.ts",
+    "apps\\api\\src\\routes\\reports.ts",
+    "apps\\api\\src\\routes\\schedule.ts",
+    "apps\\api\\src\\routes\\settings.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\telegram.ts",
+    "apps\\api\\src\\routes\\waitlistMatches.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\inspectRecall.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\audience.ts",
+    "apps\\api\\src\\services\\patients\\recallCandidates.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\services\\schedule\\waitlistMatching.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\telegram\\legacyMocks.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\PatientJourneyTimeline.tsx",
+    "apps\\web\\src\\components\\reports\\ManagerReportsPanel.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsViewHelpers.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\hooks\\domains\\useScheduleLogic.ts",
+    "apps\\web\\src\\hooks\\useScheduleRealtime.ts",
+    "apps\\web\\src\\lib\\schedulingAlgorithms.ts",
+    "apps\\web\\src\\lib\\smartBookingParser.test.ts",
+    "apps\\web\\src\\MarketingView.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\ScheduleView.tsx",
+    "apps\\web\\src\\ShiftView.tsx",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\visitSpecialtyData.ts",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "apps\\web\\temp_tests\\testParser.ts",
+    "apps\\web\\test-parsers.ts",
+    "apps\\web\\tests\\smartParsers.test.ts",
+    "artifacts\\compiled2.js",
+    "measure_perf.mjs",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\lib\\api-route-census.mjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-api-text-encoding.mjs",
+    "scripts\\smoke-core-route-validation.mjs",
+    "scripts\\smoke-schedule-active-visit-status-contract.mjs",
+    "scripts\\smoke-schedule-admin-guard.mjs",
+    "scripts\\smoke-schedule-configuration.mjs",
+    "scripts\\smoke-schedule-view-source.mjs",
+    "scripts\\smoke-settings-persistence-file.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs",
+    "scripts\\visual_audit.cjs"
+   ]
+  },
+  {
+   "table": "visits",
+   "ident": "visits",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\add-egisz-schema.cjs",
+    "apps\\api\\create_new_tables_pglite.ts",
+    "apps\\api\\drop_constraints.ts",
+    "apps\\api\\drop_constraints_pglite.ts",
+    "apps\\api\\src\\db\\billingQuery.ts",
+    "apps\\api\\src\\db\\dashboardQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\visitsQuery.ts",
+    "apps\\api\\src\\migration\\discovery.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\tests\\mapping.test.ts",
+    "apps\\api\\src\\migration\\tests\\parsers.test.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\files.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\speech.ts",
+    "apps\\api\\src\\routes\\visits.test.ts",
+    "apps\\api\\src\\routes\\visits.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\server.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\speech\\storage.ts",
+    "apps\\api\\src\\speech\\tests\\storage.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageIdentity.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreCeiling.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreRetry.test.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\speechTranscribeChunkAccess.test.ts",
+    "apps\\api\\src\\tests\\routes\\visits.test.ts",
+    "apps\\api\\src\\tests\\webCallsExistingRoutes.test.ts",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\PatientPortal.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsViewHelpers.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\components\\useVisitDiaryLogic.ts",
+    "apps\\web\\src\\components\\VisitDiaryPhotoUpload.tsx",
+    "apps\\web\\src\\hooks\\domains\\useVisitLogic.ts",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "artifacts\\compiled2.js",
+    "fix.cjs",
+    "fix.js",
+    "packages\\shared\\src\\index.ts",
+    "patch_app.cjs",
+    "scripts\\comprehensive-visual-audit.mjs",
+    "scripts\\fast-audit.mjs",
+    "scripts\\generate-wave16-individual-proofs.cjs",
+    "scripts\\smoke-document-issue-chains.mjs",
+    "scripts\\smoke-documents-catalog.mjs",
+    "scripts\\smoke-import-contracts.mjs",
+    "scripts\\smoke-visit-draft-status-contract.mjs",
+    "scripts\\smoke-visit-route-validation.mjs",
+    "scripts\\smoke-visit-workflow-forms-lifecycle.mjs"
+   ]
+  },
+  {
+   "table": "service_catalog_items",
+   "ident": "serviceCatalogItems",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\pricelistQuery.ts",
+    "apps\\api\\src\\routes\\inventory.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "packages\\shared\\src\\index.ts"
+   ]
+  },
+  {
+   "table": "treatment_items",
+   "ident": "treatmentItems",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\clinicalQuery.ts",
+    "apps\\api\\src\\db\\documentQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\audience.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\web\\src\\FinanceLedger.tsx",
+    "apps\\web\\src\\FinanceView.tsx",
+    "scripts\\smoke-finance-ledger-source.mjs"
+   ]
+  },
+  {
+   "table": "treatment_scenarios",
+   "ident": "treatmentScenarios",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts"
+   ]
+  },
+  {
+   "table": "clinical_rules",
+   "ident": "clinicalRules",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\clinicalQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\clinical.test.ts",
+    "apps\\api\\src\\tests\\sampleData.test.ts",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\useSettingsDerivations.tsx",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-settings-view-source.mjs"
+   ]
+  },
+  {
+   "table": "payments",
+   "ident": "payments",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\billingQuery.test.ts",
+    "apps\\api\\src\\db\\billingQuery.ts",
+    "apps\\api\\src\\db\\documentQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\documents\\documents.test.ts",
+    "apps\\api\\src\\documents\\frozenTaxXmlPayments.test.ts",
+    "apps\\api\\src\\documents\\guards.test.ts",
+    "apps\\api\\src\\documents\\guards.ts",
+    "apps\\api\\src\\documents\\renderDocument.ts",
+    "apps\\api\\src\\documents\\taxPaymentSnapshot.test.ts",
+    "apps\\api\\src\\documents\\taxPaymentSnapshot.ts",
+    "apps\\api\\src\\documents\\taxXml.test.ts",
+    "apps\\api\\src\\documents\\taxXml.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\reconcile.ts",
+    "apps\\api\\src\\migration\\tests\\mapping.test.ts",
+    "apps\\api\\src\\migration\\valueNormalize.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\analytics.ts",
+    "apps\\api\\src\\routes\\billing.ts",
+    "apps\\api\\src\\routes\\documents\\taxXml.ts",
+    "apps\\api\\src\\routes\\documents.ts",
+    "apps\\api\\src\\routes\\finance_family.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\communications\\audience.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\telegram\\legacyMocks.ts",
+    "apps\\api\\src\\tests\\documents\\guards.test.ts",
+    "apps\\api\\src\\tests\\documents.test.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\sampleData.test.ts",
+    "apps\\api\\truncate.ts",
+    "apps\\web\\src\\AppHelpers.tsx",
+    "apps\\web\\src\\components\\finance\\FamilyWalletPanel.tsx",
+    "apps\\web\\src\\components\\PatientJourneyTimeline.tsx",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsViewHelpers.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\DocumentsView.tsx",
+    "apps\\web\\src\\FinanceLedger.tsx",
+    "apps\\web\\src\\FinanceView.tsx",
+    "apps\\web\\src\\rubAmountInput.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\workspaceUiLabels.test.ts",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "apps\\web\\src\\__tests__\\workspaceUiLabels.test.ts",
+    "artifacts\\compiled2.js",
+    "measure.js",
+    "measure_perf.cjs",
+    "measure_perf.mjs",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-api-text-encoding.mjs",
+    "scripts\\smoke-billing-document-link.mjs",
+    "scripts\\smoke-core-route-validation.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs",
+    "scripts\\smoke-dental-persistence-routes-source.mjs",
+    "scripts\\smoke-document-guards.mjs",
+    "scripts\\smoke-document-lifecycle.mjs",
+    "scripts\\smoke-document-payload-ui-source.mjs",
+    "scripts\\smoke-document-payloads.mjs",
+    "scripts\\smoke-document-route-validation.mjs",
+    "scripts\\smoke-documents-catalog.mjs",
+    "scripts\\smoke-documents-view-source.mjs",
+    "scripts\\smoke-finance-ledger-source.mjs",
+    "scripts\\smoke-payment-idempotency.mjs",
+    "scripts\\smoke-tax-certificate-duplicate-issue.mjs",
+    "scripts\\smoke-tax-document-explicit-payment-scope.mjs",
+    "scripts\\smoke-tax-knd-xml.mjs",
+    "scripts\\smoke-tax-payment-explicit-payer.mjs",
+    "scripts\\smoke-tax-registry-fiscal.mjs",
+    "scripts\\smoke-tax-ui-year-source.mjs",
+    "scripts\\smoke-visit-workflow-forms-lifecycle.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs",
+    "test_loop_perf.cjs"
+   ]
+  },
+  {
+   "table": "generated_documents",
+   "ident": "generatedDocuments",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\create_new_tables_pglite.ts",
+    "apps\\api\\drop_constraints.ts",
+    "apps\\api\\drop_constraints_pglite.ts",
+    "apps\\api\\src\\db\\billingQuery.ts",
+    "apps\\api\\src\\db\\dashboardQuery.ts",
+    "apps\\api\\src\\db\\documentQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\routes\\documents\\sign.ts",
+    "apps\\api\\src\\routes\\documents\\signUkep.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "communication_templates",
+   "ident": "communicationTemplates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\dashboardQuery.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\campaigns.ts",
+    "apps\\api\\src\\services\\communications\\templateRenderer.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\web\\src\\CommunicationsView.tsx",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-api-text-encoding.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "communication_tasks",
+   "ident": "communicationTasks",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\communications.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\recallScheduler.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\services\\tests\\recallScheduler.test.ts",
+    "apps\\api\\src\\telegram\\legacyMocks.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\web\\src\\CommunicationsView.tsx",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "artifacts\\compiled2.js",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-communication-task-complete-contract.mjs",
+    "scripts\\smoke-communication-task-outcomes.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs",
+    "scripts\\smoke-telegram-outbox-lookup.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs"
+   ]
+  },
+  {
+   "table": "communication_events",
+   "ident": "communicationEvents",
+   "files": [
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\communications.ts",
+    "apps\\api\\src\\routes\\max.ts",
+    "apps\\api\\src\\routes\\telephony.ts",
+    "apps\\api\\src\\routes\\vk.ts",
+    "apps\\api\\src\\routes\\whatsapp.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\whatsappTransport.ts",
+    "apps\\web\\src\\CommunicationsView.tsx",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-communication-task-complete-contract.mjs",
+    "scripts\\smoke-communication-task-outcomes.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs",
+    "scripts\\smoke-workspace-live-core-actions.mjs"
+   ]
+  },
+  {
+   "table": "dente_telegram_bot_configs",
+   "ident": "denteTelegramBotConfigs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\channelRouter.ts",
+    "apps\\api\\src\\services\\communications\\templateRenderer.ts",
+    "apps\\api\\src\\services\\notificationWorker.ts",
+    "apps\\api\\src\\telegram\\config.ts",
+    "apps\\web\\src\\components\\communications\\MessageDeliveryConsole.tsx",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "dente_telegram_link_codes",
+   "ident": "denteTelegramLinkCodes",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\telegram\\linkCodes.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "dente_telegram_chat_links",
+   "ident": "denteTelegramChatLinks",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\services\\communications\\channelRouter.ts",
+    "apps\\api\\src\\services\\notificationWorker.ts",
+    "apps\\api\\src\\telegram\\chatLinks.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\utils\\telegramChatRef.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "dente_telegram_webhook_events",
+   "ident": "denteTelegramWebhookEvents",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "dente_telegram_outbox_delivery_receipts",
+   "ident": "denteTelegramOutboxDeliveryReceipts",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\telegram.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\migrateStateToDb.ts",
+    "apps\\api\\src\\telegram\\outbox.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\telegramOutboxPartialDelivery.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "attachments",
+   "ident": "attachments",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\generated\\vendor.others.js",
+    "apps\\api\\src\\maxTransport.ts",
+    "apps\\api\\src\\routes\\files.ts",
+    "apps\\web\\src\\CommunicationsView.tsx",
+    "apps\\web\\src\\components\\VisitDiaryPhotoUpload.tsx",
+    "scripts\\generate-wave14-individual-proofs.cjs",
+    "scripts\\smoke-official-document-sources.mjs",
+    "scripts\\test-edge-cases-wave14.mjs"
+   ]
+  },
+  {
+   "table": "imaging_studies",
+   "ident": "imagingStudies",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\imagingQuery.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\dicomweb.test.ts",
+    "apps\\api\\src\\routes\\dicomweb.ts",
+    "apps\\api\\src\\routes\\tests\\imaging.test.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\ingestDicom.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\web\\src\\imagingComparison.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "artifacts\\compiled2.js",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-ai-recognition-scope.mjs",
+    "scripts\\smoke-imaging-preview-object-url-lifecycle.mjs",
+    "scripts\\smoke-imaging-study-visit-scope.mjs"
+   ]
+  },
+  {
+   "table": "import_batches",
+   "ident": "importBatches",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\imports.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\SettingsView.tsx",
+    "apps\\web\\src\\useSettingsDerivations.tsx",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-settings-view-source.mjs"
+   ]
+  },
+  {
+   "table": "audit_events",
+   "ident": "auditEvents",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\audit.ts",
+    "apps\\api\\src\\db\\auditQuery.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\routes\\audit.ts",
+    "apps\\api\\src\\routes\\auth.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\imports.ts",
+    "apps\\api\\src\\routes\\system.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts",
+    "apps\\api\\src\\tests\\mutableStateFlushCoalescing.test.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts",
+    "apps\\api\\src\\tests\\sampleData.test.ts",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAccessTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\SettingsView.tsx",
+    "apps\\web\\src\\useSettingsDerivations.tsx",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\census-hollow-query-modules.mjs",
+    "scripts\\census-hollow-query-modules.test.mjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-document-lifecycle.mjs",
+    "scripts\\smoke-patient-forms-lifecycle.mjs",
+    "scripts\\smoke-settings-view-source.mjs",
+    "scripts\\smoke-ui-preferences.mjs",
+    "scripts\\smoke-visit-workflow-forms-lifecycle.mjs"
+   ]
+  },
+  {
+   "table": "ai_jobs",
+   "ident": "aiJobs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\aiQuery.ts",
+    "apps\\api\\src\\routes\\system.ts",
+    "apps\\api\\src\\speech\\gateway.ts",
+    "apps\\api\\src\\speech\\storage.ts",
+    "apps\\api\\src\\speech\\tests\\speechRetentionStatement.test.ts",
+    "apps\\api\\src\\speech\\tests\\storage.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageIdentity.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreCeiling.test.ts",
+    "apps\\api\\src\\speech\\tests\\storageRestoreRetry.test.ts",
+    "apps\\api\\src\\tests\\routes\\speechTranscribeChunkAccess.test.ts"
+   ]
+  },
+  {
+   "table": "imaging_series",
+   "ident": "imagingSeries",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\dicomweb.ts",
+    "apps\\api\\src\\scripts\\ingestDicom.ts"
+   ]
+  },
+  {
+   "table": "imaging_instances",
+   "ident": "imagingInstances",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\dicomweb.test.ts",
+    "apps\\api\\src\\routes\\dicomweb.ts",
+    "apps\\api\\src\\scripts\\ingestDicom.ts"
+   ]
+  },
+  {
+   "table": "imaging_annotations",
+   "ident": "imagingAnnotations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\ai.ts"
+   ]
+  },
+  {
+   "table": "xray_scans",
+   "ident": "xrayScans",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\xray.ts"
+   ]
+  },
+  {
+   "table": "imaging_viewer_sessions",
+   "ident": "imagingViewerSessions",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\imagingQuery.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts"
+   ]
+  },
+  {
+   "table": "dicom_workbench_bundles",
+   "ident": "dicomWorkbenchBundles",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\imagingQuery.ts",
+    "apps\\api\\src\\persistentState.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\tests\\persistentState.test.ts"
+   ]
+  },
+  {
+   "table": "recent_patient_history",
+   "ident": "recentPatientHistory",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\recentPatientHistoryQuery.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\web\\src\\useAppLogic.tsx"
+   ]
+  },
+  {
+   "table": "custom_crm_task_types",
+   "ident": "customCrmTaskTypes",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\customCrmTaskTypesQuery.ts"
+   ]
+  },
+  {
+   "table": "crm_email_dispatch_logs",
+   "ident": "crmEmailDispatchLogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "cancellation_reasons_two_level",
+   "ident": "cancellationReasonsTwoLevel",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\ScheduleView.tsx"
+   ]
+  },
+  {
+   "table": "advance_deposit_taggings",
+   "ident": "advanceDepositTaggings",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "treatment_plan_lock_tokens",
+   "ident": "treatmentPlanLockTokens",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "digital_receipt_dispatches",
+   "ident": "digitalReceiptDispatches",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "patient_service_lineages",
+   "ident": "patientServiceLineages",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\clinicalTasksQuery.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\PatientsView.tsx",
+    "scripts\\census-hollow-query-modules.mjs"
+   ]
+  },
+  {
+   "table": "landing_field_mappings",
+   "ident": "landingFieldMappings",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\landingFieldMappingsQuery.ts"
+   ]
+  },
+  {
+   "table": "kkm_item_quantity_units",
+   "ident": "kkmItemQuantityUnits",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "uis_omni_messenger_queues",
+   "ident": "uisOmniMessengerQueues",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "lost_patients_filters",
+   "ident": "lostPatientsFilters",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\lostPatientsFiltersQuery.ts",
+    "apps\\api\\src\\routes\\patientRecall.ts",
+    "apps\\api\\src\\server.ts",
+    "apps\\api\\src\\services\\patients\\recallCandidates.ts",
+    "apps\\web\\src\\components\\patients\\RecallListPanel.tsx",
+    "apps\\web\\src\\MarketingView.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "scripts\\census-hollow-query-modules.mjs"
+   ]
+  },
+  {
+   "table": "quick_appointment_confirmations",
+   "ident": "quickAppointmentConfirmations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "urgent_schedule_requests",
+   "ident": "urgentScheduleRequests",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\ScheduleView.tsx",
+    "apps\\web\\src\\ShiftView.tsx"
+   ]
+  },
+  {
+   "table": "confirmation_performance_reports",
+   "ident": "confirmationPerformanceReports",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\CommunicationsView.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx",
+    "apps\\web\\src\\ShiftView.tsx"
+   ]
+  },
+  {
+   "table": "alternative_treatment_plans",
+   "ident": "alternativeTreatmentPlans",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "scripts\\census-hollow-query-modules.mjs"
+   ]
+  },
+  {
+   "table": "schedule_clipboard_items",
+   "ident": "scheduleClipboardItems",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\components\\schedule\\AppointmentCard.tsx",
+    "apps\\web\\src\\ScheduleView.tsx"
+   ]
+  },
+  {
+   "table": "schedule_time_reservations",
+   "ident": "scheduleTimeReservations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\ScheduleView.tsx"
+   ]
+  },
+  {
+   "table": "custom_examination_form_catalogs",
+   "ident": "customExaminationFormCatalogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "egisz_multiple_diagnoses",
+   "ident": "egiszMultipleDiagnoses",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\egisz.ts"
+   ]
+  },
+  {
+   "table": "extended_odontogram_states",
+   "ident": "extendedOdontogramStates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "non_dental_examination_forms",
+   "ident": "nonDentalExaminationForms",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "treatment_plan_print_odontograms",
+   "ident": "treatmentPlanPrintOdontograms",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts"
+   ]
+  },
+  {
+   "table": "treatment_plan_stages",
+   "ident": "treatmentPlanStages",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\DocumentsView.tsx",
+    "apps\\web\\src\\store\\documentStore.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "artifacts\\compiled2.js",
+    "scripts\\smoke-document-payload-ui-source.mjs"
+   ]
+  },
+  {
+   "table": "pricelist_doctor_payrolls",
+   "ident": "pricelistDoctorPayrolls",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts"
+   ]
+  },
+  {
+   "table": "rebooking_conversion_rules",
+   "ident": "rebookingConversionRules",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\web\\src\\MarketingView.tsx",
+    "apps\\web\\src\\pages\\AnalyticsDashboardView.tsx"
+   ]
+  },
+  {
+   "table": "prodoctorov_sync_exports",
+   "ident": "prodoctorovSyncExports",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "scripts\\census-hollow-query-modules.mjs"
+   ]
+  },
+  {
+   "table": "dadata_geocoded_addresses",
+   "ident": "dadataGeocodedAddresses",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\dadataGeocodedAddressesQuery.ts"
+   ]
+  },
+  {
+   "table": "single_session_enforcements",
+   "ident": "singleSessionEnforcements",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\singleSessionEnforcementsQuery.ts"
+   ]
+  },
+  {
+   "table": "lab_orders",
+   "ident": "labOrders",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\labQuery.ts",
+    "apps\\api\\src\\routes\\lab.ts"
+   ]
+  },
+  {
+   "table": "treatment_plans",
+   "ident": "treatmentPlans",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\append-schema.cjs",
+    "apps\\api\\src\\db\\clinicalTasksQuery.ts",
+    "apps\\api\\src\\db\\dashboardQuery.ts",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\recallScheduler.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\services\\tests\\recallScheduler.test.ts",
+    "apps\\web\\src\\components\\PatientPortal.tsx",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "treatment_plan_items_new",
+   "ident": "treatmentPlanItemsNew",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\append-schema.cjs",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\services\\recallScheduler.ts",
+    "apps\\api\\src\\services\\tests\\recallScheduler.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs",
+    "scripts\\smoke-dental-persistence-routes-source.mjs"
+   ]
+  },
+  {
+   "table": "visit_templates",
+   "ident": "visitTemplates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\add-egisz-schema.cjs",
+    "apps\\api\\src\\routes\\templates.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\seedTemplates.ts"
+   ]
+  },
+  {
+   "table": "visit_diaries",
+   "ident": "visitDiaries",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\add-egisz-schema.cjs",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\routes\\sterilization.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\web\\src\\components\\useVisitDiaryLogic.ts"
+   ]
+  },
+  {
+   "table": "visit_diary_revisions",
+   "ident": "visitDiaryRevisions",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts"
+   ]
+  },
+  {
+   "table": "visit_examination_photo_links",
+   "ident": "visitExaminationPhotoLinks",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "tooth_states",
+   "ident": "toothStates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\append-schema.cjs",
+    "apps\\api\\migrate.mjs",
+    "apps\\api\\src\\ai\\visiograph.ts",
+    "apps\\api\\src\\ai\\visiographPrompt.ts",
+    "apps\\api\\src\\ai\\visitDraft.ts",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts",
+    "apps\\api\\src\\routes\\xray.ts",
+    "apps\\web\\src\\components\\imaging\\VisiographAnalyzer.tsx",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "tooth_state_history",
+   "ident": "toothStateHistory",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\toothHistory.ts"
+   ]
+  },
+  {
+   "table": "insurance_contracts",
+   "ident": "insuranceContracts",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\insurance.ts",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "packages\\shared\\src\\index.ts"
+   ]
+  },
+  {
+   "table": "inventory_items",
+   "ident": "inventoryItems",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\create_new_tables_pglite.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\routes\\inventory.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts",
+    "apps\\web\\src\\components\\InventoryView.tsx"
+   ]
+  },
+  {
+   "table": "inventory_transactions",
+   "ident": "inventoryTransactions",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\routes\\inventory.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts"
+   ]
+  },
+  {
+   "table": "patient_invoices",
+   "ident": "patientInvoices",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\web\\src\\components\\PatientPortal.tsx"
+   ]
+  },
+  {
+   "table": "appointment_waitlists",
+   "ident": "appointmentWaitlists",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\waitlist.ts",
+    "apps\\api\\src\\services\\schedule\\waitlistMatching.ts",
+    "apps\\api\\src\\tests\\routes\\waitlistMatches.test.ts"
+   ]
+  },
+  {
+   "table": "clinic_chairs",
+   "ident": "clinicChairs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\migrate.ts",
+    "apps\\web\\src\\components\\leads\\LeadsKanbanView.tsx",
+    "scripts\\smoke-schema-ddl-coverage.mjs"
+   ]
+  },
+  {
+   "table": "doctor_commissions",
+   "ident": "doctorCommissions",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\routes\\workspaceProfile.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts"
+   ]
+  },
+  {
+   "table": "family_groups",
+   "ident": "familyGroups",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\finance_family.ts",
+    "apps\\web\\src\\components\\finance\\FamilyWalletPanel.tsx",
+    "scripts\\check-schema-type-drift.mjs",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "crm_leads",
+   "ident": "crmLeads",
+   "files": [
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\telephony.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\services\\syncEngine.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "procedure_material_rules",
+   "ident": "procedureMaterialRules",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\routes\\inventory.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts"
+   ]
+  },
+  {
+   "table": "sterilization_logs",
+   "ident": "sterilizationLogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\sterilization.ts",
+    "apps\\web\\src\\ScannerView.tsx",
+    "scripts\\smoke-db-runtime-contract.mjs"
+   ]
+  },
+  {
+   "table": "system_ram_watchdogs",
+   "ident": "systemRamWatchdogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "clinical_audit_logs",
+   "ident": "clinicalAuditLogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\clinicalAuditService.ts",
+    "apps\\api\\src\\routes\\diary.ts",
+    "apps\\api\\src\\tests\\routes\\diaryDeductionProof.ts",
+    "apps\\api\\src\\tests\\routes\\diarySigningCeremony.test.ts"
+   ]
+  },
+  {
+   "table": "patient_ct_plannings",
+   "ident": "patientCtPlannings",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\imaging_planning.ts"
+   ]
+  },
+  {
+   "table": "patient_duplicate_merge_queues",
+   "ident": "patientDuplicateMergeQueues",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\services\\patients\\duplicateDetection.ts"
+   ]
+  },
+  {
+   "table": "appointment_channel_inheritances",
+   "ident": "appointmentChannelInheritances",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "bulk_image_operation_logs",
+   "ident": "bulkImageOperationLogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\tests\\webCallsExistingRoutes.test.ts"
+   ]
+  },
+  {
+   "table": "chat_message_dispatch_statuses",
+   "ident": "chatMessageDispatchStatuses",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "collaborative_chat_processing_states",
+   "ident": "collaborativeChatProcessingStates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "diagnocat_ai_findings",
+   "ident": "diagnocatAiFindings",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "egisz_blank_permissions",
+   "ident": "egiszBlankPermissions",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "external_schedule_action_logs",
+   "ident": "externalScheduleActionLogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\web\\src\\ScheduleView.tsx"
+   ]
+  },
+  {
+   "table": "family_recommendation_sources",
+   "ident": "familyRecommendationSources",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "message_template_catalogs",
+   "ident": "messageTemplateCatalogs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "messenger_file_attachments",
+   "ident": "messengerFileAttachments",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "messenger_inbound_events",
+   "ident": "messengerInboundEvents",
+   "files": [
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\max.ts",
+    "apps\\api\\src\\routes\\whatsapp.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts"
+   ]
+  },
+  {
+   "table": "mkb10_auto_directories",
+   "ident": "mkb10AutoDirectories",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "ndfl_tax_calculators",
+   "ident": "ndflTaxCalculators",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\tests\\webCallsExistingRoutes.test.ts"
+   ]
+  },
+  {
+   "table": "patient_archive_reasons_and_blacklists",
+   "ident": "patientArchiveReasonsAndBlacklists",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\patientArchiveReasonsAndBlacklistsQuery.ts",
+    "apps\\api\\src\\routes\\patients.ts",
+    "apps\\api\\src\\tests\\routes\\patientArchiveStatusScope.test.ts",
+    "apps\\web\\src\\components\\crm\\PatientArchiveReasonsAndBlacklistsWidget.tsx"
+   ]
+  },
+  {
+   "table": "patient_communication_timelines",
+   "ident": "patientCommunicationTimelines",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\patientCommunicationTimelinesQuery.ts",
+    "apps\\web\\src\\components\\crm\\PatientCommunicationTimelinesWidget.tsx",
+    "apps\\web\\src\\components\\patients\\PatientCommunicationTimelineWidget.tsx",
+    "scripts\\smoke-schema-column-parity.mjs"
+   ]
+  },
+  {
+   "table": "previous_chat_dialog_histories",
+   "ident": "previousChatDialogHistories",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "uis_call_speech_transcripts",
+   "ident": "uisCallSpeechTranscripts",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "uis_sms_chat_quotas",
+   "ident": "uisSmsChatQuotas",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "yandex_calendar_syncs",
+   "ident": "yandexCalendarSyncs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "dente_max_bot_configs",
+   "ident": "denteMaxBotConfigs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\maxTransport.ts",
+    "apps\\api\\src\\routes\\max.ts",
+    "apps\\api\\src\\services\\communications\\channelRouter.ts"
+   ]
+  },
+  {
+   "table": "dente_whatsapp_bot_configs",
+   "ident": "denteWhatsappBotConfigs",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\whatsapp.ts",
+    "apps\\api\\src\\services\\communications\\channelRouter.ts",
+    "apps\\web\\src\\components\\communications\\MessageDeliveryConsole.tsx"
+   ]
+  },
+  {
+   "table": "services",
+   "ident": "services",
+   "files": [
+    ".dente-ops-shots\\backup\\dispatcher.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    ".postgres\\pgAdmin 4\\web\\pgadmin\\static\\js\\components\\PgTree\\FileTreeX\\index.tsx",
+    "apps\\api\\src\\ai\\visitFlowOrchestrator.ts",
+    "apps\\api\\src\\db\\clinicalTasksQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\db\\tests\\clinicalQuery.test.ts",
+    "apps\\api\\src\\documents\\renderDocument.ts",
+    "apps\\api\\src\\maxTransport.ts",
+    "apps\\api\\src\\migration\\formats\\dicom.ts",
+    "apps\\api\\src\\migration\\identity.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\pricelist\\analyzer.ts",
+    "apps\\api\\src\\routes\\clinical.ts",
+    "apps\\api\\src\\routes\\communicationReceipts.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\routes\\egisz.ts",
+    "apps\\api\\src\\routes\\finance_family.ts",
+    "apps\\api\\src\\routes\\lab.ts",
+    "apps\\api\\src\\routes\\leads.ts",
+    "apps\\api\\src\\routes\\max.ts",
+    "apps\\api\\src\\routes\\odontogram.ts",
+    "apps\\api\\src\\routes\\patientDuplicates.ts",
+    "apps\\api\\src\\routes\\patientRecall.ts",
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\routes\\publicAppointmentActions.ts",
+    "apps\\api\\src\\routes\\reports.ts",
+    "apps\\api\\src\\routes\\schedule.ts",
+    "apps\\api\\src\\routes\\smartImports.ts",
+    "apps\\api\\src\\routes\\sterilization.ts",
+    "apps\\api\\src\\routes\\telephony.ts",
+    "apps\\api\\src\\routes\\vk.ts",
+    "apps\\api\\src\\routes\\waitlist.ts",
+    "apps\\api\\src\\routes\\waitlistMatches.ts",
+    "apps\\api\\src\\routes\\websocket.ts",
+    "apps\\api\\src\\routes\\whatsapp.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\migrate.ts",
+    "apps\\api\\src\\server.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\channelRouter.ts",
+    "apps\\api\\src\\services\\communications\\deliveryPolicy.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\services\\communications\\dispatchWorker.ts",
+    "apps\\api\\src\\services\\communications\\optOut.ts",
+    "apps\\api\\src\\services\\communications\\templateRenderer.ts",
+    "apps\\api\\src\\tests\\automaticSendingState.test.ts",
+    "apps\\api\\src\\tests\\deliveryPolicy.test.ts",
+    "apps\\api\\src\\tests\\dispatcherConsentGate.test.ts",
+    "apps\\api\\src\\tests\\egiszCdaGenerator.test.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\api\\src\\tests\\routes\\deliveryReceipts.test.ts",
+    "apps\\api\\src\\tests\\routes\\managerReports.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\templateRenderer.test.ts",
+    "apps\\api\\src\\tests\\waitlistMatching.test.ts",
+    "apps\\api\\src\\tests\\websocketBroker.test.ts",
+    "apps\\web\\src\\components\\plan\\ComparativePlannerDashboard.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsRulesTab.tsx",
+    "apps\\web\\src\\components\\visit\\CompletedServicesChecklist.tsx",
+    "apps\\web\\src\\FinancePlanning.tsx",
+    "apps\\web\\src\\FinanceView.tsx",
+    "apps\\web\\src\\utils\\planEstimator.ts",
+    "apps\\web\\src\\workspaceUiLabels.ts",
+    "apps\\web\\src\\__tests__\\workspaceUiLabels.test.ts",
+    "benchmark_biAnalytics.ts",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\smoke-clinical-rule-contract.mjs",
+    "scripts\\smoke-document-guards.mjs",
+    "scripts\\smoke-document-payloads.mjs",
+    "scripts\\smoke-documents-catalog.mjs",
+    "scripts\\smoke-finance-planning-source.mjs",
+    "scripts\\smoke-import-contracts.mjs",
+    "scripts\\smoke-patient-forms-lifecycle.mjs",
+    "scripts\\smoke-schema-ddl-coverage.mjs",
+    "scripts\\smoke-settings-view-source.mjs",
+    "scripts\\smoke-tax-registry-fiscal.mjs",
+    "scripts\\visual_audit.cjs"
+   ]
+  },
+  {
+   "table": "protocol_templates",
+   "ident": "protocolTemplates",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\db\\dashboardQuery.ts",
+    "apps\\api\\src\\db\\domainStateHydration.ts",
+    "apps\\api\\src\\sampleData.ts",
+    "apps\\api\\src\\sampleData_opt.ts",
+    "apps\\web\\src\\components\\settings\\LegacyMigrationStudio.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsAuditTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsImportsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SettingsProtocolsTab.tsx",
+    "apps\\web\\src\\components\\settings\\SmartImportStudio.tsx",
+    "apps\\web\\src\\useAppLogic.tsx",
+    "apps\\web\\src\\VisitView.tsx",
+    "artifacts\\compiled2.js",
+    "packages\\shared\\src\\index.ts",
+    "scripts\\auto-audit-click.cjs",
+    "scripts\\auto-audit-html.cjs",
+    "scripts\\auto-audit.cjs",
+    "scripts\\playwright-audit.cjs",
+    "scripts\\smoke-api-text-encoding.mjs",
+    "scripts\\smoke-settings-view-source.mjs",
+    "scripts\\smoke-ui-preferences.mjs"
+   ]
+  },
+  {
+   "table": "uis_mass_appointment_confirmations",
+   "ident": "uisMassAppointmentConfirmations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "outgoing_notifications",
+   "ident": "outgoingNotifications",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\services\\notificationWorker.ts",
+    "apps\\api\\src\\services\\postOpCareTrigger.ts",
+    "apps\\api\\src\\services\\tests\\postOpCareTrigger.test.ts"
+   ]
+  },
+  {
+   "table": "bi_analytics_snapshots",
+   "ident": "biAnalyticsSnapshots",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\scripts\\cronAnalyticsWorker.ts",
+    "apps\\api\\src\\scripts\\tests\\cronAnalyticsWorker.test.ts",
+    "apps\\api\\src\\services\\biAnalyticsWorker.ts"
+   ]
+  },
+  {
+   "table": "cash_ledger",
+   "ident": "cashLedger",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts"
+   ]
+  },
+  {
+   "table": "communication_outbox",
+   "ident": "communicationOutbox",
+   "files": [
+    ".dente-ops-shots\\backup\\dispatcher.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\scripts\\inspectOutbox.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\campaigns.ts",
+    "apps\\api\\src\\services\\communications\\deliveryReceipts.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\services\\reports\\managerReports.ts",
+    "apps\\api\\src\\tests\\dispatcherConsentGate.test.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts",
+    "apps\\api\\src\\tests\\routes\\deliveryReceipts.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientRecall.test.ts"
+   ]
+  },
+  {
+   "table": "patient_communication_consents",
+   "ident": "patientCommunicationConsents",
+   "files": [
+    ".dente-ops-shots\\backup\\dispatcher.ts",
+    ".dente-ops-shots\\backup\\messengerIngestion.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\audience.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\services\\messengerIngestion.ts",
+    "apps\\api\\src\\services\\patients\\patientMerge.ts",
+    "apps\\api\\src\\tests\\dispatcherConsentGate.test.ts",
+    "apps\\api\\src\\tests\\inboundOptOut.test.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts"
+   ]
+  },
+  {
+   "table": "communication_settings",
+   "ident": "communicationSettings",
+   "files": [
+    ".dente-ops-shots\\backup\\dispatcher.ts",
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\services\\communications\\appointmentReminders.ts",
+    "apps\\api\\src\\services\\communications\\dispatcher.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentReminders.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\routes\\communicationsOutbox.test.ts"
+   ]
+  },
+  {
+   "table": "migration_runs",
+   "ident": "migrationRuns",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\llmMapper.ts",
+    "apps\\api\\src\\migration\\runStore.ts",
+    "apps\\api\\src\\migration\\vendorProfiles.ts",
+    "apps\\api\\src\\migration\\worker.ts",
+    "apps\\api\\src\\routes\\migration.ts",
+    "apps\\api\\src\\routes\\migrationRuns.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts",
+    "apps\\api\\src\\server.ts",
+    "packages\\shared\\src\\migration.ts"
+   ]
+  },
+  {
+   "table": "migration_staging_records",
+   "ident": "migrationStagingRecords",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\phases.ts",
+    "apps\\api\\src\\migration\\reconcile.ts",
+    "apps\\api\\src\\migration\\runStore.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts"
+   ]
+  },
+  {
+   "table": "migration_quarantine_records",
+   "ident": "migrationQuarantineRecords",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\reconcile.ts",
+    "apps\\api\\src\\migration\\runStore.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts"
+   ]
+  },
+  {
+   "table": "migration_entity_links",
+   "ident": "migrationEntityLinks",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\engine.ts",
+    "apps\\api\\src\\migration\\loader.ts",
+    "apps\\api\\src\\migration\\runStore.ts",
+    "apps\\api\\src\\migration\\worker.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts"
+   ]
+  },
+  {
+   "table": "migration_reconciliations",
+   "ident": "migrationReconciliations",
+   "files": [
+    ".dente-ops-shots\\backup\\schema.ts",
+    "apps\\api\\src\\migration\\reconcile.ts",
+    "apps\\api\\src\\routes\\migration.ts",
+    "apps\\api\\src\\routes\\migrationRuns.ts",
+    "apps\\api\\src\\scripts\\verify-migration-engine.ts",
+    "apps\\api\\src\\scripts\\verify-migration-formats.ts",
+    "apps\\api\\src\\scripts\\verify-migration-http.ts"
+   ]
+  },
+  {
+   "table": "portal_otp_codes",
+   "ident": "portalOtpCodes",
+   "files": [
+    "apps\\api\\src\\routes\\portal.ts",
+    "apps\\api\\src\\tests\\routes\\portalOtp.test.ts"
+   ]
+  },
+  {
+   "table": "patient_duplicate_decisions",
+   "ident": "patientDuplicateDecisions",
+   "files": [
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\patients\\duplicateDetection.ts",
+    "apps\\api\\src\\services\\patients\\patientMerge.ts",
+    "apps\\api\\src\\tests\\routes\\patientDuplicates.test.ts"
+   ]
+  },
+  {
+   "table": "communication_campaigns",
+   "ident": "communicationCampaigns",
+   "files": [
+    "apps\\api\\src\\routes\\communicationsOutbox.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\campaigns.ts",
+    "apps\\api\\src\\tests\\routes\\communicationCampaigns.test.ts",
+    "apps\\api\\src\\tests\\security\\unverifiedOrganizationMutation.test.ts"
+   ]
+  },
+  {
+   "table": "appointment_action_codes",
+   "ident": "appointmentActionCodes",
+   "files": [
+    "apps\\api\\src\\routes\\dayConfirmations.ts",
+    "apps\\api\\src\\scripts\\seedOpsScreenshotDemo.ts",
+    "apps\\api\\src\\services\\communications\\appointmentActionLinks.ts",
+    "apps\\api\\src\\tests\\routes\\appointmentConfirmation.test.ts",
+    "apps\\api\\src\\tests\\routes\\dayConfirmations.test.ts"
+   ]
+  }
+ ]
+}

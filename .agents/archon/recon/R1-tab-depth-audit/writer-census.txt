@@ -1,0 +1,132 @@
+DECLARED TABLES: 126   FILES SCANNED: 1047
+ZERO-WRITER TABLES: 59
+  of which DETECTOR MISSES (live rows > 0, so a writer must exist): 0
+ZERO-WRITER AND READ BY CODE (panel that can never fill): 13
+
+sql_name	ident	writers	readers	live_rows	decl	first_writer	first_reader
+dente_telegram_chat_links	denteTelegramChatLinks	0	3	0	apps/api/src/db/schema.ts:653	-	apps/api/src/services/communications/channelRouter.ts:129 | apps/api/src/telegram/chatLinks.ts:12
+custom_crm_task_types	customCrmTaskTypes	0	1	0	apps/api/src/db/schema.ts:954	-	apps/api/src/db/customCrmTaskTypesQuery.ts:8
+dadata_geocoded_addresses	dadataGeocodedAddresses	0	1	0	apps/api/src/db/schema.ts:1285	-	apps/api/src/db/dadataGeocodedAddressesQuery.ts:8
+dente_telegram_link_codes	denteTelegramLinkCodes	0	1	0	apps/api/src/db/schema.ts:629	-	apps/api/src/telegram/linkCodes.ts:12
+dente_telegram_outbox_delivery_receipts	denteTelegramOutboxDeliveryReceipts	0	1	0	apps/api/src/db/schema.ts:700	-	apps/api/src/telegram/outbox.ts:82
+egisz_multiple_diagnoses	egiszMultipleDiagnoses	0	1	0	apps/api/src/db/schema.ts:1182	-	apps/api/src/routes/egisz.ts:179
+landing_field_mappings	landingFieldMappings	0	1	0	apps/api/src/db/schema.ts:1041	-	apps/api/src/db/landingFieldMappingsQuery.ts:8
+lost_patients_filters	lostPatientsFilters	0	1	0	apps/api/src/db/schema.ts:1081	-	apps/api/src/db/lostPatientsFiltersQuery.ts:40
+patient_communication_timelines	patientCommunicationTimelines	0	1	0	apps/api/src/db/schema.ts:1980	-	apps/api/src/db/patientCommunicationTimelinesQuery.ts:35
+patient_invoices	patientInvoices	0	1	0	apps/api/src/db/schema.ts:1580	-	apps/api/src/routes/portal.ts:614
+rebooking_conversion_rules	rebookingConversionRules	0	1	0	apps/api/src/db/schema.ts:1262	-	apps/api/src/db/rebookingConversionRulesQuery.ts:8
+single_session_enforcements	singleSessionEnforcements	0	1	0	apps/api/src/db/schema.ts:1298	-	apps/api/src/db/singleSessionEnforcementsQuery.ts:8
+treatment_scenarios	treatmentScenarios	0	1	0	apps/api/src/db/schema.ts:416	-	apps/api/src/services/biAnalyticsWorker.ts:73
+advance_deposit_taggings	advanceDepositTaggings	0	0	0	apps/api/src/db/schema.ts:990	-	-
+alternative_treatment_plans	alternativeTreatmentPlans	0	0	0	apps/api/src/db/schema.ts:1130	-	-
+appointment_channel_inheritances	appointmentChannelInheritances	0	0	0	apps/api/src/db/schema.ts:1786	-	-
+bulk_image_operation_logs	bulkImageOperationLogs	0	0	0	apps/api/src/db/schema.ts:1797	-	-
+cancellation_reasons_two_level	cancellationReasonsTwoLevel	0	0	0	apps/api/src/db/schema.ts:978	-	-
+cash_ledger	cashLedger	0	0	0	apps/api/src/db/schema.ts:2187	-	-
+chat_message_dispatch_statuses	chatMessageDispatchStatuses	0	0	0	apps/api/src/db/schema.ts:1809	-	-
+collaborative_chat_processing_states	collaborativeChatProcessingStates	0	0	0	apps/api/src/db/schema.ts:1822	-	-
+confirmation_performance_reports	confirmationPerformanceReports	0	0	0	apps/api/src/db/schema.ts:1117	-	-
+crm_email_dispatch_logs	crmEmailDispatchLogs	0	0	0	apps/api/src/db/schema.ts:966	-	-
+custom_examination_form_catalogs	customExaminationFormCatalogs	0	0	0	apps/api/src/db/schema.ts:1170	-	-
+dente_telegram_webhook_events	denteTelegramWebhookEvents	0	0	0	apps/api/src/db/schema.ts:677	-	-
+diagnocat_ai_findings	diagnocatAiFindings	0	0	0	apps/api/src/db/schema.ts:1834	-	-
+digital_receipt_dispatches	digitalReceiptDispatches	0	0	0	apps/api/src/db/schema.ts:1014	-	-
+egisz_blank_permissions	egiszBlankPermissions	0	0	0	apps/api/src/db/schema.ts:1847	-	-
+extended_odontogram_states	extendedOdontogramStates	0	0	0	apps/api/src/db/schema.ts:1194	-	-
+external_schedule_action_logs	externalScheduleActionLogs	0	0	0	apps/api/src/db/schema.ts:1858	-	-
+family_recommendation_sources	familyRecommendationSources	0	0	0	apps/api/src/db/schema.ts:1870	-	-
+kkm_item_quantity_units	kkmItemQuantityUnits	0	0	0	apps/api/src/db/schema.ts:1053	-	-
+message_template_catalogs	messageTemplateCatalogs	0	0	0	apps/api/src/db/schema.ts:1881	-	-
+messenger_file_attachments	messengerFileAttachments	0	0	0	apps/api/src/db/schema.ts:1894	-	-
+mkb10_auto_directories	mkb10AutoDirectories	0	0	0	apps/api/src/db/schema.ts:1934	-	-
+ndfl_tax_calculators	ndflTaxCalculators	0	0	0	apps/api/src/db/schema.ts:1945	-	-
+non_dental_examination_forms	nonDentalExaminationForms	0	0	0	apps/api/src/db/schema.ts:1208	-	-
+patient_consents	patientConsents	0	0	0	apps/api/src/db/schema.ts:312	-	-
+patient_duplicate_merge_queues	patientDuplicateMergeQueues	0	0	0	apps/api/src/db/schema.ts:1773	-	-
+patient_service_lineages	patientServiceLineages	0	0	0	apps/api/src/db/schema.ts:1028	-	-
+previous_chat_dialog_histories	previousChatDialogHistories	0	0	0	apps/api/src/db/schema.ts:1992	-	-
+pricelist_doctor_payrolls	pricelistDoctorPayrolls	0	0	0	apps/api/src/db/schema.ts:1249	-	-
+prodoctorov_sync_exports	prodoctorovSyncExports	0	0	0	apps/api/src/db/schema.ts:1274	-	-
+protocol_templates	protocolTemplates	0	0	0	apps/api/src/db/schema.ts:2099	-	-
+quick_appointment_confirmations	quickAppointmentConfirmations	0	0	0	apps/api/src/db/schema.ts:1093	-	-
+schedule_clipboard_items	scheduleClipboardItems	0	0	0	apps/api/src/db/schema.ts:1143	-	-
+schedule_time_reservations	scheduleTimeReservations	0	0	0	apps/api/src/db/schema.ts:1156	-	-
+services	services	0	0	0	apps/api/src/db/schema.ts:2075	-	-
+system_ram_watchdogs	systemRamWatchdogs	0	0	0	apps/api/src/db/schema.ts:1722	-	-
+treatment_plan_lock_tokens	treatmentPlanLockTokens	0	0	0	apps/api/src/db/schema.ts:1002	-	-
+treatment_plan_print_odontograms	treatmentPlanPrintOdontograms	0	0	0	apps/api/src/db/schema.ts:1223	-	-
+treatment_plan_stages	treatmentPlanStages	0	0	0	apps/api/src/db/schema.ts:1235	-	-
+uis_call_speech_transcripts	uisCallSpeechTranscripts	0	0	0	apps/api/src/db/schema.ts:2003	-	-
+uis_mass_appointment_confirmations	uisMassAppointmentConfirmations	0	0	0	apps/api/src/db/schema.ts:2118	-	-
+uis_omni_messenger_queues	uisOmniMessengerQueues	0	0	0	apps/api/src/db/schema.ts:1065	-	-
+uis_sms_chat_quotas	uisSmsChatQuotas	0	0	0	apps/api/src/db/schema.ts:2016	-	-
+urgent_schedule_requests	urgentScheduleRequests	0	0	0	apps/api/src/db/schema.ts:1104	-	-
+visit_examination_photo_links	visitExaminationPhotoLinks	0	0	0	apps/api/src/db/schema.ts:1447	-	-
+yandex_calendar_syncs	yandexCalendarSyncs	0	0	0	apps/api/src/db/schema.ts:2027	-	-
+migration_staging_records	migrationStagingRecords	1	12	480	apps/api/src/db/schema.ts:2466	apps/api/src/migration/loader.ts:348	apps/api/src/migration/engine.ts:555 | apps/api/src/migration/engine.ts:561
+visit_diaries	visitDiaries	1	9	0	apps/api/src/db/schema.ts:1392	apps/api/src/routes/diary.ts:540	apps/api/src/routes/diary.ts:142 | apps/api/src/routes/diary.ts:414
+dente_whatsapp_bot_configs	denteWhatsappBotConfigs	1	7	0	apps/api/src/db/schema.ts:2055	apps/api/src/routes/whatsapp.ts:229	apps/api/src/routes/whatsapp.ts:149 | apps/api/src/routes/whatsapp.ts:202
+dente_max_bot_configs	denteMaxBotConfigs	1	6	0	apps/api/src/db/schema.ts:2039	apps/api/src/routes/max.ts:188	apps/api/src/routes/max.ts:109 | apps/api/src/routes/max.ts:161
+appointment_action_codes	appointmentActionCodes	1	4	0	apps/api/src/db/communicationsSchema.ts:89	apps/api/src/services/communications/appointmentActionLinks.ts:157	apps/api/src/routes/dayConfirmations.ts:207 | apps/api/src/services/communications/appointmentActionLinks.ts:138
+communication_settings	communicationSettings	1	4	0	apps/api/src/db/schema.ts:2298	apps/api/src/routes/communicationsOutbox.ts:417	apps/api/src/migration/loader.ts:66 | apps/api/src/services/communications/appointmentReminders.ts:152
+family_groups	familyGroups	1	4	0	apps/api/src/db/schema.ts:1640	apps/api/src/routes/finance_family.ts:272	apps/api/src/routes/finance_family.ts:87 | apps/api/src/routes/finance_family.ts:140
+insurance_contracts	insuranceContracts	1	4	0	apps/api/src/db/schema.ts:1510	apps/api/src/routes/insurance.ts:104	apps/api/src/routes/insurance.ts:27 | apps/api/src/routes/insurance.ts:53
+migration_reconciliations	migrationReconciliations	1	4	4	apps/api/src/db/schema.ts:2544	apps/api/src/migration/reconcile.ts:427	apps/api/src/routes/migration.ts:169 | apps/api/src/routes/migration.ts:246
+treatment_plans	treatmentPlans	1	4	0	apps/api/src/db/schema.ts:1338	apps/api/src/routes/odontogram.ts:461	apps/api/src/routes/odontogram.ts:189 | apps/api/src/routes/odontogram.ts:419
+dente_telegram_bot_configs	denteTelegramBotConfigs	1	3	0	apps/api/src/db/schema.ts:590	apps/api/src/telegram/config.ts:141	apps/api/src/services/communications/channelRouter.ts:100 | apps/api/src/telegram/config.ts:12
+treatment_plan_items_new	treatmentPlanItemsNew	1	3	0	apps/api/src/db/schema.ts:1359	apps/api/src/routes/odontogram.ts:479	apps/api/src/routes/odontogram.ts:198 | apps/api/src/routes/toothHistory.ts:72
+xray_scans	xrayScans	1	3	0	apps/api/src/db/schema.ts:874	apps/api/src/routes/xray.ts:121	apps/api/src/routes/xray.ts:154 | apps/api/src/routes/xray.ts:219
+appointment_waitlists	appointmentWaitlists	1	2	0	apps/api/src/db/schema.ts:1596	apps/api/src/routes/waitlist.ts:132	apps/api/src/routes/waitlist.ts:54 | apps/api/src/services/schedule/waitlistMatching.ts:148
+clinic_chairs	clinicChairs	1	2	0	apps/api/src/db/schema.ts:1612	apps/api/src/routes/workspaceProfile.ts:302	apps/api/src/routes/leads.ts:190 | apps/api/src/routes/workspaceProfile.ts:279
+dicom_workbench_bundles	dicomWorkbenchBundles	1	2	1	apps/api/src/db/schema.ts:920	apps/api/src/db/imagingQuery.ts:365	apps/api/src/db/imagingQuery.ts:301 | apps/api/src/db/imagingQuery.ts:333
+imaging_instances	imagingInstances	1	2	0	apps/api/src/db/schema.ts:840	apps/api/src/scripts/ingestDicom.ts:60	apps/api/src/routes/dicomweb.ts:231 | apps/api/src/scripts/ingestDicom.ts:76
+lab_orders	labOrders	1	2	0	apps/api/src/db/schema.ts:1317	apps/api/src/routes/lab.ts:137	apps/api/src/db/labQuery.ts:19 | apps/api/src/routes/lab.ts:59
+migration_quarantine_records	migrationQuarantineRecords	1	2	0	apps/api/src/db/schema.ts:2492	apps/api/src/migration/loader.ts:455	apps/api/src/migration/engine.ts:667 | apps/api/src/migration/reconcile.ts:390
+patient_archive_reasons_and_blacklists	patientArchiveReasonsAndBlacklists	1	2	0	apps/api/src/db/schema.ts:1958	apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts:68	apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts:10 | apps/api/src/db/patientArchiveReasonsAndBlacklistsQuery.ts:45
+patient_ct_plannings	patientCtPlannings	1	2	0	apps/api/src/db/schema.ts:1754	apps/api/src/routes/imaging_planning.ts:71	apps/api/src/routes/imaging_planning.ts:50 | apps/api/src/routes/imaging_planning.ts:109
+portal_otp_codes	portalOtpCodes	1	2	0	apps/api/src/db/schema.ts:2582	apps/api/src/routes/portal.ts:357	apps/api/src/routes/portal.ts:221 | apps/api/src/routes/portal.ts:487
+recent_patient_history	recentPatientHistory	1	2	2	apps/api/src/db/schema.ts:943	apps/api/src/db/recentPatientHistoryQuery.ts:71	apps/api/src/db/recentPatientHistoryQuery.ts:25 | apps/api/src/db/recentPatientHistoryQuery.ts:88
+sterilization_logs	sterilizationLogs	1	2	0	apps/api/src/db/schema.ts:1704	apps/api/src/routes/sterilization.ts:57	apps/api/src/routes/sterilization.ts:27 | apps/api/src/routes/sterilization.ts:88
+visit_diary_revisions	visitDiaryRevisions	1	2	0	apps/api/src/db/schema.ts:1431	apps/api/src/routes/diary.ts:734	apps/api/src/routes/diary.ts:445 | apps/api/src/routes/diary.ts:766
+user_invitations	userInvitations	1	1	0	apps/api/src/db/schema.ts:260	apps/api/src/routes/auth.ts:581	apps/api/src/routes/auth.ts:604
+imaging_annotations	imagingAnnotations	1	0	0	apps/api/src/db/schema.ts:858	apps/api/src/routes/ai.ts:235	-
+imaging_series	imagingSeries	1	0	0	apps/api/src/db/schema.ts:823	apps/api/src/scripts/ingestDicom.ts:49	-
+import_batches	importBatches	1	0	0	apps/api/src/db/schema.ts:757	apps/api/src/routes/imports.ts:400	-
+communication_outbox	communicationOutbox	2	13	6	apps/api/src/db/schema.ts:2226	apps/api/src/scripts/seedOpsScreenshotDemo.ts:441 | apps/api/src/services/communications/dispatcher.ts:317	apps/api/src/routes/communicationsOutbox.ts:540 | apps/api/src/routes/communicationsOutbox.ts:547
+migration_runs	migrationRuns	2	12	4	apps/api/src/db/schema.ts:2412	apps/api/src/migration/engine.ts:380 | apps/api/src/migration/runStore.ts:73	apps/api/src/migration/engine.ts:699 | apps/api/src/migration/engine.ts:743
+generated_documents	generatedDocuments	2	10	4	apps/api/src/db/schema.ts:500	apps/api/src/db/documentQuery.ts:135 | apps/api/src/scripts/migrateStateToDb.ts:217	apps/api/src/db/billingQuery.ts:60 | apps/api/src/db/documentQuery.ts:89
+communication_templates	communicationTemplates	2	8	3	apps/api/src/db/schema.ts:540	apps/api/src/routes/communicationsOutbox.ts:255 | apps/api/src/scripts/seedOpsScreenshotDemo.ts:398	apps/api/src/routes/communicationsOutbox.ts:218 | apps/api/src/routes/communicationsOutbox.ts:285
+communication_campaigns	communicationCampaigns	2	7	1	apps/api/src/db/communicationsSchema.ts:36	apps/api/src/scripts/seedOpsScreenshotDemo.ts:461 | apps/api/src/services/communications/campaigns.ts:118	apps/api/src/routes/communicationsOutbox.ts:738 | apps/api/src/services/communications/campaigns.ts:158
+inventory_items	inventoryItems	2	6	0	apps/api/src/db/schema.ts:1525	apps/api/src/routes/inventory.ts:131 | apps/api/src/tests/routes/diaryDeductionProof.ts:231	apps/api/src/routes/diary.ts:257 | apps/api/src/routes/inventory.ts:66
+treatment_items	treatmentItems	2	5	10	apps/api/src/db/schema.ts:392	apps/api/src/scripts/seedOpsScreenshotDemo.ts:372 | apps/api/src/tests/routes/diaryDeductionProof.ts:254	apps/api/src/db/clinicalQuery.ts:221 | apps/api/src/routes/diary.ts:204
+imaging_studies	imagingStudies	2	4	1	apps/api/src/db/schema.ts:738	apps/api/src/db/imagingQuery.ts:122 | apps/api/src/scripts/ingestDicom.ts:35	apps/api/src/db/imagingQuery.ts:82 | apps/api/src/db/imagingQuery.ts:90
+procedure_material_rules	procedureMaterialRules	2	4	0	apps/api/src/db/schema.ts:1687	apps/api/src/routes/inventory.ts:498 | apps/api/src/tests/routes/diaryDeductionProof.ts:240	apps/api/src/routes/diary.ts:243 | apps/api/src/routes/inventory.ts:402
+tooth_states	toothStates	2	3	25	apps/api/src/db/schema.ts:1458	apps/api/src/routes/odontogram.ts:332 | apps/api/drizzle/0122_tooth_states_surfaces_jsonb.sql:7	apps/api/src/routes/odontogram.ts:231 | apps/api/src/routes/odontogram.ts:280
+ai_jobs	aiJobs	2	2	0	apps/api/src/db/schema.ts:785	apps/api/src/db/aiQuery.ts:89 | apps/api/src/speech/storage.ts:807	apps/api/src/db/aiQuery.ts:63 | apps/api/src/speech/storage.ts:619
+attachments	attachments	2	2	0	apps/api/src/db/schema.ts:726	apps/api/src/routes/files.ts:68 | apps/api/src/routes/files.ts:166	apps/api/src/routes/files.ts:93 | apps/api/src/routes/files.ts:127
+clinical_rules	clinicalRules	2	2	0	apps/api/src/db/schema.ts:436	apps/api/src/db/clinicalQuery.ts:154 | apps/api/src/scripts/migrateStateToDb.ts:246	apps/api/src/db/clinicalQuery.ts:60 | apps/api/src/db/clinicalQuery.ts:70
+imaging_viewer_sessions	imagingViewerSessions	2	2	1	apps/api/src/db/schema.ts:905	apps/api/src/db/imagingQuery.ts:203 | apps/api/src/db/imagingQuery.ts:268	apps/api/src/db/imagingQuery.ts:182 | apps/api/src/db/imagingQuery.ts:233
+doctor_commissions	doctorCommissions	2	1	0	apps/api/src/db/schema.ts:1623	apps/api/src/routes/diary.ts:369 | apps/api/src/routes/workspaceProfile.ts:601	apps/api/src/routes/diary.ts:359
+messenger_inbound_events	messengerInboundEvents	2	1	0	apps/api/src/db/schema.ts:1917	apps/api/src/routes/max.ts:281 | apps/api/src/routes/whatsapp.ts:441	apps/api/src/services/messengerIngestion.ts:223
+outgoing_notifications	outgoingNotifications	2	1	0	apps/api/src/db/schema.ts:2138	apps/api/src/services/notificationWorker.ts:13 | apps/api/src/services/postOpCareTrigger.ts:9	apps/api/src/services/notificationWorker.ts:35
+patient_duplicate_decisions	patientDuplicateDecisions	2	1	0	apps/api/src/db/patientsSchema.ts:21	apps/api/src/services/patients/patientMerge.ts:235 | apps/api/src/services/patients/patientMerge.ts:305	apps/api/src/services/patients/duplicateDetection.ts:174
+tooth_state_history	toothStateHistory	2	1	99	apps/api/src/db/schema.ts:1485	apps/api/src/routes/odontogram.ts:316 | apps/api/drizzle/0120_backfill_tooth_state_history.sql:24	apps/api/src/routes/toothHistory.ts:115
+bi_analytics_snapshots	biAnalyticsSnapshots	2	0	0	apps/api/src/db/schema.ts:2158	apps/api/src/scripts/cronAnalyticsWorker.ts:236 | apps/api/src/services/biAnalyticsWorker.ts:259	-
+clinical_audit_logs	clinicalAuditLogs	2	0	0	apps/api/src/db/schema.ts:1734	apps/api/src/clinicalAuditService.ts:43 | apps/api/src/routes/diary.ts:383	-
+inventory_transactions	inventoryTransactions	2	0	0	apps/api/src/db/schema.ts:1562	apps/api/src/routes/diary.ts:336 | apps/api/src/routes/inventory.ts:215	-
+clinics	clinics	3	13	1	apps/api/src/db/schema.ts:234	apps/api/src/routes/workspaceProfile.ts:677 | apps/api/src/scripts/migrateStateToDb.ts:92	apps/api/src/db/settingsQuery.ts:84 | apps/api/src/db/settingsQuery.ts:265
+visit_templates	visitTemplates	3	6	0	apps/api/src/db/schema.ts:1374	apps/api/src/routes/templates.ts:85 | apps/api/src/routes/workspaceProfile.ts:895	apps/api/src/routes/templates.ts:23 | apps/api/src/routes/templates.ts:35
+patient_communication_consents	patientCommunicationConsents	3	4	0	apps/api/src/db/schema.ts:2273	apps/api/src/routes/communicationsOutbox.ts:486 | apps/api/src/services/messengerIngestion.ts:136	apps/api/src/routes/communicationsOutbox.ts:439 | apps/api/src/services/communications/appointmentReminders.ts:282
+service_catalog_items	serviceCatalogItems	3	4	0	apps/api/src/db/schema.ts:368	apps/api/src/routes/workspaceProfile.ts:663 | apps/api/src/routes/workspaceProfile.ts:824	apps/api/src/db/pricelistQuery.ts:23 | apps/api/src/routes/inventory.ts:381
+crm_leads	crmLeads	3	3	0	apps/api/src/db/schema.ts:1672	apps/api/src/routes/leads.ts:60 | apps/api/src/routes/telephony.ts:75	apps/api/src/routes/leads.ts:45 | apps/api/src/routes/leads.ts:169
+communication_tasks	communicationTasks	3	2	0	apps/api/src/db/schema.ts:553	apps/api/src/routes/publicAppointmentActions.ts:223 | apps/api/src/routes/workspaceProfile.ts:401	apps/api/src/routes/communications.ts:27 | apps/api/src/telegram/outbox.ts:31
+chairs	chairs	4	5	2	apps/api/src/db/schema.ts:271	apps/api/src/db/settingsQuery.ts:268 | apps/api/src/routes/workspaceProfile.ts:689	apps/api/src/db/appointmentsQuery.ts:39 | apps/api/src/db/settingsQuery.ts:87
+migration_entity_links	migrationEntityLinks	5	4	0	apps/api/src/db/schema.ts:2516	apps/api/src/migration/loader.ts:623 | apps/api/src/migration/loader.ts:731	apps/api/src/migration/engine.ts:756 | apps/api/src/migration/loader.ts:487
+communication_events	communicationEvents	5	0	0	apps/api/src/db/schema.ts:575	apps/api/src/routes/communications.ts:43 | apps/api/src/routes/telephony.ts:168	-
+payments	payments	6	18	8	apps/api/src/db/schema.ts:457	apps/api/src/db/billingQuery.ts:78 | apps/api/src/migration/loader.ts:1055	apps/api/src/db/billingQuery.ts:21 | apps/api/src/db/billingQuery.ts:132
+visits	visits	7	11	10	apps/api/src/db/schema.ts:340	apps/api/src/migration/loader.ts:1208 | apps/api/src/routes/workspaceProfile.ts:339	apps/api/src/db/billingQuery.ts:55 | apps/api/src/db/domainStateHydration.ts:837
+appointments	appointments	9	27	27	apps/api/src/db/schema.ts:322	apps/api/src/db/appointmentsQuery.ts:155 | apps/api/src/migration/loader.ts:904	apps/api/src/db/appointmentsQuery.ts:104 | apps/api/src/db/appointmentsQuery.ts:202
+organizations	organizations	11	29	4	apps/api/src/db/schema.ts:211	apps/api/src/routes/auth.ts:424 | apps/api/src/routes/auth.ts:489	apps/api/src/audit.ts:13 | apps/api/src/db/billingQuery.ts:15
+users	users	11	26	7	apps/api/src/db/schema.ts:244	apps/api/src/db/settingsQuery.ts:192 | apps/api/src/routes/auth.ts:444	apps/api/src/db/appointmentsQuery.ts:47 | apps/api/src/db/settingsQuery.ts:62
+audit_events	auditEvents	14	1	965	apps/api/src/db/schema.ts:770	apps/api/src/audit.ts:21 | apps/api/src/db/auditQuery.ts:16	apps/api/src/routes/audit.ts:58
+patients	patients	15	60	18	apps/api/src/db/schema.ts:282	apps/api/src/db/patientsQuery.ts:112 | apps/api/src/migration/loader.ts:713	apps/api/src/db/appointmentsQuery.ts:55 | apps/api/src/db/billingQuery.ts:50

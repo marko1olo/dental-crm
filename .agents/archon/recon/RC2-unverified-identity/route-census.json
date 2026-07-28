@@ -1,0 +1,2837 @@
+[
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 62,
+  "method": "GET",
+  "route": "/api/ai/recognition-jobs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 76,
+  "method": "POST",
+  "route": "/api/ai/recognition-jobs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 129,
+  "method": "POST",
+  "route": "/api/ai/visit-note-draft",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 158,
+  "method": "POST",
+  "route": "/api/ai/treatment-plan-personalize",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 171,
+  "method": "POST",
+  "route": "/api/ai/post-visit-personalize",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ai.ts",
+  "line": 190,
+  "method": "POST",
+  "route": "/api/ai/parse-dictation",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/analytics.ts",
+  "line": 24,
+  "method": "GET",
+  "route": "/api/analytics/dashboard",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/audit.ts",
+  "line": 38,
+  "method": "GET",
+  "route": "/api/audit/logs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/audit.ts",
+  "line": 74,
+  "method": "DELETE",
+  "route": "/api/audit/logs",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:rejectMutation"
+ },
+ {
+  "file": "apps/api/src/routes/audit.ts",
+  "line": 75,
+  "method": "DELETE",
+  "route": "/api/audit/logs/:id",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:rejectMutation"
+ },
+ {
+  "file": "apps/api/src/routes/audit.ts",
+  "line": 76,
+  "method": "PUT",
+  "route": "/api/audit/logs/:id",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:rejectMutation"
+ },
+ {
+  "file": "apps/api/src/routes/audit.ts",
+  "line": 77,
+  "method": "PATCH",
+  "route": "/api/audit/logs/:id",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:rejectMutation"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 80,
+  "method": "POST",
+  "route": "/api/auth/clinic/login",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 174,
+  "method": "POST",
+  "route": "/api/auth/staff/unlock",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 244,
+  "method": "GET",
+  "route": "/api/auth/status",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 277,
+  "method": "POST",
+  "route": "/api/auth/clinic/set-password",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 337,
+  "method": "POST",
+  "route": "/api/auth/staff/set-pin",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 399,
+  "method": "POST",
+  "route": "/api/auth/setup/init",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 466,
+  "method": "POST",
+  "route": "/api/auth/register",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 510,
+  "method": "POST",
+  "route": "/api/auth/login",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 567,
+  "method": "POST",
+  "route": "/api/auth/invites/create",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 594,
+  "method": "POST",
+  "route": "/api/auth/invites/accept",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 643,
+  "method": "GET",
+  "route": "/api/auth/user/me",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 669,
+  "method": "POST",
+  "route": "/api/auth/user/update-password",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/auth.ts",
+  "line": 695,
+  "method": "POST",
+  "route": "/api/auth/user/update-pin",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/billing.ts",
+  "line": 277,
+  "method": "GET",
+  "route": "/api/billing/payouts",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requirePayoutAccess+requireClinicalReadAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/billing.ts",
+  "line": 341,
+  "method": "POST",
+  "route": "/api/billing/payments",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 46,
+  "method": "POST",
+  "route": "/api/clinical/rules/evaluate",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 75,
+  "method": "POST",
+  "route": "/api/clinical/rules",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 87,
+  "method": "PATCH",
+  "route": "/api/clinical/rules/:ruleId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 109,
+  "method": "POST",
+  "route": "/api/clinical/phase-completions",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 160,
+  "method": "GET",
+  "route": "/api/clinical/tasks",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 284,
+  "method": "GET",
+  "route": "/api/system/single-session-enforcements",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 295,
+  "method": "GET",
+  "route": "/api/integrations/dadata-addresses",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 327,
+  "method": "GET",
+  "route": "/api/hr/recent-patients",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireStaffIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 344,
+  "method": "POST",
+  "route": "/api/hr/recent-patients",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireStaffIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 371,
+  "method": "GET",
+  "route": "/api/crm/custom-task-types",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 404,
+  "method": "GET",
+  "route": "/api/integrations/landing-field-mappings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 415,
+  "method": "GET",
+  "route": "/api/crm/custom-crm-task-types",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 426,
+  "method": "GET",
+  "route": "/api/integrations/dadata-geocoded-addresses",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/clinical.ts",
+  "line": 447,
+  "method": "GET",
+  "route": "/api/analytics/lost-patients-filters",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationReceipts.ts",
+  "line": 64,
+  "method": "POST",
+  "route": "/api/communications/receipts/smsru",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationReceipts.ts",
+  "line": 96,
+  "method": "GET",
+  "route": "/api/communications/receipts/smsc",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "identifier:handleSmsc"
+ },
+ {
+  "file": "apps/api/src/routes/communicationReceipts.ts",
+  "line": 97,
+  "method": "POST",
+  "route": "/api/communications/receipts/smsc",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "identifier:handleSmsc"
+ },
+ {
+  "file": "apps/api/src/routes/communications.ts",
+  "line": 13,
+  "method": "POST",
+  "route": "/api/communications/tasks/complete",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalMutationAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 202,
+  "method": "GET",
+  "route": "/api/communications/variables",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 211,
+  "method": "GET",
+  "route": "/api/communications/templates",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 237,
+  "method": "POST",
+  "route": "/api/communications/templates",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 272,
+  "method": "PATCH",
+  "route": "/api/communications/templates/:templateId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 317,
+  "method": "POST",
+  "route": "/api/communications/templates/preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 355,
+  "method": "GET",
+  "route": "/api/communications/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 362,
+  "method": "PUT",
+  "route": "/api/communications/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 429,
+  "method": "GET",
+  "route": "/api/communications/consents/:patientId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 463,
+  "method": "PUT",
+  "route": "/api/communications/consents/:patientId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 519,
+  "method": "GET",
+  "route": "/api/communications/outbox",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 562,
+  "method": "POST",
+  "route": "/api/communications/outbox",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 635,
+  "method": "POST",
+  "route": "/api/communications/outbox/:outboxId/cancel",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 666,
+  "method": "POST",
+  "route": "/api/communications/outbox/:outboxId/retry",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 700,
+  "method": "POST",
+  "route": "/api/communications/outbox/dispatch",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 720,
+  "method": "POST",
+  "route": "/api/communications/reminders/run",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 731,
+  "method": "GET",
+  "route": "/api/communications/campaigns",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 760,
+  "method": "POST",
+  "route": "/api/communications/campaigns",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 795,
+  "method": "GET",
+  "route": "/api/communications/campaigns/:campaignId/preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 810,
+  "method": "POST",
+  "route": "/api/communications/campaigns/:campaignId/launch",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 831,
+  "method": "POST",
+  "route": "/api/communications/campaigns/:campaignId/cancel",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 847,
+  "method": "GET",
+  "route": "/api/communications/campaigns/:campaignId/progress",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/communicationsOutbox.ts",
+  "line": 896,
+  "method": "GET",
+  "route": "/api/communications/gateway-status",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/dashboard.ts",
+  "line": 6,
+  "method": "GET",
+  "route": "/api/dashboard",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/dayConfirmations.ts",
+  "line": 102,
+  "method": "GET",
+  "route": "/api/schedule/day-confirmations",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 406,
+  "method": "GET",
+  "route": "/api/diaries/visit/:visitId",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalReadAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 426,
+  "method": "GET",
+  "route": "/api/diaries/:id/revisions",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalReadAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 453,
+  "method": "POST",
+  "route": "/api/diaries",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 603,
+  "method": "POST",
+  "route": "/api/diaries/:id/lock",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 668,
+  "method": "POST",
+  "route": "/api/diaries/:id/revise",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 780,
+  "method": "POST",
+  "route": "/api/diaries/sync-progress",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalMutationAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/diary.ts",
+  "line": 786,
+  "method": "PUT",
+  "route": "/api/treatment-plans/:planId/signature",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalMutationAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/dicomweb.ts",
+  "line": 285,
+  "method": "GET",
+  "route": "/api/dicomweb/studies/:studyUid/series/:seriesUid/instances/:instanceUid",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/auditFacts.ts",
+  "line": 59,
+  "method": "GET",
+  "route": "/api/documents/:id/audit-facts",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/create.ts",
+  "line": 60,
+  "method": "POST",
+  "route": "/api/documents",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/html.ts",
+  "line": 60,
+  "method": "GET",
+  "route": "/api/documents/:id/html",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/issue.ts",
+  "line": 55,
+  "method": "POST",
+  "route": "/api/documents/:id/issue",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/pdf.ts",
+  "line": 63,
+  "method": "GET",
+  "route": "/api/documents/:id/pdf",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/pdf.ts",
+  "line": 109,
+  "method": "GET",
+  "route": "/api/documents/:id/treatment-plan-pdf",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/sign.ts",
+  "line": 8,
+  "method": "POST",
+  "route": "/api/documents/:id/sign",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/signUkep.ts",
+  "line": 8,
+  "method": "POST",
+  "route": "/api/documents/:id/sign-ukep",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/documents/taxXml.ts",
+  "line": 33,
+  "method": "GET",
+  "route": "/api/documents/:id/tax-xml",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "identifier:handleGetTaxXml"
+ },
+ {
+  "file": "apps/api/src/routes/documents/void.ts",
+  "line": 59,
+  "method": "POST",
+  "route": "/api/documents/:id/void",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/egisz.ts",
+  "line": 79,
+  "method": "GET",
+  "route": "/api/clinical/egisz/integration-status",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/egisz.ts",
+  "line": 123,
+  "method": "POST",
+  "route": "/api/clinical/egisz/validate-doctor-snils",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/egisz.ts",
+  "line": 163,
+  "method": "GET",
+  "route": "/api/egisz/multiple-diagnoses",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/egisz.ts",
+  "line": 192,
+  "method": "GET",
+  "route": "/api/egisz/visits/:visitId/cda",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/files.ts",
+  "line": 24,
+  "method": "POST",
+  "route": "/api/patients/:patientId/attachments",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/files.ts",
+  "line": 86,
+  "method": "GET",
+  "route": "/api/attachments/:attachmentId/download",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/files.ts",
+  "line": 120,
+  "method": "GET",
+  "route": "/api/files/visits/:visitId/attachments",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/files.ts",
+  "line": 143,
+  "method": "POST",
+  "route": "/api/files/visits/:visitId/attachments",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 119,
+  "method": "GET",
+  "route": "/api/finance/family",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 161,
+  "method": "GET",
+  "route": "/api/finance/family/:familyGroupId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 191,
+  "method": "GET",
+  "route": "/api/finance/family/patient/:patientId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 233,
+  "method": "POST",
+  "route": "/api/finance/family",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 291,
+  "method": "PUT",
+  "route": "/api/finance/family/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 351,
+  "method": "DELETE",
+  "route": "/api/finance/family/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 394,
+  "method": "POST",
+  "route": "/api/finance/family/pay",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/finance_family.ts",
+  "line": 526,
+  "method": "POST",
+  "route": "/api/finance/family/topup",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging_planning.ts",
+  "line": 23,
+  "method": "POST",
+  "route": "/api/imaging/planning/save",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging_planning.ts",
+  "line": 89,
+  "method": "GET",
+  "route": "/api/imaging/planning/load",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6224,
+  "method": "POST",
+  "route": "/api/imaging/visiograph-ai",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6239,
+  "method": "POST",
+  "route": "/api/imaging/imports/preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6257,
+  "method": "POST",
+  "route": "/api/imaging/dicom/series-preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6275,
+  "method": "POST",
+  "route": "/api/imaging/dicomweb/check",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireDicomWebSettingsAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6287,
+  "method": "POST",
+  "route": "/api/imaging/dicom/viewer-launch-manifest",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6299,
+  "method": "POST",
+  "route": "/api/imaging/dicom/viewer-tool-state",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6311,
+  "method": "POST",
+  "route": "/api/imaging/dicom/render-cache-plan",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6323,
+  "method": "POST",
+  "route": "/api/imaging/dicom/workstation-readiness",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6335,
+  "method": "POST",
+  "route": "/api/imaging/dicom/viewer-workbench-manifest",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6347,
+  "method": "POST",
+  "route": "/api/imaging/dicom/workbench-bundles",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6366,
+  "method": "GET",
+  "route": "/api/imaging/dicom/workbench-bundles",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6388,
+  "method": "POST",
+  "route": "/api/imaging/dicom/local-folder-discovery",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6400,
+  "method": "POST",
+  "route": "/api/imaging/local-organizer/scan-preview",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6412,
+  "method": "POST",
+  "route": "/api/imaging/dicom/folder-series-preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6427,
+  "method": "POST",
+  "route": "/api/imaging/dicom/first-frame-preview",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6439,
+  "method": "POST",
+  "route": "/api/imaging/dicom/folder-workup-plan",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6454,
+  "method": "POST",
+  "route": "/api/imaging/imports/commit",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6472,
+  "method": "POST",
+  "route": "/api/imaging/folders/scan-preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6507,
+  "method": "GET",
+  "route": "/api/imaging/studies",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6520,
+  "method": "GET",
+  "route": "/api/imaging/studies/:id/viewer-session",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6538,
+  "method": "PUT",
+  "route": "/api/imaging/studies/:id/viewer-session",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6565,
+  "method": "POST",
+  "route": "/api/imaging/studies",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireOrganizationId+requireClinicalMutationAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6614,
+  "method": "POST",
+  "route": "/api/imaging/studies/:id/analyze",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6694,
+  "method": "GET",
+  "route": "/api/imaging/studies/:id/preview.svg",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imaging.ts",
+  "line": 6729,
+  "method": "GET",
+  "route": "/api/imaging/studies/:id/file",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imports.ts",
+  "line": 323,
+  "method": "POST",
+  "route": "/api/imports/patients/intake",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imports.ts",
+  "line": 337,
+  "method": "POST",
+  "route": "/api/imports/patients/preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/imports.ts",
+  "line": 351,
+  "method": "POST",
+  "route": "/api/imports/patients/commit",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/ingestion.ts",
+  "line": 30,
+  "method": "POST",
+  "route": "/api/ingestion/extract",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalMutationAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/insurance.ts",
+  "line": 17,
+  "method": "GET",
+  "route": "/api/insurance/contracts",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/insurance.ts",
+  "line": 40,
+  "method": "GET",
+  "route": "/api/insurance/contracts/:contractId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/insurance.ts",
+  "line": 68,
+  "method": "POST",
+  "route": "/api/insurance/contracts",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/insurance.ts",
+  "line": 124,
+  "method": "PUT",
+  "route": "/api/insurance/contracts/:contractId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/insurance.ts",
+  "line": 202,
+  "method": "DELETE",
+  "route": "/api/insurance/contracts/:contractId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 48,
+  "method": "GET",
+  "route": "/:organizationId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 74,
+  "method": "POST",
+  "route": "/:organizationId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 152,
+  "method": "PATCH",
+  "route": "/:organizationId/:itemId/stock",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 234,
+  "method": "PUT",
+  "route": "/:organizationId/:itemId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 330,
+  "method": "DELETE",
+  "route": "/:organizationId/:itemId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 362,
+  "method": "GET",
+  "route": "/:organizationId/rules/:serviceId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 419,
+  "method": "POST",
+  "route": "/:organizationId/rules",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/inventory.ts",
+  "line": 510,
+  "method": "DELETE",
+  "route": "/:organizationId/rules/:ruleId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 29,
+  "method": "GET",
+  "route": "/api/clinical/lab-orders",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 78,
+  "method": "POST",
+  "route": "/api/clinical/lab-orders",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 174,
+  "method": "PUT",
+  "route": "/api/clinical/lab-orders/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 251,
+  "method": "DELETE",
+  "route": "/api/clinical/lab-orders/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 277,
+  "method": "GET",
+  "route": "/api/portal/lab-order/:token",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/lab.ts",
+  "line": 302,
+  "method": "POST",
+  "route": "/api/portal/lab-order/:token/status",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 35,
+  "method": "GET",
+  "route": "/api/leads",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 50,
+  "method": "POST",
+  "route": "/api/leads",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 70,
+  "method": "PATCH",
+  "route": "/api/leads/:id/status",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 106,
+  "method": "PUT",
+  "route": "/api/leads/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 132,
+  "method": "DELETE",
+  "route": "/api/leads/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/leads.ts",
+  "line": 156,
+  "method": "POST",
+  "route": "/api/leads/:id/convert",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/max.ts",
+  "line": 99,
+  "method": "GET",
+  "route": "/api/max/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/max.ts",
+  "line": 140,
+  "method": "PUT",
+  "route": "/api/max/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/max.ts",
+  "line": 208,
+  "method": "GET",
+  "route": "/api/max/status",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/max.ts",
+  "line": 253,
+  "method": "POST",
+  "route": "/api/max/webhook",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/max.ts",
+  "line": 300,
+  "method": "POST",
+  "route": "/api/max/send",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 100,
+  "method": "POST",
+  "route": "/api/migration/analyze",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 126,
+  "method": "POST",
+  "route": "/api/migration/run",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 147,
+  "method": "GET",
+  "route": "/api/migration/runs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 154,
+  "method": "GET",
+  "route": "/api/migration/runs/:runId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 214,
+  "method": "GET",
+  "route": "/api/migration/runs/:runId/quarantine",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 232,
+  "method": "GET",
+  "route": "/api/migration/runs/:runId/reconciliation.csv",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migration.ts",
+  "line": 277,
+  "method": "POST",
+  "route": "/api/migration/rollback",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 199,
+  "method": "POST",
+  "route": "/api/migration/upload",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 316,
+  "method": "POST",
+  "route": "/api/migration/:runId/map",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 360,
+  "method": "POST",
+  "route": "/api/migration/:runId/stage",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 391,
+  "method": "POST",
+  "route": "/api/migration/:runId/execute",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 451,
+  "method": "GET",
+  "route": "/api/migration/:runId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 464,
+  "method": "GET",
+  "route": "/api/migration/:runId/reconciliation",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 509,
+  "method": "GET",
+  "route": "/api/migration/:runId/reconciliation.csv",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 546,
+  "method": "GET",
+  "route": "/api/migration/worker/status",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 566,
+  "method": "POST",
+  "route": "/api/migration/discover",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/migrationRuns.ts",
+  "line": 643,
+  "method": "POST",
+  "route": "/api/migration/dicom/inspect",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/odontogram.ts",
+  "line": 202,
+  "method": "GET",
+  "route": "/api/patients/:patientId/tooth-states",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/odontogram.ts",
+  "line": 226,
+  "method": "POST",
+  "route": "/api/patients/:patientId/tooth-states/batch",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/odontogram.ts",
+  "line": 349,
+  "method": "GET",
+  "route": "/api/patients/:patientId/treatment-plans",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/odontogram.ts",
+  "line": 368,
+  "method": "POST",
+  "route": "/api/patients/:patientId/treatment-plans",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientDuplicates.ts",
+  "line": 64,
+  "method": "GET",
+  "route": "/api/patients/duplicates",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientDuplicates.ts",
+  "line": 80,
+  "method": "GET",
+  "route": "/api/patients/:patientId/duplicates",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientDuplicates.ts",
+  "line": 99,
+  "method": "POST",
+  "route": "/api/patients/duplicates/merge",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientDuplicates.ts",
+  "line": 133,
+  "method": "POST",
+  "route": "/api/patients/duplicates/dismiss",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientRecall.ts",
+  "line": 44,
+  "method": "GET",
+  "route": "/api/patients/recall-candidates",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patientRecall.ts",
+  "line": 67,
+  "method": "POST",
+  "route": "/api/patients/recall-candidates/invite",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 276,
+  "method": "GET",
+  "route": "/api/patients",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 295,
+  "method": "POST",
+  "route": "/api/patients",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 325,
+  "method": "PUT",
+  "route": "/api/patients/:patientId",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 361,
+  "method": "PUT",
+  "route": "/api/patients/:patientId/administrative-profile",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 435,
+  "method": "GET",
+  "route": "/api/patients/:patientId/communication-timelines",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 484,
+  "method": "GET",
+  "route": "/api/patients/:patientId/archive-status",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/patients.ts",
+  "line": 516,
+  "method": "POST",
+  "route": "/api/patients/:patientId/archive-status",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/portal.ts",
+  "line": 250,
+  "method": "POST",
+  "route": "/auth/send-otp",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/portal.ts",
+  "line": 451,
+  "method": "POST",
+  "route": "/auth/verify-otp",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/portal.ts",
+  "line": 568,
+  "method": "GET",
+  "route": "/me",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/portal.ts",
+  "line": 636,
+  "method": "GET",
+  "route": "/documents/:documentId/html",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/pricelist.ts",
+  "line": 26,
+  "method": "POST",
+  "route": "/api/pricelist/analyze",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/publicAppointmentActions.ts",
+  "line": 260,
+  "method": "GET",
+  "route": "/api/p/:code",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/publicBooking.ts",
+  "line": 248,
+  "method": "GET",
+  "route": "/:organizationId/doctors",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/publicBooking.ts",
+  "line": 278,
+  "method": "GET",
+  "route": "/:organizationId/slots/:doctorId",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/publicBooking.ts",
+  "line": 396,
+  "method": "POST",
+  "route": "/:organizationId/book",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 105,
+  "method": "GET",
+  "route": "/api/reports/revenue",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 112,
+  "method": "GET",
+  "route": "/api/reports/doctors",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 119,
+  "method": "GET",
+  "route": "/api/reports/chairs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 129,
+  "method": "GET",
+  "route": "/api/reports/appointments",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 140,
+  "method": "GET",
+  "route": "/api/reports/reminder-effect",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 147,
+  "method": "GET",
+  "route": "/api/reports/patient-flow",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 154,
+  "method": "GET",
+  "route": "/api/reports/services",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 161,
+  "method": "GET",
+  "route": "/api/reports/schedule-load",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 173,
+  "method": "GET",
+  "route": "/api/reports/receivables",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/reports.ts",
+  "line": 192,
+  "method": "GET",
+  "route": "/api/reports/summary",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/schedule.ts",
+  "line": 167,
+  "method": "POST",
+  "route": "/api/appointments",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/schedule.ts",
+  "line": 243,
+  "method": "PATCH",
+  "route": "/api/appointments/:appointmentId",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "identifier:updateAppointmentHandler"
+ },
+ {
+  "file": "apps/api/src/routes/schedule.ts",
+  "line": 244,
+  "method": "PUT",
+  "route": "/api/schedule/appointments/:appointmentId",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "identifier:updateAppointmentHandler"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 324,
+  "method": "GET",
+  "route": "/api/settings/clinic",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 331,
+  "method": "GET",
+  "route": "/api/settings/preferences",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 338,
+  "method": "PUT",
+  "route": "/api/settings/preferences",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 351,
+  "method": "POST",
+  "route": "/api/settings/clinic/mode",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 363,
+  "method": "PUT",
+  "route": "/api/settings/clinic/profile",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 379,
+  "method": "POST",
+  "route": "/api/settings/staff",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 394,
+  "method": "POST",
+  "route": "/api/settings/staff/:staffId/credentials",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 420,
+  "method": "PUT",
+  "route": "/api/settings/staff/:staffId/working-hours",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 455,
+  "method": "PUT",
+  "route": "/api/settings/staff/:staffId",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 498,
+  "method": "DELETE",
+  "route": "/api/settings/staff/:staffId",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 525,
+  "method": "POST",
+  "route": "/api/settings/chairs",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 538,
+  "method": "PUT",
+  "route": "/api/settings/chairs/:chairId/working-hours",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 569,
+  "method": "PUT",
+  "route": "/api/settings/chairs/:chairId",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 610,
+  "method": "DELETE",
+  "route": "/api/settings/chairs/:chairId",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireSettingsAccess+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 637,
+  "method": "POST",
+  "route": "/api/settings/reset-demo",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/settings.ts",
+  "line": 641,
+  "method": "POST",
+  "route": "/api/settings/reset-zero",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5595,
+  "method": "POST",
+  "route": "/api/imports/smart/preview",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5609,
+  "method": "POST",
+  "route": "/api/imports/smart/local-source-discovery",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5621,
+  "method": "POST",
+  "route": "/api/imports/smart/local-source-workup",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5633,
+  "method": "POST",
+  "route": "/api/imports/smart/local-source-probe",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5645,
+  "method": "POST",
+  "route": "/api/imports/smart/migration-autopilot",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5659,
+  "method": "POST",
+  "route": "/api/imports/smart/migration-autopilot/report.csv",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5678,
+  "method": "POST",
+  "route": "/api/imports/smart/clinic-public-lookup",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5690,
+  "method": "POST",
+  "route": "/api/imports/smart/report.csv",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5709,
+  "method": "POST",
+  "route": "/api/imports/smart/report.safe.csv",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/smartImports.ts",
+  "line": 5728,
+  "method": "POST",
+  "route": "/api/imports/smart/commit",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 313,
+  "method": "GET",
+  "route": "/api/speech/status",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechStatus"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 314,
+  "method": "GET",
+  "route": "/api/speech/gateway-health",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechGatewayHealth"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 315,
+  "method": "GET",
+  "route": "/api/speech/providers/runtime",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechProvidersRuntime"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 316,
+  "method": "POST",
+  "route": "/api/speech/recording-strategy",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechRecordingStrategy"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 317,
+  "method": "GET",
+  "route": "/api/speech/chunks",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechChunks"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 318,
+  "method": "GET",
+  "route": "/api/speech/recordings/recovery",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechRecordingsRecovery"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 319,
+  "method": "GET",
+  "route": "/api/speech/recordings/:recordingId/assemble",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "identifier:handleSpeechRecordingAssemble"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 320,
+  "method": "POST",
+  "route": "/api/speech/transcribe-chunk",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationContext",
+  "handler": "identifier:handleSpeechTranscribeChunk"
+ },
+ {
+  "file": "apps/api/src/routes/speech.ts",
+  "line": 321,
+  "method": "POST",
+  "route": "/api/speech/polish-transcript",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalMutationAccess",
+  "handler": "identifier:handleSpeechPolishTranscript"
+ },
+ {
+  "file": "apps/api/src/routes/sterilization.ts",
+  "line": 17,
+  "method": "GET",
+  "route": "/api/sterilization/logs",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/sterilization.ts",
+  "line": 33,
+  "method": "POST",
+  "route": "/api/sterilization/scan",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/sterilization.ts",
+  "line": 74,
+  "method": "POST",
+  "route": "/api/sterilization/link",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/system.ts",
+  "line": 667,
+  "method": "GET",
+  "route": "/api/system/persistence/verify",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/system.ts",
+  "line": 672,
+  "method": "GET",
+  "route": "/api/system/local-bridges/readiness",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/system.ts",
+  "line": 677,
+  "method": "GET",
+  "route": "/api/system/local-bridges/use-plans",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/system.ts",
+  "line": 682,
+  "method": "GET",
+  "route": "/api/system/persistence/export",
+  "verdict": "ADMIN_SECRET_GATE_ONLY",
+  "guards": "requireClinicalReadAccess",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2641,
+  "method": "POST",
+  "route": "/api/telegram/webhook",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:handleWebhook"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2642,
+  "method": "POST",
+  "route": "/api/telegram/webhook/:organizationId/:botConfigId",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:handleWebhook"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2643,
+  "method": "POST",
+  "route": "/api/telegram/webhook/:organizationId",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "identifier:handleWebhook"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2648,
+  "method": "GET",
+  "route": "/api/telegram/status",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2650,
+  "method": "GET",
+  "route": "/api/telegram/status/:organizationId",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2661,
+  "method": "GET",
+  "route": "/api/telegram/status/:organizationId/:botConfigId",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2678,
+  "method": "GET",
+  "route": "/api/settings/telegram",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2680,
+  "method": "PUT",
+  "route": "/api/settings/telegram",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2702,
+  "method": "GET",
+  "route": "/api/telegram/feature-plan",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2706,
+  "method": "GET",
+  "route": "/api/telegram/outbox",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2718,
+  "method": "POST",
+  "route": "/api/telegram/outbox/:itemId/send",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2733,
+  "method": "POST",
+  "route": "/api/telegram/outbox/send-due",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2750,
+  "method": "POST",
+  "route": "/api/telegram/link-codes",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2795,
+  "method": "GET",
+  "route": "/api/telegram/link-codes",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2812,
+  "method": "GET",
+  "route": "/api/telegram/chat-links",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2829,
+  "method": "POST",
+  "route": "/api/telegram/chat-links/:linkId/revoke",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telegram.ts",
+  "line": 2854,
+  "method": "POST",
+  "route": "/api/telegram/messages/preview",
+  "verdict": "DENY_ALL_STUB",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telephony.ts",
+  "line": 12,
+  "method": "POST",
+  "route": "/:organizationId/webhook",
+  "verdict": "OTHER_GUARD",
+  "guards": "verifyWebhookSecret",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/telephony.ts",
+  "line": 109,
+  "method": "POST",
+  "route": "/:organizationId/sms/webhook",
+  "verdict": "OTHER_GUARD",
+  "guards": "verifyWebhookSecret",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/templates.ts",
+  "line": 14,
+  "method": "GET",
+  "route": "/api/templates",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalReadAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/templates.ts",
+  "line": 42,
+  "method": "GET",
+  "route": "/api/templates/:id",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalReadAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/templates.ts",
+  "line": 63,
+  "method": "POST",
+  "route": "/api/templates",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/templates.ts",
+  "line": 105,
+  "method": "DELETE",
+  "route": "/api/templates/:id",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/templates.ts",
+  "line": 138,
+  "method": "POST",
+  "route": "/api/templates/seed",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "requireClinicalMutationAccess+resolveOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/toothHistory.ts",
+  "line": 16,
+  "method": "GET",
+  "route": "/api/odontogram/tooth-history/:patientId/:toothId",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/visits.ts",
+  "line": 163,
+  "method": "POST",
+  "route": "/api/appointments/:appointmentId/visit",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/visits.ts",
+  "line": 204,
+  "method": "GET",
+  "route": "/api/visits/:visitId/draft/autosave",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/visits.ts",
+  "line": 222,
+  "method": "PUT",
+  "route": "/api/visits/:visitId/draft/autosave",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/visits.ts",
+  "line": 247,
+  "method": "POST",
+  "route": "/api/visits/:visitId/draft/accept",
+  "verdict": "HAND_ROLLED_TOKEN",
+  "guards": "verifyToken",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/vk.ts",
+  "line": 19,
+  "method": "POST",
+  "route": "/api/public/:organizationId/vk/webhook",
+  "verdict": "OTHER_GUARD",
+  "guards": "verifyWebhookSecret",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlist.ts",
+  "line": 33,
+  "method": "GET",
+  "route": "/api/waitlist",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlist.ts",
+  "line": 72,
+  "method": "POST",
+  "route": "/api/waitlist",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlist.ts",
+  "line": 166,
+  "method": "PUT",
+  "route": "/api/waitlist/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlist.ts",
+  "line": 234,
+  "method": "DELETE",
+  "route": "/api/waitlist/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlistMatches.ts",
+  "line": 40,
+  "method": "GET",
+  "route": "/api/schedule/freed-slots",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/waitlistMatches.ts",
+  "line": 125,
+  "method": "GET",
+  "route": "/api/appointments/:appointmentId/waitlist-matches",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadContext",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/websocket.ts",
+  "line": 96,
+  "method": "GET",
+  "route": "/api/ws/schedule",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 139,
+  "method": "GET",
+  "route": "/api/whatsapp/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 181,
+  "method": "PUT",
+  "route": "/api/whatsapp/settings",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedStaffOrAdminOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 249,
+  "method": "GET",
+  "route": "/api/whatsapp/status",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 284,
+  "method": "GET",
+  "route": "/api/whatsapp/webhook",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 334,
+  "method": "POST",
+  "route": "/api/whatsapp/webhook",
+  "verdict": "NONE",
+  "guards": "-",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/whatsapp.ts",
+  "line": 464,
+  "method": "POST",
+  "route": "/api/whatsapp/send",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireResolvedOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/workspaceProfile.ts",
+  "line": 562,
+  "method": "GET",
+  "route": "/api/workspace/profile",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "resolveOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/workspaceProfile.ts",
+  "line": 576,
+  "method": "GET",
+  "route": "/api/workspace/chairs",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "resolveOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/workspaceProfile.ts",
+  "line": 590,
+  "method": "POST",
+  "route": "/api/workspace/profile",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "resolveOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/workspaceProfile.ts",
+  "line": 646,
+  "method": "POST",
+  "route": "/api/workspace/preset/:name",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "resolveOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/workspaceProfile.ts",
+  "line": 713,
+  "method": "POST",
+  "route": "/api/workspace/onboarding/complete",
+  "verdict": "RAW_IDENTITY_NO_REQUIRE",
+  "guards": "resolveOrganizationId+getRequestIdentity",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/xray.ts",
+  "line": 99,
+  "method": "POST",
+  "route": "/api/xray/scans",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/xray.ts",
+  "line": 144,
+  "method": "POST",
+  "route": "/api/xray/scans/:id/analyze",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/xray.ts",
+  "line": 206,
+  "method": "GET",
+  "route": "/api/xray/scans",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/xray.ts",
+  "line": 227,
+  "method": "GET",
+  "route": "/api/xray/scans/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalReadAccess+requireOrganizationId",
+  "handler": "inline"
+ },
+ {
+  "file": "apps/api/src/routes/xray.ts",
+  "line": 249,
+  "method": "DELETE",
+  "route": "/api/xray/scans/:id",
+  "verdict": "TENANT_VERIFIED",
+  "guards": "requireClinicalMutationAccess+requireOrganizationId",
+  "handler": "inline"
+ }
+]

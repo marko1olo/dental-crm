@@ -1,0 +1,180 @@
+
+=== shift: 3 referenced paths, 0 with NO route in table
+
+=== schedule: 9 referenced paths, 4 with NO route in table
+   MISSING /api/schedule/external-schedule-action-logs   <- ScheduleView.tsx:707
+   MISSING /api/src/routes/schedule.ts   <- ScheduleView.tsx:188
+   MISSING /api/src/tests/webCallsExistingRoutes.test.ts   <- ScheduleView.tsx:722
+   MISSING /api/ws/schedule   <- hooks/useScheduleRealtime.ts:29
+
+=== patients: 34 referenced paths, 8 with NO route in table
+   MISSING /api/ai/predict-no-show   <- components/patients/PatientNoShowRisk.tsx:44
+   MISSING /api/crm/bulk-image-operation-logs   <- PatientsView.tsx:683
+   MISSING /api/patients/:p/reclamations   <- components/patients/PatientReclamationsWidget.tsx:72
+   MISSING /api/patients/:p/reclamations/:p   <- components/patients/PatientReclamationsWidget.tsx:133
+   MISSING /api/patients/:p/tickets   <- components/patients/PatientTaskTicketsWidget.tsx:63
+   MISSING /api/patients/:p/tickets/:p   <- components/patients/PatientTaskTicketsWidget.tsx:124
+   MISSING /api/patients/${encodeURIComponent   <- lib/patientDuplicatesApi.ts:86
+   MISSING /api/ws/schedule   <- components/odontogram/OdontogramModule.tsx:252
+
+=== imaging: 5 referenced paths, 1 with NO route in table
+   MISSING /api/dicomweb   <- ImagingView.tsx:511
+
+=== visit: 115 referenced paths, 18 with NO route in table
+   MISSING /api/   <- useAppLogic.tsx:3900
+   MISSING /api/ai/visit-flow   <- hooks/domains/useVisitLogic.ts:1059
+   MISSING /api/documents/:p/:p   <- useAppLogic.tsx:12227
+   MISSING /api/documents/${encodeURIComponent   <- useAppLogic.tsx:12447
+   MISSING /api/egisz/logs/:p   <- components/EgiszMonitor.tsx:37
+   MISSING /api/egisz/send   <- components/EgiszMonitor.tsx:73
+   MISSING /api/odontogram/   <- VisitView.tsx:1478
+   MISSING /api/settings/catalog   <- useAppLogic.tsx:7362
+   MISSING /api/settings/catalog/:p   <- useAppLogic.tsx:7383
+   MISSING /api/speech/recordings/${encodeURIComponent   <- hooks/domains/useVisitLogic.ts:768
+   MISSING /api/telegram/chat-links/${encodeURIComponent   <- useAppLogic.tsx:13135
+   MISSING /api/telegram/messages/preview${telegramOutboxActionQueryString   <- useAppLogic.tsx:13178
+   MISSING /api/telegram/outbox/${encodeURIComponent   <- useAppLogic.tsx:13228
+   MISSING /api/telegram/outbox/send-due${telegramOutboxActionQueryString   <- useAppLogic.tsx:13286
+   MISSING /api/telegram/status/${encodeURIComponent   <- hooks/useTelegramSettings.ts:550
+   MISSING /api/visits/${dashboard   <- hooks/domains/useVisitLogic.ts:536
+   MISSING /api/visits/quick   <- useAppLogic.tsx:13559
+   MISSING /api/ws/schedule   <- components/odontogram/OdontogramModule.tsx:252
+
+=== documents: 4 referenced paths, 0 with NO route in table
+
+=== finance: 9 referenced paths, 1 with NO route in table
+   MISSING /api/ws/schedule   <- components/finance/FamilyWalletPanel.tsx:99
+
+=== analytics: 7 referenced paths, 0 with NO route in table
+
+=== communications: 18 referenced paths, 3 with NO route in table
+   MISSING /api/communications/campaigns/:p/:p   <- components/communications/CampaignPanel.tsx:177
+   MISSING /api/communications/outbox:p   <- components/communications/MessageDeliveryConsole.tsx:211
+   MISSING /api/communications/outbox/:p/:p   <- components/communications/MessageDeliveryConsole.tsx:317
+
+=== inventory: 8 referenced paths, 0 with NO route in table
+
+=== scanner: 2 referenced paths, 0 with NO route in table
+
+=== leads: 2 referenced paths, 1 with NO route in table
+   MISSING /api/ws/schedule   <- components/leads/LeadsKanbanView.tsx:156
+
+=== settings: 60 referenced paths, 14 with NO route in table
+   MISSING /api/clinic/marketing-settings   <- components/settings/SettingsMarketingTab.tsx:22
+   MISSING /api/clinic/reporting-settings   <- components/settings/SettingsReportingTab.tsx:47
+   MISSING /api/clinic/workflows   <- components/settings/SettingsBpmnTab.tsx:34
+   MISSING /api/clinic/workflows/:p   <- components/settings/SettingsBpmnTab.tsx:78
+   MISSING /api/clinic/workflows/:p/toggle   <- components/settings/SettingsBpmnTab.tsx:56
+   MISSING /api/crm/patient-duplicate-merge-queues   <- SettingsView.tsx:1289
+   MISSING /api/integrations/egisz-blank-permissions   <- components/integrations/EgiszBlankPermissionsWidget.tsx:18
+   MISSING /api/integrations/yandex-calendar-syncs   <- components/integrations/YandexCalendarSyncsWidget.tsx:17
+   MISSING /api/migration/   <- SettingsView.tsx:1528
+   MISSING /api/reporting/token/generate   <- components/settings/SettingsReportingTab.tsx:20
+   MISSING /api/settings/catalog-import   <- components/settings/SettingsPricesTab.tsx:155
+   MISSING /api/settings/protocols   <- components/settings/SettingsProtocolsTab.tsx:69
+   MISSING /api/settings/protocols/:p   <- components/settings/SettingsProtocolsTab.tsx:68
+   MISSING /api/system/ram-watchdogs   <- SettingsView.tsx:1287
+
+=== marketing: 9 referenced paths, 1 with NO route in table
+   MISSING /api/marketing/family-recommendation-sources   <- components/marketing/FamilyRecommendationSourcesWidget.tsx:27
+
+
+=== DISTINCT MISSING PATHS: 47
+/api/
+    visit @ useAppLogic.tsx:3900
+/api/ai/predict-no-show
+    patients @ components/patients/PatientNoShowRisk.tsx:44
+/api/ai/visit-flow
+    visit @ hooks/domains/useVisitLogic.ts:1059
+/api/clinic/marketing-settings
+    settings @ components/settings/SettingsMarketingTab.tsx:22
+/api/clinic/reporting-settings
+    settings @ components/settings/SettingsReportingTab.tsx:47
+/api/clinic/workflows
+    settings @ components/settings/SettingsBpmnTab.tsx:34
+/api/clinic/workflows/:p
+    settings @ components/settings/SettingsBpmnTab.tsx:78
+/api/clinic/workflows/:p/toggle
+    settings @ components/settings/SettingsBpmnTab.tsx:56
+/api/communications/campaigns/:p/:p
+    communications @ components/communications/CampaignPanel.tsx:177
+/api/communications/outbox/:p/:p
+    communications @ components/communications/MessageDeliveryConsole.tsx:317
+/api/communications/outbox:p
+    communications @ components/communications/MessageDeliveryConsole.tsx:211
+/api/crm/bulk-image-operation-logs
+    patients @ PatientsView.tsx:683
+/api/crm/patient-duplicate-merge-queues
+    settings @ SettingsView.tsx:1289
+/api/dicomweb
+    imaging @ ImagingView.tsx:511
+/api/documents/${encodeURIComponent
+    visit @ useAppLogic.tsx:12447
+/api/documents/:p/:p
+    visit @ useAppLogic.tsx:12227
+/api/egisz/logs/:p
+    visit @ components/EgiszMonitor.tsx:37
+/api/egisz/send
+    visit @ components/EgiszMonitor.tsx:73
+/api/integrations/egisz-blank-permissions
+    settings @ components/integrations/EgiszBlankPermissionsWidget.tsx:18
+/api/integrations/yandex-calendar-syncs
+    settings @ components/integrations/YandexCalendarSyncsWidget.tsx:17
+/api/marketing/family-recommendation-sources
+    marketing @ components/marketing/FamilyRecommendationSourcesWidget.tsx:27
+/api/migration/
+    settings @ SettingsView.tsx:1528
+/api/odontogram/
+    visit @ VisitView.tsx:1478
+/api/patients/${encodeURIComponent
+    patients @ lib/patientDuplicatesApi.ts:86
+/api/patients/:p/reclamations
+    patients @ components/patients/PatientReclamationsWidget.tsx:72
+/api/patients/:p/reclamations/:p
+    patients @ components/patients/PatientReclamationsWidget.tsx:133
+/api/patients/:p/tickets
+    patients @ components/patients/PatientTaskTicketsWidget.tsx:63
+/api/patients/:p/tickets/:p
+    patients @ components/patients/PatientTaskTicketsWidget.tsx:124
+/api/reporting/token/generate
+    settings @ components/settings/SettingsReportingTab.tsx:20
+/api/schedule/external-schedule-action-logs
+    schedule @ ScheduleView.tsx:707
+/api/settings/catalog
+    visit @ useAppLogic.tsx:7362
+/api/settings/catalog-import
+    settings @ components/settings/SettingsPricesTab.tsx:155
+/api/settings/catalog/:p
+    visit @ useAppLogic.tsx:7383
+/api/settings/protocols
+    settings @ components/settings/SettingsProtocolsTab.tsx:69
+/api/settings/protocols/:p
+    settings @ components/settings/SettingsProtocolsTab.tsx:68
+/api/speech/recordings/${encodeURIComponent
+    visit @ hooks/domains/useVisitLogic.ts:768
+/api/src/routes/schedule.ts
+    schedule @ ScheduleView.tsx:188
+/api/src/tests/webCallsExistingRoutes.test.ts
+    schedule @ ScheduleView.tsx:722
+/api/system/ram-watchdogs
+    settings @ SettingsView.tsx:1287
+/api/telegram/chat-links/${encodeURIComponent
+    visit @ useAppLogic.tsx:13135
+/api/telegram/messages/preview${telegramOutboxActionQueryString
+    visit @ useAppLogic.tsx:13178
+/api/telegram/outbox/${encodeURIComponent
+    visit @ useAppLogic.tsx:13228
+/api/telegram/outbox/send-due${telegramOutboxActionQueryString
+    visit @ useAppLogic.tsx:13286
+/api/telegram/status/${encodeURIComponent
+    visit @ hooks/useTelegramSettings.ts:550
+/api/visits/${dashboard
+    visit @ hooks/domains/useVisitLogic.ts:536
+/api/visits/quick
+    visit @ useAppLogic.tsx:13559
+/api/ws/schedule
+    schedule @ hooks/useScheduleRealtime.ts:29
+    patients @ components/odontogram/OdontogramModule.tsx:252
+    visit @ components/odontogram/OdontogramModule.tsx:252
+    finance @ components/finance/FamilyWalletPanel.tsx:99
+    leads @ components/leads/LeadsKanbanView.tsx:156

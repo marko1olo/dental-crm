@@ -1,0 +1,279 @@
+inline route handlers examined: 288
+handlers where body inspection / 400 precedes any guard: 55
+  of those mutating (POST/PUT/PATCH/DELETE): 46
+
+DELETE /api/settings/staff/:staffId
+  registered apps/api/src/routes/settings.ts:498
+  body first: line 502 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+DELETE /api/settings/chairs/:chairId
+  registered apps/api/src/routes/settings.ts:610
+  body first: line 614 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/portal/lab-order/:token
+  registered apps/api/src/routes/lab.ts:277
+  body first: line 279 (stmt 1) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/patients
+  registered apps/api/src/routes/patients.ts:205
+  body first: line 215 (stmt 6) - zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/patients/:patientId/communication-timelines
+  registered apps/api/src/routes/patients.ts:341
+  body first: line 353 (stmt 7) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /:organizationId/doctors
+  registered apps/api/src/routes/publicBooking.ts:248
+  body first: line 255 (stmt 2) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /:organizationId/slots/:doctorId
+  registered apps/api/src/routes/publicBooking.ts:278
+  body first: line 288 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/settings/clinic
+  registered apps/api/src/routes/settings.ts:324
+  body first: line 328 (stmt 3) - zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/settings/preferences
+  registered apps/api/src/routes/settings.ts:331
+  body first: line 335 (stmt 3) - zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/visits/:visitId/draft/autosave
+  registered apps/api/src/routes/visits.ts:78
+  body first: line 88 (stmt 7) - zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+GET /api/whatsapp/webhook
+  registered apps/api/src/routes/whatsapp.ts:284
+  body first: line 290 (stmt 4) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/clinic/login
+  registered apps/api/src/routes/auth.ts:80
+  body first: line 92 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/staff/unlock
+  registered apps/api/src/routes/auth.ts:174
+  body first: line 175 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/clinic/set-password
+  registered apps/api/src/routes/auth.ts:277
+  body first: line 278 (stmt 0) - reads request.body
+  guard:      getRequestIdentity @stmt 1 line 289
+
+POST /api/auth/staff/set-pin
+  registered apps/api/src/routes/auth.ts:337
+  body first: line 338 (stmt 0) - reads request.body
+  guard:      getRequestIdentity @stmt 1 line 347
+
+POST /api/auth/setup/init
+  registered apps/api/src/routes/auth.ts:399
+  body first: line 400 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/register
+  registered apps/api/src/routes/auth.ts:466
+  body first: line 467 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/login
+  registered apps/api/src/routes/auth.ts:510
+  body first: line 511 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/invites/create
+  registered apps/api/src/routes/auth.ts:567
+  body first: line 568 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/invites/accept
+  registered apps/api/src/routes/auth.ts:594
+  body first: line 595 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/user/update-password
+  registered apps/api/src/routes/auth.ts:669
+  body first: line 670 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/auth/user/update-pin
+  registered apps/api/src/routes/auth.ts:695
+  body first: line 696 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/imaging/dicomweb/check
+  registered apps/api/src/routes/imaging.ts:6275
+  body first: line 6277 (stmt 1) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/portal/lab-order/:token/status
+  registered apps/api/src/routes/lab.ts:302
+  body first: line 309 (stmt 1) - reads request.body + zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/max/webhook
+  registered apps/api/src/routes/max.ts:253
+  body first: line 256 (stmt 1) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/patients
+  registered apps/api/src/routes/patients.ts:224
+  body first: line 232 (stmt 6) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/patients/:patientId/archive-status
+  registered apps/api/src/routes/patients.ts:396
+  body first: line 406 (stmt 8) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /auth/send-otp
+  registered apps/api/src/routes/portal.ts:250
+  body first: line 254 (stmt 1) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /auth/verify-otp
+  registered apps/api/src/routes/portal.ts:451
+  body first: line 466 (stmt 1) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /:organizationId/book
+  registered apps/api/src/routes/publicBooking.ts:396
+  body first: line 411 (stmt 2) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/appointments
+  registered apps/api/src/routes/schedule.ts:167
+  body first: line 176 (stmt 6) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/settings/clinic/mode
+  registered apps/api/src/routes/settings.ts:351
+  body first: line 354 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/settings/staff
+  registered apps/api/src/routes/settings.ts:379
+  body first: line 382 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/settings/staff/:staffId/credentials
+  registered apps/api/src/routes/settings.ts:394
+  body first: line 398 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/settings/chairs
+  registered apps/api/src/routes/settings.ts:525
+  body first: line 528 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/telegram/outbox/:itemId/send
+  registered apps/api/src/routes/telegram.ts:2718
+  body first: line 2719 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/telegram/outbox/send-due
+  registered apps/api/src/routes/telegram.ts:2733
+  body first: line 2734 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/telegram/link-codes
+  registered apps/api/src/routes/telegram.ts:2750
+  body first: line 2751 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/telegram/chat-links/:linkId/revoke
+  registered apps/api/src/routes/telegram.ts:2829
+  body first: line 2849 (stmt 5) - zod parse
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/telegram/messages/preview
+  registered apps/api/src/routes/telegram.ts:2854
+  body first: line 2862 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /:organizationId/webhook
+  registered apps/api/src/routes/telephony.ts:12
+  body first: line 30 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /:organizationId/sms/webhook
+  registered apps/api/src/routes/telephony.ts:109
+  body first: line 125 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/visits/:visitId/draft/accept
+  registered apps/api/src/routes/visits.ts:121
+  body first: line 130 (stmt 7) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/public/:organizationId/vk/webhook
+  registered apps/api/src/routes/vk.ts:19
+  body first: line 32 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+POST /api/whatsapp/webhook
+  registered apps/api/src/routes/whatsapp.ts:334
+  body first: line 337 (stmt 1) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/patients/:patientId
+  registered apps/api/src/routes/patients.ts:248
+  body first: line 258 (stmt 8) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/patients/:patientId/administrative-profile
+  registered apps/api/src/routes/patients.ts:284
+  body first: line 294 (stmt 8) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/preferences
+  registered apps/api/src/routes/settings.ts:338
+  body first: line 341 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/clinic/profile
+  registered apps/api/src/routes/settings.ts:363
+  body first: line 366 (stmt 2) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/staff/:staffId/working-hours
+  registered apps/api/src/routes/settings.ts:420
+  body first: line 424 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/staff/:staffId
+  registered apps/api/src/routes/settings.ts:455
+  body first: line 459 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/chairs/:chairId/working-hours
+  registered apps/api/src/routes/settings.ts:538
+  body first: line 542 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/chairs/:chairId
+  registered apps/api/src/routes/settings.ts:569
+  body first: line 573 (stmt 3) - returns 400
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/settings/telegram
+  registered apps/api/src/routes/telegram.ts:2680
+  body first: line 2681 (stmt 0) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+
+PUT /api/visits/:visitId/draft/autosave
+  registered apps/api/src/routes/visits.ts:96
+  body first: line 105 (stmt 7) - reads request.body
+  guard:      NO GUARD IN TOP-LEVEL STATEMENTS
+

@@ -1,0 +1,66 @@
+files parsed: 341
+GET/HEAD registrations with a string path: 128
+named functions in apps/api/src whose own body writes the DB: 164
+
+===== TIER 1 — write lexically inside the GET/HEAD handler: 1 =====
+  GET /api/system/persistence/export
+    apps/api/src/routes/system.ts:682
+    insert(auditEvents) @686
+
+===== TIER 2 — GET/HEAD handler calls a DB-writing function: 17 =====
+  GET /api/auth/status
+    apps/api/src/routes/auth.ts:244
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /api/auth/user/me
+    apps/api/src/routes/auth.ts:643
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /api/documents/:id/html
+    apps/api/src/routes/documents/html.ts:60
+      VIA readIssuedDocumentSnapshot  apps/api/src/db/documentQuery.ts:38  [update(html) @44]
+      VIA readIssuedDocumentSnapshot  apps/api/src/sampleData_opt.ts:8795  [update(html) @8801]
+  GET /api/documents/:id/pdf
+    apps/api/src/routes/documents/pdf.ts:63
+      VIA readIssuedDocumentSnapshot  apps/api/src/db/documentQuery.ts:38  [update(html) @44]
+      VIA readIssuedDocumentSnapshot  apps/api/src/sampleData_opt.ts:8795  [update(html) @8801]
+  GET /api/documents/:id/treatment-plan-pdf
+    apps/api/src/routes/documents/pdf.ts:109
+      VIA readIssuedDocumentSnapshot  apps/api/src/db/documentQuery.ts:38  [update(html) @44]
+      VIA readIssuedDocumentSnapshot  apps/api/src/sampleData_opt.ts:8795  [update(html) @8801]
+  GET /api/imaging/studies/:id/viewer-session
+    apps/api/src/routes/imaging.ts:6520
+      VIA getOrCreateImagingViewerSession  apps/api/src/db/imagingQuery.ts:179  [insert(imagingViewerSessions) @203]
+  GET /api/patients
+    apps/api/src/routes/patients.ts:205
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /api/patients/:patientId/communication-timelines
+    apps/api/src/routes/patients.ts:341
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /api/patients/:patientId/archive-status
+    apps/api/src/routes/patients.ts:364
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /me
+    apps/api/src/routes/portal.ts:568
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /documents/:documentId/html
+    apps/api/src/routes/portal.ts:636
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+      VIA readIssuedDocumentSnapshot  apps/api/src/db/documentQuery.ts:38  [update(html) @44]
+      VIA readIssuedDocumentSnapshot  apps/api/src/sampleData_opt.ts:8795  [update(html) @8801]
+  GET /api/p/:code
+    apps/api/src/routes/publicAppointmentActions.ts:260
+      VIA handle  apps/api/src/routes/publicAppointmentActions.ts:123  [update(appointments) @191; update(appointments) @207; insert(communicationTasks) @223]
+  GET /:organizationId/doctors
+    apps/api/src/routes/publicBooking.ts:248
+      VIA isRateLimited  apps/api/src/routes/publicAppointmentActions.ts:39  [delete(key) @46]
+  GET /:organizationId/slots/:doctorId
+    apps/api/src/routes/publicBooking.ts:278
+      VIA isRateLimited  apps/api/src/routes/publicAppointmentActions.ts:39  [delete(key) @46]
+  GET /api/templates
+    apps/api/src/routes/templates.ts:14
+      VIA ensureClinicalTemplatesSeeded  apps/api/src/scripts/seedTemplates.ts:361  [insert(visitTemplates) @379]
+  GET /api/visits/:visitId/draft/autosave
+    apps/api/src/routes/visits.ts:78
+      VIA verifyToken  apps/api/src/utils/cryptoHelper.ts:53  [update(data) @59]
+  GET /api/ws/schedule
+    apps/api/src/routes/websocket.ts:96
+      VIA addClient  apps/api/src/services/websocketBroker.ts:12  [delete(conn) @17; delete(conn) @20]
