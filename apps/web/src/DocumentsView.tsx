@@ -1,9 +1,16 @@
 import { CheckCircle2, FileText } from "lucide-react";
 import { isoDateLabel } from "./AppHelpers";
-import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { EmptyState } from "./components/EmptyState";
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
+import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
+import type { DocumentSelectOption } from "./components/documents/forms/documentFormTypes";
+import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
+import { MedicalInterventionRefusalForm } from "./components/documents/forms/MedicalInterventionRefusalForm";
+import { PersonalDataProcessingConsentForm } from "./components/documents/forms/PersonalDataProcessingConsentForm";
+import { PhotoVideoConsentForm } from "./components/documents/forms/PhotoVideoConsentForm";
+import { ProcedureSpecificConsentForm } from "./components/documents/forms/ProcedureSpecificConsentForm";
+import { TaxDeductionApplicationForm } from "./components/documents/forms/TaxDeductionApplicationForm";
 import {
   documentFactoryGroups,
   documentKindMetadata as sharedDocumentKindMetadata,
@@ -18,12 +25,11 @@ import {
   type PostVisitCareTopic,
   type ProcedureSpecificConsentProcedure,
   type TaxDeductionApplicationDeliveryChannel,
-  type TaxDeductionApplicationForm,
+  type TaxDeductionApplicationForm as TaxDeductionApplicationFormKind,
   type TaxDeductionApplicationRelationship,
   type XrayCbctReferralPregnancyStatus,
   type XrayCbctReferralStudyType
 } from "@dental/shared";
-type DocumentSelectOption<T extends string> = { value: T; label: string };
 type TaxDocumentPayerOption = { key: string; inn: string; label: string; amountRub: number; paymentCount: number };
 type MedicalCopyRequestSourceDocument = GeneratedDocument & {
   chainSummary?: {
@@ -41,10 +47,6 @@ type DocumentsViewProps = Record<string, any>;
 const EXTRACT_DIAGNOSIS_CHIPS = ["Кариес", "Пульпит", "Периодонтит", "Адентия", "Гингивит", "Норма"];
 const EXTRACT_TREATMENT_CHIPS = ["Препарирование", "Пломбирование", "Экстирпация пульпы", "Удаление зуба", "Профессиональная гигиена", "Консультация"];
 const EXTRACT_REC_CHIPS = ["Осмотр через 6 месяцев", "Рентген-контроль", "Санация полости рта", "Консультация ортопеда", "Прием НПВС при болях"];
-const REFUSAL_REASON_CHIPS = ["Страх перед процедурой", "Нехватка времени", "Финансовые причины", "Желание получить второе мнение"];
-const REFUSAL_RISK_CHIPS = ["Обострение воспаления", "Потеря зуба", "Развитие абсцесса", "Распространение инфекции"];
-const REFUSAL_ALT_CHIPS = ["Удаление зуба", "Отсроченное лечение", "Консультация другого специалиста", "Наблюдение"];
-const REFUSAL_WARNING_CHIPS = ["Острая пульсирующая боль", "Отек десны или щеки", "Повышение температуры тела", "Гнойные выделения"];
 const REFUND_REASON_CHIPS = ["Ошибка при оплате", "Отказ от продолжения лечения", "Оплата авансом", "Медицинские противопоказания"];
 
 function humanizeDocumentAuditText(value: string): string {
@@ -1040,7 +1042,7 @@ export function DocumentsView(props: DocumentsViewProps) {
   const typedPostVisitCareTopicOptions = postVisitCareTopicOptions as Array<DocumentSelectOption<PostVisitCareTopic>>;
   const typedProcedureSpecificConsentProcedureOptions = procedureSpecificConsentProcedureOptions as Array<DocumentSelectOption<ProcedureSpecificConsentProcedure>>;
   const typedTaxApplicationDeliveryChannelOptions = taxApplicationDeliveryChannelOptions as Array<DocumentSelectOption<TaxDeductionApplicationDeliveryChannel>>;
-  const typedTaxApplicationFormOptions = taxApplicationFormOptions as Array<DocumentSelectOption<TaxDeductionApplicationForm>>;
+  const typedTaxApplicationFormOptions = taxApplicationFormOptions as Array<DocumentSelectOption<TaxDeductionApplicationFormKind>>;
   const typedTaxApplicationRelationshipOptions = taxApplicationRelationshipOptions as Array<DocumentSelectOption<TaxDeductionApplicationRelationship>>;
   const typedTaxDocumentPayerOptions = taxDocumentPayerOptions as TaxDocumentPayerOption[];
   const typedXrayPregnancyStatusOptions = xrayPregnancyStatusOptions as Array<DocumentSelectOption<XrayCbctReferralPregnancyStatus>>;
@@ -2261,365 +2263,33 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
 
                 {selectedDocumentKind === "tax_deduction_application" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Заявление на налоговую справку</h3>
-                    <p>Заявитель, ИНН, документ, родство, год и способ выдачи без ручных правок в HTML.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <label>
-                    Заявитель / налогоплательщик
-                    <input value={taxApplicationTaxpayerFullName} onChange={(event) => setTaxApplicationTaxpayerFullName(event.target.value)} />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      ИНН
-                      <input
-                        inputMode="numeric"
-                        value={taxApplicationTaxpayerInn}
-                        onChange={(event) => setTaxApplicationTaxpayerInn(event.target.value.replace(/[^\d]/g, "").slice(0, 12))}
-                        placeholder={taxApplicationForm === "knd_1151156" ? "12 цифр, если есть" : "10 или 12 цифр"}
-                      />
-                    </label>
-                    <label>
-                      Дата рождения
-                      <input
-                        type="date"
-                        value={taxApplicationTaxpayerBirthDate}
-                        onChange={(event) => setTaxApplicationTaxpayerBirthDate(event.target.value)}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Документ заявителя
-                    <input
-                      value={taxApplicationTaxpayerIdentityDocument}
-                      onChange={(event) => setTaxApplicationTaxpayerIdentityDocument(event.target.value)}
-                      placeholder="паспорт, серия, номер, кем и когда выдан"
-                    />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      Родство
-                      <select
-                        value={taxApplicationRelationship}
-                        onChange={(event) => {
-                          const nextRelationship = normalizedTaxApplicationRelationshipSelect(event.target.value);
-                          setTaxApplicationRelationship(nextRelationship);
-                          if (nextRelationship === "self") setTaxApplicationAuthorityDocument("");
-                        }}
-                      >
-                        {typedTaxApplicationRelationshipOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Форма
-                      <select value={taxApplicationForm} onChange={(event) => setTaxApplicationForm(normalizedTaxApplicationForm(event.target.value))}>
-                        {typedTaxApplicationFormOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <div className="document-payload-row">
-                    <label>
-                      Канал выдачи
-                      <select
-                        value={taxApplicationDeliveryChannel}
-                        onChange={(event) => setTaxApplicationDeliveryChannel(normalizedTaxApplicationDeliveryChannel(event.target.value))}
-                      >
-                        {typedTaxApplicationDeliveryChannelOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Дата заявления
-                      <input type="datetime-local" value={taxApplicationRequestedAt} onChange={(event) => setTaxApplicationRequestedAt(event.target.value)} />
-                    </label>
-                  </div>
-                  <label>
-                    Кому сообщить о готовности
-                    <input value={taxApplicationContact} onChange={(event) => setTaxApplicationContact(event.target.value)} />
-                  </label>
-                  <label>
-                    Полномочия представителя
-                    <input
-                      value={taxApplicationAuthorityDocument}
-                      onChange={(event) => setTaxApplicationAuthorityDocument(event.target.value)}
-                      placeholder="если заявитель не сам пациент"
-                    />
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={taxApplicationDuplicateWarningAccepted}
-                      type="checkbox"
-                      onChange={(event) => setTaxApplicationDuplicateWarningAccepted(event.target.checked)}
-                    />
-                    Перед выдачей будет проверен дубль по тем же расходам
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <TaxDeductionApplicationForm
+                    relationshipOptions={typedTaxApplicationRelationshipOptions}
+                    formOptions={typedTaxApplicationFormOptions}
+                    deliveryChannelOptions={typedTaxApplicationDeliveryChannelOptions}
+                    normalizeRelationship={normalizedTaxApplicationRelationshipSelect}
+                    normalizeForm={normalizedTaxApplicationForm}
+                    normalizeDeliveryChannel={normalizedTaxApplicationDeliveryChannel}
+                  />
                 ) : null}
 
                 {selectedDocumentKind === "informed_consent" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Информированное согласие</h3>
-                    <p>Конкретное вмешательство, область, показание, риски, альтернативы и рекомендации без пустого шаблона.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <label>
-                    Планируемое вмешательство
-                    <textarea
-                      value={informedConsentIntervention}
-                      onChange={(event) => setInformedConsentIntervention(event.target.value)}
-                      placeholder="что именно делаем: например, лечение кариеса зуба 36 с постановкой пломбы"
-                      rows={2}
-                    />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      Область или зубы
-                      <input
-                        value={informedConsentToothOrArea}
-                        onChange={(event) => setInformedConsentToothOrArea(event.target.value)}
-                        placeholder={inferredTreatmentArea || "FDI / зона лечения"}
-                      />
-                    </label>
-                    <label>
-                      Врач
-                      <input
-                        value={informedConsentDoctorFullName}
-                        onChange={(event) => setInformedConsentDoctorFullName(event.target.value)}
-                        placeholder={activeDoctor?.fullName ?? "врач, проводивший разъяснение"}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Диагноз или клиническое показание
-                    <textarea
-                      value={informedConsentDiagnosisOrIndication}
-                      onChange={(event) => setInformedConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к вмешательству"}
-                      rows={2}
-                    />
-                  </label>
-                  <label>
-                    Ожидаемая польза
-                    <textarea value={informedConsentExpectedBenefit} onChange={(event) => setInformedConsentExpectedBenefit(event.target.value)} rows={2} />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      Анестезия
-                      <input value={informedConsentAnesthesia} onChange={(event) => setInformedConsentAnesthesia(event.target.value)} />
-                    </label>
-                    <label>
-                      Дата подтверждения
-                      <input value={informedConsentConfirmedAt} onChange={(event) => setInformedConsentConfirmedAt(event.target.value)} />
-                    </label>
-                  </div>
-                  <label>
-                    Материалы, препараты и ограничения
-                    <textarea value={informedConsentMaterialNotes} onChange={(event) => setInformedConsentMaterialNotes(event.target.value)} rows={2} />
-                  </label>
-                  <label>
-                    Кому можно сообщать медицинские сведения
-                    <input
-                      value={informedConsentTrustedContact}
-                      onChange={(event) => setInformedConsentTrustedContact(event.target.value)}
-                      placeholder="кому пациент разрешил сообщать сведения, или «никому»"
-                    />
-                  </label>
-                  <label>
-                    Разъясненные риски
-                    <textarea value={informedConsentRisks} onChange={(event) => setInformedConsentRisks(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Альтернативы
-                    <textarea value={informedConsentAlternatives} onChange={(event) => setInformedConsentAlternatives(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    После вмешательства
-                    <textarea value={informedConsentAftercare} onChange={(event) => setInformedConsentAftercare(event.target.value)} rows={4} />
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={informedConsentQuestionsAnswered}
-                      type="checkbox"
-                      onChange={(event) => setInformedConsentQuestionsAnswered(event.target.checked)}
-                    />
-                    Пациент получил ответы на вопросы
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={informedConsentRisksUnderstood}
-                      type="checkbox"
-                      onChange={(event) => setInformedConsentRisksUnderstood(event.target.checked)}
-                    />
-                    Пациент понял риски, ограничения и прогноз
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={informedConsentWithdrawUnderstood}
-                      type="checkbox"
-                      onChange={(event) => setInformedConsentWithdrawUnderstood(event.target.checked)}
-                    />
-                    Пациенту объяснено право отказаться до вмешательства
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <InformedConsentForm
+                    activeDoctorFullName={activeDoctor?.fullName}
+                    activeVisitComplaint={dashboard?.activeVisit?.complaint}
+                    inferredTreatmentArea={inferredTreatmentArea}
+                  />
                 ) : null}
 
                 {selectedDocumentKind === "procedure_specific_consent_packet" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Процедурное согласие</h3>
-                    <p>Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div className="document-payload-row">
-                    <label>
-                      Блок процедуры
-                      <select
-                        value={procedureConsentProcedureType}
-                        onChange={(event) => setProcedureConsentProcedureType(normalizedProcedureSpecificConsentProcedure(event.target.value))}
-                      >
-                        {typedProcedureSpecificConsentProcedureOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Врач
-                      <input
-                        value={procedureConsentDoctorFullName}
-                        onChange={(event) => setProcedureConsentDoctorFullName(event.target.value)}
-                        placeholder={activeDoctor?.fullName ?? "врач, проводивший разъяснение"}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Процедура или этап
-                    <textarea
-                      value={procedureConsentProcedureName}
-                      onChange={(event) => setProcedureConsentProcedureName(event.target.value)}
-                      placeholder="название процедуры: например, удаление зуба 48"
-                      rows={2}
-                    />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      Область или зубы
-                      <input
-                        value={procedureConsentToothOrArea}
-                        onChange={(event) => setProcedureConsentToothOrArea(event.target.value)}
-                        placeholder={inferredTreatmentArea || "FDI / зона лечения"}
-                      />
-                    </label>
-                    <label>
-                      Дата подтверждения
-                      <input value={procedureConsentConfirmedAt} onChange={(event) => setProcedureConsentConfirmedAt(event.target.value)} />
-                    </label>
-                  </div>
-                  <label>
-                    Диагноз или клиническое показание
-                    <textarea
-                      value={procedureConsentDiagnosisOrIndication}
-                      onChange={(event) => setProcedureConsentDiagnosisOrIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit?.complaint ?? "показание к процедуре"}
-                      rows={2}
-                    />
-                  </label>
-                  {renderClinicalToothRowsEditor()}
-                  <div className="document-payload-row">
-                    <label>
-                      Анестезия
-                      <input value={procedureConsentAnesthesia} onChange={(event) => setProcedureConsentAnesthesia(event.target.value)} />
-                    </label>
-                    <label>
-                      Материалы, системы, конструкции
-                      <input value={procedureConsentMaterials} onChange={(event) => setProcedureConsentMaterials(event.target.value)} />
-                    </label>
-                  </div>
-                  <AnamnesisField
-                    label="Персональные факторы риска пациента"
-                    value={procedureConsentPatientRiskFactors}
-                    onChange={setProcedureConsentPatientRiskFactors}
-                    placeholder="что именно у этого пациента: аллергия, антикоагулянты, диабет, беременность"
-                    denialText="Аллергии, постоянные препараты, хронические заболевания, беременность, антикоагулянты и инфекционные риски уточнены перед процедурой, значимых факторов не выявлено."
-                    denialLabel="Опрошен, значимых факторов нет"
-                    rows={3}
+                  <ProcedureSpecificConsentForm
+                    activeDoctorFullName={activeDoctor?.fullName}
+                    activeVisitComplaint={dashboard?.activeVisit?.complaint}
+                    inferredTreatmentArea={inferredTreatmentArea}
+                    procedureOptions={typedProcedureSpecificConsentProcedureOptions}
+                    normalizeProcedure={normalizedProcedureSpecificConsentProcedure}
+                    renderToothRowsEditor={renderClinicalToothRowsEditor}
                   />
-                  <label>
-                    Процедурные риски
-                    <textarea
-                      value={procedureConsentSpecificRisks}
-                      onChange={(event) => setProcedureConsentSpecificRisks(event.target.value)}
-                      rows={4}
-                    />
-                  </label>
-                  <label>
-                    Альтернативы и отказ
-                    <textarea value={procedureConsentAlternatives} onChange={(event) => setProcedureConsentAlternatives(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    После процедуры
-                    <textarea value={procedureConsentAftercare} onChange={(event) => setProcedureConsentAftercare(event.target.value)} rows={4} />
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={procedureConsentLocalFormAttached}
-                      type="checkbox"
-                      onChange={(event) => setProcedureConsentLocalFormAttached(event.target.checked)}
-                    />
-                    Локальная форма клиники приложена или включена в пакет
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={procedureConsentQuestionsAnswered}
-                      type="checkbox"
-                      onChange={(event) => setProcedureConsentQuestionsAnswered(event.target.checked)}
-                    />
-                    Пациент получил ответы на вопросы по процедуре
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={procedureConsentExactProcedureConfirmed}
-                      type="checkbox"
-                      onChange={(event) => setProcedureConsentExactProcedureConfirmed(event.target.checked)}
-                    />
-                    Конкретная процедура, зона и объем названы пациенту
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={procedureConsentRisksUnderstood}
-                      type="checkbox"
-                      onChange={(event) => setProcedureConsentRisksUnderstood(event.target.checked)}
-                    />
-                    Пациент понял процедурные риски и ограничения
-                  </label>
-    </div>
-  </details>
-                </article>
                 ) : null}
 
                 {selectedDocumentKind === "treatment_plan" ? (
@@ -3056,112 +2726,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
 
                 {selectedDocumentKind === "anesthesia_consent_log" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Журнал анестезии</h3>
-                    <p>Перед созданием: метод, препарат, зона, доза и реакция.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <label>
-                    Метод
-                    <input
-                      value={anesthesiaMethod}
-                      onChange={(event) => setAnesthesiaMethod(event.target.value)}
-                      placeholder="например: инфильтрационная"
-                    />
-                  </label>
-                  <label>
-                    Препарат
-                    <input
-                      value={anesthesiaAnesthetic}
-                      onChange={(event) => setAnesthesiaAnesthetic(event.target.value)}
-                      placeholder="например: артикаин 4%"
-                    />
-                  </label>
-                  <label>
-                    Вазоконстриктор
-                    <input
-                      value={anesthesiaVasoconstrictor}
-                      onChange={(event) => setAnesthesiaVasoconstrictor(event.target.value)}
-                      placeholder="например: 1:100000 или «без вазоконстриктора»"
-                    />
-                  </label>
-                  <label>
-                    Зона
-                    <input value={anesthesiaZone} onChange={(event) => setAnesthesiaZone(event.target.value)} placeholder={inferredTreatmentArea || "FDI / зона"} />
-                  </label>
-                  <AnamnesisField
-                    label="Аллергоанамнез"
-                    value={anesthesiaAllergyStatus}
-                    onChange={setAnesthesiaAllergyStatus}
-                    placeholder="была ли реакция на анестетики и какая"
-                    denialText="Аллергия на местные анестетики со слов пациента не отмечена."
-                  />
-                  <div className="document-payload-row">
-                    <label>
-                      Время
-                      <input
-                        value={anesthesiaDoseTime}
-                        onChange={(event) => setAnesthesiaDoseTime(event.target.value)}
-                        placeholder="время введения, часы:минуты"
-                      />
-                    </label>
-                    <label>
-                      Доза, мл
-                      <input
-                        value={anesthesiaDoseMl}
-                        onChange={(event) => setAnesthesiaDoseMl(event.target.value)}
-                        placeholder="например: 1,7"
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    Реакция
-                    <textarea
-                      value={anesthesiaReaction}
-                      onChange={(event) => setAnesthesiaReaction(event.target.value)}
-                      placeholder="заполняется после введения"
-                      rows={2}
-                    />
-                  </label>
-                  <label>
-                    Ограничения
-                    <textarea
-                      value={anesthesiaRestrictionNotes}
-                      onChange={(event) => setAnesthesiaRestrictionNotes(event.target.value)}
-                      placeholder="например: без вазоконстриктора / контроль АД"
-                      rows={2}
-                    />
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={anesthesiaRisksExplained}
-                      type="checkbox"
-                      onChange={(event) => setAnesthesiaRisksExplained(event.target.checked)}
-                    />
-                    Пациенту объяснены риски и ограничения анестезии
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={anesthesiaAllergyRestrictionsChecked}
-                      type="checkbox"
-                      onChange={(event) => setAnesthesiaAllergyRestrictionsChecked(event.target.checked)}
-                    />
-                    Аллергии, лекарства и ограничения проверены до введения
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={anesthesiaConsentConfirmed}
-                      type="checkbox"
-                      onChange={(event) => setAnesthesiaConsentConfirmed(event.target.checked)}
-                    />
-                    Пациент согласен на выбранную местную анестезию
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <AnesthesiaConsentLogForm inferredTreatmentArea={inferredTreatmentArea} />
                 ) : null}
 
                 {selectedDocumentKind === "prescription_medication_order" ? (
@@ -3251,97 +2816,10 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
 
                 {selectedDocumentKind === "photo_video_consent" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Фото, видео и снимки</h3>
-                    <p>Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div className="document-payload-row">
-                    {typedPhotoVideoMaterialOptions.map((option) => (
-                      <label className="document-payload-checkbox" key={option.value}>
-                        <input
-                          checked={photoVideoMaterials.includes(option.value)}
-                          type="checkbox"
-                          onChange={() => togglePhotoVideoMaterial(option.value)}
-                        />
-                        {option.label}
-                      </label>
-                    ))}
-                  </div>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoClinicalRecordUseConfirmed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoClinicalRecordUseConfirmed(event.target.checked)}
-                    />
-                    Фото, видео и снимки вносятся в медицинскую карту пациента
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoAnonymizationConfirmed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoAnonymizationConfirmed(event.target.checked)}
-                    />
-                    Внешнее использование только после обезличивания, кроме отдельно разрешенной узнаваемой публикации
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoLabTransferAllowed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoLabTransferAllowed(event.target.checked)}
-                    />
-                    Можно передавать в зуботехническую лабораторию
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoColleagueConsultationAllowed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoColleagueConsultationAllowed(event.target.checked)}
-                    />
-                    Можно показывать коллегам для консультации
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoEducationUseAllowed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoEducationUseAllowed(event.target.checked)}
-                    />
-                    Можно использовать в обучении и профессиональных разборах
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoMarketingUseAllowed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoMarketingUseAllowed(event.target.checked)}
-                    />
-                    Можно использовать в маркетинге клиники
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={photoVideoRecognizablePublicationAllowed}
-                      type="checkbox"
-                      onChange={(event) => setPhotoVideoRecognizablePublicationAllowed(event.target.checked)}
-                    />
-                    Разрешена узнаваемая публикация лица или улыбки
-                  </label>
-                  <label>
-                    Как пациент отзывает согласие
-                    <textarea
-                      value={photoVideoRevocationChannel}
-                      onChange={(event) => setPhotoVideoRevocationChannel(event.target.value)}
-                      rows={2}
-                    />
-                  </label>
-                  <label>
-                    Ограничения пациента
-                    <textarea value={photoVideoScopeNotes} onChange={(event) => setPhotoVideoScopeNotes(event.target.value)} rows={2} />
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <PhotoVideoConsentForm
+                    materialOptions={typedPhotoVideoMaterialOptions}
+                    toggleMaterial={togglePhotoVideoMaterial}
+                  />
                 ) : null}
 
                 {selectedDocumentKind === "xray_cbct_referral" ? (
@@ -4148,224 +3626,15 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
 
                 {selectedDocumentKind === "personal_data_processing_consent" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Согласие на ПДн</h3>
-                    <p>Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона.</p>
-                  </div>
-  <details className="document-manual-override" style={{ background: "var(--surface-100)", padding: "12px 16px", borderRadius: "8px", border: "1px solid var(--line)", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div className="document-payload-row">
-                    <label>
-                      Оператор
-                      <input
-                        value={clinicProfileDraft.legalName || clinicProfileDraft.clinicName}
-                        readOnly
-                        placeholder="заполните юридический профиль клиники"
-                      />
-                    </label>
-                    <label>
-                      ИНН оператора
-                      <input value={clinicProfileDraft.inn} readOnly placeholder="из настроек клиники" />
-                    </label>
-                  </div>
-                  <label>
-                    Адрес оператора
-                    <input value={clinicProfileDraft.address} readOnly placeholder="из настроек клиники" />
-                  </label>
-                  <label>
-                    Цели обработки
-                    <textarea value={personalDataPurposes} onChange={(event) => setPersonalDataPurposes(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Категории данных
-                    <textarea value={personalDataCategories} onChange={(event) => setPersonalDataCategories(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Действия с данными
-                    <textarea value={personalDataActions} onChange={(event) => setPersonalDataActions(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Передача третьим лицам
-                    <textarea value={personalDataTransferRules} onChange={(event) => setPersonalDataTransferRules(event.target.value)} rows={3} />
-                  </label>
-                  <div className="document-payload-row">
-                    <label className="document-payload-checkbox">
-                      <input
-                        checked={personalDataCrossBorderAllowed}
-                        type="checkbox"
-                        onChange={(event) => setPersonalDataCrossBorderAllowed(event.target.checked)}
-                      />
-                      Разрешена трансграничная передача
-                    </label>
-                    <label className="document-payload-checkbox">
-                      <input
-                        checked={personalDataAutomatedDecisionAllowed}
-                        type="checkbox"
-                        onChange={(event) => setPersonalDataAutomatedDecisionAllowed(event.target.checked)}
-                      />
-                      Разрешены автоматизированные решения
-                    </label>
-                  </div>
-                  <label>
-                    Срок хранения
-                    <textarea
-                      value={personalDataRetentionPeriod}
-                      onChange={(event) => setPersonalDataRetentionPeriod(event.target.value)}
-                      rows={2}
-                    />
-                  </label>
-                  <div className="document-payload-row">
-                    <label>
-                      Порядок отзыва
-                      <textarea
-                        value={personalDataRevocationChannel}
-                        onChange={(event) => setPersonalDataRevocationChannel(event.target.value)}
-                        rows={2}
-                      />
-                    </label>
-                    <label>
-                      Дата согласия
-                      <input value={personalDataConsentGivenAt} onChange={(event) => setPersonalDataConsentGivenAt(event.target.value)} />
-                    </label>
-                  </div>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={personalDataVoluntaryConsentConfirmed}
-                      type="checkbox"
-                      onChange={(event) => setPersonalDataVoluntaryConsentConfirmed(event.target.checked)}
-                    />
-                    Пациент добровольно согласен на обработку персональных данных
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={personalDataMedicalProcessingAcknowledged}
-                      type="checkbox"
-                      onChange={(event) => setPersonalDataMedicalProcessingAcknowledged(event.target.checked)}
-                    />
-                    Пациент понимает обработку медицинских данных
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <PersonalDataProcessingConsentForm clinicProfileDraft={clinicProfileDraft} />
                 ) : null}
 
                 {selectedDocumentKind === "medical_intervention_refusal" ? (
-                  <article className="document-payload-card">
-                  <div>
-                    <h3>Отказ от вмешательства</h3>
-                    <p>Что предложено, почему нужно, какие риски объяснены и когда срочно обращаться.</p>
-                  </div>
-  <details className="document-manual-override bg-[var(--surface-100,#f8fafc)] p-3 rounded-lg border border-[var(--line,#e2e8f0)] mt-4">
-    <summary className="cursor-pointer font-semibold text-[var(--brand-700,#0f766e)] select-none hover:opacity-80 transition-opacity">✏️ Ручная корректировка полей (развернуть)</summary>
-    <div className="document-payload-collapsed-content mt-4 flex flex-col gap-4">
-                  <label>
-                    Предложенное вмешательство
-                    <input
-                      value={refusalIntervention}
-                      onChange={(event) => setRefusalIntervention(event.target.value)}
-                      placeholder={inferredTreatmentArea ? `например: лечение или удаление ${inferredTreatmentArea}` : "процедура или вмешательство"}
-                    />
-                  </label>
-                  <label>
-                    Клиническое показание
-                    <textarea
-                      value={refusalClinicalIndication}
-                      onChange={(event) => setRefusalClinicalIndication(event.target.value)}
-                      placeholder={dashboard?.activeVisit?.complaint ?? "показания и причина рекомендации врача"}
-                      rows={2}
-                    />
-                  </label>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Причина отказа со слов пациента</span>
-                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalPatientReason(refusalPatientReason ? `${refusalPatientReason}, ${t}` : t)} />
-                    </div>
-                    <textarea value={refusalPatientReason} onChange={(event) => setRefusalPatientReason(event.target.value)} rows={2} className="mt-0" />
-                    <div className="quick-chips-row flex-wrap">
-                      {REFUSAL_REASON_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalPatientReason(refusalPatientReason.trim() ? `${refusalPatientReason.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Разъясненные риски</span>
-                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalExplainedRisks(refusalExplainedRisks ? `${refusalExplainedRisks}, ${t}` : t)} />
-                    </div>
-                    <textarea value={refusalExplainedRisks} onChange={(event) => setRefusalExplainedRisks(event.target.value)} rows={3} className="mt-0" />
-                    <div className="quick-chips-row flex-wrap">
-                      {REFUSAL_RISK_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalExplainedRisks(refusalExplainedRisks.trim() ? `${refusalExplainedRisks.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Предложенные альтернативы</span>
-                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalAlternatives(refusalAlternatives ? `${refusalAlternatives}, ${t}` : t)} />
-                    </div>
-                    <textarea value={refusalAlternatives} onChange={(event) => setRefusalAlternatives(event.target.value)} rows={3} className="mt-0" />
-                    <div className="quick-chips-row flex-wrap">
-                      {REFUSAL_ALT_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalAlternatives(refusalAlternatives.trim() ? `${refusalAlternatives.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-semibold text-[var(--ink,#334155)]">Тревожные признаки</span>
-                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns ? `${refusalUrgentWarningSigns}, ${t}` : t)} />
-                    </div>
-                    <textarea value={refusalUrgentWarningSigns} onChange={(event) => setRefusalUrgentWarningSigns(event.target.value)} rows={3} className="mt-0" />
-                    <div className="quick-chips-row flex-wrap">
-                      {REFUSAL_WARNING_CHIPS.map(chip => (
-                        <button key={chip} type="button" className="quick-chip quick-chip--sm focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:scale-[1.02]" onClick={() => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns.trim() ? `${refusalUrgentWarningSigns.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="document-payload-row">
-                    <label>
-                      Врач
-                      <input
-                        value={refusalDoctorFullName}
-                        onChange={(event) => setRefusalDoctorFullName(event.target.value)}
-                        placeholder={activeDoctor?.fullName ?? "врач, проводивший разъяснение"}
-                      />
-                    </label>
-                    <label>
-                      Дата подтверждения
-                      <input value={refusalConfirmedAt} onChange={(event) => setRefusalConfirmedAt(event.target.value)} />
-                    </label>
-                  </div>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={refusalConsequencesUnderstood}
-                      type="checkbox"
-                      onChange={(event) => setRefusalConsequencesUnderstood(event.target.checked)}
-                    />
-                    Пациент понял последствия отказа
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={refusalSecondOpinionOffered}
-                      type="checkbox"
-                      onChange={(event) => setRefusalSecondOpinionOffered(event.target.checked)}
-                    />
-                    Пациенту предложено второе мнение или альтернатива
-                  </label>
-                  <label className="document-payload-checkbox">
-                    <input
-                      checked={refusalEmergencyCareExplained}
-                      type="checkbox"
-                      onChange={(event) => setRefusalEmergencyCareExplained(event.target.checked)}
-                    />
-                    Пациенту объяснено, когда нужна экстренная помощь
-                  </label>
-    </div>
-  </details>
-                </article>
+                  <MedicalInterventionRefusalForm
+                    activeDoctorFullName={activeDoctor?.fullName}
+                    activeVisitComplaint={dashboard?.activeVisit?.complaint}
+                    inferredTreatmentArea={inferredTreatmentArea}
+                  />
                 ) : null}
 
                 {selectedDocumentKind === "payment_refund_correction_request" ? (
