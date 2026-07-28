@@ -1,5 +1,6 @@
 import { Clipboard } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
 
 interface Template {
 	id: string;
@@ -23,12 +24,40 @@ export function VisitDiaryTemplateSelector({
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState("");
 
+	/*
+	 * Источник заголовков берётся ТОЛЬКО из контекста приложения.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО. `/api/templates` закрыт охраной requireClinicalReadAccess
+	 * (routes/templates.ts): без заголовка `x-dente-admin-secret` она отвечает 403.
+	 * Запрос шёл голым fetch, и на этой машине список шаблонов загружался только
+	 * потому, что в корневом .env секрет закомментирован, а лазейки
+	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS включены. Лазейки живут, пока
+	 * NODE_ENV !== "production", то есть у заказчика их нет: там список
+	 * «Клинический шаблон» молча пуст, и врач набирает дневник с нуля.
+	 *
+	 * Одноимённый `auth` есть ещё и в AppHelpers.tsx, но тот НЕ подставляет секрет
+	 * из сессии — только если передать его вторым аргументом. Брать заголовки
+	 * оттуда значит скомпилироваться и всё равно получить 403 в клинике.
+	 *
+	 * ref, а не зависимость эффекта: useAuthLogic возвращает новый объект на
+	 * каждый рендер провайдера, поэтому `auth` в зависимостях loadTemplates
+	 * перезапрашивал бы шаблоны на каждое нажатие клавиши в дневнике.
+	 */
+	const appLogic = useAppLogicContext();
+	const auth = appLogic?.auth;
+	const authRef = useRef(auth);
+	authRef.current = auth;
+
 	const loadTemplates = useCallback(async () => {
 		try {
+			const headerSource = authRef.current;
 			const res = await fetch("/api/templates", {
-				headers: {
-					"Content-Type": "application/json",
-				},
+				headers:
+					headerSource && typeof headerSource.denteClinicalReadHeaders === "function"
+						? headerSource.denteClinicalReadHeaders({
+								"Content-Type": "application/json",
+							})
+						: { "Content-Type": "application/json" },
 			});
 			if (res.ok) {
 				const data = await res.json();
