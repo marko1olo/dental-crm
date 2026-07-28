@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// Только ради moneyRubSchema и только через z.lazy — почему именно так,
+// объяснено у migrationMoneyTotalRubSchema ниже. На верхнем уровне этот
+// импорт использовать НЕЛЬЗЯ: связка index.ts ↔ migration.ts циклическая.
+import { moneyRubSchema } from "./index.js";
+
 /**
  * Контракты движка переноса данных из чужих систем.
  *
@@ -254,6 +259,32 @@ export type MigrationMappingSnapshot = z.infer<typeof migrationMappingSnapshotSc
 // Сверка. Это доказательство переноса, поэтому формат жёсткий.
 // ---------------------------------------------------------------------------
 
+/**
+ * Денежные итоги сверки — рубли с копейками, не «просто число».
+ *
+ * БЫЛО: `z.number().nullable()` у всех трёх итогов. Точность до копейки не
+ * требовалась НИГДЕ, и значение 1500.505 — треть копейки — контракт принимал
+ * молча. Дальше эти три поля идут в два места, и оба округляют без спроса:
+ * колонки migration_reconciliations.*_money_total_rub объявлены numeric(12, 2),
+ * а печать акта переноса в apps/api/src/migration/reconcile.ts прогоняет
+ * значение через parseKopecks, который для нецелого числа берёт toFixed(2).
+ * То есть клиника подписывала акт с суммой, отличной от переданной в отчёте, и
+ * узнать об этом было негде. Это денежный документ, а не диагностика: §8b.
+ *
+ * Инвариант «сумма точна до копейки» живёт в проекте ОДИН раз — moneyRubSchema
+ * в packages/shared/src/index.ts. Прямая ссылка на него здесь невозможна:
+ * index.ts делает `export * from "./migration.js"`, поэтому тело migration.ts
+ * исполняется РАНЬШЕ тела index.ts, и обращение к его const на верхнем уровне
+ * падает с `ReferenceError: Cannot access 'moneyRubSchema' before
+ * initialization` — измерено на минимальном ESM-повторении этой связки, выход 1.
+ * Чтение внутри z.lazy отложено до первого parse, когда index.ts уже
+ * инициализирован; то же измерение с отложенным чтением проходит с выходом 0.
+ * Второй копии проверки копеек здесь нет и быть не должно.
+ */
+const migrationMoneyTotalRubSchema = z
+  .lazy(() => moneyRubSchema)
+  .nullable();
+
 export const migrationReconciliationCheckSchema = z.object({
   /** Машинный код проверки: 'row_conservation', 'money_conservation'. */
   code: z.string(),
@@ -288,9 +319,9 @@ export const migrationReconciliationReportSchema = z.object({
   balanced: z.boolean(),
   checks: z.array(migrationReconciliationCheckSchema),
   entityBreakdown: z.array(migrationEntityBreakdownSchema),
-  sourceMoneyTotalRub: z.number().nullable(),
-  loadedMoneyTotalRub: z.number().nullable(),
-  quarantinedMoneyTotalRub: z.number().nullable()
+  sourceMoneyTotalRub: migrationMoneyTotalRubSchema,
+  loadedMoneyTotalRub: migrationMoneyTotalRubSchema,
+  quarantinedMoneyTotalRub: migrationMoneyTotalRubSchema
 });
 export type MigrationReconciliationReport = z.infer<typeof migrationReconciliationReportSchema>;
 

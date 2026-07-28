@@ -1,6 +1,9 @@
 import {
   dentalPricelistAnalysisResponseSchema,
   dentalPricelistItemSchema,
+  kopecksToNumericString,
+  parseKopecks,
+  sumKopecks,
   type DentalMaterialKind,
   type DentalPricelistAnalysisRequest,
   type DentalPricelistAnalysisResponse,
@@ -60,6 +63,17 @@ type GroqChatPayload = {
 const groqPromptVersion = "pricelist-json-v1";
 const maxGroqImagesPerRequest = 1;
 const groqProviderId = "groq_whisper" as const;
+
+/*
+ * Верхняя граница длительности услуги в минутах — десять часов.
+ *
+ * Число стояло вписанным прямо в durationFromLine и БОЛЬШЕ НИГДЕ, поэтому
+ * нейро-ветка разбора не проверяла длительность вообще: модель могла вернуть
+ * durationMinutes: 99999, и запись на приём растянулась бы на 69 суток.
+ * Одна граница на оба режима разбора, а не два разных представления о том,
+ * сколько может длиться приём.
+ */
+const maxServiceDurationMinutes = 600;
 
 const categoryRules: Array<KeywordRule<ServiceCategory> & { specialty: DentalSpecialty; treatmentKind: string }> = [
   {
@@ -439,6 +453,37 @@ function stripPriceFromTitle(line: string): string {
        * следующего слова и «1500 рабочих дней» станет «абочих дней». Границу
        * задаёт явный запрет буквы справа, он работает и для кириллицы.
        */
+      /*
+       * Диапазон цены без разделителя разрядов вырезается ЦЕЛИКОМ, вместе с
+       * нижней границей и тире.
+       *
+       * БЫЛО: «Отбеливание 12000-18000 руб» давало название «Отбеливание
+       * 12000-» — оборванный диапазон в каталоге услуг, который видит врач.
+       * Правило ниже удаляло только «18000 руб» (знак рубля стоит лишь у
+       * верхней границы), правило разрядов выше не срабатывало вовсе, потому
+       * что «12000» и «18000» записаны без пробела и точки между тысячами.
+       * Цены при этом разбирались верно (12000 и 18000) — портилось только
+       * НАЗВАНИЕ, и ни один тест этого не ловил: диапазонного случая в наборе
+       * не было.
+       *
+       * Знак рубля здесь необязателен намеренно: extractPrice считает пару
+       * «число-число» явной ценой и без него (match[2] в priceRegex), поэтому
+       * название обязано терять ровно то, что ушло в цену. Иначе разбор и
+       * каталог расходятся: цена извлечена, а её текст остался в названии.
+       * Тире к этому моменту всегда обычное: normalizeText привёл к нему
+       * ‐ ‑ ‒ – — ещё в splitPricelistLines.
+       *
+       * «от» перед нижней границей уносится вместе с диапазоном, иначе от
+       * «Отбеливание от 12000 до 18000 руб» остаётся название «Отбеливание от».
+       * Слева от «от» стоит запрет буквы через lookbehind, а не \b: \b в
+       * JavaScript определён через [A-Za-z0-9_] и на кириллице не работает
+       * вовсе, поэтому без явного запрета правило откусило бы конец слова —
+       * «Оборот 12000-18000» превратилось бы в «Обор».
+       */
+      .replace(
+        /(?:(?<![А-Яа-яЁёA-Za-z])от\s*)?\b\d{3,7}(?:[.,]\d{1,2})?\s*(?:-|до)\s*\d{3,7}(?:[.,]\d{1,2})?\s*(?:₽|руб\.?|р\.?)?(?![А-Яа-яЁёA-Za-z0-9])/giu,
+        " "
+      )
       .replace(/\b\d{3,7}(?:[.,]\d{1,2})?\s*(?:₽|руб\.?|р\.?)(?![А-Яа-яЁёA-Za-z])/giu, " ")
       .replace(/[;|]+$/g, "")
   );
@@ -448,7 +493,7 @@ function durationFromLine(line: string): number | null {
   const match = line.match(/\b(\d{1,3})\s*(?:мин|minutes?)\b/i);
   if (!match) return null;
   const duration = Number(match[1]);
-  return Number.isFinite(duration) && duration > 0 && duration <= 600 ? duration : null;
+  return Number.isFinite(duration) && duration > 0 && duration <= maxServiceDurationMinutes ? duration : null;
 }
 
 function titleTokens(value: string): Set<string> {
@@ -583,8 +628,19 @@ function summarize(items: DentalPricelistItem[]): DentalPricelistCategorySummary
         // max в этой же сводке — дословные копии priceRub строки прайса, и
         // среднее целым рублём выпадало из их диапазона на глазах у
         // пользователя (min 1500,50 · max 1500,50 · среднее 1501).
+        //
+        // Складываются ЦЕЛЫЕ КОПЕЙКИ, а не рубли с плавающей точкой:
+        // 300.01 + 300.05 + 300.07 в double даёт 900.1299999999999 или 900.13 в
+        // зависимости от порядка слагаемых, и на длинном прайсе накопленная
+        // ошибка сдвигает среднее на копейку. Деление на количество — единственное
+        // место, где точность теряется по существу задачи, и остаток отбрасывается
+        // ровно один раз, в конце.
         averagePriceRub: prices.length
-          ? Math.round((prices.reduce((sum, price) => sum + price, 0) / prices.length) * 100) / 100
+          ? Number(
+              kopecksToNumericString(
+                Math.round(sumKopecks(prices.map((price) => parseKopecks(price))) / prices.length)
+              )
+            )
           : null,
         materialKinds: materials,
         brands
@@ -730,10 +786,78 @@ function asString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
-function asNumberOrNull(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? Math.round(number) : null;
+/*
+ * ЧТЕНИЕ ЧИСЕЛ ИЗ ОТВЕТА МОДЕЛИ. Их ровно два вида, и правила у них разные.
+ *
+ * БЫЛО: одна функция asNumberOrNull с `Math.round` обслуживала и ДЕНЬГИ
+ * (priceRub, priceMaxRub), и СЧЁТ (durationMinutes). Округление до целого
+ * молча превращало 1500.50 в 1501: копейки исчезали в режиме, который продукт
+ * продаёт как «серверную нейро-проверку», и ни одна проверка не возражала —
+ * целое число тривиально точно до копейки, поэтому расширенный контракт
+ * (nonNegativeMoneyRubSchema) пропускал результат без замечаний. Клиника
+ * получала прайс, отличающийся от присланного, без единой ошибки на экране.
+ *
+ * Просто снять Math.round было НЕЛЬЗЯ: durationMinutes в контракте объявлен
+ * `z.number().int().positive()`, и дробная длительность уронила бы разбор
+ * ЦЕЛОЙ позиции в откат (см. safeParse в itemFromGroq). Поэтому читателя два,
+ * и назван каждый по своей единице измерения.
+ *
+ * Оба отказываются от приведения типов через Number(): Number(false) и
+ * Number([]) дают 0, то есть услугу за 0 ₽ и длительность 0 минут из значения,
+ * которое ценой и длительностью не является. Неизвестное значение обязано
+ * остаться неизвестным (null) и уйти в откат к детерминированному разбору, а не
+ * стать выдуманным нулём.
+ */
+
+/** Денежное значение из ответа модели в целых копейках. Без плавающей точки. */
+function readMoneyKopecksOrNull(value: unknown): number | null {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || value < 0) return null;
+    const kopecks = parseKopecks(value);
+    return Number.isSafeInteger(kopecks) ? kopecks : null;
+  }
+  if (typeof value !== "string") return null;
+  /*
+   * Формат проверяется здесь, арифметика — только в parseKopecks: второго
+   * владельца денежного инварианта в проекте быть не должно. Модель по промпту
+   * отдаёт число, но JSON от языковой модели регулярно приносит строку
+   * «1500.50» или «1500,50», и терять из-за этого цену нельзя.
+   */
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(value.trim());
+  if (!match) return null;
+  const kopecks = parseKopecks(`${match[1]}.${(match[2] ?? "").padEnd(2, "0")}`);
+  return Number.isSafeInteger(kopecks) ? kopecks : null;
+}
+
+/**
+ * Цена из ответа модели — рубли с копейками, как объявлено в контракте.
+ *
+ * Ноль трактуется как НЕ названная цена, а не как услуга за 0 ₽: промпт
+ * (groqSystemPrompt) прямо требует «If a price is absent, use null», а
+ * детерминированный разбор в этом же файле не считает ценой ничего ниже 300 ₽.
+ * Ноль из модели — это проигнорированная инструкция, и он обязан уйти в откат к
+ * детерминированной цене, а не встать в каталог услуг ценой без предупреждения.
+ */
+function readMoneyRubOrNull(value: unknown): number | null {
+  const kopecks = readMoneyKopecksOrNull(value);
+  if (kopecks === null || kopecks === 0) return null;
+  return Number(kopecksToNumericString(kopecks));
+}
+
+/**
+ * Счётное значение из ответа модели: целое, не меньше единицы, не больше
+ * `maxValue`. Ноль и отрицательное — не счёт, а отсутствие значения.
+ */
+function readIntegerCountOrNull(value: unknown, maxValue: number): number | null {
+  const raw =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+(?:[.,]\d+)?$/.test(value.trim())
+        ? Number(value.trim().replace(",", "."))
+        : null;
+  if (raw === null || !Number.isFinite(raw)) return null;
+  const rounded = Math.round(raw);
+  return rounded >= 1 && rounded <= maxValue ? rounded : null;
 }
 
 function asWarnings(value: unknown): string[] {
@@ -742,13 +866,32 @@ function asWarnings(value: unknown): string[] {
     : [];
 }
 
-function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): DentalPricelistItem | null {
+/**
+ * Одна позиция прайса из JSON-ответа модели.
+ *
+ * Экспортируется ради проверки: ветка Groq в этом окружении не исполняется (ключа
+ * нет, а платный вызов запрещён), поэтому единственное честное доказательство
+ * разбора — вызвать эту функцию напрямую с записью того же вида, какую
+ * возвращает модель. Тест apps/api/src/pricelist/groqPricelistKopecks.test.ts.
+ */
+export function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): DentalPricelistItem | null {
   if (!raw || typeof raw !== "object") return null;
   const record = raw as Record<string, unknown>;
   const sourceText = normalizeText(asString(record.sourceText, asString(record.title)));
   if (!sourceText) return null;
 
   const fallback = buildItemFromLine(sourceText, index + 1, request, catalog);
+  const priceRub = readMoneyRubOrNull(record.priceRub) ?? fallback.priceRub;
+  const priceMaxRubFromModel = readMoneyRubOrNull(record.priceMaxRub) ?? fallback.priceMaxRub;
+  /*
+   * Верхняя граница ниже нижней — не диапазон, а мусор: врач увидел бы «от 18 000
+   * до 12 000 ₽». Детерминированный разбор отбрасывает такую границу в
+   * extractPrice, нейро-ветка не проверяла её вовсе.
+   */
+  const priceMaxRub =
+    priceMaxRubFromModel !== null && priceRub !== null && priceMaxRubFromModel < priceRub
+      ? null
+      : priceMaxRubFromModel;
   const item: DentalPricelistItem = {
     ...fallback,
     id: `price-ai-${index + 1}`,
@@ -765,9 +908,10 @@ function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnaly
     brand: record.brand === null ? null : asString(record.brand, fallback.brand ?? "") || null,
     toothScope: record.toothScope === null ? null : asString(record.toothScope, fallback.toothScope ?? "") || null,
     unit: asString(record.unit, fallback.unit),
-    priceRub: asNumberOrNull(record.priceRub) ?? fallback.priceRub,
-    priceMaxRub: asNumberOrNull(record.priceMaxRub) ?? fallback.priceMaxRub,
-    durationMinutes: asNumberOrNull(record.durationMinutes) ?? fallback.durationMinutes,
+    priceRub,
+    priceMaxRub,
+    durationMinutes:
+      readIntegerCountOrNull(record.durationMinutes, maxServiceDurationMinutes) ?? fallback.durationMinutes,
     confidence: Math.min(0.98, Math.max(0.1, Number(record.confidence) || fallback.confidence)),
     warnings: Array.from(new Set([...fallback.warnings, ...asWarnings(record.warnings)])),
     matchedServiceId: null
