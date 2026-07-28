@@ -45,6 +45,7 @@ import {
   createDenteTelegramCareRequest,
   createDenteTelegramDocumentRequest,
   createDenteTelegramLinkCode,
+  denteTelegramOutboxDeliveryReceipts,
   denteTelegramVisualCardUrlFor,
   extractDenteTelegramLinkCode,
   findDenteTelegramOutboxDeliveryReceipt,
@@ -90,6 +91,10 @@ const telegramSplitPhotoCaption = "DENTE: сообщение клиники. П�
 // Фото ушло пациенту, а второе сообщение с полным текстом — нет. Отдельная причина отказа нужна,
 // чтобы повторная попытка знала, какая часть уже на телефоне, и не отправляла фото второй раз.
 export const telegramPhotoSentTextFailedBlockedReason = "telegram_photo_sent_text_failed";
+// Время отправки в позиции не разбирается как дата. Отправлять по такому значению нельзя: «не смогли
+// прочитать время» — это не «пора отправлять». Нужна отдельная причина отказа, иначе позиция молча
+// выпадает из очереди и никто не узнает, что в задаче битое время.
+export const telegramOutboxScheduleUnreadableBlockedReason = "telegram_outbox_schedule_unreadable";
 
 type UnknownRecord = Record<string, unknown>;
 type TelegramInlineKeyboardButton = { text: string; url?: string; callback_data?: string };
@@ -551,9 +556,33 @@ function dueOutboxClientMutationId(outboxItemId: string, scheduledAt: string): s
   return `due-${digest}`;
 }
 
+/**
+ * Три состояния запланированного времени, а не два. Раньше их было два, и нечитаемое время попадало
+ * в «пора».
+ */
+export type TelegramOutboxScheduleState = "due" | "not_due" | "unreadable";
+
+/**
+ * БЫЛО: `return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs;` — неразобранная дата
+ * означала «пора отправлять». То есть отказ прочитать время превращался в разрешение отправить
+ * немедленно: напоминание, назначенное на следующий вторник, ушло бы пациенту сегодня ночью.
+ * Fail-open на времени отправки не бывает правильным ни в одном случае, поэтому нечитаемое время —
+ * отдельное состояние, и вызывающий обязан его обработать, а не спутать с «пора».
+ */
+export function telegramOutboxScheduleState(scheduledAt: string, nowMs: number): TelegramOutboxScheduleState {
+  const scheduledAtMs = Date.parse(scheduledAt);
+  if (!Number.isFinite(scheduledAtMs)) return "unreadable";
+  return scheduledAtMs <= nowMs ? "due" : "not_due";
+}
+
 function isDenteTelegramOutboxItemDue(item: DenteTelegramOutboxItem, nowMs: number): boolean {
-  const scheduledAtMs = Date.parse(item.scheduledAt);
-  return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs;
+  return telegramOutboxScheduleState(item.scheduledAt, nowMs) === "due";
+}
+
+/** Значение показывается оператору как есть, поэтому обрезается: в поле может лежать что угодно. */
+function telegramOutboxScheduleUnreadableWarning(scheduledAt: string): string {
+  const shown = scheduledAt.trim().slice(0, 64) || "пусто";
+  return `Время отправки не распознано как дата (${shown}). Сообщение НЕ отправлено; исправьте время в задаче коммуникации.`;
 }
 
 /**
@@ -583,6 +612,36 @@ export function telegramOutboxDeliveredParts(
     photoDelivered: true,
     photoMessageId: typeof receipt.telegramMessageId === "number" ? receipt.telegramMessageId : null
   };
+}
+
+/**
+ * БЫЛО: признак «фото уже у пациента» искался только по паре (позиция, clientMutationId) —
+ * `findDenteTelegramOutboxDeliveryReceipt` (`sampleData.ts:8776-8786`) это Map по
+ * `${outboxItemId}:${clientMutationId}`. Автоповтор воркера строит clientMutationId детерминированно
+ * и потому признак находил, а два других повтора — нет:
+ *  1. оператор из интерфейса: `sendTelegramOutboxItem` (`useAppLogic.tsx:13140-13143`) берёт НОВЫЙ
+ *     `crypto.randomUUID()` на каждый клик, поэтому его повтор после частичной доставки не находил
+ *     ничего и звал sendPhoto заново — пациент получал фото второй раз;
+ *  2. сдвиг времени: `dueOutboxClientMutationId(item.id, item.scheduledAt)` включает scheduledAt в
+ *     хеш, поэтому смена времени между тиками меняла ключ и признак терялся так же.
+ * Фото лежит в чате у ПОЗИЦИИ, а не у попытки, поэтому и признак ищется по позиции. Квитанции лежат
+ * новыми вперёд (`unshift`), так что первый найденный message_id — самый свежий.
+ */
+export function telegramOutboxDeliveredPartsForItem(
+  outboxItemId: string,
+  replay?: DenteTelegramOutboxDeliveryReceipt | null
+): TelegramOutboxDeliveredParts {
+  const fromReplay = telegramOutboxDeliveredParts(replay);
+  if (fromReplay.photoDelivered && fromReplay.photoMessageId !== null) return fromReplay;
+  let photoDeliveredWithoutMessageId = fromReplay.photoDelivered;
+  for (const receipt of denteTelegramOutboxDeliveryReceipts) {
+    if (receipt.outboxItemId !== outboxItemId) continue;
+    const delivered = telegramOutboxDeliveredParts(receipt);
+    if (!delivered.photoDelivered) continue;
+    if (delivered.photoMessageId !== null) return delivered;
+    photoDeliveredWithoutMessageId = true;
+  }
+  return photoDeliveredWithoutMessageId ? { photoDelivered: true, photoMessageId: null } : telegramOutboxNothingDelivered;
 }
 
 type TelegramOutboxTransportSenders = {
@@ -712,6 +771,26 @@ async function executeTelegramOutboxSend(
     };
   }
 
+  // Нечитаемое время отправки останавливает отправку и в ручном роуте, и в пакетном: оба входа идут
+  // через эту функцию. Проверка стоит ДО dry-run, потому что предпросмотр «отправлю» по битому времени
+  // так же обманывает оператора, как и сама отправка.
+  if (telegramOutboxScheduleState(prepared.item.scheduledAt, Date.now()) === "unreadable") {
+    return {
+      statusCode: 409,
+      body: denteTelegramOutboxSendResponseSchema.parse({
+        status: "blocked",
+        outboxItem: prepared.item,
+        taskId: prepared.item.taskId,
+        eventId: null,
+        telegramMessageId: null,
+        clientMutationId,
+        warnings: [...prepared.warnings, telegramOutboxScheduleUnreadableWarning(prepared.item.scheduledAt)],
+        retryAfterSeconds: null,
+        blockedReason: telegramOutboxScheduleUnreadableBlockedReason
+      })
+    };
+  }
+
   if (!input.dryRun && !clientMutationId) {
     return {
       statusCode: 400,
@@ -806,7 +885,7 @@ async function executeTelegramOutboxSend(
     replyMarkup: deliveryReplyMarkup,
     timeoutMs: configuredSendTimeoutMs(),
     warnings: prepared.warnings,
-    alreadyDelivered: telegramOutboxDeliveredParts(replay)
+    alreadyDelivered: telegramOutboxDeliveredPartsForItem(prepared.item.id, replay)
   }).finally(() => {
     telegramOutboxDeliveryClaims.delete(claimKey);
   });
@@ -905,10 +984,30 @@ export async function executeDenteTelegramOutboxDueBatch(
   }
   const outbox = buildDenteTelegramOutbox({ limit: Math.max(input.limit, 50), status: "due" }, runtimeResult.runtime.runtimeScope);
   const nowMs = Date.now();
-  const dueItems = outbox.items
-    .filter((item) => item.deliveryStatus === "ready" && isDenteTelegramOutboxItemDue(item, nowMs))
+  const readyItems = outbox.items.filter((item) => item.deliveryStatus === "ready");
+  const dueItems = readyItems.filter((item) => isDenteTelegramOutboxItemDue(item, nowMs)).slice(0, input.limit);
+  // Позиция с нечитаемым временем не отправляется, но и не исчезает молча: она уходит в ответ как
+  // заблокированная, поэтому попадает в blockedCount, в лог воркера и в ответ роута со статусом 409.
+  // Без этого fail-closed превратился бы в «тихо не отправляем и никому не говорим».
+  const unreadableItems = readyItems
+    .filter((item) => telegramOutboxScheduleState(item.scheduledAt, nowMs) === "unreadable")
     .slice(0, input.limit);
-  const results: DenteTelegramOutboxSendDueResponse["results"] = await Promise.all(
+  const unreadableResults: DenteTelegramOutboxSendDueResponse["results"] = unreadableItems.map((item) => ({
+    itemId: item.id,
+    statusCode: 409,
+    result: denteTelegramOutboxSendResponseSchema.parse({
+      status: "blocked",
+      outboxItem: item,
+      taskId: item.taskId,
+      eventId: null,
+      telegramMessageId: null,
+      clientMutationId: null,
+      warnings: [...item.warnings, telegramOutboxScheduleUnreadableWarning(item.scheduledAt)],
+      retryAfterSeconds: null,
+      blockedReason: telegramOutboxScheduleUnreadableBlockedReason
+    })
+  }));
+  const sendResults: DenteTelegramOutboxSendDueResponse["results"] = await Promise.all(
     dueItems.map(async (item) => {
       const sendResult = await executeTelegramOutboxSend(
         item.id,
@@ -925,6 +1024,7 @@ export async function executeDenteTelegramOutboxDueBatch(
       };
     })
   );
+  const results: DenteTelegramOutboxSendDueResponse["results"] = [...sendResults, ...unreadableResults];
   const sentCount = results.filter((entry) => "status" in entry.result && entry.result.status === "sent").length;
   const dryRunCount = results.filter((entry) => "status" in entry.result && entry.result.status === "dry_run").length;
   const blockedCount = results.filter((entry) => "status" in entry.result && entry.result.status === "blocked").length;
@@ -935,7 +1035,8 @@ export async function executeDenteTelegramOutboxDueBatch(
     requestedLimit: input.limit,
     dueCount: outbox.dueCount,
     notDueCount: outbox.notDueCount,
-    attemptedCount: results.length,
+    // Отправкой считается только реальная попытка: отказ по нечитаемому времени попыткой не был.
+    attemptedCount: sendResults.length,
     sentCount,
     dryRunCount,
     blockedCount,

@@ -2405,7 +2405,15 @@ export const telegramBlockedReasonLabels: Record<string, string> = {
   telegram_outbox_not_due_yet: "Время отправки еще не наступило.",
   telegram_outbox_preview_empty: "В сообщении нет текста для отправки.",
   telegram_delivery_processing: "Отправка уже обрабатывается.",
-  telegram_transport_failed: "Telegram не принял сообщение. Проверьте подключение бота, сеть и связанный чат."
+  telegram_transport_failed: "Telegram не принял сообщение. Проверьте подключение бота, сеть и связанный чат.",
+  // Без этих двух строк telegramHumanMessage не находит подписи и выдаёт общее «Нужна проверка
+  // настройки Telegram», то есть отправляет оператора чинить настройки при полностью исправных
+  // настройках. Для частичной доставки это ещё и опасно: оператор жмёт «отправить» снова, и пациент
+  // получает фото второй раз.
+  telegram_photo_sent_text_failed:
+    "Фото уже доставлено пациенту, а текст под ним не ушёл. Повторная отправка дошлёт только текст — фото заново не уйдёт.",
+  telegram_outbox_schedule_unreadable:
+    "Время отправки в задаче не распознано как дата. Сообщение не отправлено; исправьте время в задаче коммуникации."
 };
 
 export const telegramWarningLabels: Record<string, string> = {
@@ -2421,9 +2429,18 @@ export function telegramHumanMessage(value: string | null | undefined): string {
   return telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value] ?? "Нужна проверка настройки Telegram.";
 }
 
+/**
+ * БЫЛО: `!Number.isFinite(scheduledAtMs) || scheduledAtMs <= Date.now()` — нечитаемое время считалось
+ * наступившим, поэтому кнопка отправки (`SettingsTelegramTab.tsx:1075` выключает её, когда НЕ пора)
+ * оставалась активной, а фильтр «пора» (`useAppLogic.tsx:4590-4598`) показывал позицию как готовую.
+ * Оператор видел приглашение отправить сообщение, время которого система не смогла прочитать.
+ * Сервер такую позицию теперь отклоняет (`routes/telegram.ts` telegramOutboxScheduleState), и
+ * интерфейс обязан говорить то же самое.
+ */
 export function isTelegramOutboxItemDueForUi(item: Pick<DenteTelegramOutboxResponse["items"][number], "scheduledAt">): boolean {
   const scheduledAtMs = Date.parse(item.scheduledAt);
-  return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= Date.now();
+  if (!Number.isFinite(scheduledAtMs)) return false;
+  return scheduledAtMs <= Date.now();
 }
 
 export const documentDetectedKindLabels: Record<string, string> = {
