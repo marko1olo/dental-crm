@@ -215,6 +215,25 @@ function archPortionOfClosed(
 	};
 }
 
+/**
+ * Worst vertex-to-vertex disagreement between the closed rendering's arch portion
+ * and the open rendering of the same handles. Compared index by index because both
+ * carry 127 vertices produced by the same resolution over the same control points,
+ * so vertex i of one corresponds to vertex i of the other.
+ */
+function closedVsOpenWorstVertexMm(controlPoints: readonly Point2D[]): number {
+	const open = cornerstonePolyline(controlPoints, false);
+	const { archPortion } = archPortionOfClosed(
+		cornerstonePolyline(controlPoints, true),
+		controlPoints[controlPoints.length - 1]!,
+	);
+	assert.strictEqual(archPortion.length, open.length);
+	return archPortion.reduce(
+		(worst, point, i) => Math.max(worst, distanceMm(point, open[i]!)),
+		0,
+	);
+}
+
 describe("the fixtures are the curves they claim to be", () => {
 	test("the elliptical handles are archHandles(7) from panoramicArch.test.ts", () => {
 		// Same generator, so the two files describe one arch. Endpoints and apex
@@ -311,24 +330,21 @@ describe("closing the contour is what cornerstone does, and it moves the curve",
 		);
 	});
 
-	test("closing changes the arch itself, not just the tail", () => {
-		// This is why the OPEN spline is not a usable baseline: it is not the same
-		// arch drawn plus a tail, it is a different arch. A closed Catmull-Rom uses
-		// wrap-around tangents at the first and last control points.
-		const open = cornerstonePolyline(ELLIPSE_HANDLES, false);
-		const { archPortion } = archPortionOfClosed(
-			cornerstonePolyline(ELLIPSE_HANDLES, true),
-			ELLIPSE_HANDLES[6]!,
-		);
-		const worstVertexMm = archPortion.reduce(
-			(worst, point, i) => Math.max(worst, distanceMm(point, open[i]!)),
-			0,
-		);
-		assert.ok(
-			worstVertexMm > 4,
-			`closed and open renderings of the same handles differ by only ${worstVertexMm.toFixed(4)} mm`,
-		);
-	});
+	for (const fixture of [
+		{ name: "archHandles(7)", handles: ELLIPSE_HANDLES },
+		{ name: "TRACED_ARCH", handles: TRACED_HANDLES },
+	]) {
+		test(`${fixture.name}: closing changes the arch itself, not just the tail`, () => {
+			// This is why the OPEN spline is not a usable baseline: it is not the same
+			// arch drawn plus a tail, it is a different arch. A closed Catmull-Rom uses
+			// wrap-around tangents at the first and last control points.
+			const worstVertexMm = closedVsOpenWorstVertexMm(fixture.handles);
+			assert.ok(
+				worstVertexMm > 4,
+				`closed and open renderings of the same handles differ by only ${worstVertexMm.toFixed(4)} mm`,
+			);
+		});
+	}
 });
 
 describe("cost of not sampling the polyline, against the curve that exists", () => {
@@ -430,6 +446,7 @@ describe("the measurement itself, printed so it can be quoted", () => {
 					`max col->OPEN segment dev=${maxDeviationMm(built.curve, open).toFixed(4)} mm`,
 					`max col->OPEN VERTEX dev=${maxVertexDeviationMm(built.curve, open).toFixed(4)} mm (withdrawn metric)`,
 					`half the OPEN spline's own vertex spacing=${(polylineLengthMm(open) / (open.length - 1) / 2).toFixed(4)} mm`,
+					`CLOSED arch portion vs OPEN, worst vertex=${closedVsOpenWorstVertexMm(fixture.handles).toFixed(4)} mm`,
 				].join("\n    "),
 			);
 		}
