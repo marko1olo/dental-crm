@@ -30,10 +30,13 @@ import {
   PatientIntakePregnancyStatus,
   ProcedureSpecificConsentProcedure,
 } from "@dental/shared";
-import {
-  dateInputValuePlusDays,
-  currentLocalDateTimeInputValue,
-} from "../AppHelpers";
+/*
+ * dateInputValuePlusDays отсюда убран вместе со сроком оплаты счёта и графиком
+ * рассрочки: в значении поля он считался при загрузке модуля и подсовывал в
+ * документ дату, которую никто не вводил. Отметки времени подставляет
+ * withDocumentCreationTimestamps в момент создания документа.
+ */
+import { currentLocalDateTimeInputValue } from "../AppHelpers";
 import {
   defaultClinicalToothRowsText,
   toDateTimeLocalValue,
@@ -2049,7 +2052,24 @@ const createFinancialSlice = (set: any) => ({
   paymentInvoicePurpose:
     "оплата стоматологических услуг по согласованному плану лечения",
   setPaymentInvoicePurpose: createSetter(set, "paymentInvoicePurpose"),
-  paymentInvoiceDueDate: (() => dateInputValuePlusDays(7))(),
+  /*
+   * Срок оплаты счёта вписывает человек.
+   *
+   * Стояло (() => dateInputValuePlusDays(7))() — обёртка ничего не отложила, это
+   * тот же немедленный вызов, и дата считалась ОДИН раз при загрузке модуля.
+   * Значит срок оплаты равнялся «седьмой день от момента открытия вкладки» и
+   * больше не обновлялся: вкладку держат открытой сутками, а счёт уносил
+   * позавчерашний расчёт. В выданный счёт значение попадало как есть
+   * (documentLogic.ts, dueDate: paymentInvoiceDueDate.trim()), фолбэка нет.
+   *
+   * Вид тоже был не тот: dateInputValuePlusDays отдаёт ISO «2026-08-04», а поле
+   * рядом — обычный текстовый input с подсказкой «например: до 25.05.2026».
+   *
+   * Соседнее поле «Дата счета» пусто, и человек его заполняет; предзаполненный
+   * срок внимания не привлекал. Теперь пусто, и validatePaymentInvoice не даёт
+   * создать счёт: «Заполните поле: счет, срок оплаты.».
+   */
+  paymentInvoiceDueDate: "",
   setPaymentInvoiceDueDate: createSetter(set, "paymentInvoiceDueDate"),
   paymentInvoicePaymentTerms:
     "оплата до или в день оказания услуги; после оплаты выдается кассовый чек",
@@ -2108,8 +2128,27 @@ const createFinancialSlice = (set: any) => ({
   setInstallmentScheduleTotalRub: createSetter(set, "installmentScheduleTotalRub"),
   installmentSchedulePrepaidRub: "",
   setInstallmentSchedulePrepaidRub: createSetter(set, "installmentSchedulePrepaidRub"),
-  installmentScheduleRows: (() =>
-    `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${dateInputValuePlusDays(21)} | 0 | запланировано`)(),
+  /*
+   * График рассрочки начинается пустым.
+   *
+   * Стояли две готовые строки: «Первый платеж | <дата+7> | 0 | запланировано» и
+   * «Финальный платеж | <дата+21> | 0 | запланировано». Обе даты считались ОДИН
+   * раз при загрузке модуля (обёртка (() => …)() ничего не откладывает), то есть
+   * замирали на моменте открытия вкладки, и обе суммы были нулями.
+   *
+   * Разборщик installmentScheduleInstallmentRows (useAppLogic.tsx) строки с
+   * нулевой суммой ВЫБРАСЫВАЕТ и, если платежей с суммой нет, сам делит остаток
+   * на два платежа со свежими датами. Значит подставленные строки в документ и
+   * не попадали — они только вводили администратора в заблуждение: он видел
+   * график из двух платежей с конкретными датами, а в графике оказывались
+   * другие. Хуже: стоило дописать сумму в ОДНУ строку, как вторая (с нулём)
+   * молча исчезала из документа.
+   *
+   * Теперь пусто: либо администратор пишет реальные платежи (формат подсказан
+   * под полем в DocumentsView.tsx), либо остаток делится автоматически, либо
+   * валидатор просит «Добавьте платежи графика или укажите остаток к оплате.».
+   */
+  installmentScheduleRows: "",
   setInstallmentScheduleRows: createSetter(set, "installmentScheduleRows"),
   installmentScheduleLatePolicy:
     "при переносе срока администратор фиксирует контакт с пациентом, новый срок и основание переноса до наступления просрочки",
@@ -2220,7 +2259,27 @@ const createFinancialSlice = (set: any) => ({
   setPaymentPayerBirthDate: createSetter(set, "paymentPayerBirthDate"),
   paymentPayerIdentityDocument: "",
   setPaymentPayerIdentityDocument: createSetter(set, "paymentPayerIdentityDocument"),
-  paymentPayerRelationship: "пациент",
+  /*
+   * Родство плательщика — не наше предположение.
+   *
+   * Стояло «пациент». Это не безобидная подпись: renderDocument.ts приводит
+   * «пациент» к "self", и справка КНД 1151156 печатает «Налогоплательщик и
+   * пациент являются одним лицом: 1 - да» плюс «Родство с пациентом: пациент»
+   * рядом с ФИО матери, которая на самом деле платила. Справка становится
+   * внутренне противоречивой, а вычет по ней получает не тот человек.
+   *
+   * Из-за непустого умолчания обе проверки на пустоту были недостижимы:
+   * подсказка «для вычета укажите родство плательщика» в PaymentCapture.tsx и
+   * список недостающих налоговых полей при отправке оплаты. Теперь пусто, и
+   * при запросе вычета касса требует родство явно.
+   *
+   * Долг (чужие файлы): после каждой оплаты поле снова получает «пациент» —
+   * DEFAULT_PAYER_RELATIONSHIP в components/finance/paymentComposerReset.ts и
+   * setPaymentPayerRelationship("пациент") в useAppLogic.tsx. Там же остаётся
+   * фолбэк «пациент» для оплат без вычета. Здесь исправлено только начальное
+   * состояние.
+   */
+  paymentPayerRelationship: "",
   setPaymentPayerRelationship: createSetter(set, "paymentPayerRelationship"),
   paymentTaxDeductionCode: "",
   setPaymentTaxDeductionCode: createSetter(set, "paymentTaxDeductionCode"),
