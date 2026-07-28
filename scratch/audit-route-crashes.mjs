@@ -26,16 +26,31 @@ const VIEWS = [
 	"communications",
 	"marketing",
 ];
+/*
+ * Список обязан совпадать с settingsTabs в apps/web/src/AppHelpers.tsx.
+ *
+ * Шесть вкладок — modules, inventory, insurance, marketing, bpmn, reporting —
+ * долго существовали как смонтированные панели без записи в списке вкладок:
+ * кнопки не рисовалось, а переход по адресу откидывал на «Клинику». Обход их
+ * не видел и рапортовал «0 сломанных мест», хотя 2713 строк экранов были
+ * недоступны. Расходится список — расходится и то, что считается проверенным.
+ */
 const SETTINGS_TABS = [
 	"profile",
 	"clinic",
+	"modules",
 	"staff",
 	"access",
 	"telegram",
 	"protocols",
 	"rules",
 	"prices",
+	"inventory",
+	"insurance",
 	"sources",
+	"marketing",
+	"bpmn",
+	"reporting",
 	"ai",
 	"imports",
 	"audit",

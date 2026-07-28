@@ -146,6 +146,15 @@ import {
   ZoomOut,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+/*
+ * Разделы левого меню берутся из общего объявления, а не собираются здесь.
+ *
+ * settingsTabs приходит пропом, а группы раньше задавались списками
+ * идентификаторов прямо в разметке этого файла — четвёртое место, где надо
+ * помнить про каждую вкладку. Забыть в нём вкладку означало убрать её из меню
+ * без всякого следа.
+ */
+import { settingsTabGroups, type SettingsTabGroup } from "./AppHelpers";
 import { InventoryView } from "./components/InventoryView";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
@@ -164,7 +173,6 @@ import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab
 import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
 import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
-import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
 import { SettingsBpmnTab } from "./components/settings/SettingsBpmnTab";
 import { SettingsMarketingTab } from "./components/settings/SettingsMarketingTab";
 import { SettingsReportingTab } from "./components/settings/SettingsReportingTab";
@@ -330,7 +338,7 @@ type SettingsTabId =
   | "marketing"
   | "bpmn"
   | "reporting";
-type SettingsTab = { id: SettingsTabId; title: string };
+type SettingsTab = { id: SettingsTabId; title: string; group: SettingsTabGroup };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -1196,6 +1204,15 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "bpmn");
   if (!flags.hasClinicalRules) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "rules");
   if (!flags.hasInsuranceCoPay) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "insurance");
+  /*
+   * Настройки мессенджеров врачу не показываем: бот клиники, номер WhatsApp и
+   * рассылки — дело администратора. Это условие стояло в прежней раскладке
+   * меню, но проверяло идентификатор "messengers", которого в списке вкладок
+   * не было, и потому не срабатывало ни разу. Сохраняю замысел, но в том же
+   * месте, что и признаки модулей, — чтобы кнопка и панель не разошлись.
+   */
+  if (activeStaffUser?.role === "doctor")
+    typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "telegram");
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;
@@ -1321,61 +1338,28 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         aria-label="Раздел настроек"
         style={{ overflowX: "auto", whiteSpace: "nowrap", WebkitOverflowScrolling: "touch" }}
       >
-        <div className="settings-tabs-group">
-          <span className="settings-tabs-group-header">Мой аккаунт</span>
-          {typedSettingsTabs
-            .filter((t) => ["profile"].includes(t.id))
-            .map(renderTabButton)}
-        </div>
-        <div className="settings-tabs-group">
-          <span className="settings-tabs-group-header">Основные</span>
-          {typedSettingsTabs
-            .filter((t) => {
-              if (t.id === "messengers") {
-                return activeStaffUser?.role !== "doctor";
-              }
-              return ["clinic", "staff", "access", "modules"].includes(t.id);
-            })
-            .map(renderTabButton)}
-        </div>
-        <div className="settings-tabs-group">
-          <span className="settings-tabs-group-header">Клинические</span>
-          {typedSettingsTabs
-            .filter((t) =>
-              ["protocols", "rules", "prices", "ai"].includes(t.id),
-            )
-            .map(renderTabButton)}
-        </div>
-        {(activeWorkspaceProfile?.hasMarketingModule ||
-          activeWorkspaceProfile?.hasBpmWorkflows) && (
-          <div className="settings-tabs-group">
-            <span className="settings-tabs-group-header">Маркетинг</span>
-            {typedSettingsTabs
-              .filter((t) => {
-                if (t.id === "marketing")
-                  return activeWorkspaceProfile?.hasMarketingModule;
-                if (t.id === "bpmn")
-                  return activeWorkspaceProfile?.hasBpmWorkflows;
-                return false;
-              })
-              .map(renderTabButton)}
-          </div>
-        )}
-        <div className="settings-tabs-group">
-          <span className="settings-tabs-group-header">Системные</span>
-          {typedSettingsTabs
-            .filter((t) => {
-              if (
-                t.id === "reporting" &&
-                !activeWorkspaceProfile?.hasAnalyticsModule
-              )
-                return false;
-              return ["sources", "imports", "audit", "reporting"].includes(
-                t.id,
-              );
-            })
-            .map(renderTabButton)}
-        </div>
+        {/*
+          Группы берутся из объявления вкладки, а не из списков в разметке.
+
+          Раньше каждая группа фильтровала по своему набору идентификаторов, и
+          вкладка, не попавшая ни в один набор, исчезала из меню без следа.
+          Так пропала кнопка настроек Telegram: раздел работал и открывался по
+          адресу, но нажать было негде. Признаки модулей уже отсеяли лишнее в
+          typedSettingsTabs выше, здесь остаётся только раскладка.
+
+          Пустая группа не рисуется — иначе у маленькой клиники висели бы
+          заголовки без единой строчки под ними.
+        */}
+        {settingsTabGroups.map((group) => {
+          const tabsInGroup = typedSettingsTabs.filter((t) => t.group === group.id);
+          if (tabsInGroup.length === 0) return null;
+          return (
+            <div className="settings-tabs-group" key={group.id}>
+              <span className="settings-tabs-group-header">{group.title}</span>
+              {tabsInGroup.map(renderTabButton)}
+            </div>
+          );
+        })}
       </div>
 
       <div
@@ -1479,7 +1463,22 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "clinic" ? <SettingsClinicTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "access" ? <SettingsAccessTab {...({ props: settingsProps, settingsTab } as any)} /> : null}
-        {settingsTab === "telegram" ? <SettingsTelegramTab props={settingsProps} settingsTab={settingsTab} /> : null}
+        {/*
+          Вкладка мессенджеров показывает все три канала, а не один Telegram.
+
+          Здесь стоял SettingsTelegramTab — только Telegram. Панель со всеми
+          каналами (Telegram, WhatsApp, MAX) была смонтирована строкой ниже под
+          идентификатор "messengers", которого нет в списке вкладок: попасть в
+          неё было нельзя ниоткуда. Настройки WhatsApp и MAX существовали и не
+          открывались.
+
+          Внутри SettingsMessengersTab начальный канал выбирается по значению
+          settingsTab, поэтому с "telegram" вкладка открывается на Telegram —
+          как и раньше.
+        */}
+        {settingsTab === "telegram" && activeStaffUser?.role !== "doctor" ? (
+          <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} />
+        ) : null}
 
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
         {settingsTab === "inventory" ? (
@@ -1487,7 +1486,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
             organizationId={dashboard?.clinicSettings?.profile?.organizationId ?? ""}
           />
         ) : null}
-        {settingsTab === "messengers" ? <SettingsMessengersTab props={settingsProps} settingsTab={settingsTab} /> : null}
         {settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 
         {settingsTab === "rules" ? <SettingsRulesTab /> : null}
@@ -1496,15 +1494,28 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         {settingsTab === "sources" ? <SettingsSourcesTab /> : null}
         {settingsTab === "ai" ? <SettingsAiTab /> : null}
         {settingsTab === "modules" ? <SettingsModulesTab /> : null}
-        {settingsTab === "marketing" &&
-        activeWorkspaceProfile?.hasMarketingModule ? (
+        {/*
+          Кнопка вкладки и сама панель обязаны спрашивать одно и то же.
+
+          Список вкладок фильтруется по flags из useWorkspaceProfile()
+          (хранилище с сохранением в браузере), а эти три панели спрашивали
+          activeWorkspaceProfile — профиль из дашборда, приходящий пропом и
+          равный null, пока клиника его не завела. Расхождение давало худший из
+          возможных исходов: кнопка на месте, нажимается, вкладка выделяется —
+          и под ней пустота. Проверено обходом: «Отзывы и NPS», «Сценарии» и
+          «Отчёты» показывали ровно 1374 знака, столько же, сколько пустой
+          каркас страницы.
+
+          Источник теперь один — flags. Признак модуля выключен, значит нет ни
+          кнопки, ни панели.
+        */}
+        {settingsTab === "marketing" && flags.hasMarketingModule ? (
           <SettingsMarketingTab />
         ) : null}
-        {settingsTab === "bpmn" && activeWorkspaceProfile?.hasBpmWorkflows ? (
+        {settingsTab === "bpmn" && flags.hasBpmWorkflows ? (
           <SettingsBpmnTab />
         ) : null}
-        {settingsTab === "reporting" &&
-        activeWorkspaceProfile?.hasAnalyticsModule ? (
+        {settingsTab === "reporting" && flags.hasAnalyticsModule ? (
           <SettingsReportingTab />
         ) : null}
 

@@ -118,8 +118,8 @@ export function useInventoryLogic(organizationId: string) {
 						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
 						setFormData({
 							name: "",
-							threshold: "5",
-							unitCostRub: "0",
+							threshold: "",
+							unitCostRub: "",
 							sku: "",
 							barcode: barcodeBuffer,
 						});
@@ -210,10 +210,21 @@ export function useInventoryLogic(organizationId: string) {
 	// Add/Edit Modal
 	const [showModal, setShowModal] = useState(false);
 	const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+	/*
+	 * Форма материала открывается пустой.
+	 *
+	 * Здесь стояли порог «5» и цена «0» как уже введённые значения. Не тронув
+	 * поля, кладовщик заносил в базу выдуманный минимальный остаток и нулевую
+	 * цену — а отличить подставленное от набранного руками в заполненном поле
+	 * нельзя. Ноль в цене особенно тих: материал бесплатный, себестоимость
+	 * лечения занижена, и никто не спохватится.
+	 *
+	 * Прежние числа остались подсказками в пустых полях.
+	 */
 	const [formData, setFormData] = useState({
 		name: "",
-		threshold: "5",
-		unitCostRub: "0",
+		threshold: "",
+		unitCostRub: "",
 		sku: "",
 		barcode: "",
 	});
@@ -253,18 +264,29 @@ export function useInventoryLogic(organizationId: string) {
 		}
 	};
 
+	/*
+	 * Без организации склад не грузится — и это надо показать, а не крутить.
+	 *
+	 * Экран получает organizationId из профиля клиники через `?? ""`. Пока
+	 * профиль не пришёл, строка пустая, запрос не уходит, а isLoading остаётся
+	 * true навсегда: «Загрузка склада...» до конца сеанса, без ошибки и без
+	 * единой кнопки. Снимаем признак загрузки — тогда экран покажет своё пустое
+	 * состояние вместо вечной крутилки.
+	 */
 	useEffect(() => {
 		if (organizationId) {
 			fetchItems();
+			return;
 		}
+		setIsLoading(false);
 	}, [organizationId]);
 
 	const openAddModal = () => {
 		setEditingItem(null);
 		setFormData({
 			name: "",
-			threshold: "5",
-			unitCostRub: "0",
+			threshold: "",
+			unitCostRub: "",
 			sku: "",
 			barcode: "",
 		});

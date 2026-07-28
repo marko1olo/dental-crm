@@ -1094,6 +1094,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										onChange={(e) =>
 											setFormData({ ...formData, threshold: e.target.value })
 										}
+										placeholder="например: 5"
 										style={{
 											padding: "10px 14px",
 											borderRadius: 8,
@@ -1129,6 +1130,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										onChange={(e) =>
 											setFormData({ ...formData, unitCostRub: e.target.value })
 										}
+										placeholder="цена за единицу, например 12,50"
 										style={{
 											padding: "10px 14px",
 											borderRadius: 8,

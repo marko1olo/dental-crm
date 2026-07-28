@@ -6028,19 +6028,67 @@ export const appointmentReadinessLabels: Record<Dashboard["appointmentReadiness"
   blocked: "важно"
 };
 
+/*
+ * Вкладки настроек.
+ *
+ * Семь панелей были смонтированы в SettingsView под идентификаторы, которых в
+ * этом списке не было: inventory, modules, insurance, reporting, marketing,
+ * bpmn и messengers. Кнопки не рисовались (панель строится из этого массива),
+ * setSettingsTab с такими значениями нигде не звался, а ручной переход по
+ * адресу вида #settings/inventory откидывало на «Клинику»
+ * (settingsTabFromHash пропускает только то, что здесь перечислено).
+ *
+ * То есть 2713 строк готовых экранов и рабочие маршруты сервера были
+ * недоступны пользователю целиком. Рядом стояли фильтры вида
+ * `if (!flags.hasInventoryModule) ... filter(t => t.id !== "inventory")` —
+ * они отсеивали элемент, которого в списке нет, и работали вхолостую.
+ *
+ * Лишнего маленькая клиника по-прежнему не увидит: показ каждой новой вкладки
+ * решает свой признак модуля в SettingsView, а не этот список.
+ *
+ * Вкладка мессенджеров переименована из «ТГ-бот»: за ней давно живут ещё
+ * WhatsApp и MAX, но по названию об этом никто не догадывался.
+ */
+/*
+ * Разделы левого списка настроек.
+ *
+ * Группа объявлена прямо у вкладки, а не отдельным списком в разметке. Так
+ * было: SettingsView раскладывал вкладки по группам своими списками
+ * идентификаторов вида `["clinic", "staff", "access"].includes(t.id)`. Любая
+ * вкладка, не упомянутая ни в одном таком списке, просто исчезала из левого
+ * меню — молча, потому что забыть дописать идентификатор в четвёртом по счёту
+ * месте ничего не стоит. Именно так пропала кнопка настроек Telegram: раздел
+ * работал и открывался по адресу, но нажать на него было негде.
+ */
+export const settingsTabGroups = [
+  { id: "account", title: "Мой аккаунт" },
+  { id: "main", title: "Основные" },
+  { id: "clinical", title: "Клинические" },
+  { id: "stock", title: "Учёт" },
+  { id: "marketing", title: "Маркетинг" },
+  { id: "system", title: "Системные" }
+] as const;
+export type SettingsTabGroup = (typeof settingsTabGroups)[number]["id"];
+
 export const settingsTabs = [
-  { id: "profile", title: "Мой профиль" },
-  { id: "clinic", title: "Клиника" },
-  { id: "staff", title: "Сотрудники" },
-  { id: "access", title: "Доступы" },
-  { id: "telegram", title: "ТГ-бот" },
-  { id: "protocols", title: "Протоколы" },
-  { id: "rules", title: "Правила" },
-  { id: "prices", title: "Прайс" },
-  { id: "sources", title: "Источники" },
-  { id: "ai", title: "ИИ" },
-  { id: "imports", title: "Импорт" },
-  { id: "audit", title: "Аудит" }
+  { id: "profile", title: "Мой профиль", group: "account" },
+  { id: "clinic", title: "Клиника", group: "main" },
+  { id: "modules", title: "Модули", group: "main" },
+  { id: "staff", title: "Сотрудники", group: "main" },
+  { id: "access", title: "Доступы", group: "main" },
+  { id: "telegram", title: "Мессенджеры", group: "main" },
+  { id: "protocols", title: "Протоколы", group: "clinical" },
+  { id: "rules", title: "Правила", group: "clinical" },
+  { id: "prices", title: "Прайс", group: "clinical" },
+  { id: "ai", title: "ИИ", group: "clinical" },
+  { id: "inventory", title: "Склад", group: "stock" },
+  { id: "insurance", title: "Страховые", group: "stock" },
+  { id: "marketing", title: "Отзывы и NPS", group: "marketing" },
+  { id: "bpmn", title: "Сценарии", group: "marketing" },
+  { id: "sources", title: "Источники", group: "system" },
+  { id: "reporting", title: "Отчёты", group: "system" },
+  { id: "imports", title: "Импорт", group: "system" },
+  { id: "audit", title: "Аудит", group: "system" }
 ] as const;
 export type SettingsTab = (typeof settingsTabs)[number]["id"];
 export type AdminSecretSessionDomain = "clinical" | "settings" | "schedule" | "telegram";
