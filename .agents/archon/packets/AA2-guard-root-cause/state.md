@@ -112,13 +112,18 @@ scripts/lib/shot-audit.mjs, components/finance/CashDayTally.tsx.
   единственная точка входа apps/web/index.html; vite.config.ts:63-64 только manualChunks, без `input`.
   Адреса живые: server.ts:457, apps/api/src/tests/webCallsExistingRoutes.test.ts:110. => (c) карантин.
 
+## COLLISION HANDLED (см. handoff.md)
+scripts/check-component-mount-reachability.mjs был ГРЯЗНЫМ: 32 незакоммиченные строки, вводящие
+DEBT_CEILING = 26 — храповик ВНУТРЬ стража, который пакет велит удалить. Диff сохранён в
+preserved-uncommitted-guard-edit.diff и закоммичен. Файл удалён `git rm -f`.
+
 ## Log
 - [x] STARTED
 - [x] AUTHORITY READ
 - [x] DEFECT CONFIRMED
 - [x] INVENTORY
-- [ ] EDIT WRITTEN
-- [ ] SELF-CHECK PASSED
-- [ ] COMMITTED <hash>
-- [ ] PROVEN
-- [ ] DONE
+- [x] EDIT WRITTEN
+- [x] SELF-CHECK PASSED (panels 9/9 exit 0, patientCard 9/9 exit 0)
+- [x] COMMITTED 82fd6427916f8633afa37d5bf7a8b92441cbd8f1
+- [x] PROVEN (5 отрицательных контролей сработали; encoding smoke ok; замер 3853 мс)
+- [x] DONE
