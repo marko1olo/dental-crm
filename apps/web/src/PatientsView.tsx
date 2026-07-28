@@ -669,9 +669,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             </div>
           </details>
         </section>
-        {/* min(280px, 100%): иначе колонка не ужимается ниже 280px и
-            карточки срезаются справа на узком экране. */}
-        <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px" }}>
+        {/* Раскладка группы — в patients-redesign.css (.patients-widgets-grid).
+            Инлайном стоял минимум дорожки 280px: на окне 720 группа получала две
+            колонки по ~311px, ряд растягивался до высоты самой высокой карточки,
+            и рядом с разбором дублей стояла пустая панель на 44 % ширины окна. */}
+        <div className="patients-widgets-grid">
           {/* Оба виджета читают данные конкретного пациента, поэтому
               получают выбранного — иначе запрос уходит без пациента и
               карточка показывает чужие звонки и чужие блокировки. */}
