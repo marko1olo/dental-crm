@@ -5,6 +5,7 @@ import {
 	actionFailureToast,
 	panelStateText,
 	requestFailureCause,
+	resolvePanelPhase,
 	unconfirmedActionToast,
 	type PanelSubject,
 } from "./panelStateText.js";
@@ -38,6 +39,68 @@ const STATUSES = [0, 400, 401, 403, 404, 409, 413, 422, 429, 500, 502, 503, 504,
 
 const LATIN = /[A-Za-z]/;
 const DIGIT = /[0-9]/;
+
+/* ------------------------------------------------------------------ */
+/*  Само правило выбора состояния — то, в чём и была ошибка            */
+/* ------------------------------------------------------------------ */
+
+test("упавшее чтение НИКОГДА не показывается как пустой список", () => {
+	// Ровно тот случай, который печатал «Рекламации и осложнения отсутствуют»:
+	// запрос завершён, список пуст — потому что его не удалось прочитать.
+	assert.equal(
+		resolvePanelPhase({ isLoading: false, hasFailure: true, isEmpty: true }),
+		"failed",
+	);
+	// И при отказе на непустом списке (перечитывание после мутации) — тоже отказ.
+	assert.equal(
+		resolvePanelPhase({ isLoading: false, hasFailure: true, isEmpty: false }),
+		"failed",
+	);
+});
+
+test("незавершённая загрузка не утверждает, что данных нет", () => {
+	assert.equal(
+		resolvePanelPhase({ isLoading: true, hasFailure: false, isEmpty: true }),
+		"loading",
+	);
+});
+
+test("честная пустота остаётся пустотой", () => {
+	assert.equal(
+		resolvePanelPhase({ isLoading: false, hasFailure: false, isEmpty: true }),
+		"empty",
+	);
+});
+
+test("обновление при уже показанных данных не гасит их", () => {
+	assert.equal(
+		resolvePanelPhase({ isLoading: true, hasFailure: false, isEmpty: false }),
+		"ready",
+	);
+	assert.equal(
+		resolvePanelPhase({ isLoading: false, hasFailure: false, isEmpty: false }),
+		"ready",
+	);
+});
+
+test("все восемь комбинаций дают ровно одно состояние, и отказ не совпадает с пустотой", () => {
+	const seen = new Map<string, string>();
+	for (const isLoading of [false, true]) {
+		for (const hasFailure of [false, true]) {
+			for (const isEmpty of [false, true]) {
+				const phase = resolvePanelPhase({ isLoading, hasFailure, isEmpty });
+				seen.set(`${isLoading}/${hasFailure}/${isEmpty}`, phase);
+				if (hasFailure) assert.equal(phase, "failed");
+				else assert.notEqual(phase, "failed");
+			}
+		}
+	}
+	assert.equal(seen.size, 8);
+});
+
+/* ------------------------------------------------------------------ */
+/*  Тексты состояний                                                   */
+/* ------------------------------------------------------------------ */
 
 test("загрузка, пустота и отказ дают три разных текста", () => {
 	const loading = panelStateText(SUBJECT, { phase: "loading" });

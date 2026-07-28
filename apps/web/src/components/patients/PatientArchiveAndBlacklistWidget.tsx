@@ -5,6 +5,7 @@ import { usePatientResource } from "../../hooks/usePatientResource";
 import {
 	actionFailureToast,
 	panelStateText,
+	resolvePanelPhase,
 	unconfirmedActionToast,
 	type PanelSubject,
 } from "../../lib/panelStateText";
@@ -83,7 +84,14 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{ patientId: string }> =
 	 * прочитан: при отказе чтения виджет показывает отказ и не даёт кнопку.
 	 */
 	const isBlacklisted = optimisticBlacklist ?? (reasons[0]?.isBookingBlocked ?? false);
-	const statusUnknown = Boolean(loadFailure) && optimisticBlacklist === null;
+	const statusPhase = resolvePanelPhase({
+		isLoading: loading,
+		hasFailure: Boolean(loadFailure),
+		isEmpty: reasons.length === 0,
+	});
+	// Успешная запись даёт факт, которого сервер уже не отменит: после неё
+	// прежний отказ чтения статус неизвестным больше не делает.
+	const statusUnknown = statusPhase === "failed" && optimisticBlacklist === null;
 
 	// Блокировка записи действует на всю сеть клиник, поэтому подтверждение
 	// обязано называть пациента поимённо, а не «пациента».

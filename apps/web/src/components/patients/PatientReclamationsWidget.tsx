@@ -14,7 +14,12 @@ import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
-import { actionFailureToast, panelStateText, type PanelSubject } from "../../lib/panelStateText";
+import {
+	actionFailureToast,
+	panelStateText,
+	resolvePanelPhase,
+	type PanelSubject,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
@@ -69,6 +74,11 @@ export function PatientReclamationsWidget({
 		[],
 	);
 	const reclamations: any[] = Array.isArray(rawReclamations) ? rawReclamations : [];
+	const phase = resolvePanelPhase({
+		isLoading,
+		hasFailure: Boolean(loadFailure),
+		isEmpty: reclamations.length === 0,
+	});
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -206,7 +216,7 @@ export function PatientReclamationsWidget({
 	 * `length === 0 && !isLoading` — и накрывала оба нештатных случая
 	 * заголовком «Рекламации и осложнения отсутствуют».
 	 */
-	if (loadFailure && !isAdding) {
+	if (phase === "failed" && !isAdding) {
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
@@ -221,7 +231,7 @@ export function PatientReclamationsWidget({
 		);
 	}
 
-	if (isLoading && reclamations.length === 0 && !isAdding) {
+	if (phase === "loading" && !isAdding) {
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
@@ -232,7 +242,7 @@ export function PatientReclamationsWidget({
 		);
 	}
 
-	if (reclamations.length === 0 && !isAdding) {
+	if (phase === "empty" && !isAdding) {
 		const emptyText = panelStateText(RECLAMATIONS_SUBJECT, { phase: "empty" });
 		return (
 			<div

@@ -13,7 +13,12 @@ import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
-import { actionFailureToast, panelStateText, type PanelSubject } from "../../lib/panelStateText";
+import {
+	actionFailureToast,
+	panelStateText,
+	resolvePanelPhase,
+	type PanelSubject,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 
@@ -60,6 +65,11 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 		[],
 	);
 	const tickets: any[] = Array.isArray(rawTickets) ? rawTickets : [];
+	const phase = resolvePanelPhase({
+		isLoading,
+		hasFailure: Boolean(loadFailure),
+		isEmpty: tickets.length === 0,
+	});
 
 	const handleAdd = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -282,7 +292,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					Отказ чтения показывается вместо пустоты, а не вместе с ней:
 					«задач нет» и «задачи не прочитаны» — разные утверждения.
 				*/}
-				{loadFailure && !isAdding && (
+				{phase === "failed" && !isAdding && (
 					<PanelLoadFailure
 						subject={TICKETS_SUBJECT}
 						status={failureStatus}
@@ -290,13 +300,13 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					/>
 				)}
 
-				{isLoading && !loadFailure && tickets.length === 0 && !isAdding && (
+				{phase === "loading" && !isAdding && (
 					<div className="py-4 text-xs text-slate-500 dark:text-slate-400">
 						{panelStateText(TICKETS_SUBJECT, { phase: "loading" }).title}
 					</div>
 				)}
 
-				{!isLoading && !loadFailure && tickets.length === 0 && !isAdding && (
+				{phase === "empty" && !isAdding && (
 					<div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
 						<Clock size={32} className="mx-auto mb-3 opacity-50" />
 						<p className="m-0 text-sm font-medium text-slate-900 dark:text-white">

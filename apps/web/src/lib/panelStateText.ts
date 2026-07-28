@@ -30,6 +30,30 @@
 /** Состояние панели. «Пусто» и «не удалось» — разные вещи и никогда не сливаются. */
 export type PanelPhase = "loading" | "empty" | "failed";
 
+/** То же плюс «данные есть и показаны». */
+export type PanelPhaseOrReady = PanelPhase | "ready";
+
+/**
+ * Какое из состояний показывать. Правило вынесено из разметки, потому что
+ * ошибались именно в нём: условие было одно — `length === 0 && !isLoading` — и
+ * накрывало и честную пустоту, и непрочитанный список.
+ *
+ * Порядок обязателен и проверяется тестом:
+ *   отказ важнее пустоты (иначе непрочитанное выдаётся за отсутствующее);
+ *   загрузка важнее пустоты (иначе на долю секунды утверждается «данных нет»);
+ *   при уже показанных данных обновление не гасит их в «загружаем».
+ */
+export function resolvePanelPhase(input: {
+	readonly isLoading: boolean;
+	readonly hasFailure: boolean;
+	readonly isEmpty: boolean;
+}): PanelPhaseOrReady {
+	if (input.hasFailure) return "failed";
+	if (input.isLoading && input.isEmpty) return "loading";
+	if (input.isEmpty) return "empty";
+	return "ready";
+}
+
 export type PanelState =
 	| { readonly phase: "loading" }
 	| { readonly phase: "empty" }
