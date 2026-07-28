@@ -48,7 +48,7 @@ export function VisitDictation() {
 		emptyDictationVoiceActionLabel,
 		visitDraftBuildMissingSteps,
 		updateVisitNoteField,
-		savedVisitNoteForm,
+		visitNoteForm,
 	} = useAppLogicContext();
 
 	const [showHints, setShowHints] = useState(false);
@@ -68,14 +68,29 @@ export function VisitDictation() {
 		setShowHints(false);
 	};
 
-	// Возвращает признак «текст действительно ушёл в поле карты»: без него
-	// невозможно отличить перенос от тихого отказа (см. onApply ниже).
+	/*
+	 * Дописывает разобранный текст к полю карты приёма.
+	 *
+	 * БЫЛО: содержимое поля бралось из savedVisitNoteForm, а такого имени в
+	 * контексте НЕТ — useVisitLogic его отдаёт, но useAppLogic.tsx в свой
+	 * возвращаемый объект не кладёт (проверено: во всём дереве это имя читает
+	 * только этот файл). Значит, проверка `if (savedVisitNoteForm ...)` всегда
+	 * ложна, и работала одна ветка — та, что ЗАМЕНЯЕТ поле целиком. Врач вписывал
+	 * жалобы руками, диктовал дополнение, нажимал «Применить» — и написанное
+	 * стиралось разобранной фразой. Ветка «дописать» не выполнялась ни разу.
+	 *
+	 * Берём visitNoteForm: он в контексте есть, и это ТЕКУЩЕЕ содержимое полей,
+	 * включая несохранённые правки, — именно к нему и надо дописывать.
+	 *
+	 * Возвращает признак «текст действительно ушёл в поле карты»: без него
+	 * невозможно отличить перенос от тихого отказа (см. onApply ниже).
+	 */
 	const appendToEMKField = (k: string, v: string): boolean => {
 		if (!k || !v || !updateVisitNoteField) return false;
 		const field = k as any;
-		if (savedVisitNoteForm && typeof (savedVisitNoteForm as any)[field] === "string") {
-			const current = (savedVisitNoteForm as any)[field] as string;
-			const newValue = current ? `${current}\n${v}` : v;
+		const currentValue = (visitNoteForm as any)?.[field];
+		if (typeof currentValue === "string") {
+			const newValue = currentValue ? `${currentValue}\n${v}` : v;
 			updateVisitNoteField(field, newValue);
 		} else {
 			updateVisitNoteField(field, v);
