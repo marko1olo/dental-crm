@@ -8,6 +8,12 @@ import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
  * по-разному.
  */
 import { normalizeRubAmountInput } from "../../rubAmountInput";
+import {
+	familyMutationId,
+	familyPayRequestKey,
+	familyTopupRequestKey,
+	type MutationTicket,
+} from "./familyWalletMutationKey";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import type { PanelSubject } from "../../lib/panelStateText";
@@ -188,25 +194,13 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	 * тот же, второго списания не будет. Изменилась хоть одна — это ДРУГАЯ
 	 * операция, и она получает новый ключ. Отдельного сброса при смене пациента не
 	 * нужно: пациент входит в подпись, и одно правило не может разойтись с другим.
+	 *
+	 * Само правило вынесено в familyWalletMutationKey.ts и проверяется прогоном
+	 * (familyWalletMutationKey.test.ts): здесь, внутри панели, исполнить его в
+	 * тесте было нельзя, а ошибка в нём стоит денег живого человека.
 	 */
-	type MutationTicket = { requestKey: string; mutationId: string };
 	const topupMutationRef = useRef<MutationTicket | null>(null);
 	const payMutationRef = useRef<MutationTicket | null>(null);
-
-	/**
-	 * Выдать ключ для операции с такой подписью: тот же при повторе, новый при
-	 * любом изменении денежной части запроса.
-	 */
-	const mutationIdFor = (
-		ref: React.MutableRefObject<MutationTicket | null>,
-		prefix: string,
-		requestKey: string,
-	): string => {
-		if (ref.current?.requestKey !== requestKey) {
-			ref.current = { requestKey, mutationId: `${prefix}-${crypto.randomUUID()}` };
-		}
-		return ref.current.mutationId;
-	};
 
 	const isPatientDatabaseId = PATIENT_ID_PATTERN.test(patientId);
 	// Номер запроса вместо флага cancelled: тот же счётчик защищает и повторную
@@ -465,10 +459,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		// (organizationId, clientMutationId) есть, но без ключа не срабатывает.
 		// Подпись — ровно те поля тела запроса, которые двигают деньги: другой
 		// пациент, другая семья или другая сумма означают другую операцию.
-		const mutationId = mutationIdFor(
+		const mutationId = familyMutationId(
 			payMutationRef,
 			"family-pay",
-			`${patientId}|${family.id}|${amount}`,
+			familyPayRequestKey(patientId, family.id, amount),
 		);
 
 		setIsPaying(true);
@@ -546,10 +540,10 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		}
 		// Способ входит в подпись наравне с суммой: он попадает в журнал платежей и
 		// в сверку кассы, поэтому «те же 5 000 ₽, но картой» — другая операция.
-		const mutationId = mutationIdFor(
+		const mutationId = familyMutationId(
 			topupMutationRef,
 			"family-topup",
-			`${patientId}|${family.id}|${topupAmount}|${topupMethod}`,
+			familyTopupRequestKey(patientId, family.id, topupAmount, topupMethod),
 		);
 
 		setIsToppingUp(true);
