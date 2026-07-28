@@ -46,6 +46,15 @@ const patientNotFoundMessage = "Пациент не найден. Обновит
 const patientDuplicateMessage =
   "Похожая карта пациента уже есть. Найдите пациента по ФИО или телефону и обновите существующую карточку.";
 
+/**
+ * Идентификатор карты пациента в адресе. Колонки patients.id и
+ * communication_events.patient_id объявлены как uuid, поэтому строка вида
+ * "undefined" или "null" — а интерфейс такие подставлял, когда пациент ещё не
+ * выбран — доходит до PostgreSQL и возвращается ошибкой разбора типа. Оператор
+ * видел «сбой чтения» там, где на самом деле не выбрана карта.
+ */
+const PATIENT_ID_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type PatientDuplicateInput = {
   birthDate?: string | null | undefined;
   fullName?: string | null | undefined;
@@ -337,7 +346,24 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     }
   });
 
-  // COMPETITOR FEATURE #4: пациенты::хронологическая_история_коммуникаций
+  /**
+   * Журнал обращений пациента: звонки и сообщения, прошедшие через клинику.
+   *
+   * БЫЛО ДВА ДЕФЕКТА, ОБА ИСПРАВЛЕНЫ ЗДЕСЬ.
+   *
+   * 1. Параметр :patientId сначала не читался вовсе — в карточке КАЖДОГО
+   *    пациента показывалась переписка ВСЕХ пациентов клиники. Это раскрытие
+   *    персональных данных внутри интерфейса.
+   * 2. Затем он читался, но источником была patient_communication_timelines —
+   *    таблица без единого писателя в проекте и без колонки patient_id: связь с
+   *    карточкой делалась сравнением ФИО строкой. То есть обе панели карточки
+   *    отвечали «звонков и сообщений нет» ВСЕГДА. Администратор звонил второй
+   *    раз или не звонил вовсе, считая, что коллега отработал.
+   *
+   * Теперь читается communication_events — единственный живой источник со
+   * связью по uuid и пятью настоящими писателями по пяти каналам. Подробности и
+   * границы утверждения — в services/patients/patientCommunicationLog.ts.
+   */
   app.get("/api/patients/:patientId/communication-timelines", async (request, reply) => {
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
@@ -346,18 +372,36 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
     const orgId = payload.organizationId as string;
 
-    // БЫЛО: параметр :patientId объявлен, но не читался — в карточке КАЖДОГО
-    // пациента показывалась история звонков, SMS и переписки ВСЕХ пациентов
-    // клиники. Это раскрытие персональных данных внутри интерфейса.
     const { patientId } = request.params as { patientId?: string };
-    if (!patientId) {
-      return reply.code(400).send({ error: "ValidationError", message: "Не указан пациент." });
+    // Проверка формата до обращения к базе: patients.id и
+    // communication_events.patient_id — колонки типа uuid, и на строке
+    // «undefined» PostgreSQL отвечает ошибкой разбора. Она превратилась бы в 500
+    // «сбой чтения» вместо понятного «карта не выбрана».
+    if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+      return sendPatientRouteValidationError(reply);
     }
 
-    const { getPatientCommunicationTimelinesFromDb } = await import("../db/patientCommunicationTimelinesQuery.js");
-    return reply
-      .status(200)
-      .send(await getPatientCommunicationTimelinesFromDb(orgId, patientId));
+    const requestedLimit = (request.query as { limit?: unknown } | null | undefined)?.limit;
+
+    try {
+      const { findPatientCommunicationLog } = await import("../services/patients/patientCommunicationLog.js");
+      const log = await findPatientCommunicationLog(orgId, patientId.trim(), { limit: requestedLimit });
+      // Пациента нет в этой клинике — это 404, а не пустой журнал. Пустой журнал
+      // оператор читает как «с человеком не связывались»; отсутствие карты и
+      // отсутствие обращений — разные ответы, и путать их нельзя (тот же приём,
+      // что в archive-status ниже).
+      if (!log) return sendPatientNotFound(reply);
+      return reply.status(200).send(log);
+    } catch (e) {
+      // Отказ базы не выдаётся за пустой журнал: это самая дорогая ошибка на
+      // этом экране. Сообщение обязано назвать и причину, и что делать.
+      request.log.error({ err: e }, "[Patients] Ошибка чтения журнала обращений пациента");
+      return reply.code(500).send({
+        error: "PatientCommunicationLogUnavailable",
+        message:
+          "Не удалось прочитать звонки и сообщения по этой карте. Не считайте, что обращений не было: повторите чтение, а до этого проверьте раздел «Общение»."
+      });
+    }
   });
 
   // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
