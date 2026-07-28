@@ -592,6 +592,71 @@ const PANELS = [
       );
     })()`,
   },
+  {
+    // Раздел намеренно «patients», а не «visit»: пациента надо выбрать ДО того,
+    // как открывать приём. Первая редакция ходила в картотеку изнутри подготовки
+    // и не успевала — раздел подключается лениво, кадр получался с пустым
+    // состоянием, и «полей ввода 0» означало не дефект карты, а мою спешку.
+    // Пусть в раздел переводит сам конвейер, он ждёт после перехода.
+    view: "patients",
+    testId: "visit-view",
+    slug: "visit",
+    // Приём — самый частый экран смены и первое, что видит врач у кресла, но ни
+    // один снимочный конвейер не показывал его С ВЫБРАННЫМ ПАЦИЕНТОМ: без выбора
+    // экран отдаёт пустое состояние, и все прежние кадры приёма были им.
+    // Поэтому пациент выбирается здесь же: заходим в картотеку, нажимаем строку
+    // списка, возвращаемся на приём. Возвращается не «сделано», а состояние —
+    // выбран ли пациент, отрисовались ли вкладки и сколько полей в карте видно.
+    // Последнее важно: вкладки «ЭМК и Диктовка» читали из контекста поля,
+    // которых там нет, и карта оставалась без единого поля.
+    prepare: `(async () => {
+      const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+      const openedName = () =>
+        [...document.querySelectorAll("input")].find((node) => node.autocomplete === "name")?.value || "";
+
+      /*
+       * Ждём и строку списка, и ОТКРЫТУЮ карточку, а не спим наугад. Первые две
+       * редакции спали фиксированно и снимали пустое состояние: на раннем панеле
+       * данные клиники ещё грузятся, строк списка нет, нажимать нечего. Ошибка
+       * при этом выглядела как дефект карты приёма («полей ввода 0»), то есть
+       * ложное обвинение чужой правки. Клик повторяется, потому что первый может
+       * прийти в момент перерисовки списка и потеряться.
+       */
+      let chosen = "";
+      for (let attempt = 0; attempt < 24 && !chosen; attempt += 1) {
+        const row = document.querySelector("article.patient-row");
+        if (row) row.click();
+        await wait(600);
+        chosen = openedName();
+      }
+      if (!chosen) chosen = "(пациент не выбран)";
+
+      window.location.hash = "visit";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      // Ждём именно раздел приёма: снимок раньше него — снимок картотеки.
+      for (let attempt = 0; attempt < 24; attempt += 1) {
+        if (document.querySelector('[data-testid="visit-view"]')) break;
+        await wait(500);
+      }
+      await wait(1200);
+
+      const view = document.querySelector('[data-testid="visit-view"]');
+      const emptyState = Boolean(view && view.textContent?.includes("Пациент не выбран"));
+      // Поля карты приёма считаются по реально отрисованным элементам ввода
+      // внутри раздела, а не по наличию заголовка вкладки: заголовок был на месте
+      // и когда полей не оставалось ни одного.
+      const fields = view ? view.querySelectorAll("input, textarea, select").length : -1;
+      const tabs = view
+        ? [...view.querySelectorAll("button")].map((node) => node.textContent?.trim()).filter(Boolean).slice(0, 8)
+        : [];
+      return (
+        "выбран: " + chosen +
+        ", пустое состояние: " + emptyState +
+        ", полей ввода в карте: " + fields +
+        ", кнопки: " + tabs.join(" | ")
+      );
+    })()`,
+  },
   { view: "communications", testId: "message-delivery-console", slug: "delivery" },
   { view: "communications", testId: "campaign-panel", slug: "campaigns" },
   { view: "analytics", testId: "manager-reports-panel", slug: "reports" },
