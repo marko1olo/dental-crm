@@ -34,15 +34,38 @@
  *  - Секреты всех административных домена и вебхуков задаются синтетическими
  *    значениями. Иначе маршрут отвечает 503 «секрет не настроен» и выглядит
  *    защищённым только потому, что на этой машине не настроен сервер.
+ *    СКОЛЬКО ИМЕННО маршрутов держится на этом — не проза, а замер: перед
+ *    основным проходом выполняется проход с ПОЛНОСТЬЮ снятыми секретами, и его
+ *    гистограмма ответов печатается в отчёте (secretsWithheldPosture). В
+ *    прошлой сдаче это число было названо по памяти и оказалось занижено в 11
+ *    раз (заявлено 24, фактически 276 из 479 — измерено ревизором и теперь
+ *    измеряется каждым прогоном).
  *  - Законные исключения перечислены поимённо, каждое с причиной и ожидаемым
  *    кодом ответа. Устаревшая запись в списке исключений — это ошибка гейта, и
  *    она валит прогон.
+ *  - Сборка обязана быть свежее исходников (см. api-route-census.mjs). Гейт,
+ *    поднимающий устаревший dist, зеленеет о вчерашнем коде.
+ *  - Поток логгера перехвачен: шум запросов отсекается уровнем, но любая запись
+ *    уровня >= 40 валит прогон. Без этого забытый `return` после охранника
+ *    («Reply was already sent…») невидим — код ответа тот же самый, а тело
+ *    обработчика при этом выполняется.
+ *
+ * ГРАНИЦЫ ПРИМЕНИМОСТИ (перечислены явно, см. injectionLimitations в отчёте)
+ * `app.inject` — не браузер. Утверждать, что каждый охранник, который проверяет
+ * этот гейт, есть тот же охранник, в который стучится браузер, НЕЛЬЗЯ: у
+ * инъекции нет рукопожатия Upgrade и нет слушающего сетевого порта, а один
+ * охранник читает именно `listening`. Оба расхождения названы в отчёте вместе с
+ * командой, которая их закрывает.
  */
 
 import { randomUUID } from "node:crypto";
 import {
+	auditDevelopmentEscapeFlags,
+	clearDevelopmentEscapes,
 	collectRouteTable,
 	createRealApiApp,
+	loadGuardHeaderNames,
+	loggerAlertLevel,
 	materializeRouteUrl,
 	mutatingHttpMethods,
 	routeKey,
@@ -69,26 +92,12 @@ const webhookSecretEnvNames = Object.freeze([
 	"DENTE_COMMUNICATION_RECEIPT_SECRET",
 ]);
 
-const developmentEscapeFlagNames = Object.freeze([
-	"DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS",
-	"DENTE_CLINICAL_ALLOW_UNGUARDED_READS",
-	"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
-	"DENTE_DEV_ALLOW_HEADER_ORG",
-	"DENTE_ALLOW_DEMO_LOGIN",
-	"DENTE_ALLOW_DEMO_FIXTURES",
-]);
-
-const adminSecretHeader = "x-dente-admin-secret";
 const secretValues = new Map();
 
 function assignSecret(envName, domain) {
 	const value = syntheticSecret(domain);
 	secretValues.set(envName, value);
 	process.env[envName] = value;
-}
-
-function clearDevelopmentEscapes() {
-	for (const flag of developmentEscapeFlagNames) delete process.env[flag];
 }
 
 function clearAllSecrets() {
@@ -266,6 +275,34 @@ const notProbeable = [
 	},
 ];
 
+// ─── Названные границы применимости инъекции ────────────────────────────────
+// Гейт уже честно объявлял слепое пятно по WebSocket. Второе расхождение с
+// браузерным путём было в бумагах названо равенством — это неверно, и здесь оно
+// зафиксировано так же явно.
+const injectionLimitations = [
+	{
+		subject: "рукопожатие Upgrade у WebSocket",
+		guard: "dist/routes/websocket.js — авторизация сокета",
+		divergence:
+			"app.inject не выполняет Upgrade, поэтому обработчик сокета либо не достигается, либо достигается без сокета",
+		verdictImpact:
+			"оба метода адреса не опрашиваются вовсе; они перечислены в notProbeable и в skippedRoutes",
+		closingCommand:
+			'живой WS-клиент против запущенного сервера: node -e "const ws=new (require(\'ws\'))(process.env.DENTE_WS_URL);ws.on(\'close\',(c)=>console.log(\'close\',c));ws.on(\'message\',(m)=>console.log(String(m)))"',
+	},
+	{
+		subject: "процесс не слушает сетевой порт",
+		guard:
+			"apps/api/src/security/identity.ts:102-106 serverAcceptsNetworkConnections() → :112-115 unverifiedOrganizationUsable()",
+		divergence:
+			"решение о НЕПРОВЕРЕННОЙ (взятой из заголовка) организации зависит от request.server.server.listening. Под app.inject он всегда false, поэтому ветку, которую проходит браузер (listening=true), этот гейт не исполняет ни разу. Утверждение «каждый охранник, который проверяет гейт, — тот же охранник, в который стучится браузер» для этого охранника НЕВЕРНО.",
+		verdictImpact:
+			"на вердикт не влияет и ошибается в сторону ложного КРАСНОГО, а не зелёного: заголовочная организация принимается только при DENTE_DEV_ALLOW_HEADER_ORG=1 и NODE_ENV != production, а гейт держит production и снимает флаг. Это не рассуждение, а проба: см. failClosedChecks, «заголовок организации при снятом production-запрете».",
+		closingCommand:
+			"живой сервер на слушающем порту: тот же меняющий маршрут с заголовком организации и без токена при DENTE_DEV_ALLOW_HEADER_ORG=1 и NODE_ENV=development — сравнить с ответом через app.inject",
+	},
+];
+
 // Обработчики, проверяющие ТЕЛО запроса раньше прав. Пустое тело даёт 400 до
 // охранника, и проверка «дошло ли до охранника» теряет смысл. Поэтому зонд
 // подаёт тело правильной ФОРМЫ (без единого настоящего значения) — и охранник
@@ -287,7 +324,26 @@ const payloadBeforeAuthorisation = [
 	},
 ];
 
+// ─── Записи логгера, которые означают «охранник сработал» ───────────────────
+// Уровень 40 сам по себе не дефект: часть охранников сообщает об отказе именно
+// предупреждением, а этот гейт весь прогон занят тем, что провоцирует отказы.
+// Поэтому здесь перечислены записи, каждая с исходником и причиной; всё
+// остальное уровня >= 40 валит прогон. Запись о ДВОЙНОМ ОТВЕТЕ не может быть
+// разрешена ни одной строкой этого списка — она проверяется раньше и всегда
+// является провалом. Разрешение, ни разу не совпавшее за прогон, попадает в
+// warnings: либо текст записи изменился, либо охранник перестал сообщать.
+const expectedGuardLogRecords = [
+	{
+		pattern: /^\[webhook:[a-z0-9_-]+\] Отклонён запрос с неверным секретом\.$/,
+		source: "apps/api/src/security/webhookAuth.ts:95-98",
+		reason:
+			"охранник вебхука отказал (401 WebhookSecretMismatch) и записал отказ предупреждением. Гейт стучится во все вебхуки без секрета, поэтому запись обязана появиться; её отсутствие подозрительнее её наличия.",
+	},
+];
+
 const challengeStatusCodes = new Set([401, 403]);
+/** «Секрет домена не настроен» — отказ по конфигурации, а не по правам. */
+const secretUnconfiguredStatusCode = 503;
 const syntheticParamValue = "11111111-1111-4111-8111-111111111111";
 const syntheticWildcardValue = "smoke-guard-wildcard";
 
@@ -340,7 +396,9 @@ async function probeWithoutCredentials(app, entry, probePayload) {
 
 // ─── Прогон ─────────────────────────────────────────────────────────────────
 
-const app = await createRealApiApp();
+const { app, logCapture, buildFreshness, importEnvironment } =
+	await createRealApiApp();
+const { adminSecretHeader, organizationHeader } = await loadGuardHeaderNames();
 const routeTable = collectRouteTable(app);
 
 const failures = [];
@@ -355,31 +413,87 @@ for (const entry of unparseableRoutes) {
 	);
 }
 
-// Секреты всех домена и вебхуков заданы, послабления разработки сняты,
-// режим production: иначе часть маршрутов ответит 503 «не настроено» или
-// вообще пропустит запрос как локальную отладку.
+// Инвентарь послаблений сверяется с исходниками: имя, найденное в коде и не
+// внесённое в список, означает машину, на которой гейт прошёл бы мимо.
+const escapeFlagAudit = await auditDevelopmentEscapeFlags();
+for (const entry of escapeFlagAudit.undeclared) {
+	failures.push(
+		`ПОСЛАБЛЕНИЕ НЕ ВНЕСЕНО В СПИСОК: ${entry.name} (${entry.source}) снимается по факту находки, но отсутствует в developmentEscapeFlagNames — впишите имя, иначе следующее послабление снова окажется незамеченным`,
+	);
+}
+
+/**
+ * Один полный проход по таблице маршрутов запросами БЕЗ учётных данных.
+ * Вызывается дважды: со снятыми секретами (замер того, сколько маршрутов
+ * держится на «секрет не настроен») и с заданными (собственно проверка прав).
+ */
+async function sweepWithoutCredentials() {
+	const startedAt = Date.now();
+	const results = [];
+	const skipped = [];
+	for (const entry of routeTable) {
+		const key = routeKey(entry.method, entry.routePath);
+		const exception = exceptions.get(key);
+		if (exception?.kind === "not-probeable") {
+			skipped.push({ route: key, reason: exception.reason });
+			continue;
+		}
+		const payload = exception?.probePayload ?? probePayloads.get(key)?.payload;
+		const result = await probeWithoutCredentials(app, entry, payload);
+		results.push({ ...entry, key, exception, ...result });
+	}
+	return { results, skipped, elapsedMs: Date.now() - startedAt };
+}
+
+// ─── Проход 1: секреты СНЯТЫ. Замер, а не проза ─────────────────────────────
+// Прошлая сдача утверждала, что задание синтетических секретов затрагивает 24
+// маршрута. Ревизор измерил 276 из 479. Число было взято из другой (протекающей)
+// конфигурации и занижено в 11 раз. Теперь его меряет сам гейт на каждом
+// прогоне, поэтому расходиться с реальностью ему больше негде.
 process.env.NODE_ENV = "production";
-clearDevelopmentEscapes();
+await clearDevelopmentEscapes();
+clearAllSecrets();
+const secretsWithheldSweep = await sweepWithoutCredentials();
+
+const secretsWithheldStatusHistogram = {};
+for (const result of secretsWithheldSweep.results) {
+	const label = String(result.statusCode);
+	secretsWithheldStatusHistogram[label] =
+		(secretsWithheldStatusHistogram[label] ?? 0) + 1;
+}
+const secretUnconfiguredRouteCount = secretsWithheldSweep.results.filter(
+	(result) => result.statusCode === secretUnconfiguredStatusCode,
+).length;
+const secretsWithheldChallengedCount = secretsWithheldSweep.results.filter(
+	(result) => challengeStatusCodes.has(result.statusCode),
+).length;
+// Следствие основного прохода, оставленное утверждением сознательно: замер без
+// проверки гниёт. В пустом окружении открытым может быть только то, что названо
+// публичным или записано долгом.
+const openedWithoutSecrets = secretsWithheldSweep.results.filter(
+	(result) =>
+		!result.exception && result.statusCode >= 200 && result.statusCode < 300,
+);
+for (const result of openedWithoutSecrets) {
+	failures.push(
+		`ОТКРЫТ В ПУСТОМ ОКРУЖЕНИИ: ${result.key} без единого настроенного секрета ответил ${result.statusCode} — маршрут не назван публичным и не записан долгом`,
+	);
+}
+
+// ─── Проход 2: секреты заданы, послабления сняты, режим production ──────────
+// Иначе часть маршрутов ответит 503 «не настроено» или вообще пропустит запрос
+// как локальную отладку.
+process.env.NODE_ENV = "production";
+await clearDevelopmentEscapes();
 for (const [domain, envName] of Object.entries(adminSecretEnvNames)) {
 	assignSecret(envName, domain);
 }
 for (const envName of webhookSecretEnvNames) assignSecret(envName, "webhook");
 
-const probeStartedAt = Date.now();
-const probeResults = [];
-const skippedRoutes = [];
-for (const entry of routeTable) {
-	const key = routeKey(entry.method, entry.routePath);
-	const exception = exceptions.get(key);
-	if (exception?.kind === "not-probeable") {
-		skippedRoutes.push({ route: key, reason: exception.reason });
-		continue;
-	}
-	const payload = exception?.probePayload ?? probePayloads.get(key)?.payload;
-	const result = await probeWithoutCredentials(app, entry, payload);
-	probeResults.push({ ...entry, key, exception, ...result });
-}
-const probeElapsedMs = Date.now() - probeStartedAt;
+const gradedSweep = await sweepWithoutCredentials();
+const probeResults = gradedSweep.results;
+const skippedRoutes = gradedSweep.skipped;
+const probeElapsedMs = gradedSweep.elapsedMs;
 
 for (const result of probeResults) {
 	const challenged = challengeStatusCodes.has(result.statusCode);
@@ -487,6 +601,14 @@ const clinicalReadRoute = probeResults.find(
 	(result) =>
 		result.method === "GET" && result.errorCode === "ClinicalReadSecretRequired",
 );
+// Маршрут с РУКОПИСНОЙ проверкой токена: его ответ не зависит ни от секретов
+// домена, ни от послаблений, поэтому именно на нём проверяется запрет
+// заголовочной организации в production.
+const handRolledAuthMutationRoute = probeResults.find(
+	(result) =>
+		mutatingHttpMethods.includes(result.method) &&
+		result.errorCode === "AuthRequired",
+);
 if (!clinicalMutationRoute) {
 	failures.push(
 		"В переписи нет ни одного меняющего маршрута под общим охранником клинических мутаций — проверять отказоустойчивость не на чем",
@@ -497,12 +619,18 @@ if (!clinicalReadRoute) {
 		"В переписи нет ни одного читающего маршрута под общим охранником клинических чтений — проверять отказоустойчивость не на чем",
 	);
 }
+if (!handRolledAuthMutationRoute) {
+	failures.push(
+		"В переписи нет ни одного меняющего маршрута с рукописной проверкой токена (401 AuthRequired) — запрет заголовочной организации в production проверять не на чем",
+	);
+}
 
-async function injectRoute(result) {
+async function injectRoute(result, headers) {
 	const injectOptions = { method: result.method, url: result.url };
 	if (result.method !== "GET" && result.method !== "HEAD") {
 		injectOptions.payload = {};
 	}
+	if (headers) injectOptions.headers = headers;
 	return app.inject(injectOptions);
 }
 
@@ -510,7 +638,7 @@ const failClosedChecks = [];
 if (clinicalMutationRoute && clinicalReadRoute) {
 	// 1. production без секрета обязан отказывать, а не пропускать.
 	clearAllSecrets();
-	clearDevelopmentEscapes();
+	await clearDevelopmentEscapes();
 	process.env.NODE_ENV = "production";
 	for (const [label, route] of [
 		["мутация", clinicalMutationRoute],
@@ -522,9 +650,9 @@ if (clinicalMutationRoute && clinicalReadRoute) {
 			route: route.key,
 			statusCode: response.statusCode,
 		});
-		if (response.statusCode !== 503) {
+		if (response.statusCode !== secretUnconfiguredStatusCode) {
 			failures.push(
-				`НЕ ОТКАЗЫВАЕТ ЗАКРЫТО: ${route.key} в production без секрета ответил ${response.statusCode}, ожидался 503`,
+				`НЕ ОТКАЗЫВАЕТ ЗАКРЫТО: ${route.key} в production без секрета ответил ${response.statusCode}, ожидался ${secretUnconfiguredStatusCode}`,
 			);
 		}
 	}
@@ -542,9 +670,9 @@ if (clinicalMutationRoute && clinicalReadRoute) {
 				route: route.key,
 				statusCode: response.statusCode,
 			});
-			if (response.statusCode !== 503) {
+			if (response.statusCode !== secretUnconfiguredStatusCode) {
 				failures.push(
-					`ЧУЖОЙ СЕКРЕТ ОТКРЫВАЕТ КЛИНИЧЕСКИЙ МАРШРУТ: ${route.key} при заданном только ${domain}-секрете ответил ${response.statusCode}, ожидался 503`,
+					`ЧУЖОЙ СЕКРЕТ ОТКРЫВАЕТ КЛИНИЧЕСКИЙ МАРШРУТ: ${route.key} при заданном только ${domain}-секрете ответил ${response.statusCode}, ожидался ${secretUnconfiguredStatusCode}`,
 				);
 			}
 		}
@@ -562,12 +690,39 @@ if (clinicalMutationRoute && clinicalReadRoute) {
 		route: clinicalReadRoute.key,
 		statusCode: escapeResponse.statusCode,
 	});
-	if (escapeResponse.statusCode === 403 || escapeResponse.statusCode === 503) {
+	if (
+		escapeResponse.statusCode === 403 ||
+		escapeResponse.statusCode === secretUnconfiguredStatusCode
+	) {
 		failures.push(
 			`ПОСЛАБЛЕНИЕ НЕ РАБОТАЕТ: ${clinicalReadRoute.key} с DENTE_CLINICAL_ALLOW_UNGUARDED_READS=1 ответил ${escapeResponse.statusCode}`,
 		);
 	}
 	delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+}
+
+// 4. Заголовок организации в production не открывает ЗАПИСЬ.
+//    Именно этим держится безвредность расхождения app.inject и слушающего
+//    порта (injectionLimitations): непроверенная организация вообще не
+//    возникает, пока послабление не включено, а в production оно выключено
+//    принудительно. Утверждение измеряется, а не пересказывается.
+if (handRolledAuthMutationRoute) {
+	process.env.NODE_ENV = "production";
+	process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
+	const headerOrgResponse = await injectRoute(handRolledAuthMutationRoute, {
+		[organizationHeader]: syntheticParamValue,
+	});
+	delete process.env.DENTE_DEV_ALLOW_HEADER_ORG;
+	failClosedChecks.push({
+		check: "заголовок организации при снятом production-запрете",
+		route: handRolledAuthMutationRoute.key,
+		statusCode: headerOrgResponse.statusCode,
+	});
+	if (!challengeStatusCodes.has(headerOrgResponse.statusCode)) {
+		failures.push(
+			`ЗАГОЛОВОК ОРГАНИЗАЦИИ ОТКРЫВАЕТ ЗАПИСЬ: ${handRolledAuthMutationRoute.key} в production с ${organizationHeader} и DENTE_DEV_ALLOW_HEADER_ORG=1 ответил ${headerOrgResponse.statusCode}, ожидались 401 или 403`,
+		);
+	}
 }
 
 // ─── Публичный /api/health не должен раскрывать состояние резервных копий ───
@@ -633,8 +788,43 @@ if (localBridgeResponse.statusCode !== 200) {
 
 await app.close();
 clearAllSecrets();
-clearDevelopmentEscapes();
+await clearDevelopmentEscapes();
 delete process.env.NODE_ENV;
+
+// ─── Записи логгера: единственный признак ответа «дважды» ───────────────────
+// Охранник, который ответил 403 и НЕ прервал обработчик, отдаёт тот же 403 —
+// по коду ответа это не отличить. Fastify сообщает об этом записью уровня 40.
+const expectedRecordHits = new Map();
+const loggerAlerts = logCapture.alerts().map((alert) => {
+	if (alert.doubleReply) {
+		failures.push(
+			`ОБРАБОТЧИК ОТВЕТИЛ ДВАЖДЫ: ${alert.message}${alert.requestId ? ` (запрос ${alert.requestId})` : ""}` +
+				" — охранник ответил, но тело обработчика продолжило работу: потерян «return» после охранника",
+		);
+		return { ...alert, expectedBy: null };
+	}
+	const allowance = expectedGuardLogRecords.find((entry) =>
+		entry.pattern.test(alert.message),
+	);
+	if (allowance) {
+		expectedRecordHits.set(
+			allowance.source,
+			(expectedRecordHits.get(allowance.source) ?? 0) + 1,
+		);
+		return { ...alert, expectedBy: allowance.source };
+	}
+	failures.push(
+		`ЛОГГЕР СООБЩИЛ О СБОЕ (уровень ${alert.level ?? "?"} >= ${loggerAlertLevel}): ${alert.message}` +
+			`${alert.requestId ? ` (запрос ${alert.requestId})` : ""}`,
+	);
+	return { ...alert, expectedBy: null };
+});
+for (const entry of expectedGuardLogRecords) {
+	if (expectedRecordHits.has(entry.source)) continue;
+	warnings.push(
+		`РАЗРЕШЕНИЕ ЗАПИСИ ЛОГГЕРА НИ РАЗУ НЕ СОВПАЛО: ${entry.source} — либо текст записи изменился, либо охранник перестал сообщать об отказе; проверьте запись, а не удаляйте её молча`,
+	);
+}
 
 // ─── Отчёт ──────────────────────────────────────────────────────────────────
 const mutatingProbes = probeResults.filter((result) =>
@@ -655,9 +845,31 @@ const summary = {
 	challengedMutatingRoutes: mutatingProbes.filter((result) =>
 		challengeStatusCodes.has(result.statusCode),
 	).length,
+	buildFreshness,
+	importEnvironment,
+	logCaptureLevel: logCapture.level,
+	loggerAlerts,
+	expectedGuardLogRecords: expectedGuardLogRecords.map((entry) => ({
+		pattern: String(entry.pattern),
+		source: entry.source,
+		matched: expectedRecordHits.get(entry.source) ?? 0,
+		reason: entry.reason,
+	})),
+	escapeFlagAudit,
+	secretsWithheldPosture: {
+		probedRoutes: secretsWithheldSweep.results.length,
+		secretUnconfiguredRoutes: secretUnconfiguredRouteCount,
+		challengedRoutes: secretsWithheldChallengedCount,
+		statusHistogram: secretsWithheldStatusHistogram,
+		elapsedMs: secretsWithheldSweep.elapsedMs,
+		meaning:
+			`столько маршрутов отвечает ${secretUnconfiguredStatusCode} «секрет домена не настроен», пока гейт не задал синтетические секреты. ` +
+			"Это не защита правами, а отказ по конфигурации, и без синтетических секретов такие маршруты выглядели бы закрытыми даром.",
+	},
 	challengeIdioms,
 	guardUnlockProbes: unlockProbes,
 	failClosedChecks,
+	injectionLimitations,
 	exceptions: {
 		unauthenticatedByDesign: unauthenticatedByDesign.map((entry) => ({
 			route: `${entry.methods.join("/")} ${entry.routePath}`,
