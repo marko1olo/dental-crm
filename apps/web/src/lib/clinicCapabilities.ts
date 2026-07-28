@@ -21,9 +21,23 @@
  * раздел выглядит как поломка.
  */
 
-import type { StaffRole } from "@dental/shared";
+import { clinicModeSchema, type ClinicMode, type StaffRole } from "@dental/shared";
 
-export type ClinicMode = "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+/*
+ * Перечень режимов не переписывается здесь руками, и это не стилистика.
+ *
+ * Раньше в этом файле лежала своя копия объединения из четырёх строк, а ниже —
+ * ещё один такой же список для проверки чужого значения. Итого три копии одного
+ * перечисления: в `packages/shared/src/index.ts:797` (`clinicModeSchema`, по нему
+ * сервер разбирает колонку `organizations.clinic_mode`) и две здесь. Ровно на
+ * таком расхождении в этом проекте уже ломалась сборка: рукописная копия списка
+ * разделов `appViews` разъехалась с самим списком.
+ *
+ * Теперь тип и список выведены из схемы. Появится пятый режим — `Record<ClinicMode,
+ * …>` ниже перестанет компилироваться, и его придётся описать, а не молча
+ * получить поведение неизвестного режима.
+ */
+export type { ClinicMode };
 
 export type ClinicCapability =
 	/** Утренний обзвон и подтверждения приёма. */
@@ -38,7 +52,23 @@ export type ClinicCapability =
 	| "doctorBreakdown"
 	/** Занятость кресел. */
 	| "chairUtilisation"
-	/** Раздел «Маркетинг/SEO»: продвижение, отзывы, площадки. */
+	/**
+	 * Привлечение: раздел «Маркетинг/SEO» (продвижение, отзывы, площадки) и
+	 * воронка «Обращения» (заявки до записи). Одно правило на оба — у отдельного
+	 * врача обращение приходит звонком и в ту же минуту становится записью.
+	 *
+	 * ВНИМАНИЕ, ВТОРОЙ ВЛАДЕЛЕЦ ЭТОГО ЖЕ РЕШЕНИЯ. Тот же продуктовый вопрос
+	 * («занимается ли клиника продвижением») задаёт флаг `hasMarketingModule` из
+	 * `hooks/useWorkspaceProfile.ts`, по нему прячется вкладка настроек
+	 * «Маркетинг» (`SettingsView.tsx:1201` и `:1512`). Источником правды он быть
+	 * не может: `GET /api/workspace/profile`
+	 * (`apps/api/src/routes/workspaceProfile.ts:451`) возвращает его равным `true`
+	 * любой организации, не глядя ни на базу, ни на режим, а `POST` на тот же
+	 * адрес не записывает ни один из семнадцати флагов. Поэтому направление
+	 * согласования — от режима к флагу: `useWorkspaceProfile()` опускает
+	 * `hasMarketingModule` там, где режим убрал эту возможность. Обратное
+	 * направление вернуло бы захардкоженный `true` и отменило бы весь режим.
+	 */
 	| "marketingSection";
 
 /**
@@ -82,8 +112,12 @@ const CAPABILITIES_BY_MODE: Readonly<Record<ClinicMode, readonly ClinicCapabilit
 	network_clinic: FULL
 };
 
-/** Перечень режимов одним списком — по нему проверяется чужое значение. */
-export const clinicModes: readonly ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+/**
+ * Перечень режимов одним списком — по нему проверяется чужое значение. Берётся
+ * из той же схемы, по которой сервер разбирает колонку `clinic_mode`, чтобы
+ * список и тип не могли разойтись (см. пояснение к `ClinicMode` выше).
+ */
+export const clinicModes: readonly ClinicMode[] = [...clinicModeSchema.options];
 
 /**
  * Известен ли режим.
@@ -128,7 +162,11 @@ export function describeHiddenCapabilities(mode: ClinicMode | null | undefined):
 		managerReports: "отчёты руководителю",
 		doctorBreakdown: "разрез отчётов по врачам",
 		chairUtilisation: "занятость кресел",
-		marketingSection: "раздел продвижения и отзывов"
+		// Возможность прячет ДВА раздела рельсы — «Маркетинг/SEO» и «Обращения».
+		// Подпись называла только первый, и объяснение пропажи было неполным
+		// ровно на тот раздел, о котором спросят: воронка обращений исчезала
+		// без единого слова.
+		marketingSection: "раздел продвижения и воронка обращений"
 	};
 	return (Object.keys(labels) as ClinicCapability[]).filter((capability) => !available.has(capability)).map((capability) => labels[capability]);
 }
@@ -185,4 +223,35 @@ export function visibleStaffRoles(order: readonly StaffRole[], mode: ClinicMode 
 	if (!isClinicMode(mode)) return [...order];
 	const allowed = ROLES_BY_MODE[mode];
 	return order.filter((role) => allowed.includes(role));
+}
+
+/**
+ * Что показать в переключателе роли.
+ *
+ * ЧЕМ ОТЛИЧАЕТСЯ ОТ visibleStaffRoles. Та отвечает на вопрос «какие роли при
+ * этом режиме вообще есть». Здесь вопрос другой: «какие кнопки нарисовать, чтобы
+ * работающий человек не остался без своей». Ответы расходятся в одном реальном
+ * случае, и он достижим: роль выбирается в мастере настройки и хранится отдельно
+ * от режима, поэтому клиника могла выбрать «Управляющий», а затем сменить режим
+ * на «Отдельный врач». Тогда шапка показывала «Роль: Управляющий», предлагала
+ * «Врач» и «Владелец», и ни одна кнопка не была подсвечена: человек видит своё
+ * положение, но не видит, где он находится в списке.
+ *
+ * Поэтому текущая выбранная роль остаётся в списке всегда, даже если режим её
+ * больше не предполагает. Порядок исходного списка сохраняется — он задан в
+ * AppHelpers (roleFocusOrder) и отражает частоту использования; дописать роль в
+ * конец значило бы переставить её относительно остальных.
+ *
+ * Правило живёт здесь, а не в разметке, потому что переключателей роли в проекте
+ * больше одного (шапка рабочего места и шаг мастера настройки), и второе
+ * описание того же правила разъедется с первым при первой же правке.
+ */
+export function staffRoleChoices(
+	order: readonly StaffRole[],
+	mode: ClinicMode | null | undefined,
+	selected: StaffRole | null | undefined
+): StaffRole[] {
+	const existing = visibleStaffRoles(order, mode);
+	if (!selected || existing.includes(selected)) return existing;
+	return order.filter((role) => existing.includes(role) || role === selected);
 }

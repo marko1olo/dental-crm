@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { StaffRole } from "@dental/shared";
+import { clinicModeSchema } from "@dental/shared";
 import {
 	clinicCapabilities,
+	clinicModes,
 	describeHiddenCapabilities,
 	hasCapability,
 	resolveClinicMode,
+	staffRoleChoices,
 	visibleStaffRoles,
 	type ClinicCapability,
 	type ClinicMode
@@ -23,7 +26,30 @@ import {
  * период не было» это ответ, а исчезнувший раздел выглядит как поломка.
  */
 
-const ALL_MODES: ClinicMode[] = ["solo_doctor", "one_chair", "small_clinic", "network_clinic"];
+/*
+ * Список берётся из самого модуля, а не переписывается здесь копией: копия
+ * промолчала бы про добавленный режим, и «во всех режимах» означало бы «во всех,
+ * какие я помнил, когда писал тест».
+ */
+const ALL_MODES: readonly ClinicMode[] = clinicModes;
+
+test("перечисление режимов не расходится со схемой сервера", () => {
+	/*
+	 * В этом файле лежала своя копия объединения из четырёх строк, а рядом — ещё
+	 * один такой же список для проверки чужого значения. Настоящее перечисление
+	 * при этом живёт в packages/shared (clinicModeSchema), и по нему сервер
+	 * разбирает колонку organizations.clinic_mode. Три копии одного перечисления
+	 * расходятся молча: рукописная копия списка разделов appViews в этом проекте
+	 * уже разъехалась и уронила сборку.
+	 */
+	assert.deepEqual([...clinicModes], [...clinicModeSchema.options]);
+	console.log(`  режимы из схемы сервера: ${clinicModes.join(", ")}`);
+	for (const mode of clinicModeSchema.options) {
+		assert.equal(resolveClinicMode(mode), mode, `режим ${mode} не признан своим`);
+		assert.ok(clinicCapabilities(mode).length > 0, `${mode}: пустой набор возможностей`);
+		assert.ok(visibleStaffRoles(["doctor", "administrator", "assistant", "manager", "owner"], mode).length > 0, `${mode}: ни одной роли`);
+	}
+});
 
 test("основные инструменты доступны в любом режиме", () => {
 	// Напоминания и обзвон нужны и отдельному врачу: он звонит сам.
@@ -105,7 +131,52 @@ test("раздел продвижения скрыт только у отдел�
 	assert.equal(hasCapability("one_chair", "marketingSection"), true);
 	assert.equal(hasCapability("small_clinic", "marketingSection"), true);
 	assert.equal(hasCapability("network_clinic", "marketingSection"), true);
-	assert.ok(describeHiddenCapabilities("solo_doctor").includes("раздел продвижения и отзывов"));
+	/*
+	 * Подпись обязана называть ОБА раздела, которые уходят по этому правилу.
+	 * Раньше она называла только продвижение, и воронка обращений исчезала из
+	 * меню без единого слова — человек искал раздел, про который ему не сказали.
+	 */
+	const hidden = describeHiddenCapabilities("solo_doctor");
+	console.log(`  что скрыто у отдельного врача: ${hidden.join(", ")}`);
+	assert.ok(
+		hidden.includes("раздел продвижения и воронка обращений"),
+		JSON.stringify(hidden)
+	);
+});
+
+test("текущая роль не исчезает из переключателя при переходе на меньший режим", () => {
+	/*
+	 * ДОСТИЖИМЫЙ СЛУЧАЙ, А НЕ ТЕОРИЯ. Роль хранится отдельно от режима и
+	 * выбирается в мастере настройки. Клиника могла выбрать «Управляющий», а потом
+	 * сменить режим на «Отдельный врач», где управляющего нет. Тогда шапка
+	 * показывала «Роль: Управляющий», предлагала «Врач» и «Владелец», и ни одна
+	 * кнопка не была подсвечена: человек видит своё положение и не находит его в
+	 * списке.
+	 */
+	const stranded = staffRoleChoices(roleFocusOrder, "solo_doctor", "manager");
+	console.log(`  отдельный врач, выбран управляющий: ${stranded.join(", ")}`);
+	assert.deepEqual(stranded, ["doctor", "manager", "owner"]);
+	// Порядок не переставлен: управляющий стоит на своём месте из roleFocusOrder,
+	// а не дописан в конец.
+	assert.deepEqual(
+		stranded.map((role) => roleFocusOrder.indexOf(role)),
+		[...stranded.map((role) => roleFocusOrder.indexOf(role))].sort((a, b) => a - b)
+	);
+	// Если выбранная роль при режиме и так есть, список не расширяется ни на что.
+	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", "doctor"), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
+	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", "owner"), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
+	assert.deepEqual(staffRoleChoices(roleFocusOrder, "network_clinic", "manager"), roleFocusOrder);
+	// Роль не выбрана и режим не известен — поведение не меняется.
+	assert.deepEqual(staffRoleChoices(roleFocusOrder, "solo_doctor", null), visibleStaffRoles(roleFocusOrder, "solo_doctor"));
+	assert.deepEqual(staffRoleChoices(roleFocusOrder, null, "manager"), roleFocusOrder);
+	// Ровно одна кнопка подсвечена в любом режиме при любой сохранённой роли:
+	// именно этого и не было в шапке.
+	for (const mode of ALL_MODES) {
+		for (const selected of roleFocusOrder) {
+			const choices = staffRoleChoices(roleFocusOrder, mode, selected);
+			assert.equal(choices.filter((role) => role === selected).length, 1, `${mode}/${selected}: выбранной роли нет в списке`);
+		}
+	}
 });
 
 test("неизвестное значение режима не превращается в режим", () => {

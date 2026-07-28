@@ -3,8 +3,11 @@
  * Reads flags from the server once, stores in Zustand + localStorage,
  * provides typed selectors for all UI consumers.
  */
+import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { hasCapability, resolveClinicMode } from "../lib/clinicCapabilities";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -137,9 +140,46 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 // ──────────────────────────────────────────────────────────────────────────────
 // Hook — call once on app mount to pull flags from server
 // ──────────────────────────────────────────────────────────────────────────────
+/**
+ * ДВЕ СИСТЕМЫ МОДУЛЬНОСТИ ОТВЕЧАЛИ НА ОДИН ВОПРОС ПО-РАЗНОМУ.
+ *
+ * «Занимается ли клиника продвижением» решают здесь флагом `hasMarketingModule`
+ * (по нему прячется вкладка настроек «Маркетинг»: `SettingsView.tsx:1201` и
+ * `:1512`) и одновременно режим клиники (по нему из бокового меню уходят разделы
+ * «Маркетинг/SEO» и «Обращения»: `workspaceShell.tsx` → `getVisibleRailViews`).
+ * У отдельного врача они расходились: раздела в меню нет, а вкладка настроек
+ * маркетинга на месте — потому что `GET /api/workspace/profile`
+ * (`apps/api/src/routes/workspaceProfile.ts:451`) возвращает `hasMarketingModule:
+ * true` любой организации, не глядя ни на базу, ни на режим.
+ *
+ * СОГЛАСОВАНО В ОДНУ СТОРОНУ: от режима к флагу. Режим — настоящие данные, он
+ * лежит в колонке `organizations.clinic_mode` и меняется из настроек; набор флагов
+ * приходит константой и записан быть не может (`POST` на тот же адрес
+ * деструктурирует семнадцать флагов и не сохраняет ни одного). Спрашивать флаг о
+ * режиме значило бы получить захардкоженный `true` и отменить весь режим.
+ *
+ * Режим только ОПУСКАЕТ флаг и никогда не поднимает: клиника, которая выключила
+ * маркетинг вручную, включённым его от режима не получит. Режим неизвестен —
+ * не трогаем ничего.
+ *
+ * Клинические флаги (`hasOrthodontics`, `hasDentalLab`, `hasPediatricMode`,
+ * `aiEnable*` и остальные) режимом НЕ управляются и здесь не участвуют: врач,
+ * работающий один, лечит ровно так же, как клиника. Скрывается организационная
+ * обвязка, не медицина.
+ */
 export function useWorkspaceProfile() {
 	const store = useWorkspaceProfileStore();
-	return store;
+	const clinicMode = resolveClinicMode(
+		useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode,
+	);
+	const marketingFitsMode = hasCapability(clinicMode, "marketingSection");
+	return useMemo(
+		() =>
+			store.hasMarketingModule && !marketingFitsMode
+				? { ...store, hasMarketingModule: false }
+				: store,
+		[store, marketingFitsMode],
+	);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

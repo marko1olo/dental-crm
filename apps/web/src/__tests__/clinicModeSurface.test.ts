@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { StaffRole } from "@dental/shared";
-import { type ClinicMode, visibleStaffRoles } from "../lib/clinicCapabilities.js";
-import { appViews, getFilteredAppViews, getVisibleRailViews, viewLabels } from "../workspaceShell.js";
+import { clinicCapabilities, clinicModes, describeHiddenCapabilities, hasCapability, type ClinicMode, visibleStaffRoles } from "../lib/clinicCapabilities.js";
+import { appViews, getFilteredAppViews, getRailViewsHiddenByMode, getVisibleRailViews, viewLabels } from "../workspaceShell.js";
 
 /*
  * Режим клиники против состава экрана.
@@ -43,8 +43,70 @@ describe("состав рабочего экрана по режиму клин�
 		console.log(`  сеть           (${network.length}): ${named(network)}`);
 		console.log(`  роли, отдельный врач: ${visibleStaffRoles(roleFocusOrder, "solo_doctor").join(", ")}`);
 		console.log(`  роли, сеть:           ${visibleStaffRoles(roleFocusOrder, "network_clinic").join(", ")}`);
+		console.log(`  возможности, отдельный врач (${clinicCapabilities("solo_doctor").length}): ${clinicCapabilities("solo_doctor").join(", ")}`);
+		console.log(`  возможности, сеть          (${clinicCapabilities("network_clinic").length}): ${clinicCapabilities("network_clinic").join(", ")}`);
 		assert.ok(solo.length > 0);
 		assert.ok(network.length > 0);
+	});
+
+	it("скрытое режимом перечисляется точно, а не общей фразой", () => {
+		/*
+		 * Раздел, исчезнувший без объяснения, читается как поломка. Подпись про
+		 * скрытое в проекте была (describeHiddenCapabilities), но её не вызывал
+		 * никто, и меню молча становилось короче.
+		 *
+		 * Список скрытого ВЫЧИСЛЯЕТСЯ разностью «право роли» минус «видно в меню»,
+		 * а не выписывается третьим перечислением: иначе подпись обещала бы одно, а
+		 * меню показывало другое.
+		 */
+		for (const mode of clinicModes) {
+			for (const role of roleFocusOrder) {
+				const hidden = getRailViewsHiddenByMode(role, mode);
+				const visible = getVisibleRailViews(role, mode);
+				const byRole = getFilteredAppViews(role);
+				assert.deepEqual(
+					[...hidden, ...visible].sort(),
+					[...byRole].sort(),
+					`${mode}/${role}: скрытое и видимое вместе не равны праву роли`
+				);
+				for (const view of hidden) {
+					assert.ok(viewLabels[view], `${mode}/${role}: скрытый раздел ${view} нечем назвать человеку`);
+				}
+			}
+		}
+		const ownerHiddenSolo = getRailViewsHiddenByMode("owner", "solo_doctor");
+		console.log(`  скрыто у владельца, отдельный врач: ${named(ownerHiddenSolo)}`);
+		console.log(`  словами: ${describeHiddenCapabilities("solo_doctor").join(", ")}`);
+		assert.deepEqual(named(ownerHiddenSolo), "Обращения, Маркетинг/SEO");
+		// Оба скрытых раздела названы в подписи, а не только один из них.
+		assert.ok(describeHiddenCapabilities("solo_doctor").includes("раздел продвижения и воронка обращений"));
+		// Сети скрывать нечего — строки объяснения в интерфейсе не будет.
+		assert.deepEqual(getRailViewsHiddenByMode("owner", "network_clinic"), []);
+		assert.deepEqual(describeHiddenCapabilities("network_clinic"), []);
+	});
+
+	it("вкладку настроек «Маркетинг» и раздел меню решает одна возможность, а не два флага", () => {
+		/*
+		 * ЧТО БЫЛО. Тот же продуктовый вопрос решали две системы: возможность
+		 * marketingSection (боковое меню) и флаг hasMarketingModule из
+		 * hooks/useWorkspaceProfile (вкладка настроек, SettingsView.tsx:1201/1512).
+		 * У отдельного врача они расходились — раздела в меню нет, вкладка
+		 * настроек маркетинга на месте, потому что сервер отдаёт флаг равным true
+		 * любой организации.
+		 *
+		 * Здесь закреплено само правило: решение о разделе «Маркетинг/SEO» в меню
+		 * принимает ровно та возможность, по которой useWorkspaceProfile опускает
+		 * флаг. Разойтись они теперь могут только если кто-то заведёт третье
+		 * правило — и тогда покраснеет эта проверка.
+		 */
+		for (const mode of clinicModes) {
+			const railHasMarketing = getVisibleRailViews("owner", mode).includes("marketing");
+			const railHasLeads = getVisibleRailViews("owner", mode).includes("leads");
+			const capability = hasCapability(mode, "marketingSection");
+			console.log(`  ${mode}: возможность=${capability} меню-маркетинг=${railHasMarketing} меню-обращения=${railHasLeads}`);
+			assert.equal(railHasMarketing, capability, `${mode}: меню и возможность разошлись`);
+			assert.equal(railHasLeads, capability, `${mode}: воронка обращений живёт по своему правилу`);
+		}
 	});
 
 	it("у отдельного врача разделов строго меньше, чем у сети", () => {

@@ -28,8 +28,9 @@ import {
   ChevronsLeft} from "lucide-react";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { type ClinicMode, hasCapability, resolveClinicMode, visibleStaffRoles } from "./lib/clinicCapabilities";
+import { type ClinicMode, describeHiddenCapabilities, hasCapability, resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
 import { useThemeStore, type ThemeMode } from "./store/themeStore";
+import { clinicModeLabels } from "./workspaceUiLabels";
 
 
 /*
@@ -219,6 +220,23 @@ export function getVisibleRailViews(role: StaffRole, mode: ClinicMode | null): A
   return allowedByRole.filter((view) => view !== "marketing" && view !== "leads");
 }
 
+/**
+ * Какие разделы у этой роли убрал именно режим клиники.
+ *
+ * ЗАЧЕМ. Раздел, исчезнувший без объяснения, читается как поломка: человек помнит,
+ * что «Обращения» были, и ищет их в свёрнутом меню, в поиске, в настройках. Чтобы
+ * сказать ему словами, что именно скрыто и как вернуть, нужен точный список, а не
+ * общая фраза.
+ *
+ * Список ВЫЧИСЛЯЕТСЯ разностью двух функций выше, а не выписывается третьим
+ * перечислением. Иначе следующее правило скрытия попало бы в одну из них и не
+ * попало во вторую: подпись обещала бы одно, меню показывало другое.
+ */
+export function getRailViewsHiddenByMode(role: StaffRole, mode: ClinicMode | null): AppView[] {
+  const visible = getVisibleRailViews(role, mode);
+  return getFilteredAppViews(role).filter((view) => !visible.includes(view));
+}
+
 export function WorkspaceSidebar({
   currentView,
   onViewIntent,
@@ -241,6 +259,36 @@ export function WorkspaceSidebar({
    */
   const clinicMode = resolveClinicMode(useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode);
   const allowedViews = getVisibleRailViews(role, clinicMode);
+
+  /*
+   * ПОЧЕМУ РАЗДЕЛОВ МЕНЬШЕ, ЧЕМ БЫЛО.
+   *
+   * Режим убирает разделы молча, и это отдельный дефект: подпись про скрытое
+   * (`describeHiddenCapabilities`) в проекте была, но её не вызывал никто —
+   * функция, весь смысл которой объяснить пропажу, лежала мёртвой. Человек видел
+   * меню на два пункта короче и не имел ни слова о причине, ни пути назад.
+   *
+   * Строка появляется только когда режим действительно что-то убрал у ЭТОЙ роли:
+   * у врача «Маркетинга» и «Обращений» нет и при режиме сети, значит и объяснять
+   * ему нечего. У свёрнутого меню ширины под текст нет — там строки тоже нет,
+   * подпись вернётся при разворачивании.
+   *
+   * Скрытое перечисляется по названиям разделов, которые человек только что
+   * потерял из вида. Остальное, что упрощает режим (рассылки по базе, разрез
+   * отчётов по врачам, занятость кресел), лежит внутри других разделов и в
+   * рельсе не видно — оно уходит в подсказку и в текст для программы чтения с
+   * экрана, чтобы короткая строка не превратилась в абзац.
+   */
+  const hiddenByMode = getRailViewsHiddenByMode(role, clinicMode);
+  const modeTitle = clinicMode ? clinicModeLabels[clinicMode].title : null;
+  const hiddenSectionNames = hiddenByMode.map((view) => viewLabels[view]).join(", ");
+  const hiddenCapabilityNames = describeHiddenCapabilities(clinicMode).join(", ");
+  const modeExplanation =
+    modeTitle && hiddenByMode.length > 0
+      ? `Режим «${modeTitle}» не показывает разделы: ${hiddenSectionNames}.${
+          hiddenCapabilityNames ? ` Также упрощены: ${hiddenCapabilityNames}.` : ""
+        } Разделы не удалены — они вернутся, если сменить режим в настройках клиники.`
+      : null;
 
   /*
    * Широкую подпись .nav-copy таблица стилей прячет в двух случаях:
@@ -306,6 +354,30 @@ export function WorkspaceSidebar({
           ) : null
         )}
       </nav>
+      {/*
+        Утилиты назначены только тем свойствам, которых у <p> не задаёт ни один
+        селектор проекта: перенос слов и max-width уже стоят глобально
+        (styles/main.css:517-528, вне слоёв — они выиграли бы у утилит), поэтому
+        повторять их здесь нечем. Цвет не задаётся вовсе: он наследуется, и
+        строка работает во всех трёх темах без единого статичного значения.
+        На узком экране рельса сужается до 76px (dente-redesign.css:606) —
+        прозе там места нет, строка убирается вместе с подписями разделов.
+      */}
+      {modeExplanation && !collapsed ? (
+        <p
+          className="mt-[0.75rem] text-[0.6875rem] leading-[1.4] opacity-70 max-[1140px]:hidden"
+          title={modeExplanation}
+        >
+          Режим «{modeTitle}» — скрыты разделы: {hiddenSectionNames}.{" "}
+          <span className="sr-only">
+            {hiddenCapabilityNames ? `Также упрощены: ${hiddenCapabilityNames}. ` : ""}
+            Разделы не удалены, они вернутся при смене режима.
+          </span>
+          <a href="#settings" onPointerEnter={() => onViewIntent?.("settings")} onFocus={() => onViewIntent?.("settings")}>
+            Изменить режим
+          </a>
+        </p>
+      ) : null}
       <div className="sidebar-footer">
         <ThemeSwitcher />
         <button
@@ -404,9 +476,15 @@ export function WorkspaceTopbar({
    * У отдельного врача ассистента, администратора и управляющего нет: три из
    * пяти кнопок предлагали переключиться на сотрудника, которого не существует.
    * Какие роли при режиме есть — решает таблица в lib/clinicCapabilities.ts.
+   *
+   * Берётся staffRoleChoices, а не visibleStaffRoles: роль хранится отдельно от
+   * режима и выбирается в мастере настройки, поэтому «Управляющий», выбранный до
+   * перехода на режим отдельного врача, оставался в заголовке рядом со списком,
+   * где его нет, и ни одна кнопка не была подсвечена. Текущая роль остаётся в
+   * списке всегда — иначе человек не видит, где он находится.
    */
   const clinicMode = resolveClinicMode(useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode);
-  const availableRoles = visibleStaffRoles(roleFocusOrder, clinicMode);
+  const availableRoles = staffRoleChoices(roleFocusOrder, clinicMode, selectedWorkspaceRole);
 
   return (
     <header className="topbar">
