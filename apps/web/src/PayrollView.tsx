@@ -14,7 +14,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { AppLoadingState } from "./AppBootState";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
 import { EmptyState } from "./components/EmptyState";
 
 type Payout = {
@@ -859,9 +858,14 @@ export function PayrollView() {
 				Нажмите на строку врача, чтобы увидеть детализацию по каждому визиту.
 			</div>
 
-			<div style={{ marginTop: "24px" }}>
-				<PricelistDoctorPayrollsWidget />
-			</div>
+			{/*
+				Здесь стоял блок «Начисления врачам по прайсу». Он ждал полей «процент
+				врача» и «маржа клиники», которых нет ни у сотрудника, ни в прайсе —
+				нигде, кроме пустой таблицы, в которую никто не пишет. На экране
+				зарплат пустая таблица начислений читается как «начислений нет», хотя
+				верное утверждение другое: система их не считает. Долг записан в
+				FinanceView.tsx рядом с остальной кассовой частью.
+			*/}
 		</motion.div>
 	);
 }

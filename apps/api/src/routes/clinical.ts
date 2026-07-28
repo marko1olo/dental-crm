@@ -281,16 +281,15 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getDadataGeocodedAddressesFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #62: финансы::отображение_суммы_начислений_врачам_в_прайс_листе
-	app.get("/api/finance/pricelist-payrolls", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getPricelistDoctorPayrollsFromDb } = await import("../db/pricelistDoctorPayrollsQuery.js");
-		return reply.status(200).send(await getPricelistDoctorPayrollsFromDb(orgId));
-	});
+	/*
+	 * Маршрут «начисления врачам по прайсу» удалён вместе со своим экраном.
+	 * Он читал таблицу pricelist_doctor_payrolls, в которую в приложении никто
+	 * не пишет, и обещал поля «процент врача» и «маржа клиники» — таких данных
+	 * нет ни у сотрудника, ни в прайсе, нигде. Считать начисление не из чего.
+	 * Выработку врача из настоящих платежей и приёмов считает
+	 * services/reports/managerReports.ts (doctorPerformance).
+	 * ДОЛГ: расчёт зарплаты врача требует поля процента у сотрудника.
+	 */
 
 	/*
 	 * История последних открытых карточек.
@@ -380,16 +379,11 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getCancellationReasonsTwoLevelFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #58: финансы::принудительное_закрепление_авансов_за_врачами_и_услугами
-	app.get("/api/finance/advance-deposit-taggings", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getAdvanceDepositTaggingsFromDb } = await import("../db/advanceDepositTaggingsQuery.js");
-		return reply.status(200).send(await getAdvanceDepositTaggingsFromDb(orgId));
-	});
+	/*
+	 * Маршрут «закрепление авансов» удалён вместе со своим экраном: таблица
+	 * advance_deposit_taggings не наполняется ничем. Часть кассовой темы 54-ФЗ,
+	 * которой в системе нет; см. долг в apps/web/src/FinanceView.tsx.
+	 */
 
 	// COMPETITOR FEATURE #52: план_лечения::конструктор_планов_лечения_2_0
 	app.get("/api/documents/treatment-plan-lock-tokens", async (request, reply) => {
@@ -414,16 +408,12 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	});
 
 
-	// COMPETITOR FEATURE #53: финансы::отправка_электронных_кассовых_чеков_на_email_или_смс
-	app.get("/api/finance/digital-receipt-dispatches", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getDigitalReceiptDispatchesFromDb } = await import("../db/digitalReceiptDispatchesQuery.js");
-		return reply.status(200).send(await getDigitalReceiptDispatchesFromDb(orgId));
-	});
+	/*
+	 * Маршрут «отправка электронных чеков» удалён вместе со своим экраном:
+	 * таблица digital_receipt_dispatches пуста всегда, чеки никуда не уходят —
+	 * драйвера кассы в системе нет. Показывать журнал отправки чеков, которых не
+	 * было, — прямая неправда в финансовом разделе.
+	 */
 
 	// COMPETITOR FEATURE #55: пациенты::вкладка_приемы_рабочий_стол_администратора
 	app.get("/api/crm/patient-service-lineages", async (request, reply) => {
@@ -483,26 +473,12 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 
 
 	// COMPETITOR FEATURE #63: финансы::автоматическое_указание_меры_количества_в_kkm
-	app.get("/api/finance/kkm-item-quantity-units", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getKkmItemQuantityUnitsFromDb } = await import("../db/kkmItemQuantityUnitsQuery.js");
-		return reply.status(200).send(await getKkmItemQuantityUnitsFromDb(orgId));
-	});
+	/*
+	 * Маршрут «единицы измерения для ККМ» удалён вместе со своим экраном: часть
+	 * кассовой темы 54-ФЗ, таблица kkm_item_quantity_units не наполняется ничем.
+	 */
 
-	// COMPETITOR FEATURE #62: финансы::отображение_суммы_начислений_врачам_в_прайс_листе
-	app.get("/api/finance/pricelist-doctor-payrolls", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getPricelistDoctorPayrollsFromDb } = await import("../db/pricelistDoctorPayrollsQuery.js");
-		return reply.status(200).send(await getPricelistDoctorPayrollsFromDb(orgId));
-	});
+	// Второй адрес того же удалённого экрана начислений убран вместе с первым.
 
 
 	// COMPETITOR FEATURE #59: коммуникации::мультимессенджер_uis_omni

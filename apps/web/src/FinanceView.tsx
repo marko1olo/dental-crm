@@ -4,10 +4,6 @@ import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
-import { AdvanceDepositTaggingsWidget } from "./components/finance/AdvanceDepositTaggingsWidget";
-import { DigitalReceiptDispatchesWidget } from "./components/finance/DigitalReceiptDispatchesWidget";
-import { KkmItemQuantityUnitsWidget } from "./components/finance/KkmItemQuantityUnitsWidget";
-import { PricelistDoctorPayrollsWidget } from "./components/finance/PricelistDoctorPayrollsWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
@@ -250,11 +246,26 @@ export function FinanceView({
 
       <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard?.serviceCatalog ?? []} />
 
+      {/*
+        ЗДЕСЬ СТОЯЛИ ЧЕТЫРЕ ПУСТЫХ БЛОКА, ОБЕЩАВШИЕ ТО, ЧЕГО СИСТЕМА НЕ УМЕЕТ.
+        Все четыре читали таблицы, в которые в приложении никто не пишет —
+        проверено поиском по всем исходникам:
+          • «Начисления врачам по прайсу» ждали поля «процент врача» и «маржа
+            клиники». Таких данных нет ни у сотрудника, ни в прайсе — нигде,
+            кроме самой пустой таблицы. Начисление считать не из чего.
+          • «Метки авансовых депозитов», «Отправка электронных чеков» и
+            «Единицы измерения для ККМ» — это касса по 54-ФЗ. Драйвера кассы в
+            системе нет, чеки никуда не уходят.
+        Пустая финансовая карточка опаснее отсутствующей: по ней принимают
+        решения о деньгах и читают её как «начислений нет», а не «мы это не
+        считаем».
+        Выработку врачей за период — из настоящих платежей и приёмов — показывает
+        отчёт «Врачи» в разделе отчётов (managerReports.doctorPerformance); маржа
+        там стоит честным прочерком по той же причине.
+        ДОЛГ: касса 54-ФЗ и расчёт зарплаты врача. Первое требует драйвера ККМ,
+        второе — поля процента у сотрудника; ни того, ни другого в базе нет.
+      */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <PricelistDoctorPayrollsWidget />
-        <AdvanceDepositTaggingsWidget />
-        <DigitalReceiptDispatchesWidget />
-        <KkmItemQuantityUnitsWidget />
         <FamilyWalletPanel patientId={documentPatient?.id ?? "pat-1"} remainingDebtRub={billingSummary?.totalDueRub ?? 0} />
       </div>
     </div>
