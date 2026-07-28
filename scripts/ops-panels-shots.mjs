@@ -561,8 +561,12 @@ const PANELS = [
     // ровно это — что кнопка есть и что она открывает настоящий ящик, а не
     // что файл лежит в репозитории.
     prepare: `(async () => {
+      // startsWith, а не точное равенство: на кнопке стоит число ждущих
+      // («Лист ожидания · 3»). Точное сравнение находило кнопку только при
+      // пустой очереди — то есть проверка отваливалась ровно тогда, когда
+      // очередь наконец заполнили, и это выглядело как исчезнувший экран.
       const button = [...document.querySelectorAll("button")].find(
-        (node) => node.textContent?.trim() === "Лист ожидания",
+        (node) => node.textContent?.trim().startsWith("Лист ожидания"),
       );
       if (button) button.click();
       await new Promise((done) => setTimeout(done, 1500));

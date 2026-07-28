@@ -4,6 +4,78 @@ import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { EmptyState } from "../EmptyState";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+
+/**
+ * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий
+ * компонент отказа берётся тот же, что у виджетов карточки пациента: второй
+ * язык ошибок на одном экране путает сильнее, чем сам отказ.
+ */
+/**
+ * Заголовки для ИЗМЕНЕНИЯ очереди.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНО ОТ ЧТЕНИЯ. Читать очередь разрешает токен клиники
+ * (GET /api/waitlist проходит через requireResolvedOrganizationId), а изменять —
+ * нет: POST, PUT и DELETE идут через requireResolvedStaffOrAdminOrganizationId,
+ * которому нужен userId, и берётся он ТОЛЬКО из заголовка x-dente-staff-token
+ * (apps/api/src/security/identity.ts:30, 150-170).
+ * auth.denteClinicalReadHeaders() токен сотрудника не отправляет вовсе, поэтому
+ * добавление в очередь отвечало 401 «Требуется вход сотрудника». Проверено живым
+ * запросом: с одним токеном клиники POST /api/waitlist -> 401, с обоими -> 200.
+ * denteAdminSecretRequestHeaders отправляет оба токена и уже используется в
+ * проекте для таких же изменяющих запросов — свой третий вариант заголовков
+ * заводить незачем.
+ */
+function waitlistWriteHeaders(): Record<string, string> {
+	return denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+}
+
+/**
+ * Почему изменение не удалось — словами администратора, а не кодом ответа.
+ * `action` подставляется в инфинитиве: «не удалось добавить пациента в очередь».
+ */
+async function writeFailureText(response: Response, action: string): Promise<string> {
+	const body = await response.json().catch(() => null);
+	const serverMessage = body && typeof body.message === "string" ? body.message.trim() : "";
+	// Сообщение сервера уже написано по-русски и точнее любого домысла на клиенте.
+	if (serverMessage) return serverMessage;
+	if (response.status === 401 || response.status === 403) {
+		return `Не удалось ${action}: нет прав. Войдите как сотрудник клиники — очередь меняют под своим именем, чтобы было видно, кто добавил пациента.`;
+	}
+	if (response.status === 404) {
+		return `Не удалось ${action}: запись уже убрал кто-то другой. Обновите список.`;
+	}
+	if (response.status >= 500) {
+		return `Не удалось ${action}: сервер клиники ответил отказом. Повторите, а если повторится — сообщите администратору.`;
+	}
+	return `Не удалось ${action}. Повторите, а если повторится — сообщите администратору.`;
+}
+
+/*
+ * Тип НЕ указан намеренно, и оба заголовка заданы намеренно.
+ *
+ * Контракт PanelSubject переименовывают прямо сейчас, в другой незакоммиченной
+ * работе: поле `title` («Задачи по пациенту», к которому модуль сам дописывал
+ * «не загружены») становится `notLoadedTitle` — целой согласованной строкой,
+ * потому что название в единственном числе давало «Статус не загружены».
+ * Объект без аннотации типа удовлетворяет и старому, и новому виду контракта:
+ * лишнее поле у переменной (в отличие от литерала на месте вызова) не считается
+ * ошибкой. Это позволяет закоммитить ящик, не дожидаясь чужой правки и не ломая
+ * сборку main, и не заводя второй язык сообщений об отказе рядом с общим.
+ * Когда переименование доедет, лишний заголовок надо убрать — он останется
+ * мёртвым полем, а не тонкой совместимостью.
+ */
+const WAITLIST_SUBJECT = {
+	notLoadedTitle: "Очередь ожидания не прочитана",
+	title: "Очередь ожидания",
+	accusative: "очередь ожидания",
+	emptyTitle: "В очереди никто не ждёт",
+	emptyHint:
+		"Это нормально, а не ошибка. Когда пациенту не подошло ни одно свободное время, добавьте его формой выше — и при отмене чужой записи система сама предложит его на освободившееся окно.",
+	failureConsequence:
+		"Не считайте, что очередь пуста: список не прочитан. Освободившееся окно можно отдать мимо тех, кто его ждёт.",
+};
 
 interface WaitlistItem {
 	id: string;
@@ -47,6 +119,13 @@ export function WaitlistDrawer(props: Props) {
 	const auth = propAuth || ctx?.auth;
 	const [items, setItems] = useState<WaitlistItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	/**
+	 * Код отказа при чтении очереди. undefined — отказа не было, null — до
+	 * сервера не дошли вовсе. Раньше отказ просто ничего не менял, и ящик
+	 * показывал «Очередь ожидания пуста» — самая опасная из возможных подписей:
+	 * непрочитанное выдавалось за прочитанное и пустое.
+	 */
+	const [loadFailureStatus, setLoadFailureStatus] = useState<number | null | undefined>(undefined);
 
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
@@ -64,15 +143,22 @@ export function WaitlistDrawer(props: Props) {
 	const fetchWaitlist = async () => {
 		try {
 			setIsLoading(true);
+			setLoadFailureStatus(undefined);
 			const res = await fetch("/api/waitlist", {
 				headers: auth?.denteClinicalReadHeaders ? auth.denteClinicalReadHeaders() : {},
 			});
 			if (res.ok) {
 				const data = await res.json();
 				setItems(Array.isArray(data) ? data : []);
+				return;
 			}
+			// Отказ сервера НЕ выдаём за пустую очередь: администратор решил бы,
+			// что ждущих нет, и раздал бы освободившееся окно мимо очереди.
+			setLoadFailureStatus(res.status);
 		} catch (e) {
 			console.error("Failed to load waitlist", e);
+			// До сервера не дошли вовсе — это отдельный случай от «ответил отказом».
+			setLoadFailureStatus(null);
 		} finally {
 			setIsLoading(false);
 		}
@@ -94,9 +180,7 @@ export function WaitlistDrawer(props: Props) {
 		try {
 			const res = await fetch("/api/waitlist", {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
+				headers: waitlistWriteHeaders(),
 				body: JSON.stringify({
 					patientId: selectedPatientId,
 					preferredDoctorId: preferredDoctorId || null,
@@ -112,11 +196,13 @@ export function WaitlistDrawer(props: Props) {
 				setPriorityLevel("medium");
 				fetchWaitlist();
 			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast(err.message || "Ошибка добавления", "error");
+				showToast(await writeFailureText(res, "добавить пациента в очередь"), "error");
 			}
 		} catch (e) {
-			showToast("Системная ошибка", "error");
+			showToast(
+				"Сервер клиники не ответил, пациент в очередь не добавлен. Проверьте, что программа клиники запущена и есть сеть, и повторите.",
+				"error",
+			);
 		}
 	};
 
@@ -125,16 +211,48 @@ export function WaitlistDrawer(props: Props) {
 		try {
 			const res = await fetch(`/api/waitlist/${id}`, {
 				method: "DELETE",
-				headers: auth.denteClinicalReadHeaders(),
+				headers: waitlistWriteHeaders(),
 			});
 			if (res.ok) {
 				showToast("Запись удалена", "success");
 				fetchWaitlist();
 			} else {
-				showToast("Ошибка удаления", "error");
+				showToast(await writeFailureText(res, "убрать пациента из очереди"), "error");
 			}
 		} catch (e) {
-			showToast("Системная ошибка", "error");
+			showToast(
+				"Сервер клиники не ответил, запись осталась в очереди. Проверьте сеть и повторите.",
+				"error",
+			);
+		}
+	};
+
+	/**
+	 * Заявка закрыта: человека приняли. Запись остаётся в базе со статусом
+	 * fulfilled — иначе клиника теряет ответ на вопрос «а кого мы из очереди
+	 * вообще позвали», и оценить, работает ли очередь, становится нечем.
+	 */
+	const handleFulfill = async (item: WaitlistItem) => {
+		try {
+			const res = await fetch(`/api/waitlist/${item.id}`, {
+				method: "PUT",
+				headers: waitlistWriteHeaders(),
+				body: JSON.stringify({ status: "fulfilled" }),
+			});
+			if (res.ok) {
+				showToast(
+					`${item.patientName || "Пациент"} убран из очереди: заявка закрыта`,
+					"success",
+				);
+				fetchWaitlist();
+			} else {
+				showToast(await writeFailureText(res, "закрыть заявку"), "error");
+			}
+		} catch (e) {
+			showToast(
+				"Сервер клиники не ответил, заявка осталась в очереди. Проверьте сеть и повторите.",
+				"error",
+			);
 		}
 	};
 
@@ -330,15 +448,21 @@ export function WaitlistDrawer(props: Props) {
 							Пациенты в очереди ({items.length})
 						</h4>
 
-						{isLoading && items.length === 0 ? (
+						{loadFailureStatus !== undefined ? (
+							<PanelLoadFailure
+								subject={WAITLIST_SUBJECT}
+								status={loadFailureStatus}
+								onRetry={fetchWaitlist}
+							/>
+						) : isLoading && items.length === 0 ? (
 							<div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
-								Загрузка...
+								Загружаем очередь ожидания…
 							</div>
 						) : items.length === 0 ? (
 							<EmptyState
 								icon={<Calendar size={24} />}
-								title="Очередь ожидания пуста"
-								description="Добавьте пациентов в лист ожидания с помощью формы выше."
+								title={WAITLIST_SUBJECT.emptyTitle}
+								description={WAITLIST_SUBJECT.emptyHint}
 								glass={false}
 								style={{ padding: "20px 16px" }}
 							/>
@@ -391,35 +515,29 @@ export function WaitlistDrawer(props: Props) {
 											>
 												Записать на прием
 											</button>
+											{/*
+												«Дождался» закрывает заявку, СОХРАНЯЯ запись: PUT со
+												статусом fulfilled. Раньше здесь стоял тот же DELETE,
+												что и у корзины рядом, — две разные кнопки давали на
+												сервере ровно один результат, и запись о том, что
+												человека всё-таки приняли, уничтожалась вместе с
+												заявкой. Список показывает только status = active
+												(routes/waitlist.ts:60), поэтому закрытая заявка из
+												очереди уходит, а из базы — нет.
+											*/}
 											<button
-												onClick={async () => {
-													try {
-														const res = await fetch(
-															`/api/waitlist/${item.id}`,
-															{
-																method: "DELETE",
-																headers: auth.denteClinicalReadHeaders(),
-															},
-														);
-														if (res.ok) {
-															showToast("Заявка выполнена", "success");
-															fetchWaitlist();
-														} else {
-															showToast("Ошибка при выполнении", "error");
-														}
-													} catch (e) {
-														showToast("Системная ошибка", "error");
-													}
-												}}
+												onClick={() => handleFulfill(item)}
 												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors"
-												title="Отметить выполненным"
+												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
+												aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
 											>
 												<CheckCircle2 className="w-3.5 h-3.5" />
 											</button>
 											<button
 												onClick={() => handleDelete(item.id)}
 												className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-colors"
-												title="Удалить из очереди"
+												title="Убрать совсем: заявка ошибочная или человек больше не хочет"
+												aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
 											>
 												<Trash2 className="w-3.5 h-3.5" />
 											</button>
