@@ -227,6 +227,20 @@ export const organizations = pgTable("organizations", {
   signatoryTitle: text("signatory_title"),
   clinicMode: text("clinic_mode").notNull().default("demo"), // demo, single, network
   clinicSchedule: jsonb("clinic_schedule"),
+  /*
+   * Какие модули включены у этой клиники.
+   *
+   * До миграции 0139 набора не существовало на сервере вовсе: GET
+   * /api/workspace/profile отдавал жёстко прописанную константу со всеми
+   * признаками true, а POST разбирал семнадцать признаков и не писал ни одного.
+   * Выбор жил только в localStorage браузера, поэтому на втором устройстве и у
+   * второго сотрудника клиника снова получала все модули включёнными.
+   *
+   * Одна колонка jsonb, а не девятнадцать boolean: набор признаков растёт вместе
+   * с продуктом, читается и пишется целиком, поиска и сортировки по нему нет.
+   * Пустое значение означает «клиника ещё не настраивалась».
+   */
+  workspaceFeatureFlags: jsonb("workspace_feature_flags"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });

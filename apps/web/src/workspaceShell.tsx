@@ -30,6 +30,7 @@ import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceAc
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { type ClinicMode, describeHiddenCapabilities, hasCapability, resolveClinicMode, staffRoleChoices } from "./lib/clinicCapabilities";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { useThemeStore, type ThemeMode } from "./store/themeStore";
 import { clinicModeLabels } from "./workspaceUiLabels";
 
@@ -204,6 +205,36 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
  * Раздел остаётся доступным по адресу (#marketing) и возвращается в меню при
  * смене режима в настройках: это скрытие, а не удаление.
  */
+/**
+ * Какие разделы убирает выключенный модуль.
+ *
+ * ЗАЧЕМ. Признаки модулей до этой правки не влияли на меню вообще: они
+ * фильтровали только вкладки настроек. Владелец выключал «Склад», видел
+ * «Сохранено» — и раздел оставался на месте. Переключатель, который ничего не
+ * переключает, хуже отсутствующего.
+ *
+ * Сопоставление намеренно узкое: убираем только те разделы, у которых признак
+ * означает ровно «этого модуля у клиники нет». Разделы лечения — смена,
+ * расписание, пациенты, снимки, приём, документы — не трогаются никаким
+ * признаком: это и есть клиника.
+ *
+ * Признак читается только если он ЯВНО false. Пока набор не загрузился с
+ * сервера, отнимать разделы нельзя — по той же причине, по которой этого не
+ * делает неизвестный режим клиники.
+ */
+export function viewsHiddenByFeatureFlags(flags: {
+  hasInventoryModule?: boolean;
+  hasAnalyticsModule?: boolean;
+  hasPayrollModule?: boolean;
+  hasMarketingModule?: boolean;
+}): AppView[] {
+  const hidden: AppView[] = [];
+  if (flags?.hasInventoryModule === false) hidden.push("inventory");
+  if (flags?.hasAnalyticsModule === false) hidden.push("analytics");
+  if (flags?.hasMarketingModule === false) hidden.push("marketing");
+  return hidden;
+}
+
 export function getVisibleRailViews(role: StaffRole, mode: ClinicMode | null): AppView[] {
   const allowedByRole = getFilteredAppViews(role);
   if (hasCapability(mode, "marketingSection")) return allowedByRole;
@@ -259,7 +290,28 @@ export function WorkspaceSidebar({
    * известен, отнимать разделы нельзя.
    */
   const clinicMode = resolveClinicMode(useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode);
-  const allowedViews = getVisibleRailViews(role, clinicMode);
+  /*
+   * ВЫКЛЮЧЕННЫЙ МОДУЛЬ УБИРАЕТ РАЗДЕЛ ИЗ МЕНЮ.
+   *
+   * Раньше меню фильтровалось только по роли и размеру клиники, а признаки
+   * модулей на него не влияли вообще. Владелец выключал «Склад» на вкладке
+   * «Модули», видел «Сохранено» — и «Склад» оставался в меню. То есть
+   * переключатели модулей ничего не переключали, а вся модульность держалась на
+   * фильтрах вкладок настроек.
+   *
+   * Признаки берутся из того же хранилища, что и вкладки настроек
+   * (useWorkspaceProfile) — второго источника правды не заводим. С сервера они
+   * приходить начали только с миграции 0139: до неё GET отдавал константу со
+   * всеми модулями включёнными, а POST не сохранял ничего.
+   *
+   * Скрытие, а не удаление: раздел остаётся достижимым по адресу и возвращается в
+   * меню, как только модуль включат обратно.
+   */
+  const featureFlags = useWorkspaceProfile();
+  const hiddenByModules = viewsHiddenByFeatureFlags(featureFlags);
+  const allowedViews = getVisibleRailViews(role, clinicMode).filter(
+    (view) => !hiddenByModules.includes(view),
+  );
 
   /*
    * ПОЧЕМУ РАЗДЕЛОВ МЕНЬШЕ, ЧЕМ БЫЛО.

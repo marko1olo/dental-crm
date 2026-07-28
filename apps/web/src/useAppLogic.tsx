@@ -747,7 +747,7 @@ import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
-import { useWorkspaceProfileStore } from "./hooks/useWorkspaceProfile";
+import { loadWorkspaceProfile, useWorkspaceProfileStore } from "./hooks/useWorkspaceProfile";
 import {
 	type ImagingStudyRow,
 	imagingCaptureDistanceMs,
@@ -2334,6 +2334,8 @@ export function useAppLogic(): any {
 	 * бы десятки раз подряд.
 	 */
 	const recordedPatientViewRef = useRef<string | null>(null);
+	/** Набор модулей уже запрашивали с сервера в этом сеансе. */
+	const workspaceProfileLoadedRef = useRef(false);
 	/*
 	 * Счётчик состоявшихся отметок просмотра.
 	 *
@@ -3712,6 +3714,25 @@ export function useAppLogic(): any {
 	 * Ошибка запроса намеренно проглатывается: история просмотров не стоит
 	 * того, чтобы мешать врачу работать сообщением о сбое.
 	 */
+	/*
+	 * Набор включённых модулей читается с сервера при запуске.
+	 *
+	 * loadWorkspaceProfile() в собственном комментарии заявлена «used in App
+	 * startup» — и её не звал НИКТО. Из-за этого набор модулей жил только в
+	 * localStorage браузера: на втором устройстве, в другом браузере и у второго
+	 * сотрудника клиника получала все модули включёнными, а выбор владельца никуда
+	 * не доходил. Вместе с тем, что сервер до миграции 0139 отдавал константу и не
+	 * сохранял ничего, вся модульность держалась на одном лишь localStorage.
+	 *
+	 * Запрос уходит один раз за сеанс, после загрузки рабочей смены: до неё нет ни
+	 * токена сотрудника, ни организации.
+	 */
+	useEffect(() => {
+		if (!dashboard || workspaceProfileLoadedRef.current) return;
+		workspaceProfileLoadedRef.current = true;
+		void loadWorkspaceProfile();
+	}, [dashboard]);
+
 	useEffect(() => {
 		if (!selectedPatientId || !dashboard) return;
 		if (recordedPatientViewRef.current === selectedPatientId) return;

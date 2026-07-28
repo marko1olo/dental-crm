@@ -48,6 +48,59 @@ export interface WorkspaceFeatureFlags {
   aiEnableDocuments: boolean;
 }
 
+/**
+ * Умолчания для клиники, которая ещё не настраивалась.
+ *
+ * Ровно те значения, которые раньше стояли литералом в ответе GET
+ * /api/workspace/profile. Оставлены как есть намеренно: у работающих клиник
+ * колонка пуста, и смена умолчаний прямо сейчас скрыла бы у них разделы, к
+ * которым они привыкли. Настроит клиника модули — в базе появится её набор.
+ */
+export const DEFAULT_WORKSPACE_FEATURE_FLAGS: WorkspaceFeatureFlags = {
+  hasAssistants: true,
+  hasMultipleChairs: true,
+  hasDentalLab: true,
+  hasInsuranceCoPay: true,
+  hasInstallments: true,
+  hasOrthodontics: true,
+  hasTasks: true,
+  hasReclamations: true,
+  hasPediatricMode: false,
+  isOmniRole: false,
+  workspacePreset: "enterprise",
+  onboardingCompleted: true,
+  hasPayrollModule: true,
+  hasMarketingModule: true,
+  hasAnalyticsModule: true,
+  hasInventoryModule: true,
+  aiEnableTreatmentPlan: true,
+  aiEnableRecommendations: true,
+  aiEnableDocuments: true,
+};
+
+/**
+ * Привести запись из базы к полному набору признаков.
+ *
+ * Набор растёт вместе с продуктом: за одну ночь в него добавляли
+ * hasBpmWorkflows, hasClinicalRules, hasReferralModule. Поэтому старая запись
+ * обязана читаться без ошибки — отсутствующие признаки берутся из умолчаний, а
+ * неизвестные ключи отбрасываются, чтобы в ответ не просочилось то, чего в
+ * контракте нет.
+ *
+ * Типы проверяются по значению, а не по вере: в jsonb может лежать что угодно,
+ * включая результат ручной правки базы.
+ */
+export function workspaceFlagsFromStorage(stored: unknown): WorkspaceFeatureFlags {
+  const source = stored && typeof stored === "object" ? (stored as Record<string, unknown>) : {};
+  const result = { ...DEFAULT_WORKSPACE_FEATURE_FLAGS } as Record<string, unknown>;
+  for (const [key, fallback] of Object.entries(DEFAULT_WORKSPACE_FEATURE_FLAGS)) {
+    const value = source[key];
+    if (typeof fallback === "boolean" && typeof value === "boolean") result[key] = value;
+    else if (typeof fallback === "string" && typeof value === "string" && value) result[key] = value;
+  }
+  return result as unknown as WorkspaceFeatureFlags;
+}
+
 export type PresetName =
   | "solo_therapist"
   | "prosthodontist"
@@ -429,32 +482,36 @@ async function seedDemoDataForPreset(
 // Route registration
 // ————————————————————————————————————————————————————————————————————————————
 export async function workspaceProfileRoutes(fastify: FastifyInstance) {
-  // GET /api/workspace/profile
+  /*
+   * GET /api/workspace/profile — какие модули включены у ЭТОЙ клиники.
+   *
+   * ЧТО БЫЛО. Здесь стоял литерал: девятнадцать признаков, почти все true, пресет
+   * "enterprise", onboardingCompleted true — одинаково для любой организации,
+   * независимо от того, что клиника выбрала в мастере первого запуска и в
+   * настройках. Модульность — сердце продукта (соло-врач не должен видеть склад,
+   * зарплаты и воронку обращений), и на сервере её не существовало.
+   *
+   * Клиент этого не показывал, потому что useWorkspaceProfile хранит выбор в
+   * localStorage. Стоило открыть программу на втором устройстве, в другом
+   * браузере или под другим сотрудником — и все модули снова включены.
+   *
+   * ЧТО СТАЛО. Признаки читаются из organizations.workspace_feature_flags.
+   * Незаполненное значение означает «клиника ещё не настраивалась» и отдаётся как
+   * прежние умолчания: так у существующих клиник ничего не меняется. Неизвестные
+   * ключи из базы отбрасываются, отсутствующие берутся из умолчаний — набор
+   * признаков растёт вместе с продуктом, и старая запись не должна ронять ответ.
+   */
   fastify.get("/api/workspace/profile", async (req, reply) => {
     const organizationId = await resolveOrganizationId(req);
     if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
 
-    return reply.send({
-      hasAssistants: true,
-      hasMultipleChairs: true,
-      hasDentalLab: true,
-      hasInsuranceCoPay: true,
-      hasInstallments: true,
-      hasOrthodontics: true,
-      hasTasks: true,
-      hasReclamations: true,
-      hasPediatricMode: false,
-      isOmniRole: false,
-      workspacePreset: "enterprise",
-      onboardingCompleted: true,
-      hasPayrollModule: true,
-      hasMarketingModule: true,
-      hasAnalyticsModule: true,
-      hasInventoryModule: true,
-      aiEnableTreatmentPlan: true,
-      aiEnableRecommendations: true,
-      aiEnableDocuments: true,
-    });
+    const [organization] = await db
+      .select({ flags: schema.organizations.workspaceFeatureFlags })
+      .from(schema.organizations)
+      .where(eq(schema.organizations.id, organizationId))
+      .limit(1);
+
+    return reply.send(workspaceFlagsFromStorage(organization?.flags));
   });
 
   // GET /api/workspace/chairs
@@ -479,33 +536,51 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
       if (!organizationId)
         return reply.code(401).send({ error: "Unauthorized" });
 
-      const {
-        hasAssistants,
-        hasMultipleChairs,
-        hasDentalLab,
-        hasInsuranceCoPay,
-        hasInstallments,
-        hasPediatricMode,
-        isOmniRole,
-        hasOrthodontics,
-        hasTasks,
-        hasReclamations,
-        hasPayrollModule,
-        hasMarketingModule,
-        hasAnalyticsModule,
-        hasInventoryModule,
-        aiEnableTreatmentPlan,
-        aiEnableRecommendations,
-        aiEnableDocuments,
-      } = req.body ?? {};
+      /*
+       * ЧТО БЫЛО. Здесь из тела разбирались семнадцать признаков — и не писался
+       * НИ ОДИН: `.set({ updatedAt: new Date() })`, после чего ответ { ok: true }.
+       * То есть «Сохранить» на вкладке «Модули» и выбор в мастере первого запуска
+       * уходили в пустоту, а программа отвечала, что всё сохранено.
+       *
+       * ЧТО СТАЛО. Признаки сливаются с уже сохранённым набором и пишутся в
+       * organizations.workspace_feature_flags. Слияние, а не замена: клиент
+       * присылает Partial (WorkspaceFeaturesSelector отправляет один
+       * переключённый признак), и замена целиком сбросила бы остальные к
+       * умолчаниям — то есть включила бы обратно всё, что клиника выключила.
+       *
+       * Тело проходит через workspaceFlagsFromStorage: неизвестные ключи в базу не
+       * попадают, а значения не того типа отбрасываются. Иначе одна строка вместо
+       * true легла бы в базу и вернулась на клиент, где признак читается как
+       * булев.
+       */
+      const [existing] = await db
+        .select({ flags: schema.organizations.workspaceFeatureFlags })
+        .from(schema.organizations)
+        .where(eq(schema.organizations.id, organizationId))
+        .limit(1);
+      if (!existing) {
+        return reply.code(404).send({
+          error: "OrganizationNotFound",
+          message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+        });
+      }
+
+      const incoming = req.body && typeof req.body === "object" ? req.body : {};
+      const merged = workspaceFlagsFromStorage({
+        ...workspaceFlagsFromStorage(existing.flags),
+        ...incoming,
+      });
+
       await db
         .update(schema.organizations)
         .set({
+          workspaceFeatureFlags: merged,
           updatedAt: new Date(),
         })
         .where(eq(schema.organizations.id, organizationId));
 
-      return reply.send({ ok: true });
+      // Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
+      return reply.send({ ok: true, ...merged });
     },
   );
 
@@ -528,9 +603,41 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
       finalFlags.hasPediatricMode = req.body.hasPediatricMode;
     }
 
+    /*
+     * ЧТО БЫЛО. `.set({ ...finalFlags, updatedAt })` — признаки пресета
+     * раскладывались так, будто это КОЛОНКИ таблицы organizations. Колонок с
+     * такими именами нет; drizzle собирает SET только из известных колонок, а
+     * остальные ключи молча отбрасывает. То есть применение пресета не меняло
+     * ничего, кроме updatedAt, и отвечало { ok: true, preset, flags } — клиент
+     * видел выбранный пресет, база о нём не знала.
+     *
+     * Ошибку не поймали типы: значения WORKSPACE_PRESETS описаны свободно, и
+     * проверка типов на этом выражении проходит.
+     *
+     * Признаки складываются с уже сохранёнными: пресет задаёт не все, а
+     * незаданные не должны сбрасываться к умолчаниям. Имя пресета пишется тем же
+     * значением, что вернётся клиенту.
+     */
+    const [existing] = await db
+      .select({ flags: schema.organizations.workspaceFeatureFlags })
+      .from(schema.organizations)
+      .where(eq(schema.organizations.id, organizationId))
+      .limit(1);
+    if (!existing) {
+      return reply.code(404).send({
+        error: "OrganizationNotFound",
+        message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
+      });
+    }
+    const savedFlags = workspaceFlagsFromStorage({
+      ...workspaceFlagsFromStorage(existing.flags),
+      ...finalFlags,
+      workspacePreset: presetName,
+    });
+
     await db
       .update(schema.organizations)
-      .set({ ...finalFlags, updatedAt: new Date() })
+      .set({ workspaceFeatureFlags: savedFlags, updatedAt: new Date() })
       .where(eq(schema.organizations.id, organizationId));
 
     // Async seeding — don't block response
@@ -540,7 +647,8 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
       req.body?.numberOfChairs,
     ).catch((e) => console.error("[workspace preset] seeding error:", e));
 
-    return reply.send({ ok: true, preset: presetName, flags });
+    // Отдаём то, что легло в базу, а не то, что было в справочнике пресетов.
+    return reply.send({ ok: true, preset: presetName, flags: savedFlags });
   });
 
   // POST /api/workspace/onboarding/complete

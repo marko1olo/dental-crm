@@ -1,0 +1,246 @@
+OHOTNIK: scanned=Просмотрен весь apps/web/src: 378 файлов .ts/.tsx и 51 файл .css. Метод: (1) прогнал node 
+  [мёртвая кнопка] apps/web/src/components/imaging/VisiographAnalyzer.tsx:562
+      border: `2px dashed ${isDragOver ? 'var(--teal)' : 'var(--border)'}`
+      -> Зона загрузки прицельного снимка ShadowAnalyst. --border и --bg-inset (строка 567, background) не объявлены нигде: в ПОКОЕ рамка-шорткат становится unset -> border-style:none, фон -> transparent. Врач
+  [мёртвая кнопка] apps/web/src/components/imaging/VisiographAnalyzer.tsx:516
+      border: '1px solid var(--border)', borderRadius: '8px'
+      -> Три кнопки шапки отчёта — «Озвучить» (516), «Печать» (528), «Закрыть результат» (540). У всех трёх background:'transparent', color:'var(--text-muted)' и border с var(--border); ни один токен не объявл
+  [мёртвая кнопка] apps/web/src/components/settings/SettingsProtocolsTab.tsx:336
+      backgroundColor: "var(--dente-red-10)", color: "var(--dente-red-60)"
+      -> Кнопка удаления шаблона клинического протокола (Trash2). Класс danger-button в репозитории НЕ ОПИСАН ни одним CSS-правилом (проверено по всем .css) — эти две инлайновые строки были всем её оформлением
+  [ложь на экране] apps/web/src/VisitView.tsx:1113
+      background: 'var(--amber-50)', ... border: '1px solid var(--amber-200)'
+      -> Плашка «Чтобы сохранить запись приема, осталось:» — единственное объяснение, почему кнопка сохранения приёма заблокирована (aria-describedby с неё, строка 1107). main.css:10697 задаёт .visit-note-miss
+  [косметика] apps/web/src/components/imaging/VisiographAnalyzer.tsx:481
+      border: '1px solid var(--border)', borderRadius: '14px', background: 'var(--surface)'
+      -> Контейнер всей панели ShadowAnalyst (481, 483) и её шапка (491 borderBottom, 492 background var(--bg-inset)). Рамка обнуляется в border-style:none, оба фона -> transparent. Врач видит блок ИИ-анализа 
+  [косметика] apps/web/src/components/imaging/VisiographAnalyzer.tsx:689
+      borderBottom: idx < reportSections.length - 1 ? '1px solid var(--border)' : 'none'
+      -> Аккордеон «Полный отчёт ShadowAnalyst»: рамка блока (676), фон и разделитель шапки (678, 680), линии между разделами (689) и подсветка раскрытого раздела (694, background var(--bg-inset) против 'trans
+  [косметика] apps/web/src/components/imaging/VisiographAnalyzer.tsx:662
+      border: `1px solid ${isCritical ? 'transparent' : isDone ? 'var(--teal)' : 'var(--border)'}`
+      -> Чипы зубов из ИИ-анализа. Нейтральная ветка (не critical и не done) берёт var(--border) для рамки и var(--bg-inset) для фона (660) — оба отсутствуют, поэтому такие чипы теряют и капсульную рамку, и за
+  [косметика] apps/web/src/components/imaging/VisiographAnalyzer.tsx:771
+      border: '1px solid var(--border)', background: 'var(--bg-inset)'
+      -> Строки «История снимков» (771) и квадрат-превью 36x36 внутри каждой (777 background var(--surface), 778 border var(--border)). Рамки обнуляются в border-style:none, фоны -> transparent. Врач, открыв и
+  [косметика] apps/web/src/components/imaging/VisiographAnalyzer.tsx:459
+      padding: '8px 0', userSelect: 'none', listStyle: 'none', color: 'var(--text-muted)'
+      -> var(--text-muted) стоит в 16 местах файла (459, 515, 527, 539, 584, 590, 594, 641, 649, 661, 684, 707, 733, 751, 786, 794) и var(--text) в 4 (583, 591, 717, 783); ни одно имя не объявлено. Цвет — насл
+  [косметика] apps/web/src/components/settings/SettingsPricesTab.tsx:336
+      <FolderTree size={48} color="var(--border)" />
+      -> Пустое состояние каталога прайс-листа «Ничего не найдено». lucide-react кладёт проп color в презентационный атрибут stroke, то есть в DOM уходит stroke="var(--border)" без запаса, а stroke для этих эл
+  [косметика] apps/web/src/components/settings/SettingsPricesTab.tsx:391
+      <ImageIcon size={32} color="var(--border)" />
+      -> То же самое в зоне загрузки фото прайса (Настройки -> Прайс-лист -> ИИ-Распознавание, режим «Фото/скан»): stroke="var(--border)" без запаса, .pricelist-file-dropzone в CSS не задаёт stroke. Иконка 32p
+  [косметика] apps/web/src/components/settings/SettingsPricesTab.tsx:238
+      background: "rgba(59, 130, 246, 0.1)", color: "var(--blue)"
+      -> Иконка ReceiptText в шапке раздела «Управление Прайс-листом». --blue в бандле веб-приложения не объявлен (единственное вхождение --blue: #007bff лежит в .postgres/pgAdmin 4/.../bootstrap.css, к сборке
+  [косметика] apps/web/src/components/SmartMicrophoneButton.tsx:81
+      color: isRecording ? 'var(--red-600)' : isProcessing ? 'var(--blue-600)' : 'var(--brand-500)'
+      -> Кнопка диктовки, отрисована в быстром вводе пациента (PatientCoreForm.tsx:54), форме новой записи (NewAppointmentForm.tsx:193), Коммуникациях (CommunicationsView.tsx:307), форме отказа от вмешательств
+  [косметика] apps/web/src/PaymentCapture.tsx:380
+      background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-200)"
+      -> Итоговый блок калькулятора рассрочки «Рассрочка от клиники, без банка» (Сумма лечения / Первый взнос / Ежемесячный платеж). --brand-200 не объявлен, шорткат border обнуляется в border-style:none — рам
+  [косметика] apps/web/src/components/PatientPortal.tsx:462
+      borderBottom: "1px solid var(--border)"
+      -> Шапка модального просмотрщика документа в портале пациента. PatientPortal.css:450 задаёт .doc-overlay-header border-bottom: 1px solid var(--glass-border), но инлайновое объявление выигрывает каскад и 
+  [косметика] apps/web/src/components/settings/SettingsReportingTab.tsx:127
+      background: "var(--paper-2)", color: apiToken ? "var(--ink)" : "var(--text-secondary)"
+      -> Поле «API-токен только для чтения» (readOnly input) в Настройки -> Отчётность. --paper-2 не объявлен, background -> transparent, снимая и заливку правила для input, и дефолт браузера. Администратор ви
+  [косметика] apps/web/src/components/settings/SettingsBpmnTab.tsx:171
+      background: "var(--paper-2)", borderRadius: "8px", border: "1px solid var(--line)"
+      -> Панель формы добавления сценария в Настройки -> BPMN. --paper-2 не объявлен, фон -> transparent. Администратор теряет тонированную подложку, отделяющую форму от списка сценариев, но рамка на месте: va
+
+OHOTNIK: scanned=apps/web/src целиком: 328 файлов .ts/.tsx (без тестов), из них 76 содержат .json(). Просмо
+  [потеря данных] apps/web/src/components/useVisitDiaryLogic.ts:60
+      .then((r) => r.json())
+      -> Врач открывает приём, у которого дневник уже сохранён. При 401/500 тело ответа — {"message":...}, поле diaryData.diary отсутствует, весь блок заполнения пропускается молча: анамнез, Status localis, ди
+  [потеря данных] apps/web/src/components/odontogram/TreatmentEstimator.tsx:153
+      .then((response) => (response.ok ? response.json() : null))
+      -> Калькулятор плана лечения (доступен из «Пациенты» и «Приём» через OdontogramModule). При отказе сервера data=null, latestPlan undefined, ранний выход — items остаются []. Состояние ровно одно: строка 
+  [потеря данных] apps/web/src/hooks/useMaxSettings.ts:64
+      } else if (res.status !== 404) { console.error("Failed to load MAX settings", res.status); }
+      -> Настройки → Мессенджеры → MAX. При 500 настройки не загружаются, а пользователю не говорят ничего: settings остаётся null, поля Bot ID и Webhook пустые, значка «установлен» у токена нет, бейдж показыв
+  [потеря данных] apps/web/src/hooks/useWhatsappSettings.ts:66
+      } else if (res.status !== 404) { console.error("Failed to load WhatsApp settings", res.status); }
+      -> То же самое для WhatsApp: при отказе сервера phoneNumberId, webhookVerifyToken и enabledFeatures остаются пустыми, isActiveDraft=false, экран выглядит как «канал не настроен». Администратор нажимает «
+  [потеря данных] apps/web/src/hooks/useWorkspaceProfile.ts:267
+      await fetch("/api/workspace/profile", { method: "POST", ... });
+      -> Результат запроса не проверяется НИКАК: ни res.ok, ни бросания ошибки, а ниже (строка 276) локальное хранилище обновляется «regardless of server response». Поэтому WorkspaceFeaturesSelector.tsx:309 вс
+  [потеря денег] apps/web/src/components/odontogram/TreatmentEstimator.tsx:100
+      .then((res) => (res.ok ? res.json() : null))
+      -> Договор ДМС пациента. При 401/500 activeContract становится null, getCoverageInfo (строка 111) возвращает null для каждой позиции, и покрытие ДМС просто исчезает из смет: врач называет пациенту ПОЛНУЮ
+  [потеря денег] apps/web/src/components/finance/FamilyWalletPanel.tsx:79
+      setFamily(res.ok ? await res.json() : null);
+      -> Панель «Семейный Кошелек» на экране «Финансы» (FinanceView.tsx:269). При отказе сервера family=null, а строка 231 — `if (!family) return null; // Not in a family group` — убирает панель с экрана ЦЕЛИК
+  [потеря денег] apps/web/src/components/patients/PatientOverviewTab.tsx:66
+      .catch(() => setFamilyData(null))
+      -> Строка 62 бросает на !res.ok, catch кладёт null — и PatientFamilyCard.tsx:176 утверждает: «Пациент не состоит в семейной группе. Вы можете создать новую семью или привязать его к существующей». Это пр
+  [падение] apps/web/src/hooks/useVoiceAssistant.ts:50
+      .then(res => res.json()).then(data => { setSpeechGatewayStatus(data); })
+      -> Голосовой ассистент смонтирован на всё приложение (App.tsx:4830) и при пустом статусе сам дёргает /api/speech/status без проверки res.ok, записывая тело ответа в глобальный стор. Штатный загрузчик (ho
+  [ложь на экране] apps/web/src/components/auth/StaffPinPad.tsx:50
+      const data = await response.json(); if (!response.ok) throw new Error(data.message || "Неверный PIN-код");
+      -> Разбор тела ДО проверки res.ok на экране разблокировки смены. Сервер лежит (502 с HTML, пустой 500) → response.json() бросает SyntaxError → catch показывает английский текст парсера, включает setError
+  [ложь на экране] apps/web/src/components/imaging/VisiographAnalyzer.tsx:207
+      if (!res.ok) return;
+      -> Загрузка архива снимков пациента: голый ранний выход, catch помечен `// silent` (строка 210-211). scanHistory остаётся [], isLoadingHistory гасится в finally — и по условию строки 466 `(scanHistory.le
+  [ложь на экране] apps/web/src/components/EgiszMonitor.tsx:38
+      if (res.ok) { const data = await res.json(); ... }
+      -> Панель ЕГИСЗ на приёме (VisitOdontogramTab). Ветки else нет: при 401/500 статус остаётся начальным "Pending", подпись показывает «Данные приема готовы к отправке», а кнопка «Отправить в ЕГИСЗ» активна
+  [ложь на экране] apps/web/src/components/settings/SettingsBpmnTab.tsx:42
+      } catch { // API not yet provisioned — show empty state without crashing
+ setWorkflows([]); }
+      -> Настройки → бизнес-процессы. Строка 37 бросает на !res.ok, catch подменяет список пустым, и строка 226 сообщает: «Нет сценариев. Создайте первый автоматический процесс», а счётчик в шапке (строка 148)
+  [ложь на экране] apps/web/src/components/patients/RecallListPanel.tsx:129
+      const payload = (await response.json()) as { message?: string };
+      -> Кнопка «Пригласить» в списке на повторный приём (MarketingView и Аналитика). Тело читается до проверки ok, и строка 130 кладёт текст в notice, который рисуется НЕЙТРАЛЬНОЙ плашкой role="status" класса
+  [ложь на экране] apps/web/src/components/schedule/LabOrdersPanel.tsx:93
+      if (res.ok) { const data = await res.json(); setOrders(...); }
+      -> Заказы зуботехнической лаборатории на вкладке диагностики приёма (VisitView). Ветки else нет, catch только пишет в консоль. При отказе сервера orders остаётся [], и строка 388 показывает «Нет активных
+  [ложь на экране] apps/web/src/components/odontogram/ToothHistoryChronicle.tsx:44
+      if (res.ok) { const data = await res.json(); if (active) setEvents(data.events || []); }
+      -> Хроника зуба, открывается кликом по зубу в одонтограмме (OdontogramModule:731, доступна из «Пациенты» и «Приём»). Ветки else нет, catch только console.error. При 401/500 events остаётся [] и строка 78
+  [ложь на экране] apps/web/src/components/VisitDiaryPhotoUpload.tsx:44
+      if (r.ok) return r.json(); return null;
+      -> Вложения дневника приёма (VisitDiaryEditor:594). При отказе сервера data=null, `if (data?.files)` не выполняется, attachments остаётся [], и по условию строки 153 блок фотографий не рисуется вовсе — н
+  [ложь на экране] apps/web/src/components/settings/SingleSessionEnforcementsWidget.tsx:31
+      .then((res) => res.json()).then((data) => { setSessions(Array.isArray(data) ? data : []); ... })
+      -> Точная копия уже исправленного дефекта, в разделе безопасности (Настройки → Доступы). Тело 401/500 — это корректный JSON-объект, Array.isArray даёт false, список пуст, и строка 65 утверждает: «Активны
+  [ложь на экране] apps/web/src/components/crm/CustomCrmTaskTypesWidget.tsx:27
+      .then((res) => res.json()).then((data) => { setTaskTypes(Array.isArray(data) ? data : []); ... })
+      -> Виджет рисуется в трёх разделах: «Пациенты» (PatientsView:689), «Маркетинг» (MarketingView:412) и Настройки → Правила (SettingsRulesTab:570). При 401/500 показывает «Типы задач отсутствуют. Кастомные 
+  [ложь на экране] apps/web/src/components/marketing/FamilyRecommendationSourcesWidget.tsx:28
+      .then((res) => res.json()).then((data) => { setItems(Array.isArray(data) ? data : []); ... })
+      -> Раздел «Маркетинг» (MarketingView:403). При отказе сервера пишет «Записи семейных рекомендаций отсутствуют». Администратор или владелец, считающий эффективность реферальной программы, видит нулевой ре
+  [ложь на экране] apps/web/src/components/integrations/DadataGeocodedAddressesWidget.tsx:27
+      .then((res) => res.json()).then((data) => { setAddresses(Array.isArray(data) ? data : []); ... })
+      -> Настройки → интеграции (SettingsView:1563). При 401/500 пишет «Геокодированные адреса пациентов отсутствуют.» Администратор решает, что проверка адресов по ФИАС не работает или ничего не проверила, и 
+  [ложь на экране] apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx:20
+      .then((res) => res.json()).then((data) => { setPermissions(Array.isArray(data) ? data : []); ... })
+      -> Настройки → интеграции (SettingsView:1564). При отказе сервера пишет «Правила выгрузки бланков ЕГИСЗ не настроены». Это утверждение о разрешениях на выгрузку медицинских данных в государственную систе
+  [ложь на экране] apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx:19
+      .then((res) => res.json()).then((data) => { setSyncs(Array.isArray(data) ? data : []); ... })
+      -> Настройки → интеграции (SettingsView:1565). При 401/500 пишет «Подключённые Яндекс Календари отсутствуют». Администратор считает, что синхронизация расписания врачей отвалилась, и подключает календари
+  [ложь на экране] apps/web/src/components/integrations/LandingFieldMappingsWidget.tsx:22
+      .then((res) => res.json()).then((data) => { setMappings(Array.isArray(data) ? data : []); ... })
+      -> Раздел «Маркетинг» (MarketingView:411). При отказе сервера пишет «Сопоставления полей лендингов не настроены.» Администратор решает, что заявки с сайта никуда не приходят, и заводит маппинг заново, хо
+  [мёртвая кнопка] apps/web/src/components/VisitDiaryTemplateSelector.tsx:33
+      if (res.ok) { const data = await res.json(); setTemplates(data?.templates || []); }
+      -> Выбор клинического шаблона в дневнике приёма (VisitDiaryEditor:309). Ветки else нет, catch только console.error. При отказе сервера templates остаётся [], и в выпадающем списке остаётся единственный п
+  [ложь на экране] apps/web/src/ImagingView.tsx:264
+      const data = await res.json(); if (res.ok) { selectedImagingStudy.aiSummary = data.analysisResult.summary; ...
+      -> Кнопка ИИ-анализа снимка в разделе «Снимки». Тело читается до проверки ok: при пустом теле или HTML от прокси res.json() бросает, и врач получает тост «Сбой сети: Unexpected end of JSON input» — то ес
+  [ложь на экране] apps/web/src/components/settings/SettingsPricesTab.tsx:163
+      const data = await res.json(); if (!res.ok) throw new Error(data.message || "Ошибка импорта");
+      -> Импорт прайс-листа услуг (Настройки → Цены). Разбор до проверки ok: при пустом теле или HTML-ответе шлюза res.json() бросает SyntaxError, и в панели результата импорта (setImportResult({error: err.mes
+  [ложь на экране] apps/web/src/components/settings/SettingsStaffTab.tsx:55
+      const data = await res.json(); if (!res.ok) throw new Error(data.message || "Ошибка добавления сотрудника");
+      -> Добавление сотрудника и смена PIN/пароля (строки 55, 85, 115 — один и тот же приём). Тело разбирается до проверки ok, поэтому при 500 с пустым или HTML-телом администратор получает тост с английским с
+  [ложь на экране] apps/web/src/components/auth/ClinicLogin.tsx:30
+      const data = await response.json(); if (!response.ok) { throw new Error(data.message || "Ошибка входа клиники"
+      -> Вход терминала клиники (AuthHub → ClinicLogin). Разбор до проверки ok: если API не поднят или отвечает 502 с HTML, response.json() бросает SyntaxError и в тост уходит английский текст парсера, а не «с
+
+OHOTNIK: scanned=apps/web/src/store/ — все 13 файлов целиком по начальным значениям: documentStore.ts (2688
+  [ложь на экране] apps/web/src/AppHelpers.tsx:3484
+      "36 | окклюзионная, дистальная | кариес | кариес дентина 36 зуба по осмотру и снимку | ..."
+      -> Готовый диагноз на конкретном зубе подставлен как введённый. defaultClinicalToothRowsText -> documentStore.ts:2267 clinicalToothRowsText -> textarea value= (useAppLogic.tsx:11980) внутри свёрнутого бл
+  [ложь на экране] apps/web/src/store/appStore.ts:301
+      releaseProtectionNote: "личность получателя проверена, лишние данные третьих лиц исключены",
+      -> Утверждение о проведённой проверке личности подставлено заранее. Поле обязательное (documentValidators.ts:1547) и уже заполнено, поэтому администратор никогда его не увидит: textarea лежит в Documents
+  [ложь на экране] apps/web/src/store/appStore.ts:303
+      communicationNote: "Пациенту передана информация, задача закрыта.",
+      -> Поле подписано «Что сказал пациент» (CommunicationsView.tsx:302) с подсказкой «Нажмите для ввода или надиктуйте», но подсказка никогда не показывается: value уже содержит утверждение о состоявшемся ра
+  [ложь на экране] apps/web/src/store/documentStore.ts:1872
+      photoVideoLabTransferAllowed: true,
+      -> Два разрешения из семи в согласии на фото, видео и снимки проставлены заранее: передача в зуботехническую лабораторию (1872) и показ коллегам для консультации (1874) — PhotoVideoConsentForm.tsx:75,83.
+  [ложь на экране] apps/web/src/store/documentStore.ts:2353
+      postVisitProcedureName: postVisitCarePresets.filling_restoration.procedureName,
+      -> Тема памятки берётся из сохранённых настроек оператора (2351, initialUiPreferences.postVisitCareTopic), а весь текст жёстко зашит на filling_restoration (2353-2391: процедура, что можно, ограничения, 
+  [ложь на экране] apps/web/src/store/documentStore.ts:1769
+      intakeCardioEndocrineNotes: "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом.
+      -> Единственное непустое поле здоровья в анкете пациента: соседние аллергии, препараты, хронические заболевания, антикоагулянты и инфекционные риски осознанно очищены и получили кнопку «Со слов пациента 
+  [потеря денег] apps/web/src/store/documentStore.ts:2278
+      "Диагностика и подготовка | ... | 0\nОсновной этап | ... | 0\nКонтроль | ... | 0"
+      -> Три готовых этапа лечения с ценой 0 в каждом. treatmentPlanStageRows (useAppLogic.tsx:11131) разбирает строки и отдаёт estimatedAmountRub: 0, а сервер печатает его как «0 руб.» (apps/api/src/documents
+  [потеря денег] apps/web/src/store/documentStore.ts:2080
+      `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${...(21)}...`
+      -> Остатки класса «дата посчитана один раз при загрузке модуля» после чистки documentStore от 14:40: строки 2079-2080 (график рассрочки) и 2020 (paymentInvoiceDueDate — срок оплаты счёта). dateInputValue
+  [потеря денег] apps/web/src/components/schedule/LabOrdersPanel.tsx:67
+      const [colorVita, setColorVita] = useState("A3");
+      -> Цвет коронки по шкале Vita — самый индивидуальный параметр наряда, его подбирают по шкале у конкретного пациента. Селект открыт на A3 без пустой опции, материал (строка 66) — на цирконии. Оба уходят в
+  [потеря денег] apps/web/src/store/documentStore.ts:2191
+      paymentPayerRelationship: "пациент",
+      -> Форма приёма оплаты открывается с утверждением, что платит сам пациент; то же значение возвращает сброс после каждого платежа (components/finance/paymentComposerReset.ts:74 DEFAULT_PAYER_RELATIONSHIP)
+  [мёртвая кнопка] apps/web/src/store/appStore.ts:279
+      newRuleTitle: "Кариес требует снимок и изоляцию",  newRuleTriggerServiceId: "svc-therapy-caries",
+      -> Конструктор клинических правил открыт полностью заполненным: название (279), четыре id услуг (291,293,295,297), текст предупреждения врачу (299) и объяснение пациенту (patientStore.ts:101) — всё как v
+  [ложь на экране] apps/web/src/ScannerView.tsx:84
+      const [status, setStatus] = useState<"passed" | "failed">("passed");
+      -> Результат контроля стерилизации выставлен «Обработан» до того, как человек посмотрел на индикатор. Селект без пустой опции, а рабочий сценарий это исключает окончательно: поле штрих-кода под фокусом с
+  [ложь на экране] apps/web/src/store/documentStore.ts:1795
+      informedConsentAnesthesia: "местная анестезия по показаниям",
+      -> Планируемая анестезия — параметр конкретного пациента, а не общий шаблон, и подставлена как введённая (InformedConsentForm.tsx:99; то же для процедурного согласия — строка 1838, ProcedureSpecificConse
+  [ложь на экране] apps/web/src/store/documentStore.ts:2467
+      xrayStudyType: "cbct",
+      -> Направление на рентген открывается с выбранной КЛКТ — самым дозовым исследованием из списка (AppHelpers.tsx:3509 xrayStudyTypeOptions), при пустых «область», «клинический вопрос» и «показание». Уходит
+  [ложь на экране] apps/web/src/store/documentStore.ts:2629
+      copyRequestIncludeDicomSourceData: true,
+      -> В заявлении пациента о выдаче копий медицинских документов заранее отмечено «включить исходные данные DICOM» (DocumentsView.tsx:3247, уходит как includeDicomSourceData, documentLogic.ts:1176). Это объ
+  [косметика] apps/web/src/components/leads/LeadsKanbanView.tsx:131
+      const [appointmentTime, setAppointmentTime] = useState("10:00");
+      -> Перевод обращения в запись открывается со временем 10:00 как введённым (строка 918), при пустой дате. Администратор выбирает дату, время не трогает — и POST /api/leads/{id}/convert создаёт приём на 10
+
+OHOTNIK: scanned=apps/api/src/db/schema.ts целиком по объявлениям numeric(): 62 объявления, из них 18 с mod
+  [ложь на экране] apps/web/src/components/PatientPortal.tsx:185
+      (s: number, i: any) => s + (i.totalAmount || 0),
+      -> Пациент (или администратор через Настройки → Telegram → «Предпросмотр» после входа по телефону и коду) открывает портал и в блоке «План лечения» видит «Итого план 0 ₽» и «Остаток 0 ₽» при реально сохр
+  [ложь на экране] apps/web/src/components/PatientPortal.tsx:411
+      {(stage.totalAmount || 0).toLocaleString()} ₽
+      -> На том же экране портала каждая строка списка планов лечения печатает «0 ₽» рядом с настоящим названием плана: поле называется totalPrice (numeric(12,2) без mode: "number", то есть строка), а читается
+  [косметика] apps/web/src/components/patients/PatientFamilyCard.tsx:149
+      {parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽
+      -> Администратор на карточке пациента (вкладка «Обзор», карточка «Баланс семьи») видит «1 500,5 ₽», а на кассовом экране Финансы для того же кошелька — «1 500,50 ₽» (FamilyWalletPanel.tsx:251 задаёт mini
+
+OHOTNIK: scanned=apps/api/src/routes: billing.ts, inventory.ts, patients.ts, diary.ts, visits.ts, schedule.
+  [потеря данных] apps/web/src/components/useVisitDiaryLogic.ts:135
+      const res = await fetch(`/api/visits/${visitId}/draft/autosave`, { method: "PUT"
+      -> Врач заполняет дневник приёма (форма 043/у: анамнез, status localis, диагноз МКБ-10, номер зуба, описание лечения, осложнения, сопутствующие заболевания) и жмёт «Сохранить черновик». Тело запроса — пл
+  [потеря данных] apps/web/src/components/patients/PatientFamilyCard.tsx:88
+      body: JSON.stringify({ familyGroupId: family.id })
+      -> Администратор в карточке пациента создаёт семью или привязывает пациента к существующей. Тело PUT /api/patients/:id содержит только familyGroupId, а updatePatientSchema такого поля не объявляет — zod 
+  [потеря денег] apps/web/src/components/settings/InsuranceContractsPanel.tsx:122
+      annualLimitRub: formData.annualLimitRub ? parseInt(formData.annualLimitRub, 10) || undefined : undefined
+      -> Администратор в Настройки → ДМС открывает договор и стирает «Годовой лимит (₽, опционально)», чтобы лимит снять, либо ставит 0. В обоих случаях выражение даёт undefined (пустая строка ложна; для "0" с
+  [потеря данных] apps/api/src/db/settingsQuery.ts:108
+      defaultVisitMinutes: 60,
+      -> Администратор в Настройки → Клиника меняет поле «Минут на визит» (SettingsClinicTab.tsx:455) и нажимает «Сохранить». Клиент честно шлёт defaultVisitMinutes (AppHelpers.tsx:4913), updateClinicProfileSc
+  [ложь на экране] apps/web/src/components/patients/PatientLoyaltyHeader.tsx:46
+      body: JSON.stringify({ ...adminProfile, loyaltyTier: tier })
+      -> Администратор в карточке пациента (PatientOverviewTab.tsx:101) выбирает статус лояльности из меню. loyaltyTier не объявлен в patientAdministrativeProfileBaseSchema, а схема не strict — zod молча выбра
+  [мёртвая кнопка] apps/web/src/components/patients/OrthodonticProgressWidget.tsx:107
+      orthodonticProgress: updatedOrtho,
+      -> Врач-ортодонт в карточке пациента заводит трекер элайнеров: «Текущая каппа», «Всего капп», «Дата начала», жмёт «Сохранить». В тело PUT /api/patients/:id/administrative-profile уходит ОБЪЕКТ {currentAl
+  [потеря данных] apps/api/src/db/settingsQuery.ts:268
+      await db.insert(schema.chairs).values({ organizationId, clinicId, name, isActive, workingHours })
+      -> Администратор в Настройки → Клиника вводит название кресла и отмечает оснащение переключателями «RVG / Микроскоп / Хирургия» (SettingsClinicTab.tsx:749-774). Клиент шлёт room, specialization, hasXrayS
+  [потеря данных] apps/api/src/db/settingsQuery.ts:192
+      await db.insert(schema.users).values({ organizationId, fullName, role, phone, email, isActive, workingHours })
+      -> Администратор при добавлении врача или ассистента выбирает специальность в полосе «Специальность нового сотрудника» (SettingsClinicTab.tsx:604-617). Клиент шлёт specialties: [newStaffSpecialty] (useAp
+  [мёртвая кнопка] apps/api/src/db/settingsQuery.ts:111
+      egiszEnabled: false,
+      -> Администратор в Настройки → Клиника включает флажок «ЕГИСЗ-адаптер включен» (SettingsClinicTab.tsx:467-475) и сохраняет профиль. Значение уходит на сервер (AppHelpers.tsx:4922), updateClinicProfileSch
+
+OHOTNIK: scanned=Только чтение, ничего не менял. Проиндексировано 378 .ts/.tsx файлов под C:\Clinic_MVP\den
+  [мёртвая кнопка] C:\Clinic_MVP\dental-crm\apps\web\src\ScheduleView.tsx:249
+      setShowCreateForm(true);
+      -> Администратор в «Расписание приемов» нажимает «Повторить» на карточке приёма (components/schedule/AppointmentCard.tsx:162; его же aria-label обещает «Форма новой записи откроется заполненной, останетс
+  [потеря данных] C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:235
+      setToothState(code, activeStampRef.current);
+      -> Врач на экране «Текущий прием» в блоке «Зубная карта» включает «Быстрый штамп» (🔴 Лечение / 📝 В план / ⚠️ Наблюдение / 🟢 Готово / ❌ Нет зуба, кнопки на строках 697-738) и отмечает зубы. Зубы честно пе
+  [ложь на экране] C:\Clinic_MVP\dental-crm\apps\web\src\VisitView.tsx:677
+      <button type="button" onClick={() => { setActiveStamp("watch"); activeStampRef.current = "watch"; }}>Наблюдени
+      -> Врач, идущий по экрану приёма клавишей Tab, попадает фокусом на невидимую кнопку и Enter'ом молча включает штамп «Наблюдение». Обёртка (строка 676) спрятана только инлайновыми opacity: 0 и pointerEven
+
+NAHODOK VSEGO: 77
+VERDIKTOV: 40 (real=34, otvergnuto=6)
