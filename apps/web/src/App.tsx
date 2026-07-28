@@ -2296,6 +2296,26 @@ export function App() {
   }
 
   return (
+    /*
+      ОБЩИЙ КОНТЕКСТ ОБНИМАЕТ ВСЁ РАБОЧЕЕ МЕСТО, А НЕ ОДНИ НАСТРОЙКИ.
+
+      AppLogicProvider стоял только вокруг ветки настроек. Остальные разделы —
+      записи, пациенты, приём, оплаты, аналитика, маркетинг — рисовались выше
+      него, и всё, что внутри них звало useAppLogicContext(), получало пустоту.
+
+      Молча. useAppLogicContext() при отсутствии провайдера возвращает
+      `{} as AppLogicContextType`: компилятор видит полный объект, во время
+      работы там ничего нет, каждое разобранное поле равно undefined. Ошибки не
+      возникает, граница ошибок не срабатывает, виджет просто рисует пустое
+      место — и выглядит это как «данных пока нет», а не как поломка. Поймать
+      такое типами нельзя по построению приведения.
+
+      Пересчёт по исходникам (scratch/audit-context-outside-provider.mjs) на
+      момент правки: 89 потребителей контекста, из них 59 отрисовывались вне
+      настроек. Среди них вся карточка пациента, вкладки приёма, одонтограмма,
+      панели кассы и виджеты записи.
+    */
+    <AppLogicProvider value={appLogicValue}>
     <main className="app-shell dente-redesign" data-collapsed={sidebarCollapsed}>
       <a className="skip-link" href="#workspace-content">
         Перейти к рабочей области
@@ -4163,7 +4183,6 @@ export function App() {
 
         {currentView === "settings" ? (
           <WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
-          <AppLogicProvider value={appLogicValue}>
           <Suspense
             fallback={
               <section className="settings-zone" id="settings" aria-busy="true">
@@ -4700,7 +4719,6 @@ export function App() {
               chairScheduleSavingId={chairScheduleSavingId}
             />
           </Suspense>
-          </AppLogicProvider>
           </WorkspaceRouteErrorBoundary>
         ) : null}
 
@@ -4769,6 +4787,7 @@ export function App() {
         </a>
       </nav>
     </main>
+    </AppLogicProvider>
   );
 }
 

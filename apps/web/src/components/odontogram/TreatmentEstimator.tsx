@@ -2,7 +2,7 @@ import { Calculator, FileText, PenTool, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast.js";
 import { SignaturePad } from "../SignaturePad";
@@ -31,6 +31,42 @@ interface SavedTreatmentPlan {
 	totalPrice: number;
 	patientSignature?: string | null;
 	items: PlanItem[];
+}
+
+/**
+ * Приведение позиции плана, пришедшей с сервера, к обещанному виду.
+ *
+ * Ответ сохранённого плана раскладывался в состояние как есть: `Array.isArray`
+ * — и готово, дальше тип PlanItem утверждал, что price и quantity это числа.
+ * В базе лежат планы, сохранённые прежними версиями формы, где цены нет вовсе.
+ * Разметка звала item.price.toLocaleString(), и весь раздел «Пациенты» уходил
+ * в заглушку «Раздел временно не открылся» — без единой подсказки, что дело в
+ * старой строке плана лечения.
+ *
+ * Проще было поставить `?.` в семи местах вывода, но тогда экран показывал бы
+ * «0 ₽» там, где цена просто не сохранилась. Здесь честнее один раз привести
+ * данные на входе: чего нет — то ноль, и это видно в смете, а не прячется за
+ * необязательным обращением где-то в глубине разметки.
+ */
+function planItemFromServer(raw: unknown): PlanItem | null {
+	if (!raw || typeof raw !== "object") return null;
+	const item = raw as Record<string, unknown>;
+	const numberOr = (value: unknown, fallback: number) =>
+		typeof value === "number" && Number.isFinite(value) ? value : fallback;
+	const name = typeof item.name === "string" ? item.name : "";
+	// Позиция без названия не показывается: врач не поймёт, за что платит.
+	if (!name) return null;
+	return {
+		...(typeof item.id === "string" ? { id: item.id } : {}),
+		...(typeof item.toothNumber === "number" ? { toothNumber: item.toothNumber } : {}),
+		priceId: typeof item.priceId === "string" ? item.priceId : "",
+		name,
+		quantity: Math.max(1, numberOr(item.quantity, 1)),
+		price: numberOr(item.price, 0),
+		discount: numberOr(item.discount, 0),
+		phase: numberOr(item.phase, 1),
+		...(typeof item.isAuto === "boolean" ? { isAuto: item.isAuto } : {}),
+	};
 }
 
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({
@@ -119,7 +155,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				const latestPlan = data?.plans?.[0] as SavedTreatmentPlan | undefined;
 				if (!active || !latestPlan) return;
 				setPlanId(latestPlan.id);
-				setItems(Array.isArray(latestPlan.items) ? latestPlan.items : []);
+				setItems(
+					Array.isArray(latestPlan.items)
+						? latestPlan.items.map(planItemFromServer).filter((item): item is PlanItem => item !== null)
+						: [],
+				);
 				setSignatureUrl(latestPlan.patientSignature ?? null);
 			})
 			.catch((error) => {
@@ -518,7 +558,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																return (
 																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
 																		<span>
-																			{item.price.toLocaleString("ru-RU")} ₽
+																			{money(item.price)}
 																		</span>
 																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
 																			Вне покрытия ДМС
@@ -532,10 +572,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																return (
 																	<span className="flex items-center gap-1.5 flex-wrap">
 																		<span className="line-through text-slate-400 dark:text-zinc-500">
-																			{item.price.toLocaleString("ru-RU")} ₽
+																			{money(item.price)}
 																		</span>
 																		<span className="text-teal-500 dark:text-teal-400 font-bold">
-																			{copayPrice.toLocaleString("ru-RU")} ₽
+																			{money(copayPrice)}
 																		</span>
 																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
 																			Со-оплата {coverage.copayPct}%
@@ -547,7 +587,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 																return (
 																	<span className="flex items-center gap-1.5 flex-wrap">
 																		<span className="line-through text-slate-400 dark:text-zinc-500">
-																			{item.price.toLocaleString("ru-RU")} ₽
+																			{money(item.price)}
 																		</span>
 																		<span className="text-teal-500 dark:text-teal-400 font-bold">
 																			0 ₽
@@ -560,7 +600,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 															}
 															return (
 																<span>
-																	{item.price.toLocaleString("ru-RU")} ₽ x{" "}
+																	{money(item.price)} x{" "}
 																	{item.quantity}
 																</span>
 															);
@@ -593,10 +633,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 														const price = coverage
 															? (item.price * coverage.copayPct) / 100
 															: item.price;
-														return (price * item.quantity).toLocaleString(
-															"ru-RU",
-														);
-													})()} ₽
+														return money(price * item.quantity);
+													})()}
 												</span>
 											</div>
 										</div>
@@ -613,10 +651,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					Итого по плану:
 				</div>
 				<div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
-					{total.toLocaleString("ru-RU")}{" "}
-					<span className="text-sm font-medium text-slate-500 dark:text-zinc-500">
-						₽
-					</span>
+					{money(total)}
 				</div>
 			</div>
 
