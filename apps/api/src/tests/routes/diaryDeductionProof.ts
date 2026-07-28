@@ -25,6 +25,11 @@
  * V2_SIGN_VIA=lock переключает подписание на POST /api/diaries/:id/lock — нужно
  * для версий ДО 87e367c40, где церемонию проводил только этот маршрут.
  *
+ * V2_API_BASE=http://127.0.0.1:4100 гонит те же случаи по СЕТИ против уже
+ * запущенного сервера, а не через app.inject: тогда в дело вступают глобальные
+ * хуки и обработчик ошибок server.ts. Сервер под tsx watch подхватывает правки
+ * маршрута сам; перезапускать его не нужно и нельзя — он общий.
+ *
  * Скрипт создаёт собственную организацию и удаляет её целиком в finally.
  * Секрет подписи токена берётся штатным authTokenSecret() и в вывод не попадает.
  */
@@ -53,6 +58,8 @@ import { signToken } from "../../utils/cryptoHelper.js";
 
 const ROUTER_MODULE = process.env.V2_DIARY_ROUTER ?? "../../routes/diary.js";
 const SIGN_VIA = process.env.V2_SIGN_VIA === "lock" ? "lock" : "post";
+/** Пустая строка означает «в процессе, через app.inject». */
+const API_BASE = process.env.V2_API_BASE?.trim() ?? "";
 
 const START_STOCK = "10";
 const TREATMENT_QUANTITY = "2";
@@ -158,16 +165,43 @@ async function main(): Promise<void> {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
-		const routerModule = (await import(ROUTER_MODULE)) as {
-			default: (instance: FastifyInstance) => Promise<void>;
-		};
-		app = Fastify();
-		// Тот же хук, что в apps/api/src/server.ts — он наполняет request.user.
-		app.addHook("onRequest", async (request) => {
-			getRequestIdentity(request);
-		});
-		await routerModule.default(app);
-		await app.ready();
+		if (!API_BASE) {
+			const routerModule = (await import(ROUTER_MODULE)) as {
+				default: (instance: FastifyInstance) => Promise<void>;
+			};
+			app = Fastify();
+			// Тот же хук, что в apps/api/src/server.ts — он наполняет request.user.
+			app.addHook("onRequest", async (request) => {
+				getRequestIdentity(request);
+			});
+			await routerModule.default(app);
+			await app.ready();
+		}
+
+		/** Один POST: либо в процессе, либо по сети против запущенного сервера. */
+		async function post(
+			url: string,
+			payload: Record<string, unknown>,
+		): Promise<{ statusCode: number; body: string }> {
+			if (API_BASE) {
+				const response = await fetch(`${API_BASE}${url}`, {
+					method: "POST",
+					headers: {
+						"content-type": "application/json",
+						"x-dente-staff-token": staffToken,
+					},
+					body: JSON.stringify(payload),
+				});
+				return { statusCode: response.status, body: await response.text() };
+			}
+			const injected = await (app as FastifyInstance).inject({
+				method: "POST",
+				url,
+				headers: { "x-dente-staff-token": staffToken },
+				payload,
+			});
+			return { statusCode: injected.statusCode, body: injected.body };
+		}
 
 		/** Услуга, полка, правило материалов, визит и позиция плана под один случай. */
 		async function seed(
@@ -240,18 +274,12 @@ async function main(): Promise<void> {
 
 		/** Подписывает приём и читает результат СЫРЫМ SQL, а не через ORM. */
 		async function sign(fixture: Fixture): Promise<Observation> {
-			const instance = app as FastifyInstance;
-			const draft = await instance.inject({
-				method: "POST",
-				url: "/api/diaries",
-				headers: { "x-dente-staff-token": staffToken },
-				payload: {
-					visitId: fixture.visitId,
-					patientId: patient.id,
-					anamnesis: "Жалобы на боль при накусывании.",
-					statusLocalis: "Зуб 36: глубокая кариозная полость.",
-					treatmentDescription: "Обработка, пломба.",
-				},
+			const draft = await post("/api/diaries", {
+				visitId: fixture.visitId,
+				patientId: patient.id,
+				anamnesis: "Жалобы на боль при накусывании.",
+				statusLocalis: "Зуб 36: глубокая кариозная полость.",
+				treatmentDescription: "Обработка, пломба.",
 			});
 			if (draft.statusCode !== 200) {
 				throw new Error(`черновик не создан: ${draft.statusCode} ${draft.body}`);
@@ -268,22 +296,14 @@ async function main(): Promise<void> {
 
 			const response =
 				SIGN_VIA === "lock"
-					? await instance.inject({
-							method: "POST",
-							url: `/api/diaries/${diaryRow?.id}/lock`,
-							headers: { "x-dente-staff-token": staffToken },
-							payload: { pkcs7Signature: PKCS7 },
+					? await post(`/api/diaries/${diaryRow?.id}/lock`, {
+							pkcs7Signature: PKCS7,
 						})
-					: await instance.inject({
-							method: "POST",
-							url: "/api/diaries",
-							headers: { "x-dente-staff-token": staffToken },
-							payload: {
-								visitId: fixture.visitId,
-								patientId: patient.id,
-								status: "signed",
-								pkcs7Signature: PKCS7,
-							},
+					: await post("/api/diaries", {
+							visitId: fixture.visitId,
+							patientId: patient.id,
+							status: "signed",
+							pkcs7Signature: PKCS7,
 						});
 
 			const stock = await db.execute(
@@ -323,7 +343,10 @@ async function main(): Promise<void> {
 			};
 		}
 
-		console.log(`\nROUTER = ${ROUTER_MODULE}`);
+		console.log(
+			`\nTRANSPORT = ${API_BASE ? `сеть, ${API_BASE}` : "app.inject в процессе"}`,
+		);
+		console.log(`ROUTER = ${API_BASE ? "запущенный сервер" : ROUTER_MODULE}`);
 		console.log(`SIGN VIA = ${SIGN_VIA}`);
 		console.log(
 			`START STOCK = ${START_STOCK}, treatment_items.quantity = ${TREATMENT_QUANTITY}`,
