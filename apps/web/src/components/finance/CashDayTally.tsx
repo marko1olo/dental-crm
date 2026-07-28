@@ -171,9 +171,13 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 									<Undo2 aria-hidden="true" />
 									<div>
 										<h3>Возвращено пациентам</h3>
+										{/* БЫЛО: «наличные возвраты уже вычтены из суммы в ящике» —
+										    неправда в обе стороны. Возврат снимается с той же строки
+										    оплаты, поэтому деньги по ней и пришли, и ушли: в приходе
+										    их нет, и вычитать из ящика нечего. */}
 										<p>
-											{paymentsCountLabel(summary.refundedCount)}; наличные возвраты
-											уже вычтены из суммы в ящике
+											{paymentsCountLabel(summary.refundedCount)}; в приход за день не
+											входят — эти деньги вернули
 										</p>
 									</div>
 									<strong>−{money(summary.refundedRub)}</strong>
@@ -211,7 +215,7 @@ export function CashDayTally({ payments, methodLabels, money }: CashDayTallyProp
 											? `Сходится: ${money(summary.cashRub)}.`
 											: differenceRub > 0
 												? `В ящике на ${money(differenceRub)} больше, чем по записям. Скорее всего, оплату приняли, но не записали в программу.`
-												: `В ящике на ${money(-differenceRub)} меньше, чем по записям. Проверьте возвраты и сдачу.`}
+												: `В ящике на ${money(-differenceRub)} меньше, чем по записям. Проверьте сдачу и возвраты: возврат по оплате, принятой в другой день, в сегодняшний итог не попадает — программа не хранит время возврата.`}
 							</p>
 						</div>
 

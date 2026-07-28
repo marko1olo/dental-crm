@@ -159,7 +159,7 @@ describe("итог дня", () => {
 		assert.equal(summary.cashRub, 0);
 	});
 
-	it("наличный возврат уменьшает ящик, а приход не увеличивает", () => {
+	it("возврат не входит в приход и НЕ занижает ящик", () => {
 		const summary = summarizeCashDay(
 			[
 				payment({ amountRub: 5000, method: "cash" }),
@@ -169,9 +169,25 @@ describe("итог дня", () => {
 			TODAY,
 		);
 		assert.equal(summary.receivedRub, 5000);
-		assert.equal(summary.cashRub, 3800);
+		/*
+		 * 5 000, а не 3 800. Возврат — смена статуса той же строки платежа
+		 * (отдельной записи возврата в базе нет), поэтому 1 200 ₽ в ящик пришли и
+		 * из ящика ушли: ноль. БЫЛО −1 200: вечером программа заявляла «в ящике на
+		 * 1 200 ₽ больше, чем по записям, скорее всего оплату не записали».
+		 */
+		assert.equal(summary.cashRub, 5000);
 		assert.equal(summary.refundedRub, 2000);
 		assert.equal(summary.refundedCount, 2);
+	});
+
+	it("возврат единственной наличной оплаты не делает ящик отрицательным", () => {
+		const summary = summarizeCashDay(
+			[payment({ amountRub: 3000, method: "cash", status: "refunded" })],
+			TODAY,
+		);
+		assert.equal(summary.cashRub, 0);
+		assert.equal(summary.receivedRub, 0);
+		assert.equal(summary.refundedRub, 3000);
 	});
 
 	it("отменённую запись не считает вовсе", () => {
