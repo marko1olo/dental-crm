@@ -1,60 +1,49 @@
 # W1-hollow-query-census — state
 
-STATUS: DEFECT CONFIRMED / EDIT WRITTEN (census tool)
+STATUS: DONE
 Time: 2026-07-28 (cycle 7)
 Agent: implementer under [ARCHON]
 
-## HEAD at start
-e75df11857f4e2e7202bb4e7ffa557c487147720
+## HEAD
+start: e75df11857f4e2e7202bb4e7ffa557c487147720
+final: a7b0b2706b04a2bacbf7f9aa1ff3fb79d6e93d45
 
-## THE TRUE NUMBER: 24, not 45
-42 modules `apps/api/src/db/*Query.ts`.
-  ПУСТОТЕЛЫХ (hollow)      24
-  СМЕШАННЫХ                 2   lostPatientsFiltersQuery, patientCommunicationTimelinesQuery
-  ЖИВЫХ                    15   incl. auditQuery (the naive census called it hollow — it is not)
-  БЕЗ ТАБЛИЦ                1   dashboardQuery (composes from other modules)
-All 24 hollow tables: 0 runtime writers, 0 migration seeds, **0 rows in live PostgreSQL 18**.
+## THE TRUE NUMBER: 24 hollow of 42 modules — not 45 of 50
+After the work: 5 hollow of 23 modules. All 5 blocked on the second author's files.
+All 24 hollow tables measured against live PostgreSQL 18: 0 writers, 0 seeds, 0 rows.
 
-## Tool
-scripts/census-hollow-query-modules.mjs
-- ast-grep NOT INSTALLED on this host: `npx --yes @ast-grep/cli --version` => exit 1
-  "could not determine executable to run". AGENTS.md §8/§8a are wrong about it.
-  Used the TypeScript 5.9.3 compiler API instead (real AST, resolves `as` aliases and
-  `import * as schema`).
-- Found and fixed a real bug in my own first version: it only walked STATIC imports and
-  therefore reported 24/24 hollow modules as "imported by NOBODY". 19 of them are wired to
-  live routes via `await import("../db/xQuery.js")` in routes/clinical.ts. Deleting on that
-  first reading would have broken HEAD exactly like VisitDictation.tsx did.
+## Commits (7, all pathspec, all verified with git log -1 --stat)
+2ff49559b  census tool + test
+29a59a80d  6 routes with no consumer + 9 modules
+7821bef70  treatment plan trio: 3 modules, 3 routes, 3 widgets, DocumentsView grid
+6bb2bb0ab  schedule pair: 2 modules, 2 routes, 2 widgets
+908be0f54  urgent requests: module, route, widget + ShiftView section header rewritten
+93a2f1803  patients pair: 2 modules, 1 route, 2 widgets + KNOWN_MISSING line and bound
+a7b0b2706  confirmation reports: module, route, widget on 3 screens + familyRecommendationSources
 
-## Deletion plan (claim-safe)
-SAFE, no web consumer at all (backend dead weight):
-  alternativeTreatmentPlansQuery, crmEmailDispatchLogsQuery, prodoctorovSyncExportsQuery,
-  quickAppointmentConfirmationsQuery, scheduleClipboardItemsQuery, uisOmniMessengerQueuesQuery
-  + 5 modules with zero importers anywhere: bulkImageOperationLogsQuery,
-  egiszMultipleDiagnosesQuery, familyRecommendationSourcesQuery,
-  uisCallSpeechTranscriptsQuery, visitExaminationPhotoLinksQuery
-SAFE, widget in files the second author is NOT in:
-  treatmentPlanStagesAutoArchiveQuery / treatmentPlanLockTokensQuery /
-  treatmentPlanPrintOdontogramsQuery  -> DocumentsView.tsx
-  scheduleTimeReservationsQuery / cancellationReasonsTwoLevelQuery /
-  urgentScheduleRequestsQuery         -> ScheduleView.tsx, ShiftView.tsx
-  patientServiceLineagesQuery         -> PatientsView.tsx, components/patients/PatientOverviewTab.tsx
-  confirmationPerformanceReportsQuery -> CommunicationsView.tsx, ShiftView.tsx, AnalyticsDashboardView.tsx
-SKIPPED — widget lives in the second author's zone, reported as coordination debt:
-  singleSessionEnforcementsQuery (components/settings/**, SettingsView.tsx)
-  dadataGeocodedAddressesQuery   (SettingsView.tsx)
-  landingFieldMappingsQuery      (MarketingView.tsx)
-  rebookingConversionRulesQuery  (MarketingView.tsx)
-  customCrmTaskTypesQuery        (MarketingView.tsx, components/settings/SettingsRulesTab.tsx)
-NOT TOUCHED by design: lostPatientsFiltersQuery (already restored once this campaign).
+Deleted: 19 db/*Query.ts modules (42 -> 23), 14 routes in clinical.ts (29 -> 15,
+527 -> 444 lines), 9 widgets.
 
-## Dirty and not mine
- M .agents/AGENTS.md, apps/web/src/lib/clinicCapabilities.ts,
-   apps/api/.data/*.json, apps/web/tsconfig.tsbuildinfo, packages/shared/dist/*,
-   scratch/audit-settings-props.mjs
+## Gates run (mine only, never a shared gate)
+census --db                                        exit 0
+scripts/census-hollow-query-modules.test.mjs       pass 6 fail 0
+apps/api/src/tests/webCallsExistingRoutes.test.ts  pass 3 fail 0 (after every deletion)
+services/clinical/ClinicalRouter.test.ts           pass 5 fail 0
+npm run smoke:web-text-encoding                    ok true, 0 mojibake
+scripts/check-css-tokens.mjs                       0 unresolved var()
+live API 127.0.0.1:4100                            deleted=404, kept=401
+
+## BLOCKED, handed to the lead
+smoke-clinical-mutation-guard.mjs refuses on a stale dist (exit 1) and demands
+`npm run build -w @dental/api` — a shared gate, not mine (§7a). Typecheck likewise
+never run by me on either workspace.
 
 ## Log
 - STARTED
 - AUTHORITY READ
-- DEFECT CONFIRMED — 24 hollow, DB row counts all 0
-- EDIT WRITTEN — census tool + about to write its test, then COMMIT the tool first
+- DEFECT CONFIRMED (24 hollow, 0 rows in live DB)
+- EDIT WRITTEN
+- SELF-CHECK PASSED
+- COMMITTED 2ff49559b / 29a59a80d / 7821bef70 / 6bb2bb0ab / 908be0f54 / 93a2f1803 / a7b0b2706
+- PROVEN (DB + API + UNIT + SMOKE; build-dependent gate BLOCKED and reported)
+- DONE
