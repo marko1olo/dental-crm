@@ -1,6 +1,5 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
-import { ExternalScheduleActionLogsWidget } from "./components/schedule/ExternalScheduleActionLogsWidget";
 import { EmptyState } from "./components/EmptyState";
 import { appointmentScheduleMissingFields } from "./AppHelpers";
 
@@ -700,7 +699,29 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                 Забронировать кресло было нечем, справочник причин негде
                 заполнить. Причина отмены записи спрашивается на самой отмене.
               */}
-              <ExternalScheduleActionLogsWidget />
+              {/*
+                Здесь стоял ExternalScheduleActionLogsWidget — «Лог внешних
+                сервисов записи (Забота 2.0 / LoyalMed AI Боты)». Убран, потому
+                что данных в нём не могло появиться никогда, ни при каком
+                действии пользователя:
+                  1) он запрашивал /api/schedule/external-schedule-action-logs,
+                     а такого маршрута в API нет — живой сервер отвечает 404
+                     (проверено запросом);
+                  2) даже если маршрут написать, таблица
+                     external_schedule_action_logs (schema.ts:1858) не имеет ни
+                     одного писателя во всём репозитории — ни drizzle-вставки,
+                     ни сырого INSERT;
+                  3) интеграции с внешними ботами записи, которая эти логи
+                     производила бы, в проекте нет. Придумывать её контракт
+                     нельзя.
+                То есть пользователь на экране расписания видел карточку с
+                заголовком и значком «Внешние боты записи», которая после
+                неудачного запроса молча показывала пустое состояние. Это не
+                недостающая функция, а интерфейс без функции.
+                Адрес остаётся в списке KNOWN_MISSING в
+                apps/api/src/tests/webCallsExistingRoutes.test.ts — запись стала
+                ненужной, но файл правит другой автор, поэтому не тронут.
+              */}
             </div>
     </div>
   );
