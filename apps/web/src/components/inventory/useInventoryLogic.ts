@@ -199,63 +199,6 @@ export function useInventoryLogic(organizationId: string) {
 		}
 	}, [activeSubTab, selectedServiceId]);
 
-	// --- Global Barcode Scanner Listener (Hardware Emulation) ---
-	useEffect(() => {
-		let barcodeBuffer = "";
-		let lastKeyTime = 0;
-
-		const handleKeyDown = (e: KeyboardEvent) => {
-			// Ignore if user is typing in an input or textarea
-			const target = e.target as HTMLElement;
-			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-
-			const currentTime = Date.now();
-			// Barcode scanners type very fast (usually < 30ms per character).
-			// If more than 100ms passed since last key, reset the buffer.
-			if (currentTime - lastKeyTime > 100) {
-				barcodeBuffer = "";
-			}
-			lastKeyTime = currentTime;
-
-			if (e.key === "Enter") {
-				if (barcodeBuffer.length > 3) {
-					// Likely a barcode scan
-					setScannedBarcode(barcodeBuffer);
-					setIsScannerActive(true);
-					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
-
-					// Optional: Auto-filter the list or open the "Add" modal for this item
-					const found = items.find(
-						(i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer,
-					);
-					if (found) {
-						showToast(`Найден товар: ${found.name}`, "info");
-						setSearchQuery(barcodeBuffer);
-					} else {
-						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
-						setFormData({
-							name: "",
-							threshold: "",
-							unitCostRub: "",
-							sku: "",
-							barcode: barcodeBuffer,
-							lotNumber: "",
-							expirationDate: "",
-						});
-						setEditingItem(null);
-						setShowModal(true);
-					}
-				}
-				barcodeBuffer = "";
-			} else if (e.key.length === 1) {
-				barcodeBuffer += e.key;
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [items]);
-
 	/*
 	 * Замок на кнопку «Добавить материал в расходники».
 	 *
@@ -411,6 +354,105 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const isSavingItemRef = useRef(false);
 	const [isSavingItem, setIsSavingItem] = useState(false);
+
+	/*
+	 * --- Слушатель сканера штрихкодов (эмуляция «клавиатурного» сканера) ---
+	 *
+	 * Объявлен ЗДЕСЬ, ниже состояний окон, а не выше вместе с остальными
+	 * эффектами: ему нужны showModal, adjustingItem и confirmDialog в списке
+	 * зависимостей, а список зависимостей вычисляется при отрисовке — не потом, в
+	 * теле обработчика. Стой этот useEffect до объявления тех состояний, отрисовка
+	 * падала бы с ReferenceError по временной мёртвой зоне.
+	 */
+	useEffect(() => {
+		let barcodeBuffer = "";
+		let lastKeyTime = 0;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ignore if user is typing in an input or textarea
+			const target = e.target as HTMLElement;
+			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+			const currentTime = Date.now();
+			// Barcode scanners type very fast (usually < 30ms per character).
+			// If more than 100ms passed since last key, reset the buffer.
+			if (currentTime - lastKeyTime > 100) {
+				barcodeBuffer = "";
+			}
+			lastKeyTime = currentTime;
+
+			if (e.key === "Enter") {
+				if (barcodeBuffer.length > 3) {
+					// Likely a barcode scan
+					setScannedBarcode(barcodeBuffer);
+					setIsScannerActive(true);
+					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
+
+					/*
+					 * Сканирование при открытом окне не сбрасывает начатую работу.
+					 *
+					 * БЫЛО: обработчик всегда шёл по ветке «неизвестный товар» —
+					 * setFormData с ПУСТЫМИ полями, setEditingItem(null),
+					 * setShowModal(true). Ранний выход спасал только при фокусе внутри
+					 * поля ввода, а поле штрихкода прямо приглашает «или отсканируйте
+					 * сканером»: сканер жмут, не наведя курсор в поле.
+					 * Последствия при открытой карточке материала:
+					 *   набранные наименование, цена, партия и срок исчезали молча —
+					 *     форма выглядела свежеоткрытой;
+					 *   правка существующего материала превращалась в создание нового
+					 *     (editingItem обнулялся). Кладовщик открывал перчатки на
+					 *     правку, сканировал их же штрихкод, нажимал «Сохранить» — и на
+					 *     складе появлялась ВТОРАЯ позиция «перчатки» вместо
+					 *     исправленной первой.
+					 * Теперь при открытой карточке код просто ложится в поле штрихкода,
+					 * как и обещает подсказка, а остальные поля остаются на месте.
+					 */
+					if (showModal) {
+						setFormData((prev) => ({ ...prev, barcode: barcodeBuffer }));
+						barcodeBuffer = "";
+						return;
+					}
+					/*
+					 * При открытом окне остатка или подтверждении удаления сканирование
+					 * не делает ничего: подменять человеку окно, пока он подтверждает
+					 * списание или удаление, нельзя — подтвердит он уже не то, что читал.
+					 */
+					if (adjustingItem || confirmDialog?.isOpen) {
+						barcodeBuffer = "";
+						return;
+					}
+
+					// Optional: Auto-filter the list or open the "Add" modal for this item
+					const found = items.find(
+						(i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer,
+					);
+					if (found) {
+						showToast(`Найден товар: ${found.name}`, "info");
+						setSearchQuery(barcodeBuffer);
+					} else {
+						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
+						setFormData({
+							name: "",
+							threshold: "",
+							unitCostRub: "",
+							sku: "",
+							barcode: barcodeBuffer,
+							lotNumber: "",
+							expirationDate: "",
+						});
+						setEditingItem(null);
+						setShowModal(true);
+					}
+				}
+				barcodeBuffer = "";
+			} else if (e.key.length === 1) {
+				barcodeBuffer += e.key;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [items, showModal, adjustingItem, confirmDialog]);
 
 	/*
 	 * Отказ сервера надо помнить, а не только мигнуть уведомлением.
