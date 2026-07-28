@@ -2013,6 +2013,31 @@ export const ndflTaxCalculators = pgTable("ndfl_tax_calculators", {
 });
 
 /**
+ * Задачи (поручения) по пациенту: перезвонить, дослать документы, проверить
+ * самочувствие.
+ *
+ * Экран карточки (PatientTaskTicketsWidget) умел создавать поручение, отмечать
+ * его выполненным, возвращать в работу и удалять — а сервера под ним не было:
+ * живая проверка сети видела на карточке 404 на GET .../tickets. Имена полей
+ * повторяют контракт, который экран уже отправляет. Физическая таблица:
+ * drizzle/0144_patient_task_tickets.sql.
+ */
+export const patientTaskTickets = pgTable("patient_task_tickets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull(),
+  // Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а
+  // поручение обязано остаться в карте. Экран показывает «Неизвестный сотрудник».
+  assignedToId: uuid("assigned_to_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("pending"),
+  priority: text("priority").notNull().default("normal"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Рекламации и осложнения по пациенту — основание для гарантии, возврата и
  * переделки.
  *

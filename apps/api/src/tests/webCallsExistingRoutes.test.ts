@@ -114,8 +114,17 @@ const KNOWN_MISSING: readonly string[] = [
 	 * строк. Врач нажимал «Зафиксировать в карту» и не имел ни одного способа
 	 * сохранить претензию, а рекламация — основание для гарантии и возврата.
 	 */
-	// Задачи по пациенту: ни маршрута, ни таблицы. Зовёт PatientTicketsWidget.
-	"/api/patients/:param/tickets"
+	/*
+	 * Отсюда убрана строка /api/patients/:param/tickets: маршруты СДЕЛАНЫ, все
+	 * четыре (GET/POST/PUT/DELETE, routes/patients.ts), таблица создана в
+	 * drizzle/0144_patient_task_tickets.sql и применена к базе.
+	 *
+	 * Долг был описан ВЕРНО («ни маршрута, ни таблицы») — в отличие от соседней
+	 * записи про рекламации, которая врала про готовые таблицы. Зовёт экран
+	 * PatientTaskTicketsWidget (в долге он был назван PatientTicketsWidget —
+	 * имени с таким написанием в дереве нет, и следующий инженер искал бы файл,
+	 * которого не существует).
+	 */
 	// Строки /api/settings/staff/:param и /api/settings/chairs/:param убраны:
 	// в routes/settings.ts добавлены PUT/DELETE на саму сущность сотрудника и
 	// кресла, раньше там жили только вложенные /credentials и /working-hours.
