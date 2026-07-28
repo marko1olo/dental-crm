@@ -210,6 +210,17 @@ export function useInventoryLogic(organizationId: string) {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [items]);
 
+	/*
+	 * Замок на кнопку «Добавить материал в расходники».
+	 *
+	 * БЫЛО: кнопка оставалась живой на время запроса, а правило создаётся через
+	 * POST. Второе нажатие давало ВТОРОЕ такое же правило на ту же услугу, и
+	 * автоматическое списание при приёме срабатывало по каждому — материал уходил
+	 * со склада в двойном количестве при каждом приёме, пока правило не заметят.
+	 */
+	const isSavingRuleRef = useRef(false);
+	const [isSavingRule, setIsSavingRule] = useState(false);
+
 	const handleAddRule = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct)
@@ -220,6 +231,9 @@ export function useInventoryLogic(organizationId: string) {
 			showToast("Введите корректное количество", "error");
 			return;
 		}
+		if (isSavingRuleRef.current) return;
+		isSavingRuleRef.current = true;
+		setIsSavingRule(true);
 
 		try {
 			const res = await fetch(`/api/inventory/${organizationId}/rules`, {
@@ -245,6 +259,10 @@ export function useInventoryLogic(organizationId: string) {
 		} catch (e) {
 			console.error(e);
 			showToast("Системная ошибка", "error");
+		} finally {
+			// Снимаем в любом исходе: после отказа правило должно быть можно завести снова.
+			isSavingRuleRef.current = false;
+			setIsSavingRule(false);
 		}
 	};
 
@@ -335,6 +353,18 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const isAdjustingStockRef = useRef(false);
 	const [isAdjustingStock, setIsAdjustingStock] = useState(false);
+	/*
+	 * Такой же замок на карточку материала.
+	 *
+	 * БЫЛО: кнопка «Сохранить» оставалась живой, пока сервер отвечал. Новый
+	 * материал создаётся через POST — повтор не переписывает запись, а добавляет
+	 * вторую: на полке одна позиция, а в списке две одинаковые. Остаток дальше
+	 * ведут по одной из них, а списывают со второй, и склад расходится с полкой
+	 * навсегда. Замок в ref по той же причине, что и у остатка: два клика
+	 * успевают попасть в один такт до перерисовки.
+	 */
+	const isSavingItemRef = useRef(false);
+	const [isSavingItem, setIsSavingItem] = useState(false);
 
 	/*
 	 * Отказ сервера надо помнить, а не только мигнуть уведомлением.
@@ -472,6 +502,9 @@ export function useInventoryLogic(organizationId: string) {
 		 * для которого порога никто не задавал. Ноль означает «следить не просили».
 		 */
 		const threshold = Math.max(0, parseInt(formData.threshold) || 0);
+		if (isSavingItemRef.current) return;
+		isSavingItemRef.current = true;
+		setIsSavingItem(true);
 		try {
 			if (editingItem) {
 				const res = await fetch(
@@ -527,6 +560,10 @@ export function useInventoryLogic(organizationId: string) {
 		} catch (e) {
 			console.error(e);
 			showToast("Системная ошибка", "error");
+		} finally {
+			// Снимаем в любом исходе: после отказа сохранение должно быть можно повторить.
+			isSavingItemRef.current = false;
+			setIsSavingItem(false);
 		}
 	};
 
@@ -671,6 +708,8 @@ export function useInventoryLogic(organizationId: string) {
 		setAdjustType,
 		handleAdjustStock,
 		isAdjustingStock,
+		isSavingItem,
+		isSavingRule,
 		criticalItemsCount,
 		lowStockCount: criticalItemsCount,
 		totalValue,

@@ -103,6 +103,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		adjustType,
 		setAdjustType,
 		isAdjustingStock,
+		isSavingItem,
+		isSavingRule,
 		fetchItems,
 		openAddModal,
 		openEditModal,
@@ -279,12 +281,26 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 								/>
 							</div>
+							{/*
+							  Кнопка запирается на время запроса: правило создаётся через
+							  POST, и второе нажатие давало второе такое же правило на ту же
+							  услугу — материал списывался бы дважды за каждый приём.
+							*/}
 							<button
 								type="submit"
 								className="primary-button"
-								style={{ alignSelf: "flex-start", marginTop: 8 }}
+								disabled={isSavingRule}
+								style={{
+									alignSelf: "flex-start",
+									marginTop: 8,
+									opacity: isSavingRule ? 0.6 : 1,
+									cursor: isSavingRule ? "wait" : "pointer",
+								}}
 							>
-								<Plus size={16} /> Добавить материал в расходники
+								<Plus size={16} />{" "}
+								{isSavingRule
+									? "Сохраняем..."
+									: "Добавить материал в расходники"}
 							</button>
 						</form>
 
@@ -1363,12 +1379,24 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								</div>
 							</details>
 
+							{/*
+							  Кнопка запирается на время запроса: новый материал создаётся
+							  через POST, и второе нажатие добавляло вторую такую же позицию
+							  на одну полку. Остаток потом ведут по одной, а списывают со
+							  второй.
+							*/}
 							<button
 								type="submit"
 								className="primary-button"
-								style={{ marginTop: 8, justifyContent: "center" }}
+								disabled={isSavingItem}
+								style={{
+									marginTop: 8,
+									justifyContent: "center",
+									opacity: isSavingItem ? 0.6 : 1,
+									cursor: isSavingItem ? "wait" : "pointer",
+								}}
 							>
-								Сохранить
+								{isSavingItem ? "Сохраняем..." : "Сохранить"}
 							</button>
 						</form>
 					</div>
