@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { Search, Calendar, Users, FileText, Settings, Banknote, Stethoscope, Camera, MessageSquare, X, CheckCircle2 } from 'lucide-react';
+import { CornerDockSlot } from './floatingCorner/CornerDock';
+import { cornerDockLabels } from './floatingCorner/cornerDockLabels';
 
 export function Omnibar() {
   const { isOmnibarOpen, setOmnibarOpen, setCurrentView } = useAppStore();
@@ -72,38 +74,50 @@ export function Omnibar() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isOmnibarOpen, setOmnibarOpen]);
 
-  /* Портал в body обязателен.
+  /* Плашка-триггер живёт в слоте `search` плавающего угла, а не в собственном
+     `position: fixed` острове. Раньше она портировалась в body с
+     z-index 9998 и отступом 1.5rem, кнопки диктовки — отдельным порталом со
+     своим отступом, и оба острова не знали ни друг о друге, ни о нижней
+     навигации: на 720px плашка садилась на панель навигации, а на 1600px
+     соседняя кнопка микрофона накрывала «Сохранить» в панели плана лечения.
+     Координаты, слой и просвет над навигацией теперь задаёт владелец региона —
+     `floatingCorner/CornerDock`.
+
+     Портал в body для раскрытого окна поиска обязателен и остаётся.
      Omnibar монтируется внутри <section class="workspace">, у которой задан
      backdrop-filter: blur(12px) saturate(1.8). Ненулевой backdrop-filter
      создаёт контейнерный блок для потомков с position: fixed, поэтому
-     «прибитая к экрану» плашка поиска на самом деле прибивалась к секции.
+     `fixed inset-0` растягивался по секции, а не по экрану.
      Замерено, scratch/probe-fixed-containing-block.mjs:
-       окно 1600x1100 — секция ровно 1100 высотой, плашка попадала в угол
-         правильно ПО СОВПАДЕНИЮ;
-       окно 390x844 — секция 1637 высотой, плашка оказывалась на y=1532,
-         то есть ниже окна: на телефоне глобальный поиск был недоступен,
-         пока не прокрутишь страницу до самого конца.
-     То же касалось и раскрытого окна поиска с fixed inset-0: оно
-     растягивалось по секции, а не по экрану. */
-  return createPortal(
+       окно 1600x1100 — секция ровно 1100 высотой, попадание в угол было
+         правильным ПО СОВПАДЕНИЮ;
+       окно 390x844 — секция 1637 высотой, элемент оказывался на y=1532,
+         то есть ниже окна.
+     Раскрытое окно поиска — модальный слой, а не фурнитура угла, поэтому оно
+     не переезжает в док: у дока слой ниже модальных окон по шкале main.css. */
+  return (
     <>
-      <AnimatePresence>
-        {!isOmnibarOpen && (
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setOmnibarOpen(true)}
-            className="omnibar-trigger-btn"
-            title="Глобальный поиск и команды (Cmd+K)"
-          >
-            <Search size={18} />
-            <span className="omnibar-trigger-text">Поиск (Cmd+K)</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <CornerDockSlot slot="search">
+        <AnimatePresence>
+          {!isOmnibarOpen && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setOmnibarOpen(true)}
+              className="omnibar-trigger-btn"
+              title={cornerDockLabels.search.title}
+            >
+              <Search size={18} />
+              <span className="omnibar-trigger-text">{cornerDockLabels.search.text}</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </CornerDockSlot>
+      {createPortal(
       <AnimatePresence>
         {isOmnibarOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] px-4 pointer-events-auto">
@@ -214,8 +228,9 @@ export function Omnibar() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
-    </>,
-    document.body
+      </AnimatePresence>,
+      document.body
+      )}
+    </>
   );
 }

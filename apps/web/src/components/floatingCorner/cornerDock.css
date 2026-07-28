@@ -1,0 +1,475 @@
+/* ============================================================
+   ПЛАВАЮЩИЙ УГОЛ — единственный владелец правого нижнего региона.
+
+   Здесь и только здесь задаются координаты, слой и размеры угла. Жильцы
+   (плашка поиска, кнопка справки, кнопка микрофона) не имеют права на
+   собственный `position: fixed`, собственный z-index и собственный отступ:
+   раньше их было три штуки, они не знали друг о друге, и микрофон физически
+   накрывал кнопку «Сохранить» панели плана лечения.
+
+   Геометрию считает `CornerDock.tsx` и публикует тремя переменными:
+     --corner-dock-bar-clearance  высота нижней навигации, измеренная по живому
+                                  элементу (0, если навигации на этой ширине нет)
+     --corner-dock-lift           подъём, чтобы не накрывать кнопку под панелью
+     --corner-dock-reserve-block  сколько низа страница обязана оставить пустым
+   ============================================================ */
+
+.corner-dock {
+	/* Единственный источник истины для отступа от краёв. JS читает его уже
+	   вычисленным (getComputedStyle(host).right), второго значения в коде нет. */
+	--corner-dock-gutter: 1.5rem;
+	--corner-dock-gap: 0.75rem;
+	/* Слой берётся из существующей шкалы main.css: --z-sticky 500 <
+	   угол < --z-drawer-overlay 1000. Угол — постоянная фурнитура экрана, он
+	   обязан пропускать вперёд ящики (1000), модальные окна (2000) и нижнюю
+	   навигацию, и не имеет права висеть поверх диалога. */
+	--corner-dock-z: 900;
+	--corner-dock-control: 3rem;
+	--corner-dock-control-primary: 3.5rem;
+
+	position: fixed;
+	right: var(--corner-dock-gutter);
+	bottom: calc(
+		var(--corner-dock-gutter) + var(--corner-dock-bar-clearance, 0px) +
+			var(--corner-dock-lift, 0px)
+	);
+	z-index: var(--corner-dock-z);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: flex-end;
+	gap: var(--corner-dock-gap);
+	/* Ширина региона ограничена экраном: русские подписи длиннее английских на
+	   30-50%, и панель обязана переноситься, а не обрезаться. */
+	max-width: calc(100vw - var(--corner-dock-gutter) * 2);
+	/* Один stacking context на весь угол. */
+	isolation: isolate;
+	/* Сам регион прозрачен для мыши, кликабельны только его жильцы. */
+	pointer-events: none;
+	/* НАМЕРЕННО без transition на bottom. Владелец региона сбрасывает подъём в
+	   ноль и тут же читает getBoundingClientRect(), чтобы замер шёл от исходного
+	   положения. С анимацией это чтение вернуло бы промежуточное значение
+	   середины перехода, и решение перестало бы быть функцией от раскладки
+	   страницы. Плавность здесь дешевле правильности. */
+}
+
+.corner-dock__slot > * {
+	pointer-events: auto;
+}
+
+/* Слот панели не создаёт собственный бокс: порядок задаётся порядком слотов в
+   разметке, а пустой слот не оставляет после себя лишний зазор. */
+.corner-dock__bar .corner-dock__slot {
+	display: contents;
+}
+
+.corner-dock__bar {
+	display: flex;
+	/* wrap-reverse: если строка не влезает, она переносится ВВЕРХ, а не
+	   обрезается и не наступает на нижнюю навигацию. */
+	flex-wrap: wrap-reverse;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--corner-dock-gap);
+	max-width: 100%;
+}
+
+/* Накладка: временные панели поверх строки управления. По контракту не входит
+   ни в резерв, ни в проверку пересечений. */
+.corner-dock__notice {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--corner-dock-gap);
+	max-width: min(24rem, calc(100vw - var(--corner-dock-gutter) * 2));
+}
+
+.corner-dock__notice:empty {
+	display: none;
+}
+
+/* ---------- КРУГЛЫЕ КНОПКИ УГЛА ---------- */
+.corner-dock__control {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--corner-dock-control);
+	height: var(--corner-dock-control);
+	border-radius: 9999px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink-2);
+	box-shadow: var(--shadow-2);
+	cursor: pointer;
+	transition:
+		background var(--transition-fast, 0.15s ease),
+		border-color var(--transition-fast, 0.15s ease),
+		color var(--transition-fast, 0.15s ease),
+		transform var(--transition-fast, 0.15s ease);
+}
+
+.corner-dock__control:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	transform: translateY(-2px);
+}
+
+.corner-dock__control:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.corner-dock__control--primary {
+	width: var(--corner-dock-control-primary);
+	height: var(--corner-dock-control-primary);
+	background: var(--paper-strong);
+	color: var(--ink);
+}
+
+.corner-dock__control[aria-pressed="true"],
+.corner-dock__control--active {
+	background: var(--teal);
+	border-color: var(--teal-dark);
+	color: var(--on-teal);
+}
+
+.corner-dock__control-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.corner-dock__control--primary .corner-dock__control-icon {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+/* ---------- ПЛАШКА ГЛОБАЛЬНОГО ПОИСКА ----------
+   Класс `.omnibar-trigger-btn` описан в двух местах (main.css ставит её в
+   ЛЕВЫЙ угол, dente-redesign.css ставила в правый). Внутри угла оба описания
+   обязаны потерять силу: положение принадлежит владельцу региона.
+   Специфичность 0,2,0 плюс !important перебивает их независимо от порядка
+   подключения файлов. */
+.corner-dock .omnibar-trigger-btn {
+	position: static !important;
+	inset: auto !important;
+	margin: 0 !important;
+	z-index: auto !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 0.5rem !important;
+	min-height: var(--corner-dock-control) !important;
+	padding: 0.5rem 1rem !important;
+	border-radius: 9999px !important;
+	border: 1px solid var(--line-strong) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	box-shadow: var(--shadow-2) !important;
+	font-size: 0.8125rem !important;
+	font-weight: 600 !important;
+	/* Плашка не обрезает подпись: если места нет, строка переносится вверх. */
+	white-space: nowrap !important;
+	cursor: pointer !important;
+}
+
+/* Без transform: масштаб при наведении задаёт framer-motion инлайновым
+   стилем, а правило с !important его бы перебило и сломало анимацию. */
+.corner-dock .omnibar-trigger-btn:hover {
+	border-color: var(--teal) !important;
+	color: var(--teal-dark) !important;
+}
+
+.corner-dock .omnibar-trigger-btn:focus-visible {
+	outline: 2px solid var(--focus-ring) !important;
+	outline-offset: 2px !important;
+}
+
+[data-theme="dark"] .corner-dock .omnibar-trigger-btn,
+[data-theme="night"] .corner-dock .omnibar-trigger-btn {
+	background: var(--paper-strong) !important;
+}
+
+/* ---------- КОМПАКТНЫЙ РЕЖИМ ----------
+   Включается владельцем региона, когда свободного положения под панелью не
+   нашлось: угол уменьшает собственный след, а не лезет поверх кнопки. */
+.corner-dock[data-corner-density="compact"] {
+	--corner-dock-gap: 0.5rem;
+	--corner-dock-control: 2.5rem;
+	--corner-dock-control-primary: 2.75rem;
+}
+
+.corner-dock[data-corner-density="compact"] .omnibar-trigger-btn {
+	padding: 0.5rem !important;
+	aspect-ratio: 1 / 1;
+	justify-content: center !important;
+}
+
+.corner-dock[data-corner-density="compact"] .omnibar-trigger-text {
+	display: none;
+}
+
+/* ---------- ВРЕМЕННЫЕ ПАНЕЛИ УГЛА ---------- */
+.corner-dock__panel {
+	width: min(22rem, 100%);
+	max-height: 70vh;
+	overflow-y: auto;
+	padding: 1rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+	font-size: 0.8125rem;
+	line-height: 1.5;
+}
+
+.corner-dock__panel-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-bottom: 0.75rem;
+	margin-bottom: 0.75rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.corner-dock__panel-title {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.corner-dock__panel-subtitle {
+	margin: 0;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.corner-dock__panel-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 auto;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+}
+
+.corner-dock__panel-close:hover {
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.corner-dock__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	margin-bottom: 0.75rem;
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.corner-dock__tab {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.375rem 0.5rem;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+	/* Русские подписи вкладок длиннее английских — перенос вместо обрезки. */
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.corner-dock__tab--active {
+	background: var(--teal-soft);
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+}
+
+.corner-dock__hint {
+	margin: 0 0 0.5rem;
+	color: var(--ink-2);
+}
+
+.corner-dock__cmd-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.corner-dock__cmd {
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	background: var(--paper-soft);
+}
+
+.corner-dock__cmd-title {
+	font-weight: 600;
+	color: var(--teal-dark);
+	overflow-wrap: anywhere;
+}
+
+.corner-dock__cmd-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+.corner-dock__note {
+	margin-top: 0.75rem;
+	padding: 0.5rem 0.625rem;
+	border: 1px solid var(--warn-fg);
+	border-radius: 0.75rem;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	font-size: 0.6875rem;
+}
+
+/* Пузырь расшифровки речи. */
+.corner-dock__transcript {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.75rem;
+	max-width: 100%;
+}
+
+.corner-dock__transcript-card {
+	width: min(22rem, 100%);
+	padding: 0.875rem;
+	border-radius: 1rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: var(--shadow-3);
+}
+
+.corner-dock__transcript-head {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.corner-dock__rec-dot {
+	width: 0.625rem;
+	height: 0.625rem;
+	border-radius: 9999px;
+	background: var(--bad-fg);
+}
+
+.corner-dock__rec-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.corner-dock__rec-mode {
+	margin-left: auto;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 0.625rem;
+	font-weight: 600;
+}
+
+.corner-dock__transcript-text {
+	min-height: 2.5rem;
+	margin-bottom: 0.75rem;
+	color: var(--ink);
+	font-size: 0.875rem;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.corner-dock__meter {
+	display: flex;
+	align-items: flex-end;
+	gap: 0.25rem;
+	height: 1.5rem;
+}
+
+.corner-dock__meter-bar {
+	width: 0.375rem;
+	border-radius: 9999px;
+	background: var(--teal);
+}
+
+/* Чип выполненной команды. */
+.corner-dock__action {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	max-width: min(20rem, 100%);
+	padding: 0.75rem;
+	border: 1px solid var(--teal-ring);
+	border-radius: 0.75rem;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	box-shadow: var(--shadow-2);
+}
+
+.corner-dock__action-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	flex: 0 0 auto;
+}
+
+.corner-dock__action-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.corner-dock__action-detail {
+	font-size: 0.6875rem;
+	color: var(--ink-2);
+	overflow-wrap: anywhere;
+}
+
+/* Подсказки диктовки рядом с пузырём — только там, где есть ширина. */
+.corner-dock__side-hints {
+	display: none;
+}
+
+@media (min-width: 60rem) {
+	.corner-dock__side-hints {
+		display: block;
+	}
+}
+
+/* ---------- УЗКИЕ ЭКРАНЫ ----------
+   Просвет над нижней навигацией больше не угадывается числом: его измеряет
+   владелец региона и публикует в --corner-dock-bar-clearance. Здесь остаётся
+   только более плотный отступ от краёв и подпись поиска, скрытая за
+   недостатком ширины. */
+@media (max-width: 52.5rem) {
+	.corner-dock {
+		--corner-dock-gutter: 1rem;
+	}
+
+	.corner-dock .omnibar-trigger-btn {
+		padding: 0.5rem !important;
+		aspect-ratio: 1 / 1;
+		justify-content: center !important;
+	}
+
+	.corner-dock .omnibar-trigger-text {
+		display: none;
+	}
+}

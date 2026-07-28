@@ -663,7 +663,11 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   .dnt-bottom-nav a svg { width: 20px; height: 20px; }
   .dnt-bottom-nav a.active { color: var(--teal-dark); background: var(--teal-soft); font-weight: 700; }
   [data-theme="dark"] .dnt-bottom-nav a.active, [data-theme="night"] .dnt-bottom-nav a.active { color: var(--teal); }
-  main, .app-content { padding-bottom: 100px !important; }
+  /* Резерв низа на узком экране считает владелец плавающего угла: в него уже
+     входит измеренная высота этой навигации плюс высота панели угла. Зашитые
+     100px закрывали навигацию, но не угол, поэтому плашка поиска и кнопка
+     микрофона всё равно оказывались поверх контента. */
+  main, .app-content { padding-bottom: var(--corner-dock-reserve-block, 100px) !important; }
 }
 
 /* ---------- 14. ПОЯВЛЕНИЕ СЕКЦИЙ ---------- */
@@ -781,6 +785,18 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   box-sizing: border-box !important;
 }
 
+/* РЕЗЕРВ ПОД ПЛАВАЮЩИЙ УГОЛ.
+   Владелец угла (`src/components/floatingCorner/CornerDock.tsx`) измеряет свою
+   панель и публикует `--corner-dock-reserve-block` на documentElement. Без этого
+   резерва последний блок страницы упирался в панель угла и его кнопки нельзя
+   было вывести из-под неё прокруткой. Правило идёт ПОСЛЕ shorthand-падинга
+   выше: та же специфичность, тот же !important, побеждает порядком.
+   Fallback 48px — исходное значение, оно действует, пока угол не смонтирован
+   (экран входа, PIN-замок). */
+.app-shell.dente-redesign .workspace {
+  padding-bottom: var(--corner-dock-reserve-block, 48px) !important;
+}
+
 .default-clinic-banner {
   background: var(--paper) !important;
   border: 1px solid var(--warn-fg) !important;
@@ -815,76 +831,25 @@ button[data-tooth-state="missing"] { background: transparent !important; color: 
   flex-shrink: 0 !important;
 }
 
-/* Плавающий угол: снизу справа живут плашка глобального поиска и голосовые
-   кнопки. Раньше обе были прибиты к одной точке bottom: 1.5rem, и плашка с
-   z-index 9998 накрывала нижнюю половину кнопок — замерено, пересечение
-   124x36 на экране 1600x1100. Подпирать кнопки жёстким числом нельзя: на
-   узком экране плашка сама поднимается на 4.5rem, чтобы не лезть на нижнюю
-   навигацию, и жёсткое число снова давало наложение (36x32 при 390px).
-   Одна переменная — единственный источник истины для обоих элементов. */
-:root {
-  --floating-corner-bottom: 1.5rem;
-  /* Высота плашки поиска плюс зазор: на столько выше стоят голосовые кнопки. */
-  --floating-corner-step: 48px;
-}
+/* Плавающий угол переехал под единственного владельца:
+   `src/components/floatingCorner/` — там и разметка региона, и его CSS, и
+   арифметика. Здесь остался только резерв места в потоке страницы.
 
-.omnibar-trigger-btn {
-  position: fixed !important;
-  bottom: var(--floating-corner-bottom) !important;
-  right: 1.5rem !important;
-  left: auto !important;
-  z-index: 9998 !important;
-  background: var(--paper) !important;
-  color: var(--ink) !important;
-  border: 1px solid var(--line-strong) !important;
-  box-shadow: var(--shadow-2) !important;
-  border-radius: 9999px !important;
-  padding: 8px 16px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  transition: all 0.2s ease !important;
-}
-
-.omnibar-trigger-btn:hover {
-  border-color: var(--teal) !important;
-  color: var(--teal-dark) !important;
-  transform: translateY(-2px) !important;
-}
-
-[data-theme="dark"] .omnibar-trigger-btn,
-[data-theme="night"] .omnibar-trigger-btn {
-  background: var(--paper-strong) !important;
-  color: var(--ink) !important;
-  border-color: var(--line-strong) !important;
-}
-
-@media (max-width: 1140px) {
-  .omnibar-trigger-btn {
-    right: 1.5rem !important;
-    left: auto !important;
-  }
-}
-
+   Что было сломано в этом файле раньше:
+   - `.omnibar-trigger-btn` прибивалась к экрану здесь, кнопки диктовки — своим
+     инлайновым `position: fixed` в VoiceAssistantUI.tsx. Два независимых
+     острова, два z-index (9998 и 50), ни один не знал о другом.
+   - Просвет над нижней навигацией задавался числом
+     `--floating-corner-bottom: 4.5rem`. Число угадывало высоту навигации, и на
+     720x1100 угадывало неверно: плашка поиска садилась на панель навигации.
+     Теперь высоту навигации измеряет владелец региона по живому элементу.
+   - Страница не знала, что угол существует, поэтому кнопка «Сохранить» панели
+     плана лечения оказывалась под кнопкой микрофона и становилась недоступной.
+     Резерв ниже — часть ответа: любой элемент страницы можно прокрутить выше
+     панели угла. Вторая часть — подъём панели, он в CornerDock.tsx. */
 @media (max-width: 840px) {
   .app-shell.dente-redesign {
     flex-direction: column !important;
-  }
-  :root {
-    /* Выше нижней навигации. Голосовые кнопки поднимаются вместе с плашкой,
-       потому что считают отступ от той же переменной. */
-    --floating-corner-bottom: 4.5rem;
-  }
-  .omnibar-trigger-btn {
-    right: 1rem !important;
-    left: auto !important;
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-  }
-  .omnibar-trigger-btn span {
-    display: none !important;
   }
   .dnt-bottom-nav {
     display: flex !important;
