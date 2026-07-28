@@ -1,0 +1,276 @@
+# Структурные правила ast-grep для scripts/check-component-mount-reachability.mjs
+#
+# Зачем отдельным файлом, а не строкой внутри скрипта: правила — это и есть
+# определение «что считается компонентом» и «что считается рендером». Их должен
+# читать и оспаривать человек, а не выковыривать из шаблонной строки.
+#
+# Почему ast-grep, а не регулярка. Регулярка по этому репозиторию уже дважды
+# соврала: перепись «45 пустых модулей из 50» и «123 pgTable вместо 126» —
+# оба раза потому, что объявление было многострочным. Импорт вида
+#   import {
+#     Foo,
+#   } from "./Foo";
+# регулярка `import \{([^}]*)\}` поймает, а вот `<Foo\n  prop={1}\n/>` уже нет.
+# Дереву разбора всё равно, где переносы строк.
+#
+# Языки объявлены дважды (Tsx и TypeScript), потому что ast-grep применяет
+# правило только к тем расширениям, которые принадлежат его языку. Импорты и
+# ре-экспорты нужны из обоих: .ts-файл не может отрендерить компонент (в нём
+# нет JSX), но вполне может его ре-экспортировать бочкой, и без правил для
+# TypeScript такой компонент был бы объявлен сиротой ложно.
+
+# ── Что считается компонентом ────────────────────────────────────────────────
+# Экспортированное объявление с именем в PascalCase, в теле которого есть JSX.
+# Это структурное определение, а не совпадение по имени файла: `export const
+# NotAComponent = { a: 1 }` и `export type AlsoNot = {...}` под него не
+# подходят, а `export const Wrapped = React.memo(function Inner(){ return
+# <span/> })` — подходит.
+id: component-decl
+language: Tsx
+rule:
+  any:
+    - pattern: export function $NAME($$$PARAMS) { $$$BODY }
+    - pattern: export const $NAME = ($$$PARAMS) => $$$BODY
+    - pattern: export const $NAME = $WRAPPER($$$WRAPPED)
+    - pattern: export default function $NAME($$$PARAMS) { $$$BODY }
+  has:
+    any:
+      - kind: jsx_element
+      - kind: jsx_self_closing_element
+      - kind: jsx_opening_element
+    stopBy: end
+constraints:
+  NAME:
+    regex: '^[A-Z]'
+
+---
+# ── Что считается рендером ───────────────────────────────────────────────────
+# Имя тега JSX-элемента. Берётся именно поле `name`, а не текст узла, поэтому
+# атрибуты, переносы строк и вложенные элементы не влияют. `nested_identifier`
+# нужен для `<Namespace.Component />`.
+id: jsx-name
+language: Tsx
+rule:
+  any:
+    - kind: identifier
+    - kind: nested_identifier
+  regex: '^[A-Z]'
+  inside:
+    any:
+      - kind: jsx_opening_element
+      - kind: jsx_self_closing_element
+    field: name
+
+---
+# ── Что считается использованием как значения ───────────────────────────────
+# Компонент можно отрендерить и не тегом: `component={Foo}`, `createElement(Foo)`,
+# `element: Foo`. Такие ссылки слабее тега, поэтому в отчёте они отдельной
+# строкой, но мёртвым код от них не становится.
+#
+# `not inside import_statement` обязателен: без него имя из самой строки импорта
+# считалось бы использованием, и любой мёртвый импорт выглядел бы живым — это
+# ровно тот дефект, который скрипт ищет.
+id: pascal-ref-tsx
+language: Tsx
+rule:
+  kind: identifier
+  regex: '^[A-Z]'
+  not:
+    inside:
+      kind: import_statement
+      stopBy: end
+
+---
+id: pascal-ref-ts
+language: TypeScript
+rule:
+  kind: identifier
+  regex: '^[A-Z]'
+  not:
+    inside:
+      kind: import_statement
+      stopBy: end
+
+---
+# ── Рёбра графа: импорты ────────────────────────────────────────────────────
+# ПУТЬ МОДУЛЯ БЕРЁТСЯ МЕТАПЕРЕМЕННОЙ БЕЗ КАВЫЧЕК — `from $SRC`, а не
+# `from "$SRC"`. Это не косметика: в apps/web/src 145 строк импорта записаны
+# одинарными кавычками (47 файлов), включая `import { AuthHub } from
+# './components/auth/AuthHub'` в App.tsx. Шаблон с двойными кавычками их не
+# видит, и первый прогон этого стража объявил сиротами AuthHub, ClinicLogin,
+# Register и ещё десятки живых компонентов. Кавычки снимает скрипт.
+#
+# Каждая форма отдельным правилом, потому что метапеременная в шаблоне
+# `import $DEF from $SRC` жадная и на `import Def, { A } from "x"` захватит весь
+# текст `Def, { A }`. Скрипт поэтому доверяет $DEF только если это одиночный
+# идентификатор, а смешанную форму читает из import-mixed.
+#
+# `kind:` указан рядом с шаблоном везде, где ast-grep иначе отказывается брать
+# шаблон с одной свободной метапеременной («Rule must specify a set of AST kinds»).
+id: import-named
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import { $$$SPECS } from $SRC
+
+---
+id: import-named-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import { $$$SPECS } from $SRC
+
+---
+# Импорт только типов рендером не является и ребром графа рендера не считается.
+id: import-type-named
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import type { $$$SPECS } from $SRC
+
+---
+id: import-type-named-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import type { $$$SPECS } from $SRC
+
+---
+id: import-default
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import $DEF from $SRC
+
+---
+id: import-default-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import $DEF from $SRC
+
+---
+id: import-mixed
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import $DEF, { $$$SPECS } from $SRC
+
+---
+id: import-mixed-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import $DEF, { $$$SPECS } from $SRC
+
+---
+id: import-namespace
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import * as $NS from $SRC
+
+---
+id: import-namespace-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import * as $NS from $SRC
+
+---
+# Импорт ради побочного эффекта. Модуль исполнится, но компонент не отрендерится.
+id: import-side-effect
+language: Tsx
+rule:
+  kind: import_statement
+  pattern: import $SRC
+
+---
+id: import-side-effect-ts
+language: TypeScript
+rule:
+  kind: import_statement
+  pattern: import $SRC
+
+---
+# ── Ленивые цели маршрутов ──────────────────────────────────────────────────
+# Разница между этими двумя правилами и голым `import()` — принципиальная.
+#
+# `lazy(() => import("./X").then((m) => ({ default: m.X })))` — это рендер, и
+# имя экспорта в нём записано явно, поэтому привязка точная. Ровно так App.tsx
+# грузит все 16 экранов, а AppShell.tsx — сам App.
+#
+# А `import("./ScheduleView")` без обёртки — это предзагрузка чанка
+# (workspacePreload.ts тянет так 14 экранов), и рендером она не является.
+# Считать её ребром графа рендера нельзя: один этот файл отбелил бы все экраны
+# сразу, и страж перестал бы что-либо доказывать.
+id: lazy-target-named
+language: Tsx
+rule:
+  kind: call_expression
+  pattern: "import($SRC).then(($MOD) => ({ default: $MOD.$NAME }))"
+
+---
+id: lazy-target-named-ts
+language: TypeScript
+rule:
+  kind: call_expression
+  pattern: "import($SRC).then(($MOD) => ({ default: $MOD.$NAME }))"
+
+---
+id: lazy-target-default
+language: Tsx
+rule:
+  kind: call_expression
+  pattern: lazy(() => import($SRC))
+
+---
+id: lazy-target-default-ts
+language: TypeScript
+rule:
+  kind: call_expression
+  pattern: lazy(() => import($SRC))
+
+---
+# Голый динамический импорт: зависимость модуля, но не рендер.
+id: import-dynamic
+language: Tsx
+rule:
+  kind: call_expression
+  pattern: import($SRC)
+
+---
+id: import-dynamic-ts
+language: TypeScript
+rule:
+  kind: call_expression
+  pattern: import($SRC)
+
+---
+# Ре-экспорт: бочка проносит имя дальше, сама ничего не рендерит.
+#
+# Здесь не шаблон, а kind + поле `source`, потому что шаблон
+# `export { $$$SPECS } from $SRC` ast-grep 0.44.1 отвергает («Multiple AST nodes
+# are detected»), а вариант с двойными кавычками не увидел бы одинарные. Форма
+# через поле покрывает обе записи — и `export { X } from`, и `export * from` —
+# одним правилом, ценой того, что список имён из неё не достаётся.
+#
+# Замерено на текущем дереве: в apps/web/src ровно ТРИ ре-экспорта
+# (ctPlanningTools.tsx:20, AppHelpers.tsx:322, AppHelpers.tsx:323), и ни один не
+# проносит компонент — только словари и типы. То есть бочек компонентов здесь
+# сейчас нет, и потеря списка имён ничего не искажает. Если бочка появится,
+# компонент из неё будет числиться достижимым по файлу, но «объявлен и не
+# рендерится» по имени — это ложное срабатывание, и лечится оно возвратом
+# списка имён, а не внесением в исключения.
+id: reexport-source
+language: Tsx
+rule:
+  kind: export_statement
+  has: { field: source, kind: string }
+
+---
+id: reexport-source-ts
+language: TypeScript
+rule:
+  kind: export_statement
+  has: { field: source, kind: string }
