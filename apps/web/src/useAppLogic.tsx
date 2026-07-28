@@ -2325,6 +2325,26 @@ export function useAppLogic(): any {
 	const localImagingRecoveryHydratedOrganizationIdRef = useRef<string | null>(
 		null,
 	);
+	/*
+	 * Последняя карточка, о которой уже отправлена отметка просмотра.
+	 *
+	 * Без неё запрос уходил бы на каждый перерисовке рабочего места с тем же
+	 * пациентом: карточка открыта весь приём, а строка в истории переписывалась
+	 * бы десятки раз подряд.
+	 */
+	const recordedPatientViewRef = useRef<string | null>(null);
+	/*
+	 * Счётчик состоявшихся отметок просмотра.
+	 *
+	 * Виджет «Недавние» читает историю при своём появлении, а отметка уходит
+	 * отсюда — и почти всегда позже. Пациент восстанавливается из настроек ещё
+	 * до того, как виджет смонтируется, поэтому «перечитать при смене пациента»
+	 * не спасает: смены не происходит. Проверено живьём — счётчик оставался
+	 * нулём, хотя строка в базе уже была. Номер меняется только после успешного
+	 * ответа сервера, и виджет перечитывает список именно тогда, когда там
+	 * появилось что-то новое.
+	 */
+	const [recentPatientViewsVersion, setRecentPatientViewsVersion] = useState(0);
 	if (initialUiPreferencesRef.current === null) {
 		initialUiPreferencesRef.current = loadUiPreferences();
 	}
@@ -3673,6 +3693,38 @@ export function useAppLogic(): any {
 		dashboard?.clinicSettings?.profile?.organizationId,
 		uiPreferencesHydrated,
 	]);
+
+	/*
+	 * Отметка об открытии карточки пациента.
+	 *
+	 * Виджет «Недавние» в шапке рабочего места читал таблицу
+	 * recent_patient_history, в которую не писал никто и никогда: ни одной
+	 * вставки во всём сервере, ноль строк в живой базе. Каждому пользователю
+	 * каждый день показывалось «История просмотров пуста», и выглядело это как
+	 * «функция есть, просто ещё не накопилось».
+	 *
+	 * Отметка ставится здесь, а не в обработчиках нажатий: карточка выбирается
+	 * из списка, из поиска, из задачи, из расписания и из самого виджета —
+	 * пришлось бы дописывать пять мест и забыть шестое. Смена selectedPatientId
+	 * — единственное общее событие.
+	 *
+	 * Ошибка запроса намеренно проглатывается: история просмотров не стоит
+	 * того, чтобы мешать врачу работать сообщением о сбое.
+	 */
+	useEffect(() => {
+		if (!selectedPatientId || !dashboard) return;
+		if (recordedPatientViewRef.current === selectedPatientId) return;
+		recordedPatientViewRef.current = selectedPatientId;
+		void fetch("/api/hr/recent-patients", {
+			method: "POST",
+			headers: auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify({ patientId: selectedPatientId }),
+		})
+			.then((response) => {
+				if (response.ok) setRecentPatientViewsVersion((version) => version + 1);
+			})
+			.catch(() => {});
+	}, [selectedPatientId, dashboard]);
 
 	useEffect(() => {
 		const organizationId =
@@ -13779,6 +13831,7 @@ export function useAppLogic(): any {
 		imagingViewerCapabilities,
 		imagingViewerHref,
 		imagingViewerImageStyle,
+		recentPatientViewsVersion,
 		imagingViewerNote,
 		imagingViewerNoteMissingId,
 		imagingViewerNoteReady,

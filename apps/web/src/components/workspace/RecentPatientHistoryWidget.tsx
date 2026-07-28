@@ -13,42 +13,62 @@ interface RecentPatientItem {
 }
 
 export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }> = ({ compactDropdown = false }) => {
-	let auth: any = null;
-	let selectPatient: any = () => {};
-	try {
-		const ctx = useAppLogicContext();
-		auth = ctx?.auth;
-		selectPatient = ctx?.selectPatient ?? (() => {});
-	} catch {
-		// Optional fallback when rendered outside AppLogicProvider
-	}
+	const context = useAppLogicContext();
+	const auth = context?.auth;
+	/*
+	 * Карточку открывает setSelectedPatientId.
+	 *
+	 * Здесь стояло ctx?.selectPatient ?? (() => {}) — поля selectPatient в общем
+	 * контексте нет вовсе, ни одного объявления во всём проекте. Пустая функция
+	 * молча подставлялась вместо него, и нажатие на пациента только меняло адрес
+	 * на #patients: раздел открывался на том, кто был выбран раньше. Ошибки при
+	 * этом не возникало, и понять, что переход не сработал, можно было только
+	 * заметив чужую фамилию.
+	 */
+	const selectPatientById = context?.setSelectedPatientId;
 	const [patients, setPatients] = useState<RecentPatientItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [failed, setFailed] = useState<boolean>(false);
 	const [isOpen, setIsOpen] = useState<boolean>(false);
+	/*
+	 * Список перечитывается после того, как сервер принял отметку о просмотре.
+	 *
+	 * Сначала здесь стояла смена выбранного пациента — и не работала: пациент
+	 * восстанавливается из настроек ещё до появления виджета, смены не
+	 * происходит, а список читается раньше, чем отметка доедет. Проверено
+	 * живьём: строка в базе была, а счётчик в шапке показывал ноль.
+	 */
+	const recordedViews = context?.recentPatientViewsVersion;
 
-	const fetchRecent = () => {
+	useEffect(() => {
+		let active = true;
 		fetch("/api/hr/recent-patients", {
 			headers: auth ? auth.denteClinicalReadHeaders() : {},
 		})
-			.then((res) => res.json())
+			.then(async (response) => {
+				// Разбор только успешного ответа: на 401 и 500 приходит не список,
+				// и «пустая история» вместо ошибки — это враньё пользователю.
+				if (!response.ok) throw new Error(`История карточек: ответ ${response.status}`);
+				return response.json();
+			})
 			.then((data) => {
+				if (!active) return;
 				setPatients(Array.isArray(data) ? data : []);
+				setFailed(false);
 				setLoading(false);
 			})
-			.catch((err) => {
-				console.error("[RecentPatientHistoryWidget fetch error]:", err);
+			.catch(() => {
+				if (!active) return;
+				setFailed(true);
 				setLoading(false);
 			});
-	};
-
-	useEffect(() => {
-		fetchRecent();
-	}, []);
+		return () => {
+			active = false;
+		};
+	}, [auth, recordedViews]);
 
 	const handleOpenPatient = (patId: string) => {
-		if (selectPatient) {
-			selectPatient(patId);
-		}
+		selectPatientById?.(patId);
 		window.location.hash = "#patients";
 		setIsOpen(false);
 	};
@@ -80,8 +100,14 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 
 					{loading ? (
 						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>Загрузка...</div>
+					) : failed ? (
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+							Не удалось прочитать историю. Обновите страницу.
+						</div>
 					) : patients.length === 0 ? (
-						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>История просмотров пуста</div>
+						<div style={{ padding: "16px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+							Здесь появятся карточки, которые вы открывали
+						</div>
 					) : (
 						patients.map((pat) => (
 							<button
@@ -117,18 +143,21 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 				<div className="flex items-center space-x-2">
 					<Clock className="w-5 h-5 text-sky-500" />
 					<h3 className="font-semibold text-sky-600 dark:text-sky-400">
-						Быстрый переход: Недавно просмотренные карточки пациентов
+						Карточки, которые вы открывали недавно
 					</h3>
 				</div>
-				<span className="text-xs px-2 py-0.5 rounded border bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800 font-medium">
-					CRM Quick Nav
-				</span>
 			</div>
 
 			{loading ? (
 				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">Загрузка...</div>
+			) : failed ? (
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
+					Не удалось прочитать историю. Обновите страницу.
+				</div>
 			) : patients.length === 0 ? (
-				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">Нет недавних карточек</div>
+				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
+					Здесь появятся карточки, которые вы открывали
+				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 					{patients.map((pat) => (

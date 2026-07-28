@@ -7,7 +7,7 @@ import {
   updateClinicalRuleSchema
 } from "@dental/shared";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
-import { requireOrganizationId } from "../security/identity.js";
+import { requireOrganizationId, requireStaffIdentity } from "../security/identity.js";
 import { evaluateClinicalRulesInDb, createClinicalRuleInDb, updateClinicalRuleInDb } from "../db/clinicalQuery.js";
 import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
 import { CLINICAL_PHASE_CODES, ClinicalRouter, isClinicalPhaseCode } from "../services/clinical/ClinicalRouter.js";
@@ -292,15 +292,59 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getPricelistDoctorPayrollsFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #46: рабочее_место::история_последних_просмотренных_карточек
+	/*
+	 * История последних открытых карточек.
+	 *
+	 * Была только выборка. В таблицу recent_patient_history не писал никто и
+	 * никогда — ни одной вставки во всём сервере, ноль строк в живой базе. Виджет
+	 * «Недавние» в шапке рабочего места показывал «История просмотров пуста»
+	 * каждому пользователю каждый день с момента появления, и выглядело это как
+	 * «функция есть, просто ещё не накопилось».
+	 *
+	 * История личная: сотрудник видит свои открытия, а не чужие, поэтому нужен
+	 * не только идентификатор клиники, но и подписанный вход сотрудника.
+	 */
 	app.get("/api/hr/recent-patients", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		const identity = requireStaffIdentity(request, reply);
+		if (!identity) return;
 		const { getRecentPatientHistoryFromDb } = await import("../db/recentPatientHistoryQuery.js");
-		return reply.status(200).send(await getRecentPatientHistoryFromDb(orgId));
+		return reply
+			.status(200)
+			.send(await getRecentPatientHistoryFromDb(identity.organizationId!, identity.userId!));
+	});
+
+	/*
+	 * Отметка об открытии карточки — недостающая половина той же функции.
+	 *
+	 * Идентификатор пациента принимается из тела, но проверяется по организации
+	 * из подписанного токена: подставить чужого пациента нельзя. Неизвестный
+	 * пациент — 404, а не молчаливое согласие: иначе в историю попадали бы
+	 * записи о карточках, которых нет.
+	 */
+	app.post("/api/hr/recent-patients", async (request, reply) => {
+		const identity = requireStaffIdentity(request, reply);
+		if (!identity) return;
+		const body = request.body as { patientId?: unknown } | undefined;
+		const patientId = typeof body?.patientId === "string" ? body.patientId : "";
+		if (!patientId) {
+			return reply.status(400).send({
+				error: "PatientIdRequired",
+				message: "Не указан пациент, карточку которого открыли.",
+			});
+		}
+		const { recordPatientViewInDb } = await import("../db/recentPatientHistoryQuery.js");
+		const result = await recordPatientViewInDb(
+			identity.organizationId!,
+			identity.userId!,
+			patientId,
+		);
+		if (!result.recorded) {
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
+		return reply.status(200).send({ recorded: true });
 	});
 
 	// COMPETITOR FEATURE #47: crm::конструктор_типов_задач_без_привязки_к_визиту
