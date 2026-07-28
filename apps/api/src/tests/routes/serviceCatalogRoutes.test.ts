@@ -64,11 +64,20 @@ after(async () => {
 describe("прайс услуг: адреса записи существуют", () => {
 	for (const endpoint of CATALOG_ENDPOINTS) {
 		test(`${endpoint.method} ${endpoint.url} обслуживается сервером`, async () => {
-			const response = await app.inject({
-				method: endpoint.method,
-				url: endpoint.url,
-				payload: endpoint.method === "DELETE" ? undefined : {},
-			});
+			/*
+			 * Поле payload не передаётся ВОВСЕ, когда тела нет, а не передаётся
+			 * равным undefined. При exactOptionalPropertyTypes это разные вещи, и
+			 * проверка типов тестов отвергает второе — верно отвергает. Разница не
+			 * умозрительная: у DELETE с заявленным телом и без него Fastify ведёт
+			 * себя по-разному, и пустое тело при объявленном content-type даёт
+			 * FST_ERR_CTP_EMPTY_JSON_BODY — падало бы само доказательство, а не
+			 * маршрут.
+			 */
+			const response = await app.inject(
+				endpoint.method === "DELETE"
+					? { method: endpoint.method, url: endpoint.url }
+					: { method: endpoint.method, url: endpoint.url, payload: {} },
+			);
 
 			assert.notEqual(
 				response.statusCode,
