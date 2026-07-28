@@ -330,7 +330,29 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * --brand-500, на которые эти листы ссылались, остаются нужны живым файлам
 	 * (ScannerView.css, styles/main.css, settings/SettingsMessengersTab.css).
 	 */
-	"components/Odontogram.tsx:Odontogram",
+	/*
+	 * components/Odontogram.tsx УДАЛЁН — вторая, локальная зубная формула.
+	 *
+	 * Причина снятия записана на месте замены, PatientsView.tsx:687-706, и она
+	 * клиническая: состояния зубов жили в patientStore.odontogramState и на сервер
+	 * НЕ сохранялись (отмеченный кариес исчезал при перезагрузке), стор был один на
+	 * всё приложение без привязки к пациенту (формула одного пациента
+	 * показывалась бы у всех), и компонент рендерился даже без выбранного пациента.
+	 * Живая замена — components/odontogram/OdontogramModule.tsx: ходит в
+	 * /api/patients/:id/tooth-states, умеет поверхности, детскую формулу,
+	 * мультивыбор и историю зуба.
+	 *
+	 * Сирота вдобавок печатала человеку латиницу — подсказка над зубом
+	 * «Зуб 26: Caries» и легенда из Healthy/Caries/Filling — и зашивала шесть hex-цветов
+	 * против правила тем.
+	 *
+	 * Вместе с последним читателем удалены и сами поля стора (odontogramState,
+	 * setToothStatus, тип ToothStatus): разбор — в store/patientStore.ts на их
+	 * месте. Порядок был обязателен: писатель формулы (смонтированный
+	 * VisiographAnalyzer) сначала переведён на живой серверный адрес в 9e7c96eab, и
+	 * только потом снят последний читатель — иначе запись «в никуда» осталась бы в
+	 * дереве без единого следа.
+	 */
 	/*
 	 * QrGatewayPanel удалён, поэтому строки здесь больше нет.
 	 *
@@ -395,8 +417,28 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	"components/settings/SingleSessionEnforcementsWidget.tsx:SingleSessionEnforcementsWidget",
 	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/visit/VisitDictation.tsx:VisitDictation",
-	"components/workspace/shift/RoleFocusStrip.tsx:RoleFocusStrip",
-	"components/workspace/shift/ShiftIntelligence.tsx:ShiftIntelligence",
+	/*
+	 * RoleFocusStrip и ShiftIntelligence УДАЛЕНЫ. Обе — копии того, что экран смены
+	 * уже рисует у себя, и обе сняты сознательно; причина в каждом случае записана
+	 * на месте снятия, в живом ShiftView.tsx.
+	 *
+	 * ShiftIntelligence.tsx:17-18 объявлял className="shift-intelligence" и
+	 * aria-label="Операционный контроль смены", а живой ShiftView.tsx:439 рендерит
+	 * секцию с ТЕМ ЖЕ классом и ТЕМ ЖЕ aria-label слово в слово. Смонтировать копию
+	 * значило бы получить на экране смены два «операционных контроля» с одинаковым
+	 * доступным именем — программе чтения с экрана их не различить.
+	 *
+	 * RoleFocusStrip снят по причине, записанной в ShiftView.tsx:380-388: полоса
+	 * «Фокус: <роль>» повторяла карточку роли ниже на том же экране слово в слово, а
+	 * чипы прав доступа («пишет: …», «… недоступна») — это настройки, а не рабочий
+	 * экран смены. На её месте живёт секция shift-todo «Что сделать сейчас»
+	 * (ShiftView.tsx:389) — то есть место занято тем, что смене действительно нужно.
+	 *
+	 * Каталог components/workspace/shift/ после этого пуст и удалён вместе с ними.
+	 * Мёртвый CSS класса .role-focus-strip остаётся в общих таблицах
+	 * (styles/main.css, styles/dente-redesign.css, styles/overflow-fixes.css) —
+	 * это чужая зона, вынесено долгом ведущему.
+	 */
 ];
 
 /**
@@ -405,7 +447,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 15;
+const LEGACY_BACKLOG_CEILING = 12;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {

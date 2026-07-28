@@ -12,12 +12,26 @@ import {
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
-export type ToothStatus = "Healthy" | "Caries" | "Filling" | "Missing" | "Implant" | "Crown";
-
+/*
+ * Здесь жили odontogramState и setToothStatus — второе, локальное хранилище
+ * состояний зубов. УДАЛЕНЫ вместе с последним читателем и последним писателем.
+ *
+ * ЧЕМ ЭТО БЫЛО ОПАСНО ДЛЯ КЛИНИКИ. Стор был один на всё приложение, без привязки
+ * к пациенту, и на сервер не сохранялся: формула одного пациента показывалась бы
+ * у всех остальных, а отмеченный кариес исчезал бы при перезагрузке. Читал его
+ * ровно один файл — несмонтированный components/Odontogram.tsx (удалён этим же
+ * коммитом), а писал смонтированный разбор снимка VisiographAnalyzer, который
+ * печатал врачу «Внесено в зубную формулу», не записав ничего (починено в
+ * 9e7c96eab: находки уходят на /api/patients/:id/tooth-states/batch).
+ *
+ * Единственное настоящее хранилище состояний зубов — таблица tooth_states на
+ * сервере; на экране её показывает components/odontogram/OdontogramModule.tsx.
+ * Тип состояния зуба тоже один и живёт рядом с формулой
+ * (components/odontogram/ToothChart.tsx, ToothState): здешний ToothStatus
+ * расходился с сервером — в нём было значение «Filling», которого в перечислении
+ * сервера нет вовсе (там «Filled»).
+ */
 export interface PatientStore {
-  odontogramState: Record<number, ToothStatus>;
-  setToothStatus: (toothNumber: number, status: ToothStatus) => void;
-
   selectedPatientId: string | null;
   setSelectedPatientId: (val: string | null | ((prev: string | null) => string | null)) => void;
 
@@ -60,11 +74,6 @@ export interface PatientStore {
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
-  odontogramState: {},
-  setToothStatus: (toothNumber, status) => set((state) => ({ 
-    odontogramState: { ...state.odontogramState, [toothNumber]: status } 
-  })),
-
   selectedPatientId: initialUiPreferences.selectedPatientId ?? null,
   setSelectedPatientId: (val) => set((state) => ({ selectedPatientId: typeof val === "function" ? val(state.selectedPatientId) : val })),
 
