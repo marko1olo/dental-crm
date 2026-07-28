@@ -51,6 +51,27 @@ function expirationState(isoDate: string): { label: string; className: string } 
 	return { label: `Годен до ${readable}`, className: "" };
 }
 
+/**
+ * Количество штук по-человечески.
+ *
+ * Правила списания приходят с сервера не разобранными (rulesList объявлен any[]),
+ * а колонки quantity_to_deduct и stock_quantity объявлены numeric без mode
+ * "number" — drizzle отдаёт их СТРОКАМИ прямо из базы, вместе с нулями до
+ * заявленной точности. На экране это выглядело как «Списание: 1.0000 шт. |
+ * Текущий остаток: 10.000 шт.»: машинная запись с точкой вместо запятой, которую
+ * кладовщику читать незачем.
+ *
+ * toLocaleString здесь уместен именно потому, что он отбрасывает хвостовые нули:
+ * «1.0000» становится «1», «1.5000» — «1,5». Для денег так делать нельзя (там
+ * пропадали бы копейки, для них есть money()), а для штук это ровно то, что
+ * человек пишет от руки.
+ */
+function quantityLabel(value: unknown): string {
+	const parsed = Number(value);
+	if (!Number.isFinite(parsed)) return "—";
+	return parsed.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
+}
+
 /** Русское склонение дней: 1 день, 2 дня, 5 дней. */
 function daysLabel(count: number): string {
 	const lastTwo = count % 100;
@@ -420,9 +441,48 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 														marginTop: 2,
 													}}
 												>
-													Списание: {rule.quantityToDeduct} шт. | Текущий
-													остаток: {rule.stockQuantity} шт.
+													Списание: {quantityLabel(rule.quantityToDeduct)} шт.,
+													текущий остаток: {quantityLabel(rule.stockQuantity)}{" "}
+													шт.
 												</div>
+												{/*
+												  Правило, которое не сработает, надо назвать вслух.
+
+												  Строка показывала расход рядом с остатком и молчала,
+												  даже когда списывать уже нечего: правило выглядело
+												  рабочим. Последствие проверено по коду сервера
+												  (apps/api/src/routes/diary.ts): при нехватке остатка
+												  списание не урезается, а бросает InsufficientStock —
+												  вся транзакция подписания откатывается, приём НЕ
+												  подписывается. Врач узнаёт об этом в конце приёма,
+												  когда исправлять уже некогда, поэтому предупреждение
+												  стоит здесь, при настройке.
+
+												  Сравниваем через Number: обе величины приходят из базы
+												  СТРОКАМИ (numeric без mode "number"), а у строк «10»
+												  меньше «3» — сравнение по тексту врало бы ровно на
+												  опасных числах.
+
+												  Признак необходимый, но не достаточный: сервер требует
+												  quantityToDeduct * количество услуги в приёме, а
+												  количество здесь неизвестно. При количестве услуги
+												  больше единицы подписание может отказать и без этого
+												  предупреждения.
+												*/}
+												{Number(rule.quantityToDeduct) >
+												Number(rule.stockQuantity) ? (
+													<div
+														style={{
+															fontSize: 12,
+															color: "var(--tomato)",
+															marginTop: 4,
+															fontWeight: 600,
+														}}
+													>
+														Остатка не хватит: приём с этой услугой не
+														подпишется, пока материал не оприходован.
+													</div>
+												) : null}
 											</div>
 											<button
 												type="button"
