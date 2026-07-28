@@ -9,7 +9,10 @@
  * - История сканов пациента с загрузкой при открытии
  * - Рендеринг markdown-отчёта с подсветкой разделов
  * - Before/After image slider с CSS-enhanced режимом
- * - Автоматическое обновление Odontogram через patientStore
+ * - Запись находок в ЖИВУЮ зубную формулу пациента (POST
+ *   /api/patients/:id/tooth-states/batch — тот же адрес, что у формулы на
+ *   карточке пациента). Прежде находки уходили в store/patientStore, который
+ *   читал только несмонтированный components/Odontogram.tsx, — то есть в никуда.
  * - Голосовое озвучивание отчёта
  * - Печать отчёта
  */
@@ -51,10 +54,16 @@ import { countLabel } from '../../AppHelpers';
  * `adminSecretOverride ?? clinicalAdminSecretSession`).
  */
 import { useAppLogicContext } from '../../contexts/AppLogicContext';
-import { usePatientStore, type ToothStatus } from '../../store/patientStore';
+import { usePatientStore } from '../../store/patientStore';
+// Состояния ЖИВОЙ зубной формулы и их русские названия. Берутся из того же
+// файла, что рисует формулу врачу (components/odontogram/ToothChart.tsx), а
+// перечисление там обязано совпадать с toothStateValues на сервере: свой
+// список здесь означал бы третий словарь состояний зуба в одном приложении.
+import { TOOTH_STATE_LABELS, type ToothState } from '../odontogram/ToothChart';
 import { ShadowAnalystImageSlider } from './ShadowAnalystImageSlider';
+import { planVisiographFindings } from './visiographFindings';
 import { PanelLoadFailure } from '../PanelLoadFailure';
-import { panelStateText, resolvePanelPhase, type PanelSubject } from '../../lib/panelStateText';
+import { actionFailureToast, panelStateText, resolvePanelPhase, type PanelSubject } from '../../lib/panelStateText';
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
@@ -80,15 +89,11 @@ interface AiToothState {
   state: string;
 }
 
-// ─── Маппинг AI-статусов → ToothStatus в одонтограмме ────────────────────────
-
-const AI_TO_ODONTOGRAM: Record<string, ToothStatus> = {
-  treatment: 'Caries',
-  planned: 'Filling',
-  watch: 'Caries',
-  done: 'Filling',
-  missing: 'Missing',
-};
+// Маппинг статусов ИИ на состояния живой формулы, разбор ответа модели и
+// причины, по которым часть находок в карту не пишется, живут в
+// ./visiographFindings — это решение о содержимом карты пациента, и оно закрыто
+// прогоном src/tests/visiographFindings.test.ts. Внутри компонента его нельзя
+// было проверить ничем, кроме платного вызова внешней модели.
 
 // ─── Markdown-рендерер (лёгкий, без зависимостей) ────────────────────────────
 
@@ -200,7 +205,7 @@ export function VisiographAnalyzer() {
   // прошли бы проверку и запустили два платных вызова ИИ.
   const analysisInFlightRef = useRef(false);
 
-  const { selectedPatientId, setToothStatus } = usePatientStore();
+  const { selectedPatientId } = usePatientStore();
 
   /*
    * ЗАГОЛОВКИ ОХРАНЫ. ЭТА ПАНЕЛЬ БЫЛА МЁРТВА У ЗАКАЗЧИКА ЦЕЛИКОМ, и увидеть это
@@ -224,7 +229,7 @@ export function VisiographAnalyzer() {
    * показывают — ловит `npm run check:guarded-headers`.
    *
    * ПОЧЕМУ ЧЕРЕЗ ref. `processFile` мемоизирован (useCallback по
-   * [selectedPatientId, setToothStatus]), и взятый в его замыкание `auth` застыл бы
+   * [selectedPatientId]), и взятый в его замыкание `auth` застыл бы
    * на том отрисовывании, когда секрета в сеансе ещё не было — он появляется после
    * разблокировки раздела, и 403 держался бы до перезагрузки страницы. Дописать
    * `auth` в зависимости тоже нельзя: useAuthLogic возвращает НОВЫЙ объект на каждом
@@ -296,6 +301,15 @@ export function VisiographAnalyzer() {
    */
   const [appliedToothCodes, setAppliedToothCodes] = useState<string[]>([]);
   const [applyNotice, setApplyNotice] = useState<string | null>(null);
+  /*
+   * Отказ записи В ЗУБНУЮ ФОРМУЛУ. Отдельно и от `error` (там «разбора нет
+   * вовсе»), и от `saveFailure` (там «снимок и заключение не легли в карту»):
+   * формула и архив снимков — две разные записи в карте пациента, они уходят
+   * разными запросами и отказать могут по одной, а врач должен знать, ЧТО именно
+   * не сохранилось. Без этого признака отказ записи формулы был бы невидим —
+   * ровно так и жил прежний дефект.
+   */
+  const [formulaFailure, setFormulaFailure] = useState<string | null>(null);
   /*
    * Снимок открыт из архива, а не разобран сейчас. Тогда про зубную формулу
    * ничего не утверждаем: этот разбор применялся когда-то раньше, и сказать
@@ -400,6 +414,49 @@ export function VisiographAnalyzer() {
     }
   };
 
+  /**
+   * Запись одной группы зубов в живую формулу пациента.
+   *
+   * Адрес и формат тела — те же, что у смонтированной формулы
+   * (OdontogramModule.updateToothState): POST
+   * /api/patients/:patientId/tooth-states/batch, тело
+   * `{ toothNumbers, state }`. Второй способ писать состояние зуба заводить
+   * нельзя — сервер в этом же запросе ведёт историю зуба и рассылает живое
+   * обновление UPDATE_ODONTOGRAM, благодаря которому открытая формула
+   * показывает находки сразу, без перезагрузки страницы.
+   *
+   * Пишущие заголовки обязательны: маршрут закрыт
+   * requireResolvedStaffOrAdminOrganizationId, то есть требует И токен кабинета,
+   * И токен сотрудника. Голый fetch получил бы 401, и экран показал бы пустоту
+   * вместо отказа — этот класс дефекта в проекте уже встречался.
+   *
+   * Возвращает null при успехе и человеческий текст отказа иначе.
+   */
+  const writeToothStatesToChart = async (
+    patientId: string,
+    toothNumbers: number[],
+    state: ToothState,
+  ): Promise<string | null> => {
+    const action = `Отметка «${TOOTH_STATE_LABELS[state]}» по снимку на ${countLabel(toothNumbers.length, 'зубе', 'зубах', 'зубах')} ${toothNumbers.join(', ')} не внесена в зубную формулу`;
+    try {
+      const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+        method: 'POST',
+        headers: denteClinicalMutationHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ toothNumbers, state }),
+      });
+      if (!res.ok) {
+        const rawBody = await res.text();
+        console.error(`[VisiographAnalyzer] формула не обновлена, ${res.status} ${rawBody.slice(0, 300)}`);
+        return `${actionFailureToast(action, res.status)} Поставьте отметку на схеме зубов руками.`;
+      }
+      return null;
+    } catch (err) {
+      console.error('[VisiographAnalyzer] запрос обновления формулы не выполнен', err);
+      // До сервера не дошли: кода ответа нет, придумывать его нельзя.
+      return `${actionFailureToast(action, null)} Поставьте отметку на схеме зубов руками.`;
+    }
+  };
+
   // ── File processing ─────────────────────────────────────────────────────
   const processFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -419,6 +476,7 @@ export function VisiographAnalyzer() {
     setIsAnalyzing(true);
     setError(null);
     setSaveFailure(null);
+    setFormulaFailure(null);
     setAppliedToothCodes([]);
     setApplyNotice(null);
     setIsHistoryView(false);
@@ -494,41 +552,58 @@ export function VisiographAnalyzer() {
       }
 
       /*
-       * ПРИМЕНЕНИЕ НАХОДОК К ЗУБНОЙ ФОРМУЛЕ.
+       * ПРИМЕНЕНИЕ НАХОДОК К ЖИВОЙ ЗУБНОЙ ФОРМУЛЕ ПАЦИЕНТА.
        *
-       * БЫЛО: `AI_TO_ODONTOGRAM[state] ?? 'Caries'`. Любое НЕузнанное описание
-       * состояния — опечатка модели, новое слово, пустая строка — становилось
-       * диагнозом «Кариес» в карте пациента. Это выдуманный факт о пациенте: по
-       * нему потом строится план лечения и смета. Незнакомое слово означает
-       * «непонятно», а не «кариес», поэтому теперь такой зуб в формулу НЕ
-       * пишется вовсе, а врачу называется отдельно — он посмотрит сам.
-       *
-       * БЫЛО: `parseInt(code, 10)` + проверка только на NaN. «0», «99», «12abc»
-       * проходили и заводили в формуле ключ, которого нет ни в одном ряду FDI.
-       * Теперь номер проверяется общим правилом FDI.
+       * БЫЛО: `setToothStatus(...)` — запись в store/patientStore, который
+       * читает только несмонтированный components/Odontogram.tsx. Разбор
+       * адресата и маппинга лежит в ./visiographFindings. Коротко: экран сообщал
+       * врачу о записи в карту, которой не было.
+       */
+      const plan = planVisiographFindings(aiResult.toothStates);
+      for (const code of [...plan.unreadableCodes, ...plan.noFormulaStateCodes]) {
+        console.warn(`[VisiographAnalyzer] находка не применена: зуб «${code}»`);
+      }
+
+      /*
+       * Пациент проверен дважды не зря: `patientAtStart` — тот, чей снимок
+       * разбирали, и запись обязана уйти именно ему. Совпадение с текущим уже
+       * проверено выше, поэтому здесь остаётся только случай «пациент не выбран
+       * вовсе»: тогда писать некуда, и об этом говорится вслух — прежний код в
+       * этом случае молча писал в стор без привязки к пациенту.
        */
       const appliedCodes: string[] = [];
-      const skippedCodes: string[] = [];
-      if (aiResult.toothStates && Object.keys(aiResult.toothStates).length > 0) {
-        for (const [code, state] of Object.entries(aiResult.toothStates)) {
-          // Number, а не parseInt: parseInt('12abc') = 12, и мусор проходил.
-          const toothNum = Number(code.trim());
-          const mapped = AI_TO_ODONTOGRAM[state];
-          if (!isValidFdiToothNumber(toothNum) || !mapped) {
-            skippedCodes.push(code);
-            console.warn(`[VisiographAnalyzer] находка не применена: зуб «${code}», состояние «${state}»`);
-            continue;
-          }
-          setToothStatus(toothNum, mapped);
-          appliedCodes.push(code);
+      const writeFailures: string[] = [];
+      if (plan.groups.length > 0 && !patientAtStart) {
+        setFormulaFailure(
+          'Пациент не выбран, поэтому находки НЕ внесены в зубную формулу. Откройте карту пациента и загрузите снимок ещё раз.',
+        );
+      } else if (plan.groups.length > 0 && patientAtStart) {
+        for (const group of plan.groups) {
+          const failure = await writeToothStatesToChart(
+            patientAtStart,
+            group.teeth.map((item) => item.toothNumber),
+            group.state,
+          );
+          if (failure) writeFailures.push(failure);
+          else appliedCodes.push(...group.teeth.map((item) => item.code));
         }
+        if (writeFailures.length > 0) setFormulaFailure(writeFailures.join(' '));
       }
+
+      // Счётчик под снимком показывает ТОЛЬКО подтверждённое сервером.
       setAppliedToothCodes(appliedCodes);
-      if (skippedCodes.length > 0) {
-        setApplyNotice(
-          `Помощник описал непонятно ${countLabel(skippedCodes.length, 'зуб', 'зуба', 'зубов')} (${skippedCodes.join(', ')}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
+      const notices: string[] = [];
+      if (plan.unreadableCodes.length > 0) {
+        notices.push(
+          `Помощник описал непонятно ${countLabel(plan.unreadableCodes.length, 'зуб', 'зуба', 'зубов')} (${plan.unreadableCodes.join(', ')}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
         );
       }
+      if (plan.noFormulaStateCodes.length > 0) {
+        notices.push(
+          `Для ${countLabel(plan.noFormulaStateCodes.length, 'зуба', 'зубов', 'зубов')} (${plan.noFormulaStateCodes.join(', ')}) в зубной формуле нет подходящего состояния: помощник назвал их «наблюдение», «план» или «ранее вылечен». Отметьте эти зубы на схеме сами — что именно найдено, написано в заключении ниже.`,
+        );
+      }
+      if (notices.length > 0) setApplyNotice(notices.join(' '));
 
       // 5. Save to DB (async, non-blocking)
       const fakeScan: XrayScan = {
@@ -666,7 +741,11 @@ export function VisiographAnalyzer() {
       setIsAnalyzing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [selectedPatientId, setToothStatus]);
+    // setToothStatus из зависимостей убран вместе с записью в мёртвый стор.
+    // writeToothStatesToChart в зависимости НЕ добавлен намеренно: он объявлен в
+    // теле компонента и пересоздаётся на каждом отрисовывании, а свежие данные
+    // берёт из authRef — по той же причине, что описана у authRef выше.
+  }, [selectedPatientId]);
 
   // ── Drag & Drop ─────────────────────────────────────────────────────────
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -698,6 +777,7 @@ export function VisiographAnalyzer() {
     setAppliedToothCodes([]);
     setApplyNotice(null);
     setSaveFailure(null);
+    setFormulaFailure(null);
     // Fetch full scan with image
     try {
       const res = await fetch(`/api/xray/scans/${scan.id}`, { headers: denteClinicalReadHeaders() });
@@ -1033,6 +1113,30 @@ export function VisiographAnalyzer() {
                   <div>
                     <strong>Заключение не сохранено в карту</strong>
                     <div style={{ marginTop: '4px' }}>{saveFailure}</div>
+                  </div>
+                </div>
+              )}
+
+              {/*
+                * Отказ записи В ЗУБНУЮ ФОРМУЛУ — своя плашка, а не общая с
+                * отказом записи снимка: это две разные записи в карте пациента,
+                * и врач должен видеть, какая именно не сохранилась. Стоит выше
+                * счётчика «Внесено в зубную формулу», чтобы отказ читался раньше
+                * числа.
+                */}
+              {formulaFailure && (
+                <div
+                  role="alert"
+                  style={{
+                    padding: '10px 14px', background: 'var(--warn-bg)', color: 'var(--warn-fg)',
+                    borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true" />
+                  <div>
+                    <strong>Находки не внесены в зубную формулу</strong>
+                    <div style={{ marginTop: '4px' }}>{formulaFailure}</div>
                   </div>
                 </div>
               )}
