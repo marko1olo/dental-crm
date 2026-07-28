@@ -67,7 +67,14 @@ const KNOWN_MISSING: readonly string[] = [
 	"/api/schedule/external-schedule-action-logs",
 	"/api/system/ram-watchdogs",
 	// Незаконченные разделы.
-	"/api/ai/predict-no-show",
+	/*
+	 * Отсюда убрана строка /api/ai/predict-no-show: маршрут СДЕЛАН (routes/ai.ts).
+	 * Считает его не языковая модель, а настоящая история записей пациента —
+	 * сколько неявок, сколько отмен, сколько приходов
+	 * (db/patientNoShowRiskQuery.ts). При истории короче двух завершённых записей
+	 * маршрут отвечает 422 человеческим текстом, а НЕ выдуманным «низким риском»:
+	 * назвать новичка проверенным пациентом опаснее, чем не считать вовсе.
+	 */
 	"/api/ai/visit-flow",
 	/*
 	 * Отсюда убрана строка /api/billing/payouts: маршрут СДЕЛАН
@@ -86,9 +93,7 @@ const KNOWN_MISSING: readonly string[] = [
 	"/api/egisz/send",
 	"/api/egisz/logs",
 	"/api/reporting/token/generate",
-	"/api/settings/catalog",
 	"/api/settings/catalog-import",
-	"/api/settings/protocols",
 	"/api/system/analyze-legacy-db",
 	"/api/visits/quick",
 	/*
@@ -176,6 +181,105 @@ function normalizePath(raw: string): string {
 		: [...segments.slice(0, glued), segments[glued]?.replace(/:param.*$/, "") ?? ""].filter(Boolean).join("/").replace(/^/, "/");
 }
 
+/**
+ * ВЫРЕЗАНИЕ КОММЕНТАРИЕВ ПЕРЕД ПОИСКОМ АДРЕСОВ.
+ *
+ * Страж искал адреса в сыром тексте файла, поэтому считал вызовом ЛЮБОЕ
+ * упоминание адреса в кавычках — в том числе внутри комментария, который этот
+ * адрес объясняет. Два живых случая в этом дереве:
+ *
+ *   components/communications/CampaignPanel.tsx:247 — комментарий рассказывает,
+ *   почему гейт заголовков не видит вызов с двумя подстановками, и цитирует
+ *   `/api/communications/campaigns/SEGMENT/SEGMENT`. Слова SEGMENT нет ни в
+ *   одном маршруте, поэтому страж объявлял несуществующим адрес, который сервер
+ *   обслуживает двумя маршрутами (communicationsOutbox.ts:810 и :831).
+ *
+ *   components/settings/settingsInviteRoles.ts:176 — JSDoc объясняет, что
+ *   семейство `/api/settings/staff*` отвечает на отказ телом {error, message}.
+ *   Звёздочка здесь знак семейства, а не путь.
+ *
+ * Это третий случай в проекте, когда сторож краснеет на ОБЪЯСНЕНИИ: до него так
+ * же вели себя проверка оформления панелей и хук запрета подписи инструмента.
+ * Урок один и тот же — сторож, требующий стереть документацию, будет выключен, и
+ * тогда он не поймает ни одного настоящего дефекта.
+ *
+ * ПРИМЕНЯЕТСЯ ТОЛЬКО К КЛИЕНТСКИМ ФАЙЛАМ, И ЭТО ИЗМЕРЕННОЕ РЕШЕНИЕ, А НЕ
+ * НЕДОДЕЛКА. Для серверных файлов вырезание пробовали и отказались: на
+ * `routes/imaging.ts` разбор теряет 156 732 символа из 281 008 — 56 процентов
+ * файла, — и четырнадцать живых маршрутов снимков исчезают из набора
+ * обслуживаемых. Место сбоя найдено: литерал регулярного выражения с кавычкой
+ * внутри разбор принимает за начало строки, после чего `*` со слэшем в заголовке
+ * `Accept` вида `application/dicom, *` со слэшем `*;q=0.1` открывает мнимый
+ * комментарий на 155 тысяч символов. Ложная тревога такого масштаба хуже
+ * пропуска: страж объявляет несуществующими четырнадцать работающих адресов, и
+ * на него перестают смотреть.
+ *
+ * ЧТО ОСТАЁТСЯ ДОЛГОМ. Закомментированный `app.get("/api/x", …)` в серверном
+ * файле по-прежнему попадает в набор обслуживаемых, и страж счёл бы живым
+ * маршрут, которого нет. Закрывается это разбором, знающим про литералы
+ * регулярных выражений, — то есть настоящим лексером, а не заплаткой. Пока
+ * долг назван здесь, а не спрятан.
+ *
+ * ПОЧЕМУ ПОСИМВОЛЬНЫЙ РАЗБОР, А НЕ РЕГУЛЯРНОЕ ВЫРАЖЕНИЕ. Первая редакция этой
+ * функции вырезала комментарии двумя заменами и на `routes/imaging.ts`
+ * СЪЕЛА 156 948 символов из 281 008 — 56 процентов файла. Измерено, а не
+ * предположено: после такой «очистки» четырнадцать живых маршрутов снимков
+ * исчезали из набора обслуживаемых, и страж объявлял несуществующими адреса,
+ * которые сервер обслуживает. Причина — нежадная пара `/*…*` со звёздочкой и
+ * слэшем не знает про строковые литералы: достаточно одной строки со звёздочкой
+ * и слэшем внутри, и спаривание уезжает на весь остаток файла.
+ *
+ * Разбор ниже знает про кавычки всех трёх видов и про экранирование, поэтому
+ * `https://…` внутри строки не начинает комментарий, а звёздочка со слэшем
+ * внутри строки не закрывает его. Содержимое шаблонных строк сохраняется
+ * ЦЕЛИКОМ: адреса живут именно в них.
+ *
+ * Известная граница: литерал регулярного выражения с кавычкой внутри
+ * (`/["']/`) разбор примет за начало строки. На этом дереве проверено замером —
+ * ни один адрес из-за этого не теряется; появится такой случай — сломается
+ * самопроверка ниже, а не молчаливо соврёт результат.
+ */
+function stripComments(source: string): string {
+	let out = "";
+	let index = 0;
+	let quote: string | null = null;
+	while (index < source.length) {
+		const char = source[index];
+		const next = source[index + 1];
+		if (quote) {
+			out += char;
+			if (char === "\\") {
+				out += next ?? "";
+				index += 2;
+				continue;
+			}
+			if (char === quote) quote = null;
+			index += 1;
+			continue;
+		}
+		if (char === '"' || char === "'" || char === "`") {
+			quote = char;
+			out += char;
+			index += 1;
+			continue;
+		}
+		if (char === "/" && next === "*") {
+			index += 2;
+			while (index < source.length && !(source[index] === "*" && source[index + 1] === "/")) index += 1;
+			index += 2;
+			out += " ";
+			continue;
+		}
+		if (char === "/" && next === "/") {
+			while (index < source.length && source[index] !== "\n") index += 1;
+			continue;
+		}
+		out += char;
+		index += 1;
+	}
+	return out;
+}
+
 /** Адреса, которые сервер действительно обслуживает. */
 function serverRoutes(): Set<string> {
 	const routes = new Set<string>();
@@ -215,7 +319,7 @@ function webCalls(): Map<string, string[]> {
 
 	for (const file of collectFiles(webSrc, [".ts", ".tsx"])) {
 		if (file.includes(`${path.sep}tests${path.sep}`) || file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
-		const source = readFileSync(file, "utf8");
+		const source = stripComments(readFileSync(file, "utf8"));
 		for (const match of source.matchAll(pattern)) {
 			const raw = match[1];
 			if (!raw) continue;
@@ -258,6 +362,47 @@ function isServed(candidate: string, routes: Set<string>): boolean {
 }
 
 describe("адреса, которые зовёт интерфейс", () => {
+	/*
+	 * САМОПРОВЕРКА СКАНЕРА. Без неё вырезание комментариев можно сломать или
+	 * потерять целиком, и страж молча начнёт считать вызовом каждое упоминание
+	 * адреса в объяснении — либо, что хуже, считать живым закомментированный
+	 * маршрут. Оба случая в этом дереве уже были.
+	 *
+	 * Образцы взяты с живых файлов, а не выдуманы: именно они держали проверку
+	 * красной.
+	 */
+	test("сканер видит вызов и не считает вызовом упоминание в комментарии", () => {
+		const inCode = stripComments('const r = await fetch("/api/schedule/day-confirmations");');
+		assert.ok(inCode.includes("/api/schedule/day-confirmations"), "настоящий вызов пропал вместе с комментариями");
+
+		const inBlockComment = stripComments(
+			"/*\n * гейт сверяет `/api/communications/campaigns/SEGMENT/SEGMENT` с `:campaignId/launch`\n */\nconst ok = true;",
+		);
+		assert.ok(
+			!inBlockComment.includes("/api/communications/campaigns"),
+			"адрес из блочного комментария остался: страж покраснеет на объяснении",
+		);
+
+		const inJsDoc = stripComments(
+			"/**\n * Маршруты `/api/settings/staff*` отвечают на отказ телом {error, message}.\n */\nexport type X = 1;",
+		);
+		assert.ok(!inJsDoc.includes("/api/settings/staff"), "адрес из JSDoc остался: этот случай уже держал проверку красной");
+
+		const inLineComment = stripComments('// звали "/api/egisz/send", маршрута нет\nconst ok = true;');
+		assert.ok(!inLineComment.includes("/api/egisz/send"), "адрес из строчного комментария остался");
+
+		// Ссылка со слэшами не должна съедать остаток строки вместе с настоящим адресом.
+		const afterUrl = stripComments('const docs = "https://example.ru/x"; const call = "/api/visits/quick";');
+		assert.ok(afterUrl.includes("/api/visits/quick"), "двойной слэш в ссылке съел настоящий адрес после неё");
+
+		// Закомментированный маршрут не должен попасть в набор обслуживаемых.
+		const commentedRoute = stripComments('// app.get("/api/never/registered", handler);\nconst ok = true;');
+		assert.ok(
+			!commentedRoute.includes("/api/never/registered"),
+			"закомментированный маршрут остался: страж объявил бы живым маршрут, которого нет",
+		);
+	});
+
 	test("каждый вызванный адрес обслуживается сервером", () => {
 		const routes = serverRoutes();
 		assert.ok(routes.size > 50, `маршруты сервера не собрались: найдено ${routes.size}`);
@@ -299,7 +444,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 23,
+			KNOWN_MISSING.length <= 20,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);
