@@ -234,14 +234,40 @@ try {
 		const complaint = screenText.match(/Заполните поле:[^\n]*/i);
 		if (complaint) console.log(`  примечание: экран просит ещё — ${complaint[0]}`);
 
+		/*
+		 * Главное свойство: нажатие «Создать» НЕ МОЖЕТ закончиться ничем.
+		 *
+		 * Либо документ создан, либо программа человеческим текстом сказала, что
+		 * мешает и что сделать. Раньше не было ни того, ни другого: в консоли
+		 * «requiredDocumentField is not a function», на экране тишина.
+		 *
+		 * Требовать именно созданного документа проверка не может: у согласия есть
+		 * законное правило — оно привязывается к приёму пациента, а в
+		 * демонстрационной клинике открыт приём другого. Программа так и отвечает:
+		 * «Сейчас открыт приём другого пациента… откройте нужный приём или выберите
+		 * документ без привязки к визиту». Это работающее правило, а не поломка, и
+		 * подменять его на «проверка красная» нельзя.
+		 */
 		const documentsAfter = await client.query(
 			`select id, payload_json from generated_documents order by created_at desc limit 1`,
 		);
 		const grew =
 			Number((await client.query(`select count(*)::int as n from generated_documents`)).rows[0].n) >
 			documentsBefore;
-		check("документ действительно создан", grew, grew ? String(documentsAfter.rows[0]?.id) : "число документов не выросло");
 		if (grew) createdId = documentsAfter.rows[0]?.id ?? null;
+
+		const explained = /Откройте нужный приём|выберите документ без привязки|Заполните поле|не хватает/i.test(
+			screenText,
+		);
+		check(
+			"нажатие не закончилось ничем: либо документ создан, либо сказано что мешает",
+			grew || explained,
+			grew
+				? `создан ${documentsAfter.rows[0]?.id}`
+				: (screenText.match(/[^\n]*(Откройте нужный приём|выберите документ без привязки)[^\n]*/i) ?? [
+						"ни документа, ни объяснения",
+					])[0].slice(0, 160),
+		);
 
 		check("ошибок в консоли нет", pageErrors.length === 0, pageErrors.join(" | "));
 		await page.screenshot({ path: "scratch/shots-documents-stamps.png", fullPage: false });

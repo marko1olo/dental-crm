@@ -1,10 +1,17 @@
-import { Calculator, FileText, PenTool, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, Calculator, FileText, Loader2, PenTool, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
+import { denteAdminSecretRequestHeaders, money, operatorReadableErrorDetail } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	actionFailureToast,
+	type PanelSubject,
+	panelStateText,
+	requestFailureCause,
+} from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast.js";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 import { SignaturePad } from "../SignaturePad";
 import { type ToothData, ToothState } from "./ToothChart";
 
@@ -69,6 +76,51 @@ function planItemFromServer(raw: unknown): PlanItem | null {
 	};
 }
 
+/**
+ * Состояние чтения сохранённого плана. «Пусто» отдельным состоянием не нужно:
+ * пустота видна по items, но утверждать её можно ТОЛЬКО в phase === "ready".
+ *
+ * ЧТО БЫЛО СЛОМАНО. Чтение выглядело как `response.ok ? response.json() : null`:
+ * отказ сервера превращался в null, latestPlan оставался undefined, и функция
+ * молча выходила. При этом эффект автоподбора (ниже) на каждое изменение зубной
+ * формулы заполняет items из отмеченных патологий. То есть после отказа врач
+ * видел не пустой экран, а ПОЛНУЮ смету с ненулевым «Итого» — внешне нормальный
+ * план, где ни одной пометки, что сохранённый план не прочитан. Достаточно
+ * нажать «Сохранить»: planId равен null, сервер вставляет ВТОРОЙ план, а подпись
+ * пациента остаётся у прежнего, и в списке планов первым идёт свежий
+ * неподписанный (loadTreatmentPlansForPatient сортирует по updatedAt).
+ */
+type PlanLoadState =
+	| { readonly phase: "loading" }
+	| { readonly phase: "ready" }
+	| { readonly phase: "failed"; readonly status: number | null };
+
+/** Названия состояний этой панели. Формулировки общие с панелями карточки пациента. */
+const PLAN_SUBJECT: PanelSubject = {
+	title: "Позиции плана лечения",
+	accusative: "план лечения",
+	emptyTitle: "План лечения пуст",
+	emptyHint:
+		"Кликните на любой зуб на схеме слева, выберите патологию, и система автоматически подберет оптимальный набор процедур из прайс-листа",
+	failureConsequence:
+		"Не считайте, что плана нет: он не прочитан. Сохранение и подписание отключены — иначе рядом с сохранённым планом появится второй, а подпись пациента останется у старого.",
+};
+
+/** Объект из тела ответа или null. Массив и скаляр объектом не считаются. */
+function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
+	const trimmed = rawBody.trim();
+	if (!trimmed) return null;
+	try {
+		const parsed: unknown = JSON.parse(trimmed);
+		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+			? (parsed as Record<string, unknown>)
+			: null;
+	} catch {
+		// Текст исключения английский, человеку он не показывается никогда.
+		return null;
+	}
+}
+
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	patientId,
 	currentTeeth,
@@ -79,6 +131,16 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [planId, setPlanId] = useState<string | null>(null);
 	const [showSignModal, setShowSignModal] = useState(false);
 	const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+	const [planLoad, setPlanLoad] = useState<PlanLoadState>({ phase: "loading" });
+	/**
+	 * Договор ДМС не прочитан, и `status` — код ответа (null, если до сервера не
+	 * дошли). Отличать это от «договора нет» обязательно: без договора смета
+	 * показывает полные цены, и врач с пациентом видят суммы больше тех, которые
+	 * пациент реально заплатит. Молча так делать нельзя.
+	 */
+	const [contractFailure, setContractFailure] = useState<{ status: number | null } | null>(null);
+	/** Счётчик кнопки «Повторить»: меняется — оба запроса идут заново. */
+	const [reloadToken, setReloadToken] = useState(0);
 
 	const { dashboard } = useAppLogicContext();
 	const [activeContract, setActiveContract] = useState<any | null>(null);
@@ -91,21 +153,51 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	useEffect(() => {
 		if (!insuranceContractId) {
 			setActiveContract(null);
+			setContractFailure(null);
 			return;
 		}
+		let active = true;
+		setContractFailure(null);
 
-		fetch(`/api/insurance/contracts/${insuranceContractId}`, {
-			headers: denteAdminSecretRequestHeaders(),
-		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				setActiveContract(data);
-			})
-			.catch((err) => {
-				console.error("Failed to load active insurance contract", err);
+		const loadContract = async () => {
+			try {
+				const res = await fetch(`/api/insurance/contracts/${insuranceContractId}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				const rawBody = await res.text();
+				if (!res.ok) {
+					// БЫЛО: `res.ok ? res.json() : null` — отказ становился «договора
+					// нет», покрытие ДМС молча исчезало из сметы, и пациенту называли
+					// полную цену вместо со-оплаты.
+					console.error(`[insurance contract] ${res.status} ${rawBody.slice(0, 300)}`);
+					if (!active) return;
+					setActiveContract(null);
+					setContractFailure({ status: res.status });
+					return;
+				}
+				const contract = jsonObjectOrNull(rawBody);
+				if (!active) return;
+				if (!contract) {
+					console.error("[insurance contract] тело ответа не разобрано");
+					setActiveContract(null);
+					setContractFailure({ status: res.status });
+					return;
+				}
+				setActiveContract(contract);
+			} catch (err) {
+				console.error("[insurance contract] запрос не выполнен", err);
+				if (!active) return;
 				setActiveContract(null);
-			});
-	}, [insuranceContractId]);
+				// До сервера не дошли: кода ответа нет, и придумывать его нельзя.
+				setContractFailure({ status: null });
+			}
+		};
+
+		void loadContract();
+		return () => {
+			active = false;
+		};
+	}, [insuranceContractId, reloadToken]);
 
 	const getCoverageInfo = (item: PlanItem) => {
 		if (!activeContract) return null;
@@ -146,14 +238,37 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		setPlanId(null);
 		setItems([]);
 		setSignatureUrl(null);
+		setPlanLoad({ phase: "loading" });
 
-		fetch(`/api/patients/${patientId}/treatment-plans`, {
-			headers: denteAdminSecretRequestHeaders(),
-		})
-			.then((response) => (response.ok ? response.json() : null))
-			.then((data) => {
-				const latestPlan = data?.plans?.[0] as SavedTreatmentPlan | undefined;
-				if (!active || !latestPlan) return;
+		const loadPlan = async () => {
+			let status: number | null = null;
+			try {
+				const response = await fetch(`/api/patients/${patientId}/treatment-plans`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				status = response.status;
+				// Тело читается один раз строкой: на пустом теле response.json()
+				// бросает исключение, и прежний catch превращал отказ в ту же
+				// «пустую» смету.
+				const rawBody = await response.text();
+				if (!response.ok) {
+					console.error(`[treatment plan load] ${status} ${rawBody.slice(0, 300)}`);
+					if (active) setPlanLoad({ phase: "failed", status });
+					return;
+				}
+				const payload = jsonObjectOrNull(rawBody);
+				if (!payload || !Array.isArray(payload.plans)) {
+					// Успешный статус без списка планов — испорченный ответ, а не
+					// «планов нет»: сервер всегда отдаёт {success, plans: []}.
+					console.error(`[treatment plan load] ${status}: в ответе нет списка планов`);
+					if (active) setPlanLoad({ phase: "failed", status });
+					return;
+				}
+				if (!active) return;
+				const latestPlan = payload.plans[0] as SavedTreatmentPlan | undefined;
+				// Прочитано успешно — в том числе когда планов у пациента ещё нет.
+				setPlanLoad({ phase: "ready" });
+				if (!latestPlan) return;
 				setPlanId(latestPlan.id);
 				setItems(
 					Array.isArray(latestPlan.items)
@@ -161,15 +276,18 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						: [],
 				);
 				setSignatureUrl(latestPlan.patientSignature ?? null);
-			})
-			.catch((error) => {
-				console.error("Treatment plan load failed", error);
-			});
+			} catch (error) {
+				console.error("[treatment plan load] запрос не выполнен", error);
+				if (active) setPlanLoad({ phase: "failed", status });
+			}
+		};
+
+		void loadPlan();
 
 		return () => {
 			active = false;
 		};
-	}, [patientId]);
+	}, [patientId, reloadToken]);
 
 	// Auto-suggestions based on currentTeeth - fully synchronized
 	useEffect(() => {
@@ -424,6 +542,22 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	}, [items, activeContract]);
 
 	const savePlan = async () => {
+		/*
+		 * Сохранять, не прочитав сохранённый план, нельзя: planId равен null, и
+		 * сервер вставит ВТОРОЙ план вместо обновления существующего. Кнопка в
+		 * этом состоянии выключена, но проверка нужна и здесь — с клавиатуры и из
+		 * будущего вызова сюда можно попасть в обход кнопки.
+		 */
+		if (planLoad.phase !== "ready") {
+			showToast(
+				planLoad.phase === "loading"
+					? "План лечения ещё читается с сервера. Подождите пару секунд и сохраните снова — набранные позиции останутся на месте."
+					: `План не сохранён: ${requestFailureCause(planLoad.status)}. Сохранённый план не прочитан, а сохранение поверх непрочитанного создало бы второй план — нажмите «Повторить», а если не поможет, обновите страницу.`,
+				planLoad.phase === "loading" ? "info" : "error",
+				12000,
+			);
+			return;
+		}
 		setIsSaving(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
@@ -438,19 +572,49 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					items: items.map((i) => ({ ...i })),
 				}),
 			});
-			const data = await res.json();
-			if (data.success) {
-				setPlanId(data.planId);
-				if (data.plan?.items) setItems(data.plan.items);
-				if (data.plan?.patientSignature !== undefined)
-					setSignatureUrl(data.plan.patientSignature);
-				showToast("План лечения успешно сохранен!", "success");
-			} else {
-				showToast(data.message || "Ошибка сохранения плана лечения", "error");
+			// БЫЛО: res.json() до проверки res.ok. У 403 и 500 тело бывает пустым —
+			// разбор бросал исключение, и врач видел «Не удалось сохранить план
+			// лечения» без причины; у 409 «подписанный план менять нельзя» причина
+			// терялась так же.
+			const rawBody = await res.text();
+			const data = jsonObjectOrNull(rawBody);
+			if (!res.ok || data?.success !== true) {
+				console.error(`[treatment plan save] ${res.status} ${rawBody.slice(0, 300)}`);
+				const detail = operatorReadableErrorDetail(
+					typeof data?.message === "string" ? data.message : null,
+				);
+				showToast(
+					detail ??
+						`${actionFailureToast("План лечения не сохранён", res.status)} Позиции остались на экране.`,
+					"error",
+					12000,
+				);
+				return;
 			}
+			if (typeof data.planId === "string") setPlanId(data.planId);
+			const savedPlan = data.plan && typeof data.plan === "object" ? (data.plan as Record<string, unknown>) : null;
+			// Позиции из ответа проходят ту же нормализацию, что и при чтении:
+			// иначе в состояние попадёт строка без цены и разметка снова упадёт.
+			if (Array.isArray(savedPlan?.items)) {
+				setItems(
+					savedPlan.items
+						.map(planItemFromServer)
+						.filter((item): item is PlanItem => item !== null),
+				);
+			}
+			if (savedPlan && savedPlan.patientSignature !== undefined) {
+				setSignatureUrl(
+					typeof savedPlan.patientSignature === "string" ? savedPlan.patientSignature : null,
+				);
+			}
+			showToast("План лечения успешно сохранен!", "success");
 		} catch (e) {
-			console.error(e);
-			showToast("Не удалось сохранить план лечения", "error");
+			console.error("[treatment plan save] запрос не выполнен", e);
+			showToast(
+				`${actionFailureToast("План лечения не сохранён", null)} Позиции остались на экране.`,
+				"error",
+				12000,
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -484,17 +648,36 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							ПОДПИСАНО
 						</span>
 					)}
+					{/* Пока план не прочитан, подписывать и сохранять нечего: подпись
+					    ляжет на второй, пустой план. Подсказка в title объясняет,
+					    почему кнопка выключена — выключенная кнопка без причины
+					    выглядит как поломка. */}
 					<button
 						onClick={() => setShowSignModal(true)}
-						className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors"
+						disabled={planLoad.phase !== "ready"}
+						title={
+							planLoad.phase === "ready"
+								? "Подписать план у пациента"
+								: planLoad.phase === "loading"
+									? "План лечения ещё читается с сервера"
+									: "Сохранённый план не прочитан — подписывать нельзя"
+						}
+						className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						<PenTool size={14} />
 						Подписать
 					</button>
 					<button
 						onClick={savePlan}
-						disabled={isSaving}
-						className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+						disabled={isSaving || planLoad.phase !== "ready"}
+						title={
+							planLoad.phase === "ready"
+								? "Сохранить план лечения"
+								: planLoad.phase === "loading"
+									? "План лечения ещё читается с сервера"
+									: "Сохранённый план не прочитан — сохранение создало бы второй план"
+						}
+						className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					>
 						<Save size={14} />
 						{isSaving ? "Сохранение..." : "Сохранить"}
@@ -503,7 +686,62 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-				{items.length === 0 && (
+				{/* Отказ чтения — первое, что видно, и он не отменяет уже подобранных
+				    позиций: подбор идёт от зубной формулы и остаётся на экране. */}
+				{planLoad.phase === "failed" && (
+					<PanelLoadFailure
+						subject={PLAN_SUBJECT}
+						status={planLoad.status}
+						onRetry={() => setReloadToken((token) => token + 1)}
+						className="mb-3"
+					/>
+				)}
+
+				{/* Договор ДМС отдельно от плана: без него суммы верные, но полные —
+				    пациент заплатит меньше, и это надо сказать, а не показывать
+				    молча цену без покрытия. */}
+				{contractFailure && (
+					<div
+						role="alert"
+						className="flex flex-wrap items-start gap-x-3 gap-y-2 p-3 mb-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
+					>
+						<AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+						<div className="flex-1 min-w-0 break-words">
+							<div className="font-semibold">
+								{/*
+								  Причина берётся из кода ответа, а не задаётся заглушкой.
+
+								  Здесь стояло requestFailureCause(null) — то есть при любом
+								  отказе печаталась одна и та же общая причина, хотя код ответа
+								  сохранён в состоянии. Отказ доступа и упавший сервер требуют
+								  от администратора разных действий.
+								*/}
+								Договор ДМС не прочитан: {requestFailureCause(contractFailure.status)}.
+							</div>
+							<div className="mt-0.5">
+								Суммы ниже показаны БЕЗ покрытия ДМС — пациент по договору заплатит
+								меньше. Не называйте эти суммы пациенту, пока договор не прочитан.
+							</div>
+						</div>
+						<button
+							type="button"
+							onClick={() => setReloadToken((token) => token + 1)}
+							className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+						>
+							Повторить
+						</button>
+					</div>
+				)}
+
+				{/* Загрузка: пока ответа нет, «План лечения пуст» — ложь. */}
+				{planLoad.phase === "loading" && items.length === 0 && (
+					<div className="flex items-center justify-center gap-2 p-8 text-sm text-slate-500 dark:text-zinc-400">
+						<Loader2 size={16} className="animate-spin" aria-hidden="true" />
+						{panelStateText(PLAN_SUBJECT, { phase: "loading" }).title}
+					</div>
+				)}
+
+				{planLoad.phase === "ready" && items.length === 0 && (
 					<div className="flex flex-col items-center justify-center p-8 mx-2 my-8 rounded-2xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 bg-zinc-50/30 dark:bg-zinc-900/20 backdrop-blur-sm text-center">
 						<div className="p-5 mb-4 rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] dark:shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] border border-indigo-500/10 dark:border-indigo-500/20">
 							<Calculator

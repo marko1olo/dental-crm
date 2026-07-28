@@ -12035,7 +12035,121 @@ export function useAppLogic(): any {
 		 *
 		 * Введённое человеком не трогается, заполняются только пустые поля.
 		 */
-		const documentStateForCreation = withDocumentCreationTimestamps(documentState);
+		/*
+		 * ВЫЧИСЛЯЕМЫЕ ЗНАЧЕНИЯ, БЕЗ КОТОРЫХ ДОКУМЕНТ НЕ СОБИРАЕТСЯ.
+		 *
+		 * Валидаторы (documentValidators.ts) и сборщик содержимого
+		 * (documentPayloadForKind) достают из объекта состояния не только поля
+		 * формы, но и вычисляемые значения: суммы по плану, ФИО плательщика,
+		 * строки этапов, разбор многострочных полей. Все они объявлены ЗДЕСЬ, в
+		 * useAppLogic, а состояние — это хранилище useDocumentStore, где их нет.
+		 *
+		 * Что из этого следовало. Нажатие «Создать выбранный документ» падало на
+		 * первом же отсутствующем имени: «requiredDocumentField is not a
+		 * function», документ не создавался, пользователю ни слова. Две чистые
+		 * функции уже подставляются в documentLogic.ts, но оставались вычисляемые
+		 * значения, и виды документов, которым они нужны, продолжали упираться в ту
+		 * же ошибку с другим именем.
+		 *
+		 * Пересчитано по исходникам (scratch/audit-document-payload-inputs.mjs): из
+		 * 32 видов документов со структурным содержимым 23 требовали имён, которых
+		 * в хранилище нет; всего таких имён 79, и все 79 объявлены в этом файле.
+		 * То есть не создавались договор платных услуг, акт выполненных работ,
+		 * смета, счёт, квитанция, график рассрочки, согласие законного
+		 * представителя, план лечения и его согласование, выписка из карты, карта
+		 * 025/у, гарантийный талон — вся бумажная работа клиники.
+		 *
+		 * Перечислены по именам намеренно, а не собраны хитростью: проверка типов
+		 * ловит опечатку и переименование, а список читается как контракт между
+		 * формой документа и его сборщиком. Функции передаются ссылкой — валидаторы
+		 * зовут их как paidContractTotalRubValue() и documentTextLines(текст).
+		 */
+		const documentDerivedValues = {
+			activeDoctor,
+			attendanceEndedAtValue,
+			attendanceSignedByValue,
+			attendanceStartedAtValue,
+			clinicProfileDraft,
+			clinicalToothRowsValue,
+			completedActDoctorFullNameValue,
+			completedActFiscalReceiptLines,
+			completedActPaidRubValue,
+			completedActServicesSummaryValue,
+			completedActTotalRubValue,
+			dashboard,
+			documentPatient,
+			documentTextLines,
+			inferredTreatmentArea,
+			installmentScheduleBaseDocumentTitleValue,
+			installmentScheduleInstallmentRows,
+			installmentSchedulePayerFullNameValue,
+			installmentSchedulePrepaidRubValue,
+			installmentScheduleRemainingRubValue,
+			installmentScheduleResponsibleFullNameValue,
+			installmentScheduleTotalRubValue,
+			minorConsentDiagnosisOrIndicationValue,
+			minorConsentDoctorFullNameValue,
+			minorConsentInterventionScopeValue,
+			minorConsentPatientBirthDateValue,
+			minorConsentPatientFullNameValue,
+			minorRepresentativeFullNameValue,
+			minorRepresentativeIdentityDocumentValue,
+			minorRepresentativePhoneValue,
+			minorRepresentativeRelationshipValue,
+			outpatient025uMedicalCardNumberValue,
+			outpatient025uPayloadValue,
+			outpatient025uSourceVisitIdsValue,
+			paidContractCareReasonValue,
+			paidContractCustomerFullNameValue,
+			paidContractDoctorFullNameValue,
+			paidContractServiceScopeValue,
+			paidContractTotalRubValue,
+			paymentInvoiceBankDetailsValue,
+			paymentInvoicePayerFullNameValue,
+			paymentInvoiceTotalRubValue,
+			paymentReceiptFiscalReceiptLines,
+			paymentReceiptIssuedByValue,
+			paymentReceiptPayerBirthDateValue,
+			paymentReceiptPayerFullNameValue,
+			paymentReceiptPayerIdentityDocumentValue,
+			paymentReceiptPayerInnValue,
+			paymentReceiptPayerRelationshipValue,
+			plannedServiceLinesForFinancialPayload,
+			postVisitDoctorFullNameValue,
+			postVisitProcedureNameValue,
+			postVisitToothOrAreaValue,
+			recordExtractComplaintAndAnamnesisValue,
+			recordExtractDiagnosisValue,
+			recordExtractObjectiveStatusValue,
+			recordExtractTreatmentProvidedValue,
+			releaseProtectionNote,
+			selectedCompletedActContractDocumentId,
+			selectedPaymentReceiptPayments,
+			selectedPaymentReceiptTotalRub,
+			selectedReleaseSourceRequestDocumentId,
+			selectedTaxPaymentIdsForCurrentDocument,
+			treatmentAcceptanceStageRows,
+			treatmentAcceptanceTotalRubValue,
+			treatmentEstimateDoctorFullNameValue,
+			treatmentEstimatePatientOrPayerFullNameValue,
+			treatmentEstimateTotalRubValue,
+			treatmentEstimateTreatmentBasisValue,
+			treatmentPlanClinicalReasonValue,
+			treatmentPlanDiagnosisSummaryValue,
+			treatmentPlanDoctorFullNameValue,
+			treatmentPlanStageRows,
+			treatmentPlanTeethOrAreaValue,
+			treatmentPlanTotalRubValue,
+			warrantyDoctorFullNameValue,
+			warrantyLinkedActOrContractValue,
+			warrantyServiceOrWorkNameValue,
+			warrantyTeethOrAreaValue,
+		};
+
+		const documentStateForCreation = withDocumentCreationTimestamps({
+			...documentState,
+			...documentDerivedValues,
+		});
 		const payloadError = validateDocumentPayloadForKind(kind, documentStateForCreation);
 		if (payloadError) {
 			setError(payloadError);
