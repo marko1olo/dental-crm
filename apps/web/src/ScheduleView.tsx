@@ -13,8 +13,15 @@ import { appointmentScheduleMissingFields, auth } from "./AppHelpers";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
-import { Plus, ShieldCheck, Calendar } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Plus, ShieldCheck, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Fragment, useState, useRef, useEffect, useMemo } from "react";
+import {
+  formatDayTitle,
+  formatMinutesForHumans,
+  groupAppointmentsByClinicDay,
+  shiftDayKey,
+  type DayGroupingAppointment
+} from "./components/schedule/scheduleDayGrouping";
 import { showToast } from "./components/GlobalToast";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
@@ -359,6 +366,65 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       { chairs: dashboard.clinicSettings.chairs, patients: dashboard.patients }
     );
   const todayScheduleDate = () => toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10);
+  /**
+   * Разбор показанных приёмов по дням клиники: заголовок дня, свободные окна
+   * между приёмами и накладки.
+   *
+   * ЧТО БЫЛО НЕ ТАК. Фильтр по дате пуст по умолчанию, поэтому экран показывал
+   * подряд все приёмы клиники за всю её жизнь, а на карточке стояло только
+   * время. Проверено в живом браузере: наверху расписания демо-клиники висел
+   * приём от 28 января 2024 года и выглядел ровно как сегодняшний. Отсюда две
+   * настоящие потери: администратор не знал, какой день перед ним, и не видел
+   * ни дырок в дне, ни двух пациентов, посаженных на одно кресло.
+   *
+   * Разбор — в отдельном проверенном модуле (scheduleDayGrouping.ts): в
+   * арифметике времени ошибаются молча.
+   */
+  const clinicToday = todayScheduleDate();
+  const scheduleDayGroups = useMemo(
+    () =>
+      groupAppointmentsByClinicDay(sortedAppointments as DayGroupingAppointment[], {
+        toClinicLocal: (iso: string) => toDateTimeLocalValue(iso, dashboard.clinicSettings.profile.timezone),
+        todayKey: clinicToday
+      }),
+    [sortedAppointments, dashboard.clinicSettings.profile.timezone, clinicToday, toDateTimeLocalValue]
+  );
+  /**
+   * ВЫБРАННЫЙ ДЕНЬ ОТБИРАЕТСЯ ЗДЕСЬ, И ЭТО ВЫНУЖДЕННО.
+   *
+   * ЧТО НАБЛЮДАЛОСЬ В ЖИВОМ БРАУЗЕРЕ (демо-клиника, 27 приёмов за 20 разных
+   * дней). Выбор дня — кнопкой «Сегодня», стрелками или вводом даты в поле —
+   * меняет значение в поле и в хранилище (подпись отбора рядом это показывает),
+   * но список приёмов остаётся тем же: 27 карточек за 20 дней. То есть поле даты
+   * на этом экране НЕ РАБОТАЛО вовсе, и «Сегодня» тоже: администратор выбирал
+   * день и продолжал видеть всю историю клиники, включая приёмы 2024 года.
+   *
+   * Причина живёт вне этого файла: список приходит пропсом sortedAppointments из
+   * App.tsx (useAppLogic), и до него изменение фильтра не доезжает. Правка
+   * App.tsx/useAppLogic мне не разрешена, поэтому день отбирается здесь — по
+   * тому же ключу дня, которым день уже посчитан для заголовков. Это не вторая
+   * копия правила фильтра: правило одно и лежит в scheduleDayGrouping.
+   *
+   * Отбор идемпотентен: если наверху фильтр когда-нибудь заработает, здесь
+   * останется тот же единственный день и ничего не изменится.
+   */
+  const selectedDayKey = scheduleDateFilter.trim();
+  const visibleDayGroups = selectedDayKey
+    ? scheduleDayGroups.filter((group) => group.dateKey === selectedDayKey)
+    : scheduleDayGroups;
+  /** Сколько записей реально на экране. Подписи обязаны считать по нему, а не по всему списку. */
+  const visibleAppointmentCount = visibleDayGroups.reduce((sum, group) => sum + group.appointmentCount, 0);
+  /** Сколько накладок на экране. Это то, из-за чего приходят двое на одно время. */
+  const scheduleOverlapCount = visibleDayGroups.reduce((sum, group) => sum + group.overlapCount, 0);
+  /**
+   * Шаг по дням. Раньше выбрать день можно было только полем даты, а пойти
+   * «на день назад» — никак: администратор, у которого заболел врач, не мог
+   * пролистать его неделю. Когда фильтр даты пуст, шаг считается от сегодня.
+   */
+  const stepScheduleDay = (deltaDays: number) => {
+    const base = scheduleDateFilter.trim() || clinicToday;
+    setScheduleDateFilter(shiftDayKey(base, deltaDays));
+  };
   const resetScheduleFilters = () => {
     setScheduleDateFilter("");
     setScheduleDoctorFilterId(null);
@@ -450,11 +516,32 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     scheduleAssistantFilterId,
     scheduleChairFilterId
   ].filter((value): value is string => Boolean(value)).length;
-  const scheduleFilteredSummary = [
-    sortedAppointments.length ? `видно записей: ${sortedAppointments.length}` : "записи скрыты фильтрами",
-    activeScheduleFilterCount ? `фильтров: ${activeScheduleFilterCount}` : "фильтры не ограничивают",
-    shiftWarnings.length ? `предупреждений: ${shiftWarnings.length}` : "срочных предупреждений нет"
-  ].join(" · ");
+  /**
+   * ЧТО именно скрывает записи — словами, а не числом.
+   *
+   * БЫЛО: на экране висел чип «Фильтров: 2», и какие это фильтры, узнать было
+   * негде. Рядом лежала переменная scheduleFilteredSummary с текстом «записи
+   * скрыты фильтрами» — и она НЕ ВЫВОДИЛАСЬ НИГДЕ: считалась при каждой
+   * отрисовке и выбрасывалась. Администратор видел короткий список, не понимал
+   * причины и делал вывод, что день пустой.
+   *
+   * Фильтр по статусу и по ассистенту отдельно важен: кнопок для них на этом
+   * экране нет вовсе (они приходят из сохранённых настроек), поэтому без подписи
+   * человек не может даже догадаться, что список урезан.
+   */
+  const staffFullNameById = (staffId: string | null) =>
+    (dashboard.clinicSettings?.staff ?? []).find((member: { id: string }) => member.id === staffId)?.fullName ?? "неизвестный сотрудник";
+  const activeScheduleFilterLabels = [
+    scheduleDateFilter.trim() ? `день: ${formatDayTitle(scheduleDateFilter.trim())}` : null,
+    scheduleDoctorFilterId ? `врач: ${staffFullNameById(scheduleDoctorFilterId)}` : null,
+    scheduleAssistantFilterId ? `ассистент: ${staffFullNameById(scheduleAssistantFilterId)}` : null,
+    scheduleChairFilterId
+      ? `кресло: ${(dashboard.clinicSettings?.chairs ?? []).find((chair: { id: string }) => chair.id === scheduleChairFilterId)?.name ?? "неизвестное"}`
+      : null,
+    scheduleStatusFilter !== "all"
+      ? `только «${appointmentLabels[scheduleStatusFilter as Appointment["status"]] ?? scheduleStatusFilter}»`
+      : null
+  ].filter((value): value is string => Boolean(value));
   const scheduleLoadSummaryCards = [
     {
       id: "doctor",
@@ -576,11 +663,44 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               aria-live="polite"
               style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}
             >
-              {sortedAppointments.length > 0 ? (
-                <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
+              {visibleAppointmentCount > 0 ? (
+                <span className="status-pill status-confirmed">Записей: {visibleAppointmentCount}</span>
               ) : null}
-              {activeScheduleFilterCount > 0 ? (
-                <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>
+              {/*
+                Названные условия отбора вместо числа «Фильтров: 2»: раньше
+                причина короткого списка была не видна нигде, и человек решал,
+                что день пустой. Формулировка «Отбор: …» намеренно нейтральна —
+                она верна и когда отбор действительно сокращает список, и когда
+                (см. selectedDayKey) список приходит сверху несокращённым.
+              */}
+              {activeScheduleFilterLabels.length > 0 ? (
+                <>
+                  <span className="status-pill status-arrived" title="Что сейчас отобрано на экране">
+                    Отбор: {activeScheduleFilterLabels.join(", ")}
+                  </span>
+                  <button className="text-button" type="button" onClick={resetScheduleFilters}>
+                    Снять отбор
+                  </button>
+                </>
+              ) : null}
+              {/*
+                Несколько дней на одном экране — это законный режим («покажи всё»),
+                но человек должен знать, что он в нём: иначе запись из прошлого
+                года читается как сегодняшняя.
+              */}
+              {activeScheduleFilterLabels.length === 0 && visibleDayGroups.length > 1 ? (
+                <>
+                  <span className="status-pill status-planned">Показаны все дни: {visibleDayGroups.length}</span>
+                  <button className="text-button" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
+                    Только сегодня
+                  </button>
+                </>
+              ) : null}
+              {/* Накладки называются на самом верху: это то, из-за чего в коридоре встречаются двое. */}
+              {scheduleOverlapCount > 0 ? (
+                <span className="status-pill status-cancelled" role="alert">
+                  Наложений на одно время: {scheduleOverlapCount}
+                </span>
               ) : null}
               {/*
                 Здесь стояли чипы «Нет записей», «Предупреждений: 1» и «Ок».
@@ -614,7 +734,23 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               )}
             </section>
             <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--paper-soft)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--line)', paddingRight: '12px', marginRight: '4px' }}>
+              {/*
+                Стрелки «день назад» и «день вперёд» рядом с датой. Раньше день
+                можно было только ввести в поле: чтобы посмотреть неделю
+                заболевшего врача, администратор набирал шесть дат руками.
+                Когда дата не выбрана, шаг считается от сегодня.
+              */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderRight: '1px solid var(--line)', paddingRight: '12px', marginRight: '4px' }}>
+                <button
+                  type="button"
+                  className="secondary-button schedule-day-step-prev"
+                  onClick={() => stepScheduleDay(-1)}
+                  aria-label="Показать предыдущий день"
+                  title="День назад"
+                  style={{ minHeight: '30px', padding: '0 8px' }}
+                >
+                  <ChevronLeft size={16} aria-hidden="true" />
+                </button>
                 <input
                   type="date"
                   aria-label="Фильтр расписания по дате"
@@ -622,6 +758,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
                   onChange={(event: TextFieldChangeEvent) => setScheduleDateFilter(event.target.value)}
                   style={{ border: '1px solid var(--line)', borderRadius: '8px', background: 'var(--paper-soft)', padding: '4px 8px', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', outline: 'none', cursor: 'pointer' }}
                 />
+                <button
+                  type="button"
+                  className="secondary-button schedule-day-step-next"
+                  onClick={() => stepScheduleDay(1)}
+                  aria-label="Показать следующий день"
+                  title="День вперёд"
+                  style={{ minHeight: '30px', padding: '0 8px' }}
+                >
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
               </div>
               
               <button
@@ -735,68 +881,190 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               setShowCreateForm={setShowCreateForm}
             />
             <div className="schedule-timeline timeline">
-              {sortedAppointments.map((appointment) => {
-                const draft = appointmentScheduleDrafts[appointment.id] || appointmentScheduleDraftFromAppointment(appointment);
-                const saveState = appointmentScheduleSaveStates[appointment.id] || 'idle';
-                const error = appointmentScheduleErrors[appointment.id] || null;
-                const dirty = appointmentScheduleDirtyIds.has(appointment.id);
-                const isEditing = editingAppointmentId === appointment.id;
-                const hasOpenVisit = dashboard.activeVisit && dashboard.activeVisit.appointmentId === appointment.id;
-                const startsAtMs = Date.parse(draft.startsAt);
-                const endsAtMs = Date.parse(draft.endsAt);
-                
-                const missingSteps = appointmentDraftMissingSteps(draft);
-                const readyToSave = missingSteps.length === 0 && dirty;
+              {/*
+                Приёмы идут ДНЯМИ, а не одной лентой. Заголовок дня — не
+                украшение: без него карточка «16:30» из января 2024 года выглядит
+                как сегодняшняя, и на этом администратор строит рабочие решения.
+                Между карточками показаны свободные окна и накладки — то, ради
+                чего человек и смотрит на день целиком.
+              */}
+              {visibleDayGroups.map((group) => (
+                <Fragment key={group.dateKey}>
+                  <div
+                    className="schedule-day-heading"
+                    data-testid="schedule-day-heading"
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "baseline",
+                      gap: "8px",
+                      margin: "18px 0 10px",
+                      paddingBottom: "6px",
+                      borderBottom: "1px solid var(--line)"
+                    }}
+                  >
+                    <strong style={{ fontSize: "15px", color: "var(--ink)", textTransform: "capitalize" }}>
+                      {group.title}
+                    </strong>
+                    {group.relativeLabel ? (
+                      <span
+                        className={`status-pill ${group.relation === "today" ? "status-confirmed" : "status-planned"}`}
+                      >
+                        {group.relativeLabel}
+                      </span>
+                    ) : null}
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                      {/* Число записей и занятое время: «где перегруз» видно без счёта в голове. */}
+                      записей: {group.appointmentCount} · занято {formatMinutesForHumans(group.bookedMinutes)}
+                      {group.freeGapMinutes > 0 ? ` · свободно между приёмами ${formatMinutesForHumans(group.freeGapMinutes)}` : ""}
+                    </span>
+                  </div>
+                  {group.rows.map((row, rowIndex) => {
+                    if (row.kind === "gap") {
+                      return (
+                        <p
+                          key={`gap-${group.dateKey}-${row.afterAppointmentId}-${rowIndex}`}
+                          className="schedule-day-gap"
+                          data-testid="schedule-day-gap"
+                          style={{
+                            margin: "6px 0 6px 12px",
+                            padding: "6px 10px",
+                            borderLeft: "3px dashed var(--line-strong)",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            color: "var(--muted)"
+                          }}
+                        >
+                          Свободно {formatMinutesForHumans(row.minutes)} — сюда можно записать
+                        </p>
+                      );
+                    }
+                    if (row.kind === "overlap") {
+                      /*
+                        Накладка названа словами и без сокращений: это то, из-за
+                        чего в коридоре оказываются два человека на одно время.
+                        Сервер такие записи принимает, значит поймать их может
+                        только экран.
+                      */
+                      const overlapReason = row.sameDoctor && row.sameChair
+                        ? "один врач и одно кресло"
+                        : row.sameDoctor
+                          ? "один и тот же врач"
+                          : "одно и то же кресло";
+                      return (
+                        <p
+                          key={`overlap-${group.dateKey}-${row.withAppointmentId}-${rowIndex}`}
+                          className="schedule-day-overlap"
+                          data-testid="schedule-day-overlap"
+                          role="alert"
+                          style={{
+                            margin: "6px 0 6px 12px",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            background: "var(--bad-bg)",
+                            border: "1px solid var(--red)",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            color: "var(--ink)"
+                          }}
+                        >
+                          Две записи на одно время ({overlapReason}), пересечение{" "}
+                          {formatMinutesForHumans(row.minutes)}. Кого-то придётся перенести.
+                        </p>
+                      );
+                    }
 
-                return (
-                  <AppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    dashboard={dashboard}
-                    visibleScheduleSuggestions={visibleScheduleSuggestions}
-                    appointmentReadinessById={appointmentReadinessById}
-                    appointmentLabels={appointmentLabels}
-                    appointmentDraft={draft}
-                    appointmentSaveState={saveState}
-                    appointmentSaveError={error}
-                    appointmentDirty={dirty}
-                    appointmentEditing={isEditing}
-                    appointmentHasOpenVisit={Boolean(hasOpenVisit)}
-                    appointmentActiveVisitStatusLocked={Boolean(hasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status))}
-                    appointmentMissingSteps={missingSteps as string[]}
-                    appointmentReadyToSave={readyToSave}
-                    openScheduleSuggestion={openScheduleSuggestion}
-                    formatTime={formatTime}
-                    patientName={patientName}
-                    openAppointmentEditor={openAppointmentEditor}
-                    repeatAppointment={repeatAppointment}
-                    closeAppointmentEditor={closeAppointmentEditor}
-                    updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
-                    saveAppointmentSchedule={saveAppointmentSchedule}
-                    normalizedAppointmentStatus={normalizedAppointmentStatus}
-                    toDateTimeLocalValue={toDateTimeLocalValue}
-                    fromDateTimeLocalValue={fromDateTimeLocalValue}
-                    useManualSelects={useManualSelects}
-                    activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
-                  />
-                );
-              })}
-              {sortedAppointments.length === 0 ? (
+                    const appointment = row.appointment as Appointment;
+                    const draft = appointmentScheduleDrafts[appointment.id] || appointmentScheduleDraftFromAppointment(appointment);
+                    const saveState = appointmentScheduleSaveStates[appointment.id] || 'idle';
+                    const error = appointmentScheduleErrors[appointment.id] || null;
+                    const dirty = appointmentScheduleDirtyIds.has(appointment.id);
+                    const isEditing = editingAppointmentId === appointment.id;
+                    const hasOpenVisit = dashboard.activeVisit && dashboard.activeVisit.appointmentId === appointment.id;
+
+                    const missingSteps = appointmentDraftMissingSteps(draft);
+                    const readyToSave = missingSteps.length === 0 && dirty;
+
+                    return (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        dashboard={dashboard}
+                        visibleScheduleSuggestions={visibleScheduleSuggestions}
+                        appointmentReadinessById={appointmentReadinessById}
+                        appointmentLabels={appointmentLabels}
+                        appointmentDraft={draft}
+                        appointmentSaveState={saveState}
+                        appointmentSaveError={error}
+                        appointmentDirty={dirty}
+                        appointmentEditing={isEditing}
+                        appointmentHasOpenVisit={Boolean(hasOpenVisit)}
+                        appointmentActiveVisitStatusLocked={Boolean(hasOpenVisit && activeVisitLockedAppointmentStatuses.has(draft.status))}
+                        appointmentMissingSteps={missingSteps as string[]}
+                        appointmentReadyToSave={readyToSave}
+                        openScheduleSuggestion={openScheduleSuggestion}
+                        formatTime={formatTime}
+                        patientName={patientName}
+                        openAppointmentEditor={openAppointmentEditor}
+                        repeatAppointment={repeatAppointment}
+                        closeAppointmentEditor={closeAppointmentEditor}
+                        updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
+                        saveAppointmentSchedule={saveAppointmentSchedule}
+                        normalizedAppointmentStatus={normalizedAppointmentStatus}
+                        toDateTimeLocalValue={toDateTimeLocalValue}
+                        fromDateTimeLocalValue={fromDateTimeLocalValue}
+                        useManualSelects={useManualSelects}
+                        activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
+                      />
+                    );
+                  })}
+                </Fragment>
+              ))}
+              {visibleAppointmentCount === 0 ? (
+                /*
+                  Три РАЗНЫЕ пустоты, а не одна.
+                  БЫЛО: всегда «Нет записей по выбранным фильтрам» и кнопка
+                  «Сбросить фильтры» — даже когда ни один фильтр не выставлен.
+                  Проверено в живом браузере на только что созданной клинике: она
+                  ни разу никого не записывала, а экран уверял, что записи прячут
+                  её фильтры, и предлагал сбросить то, чего нет. Человек ищет
+                  несуществующую поломку вместо того, чтобы записать пациента.
+                */
                 <EmptyState
                   icon={<Calendar size={32} />}
-                  title="Нет записей по выбранным фильтрам"
-                  description="Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или сразу откройте форму новой записи."
+                  title={
+                    (dashboard.appointments ?? []).length === 0
+                      ? "Записей пока нет ни одной"
+                      : activeScheduleFilterCount > 0
+                        ? scheduleDateFilter.trim()
+                          ? "На этот день записей нет"
+                          : "Всё скрыто фильтрами"
+                        : "Записей нет"
+                  }
+                  description={
+                    (dashboard.appointments ?? []).length === 0
+                      ? "Так и должно быть у новой клиники. Первая запись появится здесь, как только вы запишете пациента — форма выше, кнопка «Создать запись»."
+                      : activeScheduleFilterCount > 0
+                        ? scheduleDateFilter.trim()
+                          ? "Расписание не сломалось: на выбранный день записей нет. Полистайте дни стрелками рядом с датой, вернитесь на сегодня или запишите пациента на это свободное время."
+                          : "Расписание не сломалось: записи есть, но их скрывают выбранные врач, кресло или статус. Снимите фильтры кнопкой «Все записи»."
+                        : "Расписание не сломалось: записей действительно нет. Запишите первого — форма выше."
+                  }
                   glass={true}
                   action={
                     <div className="schedule-empty-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' }}>
-                      <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
-                        Сегодня
-                      </button>
-                      <button className="text-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
-                        Сбросить фильтры
-                      </button>
+                      {scheduleDateFilter.trim() && scheduleDateFilter.trim() !== clinicToday ? (
+                        <button className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
+                          Вернуться на сегодня
+                        </button>
+                      ) : null}
+                      {activeScheduleFilterCount > 0 ? (
+                        <button className="text-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={resetScheduleFilters}>
+                          Снять все фильтры
+                        </button>
+                      ) : null}
                       <button className="primary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors" type="button" onClick={focusNewAppointmentEditor}>
-                        <Plus aria-hidden="true" /> Новая запись
+                        <Plus aria-hidden="true" /> Записать пациента
                       </button>
                     </div>
                   }
