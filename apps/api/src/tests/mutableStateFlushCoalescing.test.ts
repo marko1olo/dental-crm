@@ -36,9 +36,8 @@ process.env.DENTAL_STATE_PERSISTENCE = "on";
 process.env.DENTAL_STATE_FILE = stateFilePath;
 process.env.DENTAL_STATE_BACKUP_DIR = path.join(temporaryRoot, "backups");
 
-const { flushPersistentStateNow, saveUiPreferences, getUiPreferences } = await import(
-	"../sampleData.js"
-);
+const { flushPersistentStateNow, saveUiPreferences, getUiPreferences, recordAuditEvent } =
+	await import("../sampleData.js");
 
 const originalWriteFileSync = fs.writeFileSync;
 let stateWriteCount = 0;
@@ -187,6 +186,38 @@ describe("слияние записей снимка состояния", () => 
 		);
 		console.log(
 			`  поток: ${actionCount} действий за ~250 мс -> ${stateWriteCount} записей (окно 50 мс)`,
+		);
+	});
+
+	test("разные места вызова сливаются в одну запись, а не в запись на каждое", async () => {
+		process.env.DENTAL_STATE_FLUSH_DELAY_MS = "60";
+		resetWriteCounters();
+
+		// Три РАЗНЫХ места вызова persistMutableState(): настройки интерфейса
+		// (sampleData.ts saveUiPreferences) и журнал аудита (recordAuditEvent,
+		// он же самая быстро растущая коллекция снимка — 76 401 Б на текущей
+		// базе). Слияние обязано работать между местами вызова, а не только
+		// между повторами одного.
+		smallUserAction(1);
+		const auditEvent = recordAuditEvent({
+			entityType: "visit",
+			entityId: "9f5b6f4e-4d51-4a2f-9d3e-1f2c3b4a5d6e",
+			action: "state_flush_coalescing_probe",
+			reason: "Проверка слияния записей снимка состояния между разными местами вызова.",
+		});
+		smallUserAction(2);
+
+		assert.equal(stateWriteCount, 0, "ни одно из трёх действий не должно писать файл на своём такте");
+
+		await sleep(200);
+
+		assert.equal(stateWriteCount, 1, "три действия из разных мест обязаны дать одну запись");
+		const persisted = JSON.parse(fs.readFileSync(stateFilePath, "utf8")) as {
+			state: { auditEvents: Array<{ id: string }> };
+		};
+		assert.ok(
+			persisted.state.auditEvents.some((event) => event.id === auditEvent.id),
+			"единственная запись обязана содержать изменения ВСЕХ слитых действий",
 		);
 	});
 
