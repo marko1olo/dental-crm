@@ -4,8 +4,11 @@ import type { DenteTelegramOutboxDeliveryReceipt } from "@dental/shared";
 import {
 	deliverTelegramOutboxParts,
 	telegramOutboxDeliveredParts,
+	telegramOutboxDeliveredPartsForItem,
+	telegramOutboxScheduleState,
 	telegramPhotoSentTextFailedBlockedReason,
 } from "../routes/telegram.js";
+import { denteTelegramOutboxDeliveryReceipts } from "../sampleData.js";
 import type { TelegramTransportResult } from "../telegramTransport.js";
 
 /**
@@ -271,5 +274,169 @@ describe("частичная доставка «фото + текст» в оч�
 		assert.strictEqual(telegramOutboxDeliveredParts(sentReceipt).photoDelivered, false);
 		assert.strictEqual(telegramOutboxDeliveredParts(null).photoDelivered, false);
 		assert.strictEqual(telegramOutboxDeliveredParts(undefined).photoDelivered, false);
+	});
+});
+
+/**
+ * Замок на дефект (b) пакета S5: нечитаемое время отправки считалось наступившим, то есть отказ
+ * прочитать дату означал «отправить сейчас». Часы здесь фиксированные — ни один тест ниже не зовёт
+ * Date.now(), иначе проверка «будущее ещё не наступило» ломалась бы на границе суток.
+ */
+const fixedNowMs = Date.parse("2026-07-28T02:00:00+04:00");
+
+describe("состояние запланированного времени отправки Telegram", () => {
+	test("часы теста действительно фиксированы", () => {
+		assert.ok(Number.isFinite(fixedNowMs), "фиксированные часы обязаны разбираться");
+	});
+
+	test("нечитаемое время НЕ считается наступившим — иначе сообщение уходит не в свой день", () => {
+		for (const unreadable of ["следующий вторник", "not-a-date", "", "   ", "2026-13-45T99:99:99Z"]) {
+			assert.strictEqual(
+				telegramOutboxScheduleState(unreadable, fixedNowMs),
+				"unreadable",
+				`значение ${JSON.stringify(unreadable)} обязано попасть в отдельное состояние, а не в «пора»`,
+			);
+			assert.notStrictEqual(
+				telegramOutboxScheduleState(unreadable, fixedNowMs),
+				"due",
+				`значение ${JSON.stringify(unreadable)} не имеет права считаться наступившим`,
+			);
+		}
+	});
+
+	test("прошедшее время — пора, будущее — не пора, ровно текущее — пора", () => {
+		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T01:59:59+04:00", fixedNowMs), "due");
+		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T02:00:00+04:00", fixedNowMs), "due");
+		assert.strictEqual(telegramOutboxScheduleState("2026-07-28T02:00:01+04:00", fixedNowMs), "not_due");
+		// Напоминание на следующий вторник: раньше нечитаемая дата давала «пора», а читаемая будущая —
+		// нет. Проверяем именно читаемую будущую, чтобы fail-closed не съел нормальное планирование.
+		assert.strictEqual(telegramOutboxScheduleState("2026-08-04T10:00:00+04:00", fixedNowMs), "not_due");
+	});
+
+	test("состояние считается от переданных часов, а не от системных", () => {
+		const scheduledAt = "2026-07-28T03:00:00+04:00";
+		assert.strictEqual(telegramOutboxScheduleState(scheduledAt, fixedNowMs), "not_due");
+		assert.strictEqual(telegramOutboxScheduleState(scheduledAt, fixedNowMs + 60 * 60 * 1000), "due");
+	});
+});
+
+/**
+ * Замок на F3 ревьюера: признак «фото уже у пациента» жил в паре (позиция, clientMutationId), а
+ * оператор из интерфейса берёт новый crypto.randomUUID() на каждый клик, поэтому его повтор признака
+ * не находил и пациент получал фото второй раз.
+ */
+function withReceipt<T>(receipt: DenteTelegramOutboxDeliveryReceipt, run: () => T): T {
+	denteTelegramOutboxDeliveryReceipts.unshift(receipt);
+	try {
+		return run();
+	} finally {
+		const index = denteTelegramOutboxDeliveryReceipts.indexOf(receipt);
+		if (index >= 0) denteTelegramOutboxDeliveryReceipts.splice(index, 1);
+	}
+}
+
+function partialDeliveryReceipt(
+	outboxItemId: string,
+	clientMutationId: string,
+	telegramMessageId: number | null,
+): DenteTelegramOutboxDeliveryReceipt {
+	return {
+		outboxItemId,
+		status: "failed",
+		outboxItem: null,
+		taskId: null,
+		eventId: null,
+		telegramMessageId,
+		clientMutationId,
+		warnings: [],
+		blockedReason: telegramPhotoSentTextFailedBlockedReason,
+		createdAt: new Date(fixedNowMs).toISOString(),
+	};
+}
+
+describe("признак частичной доставки принадлежит позиции, а не попытке", () => {
+	test("повтор с ДРУГИМ clientMutationId находит доставленное фото", () => {
+		const itemId = "document-ready:позиция-оператора:пациент";
+		const receipt = partialDeliveryReceipt(itemId, "due-первая-попытка", 555);
+
+		withReceipt(receipt, () => {
+			// Так вело себя R5: у нового mutation id квитанции нет, признака нет, фото уйдёт снова.
+			assert.strictEqual(
+				telegramOutboxDeliveredParts(null).photoDelivered,
+				false,
+				"поиск по паре (позиция, mutation id) у нового клика оператора не находит ничего — это и был дефект",
+			);
+
+			const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
+			assert.strictEqual(delivered.photoDelivered, true, "фото уже в чате пациента, повтор обязан это знать");
+			assert.strictEqual(delivered.photoMessageId, 555, "message_id доставленного фото обязан сохраниться");
+		});
+	});
+
+	test("повтор оператора с новым mutation id досылает ТОЛЬКО текст — фото второй раз не уходит", async () => {
+		const itemId = "appointment-reminder:позиция-повтора:24h:пациент";
+		const receipt = partialDeliveryReceipt(itemId, "due-первая-попытка", 555);
+
+		const { senders, calls } = recordingSenders([], [telegramSendOk(556)]);
+		await withReceipt(receipt, async () => {
+			const outcome = await deliverTelegramOutboxParts({
+				...basePlan,
+				text: longPatientText,
+				photoUrl,
+				alreadyDelivered: telegramOutboxDeliveredPartsForItem(itemId, null),
+				senders,
+			});
+			assert.strictEqual(outcome.transport.ok, true);
+		});
+
+		assert.deepStrictEqual(
+			calls.map((call) => call.kind),
+			["text"],
+			"повтор оператора не имеет права звать sendPhoto",
+		);
+		assert.strictEqual(calls.filter((call) => call.kind === "photo").length, 0, "фото повторно не отправлено");
+	});
+
+	test("сдвиг scheduledAt меняет due-ключ, но признак всё равно находится", () => {
+		const itemId = "recall:позиция-со-сдвигом:пациент";
+		// dueOutboxClientMutationId = sha256(id:scheduledAt): при сдвиге времени ключ другой.
+		const receipt = partialDeliveryReceipt(itemId, "due-ключ-до-сдвига", 777);
+
+		withReceipt(receipt, () => {
+			const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
+			assert.strictEqual(delivered.photoDelivered, true, "смена времени не выкладывает фото из чата пациента");
+			assert.strictEqual(delivered.photoMessageId, 777);
+		});
+	});
+
+	test("квитанция ЧУЖОЙ позиции не отменяет отправку фото", () => {
+		const otherItemId = "recall:чужая-позиция:пациент";
+		const receipt = partialDeliveryReceipt(otherItemId, "due-чужая-попытка", 999);
+
+		withReceipt(receipt, () => {
+			const delivered = telegramOutboxDeliveredPartsForItem("recall:моя-позиция:пациент", null);
+			assert.strictEqual(delivered.photoDelivered, false, "признак не имеет права протекать между позициями");
+			assert.strictEqual(delivered.photoMessageId, null);
+		});
+	});
+
+	test("нет ни одной квитанции по позиции — фото обязано уйти", () => {
+		const delivered = telegramOutboxDeliveredPartsForItem("post-visit:позиция-без-квитанций:пациент", null);
+		assert.strictEqual(delivered.photoDelivered, false);
+		assert.strictEqual(delivered.photoMessageId, null);
+	});
+
+	test("квитанция с message_id предпочтительнее квитанции без него", () => {
+		const itemId = "post-visit-checkup:позиция-двух-попыток:пациент";
+		const newest = partialDeliveryReceipt(itemId, "due-вторая-попытка", null);
+		const oldest = partialDeliveryReceipt(itemId, "due-первая-попытка", 555);
+
+		withReceipt(oldest, () => {
+			withReceipt(newest, () => {
+				const delivered = telegramOutboxDeliveredPartsForItem(itemId, null);
+				assert.strictEqual(delivered.photoDelivered, true);
+				assert.strictEqual(delivered.photoMessageId, 555, "message_id есть хотя бы в одной попытке — его и показываем");
+			});
+		});
 	});
 });
