@@ -45,6 +45,75 @@ const MOUNTED_PANELS = [
 	{ component: "FreedSlotsPanel", file: "components/schedule/FreedSlotsPanel.tsx" }
 ];
 
+/**
+ * Каталоги карточки пациента и плана лечения обходятся ЦЕЛИКОМ, а не по списку.
+ *
+ * ПОЧЕМУ ОБХОД, А НЕ ЕЩЁ ОДИН СПИСОК. Проверка MOUNTED_PANELS выше — поимённый
+ * перечень семи названных панелей. Она структурно не способна заметить файл,
+ * которого в перечне нет, и именно так карточка пациента получила сирот:
+ * PR #409 вынес из PatientsView.tsx пять форм, в тот же день их удалили как
+ * мёртвый код, а на следующий слепой «chore: sync final local updates» вернул
+ * в дерево два файла из пяти. Оба прошли typecheck, сборку и все тесты — искать
+ * было нечего, перечень этих имён не знал. Одна из вернувшихся форм оказалась
+ * НАДМНОЖЕСТВОМ смонтированной: пять полей реквизитов пациента существовали в
+ * схеме, в колонке, в черновике, в запросе и в валидаторе, а ввести их было
+ * нечем ни на одном экране.
+ *
+ * Обход каталога такое видит. Любой .tsx в этих каталогах обязан либо
+ * отрисовываться из достижимого модуля, либо стоять в списке заявленных долгов
+ * с причиной. Третьего состояния — «лежит в дереве и молчит» — больше нет.
+ */
+const CLINICAL_COMPONENT_DIRECTORIES = [
+	"components/patient",
+	"components/plan",
+	"components/odontogram"
+];
+
+/**
+ * Заявленные долги: файл в дереве, и его сознательно никто не отрисовывает.
+ *
+ * Запись здесь — НЕ разрешение и не «подключим потом». Она означает: причина
+ * проверена и записана, а подключение — отдельная работа с отдельным решением.
+ * Общая причина вроде «нужно доработать» здесь хуже, чем отсутствие записи:
+ * она гасит стража, ничего не сообщая. Минимальная длина причины проверяется
+ * тестом ниже.
+ */
+const KNOWN_UNMOUNTED_CLINICAL_COMPONENTS: ReadonlyArray<{
+	readonly file: string;
+	readonly reason: string;
+}> = [
+	{
+		file: "components/plan/ComparativePlannerDashboard.tsx",
+		reason:
+			"Сравнительный конструктор смет: несколько альтернативных планов рядом, " +
+			"покрытие ДМС, жизненный цикл «утвердить / архивировать / восстановить», " +
+			"печать и выгрузка CSV. Адреса на сервере рабочие, но подключать его " +
+			"нельзя — против этих адресов он не работает ни в одном сценарии, и на " +
+			"экран клиники это выйдет как ошибки в деньгах:\n" +
+			"1. Прайс клиники читается по полю priceRub, которого у позиции прайса " +
+			"нет — и в схеме (serviceCatalogItemSchema), и в колонке цена называется " +
+			"basePriceRub. В выпадающем списке услуг стоит «undefined ₽», в поле цены " +
+			"строка «undefined», а строка без разобранной цены молча вылетает из " +
+			"плана: врач нажимает «Создать план» и получает план без этой услуги.\n" +
+			"2. Для услуги, набранной вручную, уходит priceId: null, а сервер требует " +
+			"непустую ссылку на прайс, поэтому весь запрос отбивается ошибкой " +
+			"валидации.\n" +
+			"3. Смена статуса плана отправляет запрос без названия — сервер " +
+			"подставляет название по умолчанию и ПЕРЕИМЕНОВЫВАЕТ план; сам статус в " +
+			"схему запроса не входит и не сохраняется вообще.\n" +
+			"4. Статусы сервер отдаёт строчными («draft»), а экран сравнивает с " +
+			"«Draft», поэтому у загруженного плана не видно ни подписи статуса, ни " +
+			"кнопок жизненного цикла.\n" +
+			"5. Полис ДМС берётся первым из списка договоров клиники и применяется " +
+			"любому пациенту, хотя связи «пациент → договор» в схеме нет: пациенту " +
+			"могут назвать скидку по чужому полису.\n" +
+			"Это починка денежного экрана, а не перестановка кода. Вдобавок точка " +
+			"монтирования и POST-адрес общие с TreatmentEstimator, который уже " +
+			"смонтирован в одонтограмме, — разграничение двух планировщиков решает " +
+			"ведущий, а не этот файл."
+	}
+];
+
 function readSource(relativePath: string): string {
 	return readFileSync(path.join(webSrc, relativePath), "utf8");
 }
@@ -100,6 +169,42 @@ function reachableFromEntry(): Set<string> {
 	}
 
 	return reachable;
+}
+
+/**
+ * Файлы-компоненты в клинических каталогах: `.tsx`, имя с заглавной буквы.
+ * Обход рекурсивный — подкаталог не должен становиться слепой зоной.
+ * Пути возвращаются в том же виде, в каком записаны заявленные долги.
+ */
+function clinicalComponentFiles(
+	relativeDirectory: string,
+	collected: string[] = []
+): string[] {
+	const absolute = path.join(webSrc, relativeDirectory);
+	for (const entry of readdirSync(absolute)) {
+		const full = path.join(absolute, entry);
+		if (statSync(full).isDirectory()) {
+			clinicalComponentFiles(`${relativeDirectory}/${entry}`, collected);
+			continue;
+		}
+		if (!/^[A-Z][A-Za-z0-9]*\.tsx$/.test(entry)) continue;
+		if (/\.test\.tsx$/.test(entry)) continue;
+		collected.push(`${relativeDirectory}/${entry}`);
+	}
+	return collected;
+}
+
+/**
+ * Модули, которые отрисовывают компонент: достижимые от main.tsx файлы, где
+ * встречается `<Имя`. Сам файл компонента не считается — он рисует себя.
+ */
+function renderersOf(component: string, reachable: Set<string>, ownFileName: string): string[] {
+	const found: string[] = [];
+	for (const file of reachable) {
+		if (path.basename(file) === ownFileName) continue;
+		if (readFileSync(file, "utf8").includes(`<${component}`)) found.push(file);
+	}
+	return found;
 }
 
 /**
@@ -213,5 +318,75 @@ test("второго маршрутизатора рядом с App.tsx боль
 		false,
 		"AppRouter.tsx создан заново. Второй файл с цепочкой по currentView не участвует в отрисовке: " +
 			"добавьте раздел в workspaceShell.appViews и ветку в App.tsx.",
+	);
+});
+
+test("в карточке пациента и плане лечения нет незаявленных сирот", () => {
+	const reachable = reachableFromEntry();
+	const reachableNames = new Set([...reachable].map((file) => path.basename(file)));
+	const declared = new Set(KNOWN_UNMOUNTED_CLINICAL_COMPONENTS.map((debt) => debt.file));
+
+	const orphans: string[] = [];
+	for (const directory of CLINICAL_COMPONENT_DIRECTORIES) {
+		for (const relative of clinicalComponentFiles(directory)) {
+			if (declared.has(relative)) continue;
+			const fileName = path.basename(relative);
+			const component = fileName.replace(/\.tsx$/, "");
+			const rendered =
+				reachableNames.has(fileName) &&
+				renderersOf(component, reachable, fileName).length > 0;
+			if (!rendered) orphans.push(relative);
+		}
+	}
+
+	assert.deepEqual(
+		orphans,
+		[],
+		`Компонент лежит в дереве, и его никто не отрисовывает: ${orphans.join(", ")}. ` +
+			"Такой файл проходит typecheck, сборку и все остальные тесты, а на экране его нет — " +
+			"так карточка пациента полтора дня хранила форму реквизитов, которая умела больше " +
+			"смонтированной. Либо отрисуйте его из достижимого от main.tsx модуля, либо внесите " +
+			"в KNOWN_UNMOUNTED_CLINICAL_COMPONENTS вместе с проверенной причиной.",
+	);
+});
+
+test("заявленные несмонтированные компоненты не устарели и объяснены", () => {
+	const reachable = reachableFromEntry();
+
+	const missingFiles: string[] = [];
+	const staleEntries: string[] = [];
+	const emptyReasons: string[] = [];
+
+	for (const debt of KNOWN_UNMOUNTED_CLINICAL_COMPONENTS) {
+		if (!existsSync(path.join(webSrc, debt.file))) {
+			missingFiles.push(debt.file);
+			continue;
+		}
+		const fileName = path.basename(debt.file);
+		const component = fileName.replace(/\.tsx$/, "");
+		if (renderersOf(component, reachable, fileName).length > 0) staleEntries.push(debt.file);
+		// Причина короче двух строк — это отписка, а не причина.
+		if (debt.reason.trim().length < 120) emptyReasons.push(debt.file);
+	}
+
+	assert.deepEqual(
+		missingFiles,
+		[],
+		`Долг заявлен на файл, которого в дереве нет: ${missingFiles.join(", ")}. ` +
+			"Файл удалён — удалите и запись, иначе список долгов начинает врать о составе дерева.",
+	);
+	assert.deepEqual(
+		staleEntries,
+		[],
+		`Компонент заявлен как несмонтированный, но его уже отрисовывают: ${staleEntries.join(", ")}. ` +
+			"Уберите запись из KNOWN_UNMOUNTED_CLINICAL_COMPONENTS — пока она там, страж не следит " +
+			"за этим файлом и следующая поломка монтирования пройдёт молча.",
+	);
+	assert.deepEqual(
+		emptyReasons,
+		[],
+		`Долг заявлен без внятной причины: ${emptyReasons.join(", ")}. ` +
+			"Причина обязана называть, что именно мешает подключению и чем это подтверждено, " +
+			"иначе запись просто гасит проверку.",
 	);
 });
