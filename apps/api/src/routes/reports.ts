@@ -16,7 +16,10 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { requireClinicalReadContext } from "../accessGuard.js";
+import { db } from "../db/client.js";
+import { clinics } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
 	appointmentFunnel,
@@ -49,13 +52,33 @@ function badRequest(reply: FastifyReply, message: string) {
 }
 
 /**
+ * Часовой пояс клиники, `null` — определить не удалось.
+ *
+ * Нужен для периода по умолчанию: месяц отчёта — календарное понятие, и считать
+ * его границы обязан тот, кто знает пояс клиники, а не пояс серверного процесса.
+ */
+async function clinicTimeZone(organizationId: string): Promise<string | null> {
+	try {
+		const [clinic] = await db
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+		return clinic?.timezone ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Период из запроса. Слишком широкий диапазон отклоняется, а не обрезается
  * молча: отчёт «за всё время», выданный за отчёт «за год», хуже отказа.
  */
 function resolvePeriod(
-	query: z.infer<typeof periodQuerySchema>
+	query: z.infer<typeof periodQuerySchema>,
+	timeZone: string | null
 ): { ok: true; from: Date; to: Date } | { ok: false; message: string } {
-	const fallback = currentMonthPeriod();
+	const fallback = currentMonthPeriod(new Date(), timeZone);
 	const from = query.from ? new Date(query.from) : fallback.from;
 	const to = query.to ? new Date(query.to) : fallback.to;
 
@@ -90,7 +113,12 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			badRequest(reply, "Проверьте параметры отчёта: даты, детализацию и пределы.");
 			return null;
 		}
-		const period = resolvePeriod(parsed.data);
+		// Пояс читается ТОЛЬКО когда период не задан запросом: явные from/to уже
+		// приходят полным ISO со смещением, и лишний запрос к базе там ни на что
+		// не влияет.
+		const timeZone =
+			parsed.data.from && parsed.data.to ? null : await clinicTimeZone(context.organizationId);
+		const period = resolvePeriod(parsed.data, timeZone);
 		if (!period.ok) {
 			badRequest(reply, period.message);
 			return null;
