@@ -1,6 +1,6 @@
 # W6-monolith-real-split — state
 
-STATUS: COMMITTED 64d17693613646c67665b41f91a0a3f03fe29f75 -> PROVEN
+STATUS: DONE — COMMITTED 64d17693613646c67665b41f91a0a3f03fe29f75 (code+test) и 11a9fc13b (запись пакета), PROVEN
 HEAD at start: 54db1c590be322d16858cd5d69e70a451bece62e
 HEAD before commit: cf40daaccb80920771a31ee51bb61c5a1aa20f9b (moved under me, other author; my files untouched)
 
