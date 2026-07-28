@@ -23,6 +23,7 @@ import { countLabel, money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
+import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
 import { RebookingConversionRulesWidget } from "../components/analytics/RebookingConversionRulesWidget";
 import { EmptyState } from "../components/EmptyState.js";
 import {
@@ -555,6 +556,16 @@ export function AnalyticsDashboardView() {
 						пишет, — то есть показывал снимок, сделанный неизвестно когда, и
 						на двух экранах давал бы разные ответы на один вопрос.
 					*/}
+					{/*
+						Освободившиеся окна стоят ПЕРЕД возвратом пациентов намеренно: это
+						самое срочное из двух. Окно завтра в 13:30 пропадёт послезавтра, а
+						пациент, не приходивший восемь месяцев, подождёт ещё день.
+						Панель сама не показывается, когда окон нет.
+					*/}
+					<div className="mt-6">
+						<FreedSlotsPanel />
+					</div>
+
 					<div className="mt-6">
 						<RecallListPanel />
 					</div>
