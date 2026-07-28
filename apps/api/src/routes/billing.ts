@@ -12,6 +12,7 @@ import {
   createPaymentInDb
 } from "../db/billingQuery.js";
 import { doctorPayouts, resolvePayoutPeriod } from "../services/finance/doctorPayouts.js";
+import { explainNegativePayouts } from "../services/finance/payoutNegativeExplain.js";
 
 function documentCanReceivePayment(documentKind: keyof typeof documentKindMetadata): boolean {
   const metadata = documentKindMetadata[documentKind];
@@ -299,7 +300,28 @@ export async function registerBillingRoutes(app: FastifyInstance) {
         // покидать базу вовсе, даже чтобы быть отброшенными в коде.
         onlyDoctorUserId: access.scope === "own" ? access.userId : null
       });
-      return { scope: access.scope, ...report };
+      /*
+       * Отрицательная выплата объясняется словами и числами до того, как уйдёт
+       * на экран.
+       *
+       * БЫЛО: врач с долгом получал строку «Выплата отрицательная: материалы
+       * дороже начисленного процента» — ни одного числа, ни одного действия, а
+       * итог по клинике был крупным красным числом вообще без пояснения. При
+       * этом сам итог — сальдо встречных величин: выплату одному врачу и долг
+       * другого. Владелец не мог ни объяснить минус врачу, ни увидеть, сколько
+       * клиника на самом деле платит и сколько ей должны.
+       *
+       * Шаг ничего не считает заново: суммы остаются те, что вернул расчёт, —
+       * добавляются только текст и разложенный по знаку итог. Клиника без
+       * отрицательных выплат не получает ни одного нового слова.
+       *
+       * ДОЛГ: правильное место для этого текста — `payoutRowNote` внутри
+       * `doctorPayouts.ts`; на момент правки тот файл держал другой инженер, и
+       * по правилу границ он не трогался. Подробности и план переноса — в шапке
+       * `services/finance/payoutNegativeExplain.ts`.
+       */
+      const explained = explainNegativePayouts(report, { scope: access.scope });
+      return { scope: access.scope, ...explained };
     } catch (error) {
       request.log.error({ err: error }, "billing payouts calculation failed");
       /*
