@@ -7,6 +7,7 @@ import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
+import { CashDayTally } from "./components/finance/CashDayTally";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
@@ -325,6 +326,18 @@ export function FinanceView({
         payerInn={paymentPayerInn}
         payerRelationship={paymentPayerRelationship}
         taxDeductionCode={paymentTaxDeductionCode}
+      />
+
+      {/*
+        Итог дня стоит ПЕРЕД историей оплат и после формы приёма: рядом с
+        платежами, но не вместо них. История ниже — по выбранному пациенту, итог
+        здесь — по всей клинике, и об этом сказано внутри, иначе одно прочтут за
+        другое. Раздел закрыт: на поверхности только строка с двумя цифрами.
+      */}
+      <CashDayTally
+        payments={dashboard?.payments}
+        methodLabels={paymentMethodLabels}
+        money={money}
       />
 
       <FinanceLedger
