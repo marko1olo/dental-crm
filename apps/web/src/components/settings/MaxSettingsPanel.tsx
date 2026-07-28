@@ -2,14 +2,23 @@ import {
 	Check,
 	Copy,
 	ExternalLink,
+	HelpCircle,
 	RefreshCw,
 	Shield,
 	Wifi,
 	WifiOff,
 } from "lucide-react";
 import type { MaxStaffRouting } from "../../hooks/useMaxSettings.js";
-import { useMaxSettings } from "../../hooks/useMaxSettings.js";
-import { MessengerRoutingRules } from "./MessengerRoutingRules.js";
+import {
+	MAX_SETTINGS_PANEL_SUBJECT,
+	useMaxSettings,
+} from "../../hooks/useMaxSettings.js";
+import { panelStateText } from "../../lib/panelStateText";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+import {
+	MessengerRoutingRules,
+	messengerRoutingChanged,
+} from "./MessengerRoutingRules.js";
 
 interface StaffOption {
 	id: string;
@@ -25,6 +34,10 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 	const {
 		settings,
 		status,
+		statusUnknown,
+		loadState,
+		loadFailureStatus,
+		canSave,
 		loading,
 		saveState,
 		saveError,
@@ -51,24 +64,47 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 		void navigator.clipboard.writeText(myWebhookUrl);
 	};
 
+	/*
+	 * Признак изменений. РОУТИНГ ЗДЕСЬ ОБЯЗАТЕЛЕН: без него владелец назначал,
+	 * кому идут входящие сообщения пациентов, а кнопка «Сохранить» оставалась
+	 * выключенной (`disabled={!dirty}`) — заполнил и сохранить нечем. Сравнение
+	 * самого роутинга — в MessengerRoutingRules, рядом с его формой.
+	 *
+	 * webhookUrlDraft в признак не входит намеренно: поля ввода для него в панели
+	 * нет (адрес вебхука — наш собственный, он показан кодом ниже), значит и
+	 * измениться он не может.
+	 */
 	const dirty =
 		botIdDraft !== (settings?.botId ?? "") ||
 		isActiveDraft !== (settings?.isActive ?? false) ||
+		messengerRoutingChanged(staffRoutingDraft, settings?.staffRouting) ||
 		apiTokenDraft.trim() !== "";
 
-	return (
-		<section className="messenger-panel max-panel">
-			<div className="messenger-panel-header">
-				<div className="messenger-panel-icon max-icon" aria-hidden="true">
-					MAX
+	/*
+	 * ЗНАЧОК СОСТОЯНИЯ НЕ ИМЕЕТ ПРАВА ВРАТЬ. Было два состояния: «Подключён» и
+	 * «Не подключён», причём во второе сваливался и отказ проверки — /api/max/status
+	 * ответил 500 или до сервера не дошли вовсе. Владелец читал «Не подключён» у
+	 * рабочего бота и шёл перенастраивать то, что работает. Хук отдаёт эту разницу
+	 * отдельным признаком (statusUnknown), панель обязана её показать.
+	 */
+	const header = (
+		<div className="messenger-panel-header">
+			<div className="messenger-panel-icon max-icon" aria-hidden="true">
+				MAX
+			</div>
+			<div className="messenger-panel-title">
+				<h3>MAX (VK Max)</h3>
+				<p>
+					Российский мессенджер MAX (business.max.ru). Требует
+					верифицированного бизнес-аккаунта и API Token из панели бота.
+				</p>
+			</div>
+			{statusUnknown ? (
+				<div className="messenger-status-badge unknown">
+					<HelpCircle size={14} aria-hidden="true" />
+					<span>Состояние неизвестно</span>
 				</div>
-				<div className="messenger-panel-title">
-					<h3>MAX (VK Max)</h3>
-					<p>
-						Российский мессенджер MAX (business.max.ru). Требует
-						верифицированного бизнес-аккаунта и API Token из панели бота.
-					</p>
-				</div>
+			) : (
 				<div
 					className={`messenger-status-badge ${status?.connected ? "connected" : "disconnected"}`}
 				>
@@ -84,7 +120,50 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 						</>
 					)}
 				</div>
-			</div>
+			)}
+		</div>
+	);
+
+	/*
+	 * ОТКАЗ ЧТЕНИЯ — НЕ «КАНАЛ НЕ НАСТРОЕН». Панель рисовала форму при любом
+	 * исходе загрузки, поэтому на отказ сервера владелец видел пустой Bot ID,
+	 * пустой роутинг и подпись «Не подключён» — непрочитанное выдавалось за
+	 * отсутствующее. Сохранение в этом состоянии всё равно запрещено внутри хука
+	 * (иначе PUT затёр бы живые настройки пустыми), так что пустая форма ещё и
+	 * предлагала работу, которая не закончится сохранением.
+	 */
+	if (loadState.phase === "failed") {
+		return (
+			<section className="messenger-panel max-panel">
+				{header}
+				<PanelLoadFailure
+					subject={MAX_SETTINGS_PANEL_SUBJECT}
+					status={loadFailureStatus}
+					onRetry={() => void reload()}
+				/>
+			</section>
+		);
+	}
+
+	/* Первое чтение: показываем загрузку, а не пустую форму. При повторных
+	   чтениях (после сохранения) настройки уже есть — форму не гасим. */
+	if (loadState.phase === "loading" && !settings) {
+		const loadingText = panelStateText(MAX_SETTINGS_PANEL_SUBJECT, {
+			phase: "loading",
+		});
+		return (
+			<section className="messenger-panel max-panel">
+				{header}
+				<p className="messenger-status-detail" role="status" aria-live="polite">
+					{loadingText.title} {loadingText.hint}
+				</p>
+			</section>
+		);
+	}
+
+	return (
+		<section className="messenger-panel max-panel">
+			{header}
 
 			{status?.detail && (
 				<p className="messenger-status-detail">{status.detail}</p>
@@ -189,7 +268,11 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					<button
 						type="button"
 						onClick={() => void save()}
-						disabled={saveState === "saving" || !dirty}
+						/* canSave — разрешение хука: настройки прочитаны и сохранение не
+						   затрёт живые значения. Раньше кнопка спрашивала только
+						   saveState, поэтому во время перечитывания настроек нажатие
+						   отправляло PUT с ещё не заполненными черновиками. */
+						disabled={!canSave || !dirty}
 						className="btn-primary"
 					>
 						{saveState === "saving" && "Сохранение..."}

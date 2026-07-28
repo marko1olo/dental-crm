@@ -32,6 +32,40 @@ const INTENT_LABELS: Record<string, string> = {
 
 const INTENTS = Object.keys(INTENT_LABELS);
 
+/**
+ * Роутинг изменён по сравнению с тем, что сохранено в клинике.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Обе панели мессенджеров (MaxSettingsPanel,
+ * WhatsappSettingsPanel) считали признак изменений только по своим полям ввода —
+ * Bot ID, токен, «Активен» — и не смотрели на роутинг. Владелец указывал, кому
+ * направлять входящие сообщения пациентов, а кнопка «Сохранить» оставалась
+ * выключенной: заполнил, а сохранить нечем. Правило уходило вместе с закрытой
+ * вкладкой, и входящие продолжали идти в никуда.
+ *
+ * Сравнение живёт здесь, рядом с формой роутинга: это она знает свою форму
+ * данных, а не панели. Сравниваем по полям, а не через JSON.stringify: порядок
+ * ключей в правиле зависит от того, кто его собрал (нормализатор ответа сервера
+ * или spread при правке), и на разном порядке одинаковый роутинг считался бы
+ * изменённым — кнопка «Сохранить» горела бы всегда.
+ */
+export function messengerRoutingChanged(
+	draft: StaffRouting,
+	saved: StaffRouting | null | undefined,
+): boolean {
+	const savedRouting: StaffRouting = saved ?? { defaultUserId: null, rules: [] };
+	if ((draft.defaultUserId ?? null) !== (savedRouting.defaultUserId ?? null))
+		return true;
+	if (draft.rules.length !== savedRouting.rules.length) return true;
+	return draft.rules.some((rule, index) => {
+		const savedRule = savedRouting.rules[index];
+		return (
+			!savedRule ||
+			rule.intent !== savedRule.intent ||
+			(rule.assignToUserId ?? null) !== (savedRule.assignToUserId ?? null)
+		);
+	});
+}
+
 export function MessengerRoutingRules({
 	routing,
 	onChange,

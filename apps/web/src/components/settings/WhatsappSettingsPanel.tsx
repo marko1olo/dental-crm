@@ -2,6 +2,7 @@ import {
 	Check,
 	Copy,
 	ExternalLink,
+	HelpCircle,
 	MessageCircle,
 	RefreshCw,
 	Shield,
@@ -9,8 +10,16 @@ import {
 	WifiOff,
 } from "lucide-react";
 import type { WhatsappStaffRouting } from "../../hooks/useWhatsappSettings.js";
-import { useWhatsappSettings } from "../../hooks/useWhatsappSettings.js";
-import { MessengerRoutingRules } from "./MessengerRoutingRules.js";
+import {
+	WHATSAPP_SETTINGS_PANEL_SUBJECT,
+	useWhatsappSettings,
+} from "../../hooks/useWhatsappSettings.js";
+import { panelStateText } from "../../lib/panelStateText";
+import { PanelLoadFailure } from "../PanelLoadFailure";
+import {
+	MessengerRoutingRules,
+	messengerRoutingChanged,
+} from "./MessengerRoutingRules.js";
 
 interface StaffOption {
 	id: string;
@@ -36,6 +45,10 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 	const {
 		settings,
 		status,
+		statusUnknown,
+		loadState,
+		loadFailureStatus,
+		canSave,
 		loading,
 		saveState,
 		saveError,
@@ -69,26 +82,45 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 			(f) => !(settings?.enabledFeatures ?? []).includes(f),
 		);
 
+	/*
+	 * Признак изменений. РОУТИНГ ЗДЕСЬ ОБЯЗАТЕЛЕН: без него владелец назначал,
+	 * кому идут входящие сообщения пациентов, а кнопка «Сохранить» оставалась
+	 * выключенной (`disabled={!dirty}`) — заполнил и сохранить нечем. Сравнение
+	 * самого роутинга — в MessengerRoutingRules, рядом с его формой.
+	 */
 	const dirty =
 		phoneNumberIdDraft !== (settings?.phoneNumberId ?? "") ||
 		webhookVerifyTokenDraft !== (settings?.webhookVerifyToken ?? "") ||
 		isActiveDraft !== (settings?.isActive ?? false) ||
 		featuresChanged ||
+		messengerRoutingChanged(staffRoutingDraft, settings?.staffRouting) ||
 		accessTokenDraft.trim() !== "";
 
-	return (
-		<section className="messenger-panel whatsapp-panel">
-			<div className="messenger-panel-header">
-				<div className="messenger-panel-icon whatsapp-icon" aria-hidden="true">
-					WA
+	/*
+	 * ЗНАЧОК СОСТОЯНИЯ НЕ ИМЕЕТ ПРАВА ВРАТЬ. Было два состояния, и в «Не
+	 * подключён» сваливался отказ проверки: /api/whatsapp/status ответил 500 или
+	 * до сервера не дошли вовсе. Владелец читал «Не подключён» у рабочего канала и
+	 * шёл перенастраивать то, что работает. Хук отдаёт эту разницу отдельным
+	 * признаком (statusUnknown), панель обязана её показать.
+	 */
+	const header = (
+		<div className="messenger-panel-header">
+			<div className="messenger-panel-icon whatsapp-icon" aria-hidden="true">
+				WA
+			</div>
+			<div className="messenger-panel-title">
+				<h3>WhatsApp Business</h3>
+				<p>
+					Подключите WhatsApp Cloud API через Meta Business Console для отправки
+					напоминаний, документов и инструкций пациентам.
+				</p>
+			</div>
+			{statusUnknown ? (
+				<div className="messenger-status-badge unknown">
+					<HelpCircle size={14} aria-hidden="true" />
+					<span>Состояние неизвестно</span>
 				</div>
-				<div className="messenger-panel-title">
-					<h3>WhatsApp Business</h3>
-					<p>
-						Подключите WhatsApp Cloud API через Meta Business Console для
-						отправки напоминаний, документов и инструкций пациентам.
-					</p>
-				</div>
+			) : (
 				<div
 					className={`messenger-status-badge ${status?.connected ? "connected" : "disconnected"}`}
 				>
@@ -104,7 +136,50 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 						</>
 					)}
 				</div>
-			</div>
+			)}
+		</div>
+	);
+
+	/*
+	 * ОТКАЗ ЧТЕНИЯ — НЕ «КАНАЛ НЕ НАСТРОЕН». Панель рисовала форму при любом
+	 * исходе загрузки, поэтому на отказ сервера владелец видел пустой Phone Number
+	 * ID, снятые галочки функций и подпись «Не подключён» — непрочитанное
+	 * выдавалось за отсутствующее. Сохранение в этом состоянии всё равно запрещено
+	 * внутри хука (иначе PUT затёр бы живые настройки пустыми), так что пустая
+	 * форма ещё и предлагала работу, которая не закончится сохранением.
+	 */
+	if (loadState.phase === "failed") {
+		return (
+			<section className="messenger-panel whatsapp-panel">
+				{header}
+				<PanelLoadFailure
+					subject={WHATSAPP_SETTINGS_PANEL_SUBJECT}
+					status={loadFailureStatus}
+					onRetry={() => void reload()}
+				/>
+			</section>
+		);
+	}
+
+	/* Первое чтение: показываем загрузку, а не пустую форму. При повторных
+	   чтениях (после сохранения) настройки уже есть — форму не гасим. */
+	if (loadState.phase === "loading" && !settings) {
+		const loadingText = panelStateText(WHATSAPP_SETTINGS_PANEL_SUBJECT, {
+			phase: "loading",
+		});
+		return (
+			<section className="messenger-panel whatsapp-panel">
+				{header}
+				<p className="messenger-status-detail" role="status" aria-live="polite">
+					{loadingText.title} {loadingText.hint}
+				</p>
+			</section>
+		);
+	}
+
+	return (
+		<section className="messenger-panel whatsapp-panel">
+			{header}
 
 			{status?.detail && (
 				<p className="messenger-status-detail">{status.detail}</p>
@@ -255,7 +330,11 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					<button
 						type="button"
 						onClick={() => void save()}
-						disabled={saveState === "saving" || !dirty}
+						/* canSave — разрешение хука: настройки прочитаны и сохранение не
+						   затрёт живые значения. Раньше кнопка спрашивала только
+						   saveState, поэтому во время перечитывания настроек нажатие
+						   отправляло PUT с ещё не заполненными черновиками. */
+						disabled={!canSave || !dirty}
 						className="btn-primary"
 					>
 						{saveState === "saving" && "Сохранение..."}
