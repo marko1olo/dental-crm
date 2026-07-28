@@ -191,7 +191,16 @@ try {
 				},
 				{ ct: login.clinicToken, st: unlock.staffToken, th: theme },
 			);
-			await page.goto(`${WEB}/#settings/inventory`, { waitUntil: "domcontentloaded" });
+			/*
+			 * Склад живёт на своём разделе, а не во вкладке настроек.
+			 *
+			 * Сначала он был недоступен вовсе, и я открыл его вкладкой
+			 * #settings/inventory. Правильнее оказалось иначе: приход и списание
+			 * материалов — ежедневная работа ассистента, поэтому склад стал
+			 * разделом рабочего места с правами по ролям, а вкладка убрана, чтобы
+			 * не было двух дверей в одну комнату.
+			 */
+			await page.goto(`${WEB}/#inventory`, { waitUntil: "domcontentloaded" });
 			await page.reload({ waitUntil: "domcontentloaded" });
 			await page.waitForTimeout(4500);
 

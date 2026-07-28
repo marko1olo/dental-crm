@@ -155,7 +155,6 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
  * без всякого следа.
  */
 import { settingsTabGroups, type SettingsTabGroup } from "./AppHelpers";
-import { InventoryView } from "./components/InventoryView";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
@@ -1200,7 +1199,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
   let typedSettingsTabs = settingsTabs as SettingsTab[];
   if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
   if (!flags.hasAnalyticsModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "reporting");
-  if (!flags.hasInventoryModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "inventory");
+  /* Признак склада остался при самом разделе: вкладки настроек у него больше нет. */
   if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "bpmn");
   if (!flags.hasClinicalRules) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "rules");
   if (!flags.hasInsuranceCoPay) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "insurance");
@@ -1481,11 +1480,15 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
         ) : null}
 
         {settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
-        {settingsTab === "inventory" ? (
-          <InventoryView
-            organizationId={dashboard?.clinicSettings?.profile?.organizationId ?? ""}
-          />
-        ) : null}
+        {/*
+          Склад отсюда убран: он стал разделом рабочего места (#inventory).
+
+          Экран был недоступен вовсе, и я открыл его вкладкой настроек — дешёвым
+          способом. Правильнее оказалось иначе: приход и списание материалов —
+          ежедневная работа ассистента, а не настройка клиники, поэтому склад
+          живёт на рельсе с правами по ролям. Две двери в одну комнату хуже
+          одной: непонятно, какая «настоящая», и правки начинают расходиться.
+        */}
         {settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 
         {settingsTab === "rules" ? <SettingsRulesTab /> : null}

@@ -14,6 +14,13 @@ const API = process.env.DENTE_API_URL || "http://127.0.0.1:4100";
 const WEB = process.env.DENTE_WEB_URL || "http://127.0.0.1:5173";
 const OWNER = "e44d32ca-7777-4c00-a001-c88f01b92e21";
 
+/*
+ * Список обязан совпадать с appViews в apps/web/src/workspaceShell.tsx.
+ *
+ * Разделы «Склад», «Стерилизация» и «Обращения» подключены позже и обходом не
+ * проверялись: пока их тут нет, отчёт «0 сломанных мест» ничего о них не
+ * говорит. Расходится список — расходится и то, что считается проверенным.
+ */
 const VIEWS = [
 	"shift",
 	"schedule",
@@ -24,6 +31,9 @@ const VIEWS = [
 	"finance",
 	"analytics",
 	"communications",
+	"inventory",
+	"scanner",
+	"leads",
 	"marketing",
 ];
 /*
@@ -45,7 +55,12 @@ const SETTINGS_TABS = [
 	"protocols",
 	"rules",
 	"prices",
-	"inventory",
+	/*
+	 * «Склада» тут больше нет: он стал разделом рабочего места (#inventory) и
+	 * обходится выше вместе с остальными. Пока он оставался в этом списке,
+	 * #settings/inventory открывал «Клинику» (settingsTabFromHash откатывает
+	 * неизвестное имя), и обход показывал зелёное, проверив не тот экран.
+	 */
 	"insurance",
 	"sources",
 	"marketing",

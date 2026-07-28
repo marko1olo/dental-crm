@@ -114,9 +114,30 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		totalItems,
 	} = inventory;
 
-	const paperBg = "bg-white dark:bg-slate-900";
-	const paperSoftBg = "bg-slate-50 dark:bg-slate-800/80";
-	const borderColor = "border-slate-200 dark:border-slate-800";
+	/*
+	 * ЭТО ЗНАЧЕНИЯ CSS, А НЕ ИМЕНА КЛАССОВ.
+	 *
+	 * Здесь стояло:
+	 *   const paperBg = "bg-white dark:bg-slate-900";
+	 *   const borderColor = "border-slate-200 dark:border-slate-800";
+	 * и эти строки подставлялись в inline-стили как значения свойств —
+	 * `style={{ background: paperBg, border: `1px solid ${borderColor}` }}`,
+	 * 46 вхождений на весь экран. Имя класса Tailwind значением цвета не
+	 * является: браузер отбрасывает такое объявление целиком и берёт начальное
+	 * значение. Ошибки при этом нет ни в сборке, ни в консоли.
+	 *
+	 * Что было видно на экране (проверено снимком раздела «Склад»): ни одной
+	 * карточки. Прозрачный фон, нулевая граница, плитки «Позиций» и «В дефиците»
+	 * висят в воздухе, таблица без контейнера. Пока склад открывался вкладкой
+	 * настроек, рамку давала панель настроек вокруг, и подмена не бросалась в
+	 * глаза — на своём разделе стало видно сразу.
+	 *
+	 * Токены темы, а не hex: значения обязаны различаться в светлой, тёмной и
+	 * ночной теме, и подставлять цвет по месту нельзя (см. .agents/UI_STANDARDS.md).
+	 */
+	const paperBg = "var(--paper)";
+	const paperSoftBg = "var(--paper-soft)";
+	const borderColor = "var(--line)";
 
 	const renderRulesTab = () => {
 		const serviceCatalog = dashboard?.serviceCatalog || [];
@@ -161,7 +182,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						<option value="">-- Выберите услугу --</option>
 						{serviceCatalog.map((s: any) => (
 							<option key={s.id} value={s.id}>
-								[{s.code || "Без кода"}] {s.title} ({s.basePriceRub} ₽)
+								{/*
+							  Цена через общую money(): в прайсе теперь копейки, и
+							  «{basePriceRub} ₽» показывало бы «1500.5 ₽» с точкой.
+							*/}
+							[{s.code || "Без кода"}] {s.title} ({money(s.basePriceRub)})
 							</option>
 						))}
 					</select>

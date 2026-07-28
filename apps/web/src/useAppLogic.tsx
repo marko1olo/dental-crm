@@ -13584,6 +13584,25 @@ export function useAppLogic(): any {
 	return {
 		...telegramSettingsModule,
 		...auth,
+		/*
+		 * auth отдаётся ещё и целиком, отдельным полем.
+		 *
+		 * Выше он разложен через `...auth`, поэтому denteClinicalReadHeaders и
+		 * соседние функции лежали в контексте по верхнему уровню — а поля `auth`
+		 * не было вовсе. При этом 31 файл достаёт из контекста именно его:
+		 * `const { auth } = useAppLogicContext()`. Большинство прикрывалось
+		 * проверкой `auth ? auth.denteClinicalReadHeaders() : {}` и молча уходило
+		 * на сервер БЕЗ заголовков клиники, полагаясь на общую обёртку fetch.
+		 * Те, кто проверку не поставил, падали: ScannerView.tsx:102 и
+		 * LandingFieldMappingsWidget.tsx:20 звали auth.denteClinicalReadHeaders()
+		 * напрямую.
+		 *
+		 * Поймано обходом разделов после того, как «Стерилизация» появилась в
+		 * списке проверяемых: экран открывался, но дважды писал в консоль
+		 * «Cannot read properties of undefined (reading
+		 * 'denteClinicalReadHeaders')», и журнал автоклава не загружался.
+		 */
+		auth,
 		acceptDraftToVisit,
 		activeAppointment,
 		activeChair,
