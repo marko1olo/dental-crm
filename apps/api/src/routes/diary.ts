@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -32,6 +32,12 @@ const diaryUpsertSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	status: z.enum(["draft", "signed"]).optional(),
 	instrumentTrayBarcode: z.string().optional(),
+	/**
+	 * УКЭП врача. Раньше поле принимал только маршрут /lock, поэтому подпись
+	 * через POST физически не могла сохранить оттиск в crypto_signature_pkcs7:
+	 * дневник помечался подписанным без самой подписи.
+	 */
+	pkcs7Signature: z.string().optional(),
 });
 
 function computeDiaryHash(
@@ -43,6 +49,274 @@ function computeDiaryHash(
 ): string {
 	const raw = `${visitId}|${patientId}|${anamnesis ?? ""}|${statusLocalis ?? ""}|${treatmentDescription ?? ""}`;
 	return crypto.createHash("sha256").update(raw).digest("hex");
+}
+
+/** Транзакция drizzle — тип берётся у самого db, чтобы не тянуть внутренние пути ORM. */
+type DiaryDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+type DiarySigningFailureCode =
+	| "NotFound"
+	| "AlreadyLocked"
+	| "InsufficientStock";
+
+/**
+ * Отказ церемонии подписания. Раньше оба состояния передавались через
+ * `new Error("AlreadyLocked")` и разбирались сравнением `err.message` со
+ * строкой — любое совпадение текста из драйвера базы дало бы тот же ответ.
+ */
+class DiarySigningError extends Error {
+	constructor(
+		readonly code: DiarySigningFailureCode,
+		message: string,
+	) {
+		super(message);
+		this.name = "DiarySigningError";
+	}
+}
+
+interface DiaryStockDeduction {
+	inventoryItemId: string;
+	inventoryItemName: string;
+	quantityChanged: string;
+}
+
+interface DiarySigningResult {
+	diaryId: string;
+	hash: string;
+	lockedAt: Date;
+	completedTreatmentItems: number;
+	deductions: DiaryStockDeduction[];
+	auditLogId: string | null;
+}
+
+/**
+ * Единственная церемония подписания дневника.
+ *
+ * БЫЛО: подписать приём можно было двумя маршрутами, и они делали РАЗНОЕ.
+ * `POST /api/diaries` со `status: "signed"` ставил только is_locked, время и хеш.
+ * `POST /api/diaries/:id/lock` дополнительно закрывал услуги визита, списывал
+ * расходники со склада, писал строки inventory_transactions, заводил ставку врача
+ * и оставлял запись в clinical_audit_logs. То есть от того, какой маршрут вызвал
+ * экран, зависело, спишется ли материал и останется ли юридический след — при
+ * одном и том же действии врача «подписать приём». Остатки склада и журнал
+ * расходились молча, и расхождение обнаруживалось только на инвентаризации.
+ *
+ * СТАЛО: церемония существует один раз, здесь, и оба маршрута её вызывают.
+ * Копия отсутствует, поэтому разойтись им больше нечем.
+ *
+ * Вызывать только внутри транзакции: списание склада и журнал обязаны попасть в
+ * базу вместе с замком либо не попасть вовсе.
+ */
+async function runDiarySigningCeremony(
+	tx: DiaryDbTransaction,
+	params: {
+		diaryId: string;
+		organizationId: string;
+		userId: string | null;
+		pkcs7Signature: string | null;
+	},
+): Promise<DiarySigningResult> {
+	const { diaryId, organizationId, userId } = params;
+
+	// 0. Перечитать дневник FOR UPDATE внутри транзакции и заново проверить замок.
+	// Проверка снаружи читает ещё незаблокированную строку (TOCTOU): два
+	// одновременных подписанта проходят её оба, входят сюда оба и списывают
+	// материал дважды. Блокировка строки их сериализует: второй ждёт коммита
+	// первого и видит is_locked = true до любого списания.
+	const [diary] = await tx
+		.select()
+		.from(visitDiaries)
+		.where(
+			and(
+				eq(visitDiaries.id, diaryId),
+				eq(visitDiaries.organizationId, organizationId),
+			),
+		)
+		.limit(1)
+		.for("update");
+	if (!diary) {
+		throw new DiarySigningError("NotFound", "Дневник не найден.");
+	}
+	if (diary.isLocked) {
+		throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
+	}
+
+	// Хеш считается по СОХРАНЁННОЙ строке, а не по телу запроса.
+	// БЫЛО: POST хешировал присланные поля. Фронтенд сохраняет черновик отдельно и
+	// при подписании часто не присылает клинические поля вовсе — тогда в печать
+	// уходил хеш от пустых строк, тогда как в карте оставался прежний текст.
+	// Печать заверяла не то содержимое, которое хранится, и любая позднейшая
+	// проверка целостности не сошлась бы. Теперь источник один — строка в базе.
+	const hash = computeDiaryHash(
+		diary.visitId,
+		diary.patientId ?? "",
+		diary.anamnesis,
+		diary.statusLocalis,
+		diary.treatmentDescription,
+	);
+	const lockedAt = new Date();
+
+	// 1. Замок и печать
+	await tx
+		.update(visitDiaries)
+		.set({
+			isLocked: true,
+			lockedAt,
+			lockedByUserId: userId,
+			coSignedByUserId: userId,
+			diaryHash: hash,
+			cryptoSignaturePkcs7: params.pkcs7Signature,
+			updatedAt: lockedAt,
+		})
+		.where(
+			and(
+				eq(visitDiaries.id, diaryId),
+				eq(visitDiaries.organizationId, organizationId),
+			),
+		);
+
+	// 2. Закрыть услуги визита и списать расходники.
+	// Все чтения ограничены организацией дневника. БЫЛО: правила материалов
+	// выбирались по одному serviceId, а позиция склада — по одному id, без
+	// организации. Правило чужой клиники, ссылающееся на её же позицию склада,
+	// списывало остаток ЧУЖОЙ клиники, а строка inventory_transactions при этом
+	// записывалась на нашу — то есть запись о расходе и сам расход оказывались в
+	// разных клиниках.
+	const deductions: DiaryStockDeduction[] = [];
+	let completedTreatmentItems = 0;
+	if (diary.visitId) {
+		const visitTreatmentItems = await tx
+			.select()
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.visitId, diary.visitId),
+					eq(treatmentItems.organizationId, organizationId),
+				),
+			);
+		if (visitTreatmentItems.length > 0) {
+			await tx
+				.update(treatmentItems)
+				.set({ status: "completed" })
+				.where(
+					and(
+						eq(treatmentItems.visitId, diary.visitId),
+						eq(treatmentItems.organizationId, organizationId),
+					),
+				);
+			completedTreatmentItems = visitTreatmentItems.length;
+
+			for (const item of visitTreatmentItems) {
+				if (!item.serviceId) continue;
+				const rules = await tx
+					.select()
+					.from(procedureMaterialRules)
+					.where(
+						and(
+							eq(procedureMaterialRules.serviceId, item.serviceId),
+							eq(procedureMaterialRules.organizationId, organizationId),
+						),
+					);
+				for (const rule of rules) {
+					if (!rule.inventoryItemId) continue;
+					const [inv] = await tx
+						.select()
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.id, rule.inventoryItemId),
+								eq(inventoryItems.organizationId, organizationId),
+							),
+						)
+						.for("update");
+					if (!inv) continue;
+
+					const qtyToDeduct =
+						Number(rule.quantityToDeduct || 1) * Number(item.quantity || 1);
+					const currentStock = Number(inv.stockQuantity || inv.currentQty || 0);
+					if (currentStock < qtyToDeduct) {
+						throw new DiarySigningError(
+							"InsufficientStock",
+							`Недостаточно материалов: ${inv.name}`,
+						);
+					}
+					const quantityChanged = String(-qtyToDeduct);
+					await tx
+						.update(inventoryItems)
+						.set({ stockQuantity: String(currentStock - qtyToDeduct) })
+						.where(
+							and(
+								eq(inventoryItems.id, inv.id),
+								eq(inventoryItems.organizationId, organizationId),
+							),
+						);
+
+					await tx.insert(inventoryTransactions).values({
+						organizationId,
+						visitId: diary.visitId,
+						inventoryItemId: inv.id,
+						quantityChanged,
+						unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
+						transactionType: "auto_deduct",
+						userId,
+					});
+					deductions.push({
+						inventoryItemId: inv.id,
+						inventoryItemName: inv.name,
+						quantityChanged,
+					});
+				}
+			}
+		}
+	}
+
+	// 3. Ставка врача, если её ещё нет
+	if (userId) {
+		const [existingCommission] = await tx
+			.select()
+			.from(doctorCommissions)
+			.where(
+				and(
+					eq(doctorCommissions.userId, userId),
+					eq(doctorCommissions.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!existingCommission) {
+			await tx.insert(doctorCommissions).values({
+				organizationId,
+				userId,
+				specialty: "universal",
+				serviceCategory: "therapy",
+				commissionPct: "30.00",
+				materialCostDeductionPct: "100.00",
+				isActive: true,
+			});
+		}
+	}
+
+	// 4. Клинический журнал
+	const [auditLog] = await tx
+		.insert(clinicalAuditLogs)
+		.values({
+			organizationId,
+			patientId: diary.patientId,
+			action: "VISIT_SIGNED_AND_LOCKED",
+			userId,
+			entityType: "visit_diary",
+			entityId: diaryId,
+		})
+		.returning({ id: clinicalAuditLogs.id });
+
+	return {
+		diaryId,
+		hash,
+		lockedAt,
+		completedTreatmentItems,
+		deductions,
+		auditLogId: auditLog?.id ?? null,
+	};
 }
 
 export default async function registerDiaryRoutes(app: FastifyInstance) {
@@ -106,114 +380,140 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
 		data.organizationId = orgId;
 
-		const [existing] = await db
-			.select()
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, data.visitId),
-					eq(visitDiaries.organizationId, orgId),
-				),
-			);
-
 		const isSigning = data.status === "signed";
 
 		if (isSigning && role !== "doctor" && role !== "admin") {
 			return reply.code(403).send({ error: "OnlyDoctorsCanSign" });
 		}
 
-		const diaryHash = isSigning
-			? computeDiaryHash(
-					data.visitId,
-					data.patientId,
-					data.anamnesis,
-					data.statusLocalis,
-					data.treatmentDescription,
-				)
-			: null;
+		try {
+			// Черновик и подписание — одна транзакция. БЫЛО: три отдельных запроса
+			// без транзакции, поэтому упавшее списание оставляло дневник уже
+			// подписанным, а склад — нетронутым.
+			const outcome = await db.transaction(async (tx) => {
+				const [existing] = await tx
+					.select()
+					.from(visitDiaries)
+					.where(
+						and(
+							eq(visitDiaries.visitId, data.visitId),
+							eq(visitDiaries.organizationId, orgId),
+						),
+					)
+					.limit(1);
 
-		if (existing) {
-			if (existing.isLocked) {
-				return reply.code(403).send({
-					error: "DiaryLocked",
-					message: "Дневник подписан и заблокирован.",
-				});
-			}
+				if (existing?.isLocked) {
+					throw new DiarySigningError(
+						"AlreadyLocked",
+						"Дневник подписан и заблокирован.",
+					);
+				}
 
-			await db
-				.update(visitDiaries)
-				// БЫЛО: `data.X ?? existing.X` по всем клиническим полям. Пустая
-				// строка — это не undefined, но фронтенд часто не присылает поле
-				// вовсе, и врач НЕ МОГ удалить ошибочно внесённый текст: он стирал
-				// поле, сохранял, а прежняя запись молча возвращалась. Для истории
-				// болезни это опаснее опечатки — в карте остаётся неверный анамнез
-				// или несуществующее осложнение.
-				// Теперь поле переписывается, если оно ПРИСУТСТВУЕТ в запросе
-				// (включая пустую строку), и сохраняется, только если не передано.
-				.set({
-					anamnesis: data.anamnesis !== undefined ? data.anamnesis : existing.anamnesis,
-					statusLocalis:
-						data.statusLocalis !== undefined ? data.statusLocalis : existing.statusLocalis,
-					diagnosisIcd10:
-						data.diagnosisIcd10 !== undefined ? data.diagnosisIcd10 : existing.diagnosisIcd10,
-					diagnosisTooth:
-						data.diagnosisTooth !== undefined ? data.diagnosisTooth : existing.diagnosisTooth,
-					treatmentDescription:
-						data.treatmentDescription !== undefined
-							? data.treatmentDescription
-							: existing.treatmentDescription,
-					complications:
-						data.complications !== undefined ? data.complications : existing.complications,
-					comorbidities:
-						data.comorbidities !== undefined ? data.comorbidities : existing.comorbidities,
-					updatedAt: new Date(),
-					coSignedByUserId: isSigning ? userId : existing.coSignedByUserId,
-					diaryHash: diaryHash ?? existing.diaryHash,
-					isLocked: isSigning,
-					lockedAt: isSigning ? new Date() : existing.lockedAt,
-					lockedByUserId: isSigning ? userId : existing.lockedByUserId,
-					instrumentTrayBarcode:
-						data.instrumentTrayBarcode !== undefined
-							? data.instrumentTrayBarcode
-							: existing.instrumentTrayBarcode,
-				})
-				.where(
-					and(
-						eq(visitDiaries.id, existing.id),
-						eq(visitDiaries.organizationId, orgId),
-					),
-				);
+				let diaryId: string;
+				if (existing) {
+					await tx
+						.update(visitDiaries)
+						// БЫЛО: `data.X ?? existing.X` по всем клиническим полям. Пустая
+						// строка — это не undefined, но фронтенд часто не присылает поле
+						// вовсе, и врач НЕ МОГ удалить ошибочно внесённый текст: он стирал
+						// поле, сохранял, а прежняя запись молча возвращалась. Для истории
+						// болезни это опаснее опечатки — в карте остаётся неверный анамнез
+						// или несуществующее осложнение.
+						// Теперь поле переписывается, если оно ПРИСУТСТВУЕТ в запросе
+						// (включая пустую строку), и сохраняется, только если не передано.
+						.set({
+							anamnesis: data.anamnesis !== undefined ? data.anamnesis : existing.anamnesis,
+							statusLocalis:
+								data.statusLocalis !== undefined ? data.statusLocalis : existing.statusLocalis,
+							diagnosisIcd10:
+								data.diagnosisIcd10 !== undefined ? data.diagnosisIcd10 : existing.diagnosisIcd10,
+							diagnosisTooth:
+								data.diagnosisTooth !== undefined ? data.diagnosisTooth : existing.diagnosisTooth,
+							treatmentDescription:
+								data.treatmentDescription !== undefined
+									? data.treatmentDescription
+									: existing.treatmentDescription,
+							complications:
+								data.complications !== undefined ? data.complications : existing.complications,
+							comorbidities:
+								data.comorbidities !== undefined ? data.comorbidities : existing.comorbidities,
+							updatedAt: new Date(),
+							instrumentTrayBarcode:
+								data.instrumentTrayBarcode !== undefined
+									? data.instrumentTrayBarcode
+									: existing.instrumentTrayBarcode,
+						})
+						.where(
+							and(
+								eq(visitDiaries.id, existing.id),
+								eq(visitDiaries.organizationId, orgId),
+							),
+						);
+					diaryId = existing.id;
+				} else {
+					// Дневник всегда рождается черновиком. БЫЛО: при status "signed"
+					// вставка сразу ставила is_locked, время и хеш — дневник появлялся
+					// уже подписанным, минуя церемонию целиком.
+					const inserted = await tx
+						.insert(visitDiaries)
+						.values({
+							organizationId: orgId,
+							visitId: data.visitId,
+							patientId: data.patientId,
+							anamnesis: data.anamnesis,
+							statusLocalis: data.statusLocalis,
+							diagnosisIcd10: data.diagnosisIcd10,
+							diagnosisTooth: data.diagnosisTooth,
+							treatmentDescription: data.treatmentDescription,
+							complications: data.complications,
+							comorbidities: data.comorbidities,
+							draftAuthorId: userId,
+							instrumentTrayBarcode: data.instrumentTrayBarcode,
+						})
+						.returning({ id: visitDiaries.id });
+					const insertedId = inserted[0]?.id;
+					if (!insertedId) {
+						throw new DiarySigningError(
+							"NotFound",
+							"Дневник не удалось создать.",
+						);
+					}
+					diaryId = insertedId;
+				}
 
-			return reply.send({ success: true, id: existing.id, hash: diaryHash });
-		} else {
-			const inserted = await db
-				.insert(visitDiaries)
-				.values({
+				if (!isSigning) {
+					return { diaryId, signing: null as DiarySigningResult | null };
+				}
+
+				const signing = await runDiarySigningCeremony(tx, {
+					diaryId,
 					organizationId: orgId,
-					visitId: data.visitId,
-					patientId: data.patientId,
-					anamnesis: data.anamnesis,
-					statusLocalis: data.statusLocalis,
-					diagnosisIcd10: data.diagnosisIcd10,
-					diagnosisTooth: data.diagnosisTooth,
-					treatmentDescription: data.treatmentDescription,
-					complications: data.complications,
-					comorbidities: data.comorbidities,
-					draftAuthorId: userId,
-					coSignedByUserId: isSigning ? userId : null,
-					diaryHash: diaryHash,
-					isLocked: isSigning,
-					lockedAt: isSigning ? new Date() : null,
-					lockedByUserId: isSigning ? userId : null,
-					instrumentTrayBarcode: data.instrumentTrayBarcode,
-				})
-				.returning();
+					userId,
+					pkcs7Signature: data.pkcs7Signature ?? null,
+				});
+				return { diaryId, signing };
+			});
 
 			return reply.send({
 				success: true,
-				id: inserted[0]?.id,
-				hash: diaryHash,
+				id: outcome.diaryId,
+				hash: outcome.signing?.hash ?? null,
 			});
+		} catch (err) {
+			if (err instanceof DiarySigningError) {
+				if (err.code === "AlreadyLocked") {
+					return reply
+						.code(403)
+						.send({ error: "DiaryLocked", message: err.message });
+				}
+				if (err.code === "InsufficientStock") {
+					return reply
+						.code(400)
+						.send({ error: "TransactionFailed", message: err.message });
+				}
+				return reply.code(404).send({ error: "NotFound" });
+			}
+			throw err;
 		}
 	});
 
@@ -247,163 +547,38 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				.code(409)
 				.send({ error: "AlreadyLocked", hash: existing.diaryHash });
 
-		const diaryHash = computeDiaryHash(
-			existing.visitId,
-			existing.patientId ?? "",
-			existing.anamnesis,
-			existing.statusLocalis,
-			existing.treatmentDescription,
-		);
-
-		// Forensic lock & Cascading Transaction
+		// Церемония — общая с POST /api/diaries, см. runDiarySigningCeremony.
 		try {
-			await db.transaction(async (tx) => {
-				// 0. Re-read the diary FOR UPDATE inside the tx and re-check the lock.
-				// The isLocked guard above ran on an unlocked read before the tx (TOCTOU):
-				// two concurrent signers could both pass it, both enter here, and both
-				// deduct inventory — doubling material consumption on visit close. Locking
-				// the row and re-checking serializes them: the second signer blocks until
-				// the first commits, then sees isLocked=true and aborts before any deduction.
-				const [lockedDiary] = await tx
-					.select()
-					.from(visitDiaries)
-					.where(
-						and(
-							eq(visitDiaries.id, id),
-							eq(visitDiaries.organizationId, orgId),
-						),
-					)
-					.limit(1)
-					.for("update");
-				if (!lockedDiary) {
-					throw new Error("NotFound");
-				}
-				if (lockedDiary.isLocked) {
-					throw new Error("AlreadyLocked");
-				}
-
-				// 1. Lock the diary
-				await tx
-					.update(visitDiaries)
-					.set({
-						isLocked: true,
-						lockedAt: new Date(),
-						lockedByUserId: userId,
-						coSignedByUserId: userId,
-						diaryHash: diaryHash,
-						cryptoSignaturePkcs7: pkcs7Signature ?? null,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(visitDiaries.id, id),
-							eq(visitDiaries.organizationId, orgId),
-						),
-					);
-
-				// 1.5 Mark treatments as completed and deduct inventory
-				if (existing.visitId) {
-					const tItems = await tx
-						.select()
-						.from(treatmentItems)
-						.where(eq(treatmentItems.visitId, existing.visitId));
-					if (tItems.length > 0) {
-						await tx
-							.update(treatmentItems)
-							.set({ status: "completed" })
-							.where(eq(treatmentItems.visitId, existing.visitId));
-
-						for (const item of tItems) {
-							if (!item.serviceId) continue;
-							const rules = await tx
-								.select()
-								.from(procedureMaterialRules)
-								.where(eq(procedureMaterialRules.serviceId, item.serviceId));
-							for (const rule of rules) {
-								if (!rule.inventoryItemId) continue;
-								const [inv] = await tx
-									.select()
-									.from(inventoryItems)
-									.where(eq(inventoryItems.id, rule.inventoryItemId))
-									.for("update");
-								if (inv) {
-									const qtyToDeduct =
-										Number(rule.quantityToDeduct || 1) * Number(item.quantity || 1);
-									const currentStock = Number(inv.stockQuantity || inv.currentQty || 0);
-									if (currentStock < qtyToDeduct) {
-										throw new Error(`Недостаточно материалов: ${inv.name}`);
-									}
-									await tx
-										.update(inventoryItems)
-										.set({ stockQuantity: String(currentStock - qtyToDeduct) })
-										.where(eq(inventoryItems.id, inv.id));
-
-									await tx.insert(inventoryTransactions).values({
-										organizationId: orgId,
-										visitId: existing.visitId,
-										inventoryItemId: inv.id,
-										quantityChanged: String(-qtyToDeduct),
-										unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-										transactionType: "auto_deduct",
-										userId: userId,
-									});
-								}
-							}
-						}
-					}
-				}
-
-				// 2. Insert Commission if not exists
-				if (userId) {
-					const [existingCommission] = await tx
-						.select()
-						.from(doctorCommissions)
-						.where(
-							and(
-								eq(doctorCommissions.userId, userId),
-								eq(doctorCommissions.organizationId, orgId),
-							),
-						)
-						.limit(1);
-
-					if (!existingCommission) {
-						await tx.insert(doctorCommissions).values({
-							organizationId: orgId,
-							userId: userId,
-							specialty: "universal",
-							serviceCategory: "therapy",
-							commissionPct: "30.00",
-							materialCostDeductionPct: "100.00",
-							isActive: true,
-						});
-					}
-				}
-
-				// 3. Clinical Audit Log
-				await tx.insert(clinicalAuditLogs).values({
+			const signing = await db.transaction((tx) =>
+				runDiarySigningCeremony(tx, {
+					diaryId: id,
 					organizationId: orgId,
-					patientId: existing.patientId,
-					action: "VISIT_SIGNED_AND_LOCKED",
-					userId: userId,
-					entityType: "visit_diary",
-					entityId: id,
-				});
-			});
+					userId,
+					pkcs7Signature: pkcs7Signature ?? null,
+				}),
+			);
 			return reply.send({
 				success: true,
-				hash: diaryHash,
-				lockedAt: new Date().toISOString(),
+				hash: signing.hash,
+				lockedAt: signing.lockedAt.toISOString(),
 			});
-		} catch (err: any) {
-			if (err?.message === "AlreadyLocked") {
-				return reply.code(409).send({ error: "AlreadyLocked" });
+		} catch (err) {
+			if (err instanceof DiarySigningError) {
+				if (err.code === "AlreadyLocked") {
+					return reply.code(409).send({ error: "AlreadyLocked" });
+				}
+				if (err.code === "NotFound") {
+					return reply.code(404).send({ error: "NotFound" });
+				}
+				return reply
+					.code(400)
+					.send({ error: "TransactionFailed", message: err.message });
 			}
-			if (err?.message === "NotFound") {
-				return reply.code(404).send({ error: "NotFound" });
-			}
-			return reply
-				.code(400)
-				.send({ error: "TransactionFailed", message: err.message });
+			// БЫЛО: `catch (err: any)` возвращал 400 с err.message на ЛЮБОЙ сбой,
+			// включая ошибки драйвера базы — клиенту уходили внутренние подробности
+			// схемы, а отказ инфраструктуры выглядел как ошибка запроса. Теперь
+			// неожидаемые ошибки уходят обработчику server.ts, который их обезличивает.
+			throw err;
 		}
 	});
 
@@ -449,20 +624,19 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			diagnosisIcd10?: string;
 			diagnosisTooth?: string;
 			treatmentDescription?: string;
+			/**
+			 * ДОЛГ, НЕ ЗАКРЫТ ЗДЕСЬ: причина ревизии принимается, но сохранить её
+			 * некуда — в модели drizzle нет колонки. В САМОЙ БАЗЕ она есть:
+			 * миграция 0116_add_soap_template_fields.sql добавила
+			 * visit_diary_revisions.revision_reason TEXT и
+			 * visit_diary_revisions.previous_diagnosis_tooth VARCHAR(10) (проверено
+			 * чтением information_schema на 127.0.0.1:5432). Отстала только
+			 * apps/api/src/db/schema.ts:1421-1434, а её правка вне рамок этого
+			 * пакета. Пока строка ревизии не хранит ни причину, ни прежний номер зуба.
+			 */
 			revisionReason?: string;
 		};
 
-		await db.insert(visitDiaryRevisions).values({
-			organizationId: orgId,
-			diaryId: existing.id,
-			previousAnamnesis: existing.anamnesis,
-			previousStatusLocalis: existing.statusLocalis,
-			previousDiagnosisIcd10: existing.diagnosisIcd10,
-			previousTreatmentDescription: existing.treatmentDescription,
-			revisedByUserId: userId,
-		});
-
-		// Update the diary (unlock for new content, then re-lock immediately)
 		const newHash = computeDiaryHash(
 			existing.visitId,
 			existing.patientId ?? "",
@@ -471,24 +645,53 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			body.treatmentDescription ?? existing.treatmentDescription,
 		);
 
-		await db
-			.update(visitDiaries)
-			.set({
-				anamnesis: body.anamnesis ?? existing.anamnesis,
-				statusLocalis: body.statusLocalis ?? existing.statusLocalis,
-				diagnosisIcd10: body.diagnosisIcd10 ?? existing.diagnosisIcd10,
-				diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth,
-				treatmentDescription:
-					body.treatmentDescription ?? existing.treatmentDescription,
-				diaryHash: newHash,
-				version: (existing.version ?? 1) + 1,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
-			);
+		// Одна транзакция на запись ревизии и правку дневника. БЫЛО: два отдельных
+		// запроса — упавшая правка оставляла в журнале ревизию об изменении,
+		// которого не произошло.
+		const revisionCount = await db.transaction(async (tx) => {
+			await tx.insert(visitDiaryRevisions).values({
+				organizationId: orgId,
+				diaryId: existing.id,
+				previousAnamnesis: existing.anamnesis,
+				previousStatusLocalis: existing.statusLocalis,
+				previousDiagnosisIcd10: existing.diagnosisIcd10,
+				previousTreatmentDescription: existing.treatmentDescription,
+				revisedByUserId: userId,
+			});
 
-		return reply.send({ success: true, hash: newHash, revisionCount: 1 });
+			// Update the diary (unlock for new content, then re-lock immediately)
+			await tx
+				.update(visitDiaries)
+				.set({
+					anamnesis: body.anamnesis ?? existing.anamnesis,
+					statusLocalis: body.statusLocalis ?? existing.statusLocalis,
+					diagnosisIcd10: body.diagnosisIcd10 ?? existing.diagnosisIcd10,
+					diagnosisTooth: body.diagnosisTooth ?? existing.diagnosisTooth,
+					treatmentDescription:
+						body.treatmentDescription ?? existing.treatmentDescription,
+					diaryHash: newHash,
+					version: (existing.version ?? 1) + 1,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
+				);
+
+			// БЫЛО: `revisionCount: 1` — константа вместо настоящего числа ревизий.
+			// Ответ утверждал «ревизия первая» и на десятой правке карты.
+			const [tally] = await tx
+				.select({ total: count() })
+				.from(visitDiaryRevisions)
+				.where(
+					and(
+						eq(visitDiaryRevisions.diaryId, existing.id),
+						eq(visitDiaryRevisions.organizationId, orgId),
+					),
+				);
+			return tally?.total ?? 0;
+		});
+
+		return reply.send({ success: true, hash: newHash, revisionCount });
 	});
 
 	// Legacy endpoint: sync-progress + plan signature (kept for backwards compat)
