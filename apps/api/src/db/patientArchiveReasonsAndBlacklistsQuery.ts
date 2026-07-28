@@ -11,23 +11,48 @@ export async function getPatientArchiveReasonsAndBlacklistsFromDb(orgId: string,
 		.where(eq(patientArchiveReasonsAndBlacklists.organizationId, orgId));
 }
 
+/**
+ * Внесён ли пациент в чёрный список с запретом записи.
+ *
+ * ПОЧЕМУ ЭТА ПРОВЕРКА ТЕПЕРЬ ПАДАЕТ, А НЕ ОТВЕЧАЕТ «НЕ ЗАПРЕЩЕНО».
+ *
+ * Здесь стояли два глушителя ошибок, и оба давали ответ в сторону «разрешено»:
+ *   1. внешний catch возвращал inMemoryBlacklist.has(...) — набор в памяти
+ *      процесса, который после перезапуска сервера ПУСТ. То есть любой сбой базы
+ *      превращался в «пациент не в чёрном списке»;
+ *   2. внутренний catch вокруг чтения ФИО молча оставлял имя пустым, и правило
+ *      чёрного списка ПО ИМЕНИ переставало применяться — а по имени как раз и
+ *      ловится человек, которого завели новой карточкой.
+ * Вместе это означало: клиника внесла человека в чёрный список, база икнула — и
+ * запись на приём прошла.
+ *
+ * Чёрный список — защита персонала и других пациентов. Отвечать «разрешено», когда
+ * проверить не удалось, здесь недопустимо: ошибка в эту сторону приводит в клинику
+ * того, кого решили не принимать, а ошибка в другую сторону всего лишь просит
+ * повторить попытку.
+ *
+ * ДОСТУПНОСТЬ ОТ ЭТОГО НЕ СТРАДАЕТ, и это главный довод, а не смелость. Единственный
+ * вызов — createAppointmentInDb (db/appointmentsQuery.ts:126), и сразу после проверки
+ * он ВСТАВЛЯЕТ строку в ту же базу. Если база недоступна, запись не создалась бы и
+ * так: прежний «мягкий» ответ не давал работать дальше, он лишь подменял причину
+ * отказа на неверную. Падение здесь ничего не отнимает и убирает ложный ответ.
+ *
+ * Набор в памяти оставлен, но ТОЛЬКО как быстрый ответ «да, запрещено» — проверка
+ * первой строкой. В эту сторону он безопасен: разрешить лишнего он не может.
+ */
 export async function isPatientBookingBlocked(orgId: string, patientId: string): Promise<boolean> {
 	if (inMemoryBlacklist.has(`${orgId}:${patientId}`)) {
 		return true;
 	}
 	try {
 		let fullName = "";
-		try {
-			const [patientRow] = await db
-				.select({ fullName: patients.fullName })
-				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-				.limit(1);
-			if (patientRow && patientRow.fullName) {
-				fullName = patientRow.fullName.trim();
-			}
-		} catch (e) {
-			// ignore lookup failure
+		const [patientRow] = await db
+			.select({ fullName: patients.fullName })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+		if (patientRow && patientRow.fullName) {
+			fullName = patientRow.fullName.trim();
 		}
 
 		const conditions = [
@@ -48,7 +73,15 @@ export async function isPatientBookingBlocked(orgId: string, patientId: string):
 
 		return rows.length > 0;
 	} catch (err) {
-		return inMemoryBlacklist.has(`${orgId}:${patientId}`);
+		/*
+		 * Текст предназначен администратору у стойки, поэтому называет и причину, и
+		 * последствие, и следующий шаг. Молча пропустить запись нельзя, но и пугать
+		 * его словом «исключение» незачем.
+		 */
+		throw new Error(
+			"Не удалось проверить, не внесён ли пациент в чёрный список: база не ответила. " +
+				"Запись не создана — повторите через минуту, а если не поможет, позовите администратора."
+		);
 	}
 }
 
