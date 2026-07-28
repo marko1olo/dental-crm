@@ -56,6 +56,7 @@ import { registerPublicAppointmentActionRoutes } from "./routes/publicAppointmen
 import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
+import { registerWaitlistMatchRoutes } from "./routes/waitlistMatches.js";
 import { startCommunicationDispatchWorker } from "./services/communications/dispatchWorker.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { inventoryRoutes } from "./routes/inventory.js";
@@ -490,6 +491,11 @@ export async function createDenteApiApp(options: {
   // lost_patients_filters, в которую никто ничего не пишет: список был снимком,
   // сделанным неизвестно когда. Здесь он считается по текущим данным.
   await registerPatientRecallRoutes(app);
+
+  // Кому предложить окно после отмены. Лист ожидания заполнялся и читался, но с
+  // отменами связан не был вовсе: приём отменяли, окно пропадало, а люди в
+  // очереди ждали звонка, которого никто не делал.
+  await registerWaitlistMatchRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

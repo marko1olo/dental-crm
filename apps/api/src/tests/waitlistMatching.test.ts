@@ -1,0 +1,60 @@
+/**
+ * Подбор кандидатов из листа ожидания под освободившееся окно.
+ *
+ * Проверяется то, что легко сломать незаметно: разбор желаемых интервалов
+ * (поле хранится как jsonb без схемы) и порядок кандидатов. Ошибка в разборе
+ * времени не роняет ничего — она просто прячет подходящего человека, и клиника
+ * теряет запись, не узнав об этом.
+ */
+
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
+import { parsePreferredRanges, slotFitsRanges } from "../services/schedule/waitlistMatching.js";
+
+describe("желаемое время в листе ожидания", () => {
+	test("строка «10:00-13:00» понимается", () => {
+		assert.deepEqual(parsePreferredRanges(["10:00-13:00"]), [{ fromMinute: 600, toMinute: 780 }]);
+	});
+
+	test("тире в любом написании: дефис, среднее и длинное", () => {
+		// В поле попадает то, что набрал администратор, а не то, что удобно коду.
+		assert.equal(parsePreferredRanges(["09:00–12:00"]).length, 1);
+		assert.equal(parsePreferredRanges(["09:00—12:00"]).length, 1);
+	});
+
+	test("объект {from, to} понимается наравне со строкой", () => {
+		assert.deepEqual(parsePreferredRanges([{ from: "14:30", to: "18:00" }]), [{ fromMinute: 870, toMinute: 1080 }]);
+	});
+
+	test("мусор и невозможное время отбрасываются, а не роняют подбор", () => {
+		assert.deepEqual(parsePreferredRanges("после обеда"), []);
+		assert.deepEqual(parsePreferredRanges(["25:00-26:00"]), []);
+		// Конец раньше начала — это не интервал.
+		assert.deepEqual(parsePreferredRanges(["18:00-09:00"]), []);
+		assert.deepEqual(parsePreferredRanges(null), []);
+		assert.deepEqual(parsePreferredRanges(undefined), []);
+	});
+
+	test("без ограничений подходит любое окно", () => {
+		// Иначе человек, не назвавший время, никогда не попадёт в подбор — а он
+		// как раз самый удобный кандидат.
+		assert.equal(slotFitsRanges(9 * 60, []), true);
+		assert.equal(slotFitsRanges(21 * 60, []), true);
+	});
+
+	test("окно внутри интервала подходит, снаружи — нет", () => {
+		const ranges = [{ fromMinute: 600, toMinute: 780 }];
+		assert.equal(slotFitsRanges(600, ranges), true, "начало интервала входит");
+		assert.equal(slotFitsRanges(779, ranges), true);
+		assert.equal(slotFitsRanges(780, ranges), false, "конец интервала не входит: в 13:00 приём уже не начнётся");
+		assert.equal(slotFitsRanges(599, ranges), false);
+	});
+
+	test("несколько интервалов: подходит попадание в любой", () => {
+		const ranges = parsePreferredRanges(["09:00-11:00", "17:00-20:00"]);
+		assert.equal(ranges.length, 2);
+		assert.equal(slotFitsRanges(10 * 60, ranges), true);
+		assert.equal(slotFitsRanges(18 * 60, ranges), true);
+		assert.equal(slotFitsRanges(14 * 60, ranges), false);
+	});
+});
