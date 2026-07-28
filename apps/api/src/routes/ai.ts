@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   aiRecognitionJobResponseSchema,
@@ -14,7 +14,8 @@ import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.
 import { parseDictationWithLLM } from "../ai/dictationParser.js";
 import { parseDictationLocally } from "../ai/localDictationParser.js";
 import { db } from "../db/client.js";
-import { imagingAnnotations } from "../db/schema.js";
+import { eq } from "drizzle-orm";
+import { clinics, imagingAnnotations } from "../db/schema.js";
 import { listAiRecognitionJobsFromDb, createAiRecognitionJobInDb } from "../db/aiQuery.js";
 import { getPatientByIdFromDb } from "../db/patientsQuery.js";
 import { getImagingStudyById } from "../db/imagingQuery.js";
@@ -23,6 +24,7 @@ import {
   requireClinicalMutationAccess,
   requireClinicalReadAccess,
   requireResolvedOrganizationId,
+  resolveOrganizationId,
 } from "../accessGuard.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
@@ -58,6 +60,29 @@ function sendVisitNoteDraftScopeError(
     error: "VisitNoteDraftScopeError",
     message,
   });
+}
+
+/**
+ * Часовой пояс клиники запроса, `null` — определить не удалось.
+ *
+ * Кто считает календарную дату, обязан знать пояс клиники: `clinics.timezone`
+ * (`db/schema.ts`) — свободная строка со значением по умолчанию `Europe/Samara`.
+ * Ответа клиенту эта функция не отправляет: пояс здесь нужен только как
+ * подсказка модели, и его отсутствие не повод отказать во разборе диктовки.
+ */
+async function resolveClinicTimeZone(request: FastifyRequest): Promise<string | null> {
+  const organizationId = await resolveOrganizationId(request);
+  if (!organizationId) return null;
+  try {
+    const [clinic] = await db
+      .select({ timezone: clinics.timezone })
+      .from(clinics)
+      .where(eq(clinics.organizationId, organizationId))
+      .limit(1);
+    return clinic?.timezone ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function registerAiRoutes(app: FastifyInstance) {
@@ -219,7 +244,15 @@ export async function registerAiRoutes(app: FastifyInstance) {
       
       // 2. Fallback to LLM if local NLP couldn't handle complex natural language
       if (!result) {
-        result = await parseDictationWithLLM(text, type as any);
+        // Пояс клиники нужен, чтобы «сегодня» в подсказке модели было днём
+        // клиники, а не днём по UTC: иначе ночью диктовка «запиши на завтра»
+        // возвращает сегодняшнюю дату (см. dictationTodayDate).
+        //
+        // Организация берётся без отправки ошибки: гейт этого маршрута —
+        // requireClinicalReadAccess (админский секрет), токен кабинета в запросе
+        // может отсутствовать. Разбор диктовки из-за неизвестного пояса ронять
+        // нельзя — в этом случае берётся день сервера.
+        result = await parseDictationWithLLM(text, type as any, await resolveClinicTimeZone(request));
       }
 
       // 3. Database Linkage (If 3D viewer context is provided and teeth were found)
