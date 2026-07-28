@@ -383,6 +383,67 @@ route epidemic. That negative result is a genuine finding and it removes a whole
 Standing correction to my own method: **a route's guard lives in the handler, not the registration.**
 Never diagnose auth from a `grep` of `app.post(`.
 
+## CYCLE 4 + LEAD WORK — the shipped-build class, and two more lead errors
+
+Run `wf_4aefbe51-758`. Wave 1 landed (S1 speech auth, S2 cross-patient merge, S3 index+RAM ceiling).
+Wave 2 (S4/S5/S6) has been killed by "Credit balance is too low" **three times**. Nothing is lost —
+`resumeFromRunId` replays the 6 completed agents from cache and only re-runs the dead ones.
+
+### Lead errors, both caught by the S1 reviewer, both recorded per §4
+1. **"No guard whatsoever" was false** — already recorded above. `requireClinicalMutationAccess` was the
+   handler's first statement. I diagnosed auth from the registration line.
+2. **"The dev server runs WITHOUT --watch" was false**, and I put it in every cycle-4 brief.
+   `apps/api/package.json` declares `"dev": "tsx watch src/server.ts"` and `Launcher.ps1:272` runs it.
+   The reviewer therefore **promoted** a NOT VERIFIED to **API VERIFIED**: `curl -X POST
+   /api/speech/transcribe-chunk -d '{}'` → **401 `{"error":"AuthRequired"}`** on the live server. My
+   wrong environment claim had told three agents not to attempt a proof that was available.
+
+### The shipped-build defect class — found by review, closed by the lead
+`apps/api/dist` was **tracked** (149 files) even though `.gitignore:2` says `dist/` — a gitignore rule
+never applies to already-tracked files. The committed `dist/routes/speech.js` was built **before** the
+speech fix: zero occurrences of the new guard, no organizationId predicate. And
+`apps/api/package.json` declares `"start": "node dist/server.js"`. **`npm start` served the vulnerable
+build that source had already fixed.** The live box escaped only because `Launcher.ps1` runs
+`npm run dev`.
+
+Verified safe before removing: `apps/api/Dockerfile:30` runs `npx turbo run build --filter=@dental/api`
+itself; the four smokes that read `dist/server.js` demand a build explicitly («Build API first…»);
+`git rm -r --cached` leaves the worktree untouched. Closed in `589d63a4d` → **0 tracked dist files**.
+
+**Third lead error, self-caught:** the first attempt (`b96f6d04e`) did the OPPOSITE. I ran
+`git rm -r --cached` and then committed **with a pathspec** — and `git commit -- <paths>` commits the
+*working-tree* state of those paths, so it re-added the files instead of removing them. The very form I
+mandate to protect the fleet from the shared index worked against the intent here. Correct procedure
+for untracking: `git rm -r --cached`, inspect `git diff --cached --name-only` by eye, then commit
+**without** a pathspec.
+
+### Two broken gates fixed by the lead, with proof
+- **`smoke-clinical-mutation-guard.mjs` counted prose as protection** (`ae5ce1759`). It matched textual
+  occurrences of the guard name minus one for the import, so a JSDoc mention counted as a guarded
+  route. Measured: `speech.ts` old counter **2** (expected 2 → green) vs real call sites **1**. Now it
+  strips comments and counts `name(` call sites.
+  **The gate is wrong in the other direction too, and that is the bigger finding:** it has long been red
+  on `patients.ts must guard 3, found 0`, which is a FALSE ALARM. I read the handler (not the
+  registration — lesson applied): `patients.ts` authenticates by hand — `x-dente-clinic-token`,
+  `verifyToken(...)`, 401 `AuthRequired`/`AuthExpired` — and takes `organizationId` **from the
+  signature-verified token payload**, never from a header. That makes it *stricter* than the shared
+  helper and immune to the `identity.verified` bypass. **Two competing auth idioms coexist** (T5), and a
+  gate that counts identifiers can never see this (T1).
+- **`smoke-speech-route-validation.mjs` would have gone red on the next build** (`723e09fa3`). It sent
+  only `x-dente-admin-secret`, no clinic token, so against fixed code it gets 401 before reaching
+  validation — a payload-validation test accidentally testing auth. It passed only because it loads the
+  compiled `dist`, which was pre-fix. Now it signs a real clinic token with the production primitive
+  (2-segment HMAC, `TOKEN_SECRET()`), deliberately **not** via `x-organization-id` (that header is the
+  T2 bypass).
+  **SMOKE VERIFIED:** `npm run build -w @dental/api` exit 0 → rebuilt `dist/routes/speech.js` carries
+  **12** guard/organizationId occurrences vs **0** in the old committed build → `git status` churn from
+  the build is **0** (T3 paying off immediately) → `node scripts/smoke-speech-route-validation.mjs`
+  exit 0, `{"ok":true,"checkedRoutes":[3],"rawValidationHidden":true}`.
+
+### Deletion sweep — clean
+The second author is deleting the hollow `db/*Query.ts` modules (backlog item 8). Scanned every
+deletion across the last 25 commits for dangling references at HEAD: **zero**. `tsc` api exit 0.
+
 ## Lead-owned, not delegated
 
 - [ ] Re-run both capture pipelines, MD5-audit personally, read the unjudged plates
