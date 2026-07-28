@@ -15,10 +15,13 @@ import { describe, test } from "node:test";
 import { getFilteredAppViews } from "../../workspaceShell";
 import { staffRoleLabels } from "../../workspaceUiLabels";
 import {
+	CREATABLE_STAFF_ROLES,
 	INVITABLE_STAFF_ROLES,
 	inviteLinkForClipboard,
 	inviteRoleTitle,
 	parseInviteCreationPayload,
+	parseStaffMutationPayload,
+	staffRoleTitle,
 } from "./settingsInviteRoles";
 
 describe("роли, на которые можно пригласить", () => {
@@ -65,6 +68,75 @@ describe("роли, на которые можно пригласить", () => 
 		);
 		assert.ok(!asAdministrator.includes("visit"));
 		assert.ok(asUnknownRole.includes("visit"));
+	});
+});
+
+describe("роли, которые можно завести карточкой сотрудника", () => {
+	test("каждая роль есть в схеме ролей", () => {
+		for (const role of CREATABLE_STAFF_ROLES) {
+			assert.doesNotThrow(() => staffRoleSchema.parse(role));
+		}
+	});
+
+	test("владельца карточкой не заводят — только приглашением", () => {
+		assert.ok(!(CREATABLE_STAFF_ROLES as readonly string[]).includes("owner"));
+		assert.ok((INVITABLE_STAFF_ROLES as readonly string[]).includes("owner"));
+	});
+
+	test("остальные роли на месте: врач, ассистент, администратор, управляющий", () => {
+		assert.deepEqual([...CREATABLE_STAFF_ROLES].sort(), [
+			"administrator",
+			"assistant",
+			"doctor",
+			"manager",
+		]);
+	});
+});
+
+describe("подпись должности сотрудника", () => {
+	test("известная роль подписана по-русски", () => {
+		assert.equal(staffRoleTitle("administrator"), "Администратор");
+	});
+
+	test("роль вне схемы не оставляет место должности пустым", () => {
+		// Такие роли в базе есть: их создала форма приглашения, пока слала «admin».
+		const title = staffRoleTitle("admin");
+		assert.ok(title.length > 0);
+		assert.match(title, /^Должность не распознана/);
+		assert.ok(title.includes("admin"));
+	});
+
+	test("пустая роль тоже подписана", () => {
+		assert.equal(staffRoleTitle(""), "Должность не указана");
+	});
+});
+
+describe("ответ на изменение сотрудника", () => {
+	test("успех без тела — успех", () => {
+		assert.deepEqual(parseStaffMutationPayload(200, ""), { ok: true });
+	});
+
+	test("русский текст сервера сохраняется", () => {
+		const outcome = parseStaffMutationPayload(
+			500,
+			'{"error":"InternalError","message":"Не удалось обновить доступы."}',
+		);
+		assert.equal(outcome.ok, false);
+		assert.equal(
+			outcome.ok === false && outcome.message,
+			"Не удалось обновить доступы.",
+		);
+	});
+
+	test("HTML от прокси не даёт английского исключения", () => {
+		const outcome = parseStaffMutationPayload(502, "<html>Bad Gateway</html>");
+		assert.equal(outcome.ok, false);
+		assert.equal(outcome.ok === false && outcome.message, null);
+	});
+
+	test("машинный код error наружу не берётся", () => {
+		const outcome = parseStaffMutationPayload(400, '{"error":"SettingsValidationError"}');
+		assert.equal(outcome.ok === false && outcome.message, null);
 	});
 });
 

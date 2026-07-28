@@ -75,6 +75,37 @@ export function inviteRoleTitle(role: StaffRole): string {
 	return staffRoleLabels[role];
 }
 
+/**
+ * Кого можно завести карточкой сотрудника прямо в клинике, без приглашения.
+ *
+ * «Владельца» здесь нет намеренно, и это не пропуск: карточка создаётся без
+ * пароля, а владелец — тот, кто уже вошёл. Заводить второго владельца — передача
+ * клиники, и делается она приглашением на почту, а не кнопкой «Создать
+ * сотрудника».
+ *
+ * Список тоже был набран руками. Здесь ему повезло — значения совпали со схемой;
+ * повезло именно потому, что в соседней форме приглашения не повезло, и это
+ * стоило прав доступа. Поэтому и этот список выведен из общего.
+ */
+export const CREATABLE_STAFF_ROLES: readonly StaffRole[] =
+	INVITABLE_STAFF_ROLES.filter((role) => role !== "owner");
+
+/**
+ * Подпись роли сотрудника, у которой всегда есть текст.
+ *
+ * `staffRoleLabels[role]` возвращает `undefined` для роли вне схемы — а такие
+ * роли в базе есть: их создала форма приглашения, пока отправляла «admin».
+ * В списке персонала на месте должности у такого сотрудника было пусто, и
+ * администратор не мог понять, чего у человека не хватает.
+ */
+export function staffRoleTitle(role: string): string {
+	const known = (staffRoleLabels as Record<string, string | undefined>)[role];
+	if (known) return known;
+	const code = role.trim();
+	if (code.length === 0) return "Должность не указана";
+	return `Должность не распознана — сообщите администратору код «${code}»`;
+}
+
 /** Итог создания приглашения без fetch и DOM: разбирается и проверяется отдельно. */
 export type InviteCreationOutcome =
 	| { readonly ok: true; readonly inviteLink: string }
@@ -136,4 +167,42 @@ export function parseInviteCreationPayload(
  */
 export function inviteLinkForClipboard(origin: string, inviteLink: string): string {
 	return `${origin}${inviteLink}`;
+}
+
+/**
+ * Итог изменения сотрудника (создание карточки, смена PIN-кода, смена пароля).
+ *
+ * `message` — текст сервера, если он его прислал. Маршруты
+ * `/api/settings/staff*` отвечают на отказ телом `{error, message}`, и `message`
+ * там по-русски («Не удалось обновить доступы.», «ID сотрудника обязателен.»), а
+ * `error` — машинный код. Показывать можно только `message`.
+ */
+export type StaffMutationOutcome =
+	| { readonly ok: true }
+	| { readonly ok: false; readonly status: number; readonly message: string | null };
+
+/**
+ * Разбор ответа маршрутов сотрудников из УЖЕ прочитанного тела.
+ *
+ * БЫЛО во всех трёх обработчиках: `const data = await res.json()` ДО проверки
+ * `res.ok`, а затем `catch (err) { showToast(err.message) }`. Отсюда два разных
+ * английских текста в лицо администратору:
+ *   пустое тело или HTML от прокси — «Unexpected token '<' … is not valid JSON»;
+ *   обрыв связи — «Failed to fetch».
+ * Оба выглядели как ответ программы о PIN-коде сотрудника.
+ */
+export function parseStaffMutationPayload(
+	status: number,
+	rawBody: string,
+): StaffMutationOutcome {
+	if (status >= 200 && status < 300) {
+		return { ok: true };
+	}
+	let payload: unknown = null;
+	try {
+		payload = rawBody.trim().length > 0 ? JSON.parse(rawBody) : null;
+	} catch {
+		payload = null;
+	}
+	return { ok: false, status, message: textOrNull(asRecord(payload)?.message) };
 }
