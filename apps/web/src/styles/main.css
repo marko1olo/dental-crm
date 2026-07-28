@@ -6282,10 +6282,17 @@ body.dark-mode .onboarding-draft-strip span {
   margin: 7px 0 0;
 }
 
+/* --teal-fill вместо --teal и --on-teal вместо #ffffff: белый на --teal даёт
+   3.74:1 в светлой теме, 1.86:1 в тёмной (#2dd4bf) и 2.18:1 в ночной (#e0a458)
+   при норме 4.5 для 12px. --teal-fill — тот же приём, что уже применён к
+   .primary-button (см. styles/contrast-fixes.css, п. 3): в светлой теме он
+   уходит на --teal-dark, в тёмной и ночной остаётся --teal, а надпись берёт
+   --on-teal, который для этого и объявлен (#ffffff / #04211c / #231505).
+   Стало: 5.5:1 / 9.1:1 / 8.4:1. */
 .clinic-config-head > span {
-  background: var(--teal);
+  background: var(--teal-fill);
   border-radius: 999px;
-  color: #ffffff;
+  color: var(--on-teal);
   font-size: 12px;
   font-weight: 900;
   padding: 8px 11px;
@@ -6297,8 +6304,20 @@ body.dark-mode .onboarding-draft-strip span {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+/* ЗАМЕРЕНО 28.07.2026 В ЖИВОМ БРАУЗЕРЕ: было `background: #fbfefd` при
+   `color: var(--ink)`. Фон зашит светлым, надпись берётся из темы — темы
+   разъезжаются. Тёмная: rgb(248,250,252) на rgb(251,254,253) = 1.03:1. Ночная:
+   rgb(241,232,221) на том же фоне = 1.19:1. Норма 4.5:1, кегль 16px, то есть
+   заголовки вариантов «Отдельный врач» / «1 кабинет» / «Малая клиника» / «Сеть»
+   физически не читались, а по ним выбирают режим клиники — от него зависит,
+   какие модули клиника вообще увидит.
+   --elev — токен приподнятой поверхности, объявлен для всех трёх тем
+   (#ffffff / #15211f / #231d19). Светлая тема меняется на 4 единицы яркости
+   (#fbfefd -> #ffffff) и остаётся 16.9:1; тёмная становится 15.0:1, ночная
+   13.9:1. Описания под заголовками (.mode-card span, --muted) поднимаются с
+   2.53:1 до 6.5:1 в тёмной и 4.9:1 в ночной. */
 .mode-card {
-  background: #fbfefd;
+  background: var(--elev);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
@@ -6326,11 +6345,17 @@ body.dark-mode .onboarding-draft-strip span {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Тот же дефект тем же механизмом: подсказки «Один кабинет: главный фокус…»
+   стояли на зашитом #eef8f5 с зашитым же #33534b. В тёмной и ночной теме это
+   светлые плашки посреди тёмного экрана. --teal-surface (полупрозрачная
+   бирюза/янтарь по теме) плюс --teal-dark сохраняют вид в светлой теме
+   (rgba(204,251,241,0.5) над панелью ≈ #e5fdf8 против прежнего #eef8f5) и
+   переворачиваются вместе с темой. */
 .clinic-hints span {
-  background: #eef8f5;
+  background: var(--teal-surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  color: #33534b;
+  color: var(--teal-dark);
   font-size: 13px;
   font-weight: 800;
   padding: 9px 10px;
