@@ -398,7 +398,19 @@ async function waitForViewReady(viewName) {
   }
   const busy = busySelector(selector);
   let last = null;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  /*
+   * Бюджет ожидания — 30 с, а не 10.
+   *
+   * Раздел «communications» не уложился в 10 с и прогон упал, но сообщение об
+   * ошибке само себе противоречило: «контейнер раздела не появился» и тут же
+   * «контейнеры разделов [communications]». Причина не в приложении: разделы
+   * грузятся ленивыми модулями, и тяжёлый чанк при первом открытии не успевал,
+   * а pageWhereami() читал страницу уже ПОСЛЕ того, как контейнер появился.
+   * Порог поднят до 120 попыток по 250 мс; проверка при этом не ослаблена —
+   * раздел, которого нет, всё равно останавливает прогон, просто теперь это
+   * означает «нет», а не «не успел».
+   */
+  for (let attempt = 0; attempt < 120; attempt += 1) {
     last = await evaluate(`
       (() => {
         const node = document.querySelector(${JSON.stringify(selector)});
@@ -413,11 +425,23 @@ async function waitForViewReady(viewName) {
     }
     await sleep(250);
   }
+  // Причина перечитывается на момент отказа. Прежде печаталась причина ПОСЛЕДНЕЙ
+  // попытки, а диагностика собиралась позже, поэтому сообщение могло утверждать
+  // «контейнера нет» и одновременно перечислять этот контейнер среди найденных.
+  // Сообщение, противоречащее самому себе, отправляет разбираться не туда.
+  const atFailure = await evaluate(`
+    (() => {
+      const node = document.querySelector(${JSON.stringify(selector)});
+      if (!node) return { ready: false, reason: "контейнер раздела не появился" };
+      if (document.querySelector(${JSON.stringify(busy)})) return { ready: false, reason: "контейнер помечен aria-busy" };
+      return { ready: true, reason: "контейнер появился уже ПОСЛЕ истечения бюджета — это медленная загрузка, а не отсутствующий раздел" };
+    })()
+  `);
   const where = await pageWhereami();
   const stuckName = `${MISS_SUFFIX.slice(1)}_НЕ_ОТКРЫЛСЯ_${viewName}.png`;
   await writeDiagnosticShot(stuckName);
   throw new Error(
-    `Раздел «${viewName}» не открылся за 10 с: ${last?.reason ?? "причина не считана"} (искали ${selector}). ` +
+    `Раздел «${viewName}» не открылся за 30 с: ${atFailure?.reason ?? last?.reason ?? "причина не считана"} (искали ${selector}). ` +
       `На странице: адрес «${where?.hash}», контейнеры разделов [${(where?.containers ?? []).join(", ") || "нет ни одного"}], ` +
       `экран входа: ${where?.login}, экран PIN: ${where?.pin}, заголовок «${where?.title}». ` +
       `Снимать нечего, прогон остановлен. Что было на экране: ${stuckName}`,
@@ -463,11 +487,40 @@ async function nav(viewName) {
  * заново из своего хранилища. Ведомость заполняется ДО записи файла — двойник не
  * должен лечь на диск и попасть в чужую выборку.
  */
+/**
+ * Наименьший правдоподобный размер кадра приложения, в байтах.
+ *
+ * ЗАЧЕМ ЭТА ПРОВЕРКА СУЩЕСТВУЕТ. Проверка темы читает токены палитры, а они
+ * живут на :root и ПЕРЕЖИВАЮТ пустую страницу. Поэтому кадр размером 5 851 байт
+ * — полностью белый лист — прошёл проверку темы и был записан в журнал обычной
+ * строкой успеха: «снимок desktop_light_shift.png (6 КБ, тема «light», палитра
+ * aaa45b8822ec)». Отпечаток палитры совпал, имя файла обещало раздел смены, а на
+ * картинке не было ничего. Причину видно по следующему вызову: браузер перестал
+ * отвечать («Page.captureScreenshot: браузер не ответил за 30 с»), то есть
+ * отрисовка умерла при живом DOM — проверка контейнера раздела прошла, а красить
+ * было уже нечем.
+ *
+ * Порог выведен из настоящих замеров этого же прогона, а не назначен на глаз:
+ * самый маленький ЧЕСТНЫЙ кадр — imaging, 59 516 байт; пустой — 5 851 байт.
+ * 20 000 лежит между ними с запасом в три раза в обе стороны. PNG сжимает
+ * однотонный лист в десятки раз сильнее живого интерфейса, поэтому размер здесь
+ * — надёжный признак «нечего смотреть», а не придирка к качеству.
+ */
+const MIN_PLAUSIBLE_SHOT_BYTES = 20_000;
+
 async function shot(name, theme) {
   const fileName = `${name}.png`;
   const themeState = audit.assertThemeBeforeShot(await readThemeState(), theme, fileName);
   const { data } = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   const buffer = Buffer.from(data, "base64");
+  if (buffer.byteLength < MIN_PLAUSIBLE_SHOT_BYTES) {
+    throw new Error(
+      `Кадр «${fileName}» весит ${buffer.byteLength} байт — это пустой лист, а не раздел. ` +
+        `Ниже ${MIN_PLAUSIBLE_SHOT_BYTES} байт интерфейс не отрисовался: DOM мог быть на месте, а отрисовка умереть. ` +
+        `Кадр НЕ записан на диск: пустой снимок под именем раздела — ложное доказательство, а не плохой снимок. ` +
+        `Проверьте, что веб-сервер не отдаёт полуготовое дерево (правки в полёте) и что браузер жив.`,
+    );
+  }
   const entry = audit.register({ file: fileName, buffer, theme, state: themeState });
   await writeFile(path.join(OUT, fileName), buffer);
   console.log(

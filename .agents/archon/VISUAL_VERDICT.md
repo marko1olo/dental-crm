@@ -455,3 +455,79 @@ Worth naming as the standard, because §3 is otherwise the hardest rule to point
 - **Its actions are differentiated by confidence** — «Перенести сюда» at 95 %, «Всё равно перенести
   сюда» at 35 %. The user is told the risk in the verb.
 Every empty, loading and error state in this product should be judged against this panel.
+
+## ADDENDUM E — THE FIRST HONEST DESKTOP CAPTURE OF THE CAMPAIGN, AND WHY THE EARLIER ONES WERE NOT
+
+**Every desktop shot before 17:49 tonight showed a COLLAPSED sidebar under a filename promising the
+default state.** The capture script collapsed the rail with a blind click on one line and restored it on
+another, only on the happy path. Collapse persists in `localStorage`. A previous run died between those
+two lines and left the rail collapsed permanently; every later run inherited it. Nothing in the filename
+or `theme-audit.json` said so. Fixed by making the state SET, not inherited (`setSidebarCollapsed`), with
+an assertion after each toggle, so the script is self-healing and a failed click stops the run.
+
+### E.1 — WHAT THE EXPANDED RAIL ACTUALLY LOOKS LIKE: THIS IS THE BEST PART OF THE PRODUCT
+Judged by the lead's own eyes on `desktop_light_analytics.png` (130,839 bytes, 1440×900, light).
+Every section carries a name AND a plain-Russian subtitle saying what it is for:
+
+    Смена — что делать сейчас            Оплаты — оплаты и долги
+    Записи — очередь, врачи и кресла     Аналитика — отчёты и воронки
+    Пациенты — карточки и контакты       Связь — сообщения и задачи
+    Снимки — рентген, КЛКТ и КТ          Склад — материалы, остатки и сроки
+    Приём — приём и диктовка             Стерилизация — лотки и журнал автоклава
+    Документы — договоры и справки       Обращения — звонки и заявки до записи
+                                         Настройки — клиника, импорт и доступы
+                                         Маркетинг/SEO — продвижение и отзывы
+
+**This satisfies §3 properly.** A person who has never seen a dental CRM can find «звонки и заявки до
+записи» without being taught the word «Обращения». No jargon, no icons-only guessing.
+
+### E.2 — THE EMPTY STATES ARE GENUINELY EXCELLENT AND SHOULD NOT BE TOUCHED
+Analytics, empty: «За выбранный период данных нет» / «Это не нулевые показатели, а отсутствие записей:
+за выбранный период не было ни оплат, ни приёмов. Выберите другой период вверху страницы.»
+**It distinguishes ZERO from NO DATA and then points at the exact control.** Most commercial products get
+that wrong. Schedule, empty: «Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или
+сразу откройте форму новой записи» with all three as real buttons. Visit, empty: «Пациент не выбран» /
+«Выберите пациента в разделе «Пациенты» или создайте запись в «Записях», чтобы начать приём.» This is the
+standard the rest of the product should be measured against.
+
+### E.3 — CONFIRMED BY EYE: THE TOPBAR IS THE §4 DEFECT, AND THE ROW-2 REGRESSION IS REAL
+Earlier the lead measured `.topbar` growing 107→187px at 1600px after the corner redesign. **Now visually
+confirmed at 1440px.** The top-right holds SEVEN controls on row 1 — Поиск, Голос, Справка, an unlabelled
+database-like icon, Настроить, an unlabelled microphone icon — and then pushes **«Запись», the primary
+action of a dental CRM, alone onto row 2** beside an unlabelled red padlock.
+
+Three separate defects in that one corner:
+1. **Three unlabelled icon buttons** (database, microphone, padlock). §3: a user cannot know what they do.
+2. **«Голос» exists as a labelled button AND there is a separate bare microphone icon.** Two controls that
+   look like the same capability. Either they differ — then say how — or one is redundant.
+3. **The primary action is demoted to its own row** while lower-value icons keep row 1, and the red
+   padlock's alarm colour pulls the eye away from it. §4: this is piling on, not fitting in.
+
+### E.4 — SMALLER, STILL REAL
+- ~270px of a 900px screen is spent before content begins: a demo banner, then a band holding «Роль
+  Владелец сменить» and «Недавние 0 сменить», then a gap. «Недавние 0» is a chip whose content is a zero.
+- Analytics says «За всё время» in the selector and «за выбранный период» in the empty state. With "all
+  time" chosen, "no data for the selected period" reads as a filter problem when it is an empty clinic.
+- Schedule has a **full-width unlabelled empty input** above the filters — no label, no placeholder.
+- Schedule offers «Создать запись» and «Новая запись» on one screen for the same action.
+- Schedule's readiness line ends «…и ещё 3» — the user is told three more blockers exist but not what.
+
+### E.5 — THE INSTRUMENT COULD CERTIFY A BLANK PAGE. THAT HOLE IS NOW CLOSED.
+A 5,851-byte pure-white frame was written as `desktop_light_shift.png` and logged as a SUCCESS:
+«снимок desktop_light_shift.png (6 КБ, тема «light», палитра aaa45b8822ec)». The theme audit passed
+because palette tokens live on `:root` and survive an empty body. The renderer had died — the next CDP
+call timed out — while the DOM still satisfied the container check. So DOM-side readiness cannot detect a
+dead paint. A byte-size floor now rejects the frame BEFORE it reaches disk, with the threshold derived
+from this run's real numbers: smallest honest frame 59,516 bytes (imaging), blank frame 5,851 bytes,
+floor 20,000. The blank file was deleted, not kept.
+
+**Standing rule: the lead does not capture while the fleet is editing web source.** The dev server serves
+whatever is on disk, so a mid-edit tree yields frames that are evidence of nothing. Tonight's third run
+died exactly that way.
+
+### E.6 — STILL WITHOUT ANY HONEST CAPTURE
+`shift` (the blank frame was its only desktop attempt tonight), `communications` (timed out at 10 s, then
+at 30 s — the container appears but slowly; the old error text contradicted itself by naming the container
+as missing while listing it as present, and that message is now re-read at failure time), `settings`,
+`marketing`, and **every dark-theme and mobile frame**. No verdict is offered on those. Nine shots exist;
+seven are trustworthy; two are honest failure diagnostics.
