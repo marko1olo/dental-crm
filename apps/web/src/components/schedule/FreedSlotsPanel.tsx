@@ -73,6 +73,8 @@ export const FreedSlotsPanel: React.FC = () => {
 
 	const [report, setReport] = useState<FreedSlotsReport | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	/** Идёт ли запрос. Нужен для повтора: иначе кнопка молчит о том, что работает. */
+	const [loading, setLoading] = useState(true);
 	/**
 	 * Кому уже позвонили. След на смену, а не запись в карточке.
 	 *
@@ -94,18 +96,66 @@ export const FreedSlotsPanel: React.FC = () => {
 	/** Какое окно раскрыто: остальные показывают только сводку. */
 	const [openSlot, setOpenSlot] = useState<string | null>(null);
 
+	/*
+		ОТКАЗ ОБЪЯСНЯЛСЯ ПО-АНГЛИЙСКИ И МАШИННЫМ ЯЗЫКОМ.
+
+		ЧТО БЫЛО СЛОМАНО. Ответ разбирался как `await response.json()` без всякой
+		защиты, а сообщение бралось прямо из тела сервера. Отсюда три беды:
+		1. Нет сети — fetch бросает, и на экран уходило «Список не построен: Failed
+		   to fetch».
+		2. Прокси или сервер вернул страницу ошибки, а не JSON — разборщик бросал
+		   своё, и человек читал «Unexpected token '<', "<html>" is not valid JSON».
+		3. Сообщение сервера могло быть служебным английским («Internal Server
+		   Error»): русскому экрану оно не объясняет ничего.
+
+		ЧТО СТАЛО. Отказ сети, отказ сервера и «ответил не тем» — три разных
+		человеческих объяснения. Сообщение сервера берём, только если оно
+		по-русски: тогда оно точнее любого нашего. И на экране появилась кнопка
+		повторить, потому что «не построен» без действия — тупик.
+	*/
+	const loadFailureText = (status: number, serverMessage: string | null): string => {
+		// Кириллица в сообщении сервера — признак, что оно написано для человека.
+		if (serverMessage && /[а-яё]/i.test(serverMessage)) return serverMessage;
+		if (status === 401 || status === 403)
+			return "Нет прав смотреть освободившиеся окна: доступ закрыт или истёк вход в программу.";
+		if (status === 404) return "Раздел освободившихся окон не отвечает.";
+		if (status >= 500) return "Сбой на сервере клиники: список окон не собран.";
+		return `Программа не смогла получить список окон (ответ ${status}).`;
+	};
+
 	const load = useCallback(async () => {
 		setError(null);
+		setLoading(true);
 		try {
-			const response = await fetch("/api/schedule/freed-slots", {
-				headers: auth ? auth.denteClinicalReadHeaders() : {}
-			});
-			const payload = (await response.json()) as FreedSlotsReport & { message?: string };
-			if (!response.ok) throw new Error(payload.message ?? `Сервер ответил ${response.status}`);
+			let response: Response;
+			try {
+				response = await fetch("/api/schedule/freed-slots", {
+					headers: auth ? auth.denteClinicalReadHeaders() : {}
+				});
+			} catch {
+				setReport(null);
+				setError(
+					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть."
+				);
+				return;
+			}
+			// Тело читаем мягко: у страницы ошибки от прокси разбор JSON падает.
+			const payload = (await response.json().catch(() => null)) as
+				| (FreedSlotsReport & { message?: string })
+				| null;
+			if (!response.ok) {
+				setReport(null);
+				setError(loadFailureText(response.status, payload?.message ?? null));
+				return;
+			}
+			if (!payload || !Array.isArray(payload.slots)) {
+				setReport(null);
+				setError("Сервер ответил, но списка окон в ответе нет.");
+				return;
+			}
 			setReport(payload);
-		} catch (loadError) {
-			setReport(null);
-			setError(loadError instanceof Error ? loadError.message : String(loadError));
+		} finally {
+			setLoading(false);
 		}
 	}, [auth]);
 
@@ -129,9 +179,23 @@ export const FreedSlotsPanel: React.FC = () => {
 			</div>
 
 			{error ? (
-				<p className="ops-notice ops-notice--error" role="alert">
-					Список не построен: {error}
-				</p>
+				<div className="ops-notice ops-notice--error" role="alert">
+					<p>{error}</p>
+					<p>
+						Освободившиеся окна сейчас не видны, но они есть: это отменённые и
+						пропущенные приёмы за ближайшие дни. Пока список не открылся, время
+						таких приёмов считайте свободным и сверяйтесь с расписанием дня
+						вручную, иначе час кресла простоит зря.
+					</p>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => void load()}
+						disabled={loading}
+					>
+						{loading ? "Загружаю…" : "Попробовать снова"}
+					</button>
+				</div>
 			) : null}
 
 			{report === null && !error ? (
