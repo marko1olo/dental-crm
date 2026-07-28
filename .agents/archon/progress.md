@@ -1176,3 +1176,50 @@ server-side from database rows and are not schema-checked. Closing it properly m
 `moneyRubText()` helper beside the existing `moneyRubEquals` — one owner, delegating to the shared module,
 and it would also shorten eleven very long lines. That is a bounded packet, not a lead one-liner, and it is
 recorded here rather than left to be rediscovered.
+
+## CYCLE 17 — 8/8 AGENTS, ZERO DEATHS. GG1 NEEDS_REWORK: THE FIX INTRODUCED A 12× UNDERPRICE.
+
+Second full cycle in a row with no credit deaths. The GG1 review is the most consequential of the campaign
+because it found that a fix **made money worse**, and it measured rather than argued.
+
+### TWO REGRESSIONS THE FIX INTRODUCED, both measured by the reviewer against the verbatim old functions
+extracted from `59a886a2c` into a standalone harness (it did NOT revert the tree):
+
+1. **`analyzer.ts:507+526` — a currency-marked price is demoted to non-explicit, and a room number wins.**
+   `hasCurrency` is read off the END of the whole match, but in the `high === null` branch the match runs
+   past the currency to swallow the separator plus the rejected number — so «5000 руб/120» ends in a digit,
+   `explicit` becomes false, and `extractPrice:561` falls back to `.at(-1)`, letting the last bare number
+   win. Measured: **«Седация 5000 руб/120 мин кабинет 412» went from 5000 to 412 — a 12× underprice.**
+   No new test covers it.
+2. **`analyzer.ts:566` — the unselected price stays verbatim in the service title.** «Имплантация 45000
+   руб, с коронкой 60000 руб» → title «Имплантация 45000 руб, с коронкой». Worse: «Пломба 3500 руб 4000
+   руб» yields a title containing «3500 руб» while `priceRub` is 4000 — **one record contradicting
+   itself.** The packet disclosed and PINNED this in its own test file, but it is absent from the 13-entry
+   inventory it reported to the lead.
+
+Also found: the licence row **vanishes with zero warning** (the `priceRub !== null || category !== "other"`
+filter deletes it, and `price_not_found` only surfaces for lines classified `documents`); the year guard
+covers only `/`, so «Договор 1234-2025» still prices at 1234; and **the AI path at `:1003-1006` carries the
+untouched twin** of the descending-pair collapse that was removed from the deterministic path 460 lines
+above.
+
+### WHAT THE REVIEWER GOT RIGHT THAT THE LEAD DOES NOT DO
+It proved the one changed comparison was **justified rather than revert-grade**: the old
+`priceMaxRub >= priceRub ? priceMaxRub : null` nulled the upper bound but kept the FIRST position as the
+price, and on a descending pair the first position holds the larger number — so reverting reinstates a
+silent 2× overcharge. It then proved every new assertion fails on revert by naming the old value each one
+would see. And it disclosed a side effect nobody asked about: equal bounds now yield `priceMaxRub: null`.
+
+### THE LEAD'S OWN PROBE WAS INVALID, AND IT SAYS SO BEFORE REPORTING IT
+Trying to reproduce the 12× underprice, the lead called `analyzePricelist` directly and got a `ZodError`
+on **every** input — including «Лечение кариеса 1500,50», the canonical kopecks case the suites assert
+passes 33/33. That contradiction was the tell. Cause: the lead omitted `preferredSpecialty`, which
+`packages/shared/src/index.ts:1772` declares as `dentalSpecialtySchema.default("universal")`. The passing
+tests pass it explicitly; a real HTTP caller gets the zod default. **So there is no crash defect — the
+instrument was wrong, twice over, and the "ZodError on every line" finding is withdrawn before it was ever
+published as a defect.** Eleventh correction of the night, and the first one caught before it left the
+lead's hands.
+
+**Standing consequence:** a direct function call bypasses the schema defaults that every real caller gets.
+Probing a route's internals is not probing the route. Either call through the schema or pass what the
+schema would have supplied — and when a probe contradicts a green suite, the probe is the suspect.
