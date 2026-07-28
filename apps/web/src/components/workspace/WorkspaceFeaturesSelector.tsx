@@ -298,16 +298,36 @@ export function WorkspaceFeaturesSelector() {
 	const store = useWorkspaceProfileStore();
 	const [saving, setSaving] = useState<string | null>(null);
 	const [saved, setSaved] = useState<string | null>(null);
+	/**
+	 * Почему набор не сохранился на сервере — словами, рядом с переключателем.
+	 *
+	 * ЗАЧЕМ. Здесь стояла зелёная галочка «сохранено», которая ставилась ВСЕГДА,
+	 * что бы ни ответил сервер: saveWorkspaceFlags глотала отказ и правила только
+	 * localStorage. Владелец выключал модуль, видел галочку и уходил — а на другом
+	 * устройстве и у второго сотрудника модуль оставался включённым. Настройка,
+	 * которая молча не сохраняется, хуже настройки, которой нет.
+	 */
+	const [failure, setFailure] = useState<{ key: string; text: string } | null>(null);
 
 	async function handleToggle(
 		key: keyof WorkspaceFeatureFlags,
 		value: boolean,
 	) {
 		setSaving(key);
+		setFailure((current) => (current && current.key === key ? null : current));
 		try {
-			await saveWorkspaceFlags({ [key]: value });
-			setSaved(key);
-			setTimeout(() => setSaved(null), 1800);
+			const result = await saveWorkspaceFlags({ [key]: value });
+			if (result.savedOnServer) {
+				setSaved(key);
+				setTimeout(() => setSaved(null), 1800);
+			} else {
+				setFailure({
+					key,
+					text:
+						result.failureText ??
+						"Набор модулей не сохранён на сервере. Повторите переключение.",
+				});
+			}
 		} finally {
 			setSaving(null);
 		}
@@ -401,6 +421,20 @@ export function WorkspaceFeaturesSelector() {
 							>
 								{def.description}
 							</p>
+							{failure?.key === def.key && (
+								<p
+									role="alert"
+									style={{
+										margin: "6px 0 0",
+										fontSize: 13,
+										lineHeight: 1.5,
+										color: "var(--bad-fg, #f4795c)",
+										fontWeight: 600,
+									}}
+								>
+									{failure.text}
+								</p>
+							)}
 						</div>
 
 						<div style={{ marginTop: 8 }}>

@@ -8,6 +8,18 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { applyClinicModeToFlags, resolveClinicMode } from "../lib/clinicCapabilities";
+/*
+ * Заголовки авторизации. Все три запроса ниже уходили БЕЗ них, и это отменяло
+ * модульность целиком: GET /api/workspace/profile отвечает 401, если не может
+ * определить организацию (routes/workspaceProfile.ts:564), поэтому набор модулей
+ * никогда не доезжал с сервера и оставался значениями по умолчанию, где включено
+ * всё. Проверено живым запросом: без заголовков 401, с токенами клиники и
+ * сотрудника — настоящий набор. Именно поэтому выключенный склад оставался в
+ * меню в чистом браузере, хотя признак в базе был false.
+ * denteAdminSecretRequestHeaders отправляет оба токена и уже используется в
+ * проекте для таких запросов — четвёртый вариант заголовков не заводим.
+ */
+import { denteAdminSecretRequestHeaders } from "../AppHelpers";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -198,7 +210,7 @@ export async function applyWorkspacePreset(
 	try {
 		const res = await fetch(`/api/workspace/preset/${presetName}`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify(extraData || {}),
 		});
 		if (!res.ok) throw new Error(`Failed to apply preset: ${presetName}`);
@@ -260,24 +272,63 @@ export async function applyWorkspacePreset(
 // ──────────────────────────────────────────────────────────────────────────────
 // Utility: save individual flag toggles to server
 // ──────────────────────────────────────────────────────────────────────────────
+/**
+ * Результат сохранения набора модулей.
+ *
+ * ЗАЧЕМ ВОЗВРАЩАТЬ, А НЕ МОЛЧАТЬ. Прежняя версия ловила любую ошибку, писала
+ * console.warn «updating locally only» и всё равно правила локальный набор. На
+ * экране это выглядело как «Сохранено»: владелец выключал модуль, видел галочку
+ * и уходил. А на сервер запрос не доходил вовсе, потому что уходил без
+ * заголовков авторизации (см. ниже), и выбор жил до первой чистки браузера — на
+ * втором устройстве и у второго сотрудника клиника снова получала все модули
+ * включёнными. Тихий откат настройки хуже отказа: отказ можно повторить.
+ */
+export interface SaveWorkspaceFlagsResult {
+	readonly savedOnServer: boolean;
+	/** Человеческая причина, если на сервер не сохранилось. */
+	readonly failureText: string | null;
+}
+
 export async function saveWorkspaceFlags(
 	partial: Partial<WorkspaceFeatureFlags>,
-): Promise<void> {
+): Promise<SaveWorkspaceFlagsResult> {
+	let savedOnServer = false;
+	let failureText: string | null = null;
+
 	try {
-		await fetch("/api/workspace/profile", {
+		const response = await fetch("/api/workspace/profile", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify(partial),
 		});
+		if (response.ok) {
+			savedOnServer = true;
+		} else if (response.status === 401 || response.status === 403) {
+			failureText =
+				"Набор модулей не сохранён: нет прав. Войдите как сотрудник клиники и повторите — иначе выбор пропадёт при следующем входе.";
+		} else if (response.status >= 500) {
+			failureText =
+				"Набор модулей не сохранён: сервер клиники ответил отказом. Повторите, а если повторится — сообщите администратору.";
+		} else {
+			failureText =
+				"Набор модулей не сохранён: сервер не принял запрос. Обновите страницу и повторите.";
+		}
 	} catch (error) {
-		console.warn("Failed to sync workspace flags with server, updating locally only:", error);
+		failureText =
+			"Набор модулей не сохранён: сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть, и повторите.";
 	}
-	
-	// Update local store regardless of server response for MVP offline capability
+
+	/*
+	 * Локальный набор правится и при отказе — намеренно: переключатель не должен
+	 * прыгать обратно под пальцем, пока человек читает сообщение об ошибке. Но
+	 * теперь вызывающая сторона знает, что на сервер не ушло, и говорит об этом.
+	 */
 	const store = useWorkspaceProfileStore.getState();
 	for (const [k, v] of Object.entries(partial)) {
 		store.setFlag(k as keyof WorkspaceFeatureFlags, v as boolean | string | number);
 	}
+
+	return { savedOnServer, failureText };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -285,11 +336,24 @@ export async function saveWorkspaceFlags(
 // ──────────────────────────────────────────────────────────────────────────────
 export async function loadWorkspaceProfile(): Promise<void> {
 	try {
-		const res = await fetch("/api/workspace/profile");
-		if (!res.ok) return;
+		const res = await fetch("/api/workspace/profile", {
+			headers: denteAdminSecretRequestHeaders(),
+		});
+		if (!res.ok) {
+			/*
+			 * Отказ здесь оставляет набор по умолчанию, где включено ВСЁ. Это
+			 * безопасное направление (лишний раздел не мешает работать так, как
+			 * мешает пропавший), но молчать нельзя: именно молчание скрывало, что
+			 * запрос уходил без заголовков и всегда получал 401.
+			 */
+			console.warn(
+				`Набор модулей не прочитан с сервера (код ${res.status}); показаны все модули. Настройка модулей на этом устройстве не действует.`,
+			);
+			return;
+		}
 		const flags = (await res.json()) as WorkspaceFeatureFlags;
 		useWorkspaceProfileStore.getState().hydrate(flags);
 	} catch {
-		// Network offline – keep persisted values
+		// До сервера не дошли: остаются сохранённые ранее значения.
 	}
 }
