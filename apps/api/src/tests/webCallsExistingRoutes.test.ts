@@ -52,17 +52,32 @@ const KNOWN_MISSING: readonly string[] = [
 	// (виджет переведён на communication-timelines у пациента) и
 	// /api/crm/patient-archive-reasons-and-blacklists (переведён на
 	// archive-status у пациента).
+	/*
+	 * Отсюда убрана строка /api/documents/ndfl-tax-calculators: её звал ровно
+	 * один виджет, NdflTaxCalculatorsWidget, и он удалён вместе с обещанием.
+	 * Маршрута нет, у таблицы ndfl_tax_calculators нет ни писателя, ни читателя
+	 * (в apps/api/src осталось только объявление схемы), а сам виджет не
+	 * импортировал никто — то есть даже 404 никому не показывался. Адрес,
+	 * которого никто не зовёт, не долг, а мусор в списке.
+	 */
 	"/api/crm/patient-duplicate-merge-queues",
 	"/api/integrations/egisz-blank-permissions",
 	"/api/integrations/yandex-calendar-syncs",
 	"/api/marketing/family-recommendation-sources",
 	"/api/schedule/external-schedule-action-logs",
 	"/api/system/ram-watchdogs",
-	"/api/documents/ndfl-tax-calculators",
 	// Незаконченные разделы.
 	"/api/ai/predict-no-show",
 	"/api/ai/visit-flow",
-	"/api/billing/payouts",
+	/*
+	 * Отсюда убрана строка /api/billing/payouts: маршрут СДЕЛАН
+	 * (routes/billing.ts:276, коммит 5d9d9b4d5). Выплаты врачам считаются из
+	 * кассы, себестоимости материалов и ставки врача, с изоляцией по клинике и
+	 * отказом ресепшену человеческим текстом. Именно на этой строке проверка и
+	 * покраснела — в этом её смысл: адрес перестал быть долгом, а список об этом
+	 * не знал. Долг, который не убирают после починки, за месяц превращается в
+	 * список, на который никто не смотрит.
+	 */
 	"/api/clinic/marketing-settings",
 	"/api/clinic/reporting-settings",
 	"/api/clinic/workflows",
@@ -246,8 +261,13 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * только осознанно, вместе с этим числом. Начиналось с 33 — это 28 находок
 		 * аудита плюс 5, найденных самой этой проверкой при вводе.
 		 *
-		 * Сейчас 25. Последней убрана /api/crm/bulk-image-operation-logs вместе с
-		 * единственным виджетом, который её звал.
+		 * Сейчас 23, и последняя убранная строка отличается от всех прежних по
+		 * причине. До неё адреса уходили вместе с удалённым виджетом: обещание
+		 * снимали, потому что выполнить его было нечем. А /api/billing/payouts
+		 * ушёл потому, что маршрут НАПИСАН и работает, — долг закрыт исполнением,
+		 * а не отказом. До него: /api/documents/ndfl-tax-calculators вместе с
+		 * NdflTaxCalculatorsWidget, до неё — /api/crm/bulk-image-operation-logs
+		 * таким же образом.
 		 *
 		 * Число ставится по фактической длине списка, а не «с запасом»: свободная
 		 * единица означает, что одну строку долга можно добавить молча, а ради
@@ -255,7 +275,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 25,
+			KNOWN_MISSING.length <= 23,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);
