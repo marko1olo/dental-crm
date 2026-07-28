@@ -44,7 +44,6 @@ import {
 	patientSchema,
 	paymentSchema,
 	protocolTemplateSchema,
-	serviceCatalogItemSchema,
 	staffMemberSchema,
 	staffRoleSchema,
 	treatmentPlanItemSchema,
@@ -59,7 +58,6 @@ import {
 	type Patient,
 	type Payment,
 	type ProtocolTemplate,
-	type ServiceCatalogItem,
 	type StaffMember,
 	type TreatmentPlanItem,
 	type Visit,
@@ -84,6 +82,11 @@ import {
 	validScheduleTimeZone,
 } from "../sampleData.js";
 import { db } from "./client.js";
+import {
+	projectServiceCatalogRows,
+	SERVICE_CATALOG_EMPTY_MESSAGE,
+	type ServiceCatalogRow,
+} from "./pricelistQuery.js";
 import * as schema from "./schema.js";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
@@ -284,11 +287,22 @@ async function hydrateDomainStateFromDbUnsynchronized(
 		 * Прайс читается из service_catalog_items, а не из services.
 		 *
 		 * Справочников услуг в базе два, и они жили порознь. В
-		 * service_catalog_items пишет мастер первого запуска
+		 * service_catalog_items пытается писать мастер первого запуска
 		 * (routes/workspaceProfile.ts), из него читают документы
 		 * (db/pricelistQuery.ts) и по нему сверяет услугу склад
 		 * (routes/inventory.ts) — всего 21 обращение в четырёх файлах. Таблицу
 		 * services читала одна эта строка, и именно она питала все экраны.
+		 *
+		 * «Пытается» — не оговорка: заполнение прайса мастером первого запуска
+		 * (routes/workspaceProfile.ts:723-771) не работает. Оно передаёт ключ
+		 * `name`, тогда как колонка называется `title` и объявлена NOT NULL без
+		 * значения по умолчанию, а одна из категорий — "orthopedics", которой в
+		 * перечислении service_category нет (проверено на живой базе:
+		 * consultation, therapy, surgery, prosthetics, orthodontics,
+		 * periodontology, hygiene, imaging, documents, other). Поэтому таблица
+		 * пуста не «пока», а всегда, и починка этого мастера — отдельная работа:
+		 * его цены (3500, 7500, 5500, 35000, 15000) тоже выдуманы в коде, и
+		 * записывать их в прайс настоящей клиники нельзя.
 		 *
 		 * Что из этого выходило, проверено живьём
 		 * (scratch/verify-service-tables-split.mjs): услуга, заведённая в services,
@@ -302,7 +316,7 @@ async function hydrateDomainStateFromDbUnsynchronized(
 		 * читается никем; её удаление — отдельная работа с переносом данных тех
 		 * клиник, где строки в ней уже есть.
 		 */
-		selectByOrganization<typeof schema.serviceCatalogItems.$inferSelect>(
+		selectByOrganization<ServiceCatalogRow>(
 			schema.serviceCatalogItems,
 			organizationId,
 			"serviceCatalog",
@@ -673,43 +687,32 @@ async function hydrateDomainStateFromDbUnsynchronized(
 		report,
 	);
 
-	// ── Прайс ─────────────────────────────────────────────────────────────────
-	const serviceRecords = collect<ServiceCatalogItem>(
-		serviceRows.map((service) => ({
-			id: service.id,
-			organizationId: service.organizationId,
-			code: service.code ?? "",
-			title: service.title,
-			aliases: [],
-			category: service.category,
-			specialty: service.specialty,
-			/*
-			 * Цена услуги идёт с копейками.
-			 *
-			 * Здесь стояло Math.round: цена 1 500,50 ₽, честно лежащая в колонке
-			 * numeric(10,2), превращалась на экране в 1 501 ₽. Это самая живая из
-			 * потерь копейки во всей программе — прайс читает и главный экран, и
-			 * план лечения, и счёт пациенту. Округление вверх ещё и делало клинику
-			 * дороже, чем она есть.
-			 *
-			 * Округление появилось не на пустом месте: схема прайса требовала целое
-			 * число (z.number().int()), и без округления разбор отбросил бы строку
-			 * целиком. Схема теперь принимает копейки, поэтому округление не просто
-			 * лишнее — оно вредное.
-			 *
-			 * Number() остаётся: колонка объявлена numeric с mode "number", но
-			 * соседние прайсовые таблицы пока без него, и лишнее приведение числа
-			 * к числу ничего не стоит.
-			 */
-			basePriceRub: Math.max(0, Number(service.basePriceRub) || 0),
-			durationMinutes: Math.max(1, service.durationMinutes),
-			taxDeductible: service.taxDeductible,
-			active: service.isActive,
-		})),
-		serviceCatalogItemSchema,
-		"serviceCatalog",
-		report,
-	);
+	/*
+	 * ── Прайс ─────────────────────────────────────────────────────────────────
+	 *
+	 * Проекция строк прайса НЕ пишется здесь. Она одна на весь проект —
+	 * projectServiceCatalogRows() в db/pricelistQuery.ts, — и её же вызывает путь
+	 * документов (db/documentQuery.ts) и анализ прайса (routes/pricelist.ts).
+	 *
+	 * БЫЛО: собственное отображение строки в услугу прямо здесь. Оно подрезало
+	 * цену через Math.max(0, …) и длительность через Math.max(1, …), а путь
+	 * документов те же строки не подрезал вовсе. Одна услуга получала на экране
+	 * одну цену, а в договоре — другую; строка, не прошедшая контракт, молча
+	 * исчезала с экрана, но продолжала считаться в договоре. Пока проекций две,
+	 * равенство цен приходится проверять глазами; с одной — оно структурно.
+	 */
+	const serviceProjection = projectServiceCatalogRows(serviceRows);
+	const serviceRecords = serviceProjection.items;
+	report.counts.serviceCatalog = serviceRecords.length;
+	if (serviceProjection.rejected.length > 0) {
+		report.skipped.serviceCatalog = serviceProjection.rejected.length;
+		for (const rejectedRow of serviceProjection.rejected) {
+			report.warnings.push(
+				`Прайс: услуга «${rejectedRow.title}» (код ${rejectedRow.code}) не принята — ${rejectedRow.reason}. ` +
+					"Пока строка не исправлена, услугу не покажет ни один экран и не посчитает ни один документ.",
+			);
+		}
+	}
 
 	// ── Клинические правила ───────────────────────────────────────────────────
 	const ruleRecords = collect<ClinicalRule>(
@@ -772,13 +775,38 @@ async function hydrateDomainStateFromDbUnsynchronized(
 	replaceAll(communicationTasks, taskRecords);
 	replaceAll(communicationEvents, eventRecords);
 	replaceAll(imagingStudies, imagingRecords);
-	if (serviceRecords.length > 0) {
-		replaceAll(serviceCatalog, serviceRecords);
-		// Индекс прайса строится один раз при загрузке модуля. Если его не
-		// перестроить, поиск услуги возвращал бы демонстрационную позицию с
-		// другой ценой — и она попала бы в договор и в чек.
-		serviceCatalogMap.clear();
-		for (const service of serviceRecords) serviceCatalogMap.set(service.id, service);
+	/*
+	 * Прайс переносится ВСЕГДА, включая пустой результат.
+	 *
+	 * БЫЛО: `if (serviceRecords.length > 0)`. Условие защищало ровно тот случай,
+	 * которого не бывает, и пропускало тот, который есть: при пустой таблице
+	 * service_catalog_items оно не срабатывало, и в serviceCatalog оставался
+	 * демонстрационный массив, вкомпилированный в API (sampleData.ts:583, семь
+	 * услуг по выдуманным ценам, помеченных одним конкретным organization_id из
+	 * sampleData.ts:167). Экран показывал эти семь позиций ЛЮБОЙ клинике, включая
+	 * чужую, а путь документов читал ту же пустую таблицу напрямую
+	 * (db/pricelistQuery.ts) и не находил ничего. У продукта было два прайса:
+	 * пациенту называли одну цену, договор и чек считали по другой.
+	 *
+	 * Замер на живой базе: service_catalog_items — 0 строк при двух
+	 * организациях; GET /api/dashboard отдавал 7 услуг обеим, причём второй
+	 * организации — с organization_id первой.
+	 *
+	 * Теперь источник истины один — таблица. Пустая таблица означает пустой
+	 * прайс, и это честно доходит до пользователя: экран финансов показывает
+	 * заготовленное пустое состояние с кнопкой «Открыть прайс»
+	 * (apps/web/src/FinancePlanning.tsx:153-160), которое до этой правки было
+	 * недостижимо, потому что демонстрационные семь услуг никогда не давали
+	 * списку опустеть.
+	 */
+	replaceAll(serviceCatalog, serviceRecords);
+	// Индекс прайса строится один раз при загрузке модуля. Если его не
+	// перестроить, поиск услуги возвращал бы демонстрационную позицию с
+	// другой ценой — и она попала бы в договор и в чек.
+	serviceCatalogMap.clear();
+	for (const service of serviceRecords) serviceCatalogMap.set(service.id, service);
+	if (serviceRecords.length === 0) {
+		report.warnings.push(SERVICE_CATALOG_EMPTY_MESSAGE);
 	}
 	if (ruleRecords.length > 0) replaceAll(clinicalRules, ruleRecords);
 	if (protocolRecords.length > 0) replaceAll(protocolTemplates, protocolRecords);
