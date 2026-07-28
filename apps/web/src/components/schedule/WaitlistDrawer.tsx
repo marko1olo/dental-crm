@@ -1,6 +1,7 @@
 import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { EmptyState } from "../EmptyState";
@@ -322,8 +323,28 @@ export function WaitlistDrawer(props: Props) {
 		low: "Низкий",
 	};
 
+	/*
+	 * ЯЩИК ВЫНЕСЕН В КОРЕНЬ СТРАНИЦЫ ПОРТАЛОМ, И ЭТО НЕ УКРАШЕНИЕ.
+	 *
+	 * `position: fixed` привязывается к окну только до тех пор, пока ни у одного
+	 * предка нет `transform`, `filter`, `backdrop-filter`, `will-change` или
+	 * `contain`. Стоит такому предку появиться — и `fixed` начинает считаться от
+	 * НЕГО, а `inset-0` растягивает ящик на всю высоту предка.
+	 *
+	 * Ровно это и случилось, измерено снимком: `.dente-ops-shots/light_waitlist.png`
+	 * имеет высоту 10 042 пикселя при окне 1000, то есть ящик растянут на всю
+	 * высоту расписания. На экране это столб почти пустой белизны: заголовок с
+	 * крестиком и форма остаются наверху, и администратор, прокрутив расписание к
+	 * нужному времени, теряет и то и другое. Соседние панели на том же экране —
+	 * около 1100 пикселей, так что дело именно в ящике.
+	 *
+	 * Искать конкретного предка бессмысленно: в проекте 351 КБ рукописного CSS, и
+	 * завтра такой предок появится снова. Портал в document.body делает ящик
+	 * независимым от того, что над ним в дереве, — приём в проекте уже принят
+	 * (OdontogramModule, TreatmentEstimator, Omnibar, VisitDiaryEditor).
+	 */
 	if (isMinimized) {
-		return (
+		return createPortal(
 			<div className="fixed bottom-4 right-4 z-50">
 				<button
 					onClick={() => setIsMinimized(false)}
@@ -334,11 +355,12 @@ export function WaitlistDrawer(props: Props) {
 						Лист ожидания (Свернут)
 					</span>
 				</button>
-			</div>
+			</div>,
+			document.body,
 		);
 	}
 
-	return (
+	return createPortal(
 		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" data-testid="waitlist-drawer">
 			<div className="absolute inset-0" onClick={onClose} />
 			<div className="relative w-full max-w-md h-full bg-[var(--paper)] border-l border-[var(--line)] shadow-2xl flex flex-col z-10 text-[var(--ink)] animate-slide-in">
@@ -595,6 +617,7 @@ export function WaitlistDrawer(props: Props) {
 					</div>
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
