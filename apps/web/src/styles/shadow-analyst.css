@@ -177,9 +177,9 @@
   align-items: center;
   padding: 1px 6px;
   border-radius: 10px;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+  border: 1px solid var(--bad-fg);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -289,14 +289,32 @@
   line-height: 1.4;
 }
 
+/*
+ * ПОДЛОЖКИ НАХОДОК ПО ЗУБАМ БЕРУТСЯ ИЗ ТОКЕНОВ, А НЕ ИЗ ЛИТЕРАЛОВ.
+ *
+ * Здесь стояли #fef2f2 и #f0fdf4 — почти белые плашки без привязки к теме, тогда
+ * как текст строки красится var(--text-primary) и в тёмных темах он светлый.
+ * Замерено по WCAG на объявленных значениях палитры: критическая находка в теме
+ * «Ночь» (data-theme="dark") — #e9f2ef на #fef2f2, контраст 1.04; в теме «Тепло»
+ * (data-theme="night") — #f1e8dd на #fef2f2, контраст 1.11. Выполненная находка:
+ * 1.09 и 1.16. То есть строка «зуб 36, глубокий кариес» в разборе снимка не
+ * читалась вообще — белым по белому, — а именно эти строки врач и смотрит после
+ * ИИ-разбора рентгена.
+ *
+ * --bad-bg/--ok-bg объявлены во всех трёх темах, поэтому плашка следует за темой:
+ * после правки тот же текст даёт 13.13 и 12.15 в «Ночи», 11.59 и 11.38 в «Тепле»,
+ * а в светлой теме остаётся 14.07 и 15.65 (было 15.71 — оттенок плашки чуть
+ * насыщеннее, смысл цвета тот же). Цвет левой полосы тоже уходит в токен: он
+ * несёт смысл «критично / сделано» и должен быть виден в каждой теме.
+ */
 .sa-tooth-row--critical {
-  border-left-color: #ef4444;
-  background: #fef2f2;
+  border-left-color: var(--bad-fg);
+  background: var(--bad-bg);
 }
 
 .sa-tooth-row--done {
-  border-left-color: #10b981;
-  background: #f0fdf4;
+  border-left-color: var(--ok-fg);
+  background: var(--ok-bg);
 }
 
 .sa-tooth-num {
@@ -312,13 +330,13 @@
 }
 
 .sa-tooth-icon {
-  color: #ef4444;
+  color: var(--bad-fg);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .sa-tooth-icon--done {
-  color: #10b981;
+  color: var(--ok-fg);
 }
 
 /* ---- Image Slider ---- */
