@@ -391,22 +391,23 @@ export function CommunicationsView({
         </section>
 
         <aside className="communication-side">
-          <section>
-            <div className="panel-heading">
-              <h3>Шаблоны</h3>
-              <span className="status-pill status-arrived">{(dashboard?.communicationTemplates ?? []).length}</span>
-            </div>
-            <div className="template-list">
-              {(dashboard?.communicationTemplates ?? []).map((template) => (
-                <CommunicationTemplateRow
-                  communicationChannelLabels={communicationChannelLabels}
-                  key={template.id}
-                  staffRoleLabels={staffRoleLabels}
-                  template={template}
-                />
-              ))}
-            </div>
-          </section>
+          {/*
+            ЗДЕСЬ БЫЛ ВТОРОЙ СПИСОК ШАБЛОНОВ — и он показывал выдумку.
+            Блок читал dashboard.communicationTemplates, а живой ответ
+            /api/dashboard отдаёт по этому полю четыре примера, зашитых в
+            sampleData.ts: их идентификаторы «tpl-appo», «tpl-paym»,
+            «tpl-post», «tpl-reca» вместо настоящих UUID — проверено запросом.
+            То есть на одном экране рядом стояли настоящие шаблоны из базы (в
+            консоли отправки, по ним реально уходят сообщения) и четыре
+            несуществующих. Администратор видел «Подтверждение приёма —
+            WhatsApp» и мог решить, что оно настроено, хотя WhatsApp не
+            подключён вовсе, а такого шаблона в базе нет.
+
+            Два источника правды на одном экране опаснее отсутствия одного из
+            них: правку вносят в тот список, а рассылка идёт по этому.
+            Настоящий список остаётся в MessageDeliveryConsole на том же экране,
+            там же его можно менять.
+          */}
 
           <section>
             <div className="panel-heading">
