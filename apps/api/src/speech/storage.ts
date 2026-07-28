@@ -100,6 +100,60 @@ function maxCachedChunksPerRecording(): number {
   return Math.max(1, numberFromEnv("DENTAL_SPEECH_CACHED_CHUNKS_PER_RECORDING", 600));
 }
 
+/**
+ * ПОТОЛОК ВОССТАНОВЛЕНИЯ НА ВЕСЬ ПРОЦЕСС, а не на клинику.
+ *
+ * ЧТО БЫЛО СЛОМАНО: восстановление ранжирует записи
+ * row_number() OVER (PARTITION BY organization_id) и берёт первые
+ * DENTAL_SPEECH_CACHED_RECORDINGS в КАЖДОЙ организации. Внешнего лимита у
+ * запроса не было вообще, хотя до перехода на ранжирование по клинике стоял
+ * .limit(maxCachedRecordingCount()) — один жёсткий предел на весь процесс.
+ * То есть память, занятая при старте сервера, стала расти линейно по числу
+ * арендаторов: 80 записей на клинику x сколько угодно клиник. Справедливость
+ * бюджета между клиниками — правильная; исчезновение общего предела — ошибка.
+ *
+ * ПОЧЕМУ ОДНОГО ЛИМИТА ЗАПИСЕЙ НЕ ХВАТАЕТ. Число записей не ограничивает
+ * память: у сохранённого конверта нет предела по числу фрагментов (вытеснение
+ * чистит горячий кэш, но конверт в базе растёт всю запись), а у самого
+ * фрагмента нет предела по длине текста —
+ * speechTranscriptionChunkSchema.transcript объявлен как z.string() без max, и
+ * только загрузка ограничена 20 000 символами (localTranscript). Поэтому
+ * потолок задаётся тремя величинами, и все три читаются из окружения.
+ *
+ * ЗАЧЕМ ИМЕННО ТАКИЕ ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ:
+ *   DENTAL_SPEECH_RESTORED_RECORDINGS_TOTAL = 160 — ровно то, что нынешняя
+ *   установка с двумя организациями уже поднимала (2 x 80). Поведение сегодня
+ *   не меняется, но перестаёт расти при добавлении третьей клиники.
+ *   DENTAL_SPEECH_RESTORED_CHUNKS_TOTAL = 48 000 — 80 записей x 600 фрагментов,
+ *   то есть бюджет ОДНОЙ организации, пересчитанный в фрагменты. Это и есть
+ *   прежняя семантика общего предела, выраженная в том, что реально занимает
+ *   память: объектах фрагментов.
+ *   DENTAL_SPEECH_RESTORED_CHARS_TOTAL = 64 000 000 символов (около 128 МБ в
+ *   строках V8, где кириллица занимает два байта на символ). При измеренном
+ *   ревьюером реальном размере фрагмента (~1500 символов) этого хватает на все
+ *   160 записей по ~260 фрагментов. Отсекается именно патологическая форма
+ *   600 фрагментов x 20 000 символов, из которой и получались 960 МБ НА КАЖДУЮ
+ *   организацию.
+ *
+ * УСЕЧЕНИЕ ЗДЕСЬ НЕ ТЕРЯЕТ ТЕКСТ, и это принципиально отличает его от
+ * trimSpeechTranscriptionChunkRetention: восстановление читает то, что УЖЕ
+ * лежит в PostgreSQL. Не поднятая в память запись остаётся в базе целиком,
+ * loadDurableRecordingEnvelope прочитает её конверт при следующем фрагменте, и
+ * слияние отдаст полный текст. Пропуск виден: он уходит в предупреждение сборки
+ * и в speechDurableRestoreState().
+ */
+function maxRestoredRecordingCount(): number {
+  return Math.max(1, numberFromEnv("DENTAL_SPEECH_RESTORED_RECORDINGS_TOTAL", 160));
+}
+
+function maxRestoredChunkCount(): number {
+  return Math.max(1, numberFromEnv("DENTAL_SPEECH_RESTORED_CHUNKS_TOTAL", 48_000));
+}
+
+function maxRestoredTranscriptChars(): number {
+  return Math.max(1, numberFromEnv("DENTAL_SPEECH_RESTORED_CHARS_TOTAL", 64_000_000));
+}
+
 function durableRecordingPath(recordingId: string): string {
   return `${durableRecordingPathPrefix}${recordingId}`;
 }
@@ -677,6 +731,10 @@ let speechRestoreFailure: string | null = null;
 let speechRestoreFailedAttempts = 0;
 let speechRestoreRetryAtMs = 0;
 let speechRestoreUnreadableRows = 0;
+let speechRestoreSkippedRecordings = 0;
+let speechRestoreLoadedRecordings = 0;
+let speechRestoreCachedChunkCount = 0;
+let speechRestoreCachedCharCount = 0;
 
 function speechRestoreBackoffMs(): number {
   const base = numberFromEnv("DENTAL_SPEECH_RESTORE_RETRY_MS", 5000);
@@ -690,24 +748,40 @@ function speechDurableStoreWarning(): string {
   if (speechRestoreUnreadableRows > 0) {
     return `Конверты ${speechRestoreUnreadableRows} записей диктовки не прочитаны; их фрагменты не восстановлены в память, но в базе не тронуты.`;
   }
+  if (speechRestoreSkippedRecordings > 0) {
+    return `Записей диктовки, не поднятых в память из-за общего предела памяти сервера: ${speechRestoreSkippedRecordings} (в памяти ${speechRestoreCachedChunkCount} фрагментов, ${speechRestoreCachedCharCount} символов). Их текст в базе не тронут, но в живом списке фрагментов появится только с очередным фрагментом той же записи.`;
+  }
   return "";
 }
 
 /**
  * Состояние восстановления для теста границы отказа базы и для диагностики:
  * причина последнего провала, число неудачных попыток и время следующей.
+ *
+ * loadedRecordings / skippedRecordings / cachedChunks / cachedChars описывают
+ * потолок памяти по факту, а не по расчёту: без них «память ограничена» было бы
+ * утверждением без единого измеримого числа, а именно так и был потерян общий
+ * предел восстановления.
  */
 export function speechDurableRestoreState(): {
   failureReason: string | null;
   failedAttempts: number;
   unreadableRows: number;
   nextRetryAt: string | null;
+  loadedRecordings: number;
+  skippedRecordings: number;
+  cachedChunks: number;
+  cachedChars: number;
 } {
   return {
     failureReason: speechRestoreFailure,
     failedAttempts: speechRestoreFailedAttempts,
     unreadableRows: speechRestoreUnreadableRows,
-    nextRetryAt: speechRestoreRetryAtMs > 0 ? new Date(speechRestoreRetryAtMs).toISOString() : null
+    nextRetryAt: speechRestoreRetryAtMs > 0 ? new Date(speechRestoreRetryAtMs).toISOString() : null,
+    loadedRecordings: speechRestoreLoadedRecordings,
+    skippedRecordings: speechRestoreSkippedRecordings,
+    cachedChunks: speechRestoreCachedChunkCount,
+    cachedChars: speechRestoreCachedCharCount
   };
 }
 
@@ -723,11 +797,32 @@ export function speechDurableRestoreState(): {
  * row_number() по организации: бюджет кэша принадлежит клинике. Общий лимит
  * означал, что клиника с потоком диктовок вытесняет расшифровки соседней.
  *
+ * ВНЕШНИЙ LIMIT — общий потолок на весь процесс, которого после перехода на
+ * ранжирование по клинике не стало вовсе. Порядок отбора взят
+ * (recording_rank, updated_at DESC), а не просто (updated_at DESC): сначала
+ * берётся самая свежая запись КАЖДОЙ клиники, потом вторая по свежести каждой, и
+ * так далее. Иначе общий потолок вернул бы ту самую несправедливость, ради
+ * устранения которой появилось ранжирование по организации: клиника с потоком
+ * диктовок забрала бы весь лимит целиком.
+ *
  * Нечитаемый конверт больше не роняет весь проход: строка пропускается,
  * счётчик уходит в предупреждение врачу, остальные записи восстанавливаются.
+ *
+ * ЧТО ЗДЕСЬ ОСТАЛОСЬ НЕПРАВИЛЬНЫМ ПО ФОРМЕ, но не переделывается этим отрезком:
+ * загрузка жадная, она срабатывает на импорт модуля (см. последнюю строку
+ * файла), то есть сервер поднимает расшифровки в память ещё до первого запроса,
+ * даже если диктовку в этот день никто не откроет. Правильная форма — ленивое
+ * чтение конверта по recordingId, которое уже реализовано
+ * (loadDurableRecordingEnvelope) и используется на записи. Горячий кэш нужен
+ * ровно одному читателю — GET /api/speech/chunks. Переделка задевает пути
+ * чтения роутов и границу перезапуска процесса, поэтому она вынесена отдельной
+ * задачей, а здесь возвращён измеримый потолок.
  */
 async function restoreSpeechTranscriptionChunks(): Promise<void> {
   const perOrganizationLimit = maxCachedRecordingCount();
+  const globalRecordingLimit = maxRestoredRecordingCount();
+  const chunkBudget = maxRestoredChunkCount();
+  const charBudget = maxRestoredTranscriptChars();
   const storagePathPattern = `${durableRecordingPathPrefix}%`;
   const restored = await db.execute(sql`
     SELECT input_text, input_storage_path
@@ -735,6 +830,7 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
       SELECT
         ${aiJobs.inputText} AS input_text,
         ${aiJobs.inputStoragePath} AS input_storage_path,
+        ${aiJobs.updatedAt} AS updated_at,
         row_number() OVER (
           PARTITION BY ${aiJobs.organizationId}
           ORDER BY ${aiJobs.updatedAt} DESC
@@ -744,10 +840,18 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
         AND ${aiJobs.inputStoragePath} LIKE ${storagePathPattern}
     ) ranked
     WHERE ranked.recording_rank <= ${perOrganizationLimit}
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT ${globalRecordingLimit}
   `);
 
   const cached = new Set(speechTranscriptionChunks.map((chunk) => speechChunkKey(chunk.recordingId, chunk.chunkIndex)));
+  // Бюджет считается от всего горячего кэша, а не от прибавки восстановления:
+  // потолок обязан описывать занятую память, а не размер одного прохода.
+  let cachedChunkCount = speechTranscriptionChunks.length;
+  let cachedCharCount = speechTranscriptionChunks.reduce((total, chunk) => total + chunk.transcript.length, 0);
   let unreadableRows = 0;
+  let skippedRecordings = 0;
+  let loadedRecordings = 0;
   for (const row of restored.rows ?? []) {
     const storagePath = typeof row.input_storage_path === "string" ? row.input_storage_path : "";
     const inputText = typeof row.input_text === "string" ? row.input_text : null;
@@ -759,6 +863,22 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
       console.error("[SpeechStorage] Конверт расшифровки не прочитан, строка пропущена:", error);
       continue;
     }
+
+    // Запись поднимается целиком или не поднимается вовсе. Половина записи
+    // выглядела бы как запись с дырами в нумерации, и сборка сообщила бы
+    // «нет фрагментов с индексами …» про текст, который в базе есть.
+    const admitted = restoredChunks.filter(
+      (chunk) => !cached.has(speechChunkKey(chunk.recordingId, chunk.chunkIndex))
+    );
+    const admittedChars = admitted.reduce((total, chunk) => total + chunk.transcript.length, 0);
+    if (cachedChunkCount + admitted.length > chunkBudget || cachedCharCount + admittedChars > charBudget) {
+      // Ключи НЕ помечаются сохранёнными: иначе повторный фрагмент этой записи
+      // попал бы в кэш, а withDurableSpeechRecording счёл бы его уже
+      // записанным и не сохранил бы улучшенный текст.
+      skippedRecordings += 1;
+      continue;
+    }
+
     for (const chunk of restoredChunks) {
       const key = speechChunkKey(chunk.recordingId, chunk.chunkIndex);
       durableChunkKeys.add(key);
@@ -766,8 +886,15 @@ async function restoreSpeechTranscriptionChunks(): Promise<void> {
       cached.add(key);
       speechTranscriptionChunks.push(chunk);
     }
+    cachedChunkCount += admitted.length;
+    cachedCharCount += admittedChars;
+    loadedRecordings += 1;
   }
   speechRestoreUnreadableRows = unreadableRows;
+  speechRestoreSkippedRecordings = skippedRecordings;
+  speechRestoreLoadedRecordings = loadedRecordings;
+  speechRestoreCachedChunkCount = cachedChunkCount;
+  speechRestoreCachedCharCount = cachedCharCount;
 }
 
 /**
@@ -821,6 +948,10 @@ export function resetSpeechTranscriptionCacheForRestart(): void {
   speechRestoreFailedAttempts = 0;
   speechRestoreRetryAtMs = 0;
   speechRestoreUnreadableRows = 0;
+  speechRestoreSkippedRecordings = 0;
+  speechRestoreLoadedRecordings = 0;
+  speechRestoreCachedChunkCount = 0;
+  speechRestoreCachedCharCount = 0;
 }
 
 export async function recordSpeechTranscriptionChunk(

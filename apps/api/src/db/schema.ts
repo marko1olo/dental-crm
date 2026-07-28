@@ -11,6 +11,7 @@ import {
   timestamp,
   unique,
   index,
+  uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core";
 import type {
@@ -786,6 +787,21 @@ export const aiJobs = pgTable("ai_jobs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    // Хранилище диктовки ищет строку записи по паре (организация, устойчивый
+    // ключ записи), а не по id: speech/storage.ts читает конверт и тут же его
+    // перезаписывает. Без этого индекса каждый фрагмент стоил два
+    // последовательных чтения всей таблицы. Уникальность — вторая причина: на
+    // запись диктовки приходится ровно одна строка, а UPDATE без LIMIT
+    // перезаписал бы обе строки-дубликата одним конвертом. NULL в
+    // input_storage_path (так пишет db/aiQuery.ts) уникальности не нарушает:
+    // в btree значения NULL различны. Миграция: drizzle/0134_ai_jobs_recording_path_index.sql.
+    aiJobsOrganizationStoragePathKey: uniqueIndex("ai_jobs_organization_storage_path_key").on(
+      table.organizationId,
+      table.inputStoragePath
+    )
+  };
 });
 
 export const imagingSeries = pgTable("imaging_series", {
