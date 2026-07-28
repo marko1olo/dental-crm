@@ -1,3 +1,4 @@
+import { isValidFdiToothNumber } from "@dental/shared";
 import {
 	AlertTriangle,
 	Check,
@@ -23,7 +24,12 @@ import {
 	dictationApplyMessage,
 	dictationApplyPlanFromResponseBody,
 } from "./dictationToothUpdates";
-import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
+import {
+	TOOTH_STATE_LABELS,
+	ToothChart,
+	type ToothData,
+	type ToothState,
+} from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
@@ -408,26 +414,96 @@ export const OdontogramModule = ({
 		};
 		void loadTeeth();
 
-		// Listen to CT Events for auto-implants
-		const handleClinicalCollision = (e: any) => {
-			// Just an example sync point: If an implant is placed on 36
-			if (e.detail?.toothNumber) {
-				updateToothState([e.detail.toothNumber], "Planned_Implant");
+		/*
+		 * Имплантат, поставленный в трёхмерном просмотре, попадает в карту.
+		 *
+		 * ЧТО БЫЛО СЛОМАНО. Запись уходила в карту МОЛЧА: ни всплывающего
+		 * сообщения, ни следа на экране, кроме изменившегося цвета зуба, который
+		 * врач в этот момент не смотрит — он смотрит трёхмерный снимок. То есть
+		 * диагноз «имплантат в плане» появлялся в карте открытого пациента без
+		 * ведома человека.
+		 *
+		 * Номер зуба теперь проверяется общим правилом FDI: `if (e.detail?.toothNumber)`
+		 * пропускало и строку, и 0.5, и 999 — а дальше это уходило в тело запроса
+		 * как номер зуба.
+		 */
+		const handleClinicalCollision = (e: Event) => {
+			const detail = (e as CustomEvent).detail as { toothNumber?: unknown } | undefined;
+			const toothNumber = Number(detail?.toothNumber);
+			if (!isValidFdiToothNumber(toothNumber)) {
+				console.error("[имплантат из 3D] номер зуба не читается", detail?.toothNumber);
+				return;
 			}
+			showToast(
+				`В карту записано: зуб ${toothNumber} — ${TOOTH_STATE_LABELS.Planned_Implant}. Запись пришла из трёхмерного просмотра. Если имплантат планируется не на этот зуб, исправьте отметку на схеме.`,
+				"info",
+				15000,
+			);
+			void updateToothState([toothNumber], "Planned_Implant");
 		};
 		window.addEventListener("clinical-implant-placed", handleClinicalCollision);
 
-		const handleWsUpdate = (e: any) => {
-			if (e.detail?.patientId === patientId && e.detail?.states) {
-				setTeethData(e.detail.states);
-			}
+		const handleWsUpdate = (e: Event) => {
+			const detail = (e as CustomEvent).detail as
+				| { patientId?: unknown; states?: unknown }
+				| undefined;
+			if (detail?.patientId !== patientId || !Array.isArray(detail.states)) return;
+			/*
+			 * Слияние по номеру зуба, а не замена. Тот же дефект уже был закрыт у
+			 * живых обновлений выше: обновление приходит ТОЛЬКО по изменённым зубам,
+			 * и замена стёрла бы на экране всю остальную формулу.
+			 *
+			 * ДОЛГ: это событие в проекте не рассылает никто (поиск по
+			 * "dente-odontogram-update" находит только этот обработчик). Оставлено
+			 * рабочим, а не удалено: удалять чужой задел молча нельзя, но и ловушку
+			 * с заменой формулы держать нельзя.
+			 */
+			const incoming = detail.states as ToothData[];
+			if (incoming.length === 0) return;
+			setTeethData((prev) => {
+				const merged = [...prev];
+				for (const tooth of incoming) {
+					const idx = merged.findIndex((x) => x.toothNumber === tooth.toothNumber);
+					if (idx > -1) merged[idx] = tooth;
+					else merged.push(tooth);
+				}
+				return merged;
+			});
 		};
 		window.addEventListener("dente-odontogram-update", handleWsUpdate);
 
-		const handleFinding = (e: any) => {
-			if (e.detail?.toothNumber && e.detail?.finding) {
-				updateToothState([e.detail.toothNumber], e.detail.finding);
+		/*
+		 * Находка со снимка. Состояние проверяется по списку состояний схемы:
+		 * `e.detail?.finding` брался как есть, и любое слово уходило в карту
+		 * состоянием зуба. Сервер такое отклоняет целиком, а врач получал отказ
+		 * сохранения формулы вместо внятного «состояние не распознано».
+		 */
+		const handleFinding = (e: Event) => {
+			const detail = (e as CustomEvent).detail as
+				| { toothNumber?: unknown; finding?: unknown }
+				| undefined;
+			const toothNumber = Number(detail?.toothNumber);
+			const finding = detail?.finding;
+			if (!isValidFdiToothNumber(toothNumber)) {
+				console.error("[находка со снимка] номер зуба не читается", detail?.toothNumber);
+				return;
 			}
+			if (typeof finding !== "string" || !Object.hasOwn(TOOTH_STATE_LABELS, finding)) {
+				console.error("[находка со снимка] состояние не из списка схемы", finding);
+				showToast(
+					`Находка по зубу ${toothNumber} в карту не записана: состояние со снимка программе не знакомо. Отметьте зуб на схеме сами.`,
+					"warning",
+					15000,
+				);
+				return;
+			}
+			const state = finding as ToothState;
+			showToast(
+				`В карту записано: зуб ${toothNumber} — ${TOOTH_STATE_LABELS[state]}. Запись пришла со снимка. Если это неверно, исправьте отметку на схеме.`,
+				"info",
+				15000,
+			);
+			void updateToothState([toothNumber], state);
 		};
 		window.addEventListener("clinical-finding-detected", handleFinding);
 
