@@ -4167,19 +4167,22 @@ export function App() {
         </section>
         ) : null}
 
-        {["documents", "finance", "communications", "settings"].includes(currentView) ? (
-        <details className="compliance-bar" aria-label="Контроль">
-          <summary>
-            <ShieldCheck aria-hidden="true" />
-            <span>Служебные ограничения</span>
-          </summary>
-          <div>
-            {(dashboard?.complianceWarnings || []).map((warning) => (
-              <p key={warning}>{warning}</p>
-            ))}
-          </div>
-        </details>
-        ) : null}
+        {/*
+          ЗДЕСЬ БЫЛ БЛОК «СЛУЖЕБНЫЕ ОГРАНИЧЕНИЯ» — он показывал пользователю наши
+          внутренние заметки. Живой ответ /api/dashboard кладёт в
+          complianceWarnings три строки, дословно:
+            «AI-ответы являются черновиками и требуют подтверждения врача»;
+            «Медицинские данные требуют 152-ФЗ, врачебной тайны и аудита доступа»;
+            «Для продажи клиникам нужен отдельный EGISZ-адаптер и юридическая
+             проверка шаблонов».
+          Первые две — общие слова, которые администратору клиники ничего не
+          говорят и ни к какому действию не ведут. Третья — заметка о продаже
+          продукта: пользователь видел нашу кухню на своём рабочем экране, под
+          непонятным заголовком, висевшим сразу на четырёх разделах.
+          Настоящие ограничения система показывает там, где они возникают: «нет
+          согласия», «документ не подписан», «SMS-шлюз не настроен» — рядом с
+          самим действием, а не общим списком внизу страницы.
+        */}
 
         {currentView === "settings" ? (
           <WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
