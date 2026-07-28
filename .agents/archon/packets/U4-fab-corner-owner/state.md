@@ -50,3 +50,8 @@ HEAD at start: e14c09862cf9ba58c7bfa05713695b4fcfece8da
 - ABOUT TO RUN (slow, ~1-3 min): npm exec --workspace @dental/web -- vite build  (proves cornerDock.css parses and modules bundle; dist/ is gitignored, no git churn)
 - PROVEN (unit 35/35 exit 0; web suite 496/496 exit 0; typecheck 0 ошибок в моих файлах; vite build exit 0, CSS угла в бандле; мождибаке 0)
 - handoff.md написан
+
+STATUS: DONE
+- COMMITTED (2) 952025f058eef2d40b47108be6c8f5410850908b — тест-комментарии + материалы пакета
+- Финальный typecheck на HEAD 952025f05: те же 6 чужих ошибок DocumentsView, 0 в моих файлах
+- Клейм чист, ничего не оставлено грязным
