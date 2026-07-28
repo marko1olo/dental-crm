@@ -212,16 +212,26 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	 */
 
 
-	// COMPETITOR FEATURE #48: расписание::буфер_обмена_в_расписании_для_быстрого_переноса
-	app.get("/api/schedule/clipboard-items", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getScheduleClipboardItemsFromDb } = await import("../db/scheduleClipboardItemsQuery.js");
-		return reply.status(200).send(await getScheduleClipboardItemsFromDb(orgId));
-	});
+	/*
+	 * Шесть маршрутов удалены вместе со своими модулями доступа. Их таблицы
+	 * никто в приложении не наполняет — ни одной вставки, ноль строк в живой
+	 * базе — а интерфейс их вообще не звал: ни одного вызова в apps/web.
+	 * Это были адреса, которые могли вернуть только пустой список и которые
+	 * никто не спрашивал. Перепись: scripts/census-hollow-query-modules.mjs.
+	 *
+	 * /api/schedule/clipboard-items                      schedule_clipboard_items
+	 * /api/communications/email-dispatch-logs            crm_email_dispatch_logs
+	 * /api/integrations/prodoctorov-sync                 prodoctorov_sync_exports
+	 * /api/communications/uis-omni-messenger-queues      uis_omni_messenger_queues
+	 * /api/communications/quick-appointment-confirmations quick_appointment_confirmations
+	 * /api/documents/alternative-treatment-plans         alternative_treatment_plans
+	 *
+	 * ДОЛГ, а не потеря: буфер обмена в расписании, отправка планов на почту,
+	 * синхронизация отзывов «ПроДокторов», очередь мультимессенджера, быстрое
+	 * подтверждение приёма и альтернативные планы лечения — реальные задачи.
+	 * Каждая требует того, чего нет: писателя в таблицу и экрана, с которого
+	 * этот писатель вызывается. Возвращать их имеет смысл вместе с ними.
+	 */
 
 	// COMPETITOR FEATURE #54: кадры::справедливое_распределение_конверсии_повторной_записи
 	app.get("/api/hr/rebooking-conversion-rules", async (request, reply) => {
@@ -332,17 +342,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #50: crm::прямая_отправка_планов_лечения_и_счетов_на_email
-	app.get("/api/communications/email-dispatch-logs", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getCrmEmailDispatchLogsFromDb } = await import("../db/crmEmailDispatchLogsQuery.js");
-		return reply.status(200).send(await getCrmEmailDispatchLogsFromDb(orgId));
-	});
-
 	// COMPETITOR FEATURE #56: расписание::двухуровневые_причины_отмены_клиника_пациент
 	app.get("/api/schedule/cancellation-reasons-two-level", async (request, reply) => {
 		// Организация берётся из подписанного токена, а не из заголовка клиента.
@@ -424,17 +423,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #55: интеграции::продокторов_синхронизация_отзывов
-	app.get("/api/integrations/prodoctorov-sync", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getProdoctorovSyncExportsFromDb } = await import("../db/prodoctorovSyncExportsQuery.js");
-		return reply.status(200).send(await getProdoctorovSyncExportsFromDb(orgId));
-	});
-
 	// COMPETITOR FEATURE #58: пациенты::геокодинг_адресов_через_dadata
 	app.get("/api/integrations/dadata-geocoded-addresses", async (request, reply) => {
 		// Организация берётся из подписанного токена, а не из заголовка клиента.
@@ -456,17 +444,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	// Второй адрес того же удалённого экрана начислений убран вместе с первым.
 
 
-	// COMPETITOR FEATURE #59: коммуникации::мультимессенджер_uis_omni
-	app.get("/api/communications/uis-omni-messenger-queues", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getUisOmniMessengerQueuesFromDb } = await import("../db/uisOmniMessengerQueuesQuery.js");
-		return reply.status(200).send(await getUisOmniMessengerQueuesFromDb(orgId));
-	});
-
 	// COMPETITOR FEATURE #6: маркетинг::фильтр_потерянных_пациентов_в_отчете
 	app.get("/api/analytics/lost-patients-filters", async (request, reply) => {
 		// Организация берётся из подписанного токена, а не из заголовка клиента.
@@ -476,17 +453,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 		const { getLostPatientsFiltersFromDb } = await import("../db/lostPatientsFiltersQuery.js");
 		return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
-	});
-
-	// COMPETITOR FEATURE #9: коммуникации::подтверждение_приема_при_обработке_обращения
-	app.get("/api/communications/quick-appointment-confirmations", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getQuickAppointmentConfirmationsFromDb } = await import("../db/quickAppointmentConfirmationsQuery.js");
-		return reply.status(200).send(await getQuickAppointmentConfirmationsFromDb(orgId));
 	});
 
 	// COMPETITOR FEATURE #21: расписание::виджет_срочные_обращения_под_календарем
@@ -511,16 +477,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return reply.status(200).send(await getConfirmationPerformanceReportsFromDb(orgId));
 	});
 
-	// COMPETITOR FEATURE #43: план_лечения::альтернативные_планы_лечения
-	app.get("/api/documents/alternative-treatment-plans", async (request, reply) => {
-		// Организация берётся из подписанного токена, а не из заголовка клиента.
-		// Раньше здесь принимался x-organization-id без всякой аутентификации:
-		// любой мог подставить UUID чужой клиники и читать её медицинские данные.
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
-		const { getAlternativeTreatmentPlansFromDb } = await import("../db/alternativeTreatmentPlansQuery.js");
-		return reply.status(200).send(await getAlternativeTreatmentPlansFromDb(orgId));
-	});
 }
 
 

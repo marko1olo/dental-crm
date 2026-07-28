@@ -18,7 +18,7 @@
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -37,8 +37,18 @@ const census = JSON.parse(
 
 const byModule = new Map(census.report.map((entry) => [entry.module, entry]));
 
-test("перепись видит все модули db/*Query.ts и таблицы схемы", () => {
-	assert.ok(census.totalModules >= 40, `модулей найдено ${census.totalModules}`);
+test("перепись видит РОВНО те модули db/*Query.ts, что лежат на диске", () => {
+	/*
+	 * Порог вида «модулей не меньше сорока» здесь стоял и был неверен по сути:
+	 * он падал ровно тогда, когда уборка удавалась и мёртвые модули исчезали.
+	 * Проверять надо согласованность с диском, а не текущее количество мусора.
+	 */
+	const onDisk = readdirSync(join(REPO_ROOT, "apps", "api", "src", "db"))
+		.filter((name) => name.endsWith("Query.ts") && !name.endsWith(".test.ts"))
+		.map((name) => name.replace(/\.ts$/, ""))
+		.sort();
+	assert.ok(onDisk.length > 0, "модулей *Query.ts на диске не осталось совсем");
+	assert.deepEqual([...census.report.map((r) => r.module)].sort(), onDisk);
 	assert.equal(census.totalModules, census.report.length);
 	assert.ok(census.tablesInSchema > 100, `таблиц найдено ${census.tablesInSchema}`);
 });
