@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Clock, UserCheck, ChevronRight } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
@@ -40,10 +40,28 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 	 */
 	const recordedViews = context?.recentPatientViewsVersion;
 
+	/*
+	 * Заголовки берутся через ссылку, а не из зависимостей.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО МНОЙ ЖЕ. В зависимостях стоял `auth`. Это объект, который
+	 * useAppLogic собирает заново на КАЖДОЙ перерисовке рабочего места, поэтому
+	 * сравнение по ссылке всегда давало «изменилось», и запрос уходил снова. Замер
+	 * в браузере: пять обращений к /api/hr/recent-patients за тридцать секунд на
+	 * простом открытии раздела «Записи», без единого действия пользователя. Виджет
+	 * стоит в шапке и живёт на всех экранах, то есть это постоянный поток запросов
+	 * на пустом месте.
+	 *
+	 * Ссылка обновляется при каждой перерисовке, а эффект — только когда сервер
+	 * действительно принял новую отметку просмотра.
+	 */
+	const authRef = useRef(auth);
+	authRef.current = auth;
+
 	useEffect(() => {
 		let active = true;
+		const headerSource = authRef.current;
 		fetch("/api/hr/recent-patients", {
-			headers: auth ? auth.denteClinicalReadHeaders() : {},
+			headers: headerSource ? headerSource.denteClinicalReadHeaders() : {},
 		})
 			.then(async (response) => {
 				// Разбор только успешного ответа: на 401 и 500 приходит не список,
@@ -65,7 +83,7 @@ export const RecentPatientHistoryWidget: React.FC<{ compactDropdown?: boolean }>
 		return () => {
 			active = false;
 		};
-	}, [auth, recordedViews]);
+	}, [recordedViews]);
 
 	const handleOpenPatient = (patId: string) => {
 		selectPatientById?.(patId);
