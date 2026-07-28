@@ -259,6 +259,70 @@ one at a time never fixes it.
 
 ---
 
+---
+
+# ADDENDUM B — 2026-07-28, lead [ARCHON], the ops-shot pipeline
+
+Two more plates opened directly, both from `.dente-ops-shots/` — the ONE pipeline the dossier rates as
+trustworthy. **35 files, 35 unique MD5.** It also honestly filed four `_ПУСТО` misses for
+`duplicateAlert` (light/dark/night/narrow) instead of shooting a blank and calling it a capture. That
+is the behaviour `dente-redesign-shots.mjs:140` lacks, and it is why this pipeline is the one to use.
+
+## B1. `light_duplicateAlert_ПУСТО.png` — the SECOND screen that meets the bar
+
+The panel the pipeline recorded as a miss happens to contain the best table in the product.
+
+**Right, and worth protecting:**
+- «Дубли карточек пациентов» — columns ПЕРВАЯ КАРТОЧКА / ВТОРАЯ КАРТОЧКА / ЧЕМ ПОХОЖИ / ЧТО ДЕЛАТЬ.
+- **95 % совпадения** with a green check where ФИО and date of birth both match.
+- **35 % совпадения** in amber with real clinical-administrative reasoning:
+  «Осторожно: Скорее всего это родственники: муж и жена, мать и ребёнок. Объединять нельзя без
+  проверки.» A naive product would have merged those two records.
+- A footnote stating its own method AND its own safety guarantee: «Совпадение телефона само по себе
+  дублем не является… При объединении вторая карточка не удаляется: она остаётся архивной ссылкой на
+  первую, а все записи, оплаты и снимки переносятся.»
+- Three unambiguous actions per row.
+Together with the manager-reports panel, this is the standard the rest of the product should be judged
+against — not a visual standard, an **honesty** standard.
+
+**Wrong, and one of these is new:**
+1. **NEW DEFECT — solid black rectangles rendered over text.** In the left-hand patient cards
+   («Савельева Ольга Игоревна», «Громов Илья Андреевич») a filled black bar sits where a label should
+   be, on a light surface. This is rendered content, not redaction. Almost certainly a badge/pill
+   resolving to a missing colour — `styles/token-aliases.css` documents **19 undefined `var()` names
+   used 56 times**, and an undefined custom property in a `background` collapses exactly like this.
+   Worth its own packet: find the offending class, fix the token, and add a guard so an undefined token
+   cannot ship.
+2. **The three-FAB corner is not merely ugly — it OVERLAPS interactive controls.** The mic FAB clips
+   the «Сохранить» button of the treatment-plan panel and truncates «Подпи…». Users cannot reach a
+   save button that a floating button is sitting on.
+3. «Массовые операции» renders as a low-contrast greyed chip that reads as disabled.
+
+## B2. `narrow_full.png` — the 720×1100 breakpoint, judged for the first time
+
+**Right:** the duplicates table **reflows into a stacked label/value layout** (ПЕРВАЯ КАРТОЧКА /
+ВТОРАЯ КАРТОЧКА / ЧЕМ ПОХОЖИ / ЧТО ДЕЛАТЬ as row labels) rather than squashing the columns. That is a
+correct responsive pattern and someone did it deliberately. The bottom nav is labelled and has a clear
+active state (Смена / Записи / Пациенты / Приём / Ещё).
+
+**Wrong:**
+1. **Roughly 45 % of the width is a single empty white panel.** At the exact breakpoint where space is
+   scarcest, nearly half of it renders nothing.
+2. The same three floating elements pile into the bottom-right, and the search FAB **collides with the
+   bottom navigation bar**.
+
+## B3. WHAT ADDENDUM B CHANGES
+
+The composition verdict is now backed by five independent screens, and it has hardened into three
+concrete, separately-ownable packets:
+- **The corner.** Three FABs that overlap real controls. One owner, one stacking context, one rule
+  about what may live there. This is a functional defect, not a taste question — a covered «Сохранить»
+  button is unreachable.
+- **The token integrity problem, now visible as black boxes on a light card.** 19 undefined `var()`
+  names, 56 uses, 347 hardcoded hexes. A build-time or test-time guard against undefined tokens is
+  worth more than any individual repaint.
+- **Dead space at narrow widths**, alongside the mobile chrome-to-content ratio already recorded.
+
 ## 6. STILL UNJUDGED — the next lead must open these personally
 
 Not yet read with my own eyes, so no verdict exists for them:
