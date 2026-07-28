@@ -7,7 +7,21 @@ const appSource =
 	readAppLogicSourceSync() +
 	"\n" +
 	readFileSync("apps/web/src/hooks/domains/usePatientLogic.ts", "utf8");
-const patientsSource = readFileSync("apps/web/src/PatientsView.tsx", "utf8");
+/*
+ * Экран пациента — это PatientsView.tsx плюс вынесенные из него формы. Гейт
+ * проверяет свойства ЭКРАНА (подписи, autoComplete, inputMode, pattern,
+ * состояния кнопок), а не то, в каком файле они лежат: иначе первый же честный
+ * вынос формы гасит проверку доступности целого блока, и никто этого не
+ * замечает. Ровно так уже вышло с реквизитами: блок паспорта, ИНН, СНИЛС и
+ * представителя вынесен в components/patient/PatientAdministrativeForm.tsx,
+ * и без этой склейки шесть требований ниже (pattern у ИНН и СНИЛС,
+ * autoComplete у адресов и документов, состояние переключателей дней приема)
+ * искались бы в файле, где их больше нет.
+ */
+const patientsSource = [
+	readFileSync("apps/web/src/PatientsView.tsx", "utf8"),
+	readFileSync("apps/web/src/components/patient/PatientAdministrativeForm.tsx", "utf8"),
+].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 
 function requireIn(source, needle, message) {

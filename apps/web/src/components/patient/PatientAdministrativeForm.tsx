@@ -1,4 +1,56 @@
-import type { TextFieldChangeEvent, PatientAdministrativeProfileDraft, WeekdayOption } from '../../PatientsView';
+import type { ChangeEvent } from "react";
+import type { PatientAdministrativeProfile } from "@dental/shared";
+import { formatPhoneNumber } from "../../utils/inputSanitation";
+
+/*
+ * Реквизиты пациента: паспорт, ИНН, СНИЛС, представитель, получатель
+ * документов, основание обработки персональных данных и удобное окно записи.
+ *
+ * ЧТО БЫЛО НЕ ТАК. Этот файл лежал в дереве и не был подключён ни к одному
+ * экрану, а карточка пациента (PatientsView.tsx) рисовала свою копию того же
+ * блока — на пять полей короче. Пять полей существовали во всей остальной
+ * цепочке (схема @dental/shared, колонка administrative_profile, черновик и
+ * payload в AppHelpers, валидация запроса на сервере), но ввести их было
+ * НЕЧЕМ:
+ *   • «Кому выдавать документы» и «Основание обработки персональных данных»
+ *     печатаются в юридические документы (apps/api/src/documents/renderDocument.ts),
+ *     и без них в документ всегда уходила заглушка
+ *     «пациент / законный представитель / доверенное лицо»;
+ *   • «Удобно приходить с/до» читает движок предупреждений расписания
+ *     (apps/api/src/sampleData.ts), поэтому предупреждение «прием вне удобного
+ *     окна пациента» не срабатывало никогда;
+ *   • хуже всего: валидатор реквизитов (AppHelpers.patientAdministrativeProfileDraftIssue)
+ *     требует указывать начало и конец окна ПАРОЙ и при полупаре отключает
+ *     кнопку «Сохранить реквизиты» и отложенное сохранение. Полупару создаёт
+ *     сам сервер (нормализация обнуляет конец, если он не позже начала) и
+ *     прогоняет по всем пациентам при загрузке состояния. Администратор видел
+ *     «Укажите конец удобного времени приема», не мог ни указать конец, ни
+ *     очистить начало, и терял возможность сохранить паспорт, ИНН, СНИЛС и
+ *     представителя этого пациента через интерфейс.
+ *
+ * Подписи полей и плейсхолдеры взяты из карточки пациента, а не из этого
+ * файла: за них есть отдельный гейт, и расхождение подписей — это не
+ * декомпозиция, а тихая правка интерфейса.
+ *
+ * Типы черновика намеренно НЕ импортируются из PatientsView.tsx и
+ * AppHelpers.tsx: любой из этих импортов замкнул бы цикл (PatientsView →
+ * форма → PatientsView, AppHelpers → PatientsView → форма → AppHelpers).
+ * Форма выводит форму черновика из общей схемы, поэтому разойтись с ней не
+ * может: новое поле профиля автоматически появится и здесь.
+ */
+
+type PatientAdministrativeProfileDraft = {
+  [K in Exclude<keyof PatientAdministrativeProfile, "preferredAppointmentWeekdays">]: string;
+} & {
+  preferredAppointmentWeekdays: number[];
+};
+
+type WeekdayOption = {
+  label: string;
+  value: number;
+};
+
+type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 type PatientAdministrativeFormProps = {
   patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
@@ -16,12 +68,12 @@ export function PatientAdministrativeForm({
   return (
     <div className="clinic-profile-form-grid patient-admin-form-grid">
       <label>
-        Документ пациента
+        Паспорт / Документ
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.identityDocument}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("identityDocument", event.target.value)}
-          placeholder="паспорт РФ 0000 000000"
+          placeholder="Паспорт РФ 0000 000000"
         />
       </label>
       <label>
@@ -41,7 +93,7 @@ export function PatientAdministrativeForm({
           autoComplete="street-address"
           value={patientAdministrativeProfileDraft.registrationAddress}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("registrationAddress", event.target.value)}
-          placeholder="индекс, город, улица, дом"
+          placeholder="Индекс, город, улица, дом"
         />
       </label>
       <label>
@@ -50,16 +102,16 @@ export function PatientAdministrativeForm({
           autoComplete="street-address"
           value={patientAdministrativeProfileDraft.residentialAddress}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("residentialAddress", event.target.value)}
-          placeholder="если отличается"
+          placeholder="Если отличается"
         />
       </label>
       <label>
-        Полис / ДМС
+        Полис ДМС / ОМС
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.insurancePolicyNumber}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)}
-          placeholder="номер при наличии"
+          placeholder="Номер полиса"
         />
       </label>
       <label>
@@ -74,7 +126,7 @@ export function PatientAdministrativeForm({
         />
       </label>
       <label>
-        Законный представитель
+        ФИО представителя
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.legalRepresentativeFullName}
@@ -83,31 +135,37 @@ export function PatientAdministrativeForm({
         />
       </label>
       <label>
-        Основание
+        Кем приходится
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.legalRepresentativeRelationship}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", event.target.value)}
-          placeholder="родитель, опекун, доверенность"
+          placeholder="Родитель, опекун"
         />
       </label>
       <label>
-        Документ представителя
+        Паспорт представителя
+        {/* БЫЛО: плейсхолдер «Паспорт / сессия». Документ представителя — это
+            паспорт или доверенность; «сессия» здесь ничего не значит и
+            подсказывала оператору не то. */}
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeIdentityDocument", event.target.value)}
-          placeholder="паспорт / доверенность"
+          placeholder="Паспорт / доверенность"
         />
       </label>
       <label>
         Телефон представителя
+        {/* Телефон представителя приводится к тому же виду, что и телефон
+            пациента: по нему звонят и на него уходят напоминания, а разнобой
+            форматов ломает поиск и рассылку. */}
         <input
           type="tel"
           inputMode="tel"
           autoComplete="tel"
           value={patientAdministrativeProfileDraft.legalRepresentativePhone}
-          onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativePhone", event.target.value)}
+          onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativePhone", formatPhoneNumber(event.target.value))}
           placeholder="+7..."
         />
       </label>
@@ -117,12 +175,28 @@ export function PatientAdministrativeForm({
           autoComplete="off"
           value={patientAdministrativeProfileDraft.preferredDocumentRecipient}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredDocumentRecipient", event.target.value)}
-          placeholder="пациенту / представителю / доверенному лицу"
+          placeholder="Пациенту лично / представителю / доверенному лицу"
         />
       </label>
+      <p className="field-note form-span-2">
+        Получатель документов печатается в договоре, согласии и акте. Пока поле пустое, в документ уходит
+        общая формулировка «пациент / законный представитель / доверенное лицо».
+      </p>
+      <label className="form-span-2">
+        Основание обработки персональных данных
+        <input
+          autoComplete="off"
+          value={patientAdministrativeProfileDraft.dataProcessingBasisNote}
+          onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("dataProcessingBasisNote", event.target.value)}
+          placeholder="Согласие пациента, согласие представителя, договор"
+        />
+      </label>
+      <p className="field-note form-span-2">
+        Основание печатается в согласии на обработку персональных данных строкой «Основание/комментарий клиники».
+      </p>
       <div className="form-span-2 patient-appointment-preferences">
-        <span>Удобные дни записи</span>
-        <div className="weekday-toggle-row" role="group" aria-label="Удобные дни записи пациента">
+        <span>Предпочитаемые дни приема</span>
+        <div className="weekday-toggle-row" role="group" aria-label="Предпочитаемые дни приема пациента">
           {weekdayOptions.map((day) => {
             const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
             return (
@@ -146,7 +220,7 @@ export function PatientAdministrativeForm({
         </div>
       </div>
       <label>
-        Удобно с
+        Удобно приходить с
         <input
           type="time"
           value={patientAdministrativeProfileDraft.preferredAppointmentStart}
@@ -154,29 +228,25 @@ export function PatientAdministrativeForm({
         />
       </label>
       <label>
-        Удобно до
+        Удобно приходить до
         <input
           type="time"
           value={patientAdministrativeProfileDraft.preferredAppointmentEnd}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentEnd", event.target.value)}
         />
       </label>
+      <p className="field-note form-span-2">
+        Удобное окно указывается парой: и начало, и конец. Пока заполнено одно поле, реквизиты не сохраняются —
+        заполните второе или очистите первое. По этому окну расписание предупреждает, что запись стоит в
+        неудобное для пациента время.
+      </p>
       <label className="form-span-2">
         Комментарий к записи
         <input
           autoComplete="off"
           value={patientAdministrativeProfileDraft.preferredAppointmentNote}
           onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentNote", event.target.value)}
-          placeholder="например: только утро, не звонить после 19:00, нужен сопровождающий"
-        />
-      </label>
-      <label className="form-span-2">
-        Основание обработки ПДн
-        <input
-          autoComplete="off"
-          value={patientAdministrativeProfileDraft.dataProcessingBasisNote}
-          onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("dataProcessingBasisNote", event.target.value)}
-          placeholder="согласие пациента, представитель, договор, иной законный контекст"
+          placeholder="Например: только утро, не звонить после 19:00, нужен сопровождающий"
         />
       </label>
     </div>

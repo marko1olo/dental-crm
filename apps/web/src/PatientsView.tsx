@@ -12,6 +12,7 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
@@ -306,7 +307,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
             );
           })}
           {filteredPatients.length === 0 ? (
+            /* Класс patient-empty-state вернулся на общий компонент намеренно:
+               в мобильной вёрстке (styles/dente-redesign.css) на него навешаны
+               правила с !important на токенах темы, а гейт
+               scripts/smoke-patients-usability-source.mjs требует явного пустого
+               состояния именно по этому имени. После перехода на общий
+               компонент класс потеряли: на телефоне пустое состояние осталось
+               без темы, а гейт краснел на живом, работающем экране. */
             <EmptyState
+              className="patient-empty-state"
               icon={<Search size={28} />}
               title="Пациент не найден"
               description="Проверьте ФИО или телефон. Чтобы добавить нового пациента, введите ФИО выше и нажмите «Создать»."
@@ -522,129 +531,42 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>
               ) : null}
               
-              <div className="clinic-profile-form-grid patient-admin-form-grid">
-                <label>
-                  Паспорт / Документ
-                  <input
-                    autoComplete="off"
-                    value={patientAdministrativeProfileDraft.identityDocument}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("identityDocument", event.target.value)}
-                    placeholder="Паспорт РФ 0000 000000"
-                  />
-                </label>
-                <label>
-                  ИНН пациента
-                  <input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    pattern="[0-9]*"
-                    value={patientAdministrativeProfileDraft.taxpayerInn}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("taxpayerInn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))}
-                    placeholder="10 или 12 цифр"
-                  />
-                </label>
-                <label>
-                  Адрес регистрации
-                  <input
-                    autoComplete="street-address"
-                    value={patientAdministrativeProfileDraft.registrationAddress}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("registrationAddress", event.target.value)}
-                    placeholder="Индекс, город, улица, дом"
-                  />
-                </label>
-                <label>
-                  Адрес проживания
-                  <input
-                    autoComplete="street-address"
-                    value={patientAdministrativeProfileDraft.residentialAddress}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("residentialAddress", event.target.value)}
-                    placeholder="Если отличается"
-                  />
-                </label>
-                <label>
-                  Полис ДМС / ОМС
-                  <input
-                    autoComplete="off"
-                    value={patientAdministrativeProfileDraft.insurancePolicyNumber}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)}
-                    placeholder="Номер полиса"
-                  />
-                </label>
-                <label>
-                  СНИЛС
-                  <input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    pattern="[0-9 -]*"
-                    value={patientAdministrativeProfileDraft.snils}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("snils", event.target.value)}
-                    placeholder="000-000-000 00"
-                  />
-                </label>
-                <label>
-                  ФИО представителя
-                  <input
-                    autoComplete="off"
-                    value={patientAdministrativeProfileDraft.legalRepresentativeFullName}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeFullName", event.target.value)}
-                    placeholder="ФИО представителя"
-                  />
-                </label>
-                <label>
-                  Кем приходится
-                  <input
-                    autoComplete="off"
-                    value={patientAdministrativeProfileDraft.legalRepresentativeRelationship}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", event.target.value)}
-                    placeholder="Родитель, опекун"
-                  />
-                </label>
-                <label>
-                  Паспорт представителя
-                  <input
-                    autoComplete="off"
-                    value={patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeIdentityDocument", event.target.value)}
-                    placeholder="Паспорт / сессия"
-                  />
-                </label>
-                <label>
-                  Телефон представителя
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={patientAdministrativeProfileDraft.legalRepresentativePhone}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativePhone", event.target.value)}
-                    placeholder="+7..."
-                  />
-                </label>
-                <div className="form-span-2 patient-appointment-preferences">
-                  <span>Предпочитаемые дни приема</span>
-                  <div className="weekday-toggle-row" role="group" aria-label="Предпочитаемые дни приема пациента">
-                    {weekdayOptions.map((day) => {
-                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
-                      return (
-                        <button
-                          aria-pressed={weekdaySelected}
-                          className={weekdaySelected ? "active" : ""}
-                          key={`patient-weekday-${day.value}`}
-                          type="button"
-                          onClick={() => {
-                            const currentDays = patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
-                            const nextDays = weekdaySelected
-                              ? currentDays.filter((item) => item !== day.value)
-                              : [...currentDays, day.value];
-                            updatePatientAdministrativeProfileDraft("preferredAppointmentWeekdays", normalizeOptionalWorkingDaysDraft(nextDays));
-                          }}
-                        >
-                          {day.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+              {/*
+                Реквизиты рисует components/patient/PatientAdministrativeForm.tsx.
+
+                ЗДЕСЬ СТОЯЛА КОПИЯ ЭТОГО БЛОКА НА 11 ПОЛЕЙ ИЗ 16, и обе версии
+                лежали в дереве одновременно. Пяти полей — «Кому выдавать
+                документы», «Основание обработки персональных данных», «Удобно
+                приходить с/до» и «Комментарий к записи» — не было ни на одном
+                смонтированном экране, хотя сервер их использует: первые два
+                печатаются в юридические документы
+                (apps/api/src/documents/renderDocument.ts), окно приема читает
+                движок предупреждений расписания (apps/api/src/sampleData.ts).
+                Ввести их было нечем, поэтому в документ всегда уходила
+                заглушка, а предупреждение «прием вне удобного окна пациента» не
+                срабатывало никогда.
+
+                Хуже: валидатор реквизитов
+                (AppHelpers.patientAdministrativeProfileDraftIssue) требует
+                указывать окно приема парой и при полупаре «начало есть, конца
+                нет» отключает кнопку «Сохранить реквизиты» и отложенное
+                сохранение — по полям, которых на экране не было. Полупару
+                создаёт сама нормализация на сервере и прогоняет по всем
+                пациентам при загрузке состояния, а значит паспорт, ИНН, СНИЛС и
+                представителя такого пациента нельзя было сохранить через
+                интерфейс вообще.
+
+                Валидация, флаг изменений, отложенное сохранение, кнопка, плашка
+                состояния и сообщение об отказе сервера остались здесь и в
+                hooks/domains/usePatientLogic.ts — форма их не трогает и не
+                может с ними разойтись.
+              */}
+              <PatientAdministrativeForm
+                patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
+                updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft}
+                weekdayOptions={weekdayOptions}
+                normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft}
+              />
 
               <div className="patient-admin-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
                 <button
