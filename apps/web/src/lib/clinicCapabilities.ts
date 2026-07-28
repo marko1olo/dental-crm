@@ -21,6 +21,8 @@
  * раздел выглядит как поломка.
  */
 
+import type { StaffRole } from "@dental/shared";
+
 export type ClinicMode = "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
 
 export type ClinicCapability =
@@ -35,7 +37,9 @@ export type ClinicCapability =
 	/** Разрез отчётов по врачам. */
 	| "doctorBreakdown"
 	/** Занятость кресел. */
-	| "chairUtilisation";
+	| "chairUtilisation"
+	/** Раздел «Маркетинг/SEO»: продвижение, отзывы, площадки. */
+	| "marketingSection";
 
 /**
  * Отдельный врач: «минимум экранов, максимум скорости приёма» — так режим
@@ -48,15 +52,16 @@ const SOLO_DOCTOR: readonly ClinicCapability[] = ["callList", "messaging", "mana
 
 /**
  * Один кабинет: «один поток пациентов, одна смена». Рассылки уже осмысленны —
- * приглашать пациентов на осмотр приходится. Занятость единственного кресла
- * по-прежнему не показывает ничего.
+ * приглашать пациентов на осмотр приходится, а вместе с ними осмыслен и раздел
+ * продвижения. Занятость единственного кресла по-прежнему не показывает ничего.
  */
 const ONE_CHAIR: readonly ClinicCapability[] = [
 	"callList",
 	"messaging",
 	"massCampaigns",
 	"managerReports",
-	"doctorBreakdown"
+	"doctorBreakdown",
+	"marketingSection"
 ];
 
 /** Малая клиника и сеть: «несколько врачей, кресел» — доступно всё. */
@@ -66,7 +71,8 @@ const FULL: readonly ClinicCapability[] = [
 	"massCampaigns",
 	"managerReports",
 	"doctorBreakdown",
-	"chairUtilisation"
+	"chairUtilisation",
+	"marketingSection"
 ];
 
 const CAPABILITIES_BY_MODE: Readonly<Record<ClinicMode, readonly ClinicCapability[]>> = {
@@ -105,7 +111,64 @@ export function describeHiddenCapabilities(mode: ClinicMode | null | undefined):
 		massCampaigns: "рассылки по базе пациентов",
 		managerReports: "отчёты руководителю",
 		doctorBreakdown: "разрез отчётов по врачам",
-		chairUtilisation: "занятость кресел"
+		chairUtilisation: "занятость кресел",
+		marketingSection: "раздел продвижения и отзывов"
 	};
 	return (Object.keys(labels) as ClinicCapability[]).filter((capability) => !available.has(capability)).map((capability) => labels[capability]);
+}
+
+/**
+ * Режим клиники берётся из ответа сервера: `clinicSettings.profile.mode`. Это
+ * единственный источник, по которому уже решают карточка приёма, форма записи,
+ * рассылки и отчёты руководителю.
+ *
+ * ЗАЧЕМ ЭТА ФУНКЦИЯ. Нужно одно место, которое отвечает «режим пока не известен»
+ * значением null, а не подставляет вместо неизвестного какой-нибудь режим. В
+ * store/settingsStore.ts ровно такая подстановка и стояла: поле по умолчанию
+ * равнялось "network_clinic", то есть самому крупному режиму. Проверять строку
+ * на месте использования — значит завести второй ответ на тот же вопрос.
+ */
+export function resolveClinicMode(value: unknown): ClinicMode | null {
+	if (typeof value !== "string") return null;
+	return value in CAPABILITIES_BY_MODE ? (value as ClinicMode) : null;
+}
+
+/**
+ * Роли, которые при этом режиме реально есть в клинике.
+ *
+ * ЗАЧЕМ. Переключатель роли в шапке предлагал все пять ролей всегда. У
+ * отдельного врача нет ни ассистента, ни администратора на ресепшене, ни
+ * управляющего — он один. Три из пяти кнопок предлагают переключиться на
+ * сотрудника, которого не существует.
+ *
+ * ПОЧЕМУ У ОДНОГО ВРАЧА ОСТАЮТСЯ ДВЕ РОЛИ, А НЕ ОДНА. Роль задаёт не только
+ * подпись, но и состав разделов (getFilteredAppViews): у роли «Врач» нет ни
+ * «Оплат», ни «Настроек». Если оставить одну врачебную роль, отдельный врач
+ * потеряет доступ к кассе и к настройкам — в том числе к тому месту, где режим
+ * клиники меняется обратно. Поэтому остаются «Врач» (лечу) и «Владелец» (вижу
+ * всё), а роли отсутствующих сотрудников убираются.
+ *
+ * В одном кабинете ассистент и администратор появляются, а управляющий над
+ * одним кабинетом — это по-прежнему никто.
+ */
+const ROLES_BY_MODE: Readonly<Record<ClinicMode, readonly StaffRole[]>> = {
+	solo_doctor: ["doctor", "owner"],
+	one_chair: ["doctor", "assistant", "administrator", "owner"],
+	small_clinic: ["doctor", "assistant", "administrator", "manager", "owner"],
+	network_clinic: ["doctor", "assistant", "administrator", "manager", "owner"]
+};
+
+/**
+ * Отбирает из предложенного порядка ролей те, что при этом режиме существуют.
+ * Порядок исходного списка сохраняется: он задан в AppHelpers (roleFocusOrder) и
+ * отражает частоту использования, а не алфавит.
+ *
+ * Режим не известен — возвращается исходный список целиком, по тому же правилу,
+ * что и у возможностей: пропавшую кнопку будут искать, лишнюю просто заметят.
+ */
+export function visibleStaffRoles(order: readonly StaffRole[], mode: ClinicMode | null | undefined): StaffRole[] {
+	if (!mode) return [...order];
+	const allowed = ROLES_BY_MODE[mode];
+	if (!allowed) return [...order];
+	return order.filter((role) => allowed.includes(role));
 }

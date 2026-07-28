@@ -36,7 +36,22 @@ import { resolveUpdater } from './updater';
 export type ClinicMode = "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
 
 export interface SettingsState {
-  clinicMode: ClinicMode;
+  /**
+   * Режим клиники, каким его знает клиент.
+   *
+   * Здесь стояло `"network_clinic"` с подписью `// default` — то есть до ответа
+   * сервера клиент считал любую клинику сетью филиалов, самым крупным из четырёх
+   * режимов. Неизвестное значение подменялось константой, причём максимальной.
+   *
+   * `null` означает «сервер ещё не сказал». Разделы при этом показываются
+   * целиком (см. lib/clinicCapabilities.ts): отнимать возможности у клиники,
+   * режим которой не известен, нельзя — пропавший раздел выглядит как поломка.
+   *
+   * Источник правды — ответ сервера `clinicSettings.profile.mode`; меняется он
+   * через changeClinicMode (useAppLogic) → POST /api/settings/clinic/mode.
+   * Читать режим для решений следует оттуда через resolveClinicMode.
+   */
+  clinicMode: ClinicMode | null;
   onboardingDismissed: any;
   onboardingDismissedAt: string | null;
   onboardingStep: OnboardingStep;
@@ -98,7 +113,7 @@ export interface SettingsState {
 }
 
 export interface SettingsActions {
-  setClinicMode: (val: ClinicMode | ((prev: ClinicMode) => ClinicMode)) => void;
+  setClinicMode: (val: ClinicMode | null | ((prev: ClinicMode | null) => ClinicMode | null)) => void;
   setOnboardingDismissed: (val: any | ((prev: any) => any)) => void;
   setOnboardingDismissedAt: (val: string | null | ((prev: string | null) => string | null)) => void;
   setOnboardingStep: (val: OnboardingStep | ((prev: OnboardingStep) => OnboardingStep)) => void;
@@ -155,7 +170,7 @@ export interface SettingsActions {
 }
 
 const initialSettingsState: SettingsState = {
-  clinicMode: "network_clinic", // default
+  clinicMode: null,
   onboardingDismissed: (loadUiPreferences() ?? defaultUiPreferences).onboardingDismissed,
   onboardingDismissedAt: (loadUiPreferences() ?? defaultUiPreferences).onboardingDismissedAt,
   onboardingStep: (loadUiPreferences() ?? defaultUiPreferences).onboardingStep,

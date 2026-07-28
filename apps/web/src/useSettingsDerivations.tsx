@@ -1329,9 +1329,14 @@ export function useSettingsDerivations() {
 		weekdayOptions,
 		workspaceScopeLabels,
 	} = useAppLogicContext();
+	/*
+	 * Отсюда убраны clinicMode и setClinicMode из settingsStore: оба
+	 * доставались и ни разу не использовались, а хранившееся в них значение
+	 * никто и не записывал. Режим клиники приходит с сервера в
+	 * dashboard.clinicSettings.profile.mode и меняется через changeClinicMode;
+	 * решения по режиму принимает lib/clinicCapabilities.ts.
+	 */
 	const {
-		clinicMode,
-		setClinicMode,
 		setTelegramOutbox,
 		setTelegramOutboxStatusFilter,
 		setTelegramOutboxTemplateFilter,
