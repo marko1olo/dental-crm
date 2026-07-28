@@ -21,7 +21,7 @@ import {
   listSpeechRecordingRecoveries,
   listSpeechTranscriptionChunks,
 } from "../speech/storage.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { patients, visits } from "../db/schema.js";
 import {
@@ -34,7 +34,11 @@ import {
   transcribeSpeechChunk
 } from "../speech/gateway.js";
 import { polishSpeechTranscript } from "../speech/polish.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import {
+  requireClinicalMutationAccess,
+  requireClinicalMutationContext,
+  requireClinicalReadAccess
+} from "../accessGuard.js";
 
 type SpeechScopeInput = {
   patientId?: string | null | undefined;
@@ -104,12 +108,28 @@ function sendSpeechChunkRejection(
   });
 }
 
+/**
+ * Проверяет клинический контекст диктовки.
+ *
+ * options.organizationId — организация ВЫЗЫВАЮЩЕГО, полученная из подписанного токена.
+ * Когда она задана, пациент и прием ищутся только внутри этой организации: карта чужой
+ * клиники отвечает «не найден» и не подтверждает даже существование идентификатора.
+ * Это обязательно для записи: speech/storage.ts:404-425 определяет организацию
+ * сохраняемого фрагмента ПО присланным patientId/visitId, поэтому без этой проверки
+ * фрагмент диктовки ложится в карту той клиники, чей UUID назвал клиент.
+ *
+ * null допускается только там, где обработчик действительно не знает организацию —
+ * сейчас это read-эндпоинты диктовки, у которых стоит лишь булевый гейт
+ * requireClinicalReadAccess. Их арендатор не проверяется, это отдельный дефект,
+ * см. .agents/archon/packets/S1-speech-unauthenticated/handoff.md.
+ */
 async function validateSpeechClinicalScope(
   input: SpeechScopeInput,
-  options: { requirePatientOrVisit?: boolean } = {}
+  options: { organizationId: string | null; requirePatientOrVisit?: boolean }
 ): Promise<SpeechScopeValidation> {
   const requestedPatientId = normalizeScopeId(input.patientId);
   const requestedVisitId = normalizeScopeId(input.visitId);
+  const callerOrganizationId = options.organizationId;
 
   if (options.requirePatientOrVisit && !requestedPatientId && !requestedVisitId) {
     return speechScopeFailure(400, "Укажите пациента или прием для диктовки.");
@@ -120,14 +140,20 @@ async function validateSpeechClinicalScope(
 
   let patient: any = null;
   if (requestedPatientId) {
-    const [found] = await db.select().from(patients).where(eq(patients.id, requestedPatientId)).limit(1);
+    const patientScope = callerOrganizationId
+      ? and(eq(patients.id, requestedPatientId), eq(patients.organizationId, callerOrganizationId))
+      : eq(patients.id, requestedPatientId);
+    const [found] = await db.select().from(patients).where(patientScope).limit(1);
     patient = found ?? null;
     if (!patient) return speechScopeFailure(404, "Пациент для диктовки не найден.");
   }
 
   let visit: any = null;
   if (requestedVisitId) {
-    const [found] = await db.select().from(visits).where(eq(visits.id, requestedVisitId)).limit(1);
+    const visitScope = callerOrganizationId
+      ? and(eq(visits.id, requestedVisitId), eq(visits.organizationId, callerOrganizationId))
+      : eq(visits.id, requestedVisitId);
+    const [found] = await db.select().from(visits).where(visitScope).limit(1);
     visit = found ?? null;
     if (!visit) return speechScopeFailure(404, "Прием для диктовки не найден.");
   }
@@ -183,7 +209,7 @@ async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) 
 
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { requirePatientOrVisit: true }
+    { organizationId: null, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
@@ -198,7 +224,7 @@ async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: Fa
   const query = request.query as { visitId?: string; patientId?: string; limit?: string };
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { requirePatientOrVisit: true }
+    { organizationId: null, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
@@ -215,7 +241,7 @@ async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: Fas
   const query = request.query as { visitId?: string; patientId?: string };
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
-    { requirePatientOrVisit: true }
+    { organizationId: null, requirePatientOrVisit: true }
   );
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
@@ -225,8 +251,20 @@ async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: Fas
   return speechRecordingAssemblySchema.parse(assembleSpeechRecording(params.recordingId, scope));
 }
 
+/**
+ * Единственный эндпоинт диктовки, который ПИШЕТ в клиническую запись пациента.
+ *
+ * Здесь стоит requireClinicalMutationContext, а не requireClinicalMutationAccess:
+ * второй возвращает только «пройден ли гейт» и в этой среде пропускает запрос вообще
+ * без учетных данных (accessGuard.ts:31-33 — при незаданном DENTE_CLINICAL_ADMIN_SECRET
+ * и DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS=1 он возвращает true), и он никогда не
+ * сообщает, ОТ КАКОЙ клиники пришел запрос. Контекстная версия дополнительно требует
+ * организацию из подписанного токена (401, если токена нет) и отдает ее обработчику,
+ * так что фрагмент диктовки уже нельзя записать в карту чужой клиники.
+ */
 async function handleSpeechTranscribeChunk(request: FastifyRequest, reply: FastifyReply) {
-  if (!(await requireClinicalMutationAccess(request, reply, "speech chunk transcribe"))) return;
+  const context = await requireClinicalMutationContext(request, reply, "speech chunk transcribe");
+  if (!context) return;
   const input = parseSpeechPayload(
     speechChunkUploadSchema,
     request.body,
@@ -235,7 +273,7 @@ async function handleSpeechTranscribeChunk(request: FastifyRequest, reply: Fasti
     reply
   );
   if (!input) return;
-  const scopeValidation = await validateSpeechClinicalScope(input);
+  const scopeValidation = await validateSpeechClinicalScope(input, { organizationId: context.organizationId });
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
   const scopedInput: SpeechChunkUploadInput = {
     ...input,
