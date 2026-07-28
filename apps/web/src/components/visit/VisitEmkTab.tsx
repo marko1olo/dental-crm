@@ -13,6 +13,7 @@ import {
 	rememberVisitFlowResultOwner,
 	visitFlowOwnerKey,
 	visitFlowResultIsForeign,
+	visitSaveReceiptBelongsToVisit,
 } from "./visitFlowResultOwner";
 
 /**
@@ -164,6 +165,27 @@ export function VisitEmkTab() {
 	 * потеряна работа или нет.
 	 */
 	const pendingSavesText = `Ждут отправки на сервер клиники: ${countLabel(Number(pendingVisitSaveCount) || 0, "запись приёма", "записи приёма", "записей приёма")}. Всё сохранено на этом компьютере, ничего не потеряно — как только связь появится, отправка пойдёт сама. Ждать не обязательно: нажмите «Отправить сейчас».`;
+
+	/*
+	 * РАСПИСКА О СОХРАНЕНИИ — ТОЛЬКО ОТ ЭТОГО ПРИЁМА.
+	 *
+	 * БЫЛО: печаталась последняя расписка, какая была в хранилище. А она пишется
+	 * один раз (после удачного /draft/accept) и не обнуляется ничем. Врач
+	 * сохранял приём пациента А, открывал ПУСТУЮ запись пациента Б — и читал
+	 * «Сервер подтвердил сохранение 14:32, версия карты 3». Пустая запись
+	 * отчитывалась как сохранённая, чужим временем и чужой версией карты, а
+	 * настоящая подсказка «Запись приёма пока пустая. Продиктуйте или впишите
+	 * жалобы…» до врача не доходила: она стоит последней в той же цепочке.
+	 *
+	 * Расписка несёт visitId — сверяем с открытым приёмом. Чужую не показываем и
+	 * не выбрасываем: вернётся врач к тому приёму — расписка снова на месте.
+	 */
+	const saveReceiptOfThisVisit = visitSaveReceiptBelongsToVisit(
+		lastVisitSaveReceipt,
+		dashboard?.activeVisit?.id,
+	)
+		? lastVisitSaveReceipt
+		: null;
 
 	return (
 				<section
@@ -401,8 +423,8 @@ export function VisitEmkTab() {
 										? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
 										: pendingVisitSaveCount
 											? pendingSavesText
-											: lastVisitSaveReceipt
-												? visitSaveReceiptText(lastVisitSaveReceipt)
+											: saveReceiptOfThisVisit
+												? visitSaveReceiptText(saveReceiptOfThisVisit)
 												: (dashboard?.activeVisit?.doctorSummary ||
 													"Запись приёма пока пустая. Продиктуйте или впишите жалобы, осмотр и диагноз — кнопка сохранения появится сразу после первой правки.")}
 							</p>

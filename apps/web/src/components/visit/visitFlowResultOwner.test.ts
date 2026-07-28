@@ -5,6 +5,7 @@ import {
 	rememberVisitFlowResultOwner,
 	visitFlowOwnerKey,
 	visitFlowResultIsForeign,
+	visitSaveReceiptBelongsToVisit,
 } from "./visitFlowResultOwner";
 
 /**
@@ -94,5 +95,46 @@ describe("привязка разбора приёма к пациенту", () 
 		rememberVisitFlowResultOwner(result, patientA);
 		rememberVisitFlowResultOwner(null, patientA);
 		assert.equal(visitFlowResultIsForeign(result, "пациент-Б|приём-2"), false);
+	});
+});
+
+/**
+ * Расписка сервера о сохранении печаталась без сверки с приёмом. Врач сохранял
+ * приём пациента А, открывал ПУСТУЮ запись пациента Б — и читал «Сервер
+ * подтвердил сохранение 14:32, версия карты 3». Пустая запись отчитывалась как
+ * сохранённая, чужим временем и чужой версией карты.
+ */
+describe("расписка о сохранении приёма", () => {
+	const receipt = {
+		visitId: "приём-1",
+		clientMutationId: null,
+		status: "accepted",
+		serverRevision: 3,
+		savedAt: "2026-07-29T11:32:00.000Z",
+		warning: null,
+	};
+
+	it("расписка чужого приёма не выдаётся за расписку этого", () => {
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, "приём-1"), true);
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, "приём-2"), false);
+	});
+
+	it("без приёма и без расписки отчитываться нечем", () => {
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, null), false);
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, ""), false);
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, "   "), false);
+		assert.equal(visitSaveReceiptBelongsToVisit(null, "приём-1"), false);
+		assert.equal(visitSaveReceiptBelongsToVisit(undefined, "приём-1"), false);
+		// Расписка без visitId ничего не подтверждает.
+		assert.equal(
+			visitSaveReceiptBelongsToVisit({ ...receipt, visitId: undefined }, "приём-1"),
+			false,
+		);
+		assert.equal(visitSaveReceiptBelongsToVisit({ ...receipt, visitId: "" }, "приём-1"), false);
+	});
+
+	it("лишние пробелы в идентификаторах не разводят один приём на два", () => {
+		assert.equal(visitSaveReceiptBelongsToVisit({ ...receipt, visitId: " приём-1 " }, "приём-1"), true);
+		assert.equal(visitSaveReceiptBelongsToVisit(receipt, " приём-1 "), true);
 	});
 });

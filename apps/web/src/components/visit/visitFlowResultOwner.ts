@@ -1,4 +1,13 @@
 /**
+ * ЧЕЙ ОСТАТОК СОСТОЯНИЯ ПОКАЗАН В ПАНЕЛИ ЭМК: РАЗБОР ПРИЁМА И РАСПИСКА
+ * СОХРАНЕНИЯ.
+ *
+ * Общая беда обоих: они лежат в общем хранилище визита, записываются один раз и
+ * не обнуляются при смене пациента или приёма, поэтому по умолчанию врач видит
+ * их у СЛЕДУЮЩЕГО человека. Разбор приходится привязывать к пациенту вручную —
+ * ответ сервера владельца не называет; у расписки владелец есть в самом ответе
+ * (visitSaveReceiptSchema несёт visitId), поэтому её достаточно сверить.
+ *
  * ЧЕЙ РАЗБОР ПОКАЗАН В ПАНЕЛИ «АССИСТЕНТ ОБРАБОТКИ ПРИЕМА».
  *
  * БЫЛО: результат разбора приёма (`visitFlowResult`) живёт в общем хранилище
@@ -78,4 +87,32 @@ export function visitFlowResultIsForeign(result: unknown, owner: string): boolea
 export function forgetVisitFlowResultOwner(): void {
 	ownedResult = null;
 	ownerKey = null;
+}
+
+/**
+ * РАСПИСКА СЕРВЕРА О СОХРАНЕНИИ ОТНОСИТСЯ К ОТКРЫТОМУ ПРИЁМУ, А НЕ К ЛЮБОМУ.
+ *
+ * БЫЛО: панель ЭМК печатала последнюю расписку без всякой сверки —
+ * `lastVisitSaveReceipt ? visitSaveReceiptText(lastVisitSaveReceipt) : …`.
+ * А `setLastVisitSaveReceipt` вызывается РОВНО В ОДНОМ месте (после удачного
+ * ответа /draft/accept) и никогда с null: ни смена пациента, ни смена приёма,
+ * ни закрытие приёма её не сбрасывают.
+ *
+ * Что видел врач: сохранил приём пациента А — под щитом появилось «Сервер
+ * подтвердил сохранение 14:32, версия карты 3». Открыл приём пациента Б, где
+ * запись ещё ПУСТАЯ, — и прочитал ту же строку. Пустая запись отчитывалась как
+ * сохранённая, чужим временем и чужой версией карты; настоящая подсказка
+ * («Запись приёма пока пустая. Продиктуйте или впишите жалобы…») до врача не
+ * доходила, потому что стояла последней в той же цепочке.
+ *
+ * Сверять есть чем: расписка несёт visitId (visitSaveReceiptSchema в
+ * packages/shared). Чужую не показываем, но и не выбрасываем — вернётся врач к
+ * тому приёму, расписка снова окажется на месте.
+ */
+export function visitSaveReceiptBelongsToVisit(receipt: unknown, visitId: unknown): boolean {
+	if (!receipt || typeof receipt !== "object") return false;
+	const receiptVisitId = (receipt as { visitId?: unknown }).visitId;
+	if (typeof receiptVisitId !== "string" || !receiptVisitId.trim()) return false;
+	if (typeof visitId !== "string" || !visitId.trim()) return false;
+	return receiptVisitId.trim() === visitId.trim();
 }
