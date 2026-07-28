@@ -14,12 +14,7 @@ import {
   MapPin,
   Globe
 } from "lucide-react";
-import { RebookingConversionRulesWidget } from "./components/analytics/RebookingConversionRulesWidget";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
-import { FamilyRecommendationSourcesWidget } from "./components/marketing/FamilyRecommendationSourcesWidget";
-import { LandingFieldMappingsWidget } from "./components/integrations/LandingFieldMappingsWidget";
-
-import { CustomCrmTaskTypesWidget } from "./components/crm/CustomCrmTaskTypesWidget";
 
 type MarketingStats = {
   yandex: { rating: number; reviews: number };
@@ -391,26 +386,71 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
       ) : null}
 
       {/*
-        Возврат пациентов. Стоит перед мелкими виджетами и во всю ширину: это
-        единственный блок раздела, по которому в клинике действительно работают
-        руками — звонят и приглашают.
+        Возврат пациентов. Во всю ширину и последним в разделе: это единственный
+        блок здесь, по которому в клинике действительно работают руками — звонят и
+        приглашают. Про «стоит перед мелкими виджетами» в прежней редакции этого
+        комментария больше не верно: сетки виджетов под ним нет, см. ниже почему.
       */}
       <div className="mt-8">
         <RecallListPanel />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <FamilyRecommendationSourcesWidget />
-        {/*
-          LostPatientsFiltersWidget убран отсюда: он читал таблицу
-          lost_patients_filters, в которую в проекте никто не пишет — список был
-          снимком, сделанным неизвестно когда, и обновиться не мог. Живой расчёт
-          стоит выше.
-        */}
-        <RebookingConversionRulesWidget />
-        <LandingFieldMappingsWidget />
-        <CustomCrmTaskTypesWidget />
-      </div>
+      {/*
+        Здесь была сетка мелких виджетов раздела. Снята целиком вместе с
+        контейнером: после того как из неё убрали последние три панели, живых
+        карточек в ней не осталось, а пустой grid с mt-8 давал бы только полосу
+        воздуха под списком возвратов. Раздел теперь заканчивается блоком
+        «Возврат пациентов» — единственным, по которому в клинике работают руками.
+
+        Ниже — почему каждая панель не могла заполниться. Не возвращайте их, не
+        прочитав это: у всех трёх были и таблица, и маршрут, и виджет, и ни у
+        одной — писателя. Проверено 2026-07-28 на живой PostgreSQL: во всех трёх
+        таблицах 0 строк, и это не «клиника ещё не заполнила», а некому заполнить.
+
+        1. «Сопоставления полей лендингов» (LandingFieldMappingsWidget, таблица
+           landing_field_mappings). Обещала работающую интеграцию с
+           конструкторами лендингов, которой в коде нет ни для одного из них:
+           маршрут /api/integrations/landing-field-mappings только читает (один
+           select в getLandingFieldMappingsFromDb), insert в эту таблицу
+           отсутствует во всём apps/api, а экрана, где сопоставление настраивают,
+           не существует. Надпись «Сопоставления полей лендингов не настроены»
+           читалась как «настрой меня», хотя настраивать негде и читать настройку
+           некому. Стояла рядом с настоящими цифрами маркетинга и подрывала
+           доверие именно к ним. Мелкой клинике заявку с сайта проще получить
+           звонком или сообщением — этот путь в продукте уже работает.
+
+        2. «Источники семейных рекомендаций» (FamilyRecommendationSourcesWidget,
+           таблица family_recommendation_sources). Показывала 404 под видом
+           «данных пока нет»: маршрута /api/marketing/family-recommendation-sources
+           в apps/api нет вообще, существуют только таблица и миграция. Владелец
+           делал из этого вывод, что рекомендаций у него не бывает. Кабинет на два
+           кресла и так помнит, кто кого привёл, а чтобы цифра стала настоящей,
+           нужны колонка источника у пациента, справочник источников и место в
+           приёме, где источник указывают.
+
+        3. «Конструктор типов задач» (CustomCrmTaskTypesWidget, таблица
+           custom_crm_task_types). Та же пустая панель была повторена в трёх
+           разделах сразу; маршрут /api/crm/custom-crm-task-types только читает,
+           создать тип задачи нечем. В маркетинге она была вдобавок не по теме.
+           Сам файл виджета не удалён: его монтируют и другие разделы.
+
+        Раньше отсюда убрали ещё две панели, их разбор сохраняю здесь же.
+
+        LostPatientsFiltersWidget: читал таблицу lost_patients_filters, в которую
+        в проекте никто не пишет — список был снимком, сделанным неизвестно когда,
+        и обновиться не мог. Живой расчёт стоит выше.
+
+        Второй экземпляр блока «Кому засчитана повторная запись» (тот же самый,
+        что и в разделе «Аналитика») удалён вместе с маршрутом
+        /api/hr/rebooking-conversion-rules. Сервер всегда отвечал HTTP 200 и
+        пустым массивом, на обоих экранах сразу: в таблице
+        rebooking_conversion_rules 0 строк и ноль писателей. На живой расчёт не
+        переведено потому, что у appointments нет ни created_at, ни
+        created_by_user_id — то есть ни «когда записали», ни «кто записал», а
+        doctor_user_id это лечащий врач, а не автор записи. Подробный разбор и
+        формулировка долга — в комментарии на том же месте в
+        apps/web/src/pages/AnalyticsDashboardView.tsx.
+      */}
     </section>
   );
 }
