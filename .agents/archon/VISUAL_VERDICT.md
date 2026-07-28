@@ -531,3 +531,62 @@ at 30 s — the container appears but slowly; the old error text contradicted it
 as missing while listing it as present, and that message is now re-read at failure time), `settings`,
 `marketing`, and **every dark-theme and mobile frame**. No verdict is offered on those. Nine shots exist;
 seven are trustworthy; two are honest failure diagnostics.
+
+## ADDENDUM F — FIRST COMPLETE DARK-THEME SET, AND «СНИМКИ» IS BLANK IN IT
+
+Captured with the machine quiet (71 node processes, down from 128): **28 frames — 11 desktop light, 11
+desktop dark, 5 mobile light, 1 collapsed** — every one above the 20,000-byte floor, smallest 61,451.
+Palette fingerprint `fb13b9804418`. This is the first time the campaign has had dark-theme desktop frames
+for all eleven views.
+
+### F.1 — THE TWO TOPBAR DEFECTS THE LEAD FOUND ARE FIXED, VERIFIED BY EYE
+Addendum E charged that «Запись» — the primary action of a dental CRM — was pushed alone onto row 2 behind
+an unlabelled red padlock, and that three icon buttons carried no label. In `desktop_dark_shift.png`:
+**«Запись» is now FIRST on row 1, filled teal**, ahead of «Поиск», «Голос», «Справка», «Настроить»; and the
+padlock is now a labelled **«Заблокировать»** button. The regression is closed. Credit to the fleet packet.
+
+### F.2 — CONFIRMED DEFECT, AND IT IS THE WORST VISUAL FINDING SO FAR: «СНИМКИ» RENDERS NOTHING IN NIGHT THEME
+Same view, same data, same capture run, two themes:
+
+- `desktop_light_imaging.png` (176 KB) is **fully populated and genuinely good**: heading «СНИМКИ ПАЦИЕНТА
+  / Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте»; three real actions «Папка DICOM», «Файлы»,
+  «Добавить снимок вручную»; three status cards including «В ленте / 0 / локально и на сервере, без
+  удаления сырья» and «Режим / просмотрщик / ИИ только помогает, решение остается за врачом»; and two
+  excellent empty states — «Снимков по пациенту нет / Загрузите архивы DICOM/КТ…» and «Пациент не выбран /
+  Лента показывает снимки того пациента, который назван в шапке экрана. Выберите пациента в картотеке или
+  откройте приём — снимки подтянутся сами.» That last string is among the best §3 writing in the product.
+- `desktop_dark_imaging.png` (61 KB — **the smallest frame of the run, because there is nothing to
+  compress**) renders the **sidebar only**. The entire content area is void: no heading, no buttons, no
+  status cards, no empty state, no error. A dentist opening «Снимки — рентген, КЛКТ и КТ» in night theme
+  cannot tell whether it is loading, broken, or empty.
+
+**Ruled out as a scroll artefact, by measurement.** The dark frame is scrolled roughly 230 px down (its nav
+rail starts at «Снимки» and the theme switcher is visible at the bottom). At that offset it should show what
+light shows between y≈290 and y≈1130 — which in light is the populated panel. It shows 840 px of nothing
+instead. A 230 px scroll cannot produce 840 px of void.
+
+**Honest limit on this finding.** It rests on one capture per theme, not on a reproduction in a live browser
+— the lead has no interactive browser session, and headless capture is all that is available. The theme
+audit did assert the night palette applied, and the frame is 61 KB rather than a blank 6 KB, so the shell
+DID render; only the section content is missing. So: the observation is confirmed, the mechanism is not.
+A packet must reproduce it before changing anything.
+
+### F.3 — A THIRD THEME EXISTS AND THE CAPTURE NAMES IT WRONG
+The switcher at the bottom of the rail reads **«День | Ночь | Тепло»** — three themes, not two, and «Тепло»
+has never been captured or judged at all. The capture pipeline calls the second one `dark` while the
+interface calls it «Ночь». Not a defect in the product, but the file names promise a mapping the UI does not
+use, and the lead has already been burned once by filenames that promised a state they did not show.
+
+### F.4 — SMALLER, STILL REAL (from `desktop_dark_shift.png`)
+- **«дел: 2»** as a counter label. «дел» is not a word a patient-facing operator parses; «2 дела» is.
+- **«Импортов: 0. Последних событий аудита: 4.»** — machine phrasing in a task card. Zero imports tells the
+  user nothing and suggests no action.
+- Three similar actions carry three different visual weights: «Запись» filled teal, «Записать пациента»
+  filled teal of another shade, «Открыть расписание» outlined. §4: same importance should look the same.
+- **«Недавние 0 сменить»** — still a chip whose entire content is a zero. Flagged in Addendum E, unchanged.
+- The band holding «Роль Владелец сменить» and that chip still costs ~150 px before content begins.
+
+### F.5 — STILL WITHOUT ANY JUDGED CAPTURE
+The «Тепло» theme entirely; mobile dark entirely; mobile light for 6 of 11 views (the run died during
+mobile). Two honest failure diagnostics were written (`ПУСТО_НЕ_ОТКРЫЛСЯ_*`). No verdict is offered on
+those surfaces.
