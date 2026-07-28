@@ -76,9 +76,18 @@ export function SmartMicrophoneButton({ context, onResult, style, className }: S
         aria-pressed={isRecording}
         onClick={toggleRecording}
         className={className}
+        /* БЫЛО: var(--red-600), var(--blue-600), var(--blue-100). Ни одно из
+           этих имён не объявлено нигде в проекте (Tailwind v4 называет свою
+           палитру --color-red-600, это другое имя). Неизвестное имя в var()
+           не ломает сборку: объявление просто становится недействительным,
+           и цвет берётся наследуемый. Значок микрофона при записи и при
+           обработке оставался цветом окружающего текста — то есть кнопка не
+           показывала, идёт ли запись. Фон при обработке пропадал целиком.
+           Теперь взяты семантические токены, объявленные для всех трёх тем в
+           dente-redesign.css: --bad-* (красный) и --info-* (синий). */
         style={{
-          background: isRecording ? 'var(--red-100)' : isProcessing ? 'var(--blue-100)' : 'transparent',
-          color: isRecording ? 'var(--red-600)' : isProcessing ? 'var(--blue-600)' : 'var(--brand-500)',
+          background: isRecording ? 'var(--bad-bg)' : isProcessing ? 'var(--info-bg)' : 'transparent',
+          color: isRecording ? 'var(--bad-fg)' : isProcessing ? 'var(--info-fg)' : 'var(--brand-500)',
           border: 'none',
           cursor: isProcessing ? 'wait' : 'pointer',
           display: 'flex',

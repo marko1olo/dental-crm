@@ -4,6 +4,22 @@ import { useAppStore } from '../store/appStore';
 import { denteAdminSecretRequestHeaders, operatorReadableErrorDetail } from '../AppHelpers';
 import type { SpeechChunkUploadInput, SpeechGatewayStatus } from '@dental/shared';
 import { showToast } from '../components/GlobalToast';
+import { requestFailureCause } from '../lib/panelStateText';
+
+/** Объект из тела ответа или null. Массив и скаляр объектом не считаются. */
+function jsonObjectOrNull(rawBody: string): Record<string, unknown> | null {
+  const trimmed = rawBody.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    // Текст исключения английский, человеку он не показывается никогда.
+    return null;
+  }
+}
 
 export interface UseVoiceAssistantReturn {
   isListening: boolean;
@@ -19,6 +35,42 @@ export interface UseVoiceAssistantOptions {
   onNavigate?: ((view: any) => void) | undefined;
   onSearchQuery?: ((query: string) => void) | undefined;
   onDateChange?: ((date: string) => void) | undefined;
+}
+
+/**
+ * Похож ли ответ на состояние шлюза распознавания.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Ответ /api/speech/status разбирался как JSON ДО проверки
+ * res.ok, и результат безусловно уходил в общий стор. Отказы гейта клинического
+ * чтения — 403 ClinicalReadSecretRequired и 503 ClinicalReadSecretMissing
+ * (accessGuard.ts) — отдают тело {error, message, protectedArea}. Это непустой
+ * объект, поэтому все проверки вида `speechGatewayStatus ? ...` считали его
+ * готовым состоянием шлюза, а обращения к вложенным полям падали:
+ * `speechGatewayStatus?.chunkingPolicy.dedupeWindowChars` (useVisitLogic.ts:922,
+ * 1212, 1403; useAppLogic.tsx:10844), `speechGatewayStatus?.polishPolicy
+ * .neuralEnabled` (VisitView.tsx:645), `speechGatewayStatus.promptPolicy.enabled`
+ * (SettingsAiTab.tsx:107) — необязательная точка стоит только на верхнем уровне.
+ * TypeError во время отрисовки уводил в заглушку целый раздел (Настройки вместе
+ * с полосой вкладок, приём), а «Повторить открытие» падало снова: стор уже
+ * отравлен и перезапрос не делается.
+ *
+ * Проверяются ровно те поля, к вложенностям которых обращается интерфейс.
+ * Полную схему сюда не тянем: она живёт в @dental/shared и разбирает ответ на
+ * сервере, а лишняя строгость на клиенте молча отключила бы серверное
+ * распознавание из-за поля, которого интерфейс не касается.
+ */
+function looksLikeSpeechGatewayStatus(value: unknown): value is SpeechGatewayStatus {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const row = value as Record<string, unknown>;
+  const isObject = (field: unknown) =>
+    typeof field === "object" && field !== null && !Array.isArray(field);
+  return (
+    typeof row.serverTranscriptionEnabled === "boolean" &&
+    typeof row.providerLabel === "string" &&
+    isObject(row.chunkingPolicy) &&
+    isObject(row.polishPolicy) &&
+    isObject(row.promptPolicy)
+  );
 }
 
 export function useVoiceAssistant(
@@ -42,17 +94,55 @@ export function useVoiceAssistant(
   const speechGatewayStatus = useAppStore((state) => state.speechGatewayStatus as SpeechGatewayStatus | null);
   const setSpeechGatewayStatus = useAppStore((state) => state.setSpeechGatewayStatus);
 
+  /**
+   * Состояние шлюза прочитать не удалось. Всплывающим сообщением при загрузке
+   * приложения об этом не говорим: запрос фоновый, пользователь ничего не
+   * просил, а браузерное распознавание чаще всего работает. Скажем в тот
+   * момент, когда человек нажмёт микрофон и получит распознавание хуже
+   * ожидаемого — один раз за сеанс, чтобы не превратить подсказку в шум.
+   */
+  const gatewayStatusUnknownRef = useRef(false);
+  const gatewayFallbackReportedRef = useRef(false);
+
   useEffect(() => {
-    if (!speechGatewayStatus) {
+    if (speechGatewayStatus) return;
+    let alive = true;
+    const loadGatewayStatus = async () => {
       const secret = localStorage.getItem("dente_clinical_admin_secret_session") || undefined;
       const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, secret);
-      fetch("/api/speech/status", { headers })
-        .then(res => res.json())
-        .then(data => {
-          setSpeechGatewayStatus(data);
-        })
-        .catch(err => console.error("Failed to load speech status in assistant:", err));
-    }
+      try {
+        const res = await fetch("/api/speech/status", { headers });
+        // Тело читается строкой: у пустого ответа res.json() бросает исключение,
+        // и прежний catch не отличал его от отказа сервера.
+        const rawBody = await res.text();
+        if (!res.ok) {
+          console.error(`[speech status] ${res.status} ${rawBody.slice(0, 300)}`);
+          if (alive) gatewayStatusUnknownRef.current = true;
+          return;
+        }
+        let parsed: unknown = null;
+        try {
+          parsed = rawBody.trim() ? JSON.parse(rawBody) : null;
+        } catch (parseError) {
+          console.error("[speech status] тело ответа не разобрано", parseError);
+        }
+        if (!looksLikeSpeechGatewayStatus(parsed)) {
+          console.error("[speech status] ответ не похож на состояние шлюза, в стор не пишем");
+          if (alive) gatewayStatusUnknownRef.current = true;
+          return;
+        }
+        if (!alive) return;
+        gatewayStatusUnknownRef.current = false;
+        setSpeechGatewayStatus(parsed);
+      } catch (err) {
+        console.error("[speech status] запрос не выполнен", err);
+        if (alive) gatewayStatusUnknownRef.current = true;
+      }
+    };
+    void loadGatewayStatus();
+    return () => {
+      alive = false;
+    };
   }, [speechGatewayStatus, setSpeechGatewayStatus]);
 
   const playTTS = useCallback((text: string) => {
@@ -200,23 +290,73 @@ export function useVoiceAssistant(
         headers,
         body: JSON.stringify(input)
       });
-      
-      const payload = await response.json();
-      
-      if (!response.ok || payload.chunk?.status === "failed") {
-        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "Ошибка сервера");
+
+      // Тело читается один раз строкой и разбирается безопасно. БЫЛО: res.json()
+      // до проверки res.ok — на пустом теле отказа он бросал исключение, и
+      // причина отказа подменялась общим «Ошибка сервера распознавания».
+      const rawBody = await response.text();
+      const payload = jsonObjectOrNull(rawBody);
+
+      if (!response.ok) {
+        console.error(`[speech transcribe] ${response.status} ${rawBody.slice(0, 300)}`);
+        const detail = operatorReadableErrorDetail(
+          typeof payload?.message === "string" ? payload.message : null
+        );
+        showToast(
+          detail ?? `Голос не распознан: ${requestFailureCause(response.status)}.`,
+          "error",
+          10000
+        );
+        playBeep('error');
+        return;
       }
 
-      if (payload.chunk?.transcript) {
-        setTranscript(payload.chunk.transcript);
-        handleCommand(payload.chunk.transcript);
+      const chunk =
+        payload?.chunk && typeof payload.chunk === "object" && !Array.isArray(payload.chunk)
+          ? (payload.chunk as Record<string, unknown>)
+          : null;
+
+      if (chunk?.status === "failed") {
+        // Своей причины у фрагмента нет: в схеме ответа
+        // (speechTranscriptionChunkSchema) есть только warnings — массив строк
+        // по-русски. Берём первую, если она есть.
+        const firstWarning = Array.isArray(chunk.warnings) ? chunk.warnings[0] : null;
+        const detail = operatorReadableErrorDetail(
+          typeof firstWarning === "string" ? firstWarning : null
+        );
+        console.error(`[speech transcribe] фрагмент не распознан: ${rawBody.slice(0, 300)}`);
+        showToast(
+          detail ??
+            "Сервер не смог распознать этот фрагмент. Повторите фразу ближе к микрофону; если повторяется — проверьте распознавание в «Настройки → ИИ».",
+          "error",
+          10000
+        );
+        playBeep('error');
+        return;
+      }
+
+      const transcript = typeof chunk?.transcript === "string" ? chunk.transcript.trim() : "";
+      if (transcript) {
+        setTranscript(transcript);
+        handleCommand(transcript);
       } else {
-        showToast("Не удалось распознать голос", "warning");
+        // Пустой текст при успешном ответе — это действительно «ничего не
+        // услышали», а не отказ сервера: отказ обработан выше.
+        showToast(
+          "Ничего не расслышали. Скажите фразу ещё раз — ближе к микрофону и без пауз в начале.",
+          "warning",
+          8000
+        );
         playBeep('error');
       }
     } catch (err: any) {
+      // Сюда попадает только обрыв связи: ответ сервера, включая отказ, разобран выше.
       console.error("Voice Assistant Server STT Error:", err);
-      showToast("Ошибка сервера распознавания.", "error");
+      showToast(
+        `Голос не распознан: ${requestFailureCause(null)}.`,
+        "error",
+        10000
+      );
       playBeep('error');
     }
   }, [dashboard, handleCommand, playBeep]);
@@ -285,6 +425,26 @@ export function useVoiceAssistant(
       updateVolume();
 
       if (!navigator.onLine || !speechGatewayStatus?.serverTranscriptionEnabled) {
+        /*
+         * Причины отката к браузерному распознаванию разные, и человеку важна
+         * именно та, которую он может исправить. Молча откатываться нельзя:
+         * врач диктует так же, а текст получается заметно хуже, и он думает,
+         * что программа стала плохо распознавать.
+         */
+        if (!navigator.onLine) {
+          showToast(
+            "Сети нет: диктовка идёт силами браузера, текст получится грубее. Проверьте подключение и повторите — тогда распознает сервер клиники.",
+            "warning",
+            9000,
+          );
+        } else if (gatewayStatusUnknownRef.current && !gatewayFallbackReportedRef.current) {
+          gatewayFallbackReportedRef.current = true;
+          showToast(
+            "Не удалось узнать, включено ли распознавание на сервере клиники, поэтому диктовка идёт силами браузера и текст получится грубее. Обновите страницу; если не поможет — попросите администратора проверить раздел «Настройки → ИИ».",
+            "warning",
+            12000,
+          );
+        }
         startBrowserNative();
         return;
       }
