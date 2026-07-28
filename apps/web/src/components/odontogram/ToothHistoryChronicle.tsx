@@ -12,6 +12,7 @@ import { type PanelSubject, panelStateText } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
 	type ToothHistoryEvent,
+	toothHistoryAuthorLabel,
 	toothHistoryEventsFromResponseBody,
 } from "./toothHistoryEvents";
 
@@ -192,11 +193,15 @@ export function ToothHistoryChronicle({
 										    пропавшая запись. */}
 										{evt.description ?? "Описание не заполнено"}
 									</div>
-									{evt.author && (
-										<div className="timeline-author">
-											Автор: {evt.author.substring(0, 8)}...
-										</div>
-									)}
+									{/* БЫЛО: `Автор: {evt.authorId.substring(0, 8)}...` — ФИО врача
+									    обрезалось до восьми знаков («Автор: Иванова ...»), слово
+									    "System" печаталось латиницей, а «Не указан» превращалось
+									    в обрубок «Не указа...». Кто лечил зуб — не мелочь, и
+									    строка автора теперь есть у каждой записи, а не только
+									    когда поле непустое. */}
+									<div className="timeline-author">
+										{toothHistoryAuthorLabel(evt.author)}
+									</div>
 								</div>
 							</div>
 						))}

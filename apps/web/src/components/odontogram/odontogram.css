@@ -728,6 +728,9 @@
 	margin-top: 8px;
 	padding-top: 4px;
 	border-top: 1px solid var(--odontogram-border-subtle);
+	/* ФИО врача печатается целиком, а панель узкая (320px): длинное имя обязано
+	   переноситься, а не уезжать за край. Обрезка имени в карте запрещена. */
+	overflow-wrap: break-word;
 }
 
 @keyframes slideInRight {

@@ -17,9 +17,47 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	type ToothHistoryEvent,
+	toothHistoryAuthorLabel,
 	toothHistoryEventFromServer,
 	toothHistoryEventsFromResponseBody,
 } from "./toothHistoryEvents";
+
+test("ФИО врача в карте не обрезается", () => {
+	// БЫЛО: authorId.substring(0, 8) + "..." — «Автор: Иванова ...».
+	assert.equal(
+		toothHistoryAuthorLabel("Иванова Мария Петровна"),
+		"Автор: Иванова Мария Петровна",
+	);
+	assert.equal(toothHistoryAuthorLabel("Ким О Ён"), "Автор: Ким О Ён");
+});
+
+test("служебные значения автора не печатаются латиницей и обрубками", () => {
+	// "System" сервер ставит позициям плана лечения, "Не указан" — записям без автора.
+	assert.equal(toothHistoryAuthorLabel("System"), "Записано программой");
+	assert.equal(toothHistoryAuthorLabel("system"), "Записано программой");
+	assert.equal(toothHistoryAuthorLabel("Не указан"), "Автор не указан");
+	assert.equal(toothHistoryAuthorLabel(null), "Автор не указан");
+	for (const label of [
+		toothHistoryAuthorLabel("System"),
+		toothHistoryAuthorLabel("Не указан"),
+		toothHistoryAuthorLabel(null),
+	]) {
+		assert.ok(!/[A-Za-z]/.test(label), `в «${label}» осталась латиница`);
+		assert.ok(!label.endsWith("..."), `«${label}» обрублено`);
+	}
+});
+
+test("идентификатор пользователя не выдаётся за имя врача", () => {
+	// Для записей дневника сервер присылает id пользователя, а не ФИО.
+	assert.equal(
+		toothHistoryAuthorLabel("e3f1c2a4-1111-2222-3333-444455556666"),
+		"Автор: имя в записи не сохранено",
+	);
+	assert.equal(
+		toothHistoryAuthorLabel("a1b2c3d4e5f6a7b8c9d0e1f2"),
+		"Автор: имя в записи не сохранено",
+	);
+});
 
 test("тело по контракту сервера читается целиком", () => {
 	// Форма взята из apps/api/src/routes/toothHistory.ts.
