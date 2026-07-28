@@ -2378,6 +2378,31 @@ body.dark-mode .onboarding-draft-strip span {
   width: 100%;
 }
 
+/*
+ * Подсказка вместо просмотрщика-обманки для КЛКТ.
+ *
+ * Здесь стояло серое неотзывчивое полотно, притворявшееся загружающимся
+ * снимком: адрес указывал на порт 3000 и маршрут, которых у нас нет.
+ */
+.imaging-cbct-hint {
+  align-content: center;
+  background: var(--paper-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.imaging-cbct-hint p {
+  color: var(--muted);
+  margin: 0;
+  max-width: 60ch;
+  justify-self: center;
+}
+
 .imaging-viewer-meta {
   background: linear-gradient(180deg, rgba(7, 26, 27, 0), rgba(7, 26, 27, 0.92));
   bottom: 0;

@@ -503,18 +503,39 @@ export function ImagingView(props: ImagingViewProps) {
                         {localImageIds.length > 0 ? (
                           <Cornerstone3DViewer imageIds={localImageIds} />
                         ) : selectedImagingStudy?.kind === "cbct" ? (
+                          /*
+                            КЛКТ: раньше под загрузчиком стоял просмотрщик-обманка.
+
+                            Ему подсовывали адрес wadouri:http://localhost:3000/
+                            api/dicomweb/... — порт 3000, которого у нас нет
+                            (сервер отвечает на 4100), и маршрута /api/dicomweb
+                            в API тоже нет. Сверху лежали opacity-50 и
+                            pointer-events-none: серое неотзывчивое полотно,
+                            похожее на загружающийся снимок. Врач ждал, пока
+                            «прогрузится» то, что не могло прогрузиться никогда.
+
+                            Пока сервер не отдаёт срезы, честно говорим, что
+                            нужно сделать: открыть архив с диска. Загрузчик
+                            рядом, и он работает — после выбора папки срезы
+                            попадают в localImageIds и рисуются настоящим
+                            просмотрщиком ветвью выше.
+                          */
                           <div className="w-full h-full flex flex-col gap-4 p-4">
                             <DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
-                            <div className="opacity-50 pointer-events-none w-full flex-1">
-                              <Cornerstone3DViewer 
-                                imageIds={[`wadouri:http://localhost:3000/api/dicomweb/studies/${selectedImagingStudy?.dicomStudyUid}/series/1/instances/1`]} 
-                              />
+                            <div className="imaging-cbct-hint">
+                              <strong>Срезы КЛКТ открываются с диска</strong>
+                              <p>
+                                Программа пока не хранит томограммы у себя: на сервере лежит только карточка
+                                исследования. Выберите папку с файлами DICOM выше — срезы откроются в просмотрщике
+                                с измерениями и осями.
+                              </p>
                             </div>
                           </div>
                         ) : (
-                          <ShadowAnalystImageSlider 
-                            imageUrl={imagingPreviewSource(selectedImagingStudy)} 
-                            enhanced={enhancementOn && !!selectedImagingStudy?.aiSummary} 
+                          <ShadowAnalystImageSlider
+                            imageUrl={imagingPreviewSource(selectedImagingStudy)}
+                            enhanced={enhancementOn && !!selectedImagingStudy?.aiSummary}
+                            viewerStyle={imagingViewerImageStyle}
                           />
                         )}
 

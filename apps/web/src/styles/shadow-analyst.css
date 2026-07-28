@@ -335,12 +335,22 @@
   cursor: col-resize;
 }
 
+/*
+ * Настройки панели просмотра приходят переменными от компонента.
+ *
+ * Яркость, контраст, инверсия, поворот и масштаб раньше вычислялись и никуда
+ * не применялись: врач двигал ползунки, снимок не менялся. Значения приходят
+ * готовыми строками CSS, чтобы фильтр обработки и настройки врача складывались
+ * здесь, а не спорили друг с другом в разметке.
+ */
 .sa-img-original {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   pointer-events: none;
   display: block;
+  filter: var(--sa-viewer-filter, none);
+  transform: var(--sa-viewer-transform, none);
 }
 
 .sa-img-enhanced-wrapper {
@@ -363,8 +373,14 @@
   object-fit: contain;
   display: block;
   pointer-events: none;
-  /* Simulates CLAHE + Unsharp Mask via CSS GPU filters */
-  filter: contrast(1.35) brightness(1.05) saturate(0.85) drop-shadow(0 0 2px rgba(255,255,255,0.08));
+  /*
+   * Усиление контраста средствами браузера — подобие CLAHE и нерезкой маски.
+   * Настройки врача дописываются следом: фильтры складываются по порядку, и
+   * обработка остаётся видна, когда трогают яркость.
+   */
+  filter: contrast(1.35) brightness(1.05) saturate(0.85) drop-shadow(0 0 2px rgba(255, 255, 255, 0.08))
+    var(--sa-viewer-filter, none);
+  transform: var(--sa-viewer-transform, none);
 }
 
 .sa-slider-handle {
