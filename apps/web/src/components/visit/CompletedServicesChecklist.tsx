@@ -1,7 +1,13 @@
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { money } from "../../AppHelpers";
-import { visitOwnedPlanItems } from "./completedServicesPlan";
+import { countLabel } from "../../lib/russianPlural";
+import {
+	planLineQuantity,
+	planLineTotalRub,
+	roundToKopecks,
+	visitOwnedPlanItems,
+} from "./completedServicesPlan";
 import { realVisitFieldId } from "./visitIdentity";
 
 /*
@@ -43,24 +49,26 @@ import { realVisitFieldId } from "./visitIdentity";
   visitFlowRequest.completedServices в packages/shared.
 */
 
-/** Копейки не теряем и не выдумываем: 1500,505 ₽ не бывает. */
-function roundToKopecks(value: number): number {
-	return Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
-}
+/*
+  5. НЕПРОЧИТАННАЯ ЦЕНА ПЕЧАТАЛАСЬ КАК «0 ₽».
 
-/**
- * Итог строки плана. Формула ровно та же, что в смете (useAppLogic.tsx) и в
- * ленте оплат (FinanceLedger.tsx): цена × количество − скидка, не ниже нуля.
- * Number() стоит потому, что numeric из drizzle приходит СТРОКОЙ, а данные
- * дашборда на клиенте схемой не проверяются: «10» − «3» без приведения дало бы
- * NaN, а NaN в сумме приёма — это неверная цифра в кассе.
- */
-function planLineTotalRub(item: any): number {
-	const unit = Number(item?.unitPriceRub ?? 0);
-	const quantity = Number(item?.quantity ?? 1);
-	const discount = Number(item?.discountRub ?? 0);
-	return Math.max(0, roundToKopecks(unit * quantity - discount));
-}
+  БЫЛО: `Number(item?.unitPriceRub ?? 0)`. Всё, что не прочиталось числом,
+  становилось нулём: пустая цена, «1500,50» с запятой (Number() запятую не
+  принимает), сумма с разделителем тысяч. Услуга с НЕИЗВЕСТНОЙ ценой выглядела
+  бесплатной — «0 ₽» — и этот ноль ещё складывался в итог «К оплате по
+  отмеченному». Врач называл пациенту сумму, в которой не хватало позиций, и
+  проверить это по экрану было нельзя: «0 ₽» ничем не отличается от настоящего
+  нуля.
+
+  ТЕПЕРЬ цену либо удалось прочитать, либо о ней сказано словами. Запятая
+  принимается, разделители тысяч убираются, а строка вида «1,500.50» с двумя
+  разными разделителями честно считается непрочитанной: угадывать в деньгах
+  нельзя. Непрочитанные позиции в итог не попадают, и об этом написано рядом с
+  итогом. Разбор чисел вынесен в completedServicesPlan.ts и закрыт тестом.
+*/
+
+/** Цена не прочитана — так и пишем. Ноль вместо неё был бы ложью про деньги. */
+const PRICE_UNKNOWN_TEXT = "цена не указана";
 
 function serviceTitleOf(item: any): string {
 	const title = typeof item?.snapshotServiceName === "string" ? item.snapshotServiceName.trim() : "";
@@ -79,9 +87,11 @@ function toothSuffixOf(item: any): string {
  * Формат фиксированный: по нему же отметка потом находится и снимается.
  */
 function completedLineOf(item: any): string {
-	const quantity = Number(item?.quantity ?? 1);
-	const quantityPart = Number.isFinite(quantity) && quantity > 1 ? `, ${quantity} шт.` : "";
-	return `Выполнено: ${serviceTitleOf(item)}${toothSuffixOf(item)}${quantityPart} — ${money(planLineTotalRub(item))}`;
+	const quantity = planLineQuantity(item);
+	const quantityPart = quantity !== null && quantity > 1 ? `, ${quantity} шт.` : "";
+	const total = planLineTotalRub(item);
+	const priceText = total === null ? PRICE_UNKNOWN_TEXT : money(total);
+	return `Выполнено: ${serviceTitleOf(item)}${toothSuffixOf(item)}${quantityPart} — ${priceText}`;
 }
 
 export const CompletedServicesChecklist: React.FC = () => {
@@ -137,8 +147,16 @@ export const CompletedServicesChecklist: React.FC = () => {
 	const isMarked = (item: any) => planLines.includes(completedLineOf(item));
 
 	const markedItems = planItems.filter((item: any) => isMarked(item));
+	/*
+	  В итог складываем только то, что действительно прочитано как цена.
+	  Позиции с непрочитанной ценой считаем отдельно и называем их числом: молча
+	  выбросить их из суммы — это тот же обман, что и подставить им ноль.
+	*/
+	const markedWithoutPrice = markedItems.filter(
+		(item: any) => planLineTotalRub(item) === null,
+	).length;
 	const markedTotalRub = roundToKopecks(
-		markedItems.reduce((sum: number, item: any) => sum + planLineTotalRub(item), 0),
+		markedItems.reduce((sum: number, item: any) => sum + (planLineTotalRub(item) ?? 0), 0),
 	);
 
 	const toggle = (item: any) => {
@@ -218,7 +236,7 @@ export const CompletedServicesChecklist: React.FC = () => {
 				{planItems.map((item: any, index: number) => {
 					const marked = isMarked(item);
 					const totalRub = planLineTotalRub(item);
-					const quantity = Number(item?.quantity ?? 1);
+					const quantity = planLineQuantity(item);
 					return (
 						<label
 							key={item?.id ?? `${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`}
@@ -233,18 +251,33 @@ export const CompletedServicesChecklist: React.FC = () => {
 							<span className="flex-1">
 								{serviceTitleOf(item)}
 								{toothSuffixOf(item)}
-								{Number.isFinite(quantity) && quantity > 1 ? `, ${quantity} шт.` : ""}
+								{quantity !== null && quantity > 1 ? `, ${quantity} шт.` : ""}
 							</span>
-							{/* Сумма — общими money(): «1 500,50 ₽», а не своё форматирование. */}
-							<strong className="tabular-nums whitespace-nowrap">{money(totalRub)}</strong>
+							{/* Сумма — общими money(): «1 500,50 ₽», а не своё форматирование.
+							    Непрочитанная цена называется словами, а не нулём. */}
+							{totalRub === null ? (
+								<em className="whitespace-nowrap text-amber-700 dark:text-amber-400 not-italic">
+									{PRICE_UNKNOWN_TEXT}
+								</em>
+							) : (
+								<strong className="tabular-nums whitespace-nowrap">{money(totalRub)}</strong>
+							)}
 						</label>
 					);
 				})}
 			</div>
+			{/*
+				Счётное слово склоняется общим countLabel: было «Отмечено позиций: 1».
+				Позиции без прочитанной цены названы отдельно — иначе итог выглядел бы
+				полным, а в нём не хватало бы услуг.
+			*/}
 			<p className="m-0 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
 				{markedItems.length === 0
 					? "Пока ничего не отмечено."
-					: `Отмечено позиций: ${markedItems.length}. К оплате по отмеченному: ${money(markedTotalRub)}.`}
+					: `Отмечено: ${countLabel(markedItems.length, "позиция", "позиции", "позиций")}. К оплате по отмеченному: ${money(markedTotalRub)}.`}
+				{markedItems.length > 0 && markedWithoutPrice > 0
+					? ` В эту сумму НЕ вошли ${countLabel(markedWithoutPrice, "позиция", "позиции", "позиций")} без цены — уточните их стоимость в прейскуранте, прежде чем называть сумму пациенту.`
+					: ""}
 			</p>
 		</div>
 	);

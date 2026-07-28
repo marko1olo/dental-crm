@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { visitOwnedPlanItems } from "./completedServicesPlan";
+import {
+	parseRubAmount,
+	planLineQuantity,
+	planLineTotalRub,
+	visitOwnedPlanItems,
+} from "./completedServicesPlan";
 import { NIL_UUID, realVisitFieldId } from "./visitIdentity";
 
 /**
@@ -69,4 +74,73 @@ describe("позиции плана для отметки выполненног
 		assert.deepEqual(visitOwnedPlanItems([null, undefined, {}], "пациент-А"), []);
 	});
 
+});
+
+/**
+ * ДЕНЬГИ. Непрочитанная цена печаталась как «0 ₽»: услуга с неизвестной ценой
+ * выглядела бесплатной, и её ноль складывался в итог «К оплате по отмеченному».
+ * Врач называл пациенту сумму, в которой не хватало позиций, и отличить это по
+ * экрану было нельзя.
+ */
+describe("цена позиции плана", () => {
+	it("рубли читаются из строки, как их отдаёт база", () => {
+		// numeric из drizzle приходит СТРОКОЙ с точкой.
+		assert.equal(parseRubAmount("1500.50"), 1500.5);
+		assert.equal(parseRubAmount("0"), 0);
+		assert.equal(parseRubAmount(1500.5), 1500.5);
+	});
+
+	it("запятая принимается, разделители тысяч убираются", () => {
+		assert.equal(parseRubAmount("1500,50"), 1500.5);
+		assert.equal(parseRubAmount("1 500,50"), 1500.5);
+		assert.equal(parseRubAmount("1 500.50"), 1500.5);
+		assert.equal(parseRubAmount("1 500,50"), 1500.5);
+	});
+
+	it("непрочитанная цена возвращает null, а не ноль", () => {
+		assert.equal(parseRubAmount(null), null);
+		assert.equal(parseRubAmount(undefined), null);
+		assert.equal(parseRubAmount(""), null);
+		assert.equal(parseRubAmount("   "), null);
+		assert.equal(parseRubAmount("бесплатно"), null);
+		assert.equal(parseRubAmount("1500 ₽"), null);
+		assert.equal(parseRubAmount(Number.NaN), null);
+		// Две разные разделительные пары — угадывать в деньгах нельзя.
+		assert.equal(parseRubAmount("1,500.50"), null);
+		assert.equal(parseRubAmount("1.500,50"), null);
+	});
+
+	it("итог строки — цена × количество − скидка, не ниже нуля", () => {
+		assert.equal(
+			planLineTotalRub({ unitPriceRub: "1500.50", quantity: 2, discountRub: "1.00" }),
+			3000,
+		);
+		// Количества нет — это одна единица, как и в смете.
+		assert.equal(planLineTotalRub({ unitPriceRub: "990" }), 990);
+		// Скидка больше цены не превращается в долг пациента.
+		assert.equal(planLineTotalRub({ unitPriceRub: "500", discountRub: "900" }), 0);
+		// Копейки не уплывают на третий знак.
+		assert.equal(planLineTotalRub({ unitPriceRub: "0.505", quantity: 1 }), 0.51);
+	});
+
+	it("итог не выдумывается там, где цену прочитать нельзя", () => {
+		assert.equal(planLineTotalRub({ quantity: 1 }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: null }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: "договорная" }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: 0 }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: -2 }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: "1500", quantity: "две" }), null);
+		assert.equal(planLineTotalRub({ unitPriceRub: "1500", discountRub: "скидка" }), null);
+		assert.equal(planLineTotalRub(null), null);
+	});
+
+	it("количество: пусто — одна единица, ноль и мусор — не количество", () => {
+		assert.equal(planLineQuantity({}), 1);
+		assert.equal(planLineQuantity({ quantity: null }), 1);
+		assert.equal(planLineQuantity({ quantity: "" }), 1);
+		assert.equal(planLineQuantity({ quantity: 3 }), 3);
+		assert.equal(planLineQuantity({ quantity: "3" }), 3);
+		assert.equal(planLineQuantity({ quantity: 0 }), null);
+		assert.equal(planLineQuantity({ quantity: "две" }), null);
+	});
 });
