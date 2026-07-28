@@ -97,6 +97,8 @@ function imagingDescriptionTemplate(
   const body = header ? [header, ...lines.filter((line) => !line.startsWith("Область:"))] : lines;
   return body.join("\n");
 }
+// Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
+import { countLabel } from "./AppHelpers";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import { type MprWindowPreset } from "./imagingUiLabels";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
@@ -254,49 +256,128 @@ export function ImagingView(props: ImagingViewProps) {
   const [localImageIds, setLocalImageIds] = useState<string[]>([]);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [enhancementOn, setEnhancementOn] = useState(false);
-  const [, forceUpdate] = useState(0);
+  /*
+   * Разбор ИИ держится в состоянии этого экрана, а не дописывается в объект
+   * исследования.
+   *
+   * ЧТО БЫЛО. `selectedImagingStudy.aiSummary = …` и `.aiToothUpdates = …` —
+   * прямая запись в объект, пришедший из общего состояния приложения, а затем
+   * `forceUpdate(n => n + 1)`, чтобы React заметил. Ради этого и существовал
+   * счётчик-пустышка. Так делать нельзя по двум причинам:
+   *   правка не видна React, поэтому любой другой компонент, читающий тот же
+   *     объект (лента миниатюр ниже читает study.aiSummary), показывает старое,
+   *     пока экран случайно не перерисуется;
+   *   объект принадлежит дашборду, и следующая его загрузка молча затирает
+   *     запись — врач видит, как заключение исчезает без причины.
+   *
+   * Ключ по идентификатору исследования: врач переключает снимки, и разбор
+   * одного не должен показываться под другим.
+   */
+  const [analysisByStudy, setAnalysisByStudy] = useState<
+    Record<string, { summary: string; toothUpdates: unknown[] }>
+  >({});
+
+  /*
+   * Заключение для показа: сначала то, что разобрали в этом сеансе, иначе то,
+   * что пришло с сервера. Сервер сохраняет заключение при разборе, поэтому после
+   * перезагрузки страницы оно приходит в самом исследовании.
+   */
+  const analysisForSelected = selectedImagingStudy ? analysisByStudy[selectedImagingStudy.id] : undefined;
+  const selectedStudySummary: string | null =
+    analysisForSelected?.summary ?? (selectedImagingStudy?.aiSummary as string | undefined) ?? null;
+  const selectedStudyToothUpdates =
+    analysisForSelected?.toothUpdates ?? (selectedImagingStudy?.aiToothUpdates as unknown[] | undefined);
+
+  /** Состояние зуба по описанию, которое вернул разбор. */
+  const toothStateFromAi = (rawState: unknown): ToothState => {
+    const state = typeof rawState === "string" ? rawState.toLowerCase() : "";
+    if (state.includes("caries") || state.includes("pulpitis") || state.includes("periodontitis")) return "treatment";
+    if (state.includes("missing")) return "missing";
+    if (state.includes("implant") || state.includes("restoration") || state.includes("crown")) return "done";
+    // Незнакомое описание — «наблюдать»: это ближе всего к «машина что-то нашла».
+    return "watch";
+  };
 
   const handleAnalyzeAI = async () => {
     if (!selectedImagingStudy) return;
+    const studyId = selectedImagingStudy.id;
     setIsAnalyzingAI(true);
     try {
-      const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}/analyze`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        selectedImagingStudy.aiSummary = data.analysisResult.summary;
-        selectedImagingStudy.aiToothUpdates = data.analysisResult.toothUpdates;
-        
-        if (data.analysisResult?.toothUpdates?.length > 0) {
-          const detectedCodes: string[] = [];
-          const detectedToothStates: Record<string, ToothState> = {};
-          const aiDiagnoses: Record<string, string> = {};
-          
-          for (const update of data.analysisResult.toothUpdates) {
-            detectedCodes.push(update.code);
-            aiDiagnoses[update.code] = update.diagnosisOrFinding;
-            
-            const aiState = update.state.toLowerCase();
-            if (aiState.includes("caries") || aiState.includes("pulpitis") || aiState.includes("periodontitis")) {
-              detectedToothStates[update.code] = "treatment";
-            } else if (aiState.includes("missing")) {
-              detectedToothStates[update.code] = "missing";
-            } else if (aiState.includes("implant") || aiState.includes("restoration") || aiState.includes("crown")) {
-              detectedToothStates[update.code] = "done";
-            } else {
-              detectedToothStates[update.code] = "watch";
-            }
-          }
+      const res = await fetch(`/api/imaging/studies/${studyId}/analyze`, { method: "POST" });
+      /*
+       * Тело читается строкой и разбирается после проверки ответа.
+       *
+       * Было `await res.json()` ДО проверки res.ok: при ответе прокси страницей
+       * или при пустом теле разбор бросал исключение, и врач получал
+       * «Сбой сети: Unexpected token '<'» — английский текст из движка вместо
+       * объяснения. Теперь непонятное тело — это отдельный человеческий отказ.
+       */
+      const rawBody = await res.text();
+      let payload: { analysisResult?: { summary?: unknown; toothUpdates?: unknown }; message?: unknown } | null = null;
+      try {
+        payload = rawBody.trim() ? JSON.parse(rawBody) : null;
+      } catch {
+        payload = null;
+      }
+
+      if (!res.ok) {
+        const serverMessage = typeof payload?.message === "string" ? payload.message : "";
+        showToast(
+          serverMessage || "Разбор снимка не выполнен. Проверьте, что файл снимка загружен, и попробуйте снова.",
+          "error",
+        );
+        return;
+      }
+      if (!payload?.analysisResult) {
+        console.error(`[imaging analyze] ответ не разобран: ${rawBody.slice(0, 300)}`);
+        showToast("Ответ сервера не удалось прочитать. Повторите разбор снимка.", "error");
+        return;
+      }
+
+      const summary = typeof payload.analysisResult.summary === "string" ? payload.analysisResult.summary : "";
+      const toothUpdates = Array.isArray(payload.analysisResult.toothUpdates)
+        ? payload.analysisResult.toothUpdates
+        : [];
+      setAnalysisByStudy((current) => ({ ...current, [studyId]: { summary, toothUpdates } }));
+
+      if (toothUpdates.length > 0) {
+        const detectedCodes: string[] = [];
+        const detectedToothStates: Record<string, ToothState> = {};
+        const aiDiagnoses: Record<string, string> = {};
+
+        for (const raw of toothUpdates) {
+          const update = (raw ?? {}) as Record<string, unknown>;
+          // Находка без номера зуба в формулу не попадает: непонятно, куда её ставить.
+          const code = typeof update.code === "string" ? update.code : "";
+          if (!code) continue;
+          detectedCodes.push(code);
+          aiDiagnoses[code] =
+            typeof update.diagnosisOrFinding === "string" ? update.diagnosisOrFinding : "находка без описания";
+          detectedToothStates[code] = toothStateFromAi(update.state);
+        }
+        if (detectedCodes.length > 0) {
           useVisitStore.getState().applyAiToothCodes(detectedCodes, "planned", detectedToothStates, aiDiagnoses);
         }
-        
-        setEnhancementOn(true);
-        forceUpdate(n => n + 1);
-        showToast(`Анализ завершён · ${data.analysisResult?.toothUpdates?.length ?? 0} находок добавлено в формулу`, 'success');
-      } else {
-        showToast('Ошибка анализа: ' + (data.message ?? 'Неизвестная ошибка'), 'error');
       }
-    } catch (e: any) {
-      showToast('Сбой сети: ' + e.message, 'error');
+
+      setEnhancementOn(true);
+      /*
+       * Число в сообщении — сколько находок ДОШЛО до формулы, а не сколько
+       * прислал сервер. Раньше печаталось присланное, и находка без номера зуба
+       * считалась добавленной, хотя в формуле её не было.
+       */
+      const applied = toothUpdates.filter(
+        (raw) => typeof (raw as Record<string, unknown>)?.code === "string" && (raw as Record<string, unknown>).code,
+      ).length;
+      showToast(
+        applied > 0
+          ? `Разбор снимка готов: ${countLabel(applied, "находка", "находки", "находок")} в зубной формуле`
+          : "Разбор снимка готов: находок по зубам нет",
+        "success",
+      );
+    } catch (error) {
+      console.error("[imaging analyze] запрос не выполнен", error);
+      showToast("Сервер не ответил на разбор снимка. Проверьте связь и повторите.", "error");
     } finally {
       setIsAnalyzingAI(false);
     }
@@ -534,7 +615,7 @@ export function ImagingView(props: ImagingViewProps) {
                         ) : (
                           <ShadowAnalystImageSlider
                             imageUrl={imagingPreviewSource(selectedImagingStudy)}
-                            enhanced={enhancementOn && !!selectedImagingStudy?.aiSummary}
+                            enhanced={enhancementOn && !!selectedStudySummary}
                             viewerStyle={imagingViewerImageStyle}
                           />
                         )}
@@ -555,13 +636,13 @@ export function ImagingView(props: ImagingViewProps) {
                         </span>
                         <button
                           type="button"
-                          className={selectedImagingStudy?.aiSummary ? "secondary-button" : "primary-button"}
+                          className={selectedStudySummary ? "secondary-button" : "primary-button"}
                           disabled={isAnalyzingAI || !selectedImagingStudy}
                           onClick={handleAnalyzeAI}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', maxWidth: 'fit-content' }}
                         >
                           <Bot aria-hidden="true" size={16} />
-                          {isAnalyzingAI ? "Анализирую..." : (selectedImagingStudy?.aiSummary ? "Обновить анализ" : "AI-Диагностика (ShadowAnalyst)")}
+                          {isAnalyzingAI ? "Разбираю снимок..." : (selectedStudySummary ? "Разобрать заново" : "Разобрать снимок помощником")}
                         </button>
                       </div>
 
@@ -682,8 +763,8 @@ export function ImagingView(props: ImagingViewProps) {
                             <RefreshCw aria-hidden="true" />
                           </button>
 
-                          {/* Enhancement toggle — appears in toolbar once AI analysis ran */}
-                          {selectedImagingStudy?.aiSummary && (
+                          {/* Переключатель усиления — появляется, когда разбор снимка есть */}
+                          {selectedStudySummary && (
                             <label
                               className="sa-enhance-toggle sa-enhance-toggle--toolbar"
                               title="Включить/выключить улучшение снимка (CLAHE симуляция)"
@@ -827,12 +908,12 @@ export function ImagingView(props: ImagingViewProps) {
                       </div>
                       )}
 
-                      {/* SA Report — full-width below toolbar, only when AI analysis exists */}
-                      {selectedImagingStudy?.aiSummary && (
+                      {/* Отчёт помощника во всю ширину — только когда разбор снимка есть */}
+                      {selectedStudySummary && (
                         <div className="sa-report-column">
                           <ShadowAnalystReport
-                            summary={selectedImagingStudy.aiSummary}
-                            toothUpdates={selectedImagingStudy.aiToothUpdates}
+                            summary={selectedStudySummary}
+                            toothUpdates={selectedStudyToothUpdates as any}
                             studyTitle={selectedImagingStudy.title}
                           />
                         </div>
