@@ -229,8 +229,10 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 						<h3 className="text-sm font-semibold text-slate-900 dark:text-white m-0 flex items-center gap-2">
 							Задачи по пациенту
 							{pendingCount > 0 && (
+								/* БЫЛО: «3 активн.» — обрубленное слово с точкой вместо
+								   согласования с числом. */
 								<span className="bg-sky-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold">
-									{pendingCount} активн.
+									в работе: {pendingCount}
 								</span>
 							)}
 						</h3>

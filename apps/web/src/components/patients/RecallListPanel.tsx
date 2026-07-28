@@ -24,6 +24,7 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { countLabel } from "../../lib/russianPlural";
 
 type RecallBand = "due" | "overdue" | "probably_lost" | "never_arrived";
 
@@ -171,8 +172,10 @@ export const RecallListPanel: React.FC = () => {
 			{report ? (
 				report.candidates.length === 0 ? (
 					<p className="ops-empty ops-empty--good">
+						{/* БЫЛО: «Просмотрено 1 карточек» — число подставлялось к
+						    неизменяемому слову. Согласование берём из общей countLabel. */}
 						Звать некого: все, кто лечился, либо были недавно, либо уже записаны. Просмотрено{" "}
-						{report.examinedPatients} карточек.
+						{countLabel(report.examinedPatients, "карточка", "карточки", "карточек")}.
 					</p>
 				) : (
 					<>

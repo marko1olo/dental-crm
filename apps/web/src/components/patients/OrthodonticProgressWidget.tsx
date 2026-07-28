@@ -3,6 +3,7 @@ import { Calendar, Save, Smile, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 
 interface OrthoData {
@@ -279,7 +280,9 @@ export function OrthodonticProgressWidget({
 					>
 						<div className="flex justify-between items-center mb-2">
 							<span className="text-sm font-semibold text-slate-900 dark:text-white">
-								Настройка трекера (глубокий JSONB)
+								{/* БЫЛО: «Настройка трекера (глубокий JSONB)». JSONB — название типа
+								    столбца в базе данных; на экране врача оно не значит ничего. */}
+								Сколько капп пройдено
 							</span>
 							<button
 								type="button"
@@ -375,14 +378,16 @@ export function OrthodonticProgressWidget({
 									<Smile size={24} />
 								</div>
 								<p className="m-0 text-sm text-slate-500 dark:text-slate-400 text-center">
-									Ортодонтическое лечение не запущено.
+									Лечение каппами пока не начато.
 								</p>
 								<button
 									type="button"
 									onClick={handleStartEdit}
 									className="mt-2 bg-transparent border border-teal-500 text-teal-600 dark:text-teal-400 px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors"
 								>
-									Добавить орто-трекер (JSONB)
+									{/* БЫЛО: «Добавить орто-трекер (JSONB)» — на кнопке, которую жмёт
+									    врач, стояло название типа данных в базе. */}
+									Начать отсчёт капп
 								</button>
 							</div>
 						) : (
@@ -434,11 +439,14 @@ export function OrthodonticProgressWidget({
 
 								{weeksRemaining > 0 ? (
 									<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+										{/* БЫЛО: «Осталось примерно 1 капп до завершения этапа» —
+										    число подставлялось к неизменяемому слову. Согласование
+										    берём из общей countLabel, а не считаем на месте. */}
 										Осталось примерно{" "}
 										<strong className="text-slate-900 dark:text-white">
-											{weeksRemaining}
+											{countLabel(weeksRemaining, "каппа", "каппы", "капп")}
 										</strong>{" "}
-										капп до завершения этапа.
+										до конца этапа.
 									</p>
 								) : (
 									<p className="m-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium">

@@ -369,8 +369,10 @@ export function PatientReclamationsWidget({
 						<h3 className="text-sm font-semibold text-rose-900 dark:text-rose-300 m-0 flex items-center gap-2">
 							Рекламации и инциденты
 							{reviewCount > 0 && (
+								/* БЫЛО: «3 открыт.» — обрубленное слово с точкой, которое
+								   ничего не согласует ни с одним числом. */
 								<span className="bg-rose-600 text-white px-2 py-0.5 rounded-full text-[11px] font-bold shadow">
-									{reviewCount} открыт.
+									в работе: {reviewCount}
 								</span>
 							)}
 						</h3>
