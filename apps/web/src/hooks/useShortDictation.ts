@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { operatorReadableErrorDetail, denteAdminSecretRequestHeaders } from '../AppHelpers';
 import type { SpeechTranscriptionResponse, SpeechChunkUploadInput, SpeechGatewayStatus, SpeechTranscriptionSource } from '@dental/shared';
 import { showToast } from '../components/GlobalToast';
@@ -19,6 +20,9 @@ export function useShortDictation(
   
   const dashboard = useAppStore((state) => state.dashboard);
   const speechGatewayStatus = useAppStore((state) => state.speechGatewayStatus as SpeechGatewayStatus | null);
+  // Секрет администратора берётся из сеанса, а не из localStorage: подробное
+  // объяснение — у места использования ниже.
+  const clinicalAdminSecretSession = useSettingsStore((state) => state.clinicalAdminSecretSession);
 
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
@@ -91,7 +95,26 @@ export function useShortDictation(
         clientRecordedAt: new Date().toISOString(),
       };
 
-      const secret = localStorage.getItem("dente_clinical_admin_secret_session") || undefined;
+      /*
+       * БЫЛО: секрет читался из localStorage по ключу
+       * "dente_clinical_admin_secret_session". Этот ключ НИКТО НИКОГДА НЕ ПИШЕТ —
+       * во всём вебе есть только три чтения (здесь и дважды в useVoiceAssistant)
+       * и ни одной записи. Значит secret всегда был undefined, заголовок секрета
+       * не уходил, и на этой машине это не было видно: в корневом .env включены
+       * лазейки DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, гасящие охрану.
+       * Лазейки живут только пока NODE_ENV !== "production".
+       *
+       * Проверено живьём на отдельном экземпляре API с заданным секретом и
+       * выключенными лазейками: /api/speech/status отвечает 403
+       * («speech gateway status»). То есть у настоящего заказчика диктовка врача
+       * не работала вовсе, а врач видел только то, что распознавание «хуже
+       * ожидаемого».
+       *
+       * Настоящее место секрета — сеанс в store/settingsStore.ts, куда его вводит
+       * администратор на экране разблокировки; оттуда же его берёт
+       * hooks/domains/useAuthLogic.ts (`adminSecretOverride ?? clinicalAdminSecretSession`).
+       */
+      const secret = clinicalAdminSecretSession.trim() || undefined;
       const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, secret);
 
       const response = await fetch("/api/speech/transcribe-chunk", {

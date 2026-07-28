@@ -212,12 +212,25 @@ function collectWebCalls() {
 			const lineNumber = lineOf(code, match.index);
 			const above = code.split("\n").slice(Math.max(0, lineNumber - 31), lineNumber).join("\n");
 			const context = `${text}\n${above}`;
+			/*
+			 * МЁРТВЫЙ ИСТОЧНИК СЕКРЕТА. Имя помощника в коде не значит, что секрет
+			 * действительно уходит: помощник добавляет заголовок ТОЛЬКО если
+			 * секрет передан аргументом. Три места брали его из
+			 * localStorage["dente_clinical_admin_secret_session"], а этот ключ во
+			 * всём вебе НИКТО НЕ ПИШЕТ — только читают. Значит аргумент всегда
+			 * undefined и заголовка нет, хотя по имени помощника проверка считала
+			 * вызов защищённым. Это была её собственная ложная невиновность:
+			 * /api/speech/status при этом отвечает 403, проверено живьём.
+			 */
+			const deadSecretSource = context.includes("dente_clinical_admin_secret_session");
 			calls.push({
 				file,
 				line: lineNumber,
 				method,
 				path,
-				sendsSecret: HEADER_HELPERS.some((helper) => context.includes(helper)),
+				sendsSecret:
+					HEADER_HELPERS.some((helper) => context.includes(helper)) && !deadSecretSource,
+				deadSecretSource,
 			});
 		}
 	}

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { AiOrchestrator, AiIntent } from '../lib/aiOrchestrator';
 import { useAppStore } from '../store/appStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { denteAdminSecretRequestHeaders, operatorReadableErrorDetail } from '../AppHelpers';
 import type { SpeechChunkUploadInput, SpeechGatewayStatus } from '@dental/shared';
 import { showToast } from '../components/GlobalToast';
@@ -93,6 +94,14 @@ export function useVoiceAssistant(
   const dashboard = useAppStore((state) => state.dashboard);
   const speechGatewayStatus = useAppStore((state) => state.speechGatewayStatus as SpeechGatewayStatus | null);
   const setSpeechGatewayStatus = useAppStore((state) => state.setSpeechGatewayStatus);
+  /*
+   * Секрет администратора клиники — из сеанса настроек, а НЕ из localStorage.
+   * Прежний ключ "dente_clinical_admin_secret_session" не пишет никто: во всём
+   * вебе было три чтения и ни одной записи, то есть секрет всегда оказывался
+   * undefined. Локально это скрыто лазейками в .env, а у заказчика /api/speech/*
+   * отвечает 403 — проверено живьём на экземпляре с заданным секретом.
+   */
+  const clinicalAdminSecretSession = useSettingsStore((state) => state.clinicalAdminSecretSession);
 
   /**
    * Состояние шлюза прочитать не удалось. Всплывающим сообщением при загрузке
@@ -108,7 +117,7 @@ export function useVoiceAssistant(
     if (speechGatewayStatus) return;
     let alive = true;
     const loadGatewayStatus = async () => {
-      const secret = localStorage.getItem("dente_clinical_admin_secret_session") || undefined;
+      const secret = clinicalAdminSecretSession.trim() || undefined;
       const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, secret);
       try {
         const res = await fetch("/api/speech/status", { headers });
@@ -143,7 +152,13 @@ export function useVoiceAssistant(
     return () => {
       alive = false;
     };
-  }, [speechGatewayStatus, setSpeechGatewayStatus]);
+    /*
+     * Секрет добавлен в зависимости намеренно. Состояние шлюза читается один раз,
+     * пока оно неизвестно; если администратор вводит секрет ПОСЛЕ первой попытки,
+     * без этой зависимости чтение больше не повторилось бы, и врач до конца смены
+     * видел бы распознавание «хуже ожидаемого» при уже разблокированном доступе.
+     */
+  }, [speechGatewayStatus, setSpeechGatewayStatus, clinicalAdminSecretSession]);
 
   const playTTS = useCallback((text: string) => {
     window.speechSynthesis.cancel();
@@ -282,7 +297,7 @@ export function useVoiceAssistant(
         clientRecordedAt: new Date().toISOString(),
       };
 
-      const secret = localStorage.getItem("dente_clinical_admin_secret_session") || undefined;
+      const secret = clinicalAdminSecretSession.trim() || undefined;
       const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, secret);
 
       const response = await fetch("/api/speech/transcribe-chunk", {
