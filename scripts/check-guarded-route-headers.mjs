@@ -237,10 +237,58 @@ function collectWebCalls() {
 	return calls;
 }
 
+/**
+ * Сведение адреса маршрута с адресом вызова, ПОЗВЕНЬЕВО.
+ *
+ * ПОЧЕМУ НЕ РЕГУЛЯРНЫМ ВЫРАЖЕНИЕМ, как было сначала. Первая версия подставляла
+ * вместо `${…}` слово SEGMENT, потом заменяла его на «x» и сводила выражением.
+ * На этом она пропускала целый класс вызовов, и нашёл его субагент, а не я:
+ *   - `/api/communications/outbox/${id}/${action}` против маршрута
+ *     `/api/communications/outbox/:id/cancel` — второе звено на сервере ЛИТЕРАЛ,
+ *     а на клиенте подстановка, и «x» с «cancel» не сводился никогда;
+ *   - `/api/communications/outbox${query}` — строка запроса приклеена
+ *     подстановкой, поэтому `split("?")` её не отрезал, и звено «outboxSEGMENT»
+ *     не совпадало с «outbox».
+ * Четыре настоящих охраняемых вызова из-за этого гейт НЕ показывал; их закрыли
+ * руками, а проверка молчала бы и на пятом.
+ *
+ * Теперь звенья сравниваются по отдельности: `:param` принимает любое звено, а
+ * звено с подстановкой сводится по неизменной части до и после неё.
+ */
+function segmentsMatch(routeSegment, webSegment) {
+	if (routeSegment.startsWith(":")) return true;
+	if (!webSegment.includes("SEGMENT")) return routeSegment === webSegment;
+	const first = webSegment.indexOf("SEGMENT");
+	const prefix = webSegment.slice(0, first);
+	const suffix = webSegment.slice(first + "SEGMENT".length).replace(/SEGMENT/g, "");
+	if (prefix && !routeSegment.startsWith(prefix)) return false;
+	if (suffix && !routeSegment.endsWith(suffix)) return false;
+	return true;
+}
+
 function pathsMatch(routePath, webPath) {
-	if (routeMatcher(routePath).test(webPath)) return true;
-	/* Подстановка на клиенте закрыта словом SEGMENT — оно должно совпасть с :param. */
-	return routeMatcher(routePath).test(webPath.replace(/SEGMENT/g, "x"));
+	const routeSegments = routePath.split("/").filter(Boolean);
+	const webSegments = webPath.split("/").filter(Boolean);
+	if (routeSegments.length !== webSegments.length) return false;
+	return routeSegments.every((segment, index) => segmentsMatch(segment, webSegments[index] ?? ""));
+}
+
+/**
+ * Насколько точно адрес вызова сел на маршрут: чем меньше догадок, тем точнее.
+ *
+ * Нужно, чтобы вызов приписывался САМОМУ подходящему маршруту. Иначе
+ * `/api/patients/${id}` мог бы сесть на литеральный `/api/patients/duplicates`
+ * (подстановка формально совпадает с любым словом) и обвинить панель в отказе,
+ * которого у неё нет.
+ */
+function matchPrecision(routePath, webPath) {
+	const routeSegments = routePath.split("/").filter(Boolean);
+	const webSegments = webPath.split("/").filter(Boolean);
+	let exact = 0;
+	for (let i = 0; i < routeSegments.length; i += 1) {
+		if (!routeSegments[i]?.startsWith(":") && routeSegments[i] === webSegments[i]) exact += 1;
+	}
+	return exact;
 }
 
 /*
@@ -260,6 +308,31 @@ function pathsMatch(routePath, webPath) {
 		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: чужой адрес совпал — были бы ложные находки");
 		process.exit(2);
 	}
+	/*
+	 * СЛЕПОЕ ПЯТНО, НАЙДЕННОЕ СУБАГЕНТОМ, закреплено здесь навсегда. Ровно эти два
+	 * случая гейт пропускал, и четыре охраняемых вызова пришлось находить глазами:
+	 * подстановка на месте литерального звена маршрута и строка запроса, приклеенная
+	 * подстановкой. Если хоть одна строка ниже перестанет выполняться, проверка
+	 * снова начала оправдывать виновных.
+	 */
+	const blindSpots = [
+		["/api/communications/outbox/:id/cancel", "/api/communications/outbox/SEGMENT/SEGMENT"],
+		["/api/communications/campaigns/:id/launch", "/api/communications/campaigns/SEGMENT/SEGMENT"],
+		["/api/communications/outbox", "/api/communications/outboxSEGMENT"],
+	];
+	for (const [routePath, webPath] of blindSpots) {
+		if (!pathsMatch(routePath, webPath)) {
+			console.error(`САМОПРОВЕРКА НЕ ПРОШЛА: ${webPath} не сведён с ${routePath}.`);
+			console.error("Это слепое пятно уже стоило четырёх пропущенных вызовов — сведение звеньев сломано.");
+			process.exit(2);
+		}
+	}
+	/* И обратное: разное число звеньев сводиться не должно. */
+	if (pathsMatch("/api/patients/duplicates", "/api/patients/SEGMENT/duplicates")) {
+		console.error("САМОПРОВЕРКА НЕ ПРОШЛА: адреса с разным числом звеньев сведены — будут ложные находки");
+		process.exit(2);
+	}
+
 	const withHelper = `({ headers: denteClinicalReadHeaders() })`;
 	const withoutHelper = `({ method: "POST" })`;
 	if (!HEADER_HELPERS.some((h) => withHelper.includes(h))) {
@@ -294,7 +367,10 @@ const calls = collectWebCalls();
 const findings = [];
 for (const call of calls) {
 	if (call.sendsSecret) continue;
-	const route = guarded.find((r) => r.method === call.method && pathsMatch(r.path, call.path));
+	/* Из всех подходящих маршрутов берём тот, что сошёлся точнее всех. */
+	const route = guarded
+		.filter((r) => r.method === call.method && pathsMatch(r.path, call.path))
+		.sort((a, b) => matchPrecision(b.path, call.path) - matchPrecision(a.path, call.path))[0];
 	if (!route) continue;
 	findings.push({ call, route });
 }
