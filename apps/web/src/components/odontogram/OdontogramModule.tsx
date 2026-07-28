@@ -11,9 +11,14 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
-import { actionFailureToast } from "../../lib/panelStateText";
+import {
+	actionFailureToast,
+	type PanelSubject,
+	panelStateText,
+} from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
+import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
 	dictationApplyMessage,
 	dictationApplyPlanFromResponseBody,
@@ -214,6 +219,22 @@ const SurfaceSelector = ({
 	);
 };
 
+/**
+ * Как называется содержимое схемы в трёх её состояниях.
+ *
+ * Пустоты у формулы своей нет: схема рисует все зубы всегда, и «нет отметок»
+ * означает лишь то, что диагнозов пока не ставили. Опасно здесь другое —
+ * непрочитанная формула, которая выглядит ровно как формула здорового рта.
+ */
+const TEETH_SUBJECT: PanelSubject = {
+	notLoadedTitle: "Зубная формула не прочитана",
+	accusative: "формулу пациента",
+	emptyTitle: "Отметок на зубах пока нет",
+	emptyHint: "Нажмите на зуб и выберите состояние — оно попадёт в карту сразу.",
+	failureConsequence:
+		"Схема ниже показывает зубы БЕЗ отметок — это не значит, что зубы здоровы: диагнозы, пломбы и коронки не прочитаны. Не считайте формулу полной и не печатайте её пациенту, пока она не загрузится.",
+};
+
 export const OdontogramModule = ({
 	patientId,
 	pediatricMode,
@@ -225,9 +246,18 @@ export const OdontogramModule = ({
 	const [teethData, setTeethData] = useState<ToothData[]>([]);
 	/* Пока формула не загружена, на экране не должно быть ни чужих данных, ни
 	   правдоподобной пустой формулы без объяснения: и то, и другое врач
-	   принимает за факт. */
-	const [isLoadingTeeth, setIsLoadingTeeth] = useState(true);
-	const [teethLoadFailed, setTeethLoadFailed] = useState(false);
+	   принимает за факт.
+
+	   БЫЛО: `teethLoadFailed` булевым, а код ответа выбрасывался на месте
+	   (`r.ok ? r.json() : null`). Поэтому отказ всегда объяснялся одной фразой
+	   «обновите страницу» — обещание, которое при отказе по доступу или при 404
+	   не сработает ни при каком обновлении. Код ответа нужен, чтобы назвать
+	   причину и решить, есть ли смысл в кнопке повтора. */
+	const [teethLoad, setTeethLoad] = useState<
+		{ phase: "loading" } | { phase: "ready" } | { phase: "failed"; status: number | null }
+	>({ phase: "loading" });
+	/** Счётчик кнопки «Повторить»: меняется — формула читается заново. */
+	const [teethReloadToken, setTeethReloadToken] = useState(0);
 	/* Актуальная формула для снимка перед сохранением. Брать её внутри
 	   обновления состояния нельзя: обновление может быть вызвано повторно, и
 	   тогда снимок одного сохранения захватит правку другого. */
@@ -301,8 +331,7 @@ export const OdontogramModule = ({
 		   загрузку и отменяем устаревший запрос, чтобы поздний ответ по
 		   прошлому пациенту не перетёр формулу текущего. */
 		setTeethData([]);
-		setTeethLoadFailed(false);
-		setIsLoadingTeeth(true);
+		setTeethLoad({ phase: "loading" });
 
 		/* БЫЛО: сбрасывалась только сама формула, а выбор зубов, выбранные
 		   поверхности и открытое меню диагнозов принадлежали ПРОШЛОМУ пациенту и
@@ -329,25 +358,55 @@ export const OdontogramModule = ({
 		const controller = new AbortController();
 		let cancelled = false;
 
-		fetch(`/api/patients/${patientId}/tooth-states`, {
-			headers: denteAdminSecretRequestHeaders(),
-			signal: controller.signal,
-		})
-			.then((r) => (r.ok ? r.json() : null))
-			.then((data) => {
+		/*
+		 * БЫЛО: `.then(r => r.ok ? r.json() : null)` — код ответа выбрасывался, и
+		 * причину отказа назвать было нечем. Теперь он доезжает до состояния, а
+		 * тело читается строкой: на пустом теле r.json() бросает исключение, и
+		 * отказ по доступу превращался в тот же безымянный отказ.
+		 */
+		const loadTeeth = async () => {
+			let status: number | null = null;
+			try {
+				const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
+					headers: denteAdminSecretRequestHeaders(),
+					signal: controller.signal,
+				});
+				status = res.status;
+				const rawBody = await res.text();
 				if (cancelled) return;
-				if (data?.success && Array.isArray(data.states)) {
-					setTeethData(data.states);
-				} else {
-					setTeethLoadFailed(true);
+				if (!res.ok) {
+					console.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
+					setTeethLoad({ phase: "failed", status });
+					return;
 				}
-				setIsLoadingTeeth(false);
-			})
-			.catch(() => {
+				let data: unknown = null;
+				try {
+					data = rawBody.trim() === "" ? null : JSON.parse(rawBody);
+				} catch {
+					// Текст исключения английский, человеку он не показывается.
+					data = null;
+				}
+				const body =
+					typeof data === "object" && data !== null && !Array.isArray(data)
+						? (data as Record<string, unknown>)
+						: null;
+				if (body?.success === true && Array.isArray(body.states)) {
+					setTeethData(body.states as ToothData[]);
+					setTeethLoad({ phase: "ready" });
+					return;
+				}
+				console.error(`[tooth states] ${status}: в ответе нет формулы`);
+				setTeethLoad({ phase: "failed", status });
+			} catch (err) {
+				// Отменённый запрос — не отказ: пациента переключили, и об этом
+				// сообщать нечего.
 				if (cancelled) return;
-				setTeethLoadFailed(true);
-				setIsLoadingTeeth(false);
-			});
+				console.error("[tooth states] запрос не выполнен", err);
+				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+				setTeethLoad({ phase: "failed", status });
+			}
+		};
+		void loadTeeth();
 
 		// Listen to CT Events for auto-implants
 		const handleClinicalCollision = (e: any) => {
@@ -394,7 +453,8 @@ export const OdontogramModule = ({
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [patientId]);
+		// teethReloadToken — кнопка «Повторить» под сообщением об отказе.
+	}, [patientId, teethReloadToken]);
 
 	const updateToothState = async (
 		toothNumbers: number[],
@@ -612,7 +672,7 @@ export const OdontogramModule = ({
 				{/* Состояние формулы проговаривается словами. Пустая формула
 				    выглядит как «все зубы здоровы», а это утверждение о пациенте,
 				    которого система в этот момент не знает. */}
-				{(isLoadingTeeth || teethLoadFailed) && (
+				{teethLoad.phase === "loading" && (
 					<div
 						role="status"
 						aria-live="polite"
@@ -624,14 +684,31 @@ export const OdontogramModule = ({
 							borderRadius: 8,
 							fontSize: 13,
 							fontWeight: 600,
-							color: teethLoadFailed ? "var(--rust, #b91c1c)" : "var(--ink-2, var(--ink))",
-							background: teethLoadFailed ? "var(--rust-surface, rgba(185, 28, 28, 0.08))" : "var(--paper-soft, transparent)",
+							color: "var(--ink-2, var(--ink))",
+							background: "var(--paper-soft, transparent)",
 						}}
 					>
-						{teethLoadFailed
-							? "Зубная формула не загрузилась. Данные на схеме неполные — обновите страницу."
-							: "Загружаем формулу пациента…"}
+						{panelStateText(TEETH_SUBJECT, { phase: "loading" }).title}
 					</div>
+				)}
+				{/*
+				  Отказ чтения формулы — общим видом отказа панели, с причиной по коду
+				  ответа и кнопкой повтора там, где повтор осмыслен.
+
+				  БЫЛО: одна фраза на все случаи — «Зубная формула не загрузилась.
+				  Данные на схеме неполные — обновите страницу.» Обновление страницы
+				  соберёт тот же запрос и получит тот же отказ: при 403 нужно войти в
+				  смену, при 404 — сообщить администратору, что программа обновлена не
+				  полностью. Обещание, которое не может сработать, врача уводит в
+				  сторону, а схема под сообщением при этом показывает пустую формулу,
+				  то есть «все зубы здоровы».
+				*/}
+				{teethLoad.phase === "failed" && (
+					<PanelLoadFailure
+						subject={TEETH_SUBJECT}
+						status={teethLoad.status}
+						onRetry={() => setTeethReloadToken((token) => token + 1)}
+					/>
 				)}
 				<ToothChart
 					teethData={teethData}
