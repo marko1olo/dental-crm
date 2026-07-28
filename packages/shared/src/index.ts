@@ -1745,9 +1745,18 @@ export const dentalPricelistCategorySummarySchema = z.object({
   specialty: dentalSpecialtySchema,
   count: z.number().int().nonnegative(),
   pricedCount: z.number().int().nonnegative(),
-  minPriceRub: z.number().int().nonnegative().nullable(),
-  maxPriceRub: z.number().int().nonnegative().nullable(),
-  averagePriceRub: z.number().int().nonnegative().nullable(),
+  /*
+   * Итоги по категории — те же деньги, что и в строках прайса.
+   *
+   * Было z.number().int(): минимум и максимум — это ДОСЛОВНАЯ копия priceRub
+   * разобранной строки, а priceRub уже принимает копейки. Одна цена 1500,50 в
+   * категории — и вся сводка не проходила проверку: разбор прайса возвращал
+   * ошибку вместо результата. Среднее по копеечным ценам дробно по своей
+   * природе, целым его записать нельзя без потери.
+   */
+  minPriceRub: nonNegativeMoneyRubSchema.nullable(),
+  maxPriceRub: nonNegativeMoneyRubSchema.nullable(),
+  averagePriceRub: nonNegativeMoneyRubSchema.nullable(),
   materialKinds: z.array(dentalMaterialKindSchema),
   brands: z.array(z.string())
 });
@@ -1791,8 +1800,19 @@ export const treatmentPlanItemSchema = z.object({
   snapshotServiceCategory: serviceCategorySchema.nullable().optional(),
   toothCode: z.string().nullable(),
   quantity: z.number().int().positive(),
-  unitPriceRub: z.number().int().nonnegative(),
-  discountRub: z.number().int().nonnegative(),
+  /*
+   * Позиция плана лечения — с копейками.
+   *
+   * Было z.number().int(): цена копируется из basePriceRub прайса, который
+   * копейки принимает, а колонки treatment_items.unit_price_rub и
+   * treatment_items.discount_rub — numeric(12, 2). То есть услуга за 1500,50
+   * попадала в прайс,
+   * но в план лечения этого пациента уже не проходила. Из этих же позиций
+   * складываются план, смета, счёт и долг, поэтому копейка терялась здесь и
+   * дальше расхождение шло по всей цепочке.
+   */
+  unitPriceRub: nonNegativeMoneyRubSchema,
+  discountRub: nonNegativeMoneyRubSchema,
   status: treatmentPlanItemStatusSchema,
   plannedDoctorUserId: z.string().uuid().nullable(),
   plannedChairId: z.string().uuid().nullable(),
@@ -1807,7 +1827,12 @@ export const treatmentPlanScenarioSchema = z.object({
   title: z.string(),
   strategy: treatmentPlanScenarioStrategySchema,
   priority: treatmentPlanScenarioPrioritySchema,
-  totalRub: z.number().int().nonnegative(),
+  /*
+   * Сценарий лечения: итог и суммы этапов складываются из позиций плана, а те
+   * теперь с копейками. Оставить здесь int значило бы, что сумма этапов не
+   * равна итогу сценария — ровно то расхождение, которое пациент видит в смете.
+   */
+  totalRub: nonNegativeMoneyRubSchema,
   durationMonths: z.number().int().nonnegative(),
   visitCount: z.number().int().positive(),
   includedServiceIds: z.array(z.string()),
@@ -1815,7 +1840,7 @@ export const treatmentPlanScenarioSchema = z.object({
     z.object({
       title: z.string(),
       window: z.string(),
-      amountRub: z.number().int().nonnegative(),
+      amountRub: nonNegativeMoneyRubSchema,
       focus: z.string()
     })
   ),
@@ -1999,16 +2024,28 @@ export const paymentSchema = z.object({
 });
 export type Payment = z.infer<typeof paymentSchema>;
 
+/*
+ * Финансовая сводка по пациенту.
+ *
+ * Все шесть сумм — не самостоятельные величины, а итоги: план складывается из
+ * позиций плана лечения, оплачено — из платежей, долг — их разность. Позиции и
+ * платежи копейки принимают, поэтому int здесь означал ровно одно: итог не
+ * равен своим частям. При долге 1500,50 кнопка «оплатить долг» подставляла
+ * округлённую сумму, и после оплаты у пациента оставался или исчезал полтинник.
+ *
+ * openTreatmentItems и unpaidDocuments остаются целыми: это количество позиций
+ * и документов, а не деньги.
+ */
 export const billingSummarySchema = z.object({
-  totalPlannedRub: z.number().int().nonnegative(),
-  totalDiscountRub: z.number().int().nonnegative(),
-  totalPaidRub: z.number().int().nonnegative(),
-  totalDueRub: z.number().int().nonnegative(),
-  taxDeductionEligibleRub: z.number().int().nonnegative(),
-  draftDocumentAmountRub: z.number().int().nonnegative(),
+  totalPlannedRub: nonNegativeMoneyRubSchema,
+  totalDiscountRub: nonNegativeMoneyRubSchema,
+  totalPaidRub: nonNegativeMoneyRubSchema,
+  totalDueRub: nonNegativeMoneyRubSchema,
+  taxDeductionEligibleRub: nonNegativeMoneyRubSchema,
+  draftDocumentAmountRub: nonNegativeMoneyRubSchema,
   openTreatmentItems: z.number().int().nonnegative(),
   unpaidDocuments: z.number().int().nonnegative(),
-  insuranceCoverageRub: z.number().int().nonnegative().optional()
+  insuranceCoverageRub: nonNegativeMoneyRubSchema.optional()
 });
 export type BillingSummary = z.infer<typeof billingSummarySchema>;
 
@@ -2573,7 +2610,17 @@ export const patientSchema = z.object({
   email: z.string().email().nullable(),
   notes: z.string().nullable(),
   administrativeProfile: patientAdministrativeProfileSchema.nullable().default(null),
-  balanceRub: z.number().int().default(0),
+  /*
+   * Баланс пациента: оплачено минус запланировано. Отрицательное значение —
+   * долг, поэтому здесь moneyRubSchema, а не nonNegative: знак был разрешён и
+   * раньше, изменилась только дробная часть.
+   *
+   * Было z.number().int(). Считается баланс из платежей и позиций плана, и оба
+   * слагаемых с копейками, поэтому целое значение никогда не сходилось с
+   * фактом; сервер прятал расхождение через Math.round и дарил или отнимал у
+   * пациента до 50 копеек.
+   */
+  balanceRub: moneyRubSchema.default(0),
   createdAt: z.string(),
   updatedAt: z.string()
 });
@@ -2588,7 +2635,8 @@ export const patientInsightSchema = z.object({
   riskReasons: z.array(z.string()),
   nextBestAction: z.string(),
   recallDueAt: z.string().nullable(),
-  balanceDueRub: z.number().int().nonnegative(),
+  /* Долг для подсказки администратору — та же величина, что и totalDueRub. */
+  balanceDueRub: nonNegativeMoneyRubSchema,
   openTasks: z.number().int().nonnegative(),
   missingDocumentKinds: z.array(documentKindSchema),
   clinicalFlags: z.array(z.string()),
@@ -2843,7 +2891,12 @@ export const paidMedicalServicesContractPayloadSchema = z.object({
   representativeFullName: z.string().trim().max(240).nullable().optional(),
   plannedCareReason: z.string().trim().min(1).max(700),
   serviceScopeSummary: z.string().trim().min(1).max(1400),
-  estimatedTotalRub: z.number().int().nonnegative(),
+  /*
+   * Ориентировочная сумма договора берётся из плана лечения, а план теперь с
+   * копейками. Договор — документ, который пациент подписывает: сумма в нём
+   * обязана совпадать со сметой до копейки, иначе это два разных обязательства.
+   */
+  estimatedTotalRub: nonNegativeMoneyRubSchema,
   paymentTerms: z.string().trim().min(1).max(800),
   priceChangeRules: z.string().trim().min(1).max(800),
   freeCareAvailabilityNotice: z.string().trim().min(1).max(800),
@@ -2868,8 +2921,15 @@ export const completedWorksActPayloadSchema = z.object({
   servicePeriodEnd: documentDateLikeStringSchema,
   doctorFullName: z.string().trim().min(1).max(240),
   acceptedServicesSummary: z.string().trim().min(1).max(1200),
-  totalByActRub: z.number().int().nonnegative(),
-  paidRub: z.number().int().nonnegative(),
+  /*
+   * Акт выполненных работ. paidRub сверяется с фактически оплаченным ТОЧНЫМ
+   * равенством (apps/api/src/documents/guards.ts, paidFactsTotalMismatchReason),
+   * а фактическая оплата с копейками существует уже сейчас: paymentSchema
+   * .amountRub принимает 1500,50. С int акт по такому платежу было невозможно
+   * ни создать, ни подписать — контракт отвергал единственно верную сумму.
+   */
+  totalByActRub: nonNegativeMoneyRubSchema,
+  paidRub: nonNegativeMoneyRubSchema,
   fiscalReceiptNumbers: z.array(z.string().trim().min(1).max(120)).min(1).max(20),
   patientClaimsText: z.string().trim().max(1000).nullable().optional(),
   linkedToSignedContract: z.literal(true),
@@ -2884,20 +2944,27 @@ export const treatmentCostEstimatePayloadSchema = z.object({
   estimateDate: documentDateLikeStringSchema,
   patientOrPayerFullName: z.string().trim().min(1).max(240),
   treatmentBasis: z.string().trim().min(1).max(700),
+  /*
+   * Строки сметы. Сервер уже считает и сверяет их с точностью до копейки:
+   * expectedFinancialLineTotal и financialLinesTotal в
+   * apps/api/src/documents/guards.ts округляют до двух знаков. То есть проверка
+   * ждала копейки, а контракт их не пропускал — смету по цене 1500,50 нельзя
+   * было составить вообще.
+   */
   serviceLines: z
     .array(
       z.object({
         serviceName: z.string().trim().min(1).max(300),
         toothOrArea: z.string().trim().max(160).nullable().optional(),
         quantity: z.number().int().positive().max(999),
-        unitPriceRub: z.number().int().nonnegative(),
-        discountRub: z.number().int().nonnegative(),
-        totalRub: z.number().int().nonnegative()
+        unitPriceRub: nonNegativeMoneyRubSchema,
+        discountRub: nonNegativeMoneyRubSchema,
+        totalRub: nonNegativeMoneyRubSchema
       })
     )
     .min(1)
     .max(80),
-  totalAmountRub: z.number().int().positive(),
+  totalAmountRub: positiveMoneyRubSchema,
   estimateValidUntil: documentDateLikeStringSchema,
   priceChangeRules: z.string().trim().min(1).max(900),
   excludedItems: z.array(z.string().trim().min(1).max(260)).min(1).max(20),
@@ -2919,20 +2986,21 @@ export const paymentInvoicePayloadSchema = z.object({
   payerPhone: z.string().trim().max(80).nullable().optional(),
   payerEmail: z.string().trim().max(240).nullable().optional(),
   paymentPurpose: z.string().trim().min(1).max(500),
+  /* Строки счёта проверяются тем же кодом, что и строки сметы, — с копейками. */
   serviceLines: z
     .array(
       z.object({
         serviceName: z.string().trim().min(1).max(300),
         toothOrArea: z.string().trim().max(160).nullable().optional(),
         quantity: z.number().int().positive().max(999),
-        unitPriceRub: z.number().int().nonnegative(),
-        discountRub: z.number().int().nonnegative(),
-        totalRub: z.number().int().nonnegative()
+        unitPriceRub: nonNegativeMoneyRubSchema,
+        discountRub: nonNegativeMoneyRubSchema,
+        totalRub: nonNegativeMoneyRubSchema
       })
     )
     .min(1)
     .max(60),
-  totalAmountRub: z.number().int().positive(),
+  totalAmountRub: positiveMoneyRubSchema,
   dueDate: documentDateLikeStringSchema,
   paymentTerms: z.string().trim().min(1).max(700),
   clinicBankDetails: z.string().trim().min(1).max(1200),
@@ -2950,7 +3018,16 @@ export const paymentReceiptPayloadSchema = z
     receiptNumber: z.string().trim().min(1).max(120),
     receiptDate: documentDateLikeStringSchema,
     selectedPaymentIds: z.array(z.string().uuid()).min(1).max(20),
-    totalPaidRub: z.number().int().positive(),
+    /*
+     * Квитанция об оплате — сумма ВЫБРАННЫХ платежей, ничего больше.
+     *
+     * Это была самая жёсткая точка обрыва: платёж на 1500,50 создать можно, а
+     * квитанцию на него — нет. Сервер требует точного совпадения с суммой
+     * платежей (guards.ts, paidFactsTotalMismatchReason), а контракт отвергал
+     * единственное значение, которое этому требованию удовлетворяло. Пациент
+     * оставался без документа об оплате.
+     */
+    totalPaidRub: positiveMoneyRubSchema,
     payerFullName: z.string().trim().min(1).max(240),
     taxSupportRequested: z.boolean().default(false),
     payerBirthDate: documentDateLikeStringSchema.nullable().optional(),
@@ -3021,15 +3098,22 @@ export const installmentPaymentSchedulePayloadSchema = z.object({
   scheduleDate: documentDateLikeStringSchema,
   baseDocumentTitle: z.string().trim().min(1).max(300),
   payerFullName: z.string().trim().min(1).max(240),
-  totalAmountRub: z.number().int().positive(),
-  prepaidAmountRub: z.number().int().nonnegative(),
-  remainingAmountRub: z.number().int().nonnegative(),
+  /*
+   * График рассрочки. Здесь копейки не роскошь, а условие сходимости: 100 000 ₽
+   * на 3 платежа целыми рублями дают 33 333 × 3 = 99 999 — рубля не хватает, и
+   * пациент по графику остаётся должен. Точное деление уже написано:
+   * splitKopecks в packages/shared/src/utils/money.ts раскидывает остаток по
+   * первым платежам, чтобы сумма частей РАВНЯЛАСЬ итогу.
+   */
+  totalAmountRub: positiveMoneyRubSchema,
+  prepaidAmountRub: nonNegativeMoneyRubSchema,
+  remainingAmountRub: nonNegativeMoneyRubSchema,
   installments: z
     .array(
       z.object({
         label: z.string().trim().min(1).max(200),
         dueDate: documentDateLikeStringSchema,
-        amountRub: z.number().int().positive(),
+        amountRub: positiveMoneyRubSchema,
         status: installmentPaymentStatusSchema
       })
     )
@@ -3665,12 +3749,18 @@ export const treatmentPlanPayloadSchema = z.object({
         plannedServices: z.string().trim().min(1).max(500),
         plannedTiming: z.string().trim().min(1).max(180),
         clinicalNotes: z.string().trim().max(500).nullable().optional(),
-        estimatedAmountRub: z.number().int().nonnegative().nullable().optional()
+        /*
+         * Сумма этапа плана. Заполняется из цены выполненных услуг
+         * (apps/api/src/ai/visitFlowOrchestrator.ts копирует priceRub как есть),
+         * а цена услуги копейки принимает. С int этап по услуге 1500,50 ронял
+         * весь план целиком.
+         */
+        estimatedAmountRub: nonNegativeMoneyRubSchema.nullable().optional()
       })
     )
     .min(1)
     .max(24),
-  estimatedTotalRub: z.number().int().nonnegative(),
+  estimatedTotalRub: nonNegativeMoneyRubSchema,
   alternatives: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
   risksAndLimitations: z.array(z.string().trim().min(1).max(300)).min(1).max(16),
   prognosisAndLimits: z.string().trim().max(900).nullable().optional(),
@@ -3701,12 +3791,13 @@ export const treatmentPlanAcceptancePayloadSchema = z.object({
         stageName: z.string().trim().min(1).max(180),
         plannedServices: z.string().trim().min(1).max(500),
         plannedTiming: z.string().trim().min(1).max(180),
-        estimatedAmountRub: z.number().int().nonnegative().nullable().optional()
+        /* Принятый план обязан повторять суммы предложенного — до копейки. */
+        estimatedAmountRub: nonNegativeMoneyRubSchema.nullable().optional()
       })
     )
     .min(1)
     .max(20),
-  estimatedTotalRub: z.number().int().nonnegative(),
+  estimatedTotalRub: nonNegativeMoneyRubSchema,
   estimateValidUntil: documentDateLikeStringSchema,
   paymentTerms: z.string().trim().min(1).max(700),
   rejectedAlternatives: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
@@ -3737,7 +3828,13 @@ export type VisitAttendanceCertificatePayload = z.infer<typeof visitAttendanceCe
 export const paymentRefundCorrectionPayloadSchema = z.object({
   action: z.enum(["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]),
   selectedPaymentIds: z.array(z.string().uuid()).min(1).max(20),
-  amountRub: z.number().int().positive(),
+  /*
+   * Возврат или коррекция оплаты. Полный возврат обязан быть РАВЕН платежу, а
+   * платёж может быть 1500,50: с int полный возврат такого платежа был
+   * невозможен, и касса не могла закрыть операцию законно. Сервер сравнивает
+   * сумму с фактически оплаченной (guards.ts, строка с requestedAmountRub).
+   */
+  amountRub: positiveMoneyRubSchema,
   reason: z.string().trim().min(1).max(500),
   refundMethod: z.enum(["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]),
   recipientFullName: z.string().trim().min(1).max(240),
@@ -4079,7 +4176,15 @@ export const generatedDocumentSchema = z.object({
   title: z.string(),
   status: z.enum(["draft", "issued", "voided"]),
   issuedAt: z.string().nullable(),
-  totalAmountRub: z.number().nonnegative().nullable(),
+  /*
+   * Сумма выданного документа. Было z.number().nonnegative(): копейки
+   * проходили, но проходило и 1500,5555, и 0,001 — то есть значение, которое
+   * колонка generated_documents.total_amount_rub типа numeric(12, 2) молча
+   * обрежет, а
+   * документ на руках у пациента и запись в базе разойдутся. Точность до
+   * копейки теперь обязательна.
+   */
+  totalAmountRub: nonNegativeMoneyRubSchema.nullable(),
   taxYear: z.number().int().min(legacyTaxDeductionCertificateMinYear).max(2100).nullable().optional(),
   taxPayerInn: z
     .string()
@@ -4376,7 +4481,19 @@ export const createDocumentSchema = z
     visitId: z.string().uuid().nullable().optional(),
     kind: documentKindSchema,
     title: z.string().trim().min(1).max(240).optional(),
-    totalAmountRub: z.number().int().nonnegative().nullable().optional(),
+    /*
+     * ЗДЕСЬ ОБРЫВ БЫЛ ВИДЕН ПОЛЬЗОВАТЕЛЮ.
+     *
+     * apps/web/src/useAppLogic.tsx собирает totalAmountRub как сумму
+     * payment.amountRub по выбранным платежам и отправляет её в POST
+     * /api/documents. Платёж на 1500,50 разрешён (paymentSchema.amountRub), а
+     * этот int его отвергал — apps/api/src/routes/documents/create.ts отвечал
+     * 400 «Документ не создан» на КАЖДУЮ попытку выдать квитанцию, акт или
+     * справку для вычета пациенту, у которого оплата с копейками. Читающая
+     * сторона (generatedDocumentSchema.totalAmountRub) копейки уже принимала:
+     * контракт расходился сам с собой на запись и на чтение.
+     */
+    totalAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
     taxYear: z.number().int().min(legacyTaxDeductionCertificateMinYear).max(2100).nullable().optional(),
     taxPayerInn: z
       .string()
@@ -8208,7 +8325,14 @@ export const visitFlowRequestSchema = z.object({
     serviceId: z.string(),
     title: z.string(),
     quantity: z.number(),
-    priceRub: z.number(),
+    /*
+     * Было z.number() без ограничений: проходили и -5000, и 1500,5555. Отсюда
+     * цена уходит в estimatedAmountRub этапа плана
+     * (apps/api/src/ai/visitFlowOrchestrator.ts), где сумма обязана быть
+     * неотрицательной и с точностью до копейки, — проверять надо на входе, а не
+     * ловить обвал плана на выходе.
+     */
+    priceRub: nonNegativeMoneyRubSchema,
     toothCode: z.string().nullable().optional()
   })).optional(),
   orchestratorConfig: z.object({
