@@ -19,6 +19,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { countLabel, money } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { ConfirmationPerformanceReportsWidget } from "../components/analytics/ConfirmationPerformanceReportsWidget";
@@ -45,6 +46,34 @@ const DATE_RANGES = [
 
 /** Период фонового обновления. Оно НЕ должно гасить уже показанный дашборд. */
 const REFRESH_INTERVAL_MS = 60_000;
+
+/**
+ * Значение из подсказки Recharts. Библиотека объявляет его как число, строку или
+ * массив, поэтому приведение к числу делается здесь — один раз и с проверкой, а
+ * не `(val: any)` в каждом форматере, как было раньше.
+ */
+function tooltipNumber(value: unknown): number | null {
+	const parsed = typeof value === "number" ? value : Number(value);
+	return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Точная сумма в подсказке: полный денежный формат из AppHelpers. */
+function moneyTooltip(value: unknown): string {
+	const parsed = tooltipNumber(value);
+	return parsed === null ? "—" : money(parsed);
+}
+
+/** Склонение счётного слова: «1 план», «2 плана», «5 планов». */
+function planCountTooltip(value: unknown): string {
+	const parsed = tooltipNumber(value);
+	return parsed === null ? "—" : countLabel(Math.round(parsed), "план", "плана", "планов");
+}
+
+/** Склонение счётного слова: «1 приём», «2 приёма», «5 приёмов». */
+function appointmentCountTooltip(value: unknown): string {
+	const parsed = tooltipNumber(value);
+	return parsed === null ? "—" : countLabel(Math.round(parsed), "приём", "приёма", "приёмов");
+}
 
 export function AnalyticsDashboardView() {
 	const appLogic = (useAppLogicContext() || {}) as any;
@@ -144,12 +173,12 @@ export function AnalyticsDashboardView() {
 	return (
 		<div className="analytics-dashboard panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" aria-label="Аналитика клиники" data-testid="analytics-dashboard-view">
 			<header className="analytics-header flex flex-wrap gap-3 justify-between items-center mb-5 pb-3 border-b border-[var(--line)]">
-				<h2 className="m-0 text-xl font-bold text-[var(--ink)]" title="Аналитическая панель руководителя: воронка планов лечения, загрузка кресел, LTV и доходность врачей">Аналитика клиники</h2>
+				<h2 className="m-0 text-xl font-bold text-[var(--ink)]" title="Панель руководителя: путь планов лечения, загрузка кресел, сколько приносит пациент со временем и выработка врачей">Аналитика клиники</h2>
 				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
-					title="Фильтр периода аналитических отчетов"
-					aria-label="Фильтр периода аналитических отчетов"
+					title="Период, за который считаются показатели"
+					aria-label="Период, за который считаются показатели"
 					className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] transition-all cursor-pointer hover:border-[var(--teal)]"
 				>
 					{DATE_RANGES.map((r) => (
@@ -219,7 +248,7 @@ export function AnalyticsDashboardView() {
 						/>
 					) : (
 						<>
-							{/* KPI Cards */}
+							{/* Плитки главных чисел. Формат короткий: в плитке длинная сумма не читается. */}
 							<div
 								style={{
 									display: "grid",
@@ -248,20 +277,25 @@ export function AnalyticsDashboardView() {
 								/>
 								<KpiCard
 									icon={<TrendingUp size={18} />}
-									label="Ср. выручка / пациент"
+									label="Выручка на пациента"
 									value={formatRub(data.kpis.avgRevenuePerPatient)}
 									color="#f59e0b"
 								/>
 							</div>
 
 							<div className="analytics-grid">
-							{/* Widget 1: Cohort LTV.
+							{/* Виджет 1 — сколько денег приносит пациент со временем.
 							    БЫЛО в заголовке: «Выручка по когортам (LTV)». Ни «когорта», ни
 							    «LTV» врачу и администратору ничего не говорят. Название теперь
 							    объясняет смысл, термин остался в подсказке для тех, кто ищет
 							    именно его. */}
 							<article className="glass-widget">
-								<h3 title="Когорты: пациенты сгруппированы по месяцу первого визита. LTV — сколько денег приносит один пациент за всё время.">
+								{/*
+									Термины в подсказке оставлены намеренно — для тех, кто ищет
+									именно их, — но каждый объяснён по-русски, а заголовок
+									обходится без них.
+								*/}
+								<h3 title="Пациенты сгруппированы по месяцу первого визита (это и называют когортами), и для каждой группы видно, сколько денег она принесла за год — то есть LTV.">
 									<TrendingUp className="w-5 h-5 text-dente-teal" /> Сколько
 									приносит пациент со временем
 								</h3>
@@ -309,7 +343,13 @@ export function AnalyticsDashboardView() {
 													fontSize={12}
 													tickLine={false}
 													axisLine={false}
-													tickFormatter={(val) => `${Math.round(val / 1000)}k`}
+													/*
+														БЫЛО: `${Math.round(val / 1000)}k` — латинская «k» в
+														русском интерфейсе, и округление до целых тысяч: и
+														1 400 ₽, и 1 500 ₽ давали одну подпись. Общий короткий
+														формат считает честно: «1,4 тыс. ₽».
+													*/
+													tickFormatter={(val: number) => formatRub(val)}
 												/>
 												<RechartsTooltip
 													contentStyle={{
@@ -319,9 +359,14 @@ export function AnalyticsDashboardView() {
 														color: "var(--ink)",
 													}}
 													itemStyle={{ color: "var(--ink)" }}
-													formatter={(val: any) =>
-														val.toLocaleString("ru-RU") + " ₽"
-													}
+													/*
+														Подсказка показывает точную сумму, поэтому здесь полный
+														денежный формат `money` из AppHelpers. БЫЛО: местный
+														`val.toLocaleString("ru-RU") + " ₽"` — без ограничения
+														дробной части, а деньги приходят с копейками, поэтому в
+														подсказке появлялось «3 416,666666666667 ₽».
+													*/
+													formatter={moneyTooltip}
 												/>
 												<Legend />
 												{/*
@@ -355,7 +400,7 @@ export function AnalyticsDashboardView() {
 								</div>
 							</article>
 
-							{/* Widget 2: Plan Funnel */}
+							{/* Виджет 2 — путь плана лечения: предложен, принят, оплачен. */}
 							<article className="glass-widget">
 								<h3>
 									<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка планов
@@ -398,9 +443,8 @@ export function AnalyticsDashboardView() {
 														color: "var(--ink)",
 													}}
 													itemStyle={{ color: "var(--ink)" }}
-													formatter={(val: any) =>
-														`${val} планов`
-													}
+													/* Склонение: «1 план», «2 плана», «5 планов». */
+													formatter={planCountTooltip}
 												/>
 												<Bar
 													dataKey="value"
@@ -421,7 +465,7 @@ export function AnalyticsDashboardView() {
 								</div>
 							</article>
 
-							{/* Widget 3: Chair Utilization */}
+							{/* Виджет 3 — загруженность кресел по фактическим приёмам. */}
 							<article className="glass-widget">
 								<h3>
 									<Activity className="w-5 h-5 text-emerald-500" /> Загруженность
@@ -463,7 +507,7 @@ export function AnalyticsDashboardView() {
 														color: "var(--ink)",
 													}}
 													itemStyle={{ color: "var(--ink)" }}
-													formatter={(val: any) => `${val} приёмов`}
+													formatter={appointmentCountTooltip}
 												/>
 											</RadialBarChart>
 										</ResponsiveContainer>
@@ -478,7 +522,7 @@ export function AnalyticsDashboardView() {
 								</div>
 							</article>
 
-							{/* Widget 4: Doctor Profitability */}
+							{/* Виджет 4 — выработка врачей по завершённым визитам. */}
 							<article className="glass-widget">
 								<h3>
 									<Users className="w-5 h-5 text-purple-500" /> Эффективность врачей
@@ -570,7 +614,8 @@ function DoctorProfitabilityTable({
 						return (
 							<tr key={`${doc.name}-${idx}`}>
 								<td>{doc.name}</td>
-								<td>{formatRub(doc.revenue)}</td>
+								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
+								<td>{money(doc.revenue)}</td>
 								<td className={`font-semibold ${metricToneClass(margin.tone)}`} title={margin.title}>
 									{margin.text}
 								</td>

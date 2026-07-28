@@ -28,7 +28,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { money } from "../../AppHelpers";
 import { hasCapability, type ClinicMode } from "../../lib/clinicCapabilities";
+import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
 
 type RevenuePoint = { bucket: string; revenueRub: number; paymentCount: number; payingPatients: number };
 
@@ -107,9 +109,17 @@ const bucketLabels: Record<string, string> = {
 
 const weekdayNames = ["", "пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 
-function formatRub(value: number): string {
-	return `${value.toLocaleString("ru-RU")} ₽`;
-}
+/*
+ * Денежных форматов в проекте два, и оба общие: короткий `shortRub`
+ * («1,4 тыс. ₽», pages/analyticsDoctorMetrics.ts) — для плиток и полос, где
+ * длинное число не читается и ломает вёрстку, и полный `money` («1 500,50 ₽»,
+ * AppHelpers.tsx) — для таблиц и итоговых приписок, где нужна точная сумма.
+ *
+ * БЫЛО: здесь стоял третий, местный формат `${value.toLocaleString("ru-RU")} ₽`
+ * без ограничения дробной части. Суммы приходят с копейками, поэтому средний чек
+ * 3416.666666666667 печатался в таблице как «3 416,666666666667 ₽», а те же
+ * деньги на экране аналитики выглядели иначе — два формата в одном продукте.
+ */
 
 function formatPercent(value: number | null): string {
 	// Прочерк, а не «0 %»: отсутствие данных и ноль — разные утверждения.
@@ -247,7 +257,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						<h3 className="ops-section-title">Итоги периода</h3>
 						<ul className="ops-metrics">
 							<li className="ops-metric ops-metric--primary">
-								<span className="ops-metric__value">{formatRub(summary.revenue.totalRub)}</span>
+								<span className="ops-metric__value" title={money(summary.revenue.totalRub)}>{shortRub(summary.revenue.totalRub)}</span>
 								<span className="ops-metric__label">получено</span>
 							</li>
 							<li className="ops-metric">
@@ -264,7 +274,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								<span className="ops-metric__label">доля неявок</span>
 							</li>
 							<li className={`ops-metric ${summary.receivables.totalDebtRub > 0 ? "ops-metric--danger" : ""}`}>
-								<span className="ops-metric__value">{formatRub(summary.receivables.totalDebtRub)}</span>
+								<span className="ops-metric__value" title={money(summary.receivables.totalDebtRub)}>{shortRub(summary.receivables.totalDebtRub)}</span>
 								<span className="ops-metric__label">долг, {summary.receivables.debtors} пациент(ов)</span>
 							</li>
 							<li className="ops-metric">
@@ -309,7 +319,8 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 												}}
 											/>
 										</span>
-										<span className="ops-bar__value">{formatRub(point.revenueRub)}</span>
+										{/* Полоса узкая: короткий вид, точная сумма — в подсказке. */}
+										<span className="ops-bar__value" title={money(point.revenueRub)}>{shortRub(point.revenueRub)}</span>
 									</li>
 								))}
 							</ul>
@@ -347,7 +358,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 													{row.doctorName}
 												</td>
 												<td className="ops-num" data-label="Получено">
-													{formatRub(row.revenueRub)}
+													{money(row.revenueRub)}
 												</td>
 												<td className="ops-num" data-label="Приёмов">
 													{row.appointmentsTotal}
@@ -359,7 +370,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 													{row.appointmentsNoShow} ({formatPercent(row.noShowRate)})
 												</td>
 												<td className="ops-num" data-label="Средний чек">
-													{row.averageTicketRub === null ? "—" : formatRub(row.averageTicketRub)}
+													{row.averageTicketRub === null ? "—" : money(row.averageTicketRub)}
 												</td>
 												{/* Себестоимости и процента врача в базе нет — прочерк осознанный. */}
 												<td
@@ -376,7 +387,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 								</div>
 								{summary.doctors.unattributedRevenueRub > 0 ? (
 									<p className="ops-hint">
-										Не отнесено к врачу: {formatRub(summary.doctors.unattributedRevenueRub)}.{" "}
+										Не отнесено к врачу: {money(summary.doctors.unattributedRevenueRub)}.{" "}
 										{summary.doctors.attributionNote}
 									</p>
 								) : null}
@@ -548,7 +559,7 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 													}}
 												/>
 											</span>
-											<span className="ops-bar__value">{formatRub(amount)}</span>
+											<span className="ops-bar__value" title={money(amount)}>{shortRub(amount)}</span>
 										</li>
 									))}
 							</ul>

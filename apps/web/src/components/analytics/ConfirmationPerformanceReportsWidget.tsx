@@ -78,22 +78,27 @@ export const ConfirmationPerformanceReportsWidget: React.FC = () => {
 			data-testid="confirmation-performance-reports-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Отчет по конверсии подтверждения визитов колл-центром и администраторами клиники">
+			{/*
+				БЫЛО: «Отчет «Эффективность Подтверждения Приемов» по Сотрудникам» —
+				заглавная буква в каждом слове, и рядом плашка «Call Confirmation
+				Performance» английским языком в интерфейсе русской клиники.
+			*/}
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Сколько звонков сделал сотрудник и сколько приёмов после этого пациенты подтвердили">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">📊</span>
 					<h3 className="font-semibold text-blue-600 dark:text-blue-400">
-						Отчет «Эффективность Подтверждения Приемов» по Сотрудникам
+						Как сотрудники подтверждают приёмы
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
-					Call Confirmation Performance
+					Обзвон перед приёмом
 				</span>
 			</div>
 
 			{/* Состояние 1 — загрузка. */}
 			{state.status === "loading" && (
 				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
-					Загрузка отчета эффективности...
+					Загружаем данные по звонкам...
 				</div>
 			)}
 
@@ -111,7 +116,7 @@ export const ConfirmationPerformanceReportsWidget: React.FC = () => {
 			{/* Состояние 3 — запрос удался, данных нет. */}
 			{state.status === "ready" && state.items.length === 0 && (
 				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
-					Данные отчета отсутствуют.
+					Звонков с подтверждением приёма пока не было.
 				</div>
 			)}
 
@@ -130,7 +135,7 @@ export const ConfirmationPerformanceReportsWidget: React.FC = () => {
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
 								<span className="px-2.5 py-1 rounded border font-bold bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
-									Конверсия:{" "}
+									Подтвердили приём:{" "}
 									{item.conversionRatePercent === null
 										? UNKNOWN_VALUE_TEXT
 										: `${Math.round(item.conversionRatePercent)} %`}

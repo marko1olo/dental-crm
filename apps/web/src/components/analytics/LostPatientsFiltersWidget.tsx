@@ -69,22 +69,26 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 			data-testid="lost-patients-filters-widget"
 			className="p-4 rounded-xl border my-4 shadow-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"
 		>
-			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+			{/*
+				БЫЛО: «Маркетинговый Фильтр «Потерянные Пациенты» …» — заглавная буква
+				в каждом слове, и плашка «Lost Patient Filter» по-английски.
+			*/}
+			<div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800" title="Пациенты, которые давно не были на приёме: будущей записи у них нет и задачи на обзвон тоже нет">
 				<div className="flex items-center space-x-2">
 					<span className="text-xl">⚠️</span>
 					<h3 className="font-semibold text-amber-600 dark:text-amber-400">
-						Маркетинговый Фильтр «Потерянные Пациенты» (без визитов, листа ожидания и задач)
+						Пациенты, которые перестали приходить
 					</h3>
 				</div>
 				<span className="text-xs px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-					Lost Patient Filter
+					Ни записи, ни задачи
 				</span>
 			</div>
 
 			{/* Состояние 1 — загрузка. */}
 			{state.status === "loading" && (
 				<div className="text-sm py-4 text-slate-500 dark:text-slate-400">
-					Загрузка списка потерянных пациентов...
+					Загружаем список пациентов...
 				</div>
 			)}
 
@@ -103,7 +107,7 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 			{/* Состояние 3 — запрос удался, данных нет. */}
 			{state.status === "ready" && state.items.length === 0 && (
 				<div className="text-sm py-3 text-center text-slate-500 dark:text-slate-400">
-					Потерянных пациентов не обнаружено.
+					Таких пациентов нет: все, кто давно не приходил, уже записаны или взяты в работу.
 				</div>
 			)}
 
@@ -127,7 +131,7 @@ export const LostPatientsFiltersWidget: React.FC = () => {
 							</div>
 							<div className="flex items-center space-x-2 text-xs">
 								<span className="px-2.5 py-1 rounded border font-mono bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
-									⚠️ Задач нет / Будущей записи нет
+									⚠️ Нет будущей записи и нет задачи на обзвон
 								</span>
 							</div>
 						</div>
