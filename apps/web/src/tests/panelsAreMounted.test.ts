@@ -204,9 +204,36 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	"components/integrations/DadataGeocodedAddressesWidget.tsx:DadataGeocodedAddressesWidget",
 	"components/integrations/LandingFieldMappingsWidget.tsx:LandingFieldMappingsWidget",
 	"components/marketing/FamilyRecommendationSourcesWidget.tsx:FamilyRecommendationSourcesWidget",
-	"components/settings/LegacyMigrationStudio.tsx:LegacyMigrationStudio",
+	/*
+	 * SmartImportStudio и LegacyMigrationStudio удалены, поэтому строк здесь
+	 * больше нет. Это не потерянная работа, а две устаревшие КОПИИ вкладки
+	 * импорта, которая смонтирована и живёт.
+	 *
+	 * Слот settingsTab === "imports" занят двумя живыми компонентами:
+	 * MigrationWizard (SettingsView.tsx:1564, настоящий движок, ходит в
+	 * /api/migration/*) и SettingsImportsTab (SettingsView.tsx:1587, в своей
+	 * границе ошибок). Решающий замер — множества aria-label, то есть того, что
+	 * видит человек: у живой вкладки 48 блоков, у сирот 22 и 7, и СОБСТВЕННЫХ
+	 * блоков у сирот ноль — строгие подмножества. Живая вкладка умеет на 26
+	 * блоков больше: инструменты первого среза, импорт снимков из внешних систем,
+	 * органайзер локальных снимков, извлечение текста, файлы архива. Построчный
+	 * diff здесь врёт: файлы отформатированы табами против пробелов.
+	 *
+	 * Монтировать их было нельзя даже вторым экраном. У каждой было по 13
+	 * обращений `dashboard.` БЕЗ защиты против 0 у живой вкладки, где те же 13
+	 * обращений стоят как `dashboard?.` — это ровно тот вынос из SettingsView, в
+	 * котором потерялись `?.` (разбор на месте: SettingsView.tsx:1566-1574).
+	 * Любое такое обращение роняло компонент, а общая граница гасила вместе с ним
+	 * ВЕСЬ раздел настроек — вместе с мастером переноса базы клиники, который от
+	 * этих пропсов не зависит вовсе.
+	 *
+	 * Своей работы в них не было: единственные вызовы, которых нет у живой
+	 * вкладки, — Object.assign, Object.hasOwn, useAppLogicContext и
+	 * useSettingsDerivations, то есть водопровод, которым сирота собирала себе
+	 * пропсы из God Context (объявлены они были без пропсов вообще), тогда как
+	 * живая вкладка получает их прямо. Сетевых вызовов ноль в обеих.
+	 */
 	"components/settings/SingleSessionEnforcementsWidget.tsx:SingleSessionEnforcementsWidget",
-	"components/settings/SmartImportStudio.tsx:SmartImportStudio",
 	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	"components/visit/VisitDictation.tsx:VisitDictation",
 	"components/workspace/OnboardingSetupWizard.tsx:OnboardingSetupWizard",
@@ -229,7 +256,7 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 31;
+const LEGACY_BACKLOG_CEILING = 29;
 
 /** Минимальный размер переписи: ниже него она заведомо выродилась. */
 const CENSUS_FLOOR = {
