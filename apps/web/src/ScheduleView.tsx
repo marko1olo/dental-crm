@@ -13,16 +13,19 @@ import { appointmentScheduleMissingFields, auth } from "./AppHelpers";
 
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
-import { Plus, ShieldCheck, Bot, Mic, Calendar } from "lucide-react";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { Plus, ShieldCheck, Calendar } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { showToast } from "./components/GlobalToast";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
 import { motionSafeScrollIntoView } from "./motionPreference";
-import { smartBookingParser } from "./lib/smartBookingParser";
-import { DictationHints } from "./DictationHints";
-import { SmartParsePreview } from "./SmartParsePreview";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+/*
+ * Отсюда убраны неиспользуемые ввозы Bot, Mic, useMemo, smartBookingParser,
+ * DictationHints, SmartParsePreview и SmartMicrophoneButton. Весь разбор
+ * диктовки живёт в NewAppointmentForm, и мёртвые ввозы здесь читались как
+ * «голосовая запись сделана в этом файле»: следующий, кто пойдёт её править,
+ * потерял бы время на поиск несуществующей разметки.
+ */
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -179,7 +182,23 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     scheduleAdminSecretDemand
   } = useSettingsStore();
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
+  /**
+   * Раскрыта ли форма со всеми полями записи.
+   *
+   * БЫЛО: здесь лежала мёртвая копия этого признака — настоящий жил внутри
+   * NewAppointmentForm. Поэтому «Повторить» у записи и «Записать на приём» из
+   * листа ожидания заполняли черновик и не открывали ничего: на экране не
+   * менялось НИЧЕГО, а черновик молча набирался, и кнопка «Создать запись»
+   * становилась активной с датой, которую человек не видел.
+   */
   const [showCreateForm, setShowCreateForm] = useState(false);
+  /**
+   * Просьба поставить фокус в форму, пришедшая ДО её раскрытия. Фокус нельзя
+   * ставить в том же обработчике, что раскрывает форму: React отрисует её
+   * позже, и document.querySelector в этот момент ещё ничего не находит —
+   * именно так «Записать на приём» и оставляло человека без поля времени.
+   */
+  const focusCreateFormRequestedRef = useRef(false);
   /** Открыт ли лист ожидания. Экран есть, а войти в него было неоткуда. */
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   /**
@@ -238,8 +257,19 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
   /**
    * Повторить запись: те же пациент, врач, ассистент, кресло, повод и
-   * длительность переносятся в форму новой записи, время сдвигается на неделю
-   * вперёд — остаётся поправить дату и нажать «Создать запись».
+   * длительность переносятся в форму новой записи, а дата — ближайший тот же
+   * день недели и то же время в БУДУЩЕМ.
+   *
+   * ПОЧЕМУ НЕ «ровно через неделю от прошлой записи», как было. Проверено в
+   * живом браузере на демо-клинике: первая карточка в расписании — приём от
+   * 28 января 2024 года (список показывает все дни и начинается с самого
+   * старого), и «Повторить» подставляла в форму 4 февраля 2024 года. Дата в
+   * прошлом, кнопка «Создать запись» при этом становилась активной — то есть
+   * администратору предлагали записать пациента на позапрошлый год.
+   * Сдвиг делается шагом ровно в неделю, поэтому день недели и время суток
+   * сохраняются: пациент, приходивший во вторник в 16:30, останется на вторник
+   * 16:30. В России нет перехода на летнее время, поэтому шаг в 7×24 часа не
+   * сдвигает местное время.
    *
    * Это замена «Буферу обмена переноса записей расписания». Тот показывал на
    * экране пустую коробку с обещанием «из клика по визиту вы можете скопировать
@@ -257,9 +287,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs > startsAtMs
         ? endsAtMs - startsAtMs
         : (dashboard.clinicSettings.profile.defaultVisitMinutes ?? 30) * 60_000;
-    const weekAhead = Number.isFinite(startsAtMs)
-      ? new Date(startsAtMs + 7 * 24 * 60 * 60_000)
-      : new Date();
+    const weekMs = 7 * 24 * 60 * 60_000;
+    const nextSameWeekdayMs = () => {
+      if (!Number.isFinite(startsAtMs)) return Date.now() + weekMs;
+      let candidate = startsAtMs + weekMs;
+      // Шагаем неделями, пока не окажемся в будущем: у старой записи одного
+      // прибавления недели не хватает, а записывать в прошлое нельзя.
+      const now = Date.now();
+      while (candidate <= now) candidate += weekMs;
+      return candidate;
+    };
+    const weekAhead = new Date(nextSameWeekdayMs());
 
     /*
       Ассистент: если в исходной записи его нет, ставим того, кого форма и так
@@ -285,15 +323,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     updateNewAppointmentDraft("endsAt", new Date(weekAhead.getTime() + durationMs).toISOString());
     updateNewAppointmentDraft("reason", appointment.reason ?? "");
     updateNewAppointmentDraft("comment", "");
-    setShowCreateForm(true);
     setUseManualSelects(true);
-    if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
-        document
-          .querySelector(".appointment-create-form, .new-appointment-form")
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
-    }
+    /*
+      БЫЛО: прокрутка искала ".appointment-create-form, .new-appointment-form" —
+      таких классов в разметке нет ни одного, поэтому не прокручивалось никуда.
+      Вместе с мёртвым признаком раскрытия формы это давало кнопку, от нажатия
+      которой на экране не менялось ничего.
+      Теперь форма раскрывается и курсор встаёт в поле «Начало»: дата уже
+      подставлена, и поправить её — единственное, что осталось.
+    */
+    focusNewAppointmentEditor();
+    /*
+      Сообщение обязательно: подставленные значения (врач, кресло, дата) уйдут в
+      базу как факт, и человек должен понимать, что именно он подтверждает.
+    */
+    showToast(
+      "Форма заполнена как в прошлой записи: тот же день недели и время, ближайший такой день впереди. Проверьте дату и время и нажмите «Создать запись».",
+      "info",
+      7000
+    );
   };
 
   /*
@@ -318,17 +366,22 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     setScheduleChairFilterId(null);
     setScheduleStatusFilter("all");
   };
-  const focusNewAppointmentEditor = () => {
-    // БЫЛО: фокус уходил в .appointment-create-editor — легаси-форму,
-    // скрытую через opacity 0, размер 0 и pointer-events: none. Нажатие
-    // «Создать запись» (и переход из листа ожидания) не меняло на экране
-    // ничего, а клавиатурный фокус пропадал в невидимом элементе: человек
-    // терял место в интерфейсе, а программа чтения с экрана начинала
-    // зачитывать поля, которых на экране нет.
-    //
-    // Берём первый РЕАЛЬНО видимый элемент управления в блоке создания
-    // записи. Выбор по видимости, а не по конкретному селектору, чтобы
-    // правка пережила перестановку блоков внутри формы.
+  /**
+   * Поставить курсор в форму записи. Вызывается из пустого расписания
+   * («Новая запись»), из «Повторить» и из листа ожидания.
+   *
+   * БЫЛО (две ошибки подряд):
+   *  1) фокус уходил в невидимую легаси-форму (opacity 0, размер 0) — человек
+   *     терял место в интерфейсе, а программа чтения с экрана зачитывала поля,
+   *     которых на экране нет. Легаси-форма теперь удалена;
+   *  2) форму со всеми полями функция НЕ раскрывала. Если она была свёрнута (а
+   *     по умолчанию она свёрнута), курсор оставался в строке умного
+   *     бронирования, и «укажите время записи» было негде указать.
+   *
+   * Поэтому сначала раскрываем форму, а фокус ставим в следующем проходе
+   * отрисовки — через focusCreateFormRequestedRef и эффект ниже.
+   */
+  const focusVisibleCreateFormControl = () => {
     const wrapper = document.querySelector<HTMLElement>(".appointment-create-wrapper");
     if (!wrapper) return;
 
@@ -346,13 +399,30 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       return true;
     };
 
+    // Форма со всеми полями главнее строки умного бронирования: человека сюда
+    // привели, чтобы он поправил время, а поле «Начало» — первое в ней.
+    const scope = wrapper.querySelector<HTMLElement>(".appointment-manual-form") ?? wrapper;
     const target = Array.from(
-      wrapper.querySelectorAll<HTMLElement>("select, input, textarea, button"),
+      scope.querySelectorAll<HTMLElement>("select, input, textarea, button"),
     ).find((element) => !element.hasAttribute("disabled") && isVisible(element));
 
-    motionSafeScrollIntoView(target ?? wrapper, { block: "center" });
+    motionSafeScrollIntoView(target ?? scope, { block: "center" });
     target?.focus({ preventScroll: true });
   };
+  const focusNewAppointmentEditor = () => {
+    if (!showCreateForm) {
+      focusCreateFormRequestedRef.current = true;
+      setShowCreateForm(true);
+      return;
+    }
+    focusVisibleCreateFormControl();
+  };
+  useEffect(() => {
+    if (!showCreateForm) return;
+    if (!focusCreateFormRequestedRef.current) return;
+    focusCreateFormRequestedRef.current = false;
+    focusVisibleCreateFormControl();
+  }, [showCreateForm]);
   const openScheduleSuggestion = (section: string) => {
     window.location.hash = section;
     const sectionId = section.replace(/^#/, "");
@@ -661,6 +731,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
               fromDateTimeLocalValue={fromDateTimeLocalValue}
               useManualSelects={useManualSelects}
               setUseManualSelects={setUseManualSelects}
+              showCreateForm={showCreateForm}
+              setShowCreateForm={setShowCreateForm}
             />
             <div className="schedule-timeline timeline">
               {sortedAppointments.map((appointment) => {

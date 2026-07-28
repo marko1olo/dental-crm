@@ -23,6 +23,20 @@ export type NewAppointmentFormProps = {
   fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
   useManualSelects: boolean;
   setUseManualSelects: (val: boolean) => void;
+  /**
+   * Раскрыта ли форма со всеми полями. Живёт СНАРУЖИ, в ScheduleView, и это не
+   * стилистика.
+   *
+   * БЫЛО: признак был внутренним состоянием этого компонента, а снаружи лежала
+   * его мёртвая копия. «Повторить» у записи и «Записать на приём» из листа
+   * ожидания заполняли черновик и дёргали ту копию — на экране не менялось
+   * НИЧЕГО. Администратор нажимал «Повторить», видел прежнее расписание и
+   * считал кнопку сломанной, а черновик тем самым молча набирался: кнопка
+   * «Создать запись» рядом становилась активной, и запись уходила в базу с
+   * датой (через неделю), которую человек ни разу не видел на экране.
+   */
+  showCreateForm: boolean;
+  setShowCreateForm: (value: boolean) => void;
 };
 
 export function NewAppointmentForm(props: NewAppointmentFormProps) {
@@ -38,10 +52,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
     toDateTimeLocalValue,
     fromDateTimeLocalValue,
     useManualSelects,
-    setUseManualSelects
+    setUseManualSelects,
+    showCreateForm,
+    setShowCreateForm
   } = props;
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<unknown>(null);
@@ -66,105 +81,27 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
   return (
     <div className="appointment-create-wrapper" aria-label="Создание записи">
-      <div className="appointment-create-editor" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' }}>
-        {/* Этот блок визуально скрыт (opacity 0, размер 0), но
-            focusNewAppointmentEditor в ScheduleView намеренно переводит сюда
-            фокус. Значит поля обязаны иметь доступные имена: без них
-            программа чтения с экрана объявляет безымянное поле ввода.
-            Отдельная проблема — фокус уезжает на невидимый элемент; она
-            требует переделки самого сценария создания записи. */}
-        <input
-          type="datetime-local"
-          aria-label="Начало записи"
-          value={toDateTimeLocalValue(newAppointmentDraft.startsAt as string, dashboard.clinicSettings.profile.timezone)}
-          onChange={(event) => updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
-        />
-        <input
-          type="datetime-local"
-          aria-label="Окончание записи"
-          value={toDateTimeLocalValue(newAppointmentDraft.endsAt as string, dashboard.clinicSettings.profile.timezone)}
-          onChange={(event) => updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))}
-        />
-        <select
-          value={newAppointmentDraft.patientId || ''}
-          onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
-        >
-          <option value="">-- Выберите пациента --</option>
-          {(dashboard.patients ?? []).map(p => (
-            <option key={p.id} value={p.id}>{p.fullName}</option>
-          ))}
-        </select>
-        <select
-          value={newAppointmentDraft.doctorUserId || ''}
-          onChange={(e) => updateNewAppointmentDraft('doctorUserId', e.target.value)}
-        >
-          <option value="">-- Выберите врача --</option>
-          {(dashboard.clinicSettings?.staff ?? []).map(m => (
-            <option key={m.id} value={m.id}>{m.fullName}</option>
-          ))}
-        </select>
-        <select
-          value={newAppointmentDraft.assistantUserId || ''}
-          onChange={(e) => updateNewAppointmentDraft('assistantUserId', e.target.value)}
-        >
-          <option value="">-- Выберите ассистента --</option>
-          <option value="">-- Нет ассистента --</option>
-          {(dashboard.clinicSettings?.staff ?? []).map(m => (
-            <option key={m.id} value={m.id}>{m.fullName}</option>
-          ))}
-        </select>
-        <select
-          value={newAppointmentDraft.chairId || ''}
-          onChange={(e) => updateNewAppointmentDraft('chairId', e.target.value)}
-        >
-          <option value="">-- Выберите кресло --</option>
-          {(dashboard.clinicSettings?.chairs ?? []).map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <select
-          value={newAppointmentDraft.status || ''}
-          onChange={(e) => updateNewAppointmentDraft('status', e.target.value)}
-        >
-          {Object.keys(appointmentLabels).map(status => (
-            <option key={status} value={status}>{appointmentLabels[status as Appointment["status"]]}</option>
-          ))}
-        </select>
-        <div className="flex flex-col gap-1">
-          <input
-            type="text"
-            placeholder="Услуга / Причина (например: Кариес, Осмотр)"
-            value={newAppointmentDraft.reason}
-            onChange={(event) => updateNewAppointmentDraft("reason", event.target.value)}
-          />
-          <div className="chip-templates-row">
-            {["Осмотр", "Кариес", "Пульпит", "Профгигиена", "Удаление", "Консультация", "Снятие швов"].map(t => (
-              <button 
-                key={t} 
-                type="button" 
-                className="chip-template-button" 
-                onClick={() => updateNewAppointmentDraft("reason", t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-        <textarea
-          placeholder="Комментарий (опционально)"
-          value={newAppointmentDraft.comment}
-          onChange={(event) => updateNewAppointmentDraft("comment", event.target.value)}
-        />
-        <div className="appointment-editor-actions">
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => void createAppointmentFromDraft()}
-          >
-            Сохранить новую запись
-          </button>
-        </div>
-      </div>
+      {/*
+        ЗДЕСЬ БЫЛА ВТОРАЯ, НЕВИДИМАЯ ФОРМА СОЗДАНИЯ ЗАПИСИ (.appointment-create-editor:
+        position absolute, opacity 0, ширина и высота 0). Убрана целиком, и вот почему.
+
+        1. Она оставалась в порядке обхода по Tab: opacity и нулевой размер фокус не
+           отключают. Администратор, работающий с клавиатуры, проваливался в восемь
+           полей, которых на экране нет, — программа чтения с экрана при этом
+           зачитывала «Начало записи», «Выберите пациента» и так далее.
+        2. Её кнопка «Сохранить новую запись» вызывала создание записи БЕЗ проверки
+           заполненности (в видимой форме та же кнопка заперта, пока не хватает
+           пациента, врача, кресла или времени). Нажатие пробелом на невидимой кнопке
+           отправляло на сервер недособранный черновик.
+        3. Все её поля дублируют видимую форму ниже, то есть это был второй путь
+           записи пациента в базу — с другим набором правил.
+        4. Ради неё же существовал маленький обман в справке: комментарий уверял, что
+           фокус сюда переводят намеренно. Это перестало быть правдой — focus-логика
+           в ScheduleView давно выбирает только ВИДИМЫЕ элементы управления.
+
+        Осиротевшее правило `.appointment-create-editor { margin: 12px 0 }` в
+        styles/main.css не тронуто: чужой файл, снимает ведущий.
+      */}
       <div className="smart-ai-booking" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "14px", padding: "16px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "var(--shadow-1)", color: "var(--ink)" }}>
         <div className="flex items-center gap-2">
           <Bot size={18} className="text-sky-600 dark:text-sky-400 shrink-0" />
@@ -232,7 +169,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           <div className="flex gap-3 items-center">
             <button
               type="button"
-              onClick={() => setShowCreateForm((v) => !v)}
+              onClick={() => setShowCreateForm(!showCreateForm)}
               className="secondary-button focus:ring-2 focus:ring-teal-600 focus:outline-none transition-colors"
               style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
             >
@@ -282,7 +219,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
       </div>
 
       {showCreateForm && (
-        <div className="appointment-editor mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+        /*
+          appointment-manual-form — не украшение, а точка прицела для фокуса.
+          «Повторить» и «Записать на приём» из листа ожидания должны ставить
+          курсор в поле «Начало» ЭТОЙ формы, а не в строку умного бронирования,
+          которая в разметке идёт раньше. Искать по классу, а не по порядку
+          элементов, чтобы правка пережила перестановку блоков.
+        */
+        <div className="appointment-editor appointment-manual-form mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
             <label>
               Начало
