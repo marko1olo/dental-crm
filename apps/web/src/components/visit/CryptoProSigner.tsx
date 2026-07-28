@@ -91,6 +91,25 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	const [signatureType, setSignatureType] = useState<"crypto" | "pin">("pin");
 	const [isSigning, setIsSigning] = useState(false);
 	const [failureText, setFailureText] = useState<string | null>(null);
+	/*
+	 * ОКНО БОЛЬШЕ НЕ ЗАКРЫВАЕТСЯ КАК ПРИ УСПЕХЕ, ПОКА ПОДПИСЬ НЕ ПОДТВЕРЖДЕНА.
+	 *
+	 * БЫЛО: сразу после `await onLock(...)` вызывался closeDialog(). А doLock
+	 * (components/useVisitDiaryLogic.ts) при отказе исключение НЕ бросает: он
+	 * показывает всплывающее сообщение и возвращает управление точно так же, как
+	 * при удачном подписании. Отказов там шесть — врач не выбран, дневник ещё не
+	 * прочитан с сервера, штрихкод лотка не подтверждён журналом стерилизации,
+	 * дневник не сохранён (нет его идентификатора), маршрут /lock ответил
+	 * ошибкой, сеть не дошла. В каждом из них окно подписания закрывалось,
+	 * ПИН стирался, и врач у кресла видел единственный признак — окно исчезло,
+	 * то есть «подписано». Запись при этом оставалась неподписанной.
+	 *
+	 * Подтверждение приходит не ответом функции, а сменой признака isLocked у
+	 * родителя. Поэтому ждём его ограниченное время: подписалось — компонент сам
+	 * уходит в ветку «Подписано» и окно исчезает; не подписалось — говорим об
+	 * этом словами прямо в окне, а не всплывающей подсказкой, которая гаснет.
+	 */
+	const [awaitingLockConfirmation, setAwaitingLockConfirmation] = useState(false);
 
 	// Окно перекрывает весь экран, поэтому обязано закрываться Escape.
 	useEffect(() => {
@@ -102,9 +121,23 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [showPinDialog, isSigning]);
 
+	// Ожидание подтверждения подписи: истекло, а признак isLocked не пришёл —
+	// значит, подписание отказало без исключения (см. пояснение выше).
+	useEffect(() => {
+		if (!awaitingLockConfirmation) return;
+		const timer = setTimeout(() => {
+			setAwaitingLockConfirmation(false);
+			setFailureText(
+				"Запись НЕ подписана: сервер не подтвердил подпись. Набранный текст на месте, ничего не потеряно. Причину показало сообщение в углу экрана — чаще всего дневник не сохранён на сервере или не подтверждён штрихкод лотка. Нажмите «Сохранить черновик», затем повторите подписание.",
+			);
+		}, 1500);
+		return () => clearTimeout(timer);
+	}, [awaitingLockConfirmation]);
+
 	const closeDialog = () => {
 		setShowPinDialog(false);
 		setFailureText(null);
+		setAwaitingLockConfirmation(false);
 		// ПИН не держим в памяти дольше самого подписания.
 		setPinCode("");
 	};
@@ -158,7 +191,9 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 	const cryptoSigningUnavailable = !diaryHash;
 
 	const handleConfirmLock = async () => {
-		if (isSigning) return;
+		// Пока ждём подтверждения подписи, второе нажатие — второе подписание той
+		// же записи.
+		if (isSigning || awaitingLockConfirmation) return;
 		setFailureText(null);
 
 		if (signatureType === "crypto") {
@@ -183,7 +218,10 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 					selectedCertInfo?.deviceId,
 				);
 				await onLock(selectedCert, signatureBase64);
-				closeDialog();
+				// ПИН носителя в памяти дольше подписания не держим, а окно закроется
+				// само, когда придёт подтверждение подписи.
+				setPinCode("");
+				setAwaitingLockConfirmation(true);
 			} catch (error) {
 				console.error("[ЭЦП] подписание не выполнено:", error);
 				setFailureText(readableSigningFailure(error));
@@ -200,7 +238,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 		setIsSigning(true);
 		try {
 			await onLock("PIN_SIGNATURE", `PIN:${pinCode}`);
-			closeDialog();
+			setPinCode("");
+			setAwaitingLockConfirmation(true);
 		} catch (error) {
 			console.error("[ЭЦП] простое подписание не выполнено:", error);
 			setFailureText(readableSigningFailure(error));
@@ -435,6 +474,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								onClick={handleConfirmLock}
 								disabled={
 									isSigning ||
+									awaitingLockConfirmation ||
 									(signatureType === "crypto" && cryptoSigningUnavailable)
 								}
 								title={
@@ -444,7 +484,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								}
 								className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-60 flex items-center justify-center gap-2"
 							>
-								{isSigning ? (
+								{isSigning || awaitingLockConfirmation ? (
 									"Подписываю…"
 								) : (
 									<>
