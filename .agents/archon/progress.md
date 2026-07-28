@@ -454,3 +454,51 @@ deletion across the last 25 commits for dangling references at HEAD: **zero**. `
       "There are no network ports (e.g. 5432)". A subagent ordered to read it complete is actively
       misled. Same defect class as the known `.agents/AGENTS.md:7` contradiction. Fix the rule.
 - [ ] Tell the user to rotate the two PATs in `.git/config`.
+
+## CYCLE 4 CLOSED — 12/12 after three credit deaths. TWO STRIKES ESCALATED TO AREA LEVEL.
+
+Run `wf_4aefbe51-758` needed **four launches**: one killed by my own `${}` interpolation bug before any
+agent started, then three rounds of "Credit balance is too low". `resumeFromRunId` replayed the
+completed agents from cache every time and only re-ran the dead ones — **nothing was ever re-derived**.
+Final: 12 agents, 12 done, 0 errors.
+
+Verdicts: S4 SOUND_WITH_NITS. **S1, S2, S5, S6 NEEDS_REWORK.**
+
+### The hard call: freezing two areas
+Counting by AREA rather than by packet: **speech/dictation has now failed review five times**
+(C4 → R1 → S1 → S2 → S6) and **Telegram twice** (R5 → S5). S2 was itself the root-cause packet I created
+*after* invoking two strikes on C4/R1 — and it came back needing rework. That is the signal to stop.
+
+**Both areas are FROZEN.** Their residue is recorded as documented debt with file:line, not patched a
+sixth time. The campaign rule is now: *two strikes applies per AREA, not per packet.* Unfreezing
+requires a new root-cause argument, not another attempt.
+
+This is not abandonment — those areas absorbed five cycles and produced real fixes (the cross-patient
+merge, the tenant-blind write, the fail-open schedule, the duplicate photo, the AssemblyAI job loss).
+It is a decision to stop paying compound interest on one subsystem while nine other defect classes sit
+untouched.
+
+### Working-tree breakage that is NOT ours
+`npm run typecheck -w @dental/web` reports **6 errors**, all `Cannot find name 'AnamnesisField'` in
+`apps/web/src/DocumentsView.tsx`. Investigated: the file is **dirty** (79 insertions, second author
+mid-refactor extracting `components/documents/AnamnesisField.tsx`), and **at HEAD the symbol is not
+used at all** — so HEAD is clean and the API gate is 0 errors. Left untouched and declared to the whole
+fleet in the cycle-5 briefs so nobody "fixes" another author's in-flight work or blames themselves.
+
+## CYCLE 5 — dispatched, run `wf_4b457d07-e96`, script `.agents/archon/cycle5.workflow.js`
+
+Fresh ground only. Script assembled by reusing the proven LAW preamble verbatim and appending a
+CORRECTIONS block, so the four lead errors found so far are stated as overrides rather than silently
+edited away.
+
+| # | Packet | Why |
+|---|---|---|
+| U1 | `identity.verified` is set and never read | A field designed for exactly this check, never enforced; `apply-dev-env.ps1` arms it in three env files |
+| U2 | Guard gate that tests BEHAVIOUR | Current gate greens on prose and reds on correct hand-rolled auth; must app.inject every mutating route and assert 401 |
+| U3 | Black rectangles over text + undefined-token guard | Lead saw it on a plate; 19 undefined `var()` names used 56 times is the disease, the black box is the symptom |
+| U4 | One owner for the FAB corner | The mic FAB physically covers the treatment-plan «Сохранить» button — a control you cannot click |
+| U5 | `diary.ts` POST signing skips the `/lock` ceremony | No inventory deduction, no audit entry; two paths, one meaning |
+| U6 | `mutableStateSnapshot()` multi-MB write per action | 32 call sites; measure before fixing, and delete it if nothing reads it |
+
+Every packet must report `measurements` as a first-class field this cycle — a performance or census
+claim without a reproducible number is an opinion.
