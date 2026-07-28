@@ -21,6 +21,7 @@ import { appointmentActionCodes, communicationCampaigns } from "../db/communicat
 import { patientDuplicateDecisions } from "../db/patientsSchema.js";
 import {
 	appointments,
+	auditEvents,
 	chairs,
 	clinics,
 	communicationOutbox,
@@ -83,6 +84,13 @@ async function clean(): Promise<void> {
 	await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
 	await db.delete(users).where(eq(users.organizationId, ORG_ID));
 	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+	/*
+	 * Журнал действий удаляется последним из зависимых. Он наполняется сам —
+	 * любой маршрут, что-то меняющий в демо-клинике, оставляет здесь запись, — и
+	 * внешний ключ на организацию не даёт её удалить. Пересев ломался ровно так
+	 * после появления маршрутов правки сотрудника и кресла.
+	 */
+	await db.delete(auditEvents).where(eq(auditEvents.organizationId, ORG_ID));
 	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
 	// В stderr, а не в stdout: stdout этого скрипта — строго JSON с токенами, его
 	// перенаправляют в .ops-shot-tokens.json. Любая проза в stdout делает файл
