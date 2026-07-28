@@ -9,6 +9,35 @@
  *
  * Заголовки приходят снаружи, а не берутся здесь: доступ к клинике живёт в
  * контексте приложения, и этот файл не должен знать, как он устроен.
+ *
+ * ПОЧЕМУ У `headers` НЕТ ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ. Все четыре адреса закрыты охраной
+ * `requireClinicalReadContext` / `requireClinicalMutationContext`: без заголовка
+ * `x-dente-admin-secret` сервер отвечает 403. Раньше параметр имел значение по
+ * умолчанию `{}`, и это ровно тот дефект, который не видно на машине разработчика:
+ * в корневом `.env` секрет закомментирован, зато включены лазейки
+ * `DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS`, поэтому вызов без заголовков
+ * локально зелёный. Лазейки живут только пока `NODE_ENV !== "production"` — у
+ * заказчика их нет, и такой вызов там означает, что поиск дублей и слияние карт
+ * мертвы, а на одного человека продолжают плодиться карты. Теперь заголовки —
+ * обязательный аргумент: забыть их нельзя, это ошибка компиляции, а не тишина.
+ *
+ * ЭТОТ ФАЙЛ ОСТАЁТСЯ В НАХОДКАХ `npm run check:guarded-headers`, И ЭТО ОЖИДАЕМО.
+ * Проверка ищет имя помощника заголовков в тексте вызова и в тридцати строках над
+ * ним; здесь заголовки приходят параметром, за границу файла проверка не смотрит и
+ * сама называет это своим известным пределом. Оба вызывающих —
+ * `components/crm/PatientDuplicateMergeQueuesWidget.tsx` и
+ * `components/patients/PatientDuplicateAlert.tsx` — берут `auth` из
+ * `useAppLogicContext()` и передают сюда `auth.denteClinicalReadHeaders()` либо
+ * `auth.denteClinicalMutationHeaders()`, то есть секрет сеанса уходит на сервер.
+ *
+ * ЧЕГО ЗДЕСЬ ДЕЛАТЬ НЕЛЬЗЯ, чтобы «закрыть» ту находку. Не звать
+ * `denteAdminSecretRequestHeaders()` без секрета: помощник добавляет заголовок
+ * ТОЛЬКО когда секрет передан аргументом, поэтому такой вызов заголовка не даёт —
+ * проверка замолчит, а в клинике останется 403. Не читать секрет из хранилища
+ * настроек здесь: единственный источник — `clinicalAdminSecretSession` в
+ * `hooks/domains/useAuthLogic.ts`, и второй путь к нему разошёлся бы с первым.
+ * Молчание проверки на этом файле опаснее самой находки: тридцатистрочное окно
+ * накрыло бы и соседние вызовы, и пятый добавленный без заголовков уже не нашли бы.
  */
 
 export type DuplicateReason =
@@ -73,14 +102,14 @@ export function duplicatePairKey(candidate: DuplicateCandidate): string {
 	return `${candidate.leftPatientId}|${candidate.rightPatientId}`;
 }
 
-export async function fetchDuplicateReport(headers: RequestHeaders = {}): Promise<DuplicateReport> {
+export async function fetchDuplicateReport(headers: RequestHeaders): Promise<DuplicateReport> {
 	return readJson<DuplicateReport>(await fetch("/api/patients/duplicates", { headers }));
 }
 
 /** Дубли одной карточки — для предупреждения внутри неё. */
 export async function fetchDuplicatesForPatient(
 	patientId: string,
-	headers: RequestHeaders = {}
+	headers: RequestHeaders
 ): Promise<DuplicateCandidate[]> {
 	const payload = await readJson<{ patientId: string; candidates: DuplicateCandidate[] }>(
 		await fetch(`/api/patients/${encodeURIComponent(patientId)}/duplicates`, { headers })
@@ -94,7 +123,7 @@ export async function fetchDuplicatesForPatient(
  */
 export async function mergeDuplicatePair(
 	input: { keepPatientId: string; mergePatientId: string; reason?: string },
-	headers: RequestHeaders = {}
+	headers: RequestHeaders
 ): Promise<{ summary: string }> {
 	const body: Record<string, string> = {
 		primaryPatientId: input.keepPatientId,
@@ -113,7 +142,7 @@ export async function mergeDuplicatePair(
 /** «Это разные люди»: пара больше не предлагается. */
 export async function dismissDuplicatePair(
 	input: { leftPatientId: string; rightPatientId: string; reason?: string },
-	headers: RequestHeaders = {}
+	headers: RequestHeaders
 ): Promise<{ message: string }> {
 	const body: Record<string, string> = {
 		leftPatientId: input.leftPatientId,
