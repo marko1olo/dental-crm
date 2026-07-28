@@ -105,7 +105,17 @@ function contractRiskLevels(): string[] {
 	const contract = readFileSync(SHARED_CONTRACT, "utf8");
 	const declaration = /patientInsightRiskSchema\s*=\s*z\.enum\(\[([^\]]*)\]\)/.exec(contract);
 	assert.ok(declaration, "в контракте не нашлось patientInsightRiskSchema — проверка потеряла опору");
-	const levels = [...declaration[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+	/*
+	 * Содержимое скобок вынуто в переменную и проверено отдельно. При включённом
+	 * noUncheckedIndexedAccess группа разбора имеет тип «строка или ничего», и
+	 * подстановка пустой строки вместо проверки означала бы, что при сломанном
+	 * разборе проверка молча проходит на пустом перечислении.
+	 */
+	const enumBody = declaration[1];
+	assert.ok(enumBody, "перечисление риска в контракте разобрано пустым — проверка потеряла опору");
+	const levels = [...enumBody.matchAll(/"([^"]+)"/g)]
+		.map((match) => match[1])
+		.filter((value): value is string => Boolean(value));
 	assert.ok(levels.length >= 2, "перечисление риска разобрано пустым");
 	return levels;
 }
@@ -114,7 +124,9 @@ test("сравнения уровня риска ссылаются только
 	// Здесь и жил дефект: сравнение с «medium» при перечислении low | watch | high.
 	const levels = contractRiskLevels();
 	const source = stripComments(readWeb(SHIFT_VIEW));
-	const compared = [...source.matchAll(/riskLevel\s*===\s*"([^"]+)"/g)].map((match) => match[1]);
+	const compared = [...source.matchAll(/riskLevel\s*===\s*"([^"]+)"/g)]
+		.map((match) => match[1])
+		.filter((value): value is string => Boolean(value));
 	assert.ok(compared.length > 0, `${SHIFT_VIEW}: сравнений уровня риска не найдено — проверка ослепла`);
 	for (const value of compared) {
 		assert.ok(
@@ -143,9 +155,11 @@ test("у каждого уровня риска есть русская подп
 	const helpers = readWeb(HELPERS);
 	const block = /patientInsightRiskLabels[^=]*=\s*\{([\s\S]*?)\n\};/.exec(helpers);
 	assert.ok(block, `${HELPERS}: не нашёлся словарь patientInsightRiskLabels`);
+	const blockBody = block[1];
+	assert.ok(blockBody, `${HELPERS}: словарь patientInsightRiskLabels разобран пустым`);
 	for (const level of levels) {
 		assert.ok(
-			new RegExp(`\\b${level}\\s*:`).test(block[1]),
+			new RegExp(`\\b${level}\\s*:`).test(blockBody),
 			`${HELPERS}: у уровня «${level}» нет подписи — на экран попадёт пустота или ключ`
 		);
 	}
@@ -157,8 +171,15 @@ test("пропсы карточки пациента типизированы, �
 	const source = readWeb(SHIFT_VIEW);
 	const signature = /export function PatientCockpit\(\{[\s\S]*?\}:\s*([A-Za-z][\w<>[\]"|\s.]*)\)/.exec(source);
 	assert.ok(signature, `${SHIFT_VIEW}: не разобрана сигнатура PatientCockpit`);
+	/*
+	 * Тип пропсов проверяется отдельным утверждением, а не подстановкой пустой
+	 * строки: на пустой строке проверка «нет any» прошла бы всегда, и страж стал
+	 * бы декоративным именно в том случае, для которого написан.
+	 */
+	const signatureType = signature[1];
+	assert.ok(signatureType, `${SHIFT_VIEW}: не разобран тип пропсов PatientCockpit`);
 	assert.ok(
-		!/\bany\b/.test(signature[1]),
+		!/\bany\b/.test(signatureType),
 		`${SHIFT_VIEW}: пропсы PatientCockpit снова any — расхождение с контрактом станет невидимым`
 	);
 	assert.ok(
