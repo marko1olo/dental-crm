@@ -4,7 +4,6 @@ import { db } from "../db/client.js";
 import {
   appointments,
   auditEvents,
-  communicationSettings,
   migrationEntityLinks,
   migrationQuarantineRecords,
   migrationStagingRecords,
@@ -12,9 +11,17 @@ import {
   payments,
   visits
 } from "../db/schema.js";
+/**
+ * Пояс клиники берётся из ЕДИНСТВЕННОГО источника — `clinicTimeZone` в
+ * `services/reports/managerReports.js`. Своя копия здесь была бы третьим
+ * источником истины о поясе клиники; ровно из такого размножения в этом проекте
+ * выросли четыре разных расчёта долга. Цикла нет: `managerReports` про перенос не
+ * знает и тянет только drizzle, клиент базы и схему.
+ */
+import { clinicTimeZone } from "../services/reports/managerReports.js";
 import { IdentityIndex, naturalKeyFor, rawRowHash, type IdentityCandidate } from "./identity.js";
 import type { RowIssue, TransformedRow } from "./rowTransform.js";
-import { DEFAULT_CLINIC_TIME_ZONE, dateOnlyPart, storedDateTimeToUtc } from "./valueNormalize.js";
+import { dateOnlyPart, storedDateTimeToUtc } from "./valueNormalize.js";
 
 /**
  * Укладка в стейджинг и загрузка в боевые таблицы.
@@ -52,20 +59,84 @@ const APPOINTMENT_DEFAULT_MINUTES = 9 * 60;
 const PAYMENT_DEFAULT_MINUTES = 12 * 60;
 
 /**
- * Часовой пояс клиники.
+ * Пояс, в котором читается местное время источника, когда пояс клиники
+ * НЕИЗВЕСТЕН. «UTC» здесь означает «сдвиг не применяется»: время суток из
+ * выгрузки сохраняется как написано, и мы ничего не утверждаем о том, где стоит
+ * клиника.
  *
- * Выгрузка старой системы содержит МЕСТНОЕ время без указания пояса. Записать
- * «14:30» как UTC значит сдвинуть весь перенесённый график на три часа, и врач
- * увидит приёмы, которых в это время не было. Пояс берётся из настроек рассылки
- * организации — там он уже есть и уже используется для тихих часов, так что
- * второго источника истины не появляется.
+ * Это НЕ пояс по умолчанию и не замена ему. Разница принципиальна: подставить
+ * конкретный гражданский пояс — значит утвердить факт («эта клиника на UTC+3»),
+ * которого у нас нет. Не применить сдвиг — значит факт не утверждать.
  */
-async function clinicTimeZone(organizationId: string): Promise<string> {
-  const [row] = await db
-    .select({ timezone: communicationSettings.timezone })
-    .from(communicationSettings)
-    .where(eq(communicationSettings.organizationId, organizationId));
-  return row?.timezone?.trim() || DEFAULT_CLINIC_TIME_ZONE;
+const NO_OFFSET_TIME_ZONE = "UTC";
+
+/** Пояс переноса и признак того, известен ли настоящий пояс клиники. */
+export interface MigrationTimeZone {
+  /** Имя пояса для `storedDateTimeToUtc`. */
+  readonly readingZone: string;
+  /** false — пояс клиники не определён, сдвиг не применяется. */
+  readonly known: boolean;
+}
+
+/**
+ * Пояс переноса из пояса клиники. Чистая функция — вся политика «что делать,
+ * когда пояса нет» живёт здесь, поэтому её можно запереть тестом без базы.
+ *
+ * ЗДЕСЬ СТОЯЛА ТРЕТЬЯ КОПИЯ `clinicTimeZone`, И ОНА БЫЛА ХУЖЕ ДВУХ ДРУГИХ.
+ * Она возвращала `Promise<string>`, а не `Promise<string | null>`, то есть на
+ * отсутствие значения ПОДСТАВЛЯЛА `DEFAULT_CLINIC_TIME_ZONE` = `Europe/Moscow`.
+ * «Пояса нет» превращалось в «клиника в Москве», и перенос чужой базы сдвигал
+ * весь график на разницу поясов у той клиники, про которую мы как раз ничего не
+ * знаем. Хуже всего, что сдвиг тихий: даты на месте, все строки загружены,
+ * сверка сошлась — врач просто видит приёмы не в те часы, в которые они были.
+ *
+ * И читала она `communicationSettings.timezone`, тогда как канон — `clinics.timezone`.
+ * Это РАЗНЫЕ источники с РАЗНЫМИ значениями по умолчанию:
+ * `clinics.timezone` — `Europe/Samara`, `communication_settings.timezone` —
+ * `Europe/Moscow` (db/schema.ts). То есть даже когда обе строки существуют со
+ * своими умолчаниями, перенос и отчёты расходятся на час: перенос кладёт приём по
+ * Москве, а отчёт руководителя группирует его по Самаре.
+ *
+ * ЕЁ СОБСТВЕННОЕ ОБОСНОВАНИЕ БЫЛО ОПРОВЕРГНУТО ЗАМЕРОМ. В шапке стояло: «пояс
+ * берётся из настроек рассылки организации — там он уже есть и уже используется
+ * для тихих часов, так что второго источника истины не появляется». Оба
+ * утверждения неверны. Второй источник появлялся именно так: пояс тихих часов
+ * отвечает на вопрос «когда вежливо присылать SMS», а не «в каком часовом поясе
+ * клиника принимает пациентов». И «там он уже есть» не подтвердилось: в живой
+ * базе таблица `communication_settings` ПУСТА — 0 строк на 4 организации, — то
+ * есть ветка с подстановкой Москвы была не редким краем, а единственной рабочей
+ * ветвью для КАЖДОГО переноса.
+ *
+ * Своего источника пояса у переноса нет и быть не может: во всём модуле
+ * `migration/` пояс больше нигде не читается, оператору он не показывается и
+ * выбрать его оператор не может. Значит переносу нечего противопоставить канону —
+ * он обязан читать его.
+ */
+export function migrationTimeZoneFrom(clinicZone: string | null | undefined): MigrationTimeZone {
+  const zone = clinicZone?.trim();
+  if (!zone) return { readingZone: NO_OFFSET_TIME_ZONE, known: false };
+  return { readingZone: zone, known: true };
+}
+
+/**
+ * Пояс переноса для организации. Читает КАНОН и ничего не подставляет.
+ *
+ * Неизвестный пояс не молчит: он попадает в журнал процесса переноса. Строчного
+ * канала к оператору у загрузчика нет — `issuesByStagingId` это `Map` на строку,
+ * и запись в него затёрла бы более важную причину карантина (`broken_reference`,
+ * отказ базы), поэтому предупреждение идёт в лог один раз на загрузку, а не на
+ * каждую из сотен тысяч строк.
+ */
+async function migrationTimeZone(organizationId: string, entityTitle: string): Promise<MigrationTimeZone> {
+  const resolved = migrationTimeZoneFrom(await clinicTimeZone(organizationId));
+  if (!resolved.known) {
+    console.warn(
+      `[MIGRATION_TIME_ZONE_UNKNOWN] Организация ${organizationId}: часовой пояс клиники не задан ` +
+        `(clinics.timezone). Загрузка «${entityTitle}» сохраняет время суток из выгрузки без сдвига. ` +
+        "Укажите часовой пояс клиники и повторите загрузку, иначе часы приёмов останутся смещёнными."
+    );
+  }
+  return resolved;
 }
 
 /**
@@ -820,7 +891,7 @@ export async function loadAppointments(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const appointmentLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "appointment");
-  const timeZone = await clinicTimeZone(input.organizationId);
+  const { readingZone: timeZone } = await migrationTimeZone(input.organizationId, "запись расписания");
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
@@ -988,7 +1059,7 @@ export async function loadPayments(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const paymentLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "payment");
-  const timeZone = await clinicTimeZone(input.organizationId);
+  const { readingZone: timeZone } = await migrationTimeZone(input.organizationId, "платёж");
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
@@ -1146,7 +1217,7 @@ export async function loadVisits(input: {
 
   const patientLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "patient");
   const visitLinks = await loadEntityLinks(input.organizationId, input.sourceSystem, "visit");
-  const timeZone = await clinicTimeZone(input.organizationId);
+  const { readingZone: timeZone } = await migrationTimeZone(input.organizationId, "приём");
   const loadable = input.rows.filter((row) => !row.issues.some((issue) => issue.blocking));
 
   for (let offset = 0; offset < loadable.length; offset += LOAD_BATCH_SIZE) {
