@@ -141,7 +141,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     // FAIL CLOSED: организация без пароля больше не пускает с любым паролем.
     // Раньше отсутствие passwordHash означало "подойдёт что угодно".
     const storedHash = org.passwordHash;
-    const isMatch = storedHash ? verifyCredential(password, storedHash) : isDemoClinicLogin;
+    const isMatch = storedHash ? await verifyCredential(password, storedHash) : isDemoClinicLogin;
 
     if (!isMatch) {
       await authFailureDelay();
@@ -204,7 +204,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     const storedPinHash = user.pinCodeHash;
-    const isMatch = storedPinHash ? verifyCredential(pinCode, storedPinHash) : false;
+    const isMatch = storedPinHash ? await verifyCredential(pinCode, storedPinHash) : false;
 
     if (!isMatch) {
       await authFailureDelay();
@@ -316,7 +316,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: "Forbidden", message: "Нельзя менять пароль чужой организации." });
     }
 
-    const hash = hashCredential(body.newPassword);
+    const hash = await hashCredential(body.newPassword);
     await db.update(organizations).set({ passwordHash: hash }).where(eq(organizations.id, targetOrganizationId));
 
     await db.insert(auditEvents).values({
@@ -379,7 +379,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       }
     }
 
-    const hash = hashCredential(body.newPin);
+    const hash = await hashCredential(body.newPin);
     await db.update(users).set({ pinCodeHash: hash }).where(eq(users.id, body.userId));
 
     if (identity.organizationId) {
@@ -419,7 +419,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(409).send({ error: "Conflict", message: "Организация с таким логином уже существует." });
     }
 
-    const passwordHash = hashCredential(password);
+    const passwordHash = await hashCredential(password);
 
     const [org] = await db
       .insert(organizations)
@@ -440,7 +440,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       if (!ownerPin) {
         generatedOwnerPin = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
       }
-      const pinHash = hashCredential(ownerPin ?? generatedOwnerPin!);
+      const pinHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
       const [ownerUser] = await db
         .insert(users)
         .values({ organizationId: org.id, fullName: ownerName, role: "owner", pinCodeHash: pinHash, isActive: true })
@@ -483,9 +483,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (existingUser) return reply.code(409).send({ error: 'Conflict', message: 'Пользователь с таким email уже существует.' });
 
     // БЫЛО: PIN владельца всегда '0000' — предсказуемый вход в любую свежую клинику.
-    const passwordHash = hashCredential(password);
+    const passwordHash = await hashCredential(password);
     const generatedOwnerPin = ownerPin ? null : String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
-    const pinCodeHash = hashCredential(ownerPin ?? generatedOwnerPin!);
+    const pinCodeHash = await hashCredential(ownerPin ?? generatedOwnerPin!);
 
     const [org] = await db.insert(organizations).values({ name: clinicName, loginId, passwordHash, email: loginId }).returning();
     if (!org) return reply.code(500).send({ error: 'InternalError', message: 'Не удалось создать организацию.' });
@@ -544,7 +544,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     // FAIL CLOSED: нет хеша пароля — вход запрещён (кроме явного демо-режима).
-    const isMatch = user.passwordHash ? verifyCredential(password, user.passwordHash) : isDemoUserLogin;
+    const isMatch = user.passwordHash ? await verifyCredential(password, user.passwordHash) : isDemoUserLogin;
     if (!isMatch) {
       await authFailureDelay();
       return reply.code(401).send({ error: 'AuthError', message: 'Неверный email или пароль.' });
@@ -652,9 +652,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'InvalidToken', message: 'Приглашение уже использовано.' });
     }
 
-    const passwordHash = hashCredential(password);
-    const pinCodeHash = hashCredential(pinCode);
-    
+    const passwordHash = await hashCredential(password);
+    const pinCodeHash = await hashCredential(pinCode);
+
     const [user] = await db.insert(users).values({
       organizationId: invite.organizationId,
       fullName,
@@ -718,11 +718,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.passwordHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или пароль не установлен.' });
 
-    if (!verifyCredential(oldPassword, user.passwordHash)) {
+    if (!(await verifyCredential(oldPassword, user.passwordHash))) {
       return reply.code(401).send({ error: 'AuthError', message: 'Старый пароль неверен.' });
     }
 
-    const newPasswordHash = hashCredential(newPassword);
+    const newPasswordHash = await hashCredential(newPassword);
     await db.update(users).set({ passwordHash: newPasswordHash }).where(eq(users.id, user.id));
 
     return reply.send({ ok: true, message: 'Пароль успешно изменен.' });
@@ -744,11 +744,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
     if (!user || !user.pinCodeHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или PIN не установлен.' });
 
-    if (!verifyCredential(oldPin, user.pinCodeHash)) {
+    if (!(await verifyCredential(oldPin, user.pinCodeHash))) {
       return reply.code(401).send({ error: 'AuthError', message: 'Старый PIN-код неверен.' });
     }
 
-    const newPinHash = hashCredential(newPin);
+    const newPinHash = await hashCredential(newPin);
     await db.update(users).set({ pinCodeHash: newPinHash }).where(eq(users.id, user.id));
 
     return reply.send({ ok: true, message: 'PIN-код успешно изменен.' });

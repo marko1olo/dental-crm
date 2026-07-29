@@ -73,7 +73,10 @@ async function migrate() {
     id: orgId,
     name: state.clinicProfile.clinicName,
     loginId: clinicLogin,
-    passwordHash: hashCredential(clinicPassword),
+    // hashCredential асинхронна (pbkdf2 в пуле потоков, см.
+    // utils/cryptoHelper.ts). Без await в колонку уехал бы текст
+    // "[object Promise]", и после переноса в клинику нельзя было бы войти.
+    passwordHash: await hashCredential(clinicPassword),
     inn: state.clinicProfile.inn,
     kpp: state.clinicProfile.kpp,
     ogrn: state.clinicProfile.ogrn,
@@ -102,21 +105,31 @@ async function migrate() {
     `👥 Migrating ${state.staffMembers.length} Staff Members (Users)...`,
   );
   if (state.staffMembers?.length > 0) {
-    const values = state.staffMembers.map((staff: any) => {
-      const isAdmin = staff.role === "owner" || staff.role === "administrator";
-      const pin = isAdmin ? adminPin : staffPin;
-      return {
-        id: staff.id,
-        organizationId: orgId,
-        fullName: staff.fullName,
-        role: staff.role,
-        phone: staff.phone,
-        email: staff.email,
-        pinCodeHash: hashCredential(pin),
-        isActive: staff.active,
-        createdAt: new Date(staff.createdAt),
-      };
-    });
+    /*
+     * Обратный вызов .map стал асинхронным, и результат собирается через
+     * Promise.all. Это не украшение: hashCredential теперь возвращает обещание,
+     * и обычный .map положил бы в pinCodeHash обещание вместо строки — PIN
+     * каждого сотрудника перестал бы подходить, а сбоя при этом не было бы
+     * видно нигде. Соль по-прежнему своя у каждой строки: два сотрудника с
+     * одинаковым PIN не должны получать одинаковый хеш.
+     */
+    const values = await Promise.all(
+      state.staffMembers.map(async (staff: any) => {
+        const isAdmin = staff.role === "owner" || staff.role === "administrator";
+        const pin = isAdmin ? adminPin : staffPin;
+        return {
+          id: staff.id,
+          organizationId: orgId,
+          fullName: staff.fullName,
+          role: staff.role,
+          phone: staff.phone,
+          email: staff.email,
+          pinCodeHash: await hashCredential(pin),
+          isActive: staff.active,
+          createdAt: new Date(staff.createdAt),
+        };
+      }),
+    );
     for (const chunk of chunkArray(values as any[], 1000)) {
       await db.insert(schema.users).values(chunk);
     }

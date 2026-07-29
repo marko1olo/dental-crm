@@ -51,11 +51,17 @@ const PORTAL_TOKEN_KIND = "portal";
  * итераций — utils/cryptoHelper.ts), гасится при первой успешной проверке и
  * уходит пациенту настоящей SMS через существующий транспорт.
  *
- * ЦЕНА PBKDF2 НА ЭТОМ МАРШРУТЕ, ИЗМЕРЕНО: 37.6 мс блокировки цикла событий на
- * один вызов. Это ровно та же цена, которую уже платит /api/auth/clinic/login
- * через verifyCredential, поэтому вторая схема хеширования не заводится. На
- * одну проверку приходится строго ОДИН вызов: сверяется единственный
- * действующий код, а не все выданные.
+ * ЦЕНА PBKDF2 НА ЭТОМ МАРШРУТЕ. Прежняя редакция этого пояснения называла
+ * «37.6 мс блокировки цикла событий на один вызов», и это было верно, пока
+ * cryptoHelper считал хеш через pbkdf2Sync. Теперь счёт уходит в пул потоков
+ * libuv, и цикл событий на нём не стоит вовсе: сам вызов по-прежнему занимает
+ * десятки-сотни миллисекунд, но эти миллисекунды сервер продолжает отвечать
+ * остальным. Обоснование и замер — в utils/cryptoHelper.ts.
+ *
+ * Это ровно та же цена, которую платит /api/auth/clinic/login через
+ * verifyCredential, поэтому вторая схема хеширования не заводится. На одну
+ * проверку приходится строго ОДИН вызов: сверяется единственный действующий
+ * код, а не все выданные.
  *
  * ОГРАНИЧЕНИЕ ЧАСТОТЫ ПО IP здесь намеренно не дублируется. Оно уже работает
  * глобально для всего префикса /api/portal/ (security/rateLimit.ts, правило
@@ -340,7 +346,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 			}
 
 			const code = generateNumericCode(policy.codeLength);
-			const codeHash = hashCredential(code);
+			const codeHash = await hashCredential(code);
 
 			// Уборка старья по этому же пациенту: без неё таблица растёт вечно.
 			await db
@@ -544,7 +550,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				return reply.status(401).send(invalidOtp);
 			}
 
-			if (!verifyCredential(code, candidate.codeHash)) {
+			if (!(await verifyCredential(code, candidate.codeHash))) {
 				return reply.status(401).send(invalidOtp);
 			}
 

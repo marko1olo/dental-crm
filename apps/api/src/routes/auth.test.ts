@@ -69,7 +69,7 @@ describe("auth routes", () => {
       mock.method(db, 'select', () => ({
         from: () => ({
           where: () => ({
-            limit: async () => [{ id: 'org1', name: 'Test Org', passwordHash: hashCredential('password123') }]
+            limit: async () => [{ id: 'org1', name: 'Test Org', passwordHash: await hashCredential('password123') }]
           })
         })
       }));
@@ -123,7 +123,7 @@ describe("auth routes", () => {
       mock.method(db, 'select', () => ({
         from: () => ({
           where: () => ({
-            limit: async () => [{ id: 'user1', organizationId: 'org1', pinCodeHash: hashCredential('1234'), role: 'doctor' }]
+            limit: async () => [{ id: 'user1', organizationId: 'org1', pinCodeHash: await hashCredential('1234'), role: 'doctor' }]
           })
         })
       }));
@@ -146,7 +146,7 @@ describe("auth routes", () => {
       mock.method(db, 'select', () => ({
         from: () => ({
           where: () => ({
-            limit: async () => [{ id: 'user1', organizationId: 'org1', pinCodeHash: hashCredential('1234'), role: 'doctor' }]
+            limit: async () => [{ id: 'user1', organizationId: 'org1', pinCodeHash: await hashCredential('1234'), role: 'doctor' }]
           })
         })
       }));
@@ -203,7 +203,7 @@ describe("auth routes", () => {
             limit: async () => {
               if (callCount === 0) {
                 callCount++;
-                return [{ id: 'user1', organizationId: 'org1', passwordHash: hashCredential('password123'), role: 'doctor', fullName: 'John Doe', email: 'test@test.com' }];
+                return [{ id: 'user1', organizationId: 'org1', passwordHash: await hashCredential('password123'), role: 'doctor', fullName: 'John Doe', email: 'test@test.com' }];
               }
               return [{ name: 'Clinic Name' }];
             }
