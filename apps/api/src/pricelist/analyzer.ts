@@ -604,8 +604,8 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
     const matchSpan = match.indices?.[0];
     const matchText = match[0] ?? "";
     if (!matchSpan || !matchText) continue;
-    const lowText = groups.low ?? "";
-    const low = parseMoney(lowText);
+    const lowGroupText = groups.low ?? "";
+    const low = parseMoney(lowGroupText);
     if (low === null) continue;
     /*
      * Приклеенность считается у НИЖНЕЙ ГРАНИЦЫ, а не у начала совпадения:
@@ -615,7 +615,7 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
      * indexOf по тексту совпадения даёт точную позицию нижней границы: левее неё
      * в совпадении может стоять только «от» с пробелами, а цифр там нет ни одной.
      */
-    const lowStart = matchSpan[0] + matchText.indexOf(lowText);
+    const lowStart = matchSpan[0] + matchText.indexOf(lowGroupText);
     const glued = gluedToWordPattern.test(scanText.slice(0, lowStart));
     const hasCurrency = /(?:₽|руб|р)\.?$/iu.test(matchText.trimEnd());
     /*
