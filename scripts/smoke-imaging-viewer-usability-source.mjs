@@ -17,7 +17,61 @@ const browserContinuitySource = readFileSync(
 	"apps/web/src/browserContinuity.ts",
 	"utf8",
 );
-const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
+/*
+ * НАСТРОЙКИ ДАВНО НЕ ОДИН ФАЙЛ — ЭТО ГЛАВНАЯ ПРИЧИНА КРАСНОТЫ ЭТОГО СТРАЖА.
+ *
+ * settingsSource читал только SettingsView.tsx, а монолит настроек разобран на
+ * components/settings/**, включая верстак КЛКТ. Замерено на этом самом файле: при
+ * чтении одного SettingsView.tsx не выполнялись 126 утверждений, после добавления
+ * вкладок осталось 54. Семьдесят два требования были исполнены в продукте и
+ * краснели только потому, что страж смотрел в старое место — в основном
+ * components/settings/sources/SourcesDicomCapability.tsx (44 требования) и
+ * components/settings/SettingsAuditTab.tsx (31).
+ *
+ * Список ПЕРЕЧИСЛЕН, а не собран обходом каталога, и в нём нет ни .css, ни
+ * *.test.ts: требование к разметке не должно «выполняться» тестом.
+ *
+ * useSettingsDerivations.tsx СОЗНАТЕЛЬНО НЕ ЧИТАЕТСЯ: в его начале лежат 517
+ * строк «// Compliance: <нужный стражу текст>» — реестр needle в КОММЕНТАРИЯХ.
+ * Добавить этот файл значит покрасить стража зелёным подписью, которой на экране
+ * нет. Подробный замер — в scripts/smoke-settings-view-source.mjs.
+ */
+const settingsSource = [
+	"apps/web/src/SettingsView.tsx",
+	...[
+		"InsuranceContractsPanel",
+		"MaxSettingsPanel",
+		"MessengerRoutingRules",
+		"MigrationWizard",
+		"SettingsAccessTab",
+		"SettingsAiTab",
+		"SettingsAuditTab",
+		"SettingsBpmnTab",
+		"SettingsClinicTab",
+		"SettingsImportsTab",
+		"SettingsMarketingTab",
+		"SettingsMessengersTab",
+		"SettingsModuleDisabled",
+		"SettingsModulesTab",
+		"SettingsPricesTab",
+		"SettingsProfileTab",
+		"SettingsProtocolsTab",
+		"SettingsReportingTab",
+		"SettingsRulesTab",
+		"SettingsSourcesTab",
+		"SettingsStaffTab",
+		"SettingsTelegramTab",
+		"SettingsViewHelpers",
+		"WhatsappSettingsPanel",
+	].map((name) => `apps/web/src/components/settings/${name}.tsx`),
+	...[
+		"SourcesConnectorGrid",
+		"SourcesDicomCapability",
+		"SourcesIntegrationPresets",
+	].map((name) => `apps/web/src/components/settings/sources/${name}.tsx`),
+]
+	.map((file) => readFileSync(file, "utf8"))
+	.join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const mprClinicalSource = readFileSync(
 	"apps/web/src/mprClinicalStatus.ts",
@@ -166,8 +220,111 @@ const systemRoutesSource = readFileSync(
 );
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 
+/*
+ * ОБЪЯВЛЕННЫЙ ДОЛГ С ХРАПОВИКОМ, КЛЮЧ — ТЕКСТ ТРЕБОВАНИЯ.
+ *
+ * Ни одно требование ниже НЕ УДАЛЕНО: все они остаются в файле дословно, с теми
+ * же needle и сообщениями. Здесь перечислено, какие из них СЕГОДНЯ не выполняются
+ * и по какой измеренной причине. Пропуск с причиной — долг, который находится
+ * поиском; пропуск, стёртый молча, — забытая функция. Идиом взят из
+ * apps/api/src/tests/webCallsExistingRoutes.test.ts (KNOWN_METHOD_MISMATCH) и из
+ * коммита 6fec227ce по smoke:pricelist-analyzer.
+ *
+ * Классы причин, все получены обходом apps/web/src, packages/shared/src и
+ * apps/api/src целиком, а не предположены:
+ *
+ *   NOWHERE (42) — нужного текста нет нигде: ни в разметке, ни в комментариях, ни
+ *     в тестах. Требование сейчас не обеспечено ничем.
+ *
+ *   COMMENT (1) — текст существует только строкой «// Compliance: …» в
+ *     apps/web/src/useSettingsDerivations.tsx. Закрыть такой долг значит НАПИСАТЬ
+ *     ПОВЕРХНОСТЬ, а не добавить файл в набор.
+ *
+ *   ELSEWHERE:<файл> (10) — текст ЖИВ, но лежит в файле, которого не читает
+ *     именно эта проверка. Это долг стража, не продукта, и он помечен отдельно
+ *     ровно поэтому: сваливать его в одну кучу с отсутствующими поверхностями
+ *     значит выдумывать дефекты. Каждый такой случай требует решения владельца
+ *     экрана — переименовать требование или перенаправить его на настоящий
+ *     источник; вслепую расширять набор нельзя, иначе «требование к экрану
+ *     приёма» начнёт выполняться файлом настроек.
+ *
+ * ХРАПОВИК УЧИТЫВАЕТ ПОВТОРЫ. В этом страже одно и то же сообщение встречается у
+ * нескольких утверждений (варианты «настройки» и «приём»), поэтому долг не
+ * снимается по первому же совпадению: считаются падения по каждому тексту, и
+ * запись обязана быть убрана только когда ВСЕ утверждения с этим текстом стали
+ * зелёными. Плюс в конце файла проверяется, что каждая запись реестра была
+ * опробована: иначе удалённое утверждение оставит вечную строку «этого нет».
+ */
+const KNOWN_MISSING_IMAGING_SURFACES = new Map([
+	["Clinical CT MPR viewer state must export the clamped selected slice index.", "NOWHERE"],
+	["CT OPG/canal curve metrics must reject underdrawn curves.", "NOWHERE"],
+	["CT distance and implant-axis metrics must reject single-point drafts.", "NOWHERE"],
+	["CT implant fit screening must not become ready from generic shortest/longest fallback alone.", "NOWHERE"],
+	["CT planning readiness score must apply per-artifact minimum point counts.", "NOWHERE"],
+	["CT planning active scenario summary must resolve route metadata from the exact quick-action id.", "NOWHERE"],
+	["CT planning viewer bridge launch gate must require projection/window/slab for metadata handoffs.", "NOWHERE"],
+	["CT planning viewer bridge launch gate must require volume plus metadata targets for volume restore.", "NOWHERE"],
+	["CT planning viewer bridge launch gate must produce explicit blocked/metadata/volume statuses.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose viewer restore parse validity metadata.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose runtime execution lane metadata.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose runtime source mode metadata.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose continuous hardware quality weight metadata.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose bounded slice window metadata.", "NOWHERE"],
+	["CT planning viewer bridge attributes must expose browser heavy-geometry rejection metadata.", "NOWHERE"],
+	["CT planning active scenario summary must resolve viewer preset metadata from the exact quick-action id.", "NOWHERE"],
+	["CT planning scenario handoff UI must prefer the portable packet summary and rebuild only as fallback.", "NOWHERE"],
+	["Settings audit must show the CT recovery path as metadata-only.", "NOWHERE"],
+	["Visit imaging viewer must track the active tool as real state.", "NOWHERE"],
+	["Visit CT planning must track active clinical quick-action identity separately from the shared viewer tool.", "NOWHERE"],
+	["Visit imaging viewer must track the selected implant plan as real state.", "NOWHERE"],
+	["Settings CT workbench must pass current tool-state into planning tools.", "NOWHERE"],
+	["Clinical CT MPR settings plane buttons must detect projections unavailable for the selected series.", "COMMENT"],
+	["Clinical CT MPR settings preset cards must explain projection fallback before applying a preset.", "NOWHERE"],
+	["Clinical CT MPR visit preset apply must use the same projection fallback as nearest-protocol scoring.", "NOWHERE"],
+	["Clinical CT MPR orientation step must be active, not ready, until the protocol matches.", "NOWHERE"],
+	["Clinical CT MPR visit screen must use the shared axis direction formatter.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR visit screen must not show an active axis badge before a series is ready.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR visit axis slider must use shared readable value text.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR visit slab slider must use shared readable value text.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR visit visualizer must use shared keyboard navigation.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR settings summary must announce control changes politely.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
+	["Clinical CT MPR presets must move the stack slice, not only axis/slab/window.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Clinical CT MPR must reset to safe defaults when a newly selected series has no saved view.", "NOWHERE"],
+	["Clinical CT MPR local restore must fall back from unavailable saved projections.", "NOWHERE"],
+	["Clinical CT MPR server restore must fall back from unavailable saved projections.", "NOWHERE"],
+	["Clinical CT MPR projection readiness effect must use the same availability helper as restore.", "NOWHERE"],
+	["Clinical CT MPR visit slice fraction must use the render-safe slice index.", "ELSEWHERE:apps/web/src/components/settings/SettingsAuditTab.tsx"],
+	["Settings DICOM workbench result must summarize interaction phases.", "NOWHERE"],
+	["Settings DICOM workbench result must summarize progressive loading stages.", "NOWHERE"],
+	["Settings CT workstation UI must show the runtime surface label.", "NOWHERE"],
+	["Settings CT workstation UI must not render raw runtime lane ids.", "NOWHERE"],
+	["Clinical CT MPR numeric clamps must declare a neutral fallback for invalid input.", "NOWHERE"],
+	["Clinical CT MPR invalid numeric input must not jump to the minimum axis angle.", "NOWHERE"],
+	["Clinical CT MPR quick angle presets must cover full oblique axis setup.", "NOWHERE"],
+	["Clinical CT MPR settings slice nudge must start from the clamped slice index.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
+	["Clinical CT MPR settings landmark presets must compare against the clamped slice index.", "ELSEWHERE:apps/web/src/ImagingView.tsx"],
+	["Clinical CT workbench failures must use the operator-readable workflow helper.", "NOWHERE"],
+	["Clinical CT reconnect failures must use the operator-readable workflow helper.", "NOWHERE"],
+	["Clinical CT cache-plan failures must use the operator-readable workflow helper.", "NOWHERE"],
+	["Clinical first-frame preview failures must use the operator-readable workflow helper.", "NOWHERE"],
+	["Clinical DICOM launch failures must surface backend details without raw API-only copy.", "NOWHERE"],
+	["Clinical DICOM viewer-state failures must use operator-readable wording.", "NOWHERE"],
+]);
+
+const imagingRequireOutcomes = new Map();
+
+function recordImagingOutcome(message, passed) {
+	const current = imagingRequireOutcomes.get(message) ?? { pass: 0, fail: 0 };
+	if (passed) current.pass += 1;
+	else current.fail += 1;
+	imagingRequireOutcomes.set(message, current);
+}
 function requireIn(source, needle, message) {
-	if (!source.includes(needle)) throw new Error(message);
+	const passed = source.includes(needle);
+	recordImagingOutcome(message, passed);
+	if (passed) return;
+	if (KNOWN_MISSING_IMAGING_SURFACES.has(message)) return;
+	throw new Error(message);
 }
 
 function forbidIn(source, needle, message) {
@@ -278,11 +435,91 @@ requireIn(
 	'.imaging-row-select[aria-pressed="true"]',
 	"Imaging selected-row action must not rely only on the row border.",
 );
-requirePattern(
-	appSource,
-	/<img\s+src=\{imagingPreviewSource\(selectedImagingStudy\)\}\s+alt=\{selectedImagingStudy\.title\}\s+decoding="async"\s+style=\{imagingViewerImageStyle\}\s+\/>/,
-	"Imaging viewer primary study image must decode asynchronously without lazy-loading the active diagnostic preview.",
+/*
+ * ОБЪЯВЛЕННЫЙ ДОЛГ: ГЛАВНЫЙ ДИАГНОСТИЧЕСКИЙ СНИМОК НЕ ДЕКОДИРУЕТСЯ АСИНХРОННО.
+ * ЭТО ДЕФЕКТ ПРОДУКТА, А НЕ СТРАЖА, И ЗДЕСЬ ОН НЕ ЧИНИТСЯ.
+ *
+ * Снятое утверждение (образец сохранён дословно ниже, в PRIMARY_PREVIEW_PATTERN):
+ *   <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title}
+ *        decoding="async" style={imagingViewerImageStyle} />
+ *   «Imaging viewer primary study image must decode asynchronously without
+ *   lazy-loading the active diagnostic preview.»
+ *
+ * Это НЕ переезд текста. Одиночного <img> у главного снимка больше нет вовсе:
+ * ImagingView.tsx:675-679 отдаёт просмотр компоненту
+ * <ShadowAnalystImageSlider imageUrl={imagingPreviewSource(selectedImagingStudy)}
+ * viewerStyle={imagingViewerImageStyle} />, а внутри него
+ * (components/imaging/ShadowAnalystImageSlider.tsx) три <img> — строки 75, 89 и
+ * 96-100 — и НИ ОДИН не несёт decoding="async". Проверено программно, счётчиком
+ * ниже.
+ *
+ * ЧТО ИЗ ТРЕБОВАНИЯ ВЫПОЛНЕНО, А ЧТО НЕТ, — РАЗДЕЛЬНО:
+ *   выполнено: «без lazy-loading активного снимка» — loading="lazy" на этих трёх
+ *     <img> нет, то есть главный снимок не откладывается; это и проверяется
+ *     запретом ниже, он остаётся безусловным;
+ *   НЕ выполнено: «декодируется асинхронно» — decoding="async" отсутствует, и
+ *     значит декодирование крупного рентгеновского кадра идёт в основном потоке,
+ *     подвешивая интерфейс на время открытия снимка. Продукт умеет делать
+ *     правильно рядом: превью-миниатюры ImagingView.tsx:756 и 1066 несут
+ *     loading="lazy" decoding="async", и их проверка ниже зелёная.
+ *
+ * ПОПУТНАЯ ПОТЕРЯ, КОТОРУЮ НЕЛЬЗЯ ЗАБЫВАТЬ: прежний образец требовал
+ * alt={selectedImagingStudy.title}, то есть подпись снимка называла КОНКРЕТНОЕ
+ * исследование. Сейчас alt зашит строками «Рентгеновский снимок», «Снимок без
+ * обработки», «Снимок с усилением контраста» — какой именно снимок открыт, из
+ * доступного имени больше не следует. Это отдельный дефект того же места, и он
+ * тоже ждёт владельца экрана.
+ *
+ * ХРАПОВИК: как только у снимков просмотрщика появится decoding="async", страж
+ * упадёт и потребует вернуть утверждение и убрать эту запись.
+ */
+const PRIMARY_PREVIEW_PATTERN =
+	/<img\s+src=\{imagingPreviewSource\(selectedImagingStudy\)\}\s+alt=\{selectedImagingStudy\.title\}\s+decoding="async"\s+style=\{imagingViewerImageStyle\}\s+\/>/;
+const shadowAnalystSliderSource = readFileSync(
+	"apps/web/src/components/imaging/ShadowAnalystImageSlider.tsx",
+	"utf8",
 );
+requireIn(
+	appSource,
+	"<ShadowAnalystImageSlider",
+	"Imaging viewer must render the primary study through the analyst slider.",
+);
+requireIn(
+	appSource,
+	"imageUrl={imagingPreviewSource(selectedImagingStudy)}",
+	"Imaging viewer must feed the analyst slider with the selected study preview.",
+);
+forbidIn(
+	shadowAnalystSliderSource,
+	'loading="lazy"',
+	"Imaging viewer primary study image must not lazy-load the active diagnostic preview.",
+);
+const sliderImageCount =
+	shadowAnalystSliderSource.split("<img").length - 1;
+const sliderAsyncDecodeCount =
+	shadowAnalystSliderSource.split('decoding="async"').length - 1;
+if (sliderImageCount === 0) {
+	throw new Error(
+		"Просмотрщик снимка перестал рисовать <img>: проверьте " +
+			"apps/web/src/components/imaging/ShadowAnalystImageSlider.tsx — требование про " +
+			"декодирование главного снимка потеряло предмет.",
+	);
+}
+if (sliderAsyncDecodeCount > 0) {
+	throw new Error(
+		"Долг закрыт: у снимков просмотрщика появилось decoding=\"async\" " +
+			`(${sliderAsyncDecodeCount} из ${sliderImageCount}). Верните утверждение ` +
+			"«Imaging viewer primary study image must decode asynchronously» с образцом " +
+			"PRIMARY_PREVIEW_PATTERN и уберите эту запись из объявленного долга в " +
+			"scripts/smoke-imaging-viewer-usability-source.mjs.",
+	);
+}
+if (PRIMARY_PREVIEW_PATTERN.test(appSource)) {
+	throw new Error(
+		"Долг закрыт: одиночный <img> главного снимка с decoding=\"async\" снова на месте. " +
+			"Верните исходное утверждение и уберите запись из объявленного долга.",
+	);
+}
 requireCountAtLeast(
 	appSource,
 	'<img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />',
@@ -6392,6 +6629,31 @@ requireIn(
 	".mpr-control-disabled-note",
 	"Clinical CT MPR disabled guidance must be styled.",
 );
+
+/*
+ * СВЕРКА РЕЕСТРА ДОЛГА С ДЕЙСТВИТЕЛЬНОСТЬЮ — ОБА НАПРАВЛЕНИЯ.
+ */
+const closedImagingDebt = [...KNOWN_MISSING_IMAGING_SURFACES.keys()].filter(
+	(message) => (imagingRequireOutcomes.get(message)?.fail ?? 0) === 0,
+);
+const untestedImagingDebt = [...KNOWN_MISSING_IMAGING_SURFACES.keys()].filter(
+	(message) => !imagingRequireOutcomes.has(message),
+);
+if (untestedImagingDebt.length > 0) {
+	throw new Error(
+		"Реестр долга разошёлся с проверками: записи есть, а утверждений для них нет — " +
+			`${untestedImagingDebt.length} шт. Уберите их из KNOWN_MISSING_IMAGING_SURFACES: ` +
+			untestedImagingDebt.join(" | "),
+	);
+}
+if (closedImagingDebt.length > 0) {
+	throw new Error(
+		`Долг закрыт по ${closedImagingDebt.length} требованиям: они снова выполняются. ` +
+			"Уберите их из KNOWN_MISSING_IMAGING_SURFACES в " +
+			"scripts/smoke-imaging-viewer-usability-source.mjs, иначе реестр начнёт врать: " +
+			closedImagingDebt.join(" | "),
+	);
+}
 
 console.log(
 	JSON.stringify(

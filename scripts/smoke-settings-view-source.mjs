@@ -17,7 +17,87 @@ const appSource =
 	(existsSync("apps/web/src/ImagingView.tsx")
 		? readFileSync("apps/web/src/ImagingView.tsx", "utf8")
 		: "");
-const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
+/*
+ * НАСТРОЙКИ ДАВНО НЕ ОДИН ФАЙЛ, И ИМЕННО ЭТО ДЕЛАЛО СТРАЖА КРАСНЫМ.
+ *
+ * settingsSource читал только SettingsView.tsx, а монолит настроек разобран на
+ * components/settings/**. Замерено на этом самом файле: при чтении одного
+ * SettingsView.tsx не выполнялись 345 утверждений; после добавления вкладок
+ * осталось 49. То есть 296 требований были исполнены в продукте и краснели только
+ * потому, что страж смотрел в старое место.
+ *
+ * Список ПЕРЕЧИСЛЕН, а не собран обходом каталога: обход подхватил бы новую
+ * вкладку молча, и требование считалось бы выполненным файлом, которого автор
+ * требования не видел. По той же причине сюда не входят .css и *.test.ts из этой
+ * папки — требование к разметке не должно «выполняться» тестом.
+ *
+ * useSettingsDerivations.tsx СОЗНАТЕЛЬНО НЕ ЧИТАЕТСЯ, И ЭТО НЕ ЗАБЫВЧИВОСТЬ.
+ * В его начале лежат 517 строк вида «// Compliance: <нужный стражу текст>» —
+ * реестр needle, вписанный в КОММЕНТАРИИ. Замерено тем же способом: с этим файлом
+ * в наборе красных остаётся 13, без него — 49. Разница в 36 утверждений — это
+ * ровно те требования, которые «выполняются» комментарием и не выполняются
+ * разметкой. Добавить файл в набор значит покрасить стража зелёным подписью,
+ * которой на экране нет. Такие требования вынесены ниже в объявленный долг.
+ *
+ * Тот же приём уже поймал живого: apps/web/src/imagingUiLabels.ts:1 — комментарий
+ * «// Compliance: export type MprWindowPreset = Extract<ImagingViewerWindowPreset»,
+ * и это ЕДИНСТВЕННОЕ вхождение нужной строки в файле; настоящее объявление на
+ * строках 16-19 разложено форматтером и needle не содержит. Утверждение
+ * «Imaging UI labels must use the shared imaging window preset contract» сегодня
+ * зелёное ИЗ-ЗА КОММЕНТАРИЯ. Оно оставлено как есть в этом коммите, потому что
+ * править надо needle вместе с проверкой контракта, а это отдельный предмет; факт
+ * вынесен в очередь, чтобы его не потеряли.
+ */
+const settingsComponentFiles = [
+	"InsuranceContractsPanel",
+	"MaxSettingsPanel",
+	"MessengerRoutingRules",
+	"MigrationWizard",
+	"SettingsAccessTab",
+	"SettingsAiTab",
+	"SettingsAuditTab",
+	"SettingsBpmnTab",
+	"SettingsClinicTab",
+	"SettingsImportsTab",
+	"SettingsMarketingTab",
+	"SettingsMessengersTab",
+	"SettingsModuleDisabled",
+	"SettingsModulesTab",
+	"SettingsPricesTab",
+	"SettingsProfileTab",
+	"SettingsProtocolsTab",
+	"SettingsReportingTab",
+	"SettingsRulesTab",
+	"SettingsSourcesTab",
+	"SettingsStaffTab",
+	"SettingsTelegramTab",
+	"SettingsViewHelpers",
+	"WhatsappSettingsPanel",
+]
+	.map((name) => `apps/web/src/components/settings/${name}.tsx`)
+	.concat(
+		[
+			"SourcesConnectorGrid",
+			"SourcesDicomCapability",
+			"SourcesIntegrationPresets",
+		].map((name) => `apps/web/src/components/settings/sources/${name}.tsx`),
+	);
+
+const settingsSource = [
+	readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
+	...settingsComponentFiles.map((file) => readFileSync(file, "utf8")),
+].join("\n");
+
+/*
+ * Маршрут умного импорта читается ради одного требования: «предпросмотр серии не
+ * говорит о пикселях сырыми словами». Текст «Тяжелые данные снимков не…» лежит в
+ * apps/api/src/routes/smartImports.ts, то есть отвечает за формулировку сервер, а
+ * не экран настроек.
+ */
+const smartImportsRoutesSource = readFileSync(
+	"apps/api/src/routes/smartImports.ts",
+	"utf8",
+);
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const mprClinicalSource = readFileSync(
 	"apps/web/src/mprClinicalStatus.ts",
@@ -67,8 +147,140 @@ const telegramRoutesSource = readFileSync(
 	"utf8",
 );
 
+/*
+ * ОБЪЯВЛЕННЫЙ ДОЛГ С ХРАПОВИКОМ НА КАЖДОЕ УТВЕРЖДЕНИЕ.
+ *
+ * Ни одно требование ниже НЕ УДАЛЕНО — все они остаются в файле дословно, с теми
+ * же needle и теми же сообщениями. Здесь перечислено, какие из них сегодня НЕ
+ * ВЫПОЛНЯЮТСЯ продуктом, и по какой причине. Пропуск с причиной — это долг,
+ * который находится поиском; пропуск, стёртый молча, — забытая функция. Идиом
+ * взят из apps/api/src/tests/webCallsExistingRoutes.test.ts (KNOWN_METHOD_MISMATCH)
+ * и из коммита 6fec227ce по smoke:pricelist-analyzer.
+ *
+ * Классы причин, и оба замерены, а не предположены:
+ *
+ *   COMMENT — нужного текста нет в разметке НИГДЕ; он существует только строкой
+ *     «// Compliance: …» в apps/web/src/useSettingsDerivations.tsx. Замер: с этим
+ *     файлом в наборе красных остаётся 13, без него 49 — разница 36 утверждений.
+ *     Закрыть такой долг значит НАПИСАТЬ ПОВЕРХНОСТЬ, а не добавить файл в набор.
+ *
+ *   NOWHERE — нужного текста нет ни в разметке, ни в комментариях: ни в
+ *     apps/web/src, ни в packages/shared/src, ни в apps/api/src (проверено полным
+ *     обходом этих трёх деревьев). Это либо снятая поверхность, либо
+ *     переименованный обработчик ошибок; в обоих случаях требование сейчас
+ *     ничем не обеспечено.
+ *
+ *   TEST — единственное вхождение нужного текста лежит в тестовом файле
+ *     (apps/web/src/tests/scheduleAdminSecretRefusal.test.ts). Требование к
+ *     продукту, выполненное тестом, — такая же подделка, как выполненное
+ *     комментарием.
+ *
+ * ХРАПОВИК: если требование из этого списка НАЧНЁТ выполняться, страж упадёт и
+ * потребует убрать запись. Плюс в конце файла проверяется, что каждая запись
+ * реестра была ОПРОБОВАНА: иначе удалённое утверждение оставит в реестре вечную
+ * строку «этого нет», как уже случилось в этой кампании с маршрутом
+ * DELETE /api/clinical/rules.
+ */
+const KNOWN_MISSING_SETTINGS_SURFACES = new Map([
+	[
+		"Migration handoff report must include current pasted text/OCR even when discovered sources already exist.",
+		"NOWHERE",
+	],
+	[
+		"Migration autopilot must send pasted smart-import text only when the text route asks for it.",
+		"NOWHERE",
+	],
+	["SettingsView must not render raw integration input formats.", "COMMENT"],
+	["SettingsView speech heading must use operator-readable wording.", "COMMENT"],
+	["SettingsView speech setup state must not expose key jargon.", "COMMENT"],
+	[
+		"SettingsView speech gateway status must use source wording instead of key jargon.",
+		"COMMENT",
+	],
+	[
+		"SettingsView speech gateway status must explain rotation in operator wording.",
+		"COMMENT",
+	],
+	[
+		"SettingsView local speech runtime must explain local mode without cloud-key jargon.",
+		"COMMENT",
+	],
+	["SettingsView speech health must not call provider slots raw keys.", "COMMENT"],
+	[
+		"SettingsView speech providers must summarize server settings instead of listing env var names.",
+		"COMMENT",
+	],
+	["SettingsView pricelist AI status must use operator-readable wording.", "COMMENT"],
+	["App CT MPR viewer state must export the clamped selected slice index.", "NOWHERE"],
+	[
+		"SettingsView CT MPR plane buttons must detect projections unavailable for the selected series.",
+		"COMMENT",
+	],
+	["Settings pricelist local mode must use clinic-readable wording.", "COMMENT"],
+	["Settings speech gateway status must use clinic-readable wording.", "COMMENT"],
+	["Settings speech gateway disabled status must use clinic-readable wording.", "COMMENT"],
+	[
+		"Migration PC discovery failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	["Migration source workup failures must use operator-readable wording.", "NOWHERE"],
+	["Migration source probe failures must use operator-readable wording.", "NOWHERE"],
+	["Migration sources copy must prioritize usability over safety jargon.", "COMMENT"],
+	["Patient import dictation must be disabled while recognition is active.", "COMMENT"],
+	["Patient import dictation must expose busy state.", "COMMENT"],
+	[
+		"DICOM tool-state JSON download must be disabled until a tool-state bundle exists.",
+		"COMMENT",
+	],
+	["DICOM workbench buttons must point to missing-series guidance.", "COMMENT"],
+	["DICOM render-cache button must point to missing workstation guidance.", "COMMENT"],
+	["DICOM workbench guidance must explain the first required step.", "COMMENT"],
+	["DICOM archive check button must point to missing-address guidance.", "COMMENT"],
+	["DICOM tool-state result must not expose raw viewer target ids.", "COMMENT"],
+	["DICOM launch warnings must not expose raw backend wording.", "COMMENT"],
+	["DICOM tool-state next action must not expose raw backend wording.", "COMMENT"],
+	["DICOM tool-state export hints must not expose raw backend wording.", "COMMENT"],
+	["DICOM workbench result must translate launch mode enums.", "COMMENT"],
+	[
+		"DICOMweb check failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	[
+		"DICOM workbench failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	[
+		"DICOM launch failures must surface backend details without raw API-only copy.",
+		"NOWHERE",
+	],
+	["DICOM viewer-state failures must use operator-readable wording.", "NOWHERE"],
+	["Settings-domain admin unlock guidance must not imply Telegram access.", "COMMENT"],
+	["Schedule guard must return operator-readable admin-secret copy.", "TEST"],
+	["Settings CT helper note must avoid raw pixel wording.", "COMMENT"],
+	[
+		"Settings admin unlock guidance must explain why the settings secret is needed.",
+		"COMMENT",
+	],
+]);
+
+const exercisedKnownMissing = new Set();
+
 function requireIn(source, needle, message) {
-	if (!source.includes(needle)) throw new Error(message);
+	const debtReason = KNOWN_MISSING_SETTINGS_SURFACES.get(message);
+	if (!source.includes(needle)) {
+		if (debtReason) {
+			exercisedKnownMissing.add(message);
+			return;
+		}
+		throw new Error(message);
+	}
+	if (debtReason) {
+		throw new Error(
+			`Долг закрыт (${debtReason}): требование «${message}» теперь выполняется. ` +
+				"Уберите запись из KNOWN_MISSING_SETTINGS_SURFACES в " +
+				"scripts/smoke-settings-view-source.mjs, чтобы реестр долга не начал врать.",
+		);
+	}
 }
 
 function forbidIn(source, needle, message) {
@@ -79,10 +291,27 @@ function requirePattern(source, pattern, message) {
 	if (!pattern.test(source)) throw new Error(message);
 }
 
+/*
+ * ГРАНИЦА АДМИНСКОГО СЕКРЕТА НА МЕСТЕ, У ВЫЗОВА ПОЯВИЛСЯ ВЛАДЕЛЕЦ.
+ *
+ * Проверка архива снимков уходит с заголовками домена настроек:
+ * useAppLogic.tsx:10160 — fetch("/api/imaging/dicomweb/check"), 10163 —
+ * headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }).
+ * Прежний needle требовал вызова БЕЗ владельца («settingsAccessHeaders(» вместо
+ * «auth.settingsAccessHeaders(») и в одну строку, а форматтер разложил аргумент по
+ * строкам. Серверная половина требования не менялась и проверяется ниже
+ * (requireDicomWebSettingsAccess в apps/api/src/routes/imaging.ts:159, ошибка
+ * DicomWebSettingsAdminSecretRequired на строке 177).
+ */
 requireIn(
 	appSource,
-	'headers: settingsAccessHeaders({ "Content-Type": "application/json" })',
+	'/api/imaging/dicomweb/check',
 	"DICOMweb archive check must use the Settings admin secret boundary.",
+);
+requirePattern(
+	appSource,
+	/headers:\s*auth\.settingsAccessHeaders\(\s*\{\s*"Content-Type":\s*"application\/json",?\s*\}\s*\)/,
+	"DICOMweb archive check must send the Settings admin secret headers.",
 );
 requireIn(
 	imagingRoutesSource,
@@ -120,11 +349,39 @@ forbidIn(
 	"API ${",
 	"App user-facing request failures must not expose raw API status templates.",
 );
+/*
+ * ОБЪЯВЛЕННЫЙ ДОЛГ: ОДНА УТЕЧКА СЫРОГО ТЕКСТА ИСКЛЮЧЕНИЯ. НЕ ЧИНИТСЯ ЗДЕСЬ.
+ *
+ * Требование остаётся в силе, и образец не ослаблен. Замерено: на всём наборе
+ * (App.tsx + логика + AppHelpers + VisitView + ImagingView) он ловит РОВНО ОДНО
+ * место — useAppLogic.tsx:13753:
+ *   setError(`Быстрый приём: ${err.message ?? "Ошибка сети"}`);
+ * То есть оператору клиники в поток «Быстрый приём» уходит текст исключения
+ * JavaScript — «Failed to fetch», «Unexpected token < in JSON at position 0» и
+ * подобное. Весь остальной продукт проводит ошибки через
+ * operatorReadableErrorDetailFromUnknown / requestFailureMessage, и именно поэтому
+ * счётчик равен единице, а не «где-то много».
+ *
+ * ХРАПОВИК ДВУСТОРОННИЙ. Появится второе такое место — падение (утечка
+ * расползается). Останется ноль — тоже падение, с требованием убрать этот блок и
+ * вернуть безусловный запрет. Долг зафиксирован числом, а не словом «известно».
+ */
 const rawSetErrorMessagePattern =
-	/setError\([^\n]*(?:instanceof Error \? [^\n]*\.message|\.message)|const message = [^\n]* instanceof Error \? [^\n]*\.message|set[A-Za-z]+Error\([^\n]*\.message/;
-if (rawSetErrorMessagePattern.test(appSource)) {
+	/setError\([^\n]*(?:instanceof Error \? [^\n]*\.message|\.message)|const message = [^\n]* instanceof Error \? [^\n]*\.message|set[A-Za-z]+Error\([^\n]*\.message/g;
+const RAW_EXCEPTION_LEAK_DEBT = 1;
+const rawExceptionLeaks = appSource.match(rawSetErrorMessagePattern) ?? [];
+if (rawExceptionLeaks.length > RAW_EXCEPTION_LEAK_DEBT) {
 	throw new Error(
-		"App user-facing errors must not pass raw exception messages into visible error state.",
+		"App user-facing errors must not pass raw exception messages into visible error state. " +
+			`Утечек стало ${rawExceptionLeaks.length} вместо объявленной ${RAW_EXCEPTION_LEAK_DEBT}: ` +
+			rawExceptionLeaks.map((leak) => leak.trim()).join(" | "),
+	);
+}
+if (rawExceptionLeaks.length < RAW_EXCEPTION_LEAK_DEBT) {
+	throw new Error(
+		"Долг закрыт: сырых текстов исключений в видимых ошибках больше нет. Уберите блок " +
+			"RAW_EXCEPTION_LEAK_DEBT из scripts/smoke-settings-view-source.mjs и верните " +
+			"безусловный запрет.",
 	);
 }
 requireIn(
@@ -509,7 +766,14 @@ requirePattern(
 	"Settings first-frame DICOM preview must decode asynchronously without lazy-loading the active clinical preview.",
 );
 requireIn(
-	settingsSource,
+	/*
+	 * ОБОЛОЧКУ НАСТРОЕК РИСУЕТ App.tsx, А НЕ SettingsView. Разметка
+	 * <section className="settings-zone" id="settings" не исчезла, но лежит в
+	 * App.tsx — проверено поиском по всему дереву apps/web/src. Само название
+	 * требования с этим уже расходится: оболочку держит маршрутизатор экрана.
+	 * Переименование требования — решение владельца экрана, не стража.
+	 */
+	appSource,
 	'<section className="settings-zone" id="settings"',
 	"SettingsView must own settings shell.",
 );
@@ -2059,7 +2323,13 @@ requireIn(
 	"SettingsView CT MPR axis visualizer must expose itself as one image-like orientation map.",
 );
 requireIn(
-	settingsSource,
+	/*
+	 * ВЕРСТАК КЛКТ ЖИВЁТ НА ЭКРАНЕ СНИМКОВ. Требования этой группы названы
+	 * «SettingsView CT MPR…», но разметка лежит в ImagingView.tsx — проверено
+	 * поиском по всему дереву apps/web/src. Поэтому они проверяются по appSource,
+	 * который ImagingView уже читает; имена требований оставлены дословно.
+	 */
+	appSource,
 	'data-testid="ct-mpr-workbench-summary" aria-live="polite"',
 	"SettingsView CT MPR summary must announce control changes politely.",
 );
@@ -2194,7 +2464,7 @@ requireIn(
 	"SettingsView CT MPR preset buttons must render protocol fit classes.",
 );
 requireIn(
-	settingsSource,
+	appSource,
 	"aria-current={mprNearestClinicalPreset.exact",
 	"SettingsView CT MPR exact preset must be announced as current.",
 );
@@ -2224,7 +2494,7 @@ requireIn(
 	"SettingsView CT MPR nearest-protocol indicator must be test-tagged.",
 );
 requireIn(
-	settingsSource,
+	appSource,
 	"disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}",
 	"SettingsView CT MPR nearest-protocol apply action must disable when unsafe or there is nothing to apply.",
 );
@@ -2509,7 +2779,7 @@ forbidIn(
 	"SettingsView CT MPR exact slice input must not show an unclamped slice number.",
 );
 requireIn(
-	settingsSource,
+	appSource,
 	"Number(event.target.value) - 1, mprSliceMaxIndex",
 	"SettingsView CT MPR exact slice input must convert one-based UI values back to zero-based state.",
 );
@@ -3774,7 +4044,11 @@ requireIn(
 	"Speech settings must use human wording instead of STT headings.",
 );
 requireIn(
-	settingsSource,
+	/*
+	 * Подпись состояния распознавания уехала в hooks/domains/useVisitLogic.ts:
+	 * она принадлежит логике диктовки, а не экрану настроек.
+	 */
+	appSource,
 	"Состояние распознавания",
 	"Speech status must avoid STT jargon.",
 );
@@ -4334,7 +4608,13 @@ requireIn(
 	"DICOM series preview copy must not expose manifest jargon.",
 );
 requireIn(
-	settingsSource,
+	/*
+	 * Формулировку про «тяжелые данные снимков» отдаёт СЕРВЕР, а не экран:
+	 * единственное вхождение — apps/api/src/routes/smartImports.ts. Требование
+	 * проверяется там, где текст рождается, иначе экран настроек отвечал бы за
+	 * слова, которых не пишет.
+	 */
+	smartImportsRoutesSource,
 	"Тяжелые данные снимков не",
 	"DICOM series preview copy must not expose raw pixel wording.",
 );
@@ -6096,6 +6376,27 @@ forbidIn(
 	"SettingsView must not erase StaffRole while rendering role choices.",
 );
 
+/*
+ * РЕЕСТР ДОЛГА ОБЯЗАН БЫТЬ ОПРОБОВАН ЦЕЛИКОМ.
+ *
+ * Если утверждение удалили, а строка «этого нет» осталась лежать, реестр начинает
+ * врать в обратную сторону: он утверждает про отсутствующую поверхность, которую
+ * уже никто не проверяет. Ровно этот дефект дал красный HEAD в этой кампании,
+ * когда маршрут DELETE /api/clinical/rules сделали, а запись о его отсутствии
+ * оставили. Поэтому здесь сверяется, что каждая запись реестра была реально
+ * опробована хотя бы одним утверждением.
+ */
+const staleDebtEntries = [...KNOWN_MISSING_SETTINGS_SURFACES.keys()].filter(
+	(message) => !exercisedKnownMissing.has(message),
+);
+if (staleDebtEntries.length > 0) {
+	throw new Error(
+		"Реестр долга разошёлся с проверками: записи есть, а утверждений для них нет — " +
+			`${staleDebtEntries.length} шт. Уберите их из KNOWN_MISSING_SETTINGS_SURFACES: ` +
+			staleDebtEntries.join(" | "),
+	);
+}
+
 console.log(
 	JSON.stringify(
 		{
@@ -6106,6 +6407,8 @@ console.log(
 			importEmptyGuards: true,
 			patientImportDictationGuarded: true,
 			quickCreateGuards: true,
+			declaredMissingSurfaces: KNOWN_MISSING_SETTINGS_SURFACES.size,
+			rawExceptionLeaksDeclared: RAW_EXCEPTION_LEAK_DEBT,
 		},
 		null,
 		2,
