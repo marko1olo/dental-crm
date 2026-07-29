@@ -233,7 +233,12 @@ await send("Runtime.enable");
 const tokenFile = path.join(process.cwd(), ".ops-shot-tokens.json");
 if (!existsSync(tokenFile)) {
   throw new Error(
-    `Нет ${tokenFile}. Сначала: cd apps/api && npx tsx src/scripts/seedOpsScreenshotDemo.ts > ../../.ops-shot-tokens.json`,
+    `Нет ${tokenFile}. Сначала: cd apps/api && npx tsx src/scripts/seedOpsScreenshotDemo.ts > ../../.ops-shot-tokens.json` +
+      "\n\nВыпускать токены ТОЛЬКО этим сидом. В scratch/ лежит recon-sign-shot-tokens.ts, который " +
+      "подписывает их НЕВЕРНЫМ секретом: он не загружает .env, поэтому authTokenSecret() берёт " +
+      "локальный секрет разработки из .data/dev-auth-secret вместо AUTH_TOKEN_SECRET. Сервер такие " +
+      "токены не принимает и отвечает 401 «Требуется авторизация рабочего кабинета клиники» — это " +
+      "выглядит как дефект входа, а не как чужой секрет, и один агент потратил на это шесть минут.",
   );
 }
 const { clinicToken, staffToken } = JSON.parse(await readFile(tokenFile, "utf8"));
