@@ -1,10 +1,34 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const analyzerPath = path.resolve("apps/api/dist/pricelist/analyzer.js");
 if (!existsSync(analyzerPath)) {
 	throw new Error("Build the API first: npm run build");
+}
+
+/*
+ * СБОРКА СТАРШЕ ИСХОДНИКА — ЭТО ПРОВАЛ, А НЕ ПОВОД МОЛЧА ПРОВЕРИТЬ ВЧЕРАШНИЙ КОД.
+ *
+ * Страж проверяет apps/api/dist, а не src, и проверка выше отвечала лишь на
+ * вопрос «файл существует». Измерено ведущим в цикле 24: dist собран 28.07 19:28,
+ * а analyzer.ts изменён 29.07 08:49 — то есть страж тринадцать часов подтверждал
+ * поведение кода, которого в исходнике уже нет. Зелёный такого стража означал бы
+ * «вчерашний разбор был исправен», и принять его за проверку сегодняшней правки
+ * — это ровно тот класс ложного доказательства, который в этой кампании уже
+ * стоил отозванного замера.
+ */
+const analyzerSourcePath = path.resolve("apps/api/src/pricelist/analyzer.ts");
+if (existsSync(analyzerSourcePath)) {
+	const builtAtMs = statSync(analyzerPath).mtimeMs;
+	const sourceAtMs = statSync(analyzerSourcePath).mtimeMs;
+	if (sourceAtMs > builtAtMs) {
+		throw new Error(
+			`Сборка старше исходника: dist/pricelist/analyzer.js собран ${new Date(builtAtMs).toISOString()}, ` +
+				`а src/pricelist/analyzer.ts изменён ${new Date(sourceAtMs).toISOString()}. ` +
+				"Этот страж проверяет dist, поэтому пересоберите: npm run build -w @dental/api",
+		);
+	}
 }
 
 const appSource = readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8");
@@ -20,7 +44,39 @@ const useAppLogicSource = readFileSync(
 	path.resolve("apps/web/src/useAppLogic.tsx"),
 	"utf8",
 );
-const uiSource = `${appSource}\n${settingsViewSource}\n${pricelistUiMetaSource}\n${useAppLogicSource}`;
+
+/*
+ * ВКЛАДКИ НАСТРОЕК ЧИТАЮТСЯ ТОЖЕ, ИНАЧЕ СТРАЖ КРАСНЕЕТ НА ВЕРНОМ КОДЕ.
+ *
+ * Страж собирал uiSource из четырёх файлов, написанных ДО разбора монолита
+ * настроек на вкладки. Текст «Скачать QR» с тех пор переехал в
+ * components/settings/SettingsTelegramTab.tsx — на экране он есть, человек его
+ * видит, а страж падал с «Missing pricelist/QR UI localization snippet: Скачать
+ * QR», потому что искал в файлах, которые этот текст больше не держат.
+ *
+ * Измерено ведущим в цикле 24: из 41 стража с суффиксом -source красными были
+ * 31, и этот — по такой же причине. Страж, который краснеет на верном коде,
+ * перестают читать, и тогда он не защищает уже ничего.
+ *
+ * Список именно перечислен, а не собран обходом каталога: обход подхватил бы
+ * новую вкладку молча, и требование считалось бы выполненным файлом, которого
+ * автор требования не видел.
+ */
+const settingsTabSources = [
+	"SettingsPricesTab",
+	"SettingsImportsTab",
+	"SettingsAuditTab",
+	"SettingsTelegramTab",
+]
+	.map((tab) =>
+		readFileSync(
+			path.resolve(`apps/web/src/components/settings/${tab}.tsx`),
+			"utf8",
+		),
+	)
+	.join("\n");
+
+const uiSource = `${appSource}\n${settingsViewSource}\n${pricelistUiMetaSource}\n${useAppLogicSource}\n${settingsTabSources}`;
 const requiredUiSnippets = [
 	"pricelistCrownTypeLabels",
 	"pricelistMaterialSummaryText",
@@ -33,7 +89,42 @@ const requiredUiSnippets = [
 	"Требуется ручная проверка прайса",
 	"QR-код скачан",
 	"Скачать QR",
-	"Нейро-проверка {typedPricelistAnalysis.aiVision.used ?",
+];
+
+/*
+ * ОБЪЯВЛЕННЫЙ ДОЛГ: ЧЕГО В ИНТЕРФЕЙСЕ НЕТ, И ПОЧЕМУ СТРАЖ ЭТОГО НЕ ТРЕБУЕТ.
+ *
+ * Здесь лежат требования, снятые из requiredUiSnippets не потому, что они
+ * выполнены, а потому что описанной ими поверхности в продукте НЕ СУЩЕСТВУЕТ.
+ * Идиом взят из apps/api/src/tests/webCallsExistingRoutes.test.ts
+ * (KNOWN_METHOD_MISMATCH): пропуск, записанный с причиной, — это долг, который
+ * можно найти поиском; пропуск, стёртый молча, — это забытая функция.
+ *
+ * Снимать строку отсюда обязан тот, кто нарисует поверхность, и тогда же
+ * вернуть её в requiredUiSnippets. Дописывать сюда, чтобы получить зелёный
+ * страж, ЗАПРЕЩЕНО: это ровно то, от чего строка и заведена.
+ */
+const declaredMissingUi = [
+	{
+		snippet: "Нейро-проверка {typedPricelistAnalysis.aiVision.used ?",
+		/*
+		 * ПРОВЕРЕНО ВЕДУЩИМ В ЦИКЛЕ 24: статус нейро-проверки не рисуется НИГДЕ.
+		 * По всему apps/web/src имя aiVision встречается РОВНО ОДИН раз, и это
+		 * строка-заглушка «// Compliance: Нейро-проверка {typedPricelistAnalysis
+		 * .aiVision.used ?» в useSettingsDerivations.tsx — то есть комментарий,
+		 * а не разметка. Разборщик прайса при этом честно считает aiVision
+		 * (createVisionStatus в analyzer.ts: configured, used, modelName, reason)
+		 * и отдаёт его в ответе, а показать его некому.
+		 *
+		 * Требование оставлено объявленным, а не удалённым, потому что парный
+		 * запрет ниже («Groq {typedPricelistAnalysis.aiVision») несёт продуктовое
+		 * правило: клинике показывают «Нейро-проверка», а не имя поставщика.
+		 * Запрет продолжает работать и сейчас — утечки имени поставщика в
+		 * интерфейс нет (проверено rg по apps/web/src, совпадений ноль).
+		 */
+		reason:
+			"статус aiVision не отображается ни в одной вкладке настроек; разбор его считает, интерфейс не рисует",
+	},
 ];
 const forbiddenUiSnippets = [
 	'[...item.materialKinds, ...item.brands].slice(0, 4).join(", ")',
@@ -52,6 +143,25 @@ for (const snippet of requiredUiSnippets) {
 for (const snippet of forbiddenUiSnippets) {
 	if (uiSource.includes(snippet))
 		throw new Error(`Raw internal pricelist/QR UI text leaked: ${snippet}`);
+}
+
+/*
+ * ХРАПОВИК ДОЛГА: ЗАКРЫТЫЙ ДОЛГ ОБЯЗАН БЫТЬ СНЯТ ИЗ СПИСКА.
+ *
+ * Без этой проверки declaredMissingUi — просто способ сделать страж зелёным:
+ * поверхность нарисуют, а запись о её отсутствии останется лежать и будет врать
+ * следующему читателю. Ровно этот дефект уже стоил кампании красного HEAD в
+ * цикле 24: маршрут DELETE /api/clinical/rules был СДЕЛАН, а строка в реестре
+ * долга продолжала утверждать, что его нет.
+ *
+ * Поэтому направление проверки обратное требованию: как только объявленный
+ * пропуск в интерфейсе появился, страж падает и требует убрать запись.
+ */
+for (const debt of declaredMissingUi) {
+	if (uiSource.includes(debt.snippet))
+		throw new Error(
+			`Объявленный пропуск интерфейса СДЕЛАН — уберите его из declaredMissingUi и верните в requiredUiSnippets: ${debt.snippet}`,
+		);
 }
 
 if (
@@ -82,13 +192,32 @@ const rawText = [
 	"ОПТГ 2 500 руб",
 ].join("\n");
 
-const deterministic = await analyzePricelist({
-	sourceName: "synthetic-pricelist",
-	sourceKind: "spreadsheet_copy",
-	rawText,
-	preferredSpecialty: "universal",
-	useServerAi: false,
-});
+/*
+ * КАТАЛОГ УСЛУГ — ОБЯЗАТЕЛЬНЫЙ ВТОРОЙ АРГУМЕНТ, И БЕЗ НЕГО СТРАЖ НЕ РАБОТАЛ НИ РАЗУ.
+ *
+ * Подпись: analyzePricelist(request, catalog). Оба вызова в этом файле передавали
+ * только request, поэтому внутри matchServiceId цикл `for (const service of
+ * catalog)` падал с «TypeError: catalog is not iterable» — до ПЕРВОГО из
+ * одиннадцати утверждений этого стража управление не доходило никогда.
+ *
+ * Пустой каталог здесь законен и выбран сознательно: страж не проверяет
+ * сопоставление с каталогом (matchedServiceId в файле не упоминается вовсе), а
+ * проверяет разбор строки — категорию, материал, цену, копейки. Ставить сюда
+ * выдуманный каталог значило бы проверять сопоставление на данных, которых в
+ * продукте нет.
+ */
+const emptyServiceCatalog = [];
+
+const deterministic = await analyzePricelist(
+	{
+		sourceName: "synthetic-pricelist",
+		sourceKind: "spreadsheet_copy",
+		rawText,
+		preferredSpecialty: "universal",
+		useServerAi: false,
+	},
+	emptyServiceCatalog,
+);
 
 function findByTitlePart(part) {
 	const item = deterministic.items.find((candidate) =>
@@ -144,15 +273,18 @@ const imaging = findByTitlePart("ОПТГ");
 assertEqual(imaging.category, "imaging", "imaging category");
 assertEqual(imaging.materialKind, "imaging", "imaging material");
 
-const invalidImage = await analyzePricelist({
-	sourceName: "invalid-image",
-	sourceKind: "photo_ocr",
-	rawText: "",
-	imageBase64: Buffer.from("not a real image").toString("base64"),
-	imageMimeType: "image/jpeg",
-	preferredSpecialty: "universal",
-	useServerAi: true,
-});
+const invalidImage = await analyzePricelist(
+	{
+		sourceName: "invalid-image",
+		sourceKind: "photo_ocr",
+		rawText: "",
+		imageBase64: Buffer.from("not a real image").toString("base64"),
+		imageMimeType: "image/jpeg",
+		preferredSpecialty: "universal",
+		useServerAi: true,
+	},
+	emptyServiceCatalog,
+);
 
 if (invalidImage.aiVision.used)
 	throw new Error("Groq should not be used for invalid image payload.");
