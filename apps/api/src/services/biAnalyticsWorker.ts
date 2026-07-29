@@ -1,8 +1,3 @@
-import {
-	kopecksToNumericString,
-	parseKopecks,
-	percentageOfKopecks,
-} from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
@@ -361,45 +356,71 @@ async function computeChairUtilizationAll() {
 }
 
 /**
- * Доли материалов и комиссии заданы базисными пунктами (1% = 100 б.п.), чтобы
- * расчёт шёл целыми копейками. Раньше стояло 0.15 / 0.25, а результат
- * прогонялся через `+(x).toFixed(2)` — округление двоичной дроби вместо точной
- * доли.
+ * Строка прибыльности врача в том виде, в каком она ложится в
+ * `bi_analytics_snapshots.doctor_profitability_json`. Форма — та же, что у
+ * второго писателя этой колонки (`DoctorProfitabilitySnapshotRow` в
+ * `scripts/cronAnalyticsWorker.ts`), потому что колонку читает один экран.
  */
-const MATERIAL_BASIS_POINTS = 1_500;
-const COMMISSION_BASIS_POINTS = 2_500;
+export interface DoctorProfitabilitySnapshotRow {
+	readonly name: string;
+	readonly revenue: number;
+	readonly margin: number | null;
+	readonly completionRate: number | null;
+}
 
 /**
- * Строка прибыльности врача. Вынесена из запроса отдельно, чтобы арифметику
- * можно было проверить тестом без базы.
+ * СЕБЕСТОИМОСТИ В СИСТЕМЕ НЕТ, ПОЭТОМУ ПРИБЫЛИ НЕТ.
  *
- * Суммы отдаются строками "0.00": это тот же вид, в котором деньги лежат в
- * numeric-колонках, и он не теряет копейки при сериализации в JSON.
+ * Здесь стояли `materialCost` = 15 % выручки и `commission` = 25 % выручки, а
+ * `margin` — остаток, то есть ровно 60 % выручки. Доли выглядели расчётом:
+ * заданы базисными пунктами, сведены до копейки, покрыты пятью проверками.
+ * Расчётом они не были — числа 1500 и 2500 не выведены ни из одной строки базы.
+ *
+ * ПРОВЕРЕНО МНОЙ на живой базе 2026-07-29: все источники затрат пусты —
+ * inventory_transactions, inventory_items, procedure_material_rules,
+ * doctor_commissions, pricelist_doctor_payrolls, по нулю строк в каждой.
+ * Материалов и комиссий в системе не существует, поэтому их доли взять неоткуда.
+ *
+ * Ноль вместо неизвестной себестоимости подставить тоже нельзя: тогда прибылью
+ * объявляется вся выручка целиком — ложь крупнее прежней. Поэтому `margin`
+ * равен `null` («считать не из чего»), а `materialCost` и `commission` исчезли:
+ * величины, которой нет, не должно быть и в снимке. Экран печатает на месте
+ * `null` прочерк (`pages/analyticsDoctorMetrics.ts:154-159`).
+ *
+ * Ровно это решение уже принято дважды в том же узле — на живом маршруте
+ * `routes/analytics.ts:127-132` и в `buildDoctorProfitabilityRow`
+ * (`scripts/cronAnalyticsWorker.ts`), где `margin: Number(row.revenue) * 0.4`
+ * с подписью «Simplified margin heuristic» снят по той же причине. Два писателя
+ * одной колонки давали разные ответы на один вопрос: один честный `null`, другой
+ * выдуманные 60 %.
+ *
+ * УСПЕШНОСТЬ ЗДЕСЬ ТОЖЕ НЕ ИЗМЕРЕНА. Стояло `paymentCount > 0 ? 100 : 0`: врач,
+ * у которого нашёлся хотя бы один платёж, объявлялся завершившим 100 % приёмов.
+ * Эта выборка идёт по платежам и статусов приёмов не содержит вовсе, поэтому
+ * доля не восстанавливается — `null`. Успешность СЧИТАЕМА, но по другому
+ * множеству: `buildDoctorProfitabilityRow` берёт её из журнала приёмов
+ * (`count(*) filter (where status = 'completed')`), и это правильное место.
+ *
+ * ВЫРУЧКА — ЧИСЛО, А НЕ СТРОКА, и это не косметика. Строка "500000.00" не
+ * доходила до экрана вовсе: разборщик ответа принимает только число
+ * (`numberOr` в `pages/analyticsDoctorMetrics.ts:231-233`) и на строке
+ * подставляет 0. То есть единственная измеренная величина этой строки
+ * показывалась нулём, пока выдуманная маржа показывалась как факт. Копейки
+ * здесь не теряются: `payments.amount_rub` — целые рубли, `sum()` над ними
+ * точен.
  */
 export function doctorProfitabilityRow(
 	name: string,
 	totalRevenue: string | number | null,
-	paymentCount: number,
-) {
-	// sum() над integer возвращает bigint, а драйвер отдаёт bigint строкой —
-	// parseKopecks разбирает и строку, и число, не пуская значение через float.
-	const revenueKopecks = parseKopecks(totalRevenue);
-	const materialKopecks = percentageOfKopecks(revenueKopecks, MATERIAL_BASIS_POINTS);
-	const commissionKopecks = percentageOfKopecks(
-		revenueKopecks,
-		COMMISSION_BASIS_POINTS,
-	);
-	// Маржа — остаток, а не отдельно посчитанный процент: так три слагаемых
-	// всегда сходятся к выручке до копейки.
-	const marginKopecks = revenueKopecks - materialKopecks - commissionKopecks;
+): DoctorProfitabilitySnapshotRow {
+	// sum() над integer возвращает bigint, а драйвер отдаёт bigint строкой.
+	const revenue = Number(totalRevenue ?? 0);
 
 	return {
 		name,
-		revenue: kopecksToNumericString(revenueKopecks),
-		materialCost: kopecksToNumericString(materialKopecks),
-		commission: kopecksToNumericString(commissionKopecks),
-		margin: kopecksToNumericString(marginKopecks),
-		completionRate: paymentCount > 0 ? 100 : 0,
+		revenue: Number.isFinite(revenue) ? revenue : 0,
+		margin: null,
+		completionRate: null,
 	};
 }
 
@@ -411,7 +432,6 @@ async function computeDoctorProfitabilityAll() {
 			doctorId: visitDiaries.doctorId,
 			doctorName: users.fullName,
 			totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			paymentCount: sql<number>`count(${payments.id})`,
 		})
 		.from(payments)
 		.leftJoin(visitDiaries, eq(payments.visitId, visitDiaries.visitId))
@@ -419,18 +439,16 @@ async function computeDoctorProfitabilityAll() {
 		.where(PAID_PAYMENTS_ONLY)
 		.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
 
-	const map = new Map<string, any[]>();
+	const map = new Map<string, DoctorProfitabilitySnapshotRow[]>();
 	for (const r of rows) {
 		if (!r.organizationId) continue;
 		if (!map.has(r.organizationId)) {
 			map.set(r.organizationId, []);
 		}
 		map.get(r.organizationId)!.push(
-			doctorProfitabilityRow(
-				r.doctorName ?? "Врач не указан",
-				r.totalRevenue,
-				r.paymentCount,
-			),
+			// Счётчик платежей больше не нужен: он служил только выдуманной
+			// успешности `paymentCount > 0 ? 100 : 0`.
+			doctorProfitabilityRow(r.doctorName ?? "Врач не указан", r.totalRevenue),
 		);
 	}
 
