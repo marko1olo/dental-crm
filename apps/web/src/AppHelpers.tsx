@@ -2574,6 +2574,15 @@ export function findPatient(patients: Patient[], patientId: string | null) {
 }
 
 /**
+ * Что печатается вместо суммы, которой программа не знает.
+ *
+ * Вынесено в имя, а не написано строкой по месту: разметке местами нужно
+ * ОТЛИЧИТЬ неизвестное от суммы, не разбирая текст на части, — например чтобы
+ * не подсвечивать красным долг, которого никто не считал.
+ */
+export const moneyUnknownLabel = "не определено";
+
+/**
  * Сумма для показа человеку.
  *
  * Копейки печатаются, только если они есть, и всегда двумя знаками. Раньше
@@ -2584,13 +2593,47 @@ export function findPatient(patients: Patient[], patientId: string | null) {
  *
  * Строку на входе тоже переживаем: колонки numeric приходили из драйвера базы
  * строками, и такое значение могло долететь до форматирования.
+ *
+ * НЕИЗВЕСТНАЯ СУММА БОЛЬШЕ НЕ ПЕЧАТАЕТСЯ НУЛЁМ. Здесь стояло
+ * `Number.isFinite(amount) ? amount : 0`, и любое значение, которого программа
+ * не знает — null, undefined, нечитаемая строка, — выходило на экран как
+ * «0 ₽», не отличимое от настоящего нуля. «Пациент не должен ничего» и
+ * «сколько должен, не посчитано» — разные утверждения о деньгах, а показывались
+ * одной строкой. Прежний автор `planItemFromServer` уже описал эту ловушку с
+ * другой стороны (components/odontogram/treatmentEstimatorPricing.ts): он
+ * подставлял ноль ИМЕННО ЧТОБЫ не показать «0 ₽», а получал гарантированный
+ * «0 ₽», потому что подмена происходила до этой функции.
+ *
+ * Живой пример на момент правки: в списке документов
+ * (`DocumentsView.tsx:4238`, `money(document.totalAmountRub)`) поле нулевое по
+ * схеме — `nonNegativeMoneyRubSchema.nullable()`, и `useAppLogic.tsx:12362`
+ * ставит null всем видам документов без денег. Таких видов 18 из 32 — согласия,
+ * рецепты, выписки, направления, отказы, анкеты, — и каждый печатался в строке
+ * как «· 0 ₽».
+ *
+ * ПОЧЕМУ «не определено», А НЕ ПРОЧЕРК. В русской финансовой записи прочерк в
+ * денежной графе означает как раз НОЛЬ («операции не было»), поэтому «—»
+ * поменяло бы одну двусмысленность на другую — ту же самую, которую здесь
+ * убирают. «н/д» — сокращение для бухгалтера, а этот текст читают
+ * администратор, врач и пациент. Слово «не определено» уже живёт в продукте в
+ * этом же файле (`documentDetectedKindLabels.unknown`), так что словарь не
+ * расширяется. Знак «₽» намеренно НЕ добавлен: «не определено ₽» читалось бы
+ * снова как сумма.
+ *
+ * НАСТОЯЩИЙ НОЛЬ ОСТАЛСЯ НУЛЁМ. `money(0)` — это «0 ₽»: ноль рублей законная
+ * сумма, и прятать её нельзя.
+ *
+ * Пустая строка отнесена к неизвестному, а не к нулю: `Number("")` в
+ * JavaScript равно 0, и незаполненное поле или отсутствующая колонка проезжали
+ * через `Number.isFinite` как честный ноль — тот же дефект другой дверью.
  */
-export function money(value: number | string | null) {
-  const amount = typeof value === "string" ? Number(value) : value;
-  const safeAmount = Number.isFinite(amount as number) ? (amount as number) : 0;
-  const kopecks = Math.round(safeAmount * 100) % 100;
+export function money(value: number | string | null | undefined) {
+  const amount =
+    typeof value === "string" ? (value.trim() === "" ? Number.NaN : Number(value)) : value;
+  if (typeof amount !== "number" || !Number.isFinite(amount)) return moneyUnknownLabel;
+  const kopecks = Math.round(amount * 100) % 100;
   const fractionDigits = kopecks === 0 ? 0 : 2;
-  return `${safeAmount.toLocaleString("ru-RU", {
+  return `${amount.toLocaleString("ru-RU", {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits
   })} ₽`;
