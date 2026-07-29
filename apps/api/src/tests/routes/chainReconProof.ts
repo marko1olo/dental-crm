@@ -26,6 +26,194 @@ function money(value: unknown): number {
 	return Math.round(Number(value ?? 0) * 100) / 100;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * СЧЁТЧИК СОДЕРЖАТЕЛЬНОСТИ: ПОЧЕМУ ОН ЗДЕСЬ ПОЯВИЛСЯ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ЗАМЕР 2026-07-29 по живой базе `dental_crm`. В базе две клиники:
+ *
+ *   «Демо-клиника для снимков» — 14 пациентов, 27 записей, 10 приёмов,
+ *                                10 позиций лечения, 8 оплат;
+ *   «Стоматология, 1 кабинет»  — 3 пациента и НОЛЬ всего остального:
+ *                                0 записей, 0 приёмов, 0 визитов, 0 оплат,
+ *                                0 счетов, 0 планов, 0 позиций лечения,
+ *                                0 позиций одонтограммы, 0 дневников.
+ *
+ * До этой правки файл печатал по второй клинике благополучную картину: три
+ * сверки вида «назначено дашборд=0 vs SQL=0» плюс десяток строк отчётов с
+ * нулями — и ни слова о том, что сверять было нечего. Хуже: НИ ОДНА из этих
+ * строк не была сравнением, файл печатал два числа рядом и шёл дальше. Поэтому
+ * по второй клинике он оставался зелёным ПРИ ЛЮБОМ состоянии кода. Клиника
+ * платила за прогон уверенностью, которой у неё нет, — ровно та болезнь, которую
+ * сквозные сценарии и заведены ловить.
+ *
+ * ПОЧЕМУ СЧИТАЕТСЯ «СОДЕРЖАТЕЛЬНОСТЬ», А НЕ ЧИСЛО ПРОЙДЕННЫХ. Сравнение нуля с
+ * нулём проходит и на верном коде, и на коде, который вообще ничего не считает,
+ * поэтому в графу «сошлось» ему нельзя: иначе один пустой клиент раздувает
+ * счётчик успеха и прячет потерю проверок. Такое утверждение здесь НЕ считается
+ * пройденным вовсе — оно уходит в отдельную графу и печатается по имени.
+ *
+ * ЧТО ДЕЛАЕТ УТВЕРЖДЕНИЕ СОДЕРЖАТЕЛЬНЫМ — решает не сравниваемая пара, а явно
+ * названная величина, на которой утверждение СТОИТ. Для сверки сумм это сами
+ * суммы; для утверждения «чужих строк в отчёте нет» — размер набора, который МОГ
+ * бы протечь. Второй случай важен: `false === false` на пустом наборе не
+ * доказывает изоляцию, он доказывает пустоту.
+ *
+ * ПОРОГ С ЗАПАСОМ ЗДЕСЬ НЕ СТАВИТСЯ. В этом же дереве датчик охвата слоя доступа
+ * считался и НЕ сверялся, и урезание охвата с 106 функций до 26 проходило при
+ * семи зелёных проверках из восьми (коммит 115aa6595). Поэтому число
+ * содержательных утверждений печатается ЧИСЛОМ рядом с общим, а граница
+ * «содержательно / вырождено» проходит по нулю, а не по проценту.
+ */
+
+/** Величина, на которой стоит утверждение: сумма, счётчик или размер набора. */
+type Magnitude = number | readonly unknown[] | null | undefined;
+
+function magnitudeOf(value: Magnitude): number {
+	if (value === null || value === undefined) return 0;
+	if (typeof value === "number") return Number.isFinite(value) ? Math.abs(value) : 0;
+	return value.length;
+}
+
+interface Claim {
+	/** Клиника, о которой утверждение. Пустая клиника — не повод молчать. */
+	readonly clinic: string;
+	readonly label: string;
+	readonly ok: boolean;
+	/** Ложь — сравнивался ноль с нулём: подтверждать такому нечего. */
+	readonly substantive: boolean;
+	readonly actual: unknown;
+	readonly expected: unknown;
+	/** Наибольшая из названных величин. Ноль — стоять не на чем. */
+	readonly weight: number;
+}
+
+/**
+ * Приговор одному утверждению — ЧИСТАЯ функция: ничего не печатает, никуда не
+ * пишет, в базу не смотрит.
+ *
+ * Отделена от `same` намеренно. Датчик содержательности обязан срабатывать при
+ * ЗАДАННЫХ входных данных, а не когда повезёт с тем, что сейчас лежит в живой
+ * базе: проверка, зависящая от текущего содержимого клиники, бывает зелёной на
+ * возвращённом дефекте. Чистую функцию можно прогнать на выдуманном нуле и на
+ * выдуманной сумме в том же процессе — этим и занимается
+ * `proveSubstanceSensorFires`.
+ */
+function judge(
+	clinic: string,
+	label: string,
+	actual: unknown,
+	expected: unknown,
+	substance: readonly Magnitude[],
+): Claim {
+	let weight = 0;
+	for (const value of substance) weight = Math.max(weight, magnitudeOf(value));
+	return {
+		clinic,
+		label,
+		ok: JSON.stringify(actual) === JSON.stringify(expected),
+		substantive: weight > 0,
+		actual,
+		expected,
+		weight,
+	};
+}
+
+/** Все утверждения прогона по порядку. Итог считается по этому списку. */
+const claims: Claim[] = [];
+
+/**
+ * Сверка с явным ответом на вопрос «а было ли что сверять».
+ *
+ * `substance` обязателен и значения по умолчанию не имеет: молчаливое «возьму
+ * сравниваемую пару» — это ровно тот оплаченный вперёд молчаливый слот, из-за
+ * которого урезание охвата проходит незамеченным.
+ */
+function same(
+	clinic: string,
+	label: string,
+	actual: unknown,
+	expected: unknown,
+	substance: readonly Magnitude[],
+): Claim {
+	const claim = judge(clinic, label, actual, expected, substance);
+	claims.push(claim);
+	if (!claim.substantive) {
+		console.log(
+			`ПУСТО  ${label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)} — ` +
+				"обе стороны нулевые, сравнение НЕ подтверждает ничего и в пройденные не идёт",
+		);
+	} else {
+		console.log(
+			`${claim.ok ? "ОК    " : "ПРОВАЛ"} ${label}: получено ${JSON.stringify(claim.actual)}, ` +
+				`ожидалось ${JSON.stringify(claim.expected)} (на величине ${claim.weight})`,
+		);
+	}
+	return claim;
+}
+
+/**
+ * ПРОВЕРКА САМОГО ДАТЧИКА — на выдуманных числах, без единого обращения к базе.
+ *
+ * Проверка, которая опирается на текущее содержимое живой клиники, бывает
+ * зелёной на возвращённом дефекте. Здесь входные данные заданы прямо в коде:
+ * датчик обязан назвать вырождением ноль против нуля и пустоту против пустоты
+ * при любом состоянии базы, времени суток и наборе клиник.
+ *
+ * Возвращает список претензий. Пустой список — датчик работает.
+ */
+function proveSubstanceSensorFires(): string[] {
+	const complaints: string[] = [];
+
+	const zeroAgainstZero = judge("датчик", "ноль против нуля", 0, 0, [0, 0]);
+	if (zeroAgainstZero.substantive) complaints.push("датчик счёл содержательным сравнение нуля с нулём");
+	if (!zeroAgainstZero.ok) complaints.push("датчик не увидел равенства нуля и нуля");
+
+	const emptyAgainstEmpty = judge("датчик", "пусто против пусто", [], [], [[], []]);
+	if (emptyAgainstEmpty.substantive) complaints.push("датчик счёл содержательным сравнение двух пустых наборов");
+
+	const missingValue = judge("датчик", "величина не пришла", null, null, [null, undefined]);
+	if (missingValue.substantive) complaints.push("датчик счёл содержательной непришедшую величину");
+
+	const realMoney = judge("датчик", "сумма против суммы", 9200, 9200, [9200]);
+	if (!realMoney.substantive) complaints.push("датчик счёл вырожденным сравнение ненулевых сумм");
+
+	const overpayment = judge("датчик", "переплата против переплаты", -800, -800, [-800]);
+	if (!overpayment.substantive) complaints.push("датчик потерял содержательность на отрицательной сумме");
+
+	const isolationOnRealSet = judge("датчик", "чужих строк нет", false, false, [7]);
+	if (!isolationOnRealSet.substantive) complaints.push("датчик счёл вырожденной изоляцию на непустом наборе");
+
+	const isolationOnEmptySet = judge("датчик", "чужих строк нет", false, false, [0]);
+	if (isolationOnEmptySet.substantive) complaints.push("датчик счёл доказанной изоляцию на пустом наборе");
+
+	const mismatch = judge("датчик", "суммы разошлись", 9200, 9100, [9200]);
+	if (mismatch.ok) complaints.push("датчик не заметил расхождения сумм");
+	if (!mismatch.substantive) complaints.push("датчик потерял содержательность на расхождении");
+
+	return complaints;
+}
+
+/**
+ * Итог по содержательности. Отдельной функцией, чтобы число считалось ОДИН раз и
+ * из одного места: два независимых подсчёта — это два разных ответа.
+ */
+function substanceSummary(rows: readonly Claim[]): {
+	readonly total: number;
+	readonly substantive: number;
+	readonly degenerate: readonly Claim[];
+	readonly failed: readonly Claim[];
+} {
+	const substantiveRows = rows.filter((row) => row.substantive);
+	return {
+		total: rows.length,
+		substantive: substantiveRows.length,
+		degenerate: rows.filter((row) => !row.substantive),
+		failed: substantiveRows.filter((row) => !row.ok),
+	};
+}
+
 async function buildApp(): Promise<FastifyInstance> {
 	const app = Fastify();
 	app.addHook("onRequest", async (request) => {
@@ -175,21 +363,65 @@ async function main(): Promise<void> {
 						`оплат ${dashboard.payments?.length ?? "нет"}, приёмов ${dashboard.appointments?.length ?? "нет"}, ` +
 						`пациентов ${dashboard.patients?.length ?? "нет"}, прайс ${dashboard.serviceCatalog?.length ?? "нет"}`,
 				);
+				/*
+				 * ОТСЮДА И НИЖЕ ЧИСЛА СРАВНИВАЮТСЯ, А НЕ ПЕЧАТАЮТСЯ РЯДОМ.
+				 *
+				 * Раньше здесь стояли три строки «СВЕРКА: … vs …»: два числа в одной
+				 * строке и ни одного сравнения. На пустой клинике они печатали
+				 * «0 vs 0» и выглядели подтверждением; на непустой они бы разошлись
+				 * молча. Ожидание берётся из независимого SQL, а не зашивается
+				 * числом: утверждение, зашитое под сегодняшние данные, краснеет в
+				 * день, когда данные меняются, и его выключают.
+				 */
 				const summary = dashboard.billingSummary ?? {};
-				console.log(
-					`СВЕРКА: назначено дашборд=${money(summary.totalPlannedRub)} vs SQL(greatest)=${money(totals.planned_sql_greatest)} ` +
-						`vs SQL(round)=${money(totals.planned_dashboard_rounded)}; ` +
-						`оплачено дашборд=${money(summary.totalPaidRub)} vs SQL=${money(totals.paid_sql)}; ` +
-						`долг дашборд=${money(summary.totalDueRub)}`,
+				same(
+					org.name,
+					"назначено дашборд = SQL по позициям (количество округлено, как считает дашборд)",
+					money(summary.totalPlannedRub),
+					money(totals.planned_dashboard_rounded),
+					[money(summary.totalPlannedRub), money(totals.planned_dashboard_rounded)],
+				);
+				same(
+					org.name,
+					"оплачено дашборд = SQL по оплатам в статусе paid",
+					money(summary.totalPaidRub),
+					money(totals.paid_sql),
+					[money(summary.totalPaidRub), money(totals.paid_sql)],
+				);
+				/*
+				 * Долг главного экрана — НЕТТО ПО КЛИНИКЕ с зажимом в нуле
+				 * (sampleData.ts, buildBillingSummary: `Math.max(0, назначено −
+				 * оплачено)`). Это законная величина «сколько ещё не собрано», но она
+				 * НЕ равна дебиторке: переплата одного пациента гасит долг другого.
+				 * Разбор — money/patientDebt.ts. Здесь сверяется именно та формула,
+				 * которую экран считает, иначе утверждение краснело бы на верном коде.
+				 */
+				const netUncollected = money(
+					Math.max(0, money(totals.planned_dashboard_rounded) - money(totals.paid_sql)),
+				);
+				same(
+					org.name,
+					"долг дашборд = назначено − оплачено, зажатое нулём (нетто по клинике)",
+					money(summary.totalDueRub),
+					netUncollected,
+					[money(summary.totalDueRub), netUncollected],
 				);
 				console.log(
-					`СВЕРКА выполненного: сумма только по completed=${money(totals.planned_completed_only)} — ` +
-						`дашборд в totalDueRub её НЕ использует (берёт все не отменённые).`,
+					`справка: сумма только по completed=${money(totals.planned_completed_only)} — ` +
+						"дашборд в totalDueRub её НЕ использует, берёт все не отменённые.",
 				);
-				// Сколько пациентов дашборд считает в активном визите
 				const insights = dashboard.patientInsights ?? [];
-				const insightDebt = insights.reduce((sum: number, row: any) => sum + money(row.balanceDueRub), 0);
-				console.log(`patientInsights: строк ${insights.length}, сумма balanceDueRub=${money(insightDebt)}`);
+				const insightDebt = money(
+					insights.reduce((sum: number, row: { balanceDueRub?: unknown }) => sum + money(row.balanceDueRub), 0),
+				);
+				console.log(`patientInsights: строк ${insights.length}, сумма balanceDueRub=${insightDebt}`);
+				same(
+					org.name,
+					"пациентов в patientInsights = пациентов в картотеке дашборда",
+					insights.length,
+					dashboard.patients?.length ?? 0,
+					[insights.length, dashboard.patients?.length ?? 0],
+				);
 			}
 
 			const receivablesResponse = await app.inject({
@@ -208,7 +440,46 @@ async function main(): Promise<void> {
 				for (const row of (receivables.rows ?? []).slice(0, 10)) {
 					console.log(`   ${row.patientName}: ${money(row.debtRub)} ₽ (${row.bucket}, с ${row.oldestChargeAt})`);
 				}
+				/*
+				 * Две внутренние сходимости отчёта дебиторки. Обе не зависят ни от
+				 * периода, ни от даты прогона: корзины — это разбиение тех же строк по
+				 * сроку, а итог — их сумма. Именно поэтому они годятся в утверждения:
+				 * ожидание считается из того же ответа, а не зашито под сегодняшнюю
+				 * базу.
+				 */
+				const debtRows = (receivables.rows ?? []) as { debtRub?: unknown }[];
+				const rowsDebt = money(debtRows.reduce((sum, row) => sum + money(row.debtRub), 0));
+				const bucketDebt = money(
+					Object.values((receivables.byBucket ?? {}) as Record<string, unknown>).reduce(
+						(sum: number, value) => sum + money(value),
+						0,
+					),
+				);
+				same(org.name, "сумма долгов по строкам = итог дебиторки", rowsDebt, money(receivables.totalDebtRub), [
+					rowsDebt,
+					money(receivables.totalDebtRub),
+				]);
+				same(org.name, "сумма корзин по сроку = итог дебиторки", bucketDebt, money(receivables.totalDebtRub), [
+					bucketDebt,
+					money(receivables.totalDebtRub),
+				]);
+				same(
+					org.name,
+					"должников в отчёте = строк с положительным долгом",
+					receivables.rows?.length ?? 0,
+					debtRows.filter((row) => money(row.debtRub) > 0).length,
+					[receivables.rows?.length ?? 0, debtRows.length],
+				);
 			}
+
+			/**
+			 * Вся выручка периода, как её видит отчёт по врачам: отнесённая плюс
+			 * неотнесённая. Считается здесь, а сверяется ниже с динамикой выручки —
+			 * это два независимых запроса с ОДНИМ периодом, поэтому их итоги обязаны
+			 * совпасть до копейки. Утверждение не зависит ни от даты прогона, ни от
+			 * того, сколько строк лежит в базе.
+			 */
+			let doctorsPeriodRevenue: number | null = null;
 
 			const doctorsResponse = await app.inject({
 				method: "GET",
@@ -226,6 +497,9 @@ async function main(): Promise<void> {
 				for (const row of doctors.rows ?? []) {
 					console.log(`   ${row.doctorName}: выручка=${money(row.revenueRub)}, приёмов=${row.appointmentsTotal}, завершено=${row.appointmentsCompleted}`);
 				}
+				const doctorRows = (doctors.rows ?? []) as { revenueRub?: unknown }[];
+				const attributed = money(doctorRows.reduce((sum, row) => sum + money(row.revenueRub), 0));
+				doctorsPeriodRevenue = money(attributed + money(doctors.unattributedRevenueRub));
 			}
 
 			const servicesResponse = await app.inject({
@@ -252,6 +526,21 @@ async function main(): Promise<void> {
 			} else {
 				const revenue = JSON.parse(revenueResponse.body);
 				console.log(`/api/reports/revenue: точек ${revenue.points?.length ?? 0}, итог=${money(revenue.totalRub)}`);
+				if (doctorsPeriodRevenue !== null) {
+					same(
+						org.name,
+						"выручка динамики = выручка врачей плюс не отнесённая (тот же период)",
+						money(revenue.totalRub),
+						doctorsPeriodRevenue,
+						[money(revenue.totalRub), doctorsPeriodRevenue],
+					);
+				}
+				const revenuePoints = (revenue.points ?? []) as { revenueRub?: unknown }[];
+				const pointsTotal = money(revenuePoints.reduce((sum, row) => sum + money(row.revenueRub), 0));
+				same(org.name, "сумма точек динамики = итог динамики", pointsTotal, money(revenue.totalRub), [
+					pointsTotal,
+					money(revenue.totalRub),
+				]);
 			}
 		}
 	} finally {
@@ -359,7 +648,66 @@ async function main(): Promise<void> {
 	}
 
 	console.log("\nГОТОВО. Единственная возможная запись — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
+
+	/*
+	 * ═══════════════════════════════════════════════════════════════════════
+	 * ИТОГ: СКОЛЬКО УТВЕРЖДЕНИЙ ВООБЩЕ БЫЛО И СКОЛЬКО ИЗ НИХ ЧТО-ТО ЗНАЧИЛИ
+	 * ═══════════════════════════════════════════════════════════════════════
+	 *
+	 * Вырожденные утверждения печатаются ПОИМЁННО и с названием клиники. Молчать
+	 * о них нельзя: это единственное место, где видно, что прогон по конкретной
+	 * клинике ничего не подтвердил.
+	 *
+	 * ПОЧЕМУ ВЫРОЖДЕНИЕ НЕ СЧИТАЕТСЯ НАРУШЕНИЕМ. Пустая клиника — законное
+	 * состояние клиники, а не дефект кода. Страж, кричащий на верном коде, будет
+	 * выключен: в этом дереве так уже случилось трижды. Поэтому вырождение — это
+	 * ПРОБЕЛ В ДОКАЗАТЕЛЬСТВЕ, он называется числом и именем, а нарушением
+	 * объявляется только несошедшееся утверждение, у которого было что сверять,
+	 * и поломка самого датчика.
+	 */
+	const sensorComplaints = proveSubstanceSensorFires();
+	console.log("\n===== ПРОВЕРКА ДАТЧИКА СОДЕРЖАТЕЛЬНОСТИ (на заданных числах, без базы) =====");
+	if (sensorComplaints.length === 0) {
+		console.log(
+			"датчик исправен: ноль против нуля и пустота против пустоты названы вырождением, " +
+				"ненулевые суммы — содержательными, расхождение опознано.",
+		);
+	} else {
+		for (const complaint of sensorComplaints) console.log(`ПРОВАЛ ДАТЧИКА: ${complaint}`);
+	}
+
+	const verdict = substanceSummary(claims);
+	console.log("\n===== ИТОГ СВЕРКИ =====");
+	console.log(`утверждений всего: ${verdict.total}`);
+	console.log(`из них содержательных: ${verdict.substantive}`);
+	console.log(`вырожденных (сравнивался ноль с нулём): ${verdict.degenerate.length}`);
+	if (verdict.degenerate.length > 0) {
+		console.log("вырожденные утверждения — НЕ подтверждение, перечислены полностью:");
+		for (const claim of verdict.degenerate) {
+			console.log(`  «${claim.clinic}» — ${claim.label}`);
+		}
+		const byClinic = new Map<string, number>();
+		for (const claim of verdict.degenerate) byClinic.set(claim.clinic, (byClinic.get(claim.clinic) ?? 0) + 1);
+		for (const [clinic, count] of byClinic) {
+			const all = claims.filter((claim) => claim.clinic === clinic).length;
+			console.log(
+				`  ИТОГ ПО КЛИНИКЕ «${clinic}»: ${count} из ${all} утверждений не подтверждают ничего — ` +
+					"в ней нет данных для этих звеньев цепочки.",
+			);
+		}
+	}
+	for (const claim of verdict.failed) {
+		console.log(`ПРОВАЛ «${claim.clinic}» — ${claim.label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)}`);
+	}
+
+	const violations = verdict.failed.length + sensorComplaints.length;
+	console.log(
+		`\nИТОГ: СОДЕРЖАТЕЛЬНЫХ УТВЕРЖДЕНИЙ: ${verdict.substantive} из ${verdict.total}; ` +
+			`вырожденных ${verdict.degenerate.length}; РАСХОЖДЕНИЙ на содержательных ${verdict.failed.length}; ` +
+			`НАРУШЕНИЙ: ${violations}`,
+	);
 	await pool.end();
+	if (violations > 0) process.exitCode = 1;
 }
 
 main().catch((error) => {
