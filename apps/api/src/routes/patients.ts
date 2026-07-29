@@ -263,6 +263,10 @@ export function patientArchiveRowsBlockBooking(rows: readonly PatientArchiveRowL
 }
 
 import { verifyToken } from "../utils/cryptoHelper.js";
+import {
+  clinicSessionMissingMessage,
+  clinicSessionRejectedMessage
+} from "../utils/clinicSessionRefusal.js";
 import { TOKEN_SECRET } from "./auth.js";
 import {
   getPatientsFromDb,
@@ -299,10 +303,24 @@ import {
  * заголовка («Пациенты не загружены: …»), и второе двоеточие в одном
  * предложении читается как обрывок.
  */
-const clinicAuthRequiredMessage =
-  "Требуется авторизация рабочего кабинета клиники — картотека пациентов открывается только из кабинета. Войдите в кабинет клиники и повторите действие.";
-const clinicAuthRejectedMessage =
-  "Вход в рабочий кабинет клиники не принят — срок входа истёк или запись о входе повреждена. Войдите в кабинет клиники заново и повторите действие.";
+/*
+ * ТЕКСТ ЭТИХ ДВУХ ОТКАЗОВ ЗДЕСЬ БОЛЬШЕ НЕ ЖИВЁТ, И ЭТО НЕ КОСМЕТИКА.
+ *
+ * Это была ПЕРВАЯ копия отказа «запрос пришёл без рабочего кабинета клиники». К
+ * моменту правки в дереве завелась третья (`routes/diary.ts`, ветка подписания
+ * дневника, своя формулировка того же состояния), а расписание, дневник и
+ * протоколы приёма отвечали на него вообще без текста. В этом продукте уже
+ * выросли четыре разных расчёта долга ровно так — каждый раз заводили ещё одно
+ * место. Формулировка переехала в единственный дом,
+ * `utils/clinicSessionRefusal.ts`, и все они собирают фразу там.
+ *
+ * Сами строки не изменились ни на знак: на них стоит
+ * tests/routes/patientsRefusalText.test.ts.
+ */
+const clinicAuthRequiredMessage = clinicSessionMissingMessage(
+  "картотека пациентов открывается только из кабинета"
+);
+const clinicAuthRejectedMessage = clinicSessionRejectedMessage;
 
 /**
  * Организация из ПОДПИСАННОГО токена кабинета, либо 401 с причиной и действием.
