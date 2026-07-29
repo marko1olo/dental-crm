@@ -138,6 +138,12 @@ describe("автоматические напоминания о приёме", 
 		assert.equal(addressableName("Орлова Марина Петровна"), "Марина Петровна");
 		assert.equal(addressableName("Орлова Марина"), "Марина");
 		assert.equal(addressableName("Орлова"), "Орлова");
+
+		// Edge cases
+		assert.equal(addressableName("  Орлова   Марина   Петровна  "), "Марина Петровна");
+		assert.equal(addressableName("Орлова Марина Петровна Сидорова"), "Марина Петровна");
+		assert.equal(addressableName("   "), "");
+		assert.equal(addressableName("О"), "О");
 	});
 
 	test("врач называется фамилией с инициалами", () => {
