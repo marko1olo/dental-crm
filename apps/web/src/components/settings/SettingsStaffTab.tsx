@@ -5,17 +5,36 @@ import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
 import {
   CREATABLE_STAFF_ROLES,
-  parseStaffMutationPayload,
   staffRoleTitle,
 } from "./settingsInviteRoles";
+import {
+  planStaffCredentialUpdate,
+  reloadStaffList,
+  requestStaffMutation,
+  staffCredentialFailedAction,
+  staffCredentialSavedMessage,
+  type SettingsAccessHeaders,
+  type StaffCredentialKind,
+} from "./staffMutationRequest";
 
 interface SettingsStaffTabProps {
   props: Record<string, any>;
 }
 
 export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
-  const { dashboard, staffRoleLabels, loadDashboard } = props;
+  const { dashboard, staffRoleLabels, loadDashboard, auth } = props;
   const staff = dashboard?.clinicSettings?.staff || [];
+  /*
+   * ЗАГОЛОВКИ ДОМЕНА НАСТРОЕК, ОДИН ИСТОЧНИК НА ВСЮ ВКЛАДКУ.
+   *
+   * Все четыре обработчика ниже посылали только `x-dente-clinic-token`, взятый
+   * из localStorage руками. Охрана маршрутов `/api/settings/staff*` требует НЕ
+   * его, а `x-dente-admin-secret` (`routes/settings.ts:559`), поэтому в клинике
+   * с заданным DENTE_SETTINGS_ADMIN_SECRET вкладка отвечала 403 на любое
+   * действие, оставаясь зелёной на машине разработчика. Разбор — в
+   * ./staffMutationRequest.ts.
+   */
+  const accessHeaders = auth?.settingsAccessHeaders as SettingsAccessHeaders | undefined;
   /*
    * Список сотрудников приходит из дашборда. Отличить «сотрудников нет» от
    * «данные клиники не прочитаны» можно только по наличию самого дашборда:
@@ -90,18 +109,17 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
       return;
     }
 
+    const addedName = newStaffName.trim();
     setLoading(true);
-    const failedAction = `Сотрудник «${newStaffName.trim()}» не добавлен`;
+    const failedAction = `Сотрудник «${addedName}» не добавлен`;
     try {
-      const clinicToken = localStorage.getItem("dente_clinic_token");
-      const res = await fetch("/api/settings/staff", {
+      const outcome = await requestStaffMutation({
+        url: "/api/settings/staff",
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-dente-clinic-token": clinicToken || "",
-        },
-        body: JSON.stringify({
-          fullName: newStaffName.trim(),
+        accessHeaders,
+        logLabel: "сотрудник не добавлен",
+        body: {
+          fullName: addedName,
           role: newStaffRole,
           phone: newStaffPhone.trim() || null,
           email: newStaffEmail.trim() || null,
@@ -110,20 +128,15 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
           canManageMoney: newStaffRole === "administrator" || newStaffRole === "owner",
           canManageImports: true,
           color: "#3b82f6"
-        }),
+        },
       });
-      /* Тело читается строкой и разбирается чистой функцией: res.json() до
-         проверки res.ok бросал английское исключение прямо в лицо. */
-      const outcome = parseStaffMutationPayload(res.status, await res.text());
       if (!outcome.ok) {
-        console.error("[персонал] сотрудник не добавлен, ответ", outcome.status);
         showToast(
           outcome.message ?? actionFailureToast(failedAction, outcome.status),
           "error",
         );
         return;
       }
-      const addedName = newStaffName.trim();
       setNewStaffName("");
       setNewStaffEmail("");
       setNewStaffPhone("");
@@ -135,23 +148,18 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
        * администратора перезагрузить страницу вручную. Перечитывать данные
        * клиники умеет loadDashboard, он приходит сюда вместе с остальными
        * настройками; просьба к человеку сделать работу программы убрана.
+       *
+       * Отказ САМОГО перечитывания больше не выдаётся за отказ создания: раньше
+       * упавший loadDashboard уводил в catch, и человек читал «Сотрудник не
+       * добавлен» про уже созданного сотрудника — и заводил его второй раз.
        */
-      if (typeof loadDashboard === "function") {
-        await loadDashboard();
-        showToast(
-          `Сотрудник «${addedName}» добавлен. Назначьте ему PIN-код для планшета в списке слева.`,
-          "success",
-        );
-        return;
-      }
+      const listRefreshed = await reloadStaffList(loadDashboard);
       showToast(
-        `Сотрудник «${addedName}» добавлен. Обновите страницу, чтобы увидеть его в списке.`,
+        listRefreshed
+          ? `Сотрудник «${addedName}» добавлен. Назначьте ему PIN-код для планшета в списке слева.`
+          : `Сотрудник «${addedName}» добавлен. Обновите страницу, чтобы увидеть его в списке.`,
         "success",
       );
-    } catch (err) {
-      // Текст исключения наружу не идёт: он английский («Failed to fetch»).
-      console.error("[персонал] добавление не дошло до сервера", err);
-      showToast(actionFailureToast(failedAction, null), "error");
     } finally {
       setLoading(false);
     }
@@ -162,9 +170,12 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
    *
    * Маршрут существует и принимает частичное обновление
    * (routes/settings.ts:745, схема updateStaffMemberProfileSchema), но до этой
-   * правки его не звал из веба НИКТО: updateStaffMember в useAppLogic.tsx:7504
-   * объявлен и не вызывается ни из одного файла. То есть карточку сотрудника
-   * нельзя было исправить вообще ничем.
+   * правки его не звал из веба НИКТО: `updateStaffMember` в `useAppLogic.tsx`
+   * объявлен, попадает в возвращаемый объект хука и не вызывается ни из одного
+   * файла — проверено поиском по всему дереву. То есть карточку сотрудника
+   * нельзя было исправить вообще ничем. Этот обработчик — единственный живой
+   * вызов маршрута; мёртвая копия в `useAppLogic.tsx` подлежит удалению, но
+   * удаляется не отсюда: файл принадлежит другой правке.
    *
    * Пустая строка отправляется как null, а не как "": колонка nullable, и
    * «номер стёрли» должно храниться пустотой, а не пустой строкой, иначе на
@@ -176,18 +187,14 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
     setLoading(true);
     const failedAction = `Телефон ${staffName} не сохранён`;
     try {
-      const clinicToken = localStorage.getItem("dente_clinic_token");
-      const res = await fetch(`/api/settings/staff/${staffId}`, {
+      const outcome = await requestStaffMutation({
+        url: `/api/settings/staff/${staffId}`,
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-dente-clinic-token": clinicToken || "",
-        },
-        body: JSON.stringify({ phone: phoneDraft.trim() || null }),
+        accessHeaders,
+        logLabel: "телефон не сохранён",
+        body: { phone: phoneDraft.trim() || null },
       });
-      const outcome = parseStaffMutationPayload(res.status, await res.text());
       if (!outcome.ok) {
-        console.error("[персонал] телефон не сохранён, ответ", outcome.status);
         /* Поле ввода НЕ закрываем при отказе: набранный номер должен остаться
            на экране, иначе его придётся вспоминать заново. */
         showToast(
@@ -199,104 +206,77 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
       const savedPhone = phoneDraft.trim();
       setEditingPhoneForId(null);
       setPhoneDraft("");
-      if (typeof loadDashboard === "function") await loadDashboard();
+      /* Номер сохранён на сервере, поэтому об успехе говорим и тогда, когда
+         карточку не удалось перечитать: тогда добавляем, что делать дальше. */
+      const listRefreshed = await reloadStaffList(loadDashboard);
+      const staleHint = listRefreshed
+        ? ""
+        : " Обновите страницу, чтобы увидеть это на карточке.";
       showToast(
         savedPhone
-          ? `Телефон ${staffName} сохранён: ${savedPhone}`
-          : `Телефон ${staffName} удалён`,
+          ? `Телефон ${staffName} сохранён: ${savedPhone}.${staleHint}`
+          : `Телефон ${staffName} удалён.${staleHint}`,
         "success",
       );
-    } catch (err) {
-      console.error("[персонал] сохранение телефона не дошло до сервера", err);
-      showToast(actionFailureToast(failedAction, null), "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdatePin = async (e: React.FormEvent, staffId: string) => {
+  /*
+   * PIN-КОД И ПАРОЛЬ — ОДИН МАРШРУТ И ОДИН ОБРАБОТЧИК.
+   *
+   * Здесь стояли handleUpdatePin и handleUpdatePassword: два блока по 45 строк,
+   * адресованные ОДНОМУ адресу POST /api/settings/staff/:staffId/credentials
+   * (сервер принимает email, password и pinCode одним телом,
+   * routes/settings.ts:684). Различались они полем тела, текстом уведомления и
+   * тем, какое поле ввода закрыть после успеха. Разошлись бы они на первой же
+   * правке — в этом дереве уже есть третья копия тех же двух проверок,
+   * SettingsClinicTab.tsx:60,72.
+   *
+   * Что осталось на каждый вид доступа: проверка введённого и два текста — они
+   * живут чистыми функциями в ./staffMutationRequest.ts и проверяются без DOM.
+   */
+  const handleUpdateCredential = async (
+    e: React.FormEvent,
+    staffId: string,
+    kind: StaffCredentialKind,
+  ) => {
     e.preventDefault();
     const staffName = staffNameById(staffId);
-    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) {
-      showToast("PIN-код — ровно 4 цифры, без букв и пробелов", "warning");
+    const plan = planStaffCredentialUpdate(kind, kind === "pin" ? newPin : newPassword);
+    if (!plan.ok) {
+      showToast(plan.warning, "warning");
       return;
     }
 
     setLoading(true);
-    const failedAction = `PIN-код для ${staffName} не изменён`;
+    const failedAction = staffCredentialFailedAction(kind, staffName);
     try {
-      const clinicToken = localStorage.getItem("dente_clinic_token");
-      const res = await fetch(`/api/settings/staff/${staffId}/credentials`, {
+      const outcome = await requestStaffMutation({
+        url: `/api/settings/staff/${staffId}/credentials`,
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-dente-clinic-token": clinicToken || "",
-        },
-        body: JSON.stringify({ pinCode: newPin }),
+        accessHeaders,
+        logLabel: failedAction,
+        body: plan.body,
       });
-      const outcome = parseStaffMutationPayload(res.status, await res.text());
       if (!outcome.ok) {
-        console.error("[персонал] PIN не изменён, ответ", outcome.status);
-        /* Поле ввода НЕ закрываем при отказе: иначе неясно, сменился PIN или нет,
-           и набирать его придётся заново. */
+        /* Поле ввода НЕ закрываем при отказе: иначе неясно, сменился доступ или
+           нет, и набирать его придётся заново. */
         showToast(
           outcome.message ?? actionFailureToast(failedAction, outcome.status),
           "error",
         );
         return;
       }
-      setEditingPinForId(null);
-      setNewPin("");
-      showToast(
-        `PIN-код для ${staffName} изменён — сообщите его сотруднику, старый больше не работает`,
-        "success",
-      );
-    } catch (err) {
-      console.error("[персонал] смена PIN не дошла до сервера", err);
-      showToast(actionFailureToast(failedAction, null), "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdatePassword = async (e: React.FormEvent, staffId: string) => {
-    e.preventDefault();
-    const staffName = staffNameById(staffId);
-    if (newPassword.length < 6) {
-      showToast("Пароль — не короче 6 знаков", "warning");
-      return;
-    }
-
-    setLoading(true);
-    const failedAction = `Пароль для ${staffName} не изменён`;
-    try {
-      const clinicToken = localStorage.getItem("dente_clinic_token");
-      const res = await fetch(`/api/settings/staff/${staffId}/credentials`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-dente-clinic-token": clinicToken || "",
-        },
-        body: JSON.stringify({ password: newPassword }),
-      });
-      const outcome = parseStaffMutationPayload(res.status, await res.text());
-      if (!outcome.ok) {
-        console.error("[персонал] пароль не изменён, ответ", outcome.status);
-        showToast(
-          outcome.message ?? actionFailureToast(failedAction, outcome.status),
-          "error",
-        );
-        return;
+      if (kind === "pin") {
+        setEditingPinForId(null);
+        setNewPin("");
+      } else {
+        setEditingPasswordForId(null);
+        setNewPassword("");
       }
-      setEditingPasswordForId(null);
-      setNewPassword("");
-      showToast(
-        `Пароль для ${staffName} изменён — сообщите его сотруднику, старый больше не работает`,
-        "success",
-      );
-    } catch (err) {
-      console.error("[персонал] смена пароля не дошла до сервера", err);
-      showToast(actionFailureToast(failedAction, null), "error");
+      showToast(staffCredentialSavedMessage(kind, staffName), "success");
     } finally {
       setLoading(false);
     }
@@ -395,7 +375,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                       <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPhoneForId(null)}>Отмена</button>
                     </form>
                   ) : editingPinForId === member.id ? (
-                    <form onSubmit={(e) => handleUpdatePin(e, member.id)} className="flex gap-2">
+                    <form onSubmit={(e) => handleUpdateCredential(e, member.id, "pin")} className="flex gap-2">
                       <input 
                         type="password" 
                         maxLength={4}
@@ -409,7 +389,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                       <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPinForId(null)}>Отмена</button>
                     </form>
                   ) : editingPasswordForId === member.id ? (
-                    <form onSubmit={(e) => handleUpdatePassword(e, member.id)} className="flex gap-2">
+                    <form onSubmit={(e) => handleUpdateCredential(e, member.id, "password")} className="flex gap-2">
                       <input 
                         type="password" 
                         placeholder="Пароль" 
