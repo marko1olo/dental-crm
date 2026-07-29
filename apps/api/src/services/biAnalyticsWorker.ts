@@ -10,7 +10,8 @@ import {
 	biAnalyticsSnapshots,
 	organizations,
 	payments,
-	treatmentScenarios,
+	treatmentPlanStatus,
+	treatmentPlans,
 	users,
 	visitDiaries,
 } from "../db/schema.js";
@@ -38,6 +39,44 @@ import {
  * исправляли в routes/analytics.ts, здесь она осталась.
  */
 const PAID_PAYMENTS_ONLY = eq(payments.status, "paid");
+
+/**
+ * Корзина выручки: месяц по часам клиники и сумма ОПЛАЧЕННЫХ платежей за него.
+ *
+ * ГОРИЗОНТОВ «Month 3 / 6 / 12» ЗДЕСЬ БОЛЬШЕ НЕТ, И ЭТО НЕ ПОТЕРЯ ДАННЫХ.
+ * Они не считались никогда — они домножались:
+ *
+ *     "Month 3":  (r.total || 0) * 1.5,
+ *     "Month 6":  (r.total || 0) * 2,
+ *     "Month 12": (r.total || 0) * 3,
+ *
+ * Множители 1.5 / 2 / 3 не выведены ни из одной строки базы: это выдуманные
+ * числа, запрещённые правилом «Zero Mocks» из `.agents/AGENTS.md`. Цена именно у
+ * `Month 12` наибольшая, потому что ЭКРАН ЧИТАЕТ РОВНО ЭТО ПОЛЕ и подписывает
+ * его словами: `AnalyticsDashboardView.tsx:388` рисует область
+ * `dataKey="Month 12"` с подписью «За год», а заголовок виджета обещает «сколько
+ * денег она принесла за год — то есть LTV». То есть месячная выручка,
+ * умноженная на три, предъявлялась владельцу клиники как измеренная годовая, и
+ * ошибка была ровно втрое — в сторону завышения. По такому числу решают, сколько
+ * тратить на рекламу.
+ *
+ * ПОЧЕМУ ГОРИЗОНТЫ НЕЛЬЗЯ ПОСЧИТАТЬ ИМЕННО ЗДЕСЬ. Корзина этого запроса — месяц,
+ * В КОТОРОМ ПРИШЛИ ДЕНЬГИ, а не месяц регистрации пациента (это зафиксировано
+ * проверкой `tests/analyticsCohortTimeZone.test.ts`, и менять ось запроса она
+ * запрещает). «Месяц N с момента регистрации» — другая ось, и по этой выборке она
+ * не восстанавливается: в ней нет даты регистрации плательщика. Поэтому величина
+ * ОТСУТСТВУЕТ, а не заполняется множителем: отсутствующее видно — экран покажет
+ * «За год» без данных, — а выдуманное владелец примет за правду. Тот же выбор уже
+ * сделан на живом маршруте `routes/analytics.ts:213-218` (`void m1;`), где
+ * «выручка первого месяца = 40 % от общей» была снята как константа, а не расчёт.
+ *
+ * `Month 1` остаётся: это единственная величина, которая здесь ИЗМЕРЕНА, — сумма
+ * оплаченных платежей корзины, без множителей.
+ */
+export interface CohortRevenuePoint {
+	readonly cohort: string;
+	readonly "Month 1": number;
+}
 
 /**
  * МЕСЯЦ КОГОРТЫ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
@@ -75,8 +114,8 @@ const PAID_PAYMENTS_ONLY = eq(payments.status, "paid");
  * `AT TIME ZONE` бросает 22023 и вся сборка снимков валится в catch. Пояс
  * неизвестен — поведение прежнее, месяц режется в поясе сессии.
  */
-async function computeCohortLtvAll(organizationIds: readonly string[]) {
-	const map = new Map<string, any[]>();
+export async function computeCohortLtvAll(organizationIds: readonly string[]) {
+	const map = new Map<string, CohortRevenuePoint[]>();
 
 	for (const organizationId of organizationIds) {
 		const zone = await postgresKnowsTimeZone(await clinicTimeZone(organizationId));
@@ -103,10 +142,7 @@ async function computeCohortLtvAll(organizationIds: readonly string[]) {
 			organizationId,
 			rows.map((r) => ({
 				cohort: r.month,
-				"Month 1": r.total || 0,
-				"Month 3": (r.total || 0) * 1.5,
-				"Month 6": (r.total || 0) * 2,
-				"Month 12": (r.total || 0) * 3,
+				"Month 1": Number(r.total ?? 0),
 			})),
 		);
 	}
@@ -114,42 +150,181 @@ async function computeCohortLtvAll(organizationIds: readonly string[]) {
 	return map;
 }
 
-async function computePlanFunnelAll() {
-	// Count real treatment scenarios by strategy and organization
+/** Состояние плана лечения так, как его называет перечисление базы. */
+export type TreatmentPlanStatus = (typeof treatmentPlanStatus.enumValues)[number];
+
+/**
+ * ВЕТВИ ВОРОНКИ ВЫВЕДЕНЫ ИЗ ПЕРЕЧИСЛЕНИЯ, А НЕ ЗАПИСАНЫ ВТОРЫМ СПИСКОМ.
+ *
+ * Второй список — это и был дефект. В `scripts/cronAnalyticsWorker.ts` стояла
+ * карта `{ draft, proposed, approved, active, completed }` со СТРОЧНЫМИ ключами и
+ * отбор `if (p.status in funnelMap)`. Перечисление `treatment_plan_status` в базе
+ * — `Draft, Active, Approved, Completed, Rejected` С БОЛЬШОЙ БУКВЫ, поэтому
+ * условие не выполнялось НИ ДЛЯ ОДНОГО статуса: воронка показывала нули при
+ * любом числе планов. ЗАМЕРЕНО на живой базе 2026-07-29: 15 планов (1 Draft,
+ * 2 Active, 3 Approved, 4 Completed, 5 Rejected) дали воронку из пяти нулей.
+ * Отказа при этом не было — был тихий ноль, по которому владелец клиники решает,
+ * сколько тратить на рекламу.
+ *
+ * Карта расходилась с базой В ОБЕ СТОРОНЫ: `proposed` в перечислении НЕТ вовсе
+ * (ветвь, под которой не могло оказаться ни одного плана), а `Rejected` в
+ * перечислении ЕСТЬ, и карта его не знала — планы, от которых пациент отказался,
+ * из отчёта исчезали. Это ровно тот показатель, по которому видно, что смета не
+ * продаётся.
+ *
+ * Порядок ветвей — порядок `pg_enum` (`enumsortorder`), то есть тот же, в котором
+ * состояния объявлены в базе. Своей сортировки здесь нет: она стала бы третьим
+ * списком.
+ */
+const TREATMENT_PLAN_FUNNEL_STATUSES = treatmentPlanStatus.enumValues;
+
+/**
+ * Подпись и цвет ветви. `Record` по объединению статусов, а не массив пар:
+ * компилятор требует ПОЛНОТЫ и запрещает лишний ключ, поэтому появление статуса
+ * в `schema.ts` без подписи здесь — ошибка сборки, а не тихий пропуск. Значение
+ * из базы, которого нет в `schema.ts`, компилятор поймать не может по построению:
+ * его ловит `buildPlanFunnel` в рантайме и тест по живому `pg_enum`.
+ *
+ * Подписи русские, как у живого маршрута `routes/analytics.ts` («Запланированы»,
+ * «Завершены»): воронку читает владелец клиники, а не разработчик.
+ */
+const TREATMENT_PLAN_FUNNEL_APPEARANCE: Record<
+	TreatmentPlanStatus,
+	{ readonly label: string; readonly fill: string }
+> = {
+	Draft: { label: "Черновики", fill: "#a1a1aa" },
+	Active: { label: "В работе", fill: "#f59e0b" },
+	Approved: { label: "Согласованы", fill: "#3b82f6" },
+	Completed: { label: "Завершены", fill: "#10b981" },
+	Rejected: { label: "Отклонены", fill: "#ef4444" },
+};
+
+/** Строка «статус → сколько планов» из группирующего запроса. */
+export interface PlanStatusCount {
+	readonly status: string | null;
+	readonly count: number | string | null;
+}
+
+/**
+ * Ветвь воронки в том виде, в каком она ложится в
+ * `bi_analytics_snapshots.plan_funnel_json`.
+ *
+ * `status` — идентификатор состояния из базы, и он здесь НЕ ДЛЯ КРАСОТЫ: по нему
+ * проверка сверяет записанную воронку с живым `pg_enum` в обе стороны. Подпись
+ * `name` для этого не годится, она русская и предназначена человеку. Экран читает
+ * `name`, `value`, `fill` (`pages/analyticsDoctorMetrics.ts:184-188`) и лишнее
+ * поле игнорирует.
+ */
+export interface PlanFunnelStage {
+	readonly status: string;
+	readonly name: string;
+	readonly value: number;
+	readonly fill: string;
+}
+
+/**
+ * Воронка планов лечения из счётчиков по статусам.
+ *
+ * НЕИЗВЕСТНОЕ СОСТОЯНИЕ НЕ ВЫБРАСЫВАЕТСЯ. Прежний отбор `if (p.status in
+ * funnelMap)` молча терял планы, и сумма воронки не сходилась с числом планов в
+ * базе — причём заметить это было нечем. Состояние, которого нет в `schema.ts`,
+ * попадает в воронку под своим сырым именем из базы и кричит в лог: придумать ему
+ * русскую подпись нельзя, а потерять планы — хуже, чем показать ветвь без
+ * перевода. Так сумма ветвей всегда равна числу планов.
+ */
+export function buildPlanFunnel(rows: readonly PlanStatusCount[]): PlanFunnelStage[] {
+	const known = new Map<string, number>(
+		TREATMENT_PLAN_FUNNEL_STATUSES.map((status) => [status, 0]),
+	);
+	const unknown = new Map<string, number>();
+
+	for (const row of rows) {
+		const status = row.status ?? "";
+		const parsed = Number(row.count ?? 0);
+		const count = Number.isFinite(parsed) ? parsed : 0;
+		const previous = known.get(status);
+		if (previous !== undefined) {
+			known.set(status, previous + count);
+			continue;
+		}
+		unknown.set(status, (unknown.get(status) ?? 0) + count);
+	}
+
+	if (unknown.size > 0) {
+		console.error(
+			"[BI] Воронка планов лечения: база вернула состояния, которых нет в перечислении " +
+				`treatmentPlanStatus (db/schema.ts): ${[...unknown.keys()].join(", ")}. ` +
+				"Планы показаны под сырым именем, чтобы не пропасть из отчёта; подпись и цвет им " +
+				"добавляются в TREATMENT_PLAN_FUNNEL_APPEARANCE.",
+		);
+	}
+
+	return [
+		...TREATMENT_PLAN_FUNNEL_STATUSES.map((status) => ({
+			status,
+			name: TREATMENT_PLAN_FUNNEL_APPEARANCE[status].label,
+			value: known.get(status) ?? 0,
+			fill: TREATMENT_PLAN_FUNNEL_APPEARANCE[status].fill,
+		})),
+		...[...unknown.entries()].map(([status, value]) => ({
+			status,
+			name: status,
+			value,
+			fill: "#71717a",
+		})),
+	];
+}
+
+/**
+ * ВОРОНКА СЧИТАЛАСЬ ПО СТРАТЕГИИ СЦЕНАРИЯ, А НЕ ПО СОСТОЯНИЮ ПЛАНА.
+ *
+ * Здесь стоял запрос к `treatment_scenarios` с группировкой по `strategy` и
+ * раскладкой `urgent → Active`, `standard → Proposed`, `optimal → Draft`, всё
+ * остальное → `Completed`. Стратегия — это ПОДХОД к лечению, а не стадия
+ * жизненного цикла: перечисление `treatment_plan_scenario_strategy` в базе —
+ * `urgent, standard, optimal, phased, maintenance` (снято с `pg_enum`
+ * 2026-07-29). То есть сценарий «phased» или «maintenance» попадал в ветку
+ * `else` и объявлялся ЗАВЕРШЁННЫМ планом лечения, ни разу таковым не будучи.
+ * Никакого перехода между этими значениями не существует, поэтому «воронкой» это
+ * не было ни при каких данных — это была раскладка одного справочника по
+ * подписям другого.
+ *
+ * Плюс `os.draft || 1`: ноль подменялся единицей у трёх ветвей из четырёх.
+ * Клиника без единого плана лечения видела по одному плану в «Draft», «Proposed»
+ * и «Active» — выдуманное число, которое от настоящего не отличается ничем.
+ *
+ * Теперь считается то, что обещает имя колонки снимка: планы лечения по своему
+ * состоянию, через ту же `buildPlanFunnel`, что и `scripts/cronAnalyticsWorker.ts`.
+ * Два писателя одной колонки наконец согласованы.
+ *
+ * Арендатор берётся из `treatment_plans.organization_id` — собственной колонки
+ * таблицы, как и у всех остальных запросов этого файла. `cronAnalyticsWorker.ts`
+ * идёт к арендатору через соединение с `patients`; расхождение оставлено как
+ * есть и не «приведено к единому виду» тихой правкой, потому что это вопрос
+ * правила аренды, а не оформления.
+ */
+export async function computePlanFunnelAll(): Promise<Map<string, PlanFunnelStage[]>> {
 	const stats = await db
 		.select({
-			organizationId: treatmentScenarios.organizationId,
-			strategy: treatmentScenarios.strategy,
-			count: sql<number>`count(*)`,
+			organizationId: treatmentPlans.organizationId,
+			status: treatmentPlans.status,
+			count: sql<number>`count(*)::int`,
 		})
-		.from(treatmentScenarios)
-		.groupBy(treatmentScenarios.organizationId, treatmentScenarios.strategy);
+		.from(treatmentPlans)
+		.groupBy(treatmentPlans.organizationId, treatmentPlans.status);
 
-	const orgStats = new Map<string, { draft: number; proposed: number; active: number; completed: number }>();
-
-	for (const s of stats) {
-		if (!s.organizationId) continue;
-		if (!orgStats.has(s.organizationId)) {
-			orgStats.set(s.organizationId, { draft: 0, proposed: 0, active: 0, completed: 0 });
-		}
-		const os = orgStats.get(s.organizationId)!;
-
-		if (s.strategy === "urgent") os.active += Number(s.count);
-		else if (s.strategy === "standard") os.proposed += Number(s.count);
-		else if (s.strategy === "optimal") os.draft += Number(s.count);
-		else os.completed += Number(s.count);
+	const byOrganization = new Map<string, PlanStatusCount[]>();
+	for (const row of stats) {
+		if (!row.organizationId) continue;
+		const rows = byOrganization.get(row.organizationId) ?? [];
+		rows.push({ status: row.status, count: row.count });
+		byOrganization.set(row.organizationId, rows);
 	}
 
-	const map = new Map<string, any[]>();
-	for (const [orgId, os] of orgStats.entries()) {
-		map.set(orgId, [
-			{ name: "Draft", value: os.draft || 1, fill: "#4f46e5" },
-			{ name: "Proposed", value: os.proposed || 1, fill: "#0ea5e9" },
-			{ name: "Active", value: os.active || 1, fill: "#f59e0b" },
-			{ name: "Completed", value: os.completed || 0, fill: "#8b5cf6" },
-		]);
+	const map = new Map<string, PlanFunnelStage[]>();
+	for (const [organizationId, rows] of byOrganization.entries()) {
+		map.set(organizationId, buildPlanFunnel(rows));
 	}
-
 	return map;
 }
 
@@ -284,18 +459,33 @@ export async function computeBiAnalyticsSnapshots() {
 		const snapshots = orgs.map((org) => {
 			const orgId = org.id;
 
-			const cohortLtvJson = cohortLtvMap.get(orgId) || [{ cohort: "Jan", "Month 1": 0 }];
-			const planFunnelJson = planFunnelMap.get(orgId) || [
-				{ name: "Draft", value: 1, fill: "#4f46e5" },
-				{ name: "Proposed", value: 1, fill: "#0ea5e9" },
-				{ name: "Active", value: 1, fill: "#f59e0b" },
-				{ name: "Completed", value: 0, fill: "#8b5cf6" },
-			];
-			const chairUtilizationJson = chairUtilizationMap.get(orgId) || [
-				{ name: "Chair 1", value: 10, fill: "#3b82f6" },
-				{ name: "Chair 2", value: 5, fill: "#10b981" },
-			];
-			const doctorProfitabilityJson = doctorProfitabilityMap.get(orgId) || [];
+			/*
+			 * ЗДЕСЬ СТОЯЛИ ТРИ ВЫДУМАННЫХ ПОДСТАВНЫХ НАБОРА — на случай, когда у
+			 * клиники данных нет. Это худший из возможных случаев для подмены:
+			 * ровно НОВАЯ клиника, у которой ещё ничего не накопилось, получала чужие
+			 * показатели как свои и по ним принимала первые решения.
+			 *
+			 *   cohortLtvJson        → [{ cohort: "Jan", "Month 1": 0 }] — когорта
+			 *                          «Jan» вместо ярлыка `YYYY-MM`, которого требует
+			 *                          остальной код, и месяц, взятый из ниоткуда:
+			 *                          января в данных не было вовсе.
+			 *   planFunnelJson       → по одному плану в «Draft», «Proposed» и
+			 *                          «Active» при полном отсутствии планов.
+			 *   chairUtilizationJson → «Chair 1 — 10 приёмов», «Chair 2 — 5»: два
+			 *                          кресла, которых у клиники может не быть, и
+			 *                          пятнадцать приёмов, которых не было.
+			 *
+			 * Пустой массив честнее, и в этом узле он уже принят: `routes/analytics.ts`
+			 * отдаёт пустые массивы с отдельным признаком `isEmpty`, а экран рисует по
+			 * ним «Пока нечего показать» с объяснением, чего именно не хватает
+			 * (`AnalyticsDashboardView.tsx:400-408`). Ровно за это же — за
+			 * «Иванов И.И. — 240 000 ₽» и «Кресло 1 — 42 %» на пустой базе — подмену
+			 * там уже убирали.
+			 */
+			const cohortLtvJson = cohortLtvMap.get(orgId) ?? [];
+			const planFunnelJson = planFunnelMap.get(orgId) ?? [];
+			const chairUtilizationJson = chairUtilizationMap.get(orgId) ?? [];
+			const doctorProfitabilityJson = doctorProfitabilityMap.get(orgId) ?? [];
 
 			return {
 				organizationId: orgId,

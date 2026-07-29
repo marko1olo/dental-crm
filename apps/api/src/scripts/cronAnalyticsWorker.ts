@@ -14,6 +14,10 @@ import {
 	inClinicZone,
 	postgresKnowsTimeZone,
 } from "../services/reports/managerReports.js";
+// Ветви воронки планов лечения выводятся из перечисления базы ОДНИМ местом на
+// проект. Своя карта состояний здесь и была дефектом: она разошлась с `pg_enum`
+// и по регистру, и по составу, а воронка показывала нули при любом числе планов.
+import { buildPlanFunnel } from "../services/biAnalyticsWorker.js";
 
 /**
  * Сырая строка запроса прибыльности. Числа объявлены `string | number`, потому
@@ -180,24 +184,27 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			.where(eq(patients.organizationId, orgId))
 			.groupBy(treatmentPlans.status);
 
-		const funnelMap: Record<string, number> = {
-			draft: 0,
-			proposed: 0,
-			approved: 0,
-			active: 0,
-			completed: 0,
-		};
-		for (const p of planCounts) {
-			if (p.status in funnelMap) funnelMap[p.status] = p.count;
-		}
-
-		const planFunnelJson = [
-			{ name: "Draft", value: funnelMap.draft },
-			{ name: "Proposed", value: funnelMap.proposed },
-			{ name: "Approved", value: funnelMap.approved },
-			{ name: "Active", value: funnelMap.active },
-			{ name: "Completed", value: funnelMap.completed },
-		];
+		/*
+		 * ВОРОНКА ПОКАЗЫВАЛА НУЛИ ПРИ ЛЮБОМ ЧИСЛЕ ПЛАНОВ.
+		 *
+		 * Здесь стояла своя карта состояний со СТРОЧНЫМИ ключами
+		 * (`{ draft, proposed, approved, active, completed }`) и отбор
+		 * `if (p.status in funnelMap) funnelMap[p.status] = p.count`. Перечисление
+		 * `treatment_plan_status` в базе — `Draft, Active, Approved, Completed,
+		 * Rejected` С БОЛЬШОЙ БУКВЫ, поэтому условие не выполнялось НИ ДЛЯ ОДНОГО
+		 * статуса. ЗАМЕРЕНО на живой базе: 15 планов дали пять нулей.
+		 *
+		 * И карта расходилась с базой в обе стороны: `proposed` в перечислении нет
+		 * вовсе, а `Rejected` — есть, и воронка его не знала, то есть отказы
+		 * пациентов от смет в отчёт не попадали никогда.
+		 *
+		 * Второго списка состояний больше нет: `buildPlanFunnel` выводит ветви из
+		 * самого перечисления (`treatmentPlanStatus.enumValues`) и служит обоим
+		 * писателям колонки `plan_funnel_json` — этому и
+		 * `services/biAnalyticsWorker.ts`. Список, который приходилось бы держать
+		 * вторым, разошёлся бы снова.
+		 */
+		const planFunnelJson = buildPlanFunnel(planCounts);
 
 		// 3. Chair Utilization Rate (Real Implementation)
 		const chairUsage = await db.execute(sql`
