@@ -62,7 +62,7 @@ export async function processNotificationQueue() {
 		const botConfigsMap = new Map(botConfigs.map((c) => [c.organizationId, c]));
 		const chatLinksMap = new Map(chatLinks.map((l) => [l.subjectId, l]));
 
-		for (const notif of pending) {
+		await Promise.all(pending.map(async (notif) => {
 			const messageText: string =
 				String((notif.payload as Record<string, unknown>)?.text ?? JSON.stringify(notif.payload));
 
@@ -115,7 +115,7 @@ export async function processNotificationQueue() {
 					sentAt: deliveryStatus === "sent" ? new Date() : null
 				})
 				.where(eq(outgoingNotifications.id, notif.id));
-		}
+		}));
 	} catch (e) {
 		console.error("Failed to process notification queue:", e);
 	}
