@@ -1,6 +1,33 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clampMprSlabMm } from "./mprMath.js";
+import { clampMprSlabMm, classifyBoneDensity } from "./mprMath.js";
+
+describe("classifyBoneDensity", () => {
+  it("should classify values >= 850 as D1", () => {
+    assert.equal(classifyBoneDensity(850), "D1");
+    assert.equal(classifyBoneDensity(1000), "D1");
+    assert.equal(classifyBoneDensity(2000), "D1");
+  });
+
+  it("should classify values >= 500 and < 850 as D2", () => {
+    assert.equal(classifyBoneDensity(500), "D2");
+    assert.equal(classifyBoneDensity(700), "D2");
+    assert.equal(classifyBoneDensity(849), "D2");
+  });
+
+  it("should classify values >= 225 and < 500 as D3", () => {
+    assert.equal(classifyBoneDensity(225), "D3");
+    assert.equal(classifyBoneDensity(300), "D3");
+    assert.equal(classifyBoneDensity(499), "D3");
+  });
+
+  it("should classify values < 225 as D4", () => {
+    assert.equal(classifyBoneDensity(224), "D4");
+    assert.equal(classifyBoneDensity(0), "D4");
+    assert.equal(classifyBoneDensity(-500), "D4");
+    assert.equal(classifyBoneDensity(-1000), "D4");
+  });
+});
 
 describe("clampMprSlabMm", () => {
   it("should return the value correctly rounded if within bounds [1, 30]", () => {
