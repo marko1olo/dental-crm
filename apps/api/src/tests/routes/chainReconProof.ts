@@ -209,6 +209,34 @@ function proveSubstanceSensorFires(): string[] {
 	if (mismatch.ok) complaints.push("датчик не заметил расхождения сумм");
 	if (!mismatch.substantive) complaints.push("датчик потерял содержательность на расхождении");
 
+	/*
+	 * ПРОВЕРКА САМОГО РЕЕСТРА, тоже на выдуманных утверждениях. Датчик, который
+	 * умеет назвать вырождение, но реестр которого его пропускает, бесполезен:
+	 * ровно так и появляется молчаливый зелёный. Три исхода проверяются сразу —
+	 * содержательное, выродившееся и не выполнявшееся вовсе.
+	 */
+	const synthetic: Claim[] = [
+		judge("своя клиника", "живое утверждение", 9200, 9200, [9200]),
+		judge("своя клиника", "выродившееся утверждение", 0, 0, [0]),
+		// Чужая клиника с тем же именем утверждения: реестр обязан смотреть на СВОЮ.
+		judge("другая клиника", "утверждения нет вовсе", 5, 5, [5]),
+	];
+	const rosterVerdict = verifyRoster(synthetic, "своя клиника", [
+		"живое утверждение",
+		"выродившееся утверждение",
+		"утверждения нет вовсе",
+	]);
+	if (rosterVerdict.degenerate.length !== 1 || rosterVerdict.degenerate[0] !== "выродившееся утверждение") {
+		complaints.push("реестр не назвал выродившееся утверждение своей клиники");
+	}
+	if (rosterVerdict.missing.length !== 1 || rosterVerdict.missing[0] !== "утверждения нет вовсе") {
+		complaints.push("реестр не заметил, что утверждение не выполнялось (или зачёл его по чужой клинике)");
+	}
+	const cleanVerdict = verifyRoster(synthetic, "своя клиника", ["живое утверждение"]);
+	if (cleanVerdict.missing.length !== 0 || cleanVerdict.degenerate.length !== 0) {
+		complaints.push("реестр объявил нарушение там, где содержательное утверждение на месте");
+	}
+
 	return complaints;
 }
 
@@ -229,6 +257,106 @@ function substanceSummary(rows: readonly Claim[]): {
 		degenerate: rows.filter((row) => !row.substantive),
 		failed: substantiveRows.filter((row) => !row.ok),
 	};
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * РЕЕСТР УТВЕРЖДЕНИЙ, КОТОРЫМ ВЫРОЖДАТЬСЯ ЗАПРЕЩЕНО
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Счётчик содержательности честно печатает «33 из 75», но сам по себе ничего не
+ * гарантирует: если данные снова опустеют, вернётся молчаливый зелёный — уже с
+ * пометкой, но всё равно без доказательства. Реестр закрывает эту дыру.
+ *
+ * ПОЧЕМУ СПИСОК ИМЁН, А НЕ ПОРОГ ЧИСЛОМ. Порог с запасом — это оплаченный вперёд
+ * молчаливый слот, и в этом дереве это уже доказано замером: датчик охвата слоя
+ * доступа считался и НЕ сверялся, урезание охвата с 106 функций до 26 прошло при
+ * семи зелёных проверках из восьми (коммит 115aa6595). Порог «не меньше двадцати
+ * содержательных» разрешил бы потерять тринадцать молча. Список ИМЁН запаса не
+ * имеет: пропало утверждение — названо по имени; выродилось — названо по имени.
+ * Добавить новое можно свободно, потому что реестр требует наличия, а не
+ * количества.
+ *
+ * ПОЧЕМУ РЕЕСТР ПРИВЯЗАН К СВОЕЙ КЛИНИКЕ. Живая клиника имеет право быть пустой —
+ * это её законное состояние, а не дефект кода, и требовать от неё содержательности
+ * значило бы завести стража, который кричит на верном коде. Свою клинику сценарий
+ * сеет сам, поэтому её пустота означает ровно одно: сломался посев или сломался
+ * маршрут. Здесь молчать нельзя, и здесь это нарушение.
+ */
+const FIXTURE_SUBSTANCE_ROSTER: readonly string[] = [
+	// Деньги главного экрана против независимого SQL.
+	"назначено дашборд = SQL по позициям (количество округлено, как считает дашборд)",
+	"оплачено дашборд = SQL по оплатам в статусе paid",
+	"долг дашборд = назначено − оплачено, зажатое нулём (нетто по клинике)",
+	"скидка дашборд = SQL по скидкам не отменённых позиций",
+	"к вычету дашборд = SQL по позициям налоговых услуг",
+	"незакрытых позиций дашборд = SQL по не завершённым",
+	"активный визит дашборда — настоящая строка базы",
+	"позиций плана на дашборде = строк в базе",
+	"оплат на дашборде = строк в базе",
+	"приёмов на дашборде = строк в базе",
+	"пациентов в patientInsights = пациентов в картотеке дашборда",
+	// Долг: отчёт дебиторки против канона, и расхождение экранов числом.
+	"сумма долгов по строкам = итог дебиторки",
+	"сумма корзин по сроку = итог дебиторки",
+	"должников в отчёте = строк с положительным долгом",
+	"назначено по канону = SQL по позициям",
+	"дебиторка отчёта = дебиторка по канону",
+	"переплата отчёта = возврат по канону",
+	"должников в отчёте = должников по канону",
+	"переплативших в отчёте = переплативших по канону",
+	"разница дебиторки и главного экрана = переплаты пациентов",
+	"сумма balanceDueRub = дебиторка по формуле главного экрана (с отменёнными позициями)",
+	// Врачи, услуги, выручка.
+	"выручка врачей = оплаты, дошедшие до врача через приём",
+	"не отнесено к врачу = оплаты, которым приём не нашёлся",
+	"приёмов у врачей = приёмов клиники за период",
+	"назначено услуг = SQL по позициям с визитом в периоде",
+	"выручка динамики = выручка врачей плюс не отнесённая (тот же период)",
+	"сумма точек динамики = итог динамики",
+	// Карта приёма: и отказ, и успех.
+	"черновик приёма принимает автосохранение",
+	"подписанный приём отказывает в автосохранении",
+	// Посев под число: без этого «пусто» не отличить от «посев не состоялся».
+	"посев: приёмов",
+	"посев: визитов",
+	"посев: визитов, созданных из записи",
+	"посев: позиций лечения",
+	"посев: оплат",
+	"посев: назначено",
+	"посев: оплачено",
+	"посев: предоплата в статусе planned",
+	"посев: оплата без визита",
+	"посев: отменённая позиция вне назначенного",
+	"посев: дебиторка по канону",
+	"посев: возврат по канону",
+];
+
+interface RosterVerdict {
+	/** Утверждения не выполнялись вовсе — проверка потеряна. */
+	readonly missing: readonly string[];
+	/** Выполнялись, но сравнивали ноль с нулём — на СВОЕЙ клинике это поломка. */
+	readonly degenerate: readonly string[];
+}
+
+/**
+ * Сверка реестра — ЧИСТАЯ функция, чтобы её саму можно было проверить на
+ * выдуманных утверждениях, не заводя клинику и не глядя в базу.
+ */
+function verifyRoster(rows: readonly Claim[], clinic: string, roster: readonly string[]): RosterVerdict {
+	const missing: string[] = [];
+	const degenerate: string[] = [];
+	for (const label of roster) {
+		const claim = rows.find((row) => row.clinic === clinic && row.label === label);
+		if (!claim) {
+			missing.push(label);
+			continue;
+		}
+		// Провал содержательного утверждения уже считается в общем итоге; здесь
+		// реестр отвечает только за наличие и за содержательность.
+		if (!claim.substantive) degenerate.push(label);
+	}
+	return { missing, degenerate };
 }
 
 async function buildApp(): Promise<FastifyInstance> {
@@ -364,6 +492,29 @@ async function seedFixtureChain(): Promise<void> {
 		{ id: FIXTURE_OVERPAID_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Переплатова Мария Львовна" },
 		{ id: FIXTURE_EVEN_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Ровнова Ольга Дмитриевна" },
 	]);
+
+	/*
+	 * ПРОВЕРКА ДАТЧИКА НА ПУСТОТЕ — не лазейка, а обязательный обратный прогон.
+	 *
+	 * Страж, чей путь отказа никогда не проходили, не доказан: он мог бы молчать
+	 * всегда. `DENTE_CHAIN_RECON_EMPTY_FIXTURE=1` останавливает посев здесь и
+	 * оставляет клинику ровно в состоянии живой «Стоматология, 1 кабинет» — три
+	 * карточки и НОЛЬ всего остального. Тогда реестр обязан назвать выродившиеся
+	 * утверждения по имени и заявить нарушения; если он промолчит, датчик сломан.
+	 *
+	 * Переменная действует только в сторону строгости: включить её нельзя так,
+	 * чтобы прогон стал зеленее. Пустых клиник в живой базе она не создаёт — своя
+	 * клиника убирается целиком на выходе, как и при полном посеве.
+	 */
+	if (process.env.DENTE_CHAIN_RECON_EMPTY_FIXTURE === "1") {
+		console.log(
+			"ПРОВЕРКА ДАТЧИКА НА ПУСТОТЕ: посев остановлен после карточек пациентов. Своя клиника " +
+				"воспроизводит живую «Стоматология, 1 кабинет» — 3 пациента и ноль записей, приёмов, " +
+				"позиций лечения и оплат. Реестр обязан заявить нарушения.",
+		);
+		return;
+	}
+
 	await db.insert(serviceCatalogItems).values([
 		{
 			id: FIXTURE_SERVICE_TAXED_ID,
@@ -592,6 +743,8 @@ async function canonDebt(organizationId: string): Promise<{
 	debtorCount: number;
 	overpaidCount: number;
 	chargedRub: number;
+	/** Тот же расчёт формулой главного экрана: отменённые позиции учтены. */
+	screenReceivableRub: number;
 	explanation: string;
 }> {
 	const chargeRows = (
@@ -623,6 +776,36 @@ async function canonDebt(organizationId: string): Promise<{
 	let chargedKopecks = 0;
 	for (const ledger of ledgers.values()) chargedKopecks += ledger.chargedKopecks;
 
+	/*
+	 * ВТОРОЙ ПРОХОД — ФОРМУЛОЙ ГЛАВНОГО ЭКРАНА, А НЕ КАНОНОМ.
+	 *
+	 * `patientInsight.balanceDueRub` (sampleData.ts:1720) считает по тем же
+	 * пациентам, но позиции берёт БЕЗ фильтра по статусу: группировка на
+	 * sampleData.ts:1693 — `groupByPatientId(treatmentPlanItems)`, тогда как
+	 * оплаты рядом фильтруются (`payment.status === "paid"`). Значит отменённое
+	 * лечение продолжает висеть на пациенте долгом ровно там, где администратор
+	 * читает сумму перед звонком.
+	 *
+	 * Здесь это ВОСПРОИЗВОДИТСЯ, а не исправляется: правка боевого кода в эту
+	 * задачу не входит, а утверждение, требующее правильного ответа от кода,
+	 * который его пока не даёт, покраснело бы на неизменном коде и было бы
+	 * выключено. Поэтому статус подменяется на `completed` — так канон учтёт
+	 * отменённые строки, как их учитывает экран, — и порог значимости ставится в
+	 * ноль, потому что у экрана его нет вовсе. Разница двух проходов и есть
+	 * размер дефекта, и она печатается числом.
+	 */
+	const screenLedgers = buildPatientLedgers(
+		chargeRows.map((row) => ({
+			patientId: row.patient_id,
+			status: "completed",
+			unitPriceRub: row.unit_price_rub,
+			quantity: row.quantity,
+			discountRub: row.discount_rub,
+		})),
+		paymentRows.map((row) => ({ patientId: row.patient_id, status: row.status, amountRub: row.amount_rub })),
+	);
+	const screenTotals = clinicDebtTotals(screenLedgers, { significanceKopecks: 0 });
+
 	return {
 		receivableRub: rublesFromKopecks(totals.receivableKopecks),
 		refundRub: rublesFromKopecks(totals.refundLiabilityKopecks),
@@ -630,6 +813,7 @@ async function canonDebt(organizationId: string): Promise<{
 		debtorCount: totals.debtorCount,
 		overpaidCount: totals.overpaidCount,
 		chargedRub: rublesFromKopecks(chargedKopecks),
+		screenReceivableRub: rublesFromKopecks(screenTotals.receivableKopecks),
 		explanation: explainDebtTotals(totals),
 	};
 }
@@ -733,7 +917,70 @@ async function main(): Promise<void> {
 					  (select coalesce(sum(amount_rub),0)::numeric(12,2)
 					     from payments p where p.organization_id = ${org.id} and p.status = 'paid'
 					       and exists (select 1 from visits v join appointments a on a.id = v.appointment_id
-					                    where v.id = p.visit_id and a.doctor_user_id is not null)) as paid_attributable_to_doctor
+					                    where v.id = p.visit_id and a.doctor_user_id is not null)) as paid_attributable_to_doctor,
+					  /*
+					   * Дальше — величины, которых здесь не было и без которых половина
+					   * сводки главного экрана не сверялась ни с чем: скидка, сумма к
+					   * налоговому вычету, число незакрытых позиций, размеры коллекций.
+					   * Формулы повторяют дашборд дословно, включая округление количества:
+					   * слой чтения берёт Math.max(1, Math.round(quantity)), и сверять его
+					   * надо той же формулой, иначе утверждение краснело бы на верном коде.
+					   * Обратные кавычки в этом комментарии стоять НЕ МОГУТ: он лежит
+					   * внутри шаблонной строки, и первая же кавычка её обрывает — на этом
+					   * прогон уже падал разбором.
+					   */
+					  (select coalesce(sum(discount_rub),0)::numeric(12,2)
+					     from treatment_items where organization_id = ${org.id} and status <> 'cancelled') as discount_sql,
+					  (select coalesce(sum(greatest(ti.unit_price_rub * round(greatest(ti.quantity,1)) - ti.discount_rub, 0)),0)::numeric(12,2)
+					     from treatment_items ti
+					     join service_catalog_items sci on sci.id = ti.service_id
+					    where ti.organization_id = ${org.id} and ti.status <> 'cancelled'
+					      and sci.tax_deductible) as tax_deductible_sql,
+					  (select count(*)::int from treatment_items
+					    where organization_id = ${org.id} and status <> 'cancelled' and status <> 'completed') as open_items_sql,
+					  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+					     from treatment_items where organization_id = ${org.id} and status = 'cancelled') as cancelled_line_sql,
+					  (select count(*)::int from treatment_items where organization_id = ${org.id}) as item_rows,
+					  (select count(*)::int from payments where organization_id = ${org.id}) as payment_rows,
+					  (select count(*)::int from appointments where organization_id = ${org.id}) as appointment_rows,
+					  (select count(*)::int from visits where organization_id = ${org.id}) as visit_rows,
+					  (select count(*)::int from visits
+					    where organization_id = ${org.id} and appointment_id is not null) as visit_rows_from_appointment,
+					  (select count(*)::int from visits where organization_id = ${org.id} and status = 'draft') as draft_visit_rows,
+					  (select count(*)::int from visits where organization_id = ${org.id} and status = 'signed') as signed_visit_rows,
+					  /*
+					   * Период тот же, что уходит в отчёты. Отнесение платежа к врачу
+					   * повторяет отчёт дословно: payments → visits → appointments, и
+					   * «не отнесено» — это группа с пустым врачом, а не только платежи
+					   * без визита. Разница видна на визите без записи: платёж по нему
+					   * к врачу не относится, хотя visit_id у него есть.
+					   */
+					  (select coalesce(sum(p.amount_rub),0)::numeric(12,2)
+					     from payments p
+					     left join visits v on v.id = p.visit_id
+					     left join appointments a on a.id = v.appointment_id
+					    where p.organization_id = ${org.id} and p.status = 'paid'
+					      and p.paid_at >= ${REPORT_PERIOD_FROM}::timestamptz
+					      and p.paid_at <= ${REPORT_PERIOD_TO}::timestamptz
+					      and a.doctor_user_id is not null) as period_paid_to_doctor,
+					  (select coalesce(sum(p.amount_rub),0)::numeric(12,2)
+					     from payments p
+					     left join visits v on v.id = p.visit_id
+					     left join appointments a on a.id = v.appointment_id
+					    where p.organization_id = ${org.id} and p.status = 'paid'
+					      and p.paid_at >= ${REPORT_PERIOD_FROM}::timestamptz
+					      and p.paid_at <= ${REPORT_PERIOD_TO}::timestamptz
+					      and a.doctor_user_id is null) as period_paid_unattributed,
+					  (select count(*)::int from appointments
+					    where organization_id = ${org.id} and doctor_user_id is not null
+					      and starts_at >= ${REPORT_PERIOD_FROM}::timestamptz
+					      and starts_at <= ${REPORT_PERIOD_TO}::timestamptz) as period_appointments_with_doctor,
+					  (select coalesce(sum(greatest(ti.unit_price_rub * greatest(ti.quantity,1) - ti.discount_rub, 0)),0)::numeric(12,2)
+					     from treatment_items ti
+					     join visits v on v.id = ti.visit_id
+					    where ti.organization_id = ${org.id} and ti.status <> 'cancelled'
+					      and v.created_at >= ${REPORT_PERIOD_FROM}::timestamptz
+					      and v.created_at <= ${REPORT_PERIOD_TO}::timestamptz) as period_services_planned
 				`)
 			).rows[0] as Record<string, unknown>;
 			console.log(`SQL напрямую: ${JSON.stringify(totals)}`);
@@ -751,6 +998,8 @@ async function main(): Promise<void> {
 			 * называл пациенту сумму, которой нет на главном экране.
 			 */
 			let dashboardDueRub: number | null = null;
+			/** Сумма `balanceDueRub` карточек пациентов — сверяется с каноном ниже. */
+			let dashboardInsightDebt: number | null = null;
 
 			const dashboardResponse = await app.inject({
 				method: "GET",
@@ -815,6 +1064,62 @@ async function main(): Promise<void> {
 					[money(summary.totalDueRub), netUncollected],
 				);
 				dashboardDueRub = money(summary.totalDueRub);
+				same(
+					org.name,
+					"скидка дашборд = SQL по скидкам не отменённых позиций",
+					money(summary.totalDiscountRub),
+					money(totals.discount_sql),
+					[money(summary.totalDiscountRub), money(totals.discount_sql)],
+				);
+				same(
+					org.name,
+					"к вычету дашборд = SQL по позициям налоговых услуг",
+					money(summary.taxDeductionEligibleRub),
+					money(totals.tax_deductible_sql),
+					[money(summary.taxDeductionEligibleRub), money(totals.tax_deductible_sql)],
+				);
+				same(
+					org.name,
+					"незакрытых позиций дашборд = SQL по не завершённым",
+					summary.openTreatmentItems ?? 0,
+					Number(totals.open_items_sql ?? 0),
+					[summary.openTreatmentItems ?? 0, Number(totals.open_items_sql ?? 0)],
+				);
+				same(org.name, "позиций плана на дашборде = строк в базе", dashboard.treatmentPlanItems?.length ?? 0, Number(totals.item_rows ?? 0), [
+					dashboard.treatmentPlanItems?.length ?? 0,
+					Number(totals.item_rows ?? 0),
+				]);
+				same(org.name, "оплат на дашборде = строк в базе", dashboard.payments?.length ?? 0, Number(totals.payment_rows ?? 0), [
+					dashboard.payments?.length ?? 0,
+					Number(totals.payment_rows ?? 0),
+				]);
+				same(org.name, "приёмов на дашборде = строк в базе", dashboard.appointments?.length ?? 0, Number(totals.appointment_rows ?? 0), [
+					dashboard.appointments?.length ?? 0,
+					Number(totals.appointment_rows ?? 0),
+				]);
+				/*
+				 * АКТИВНЫЙ ВИЗИТ ОБЯЗАН БЫТЬ СТРОКОЙ БАЗЫ, а не подстановкой.
+				 *
+				 * На пустой клинике дашборд отдаёт `activeVisit.id` из нулей
+				 * (`00000000-…-000000000000`) — такой строки в базе нет, и утверждение
+				 * там ВЫРОЖДЕНО, потому что визитов нет вовсе и проверять нечего.
+				 * Величина, на которой оно стоит, — число визитов клиники: пока их
+				 * ноль, «визит существует» не вопрос. Как только визит есть, дашборд
+				 * обязан подставить настоящий.
+				 */
+				const activeVisitId = String(dashboard.activeVisit?.id ?? "");
+				const activeVisitExists =
+					Number(
+						(
+							await db.execute(sql`
+								select count(*)::int as n from visits
+								 where organization_id = ${org.id} and id::text = ${activeVisitId}
+							`)
+						).rows[0]?.n ?? 0,
+					) > 0;
+				same(org.name, "активный визит дашборда — настоящая строка базы", activeVisitExists, true, [
+					Number(totals.visit_rows ?? 0),
+				]);
 				console.log(
 					`справка: сумма только по completed=${money(totals.planned_completed_only)} — ` +
 						"дашборд в totalDueRub её НЕ использует, берёт все не отменённые.",
@@ -824,6 +1129,7 @@ async function main(): Promise<void> {
 					insights.reduce((sum: number, row: { balanceDueRub?: unknown }) => sum + money(row.balanceDueRub), 0),
 				);
 				console.log(`patientInsights: строк ${insights.length}, сумма balanceDueRub=${insightDebt}`);
+				dashboardInsightDebt = insightDebt;
 				same(
 					org.name,
 					"пациентов в patientInsights = пациентов в картотеке дашборда",
@@ -927,6 +1233,26 @@ async function main(): Promise<void> {
 						canon.refundRub,
 					]);
 				}
+				if (dashboardInsightDebt !== null) {
+					same(
+						org.name,
+						"сумма balanceDueRub = дебиторка по формуле главного экрана (с отменёнными позициями)",
+						dashboardInsightDebt,
+						canon.screenReceivableRub,
+						[dashboardInsightDebt, canon.screenReceivableRub],
+					);
+					const cancelledWeight = money(totals.cancelled_line_sql);
+					if (cancelledWeight > 0) {
+						console.log(
+							`НАХОДКА ДЛЯ ОЧЕРЕДИ: карточки пациентов считают долг ${dashboardInsightDebt} ₽, канон — ` +
+								`${canon.receivableRub} ₽, разница ${money(dashboardInsightDebt - canon.receivableRub)} ₽ при ` +
+								`отменённом лечении на ${cancelledWeight} ₽. Причина: sampleData.ts:1693 группирует позиции ` +
+								"БЕЗ фильтра по статусу (оплаты рядом фильтруются по 'paid'), поэтому отменённое лечение " +
+								"висит на пациенте долгом ровно там, где администратор читает сумму перед звонком. " +
+								"Правка боевого кода в эту задачу не входит.",
+						);
+					}
+				}
 			}
 
 			/**
@@ -954,9 +1280,41 @@ async function main(): Promise<void> {
 				for (const row of doctors.rows ?? []) {
 					console.log(`   ${row.doctorName}: выручка=${money(row.revenueRub)}, приёмов=${row.appointmentsTotal}, завершено=${row.appointmentsCompleted}`);
 				}
-				const doctorRows = (doctors.rows ?? []) as { revenueRub?: unknown }[];
+				const doctorRows = (doctors.rows ?? []) as {
+					revenueRub?: unknown;
+					appointmentsTotal?: unknown;
+				}[];
 				const attributed = money(doctorRows.reduce((sum, row) => sum + money(row.revenueRub), 0));
 				doctorsPeriodRevenue = money(attributed + money(doctors.unattributedRevenueRub));
+				same(
+					org.name,
+					"выручка врачей = оплаты, дошедшие до врача через приём",
+					attributed,
+					money(totals.period_paid_to_doctor),
+					[attributed, money(totals.period_paid_to_doctor)],
+				);
+				/*
+				 * «Не отнесено» — это НЕ только платежи без визита. Отчёт группирует по
+				 * `appointments.doctor_user_id` после двух левых соединений, поэтому сюда
+				 * же попадает платёж по визиту БЕЗ записи в расписании. Своя клиника
+				 * держит и такой случай: черновик без записи существует, и разница между
+				 * двумя формулами была бы видна числом.
+				 */
+				same(
+					org.name,
+					"не отнесено к врачу = оплаты, которым приём не нашёлся",
+					money(doctors.unattributedRevenueRub),
+					money(totals.period_paid_unattributed),
+					[money(doctors.unattributedRevenueRub), money(totals.period_paid_unattributed)],
+				);
+				const appointmentsInReport = doctorRows.reduce((sum, row) => sum + Number(row.appointmentsTotal ?? 0), 0);
+				same(
+					org.name,
+					"приёмов у врачей = приёмов клиники за период",
+					appointmentsInReport,
+					Number(totals.period_appointments_with_doctor ?? 0),
+					[appointmentsInReport, Number(totals.period_appointments_with_doctor ?? 0)],
+				);
 			}
 
 			const servicesResponse = await app.inject({
@@ -970,6 +1328,19 @@ async function main(): Promise<void> {
 				const services = JSON.parse(servicesResponse.body);
 				console.log(
 					`/api/reports/services: строк ${services.rows?.length ?? 0}, назначено итого=${money(services.plannedTotalRub)}`,
+				);
+				/*
+				 * Отчёт по услугам датирует позицию по визиту, поэтому его итог — НЕ
+				 * «всё назначенное», а «назначенное по визитам периода». Независимый SQL
+				 * повторяет именно этот фильтр: сверка с полным назначенным сошлась бы
+				 * сегодня по совпадению и разошлась бы на первой позиции без визита.
+				 */
+				same(
+					org.name,
+					"назначено услуг = SQL по позициям с визитом в периоде",
+					money(services.plannedTotalRub),
+					money(totals.period_services_planned),
+					[money(services.plannedTotalRub), money(totals.period_services_planned)],
 				);
 			}
 
@@ -1054,55 +1425,159 @@ async function main(): Promise<void> {
 	});
 	await registerVisitRoutes(visitApp);
 	await visitApp.ready();
+	/**
+	 * Одна попытка автосохранения карты приёма.
+	 *
+	 * ПОЧЕМУ УСПЕШНАЯ ПОПЫТКА — ТОЛЬКО ПО СВОЕЙ КЛИНИКЕ. Автосохранение на
+	 * черновике ПИШЕТ в визит. Писать в черновик живой клиники сценарий не имеет
+	 * права: это чужие медицинские данные, и прежняя редакция этого файла честно
+	 * печатала «ВНИМАНИЕ: состояние базы изменено этим шагом» — то есть знала, что
+	 * делает, но делала. Теперь успех проверяется на своём черновике, а по живым
+	 * клиникам берётся только подписанный визит, на котором маршрут обязан
+	 * ОТКАЗАТЬ, — то есть ничего не пишется.
+	 */
+	const tryAutosave = async (
+		orgId: string,
+		visit: { id: string; patient_id: string },
+	): Promise<{ statusCode: number; body: string }> => {
+		const clinicToken = signToken({ organizationId: orgId }, authTokenSecret());
+		const response = await visitApp.inject({
+			method: "PUT",
+			url: `/api/visits/${visit.id}/draft/autosave`,
+			headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
+			payload: {
+				patientId: visit.patient_id,
+				selectedSpecialty: "therapist",
+				transcript: "сверка цепочки: попытка автосохранения черновика",
+				draft: {
+					warnings: [],
+					complaint: "проверка",
+					anamnesis: "",
+					objectiveStatus: "",
+					diagnosis: "",
+					treatmentPlan: "",
+				},
+			},
+		});
+		return { statusCode: response.statusCode, body: response.body };
+	};
+
+	const visitOfStatus = async (orgId: string, status: "draft" | "signed") =>
+		(
+			await db.execute(sql`
+				select id::text as id, patient_id::text as patient_id, status::text as status
+				  from visits
+				 where organization_id = ${orgId} and status = ${status}
+				 order by updated_at desc
+				 limit 1
+			`)
+		).rows[0] as { id: string; patient_id: string; status: string } | undefined;
+
 	try {
 		for (const org of orgs) {
-			const live = (
-				await db.execute(sql`
-					select id::text as id, patient_id::text as patient_id, status::text as status
-					  from visits
-					 where organization_id = ${org.id}
-					 order by (status = 'draft') desc, updated_at desc
-					 limit 1
-				`)
-			).rows[0] as { id: string; patient_id: string; status: string } | undefined;
-			if (!live) {
+			const signed = await visitOfStatus(org.id, "signed");
+			const draft = org.id === FIXTURE_ORGANIZATION_ID ? await visitOfStatus(org.id, "draft") : undefined;
+			if (!signed && !draft) {
 				console.log(`\n«${org.name}»: приёмов в базе нет вовсе — карту приёма открывать не на чем.`);
-				continue;
+			} else {
+				console.log(`\n«${org.name}»: подписанный визит ${signed?.id ?? "нет"}, свой черновик ${draft?.id ?? "нет"}`);
 			}
-			console.log(`\n«${org.name}»: дашборд подставит визит ${live.id} статус=${live.status}`);
-			const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
-			const get = await visitApp.inject({
-				method: "GET",
-				url: `/api/visits/${live.id}/draft/autosave`,
-				headers: { "x-dente-clinic-token": clinicToken },
-			});
-			console.log(`  GET  /api/visits/${live.id}/draft/autosave -> HTTP ${get.statusCode} ${get.body.slice(0, 220)}`);
-			const put = await visitApp.inject({
-				method: "PUT",
-				url: `/api/visits/${live.id}/draft/autosave`,
-				headers: { "x-dente-clinic-token": clinicToken, "content-type": "application/json" },
-				payload: {
-					patientId: live.patient_id,
-					selectedSpecialty: "therapist",
-					transcript: "разведка цепочки: попытка автосохранения черновика",
-					draft: {
-						warnings: [],
-						complaint: "проверка",
-						anamnesis: "",
-						objectiveStatus: "",
-						diagnosis: "",
-						treatmentPlan: "",
-					},
-				},
-			});
-			console.log(`  PUT  автосохранение -> HTTP ${put.statusCode} ${put.body.slice(0, 260)}`);
-			if (put.statusCode === 200) {
-				console.log("  ВНИМАНИЕ: автосохранение прошло — значит визит был черновиком, состояние базы изменено этим шагом.");
+
+			if (signed) {
+				const clinicToken = signToken({ organizationId: org.id }, authTokenSecret());
+				const get = await visitApp.inject({
+					method: "GET",
+					url: `/api/visits/${signed.id}/draft/autosave`,
+					headers: { "x-dente-clinic-token": clinicToken },
+				});
+				console.log(`  GET  черновик подписанного -> HTTP ${get.statusCode} ${get.body.slice(0, 200)}`);
+				if (get.statusCode === 404) {
+					console.log(
+						"  НАХОДКА ДЛЯ ОЧЕРЕДИ: маршрут отвечает «VisitNotFound / Прием не найден» о приёме, который " +
+							"в базе ЕСТЬ. Причина: db/visitsQuery.ts:46 возвращает null для любого не-черновика, а " +
+							"routes/visits.ts превращает null в 404 с текстом про отсутствие приёма. Для человека за " +
+							"стойкой это «приём потерялся», хотя он подписан. Правка боевого кода в эту задачу не входит.",
+					);
+				}
+				const put = await tryAutosave(org.id, signed);
+				console.log(`  PUT  автосохранение подписанного -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`);
+				same(org.name, "подписанный приём отказывает в автосохранении", put.statusCode, 409, [1]);
+			} else {
+				same(org.name, "подписанный приём отказывает в автосохранении", null, 409, [0]);
+			}
+
+			if (draft) {
+				const put = await tryAutosave(org.id, draft);
+				console.log(`  PUT  автосохранение своего черновика -> HTTP ${put.statusCode} ${put.body.slice(0, 220)}`);
+				same(org.name, "черновик приёма принимает автосохранение", put.statusCode, 200, [1]);
+			} else if (org.id === FIXTURE_ORGANIZATION_ID) {
+				same(org.name, "черновик приёма принимает автосохранение", null, 200, [0]);
 			}
 		}
 	} finally {
 		await visitApp.close();
 	}
+
+	console.log("\n=== ШАГ 5. ПОСЕВ ПОД ЧИСЛО: ЛЕГЛО ЛИ В БАЗУ ИМЕННО ТО, ЧТО ЗАЯВЛЕНО ===");
+	/*
+	 * ЗАЧЕМ ЭТИ УТВЕРЖДЕНИЯ, ЕСЛИ ВЫШЕ УЖЕ ВСЁ СВЕРЕНО. Без них «пусто» нельзя
+	 * отличить от «посев не состоялся». Сверки выше сравнивают маршрут с базой:
+	 * если посева не было вовсе, они дружно сойдутся на нулях и промолчат. Здесь
+	 * ожидания — ЛИТЕРАЛЫ замысла: числа названы независимо от того, что легло в
+	 * базу, поэтому неудавшийся посев виден расхождением, а не тишиной.
+	 *
+	 * Ожидания намеренно НЕ выводятся из констант посева: константа, использованная
+	 * и при записи, и при проверке, подтверждает саму себя. Литерал здесь — вторая
+	 * независимая запись того же замысла.
+	 */
+	const seeded = (
+		await db.execute(sql`
+			select
+			  (select count(*)::int from appointments where organization_id = ${FIXTURE_ORGANIZATION_ID}) as appointments,
+			  (select count(*)::int from visits where organization_id = ${FIXTURE_ORGANIZATION_ID}) as visits,
+			  (select count(*)::int from visits
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and appointment_id is not null) as visits_from_appointment,
+			  (select count(*)::int from treatment_items where organization_id = ${FIXTURE_ORGANIZATION_ID}) as items,
+			  (select count(*)::int from payments where organization_id = ${FIXTURE_ORGANIZATION_ID}) as payments,
+			  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+			     from treatment_items
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status <> 'cancelled') as planned,
+			  (select coalesce(sum(amount_rub),0)::numeric(12,2) from payments
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'paid') as paid,
+			  (select coalesce(sum(amount_rub),0)::numeric(12,2) from payments
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'planned') as advance,
+			  (select coalesce(sum(amount_rub),0)::numeric(12,2) from payments
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'paid' and visit_id is null) as paid_without_visit,
+			  (select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)),0)::numeric(12,2)
+			     from treatment_items
+			    where organization_id = ${FIXTURE_ORGANIZATION_ID} and status = 'cancelled') as cancelled_line
+		`)
+	).rows[0] as Record<string, unknown>;
+	console.log(`посев в базе: ${JSON.stringify(seeded)}`);
+
+	const seedClinic = FIXTURE_ORGANIZATION_NAME;
+	same(seedClinic, "посев: приёмов", Number(seeded.appointments ?? 0), 4, [Number(seeded.appointments ?? 0), 4]);
+	same(seedClinic, "посев: визитов", Number(seeded.visits ?? 0), 4, [Number(seeded.visits ?? 0), 4]);
+	same(seedClinic, "посев: визитов, созданных из записи", Number(seeded.visits_from_appointment ?? 0), 3, [
+		Number(seeded.visits_from_appointment ?? 0),
+		3,
+	]);
+	same(seedClinic, "посев: позиций лечения", Number(seeded.items ?? 0), 6, [Number(seeded.items ?? 0), 6]);
+	same(seedClinic, "посев: оплат", Number(seeded.payments ?? 0), 5, [Number(seeded.payments ?? 0), 5]);
+	same(seedClinic, "посев: назначено", money(seeded.planned), 24_500, [money(seeded.planned), 24_500]);
+	same(seedClinic, "посев: оплачено", money(seeded.paid), 15_300, [money(seeded.paid), 15_300]);
+	same(seedClinic, "посев: предоплата в статусе planned", money(seeded.advance), 2_500, [money(seeded.advance), 2_500]);
+	same(seedClinic, "посев: оплата без визита", money(seeded.paid_without_visit), 1_000, [
+		money(seeded.paid_without_visit),
+		1_000,
+	]);
+	same(seedClinic, "посев: отменённая позиция вне назначенного", money(seeded.cancelled_line), 5_000, [
+		money(seeded.cancelled_line),
+		5_000,
+	]);
+	const seedCanon = await canonDebt(FIXTURE_ORGANIZATION_ID);
+	same(seedClinic, "посев: дебиторка по канону", seedCanon.receivableRub, 10_000, [seedCanon.receivableRub, 10_000]);
+	same(seedClinic, "посев: возврат по канону", seedCanon.refundRub, 800, [seedCanon.refundRub, 800]);
 
 	console.log("\nГОТОВО. Единственная возможная запись по живым клиникам — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
 }
@@ -1164,9 +1639,39 @@ function printVerdict(extraViolations: readonly string[]): number {
 		console.log(`ПРОВАЛ «${claim.clinic}» — ${claim.label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)}`);
 	}
 
+	/*
+	 * РЕЕСТР: ЗДЕСЬ ВЫРОЖДЕНИЕ ПЕРЕСТАЁТ БЫТЬ ПРОСТО ПОМЕТКОЙ.
+	 *
+	 * По живым клиникам вырождение — законный пробел в доказательстве. По СВОЕЙ
+	 * клинике, которую сценарий сам сеет, вырождение означает одно из двух:
+	 * посев не состоялся или маршрут перестал отдавать данные. И то и другое —
+	 * нарушение, потому что иначе прогон вернулся бы к молчаливому зелёному, ради
+	 * ухода от которого всё это и написано.
+	 */
+	const roster = verifyRoster(claims, FIXTURE_ORGANIZATION_NAME, FIXTURE_SUBSTANCE_ROSTER);
+	console.log("\n===== РЕЕСТР УТВЕРЖДЕНИЙ ПО СВОЕЙ КЛИНИКЕ =====");
+	console.log(`в реестре: ${FIXTURE_SUBSTANCE_ROSTER.length}`);
+	if (roster.missing.length === 0 && roster.degenerate.length === 0) {
+		console.log("все утверждения реестра выполнены и содержательны");
+	}
+	for (const label of roster.missing) {
+		console.log(`НАРУШЕНИЕ: утверждение «${label}» по своей клинике НЕ выполнялось — проверка потеряна`);
+	}
+	for (const label of roster.degenerate) {
+		console.log(
+			`НАРУШЕНИЕ: утверждение «${label}» по своей клинике сравнивало ноль с нулём — ` +
+				"посев не состоялся или маршрут перестал отдавать данные",
+		);
+	}
+
 	for (const complaint of extraViolations) console.log(`НАРУШЕНИЕ: ${complaint}`);
 
-	const violations = verdict.failed.length + sensorComplaints.length + extraViolations.length;
+	const violations =
+		verdict.failed.length +
+		sensorComplaints.length +
+		extraViolations.length +
+		roster.missing.length +
+		roster.degenerate.length;
 	console.log(
 		`\nИТОГ: СОДЕРЖАТЕЛЬНЫХ УТВЕРЖДЕНИЙ: ${verdict.substantive} из ${verdict.total}; ` +
 			`вырожденных ${verdict.degenerate.length}; РАСХОЖДЕНИЙ на содержательных ${verdict.failed.length}; ` +
