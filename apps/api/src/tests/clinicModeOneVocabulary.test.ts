@@ -41,7 +41,6 @@ import { fileURLToPath } from "node:url";
 import { clinicModeSchema } from "@dental/shared";
 
 import { DEFAULT_CLINIC_MODE, organizations } from "../db/schema.js";
-import { clinicModeFromOnboarding } from "../routes/workspaceProfile.js";
 /*
  * Таблица «режим → набор возможностей». Единственный модуль, отвечающий на вопрос
  * «что видно при этом режиме», и он же — потребитель словаря на стороне веба.
@@ -78,47 +77,21 @@ test("умолчание колонки clinic_mode лежит внутри пе
 	assert.equal(clinicModeSchema.parse(columnDefault), DEFAULT_CLINIC_MODE);
 });
 
-test("мастер первого запуска не может записать значение вне словаря", () => {
-	/*
-	 * Перебирается весь вход, который мастер РЕАЛЬНО присылает (число рабочих мест
-	 * и список сотрудников), включая мусор: раньше здесь стояло выражение
-	 * `(payload.chairs || 1) === 1 ? "single" : "network"`, то есть при ЛЮБОМ входе
-	 * писалось значение вне словаря. Ни один вход не должен этого повторить.
-	 */
-	const chairCandidates: unknown[] = [undefined, null, 0, 1, 2, 5, 40, -3, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1", "много", {}, []];
-	const staffCandidates: unknown[] = [undefined, null, [], [{}], [{}, {}], [{}, {}, {}], "Врач", 1];
-
-	const produced = new Set<string>();
-	for (const chairs of chairCandidates) {
-		for (const staff of staffCandidates) {
-			const mode = clinicModeFromOnboarding({ chairs, staff } as { chairs?: number; staff?: unknown });
-
-			if (mode === null) continue;
-			assert.ok(
-				VOCABULARY.includes(mode),
-				`мастер первого запуска вывел режим «${mode}» вне словаря [${VOCABULARY.join(", ")}] ` +
-					`при chairs=${JSON.stringify(chairs)}, staff=${JSON.stringify(staff)}`,
-			);
-			/* Ключевое: значение проходит СТРОГИЙ разбор, тот же, что на чтении. */
-			assert.equal(clinicModeSchema.parse(mode), mode);
-			produced.add(mode);
-		}
-	}
-
-	/*
-	 * Правило обязано РАЗЛИЧАТЬ клиники, а не сводить всё к одному значению: до
-	 * правки у всех организаций получался один и тот же режим, и именно поэтому
-	 * «скрыто у отдельного врача» ничего не значило.
-	 */
-	assert.ok(produced.size >= 2, `мастер выдаёт всего один режим (${[...produced].join(", ")}) — модульность снова декорация`);
-	assert.ok(produced.has("solo_doctor"), "режим solo_doctor снова недостижим: мастер его не выводит ни при каком входе");
-
-	/* Именованные ожидания правила — чтобы менялось оно осознанно, а не случайно. */
-	assert.equal(clinicModeFromOnboarding({ chairs: 1, staff: [{}] }), "solo_doctor", "одно кресло и один человек — это отдельный врач");
-	assert.equal(clinicModeFromOnboarding({ chairs: 1, staff: [{}, {}] }), "one_chair", "одно кресло и команда — это один кабинет");
-	assert.equal(clinicModeFromOnboarding({ chairs: 4, staff: [{}] }), "small_clinic", "несколько кресел — это уже клиника");
-	assert.equal(clinicModeFromOnboarding({ staff: [{}] }), null, "без числа кресел размер неизвестен — поле не трогается");
-});
+/*
+ * ЗДЕСЬ СТОЯЛА ПРОВЕРКА ВЫВОДА РЕЖИМА ИЗ ОТВЕТОВ МАСТЕРА ПЕРВОГО ЗАПУСКА, и она
+ * снята вместе со своей целью. Функция clinicModeFromOnboarding жила в
+ * routes/workspaceProfile.ts ради единственного вызова — маршрута
+ * POST /api/workspace/onboarding/complete, у которого не осталось ни одного
+ * писателя после удаления недостижимого семишагового мастера. Маршрут удалён,
+ * разбор стоит на его месте; держать протестированную функцию без вызова значило
+ * бы охранять фасад.
+ *
+ * Инвариант при этом НЕ ослаблен, он переехал ближе к живому коду: у колонок
+ * clinic_mode и clinic_schedule должно быть по одному писателю, и словарь
+ * проверяется у него. Держит это tests/clinicScheduleSingleWriter.test.ts.
+ * Два оставшихся здесь утверждения — умолчание колонки внутри словаря и запрет
+ * миграции 0140 на всё вне словаря — закрывают базу, а не писателя, и остаются.
+ */
 
 test("миграция 0140 запрещает базе хранить что-либо вне словаря", () => {
 	/*

@@ -3,10 +3,11 @@
  * GET  /api/workspace/profile        — load feature flags for current org
  * POST /api/workspace/profile        — save feature flags (individual toggles)
  * POST /api/workspace/preset/:name   — apply a named preset + seed demo data
- * POST /api/workspace/onboarding/complete — mark onboarding as done
+ *
+ * POST /api/workspace/onboarding/complete здесь БОЛЬШЕ НЕТ — разбор удаления
+ * стоит на месте, где маршрут был зарегистрирован, в конце этого файла.
  */
 
-import type { ClinicMode } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
@@ -100,63 +101,6 @@ export function workspaceFlagsFromStorage(stored: unknown): WorkspaceFeatureFlag
     else if (typeof fallback === "string" && typeof value === "string" && value) result[key] = value;
   }
   return result as unknown as WorkspaceFeatureFlags;
-}
-
-/**
- * Ответы мастера первого запуска, по которым можно судить о размере клиники.
- * Ровно то, что присылает `components/workspace/onboarding/useOnboardingLogic.ts`
- * (handleLaunch): число рабочих мест и список сотрудников.
- */
-export interface OnboardingScale {
-  chairs?: number;
-  staff?: unknown;
-}
-
-/**
- * Режим клиники по ответам мастера первого запуска.
- *
- * ЧТО БЫЛО СЛОМАНО. Здесь стояло `clinicMode: (payload.chairs || 1) === 1 ?
- * "single" : "network"`. Ни "single", ни "network" не входят в перечисление
- * режимов (`clinicModeSchema`, packages/shared/src/index.ts:797) — по которому
- * этот же режим потом разбирается на чтении и по которому интерфейс решает, какие
- * разделы показать. То есть мастер первого запуска, единственное место, где
- * клиника заявляет свой размер, писал в базу значение, не существующее в
- * контракте. Дальше оно молча подменялось при чтении (db/domainStateHydration.ts
- * и db/settingsQuery.ts подменяли по-разному), поэтому ошибка не всплывала
- * нигде — просто у всех клиник получалось одинаковое меню.
- *
- * ПРАВИЛО. Считается только по тому, что мастер РЕАЛЬНО спрашивает:
- *
- *   рабочих мест больше одного            -> small_clinic
- *   одно место и заявлен один человек     -> solo_doctor
- *   одно место, людей больше или неясно   -> one_chair
- *
- * ПОЧЕМУ НИКОГДА НЕ network_clinic. Сеть — это несколько адресов, а про филиалы
- * мастер не спрашивает вовсе: в его шагах есть специализации, кресла, часы,
- * модули, оформление, сотрудники и реквизиты — и ни одного вопроса про второй
- * адрес. Выводить сеть из числа кресел значило бы выдумать признак, которого в
- * ответах нет (.agents/AGENTS.md §10). Сеть выставляется на вкладке настроек
- * клиники, где режим выбирается прямо.
- *
- * ПОЧЕМУ РОЛИ СОТРУДНИКОВ НЕ РАЗБИРАЮТСЯ. Мастер присылает роль русской подписью
- * («Врач», «Ассистент», «Администратор» — steps/Step5Staff.tsx:180-182), а не
- * значением перечисления. Сверяться с этими подписями значило бы вшить текст
- * интерфейса в решение о режиме и сломать его при первой правке подписи. На
- * вопрос «работает ли человек один» отвечает количество, и его достаточно.
- *
- * ПОЧЕМУ ВОЗВРАЩАЕТСЯ null, А НЕ РЕЖИМ ПО УМОЛЧАНИЮ. Если число рабочих мест не
- * пришло, размер клиники неизвестен. Подставить вместо неизвестного какое-нибудь
- * значение — значит перезаписать то, что клиника уже выбрала в настройках, чужой
- * догадкой. На неизвестное колонка отвечает своим умолчанием (db/schema.ts,
- * DEFAULT_CLINIC_MODE), а обработчик просто не трогает поле.
- */
-export function clinicModeFromOnboarding(payload: OnboardingScale): ClinicMode | null {
-  const chairs = typeof payload.chairs === "number" && Number.isFinite(payload.chairs) ? payload.chairs : null;
-  if (chairs === null) return null;
-  if (chairs > 1) return "small_clinic";
-  const declaredPeople = Array.isArray(payload.staff) ? payload.staff.length : null;
-  if (declaredPeople === 1) return "solo_doctor";
-  return "one_chair";
 }
 
 export type PresetName =
@@ -709,375 +653,68 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
     return reply.send({ ok: true, preset: presetName, flags: savedFlags });
   });
 
-  // POST /api/workspace/onboarding/complete
-  fastify.post("/api/workspace/onboarding/complete", async (req, reply) => {
-    const organizationId = await resolveOrganizationId(req);
-    if (!organizationId) return reply.code(401).send({ error: "Unauthorized" });
+  /*
+   * ЗДЕСЬ СТОЯЛ POST /api/workspace/onboarding/complete — 370 строк без единого
+   * писателя. УДАЛЁН, и вот чем он был опасен, пока лежал.
+   *
+   * КТО ЕГО ЗВАЛ. Никто. Его единственным клиентом был семишаговый мастер
+   * первого запуска — недостижимая копия живого мастера, удалённая вместе со
+   * своим поддеревом (разбор: apps/web/src/tests/panelsAreMounted.test.ts).
+   * После этого поиск по всему репозиторию не находил ни одного вызова: ни в
+   * apps/web, ни в скриптах, ни в смоук-прогонах. Живой мастер первого запуска
+   * (App.tsx) этого адреса не знает вовсе и никогда не знал.
+   *
+   * ПОЧЕМУ НЕЛЬЗЯ БЫЛО ОСТАВИТЬ КАК ЕСТЬ. Маршрут был зарегистрирован и доступен
+   * по токену кабинета, а его тело делало три вещи, каждая из которых портит
+   * настроенную клинику:
+   *
+   *   1. `name: payload.name || payload.legal?.name || "Клиника DENTE"`.
+   *      Поля `name` в нагрузке не было ни у одного клиента, а `legal` — это
+   *      { inn, ogrn, address } без имени. То есть УСПЕШНЫЙ вызов переименовывал
+   *      клинику в «Клиника DENTE».
+   *
+   *   2. `clinicSchedule: { workHours, specs }` — ЗАМЕНА всей колонки
+   *      organizations.clinic_schedule устаревшей раскладкой. Достижимый экран
+   *      настроек пишет туда другой формат
+   *      ({ workdayStart, workdayEnd, workingDays, appointmentBufferMinutes },
+   *      db/settingsQuery.ts), и именно его читает публичный виджет записи
+   *      (routes/publicBooking.ts). Вызов маршрута стирал график клиники, а
+   *      чтение настроек не разбирает старую раскладку вовсе
+   *      (clinicScheduleDefaultsSchema) — то есть клиника с графиком 8–20 молча
+   *      возвращалась к запасу 09:00–18:00 и теряла утренние и вечерние слоты в
+   *      публичной записи. Ровно тот дефект, который только что починен и закрыт
+   *      прогоном tests/routes/publicBookingWorkHoursProof.ts: маршрут был
+   *      кнопкой «отменить эту починку».
+   *
+   *   3. `catch` транзакции писал в журнал, обновлял один updatedAt и отвечал
+   *      `{ success: true }`. Плюс `setTimeout` на 1,5 секунды «для красивого
+   *      экрана загрузки» — задержка сервера ради анимации клиента.
+   *
+   * ЗАМЕНА ПОКАЗАНА ПО КАЖДОЙ ЕГО ЧАСТИ — без этого удалять было нельзя:
+   *   название, ИНН, ОГРН, юридический адрес → Настройки → «Клиника»
+   *     (updateClinicProfileInDb, routes/settings.ts);
+   *   график клиники → Настройки → «Клиника», начало и окончание рабочего дня и
+   *     отметки рабочих дней (db/settingsQuery.ts, единственный писатель колонки
+   *     после этого удаления);
+   *   режим клиники → Настройки → «Клиника», выбор режима прямо
+   *     (routes/settings.ts). Маршрут ВЫВОДИЛ режим из числа кресел, и это была
+   *     догадка: про филиалы он не спрашивал вовсе. Ручной выбор точнее;
+   *   сотрудники → Настройки → «Сотрудники» (POST /api/settings/staff), включая
+   *     телефон; ставка врача — на экране выплат
+   *     (PUT /api/settings/staff/:staffId/commission);
+   *   кресла → Настройки → «Клиника», «Кресла и кабинеты»
+   *     (POST /api/settings/chairs), с названием и графиком на каждое кресло
+   *     против безымянного «Кресло N» здесь;
+   *   прайс и шаблоны приёма → у обоих появился достижимый писатель
+   *     (вкладка «Прайс» и раздел протоколов). Засев жёстко зашитым списком
+   *     услуг здесь игнорировал выбор клиники: в асинхронной части стояло
+   *     `const specs = ["therapy", "surgery"]` вместо присланного набора.
+   *
+   * Вместе с маршрутом удалены clinicModeFromOnboarding и OnboardingScale: после
+   * снятия единственного вызова это была бы протестированная мёртвая функция.
+   * Инвариант «у колонки clinic_schedule один писатель и один формат» закреплён
+   * прогоном tests/clinicScheduleSingleWriter.test.ts — иначе следующий писатель
+   * повторит пункт 2.
+   */
 
-    const payload = (req.body || {}) as {
-      name?: string;
-      legal?: { name?: string; inn?: string; ogrn?: string; address?: string };
-      chairs?: number;
-      workHours?: [number, number];
-      specs?: string[];
-      staff?: Array<{ id?: string; fullName?: string; role?: string; phone?: string; percentage?: number; commissionRatePct?: number }>;
-      chairsList?: Array<{ name?: string; roomNumber?: string }>;
-    };
-
-    if (
-      payload &&
-      typeof payload === "object" &&
-      Object.keys(payload).length > 0
-    ) {
-      /*
-       * Режим считается ДО транзакции и отдельной функцией: правило продуктовое
-       * («какого размера эта клиника»), проверяется тестом на самой функции, а не
-       * отрисовкой мастера, и не должно быть выражением внутри `.set()`, где его
-       * прошлая версия писала значение вне перечисления.
-       *
-       * null означает «мастер не сказал, сколько рабочих мест» — тогда поле не
-       * трогается вовсе, чтобы не перезаписать выбранный в настройках режим
-       * догадкой.
-       */
-      const derivedClinicMode = clinicModeFromOnboarding(payload);
-
-      try {
-        await db.transaction(async (tx) => {
-        // 1. Update organizations
-        await tx
-          .update(schema.organizations)
-          .set({
-            name: payload.name || payload.legal?.name || "Клиника DENTE",
-            inn: payload.legal?.inn || null,
-            ogrn: payload.legal?.ogrn || null,
-            legalAddress: payload.legal?.address || null,
-            ...(derivedClinicMode ? { clinicMode: derivedClinicMode } : {}),
-            clinicSchedule: {
-              workHours: payload.workHours || [9, 18],
-              specs: payload.specs || ["therapy"]
-            },
-            updatedAt: new Date()
-          })
-          .where(eq(schema.organizations.id, organizationId));
-
-        // 2. Insert Staff & Commissions
-        if (payload.staff && Array.isArray(payload.staff)) {
-          for (const s of payload.staff) {
-            const [newUser] = await tx
-              .insert(schema.users)
-              .values({
-                organizationId,
-                fullName: s.fullName || "Сотрудник",
-                role: s.role || "doctor",
-                isActive: true,
-                email: s.id + "@clinic.local",
-                phone: s.phone || null,
-              })
-              .returning();
-
-            if (s.role === "Врач" || s.role === "Куратор") {
-              await tx.insert(schema.doctorCommissions).values({
-                organizationId,
-                userId: newUser?.id as string,
-                specialty: "therapist",
-                serviceCategory: "consultation",
-
-                commissionPct: (s.percentage ? Number(s.percentage) : 25).toString(),
-              });
-            }
-          }
-        }
-
-        // 2.5 Smart Seeding: Service Catalog
-        const selectedSpecs = payload.specs || ["therapy"];
-        const servicesToInsert: any[] = [];
-        if (selectedSpecs.includes("therapy")) {
-          servicesToInsert.push({
-            organizationId,
-            code: "T01",
-            name: "Кариес эмали",
-            category: "therapy",
-            basePriceRub: 3500,
-            priceRub: 3500,
-          });
-          servicesToInsert.push({
-            organizationId,
-            code: "T02",
-            name: "Пульпит (1 канал)",
-            category: "therapy",
-            basePriceRub: 7500,
-            priceRub: 7500,
-          });
-        }
-        if (selectedSpecs.includes("surgery")) {
-          servicesToInsert.push({
-            organizationId,
-            code: "S01",
-            name: "Удаление зуба сложное",
-            category: "surgery",
-            basePriceRub: 5500,
-            priceRub: 5500,
-          });
-          servicesToInsert.push({
-            organizationId,
-            code: "S02",
-            name: "Имплантат Osstem",
-            category: "surgery",
-            basePriceRub: 35000,
-            priceRub: 35000,
-          });
-        }
-        if (selectedSpecs.includes("orthopedics")) {
-          servicesToInsert.push({
-            organizationId,
-            code: "O01",
-            name: "Металлокерамическая коронка",
-            category: "orthopedics",
-            basePriceRub: 15000,
-            priceRub: 15000,
-          });
-        }
-        if (servicesToInsert.length > 0) {
-          await tx.insert(schema.serviceCatalogItems).values(servicesToInsert);
-        }
-
-        // 3. Create Chairs
-        const chairsCount = payload.chairs ?? 0;
-        if (chairsCount > 0) {
-          let existingClinic = await tx
-            .select({ id: schema.clinics.id })
-            .from(schema.clinics)
-            .where(eq(schema.clinics.organizationId, organizationId))
-            .limit(1);
-          let clinicId = existingClinic[0]?.id;
-          if (!clinicId) {
-            const [createdClinic] = await tx
-              .insert(schema.clinics)
-              .values({ organizationId, name: "Главный филиал" })
-              .returning({ id: schema.clinics.id });
-            clinicId = createdClinic?.id ?? organizationId;
-          }
-
-          const chairs = Array.from({ length: chairsCount }).map((_, i) => ({
-            organizationId,
-            clinicId,
-            name: `Кресло ${i + 1}`,
-            isActive: true,
-          }));
-          await tx.insert(schema.chairs).values(chairs);
-        }
-      });
-    } catch (txErr: any) {
-        console.error("[onboarding] transaction failed, falling back:", txErr?.message);
-        await db
-          .update(schema.organizations)
-          .set({ updatedAt: new Date() })
-          .where(eq(schema.organizations.id, organizationId));
-      }
-    } else {
-      // Fallback
-      await db
-        .update(schema.organizations)
-        .set({ updatedAt: new Date() })
-        .where(eq(schema.organizations.id, organizationId));
-    }
-
-    // Simulate 1.5 - 2 second delay for a beautiful loading screen
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Async Seeding of templates and price list
-    try {
-      const existingItems = await db
-        .select({ id: schema.serviceCatalogItems.id })
-        .from(schema.serviceCatalogItems)
-        .where(eq(schema.serviceCatalogItems.organizationId, organizationId))
-        .limit(1);
-      if (existingItems.length === 0) {
-        // Fetch organization info
-        const [org] = await db
-          .select({ name: schema.organizations.name })
-          .from(schema.organizations)
-          .where(eq(schema.organizations.id, organizationId));
-        const specs = ["therapy", "surgery"] as string[];
-
-        type ServiceCategory =
-          | "consultation"
-          | "therapy"
-          | "surgery"
-          | "prosthetics"
-          | "orthodontics"
-          | "periodontology"
-          | "hygiene"
-          | "imaging"
-          | "documents"
-          | "other";
-        const allServices: {
-          organizationId: string;
-          code: string;
-          title: string;
-          basePriceRub: number;
-          priceRub: number;
-          category: ServiceCategory;
-        }[] = [
-          {
-            organizationId,
-            code: "A16.07.000",
-            title: "Установка имплантата Osstem",
-            basePriceRub: 45000,
-            priceRub: 45000,
-            category: "surgery",
-          },
-          {
-            organizationId,
-            code: "A16.07.001",
-            title: "Удаление зуба (простое)",
-            basePriceRub: 2500,
-            priceRub: 2500,
-            category: "surgery",
-          },
-          {
-            organizationId,
-            code: "A16.07.002",
-            title: "Лечение кариеса (поверхностный)",
-            basePriceRub: 3500,
-            priceRub: 3500,
-            category: "therapy",
-          },
-          {
-            organizationId,
-            code: "A16.07.008",
-            title: "Лечение пульпита (3 канала)",
-            basePriceRub: 12000,
-            priceRub: 12000,
-            category: "therapy",
-          },
-          {
-            organizationId,
-            code: "A16.07.051",
-            title: "Профессиональная гигиена",
-            basePriceRub: 5000,
-            priceRub: 5000,
-            category: "therapy",
-          },
-          {
-            organizationId,
-            code: "A16.07.052",
-            title: "Установка брекет-системы",
-            basePriceRub: 80000,
-            priceRub: 80000,
-            category: "orthodontics",
-          },
-          {
-            organizationId,
-            code: "A16.07.053",
-            title: "Коронка из диоксида циркония",
-            basePriceRub: 25000,
-            priceRub: 25000,
-            category: "prosthetics",
-          },
-          {
-            organizationId,
-            code: "A16.07.054",
-            title: "Лечение молочного зуба",
-            basePriceRub: 3000,
-            priceRub: 3000,
-            category: "therapy",
-          },
-        ];
-
-        // Filter based on selected specs (or map category to specs)
-        const categoryToSpec: Record<string, string> = {
-          surgery: "surgery",
-          therapy: "therapy",
-          orthodontics: "orthodontics",
-          prosthetics: "orthopedics",
-        };
-        const filteredServices = allServices.filter((s) =>
-          specs.includes(categoryToSpec[s.category] || s.category),
-        );
-
-        if (filteredServices.length > 0) {
-          // Seed price list
-          const insertedServices = await db
-            .insert(schema.serviceCatalogItems)
-            .values(filteredServices)
-            .returning({
-              id: schema.serviceCatalogItems.id,
-              title: schema.serviceCatalogItems.title,
-            });
-
-          const serviceMap = Object.fromEntries(
-            insertedServices.map((s) => [s.title, s.id]),
-          );
-
-          const allTemplates = [
-            {
-              organizationId,
-              title: "Установка имплантата Osstem",
-              category: "surgery" as const,
-              prefilledAnamnesis:
-                "Отсутствие зуба, нарушение жевательной функции.",
-              prefilledObjective:
-                "В области отсутствующего зуба слизистая оболочка без видимых патологических изменений. Костная ткань в достаточном объеме.",
-              prefilledTreatment:
-                "Анестезия инфильтрационная, разрез, отслаивание лоскута, формирование ложа, установка имплантата Osstem, наложение швов.",
-              defaultIcd10: "K08.1",
-              defaultIcd10Label: "Потеря зубов вследствие удаления",
-              isBuiltIn: true,
-              suggestedProcedureIds: [
-                serviceMap["Установка имплантата Osstem"],
-              ].filter(Boolean),
-            },
-            {
-              organizationId,
-              title: "Лечение пульпита (3 канала)",
-              category: "therapy" as const,
-              prefilledAnamnesis:
-                "Самопроизвольные ноющие боли, усиливающиеся в ночное время.",
-              prefilledObjective:
-                "Глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование резко болезненно, перкуссия безболезненная.",
-              prefilledTreatment:
-                "Анестезия, препарирование кариозной полости, экстирпация пульпы, механическая и медикаментозная обработка 3-х корневых каналов, пломбирование каналов гуттаперчей, постановка постоянной пломбы.",
-              defaultIcd10: "K04.0",
-              defaultIcd10Label: "Пульпит",
-              isBuiltIn: true,
-              suggestedProcedureIds: [
-                serviceMap["Лечение пульпита (3 канала)"],
-              ].filter(Boolean),
-            },
-            {
-              organizationId,
-              title: "Лечение кариеса",
-              category: "therapy" as const,
-              prefilledAnamnesis:
-                "Жалобы на кратковременную боль от сладкого и холодного.",
-              prefilledObjective:
-                "Кариозная полость в пределах плащевого дентина. Зондирование чувствительно по эмалево-дентинной границе.",
-              prefilledTreatment:
-                "Анестезия, препарирование кариозной полости, медикаментозная обработка, адгезивный протокол, постановка светоотверждаемой пломбы, шлифовка, полировка.",
-              defaultIcd10: "K02.1",
-              defaultIcd10Label: "Кариес дентина",
-              isBuiltIn: true,
-              suggestedProcedureIds: [
-                serviceMap["Лечение кариеса (поверхностный)"],
-              ].filter(Boolean),
-            },
-          ];
-
-          const filteredTemplates = allTemplates.filter((t) =>
-            specs.includes(categoryToSpec[t.category] || t.category),
-          );
-
-          if (filteredTemplates.length > 0) {
-            // Seed templates
-            await db.insert(schema.visitTemplates).values(filteredTemplates);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("[workspace onboarding] async seeding error:", err);
-    }
-
-    return reply.send({ success: true });
-  });
 }
