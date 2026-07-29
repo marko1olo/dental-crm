@@ -87,10 +87,10 @@ function extractTime(text: string): string | null {
   }
   
   // Fix 'полпервого' / 'пол первого'
-  m = text.match(/(пол(?:овин[аеу])?[\s\-]*|четверть\s+)([а-яё]+)/i);
+  m = text.match(/(?:(?:^|\s)(пол(?:овин[аеу])?|четверть)[\s\-]*)(перв|втор|трет|четверт|пят|шест|седьм|восьм|девят|десят|одиннадцат|двенадцат)[а-яё]*/i);
   if (m) {
     const isQuarter = (m[1] ?? "").includes("четверть");
-    const word = (m[2] ?? "").substring(0, 3);
+    const word = (m[2] ?? "").substring(0, 3).toLowerCase();
     const hourMap: Record<string, number> = { "пер": 12, "вто": 13, "тре": 14, "чет": 15, "пят": 16, "шес": 17, "сед": 18, "вос": 19, "дев": 20, "дес": 21, "оди": 10, "две": 11 };
     if (hourMap[word]) return `${hourMap[word]}:${isQuarter ? "15" : "30"}`;
   }
