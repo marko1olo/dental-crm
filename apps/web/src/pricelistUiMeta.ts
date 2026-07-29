@@ -198,17 +198,58 @@ export function pricelistMaterialSummaryText(
 	return labels.join(", ") || "без материала";
 }
 
+/*
+ * ОДНА И ТА ЖЕ МЕТКА ДВАЖДЫ В ОДНОЙ СТРОКЕ — ИЗМЕРЕНО ИСПОЛНЕНИЕМ, НЕ ЧТЕНИЕМ.
+ *
+ * `detectCrownType` выводит тип коронки ИЗ materialKind
+ * (`apps/api/src/pricelist/analyzer.ts:320-329`: при materialKind zirconia
+ * возвращается «zirconia»), поэтому две метки описывают один материал ОДНИМИ И
+ * ТЕМИ ЖЕ словами. Замерено на HEAD до этой правки, на ДЕТЕРМИНИРОВАННОМ пути —
+ * том самом, который считался чистым:
+ *     zirconia + zirconia + crown          -> «Цирконий · Цирконий · Коронка»
+ *     metal ceramic + metal_ceramic        -> «Металлокерамика · Металлокерамика · Коронка»
+ *     ceramic + ceramic + crown            -> «Керамика · Керамика · Коронка»
+ *     crown + unknown + crown              -> «Коронка · Коронка»
+ *     zirconia multilayer + zirconia       -> «Цирконий MultiLayer · Цирконий · Коронка»
+ * Пять из семи значений `detectCrownType` давали клинике заикание, и это не
+ * нейро-путь: так выглядит обычная строка «Коронка циркониевая» из любого прайса.
+ *
+ * Правило: метка не печатается, если она ЦЕЛИКОМ содержится в одной из уже
+ * оставленных. Список идёт от точного к общему (бренд -> тип коронки ->
+ * материал -> вид работы), поэтому «Цирконий» уходит из-под «Цирконий
+ * MultiLayer», а не наоборот, и бренд из прайса клиники не может быть съеден
+ * переводной меткой. Ничего не переписывается и не склеивается: не печатается
+ * только повторное упоминание того же слова.
+ *
+ * Почему НЕ «убрать materialKind, когда есть crownType»: на нейро-пути эти два
+ * поля приезжают независимо, и при crownType «crown» + materialKind zirconia
+ * такое правило потеряло бы единственное упоминание материала.
+ */
+function pricelistDedupeLabels(labels: string[]): string[] {
+	const kept: string[] = [];
+	for (const label of labels) {
+		const normalized = label.trim().toLowerCase();
+		if (!normalized) continue;
+		if (kept.some((existing) => existing.toLowerCase().includes(normalized)))
+			continue;
+		kept.push(label);
+	}
+	return kept;
+}
+
 export function pricelistItemMaterialText(
 	item: DentalPricelistAnalysisResponse["items"][number],
 ): string {
-	const labels = [
-		item.brand,
-		pricelistCrownTypeLabel(item.crownType),
-		item.materialKind === "unknown"
-			? null
-			: pricelistMaterialKindLabel(item.materialKind),
-		pricelistRestorationTypeLabel(item.restorationType),
-	].filter((value): value is string => Boolean(value));
+	const labels = pricelistDedupeLabels(
+		[
+			item.brand,
+			pricelistCrownTypeLabel(item.crownType),
+			item.materialKind === "unknown"
+				? null
+				: pricelistMaterialKindLabel(item.materialKind),
+			pricelistRestorationTypeLabel(item.restorationType),
+		].filter((value): value is string => Boolean(value)),
+	);
 	return labels.join(" · ") || "материал не распознан";
 }
 

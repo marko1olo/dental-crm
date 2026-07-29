@@ -166,6 +166,123 @@ describe("pricelistItemMaterialText: регистр и разделители", 
 	}
 });
 
+/*
+ * ЗАИКАНИЕ НА ДЕТЕРМИНИРОВАННОМ ПУТИ, ИЗМЕРЕННОЕ, А НЕ ПРЕДПОЛОЖЕННОЕ.
+ *
+ * `detectCrownType` выводит тип коронки из materialKind, поэтому пять из семи
+ * его значений печатали клинике одно и то же слово дважды: «Цирконий · Цирконий
+ * · Коронка». Ожидания ниже — вывод после дедупликации; каждая строка падает,
+ * если убрать дедупликацию.
+ */
+describe("pricelistItemMaterialText: повторяющаяся метка", () => {
+	it("циркониевая коронка не заикается", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "zirconia",
+					materialKind: "zirconia",
+					restorationType: "crown",
+				}),
+			),
+			"Цирконий · Коронка",
+		);
+	});
+
+	it("MultiLayer оставляет более точную метку, а не общую", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "zirconia multilayer",
+					materialKind: "zirconia",
+					restorationType: "crown",
+				}),
+			),
+			"Цирконий MultiLayer · Коронка",
+		);
+	});
+
+	it("металлокерамика и керамика не заикаются", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "metal ceramic",
+					materialKind: "metal_ceramic",
+					restorationType: "crown",
+				}),
+			),
+			"Металлокерамика · Коронка",
+		);
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "ceramic",
+					materialKind: "ceramic",
+					restorationType: "crown",
+				}),
+			),
+			"Керамика · Коронка",
+		);
+	});
+
+	it("коронка без материала печатается один раз", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "crown",
+					materialKind: "unknown",
+					restorationType: "crown",
+				}),
+			),
+			"Коронка",
+		);
+	});
+
+	it("бренд из прайса клиники не съедается переводной меткой", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "lithium disilicate",
+					materialKind: "lithium_disilicate",
+					restorationType: "crown",
+					brand: "IPS e.max",
+				}),
+			),
+			"IPS e.max · E.max / дисиликат лития · Коронка",
+		);
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "zirconia",
+					materialKind: "zirconia",
+					restorationType: "crown",
+					brand: "Katana",
+				}),
+			),
+			"Katana · Цирконий · Коронка",
+		);
+	});
+
+	/*
+	 * Пересечение по смыслу, но не по буквам, НЕ вычищается сознательно: метка
+	 * «PMMA / временные» не содержится в «Временная PMMA» целиком, и склеивать их
+	 * значило бы придумывать третью формулировку. Ожидание зафиксировано как
+	 * измеренное, чтобы следующий читатель видел остаток долга, а не считал, что
+	 * дедупликация покрывает всё.
+	 */
+	it("оставляет пересечение по смыслу, если это не то же слово", () => {
+		assert.equal(
+			pricelistItemMaterialText(
+				item({
+					crownType: "temporary PMMA",
+					materialKind: "pmma",
+					restorationType: "temporary_crown",
+				}),
+			),
+			"Временная PMMA · PMMA / временные · Временная коронка",
+		);
+	});
+});
+
 describe("pricelistItemMaterialText: англоязычные синонимы", () => {
 	const synonyms: Array<[string, string]> = [
 		["full ceramic", "Керамика"],
