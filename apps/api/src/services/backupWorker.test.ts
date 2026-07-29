@@ -76,15 +76,13 @@ describe("BackupWorker start/stop", () => {
 
 		backupWorker.startBackupDaemon();
 
-		assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
-		const startLog = logMock.mock.calls[0];
-		assert.ok(startLog);
-		assert.match(startLog.arguments[0], /Резервное копирование включено/);
+		// startBackupDaemon nolonger logs
+		assert.strictEqual(logMock.mock.callCount(), 0, "Should not log start message");
 
 		backupWorker.stopBackupDaemon();
 
-		const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
-		assert.match(logs, /Резервное копирование остановлено/);
+		// stopBackupDaemon no longer logs
+		assert.strictEqual(logMock.mock.callCount(), 0, "Should not log stop message");
 
 		// После остановки интервал снят: тик 24 часов ничего не добавляет в журнал.
 		const callsAfterStop = logMock.mock.callCount();
@@ -98,14 +96,16 @@ describe("BackupWorker start/stop", () => {
 
 	test("повторный запуск не создаёт второй интервал", async (t) => {
 		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
-		const logMock = t.mock.method(console, "log", () => {});
+
+		// To track if multiple intervals were created, we can spy on setInterval
+		const setIntervalMock = t.mock.method(global, "setInterval");
 
 		backupWorker.startBackupDaemon();
 		backupWorker.startBackupDaemon();
 
 		// Второй вызов обязан выйти сразу: иначе первый интервал теряется и
 		// снять его уже нечем — копии начали бы делаться дважды.
-		assert.strictEqual(logMock.mock.callCount(), 1);
+		assert.strictEqual(setIntervalMock.mock.callCount(), 1);
 	});
 
 	test("без ключа шифрования демон не запускается и говорит об этом", async (t) => {
