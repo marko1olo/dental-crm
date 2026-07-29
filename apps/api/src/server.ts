@@ -68,7 +68,6 @@ import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
 import { ensureSshTunnel } from "./speech/tunnel.js";
-import { getProxyAgent } from "./speech/keyPool.js";
 import { startWatchdog } from "./watchdog.js";
 import { registerRateLimiting } from "./security/rateLimit.js";
 import { startBackupDaemon, stopBackupDaemon } from "./services/backupWorker.js";
@@ -186,9 +185,6 @@ export async function setupProxyAndTunnels() {
       }
     }
   }
-
-  // Register global agent for direct undici fetches
-  (globalThis as any)._dentalProxyAgent = getProxyAgent() || undefined;
 }
 
 type HttpErrorLike = {

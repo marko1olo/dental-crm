@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-06-28T12:05:48.078Z",
+  "savedAt": "2026-07-29T23:14:55.224Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -37,6 +37,33 @@
       "networkEnabled": false,
       "egiszEnabled": false,
       "updatedAt": "2026-06-28T12:05:48.077Z",
+      "currency": "₽",
+      "themeColor": "teal",
+      "logoUrl": null,
+      "stampUrl": null,
+      "hasAssistants": true,
+      "hasMultipleChairs": true,
+      "hasDentalLab": true,
+      "hasInsuranceCoPay": true,
+      "hasInstallments": true,
+      "hasOrthodontics": true,
+      "hasGnathology": false,
+      "hasCsoScanner": false,
+      "hasLeadsKanban": false,
+      "hasOmnichannel": false,
+      "hasTasks": true,
+      "hasReclamations": true,
+      "workspacePreset": "enterprise",
+      "onboardingCompleted": false,
+      "hasPediatricMode": false,
+      "isOmniRole": false,
+      "hasPayrollModule": true,
+      "hasMarketingModule": true,
+      "hasAnalyticsModule": true,
+      "hasInventoryModule": true,
+      "aiEnableTreatmentPlan": true,
+      "aiEnableRecommendations": true,
+      "aiEnableDocuments": true,
       "timeZone": "Europe/Moscow",
       "licenseNumber": "",
       "licenseDate": "",
@@ -72,7 +99,51 @@
         "canManageImports": false,
         "color": "#0f766e",
         "createdAt": "2026-06-28T12:05:48.077Z",
-        "updatedAt": "2026-06-28T12:05:48.077Z"
+        "updatedAt": "2026-06-28T12:05:48.077Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
       }
     ],
     "chairs": [],
@@ -288,5 +359,5 @@
       "protocolText": ""
     }
   },
-  "checksum": "9bdd85a2ddb18bbef3a13585a5d4ef38f6b365df416abfd5f1b428fb7701c7fb"
+  "checksum": "dce23e8a4fd5d71209e495d0ee8bdab32963180195c552bf0377cf50632bec78"
 }
