@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+		"typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
     "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
