@@ -8,7 +8,12 @@ import {
 } from "@dental/shared";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 import { requireOrganizationId, requireStaffIdentity } from "../security/identity.js";
-import { evaluateClinicalRulesInDb, createClinicalRuleInDb, updateClinicalRuleInDb } from "../db/clinicalQuery.js";
+import {
+  evaluateClinicalRulesInDb,
+  createClinicalRuleInDb,
+  updateClinicalRuleInDb,
+  deleteClinicalRuleInDb
+} from "../db/clinicalQuery.js";
 import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
 import { CLINICAL_PHASE_CODES, ClinicalRouter, isClinicalPhaseCode } from "../services/clinical/ClinicalRouter.js";
 
@@ -96,6 +101,43 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     const orgId = requireOrganizationId(request, reply);
     if (!orgId) return;
     return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
+  });
+
+  /**
+   * Удаление клинического правила.
+   *
+   * БЫЛО: маршрута не существовало ни в одной сборке. Кнопка «удалить» в
+   * настройках правил звала этот адрес и получала 404 «Route not found» —
+   * проверено живым запросом: PATCH по тому же пути отвечал 401, то есть сервер
+   * различал случаи и говорил именно «такого маршрута нет». Врач нажимал
+   * «удалить», видел ошибку, и правило продолжало срабатывать на приёме.
+   *
+   * Гарды и их порядок повторяют PATCH выше: сначала право на изменение правил,
+   * затем организация из подписанного токена. Организация обязательна и здесь —
+   * см. выше про редактирование правила в чужой организации; удалить чужое
+   * правило хуже, чем испортить его, потому что вернуть его нечем.
+   *
+   * Идентификатор проверяется на формат UUID по той же причине, что и в задачах
+   * выше: clinical_rules.id имеет тип uuid, и строка «rule1» дошла бы до
+   * PostgreSQL пятисоткой «invalid input syntax for type uuid».
+   */
+  app.delete("/api/clinical/rules/:ruleId", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "clinical rule delete"))) return;
+    const { ruleId } = request.params as { ruleId: string };
+    if (!ruleId || !UUID_PATTERN.test(ruleId)) {
+      return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
+    }
+    const orgId = requireOrganizationId(request, reply);
+    if (!orgId) return;
+    const deleted = await deleteClinicalRuleInDb(orgId, ruleId);
+    if (!deleted) {
+      // Чужое правило и несуществующее правило отвечают одинаково: разный ответ
+      // сообщал бы посторонней клинике, что такое правило у соседей есть.
+      return reply
+        .code(404)
+        .send({ error: "ClinicalRuleNotFound", message: "Правило не найдено." });
+    }
+    return reply.code(200).send({ id: ruleId, deleted: true });
   });
 
   /**

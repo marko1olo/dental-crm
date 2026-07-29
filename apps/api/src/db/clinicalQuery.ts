@@ -216,6 +216,45 @@ export async function updateClinicalRuleInDb(organizationId: string, input: Upda
   return mapClinicalRule(record);
 }
 
+/**
+ * Удаление клинического правила.
+ *
+ * БЫЛО: этой функции не существовало — как и маршрута DELETE. Кнопка «удалить»
+ * в настройках правил (apps/web/src/components/settings/SettingsRulesTab.tsx:581)
+ * звала DELETE /api/clinical/rules/:ruleId, сервер отвечал «Route not found», и
+ * правило оставалось в проверке противопоказаний навсегда: второго способа
+ * убрать правило в системе нет.
+ *
+ * Удаление именно жёсткое, а не снятие isActive: выключение — это отдельная
+ * кнопка рядом (SettingsRulesTab.tsx:563), она ходит в PATCH и уже работает.
+ * Если бы «удалить» тоже лишь снимало флаг, две кнопки делали бы одно и то же,
+ * а список правил разрастался бы без предела. Сирот удаление не оставляет: на
+ * clinical_rules не ссылается ни одна таблица (db/schema.ts:499).
+ *
+ * Организация входит в WHERE вместе с идентификатором, одним запросом. Фильтр
+ * только по id позволил бы одной клинике удалить правило другой — тот самый
+ * дефект, что записан в routes/clinical.ts про редактирование чужого правила.
+ * Ответ одинаков и для несуществующего правила, и для чужого: подтверждать
+ * существование правила чужой клиники нельзя.
+ */
+export async function deleteClinicalRuleInDb(organizationId: string, ruleId: string): Promise<boolean> {
+  if (useInMemory()) {
+    const index = inMemoryClinicalRules.findIndex(
+      (rule) => rule.id === ruleId && rule.organizationId === organizationId
+    );
+    if (index < 0) return false;
+    inMemoryClinicalRules.splice(index, 1);
+    return true;
+  }
+
+  const deleted = await db
+    .delete(schema.clinicalRules)
+    .where(and(eq(schema.clinicalRules.organizationId, organizationId), eq(schema.clinicalRules.id, ruleId)))
+    .returning({ id: schema.clinicalRules.id });
+
+  return deleted.length > 0;
+}
+
 
 export async function getTreatmentPlanItemsForPatient(organizationId: string, patientId: string) {
   return await db.select().from(schema.treatmentItems).where(and(eq(schema.treatmentItems.organizationId, organizationId), eq(schema.treatmentItems.patientId, patientId)));
