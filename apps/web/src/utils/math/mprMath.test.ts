@@ -1,6 +1,52 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clampMprSlabMm } from "./mprMath.js";
+import { clampMprSlabMm, polylineLengthMm } from "./mprMath.js";
+import type { DicomViewerToolStatePoint } from "@dental/shared";
+
+const createPoint = (
+  x: number,
+  y: number,
+  z: number,
+): DicomViewerToolStatePoint => ({
+  world: [x, y, z],
+  canvas: null,
+  plane: null,
+  sourceIndex: 0,
+});
+
+describe("polylineLengthMm", () => {
+  it("should return null for an empty array", () => {
+    assert.equal(polylineLengthMm([]), null);
+  });
+
+  it("should return null for an array with a single point", () => {
+    assert.equal(polylineLengthMm([createPoint(0, 0, 0)]), null);
+  });
+
+  it("should calculate the correct length for two points (3-4-5 triangle)", () => {
+    const points = [createPoint(0, 0, 0), createPoint(3, 4, 0)];
+    assert.equal(polylineLengthMm(points), 5);
+  });
+
+  it("should calculate the correct cumulative length for multiple points", () => {
+    const points = [
+      createPoint(0, 0, 0),
+      createPoint(3, 0, 0),
+      createPoint(3, 4, 0),
+      createPoint(0, 4, 0),
+    ];
+    // 3 + 4 + 3 = 10
+    assert.equal(polylineLengthMm(points), 10);
+  });
+
+  it("should handle non-finite values by returning null", () => {
+    const points = [createPoint(0, 0, 0), createPoint(NaN, 4, 0)];
+    assert.equal(polylineLengthMm(points), null);
+
+    const points2 = [createPoint(0, 0, 0), createPoint(Infinity, 4, 0)];
+    assert.equal(polylineLengthMm(points2), null);
+  });
+});
 
 describe("clampMprSlabMm", () => {
   it("should return the value correctly rounded if within bounds [1, 30]", () => {
