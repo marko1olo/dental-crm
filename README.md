@@ -8,12 +8,8 @@
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)]()
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue?style=for-the-badge&logo=postgresql)]()
 [![DICOM](https://img.shields.io/badge/DICOM-Local%203D-00ff88?style=for-the-badge)]()
-[![License](https://img.shields.io/badge/License-Commercial%20Proprietary-orange?style=for-the-badge)](LICENSE.md)
-[![Stars](https://img.shields.io/github/stars/marko1olo/dental-crm?style=for-the-badge&color=gold)]()
 
 > **High-performance NestJS + React SPA for dental practices — zero-cloud local 3D DICOM, smart scheduling, full financial ledger.**
-
-[📖 Docs](#) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [📧 Contact](#)
 
 </div>
 
