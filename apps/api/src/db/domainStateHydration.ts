@@ -143,6 +143,24 @@ const NIL_UUID = "00000000-0000-0000-0000-000000000000";
  */
 const NO_VISIT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
+/**
+ * ОБЪЯВЛЕННАЯ МЕТКА «ВРЕМЯ ЭТОЙ СТРОКИ НЕИЗВЕСТНО».
+ *
+ * Отдельная от `NO_VISIT_TIMESTAMP` при том же значении, и это не дубль: та
+ * отвечает на «приёма нет», эта — на «строка есть, а её время не читается». Смешать
+ * их в одну константу значило бы, что смена смысла у одной молча меняет вторую.
+ *
+ * Значение выбрано по тому же доводу: `Date.parse` даёт для начала эпохи ноль —
+ * «времени нет, считать самым старым», — поэтому любое сравнение свежести
+ * работает в верную сторону, а за настоящую клиническую отметку такое время не
+ * примет ни код, ни человек.
+ *
+ * ПРИМЕНЯЕТСЯ РОВНО В ОДНОМ МЕСТЕ — `clinicProfile.updatedAt`, где пропуск строки
+ * невозможен: профиль в клинике один. Все остальные строки при нечитаемом времени
+ * пропускаются, а не помечаются; см. `reportUnreadableTime`.
+ */
+const UNREADABLE_TIME_MARKER = "1970-01-01T00:00:00.000Z";
+
 /** В режиме "off" источник истины — сами доменные массивы, синхронизировать нечего. */
 function inMemoryMode(): boolean {
 	return process.env.DENTAL_STATE_PERSISTENCE === "off";
@@ -155,8 +173,103 @@ function iso(value: Date | string | null | undefined): string | null {
 	return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-function isoOrNow(value: Date | string | null | undefined): string {
-	return iso(value) ?? new Date().toISOString();
+/**
+ * Время, которое база отдала нечитаемым, — это НЕ «сейчас».
+ *
+ * ЧТО БЫЛО. Здесь стоял помощник `isoOrNow(value) = iso(value) ?? new
+ * Date().toISOString()` и вызывался ТРИНАДЦАТЬ раз на настоящих строках базы:
+ * `patients.created_at/updated_at`, `appointments.starts_at/ends_at`,
+ * `users.created_at`, `payments.created_at`, `communication_tasks.due_at/created_at`,
+ * `communication_events.created_at`, `imaging_studies.captured_at`,
+ * `protocol_templates.updated_at`, `organizations.updated_at`. Строка, чьё время не
+ * прочиталось, получала время ОТКРЫТИЯ СТРАНИЦЫ и уезжала в рабочее состояние
+ * клиники как настоящая.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Приём переезжал в текущий момент: расписание
+ * показывало его там, где его нет, готовность приёма и нагрузка смены считались по
+ * этому времени, а в истории пациента появлялось событие, которого не было.
+ * Платёж с нечитаемым `created_at` попадал в кассовый отчёт СЕГОДНЯШНЕГО дня,
+ * хотя проведён был в другой; задача обзвона с нечитаемым `due_at` становилась
+ * просроченной ровно сейчас и лезла в очередь Telegram-отправок.
+ *
+ * ЧТО ИМЕННО ДОСТИЖИМО, ПРОВЕРЕНО НА ЖИВОЙ БАЗЕ, А НЕ ПРЕДПОЛОЖЕНО. Все
+ * тринадцать колонок объявлены NOT NULL в ФАКТИЧЕСКОЙ схеме (сверено запросом к
+ * information_schema.columns на PostgreSQL 18), поэтому путь через NULL закрыт —
+ * и «починка на всякий случай» тут была бы выдумкой. Достижимо другое: PostgreSQL
+ * законно хранит в `timestamptz` значения, которых в JS Date не существует, —
+ * `infinity`, `-infinity` и годы за пределами ±275760. Замер на своей фикстурной
+ * клинике (`tests/routes/hydrationUnknownTimeIsNotNow.test.ts`): приём со
+ * `starts_at = 'infinity'` приходил из драйвера как `Invalid Date`, а гидратация
+ * отдавала `startsAt = 2026-07-29T09:25:39.426Z` при «сейчас»
+ * `2026-07-29T09:25:39.427Z` — разница одна миллисекунда, и `skipped` был ПУСТ:
+ * ни отчёт, ни журнал сервера об этом не сообщали ничего.
+ *
+ * Собственные записывающие пути приложения таких значений не пишут: они передают
+ * `Date`, а импорт из чужой CRM (`migration/loader.ts`) проводит время через
+ * `storedDateTimeToUtc`, отдающий `Date` или `null`. Значит источники —
+ * восстановление из дампа другой системы, правка SQL руками и любой будущий путь,
+ * пишущий строку в колонку времени напрямую. На сегодняшней базе таких строк ноль
+ * (сверено по всем одиннадцати колонкам); дефект был заряжен, а не сработал.
+ *
+ * ЧТО ДЕЛАЕТСЯ ВМЕСТО ПОДСТАНОВКИ. Возвращается `null`. Контракт всех этих полей —
+ * `z.string()` без `.nullable()`, поэтому строка не проходит `safeParse` и
+ * пропускается в `collect()` поимённо, как и любая другая не отвечающая контракту:
+ * одна кривая запись не гасит рабочий день всей клиники, но и не притворяется
+ * записью на сейчас. Молча это не проходит — причина уходит в журнал сервера с
+ * таблицей, идентификатором строки и колонкой, чтобы значение можно было
+ * исправить в базе.
+ *
+ * ЧЕГО ЗДЕСЬ НЕ ХВАТАЕТ И ЧЕЙ ЭТО ДОЛГ. Правильный ответ — не пропуск строки, а
+ * `null` в контракте: «время неизвестно» вместо исчезновения пациента из списка.
+ * Это правка `packages/shared/src/index.ts` (`patientSchema.createdAt/updatedAt`,
+ * `appointmentSchema.startsAt/endsAt`, `staffMemberSchema.createdAt/updatedAt`,
+ * `paymentSchema.createdAt`, `communicationTaskSchema.dueAt/createdAt`,
+ * `communicationEventSchema.createdAt`, `imagingStudySchema.capturedAt`,
+ * `protocolTemplateSchema.updatedAt`, `clinicProfileSchema.updatedAt` — сделать
+ * `.nullable()`) плюс защита на клиенте там, где эти поля форматируются. Файл
+ * принадлежит другому владельцу, поэтому здесь долг назван, а не сделан.
+ */
+function reportUnreadableTime(
+	table: string,
+	rowId: string,
+	column: string,
+	value: Date | string | null | undefined,
+	report: DomainStateHydrationReport,
+): void {
+	const shown =
+		value === null
+			? "NULL"
+			: value === undefined
+				? "колонки нет в строке"
+				: `«${String(value)}»`;
+	console.error(
+		`[domainStateHydration] ${table} ${rowId} (клиника ${report.organizationId}): ` +
+			`колонка ${column} прочитана как ${shown} — время неизвестно. Строка НЕ переносится в рабочее ` +
+			"состояние клиники. Подставить сюда часы сервера значило бы передвинуть запись на момент " +
+			"открытия страницы: приём попал бы в расписание на сейчас, платёж — в кассовый отчёт за сегодня. " +
+			"Исправьте значение в базе, после чего строка вернётся сама.",
+	);
+	report.warnings.push(
+		`${table} ${rowId}: колонка ${column} не читается как время (${shown}). Строка пропущена — ` +
+			"её время неизвестно, а текущее время вместо него было бы выдумкой.",
+	);
+}
+
+/**
+ * Время строки или `null` с записью причины в журнал. Ни при каких условиях — не
+ * текущие часы; разбор в докстринге `reportUnreadableTime` выше.
+ */
+function isoOrSkipRow(
+	value: Date | string | null | undefined,
+	table: string,
+	rowId: string,
+	column: string,
+	report: DomainStateHydrationReport,
+): string | null {
+	const parsed = iso(value);
+	if (parsed !== null) return parsed;
+	reportUnreadableTime(table, rowId, column, value, report);
+	return null;
 }
 
 function parseJsonArray(value: unknown): string[] {
@@ -489,7 +602,30 @@ async function hydrateDomainStateFromDbUnsynchronized(
 		// поэтому неизвестное значение сводим к «один кабинет».
 		clinicProfile.mode = clinicModeSchema.catch("one_chair").parse(organization.clinicMode);
 		clinicProfile.timezone = validScheduleTimeZone(clinic?.timezone);
-		clinicProfile.updatedAt = isoOrNow(organization.updatedAt);
+		/*
+		 * ЕДИНСТВЕННЫЙ СЛУЧАЙ, КОТОРЫЙ НЕЛЬЗЯ ПРОПУСТИТЬ, И ПОЭТОМУ ОН РЕШЁН ИНАЧЕ.
+		 *
+		 * Профиль клиники в клинике ровно один: «пропустить строку» здесь означало бы
+		 * оставить в общем на процесс объекте реквизиты ПРЕДЫДУЩЕЙ прочитанной клиники —
+		 * ту самую химеру с чужим ИНН, из-за которой выше стоит выход по !organization.
+		 * Отказать целиком тоже нельзя: `organizations.updated_at` — служебная отметка,
+		 * и гасить из-за неё рабочий день клиники, у которой название, ИНН и лицензия
+		 * прочитались, значит нанести больше вреда, чем сам дефект.
+		 *
+		 * Поэтому здесь та же ОБЪЯВЛЕННАЯ метка «времени нет», что и у заготовки
+		 * «приёма нет»: начало эпохи, для которого `Date.parse` даёт ноль — «считать
+		 * самым старым». Настоящей отметкой её не примет ни сравнение свежести, ни
+		 * человек. Читателей у поля сегодня нет вовсе (сверено по apps/api и apps/web:
+		 * `clinicProfile.updatedAt` только записывается — sampleData.ts:11131 и :11203),
+		 * поэтому цена метки здесь нулевая, а причина всё равно уходит в журнал.
+		 * Правильный ответ — `clinicProfileSchema.updatedAt` с `.nullable()`; это
+		 * `packages/shared/src/index.ts:1471`, чужой файл, и это названный долг.
+		 */
+		const organizationUpdatedAt = iso(organization.updatedAt);
+		if (organizationUpdatedAt === null) {
+			reportUnreadableTime("organizations", organization.id, "updated_at", organization.updatedAt, report);
+		}
+		clinicProfile.updatedAt = organizationUpdatedAt ?? UNREADABLE_TIME_MARKER;
 		report.counts.clinicProfile = 1;
 	}
 
@@ -529,8 +665,22 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			...staffAuthorityFlags(user.role),
 			color: "#1e293b",
 			workingHours: user.workingHours ?? null,
-			createdAt: isoOrNow(user.createdAt),
-			updatedAt: isoOrNow(user.createdAt),
+			createdAt: isoOrSkipRow(user.createdAt, "users", user.id, "created_at", report),
+			/*
+			 * ОБА ПОЛЯ ЧИТАЮТ ОДНУ КОЛОНКУ `created_at`, И ЭТО РАСХОЖДЕНИЕ СХЕМЫ,
+			 * А НЕ ЗАМЫСЕЛ. В базе у `users` есть `updated_at` (NOT NULL, DEFAULT
+			 * now() — сверено на живой PostgreSQL), но `db/schema.ts` его для этой
+			 * таблицы НЕ ОБЪЯВЛЯЕТ: в объявлении `users` есть только `createdAt`.
+			 * Поэтому взять настоящее время изменения отсюда нечем, и сотрудник
+			 * всегда отчитывается «изменён = создан»: переименование, смена роли и
+			 * отключение доступа выглядят как отсутствие правок.
+			 *
+			 * Долг за владельцем `db/schema.ts`: объявить `users.updatedAt`, после
+			 * чего эта строка читает свою колонку. Подставлять здесь текущие часы
+			 * нельзя — тогда КАЖДЫЙ сотрудник выглядел бы изменённым при каждой
+			 * загрузке страницы.
+			 */
+			updatedAt: isoOrSkipRow(user.createdAt, "users", user.id, "created_at", report),
 		})),
 		staffMemberSchema,
 		"staff",
@@ -596,8 +746,8 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			balanceRub: Math.round(
 				(paidByPatient.get(patient.id) ?? 0) - (plannedByPatient.get(patient.id) ?? 0),
 			),
-			createdAt: isoOrNow(patient.createdAt),
-			updatedAt: isoOrNow(patient.updatedAt),
+			createdAt: isoOrSkipRow(patient.createdAt, "patients", patient.id, "created_at", report),
+			updatedAt: isoOrSkipRow(patient.updatedAt, "patients", patient.id, "updated_at", report),
 		})),
 		patientSchema,
 		"patients",
@@ -616,8 +766,15 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			assistantUserId: appointment.assistantUserId ?? null,
 			chairId: appointment.chairId,
 			status: appointment.status,
-			startsAt: isoOrNow(appointment.startsAt),
-			endsAt: isoOrNow(appointment.endsAt),
+			/*
+			 * Запись с нечитаемым временем не попадает в расписание вовсе — и это
+			 * дешевле, чем прежнее «переехать на сейчас». Сетка приёмов строится по
+			 * этим двум полям: приём со временем из часов сервера садился в текущий
+			 * час поверх настоящего приёма, освобождал своё настоящее окно и вносил
+			 * пациента в готовность приёма и в нагрузку смены на сегодня.
+			 */
+			startsAt: isoOrSkipRow(appointment.startsAt, "appointments", appointment.id, "starts_at", report),
+			endsAt: isoOrSkipRow(appointment.endsAt, "appointments", appointment.id, "ends_at", report),
 			reason: appointment.reason ?? null,
 			comment: appointment.comment ?? null,
 		})),
@@ -673,7 +830,15 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			method: payment.method,
 			status: payment.status,
 			paidAt: iso(payment.paidAt),
-			createdAt: isoOrNow(payment.createdAt),
+			/*
+			 * Баланс пациента считается ВЫШЕ, по сырым строкам paymentRows, а не по
+			 * этому списку, поэтому пропуск платежа сумму долга не сдвигает. Но платёж
+			 * исчезает из списка оплат, и это названо честно: сверка смены увидит
+			 * расхождение и человек пойдёт в базу по строке из журнала. Прежнее
+			 * поведение хуже молча: платёж, проведённый в другой день, попадал в
+			 * кассовый отчёт за СЕГОДНЯ и сходился с ним до копейки.
+			 */
+			createdAt: isoOrSkipRow(payment.createdAt, "payments", payment.id, "created_at", report),
 			fiscalReceiptNumber: payment.fiscalReceiptNumber ?? null,
 			fiscalReceiptIssuedAt: payment.fiscalReceiptIssuedAt ?? null,
 			fiscalReceiptUrl: payment.fiscalReceiptUrl ?? null,
@@ -742,12 +907,14 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			intent: task.intent,
 			status: task.status,
 			priority: task.priority,
-			dueAt: isoOrNow(task.dueAt),
+			// Срок обзвона из часов сервера — это задача, просроченная ровно сейчас:
+			// она лезет в очередь Telegram-отправок и в список «позвонить сегодня».
+			dueAt: isoOrSkipRow(task.dueAt, "communication_tasks", task.id, "due_at", report),
 			title: task.title,
 			body: task.body,
 			workflowCode: task.workflowCode ?? null,
 			lastEventAt: iso(task.lastEventAt),
-			createdAt: isoOrNow(task.createdAt),
+			createdAt: isoOrSkipRow(task.createdAt, "communication_tasks", task.id, "created_at", report),
 		})),
 		communicationTaskSchema,
 		"communicationTasks",
@@ -764,7 +931,7 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			direction: event.direction,
 			status: event.status,
 			message: event.message,
-			createdAt: isoOrNow(event.createdAt),
+			createdAt: isoOrSkipRow(event.createdAt, "communication_events", event.id, "created_at", report),
 		})),
 		communicationEventSchema,
 		"communicationEvents",
@@ -785,7 +952,9 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			title: study.title,
 			toothCode: study.toothCode ?? null,
 			region: study.region ?? null,
-			capturedAt: isoOrNow(study.capturedAt),
+			// Дата снимка из часов сервера — это «рентген сделан только что»:
+			// врач сравнивает по ней динамику и решает, нужен ли новый снимок.
+			capturedAt: isoOrSkipRow(study.capturedAt, "imaging_studies", study.id, "captured_at", report),
 			sourceKind: study.sourceKind,
 			sourceName: study.sourceName,
 			storagePath: study.storagePath ?? null,
@@ -879,7 +1048,7 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			requiredDocuments: parseJsonArray(template.requiredDocuments),
 			suggestedImaging: parseJsonArray(template.suggestedImaging),
 			safetyWarnings: parseJsonArray(template.safetyWarnings),
-			updatedAt: isoOrNow(template.updatedAt),
+			updatedAt: isoOrSkipRow(template.updatedAt, "protocol_templates", template.id, "updated_at", report),
 		})),
 		protocolTemplateSchema,
 		"protocolTemplates",
