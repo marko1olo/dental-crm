@@ -650,6 +650,24 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     previewSmartImport,
     previewTelegramTemplate,
     pricelistAnalysis,
+    /*
+      Три имени ниже приезжают в useAppLogic и НИ РАЗУ не читались.
+
+      pricelistImageNote — живая строка, её пишет preparePricelistImage
+      (AppHelpers.tsx:5928) и переписывает общий импорт файлов
+      (useAppLogic.tsx:7844): «Фото подготовлено: 1600x1200, 1.9 Мп, JPEG 82%.».
+      Клиника грузила фото прайса, разбор шёл по СЖАТОЙ картинке, и узнать
+      степень сжатия было нельзя ниоткуда — а именно она объясняет, почему с
+      мелкого шрифта строки не прочитались.
+
+      pricelistItemMaterialText и pricelistMaterialSummaryText — готовые функции
+      pricelistUiMeta (:107 и :95). Разбор честно считает materialKind для каждой
+      строки и ставит material_uncertain, то есть жаловался на поле, которого
+      клиника не видела ни в одной вкладке.
+    */
+    pricelistImageNote,
+    pricelistItemMaterialText,
+    pricelistMaterialSummaryText,
     pricelistWarningsText,
     recognitionJob,
     recognitionKind,
@@ -1229,15 +1247,48 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
    * показывает только items.slice(0, 12), и за пределами первых двенадцати
    * строк отказ не был виден вовсе.
    */
-  const typedPricelistItems = (pricelistAnalysis?.items ?? []) as Array<{
-    id: string;
-    sourceLine: number;
-    title: string;
-    warnings: string[];
-  }>;
+  /*
+   * Тип берётся из схемы ответа, а не переписывается четырьмя полями от руки.
+   *
+   * Локальный `as Array<{ id; sourceLine; title; warnings }>` отрезал от позиции
+   * ровно то, чем она описана: materialKind, brand, crownType, restorationType.
+   * Пока список полей был здесь, вызвать pricelistItemMaterialText было
+   * НЕВОЗМОЖНО — функция ждёт позицию целиком, и приведение молча запрещало ей
+   * дойти до экрана.
+   */
+  const typedPricelistItems = (pricelistAnalysis?.items ??
+    []) as DentalPricelistAnalysisResponse["items"];
   const pricelistWarningRows = typedPricelistItems.filter(
     (item) => item.warnings.length > 0,
   );
+  /*
+   * ПРЕДУПРЕЖДЕНИЯ ОТВЕТА — ВТОРОЙ УРОВЕНЬ, И ЕГО НЕ ЧИТАЛ НИКТО.
+   *
+   * У разбора прайса их два, и они про разное:
+   *   item.warnings              — про ОДНУ строку (price_not_found,
+   *                                category_uncertain, material_uncertain);
+   *   pricelistAnalysis.warnings — про ВЕСЬ присланный прайс
+   *                                (no_pricelist_rows_detected,
+   *                                pricelist_rows_skipped:N,
+   *                                image_payload_invalid, groq_failed:…,
+   *                                groq_key_pool_empty).
+   * Первый уровень рисуется ниже. Второй не читал НИ ОДИН файл apps/web/src:
+   * поиск по `pricelistAnalysis.warnings` давал только запись в стор.
+   *
+   * Почему это дороже, чем кажется. analyzer.ts:1153 считает отброшенные строки
+   * и уводит счёт в pricelist_rows_skipped:N ровно затем, чтобы клиника узнала,
+   * что услуги в её прайсе НЕТ. Раз массив не рисовался, починка кончалась на
+   * границе экрана: сервер считал, ответ везл, интерфейс молчал. Это тот же
+   * дефект, что описан выше для предупреждений ПОЗИЦИЙ, — имя доезжало и
+   * обрывалось на строке деструктуризации.
+   *
+   * Первый уровень второй не заменяет: строка может разобраться без единого
+   * замечания, а прайс при этом доехать не полностью.
+   */
+  const typedPricelistResponseWarnings = (pricelistAnalysis?.warnings ??
+    []) as DentalPricelistAnalysisResponse["warnings"];
+  const typedPricelistSummary = (pricelistAnalysis?.summary ??
+    []) as DentalPricelistAnalysisResponse["summary"];
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;
@@ -1539,6 +1590,142 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "prices" ? (
           <>
+            {typedPricelistResponseWarnings.length > 0 ? (
+              <section
+                aria-label="Замечания к разбору всего прайса"
+                role="status"
+                aria-live="polite"
+                style={{
+                  border: "1px solid var(--warning-color)",
+                  borderRadius: "10px",
+                  padding: "14px 16px",
+                  marginBottom: "16px",
+                  background: "var(--surface-muted)",
+                }}
+              >
+                <strong style={{ color: "var(--warning-color)" }}>
+                  Прайс целиком: замечаний —{" "}
+                  {typedPricelistResponseWarnings.length}
+                </strong>
+                <p
+                  style={{
+                    margin: "6px 0 10px",
+                    color: "var(--text-muted)",
+                    fontSize: "13px",
+                  }}
+                >
+                  Это замечания не к отдельной строке, а ко всему присланному
+                  файлу: сколько строк не признано услугами, прочиталось ли фото,
+                  работала ли нейро-проверка. Список ниже их не заменяет — строка
+                  может разобраться без единого замечания, а прайс при этом
+                  доехать не полностью.
+                </p>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: "18px",
+                    fontSize: "13px",
+                  }}
+                >
+                  {typedPricelistResponseWarnings.map((warning) => (
+                    <li
+                      key={warning}
+                      style={{
+                        marginBottom: "4px",
+                        color: "var(--warning-color)",
+                      }}
+                    >
+                      {/*
+                        Разбирает ключ ТА ЖЕ функция, что и предупреждения
+                        позиций. Ключи с хвостом («pricelist_rows_skipped:3»,
+                        «groq_failed:…») уже разбираются внутри
+                        pricelistWarningText (pricelistUiMeta.ts:143-156), и
+                        второго места, где префикс отрезают руками, быть не
+                        должно: разойдясь, они дадут клинике два разных текста
+                        про одно событие. Массив из одного элемента — потому
+                        что склейка запятой здесь не нужна, каждое замечание
+                        своей строкой.
+                      */}
+                      {pricelistWarningsText([warning])}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {typeof pricelistImageNote === "string" &&
+            pricelistImageNote.trim() ? (
+              <p
+                aria-label="Как подготовлено фото прайса"
+                style={{
+                  margin: "0 0 16px",
+                  padding: "10px 14px",
+                  border: "1px solid var(--line)",
+                  borderRadius: "10px",
+                  background: "var(--surface-muted)",
+                  color: "var(--text-muted)",
+                  fontSize: "13px",
+                }}
+              >
+                {/*
+                  Разбор шёл по СЖАТОЙ картинке, и до сих пор это было не видно.
+                  preparePricelistImage уменьшает фото до 1600/1200/900/720 px и
+                  жмёт JPEG до 82/72/62%, лишь бы влезть в предел base64, — то
+                  есть с мелкого шрифта строки могли не прочитаться именно из-за
+                  сжатия. Клиника обязана видеть, что именно ушло на разбор,
+                  прежде чем решать «прайс плохой» или «фото плохое».
+                */}
+                Фото прайса: {pricelistImageNote}
+              </p>
+            ) : null}
+            {typedPricelistSummary.length > 0 ? (
+              <section
+                aria-label="Материалы и бренды, распознанные в прайсе"
+                style={{
+                  border: "1px solid var(--line)",
+                  borderRadius: "10px",
+                  padding: "14px 16px",
+                  marginBottom: "16px",
+                  background: "var(--surface-muted)",
+                }}
+              >
+                <strong>Материалы, распознанные в прайсе</strong>
+                <p
+                  style={{
+                    margin: "6px 0 10px",
+                    color: "var(--text-muted)",
+                    fontSize: "13px",
+                  }}
+                >
+                  Разбор ставит материал каждой строке и жалуется на него
+                  предупреждением «Материал требует проверки». Сводка по
+                  категориям показывает, что он в итоге увидел, — иначе проверять
+                  предупреждение было бы нечем.
+                </p>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: "18px",
+                    maxHeight: "220px",
+                    overflowY: "auto",
+                    fontSize: "13px",
+                  }}
+                >
+                  {typedPricelistSummary.map((summary) => (
+                    <li
+                      key={`${summary.category}-${summary.specialty}`}
+                      style={{ marginBottom: "4px" }}
+                    >
+                      {serviceCategoryLabels[summary.category] ??
+                        summary.category}{" "}
+                      — строк {summary.count}, с ценой {summary.pricedCount}:{" "}
+                      <span style={{ color: "var(--text-muted)" }}>
+                        {pricelistMaterialSummaryText(summary)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
             {pricelistWarningRows.length > 0 ? (
               <section
                 aria-label="Строки прайса, требующие ручной проверки"
@@ -1576,10 +1763,27 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
                   }}
                 >
                   {pricelistWarningRows.map((item) => (
-                    <li key={item.id} style={{ marginBottom: "4px" }}>
+                    <li key={item.id} style={{ marginBottom: "6px" }}>
                       Строка {item.sourceLine} — {item.title}:{" "}
                       <span style={{ color: "var(--warning-color)" }}>
                         {pricelistWarningsText(item.warnings)}
+                      </span>
+                      {/*
+                        Материал стоит здесь, а не отдельной вкладкой: одно из
+                        предупреждений — ровно «Материал требует проверки», и
+                        проверять его без того, что разбор решил, нельзя. Функция
+                        pricelistItemMaterialText была написана, экспортирована и
+                        протянута через App → AppHelpers → useAppLogic в три
+                        вкладки, но не вызвана НИ РАЗУ; это её первый вызов.
+                      */}
+                      <br />
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "12px",
+                        }}
+                      >
+                        Материал по разбору: {pricelistItemMaterialText(item)}
                       </span>
                     </li>
                   ))}
