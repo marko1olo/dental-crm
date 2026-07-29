@@ -1533,7 +1533,15 @@ function groqSystemPrompt(): string {
     "Allowed specialty values: therapist, orthopedist, surgeon, orthodontist, periodontist, hygienist, pediatric, implantologist, radiologist, universal.",
     "Allowed materialKind values: composite, glass_ionomer, sealant, ceramic, zirconia, lithium_disilicate, metal_ceramic, pmma, metal, titanium, implant_system, abutment, bone_graft, membrane, aligner, bracket, fluoride, whitening, anesthetic, imaging, lab, other, unknown.",
     "Allowed restorationType values: filling, direct_restoration, inlay, onlay, overlay, veneer, crown, bridge, implant_crown, temporary_crown, post_core, denture, ortho_appliance, sealant, whitening, implant, surgical_guide, none, unknown.",
-    "Allowed crownType values: zirconia multilayer, zirconia, lithium disilicate, metal ceramic, temporary PMMA, ceramic, crown. If the crown type is uncertain, use null for crownType: never the word unknown and never free text."
+    "Allowed crownType values: zirconia multilayer, zirconia, lithium disilicate, metal ceramic, temporary PMMA, ceramic, crown. If the crown type is uncertain, use null for crownType: never the word unknown and never free text.",
+    /*
+     * Правило бренда — ПАРА к правилу crownType выше, и оно про другое.
+     * Перечислить бренды нельзя: список открыт, «Straumann» и «Filtek Z550» —
+     * законные значения, которые клиника обязана видеть латиницей как есть.
+     * Запрещается ровно служебное слово вместо «не знаю»; ту же строку подпирает
+     * brandFromModel на границе разбора.
+     */
+    "The brand field must be the manufacturer or product name exactly as printed in the price list, for example Straumann, Filtek Z550, Bio-Gide. If no brand is named in the row, use null for brand: never the word unknown, never n/a, never a dash."
   ].join(" ");
 }
 
@@ -1720,6 +1728,50 @@ function readIntegerCountOrNull(value: unknown, maxValue: number): number | null
  * хуже, чем показать чужой ключ: просьба исчезла бы вместе с ключом, а это тот
  * самый класс «молчаливой потери», против которого написан весь этот файл.
  */
+/*
+ * БРЕНД ОТ МОДЕЛИ: СЛОВО-ЗАГЛУШКА — НЕ БРЕНД.
+ *
+ * ОТЛИЧИЕ ОТ crownType, И ОНО ОПРЕДЕЛЯЕТ ПОЧИНКУ. Бренды ЗАКОННО латиницей:
+ * «Straumann», «Filtek Z550», «Bio-Gide», «Zoom» — это настоящие названия, и
+ * печатать их как есть ПРАВИЛЬНО. Поэтому переводить бренд нельзя и перечислить
+ * все допустимые значения тоже нельзя: список брендов открыт. Ломает не латиница,
+ * а служебное слово, которое модель ставит вместо «не знаю».
+ *
+ * Замер ведущего исполнением pricelistItemMaterialText (находка ревьюера волны OO):
+ *   brand "unknown"   → «unknown»     ← дефект, клиника видит служебное слово
+ *   brand "Straumann" → «Straumann»   ← верно, так и должно быть
+ *   brand null        → «материал не распознан»  ← верно
+ *
+ * ПРИЧИНА В САМОМ ПРОМПТЕ: строка «If a material/brand/crown type is uncertain,
+ * use unknown or null» ПРИГЛАШАЕТ слово unknown. Для crownType это уже закрыто
+ * отдельным правилом («never the word unknown and never free text»), для бренда —
+ * закрывается здесь же, ниже в промпте, и подпирается этой проверкой на границе.
+ *
+ * ЧИСТКА НА ГРАНИЦЕ РАЗБОРА, А НЕ В ИНТЕРФЕЙСЕ: бренд уходит не только в подпись
+ * позиции, но и в сводку по категориям (`summary.brands`). Починка в одном месте
+ * отображения оставила бы служебное слово в сводке.
+ *
+ * Детерминированная ветка чиста по построению: `detectBrand` выбирает только из
+ * `brandRules`, то есть из закрытого списка, и «unknown» вернуть не может.
+ */
+const modelBrandSentinels = new Set(["unknown", "unknown brand", "n/a", "na", "none", "null", "-", "—"]);
+
+function brandFromModel(raw: unknown, fallbackBrand: string | null): string | null {
+  if (raw === null) return null;
+  const candidate = asString(raw, fallbackBrand ?? "").trim();
+  if (!candidate) return fallbackBrand;
+  /*
+   * ЗАГЛУШКА ОТ МОДЕЛИ УСТУПАЕТ НАХОДКЕ ДЕТЕРМИНИРОВАННОГО РАЗБОРА, А НЕ ОБНУЛЯЕТ ЕЁ.
+   *
+   * `fallbackBrand` приходит из `detectBrand`, то есть из ЗАКРЫТОГО списка
+   * `brandRules`, и служебного слова содержать не может. Если модель написала
+   * «unknown», а в строке прайса стоит «Straumann» и разбор его нашёл, — верным
+   * ответом является «Straumann», а не пустота. Обнулять здесь значило бы
+   * выбросить измеренное в пользу незнания модели.
+   */
+  return modelBrandSentinels.has(candidate.toLowerCase()) ? fallbackBrand : candidate;
+}
+
 const modelWarningAllowList = new Set([
   "price_not_found",
   "category_uncertain",
@@ -1835,7 +1887,7 @@ export function itemFromGroq(
     materialKind: asString(record.materialKind, fallback.materialKind) as DentalMaterialKind,
     restorationType: asString(record.restorationType, fallback.restorationType) as DentalRestorationType,
     crownType: record.crownType === null ? null : asString(record.crownType, fallback.crownType ?? "") || null,
-    brand: record.brand === null ? null : asString(record.brand, fallback.brand ?? "") || null,
+    brand: brandFromModel(record.brand, fallback.brand),
     toothScope: record.toothScope === null ? null : asString(record.toothScope, fallback.toothScope ?? "") || null,
     unit: asString(record.unit, fallback.unit),
     priceRub,
