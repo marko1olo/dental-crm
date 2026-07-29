@@ -15,11 +15,28 @@ import { sql } from "drizzle-orm";
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
+import {
+	appointments,
+	organizations,
+	patients,
+	payments,
+	serviceCatalogItems,
+	treatmentItems,
+	users,
+	visits,
+} from "../../db/schema.js";
+import {
+	buildPatientLedgers,
+	clinicDebtTotals,
+	explainDebtTotals,
+	rublesFromKopecks,
+} from "../../money/patientDebt.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { registerReportRoutes } from "../../routes/reports.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
 function money(value: unknown): number {
@@ -234,6 +251,389 @@ async function rows(label: string, query: ReturnType<typeof sql>): Promise<Recor
 	return data;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * СВОЯ КЛИНИКА С ЖИВОЙ ЦЕПОЧКОЙ: ЗАЧЕМ ОНА ЗДЕСЬ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Счётчик содержательности честно печатает «12 из 36», но сам по себе он ничего
+ * не гарантирует: данные в живой базе могут снова опустеть, и тогда вернётся
+ * молчаливый зелёный — уже с пометкой, но всё равно без доказательства. Поэтому
+ * сценарий перестаёт зависеть от того, что кто-то когда-то насеял в живые
+ * клиники, и приносит свои данные: запись → приём → позиция лечения → оплата →
+ * долг → отчёты, все суммы известны заранее.
+ *
+ * ПОЧЕМУ НЕ В ЖИВУЮ КЛИНИКУ. «Демо-клиника для снимков» держит 10 позиций
+ * лечения и 8 оплат, на которые опираются другие прогоны и снимки; дописать в
+ * неё свои строки — сломать чужие ожидания. «Стоматология, 1 кабинет» — рабочая
+ * клиника, её данные не мои. Идентификаторы берутся через `fixtureUuid` из имени
+ * ЭТОГО файла, поэтому пересечься блоком с другим тестом нельзя: для этого
+ * пришлось бы совпасть именем файла (разбор — tests/support/fixtureOrganizations.ts).
+ *
+ * УБОРКА НА ВХОДЕ И НА ВЫХОДЕ. Прогон, убитый снаружи (Ctrl+C, закрытая труба
+ * вида `| head`), до `finally` не доходит и оставляет свои строки в живой базе.
+ * Следующий прогон обязан начинать с чистого места, а не наследовать чужой
+ * мусор, поэтому уборка идёт и перед посевом.
+ *
+ * ЧИСЛА ВЫБРАНЫ ТАК, ЧТОБЫ КАЖДОЕ ЗВЕНО БЫЛО НЕНУЛЕВЫМ И ПРОВЕРЯЕМЫМ:
+ *
+ *   пациент     назначено            оплачено   сальдо
+ *   Долгов      5000×2−800 + 800     4000+1000  +5000  ← должник
+ *               = 10 000             = 5000
+ *   Переплатова 5000                 5800       −800   ← клиника должна ему
+ *   Ровнова     5000−500 + 5000      4500       +5000  ← должник, есть незакрытая
+ *               = 9 500                                  позиция в статусе proposed
+ *
+ *   назначено всего            24 500
+ *   оплачено (только paid)     15 300
+ *   предоплата (planned)        2 500  ← деньгами ещё не является
+ *   оплата без визита           1 000  ← к врачу отнести нечем
+ *   отменённая позиция          5 000  ← в назначенное не входит по канону
+ *
+ *   дебиторка по канону        10 000  (5000 + 5000, переплата НЕ вычитается)
+ *   возврат по канону             800
+ *   не собрано, нетто           9 200  (10 000 − 800) — это и есть число
+ *                                       главного экрана
+ *
+ * Эти три величины РАЗНЫЕ, и именно на них расходились девять формул долга в
+ * этом дереве (разбор — money/patientDebt.ts). На пустой клинике все три равны
+ * нулю, поэтому их расхождение там не проверяется вообще: ровно то, ради чего
+ * нужна своя клиника с деньгами.
+ */
+
+/** Пространство фикстур выводится из имени файла, а не назначается вручную. */
+const FIXTURE_NAMESPACE = "chainReconProof";
+
+const FIXTURE_ORGANIZATION_ID = fixtureUuid(FIXTURE_NAMESPACE, 1);
+const FIXTURE_ORGANIZATION_NAME = "Сверка цепочки — клиника с живой цепочкой";
+const FIXTURE_DOCTOR_ID = fixtureUuid(FIXTURE_NAMESPACE, 11);
+const FIXTURE_OWNER_ID = fixtureUuid(FIXTURE_NAMESPACE, 12);
+const FIXTURE_DEBTOR_ID = fixtureUuid(FIXTURE_NAMESPACE, 21);
+const FIXTURE_OVERPAID_ID = fixtureUuid(FIXTURE_NAMESPACE, 22);
+const FIXTURE_EVEN_ID = fixtureUuid(FIXTURE_NAMESPACE, 23);
+const FIXTURE_SERVICE_TAXED_ID = fixtureUuid(FIXTURE_NAMESPACE, 31);
+const FIXTURE_SERVICE_PLAIN_ID = fixtureUuid(FIXTURE_NAMESPACE, 32);
+
+/**
+ * Суммы посева. Вынесены в константы, потому что каждая участвует и в записи, и
+ * в ожидании: разъехаться им нельзя.
+ */
+const FIXTURE_UNIT_PRICE = 5000;
+const FIXTURE_PLAIN_PRICE = 800;
+const FIXTURE_DISCOUNT_TWO_UNITS = 800;
+const FIXTURE_DISCOUNT_ONE_UNIT = 500;
+const FIXTURE_CANCELLED_LINE = 5000;
+const FIXTURE_PLANNED_TOTAL = 24_500;
+const FIXTURE_PAID_TOTAL = 15_300;
+const FIXTURE_ADVANCE_PLANNED = 2_500;
+const FIXTURE_PAID_WITHOUT_VISIT = 1_000;
+const FIXTURE_RECEIVABLE = 10_000;
+const FIXTURE_REFUND = 800;
+
+/**
+ * ПЕРИОД ОТЧЁТОВ — СКОЛЬЗЯЩЕЕ ОКНО, А НЕ ЗАШИТЫЙ 2026 ГОД.
+ *
+ * Здесь стояло `from=2026-01-01&to=2026-12-31` во всех трёх запросах. Такое
+ * окно перестаёт содержать данные посева в первый день 2027 года, и утверждения
+ * молча становятся вырожденными — то есть проверка была бы зелёной только часть
+ * времени, а это ровно тот класс слабой проверки, который в этом дереве уже
+ * ловили. Окно шириной 365 суток (маршрут отвергает шире 400,
+ * routes/reports.ts MAX_PERIOD_DAYS) всегда накрывает и посев, и ближайшее
+ * расписание.
+ */
+const REPORT_PERIOD_FROM = new Date(Date.now() - 330 * 86_400_000).toISOString();
+const REPORT_PERIOD_TO = new Date(Date.now() + 35 * 86_400_000).toISOString();
+
+/** Приём и визит — двое суток назад: срок долга получается определённым. */
+const FIXTURE_VISIT_AT = new Date(Date.now() - 2 * 86_400_000);
+/** Оплата — сутки назад: внутри периода при любой дате прогона. */
+const FIXTURE_PAID_AT = new Date(Date.now() - 86_400_000);
+
+/**
+ * Посев цепочки целиком. Идентификаторы заданы явно, поэтому повторный прогон
+ * после уборки даёт побитово те же строки.
+ */
+async function seedFixtureChain(): Promise<void> {
+	await db.insert(organizations).values({ id: FIXTURE_ORGANIZATION_ID, name: FIXTURE_ORGANIZATION_NAME });
+	await db.insert(users).values([
+		{ id: FIXTURE_DOCTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Иванов Пётр Сергеевич", role: "doctor" },
+		{ id: FIXTURE_OWNER_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Петрова Анна Ильинична", role: "owner" },
+	]);
+	await db.insert(patients).values([
+		{ id: FIXTURE_DEBTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Долгов Артём Юрьевич" },
+		{ id: FIXTURE_OVERPAID_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Переплатова Мария Львовна" },
+		{ id: FIXTURE_EVEN_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Ровнова Ольга Дмитриевна" },
+	]);
+	await db.insert(serviceCatalogItems).values([
+		{
+			id: FIXTURE_SERVICE_TAXED_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			code: "CHAIN-RECON-1",
+			title: "Лечение кариеса, сверка цепочки",
+			category: "therapy",
+			basePriceRub: FIXTURE_UNIT_PRICE,
+			priceRub: FIXTURE_UNIT_PRICE,
+			taxDeductible: true,
+		},
+		{
+			id: FIXTURE_SERVICE_PLAIN_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			code: "CHAIN-RECON-2",
+			title: "Прицельный снимок, сверка цепочки",
+			category: "imaging",
+			basePriceRub: FIXTURE_PLAIN_PRICE,
+			priceRub: FIXTURE_PLAIN_PRICE,
+			// Не входит в справку для налогового вычета — так проверяется, что
+			// дашборд считает к вычету НЕ всё назначенное подряд.
+			taxDeductible: false,
+		},
+	]);
+
+	const appointmentFor = (slot: number, patientId: string, status: "completed" | "cancelled") => ({
+		id: fixtureUuid(FIXTURE_NAMESPACE, slot),
+		organizationId: FIXTURE_ORGANIZATION_ID,
+		patientId,
+		doctorUserId: FIXTURE_DOCTOR_ID,
+		status,
+		startsAt: FIXTURE_VISIT_AT,
+		endsAt: new Date(FIXTURE_VISIT_AT.getTime() + 3_600_000),
+	});
+	await db.insert(appointments).values([
+		appointmentFor(41, FIXTURE_DEBTOR_ID, "completed"),
+		appointmentFor(42, FIXTURE_OVERPAID_ID, "completed"),
+		appointmentFor(43, FIXTURE_EVEN_ID, "completed"),
+		// Отменённая запись без приёма: в выручку не идёт, в загрузку врача идёт.
+		appointmentFor(44, FIXTURE_DEBTOR_ID, "cancelled"),
+	]);
+
+	const visitFor = (slot: number, patientId: string, appointmentSlot: number | null, status: "signed" | "draft") => ({
+		id: fixtureUuid(FIXTURE_NAMESPACE, slot),
+		organizationId: FIXTURE_ORGANIZATION_ID,
+		patientId,
+		appointmentId: appointmentSlot === null ? null : fixtureUuid(FIXTURE_NAMESPACE, appointmentSlot),
+		status,
+		createdAt: FIXTURE_VISIT_AT,
+		updatedAt: FIXTURE_VISIT_AT,
+		signedAt: status === "signed" ? FIXTURE_VISIT_AT : null,
+	});
+	await db.insert(visits).values([
+		visitFor(51, FIXTURE_DEBTOR_ID, 41, "signed"),
+		visitFor(52, FIXTURE_OVERPAID_ID, 42, "signed"),
+		visitFor(53, FIXTURE_EVEN_ID, 43, "signed"),
+		// Черновик без записи (пациент пришёл без расписания): на нём проверяется,
+		// что автосохранение карты приёма вообще работает, а не только отказывает.
+		visitFor(54, FIXTURE_DEBTOR_ID, null, "draft"),
+	]);
+
+	const itemFor = (options: {
+		slot: number;
+		patientId: string;
+		visitSlot: number;
+		serviceId: string;
+		title: string;
+		quantity: string;
+		unitPriceRub: number;
+		discountRub: number;
+		status: "completed" | "cancelled" | "proposed";
+	}) => ({
+		id: fixtureUuid(FIXTURE_NAMESPACE, options.slot),
+		organizationId: FIXTURE_ORGANIZATION_ID,
+		patientId: options.patientId,
+		visitId: fixtureUuid(FIXTURE_NAMESPACE, options.visitSlot),
+		serviceId: options.serviceId,
+		title: options.title,
+		quantity: options.quantity,
+		unitPriceRub: options.unitPriceRub,
+		discountRub: options.discountRub,
+		priceRub: Math.max(0, options.unitPriceRub * Number(options.quantity) - options.discountRub),
+		status: options.status,
+	});
+	await db.insert(treatmentItems).values([
+		itemFor({
+			slot: 61,
+			patientId: FIXTURE_DEBTOR_ID,
+			visitSlot: 51,
+			serviceId: FIXTURE_SERVICE_TAXED_ID,
+			title: "Лечение кариеса, сверка цепочки",
+			// Количество 2 со скидкой строки: именно здесь расходятся
+			// «цена×кол-во − скидка» и «(цена − скидка)×кол-во» — на 800 ₽.
+			quantity: "2",
+			unitPriceRub: FIXTURE_UNIT_PRICE,
+			discountRub: FIXTURE_DISCOUNT_TWO_UNITS,
+			status: "completed",
+		}),
+		itemFor({
+			slot: 62,
+			patientId: FIXTURE_DEBTOR_ID,
+			visitSlot: 51,
+			serviceId: FIXTURE_SERVICE_PLAIN_ID,
+			title: "Прицельный снимок, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_PLAIN_PRICE,
+			discountRub: 0,
+			status: "completed",
+		}),
+		itemFor({
+			slot: 63,
+			patientId: FIXTURE_OVERPAID_ID,
+			visitSlot: 52,
+			serviceId: FIXTURE_SERVICE_TAXED_ID,
+			title: "Лечение кариеса, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_UNIT_PRICE,
+			discountRub: 0,
+			status: "completed",
+		}),
+		itemFor({
+			slot: 64,
+			patientId: FIXTURE_EVEN_ID,
+			visitSlot: 53,
+			serviceId: FIXTURE_SERVICE_TAXED_ID,
+			title: "Профгигиена, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_UNIT_PRICE,
+			discountRub: FIXTURE_DISCOUNT_ONE_UNIT,
+			status: "completed",
+		}),
+		itemFor({
+			slot: 65,
+			patientId: FIXTURE_DEBTOR_ID,
+			visitSlot: 51,
+			serviceId: FIXTURE_SERVICE_TAXED_ID,
+			title: "Отменённая позиция, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_CANCELLED_LINE,
+			discountRub: 0,
+			status: "cancelled",
+		}),
+		itemFor({
+			slot: 66,
+			patientId: FIXTURE_EVEN_ID,
+			visitSlot: 53,
+			serviceId: FIXTURE_SERVICE_TAXED_ID,
+			title: "Предложенное лечение, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_UNIT_PRICE,
+			discountRub: 0,
+			status: "proposed",
+		}),
+	]);
+
+	await db.insert(payments).values([
+		{
+			id: fixtureUuid(FIXTURE_NAMESPACE, 71),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_DEBTOR_ID,
+			visitId: fixtureUuid(FIXTURE_NAMESPACE, 51),
+			amountRub: 4000,
+			status: "paid",
+			paidAt: FIXTURE_PAID_AT,
+		},
+		{
+			// Оплата без визита: отнести её к врачу нечем, уходит в «не отнесено».
+			id: fixtureUuid(FIXTURE_NAMESPACE, 72),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_DEBTOR_ID,
+			amountRub: FIXTURE_PAID_WITHOUT_VISIT,
+			status: "paid",
+			paidAt: FIXTURE_PAID_AT,
+		},
+		{
+			id: fixtureUuid(FIXTURE_NAMESPACE, 73),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_OVERPAID_ID,
+			visitId: fixtureUuid(FIXTURE_NAMESPACE, 52),
+			amountRub: 5800,
+			status: "paid",
+			paidAt: FIXTURE_PAID_AT,
+		},
+		{
+			id: fixtureUuid(FIXTURE_NAMESPACE, 74),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_EVEN_ID,
+			visitId: fixtureUuid(FIXTURE_NAMESPACE, 53),
+			amountRub: 4500,
+			status: "paid",
+			paidAt: FIXTURE_PAID_AT,
+		},
+		{
+			// Запланированная предоплата: деньгами ещё не является и долг не гасит.
+			id: fixtureUuid(FIXTURE_NAMESPACE, 75),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_DEBTOR_ID,
+			visitId: fixtureUuid(FIXTURE_NAMESPACE, 51),
+			amountRub: FIXTURE_ADVANCE_PLANNED,
+			status: "planned",
+			paidAt: FIXTURE_PAID_AT,
+		},
+	]);
+
+	console.log(
+		`Посев цепочки: клиника «${FIXTURE_ORGANIZATION_NAME}» ${FIXTURE_ORGANIZATION_ID} — ` +
+			"3 пациента, 4 записи, 4 приёма, 6 позиций лечения, 5 оплат.",
+	);
+}
+
+/**
+ * Долг по КАНОНУ проекта, а не десятой формулой.
+ *
+ * Считает `money/patientDebt.ts` — единственный дом этого вопроса; девять
+ * расходившихся формул сведены туда коммитом 8062e6d55. Здесь только чтение
+ * строк и вызов канона: своей арифметики денег в этом файле нет.
+ *
+ * Суммы читаются ТЕКСТОМ колонки `numeric`, а не числом: канон отвергает
+ * значения, которые уже потеряли точность в плавающей точке, и это его работа —
+ * узнать о грязи, а не подтвердить её своей подписью.
+ */
+async function canonDebt(organizationId: string): Promise<{
+	receivableRub: number;
+	refundRub: number;
+	netUncollectedRub: number;
+	debtorCount: number;
+	overpaidCount: number;
+	chargedRub: number;
+	explanation: string;
+}> {
+	const chargeRows = (
+		await db.execute(sql`
+			select patient_id::text as patient_id, status::text as status,
+			       unit_price_rub::text as unit_price_rub, quantity::text as quantity,
+			       discount_rub::text as discount_rub
+			  from treatment_items where organization_id = ${organizationId}
+		`)
+	).rows as { patient_id: string; status: string; unit_price_rub: string; quantity: string; discount_rub: string }[];
+	const paymentRows = (
+		await db.execute(sql`
+			select patient_id::text as patient_id, status::text as status, amount_rub::text as amount_rub
+			  from payments where organization_id = ${organizationId}
+		`)
+	).rows as { patient_id: string; status: string; amount_rub: string }[];
+
+	const ledgers = buildPatientLedgers(
+		chargeRows.map((row) => ({
+			patientId: row.patient_id,
+			status: row.status,
+			unitPriceRub: row.unit_price_rub,
+			quantity: row.quantity,
+			discountRub: row.discount_rub,
+		})),
+		paymentRows.map((row) => ({ patientId: row.patient_id, status: row.status, amountRub: row.amount_rub })),
+	);
+	const totals = clinicDebtTotals(ledgers);
+	let chargedKopecks = 0;
+	for (const ledger of ledgers.values()) chargedKopecks += ledger.chargedKopecks;
+
+	return {
+		receivableRub: rublesFromKopecks(totals.receivableKopecks),
+		refundRub: rublesFromKopecks(totals.refundLiabilityKopecks),
+		netUncollectedRub: rublesFromKopecks(totals.netUncollectedKopecks),
+		debtorCount: totals.debtorCount,
+		overpaidCount: totals.overpaidCount,
+		chargedRub: rublesFromKopecks(chargedKopecks),
+		explanation: explainDebtTotals(totals),
+	};
+}
+
 async function main(): Promise<void> {
 	process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 
@@ -344,6 +744,14 @@ async function main(): Promise<void> {
 				authTokenSecret(),
 			);
 
+			/**
+			 * Долг главного экрана, вынесенный из блока дашборда: ниже он сверяется с
+			 * дебиторкой отчёта, и разница между ними обязана равняться переплатам —
+			 * это то самое расхождение двух экранов, из-за которого администратор
+			 * называл пациенту сумму, которой нет на главном экране.
+			 */
+			let dashboardDueRub: number | null = null;
+
 			const dashboardResponse = await app.inject({
 				method: "GET",
 				url: "/api/dashboard",
@@ -406,6 +814,7 @@ async function main(): Promise<void> {
 					netUncollected,
 					[money(summary.totalDueRub), netUncollected],
 				);
+				dashboardDueRub = money(summary.totalDueRub);
 				console.log(
 					`справка: сумма только по completed=${money(totals.planned_completed_only)} — ` +
 						"дашборд в totalDueRub её НЕ использует, берёт все не отменённые.",
@@ -470,6 +879,54 @@ async function main(): Promise<void> {
 					debtRows.filter((row) => money(row.debtRub) > 0).length,
 					[receivables.rows?.length ?? 0, debtRows.length],
 				);
+
+				/*
+				 * СВЕРКА С КАНОНОМ ДОЛГА, а не с десятой формулой. Считает
+				 * money/patientDebt.ts — единственный дом этого вопроса. Смысл
+				 * утверждений: отчёт дебиторки обязан совпасть с каноном до копейки,
+				 * потому что канон из него и выведен, а главный экран обязан
+				 * отличаться РОВНО на переплаты — и это отличие называется числом, а
+				 * не замалчивается.
+				 */
+				const canon = await canonDebt(org.id);
+				console.log(`канон долга (money/patientDebt.ts): ${canon.explanation}`);
+				same(org.name, "назначено по канону = SQL по позициям", canon.chargedRub, money(totals.planned_sql_greatest), [
+					canon.chargedRub,
+					money(totals.planned_sql_greatest),
+				]);
+				same(org.name, "дебиторка отчёта = дебиторка по канону", money(receivables.totalDebtRub), canon.receivableRub, [
+					money(receivables.totalDebtRub),
+					canon.receivableRub,
+				]);
+				same(org.name, "переплата отчёта = возврат по канону", money(receivables.totalPrepaidRub), canon.refundRub, [
+					money(receivables.totalPrepaidRub),
+					canon.refundRub,
+				]);
+				same(org.name, "должников в отчёте = должников по канону", receivables.rows?.length ?? 0, canon.debtorCount, [
+					receivables.rows?.length ?? 0,
+					canon.debtorCount,
+				]);
+				same(
+					org.name,
+					"переплативших в отчёте = переплативших по канону",
+					receivables.prepayments?.length ?? 0,
+					canon.overpaidCount,
+					[receivables.prepayments?.length ?? 0, canon.overpaidCount],
+				);
+				if (dashboardDueRub !== null) {
+					const screenGap = money(money(receivables.totalDebtRub) - dashboardDueRub);
+					console.log(
+						`РАСХОЖДЕНИЕ ДВУХ ЭКРАНОВ: дебиторка ${money(receivables.totalDebtRub)} − долг главного экрана ` +
+							`${dashboardDueRub} = ${screenGap}; переплаты пациентов ${canon.refundRub}. ` +
+							"Это не дефект расчёта, а две разные величины: главный экран считает нетто по клинике одним " +
+							"вычитанием, поэтому переплата одного пациента гасит долг другого.",
+					);
+					same(org.name, "разница дебиторки и главного экрана = переплаты пациентов", screenGap, canon.refundRub, [
+						money(receivables.totalDebtRub),
+						dashboardDueRub,
+						canon.refundRub,
+					]);
+				}
 			}
 
 			/**
@@ -483,7 +940,7 @@ async function main(): Promise<void> {
 
 			const doctorsResponse = await app.inject({
 				method: "GET",
-				url: `/api/reports/doctors?from=2026-01-01T00:00:00.000Z&to=2026-12-31T23:59:59.000Z`,
+				url: `/api/reports/doctors?from=${REPORT_PERIOD_FROM}&to=${REPORT_PERIOD_TO}`,
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (doctorsResponse.statusCode !== 200) {
@@ -504,7 +961,7 @@ async function main(): Promise<void> {
 
 			const servicesResponse = await app.inject({
 				method: "GET",
-				url: `/api/reports/services?from=2026-01-01T00:00:00.000Z&to=2026-12-31T23:59:59.000Z`,
+				url: `/api/reports/services?from=${REPORT_PERIOD_FROM}&to=${REPORT_PERIOD_TO}`,
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (servicesResponse.statusCode !== 200) {
@@ -518,7 +975,7 @@ async function main(): Promise<void> {
 
 			const revenueResponse = await app.inject({
 				method: "GET",
-				url: `/api/reports/revenue?from=2026-01-01T00:00:00.000Z&to=2026-12-31T23:59:59.000Z&granularity=month`,
+				url: `/api/reports/revenue?from=${REPORT_PERIOD_FROM}&to=${REPORT_PERIOD_TO}&granularity=month`,
 				headers: { "x-dente-staff-token": staffToken },
 			});
 			if (revenueResponse.statusCode !== 200) {
@@ -647,8 +1104,15 @@ async function main(): Promise<void> {
 		await visitApp.close();
 	}
 
-	console.log("\nГОТОВО. Единственная возможная запись — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
+	console.log("\nГОТОВО. Единственная возможная запись по живым клиникам — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
+}
 
+/**
+ * Итог прогона. Возвращает число нарушений, а не печатает приговор в одиночку:
+ * решение о коде возврата принимает вызывающий, у которого на руках ещё и
+ * результат уборки.
+ */
+function printVerdict(extraViolations: readonly string[]): number {
 	/*
 	 * ═══════════════════════════════════════════════════════════════════════
 	 * ИТОГ: СКОЛЬКО УТВЕРЖДЕНИЙ ВООБЩЕ БЫЛО И СКОЛЬКО ИЗ НИХ ЧТО-ТО ЗНАЧИЛИ
@@ -700,17 +1164,95 @@ async function main(): Promise<void> {
 		console.log(`ПРОВАЛ «${claim.clinic}» — ${claim.label}: ${JSON.stringify(claim.actual)} против ${JSON.stringify(claim.expected)}`);
 	}
 
-	const violations = verdict.failed.length + sensorComplaints.length;
+	for (const complaint of extraViolations) console.log(`НАРУШЕНИЕ: ${complaint}`);
+
+	const violations = verdict.failed.length + sensorComplaints.length + extraViolations.length;
 	console.log(
 		`\nИТОГ: СОДЕРЖАТЕЛЬНЫХ УТВЕРЖДЕНИЙ: ${verdict.substantive} из ${verdict.total}; ` +
 			`вырожденных ${verdict.degenerate.length}; РАСХОЖДЕНИЙ на содержательных ${verdict.failed.length}; ` +
 			`НАРУШЕНИЙ: ${violations}`,
 	);
+	return violations;
+}
+
+/**
+ * Уборка своей клиники и НЕЗАВИСИМАЯ проверка, что от неё не осталось строк.
+ *
+ * Проверка отдельным запросом, а не доверием к уборке: `purgeFixtureOrganizations`
+ * идёт по каталогу базы и бросает исключение сама, но тихо оставленный мусор в
+ * следующем прогоне читается как данные клиники, поэтому остаток называется
+ * числом. Маркер `[УТЕЧКА]` ставится сознательно — прогон сквозных сценариев
+ * читает его как заявленное нарушение.
+ */
+async function purgeFixtureAndProve(): Promise<string[]> {
+	const complaints: string[] = [];
+	try {
+		await purgeFixtureOrganizations([FIXTURE_ORGANIZATION_ID]);
+	} catch (error) {
+		complaints.push(`уборка своей клиники не завершилась: ${error instanceof Error ? error.message : String(error)}`);
+	}
+	const leftovers = (
+		await db.execute(sql`
+			select
+			  (select count(*)::int from organizations where id = ${FIXTURE_ORGANIZATION_ID}::uuid) as organizations,
+			  (select count(*)::int from patients where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as patients,
+			  (select count(*)::int from users where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as users,
+			  (select count(*)::int from appointments where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as appointments,
+			  (select count(*)::int from visits where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as visits,
+			  (select count(*)::int from treatment_items where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as treatment_items,
+			  (select count(*)::int from payments where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as payments,
+			  (select count(*)::int from service_catalog_items where organization_id = ${FIXTURE_ORGANIZATION_ID}::uuid) as prices
+		`)
+	).rows[0] as Record<string, unknown>;
+	console.log(`\nостатки своей клиники после уборки (обязаны быть нулями): ${JSON.stringify(leftovers)}`);
+	for (const [table, count] of Object.entries(leftovers ?? {})) {
+		if (Number(count) !== 0) {
+			console.log(`[УТЕЧКА] уборка оставила ${count} строк в ${table} по клинике ${FIXTURE_ORGANIZATION_ID}`);
+			complaints.push(`уборка оставила ${count} строк в ${table}`);
+		}
+	}
+	return complaints;
+}
+
+/**
+ * Порядок работы: уборка следов прошлого прогона → посев своей цепочки → сверка
+ * → уборка → приговор.
+ *
+ * Уборка ДО посева обязательна: прогон, убитый снаружи, до `finally` не доходит,
+ * и его строки остались бы в живой базе. Приговор печатается ПОСЛЕ уборки,
+ * потому что остаток строк — тоже нарушение и обязан попасть в тот же счёт.
+ */
+async function run(): Promise<void> {
+	const cleanupComplaints: string[] = [];
+	try {
+		await purgeFixtureOrganizations([FIXTURE_ORGANIZATION_ID]);
+		await seedFixtureChain();
+		await main();
+	} finally {
+		cleanupComplaints.push(...(await purgeFixtureAndProve()));
+	}
+	const violations = printVerdict(cleanupComplaints);
 	await pool.end();
 	if (violations > 0) process.exitCode = 1;
 }
 
-main().catch((error) => {
+run().catch(async (error) => {
 	console.error(error);
+	/*
+	 * Падение посреди прогона не имеет права оставить свою клинику в живой базе:
+	 * следующий прогон прочитал бы её как данные клиники. Уборка на входе это
+	 * подметёт, но подметать надо и здесь — на чужой базе входа может и не быть.
+	 */
+	try {
+		await purgeFixtureOrganizations([FIXTURE_ORGANIZATION_ID]);
+		console.log("своя клиника убрана после падения прогона");
+	} catch (cleanupError) {
+		console.log(`[УТЕЧКА] своя клиника осталась в базе: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`);
+	}
+	try {
+		await pool.end();
+	} catch {
+		// Пул мог не открыться вовсе — тогда закрывать нечего.
+	}
 	process.exitCode = 1;
 });
