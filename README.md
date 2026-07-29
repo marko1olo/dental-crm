@@ -1,5 +1,8 @@
 <div align="center">
 
+![DENTAL-CRM Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg)
+
+
 # DENTE — Enterprise Dental CRM & DICOM Interactive Engine
 
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2018-blue?style=for-the-badge&logo=postgresql)][][![Live Website](https://img.shields.io/badge/Website-GitHub%20Pages-00f2fe?style=for-the-badge)](https://marko1olo.github.io/dental-crm/)
