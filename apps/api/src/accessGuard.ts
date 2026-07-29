@@ -168,6 +168,22 @@ export async function requireClinicalMutationContext(
 /**
  * requireNonDoctorAccess — allows any authenticated non-doctor (admin, staff)
  * through. Doctors are restricted from certain write routes.
+ *
+ * ТЕКСТ ОТКАЗА. Раньше здесь стояло
+ * `Доктора не могут выполнять это действие: ${protectedArea}`, а protectedArea —
+ * это машинная метка участка (`non-doctor mutation`). Врач получал латинский
+ * хвост вместо следующего шага, и вдобавок латинское слово из шести и более букв
+ * целиком гасит фразу фильтром клиента (`apps/web/src/AppHelpers.tsx`,
+ * `technicalWorkflowFailurePattern` под флагом `/i`) — на экране не оставалось
+ * ничего, кроме подсказки по коду 403 «войдите в смену заново», которая врачу не
+ * поможет никогда: повторный вход роль не меняет.
+ *
+ * Метка участка не выброшена, а вынесена в отдельное машинное поле — она нужна в
+ * журнале и разработчику, но не человеку. Причина в тексте названа ровно та,
+ * которую сервер знает: действие закрыто для роли «врач». Обещать, что у
+ * администратора оно точно пройдёт, нельзя — за этой проверкой стоит ещё секрет
+ * администратора клиники, поэтому текст просит обратиться, а не гарантирует
+ * успех.
  */
 export async function requireNonDoctorAccess(
   request: FastifyRequest,
@@ -178,7 +194,10 @@ export async function requireNonDoctorAccess(
   if (identity.role === "doctor") {
     reply.code(403).send({
       error: "DoctorsNotAllowed",
-      message: `Доктора не могут выполнять это действие: ${protectedArea}`,
+      protectedArea,
+      message:
+        "Врачам это действие в программе клиники закрыто. " +
+        "Попросите администратора ресепшена, управляющего или владельца клиники выполнить его.",
     });
     return false;
   }

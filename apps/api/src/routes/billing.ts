@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
 import { requireClinicalMutationAccess, requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
-import { enforcePermissionWhenStaffKnown, roleHasPermission } from "../security/permissions.js";
+import { enforcePermissionWhenStaffKnown, permissionRefusalMessage, roleHasPermission } from "../security/permissions.js";
 import {
   findPaymentByClientMutationIdInDb,
   getPatientForBilling,
@@ -251,11 +251,23 @@ async function requirePayoutAccess(request: FastifyRequest, reply: FastifyReply)
     return { organizationId: identity.organizationId, userId: identity.userId, role: identity.role, scope: "own" };
   }
 
+  /*
+   * ТЕКСТ ОТКАЗА БЕРЁТСЯ ИЗ ОДНОГО МЕСТА. Здесь стояла своя формулировка
+   * `Роль «${identity.role}» не видит выплаты врачам…` — третья копия одного и
+   * того же дефекта: латинский ключ `users.role` в тексте для человека. Фильтр
+   * клиента (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern`
+   * под флагом `/i`) гасит любую фразу с латинским словом из шести и более букв
+   * ЦЕЛИКОМ, поэтому эта строка до экрана не доходила вообще.
+   *
+   * Своя формулировка не нужна и по второй причине: «сам врач видит свои
+   * выплаты» читателю этой ветки не пригодится — врач сюда не попадает, у него
+   * есть право `payroll.read.own` и он ушёл строкой выше.
+   */
   reply.code(403).send({
     error: "PermissionDenied",
     permission: "payroll.read",
     role: identity.role,
-    message: `Роль «${identity.role}» не видит выплаты врачам. Зарплату смотрят владелец, управляющий и сам врач — свою.`
+    message: permissionRefusalMessage(identity.role, "payroll.read")
   });
   return null;
 }
