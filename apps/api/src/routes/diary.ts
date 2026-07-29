@@ -18,6 +18,62 @@ import {
 	visitDiaries,
 	visitDiaryRevisions,
 } from "../db/schema.js";
+import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
+
+/**
+ * ДНЕВНИК ПРИЁМА ОТКАЗЫВАЛ КОДОМ, А НЕ ПРИЧИНОЙ.
+ *
+ * ЧТО БЫЛО. Доказано запросом в процессе (`app.inject`, не дев-сервер): чтение
+ * дневника, чтение истории правок, сохранение дневника и его исправление
+ * отвечали телом `{"error":"OrgRequired"}` — без поля `message`. Пятая ветка, в
+ * подписании (`/lock`), текст имела, но СВОЙ, третьей копией той же фразы в
+ * дереве.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Живой клиент подписания
+ * (`apps/web/src/components/useVisitDiaryLogic.ts:530-540`) печатает поле
+ * `message` тостом ДОСЛОВНО, а без него строит подсказку по коду ответа. Для 403
+ * это «войдите в смену заново или попросите администратора открыть доступ» —
+ * ложное указание: смена тут не при чём, не определён кабинет клиники. Дневник
+ * приёма — юридический документ, и врач, не понявший отказ, либо теряет
+ * набранный текст, либо переписывает его во второй записи.
+ *
+ * ЧЕГО СЕРВЕР НЕ ЗНАЕТ, ТОГО И НЕ УТВЕРЖДАЕТ. `resolveOrganizationId` возвращает
+ * null и когда токена кабинета нет, и когда `verifyToken` его отверг
+ * (`security/identity.ts`): различить эти два состояния здесь нечем. Поэтому
+ * текст называет обе возможные причины и одно действие, которое лечит любую.
+ *
+ * Коды ответа и значения поля `error` сохранены дословно. Текст живёт в общем
+ * доме `utils/clinicSessionRefusal.ts`, чтобы четвёртой копии не появилось.
+ */
+const DIARY_CLINIC_UNKNOWN_READ_MESSAGE = clinicNotIdentifiedMessage(
+	"дневник приёма не открыть",
+);
+const DIARY_CLINIC_UNKNOWN_REVISIONS_MESSAGE = clinicNotIdentifiedMessage(
+	"историю правок дневника не показать",
+);
+const DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE = clinicNotIdentifiedMessage(
+	"дневник приёма не сохранить",
+	"набранный текст остаётся на экране, не закрывайте приём",
+);
+const DIARY_CLINIC_UNKNOWN_SIGN_MESSAGE = clinicNotIdentifiedMessage(
+	"подписать дневник нельзя",
+	"набранный текст остаётся на экране",
+);
+const DIARY_CLINIC_UNKNOWN_REVISE_MESSAGE = clinicNotIdentifiedMessage(
+	"исправить подписанный дневник нельзя",
+);
+
+/**
+ * «Дневника нет» на чтении истории и на исправлении. Причина у сервера
+ * установлена точно: строки с таким номером в этой клинике не существует.
+ * Действие названо, потому что оно есть и оно одно — открыть приём заново;
+ * прежний голый 404 клиент превращал в «программа клиники обновлена не
+ * полностью, сообщите администратору», то есть отправлял врача не туда.
+ */
+const DIARY_NOT_FOUND_REVISIONS_MESSAGE =
+	"Дневник этого приёма не найден в этой клинике, поэтому истории правок у него нет. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён или заведён заново. Откройте приём заново и посмотрите историю ещё раз.";
+const DIARY_NOT_FOUND_REVISE_MESSAGE =
+	"Дневник этого приёма не найден в этой клинике, исправлять нечего. Так бывает, если страница приёма открыта давно и дневник с тех пор удалён или заведён заново. Откройте приём заново и повторите исправление.";
 
 const diaryUpsertSchema = z.object({
 	visitId: z.string().uuid(),
@@ -437,7 +493,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary"))) return;
 		const { visitId } = req.params as { visitId: string };
 		const orgId = await resolveOrganizationId(req);
-		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
+		if (!orgId)
+			return reply
+				.code(403)
+				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_READ_MESSAGE });
 
 		const [diary] = await db
 			.select()
@@ -458,7 +517,11 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 			return;
 		const { id } = req.params as { id: string };
 		const orgId = await resolveOrganizationId(req);
-		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
+		if (!orgId)
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_REVISIONS_MESSAGE,
+			});
 
 		// Verify diary belongs to org
 		const [diary] = await db
@@ -468,7 +531,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
 			);
 
-		if (!diary) return reply.code(404).send({ error: "NotFound" });
+		if (!diary)
+			return reply
+				.code(404)
+				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISIONS_MESSAGE });
 
 		const revisions = await db
 			.select()
@@ -489,7 +555,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		const role: string = userContext?.role ?? "assistant";
 
 		const orgId = await resolveOrganizationId(req);
-		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
+		if (!orgId)
+			return reply
+				.code(403)
+				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE });
 		data.organizationId = orgId;
 
 		const isSigning = data.status === "signed";
@@ -696,11 +765,9 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 
 		const orgId = await resolveOrganizationId(req);
 		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message:
-					"Рабочий кабинет клиники не определён, поэтому подписать дневник нельзя. Войдите в кабинет клиники заново и повторите подписание — набранный текст останется на экране.",
-			});
+			return reply
+				.code(403)
+				.send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SIGN_MESSAGE });
 
 		const [existing] = await db
 			.select()
@@ -781,15 +848,28 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		const role: string = userContext?.role ?? "assistant";
 
 		if (role !== "admin") {
+			/*
+			 * Прежний текст назывался «Ревизия заблокированного дневника доступна
+			 * только администратору.» — причину он называл, а действие нет, и слово
+			 * «ревизия» на экране приёма читается как бухгалтерская проверка. Без
+			 * следующего шага врач, которому нужно исправить подписанный дневник,
+			 * упирается в отказ и не узнаёт, что исправление вообще возможно — а
+			 * дневник приёма это юридический документ, и переписывать его второй
+			 * записью нельзя.
+			 */
 			return reply.code(403).send({
 				error: "OnlyAdminsCanRevise",
 				message:
-					"Ревизия заблокированного дневника доступна только администратору.",
+					"Исправить уже подписанный дневник приёма может только администратор клиники, и повторный вход этого права не добавит. Позовите администратора клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
 			});
 		}
 
 		const orgId = await resolveOrganizationId(req);
-		if (!orgId) return reply.code(403).send({ error: "OrgRequired" });
+		if (!orgId)
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_REVISE_MESSAGE,
+			});
 
 		const [existing] = await db
 			.select()
@@ -798,7 +878,10 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)),
 			);
 
-		if (!existing) return reply.code(404).send({ error: "NotFound" });
+		if (!existing)
+			return reply
+				.code(404)
+				.send({ error: "NotFound", message: DIARY_NOT_FOUND_REVISE_MESSAGE });
 		if (!existing.isLocked)
 			return reply.code(409).send({
 				error: "NotLocked",
