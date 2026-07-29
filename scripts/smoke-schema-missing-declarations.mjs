@@ -76,10 +76,51 @@ const SERVICE_LEDGER =
 	"журнал применённых миграций: его пишет и читает только раскатчик миграций, " +
 	"объявление в Drizzle открыло бы приложению запись в собственный храповик";
 
-const MIGRATED_NEVER_DECLARED =
-	"таблицу создаёт миграция репозитория (поле since), а в Drizzle её нет — тот же класс, " +
-	"что egisz_logs: ни один аудит этой таблицы не видит по построению; перепись KK5 от 2026-07-29; " +
-	"снять запись — объявив таблицу в Drizzle или удалив её из базы миграцией";
+/**
+ * ПОЧЕМУ ОДНОЙ ПРИЧИНЫ НА ВСЕ ТАБЛИЦЫ БОЛЬШЕ НЕТ. До пакета MM4 все 18 записей
+ * делили `MIGRATED_NEVER_DECLARED` — «таблицу создала миграция, объявления нет».
+ * Факт верный, причина — нет: она не отличает таблицу, которую заменил
+ * работающий двойник, от таблицы, которую сервер ЧИТАЕТ И ПИШЕТ сырым SQL прямо
+ * сейчас. Разница решает судьбу таблицы: первую можно удалить миграцией, вторую
+ * удаление (и `drizzle-kit push` по текущим объявлениям тоже) сломает. Реестр,
+ * оправдывающий одной причиной и мёртвое, и живое, со временем оправдает дыру.
+ *
+ * ЗАМЕР, НА КОТОРОМ СТОЯТ ЭТИ ПРИЧИНЫ: `scripts/count-orphan-table-rows.mjs`,
+ * 2026-07-29 — во всех 18 таблицах 0 строк, контроль непустой базы пройден
+ * (organizations 2, patients 17, appointments 27, payments 8), у 13 таблиц с
+ * `organization_id` разбивка пуста, фикстурные префиксы `d0000000`/`dce70000`
+ * вычтены. Досье: `.agents/archon/recon/MM4-orphan-tables/DOSSIER.md`.
+ *
+ * Ссылки в причинах даны на файл и имя таблицы, БЕЗ номеров строк: номер строки
+ * в живом `schema.ts` гниёт за час, а гнилой провенанс хуже отсутствующего.
+ *
+ * Категория «инструмент разработчика» в реестре не появилась по замеру, а не по
+ * недосмотру: единственный кандидат, `migration_templates`, привязан к
+ * организации внешним ключом и несёт флаг `is_approved` — это продуктовые данные
+ * клиники. Служебная запись здесь одна и у неё своя причина — `SERVICE_LEDGER`.
+ */
+
+/** Понятие живёт в объявленной таблице или колонке; брошенная таблица пуста. */
+const twinAccepted = (twin, evidence) =>
+	`принят двойник: то же понятие живёт в объявленной ${twin} — ${evidence}. Брошенную таблицу создаёт ` +
+	"миграция репозитория (поле since), в Drizzle её нет, и по замеру MM4 от 2026-07-29 в ней 0 строк: " +
+	"удаление миграцией безопасно. Снять запись — удалив таблицу из базы миграцией";
+
+/** Двойника нет, писателя нет нигде: понятие в продукте не реализовано. */
+const featureNeverFinished = (evidence) =>
+	`функция не дописана: объявленного двойника у понятия нет и писателя нет нигде — ${evidence}. ` +
+	"Таблица пуста (0 строк, замер MM4 от 2026-07-29), удаление миграцией безопасно, но продуктовую " +
+	"дыру оно не закрывает — она остаётся и без таблицы";
+
+/**
+ * Таблицу использует серверный код, а объявления нет. Самая опасная запись
+ * реестра: строк в ней сейчас ноль, но путь живой, и удаление таблицы (как и
+ * `drizzle-kit push` по текущим объявлениям) сломает работающий код.
+ */
+const usedByRawSql = (evidence) =>
+	`таблицу использует серверный код БЕЗ объявления в Drizzle — ${evidence}. Пусто в ней сейчас, но ` +
+	"путь живой: удалять НЕЛЬЗЯ, и ни один аудит по объявлениям этой таблицы не видит. Снять запись — " +
+	"только объявив таблицу в Drizzle";
 
 const MIGRATED_COLUMNS_NEVER_DECLARED =
 	"колонки создают миграции репозитория (проверено по всем 134 колонкам переписи KK5), " +
@@ -94,27 +135,215 @@ const MIGRATED_COLUMNS_NEVER_DECLARED =
  */
 const undeclaredTables = new Map([
 	["_dente_migrations", { reason: SERVICE_LEDGER, permanent: true }],
-	["analytics_snapshots", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["cash_shifts", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["clinic_workflows", { reason: MIGRATED_NEVER_DECLARED, since: "0008_add_settings.sql" }],
-	["clinical_tasks", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["dental_lab_orders", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["doctor_assistants", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["doctor_payrolls", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["document_templates", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["drill_protocols", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["ingested_patients_mapping", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["ingestion_sources", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["migration_templates", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["patient_anamnesis", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["payment_installments", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["scheduler_reservations", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
-	["signed_outpatient_cards", { reason: MIGRATED_NEVER_DECLARED, since: "0002_aromatic_smiling_tiger.sql" }],
+	[
+		"analytics_snapshots",
+		{
+			reason: twinAccepted(
+				"bi_analytics_snapshots",
+				"её пишет services/biAnalyticsWorker.ts и cron scripts/cronAnalyticsWorker.ts; имя " +
+					"analytics_snapshots в apps/api/src не встречается ни разу — четыре «ссылки» переписи KK5 это " +
+					"подстрока bi_analytics_snapshots, поиск шёл без границы слова",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"cash_shifts",
+		{
+			reason: featureNeverFinished(
+				"объявленная cash_ledger двойником НЕ является (invoice_id, payment_method, amount_rub, " +
+					"operator_id, timestamp — журнал операций без открытия, закрытия и ожидаемого остатка) и сама " +
+					"без писателя: объявление плюс select count(*) в tests/routes/chainReconProof.ts. Виджет смены " +
+					"брошен по ложной причине: apps/web/src/components/finance/CashDayTally.tsx и cashDaySummary.ts " +
+					"пишут «таблицы смен в базе не существует», хотя она есть — от виджета остался только " +
+					"CashShiftWidget.css на 156 строк",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"clinic_workflows",
+		{
+			reason: featureNeverFinished(
+				"имени нет ни в apps/api/src, ни в apps/web/src; таблицы правил-триггеров того же смысла " +
+					"(name/trigger/active) в Drizzle не объявлено ни одной",
+			),
+			since: "0008_add_settings.sql",
+		},
+	],
+	[
+		"clinical_tasks",
+		{
+			reason: usedByRawSql(
+				"db/clinicalTasksQuery.ts делает INSERT и SELECT строкой SQL, маршрут /api/clinical/tasks " +
+					"обслуживает services/clinical/ClinicalRouter.ts",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"dental_lab_orders",
+		{
+			reason: twinAccepted(
+				"lab_orders (schema.ts)",
+				"её пишут db/labQuery.ts и routes/lab.ts, экран apps/web/src/components/schedule/LabOrdersPanel.tsx " +
+					"ходит в /api/clinical/lab-orders; брошенная полнее принятой (clinic_id, treatment_plan_item_id, " +
+					"planned_fitting_date, lab_cost_amount), но строк нет ни в той, ни в другой",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"doctor_assistants",
+		{
+			reason: twinAccepted(
+				"колонке appointments.assistant_user_id (schema.ts)",
+				"её пишет db/appointmentsQuery.ts: ассистент назначается на приём, а постоянной пары " +
+					"врач-ассистент в продукте нет вообще; из 27 приёмов живой базы ассистент указан в нуле",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"doctor_payrolls",
+		{
+			reason: featureNeverFinished(
+				"одноимённого двойника нет: объявленная pricelist_doctor_payrolls упомянута только в " +
+					"комментариях routes/clinical.ts и scripts/cronAnalyticsWorker.ts («в которую в приложении никто " +
+					"не пишет»), писателя у неё нет. Три «ссылки» переписи KK5 на doctor_payrolls — подстрока " +
+					"pricelist_doctor_payrolls; с границей слова ноль",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"document_templates",
+		{
+			reason: twinAccepted(
+				"generated_documents (schema.ts)",
+				"шаблоны документов живут кодом documents/renderDocument.ts, результат ложится в " +
+					"generated_documents (4 строки в живой базе); таблицы с html-шаблонами в Drizzle нет вообще — " +
+					"редактируемых клиникой шаблонов в продукте не существует",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"drill_protocols",
+		{
+			reason: twinAccepted(
+				"patient_ct_plannings (schema.ts)",
+				"её пишет routes/imaging_planning.ts: тот же КТ-снимок (study_instance_uid) и те же импланты; " +
+					"расчёта протокола сверления по классу кости Миша нет ни в apps/api/src, ни в apps/web/src",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"ingested_patients_mapping",
+		{
+			reason: twinAccepted(
+				"migration_entity_links (schema.ts)",
+				"те же source_system + source_entity_id + natural_key, пишет подсистема apps/api/src/migration " +
+					"(engine, loader, reconcile, runStore — 7 файлов вне объявлений и тестов)",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"ingestion_sources",
+		{
+			reason: twinAccepted(
+				"migration_runs (schema.ts)",
+				"те же source_name/source_kind/status, 11 файлов подсистемы apps/api/src/migration вне " +
+					"объявлений и тестов, 4 строки в живой базе — единственный двойник этого реестра, которым " +
+					"действительно пользуются",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"migration_templates",
+		{
+			reason: twinAccepted(
+				"колонке migration_runs.vendor_profile (schema.ts)",
+				"сопоставление колонок источника считает код migration/mapping.ts (детерминированное плюс " +
+					"переопределения), профиль вендора хранится на прогоне — 4 непустых значения. Инструментом " +
+					"разработчика таблица не является: organization_id NOT NULL с внешним ключом на organizations " +
+					"и флаг is_approved — это данные клиники",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"patient_anamnesis",
+		{
+			reason: usedByRawSql(
+				"services/patients/patientMerge.ts перечисляет её в списке таблиц, строки которых переносит " +
+					"слияние карт пациентов",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"payment_installments",
+		{
+			reason: twinAccepted(
+				"generated_documents со значением kind = 'installment_payment_schedule' (schema.ts)",
+				"график рассрочки живёт печатным документом: проверки documents/guards.ts, поля " +
+					"apps/web/src/documentLogic.ts и documentValidators.ts. ЧЕГО ДВОЙНИК НЕ ПОКРЫВАЕТ: " +
+					"пер-строчного учёта платежей рассрочки (due_date/paid_date/status) нет нигде, и удаление " +
+					"таблицы этот долг не закрывает. Документов такого вида в живой базе пока 0 из 4",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"scheduler_reservations",
+		{
+			reason: featureNeverFinished(
+				"похожая объявленная schedule_time_reservations мертва так же: её маршрут " +
+					"/api/schedule/time-reservations удалён за отсутствием писателя и нулём строк — см. блок «Два " +
+					"маршрута расписания удалены» в routes/clinical.ts",
+			),
+			since: "0000_freezing_randall_flagg.sql",
+		},
+	],
+	[
+		"signed_outpatient_cards",
+		{
+			reason: twinAccepted(
+				"колонках visit_diaries.crypto_signature_pkcs7 и generated_documents.signature_svg (schema.ts)",
+				"подпись ставят routes/diary.ts и routes/documents/signUkep.ts; подписанных дневников в живой " +
+					"базе ноль, то есть путь объявлен и подключён, но им ещё не пользовались",
+			),
+			since: "0002_aromatic_smiling_tiger.sql",
+		},
+	],
 	[
 		"treatment_plan_stages_auto_archive",
-		{ reason: MIGRATED_NEVER_DECLARED, since: "0067_add_treatment_plan_stages_auto_archive.sql" },
+		{
+			reason: featureNeverFinished(
+				"объявленная treatment_plan_stages тоже без писателя: маршрут " +
+					"/api/documents/treatment-plan-stages удалён вместе с модулем — см. блок «Три маршрута плана " +
+					"лечения удалены» в routes/clinical.ts. В таблице переписи KK5 эта таблица пропущена, поэтому " +
+					"таблиц с нулём ссылок не 13, а 16",
+			),
+			since: "0067_add_treatment_plan_stages_auto_archive.sql",
+		},
 	],
-	["ztl_lab_orders", { reason: MIGRATED_NEVER_DECLARED, since: "0006_nostalgic_maverick.sql" }],
+	[
+		"ztl_lab_orders",
+		{
+			reason: twinAccepted(
+				"lab_orders (schema.ts)",
+				"экран ЗТЛ apps/web/src/components/schedule/LabOrdersPanel.tsx («Form state for new ZTL order») " +
+					"пишет в /api/clinical/lab-orders → routes/lab.ts → db/labQuery.ts; отдельного маршрута ztl в " +
+					"проекте нет",
+			),
+			since: "0006_nostalgic_maverick.sql",
+		},
+	],
 ]);
 
 /**
