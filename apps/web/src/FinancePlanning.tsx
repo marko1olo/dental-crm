@@ -45,25 +45,41 @@ export function FinancePlanningOverview({
 
   return (
     <>
+      {/*
+        ДЕНЬГИ ЗДЕСЬ БЕЗ `?? 0`. Все четыре суммы печатались через
+        `money(billingSummary?.поле ?? 0)`, то есть неизвестное превращалось в
+        ноль ДО форматирования, и общая правка money() до этих плиток не
+        доставала. Пока сводки нет, экран уверенно показывал «План лечения 0 ₽,
+        Оплачено 0 ₽, Остаток 0 ₽» — то же самое, что «пациент ничего не
+        должен». Счётчики позиций (`ruCount`) свои `?? 0` сохранили: ноль
+        открытых позиций — это осмысленное «позиций нет», а не молчание.
+
+        Отдельным долгом (не в этом файле): apps/web/src/useAppLogic.tsx:5030
+        при отсутствии дашборда или пациента ВОЗВРАЩАЕТ сводку из нулей, а не
+        признак «не посчитано». Пока это так, сюда доезжают настоящие нули, и
+        разница не видна. Тип Dashboard["billingSummary"] нулей не допускает
+        (packages/shared/src/index.ts:2056), поэтому честный признак требует
+        правки общей схемы — она шире одного экрана.
+      */}
       <div className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4" aria-label="Финансовая сводка" data-testid="finance-planning">
         <article>
           <span>План лечения</span>
-          <strong>{money(billingSummary?.totalPlannedRub ?? 0)}</strong>
+          <strong>{money(billingSummary?.totalPlannedRub)}</strong>
           <p>{ruCount(billingSummary?.openTreatmentItems ?? 0, ["открытая позиция", "открытые позиции", "открытых позиций"])}</p>
         </article>
         <article>
           <span>Оплачено</span>
-          <strong>{money(billingSummary?.totalPaidRub ?? 0)}</strong>
+          <strong>{money(billingSummary?.totalPaidRub)}</strong>
           <p>{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту</p>
         </article>
         <article className={(billingSummary?.totalDueRub ?? 0) > 0 ? "finance-due" : ""}>
           <span>Остаток</span>
-          <strong>{money(billingSummary?.totalDueRub ?? 0)}</strong>
+          <strong>{money(billingSummary?.totalDueRub)}</strong>
           <p>{ruCount(billingSummary?.unpaidDocuments ?? 0, ["документ", "документа", "документов"])} без оплаты</p>
         </article>
         <article>
           <span>Вычет</span>
-          <strong>{money(billingSummary?.taxDeductionEligibleRub ?? 0)}</strong>
+          <strong>{money(billingSummary?.taxDeductionEligibleRub)}</strong>
           <p>медицинские услуги, пригодные для справки</p>
         </article>
       </div>

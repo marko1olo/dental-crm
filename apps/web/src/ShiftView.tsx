@@ -748,7 +748,16 @@ export function PatientCockpit({
               <CreditCard aria-hidden="true" size={24} />
               <div>
                 <h3>Оплаты</h3>
-                <p className="tile-meta">{money(dashboard?.billingSummary?.totalPaidRub ?? 0)} · долг {money(dashboard?.billingSummary?.totalDueRub ?? 0)}</p>
+                {/*
+                  Здесь стояло `?? 0`, и подмена случалась ДО money(), поэтому
+                  общая правка форматирования этот экран не спасала. Плитка
+                  печатала «0 ₽ · долг 0 ₽», пока дашборд не загружен, — а
+                  `dashboard` по типу здесь `Dashboard | null | undefined`
+                  (строка 618). Врач на своём главном экране читал «долг 0 ₽»
+                  как «пациент рассчитался», хотя суммы просто ещё нет.
+                  Без `?? 0` money() честно печатает «не определено».
+                */}
+                <p className="tile-meta">{money(dashboard?.billingSummary?.totalPaidRub)} · долг {money(dashboard?.billingSummary?.totalDueRub)}</p>
               </div>
             </article>
             <article role="button" tabIndex={0} aria-label="Открыть связь и задачи" className="clickable-card" onClick={() => { window.location.hash = "communications"; }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.hash = "communications"; } }}>
