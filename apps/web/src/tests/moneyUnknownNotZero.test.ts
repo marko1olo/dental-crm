@@ -24,15 +24,25 @@ import ts from "typescript";
  *   • FinancePlanning.tsx — четыре плитки финансовой сводки: план лечения,
  *     оплачено, остаток, вычет.
  *
- * ОХРАНА ЛОВИЛА ОДНУ ФОРМУ ИЗ ПЯТИ, И ЭТО ИЗМЕРЕНО, А НЕ ПРЕДПОЛОЖЕНО. Прежняя
+ * ОХРАНА ЛОВИЛА ОДНУ ФОРМУ ИЗ СЕМИ, И ЭТО ИЗМЕРЕНО, А НЕ ПРЕДПОЛОЖЕНО. Прежняя
  * редакция искала подстроку регулярным выражением `money\([^()]*\?\?\s*0`.
- * Мутации в копию ShiftView.tsx, по одной на форму, с кодами выхода набора:
+ * Мутации в копию ShiftView.tsx, по одной на форму (правится одна строка,
+ * :760 — плитка «Оплаты»), копия набора нацелена на копию файла. Код выхода
+ * набора у прежней охраны и у этой:
  *
- *   money(x ?? 0)         → код 1, ловит
- *   money(x || 0)         → код 0, НЕ ЛОВИТ
- *   money((x) ?? 0)       → код 0, НЕ ЛОВИТ
- *   money(Number(x ?? 0)) → код 0, НЕ ЛОВИТ
- *   money(x ? x : 0)      → код 0, НЕ ЛОВИТ
+ *   money(x ?? 0)              1 / 1
+ *   money(x || 0)              0 / 1
+ *   money((x) ?? 0)            0 / 1
+ *   money(Number(x ?? 0))      0 / 1
+ *   money(x ? x : 0)           0 / 1
+ *   money((x) ?? 0 as number)  0 / 1
+ *   money((x) ?? 0!)           0 / 1
+ *   без мутации                0 / 0
+ *
+ * Последние две формы прошли мимо и ПЕРВОЙ редакции этого разбора (тоже
+ * измерено): переход на компилятор закрыл обёртки вокруг значения и оставил
+ * такую же щель вокруг нуля. Разбор дерева сам по себе ничего не гарантирует —
+ * гарантирует прогон по каждой форме, поэтому таблица выше и живёт в файле.
  *
  * `|| 0` ХУЖЕ ИСХОДНОГО ДЕФЕКТА, и именно его охрана пропускала. `?? 0` гасит
  * только `null` и `undefined`; `|| 0` гасит ЕЩЁ и настоящий ноль, и пустую
@@ -94,6 +104,34 @@ const webSrcDir = fileURLToPath(new URL("..", import.meta.url));
 const MONEY_CALLEES = new Set(["money"]);
 
 /**
+ * Обёртки, которые ничего не меняют в значении: скобки, приведение типа,
+ * `satisfies`, утверждение non-null, угловое приведение.
+ *
+ * Снимаются, потому что искать дефект надо в ЗНАЧЕНИИ, а не в записи. Замер по
+ * первой редакции этого разбора: `money(x ?? 0 as number)`,
+ * `money(x ?? (0 as number))`, `money(x ?? 0!)` и `money(x ?? 0 satisfies number)`
+ * давали ноль совпадений — то есть переход на компилятор закрыл обёртки на
+ * стороне ЗНАЧЕНИЯ (`Number(x ?? 0)`), но оставил ровно ту же щель на стороне
+ * НУЛЯ. Дописать `as number` проще, чем `Number(...)`, и в TypeScript-файле это
+ * первое, что напишет автор, которому мешает тип.
+ *
+ * Угловое приведение `<number>0` живёт только в `.ts`: в `.tsx` угловая скобка —
+ * это разметка, и такой записи там не бывает по построению языка.
+ */
+function unwrapValue(node: ts.Expression): ts.Expression {
+	if (
+		ts.isParenthesizedExpression(node) ||
+		ts.isAsExpression(node) ||
+		ts.isSatisfiesExpression(node) ||
+		ts.isNonNullExpression(node) ||
+		ts.isTypeAssertionExpression(node)
+	) {
+		return unwrapValue(node.expression);
+	}
+	return node;
+}
+
+/**
  * Ноль как значение по умолчанию.
  *
  * `0.0`, `0e0`, `0_0`, `-0`, `+0` — записи одного и того же нуля, и `Number()`
@@ -103,10 +141,11 @@ const MONEY_CALLEES = new Set(["money"]);
  * ПУСТАЯ СТРОКА ЗДЕСЬ НЕ НОЛЬ, и это не упущение: `money(x ?? "")` печатает
  * «не определено» — money() относит пустую строку к неизвестному специально
  * (её докстринг объясняет, почему: `Number("")` в JavaScript равен нулю).
- * Считать `?? ""` дефектом значило бы краснеть на верном коде.
+ * Считать `?? ""` дефектом значило бы краснеть на верном коде. По той же
+ * причине не дефект и `money(x ?? Number.NaN)`.
  */
 function isZeroDefault(node: ts.Expression): boolean {
-	const inner = ts.isParenthesizedExpression(node) ? node.expression : node;
+	const inner = unwrapValue(node);
 	if (ts.isNumericLiteral(inner)) return Number(inner.text) === 0;
 	if (
 		ts.isPrefixUnaryExpression(inner) &&
@@ -292,7 +331,7 @@ describe("неизвестная сумма не гасится нулём до 
 	 * при живом дефекте.
 	 */
 	it("разбор видит гашение нуля во всех формах записи", () => {
-		const cases: [string, string][] = [
+		const cases: [string, string, string?][] = [
 			["одиночный ??", "money(dashboard?.billingSummary?.totalDueRub ?? 0)"],
 			["|| вместо ??", "money(dashboard?.billingSummary?.totalDueRub || 0)"],
 			["скобки вокруг значения", "money((dashboard?.billingSummary?.totalDueRub) ?? 0)"],
@@ -305,11 +344,20 @@ describe("неизвестная сумма не гасится нулём до 
 			["обёртка Math.round()", "money(Math.round(due ?? 0))"],
 			["арифметика внутри вызова", "money(total - (discount ?? 0))"],
 			["цепочка из двух ??", "money(item.basePriceRub ?? item.priceRub ?? 0)"],
-			["разметка вокруг вызова", "const tile = <p className=\"tile\">{money(due || 0)}</p>;"],
+			['разметка вокруг вызова', 'const tile = <p className="tile">{money(due || 0)}</p>;'],
+			// Обёртки на стороне НУЛЯ. Все четыре давали ноль совпадений у первой
+			// редакции этого разбора: компилятор снял обёртки вокруг значения, а
+			// вокруг нуля осталась та же щель.
+			["приведение типа на нуле", "money(due ?? 0 as number)"],
+			["приведение в скобках", "money(due ?? (0 as number))"],
+			["утверждение non-null на нуле", "money(due ?? 0!)"],
+			["satisfies на нуле", "money(due ?? 0 satisfies number)"],
+			// Угловое приведение бывает только в .ts: в .tsx угловая скобка — разметка.
+			["угловое приведение", "money(due ?? <number>0)", "fixture.ts"],
 		];
-		for (const [label, sample] of cases) {
+		for (const [label, sample, fileName] of cases) {
 			assert.equal(
-				zeroFallbacksInMoneyCalls("fixture.tsx", sample).length,
+				zeroFallbacksInMoneyCalls(fileName ?? "fixture.tsx", sample).length,
 				1,
 				`${label}: разбор не увидел гашение нуля в «${sample}» — эта форма снова проходит мимо охраны`,
 			);
@@ -337,6 +385,10 @@ describe("неизвестная сумма не гасится нулём до 
 			["дефект внутри строкового литерала", 'const doc = "money(x ?? 0)";'],
 			["не ноль по умолчанию", "money(due ?? fallbackRub)"],
 			["ноль справа, но не по умолчанию", "money(due === 0 ? unknownRub : due)"],
+			// NaN money() относит к неизвестному и печатает «не определено» — это
+			// честный ответ, а не гашение.
+			["NaN по умолчанию", "money(due ?? Number.NaN)"],
+			["приведение типа на НЕ нуле", "money(due ?? fallbackRub as number)"],
 		];
 		for (const [label, sample] of silent) {
 			assert.deepEqual(
