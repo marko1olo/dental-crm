@@ -6,6 +6,17 @@ import { pathToFileURL } from "node:url";
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Сценарий уже подписывал токен, но секретом-заглушкой, а `AUTH_TOKEN_SECRET`
+ * не задавал. Под `NODE_ENV=production` сервер СПРАВЕДЛИВО отказывается принимать
+ * токены без этой переменной, поэтому первый же запрос получал 500 «AUTH_TOKEN_SECRET
+ * обязателен в production», а не 400 с человеческим текстом — то есть контракт
+ * создания карты пациента не проверялся ни одного дня.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-patient-create-contract-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/patients.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
@@ -44,7 +55,26 @@ function validationErrorHandler(error, _request, reply) {
 
 const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
-const validToken = signToken({ organizationId: "00000000-0000-0000-0000-000000000001", role: "admin" }, process.env.AUTH_TOKEN_SECRET || "synthetic-clinical-secret");
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+/*
+ * Секрет подписи берётся у ЕДИНСТВЕННОГО владельца (`authTokenSecret`), а не
+ * собирается на месте из `process.env.AUTH_TOKEN_SECRET || "..."`. Прежняя форма
+ * позволяла сценарию подписать токен одним секретом, пока сервер проверяет его
+ * другим (или вообще отказывается принимать) — и тогда сценарий краснел из-за
+ * рассогласования, а не из-за предмета проверки. Токен сотрудника нужен наряду с
+ * токеном кабинета: часть маршрутов картотеки требует именно сотрудника
+ * (`requireResolvedStaffOrAdminOrganizationId`), поэтому в payload есть userId.
+ */
+const validToken = signToken(
+	{
+		organizationId: "00000000-0000-0000-0000-000000000001",
+		userId: "00000000-0000-0000-0000-0000000000a1",
+		role: "admin",
+	},
+	authTokenSecret(),
+);
 
 const app = Fastify({ logger: false });
 app.setErrorHandler(validationErrorHandler);

@@ -4,6 +4,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ. Нужен, чтобы подписать токен кабинета
+ * тем же секретом, что и в бою; значение нигде не печатается.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-ai-recognition-scope-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/ai.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
@@ -80,7 +86,36 @@ assert(
 	"AI route must not put human operator copy directly in the public error field",
 );
 
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+
 const app = Fastify({ logger: false });
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН ВСЕМ ОДИННАДЦАТИ ЗАПРОСАМ, ИНАЧЕ СЦЕНАРИЙ ПРОВЕРЯЕТ
+ * НЕ ОБЛАСТЬ AI-РАСПОЗНАВАНИЯ, А ВХОД.
+ *
+ * `routes/ai.ts` берёт клинику из подписанного токена, и барьер стоит ПЕРЕД
+ * разбором тела. Без токена первый же запрос получал 401 «Требуется авторизация
+ * рабочего кабинета клиники», а сценарий ждал 400 — то есть ни привязка задачи к
+ * пациенту, ни отказ на чужой снимок, ни границы длины диктовки не проверялись
+ * ни одного дня.
+ *
+ * Токен ставится хуком, потому что предмет сценария — область данных, а не сам
+ * гейт: ни одно утверждение ниже не проверяет запрос БЕЗ токена. Подписан он тем
+ * же секретом, что и в бою, поэтому гейт остаётся настоящим.
+ */
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId },
+	authTokenSecret(),
+);
+app.addHook("onRequest", (request, _reply, done) => {
+	request.headers["x-dente-clinic-token"] = clinicToken;
+	done();
+});
 await registerAiRoutes(app);
 
 const activePatient = patients.find(

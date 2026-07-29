@@ -7,6 +7,16 @@ process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Сценарий работает под `NODE_ENV=production` намеренно, а там
+ * `authTokenSecret()` СПРАВЕДЛИВО отказывается подписывать без
+ * `AUTH_TOKEN_SECRET`. Без этой строки сценарий падал бы на своём же правильном
+ * стороже, не дойдя до предмета проверки.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-document-route-validation-smoke";
 
 const routeFiles = {
 	documents: path.resolve("apps/api/dist/routes/documents.js"),
@@ -84,6 +94,12 @@ const { registerPricelistRoutes } = await import(
 const { activeVisit, payments } = await import(
 	pathToFileURL(routeFiles.sampleData).href
 );
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
 
 const app = Fastify({ logger: false });
 app.setErrorHandler((error, _request, reply) => {
@@ -99,8 +115,28 @@ await registerDocumentRoutes(app);
 await registerIngestionRoutes(app);
 await registerPricelistRoutes(app);
 
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ТЕКСТ ОТКАЗА, А ВХОД.
+ *
+ * Маршруты документов берут клинику из подписанного токена
+ * (`requireOrganizationId`), и барьер стоит ПЕРЕД разбором тела. Запрос без
+ * токена получал 401 «Требуется авторизация рабочего кабинета клиники» — ни одна
+ * из пяти формулировок отказа («Документ не создан…», «Документ не выдан…»,
+ * «Документ не аннулирован…», «Файл не разобран…», «Прайс не проверен…») не
+ * проверялась ни одного дня после того, как выдачу документов закрыли сеансом
+ * кабинета.
+ *
+ * Токен подписывается ТЕМ ЖЕ секретом, что и в бою, а организация берётся из
+ * фикстуры приёма: документы создаются и читаются в той же клинике.
+ */
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId },
+	authTokenSecret(),
+);
+
 const clinicalHeaders = {
 	"x-dente-admin-secret": "synthetic-clinical-secret",
+	"x-dente-clinic-token": clinicToken,
 	"content-type": "application/json",
 };
 

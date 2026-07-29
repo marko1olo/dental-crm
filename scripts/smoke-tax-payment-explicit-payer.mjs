@@ -5,10 +5,22 @@ import { pathToFileURL } from "node:url";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Без него `authTokenSecret()` в production отказывается подписывать («не
+ * подписывать токены известным секретом»), и сценарий упал бы на своём же
+ * правильном стороже, не дойдя до предмета проверки. Значение нигде не
+ * печатается и живёт только внутри процесса сценария.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-tax-payer-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/billing.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const authSecretPath = path.resolve("apps/api/dist/security/authSecret.js");
 const appSourcePath = path.resolve("apps/web/src/App.tsx");
 
 if (
@@ -28,6 +40,8 @@ const { activeVisit, documents, payments } = await import(
 const { createPaymentSchema, documentKindMetadata } = await import(
 	pathToFileURL(sharedPath).href
 );
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const { authTokenSecret } = await import(pathToFileURL(authSecretPath).href);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -36,6 +50,27 @@ function assert(condition, message) {
 function assertSourceContains(source, needle, message) {
 	assert(source.includes(needle), message);
 }
+
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ СЦЕНАРИЙ ПРОВЕРЯЕТ НЕ ПЛАТЕЖИ, А ВХОД.
+ *
+ * Касса — `requireResolvedOrganizationId` в `routes/billing.ts`: запрос без
+ * подписанного токена кабинета получает 401 «Требуется авторизация рабочего
+ * кабинета клиники» и до разбора полей плательщика не доходит НИКОГДА. Значит
+ * все утверждения ниже (400 на неявного плательщика, 201 на явного, сохранение
+ * ИНН и кода вычета) не проверялись ни одного дня после того, как кассу закрыли
+ * сеансом кабинета.
+ *
+ * Токен подписывается ТЕМ ЖЕ секретом, что и в бою (`authTokenSecret`), поэтому
+ * гейт остаётся настоящим: проверяется работа кассы для вошедшего кабинета, а не
+ * послабление охраны. Организация берётся из фикстуры, чтобы платёж попал в ту
+ * же клинику, что и приём.
+ */
+const clinicToken = signToken(
+	{ organizationId: activeVisit.organizationId },
+	authTokenSecret(),
+);
+const clinicHeaders = { "x-dente-clinic-token": clinicToken };
 
 const app = Fastify({ logger: false });
 await registerBillingRoutes(app);
@@ -76,6 +111,7 @@ const beforeInvalidCount = payments.length;
 const invalidResponse = await app.inject({
 	method: "POST",
 	url: "/api/billing/payments",
+	headers: clinicHeaders,
 	payload: invalidTaxPayload,
 });
 assert(
@@ -90,6 +126,7 @@ assert(
 const ordinaryResponse = await app.inject({
 	method: "POST",
 	url: "/api/billing/payments",
+	headers: clinicHeaders,
 	payload: basePayload,
 });
 assert(
@@ -104,6 +141,7 @@ assert(
 const validTaxResponse = await app.inject({
 	method: "POST",
 	url: "/api/billing/payments",
+	headers: clinicHeaders,
 	payload: {
 		...basePayload,
 		fiscalReceiptNumber: "FN-SMOKE-TAX-OK",

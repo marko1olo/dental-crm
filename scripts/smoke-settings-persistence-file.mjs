@@ -48,6 +48,15 @@ const { registerPatientRoutes } = await import(
 );
 const { getPersistentStateIntegrityReport, buildPersistentStateExport } =
 	await import(pathToFileURL(persistentStatePath).href);
+const { clinicProfile } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/sampleData.js")).href
+);
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
 
 function assert(condition, message) {
 	if (!condition) throw new Error(message);
@@ -141,8 +150,25 @@ try {
 	await registerSettingsRoutes(app);
 	await registerScheduleRoutes(app);
 	await registerPatientRoutes(app);
+	/*
+	 * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ СОХРАНЕНИЕ НАСТРОЕК, А ВХОД.
+	 *
+	 * Настройки клиники берут организацию из подписанного токена. Пока в базе была
+	 * одна клиника, маршрут мог вывести её сам, и сценарий работал без токена; как
+	 * только клиник стало несколько, тот же запрос стал получать 401 «В базе
+	 * несколько клиник — войдите в кабинет, чтобы изменить настройки» (сейчас их
+	 * пять). Ни сохранение предпочтений, ни ротация резервных копий, ни целостность
+	 * файла состояния после этого не проверялись.
+	 *
+	 * Токен подписывается ТЕМ ЖЕ секретом, что и в бою, а клиника берётся из
+	 * профиля фикстуры — той же, к которой относятся врач, ассистент и кресло ниже.
+	 */
 	const guardedHeaders = {
 		"x-dente-admin-secret": process.env.DENTE_SETTINGS_ADMIN_SECRET,
+		"x-dente-clinic-token": signToken(
+			{ organizationId: clinicProfile.organizationId },
+			authTokenSecret(),
+		),
 	};
 
 	const doctorStaffId = "8356141b-7cfa-4221-95f7-70f47e7344b1";

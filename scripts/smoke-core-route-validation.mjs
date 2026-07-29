@@ -9,6 +9,17 @@ process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
 process.env.DENTE_SCHEDULE_ADMIN_SECRET = "synthetic-schedule-secret";
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
 delete process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS;
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Сценарий работает под `NODE_ENV=production` намеренно: он проверяет боевое
+ * поведение маршрутов, а не разрешённое послаблением. Но в production
+ * `authTokenSecret()` СПРАВЕДЛИВО отказывается подписывать без
+ * `AUTH_TOKEN_SECRET` — и без этой строки сценарий падал бы на своём же
+ * правильном стороже, не дойдя до проверки.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-core-route-validation-smoke";
 
 const routeFiles = {
 	ai: path.resolve("apps/api/dist/routes/ai.js"),
@@ -101,6 +112,12 @@ const { registerPatientRoutes } = await import(
 const { registerScheduleRoutes } = await import(
 	pathToFileURL(routeFiles.schedule).href
 );
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
 
 const app = Fastify({ logger: false });
 app.setErrorHandler((error, _request, reply) => {
@@ -119,12 +136,34 @@ await registerCommunicationRoutes(app);
 await registerPatientRoutes(app);
 await registerScheduleRoutes(app);
 
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ВАЛИДАЦИЯ, А ВХОД.
+ *
+ * Все двенадцать проверок ниже посылали запрос БЕЗ токена кабинета и ждали 400 с
+ * человеческим текстом, а получали 401 «Требуется авторизация рабочего кабинета
+ * клиники» на первой же из них. Порядок барьеров в маршрутах — сначала кабинет,
+ * потом разбор тела, поэтому до текста отказа запрос не доходил НИКОГДА: ни одна
+ * из двенадцати формулировок для администратора клиники не проверялась.
+ *
+ * Токен подписывается ТЕМ ЖЕ секретом, что и в бою (`authTokenSecret`), поэтому
+ * гейт остаётся настоящим. Организация синтетическая осознанно: все двенадцать
+ * тел заведомо невалидны, разбор падает ДО первого обращения к базе, поэтому
+ * существование клиники в базе на предмет проверки не влияет — а сценарий
+ * остаётся независимым от содержимого общей базы.
+ */
+const clinicToken = signToken(
+	{ organizationId: "00000000-0000-4000-8000-0000000000c0" },
+	authTokenSecret(),
+);
+
 const clinicalHeaders = {
 	"x-dente-admin-secret": "synthetic-clinical-secret",
+	"x-dente-clinic-token": clinicToken,
 	"content-type": "application/json",
 };
 const scheduleHeaders = {
 	"x-dente-admin-secret": "synthetic-schedule-secret",
+	"x-dente-clinic-token": clinicToken,
 	"content-type": "application/json",
 };
 
