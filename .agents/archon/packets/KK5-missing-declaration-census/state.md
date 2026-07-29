@@ -1,0 +1,2 @@
+START: перепись «в базе есть, в объявлениях Drizzle нет» — новый страж scripts/smoke-schema-missing-declarations.mjs
+COMMITTED: 920b19524 — scripts/smoke-schema-missing-declarations.mjs, страж «в базе есть, в Drizzle нет»: 19 таблиц + 134 колонки в реестре с причиной, падает на скрытом объявлении (exit 1)
