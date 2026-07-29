@@ -120,13 +120,98 @@ function contractRiskLevels(): string[] {
 	return levels;
 }
 
+/**
+ * Тело каждого переключателя, который ветвится по уровню риска.
+ *
+ * Скобки считаются вручную, а не выбираются выражением: `[^}]*` оборвал бы тело
+ * на первом вложенном объекте стилей, а «до конца файла» записал бы в
+ * переключатель по риску все `case` посторонних переключателей и красил бы
+ * стража красным на верном коде. Сторож, краснеющий на верном коде, учит себя
+ * выключать — то же правило, что и у вырезания комментариев выше.
+ */
+function switchOnRiskLevelBodies(source: string): string[] {
+	const bodies: string[] = [];
+	const header = /switch\s*\(([^)]*riskLevel[^)]*)\)\s*\{/g;
+	for (let match = header.exec(source); match; match = header.exec(source)) {
+		const opensAt = match.index + match[0].length - 1;
+		let depth = 0;
+		let closesAt = opensAt;
+		for (; closesAt < source.length; closesAt += 1) {
+			if (source[closesAt] === "{") depth += 1;
+			else if (source[closesAt] === "}") {
+				depth -= 1;
+				if (depth === 0) break;
+			}
+		}
+		bodies.push(source.slice(opensAt, closesAt));
+	}
+	return bodies;
+}
+
+/**
+ * Все строки, с которыми в файле сверяется уровень риска.
+ *
+ * ПОЧЕМУ НЕ ОДНО `===`. Прежняя проверка искала только `riskLevel === "…"`, и это
+ * оставляло ту же дыру в четырёх видах записи. Проверено запуском: мимо неё
+ * проходили `riskLevel == "medium"`, `riskLevel !== "medium"`,
+ * `"medium" === riskLevel` и `switch (insight.riskLevel) { case "medium": }` —
+ * все четыре. Дефект был не в операторе, а в том, что сравнение с посторонней
+ * строкой никто не замечал; страж, закрывающий одну запись из пяти, повторял бы
+ * ровно эту ошибку.
+ */
+function comparedRiskValues(source: string): string[] {
+	const values: string[] = [];
+	const comparisons: readonly RegExp[] = [
+		/riskLevel\s*(?:===|!==|==|!=)\s*"([^"]+)"/g,
+		/"([^"]+)"\s*(?:===|!==|==|!=)\s*[\w.?\[\]]*riskLevel/g
+	];
+	for (const pattern of comparisons) {
+		for (const match of source.matchAll(pattern)) {
+			if (match[1]) values.push(match[1]);
+		}
+	}
+	for (const body of switchOnRiskLevelBodies(source)) {
+		for (const match of body.matchAll(/case\s+"([^"]+)"/g)) {
+			if (match[1]) values.push(match[1]);
+		}
+	}
+	return values;
+}
+
+/*
+ * САМОПРОВЕРКА СБОРА СРАВНЕНИЙ. Без неё «посторонних значений не найдено»
+ * означало бы в том числе «сравнений не разобрано ни одного вида».
+ */
+test("сравнения уровня риска собираются во всех видах записи, а не только через ===", () => {
+	const forms: ReadonlyArray<readonly [string, string]> = [
+		['activePatientInsight.riskLevel === "medium"', "строгое равенство"],
+		['activePatientInsight.riskLevel == "medium"', "нестрогое равенство"],
+		['activePatientInsight.riskLevel !== "medium"', "строгое неравенство"],
+		['activePatientInsight.riskLevel != "medium"', "нестрогое неравенство"],
+		['"medium" === activePatientInsight.riskLevel', "сравнение в обратном порядке"],
+		['switch (activePatientInsight.riskLevel) {\n\tcase "medium":\n\t\tbreak;\n}', "переключатель по уровню"]
+	];
+	for (const [snippet, form] of forms) {
+		assert.deepEqual(comparedRiskValues(snippet), ["medium"], `${form}: сравнение не собрано, дефект пройдёт мимо стража`);
+	}
+
+	assert.deepEqual(
+		comparedRiskValues('switch (appointment.status) {\n\tcase "planned":\n\t\tbreak;\n}'),
+		[],
+		"переключатель по чужому полю принят за сравнение уровня риска"
+	);
+	assert.deepEqual(
+		comparedRiskValues('switch (insight.riskLevel) {\n\tcase "watch": {\n\t\tconst s = { a: 1 };\n\t\tbreak;\n\t}\n}\nswitch (app.status) {\n\tcase "planned":\n\t\tbreak;\n}'),
+		["watch"],
+		"тело переключателя разобрано неверно: вложенные скобки или чужой переключатель"
+	);
+});
+
 test("сравнения уровня риска ссылаются только на значения контракта", () => {
 	// Здесь и жил дефект: сравнение с «medium» при перечислении low | watch | high.
 	const levels = contractRiskLevels();
 	const source = stripComments(readWeb(SHIFT_VIEW));
-	const compared = [...source.matchAll(/riskLevel\s*===\s*"([^"]+)"/g)]
-		.map((match) => match[1])
-		.filter((value): value is string => Boolean(value));
+	const compared = comparedRiskValues(source);
 	assert.ok(compared.length > 0, `${SHIFT_VIEW}: сравнений уровня риска не найдено — проверка ослепла`);
 	for (const value of compared) {
 		assert.ok(
