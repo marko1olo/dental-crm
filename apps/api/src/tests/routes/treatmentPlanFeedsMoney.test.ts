@@ -169,6 +169,32 @@ async function planItemCount(planId: string): Promise<number> {
 	return result.rows[0]?.n ?? 0;
 }
 
+/**
+ * Сколько позиций сметы легло БЕЗ принадлежности клинике.
+ *
+ * ЗАЧЕМ ЭТО ОТДЕЛЬНОЕ ЧИСЛО. Вставка позиций не задавала `organizationId`, хотя он
+ * лежал в области видимости строкой выше — строкой плана. Колонка нуллябельна и в
+ * базе, и в объявлении, поэтому база молчала, а позиции подписываемой сметы
+ * ложились без владельца.
+ *
+ * Строка без организации не принадлежит никому: запрос с отбором по клинике её не
+ * видит, а запрос без отбора видит её у ВСЕХ клиник. Ровно из этого класса выросла
+ * межклиничная утечка приёмов (`f18a261bb`), где чужой пациент был виден в
+ * расписании. Здесь речь о документе, под которым пациент ставит подпись.
+ *
+ * Проверяется числом, а не наличием: «ни одной сироты» и «принадлежит нужной
+ * клинике» — разные утверждения, и второе без первого проходит на пустой выборке.
+ */
+async function planItemOwnership(planId: string): Promise<{ total: number; orphans: number; mine: number }> {
+	const result = await db.execute<{ total: number; orphans: number; mine: number }>(
+		sql`select count(*)::int as total,
+		           count(*) filter (where organization_id is null)::int as orphans,
+		           count(*) filter (where organization_id = ${ORGANIZATION_ID}::uuid)::int as mine
+		      from treatment_plan_items_new where plan_id = ${planId}::uuid`,
+	);
+	return result.rows[0] ?? { total: 0, orphans: 0, mine: 0 };
+}
+
 function planItem(overrides: Record<string, unknown> = {}) {
 	return {
 		toothNumber: 36,
@@ -338,6 +364,17 @@ describe("сохранённый план лечения виден деньга
 			await planItemCount(planId),
 			2,
 			"позиции сметы-документа исчезли",
+		);
+
+		// И обязаны принадлежать КЛИНИКЕ, а не никому: строка без организации не
+		// видна запросу с отбором по клинике и видна запросу без отбора у всех.
+		const ownership = await planItemOwnership(planId);
+		assert.deepEqual(
+			ownership,
+			{ total: 2, orphans: 0, mine: 2 },
+			`позиции сметы легли без принадлежности клинике: ${JSON.stringify(ownership)} — ` +
+				"строка без организации не принадлежит никому, и документ, под которым пациент ставит подпись, " +
+				"становится виден чужой клинике при запросе без отбора",
 		);
 
 		const money = await moneyForPatient(PATIENT_MONEY);
