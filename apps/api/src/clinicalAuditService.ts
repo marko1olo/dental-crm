@@ -74,14 +74,25 @@ export async function auditFromRequest(
 	await writeClinicalAuditLog({ ...payload, ipAddress: ip, userAgent: ua });
 }
 
-/**
- * Tenant isolation assertion — call this wherever you need to verify
- * that a resource's organizationId matches the session's organizationId.
- * Returns true if OK, false if mismatch (caller should send 403 and log ACCESS_DENIED).
+/*
+ * ЗДЕСЬ СТОЯЛА `assertTenantMatch`, И ОНА УДАЛЕНА.
+ *
+ * Её комментарий приглашал ей пользоваться — «call this wherever you need to
+ * verify that a resource's organizationId matches the session's organizationId»,
+ * с указанием отвечать 403 и писать ACCESS_DENIED. Не вызывал её никто:
+ * единственным вхождением имени во всём дереве было само объявление.
+ *
+ * ДЫРОЙ ОНА НЕ БЫЛА, и это надо сказать прямо. Она не барьер: чистое сравнение
+ * двух строк, возвращающее boolean, без отказа и без записи в журнал. Изоляцию
+ * клиник держат подписанный токен (`security/identity.ts`) и фильтр
+ * `organization_id` в самих запросах, и это измеряет сквозной сценарий
+ * `tests/security/crossTenantReconProof.ts`.
+ *
+ * УДАЛЕНА ЗА ФОРМУ. Форма «объявлен, снабжён инструкцией по применению и не
+ * вызван» — ровно та, в которой в этом дереве стояла настоящая дыра в расписании
+ * (`requireScheduleMutationAccess`, закрыто 1f4614ea2). Пока такое имя лежит в
+ * файле аудита, инженер, проверяющий «сверяется ли клиника ресурса», находит его
+ * поиском и получает ложное спокойствие — а вместе с ним соблазн считать, что
+ * межклиничная проверка где-то уже есть. Именно так дыра в расписании и простояла:
+ * охрана была видна и не работала.
  */
-export function assertTenantMatch(
-	resourceOrgId: string,
-	sessionOrgId: string,
-): boolean {
-	return resourceOrgId === sessionOrgId;
-}

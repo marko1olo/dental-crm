@@ -61,19 +61,35 @@ interface SetupInitBody {
   ownerPin?: string;
 }
 
-// Middleware to verify clinic token on protected requests
-export async function requireClinicToken(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const header = request.headers["x-dente-clinic-token"];
-  const token = Array.isArray(header) ? header[0] : header;
-  if (!token) {
-    return void reply.code(401).send({ error: "AuthRequired", message: "Необходима авторизация рабочего кабинета клиники." });
-  }
-  const payload = verifyToken(token, TOKEN_SECRET());
-  if (!payload || !payload.organizationId) {
-    return void reply.code(401).send({ error: "TokenExpired", message: "Сессия истекла. Войдите в кабинет заново." });
-  }
-  (request as any).clinicOrganizationId = payload.organizationId;
-}
+/*
+ * ЗДЕСЬ СТОЯЛА `requireClinicToken`, И ОНА УДАЛЕНА, А НЕ СШИТА.
+ *
+ * Она выглядела как общий middleware проверки токена кабинета — с текстами
+ * отказов 401 «Необходима авторизация рабочего кабинета клиники» и «Сессия
+ * истекла». Ни один маршрут её не вызывал: единственным вхождением имени в
+ * `apps/api/src` было само объявление, остальные упоминания — заметки о ней же.
+ * Ровно та форма, в которой в этом дереве уже стояла НАСТОЯЩАЯ дыра:
+ * `requireScheduleMutationAccess` была так же объявлена, снабжена отказами и не
+ * вызывалась, и любой с токеном кабинета писал в сетку приёмов мимо гейта
+ * администратора (закрыто 1f4614ea2).
+ *
+ * ПОЧЕМУ УДАЛЕНА, А НЕ ПОДКЛЮЧЕНА. Сшивать нечего: её единственным действием
+ * после проверки подписи была запись `request.clinicOrganizationId`, которую во
+ * всём дереве не читал НИКТО — ни один маршрут, ни один сервис (проверено
+ * поиском: одна запись, ноль чтений). Проверку подписи токена кабинета делает
+ * `security/identity.ts` (`getRequestIdentity` + `requireOrganizationId`) и делает
+ * строже: с кэшем разбора на объекте запроса, с меткой `verified` и с отказом
+ * непроверенной организации на запись.
+ *
+ * И ПОДКЛЮЧИТЬ ЕЁ ОБЩИМ MIDDLEWARE БЫЛО НЕЛЬЗЯ: она принимает только
+ * `x-dente-clinic-token`, поэтому на маршрутах отчётов и выплат, которые ходят по
+ * `x-dente-staff-token`, отвечала бы 401 на верных запросах.
+ *
+ * Цена бездействия была не нулевой: инженер, проверяющий «есть ли охрана токена
+ * кабинета», находил имя поиском и получал ложное спокойствие. Пустое место
+ * честнее мёртвой охраны — оно отправляет читателя в identity.ts, где проверка
+ * действительно живёт.
+ */
 
 export async function registerAuthRoutes(app: FastifyInstance) {
 
