@@ -1258,3 +1258,36 @@ clinic shown «цена не распознана, проверьте строк
 
 Also handed over: the untouched twin on the AI path (`analyzer.ts:~1003-1006` still collapses a
 model-returned descending pair, the exact shape removed from the deterministic path 460 lines above).
+
+## THE LEAD'S TWELFTH STALE BRIEF, AND THIS TIME THE CAUSE IS STRUCTURAL — SO THE FIX MUST BE TOO
+
+Packet HH2 reported «brief WAS stale — all three items» and refused to do the work. The lead verified it
+rather than relaying it, and HH2 is right on every count:
+
+- `riskLevel === "medium"` is GONE. `ShiftView.tsx:705/707` now compares `"high"` and `"watch"`, which are
+  the values the contract actually declares.
+- `PatientCockpitProps` is a real declared type at `:615`, not `any`.
+- The comments at `:604` and `:700` already describe the fix in the past tense.
+
+So the HH2 brief ordered three completed items, and its own commit message says it plainly: «наряд HH2
+повторял уже сделанную правку и увёл бы седьмого исполнителя в пустую работу». Instead of padding, it
+found a REAL gap and closed it (`aabad8225`): **the guard could not see a comparison written without
+`===`**, so the dead-branch protection had a hole the size of `!==`, `switch`, and every other form.
+
+**This is the system working as designed** — the law says «if your measurement contradicts the brief, YOUR
+MEASUREMENT WINS, say so loudly», and an agent used it to stop the lead from wasting a seventh implementer.
+
+### THE CAUSE, NAMED PRECISELY, BECAUSE APOLOGISING TWELVE TIMES IS NOT A FIX
+Every one of these twelve had the same shape: **the lead briefed from the REVIEW TEXT instead of
+re-measuring the file at dispatch time.** Reviews are written against the HEAD that existed when the
+reviewer ran, and this tree moves under everyone — eight fleet agents plus a second author committing
+continuously. A review is a measurement with a timestamp, exactly like a ledger entry.
+
+The lead HAS been verifying `git status --porcelain` on every target — that catches a DIRTY file, which is
+a collision risk. It does not catch a finding that was fixed and COMMITTED between the review and the
+dispatch, because the file is then perfectly clean and perfectly different.
+
+**Standing rule from here: a rework packet quotes the defect as it exists at dispatch HEAD, re-measured,
+or it does not get dispatched.** Cleanliness of the target and liveness of the finding are two different
+checks and the lead was only doing the first. Cheapest form: one grep per claimed item against HEAD
+immediately before writing the brief — the same grep the brief will tell the agent to run.
