@@ -1,4 +1,7 @@
 import { z } from "zod";
+export declare const moneyRubSchema: z.ZodEffects<z.ZodNumber, number, number>;
+export declare const positiveMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+export declare const nonNegativeMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
 export declare const patientStatusSchema: z.ZodEnum<["active", "archived"]>;
 export type PatientStatus = z.infer<typeof patientStatusSchema>;
 export declare const appointmentStatusSchema: z.ZodEnum<["planned", "confirmed", "arrived", "in_treatment", "completed", "cancelled", "no_show"]>;
@@ -315,6 +318,22 @@ export declare const imagingStudyKindSchema: z.ZodEnum<["periapical", "bitewing"
 export type ImagingStudyKind = z.infer<typeof imagingStudyKindSchema>;
 export declare const imagingSourceKindSchema: z.ZodEnum<["manual_upload", "dicom_file", "dicomweb", "pacs", "twain_wia", "sensor_bridge", "folder_watch"]>;
 export type ImagingSourceKind = z.infer<typeof imagingSourceKindSchema>;
+/**
+ * СОСТОЯНИЕ ПЕРЕДАЧИ ДОКУМЕНТА В ЕГИСЗ (таблица egisz_logs).
+ *
+ * Заглавная буква здесь — часть контракта, а не оформление. В базе это
+ * перечисление `egisz_status_enum` (apps/api/drizzle/0000_freezing_randall_flagg.sql,
+ * строка 26) ровно с такими значениями, и «sent» вместо «Sent» Postgres
+ * отклоняет при ВСТАВКЕ строки журнала — то есть в тот момент, когда передача
+ * медицинских данных в государственную систему уже произошла, а записать её не
+ * удалось. Пока этого контракта не было, набор проверяла только база, и опечатка
+ * в регистре проходила и типизацию, и все тесты.
+ *
+ * Тот же набор у панели apps/web/src/components/integrations/egiszAvailability.ts
+ * (строка 82 и TRANSMISSION_STATUSES на строке 203) — сверено, расхождений нет.
+ */
+export declare const egiszStatusSchema: z.ZodEnum<["Pending", "Sent", "Error", "Accepted"]>;
+export type EgiszStatus = z.infer<typeof egiszStatusSchema>;
 export declare const clinicModeSchema: z.ZodEnum<["solo_doctor", "one_chair", "small_clinic", "network_clinic"]>;
 export type ClinicMode = z.infer<typeof clinicModeSchema>;
 export declare const staffRoleSchema: z.ZodEnum<["owner", "doctor", "administrator", "assistant", "manager"]>;
@@ -4019,7 +4038,7 @@ export declare const serviceCatalogItemSchema: z.ZodObject<{
     aliases: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     category: z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>;
     specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
-    basePriceRub: z.ZodNumber;
+    basePriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     durationMinutes: z.ZodNumber;
     taxDeductible: z.ZodBoolean;
     active: z.ZodBoolean;
@@ -4095,8 +4114,8 @@ export declare const dentalPricelistItemSchema: z.ZodObject<{
     brand: z.ZodNullable<z.ZodString>;
     toothScope: z.ZodNullable<z.ZodString>;
     unit: z.ZodString;
-    priceRub: z.ZodNullable<z.ZodNumber>;
-    priceMaxRub: z.ZodNullable<z.ZodNumber>;
+    priceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+    priceMaxRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
     durationMinutes: z.ZodNullable<z.ZodNumber>;
     confidence: z.ZodNumber;
     warnings: z.ZodArray<z.ZodString, "many">;
@@ -4150,9 +4169,9 @@ export declare const dentalPricelistCategorySummarySchema: z.ZodObject<{
     specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
     count: z.ZodNumber;
     pricedCount: z.ZodNumber;
-    minPriceRub: z.ZodNullable<z.ZodNumber>;
-    maxPriceRub: z.ZodNullable<z.ZodNumber>;
-    averagePriceRub: z.ZodNullable<z.ZodNumber>;
+    minPriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+    maxPriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+    averagePriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
     materialKinds: z.ZodArray<z.ZodEnum<["composite", "glass_ionomer", "sealant", "ceramic", "zirconia", "lithium_disilicate", "metal_ceramic", "pmma", "metal", "titanium", "implant_system", "abutment", "bone_graft", "membrane", "aligner", "bracket", "fluoride", "whitening", "anesthetic", "imaging", "lab", "other", "unknown"]>, "many">;
     brands: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
@@ -4239,8 +4258,8 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         brand: z.ZodNullable<z.ZodString>;
         toothScope: z.ZodNullable<z.ZodString>;
         unit: z.ZodString;
-        priceRub: z.ZodNullable<z.ZodNumber>;
-        priceMaxRub: z.ZodNullable<z.ZodNumber>;
+        priceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+        priceMaxRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
         durationMinutes: z.ZodNullable<z.ZodNumber>;
         confidence: z.ZodNumber;
         warnings: z.ZodArray<z.ZodString, "many">;
@@ -4293,9 +4312,9 @@ export declare const dentalPricelistAnalysisResponseSchema: z.ZodObject<{
         specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
         count: z.ZodNumber;
         pricedCount: z.ZodNumber;
-        minPriceRub: z.ZodNullable<z.ZodNumber>;
-        maxPriceRub: z.ZodNullable<z.ZodNumber>;
-        averagePriceRub: z.ZodNullable<z.ZodNumber>;
+        minPriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+        maxPriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
+        averagePriceRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
         materialKinds: z.ZodArray<z.ZodEnum<["composite", "glass_ionomer", "sealant", "ceramic", "zirconia", "lithium_disilicate", "metal_ceramic", "pmma", "metal", "titanium", "implant_system", "abutment", "bone_graft", "membrane", "aligner", "bracket", "fluoride", "whitening", "anesthetic", "imaging", "lab", "other", "unknown"]>, "many">;
         brands: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
@@ -4451,8 +4470,8 @@ export declare const treatmentPlanItemSchema: z.ZodObject<{
     snapshotServiceCategory: z.ZodOptional<z.ZodNullable<z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>>>;
     toothCode: z.ZodNullable<z.ZodString>;
     quantity: z.ZodNumber;
-    unitPriceRub: z.ZodNumber;
-    discountRub: z.ZodNumber;
+    unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     status: z.ZodEnum<["proposed", "approved", "in_progress", "completed", "cancelled"]>;
     plannedDoctorUserId: z.ZodNullable<z.ZodString>;
     plannedChairId: z.ZodNullable<z.ZodString>;
@@ -4498,14 +4517,14 @@ export declare const treatmentPlanScenarioSchema: z.ZodObject<{
     title: z.ZodString;
     strategy: z.ZodEnum<["urgent", "standard", "optimal", "phased", "maintenance"]>;
     priority: z.ZodEnum<["budget", "balanced", "clinical"]>;
-    totalRub: z.ZodNumber;
+    totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     durationMonths: z.ZodNumber;
     visitCount: z.ZodNumber;
     includedServiceIds: z.ZodArray<z.ZodString, "many">;
     phases: z.ZodArray<z.ZodObject<{
         title: z.ZodString;
         window: z.ZodString;
-        amountRub: z.ZodNumber;
+        amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         focus: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         title: string;
@@ -5005,9 +5024,6 @@ export declare const fiscalReceiptDetailsSchema: z.ZodObject<{
     operationType?: "income" | "income_return" | null | undefined;
 }>;
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
-export declare const moneyRubSchema: z.ZodEffects<z.ZodNumber, number, number>;
-export declare const positiveMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
-export declare const nonNegativeMoneyRubSchema: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
 export declare const paymentSchema: z.ZodObject<{
     id: z.ZodString;
     organizationId: z.ZodString;
@@ -5115,15 +5131,15 @@ export declare const paymentSchema: z.ZodObject<{
 }>;
 export type Payment = z.infer<typeof paymentSchema>;
 export declare const billingSummarySchema: z.ZodObject<{
-    totalPlannedRub: z.ZodNumber;
-    totalDiscountRub: z.ZodNumber;
-    totalPaidRub: z.ZodNumber;
-    totalDueRub: z.ZodNumber;
-    taxDeductionEligibleRub: z.ZodNumber;
-    draftDocumentAmountRub: z.ZodNumber;
+    totalPlannedRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    totalDiscountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    totalDueRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    taxDeductionEligibleRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    draftDocumentAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     openTreatmentItems: z.ZodNumber;
     unpaidDocuments: z.ZodNumber;
-    insuranceCoverageRub: z.ZodOptional<z.ZodNumber>;
+    insuranceCoverageRub: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
 }, "strip", z.ZodTypeAny, {
     totalPlannedRub: number;
     totalDiscountRub: number;
@@ -7622,7 +7638,7 @@ export declare const patientSchema: z.ZodObject<{
         dataProcessingBasisNote?: string | null | undefined;
         orthodonticProgress?: string | null | undefined;
     }>>>;
-    balanceRub: z.ZodDefault<z.ZodNumber>;
+    balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
     createdAt: z.ZodString;
     updatedAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -7697,7 +7713,7 @@ export declare const patientInsightSchema: z.ZodObject<{
     riskReasons: z.ZodArray<z.ZodString, "many">;
     nextBestAction: z.ZodString;
     recallDueAt: z.ZodNullable<z.ZodString>;
-    balanceDueRub: z.ZodNumber;
+    balanceDueRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     openTasks: z.ZodNumber;
     missingDocumentKinds: z.ZodArray<z.ZodEnum<["paid_medical_services_contract", "completed_works_act", "tax_deduction_certificate", "informed_consent", "procedure_specific_consent_packet", "treatment_plan", "treatment_plan_acceptance", "anesthesia_consent_log", "prescription_medication_order", "personal_data_processing_consent", "minor_legal_representative_consent", "photo_video_consent", "medical_intervention_refusal", "treatment_cost_estimate", "payment_invoice", "payment_receipt", "installment_payment_schedule", "post_visit_recommendations", "outpatient_medical_card_025u", "medical_record_extract", "medical_record_copy_request", "medical_document_release_receipt", "xray_cbct_referral", "lab_work_order", "visit_attendance_certificate", "warranty_service_memo", "payment_refund_correction_request", "tax_deduction_application", "legacy_tax_deduction_certificate", "tax_deduction_registry", "patient_intake_questionnaire"]>, "many">;
     clinicalFlags: z.ZodArray<z.ZodString, "many">;
@@ -8217,7 +8233,7 @@ export declare const paidMedicalServicesContractPayloadSchema: z.ZodObject<{
     representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     plannedCareReason: z.ZodString;
     serviceScopeSummary: z.ZodString;
-    estimatedTotalRub: z.ZodNumber;
+    estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     paymentTerms: z.ZodString;
     priceChangeRules: z.ZodString;
     freeCareAvailabilityNotice: z.ZodString;
@@ -8285,8 +8301,8 @@ export declare const completedWorksActPayloadSchema: z.ZodObject<{
     servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
     doctorFullName: z.ZodString;
     acceptedServicesSummary: z.ZodString;
-    totalByActRub: z.ZodNumber;
-    paidRub: z.ZodNumber;
+    totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
     patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     linkedToSignedContract: z.ZodLiteral<true>;
@@ -8338,9 +8354,9 @@ export declare const treatmentCostEstimatePayloadSchema: z.ZodObject<{
         serviceName: z.ZodString;
         toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         quantity: z.ZodNumber;
-        unitPriceRub: z.ZodNumber;
-        discountRub: z.ZodNumber;
-        totalRub: z.ZodNumber;
+        unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     }, "strip", z.ZodTypeAny, {
         quantity: number;
         unitPriceRub: number;
@@ -8356,7 +8372,7 @@ export declare const treatmentCostEstimatePayloadSchema: z.ZodObject<{
         serviceName: string;
         toothOrArea?: string | null | undefined;
     }>, "many">;
-    totalAmountRub: z.ZodNumber;
+    totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
     priceChangeRules: z.ZodString;
     excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -8431,9 +8447,9 @@ export declare const paymentInvoicePayloadSchema: z.ZodObject<{
         serviceName: z.ZodString;
         toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         quantity: z.ZodNumber;
-        unitPriceRub: z.ZodNumber;
-        discountRub: z.ZodNumber;
-        totalRub: z.ZodNumber;
+        unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     }, "strip", z.ZodTypeAny, {
         quantity: number;
         unitPriceRub: number;
@@ -8449,7 +8465,7 @@ export declare const paymentInvoicePayloadSchema: z.ZodObject<{
         serviceName: string;
         toothOrArea?: string | null | undefined;
     }>, "many">;
-    totalAmountRub: z.ZodNumber;
+    totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     dueDate: z.ZodEffects<z.ZodString, string, string>;
     paymentTerms: z.ZodString;
     clinicBankDetails: z.ZodString;
@@ -8515,7 +8531,7 @@ export declare const paymentReceiptPayloadSchema: z.ZodEffects<z.ZodObject<{
     receiptNumber: z.ZodString;
     receiptDate: z.ZodEffects<z.ZodString, string, string>;
     selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-    totalPaidRub: z.ZodNumber;
+    totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     payerFullName: z.ZodString;
     taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
     payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -8605,13 +8621,13 @@ export declare const installmentPaymentSchedulePayloadSchema: z.ZodObject<{
     scheduleDate: z.ZodEffects<z.ZodString, string, string>;
     baseDocumentTitle: z.ZodString;
     payerFullName: z.ZodString;
-    totalAmountRub: z.ZodNumber;
-    prepaidAmountRub: z.ZodNumber;
-    remainingAmountRub: z.ZodNumber;
+    totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+    remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     installments: z.ZodArray<z.ZodObject<{
         label: z.ZodString;
         dueDate: z.ZodEffects<z.ZodString, string, string>;
-        amountRub: z.ZodNumber;
+        amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
     }, "strip", z.ZodTypeAny, {
         status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -9025,6 +9041,33 @@ export declare const clinicalToothRowsSchema: z.ZodArray<z.ZodObject<{
     implantOrProstheticNotes?: string | null | undefined;
     orthodonticNotes?: string | null | undefined;
 }>, "many">;
+/**
+ * Допустимые номера зубов по двухцифровой системе FDI (ISO 3950).
+ *
+ * ЗАЧЕМ ЭТО ПЕРЕЕХАЛО В ОБЩИЙ КОНТРАКТ. Набор и схема жили ТОЛЬКО на сервере, в
+ * `apps/api/src/routes/odontogram.ts`, поэтому клиент физически не мог соблюдать
+ * правило, которым сервер его проверяет. Следствие измерено ревизией: смета
+ * начала отправлять `toothNumber`, клиент фильтровал его лишь через
+ * `Number.isFinite`, и номер 19 — не существующий зуб — проходил проверку
+ * клиента, после чего сервер отклонял ВЕСЬ план лечения общим сообщением. Врач
+ * терял всю смету из-за одной опечатки в одной строке.
+ *
+ * Скопировать список на клиент было нельзя: скопированный список расходится, и
+ * в этом же проекте скопированное вручную объединение разделов уже разошлось и
+ * сломало сборку веба. Поэтому определение здесь одно, а обе стороны его
+ * ВЫВОДЯТ. Ошибиться теперь можно только в одном месте.
+ *
+ * Диапазон `min(11).max(99)`, стоявший здесь раньше, пропускал 19, 20, 29, 30,
+ * 39, 40, 49, 50, 56–60, 66–70, 76–80 и 86–99 — ни одно из этих чисел зубом не
+ * является. Опечатка «49» вместо «48» сохранялась, попадала в план лечения со
+ * стоимостью, но не показывалась в одонтограмме: врач видел строку без зуба.
+ */
+export declare const VALID_FDI_TOOTH_NUMBERS: ReadonlySet<number>;
+/** Текст отказа — один и тот же на сервере и на клиенте, чтобы врач не читал две разные формулировки. */
+export declare const FDI_TOOTH_NUMBER_MESSAGE = "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u0437\u0443\u0431\u0430. \u0421\u0438\u0441\u0442\u0435\u043C\u0430 FDI: 11\u201318, 21\u201328, 31\u201338, 41\u201348 (\u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u044B\u0435), 51\u201355, 61\u201365, 71\u201375, 81\u201385 (\u043C\u043E\u043B\u043E\u0447\u043D\u044B\u0435).";
+/** Проверка без zod — для фильтров на клиенте, где схема не нужна. */
+export declare function isValidFdiToothNumber(value: unknown): value is number;
+export declare const fdiToothNumberSchema: z.ZodEffects<z.ZodNumber, number, number>;
 export declare const prescriptionMedicationRowSchema: z.ZodObject<{
     medication: z.ZodString;
     dosage: z.ZodString;
@@ -10903,7 +10946,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         plannedServices: z.ZodString;
         plannedTiming: z.ZodString;
         clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
     }, "strip", z.ZodTypeAny, {
         stageName: string;
         plannedServices: string;
@@ -10917,7 +10960,7 @@ export declare const treatmentPlanPayloadSchema: z.ZodObject<{
         clinicalNotes?: string | null | undefined;
         estimatedAmountRub?: number | null | undefined;
     }>, "many">;
-    estimatedTotalRub: z.ZodNumber;
+    estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     alternatives: z.ZodArray<z.ZodString, "many">;
     risksAndLimitations: z.ZodArray<z.ZodString, "many">;
     prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -11051,7 +11094,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         stageName: z.ZodString;
         plannedServices: z.ZodString;
         plannedTiming: z.ZodString;
-        estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
     }, "strip", z.ZodTypeAny, {
         stageName: string;
         plannedServices: string;
@@ -11063,7 +11106,7 @@ export declare const treatmentPlanAcceptancePayloadSchema: z.ZodObject<{
         plannedTiming: string;
         estimatedAmountRub?: number | null | undefined;
     }>, "many">;
-    estimatedTotalRub: z.ZodNumber;
+    estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
     paymentTerms: z.ZodString;
     rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -11182,7 +11225,7 @@ export type VisitAttendanceCertificatePayload = z.infer<typeof visitAttendanceCe
 export declare const paymentRefundCorrectionPayloadSchema: z.ZodEffects<z.ZodObject<{
     action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
     selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-    amountRub: z.ZodNumber;
+    amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
     reason: z.ZodString;
     refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
     recipientFullName: z.ZodString;
@@ -11536,7 +11579,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         plannedCareReason: z.ZodString;
         serviceScopeSummary: z.ZodString;
-        estimatedTotalRub: z.ZodNumber;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         paymentTerms: z.ZodString;
         priceChangeRules: z.ZodString;
         freeCareAvailabilityNotice: z.ZodString;
@@ -11603,8 +11646,8 @@ export declare const documentPayloadSchema: z.ZodObject<{
         servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
         doctorFullName: z.ZodString;
         acceptedServicesSummary: z.ZodString;
-        totalByActRub: z.ZodNumber;
-        paidRub: z.ZodNumber;
+        totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
         patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         linkedToSignedContract: z.ZodLiteral<true>;
@@ -11655,9 +11698,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             serviceName: z.ZodString;
             toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             quantity: z.ZodNumber;
-            unitPriceRub: z.ZodNumber;
-            discountRub: z.ZodNumber;
-            totalRub: z.ZodNumber;
+            unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         }, "strip", z.ZodTypeAny, {
             quantity: number;
             unitPriceRub: number;
@@ -11673,7 +11716,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             serviceName: string;
             toothOrArea?: string | null | undefined;
         }>, "many">;
-        totalAmountRub: z.ZodNumber;
+        totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
         priceChangeRules: z.ZodString;
         excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -11747,9 +11790,9 @@ export declare const documentPayloadSchema: z.ZodObject<{
             serviceName: z.ZodString;
             toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             quantity: z.ZodNumber;
-            unitPriceRub: z.ZodNumber;
-            discountRub: z.ZodNumber;
-            totalRub: z.ZodNumber;
+            unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         }, "strip", z.ZodTypeAny, {
             quantity: number;
             unitPriceRub: number;
@@ -11765,7 +11808,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             serviceName: string;
             toothOrArea?: string | null | undefined;
         }>, "many">;
-        totalAmountRub: z.ZodNumber;
+        totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         dueDate: z.ZodEffects<z.ZodString, string, string>;
         paymentTerms: z.ZodString;
         clinicBankDetails: z.ZodString;
@@ -11830,7 +11873,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
         receiptNumber: z.ZodString;
         receiptDate: z.ZodEffects<z.ZodString, string, string>;
         selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-        totalPaidRub: z.ZodNumber;
+        totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         payerFullName: z.ZodString;
         taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
         payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -11917,13 +11960,13 @@ export declare const documentPayloadSchema: z.ZodObject<{
         scheduleDate: z.ZodEffects<z.ZodString, string, string>;
         baseDocumentTitle: z.ZodString;
         payerFullName: z.ZodString;
-        totalAmountRub: z.ZodNumber;
-        prepaidAmountRub: z.ZodNumber;
-        remainingAmountRub: z.ZodNumber;
+        totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         installments: z.ZodArray<z.ZodObject<{
             label: z.ZodString;
             dueDate: z.ZodEffects<z.ZodString, string, string>;
-            amountRub: z.ZodNumber;
+            amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
         }, "strip", z.ZodTypeAny, {
             status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -13803,7 +13846,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             plannedServices: z.ZodString;
             plannedTiming: z.ZodString;
             clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             stageName: string;
             plannedServices: string;
@@ -13817,7 +13860,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             clinicalNotes?: string | null | undefined;
             estimatedAmountRub?: number | null | undefined;
         }>, "many">;
-        estimatedTotalRub: z.ZodNumber;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         alternatives: z.ZodArray<z.ZodString, "many">;
         risksAndLimitations: z.ZodArray<z.ZodString, "many">;
         prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -13948,7 +13991,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             stageName: z.ZodString;
             plannedServices: z.ZodString;
             plannedTiming: z.ZodString;
-            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             stageName: string;
             plannedServices: string;
@@ -13960,7 +14003,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
             plannedTiming: string;
             estimatedAmountRub?: number | null | undefined;
         }>, "many">;
-        estimatedTotalRub: z.ZodNumber;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
         paymentTerms: z.ZodString;
         rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -14077,7 +14120,7 @@ export declare const documentPayloadSchema: z.ZodObject<{
     paymentRefundCorrection: z.ZodOptional<z.ZodEffects<z.ZodObject<{
         action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
         selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-        amountRub: z.ZodNumber;
+        amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         reason: z.ZodString;
         refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
         recipientFullName: z.ZodString;
@@ -16450,7 +16493,7 @@ export declare const taxXmlSourceSnapshotSchema: z.ZodObject<{
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
         }>>>;
-        balanceRub: z.ZodDefault<z.ZodNumber>;
+        balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -17008,7 +17051,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
     title: z.ZodString;
     status: z.ZodEnum<["draft", "issued", "voided"]>;
     issuedAt: z.ZodNullable<z.ZodString>;
-    totalAmountRub: z.ZodNullable<z.ZodNumber>;
+    totalAmountRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
     taxYear: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     taxPayerInn: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     taxPaymentSnapshot: z.ZodOptional<z.ZodNullable<z.ZodObject<{
@@ -17244,7 +17287,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             plannedCareReason: z.ZodString;
             serviceScopeSummary: z.ZodString;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             paymentTerms: z.ZodString;
             priceChangeRules: z.ZodString;
             freeCareAvailabilityNotice: z.ZodString;
@@ -17311,8 +17354,8 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
             doctorFullName: z.ZodString;
             acceptedServicesSummary: z.ZodString;
-            totalByActRub: z.ZodNumber;
-            paidRub: z.ZodNumber;
+            totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
             patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             linkedToSignedContract: z.ZodLiteral<true>;
@@ -17363,9 +17406,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -17381,7 +17424,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             priceChangeRules: z.ZodString;
             excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -17455,9 +17498,9 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -17473,7 +17516,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             dueDate: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             clinicBankDetails: z.ZodString;
@@ -17538,7 +17581,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             receiptNumber: z.ZodString;
             receiptDate: z.ZodEffects<z.ZodString, string, string>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            totalPaidRub: z.ZodNumber;
+            totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             payerFullName: z.ZodString;
             taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
             payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -17625,13 +17668,13 @@ export declare const generatedDocumentSchema: z.ZodObject<{
             scheduleDate: z.ZodEffects<z.ZodString, string, string>;
             baseDocumentTitle: z.ZodString;
             payerFullName: z.ZodString;
-            totalAmountRub: z.ZodNumber;
-            prepaidAmountRub: z.ZodNumber;
-            remainingAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             installments: z.ZodArray<z.ZodObject<{
                 label: z.ZodString;
                 dueDate: z.ZodEffects<z.ZodString, string, string>;
-                amountRub: z.ZodNumber;
+                amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
             }, "strip", z.ZodTypeAny, {
                 status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -19511,7 +19554,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
                 clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -19525,7 +19568,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 clinicalNotes?: string | null | undefined;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             alternatives: z.ZodArray<z.ZodString, "many">;
             risksAndLimitations: z.ZodArray<z.ZodString, "many">;
             prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -19656,7 +19699,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 stageName: z.ZodString;
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -19668,7 +19711,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 plannedTiming: string;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -19785,7 +19828,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
         paymentRefundCorrection: z.ZodOptional<z.ZodEffects<z.ZodObject<{
             action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            amountRub: z.ZodNumber;
+            amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             reason: z.ZodString;
             refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
             recipientFullName: z.ZodString;
@@ -21823,7 +21866,7 @@ export declare const generatedDocumentSchema: z.ZodObject<{
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
             }>>>;
-            balanceRub: z.ZodDefault<z.ZodNumber>;
+            balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -24396,7 +24439,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
     title: z.ZodString;
     status: z.ZodEnum<["draft", "issued", "voided"]>;
     issuedAt: z.ZodNullable<z.ZodString>;
-    totalAmountRub: z.ZodNullable<z.ZodNumber>;
+    totalAmountRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
     taxYear: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     taxPayerInn: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     taxPaymentSnapshot: z.ZodOptional<z.ZodNullable<z.ZodObject<{
@@ -24632,7 +24675,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             plannedCareReason: z.ZodString;
             serviceScopeSummary: z.ZodString;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             paymentTerms: z.ZodString;
             priceChangeRules: z.ZodString;
             freeCareAvailabilityNotice: z.ZodString;
@@ -24699,8 +24742,8 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
             doctorFullName: z.ZodString;
             acceptedServicesSummary: z.ZodString;
-            totalByActRub: z.ZodNumber;
-            paidRub: z.ZodNumber;
+            totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
             patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             linkedToSignedContract: z.ZodLiteral<true>;
@@ -24751,9 +24794,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -24769,7 +24812,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             priceChangeRules: z.ZodString;
             excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -24843,9 +24886,9 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -24861,7 +24904,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             dueDate: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             clinicBankDetails: z.ZodString;
@@ -24926,7 +24969,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             receiptNumber: z.ZodString;
             receiptDate: z.ZodEffects<z.ZodString, string, string>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            totalPaidRub: z.ZodNumber;
+            totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             payerFullName: z.ZodString;
             taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
             payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -25013,13 +25056,13 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
             scheduleDate: z.ZodEffects<z.ZodString, string, string>;
             baseDocumentTitle: z.ZodString;
             payerFullName: z.ZodString;
-            totalAmountRub: z.ZodNumber;
-            prepaidAmountRub: z.ZodNumber;
-            remainingAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             installments: z.ZodArray<z.ZodObject<{
                 label: z.ZodString;
                 dueDate: z.ZodEffects<z.ZodString, string, string>;
-                amountRub: z.ZodNumber;
+                amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
             }, "strip", z.ZodTypeAny, {
                 status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -26899,7 +26942,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
                 clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -26913,7 +26956,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 clinicalNotes?: string | null | undefined;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             alternatives: z.ZodArray<z.ZodString, "many">;
             risksAndLimitations: z.ZodArray<z.ZodString, "many">;
             prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -27044,7 +27087,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 stageName: z.ZodString;
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -27056,7 +27099,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 plannedTiming: string;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -27173,7 +27216,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
         paymentRefundCorrection: z.ZodOptional<z.ZodEffects<z.ZodObject<{
             action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            amountRub: z.ZodNumber;
+            amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             reason: z.ZodString;
             refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
             recipientFullName: z.ZodString;
@@ -29211,7 +29254,7 @@ export declare const publicGeneratedDocumentSchema: z.ZodObject<Omit<{
                 dataProcessingBasisNote?: string | null | undefined;
                 orthodonticProgress?: string | null | undefined;
             }>>>;
-            balanceRub: z.ZodDefault<z.ZodNumber>;
+            balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
             createdAt: z.ZodString;
             updatedAt: z.ZodString;
         }, "strip", z.ZodTypeAny, {
@@ -31501,7 +31544,7 @@ export declare const dashboardSchema: z.ZodObject<{
             dataProcessingBasisNote?: string | null | undefined;
             orthodonticProgress?: string | null | undefined;
         }>>>;
-        balanceRub: z.ZodDefault<z.ZodNumber>;
+        balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
         createdAt: z.ZodString;
         updatedAt: z.ZodString;
     }, "strip", z.ZodTypeAny, {
@@ -31573,7 +31616,7 @@ export declare const dashboardSchema: z.ZodObject<{
         riskReasons: z.ZodArray<z.ZodString, "many">;
         nextBestAction: z.ZodString;
         recallDueAt: z.ZodNullable<z.ZodString>;
-        balanceDueRub: z.ZodNumber;
+        balanceDueRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         openTasks: z.ZodNumber;
         missingDocumentKinds: z.ZodArray<z.ZodEnum<["paid_medical_services_contract", "completed_works_act", "tax_deduction_certificate", "informed_consent", "procedure_specific_consent_packet", "treatment_plan", "treatment_plan_acceptance", "anesthesia_consent_log", "prescription_medication_order", "personal_data_processing_consent", "minor_legal_representative_consent", "photo_video_consent", "medical_intervention_refusal", "treatment_cost_estimate", "payment_invoice", "payment_receipt", "installment_payment_schedule", "post_visit_recommendations", "outpatient_medical_card_025u", "medical_record_extract", "medical_record_copy_request", "medical_document_release_receipt", "xray_cbct_referral", "lab_work_order", "visit_attendance_certificate", "warranty_service_memo", "payment_refund_correction_request", "tax_deduction_application", "legacy_tax_deduction_certificate", "tax_deduction_registry", "patient_intake_questionnaire"]>, "many">;
         clinicalFlags: z.ZodArray<z.ZodString, "many">;
@@ -31762,7 +31805,7 @@ export declare const dashboardSchema: z.ZodObject<{
         appointmentId: string | null;
         section: "shift" | "visit" | "imaging" | "documents" | "patients" | "schedule" | "finance" | "communications" | "settings";
     }>, "many">;
-    activeVisit: z.ZodObject<{
+    activeVisit: z.ZodNullable<z.ZodObject<{
         id: z.ZodString;
         organizationId: z.ZodString;
         patientId: z.ZodString;
@@ -31807,7 +31850,7 @@ export declare const dashboardSchema: z.ZodObject<{
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
-    }>;
+    }>>;
     visitCloseChecklist: z.ZodObject<{
         visitId: z.ZodString;
         readyToSign: z.ZodBoolean;
@@ -31889,7 +31932,7 @@ export declare const dashboardSchema: z.ZodObject<{
         title: z.ZodString;
         status: z.ZodEnum<["draft", "issued", "voided"]>;
         issuedAt: z.ZodNullable<z.ZodString>;
-        totalAmountRub: z.ZodNullable<z.ZodNumber>;
+        totalAmountRub: z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
         taxYear: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         taxPayerInn: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         taxPaymentSnapshot: z.ZodOptional<z.ZodNullable<z.ZodObject<{
@@ -32125,7 +32168,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 plannedCareReason: z.ZodString;
                 serviceScopeSummary: z.ZodString;
-                estimatedTotalRub: z.ZodNumber;
+                estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 paymentTerms: z.ZodString;
                 priceChangeRules: z.ZodString;
                 freeCareAvailabilityNotice: z.ZodString;
@@ -32192,8 +32235,8 @@ export declare const dashboardSchema: z.ZodObject<{
                 servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
                 doctorFullName: z.ZodString;
                 acceptedServicesSummary: z.ZodString;
-                totalByActRub: z.ZodNumber;
-                paidRub: z.ZodNumber;
+                totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
                 patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 linkedToSignedContract: z.ZodLiteral<true>;
@@ -32244,9 +32287,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     serviceName: z.ZodString;
                     toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     quantity: z.ZodNumber;
-                    unitPriceRub: z.ZodNumber;
-                    discountRub: z.ZodNumber;
-                    totalRub: z.ZodNumber;
+                    unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                    discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                    totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 }, "strip", z.ZodTypeAny, {
                     quantity: number;
                     unitPriceRub: number;
@@ -32262,7 +32305,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     serviceName: string;
                     toothOrArea?: string | null | undefined;
                 }>, "many">;
-                totalAmountRub: z.ZodNumber;
+                totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
                 priceChangeRules: z.ZodString;
                 excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -32336,9 +32379,9 @@ export declare const dashboardSchema: z.ZodObject<{
                     serviceName: z.ZodString;
                     toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                     quantity: z.ZodNumber;
-                    unitPriceRub: z.ZodNumber;
-                    discountRub: z.ZodNumber;
-                    totalRub: z.ZodNumber;
+                    unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                    discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                    totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 }, "strip", z.ZodTypeAny, {
                     quantity: number;
                     unitPriceRub: number;
@@ -32354,7 +32397,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     serviceName: string;
                     toothOrArea?: string | null | undefined;
                 }>, "many">;
-                totalAmountRub: z.ZodNumber;
+                totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 dueDate: z.ZodEffects<z.ZodString, string, string>;
                 paymentTerms: z.ZodString;
                 clinicBankDetails: z.ZodString;
@@ -32419,7 +32462,7 @@ export declare const dashboardSchema: z.ZodObject<{
                 receiptNumber: z.ZodString;
                 receiptDate: z.ZodEffects<z.ZodString, string, string>;
                 selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-                totalPaidRub: z.ZodNumber;
+                totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 payerFullName: z.ZodString;
                 taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
                 payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -32506,13 +32549,13 @@ export declare const dashboardSchema: z.ZodObject<{
                 scheduleDate: z.ZodEffects<z.ZodString, string, string>;
                 baseDocumentTitle: z.ZodString;
                 payerFullName: z.ZodString;
-                totalAmountRub: z.ZodNumber;
-                prepaidAmountRub: z.ZodNumber;
-                remainingAmountRub: z.ZodNumber;
+                totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 installments: z.ZodArray<z.ZodObject<{
                     label: z.ZodString;
                     dueDate: z.ZodEffects<z.ZodString, string, string>;
-                    amountRub: z.ZodNumber;
+                    amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                     status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
                 }, "strip", z.ZodTypeAny, {
                     status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -34392,7 +34435,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     plannedServices: z.ZodString;
                     plannedTiming: z.ZodString;
                     clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                    estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                    estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
                 }, "strip", z.ZodTypeAny, {
                     stageName: string;
                     plannedServices: string;
@@ -34406,7 +34449,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     clinicalNotes?: string | null | undefined;
                     estimatedAmountRub?: number | null | undefined;
                 }>, "many">;
-                estimatedTotalRub: z.ZodNumber;
+                estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 alternatives: z.ZodArray<z.ZodString, "many">;
                 risksAndLimitations: z.ZodArray<z.ZodString, "many">;
                 prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -34537,7 +34580,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     stageName: z.ZodString;
                     plannedServices: z.ZodString;
                     plannedTiming: z.ZodString;
-                    estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                    estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
                 }, "strip", z.ZodTypeAny, {
                     stageName: string;
                     plannedServices: string;
@@ -34549,7 +34592,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     plannedTiming: string;
                     estimatedAmountRub?: number | null | undefined;
                 }>, "many">;
-                estimatedTotalRub: z.ZodNumber;
+                estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
                 paymentTerms: z.ZodString;
                 rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -34666,7 +34709,7 @@ export declare const dashboardSchema: z.ZodObject<{
             paymentRefundCorrection: z.ZodOptional<z.ZodEffects<z.ZodObject<{
                 action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
                 selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-                amountRub: z.ZodNumber;
+                amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 reason: z.ZodString;
                 refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
                 recipientFullName: z.ZodString;
@@ -36704,7 +36747,7 @@ export declare const dashboardSchema: z.ZodObject<{
                     dataProcessingBasisNote?: string | null | undefined;
                     orthodonticProgress?: string | null | undefined;
                 }>>>;
-                balanceRub: z.ZodDefault<z.ZodNumber>;
+                balanceRub: z.ZodDefault<z.ZodEffects<z.ZodNumber, number, number>>;
                 createdAt: z.ZodString;
                 updatedAt: z.ZodString;
             }, "strip", z.ZodTypeAny, {
@@ -37598,7 +37641,7 @@ export declare const dashboardSchema: z.ZodObject<{
         aliases: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         category: z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>;
         specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
-        basePriceRub: z.ZodNumber;
+        basePriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         durationMinutes: z.ZodNumber;
         taxDeductible: z.ZodBoolean;
         active: z.ZodBoolean;
@@ -37637,8 +37680,8 @@ export declare const dashboardSchema: z.ZodObject<{
         snapshotServiceCategory: z.ZodOptional<z.ZodNullable<z.ZodEnum<["consultation", "therapy", "surgery", "prosthetics", "orthodontics", "periodontology", "hygiene", "imaging", "documents", "other"]>>>;
         toothCode: z.ZodNullable<z.ZodString>;
         quantity: z.ZodNumber;
-        unitPriceRub: z.ZodNumber;
-        discountRub: z.ZodNumber;
+        unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         status: z.ZodEnum<["proposed", "approved", "in_progress", "completed", "cancelled"]>;
         plannedDoctorUserId: z.ZodNullable<z.ZodString>;
         plannedChairId: z.ZodNullable<z.ZodString>;
@@ -37683,14 +37726,14 @@ export declare const dashboardSchema: z.ZodObject<{
         title: z.ZodString;
         strategy: z.ZodEnum<["urgent", "standard", "optimal", "phased", "maintenance"]>;
         priority: z.ZodEnum<["budget", "balanced", "clinical"]>;
-        totalRub: z.ZodNumber;
+        totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         durationMonths: z.ZodNumber;
         visitCount: z.ZodNumber;
         includedServiceIds: z.ZodArray<z.ZodString, "many">;
         phases: z.ZodArray<z.ZodObject<{
             title: z.ZodString;
             window: z.ZodString;
-            amountRub: z.ZodNumber;
+            amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             focus: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             title: string;
@@ -37985,15 +38028,15 @@ export declare const dashboardSchema: z.ZodObject<{
         taxDeductionCode?: "1" | "2" | null | undefined;
     }>, "many">;
     billingSummary: z.ZodObject<{
-        totalPlannedRub: z.ZodNumber;
-        totalDiscountRub: z.ZodNumber;
-        totalPaidRub: z.ZodNumber;
-        totalDueRub: z.ZodNumber;
-        taxDeductionEligibleRub: z.ZodNumber;
-        draftDocumentAmountRub: z.ZodNumber;
+        totalPlannedRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        totalDiscountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        totalDueRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        taxDeductionEligibleRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        draftDocumentAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         openTreatmentItems: z.ZodNumber;
         unpaidDocuments: z.ZodNumber;
-        insuranceCoverageRub: z.ZodOptional<z.ZodNumber>;
+        insuranceCoverageRub: z.ZodOptional<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>;
     }, "strip", z.ZodTypeAny, {
         totalPlannedRub: number;
         totalDiscountRub: number;
@@ -38686,7 +38729,7 @@ export declare const dashboardSchema: z.ZodObject<{
         diagnosis: string | null;
         treatmentPlan: string | null;
         doctorSummary: string | null;
-    };
+    } | null;
     visitCloseChecklist: {
         visitId: string;
         nextAction: string;
@@ -39349,7 +39392,7 @@ export declare const dashboardSchema: z.ZodObject<{
         treatmentPlan: string | null;
         doctorSummary: string | null;
         revision?: number | undefined;
-    };
+    } | null;
     visitCloseChecklist: {
         visitId: string;
         nextAction: string;
@@ -40059,6 +40102,144 @@ export declare const updateStaffWorkingHoursSchema: z.ZodObject<{
     }[];
 }>;
 export type UpdateStaffWorkingHoursInput = z.infer<typeof updateStaffWorkingHoursSchema>;
+export declare const staffAuthorityFlagsSchema: z.ZodObject<{
+    canSignMedicalRecords: z.ZodBoolean;
+    canManageMoney: z.ZodBoolean;
+    canManageImports: z.ZodBoolean;
+}, "strip", z.ZodTypeAny, {
+    canSignMedicalRecords: boolean;
+    canManageMoney: boolean;
+    canManageImports: boolean;
+}, {
+    canSignMedicalRecords: boolean;
+    canManageMoney: boolean;
+    canManageImports: boolean;
+}>;
+export type StaffAuthorityFlagsDto = z.infer<typeof staffAuthorityFlagsSchema>;
+/** Ключи полномочий одним списком: по нему маршрут перечисляет отклонённые поля. */
+export declare const staffAuthorityFlagKeys: readonly ["canSignMedicalRecords", "canManageMoney", "canManageImports"];
+export type StaffAuthorityFlagKey = (typeof staffAuthorityFlagKeys)[number];
+/**
+ * Тело запроса на выдачу полномочий. Все три поля необязательны: интерфейс
+ * правит один переключатель, а не весь набор, и присланное «ничего не менять» не
+ * должно превращаться в три надбавки. Пустое тело маршрут отвергает 400-м, как
+ * и остальные частичные правки настроек (`updateStaffMemberProfileSchema`), —
+ * ответить 200 на запрос, который ничего не изменил, значит соврать оператору.
+ */
+export declare const updateStaffAuthorityGrantsSchema: z.ZodObject<{
+    canSignMedicalRecords: z.ZodOptional<z.ZodBoolean>;
+    canManageMoney: z.ZodOptional<z.ZodBoolean>;
+    canManageImports: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    canSignMedicalRecords?: boolean | undefined;
+    canManageMoney?: boolean | undefined;
+    canManageImports?: boolean | undefined;
+}, {
+    canSignMedicalRecords?: boolean | undefined;
+    canManageMoney?: boolean | undefined;
+    canManageImports?: boolean | undefined;
+}>;
+export type UpdateStaffAuthorityGrantsInput = z.infer<typeof updateStaffAuthorityGrantsSchema>;
+/**
+ * Ответ маршрута: три набора, а не один.
+ *
+ * `roleDerived` — что даёт роль (матрица ROLE_PERMISSIONS на сервере),
+ * `grants` — что лежит в колонках `users`, `effective` — «роль ИЛИ надбавка».
+ * Разведены намеренно: по одному итоговому значению интерфейс не смог бы
+ * показать, откуда взялось полномочие, и снятая галочка у врача выглядела бы
+ * потерянной правкой вместо «это даёт роль врача».
+ *
+ * ДОЛГ, о котором обязан знать читатель этого ответа: сводка клиники
+ * (`GET /api/settings/clinic`) и гидратация (`db/domainStateHydration.ts`)
+ * сейчас отдают именно `roleDerived` и колонок не читают. Пока чтение не
+ * переведено на `effective`, надбавка — это записанное решение клиники, а не
+ * действующий доступ: маршруты по-прежнему судит `requirePermission` по роли.
+ *
+ * `role` — строка, а НЕ `staffRoleSchema`: в живой базе роль лежит сырой, а
+ * матрица прав знает легаси-написание `admin`, которого в `staffRoleSchema` нет
+ * (см. `security/permissions.ts`, ASSIGNABLE_ROLES). Разбор такой строки
+ * перечислением уронил бы ответ на 500 у клиники со старой записью сотрудника.
+ */
+export declare const staffAuthorityStateSchema: z.ZodObject<{
+    staffId: z.ZodString;
+    role: z.ZodString;
+    roleDerived: z.ZodObject<{
+        canSignMedicalRecords: z.ZodBoolean;
+        canManageMoney: z.ZodBoolean;
+        canManageImports: z.ZodBoolean;
+    }, "strip", z.ZodTypeAny, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }>;
+    grants: z.ZodObject<{
+        canSignMedicalRecords: z.ZodBoolean;
+        canManageMoney: z.ZodBoolean;
+        canManageImports: z.ZodBoolean;
+    }, "strip", z.ZodTypeAny, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }>;
+    effective: z.ZodObject<{
+        canSignMedicalRecords: z.ZodBoolean;
+        canManageMoney: z.ZodBoolean;
+        canManageImports: z.ZodBoolean;
+    }, "strip", z.ZodTypeAny, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }, {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    role: string;
+    staffId: string;
+    roleDerived: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+    grants: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+    effective: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+}, {
+    role: string;
+    staffId: string;
+    roleDerived: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+    grants: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+    effective: {
+        canSignMedicalRecords: boolean;
+        canManageMoney: boolean;
+        canManageImports: boolean;
+    };
+}>;
+export type StaffAuthorityState = z.infer<typeof staffAuthorityStateSchema>;
 export declare const updateChairWorkingHoursSchema: z.ZodObject<{
     workingHours: z.ZodArray<z.ZodEffects<z.ZodObject<{
         weekday: z.ZodNumber;
@@ -40171,7 +40352,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
     visitId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     kind: z.ZodEnum<["paid_medical_services_contract", "completed_works_act", "tax_deduction_certificate", "informed_consent", "procedure_specific_consent_packet", "treatment_plan", "treatment_plan_acceptance", "anesthesia_consent_log", "prescription_medication_order", "personal_data_processing_consent", "minor_legal_representative_consent", "photo_video_consent", "medical_intervention_refusal", "treatment_cost_estimate", "payment_invoice", "payment_receipt", "installment_payment_schedule", "post_visit_recommendations", "outpatient_medical_card_025u", "medical_record_extract", "medical_record_copy_request", "medical_document_release_receipt", "xray_cbct_referral", "lab_work_order", "visit_attendance_certificate", "warranty_service_memo", "payment_refund_correction_request", "tax_deduction_application", "legacy_tax_deduction_certificate", "tax_deduction_registry", "patient_intake_questionnaire"]>;
     title: z.ZodOptional<z.ZodString>;
-    totalAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    totalAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
     taxYear: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     taxPayerInn: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     payload: z.ZodOptional<z.ZodNullable<z.ZodObject<{
@@ -40221,7 +40402,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             representativeFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             plannedCareReason: z.ZodString;
             serviceScopeSummary: z.ZodString;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             paymentTerms: z.ZodString;
             priceChangeRules: z.ZodString;
             freeCareAvailabilityNotice: z.ZodString;
@@ -40288,8 +40469,8 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             servicePeriodEnd: z.ZodEffects<z.ZodString, string, string>;
             doctorFullName: z.ZodString;
             acceptedServicesSummary: z.ZodString;
-            totalByActRub: z.ZodNumber;
-            paidRub: z.ZodNumber;
+            totalByActRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            paidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             fiscalReceiptNumbers: z.ZodArray<z.ZodString, "many">;
             patientClaimsText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
             linkedToSignedContract: z.ZodLiteral<true>;
@@ -40340,9 +40521,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -40358,7 +40539,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             priceChangeRules: z.ZodString;
             excludedItems: z.ZodArray<z.ZodString, "many">;
@@ -40432,9 +40613,9 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 serviceName: z.ZodString;
                 toothOrArea: z.ZodOptional<z.ZodNullable<z.ZodString>>;
                 quantity: z.ZodNumber;
-                unitPriceRub: z.ZodNumber;
-                discountRub: z.ZodNumber;
-                totalRub: z.ZodNumber;
+                unitPriceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                discountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+                totalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             }, "strip", z.ZodTypeAny, {
                 quantity: number;
                 unitPriceRub: number;
@@ -40450,7 +40631,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 serviceName: string;
                 toothOrArea?: string | null | undefined;
             }>, "many">;
-            totalAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             dueDate: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             clinicBankDetails: z.ZodString;
@@ -40515,7 +40696,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             receiptNumber: z.ZodString;
             receiptDate: z.ZodEffects<z.ZodString, string, string>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            totalPaidRub: z.ZodNumber;
+            totalPaidRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             payerFullName: z.ZodString;
             taxSupportRequested: z.ZodDefault<z.ZodBoolean>;
             payerBirthDate: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>>;
@@ -40602,13 +40783,13 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
             scheduleDate: z.ZodEffects<z.ZodString, string, string>;
             baseDocumentTitle: z.ZodString;
             payerFullName: z.ZodString;
-            totalAmountRub: z.ZodNumber;
-            prepaidAmountRub: z.ZodNumber;
-            remainingAmountRub: z.ZodNumber;
+            totalAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            prepaidAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            remainingAmountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             installments: z.ZodArray<z.ZodObject<{
                 label: z.ZodString;
                 dueDate: z.ZodEffects<z.ZodString, string, string>;
-                amountRub: z.ZodNumber;
+                amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
                 status: z.ZodEnum<["planned", "paid", "overdue", "rescheduled", "cancelled"]>;
             }, "strip", z.ZodTypeAny, {
                 status: "planned" | "cancelled" | "paid" | "overdue" | "rescheduled";
@@ -42488,7 +42669,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
                 clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -42502,7 +42683,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 clinicalNotes?: string | null | undefined;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             alternatives: z.ZodArray<z.ZodString, "many">;
             risksAndLimitations: z.ZodArray<z.ZodString, "many">;
             prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -42633,7 +42814,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 stageName: z.ZodString;
                 plannedServices: z.ZodString;
                 plannedTiming: z.ZodString;
-                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
             }, "strip", z.ZodTypeAny, {
                 stageName: string;
                 plannedServices: string;
@@ -42645,7 +42826,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
                 plannedTiming: string;
                 estimatedAmountRub?: number | null | undefined;
             }>, "many">;
-            estimatedTotalRub: z.ZodNumber;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             estimateValidUntil: z.ZodEffects<z.ZodString, string, string>;
             paymentTerms: z.ZodString;
             rejectedAlternatives: z.ZodArray<z.ZodString, "many">;
@@ -42762,7 +42943,7 @@ export declare const createDocumentSchema: z.ZodEffects<z.ZodObject<{
         paymentRefundCorrection: z.ZodOptional<z.ZodEffects<z.ZodObject<{
             action: z.ZodEnum<["full_refund", "partial_refund", "payment_transfer", "receipt_correction", "payer_details_correction"]>;
             selectedPaymentIds: z.ZodArray<z.ZodString, "many">;
-            amountRub: z.ZodNumber;
+            amountRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
             reason: z.ZodString;
             refundMethod: z.ZodEnum<["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"]>;
             recipientFullName: z.ZodString;
@@ -91946,19 +92127,1041 @@ export declare const sharedBrowserImagingScanProgressSchema: z.ZodObject<{
 export type SharedBrowserImagingScanProgress = z.infer<typeof sharedBrowserImagingScanProgressSchema>;
 export declare const visitFlowStepStatusSchema: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
 export type VisitFlowStepStatus = z.infer<typeof visitFlowStepStatusSchema>;
-export declare const visitFlowStepResultSchema: z.ZodObject<{
+/**
+ * ВИД ШАГА РАЗБОРА ПРИЁМА — ОН ЖЕ РАЗЛИЧИТЕЛЬ ОБЪЕДИНЕНИЯ.
+ *
+ * БЫЛО: `visitFlowStepResultSchema.data = z.unknown().nullable()`, то есть у
+ * содержимого шага не было НИ ОДНОГО известного поля. Замерено компилятором на
+ * этом дереве: `step.data?.diagnosisSummary` даёт
+ * «TS2339: Property 'diagnosisSummary' does not exist on type '{}'», прямое
+ * чтение — «TS18046: 'step.data' is of type 'unknown'».
+ *
+ * ЧЕМ ЭТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Это панель «Ассистент обработки приема» — то,
+ * что врач читает после диктовки: диагноз ДЛЯ ПАЦИЕНТА, рекомендации после
+ * процедуры, список документов на подпись. Сервер эти поля отдаёт, экран их
+ * печатает, а контракт о них не знал — поэтому каждый потребитель приводил тип
+ * руками (`as any`), и опечатка в имени поля не ловилась ничем: приведение к
+ * полю, которого в данных нет, молча даёт `undefined`, блок с диагнозом
+ * пропадает из панели, и врач не видит, что разбор что-то сказал.
+ *
+ * Схемы шагов заново НЕ пишутся: `visitNoteDraftSchema`,
+ * `treatmentPlanPayloadSchema` и `postVisitRecommendationsPayloadSchema` уже
+ * описывают ровно то, что складывает `apps/api/src/ai/visitFlowOrchestrator.ts`.
+ */
+export declare const visitFlowStepKindSchema: z.ZodEnum<["draft", "plan", "recommendations", "documents"]>;
+export type VisitFlowStepKind = z.infer<typeof visitFlowStepKindSchema>;
+/**
+ * Документы на подпись, предложенные разбором.
+ *
+ * Здесь СТРОКИ, а не `documentKindSchema`, и это не лень. Оркестратор
+ * складывает `"procedure_specific_consent"`, а в перечислении видов документов
+ * такого члена нет — там `"procedure_specific_consent_packet"`. Объявить тут
+ * `documentKindSchema` значило бы, что контракт разошёлся с сервером в первый же
+ * день и разбор удаления зуба перестал бы проходить проверку. Расхождение имён
+ * названо здесь как долг, а не спрятано под удобный тип.
+ */
+export declare const visitFlowDocumentSuggestionsSchema: z.ZodObject<{
+    suggestions: z.ZodArray<z.ZodString, "many">;
+}, "strip", z.ZodTypeAny, {
+    suggestions: string[];
+}, {
+    suggestions: string[];
+}>;
+export type VisitFlowDocumentSuggestions = z.infer<typeof visitFlowDocumentSuggestionsSchema>;
+export declare const visitFlowDraftStepResultSchema: z.ZodObject<{
+    step: z.ZodLiteral<"draft">;
     status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
     message: z.ZodNullable<z.ZodString>;
-    data: z.ZodNullable<z.ZodUnknown>;
+    data: z.ZodNullable<z.ZodObject<{
+        complaint: z.ZodNullable<z.ZodString>;
+        anamnesis: z.ZodNullable<z.ZodString>;
+        objectiveStatus: z.ZodNullable<z.ZodString>;
+        diagnosis: z.ZodNullable<z.ZodString>;
+        treatmentPlan: z.ZodNullable<z.ZodString>;
+        quality: z.ZodOptional<z.ZodObject<{
+            level: z.ZodEnum<["ready", "review", "needs_more_dictation"]>;
+            confidence: z.ZodNumber;
+            specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
+            detectedToothCodes: z.ZodArray<z.ZodString, "many">;
+            detectedToothStates: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["idle", "watch", "planned", "done", "missing", "treatment"]>>>;
+            signals: z.ZodArray<z.ZodString, "many">;
+            missingCriticalFields: z.ZodArray<z.ZodString, "many">;
+            nextAction: z.ZodString;
+        }, "strip", z.ZodTypeAny, {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        }, {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        }>>;
+        warnings: z.ZodArray<z.ZodString, "many">;
+    }, "strip", z.ZodTypeAny, {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    }, {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    }>>;
 }, "strip", z.ZodTypeAny, {
     message: string | null;
     status: "pending" | "skipped" | "running" | "error" | "success";
-    data?: unknown;
+    step: "draft";
+    data: {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    } | null;
 }, {
     message: string | null;
     status: "pending" | "skipped" | "running" | "error" | "success";
-    data?: unknown;
+    step: "draft";
+    data: {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    } | null;
 }>;
+export type VisitFlowDraftStepResult = z.infer<typeof visitFlowDraftStepResultSchema>;
+export declare const visitFlowPlanStepResultSchema: z.ZodObject<{
+    step: z.ZodLiteral<"plan">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        clinicalReason: z.ZodString;
+        diagnosisSummary: z.ZodString;
+        teethOrArea: z.ZodString;
+        clinicalToothRows: z.ZodArray<z.ZodObject<{
+            toothOrArea: z.ZodString;
+            surfaces: z.ZodArray<z.ZodEnum<["occlusal", "mesial", "distal", "buccal", "lingual", "palatal", "incisal", "root", "implant_site", "not_applicable"]>, "many">;
+            status: z.ZodEnum<["sound", "watch", "caries", "pulpitis_periodontitis", "periodontal", "missing", "implant", "prosthetic", "orthodontic", "planned", "completed", "other"]>;
+            diagnosisOrFinding: z.ZodString;
+            indication: z.ZodString;
+            plannedAction: z.ZodString;
+            prognosis: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            periodontalStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, "strip", z.ZodTypeAny, {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }, {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }>, "many">;
+        treatmentGoals: z.ZodArray<z.ZodString, "many">;
+        plannedStages: z.ZodArray<z.ZodObject<{
+            stageName: z.ZodString;
+            plannedServices: z.ZodString;
+            plannedTiming: z.ZodString;
+            clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
+        }, "strip", z.ZodTypeAny, {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }, {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }>, "many">;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        alternatives: z.ZodArray<z.ZodString, "many">;
+        risksAndLimitations: z.ZodArray<z.ZodString, "many">;
+        prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        controlPlan: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        doctorFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        plannedAt: z.ZodEffects<z.ZodString, string, string>;
+        patientQuestionsAnswered: z.ZodLiteral<true>;
+        planRequiresSeparateConsent: z.ZodLiteral<true>;
+        planRequiresNewApprovalOnChange: z.ZodLiteral<true>;
+        patientFriendlyExplanation: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        patientHygieneAdvice: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        customHygieneTextOverride: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    }, {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "plan";
+    data: {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "plan";
+    data: {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    } | null;
+}>;
+export type VisitFlowPlanStepResult = z.infer<typeof visitFlowPlanStepResultSchema>;
+export declare const visitFlowRecommendationsStepResultSchema: z.ZodObject<{
+    step: z.ZodLiteral<"recommendations">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
+        procedureName: z.ZodString;
+        toothOrArea: z.ZodString;
+        performedAt: z.ZodEffects<z.ZodString, string, string>;
+        doctorFullName: z.ZodString;
+        allowedAfter: z.ZodArray<z.ZodString, "many">;
+        temporaryRestrictions: z.ZodArray<z.ZodString, "many">;
+        medicationAndRinsePlan: z.ZodArray<z.ZodString, "many">;
+        hygieneInstructions: z.ZodArray<z.ZodString, "many">;
+        nutritionInstructions: z.ZodArray<z.ZodString, "many">;
+        urgentWarningSigns: z.ZodArray<z.ZodString, "many">;
+        plannedFollowUpAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        clinicContactInstruction: z.ZodString;
+        telegramSummary: z.ZodString;
+        patientReceivedPrintedCopy: z.ZodLiteral<true>;
+        patientUnderstandsUrgentSigns: z.ZodLiteral<true>;
+        safeForTelegramSending: z.ZodLiteral<true>;
+    }, "strip", z.ZodTypeAny, {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    }, {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "recommendations";
+    data: {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "recommendations";
+    data: {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    } | null;
+}>;
+export type VisitFlowRecommendationsStepResult = z.infer<typeof visitFlowRecommendationsStepResultSchema>;
+export declare const visitFlowDocumentsStepResultSchema: z.ZodObject<{
+    step: z.ZodLiteral<"documents">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        suggestions: z.ZodArray<z.ZodString, "many">;
+    }, "strip", z.ZodTypeAny, {
+        suggestions: string[];
+    }, {
+        suggestions: string[];
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "documents";
+    data: {
+        suggestions: string[];
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "documents";
+    data: {
+        suggestions: string[];
+    } | null;
+}>;
+export type VisitFlowDocumentsStepResult = z.infer<typeof visitFlowDocumentsStepResultSchema>;
+/**
+ * Шаг разбора вообще — разделяемое объединение по виду шага.
+ *
+ * Нужно там, где шаги перебираются одним списком (панель рисует четыре точки
+ * подряд, `apps/web/src/components/visit/VisitFlowProgress.tsx`): `status` и
+ * `message` читаются без сужения, а `data` — только после проверки `step`.
+ * Поля `visitFlowResultSchema` объявлены КОНКРЕТНЫМИ вариантами, поэтому
+ * `result.plan.data.diagnosisSummary` читается напрямую, без приведения и без
+ * сужения.
+ *
+ * ЧЕГО ЗДЕСЬ СОЗНАТЕЛЬНО НЕТ: разбором этой схемы ответ `/api/ai/visit-flow` на
+ * клиенте не проверяется. `treatmentPlanPayloadSchema` описывает план, ГОТОВЫЙ К
+ * ПОДПИСАНИЮ, — у него `treatmentGoals`, `alternatives`, `risksAndLimitations` и
+ * `clinicalToothRows` объявлены `.min(1)`. Оркестратор в запасной ветке
+ * (`extractPlanPayload`) отдаёт их пустыми, потому что придумывать пациенту цели
+ * лечения и альтернативы, которых врач не называл, — это выдумка того же класса,
+ * что и выдуманный идентификатор приёма. Значит `safeParse` резал бы всю панель
+ * целиком ровно тогда, когда врач уже продиктовал приём. Объединение даёт
+ * компилятору ИМЕНА полей; проверка значений остаётся там, где план
+ * действительно подписывают.
+ */
+export declare const visitFlowStepResultSchema: z.ZodDiscriminatedUnion<"step", [z.ZodObject<{
+    step: z.ZodLiteral<"draft">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        complaint: z.ZodNullable<z.ZodString>;
+        anamnesis: z.ZodNullable<z.ZodString>;
+        objectiveStatus: z.ZodNullable<z.ZodString>;
+        diagnosis: z.ZodNullable<z.ZodString>;
+        treatmentPlan: z.ZodNullable<z.ZodString>;
+        quality: z.ZodOptional<z.ZodObject<{
+            level: z.ZodEnum<["ready", "review", "needs_more_dictation"]>;
+            confidence: z.ZodNumber;
+            specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
+            detectedToothCodes: z.ZodArray<z.ZodString, "many">;
+            detectedToothStates: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["idle", "watch", "planned", "done", "missing", "treatment"]>>>;
+            signals: z.ZodArray<z.ZodString, "many">;
+            missingCriticalFields: z.ZodArray<z.ZodString, "many">;
+            nextAction: z.ZodString;
+        }, "strip", z.ZodTypeAny, {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        }, {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        }>>;
+        warnings: z.ZodArray<z.ZodString, "many">;
+    }, "strip", z.ZodTypeAny, {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    }, {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "draft";
+    data: {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "draft";
+    data: {
+        warnings: string[];
+        complaint: string | null;
+        anamnesis: string | null;
+        objectiveStatus: string | null;
+        diagnosis: string | null;
+        treatmentPlan: string | null;
+        quality?: {
+            confidence: number;
+            specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+            level: "ready" | "review" | "needs_more_dictation";
+            signals: string[];
+            nextAction: string;
+            detectedToothCodes: string[];
+            missingCriticalFields: string[];
+            detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+        } | undefined;
+    } | null;
+}>, z.ZodObject<{
+    step: z.ZodLiteral<"plan">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        clinicalReason: z.ZodString;
+        diagnosisSummary: z.ZodString;
+        teethOrArea: z.ZodString;
+        clinicalToothRows: z.ZodArray<z.ZodObject<{
+            toothOrArea: z.ZodString;
+            surfaces: z.ZodArray<z.ZodEnum<["occlusal", "mesial", "distal", "buccal", "lingual", "palatal", "incisal", "root", "implant_site", "not_applicable"]>, "many">;
+            status: z.ZodEnum<["sound", "watch", "caries", "pulpitis_periodontitis", "periodontal", "missing", "implant", "prosthetic", "orthodontic", "planned", "completed", "other"]>;
+            diagnosisOrFinding: z.ZodString;
+            indication: z.ZodString;
+            plannedAction: z.ZodString;
+            prognosis: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            periodontalStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, "strip", z.ZodTypeAny, {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }, {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }>, "many">;
+        treatmentGoals: z.ZodArray<z.ZodString, "many">;
+        plannedStages: z.ZodArray<z.ZodObject<{
+            stageName: z.ZodString;
+            plannedServices: z.ZodString;
+            plannedTiming: z.ZodString;
+            clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
+        }, "strip", z.ZodTypeAny, {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }, {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }>, "many">;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+        alternatives: z.ZodArray<z.ZodString, "many">;
+        risksAndLimitations: z.ZodArray<z.ZodString, "many">;
+        prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        controlPlan: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        doctorFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        plannedAt: z.ZodEffects<z.ZodString, string, string>;
+        patientQuestionsAnswered: z.ZodLiteral<true>;
+        planRequiresSeparateConsent: z.ZodLiteral<true>;
+        planRequiresNewApprovalOnChange: z.ZodLiteral<true>;
+        patientFriendlyExplanation: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        patientHygieneAdvice: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        customHygieneTextOverride: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    }, {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "plan";
+    data: {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "plan";
+    data: {
+        estimatedTotalRub: number;
+        teethOrArea: string;
+        clinicalToothRows: {
+            status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+            toothOrArea: string;
+            surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+            diagnosisOrFinding: string;
+            indication: string;
+            plannedAction: string;
+            prognosis?: string | null | undefined;
+            periodontalStatus?: string | null | undefined;
+            implantOrProstheticNotes?: string | null | undefined;
+            orthodonticNotes?: string | null | undefined;
+        }[];
+        clinicalReason: string;
+        diagnosisSummary: string;
+        treatmentGoals: string[];
+        plannedStages: {
+            stageName: string;
+            plannedServices: string;
+            plannedTiming: string;
+            clinicalNotes?: string | null | undefined;
+            estimatedAmountRub?: number | null | undefined;
+        }[];
+        alternatives: string[];
+        risksAndLimitations: string[];
+        plannedAt: string;
+        patientQuestionsAnswered: true;
+        planRequiresSeparateConsent: true;
+        planRequiresNewApprovalOnChange: true;
+        doctorFullName?: string | null | undefined;
+        prognosisAndLimits?: string | null | undefined;
+        controlPlan?: string | null | undefined;
+        patientFriendlyExplanation?: string | null | undefined;
+        patientHygieneAdvice?: string | null | undefined;
+        customHygieneTextOverride?: string | null | undefined;
+    } | null;
+}>, z.ZodObject<{
+    step: z.ZodLiteral<"recommendations">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
+        procedureName: z.ZodString;
+        toothOrArea: z.ZodString;
+        performedAt: z.ZodEffects<z.ZodString, string, string>;
+        doctorFullName: z.ZodString;
+        allowedAfter: z.ZodArray<z.ZodString, "many">;
+        temporaryRestrictions: z.ZodArray<z.ZodString, "many">;
+        medicationAndRinsePlan: z.ZodArray<z.ZodString, "many">;
+        hygieneInstructions: z.ZodArray<z.ZodString, "many">;
+        nutritionInstructions: z.ZodArray<z.ZodString, "many">;
+        urgentWarningSigns: z.ZodArray<z.ZodString, "many">;
+        plannedFollowUpAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        clinicContactInstruction: z.ZodString;
+        telegramSummary: z.ZodString;
+        patientReceivedPrintedCopy: z.ZodLiteral<true>;
+        patientUnderstandsUrgentSigns: z.ZodLiteral<true>;
+        safeForTelegramSending: z.ZodLiteral<true>;
+    }, "strip", z.ZodTypeAny, {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    }, {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "recommendations";
+    data: {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "recommendations";
+    data: {
+        doctorFullName: string;
+        toothOrArea: string;
+        careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+        procedureName: string;
+        performedAt: string;
+        allowedAfter: string[];
+        temporaryRestrictions: string[];
+        medicationAndRinsePlan: string[];
+        hygieneInstructions: string[];
+        nutritionInstructions: string[];
+        urgentWarningSigns: string[];
+        clinicContactInstruction: string;
+        telegramSummary: string;
+        patientReceivedPrintedCopy: true;
+        patientUnderstandsUrgentSigns: true;
+        safeForTelegramSending: true;
+        plannedFollowUpAt?: string | null | undefined;
+    } | null;
+}>, z.ZodObject<{
+    step: z.ZodLiteral<"documents">;
+    status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
+    message: z.ZodNullable<z.ZodString>;
+    data: z.ZodNullable<z.ZodObject<{
+        suggestions: z.ZodArray<z.ZodString, "many">;
+    }, "strip", z.ZodTypeAny, {
+        suggestions: string[];
+    }, {
+        suggestions: string[];
+    }>>;
+}, "strip", z.ZodTypeAny, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "documents";
+    data: {
+        suggestions: string[];
+    } | null;
+}, {
+    message: string | null;
+    status: "pending" | "skipped" | "running" | "error" | "success";
+    step: "documents";
+    data: {
+        suggestions: string[];
+    } | null;
+}>]>;
 export type VisitFlowStepResult = z.infer<typeof visitFlowStepResultSchema>;
 export declare const visitFlowRequestSchema: z.ZodObject<{
     patientId: z.ZodOptional<z.ZodString>;
@@ -91970,7 +93173,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
         serviceId: z.ZodString;
         title: z.ZodString;
         quantity: z.ZodNumber;
-        priceRub: z.ZodNumber;
+        priceRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         toothCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         title: string;
@@ -92042,7 +93245,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             plannedServices: z.ZodString;
             plannedTiming: z.ZodString;
             clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+            estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
         }, "strip", z.ZodTypeAny, {
             stageName: string;
             plannedServices: string;
@@ -92056,7 +93259,7 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
             clinicalNotes?: string | null | undefined;
             estimatedAmountRub?: number | null | undefined;
         }>, "many">;
-        estimatedTotalRub: z.ZodNumber;
+        estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
         alternatives: z.ZodArray<z.ZodString, "many">;
         risksAndLimitations: z.ZodArray<z.ZodString, "many">;
         prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -92353,101 +93556,691 @@ export declare const visitFlowRequestSchema: z.ZodObject<{
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
 export declare const visitFlowResultSchema: z.ZodObject<{
     draft: z.ZodObject<{
+        step: z.ZodLiteral<"draft">;
         status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
         message: z.ZodNullable<z.ZodString>;
-        data: z.ZodNullable<z.ZodUnknown>;
+        data: z.ZodNullable<z.ZodObject<{
+            complaint: z.ZodNullable<z.ZodString>;
+            anamnesis: z.ZodNullable<z.ZodString>;
+            objectiveStatus: z.ZodNullable<z.ZodString>;
+            diagnosis: z.ZodNullable<z.ZodString>;
+            treatmentPlan: z.ZodNullable<z.ZodString>;
+            quality: z.ZodOptional<z.ZodObject<{
+                level: z.ZodEnum<["ready", "review", "needs_more_dictation"]>;
+                confidence: z.ZodNumber;
+                specialty: z.ZodEnum<["therapist", "orthopedist", "surgeon", "orthodontist", "periodontist", "hygienist", "pediatric", "implantologist", "radiologist", "universal"]>;
+                detectedToothCodes: z.ZodArray<z.ZodString, "many">;
+                detectedToothStates: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["idle", "watch", "planned", "done", "missing", "treatment"]>>>;
+                signals: z.ZodArray<z.ZodString, "many">;
+                missingCriticalFields: z.ZodArray<z.ZodString, "many">;
+                nextAction: z.ZodString;
+            }, "strip", z.ZodTypeAny, {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            }, {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            }>>;
+            warnings: z.ZodArray<z.ZodString, "many">;
+        }, "strip", z.ZodTypeAny, {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        }, {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        }>>;
     }, "strip", z.ZodTypeAny, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "draft";
+        data: {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        } | null;
     }, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "draft";
+        data: {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        } | null;
     }>;
     plan: z.ZodObject<{
+        step: z.ZodLiteral<"plan">;
         status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
         message: z.ZodNullable<z.ZodString>;
-        data: z.ZodNullable<z.ZodUnknown>;
+        data: z.ZodNullable<z.ZodObject<{
+            clinicalReason: z.ZodString;
+            diagnosisSummary: z.ZodString;
+            teethOrArea: z.ZodString;
+            clinicalToothRows: z.ZodArray<z.ZodObject<{
+                toothOrArea: z.ZodString;
+                surfaces: z.ZodArray<z.ZodEnum<["occlusal", "mesial", "distal", "buccal", "lingual", "palatal", "incisal", "root", "implant_site", "not_applicable"]>, "many">;
+                status: z.ZodEnum<["sound", "watch", "caries", "pulpitis_periodontitis", "periodontal", "missing", "implant", "prosthetic", "orthodontic", "planned", "completed", "other"]>;
+                diagnosisOrFinding: z.ZodString;
+                indication: z.ZodString;
+                plannedAction: z.ZodString;
+                prognosis: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+                periodontalStatus: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+                implantOrProstheticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+                orthodonticNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            }, "strip", z.ZodTypeAny, {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }, {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }>, "many">;
+            treatmentGoals: z.ZodArray<z.ZodString, "many">;
+            plannedStages: z.ZodArray<z.ZodObject<{
+                stageName: z.ZodString;
+                plannedServices: z.ZodString;
+                plannedTiming: z.ZodString;
+                clinicalNotes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+                estimatedAmountRub: z.ZodOptional<z.ZodNullable<z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>>>;
+            }, "strip", z.ZodTypeAny, {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }, {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }>, "many">;
+            estimatedTotalRub: z.ZodEffects<z.ZodEffects<z.ZodNumber, number, number>, number, number>;
+            alternatives: z.ZodArray<z.ZodString, "many">;
+            risksAndLimitations: z.ZodArray<z.ZodString, "many">;
+            prognosisAndLimits: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            controlPlan: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            doctorFullName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            plannedAt: z.ZodEffects<z.ZodString, string, string>;
+            patientQuestionsAnswered: z.ZodLiteral<true>;
+            planRequiresSeparateConsent: z.ZodLiteral<true>;
+            planRequiresNewApprovalOnChange: z.ZodLiteral<true>;
+            patientFriendlyExplanation: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            patientHygieneAdvice: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            customHygieneTextOverride: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        }, "strip", z.ZodTypeAny, {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        }, {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        }>>;
     }, "strip", z.ZodTypeAny, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "plan";
+        data: {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        } | null;
     }, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "plan";
+        data: {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        } | null;
     }>;
     recommendations: z.ZodObject<{
+        step: z.ZodLiteral<"recommendations">;
         status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
         message: z.ZodNullable<z.ZodString>;
-        data: z.ZodNullable<z.ZodUnknown>;
+        data: z.ZodNullable<z.ZodObject<{
+            careTopic: z.ZodEnum<["extraction", "implantation", "filling_restoration", "endo", "surgery", "local_anesthesia", "hygiene", "prosthetics", "orthodontics", "periodontology", "other"]>;
+            procedureName: z.ZodString;
+            toothOrArea: z.ZodString;
+            performedAt: z.ZodEffects<z.ZodString, string, string>;
+            doctorFullName: z.ZodString;
+            allowedAfter: z.ZodArray<z.ZodString, "many">;
+            temporaryRestrictions: z.ZodArray<z.ZodString, "many">;
+            medicationAndRinsePlan: z.ZodArray<z.ZodString, "many">;
+            hygieneInstructions: z.ZodArray<z.ZodString, "many">;
+            nutritionInstructions: z.ZodArray<z.ZodString, "many">;
+            urgentWarningSigns: z.ZodArray<z.ZodString, "many">;
+            plannedFollowUpAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            clinicContactInstruction: z.ZodString;
+            telegramSummary: z.ZodString;
+            patientReceivedPrintedCopy: z.ZodLiteral<true>;
+            patientUnderstandsUrgentSigns: z.ZodLiteral<true>;
+            safeForTelegramSending: z.ZodLiteral<true>;
+        }, "strip", z.ZodTypeAny, {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        }, {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        }>>;
     }, "strip", z.ZodTypeAny, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "recommendations";
+        data: {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        } | null;
     }, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "recommendations";
+        data: {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        } | null;
     }>;
     documents: z.ZodObject<{
+        step: z.ZodLiteral<"documents">;
         status: z.ZodEnum<["pending", "running", "success", "skipped", "error"]>;
         message: z.ZodNullable<z.ZodString>;
-        data: z.ZodNullable<z.ZodUnknown>;
+        data: z.ZodNullable<z.ZodObject<{
+            suggestions: z.ZodArray<z.ZodString, "many">;
+        }, "strip", z.ZodTypeAny, {
+            suggestions: string[];
+        }, {
+            suggestions: string[];
+        }>>;
     }, "strip", z.ZodTypeAny, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "documents";
+        data: {
+            suggestions: string[];
+        } | null;
     }, {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "documents";
+        data: {
+            suggestions: string[];
+        } | null;
     }>;
     overallStatus: z.ZodEnum<["success", "partial", "error"]>;
 }, "strip", z.ZodTypeAny, {
     draft: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "draft";
+        data: {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        } | null;
     };
     documents: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "documents";
+        data: {
+            suggestions: string[];
+        } | null;
     };
     recommendations: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "recommendations";
+        data: {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        } | null;
     };
     overallStatus: "error" | "success" | "partial";
     plan: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "plan";
+        data: {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        } | null;
     };
 }, {
     draft: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "draft";
+        data: {
+            warnings: string[];
+            complaint: string | null;
+            anamnesis: string | null;
+            objectiveStatus: string | null;
+            diagnosis: string | null;
+            treatmentPlan: string | null;
+            quality?: {
+                confidence: number;
+                specialty: "therapist" | "orthopedist" | "surgeon" | "orthodontist" | "periodontist" | "hygienist" | "pediatric" | "implantologist" | "radiologist" | "universal";
+                level: "ready" | "review" | "needs_more_dictation";
+                signals: string[];
+                nextAction: string;
+                detectedToothCodes: string[];
+                missingCriticalFields: string[];
+                detectedToothStates?: Record<string, "done" | "planned" | "idle" | "watch" | "missing" | "treatment"> | undefined;
+            } | undefined;
+        } | null;
     };
     documents: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "documents";
+        data: {
+            suggestions: string[];
+        } | null;
     };
     recommendations: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "recommendations";
+        data: {
+            doctorFullName: string;
+            toothOrArea: string;
+            careTopic: "other" | "surgery" | "prosthetics" | "orthodontics" | "periodontology" | "hygiene" | "extraction" | "implantation" | "filling_restoration" | "endo" | "local_anesthesia";
+            procedureName: string;
+            performedAt: string;
+            allowedAfter: string[];
+            temporaryRestrictions: string[];
+            medicationAndRinsePlan: string[];
+            hygieneInstructions: string[];
+            nutritionInstructions: string[];
+            urgentWarningSigns: string[];
+            clinicContactInstruction: string;
+            telegramSummary: string;
+            patientReceivedPrintedCopy: true;
+            patientUnderstandsUrgentSigns: true;
+            safeForTelegramSending: true;
+            plannedFollowUpAt?: string | null | undefined;
+        } | null;
     };
     overallStatus: "error" | "success" | "partial";
     plan: {
         message: string | null;
         status: "pending" | "skipped" | "running" | "error" | "success";
-        data?: unknown;
+        step: "plan";
+        data: {
+            estimatedTotalRub: number;
+            teethOrArea: string;
+            clinicalToothRows: {
+                status: "completed" | "planned" | "other" | "implant" | "watch" | "sound" | "caries" | "pulpitis_periodontitis" | "periodontal" | "missing" | "prosthetic" | "orthodontic";
+                toothOrArea: string;
+                surfaces: ("not_applicable" | "occlusal" | "mesial" | "distal" | "buccal" | "lingual" | "palatal" | "incisal" | "root" | "implant_site")[];
+                diagnosisOrFinding: string;
+                indication: string;
+                plannedAction: string;
+                prognosis?: string | null | undefined;
+                periodontalStatus?: string | null | undefined;
+                implantOrProstheticNotes?: string | null | undefined;
+                orthodonticNotes?: string | null | undefined;
+            }[];
+            clinicalReason: string;
+            diagnosisSummary: string;
+            treatmentGoals: string[];
+            plannedStages: {
+                stageName: string;
+                plannedServices: string;
+                plannedTiming: string;
+                clinicalNotes?: string | null | undefined;
+                estimatedAmountRub?: number | null | undefined;
+            }[];
+            alternatives: string[];
+            risksAndLimitations: string[];
+            plannedAt: string;
+            patientQuestionsAnswered: true;
+            planRequiresSeparateConsent: true;
+            planRequiresNewApprovalOnChange: true;
+            doctorFullName?: string | null | undefined;
+            prognosisAndLimits?: string | null | undefined;
+            controlPlan?: string | null | undefined;
+            patientFriendlyExplanation?: string | null | undefined;
+            patientHygieneAdvice?: string | null | undefined;
+            customHygieneTextOverride?: string | null | undefined;
+        } | null;
     };
 }>;
 export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;

@@ -128,6 +128,27 @@ test("расширенные символы GSM-7 занимают два мес
 	assert.equal(describeSmsPayload("a").characters, 1);
 });
 
+test("эмодзи вне BMP считаются как два символа в UCS-2", () => {
+	const emoji = describeSmsPayload("🙂");
+	assert.equal(emoji.encoding, "ucs2");
+	assert.equal(emoji.characters, 2);
+	assert.equal(emoji.segments, 1);
+});
+
+test("пустая строка тарифицируется как один сегмент", () => {
+	const empty = describeSmsPayload("");
+	assert.equal(empty.encoding, "gsm7");
+	assert.equal(empty.characters, 0);
+	assert.equal(empty.segments, 1);
+});
+
+test("расширенные символы GSM-7 корректно тарифицируются в длинных сообщениях", () => {
+	const boundary = describeSmsPayload("a".repeat(152) + "[");
+	assert.equal(boundary.encoding, "gsm7");
+	assert.equal(boundary.characters, 154);
+	assert.equal(boundary.segments, 1);
+});
+
 test("длинная SMS отклоняется по числу сегментов", () => {
 	const long = checkChannelFit("sms", "я".repeat(400));
 	assert.equal(long.ok, false);
