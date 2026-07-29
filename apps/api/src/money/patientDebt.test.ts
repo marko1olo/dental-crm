@@ -23,6 +23,7 @@ import {
 	kopecksFromRubles,
 	MoneyPrecisionError,
 	type PaymentRow,
+	patientAccountBalanceKopecks,
 	patientOwesClinicKopecks,
 	QuantityContractError,
 	rublesFromKopecks,
@@ -706,6 +707,138 @@ describe("против patientsQuery.ts:67 — balanceRub: 0", () => {
 				`у ${ledger.patientId} сальдо не ноль, а константа даёт 0`,
 			);
 		}
+	});
+});
+
+/*
+ * ШЕСТОЙ ОТВЕТ: сальдо карточки со знаком, которым его объявил общий контракт.
+ *
+ * Проверяется не «функция что-то вернула», а три утверждения, каждое из которых
+ * может не сойтись независимо от остальных:
+ *   1. Знак совпадает с тем, что печатает ЖИВОЙ второй производитель того же
+ *      поля (гидратация сводки): минус — долг, плюс — переплата.
+ *   2. Это НЕ третий расчёт: на всех живых сальдо значение побитово равно
+ *      разности двух уже существующих ответов.
+ *   3. Копейки доживают до рублей контракта — прежний производитель терял их на
+ *      `Math.round` до целого рубля, и потеря несимметрична по знаку.
+ */
+describe("шестой ответ: сальдо карточки пациента со знаком контракта", () => {
+	const ledgers = buildPatientLedgers(LIVE_CHARGES, LIVE_PAYMENTS);
+
+	test("знак тот же, что у живой гидратации: должник в минусе, переплативший в плюсе", () => {
+		/*
+		 * Числа — не выдумка, а вывод боевого маршрута GET /api/dashboard по
+		 * клинике d0000000-…-d001 (замер 2026-07-29, поле dashboard.patients[].
+		 * balanceRub, производитель — db/domainStateHydration.ts):
+		 *     0100=800, 0101=800, 0103=-26500, 0104=-26500.
+		 * Если карточка начнёт печатать канонический знак, тот же пациент окажется
+		 * должником на одном экране и переплатившим на другом.
+		 */
+		const expected: Record<string, number> = {
+			"0100": 800,
+			"0101": 800,
+			"0102": 0,
+			"0103": -26_500,
+			"0104": -26_500,
+			"0105": 0,
+			"0106": 0,
+		};
+		for (const [patientId, rubles] of Object.entries(expected)) {
+			const ledger = ledgers.get(patientId);
+			assert.ok(ledger, `пациент ${patientId} потерян`);
+			assert.strictEqual(
+				rublesFromKopecks(patientAccountBalanceKopecks(ledger)),
+				rubles,
+				`сальдо карточки пациента ${patientId} разошлось с живым замером гидратации`,
+			);
+		}
+	});
+
+	test("рассчитавшийся пациент получает НОЛЬ, а не отрицательный ноль", () => {
+		/*
+		 * Ловушка, найденная этим тестом на первом прогоне: `-ledger.balanceKopecks`
+		 * на нулевом сальдо даёт -0. `Object.is(-0, 0)` — false, а
+		 * `(-0).toLocaleString("ru-RU")` печатает «-0», то есть пациент, рассчитавшийся
+		 * до копейки, увидел бы в карточке «−0 ₽».
+		 */
+		const settled = ledgers.get("0102");
+		assert.ok(settled);
+		assert.strictEqual(settled.balanceKopecks, 0);
+		const card = patientAccountBalanceKopecks(settled);
+		assert.strictEqual(card, 0);
+		assert.ok(
+			Object.is(card, 0),
+			"сальдо карточки — отрицательный ноль: сравнение с нулём станет ложным, а печать даст «-0»",
+		);
+		assert.strictEqual(rublesFromKopecks(card).toLocaleString("ru-RU"), "0");
+	});
+
+	test("это не третий расчёт: величина равна разности двух прежних ответов", () => {
+		for (const ledger of ledgers.values()) {
+			assert.strictEqual(
+				patientAccountBalanceKopecks(ledger),
+				clinicOwesPatientKopecks(ledger) - patientOwesClinicKopecks(ledger),
+				`у ${ledger.patientId} сальдо карточки не выводится из двух ответов дома — значит завелась новая формула`,
+			);
+			// И обратно: сумма долга и переплаты равна модулю сальдо, то есть
+			// ненулевым может быть только одно из двух.
+			assert.strictEqual(
+				patientOwesClinicKopecks(ledger) + clinicOwesPatientKopecks(ledger),
+				Math.abs(ledger.balanceKopecks),
+				`у ${ledger.patientId} долг и переплата ненулевые одновременно`,
+			);
+		}
+	});
+
+	test("копейки доживают до карточки, а прежний Math.round их терял", () => {
+		// Долг 49 899,50 ₽: назначено 53 000,00, оплачено 3 100,50.
+		const ledger = buildPatientLedger(
+			"p1",
+			[
+				{
+					patientId: "p1",
+					status: "completed",
+					unitPriceRub: "53000.00",
+					quantity: 1,
+					discountRub: "0.00",
+				},
+			],
+			[{ patientId: "p1", status: "paid", amountRub: "3100.50" }],
+		);
+		const cardKopecks = patientAccountBalanceKopecks(ledger);
+		assert.strictEqual(cardKopecks, -4_989_950);
+		assert.strictEqual(debtNumericText(cardKopecks), "-49899.50");
+		assert.strictEqual(rublesFromKopecks(cardKopecks), -49_899.5);
+
+		// Прежний производитель: Math.round(оплачено − назначено).
+		const legacyRounded = Math.round(3100.5 - 53_000);
+		assert.strictEqual(legacyRounded, -49_899);
+		assert.strictEqual(
+			rublesFromKopecks(cardKopecks) - legacyRounded,
+			-0.5,
+			"прежний расчёт прощал должнику 50 копеек — на переплате он их, наоборот, приписывал",
+		);
+		assert.strictEqual(Math.round(49_899.5), 49_900);
+	});
+
+	test("согласие с итогами клиники: сумма карточек равна нетто со обратным знаком", () => {
+		/*
+		 * Продолжение проверки согласия: до этого сходимость проверялась по
+		 * дебиторке и возвратам, а карточка в ней не участвовала. Теперь
+		 * участвует, и с нулевым порогом — потому что порог значимости отбрасывает
+		 * копеечные суммы, а сумма карточек их содержит.
+		 */
+		const cardSum = [...ledgers.values()].reduce(
+			(sum, ledger) => sum + patientAccountBalanceKopecks(ledger),
+			0,
+		);
+		const totals = clinicDebtTotals(ledgers, { significanceKopecks: 0 });
+		assert.strictEqual(cardSum, -totals.netUncollectedKopecks);
+		assert.strictEqual(debtNumericText(cardSum), "-51400.00");
+		assert.strictEqual(
+			debtNumericText(totals.netUncollectedKopecks),
+			"51400.00",
+		);
 	});
 });
 
