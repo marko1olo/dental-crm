@@ -6,6 +6,16 @@
  * решения, там не было: динамики выручки, доли неявок, дебиторки и того, что
  * именно продаётся. Всё это теперь считает /api/reports/*.
  *
+ * ЧЕТЫРЕ ЗАПРОСА, А НЕ ОДИН, И ЧТО ЭТО ЗАКРЫЛО. Маршрутов отчётов управляющего
+ * девять. Панель звала ОДИН — сводку, и три разреза из девяти не доходили до
+ * владельца никак, хотя считались верно: что продаётся (`/api/reports/services`),
+ * загрузка по дням недели и часам (`/api/reports/schedule-load`) и ИМЕНА
+ * должников со сроком долга (`/api/reports/receivables`; сводка отдаёт только
+ * итог и число должников, то есть цифру, по которой нельзя позвонить). Ещё один
+ * разрез — поток пациентов по месяцам — приходил в сводке и НЕ РИСОВАЛСЯ: от
+ * него на экране была одна плитка «первичные / повторные» за весь период.
+ * Разбор каждого решения стоит рядом со своим блоком ниже.
+ *
  * ЧТО ЗДЕСЬ ПРИНЦИПИАЛЬНО
  *
  * 1. Рядом с процентом занятости печатается база расчёта. «Загрузка 42 %» без
@@ -28,7 +38,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { money } from "../../AppHelpers";
+import { money, operatorReadableErrorDetail } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { hasCapability, type ClinicMode } from "../../lib/clinicCapabilities";
 import { formatRub as shortRub } from "../../pages/analyticsDoctorMetrics.js";
@@ -206,7 +216,7 @@ function monthBounds(now = new Date()): { from: string; to: string } {
  * пути, которым ходит клиент.
  */
 export async function fetchReportsSummary(
-	period: { readonly from: string; readonly to: string; readonly granularity: "day" | "week" | "month" },
+	period: CalendarPeriod & { readonly granularity: "day" | "week" | "month" },
 	headers: Record<string, string>
 ): Promise<ReportsSummary> {
 	const query = new URLSearchParams({
@@ -216,6 +226,156 @@ export async function fetchReportsSummary(
 	});
 	const response = await fetch(`/api/reports/summary?${query.toString()}`, { headers });
 	return readJson<ReportsSummary>(response);
+}
+
+/**
+ * ТРИ ОТЧЁТА, КОТОРЫЕ СЧИТАЛИСЬ, НО НЕ ДОХОДИЛИ ДО ВЛАДЕЛЬЦА.
+ *
+ * Маршрутов отчётов управляющего девять. Шесть из них сводка отдаёт целиком, и
+ * панель их рисует: выручку, врачей, кресла, приёмы, эффект напоминаний, поток
+ * пациентов. Оставшиеся ТРИ разреза до экрана не доходили никак:
+ *
+ *  1. `/api/reports/services` — что именно продаётся. В сводке этого нет вовсе.
+ *     Владелец видел «получено 67 400 ₽» и не мог узнать, на чём.
+ *  2. `/api/reports/schedule-load` — загрузка по дням недели и часам. В сводке
+ *     нет вовсе. Именно по ней решают, когда открывать смены и куда ставить
+ *     дополнительное кресло.
+ *  3. `/api/reports/receivables` — ИМЕНА должников и срок долга. Сводка отдаёт
+ *     только итог и число должников: «долг 53 000 ₽, 2 пациент(ов)». Кому
+ *     звонить — не сказано, а без имени и срока дебиторка не работа, а цифра.
+ *
+ * ПОЧЕМУ ОТДЕЛЬНЫМИ ЗАПРОСАМИ, А НЕ ПОЛЯМИ СВОДКИ. Сводка — это сознательно
+ * один поход за главными числами (её пояснение в routes/reports.ts). Три разреза
+ * ниже к главным числам не относятся: два принимают свои параметры (`limit` у
+ * услуг, `minDebtRub` у дебиторки), а дебиторка вообще НЕ ИМЕЕТ периода — долг
+ * существует на дату отчёта, а не «за март». Дописать их в сводку значило бы
+ * либо потерять эти параметры, либо привязать долг к периоду, которого у него
+ * нет. Сервер здесь не меняется ни строкой: маршруты давно готовы.
+ *
+ * ОТКАЗ КАЖДОГО РАЗРЕЗА ОТДЕЛЬНЫЙ, И ЭТО ГЛАВНОЕ СВОЙСТВО. Один упавший запрос
+ * не гасит остальные три и не гасит сводку: иначе достижимость, которую эта
+ * правка добавляет, отбиралась бы обратно первым же отказом сервера.
+ */
+export type CalendarPeriod = {
+	readonly from: string;
+	readonly to: string;
+};
+
+/** Ответ `/api/reports/services`. Суммы НАЗНАЧЕННЫЕ, а не полученные. */
+export type ServiceSalesReport = {
+	rows: { title: string; quantity: number; plannedRub: number; averagePriceRub: number; discountRub: number }[];
+	plannedTotalRub: number;
+	discountTotalRub: number;
+	note: string;
+	isEmpty: boolean;
+};
+
+/** Ответ `/api/reports/receivables`: то же, что в сводке, плюс сами должники. */
+export type ReceivablesDetail = {
+	rows: {
+		patientId: string;
+		patientName: string;
+		debtRub: number;
+		/** Самая ранняя неоплаченная позиция. null — датировать нечем. */
+		oldestChargeAt: string | null;
+		bucket: string;
+	}[];
+	totalDebtRub: number;
+	byBucket: Record<string, number>;
+	prepayments: { patientId: string; patientName: string; prepaidRub: number }[];
+	totalPrepaidRub: number;
+	note: string;
+	isEmpty: boolean;
+};
+
+/** Ответ `/api/reports/schedule-load`. `weekday` — ISO: 1 понедельник, 7 воскресенье. */
+export type ScheduleLoadReport = {
+	cells: { weekday: number; hour: number; appointments: number; bookedMinutes: number }[];
+	busiestWeekday: number | null;
+	busiestHour: number | null;
+	isEmpty: boolean;
+};
+
+/*
+ * ЗАПРОСЫ ТРЁХ РАЗРЕЗОВ. Форма ровно та же, что у сводки, и по тем же причинам:
+ * период уходит календарной датой (пояс клиники знает сервер), заголовки
+ * приходят аргументом (их собирает `auth.denteClinicalReadHeaders()` в момент
+ * запроса), адрес записан литералом в самом вызове.
+ *
+ * АДРЕС ЛИТЕРАЛОМ — НЕ СТИЛИСТИКА. Недостижимость этих отчётов обнаружила
+ * перепись адресов: она ищет упоминание серверного адреса в клиенте. Собери
+ * адрес в переменной — и следующая перепись снова назовёт маршрут никем не
+ * зовомым, хотя вызов есть.
+ *
+ * ЗАГОЛОВКИ ОБЯЗАТЕЛЬНЫ. Все три маршрута закрыты той же охраной, что и сводка
+ * (`scopeFor` → `requireClinicalReadContext`): без `x-dente-admin-secret`
+ * настоящая клиника получает 403, и раздел выглядит пустым, а не сломанным.
+ * Именно поэтому проверка `tests/managerReportSlicesReachTheOwner.test.ts`
+ * читает не состояние компонента, а то, ЧТО уходит в запрос.
+ */
+
+export async function fetchServiceSales(
+	period: CalendarPeriod,
+	headers: Record<string, string>
+): Promise<ServiceSalesReport> {
+	const query = new URLSearchParams({ from: period.from, to: period.to });
+	const response = await fetch(`/api/reports/services?${query.toString()}`, { headers });
+	return readJson<ServiceSalesReport>(response);
+}
+
+/**
+ * Дебиторка периода НЕ ПРИНИМАЕТ, и это не упущение: долг существует на дату
+ * отчёта. Передать сюда `from`/`to` значило бы показать «долг за март».
+ */
+export async function fetchReceivablesDetail(headers: Record<string, string>): Promise<ReceivablesDetail> {
+	const response = await fetch("/api/reports/receivables", { headers });
+	return readJson<ReceivablesDetail>(response);
+}
+
+export async function fetchScheduleLoad(
+	period: CalendarPeriod,
+	headers: Record<string, string>
+): Promise<ScheduleLoadReport> {
+	const query = new URLSearchParams({ from: period.from, to: period.to });
+	const response = await fetch(`/api/reports/schedule-load?${query.toString()}`, { headers });
+	return readJson<ScheduleLoadReport>(response);
+}
+
+/** Загруженный разрез либо причина, по которой его нет. */
+type ReportSlice<T> = { readonly data: T | null; readonly error: string | null };
+
+const pendingSlice = { data: null, error: null };
+
+function sliceOf<T>(result: PromiseSettledResult<T>): ReportSlice<T> {
+	if (result.status === "fulfilled") return { data: result.value, error: null };
+	return {
+		data: null,
+		error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+	};
+}
+
+/**
+ * ОТКАЗ ПО-РУССКИ: ЧТО НЕ ОТКРЫЛОСЬ, ПОЧЕМУ И ЧТО ДЕЛАТЬ.
+ *
+ * Причина берётся из ответа сервера, но только если её вообще можно показывать
+ * человеку: решает это общий `operatorReadableErrorDetail` из AppHelpers.tsx —
+ * он гасит текст без русских букв и текст с техническими словами («Failed to
+ * fetch», имя класса ошибки, адрес маршрута). Второго правила «что показывать
+ * оператору» здесь не заводится: оно уже есть, и разъехавшихся копий в этом
+ * дереве хватает.
+ *
+ * Третья часть — действие — приписывается ВСЕГДА. Отказ без действия («Сервер
+ * ответил 403») это код ответа русскими словами: человек читает и не знает, что
+ * нажать. Самая частая причина отказа здесь — истёкший вход в кабинет, и лечится
+ * она повторным входом.
+ */
+export function sliceRefusalText(subject: string, detail: string | null): string {
+	const readable = operatorReadableErrorDetail(detail);
+	const cause = readable ? readable.replace(/\s*[.;]\s*$/, "") : "сервер отказал без объяснения";
+	return (
+		`${subject} не построен: ${cause}. Нажмите «Обновить». ` +
+		"Если отказ повторяется — войдите в рабочий кабинет клиники заново, этот раздел закрыт входом."
+	);
 }
 
 export type ManagerReportsPanelProps = {
@@ -277,6 +437,9 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 	const [summary, setSummary] = useState<ReportsSummary | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [services, setServices] = useState<ReportSlice<ServiceSalesReport>>(pendingSlice);
+	const [debtors, setDebtors] = useState<ReportSlice<ReceivablesDetail>>(pendingSlice);
+	const [scheduleLoad, setScheduleLoad] = useState<ReportSlice<ScheduleLoadReport>>(pendingSlice);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -296,11 +459,44 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			 * `from` и `to` — календарные даты `YYYY-MM-DD` прямо из полей ввода.
 			 * Своего превращения в мгновение здесь больше НЕТ: пояс клиники знает
 			 * сервер, браузер — нет. Разбор в `fetchReportsSummary` выше.
+			 *
+			 * ЧЕТЫРЕ ЗАПРОСА ПАРАЛЛЕЛЬНО И `allSettled`, А НЕ `all`. Разрезы
+			 * независимы, и падение одного не должно уносить остальные: с `all`
+			 * отказ дебиторки погасил бы и выручку, и услуги, и загрузку — то есть
+			 * достижимость, которую эта правка добавляет, отбирал бы обратно первый
+			 * же 403. Ждать их по очереди тоже нельзя: четыре последовательных
+			 * похода к базе складываются в задержку, которую видно глазом.
 			 */
-			setSummary(await fetchReportsSummary({ from, to, granularity }, readHeaders));
+			const [summaryResult, servicesResult, debtorsResult, scheduleResult] = await Promise.allSettled([
+				fetchReportsSummary({ from, to, granularity }, readHeaders),
+				fetchServiceSales({ from, to }, readHeaders),
+				fetchReceivablesDetail(readHeaders),
+				fetchScheduleLoad({ from, to }, readHeaders)
+			]);
+
+			if (summaryResult.status === "fulfilled") {
+				setSummary(summaryResult.value);
+			} else {
+				setSummary(null);
+				setError(
+					summaryResult.reason instanceof Error ? summaryResult.reason.message : String(summaryResult.reason)
+				);
+			}
+			setServices(sliceOf(servicesResult));
+			setDebtors(sliceOf(debtorsResult));
+			setScheduleLoad(sliceOf(scheduleResult));
 		} catch (loadError) {
+			/*
+			 * Сюда попадает только сбой ДО запросов — сборка заголовков:
+			 * `localStorage` в приватном режиме браузера бросает исключение
+			 * (lib/denteRequestHeaders.ts, известная латентная ошибка). Тогда не ушёл
+			 * ни один из четырёх запросов, и все разрезы гасятся одной причиной.
+			 */
 			setSummary(null);
 			setError(loadError instanceof Error ? loadError.message : String(loadError));
+			setServices(pendingSlice);
+			setDebtors(pendingSlice);
+			setScheduleLoad(pendingSlice);
 		} finally {
 			setLoading(false);
 		}
@@ -314,6 +510,55 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 		() => summary?.revenue.points.reduce((peak, point) => Math.max(peak, point.revenueRub), 0) ?? 0,
 		[summary]
 	);
+
+	/**
+	 * КРАЕВЫЕ СУММЫ СЕТКИ ЗАГРУЗКИ: по дням недели и по часам.
+	 *
+	 * Сервер отдаёт сетку «день недели × час» — 17 клеток на живых данных этой
+	 * установки. Показывать её таблицей 7 × 24 бессмысленно: 168 ячеек, из которых
+	 * заполнены единицы, и решение из них не читается. Читаются две краевые суммы:
+	 * «в какой день» и «в какой час». Это projection тех же занятых минут, по
+	 * которым сервер считает `busiestWeekday` и `busiestHour`, — то есть цифры
+	 * панели и вывод сервера сходятся по построению, а не по совпадению.
+	 *
+	 * Пик у каждой оси СВОЙ. Общий знаменатель на два разных разреза сделал бы
+	 * часовые полосы визуально втрое короче дневных при тех же данных: суммы по
+	 * семи дням крупнее сумм по двенадцати часам просто потому, что корзин меньше.
+	 */
+	const scheduleMargins = useMemo(() => {
+		const cells = scheduleLoad.data?.cells ?? [];
+		const weekdayMinutes = new Map<number, number>();
+		const hourMinutes = new Map<number, number>();
+		for (const cell of cells) {
+			weekdayMinutes.set(cell.weekday, (weekdayMinutes.get(cell.weekday) ?? 0) + cell.bookedMinutes);
+			hourMinutes.set(cell.hour, (hourMinutes.get(cell.hour) ?? 0) + cell.bookedMinutes);
+		}
+		// Все семь дней подряд, включая пустые: «в субботу пусто» — это и есть
+		// ответ, ради которого отчёт нужен, а пропущенная строка читается как
+		// отсутствие данных.
+		const byWeekday = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+			key: weekday,
+			minutes: weekdayMinutes.get(weekday) ?? 0
+		}));
+		// Часы — непрерывным отрезком от первого занятого до последнего. Пустой час
+		// ВНУТРИ рабочего дня это настоящий ноль (обед, провал в записи), и прятать
+		// его нельзя; сутки целиком показывать незачем — клиника ночью закрыта.
+		const busyHours = [...hourMinutes.keys()].sort((left, right) => left - right);
+		const byHour: { key: number; minutes: number }[] = [];
+		const firstHour = busyHours[0];
+		const lastHour = busyHours[busyHours.length - 1];
+		if (firstHour !== undefined && lastHour !== undefined) {
+			for (let hour = firstHour; hour <= lastHour; hour += 1) {
+				byHour.push({ key: hour, minutes: hourMinutes.get(hour) ?? 0 });
+			}
+		}
+		return {
+			byWeekday,
+			byHour,
+			peakWeekdayMinutes: byWeekday.reduce((peak, row) => Math.max(peak, row.minutes), 0),
+			peakHourMinutes: byHour.reduce((peak, row) => Math.max(peak, row.minutes), 0)
+		};
+	}, [scheduleLoad.data]);
 
 	return (
 		<section className="panel ops-panel" data-testid="manager-reports-panel">
@@ -591,6 +836,63 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						</p>
 
 						{/*
+							── Поток пациентов по месяцам ────────────────────────────
+							ЧТО ЗДЕСЬ БЫЛО НЕ ТАК. Разбивку `patientFlow.points` сводка
+							присылает с самого начала, а панель показывала из неё ОДНУ
+							плитку «7 / 0» в итогах периода. Отчёт существует ради
+							динамики: по числу первичных за месяц оценивают рекламу, и из
+							одной суммы за квартал этого не видно.
+
+							НОВОГО ЗАПРОСА ЗДЕСЬ НЕТ НАМЕРЕННО. Числа уже пришли в сводке;
+							звать /api/reports/patient-flow отдельно значило бы посчитать
+							то же самое второй раз и получить второй источник тех же цифр.
+
+							Корзина печатается как есть, `YYYY-MM`. Превращать её в «июнь
+							2026» через `new Date("2026-06-01")` нельзя: такая строка
+							разбирается как полночь UTC, и в браузере западнее Гринвича
+							месяц уехал бы на предыдущий — тот же дефект, из-за которого
+							границы периода теперь считает сервер. Так же печатает корзины
+							и разрез выручки выше.
+						*/}
+						{summary.patientFlow.points.length > 0 ? (
+							<>
+								<h3 className="ops-section-title">Первичные и повторные пациенты</h3>
+								<div className="ops-table-wrap">
+									<table className="ops-table">
+										<thead>
+											<tr>
+												<th scope="col">Месяц</th>
+												<th scope="col">Первичные</th>
+												<th scope="col">Повторные</th>
+											</tr>
+										</thead>
+										<tbody>
+											{summary.patientFlow.points.map((point) => (
+												<tr key={point.bucket}>
+													<td className="ops-strong" data-label="Месяц">
+														{point.bucket}
+													</td>
+													<td className="ops-num" data-label="Первичные">
+														{point.newPatients}
+													</td>
+													<td className="ops-num" data-label="Повторные">
+														{point.returningPatients}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<p className="ops-hint">
+									Первичный — тот, у кого это первый завершённый приём за всю историю клиники, а не первый в
+									выбранном периоде. Пациент, пришедший в одном месяце и первично, и повторно, посчитан
+									первичным один раз. Считаются пациенты, дошедшие до кресла, а не все записи периода —
+									поэтому эти числа меньше числа приёмов выше.
+								</p>
+							</>
+						) : null}
+
+						{/*
 							── Работают ли напоминания ──────────────────────────────
 							Клиника платит за каждое SMS и должна видеть, окупается ли
 							это. Показываются ОБА состава групп, а не только разница:
@@ -746,6 +1048,219 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			) : null}
 
 			{/*
+				── Что продаётся ─────────────────────────────────────────────────
+				Разрез /api/reports/services. До этой правки его не звал никто:
+				маршрут считал позиции лечения, а владелец видел только итоговое
+				«получено» и не мог узнать, на чём клиника заработала и сколько
+				отдала скидками.
+
+				ПОЧЕМУ СНАРУЖИ ВЕТКИ `summary`, КАК И ВЫПЛАТЫ НИЖЕ. Внутри блок был
+				бы виден только когда сводка УЖЕ построилась: при её отказе или при
+				пустом периоде он исчезал бы вместе с ней, хотя у него свой запрос и
+				своя причина отказа. Ровно так в этом дереве уже прятались три
+				починки диктовки — экран не открывался, и работы будто не было.
+			*/}
+			{services.error !== null || services.data !== null ? (
+				<>
+					<h3 className="ops-section-title">Что продаётся</h3>
+					{services.error !== null ? (
+						<p className="ops-notice ops-notice--error" role="alert">
+							{sliceRefusalText("Разрез по услугам", services.error)}
+						</p>
+					) : services.data === null || services.data.isEmpty ? (
+						<p className="ops-empty">
+							За выбранный период не назначено ни одной позиции лечения. Это не нулевая выручка, а отсутствие
+							записей: услуги попадают в отчёт из карты приёма.
+						</p>
+					) : (
+						<>
+							<div className="ops-table-wrap">
+								<table className="ops-table">
+									<thead>
+										<tr>
+											<th scope="col">Услуга</th>
+											<th scope="col">Количество</th>
+											<th scope="col">Назначено</th>
+											<th scope="col">Средняя цена</th>
+											<th scope="col">Скидка</th>
+										</tr>
+									</thead>
+									<tbody>
+										{services.data.rows.map((row) => (
+											<tr key={row.title}>
+												<td className="ops-strong" data-label="Услуга">
+													{row.title}
+												</td>
+												<td className="ops-num" data-label="Количество">
+													{row.quantity}
+												</td>
+												<td className="ops-num" data-label="Назначено">
+													{money(row.plannedRub)}
+												</td>
+												<td className="ops-num" data-label="Средняя цена">
+													{money(row.averagePriceRub)}
+												</td>
+												<td className="ops-num" data-label="Скидка">
+													{row.discountRub > 0 ? money(row.discountRub) : "—"}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							{/*
+								Приписка сервера про смысл сумм обязательна к показу: это
+								НАЗНАЧЕННЫЕ деньги, а не полученные. Разница с выручкой выше —
+								дебиторка и скидки, и без этой строки два числа на одном экране
+								выглядят как ошибка расчёта.
+							*/}
+							<p className="ops-hint">
+								Назначено всего {money(services.data.plannedTotalRub)}, из них отдано скидками{" "}
+								{money(services.data.discountTotalRub)}. {services.data.note}
+							</p>
+						</>
+					)}
+				</>
+			) : null}
+
+			{/*
+				── Когда клиника занята ──────────────────────────────────────────
+				Разрез /api/reports/schedule-load, тоже не звал никто. Он отвечает на
+				вопрос, который из общей цифры за месяц не виден вовсе: «в среду с 10
+				до 13 очередь, а в субботу пусто». По нему открывают и закрывают
+				смены и решают, куда ставить дополнительное кресло.
+
+				РЕЖИМ КЛИНИКИ ЗДЕСЬ НЕ ПРИ ЧЁМ, и это осознанно. Признаки
+				`chairUtilisation` и `doctorBreakdown` прячут разрезы, бессмысленные
+				по УСТРОЙСТВУ: у одного кресла занятость всегда одна и та же, у одного
+				врача выработка это он сам. Часы приёма от числа кресел и врачей не
+				зависят: отдельный врач так же решает, работать ли ему в субботу, и
+				его собственная сетка для него так же не видна.
+			*/}
+			{scheduleLoad.error !== null || scheduleLoad.data !== null ? (
+				<>
+					<h3 className="ops-section-title">Когда клиника занята</h3>
+					{scheduleLoad.error !== null ? (
+						<p className="ops-notice ops-notice--error" role="alert">
+							{sliceRefusalText("Разрез загрузки по дням и часам", scheduleLoad.error)}
+						</p>
+					) : scheduleLoad.data === null || scheduleLoad.data.isEmpty ? (
+						<p className="ops-empty">Приёмов за выбранный период не было — распределять по дням и часам нечего.</p>
+					) : (
+						<>
+							<ul className="ops-bars">
+								{scheduleMargins.byWeekday.map((row) => (
+									<li className="ops-bar" key={`weekday-${row.key}`}>
+										<span className="ops-bar__label">{weekdayNames[row.key] ?? row.key}</span>
+										<span className="ops-bar__track">
+											<span
+												className="ops-bar__fill"
+												style={{
+													width: `${row.minutes > 0 && scheduleMargins.peakWeekdayMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakWeekdayMinutes) * 100)) : 0}%`
+												}}
+											/>
+										</span>
+										<span className="ops-bar__value">{formatHours(row.minutes)}</span>
+									</li>
+								))}
+							</ul>
+							<h3 className="ops-section-title">Часы приёма</h3>
+							<ul className="ops-bars">
+								{scheduleMargins.byHour.map((row) => (
+									<li className="ops-bar" key={`hour-${row.key}`}>
+										<span className="ops-bar__label">{String(row.key).padStart(2, "0")}:00</span>
+										<span className="ops-bar__track">
+											<span
+												className="ops-bar__fill"
+												style={{
+													width: `${row.minutes > 0 && scheduleMargins.peakHourMinutes > 0 ? Math.max(2, Math.round((row.minutes / scheduleMargins.peakHourMinutes) * 100)) : 0}%`
+												}}
+											/>
+										</span>
+										<span className="ops-bar__value">{formatHours(row.minutes)}</span>
+									</li>
+								))}
+							</ul>
+							<p className="ops-hint">
+								{scheduleLoad.data.busiestWeekday !== null && scheduleLoad.data.busiestHour !== null
+									? `Самый занятый день — ${weekdayNames[scheduleLoad.data.busiestWeekday] ?? scheduleLoad.data.busiestWeekday}, самый занятый час — ${String(scheduleLoad.data.busiestHour).padStart(2, "0")}:00. `
+									: ""}
+								День недели и час берутся в часовом поясе клиники, а не браузера. Отменённые приёмы в занятые
+								минуты не входят; неявка кресло занимала и учтена.
+							</p>
+						</>
+					)}
+				</>
+			) : null}
+
+			{/*
+				── Кто именно не доплатил ────────────────────────────────────────
+				Разрез /api/reports/receivables. Сводка отдаёт только итог и ЧИСЛО
+				должников — «долг 53 000 ₽, 2 пациент(ов)». По такой строке нельзя
+				позвонить: нет ни имени, ни срока. Сами строки лежали в ответе
+				маршрута, которого не звал никто.
+
+				ПЕРИОДА У ЭТОГО РАЗРЕЗА НЕТ, и он снаружи ветки `summary` ещё и
+				поэтому: долг существует на дату отчёта, а не «за март». Он обязан
+				быть виден и когда в выбранном периоде не было ни одного приёма —
+				именно в такую неделю и садятся звонить должникам.
+
+				Расчёт тот же самый, что у корзин дебиторки выше: одна функция
+				`receivables` на сервере, один способ считать долг. Второго расчёта
+				долга здесь не появилось — их в этом дереве и без того было четыре.
+			*/}
+			{debtors.error !== null || debtors.data !== null ? (
+				<>
+					<h3 className="ops-section-title">Кто именно не доплатил</h3>
+					{debtors.error !== null ? (
+						<p className="ops-notice ops-notice--error" role="alert">
+							{sliceRefusalText("Список должников", debtors.error)}
+						</p>
+					) : debtors.data === null || debtors.data.rows.length === 0 ? (
+						<p className="ops-empty ops-empty--good">Должников нет: ни у одного пациента нет неоплаченного лечения.</p>
+					) : (
+						<>
+							<div className="ops-table-wrap">
+								<table className="ops-table">
+									<caption className="sr-only">Пациенты с неоплаченным лечением, от крупного долга к мелкому</caption>
+									<thead>
+										<tr>
+											<th scope="col">Пациент</th>
+											<th scope="col">Долг</th>
+											<th scope="col">Срок</th>
+											<th scope="col">Первая позиция</th>
+										</tr>
+									</thead>
+									<tbody>
+										{debtors.data.rows.map((row) => (
+											<tr key={row.patientId}>
+												<td className="ops-strong" data-label="Пациент">
+													{row.patientName}
+												</td>
+												<td className="ops-num" data-label="Долг">
+													{money(row.debtRub)}
+												</td>
+												<td data-label="Срок">{bucketLabels[row.bucket] ?? row.bucket}</td>
+												<td className="ops-num" data-label="Первая позиция">
+													{row.oldestChargeAt === null
+														? "дата не определена"
+														: new Date(row.oldestChargeAt).toLocaleDateString("ru-RU")}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							<p className="ops-hint">
+								Итого {money(debtors.data.totalDebtRub)} у {debtors.data.rows.length} пациент(ов).{" "}
+								{debtors.data.note}
+							</p>
+						</>
+					)}
+				</>
+			) : null}
+
+			{/*
 				── Выплаты врачам ────────────────────────────────────────────────
 				Расчёт зарплаты врача: касса врача за месяц, ставка, удержание за
 				материалы, сумма к выплате. Раньше этой таблицы не видел никто —
@@ -786,5 +1301,11 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 
 export default ManagerReportsPanel;
 
-/** Подписи дней недели для отчёта загрузки — вынесены для повторного использования. */
+/**
+ * Подписи дней недели для отчёта загрузки. До этой правки они были ЗАГОТОВКОЙ:
+ * объявлены и экспортированы «для повторного использования», а разреза загрузки
+ * по дням недели на экране не было вовсе. Теперь их читает раздел «Когда клиника
+ * занята» выше; порядок соответствует ISO — 1 понедельник, 7 воскресенье, как
+ * возвращает `extract(isodow …)` в services/reports/managerReports.ts.
+ */
 export { weekdayNames };
