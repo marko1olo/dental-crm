@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-	resolveOrganizationId,
+  requireClinicalMutationAccess,
+  requireClinicalReadAccess,
+  resolveOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { visitTemplates } from "../db/schema.js";
@@ -39,20 +39,20 @@ import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
  * кабинета» берётся из общего дома `utils/clinicSessionRefusal.ts`.
  */
 const TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE = clinicNotIdentifiedMessage(
-	"список протоколов приёма не открыть",
+  "список протоколов приёма не открыть",
 );
 const TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE = clinicNotIdentifiedMessage(
-	"протокол приёма не открыть",
+  "протокол приёма не открыть",
 );
 const TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE = clinicNotIdentifiedMessage(
-	"новый протокол приёма не сохранить",
-	"заполненная форма остаётся на экране",
+  "новый протокол приёма не сохранить",
+  "заполненная форма остаётся на экране",
 );
 const TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE = clinicNotIdentifiedMessage(
-	"удалить протокол приёма нельзя",
+  "удалить протокол приёма нельзя",
 );
 const TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE = clinicNotIdentifiedMessage(
-	"встроенные протоколы приёма не установить",
+  "встроенные протоколы приёма не установить",
 );
 
 /**
@@ -62,7 +62,7 @@ const TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE = clinicNotIdentifiedMessage(
  * сообщите администратору» — ложное указание, потому что маршрут работает.
  */
 const TEMPLATE_NOT_FOUND_MESSAGE =
-	"Этот протокол приёма не найден в вашей клинике. Так бывает, если его удалили, пока список был открыт на экране. Обновите список протоколов и выберите протокол заново.";
+  "Этот протокол приёма не найден в вашей клинике. Так бывает, если его удалили, пока список был открыт на экране. Обновите список протоколов и выберите протокол заново.";
 
 /**
  * «У протокола нет названия». Поле названо русской подписью с экрана, а не
@@ -70,7 +70,7 @@ const TEMPLATE_NOT_FOUND_MESSAGE =
  * же объясняет, зачем оно обязательно.
  */
 const TEMPLATE_TITLE_REQUIRED_MESSAGE =
-	"Протокол приёма не сохранён, потому что у него не заполнено название. Именно по названию врач выбирает протокол в списке на приёме, поэтому пустым оно быть не может. Впишите название и сохраните снова.";
+  "Протокол приёма не сохранён, потому что у него не заполнено название. Именно по названию врач выбирает протокол в списке на приёме, поэтому пустым оно быть не может. Впишите название и сохраните снова.";
 
 /**
  * «Встроенный протокол удалить нельзя».
@@ -82,212 +82,210 @@ const TEMPLATE_TITLE_REQUIRED_MESSAGE =
  * администратора к кнопке, которой не существует.
  */
 const TEMPLATE_BUILT_IN_MESSAGE =
-	"Это встроенный протокол приёма, он поставляется вместе с программой и удалить его нельзя. Если он вам не подходит, создайте свой протокол приёма и выбирайте на приёме его — встроенный останется в списке, но пользоваться им никто не обязан.";
+  "Это встроенный протокол приёма, он поставляется вместе с программой и удалить его нельзя. Если он вам не подходит, создайте свой протокол приёма и выбирайте на приёме его — встроенный останется в списке, но пользоваться им никто не обязан.";
 
 export default async function registerTemplateRoutes(app: FastifyInstance) {
-	// GET /api/templates — list all templates for the org
-	app.get("/api/templates", async (req, reply) => {
-		if (!(await requireClinicalReadAccess(req, reply, "read templates")))
-			return;
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE,
-			});
+  app.get("/api/templates", async (req, reply) => {
+    if (!(await requireClinicalReadAccess(req, reply, "read templates")))
+      return;
+    const orgId = await resolveOrganizationId(req);
+    if (!orgId)
+      return reply.code(403).send({
+        error: "OrgRequired",
+        message: TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE,
+      });
 
-		// Auto-seed built-in templates if none exist
-		const existing = await db
-			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
-		/*
-		 * ЧТО БЫЛО СЛОМАНО. Провал установки встроенных протоколов приёма
-		 * записывался в журнал сервера и наружу уходил безусловный
-		 * `200 {"templates":[]}`. Для врача «протоколов в этой клинике нет» и
-		 * «протоколы не поставились» выглядели одинаково — пустым выпадающим
-		 * списком «Клинический шаблон», — а разница между ними это разница между
-		 * «набираю дневник руками» и «звоню администратору». Отказа не было
-		 * вообще: человек не знал, что что-то сломалось, и делал вывод, что
-		 * готовых протоколов в его клинике не бывает. Дневник приёма заполняется
-		 * на каждом приёме, поэтому вывод закреплялся навсегда.
-		 *
-		 * Ошибка запоминается, а не гасится: ответ решается ПОСЛЕ повторного
-		 * чтения списка. Посев идёт вставками в цикле без транзакции
-		 * (scripts/seedTemplates.ts), поэтому сбой посередине оставляет часть
-		 * протоколов в базе — и отказ вместо них отнял бы у врача то, что уже
-		 * годится к работе.
-		 */
-		let seedFailure: unknown = null;
-		if (existing.length === 0) {
-			try {
-				await ensureClinicalTemplatesSeeded(orgId);
-			} catch (err) {
-				seedFailure = err;
-				// error, а не warn: пустой список протоколов у клиники — это поломка
-				// установки, и в журнале она обязана лежать как поломка.
-				app.log.error(
-					`[Templates] Установка встроенных протоколов провалилась для организации ${orgId}: ${String(err)}`,
-				);
-			}
-		}
+    // Auto-seed built-in templates if none exist
+    const existing = await db
+      .select()
+      .from(visitTemplates)
+      .where(eq(visitTemplates.organizationId, orgId));
+    /*
+     * ЧТО БЫЛО СЛОМАНО. Провал установки встроенных протоколов приёма
+     * записывался в журнал сервера и наружу уходил безусловный
+     * `200 {"templates":[]}`. Для врача «протоколов в этой клинике нет» и
+     * «протоколы не поставились» выглядели одинаково — пустым выпадающим
+     * списком «Клинический шаблон», — а разница между ними это разница между
+     * «набираю дневник руками» и «звоню администратору». Отказа не было
+     * вообще: человек не знал, что что-то сломалось, и делал вывод, что
+     * готовых протоколов в его клинике не бывает. Дневник приёма заполняется
+     * на каждом приёме, поэтому вывод закреплялся навсегда.
+     *
+     * Ошибка запоминается, а не гасится: ответ решается ПОСЛЕ повторного
+     * чтения списка. Посев идёт вставками в цикле без транзакции
+     * (scripts/seedTemplates.ts), поэтому сбой посередине оставляет часть
+     * протоколов в базе — и отказ вместо них отнял бы у врача то, что уже
+     * годится к работе.
+     */
+    let seedFailure: unknown = null;
+    if (existing.length === 0) {
+      try {
+        await ensureClinicalTemplatesSeeded(orgId);
+      } catch (err) {
+        seedFailure = err;
+        // error, а не warn: пустой список протоколов у клиники — это поломка
+        // установки, и в журнале она обязана лежать как поломка.
+        app.log.error(
+          `[Templates] Установка встроенных протоколов провалилась для организации ${orgId}: ${String(err)}`,
+        );
+      }
+    }
 
-		const templates = await db
-			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
+    const templates = await db
+      .select()
+      .from(visitTemplates)
+      .where(eq(visitTemplates.organizationId, orgId));
 
-		if (seedFailure && templates.length === 0) {
-			// 503, а не 200: список пуст не потому, что протоколов нет, а потому
-			// что их не удалось установить. Причина у сервера установлена только
-			// такая — сама установка не прошла; ЧТО именно отказало (база, права,
-			// связь), сервер здесь не знает и не сочиняет: подробности ушли в
-			// журнал строкой выше.
-			return reply.code(503).send({
-				error: "ClinicalTemplatesSeedFailed",
-				message:
-					"Встроенные клинические протоколы не установились в этой клинике, поэтому список пуст — это сбой установки, а не отсутствие протоколов. Дневник приёма пока заполните вручную и передайте это сообщение администратору клиники: установку нужно повторить.",
-			});
-		}
+    if (seedFailure && templates.length === 0) {
+      // 503, а не 200: список пуст не потому, что протоколов нет, а потому
+      // что их не удалось установить. Причина у сервера установлена только
+      // такая — сама установка не прошла; ЧТО именно отказало (база, права,
+      // связь), сервер здесь не знает и не сочиняет: подробности ушли в
+      // журнал строкой выше.
+      return reply.code(503).send({
+        error: "ClinicalTemplatesSeedFailed",
+        message:
+          "Встроенные клинические протоколы не установились в этой клинике, поэтому список пуст — это сбой установки, а не отсутствие протоколов. Дневник приёма пока заполните вручную и передайте это сообщение администратору клиники: установку нужно повторить.",
+      });
+    }
 
-		return reply.send({ templates });
-	});
+    return reply.send({ templates });
+  });
 
-	// GET /api/templates/:id — get single template
-	app.get("/api/templates/:id", async (req, reply) => {
-		if (!(await requireClinicalReadAccess(req, reply, "read template"))) return;
-		const { id } = req.params as { id: string };
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
-			});
+  app.get("/api/templates/:id", async (req, reply) => {
+    if (!(await requireClinicalReadAccess(req, reply, "read template"))) return;
+    const { id } = req.params as { id: string };
+    const orgId = await resolveOrganizationId(req);
+    if (!orgId)
+      return reply.code(403).send({
+        error: "OrgRequired",
+        message: TEMPLATES_CLINIC_UNKNOWN_ONE_MESSAGE,
+      });
 
-		const [template] = await db
-			.select()
-			.from(visitTemplates)
-			.where(
-				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
-				),
-			);
+    const [template] = await db
+      .select()
+      .from(visitTemplates)
+      .where(
+        and(
+          eq(visitTemplates.id, id),
+          eq(visitTemplates.organizationId, orgId),
+        ),
+      );
 
-		if (!template)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-		return reply.send({ template });
-	});
+    if (!template)
+      return reply
+        .code(404)
+        .send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
+    return reply.send({ template });
+  });
 
-	// POST /api/templates — create a custom template
-	app.post("/api/templates", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "create template")))
-			return;
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE,
-			});
+  app.post("/api/templates", async (req, reply) => {
+    if (!(await requireClinicalMutationAccess(req, reply, "create template")))
+      return;
+    const orgId = await resolveOrganizationId(req);
+    if (!orgId)
+      return reply.code(403).send({
+        error: "OrgRequired",
+        message: TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE,
+      });
 
-		const body = req.body as {
-			title: string;
-			category?: string;
-			specialty?: string;
-			prefilledAnamnesis?: string;
-			prefilledObjective?: string;
-			prefilledTreatment?: string;
-			defaultIcd10?: string;
-			defaultIcd10Label?: string;
-			suggestedProcedureIds?: string[];
-		};
+    const body = req.body as {
+      title: string;
+      category?: string;
+      specialty?: string;
+      prefilledAnamnesis?: string;
+      prefilledObjective?: string;
+      prefilledTreatment?: string;
+      defaultIcd10?: string;
+      defaultIcd10Label?: string;
+      suggestedProcedureIds?: string[];
+    };
 
-		if (!body.title?.trim())
-			return reply
-				.code(400)
-				.send({ error: "Title required", message: TEMPLATE_TITLE_REQUIRED_MESSAGE });
+    if (!body.title?.trim())
+      return reply
+        .code(400)
+        .send({
+          error: "Title required",
+          message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
+        });
 
-		const [inserted] = await db
-			.insert(visitTemplates)
-			.values({
-				organizationId: orgId,
-				title: body.title.trim(),
-				category: body.category,
-				specialty: body.specialty,
-				prefilledAnamnesis: body.prefilledAnamnesis,
-				prefilledObjective: body.prefilledObjective,
-				prefilledTreatment: body.prefilledTreatment,
-				defaultIcd10: body.defaultIcd10,
-				defaultIcd10Label: body.defaultIcd10Label,
-				suggestedProcedureIds: body.suggestedProcedureIds ?? [],
-				isBuiltIn: false,
-			})
-			.returning();
+    const [inserted] = await db
+      .insert(visitTemplates)
+      .values({
+        organizationId: orgId,
+        title: body.title.trim(),
+        category: body.category,
+        specialty: body.specialty,
+        prefilledAnamnesis: body.prefilledAnamnesis,
+        prefilledObjective: body.prefilledObjective,
+        prefilledTreatment: body.prefilledTreatment,
+        defaultIcd10: body.defaultIcd10,
+        defaultIcd10Label: body.defaultIcd10Label,
+        suggestedProcedureIds: body.suggestedProcedureIds ?? [],
+        isBuiltIn: false,
+      })
+      .returning();
 
-		return reply.code(201).send({ template: inserted });
-	});
+    return reply.code(201).send({ template: inserted });
+  });
 
-	// DELETE /api/templates/:id — delete custom template (built-in protected)
-	app.delete("/api/templates/:id", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "delete template")))
-			return;
-		const { id } = req.params as { id: string };
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE,
-			});
+  app.delete("/api/templates/:id", async (req, reply) => {
+    if (!(await requireClinicalMutationAccess(req, reply, "delete template")))
+      return;
+    const { id } = req.params as { id: string };
+    const orgId = await resolveOrganizationId(req);
+    if (!orgId)
+      return reply.code(403).send({
+        error: "OrgRequired",
+        message: TEMPLATES_CLINIC_UNKNOWN_DELETE_MESSAGE,
+      });
 
-		const [template] = await db
-			.select()
-			.from(visitTemplates)
-			.where(
-				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
-				),
-			);
+    const [template] = await db
+      .select()
+      .from(visitTemplates)
+      .where(
+        and(
+          eq(visitTemplates.id, id),
+          eq(visitTemplates.organizationId, orgId),
+        ),
+      );
 
-		if (!template)
-			return reply
-				.code(404)
-				.send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
-		if (template.isBuiltIn)
-			return reply.code(403).send({
-				error: "CannotDeleteBuiltIn",
-				message: TEMPLATE_BUILT_IN_MESSAGE,
-			});
+    if (!template)
+      return reply
+        .code(404)
+        .send({ error: "NotFound", message: TEMPLATE_NOT_FOUND_MESSAGE });
+    if (template.isBuiltIn)
+      return reply.code(403).send({
+        error: "CannotDeleteBuiltIn",
+        message: TEMPLATE_BUILT_IN_MESSAGE,
+      });
 
-		await db
-			.delete(visitTemplates)
-			.where(
-				and(
-					eq(visitTemplates.id, id),
-					eq(visitTemplates.organizationId, orgId),
-				),
-			);
-		return reply.send({ success: true });
-	});
+    await db
+      .delete(visitTemplates)
+      .where(
+        and(
+          eq(visitTemplates.id, id),
+          eq(visitTemplates.organizationId, orgId),
+        ),
+      );
+    return reply.send({ success: true });
+  });
 
-	// POST /api/templates/seed — force re-seed built-in templates
-	app.post("/api/templates/seed", async (req, reply) => {
-		if (!(await requireClinicalMutationAccess(req, reply, "seed templates")))
-			return;
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE,
-			});
+  app.post("/api/templates/seed", async (req, reply) => {
+    if (!(await requireClinicalMutationAccess(req, reply, "seed templates")))
+      return;
+    const orgId = await resolveOrganizationId(req);
+    if (!orgId)
+      return reply.code(403).send({
+        error: "OrgRequired",
+        message: TEMPLATES_CLINIC_UNKNOWN_SEED_MESSAGE,
+      });
 
-		await ensureClinicalTemplatesSeeded(orgId);
-		const templates = await db
-			.select()
-			.from(visitTemplates)
-			.where(eq(visitTemplates.organizationId, orgId));
-		return reply.send({ success: true, count: templates.length });
-	});
+    await ensureClinicalTemplatesSeeded(orgId);
+    const templates = await db
+      .select()
+      .from(visitTemplates)
+      .where(eq(visitTemplates.organizationId, orgId));
+    return reply.send({ success: true, count: templates.length });
+  });
 }
