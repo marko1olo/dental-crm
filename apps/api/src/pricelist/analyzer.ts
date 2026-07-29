@@ -682,8 +682,23 @@ function stripPriceFromTitle(line: string, pricedSpan: PriceSpan | null): string
     .trim();
 }
 
+/**
+ * Длительность приёма из строки прайса.
+ *
+ * СПРАВА СТОИТ ЗАПРЕТ БУКВЫ, А НЕ \b. Прежняя регулярка кончалась на `\b` после
+ * «мин», и в русском прайсе она не срабатывала НИКОГДА: в JavaScript `\b`
+ * определён через [A-Za-z0-9_], кириллическое «н» словным символом не считается,
+ * и границы слова после «мин» не возникает ни перед пробелом, ни в конце строки.
+ * Проверено прямым вызовом регулярки: «Седация 5000/120 мин» → нет совпадения,
+ * «Sedation 120 minutes» → есть. То есть длительность читалась только из
+ * английской строки, а весь русский прайс приезжал с durationMinutes: null, и
+ * запись на приём теряла длину визита, которая в прайсе была написана.
+ *
+ * Это тот же способ порчи, из-за которого в этом файле нельзя опираться на `\b`:
+ * см. currencyPattern и запрет буквы слева от «от» в priceRegex.
+ */
 function durationFromLine(line: string): number | null {
-  const match = line.match(/\b(\d{1,3})\s*(?:мин|minutes?)\b/i);
+  const match = line.match(/\b(\d{1,3})\s*(?:мин(?:ут\w*)?|minutes?)(?![А-Яа-яЁёA-Za-z])/iu);
   if (!match) return null;
   const duration = Number(match[1]);
   return Number.isFinite(duration) && duration > 0 && duration <= maxServiceDurationMinutes ? duration : null;
