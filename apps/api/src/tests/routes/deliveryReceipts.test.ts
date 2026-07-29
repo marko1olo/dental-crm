@@ -77,8 +77,21 @@ describe("разбор квитанций провайдеров", () => {
 		assert.deepEqual(parseSmsRuReceipts(""), []);
 		assert.deepEqual(parseSmsRuReceipts("   "), []);
 		assert.deepEqual(parseSmsRuReceipts(null), []);
+		assert.deepEqual(parseSmsRuReceipts(123), []);
+		assert.deepEqual(parseSmsRuReceipts({}), []);
+		assert.deepEqual(parseSmsRuReceipts([]), []);
 		assert.deepEqual(parseSmsRuReceipts("=103"), []);
 		assert.deepEqual(parseSmsRuReceipts("000000-1=абв"), []);
+		assert.deepEqual(parseSmsRuReceipts(" =100"), []);
+		assert.deepEqual(parseSmsRuReceipts("123="), []);
+		assert.deepEqual(parseSmsRuReceipts("123"), []);
+	});
+
+	test("SMS.RU: пустые строки между квитанциями игнорируются", () => {
+		const receipts = parseSmsRuReceipts("000000-10000001=103\n \n\t\n000000-10000002=104");
+		assert.equal(receipts.length, 2);
+		assert.equal(receipts[0]?.providerMessageId, "000000-10000001");
+		assert.equal(receipts[1]?.providerMessageId, "000000-10000002");
 	});
 
 	test("SMSC: доставка, отказ и ожидание различаются", () => {
