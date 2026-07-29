@@ -1,30 +1,42 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
-const financeViewSource = readFileSync("apps/web/src/FinanceView.tsx", "utf8");
-const scheduleViewSource = readFileSync(
-	"apps/web/src/ScheduleView.tsx",
-	"utf8",
-);
-const settingsViewSource = readFileSync(
-	"apps/web/src/SettingsView.tsx",
-	"utf8",
-);
-const shellSource = readFileSync("apps/web/src/workspaceShell.tsx", "utf8");
-const continuityStripSource = readFileSync(
+/*
+ * ПЕРЕВОДЫ СТРОК НОРМАЛИЗУЮТСЯ ПРИ ЧТЕНИИ, И БЕЗ ЭТОГО СТРАЖ — МОНЕТКА.
+ *
+ * Замерено 29.07.2026. В репозитории `core.autocrlf=true`, и рабочее дерево
+ * лежит СМЕШАННЫМ: styles/main.css — 17375 CRLF и ни одного одиночного LF,
+ * App.tsx и SettingsView.tsx — наоборот, 5073 и 2017 LF и ни одного CRLF.
+ * Любое требование, внутри которого есть литерал `\n`, поэтому проверяет не
+ * содержимое файла, а то, в каком виде git его развернул на этой машине.
+ *
+ * Ровно так падало требование «Sidebar view hints must collapse on mobile»:
+ * искалось `.nav-copy small {\n    display: none;`, а правило в файле ЕСТЬ —
+ * styles/main.css:13353-13355, внутри медиа-запроса, просто с `\r\n`. Страж
+ * сообщал об отсутствии мобильного правила, которое существует.
+ *
+ * Это не косметика: класс дефекта общий для всех стражей с суффиксом -source,
+ * потому что они сравнивают подстроки, а не разбирают код. Здесь он закрыт в
+ * одном месте — чтением через normalizeSource.
+ */
+function readSource(relativePath) {
+	return readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
+}
+
+const appSource = readSource("apps/web/src/App.tsx");
+const financeViewSource = readSource("apps/web/src/FinanceView.tsx");
+const scheduleViewSource = readSource("apps/web/src/ScheduleView.tsx");
+const settingsViewSource = readSource("apps/web/src/SettingsView.tsx");
+const shellSource = readSource("apps/web/src/workspaceShell.tsx");
+const continuityStripSource = readSource(
 	"apps/web/src/workspaceContinuityStrip.tsx",
-	"utf8",
 );
-const routeErrorBoundarySource = readFileSync(
+const routeErrorBoundarySource = readSource(
 	"apps/web/src/workspaceRouteErrorBoundary.tsx",
-	"utf8",
 );
-const preloadSource = readFileSync("apps/web/src/workspacePreload.ts", "utf8");
-const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
-const motionPreferenceSource = readFileSync(
-	"apps/web/src/motionPreference.ts",
-	"utf8",
-);
+const preloadSource = readSource("apps/web/src/workspacePreload.ts");
+const cssSource = readSource("apps/web/src/styles/main.css");
+const motionPreferenceSource = readSource("apps/web/src/motionPreference.ts");
+const workspaceUiLabelsSource = readSource("apps/web/src/workspaceUiLabels.ts");
 
 const missing = [];
 
@@ -387,11 +399,26 @@ requireIn(
 	'className="nav-copy"',
 	"workspaceShell sidebar must render a visible label and desktop hint group",
 );
-requireIn(
-	shellSource,
-	'aria-label="Настройки импорта и экспорта"',
-	"workspaceShell icon-only settings shortcut must have an accessible name",
-);
+/*
+ * СНЯТОЕ ТРЕБОВАНИЕ №1: 'aria-label="Настройки импорта и экспорта"'.
+ * Формулировка была «icon-only settings shortcut must have an accessible name».
+ *
+ * СНЯТО ПОТОМУ, ЧТО ЕГО ПРЯМО ЗАПРЕЩАЕТ ДРУГОЙ ТЕСТ, А НЕ ПОТОМУ, ЧТО КРАСНО.
+ * apps/web/src/__tests__/workspaceTopbarActions.test.ts:215-218 утверждает
+ * `!shellSource.includes("Настройки импорта и экспорта")` с причиной: ссылка-
+ * значок вела на общий хеш `#settings`, который вкладку импорта не открывает, то
+ * есть её имя для программы чтения с экрана обещало то, чего она не делала.
+ * Разбор удаления лежит в workspaceShell.tsx:721-730: удалён БЕЗЫМЯННЫЙ ДУБЛЬ
+ * пункта «Настройки» бокового меню — тот же глиф Database, тот же адрес, — а не
+ * путь к настройкам. Все роли, которым он показывался (администратор,
+ * управляющий, владелец), имеют подписанный пункт «Настройки» в боковом меню.
+ *
+ * Два гейта требовали противоположного, поэтому зелёными одновременно быть не
+ * могли: этот страж требовал вернуть кнопку, а тест требовал её отсутствия.
+ * Правило живёт в том тесте — он разбирает список кнопок и потому строже
+ * подстроки.
+ * Дублировать запрет здесь не нужно, ссылки достаточно.
+ */
 requireIn(
 	shellSource,
 	"onRoleChange(role)",
@@ -402,20 +429,64 @@ requireIn(
 	"aria-pressed={selectedWorkspaceRole === role}",
 	"workspaceShell role buttons must expose selected state without relying on color",
 );
+/*
+ * ПОДПИСЬ ВЫНЕСЕНА В МОДУЛЬ ПОДПИСЕЙ — ЭТО ТРЕБОВАНИЕ КОНСТИТУЦИИ, А НЕ РЕГРЕСС.
+ *
+ * Требовалось дословно `aria-label={`Рабочий режим: ${staffRoleLabels[role]}`}`,
+ * то есть ЖЁСТКО ВПИСАННЫЙ русский текст в разметке. В workspaceShell.tsx:567
+ * стоит `aria-label={`${workspaceTopbarLabels.role.region}: ${staffRoleLabels[role]}`}`,
+ * а сама строка «Рабочий режим» лежит в workspaceUiLabels.ts:393. Результат на
+ * экране идентичен, но текст извлечён из разметки — ровно то, что предписывает
+ * .agents/AGENTS.md, DESIGN ADAPTABILITY MANDATE, пункт Multi-Language:
+ * «Do not hardcode UI text. Extract strings to locale files».
+ *
+ * Прежнее требование заставляло нарушать конституцию, поэтому проверка разделена
+ * на две половины, и обе обязательны: СВЯЗЬ (подпись роли собирается из подписи
+ * раздела и названия роли) проверяется в разметке, а ТЕКСТ — там, где он теперь
+ * объявлен. Так требование не ослаблено: пропадёт любая из половин — страж
+ * упадёт.
+ */
 requireIn(
 	shellSource,
-	"aria-label={`Рабочий режим: ${staffRoleLabels[role]}`}",
+	"aria-label={`${workspaceTopbarLabels.role.region}: ${staffRoleLabels[role]}`}",
 	"workspaceShell role buttons must have explicit action names",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'region: "Рабочий режим"',
+	"workspaceUiLabels must keep the readable role-region name used by role button labels",
 );
 requireIn(
 	shellSource,
 	"onGoToDictation",
 	"workspaceShell topbar must keep dictation shortcut externalized",
 );
+/*
+ * СНЯТОЕ ТРЕБОВАНИЕ №2: класс `top-dictation-button`.
+ * Формулировка была «topbar must expose a testable dictation shortcut».
+ *
+ * ЯРЛЫК ДИКТОВКИ НЕ ПРОПАЛ — ПРОПАЛ БЕЗЫМЯННЫЙ ДУБЛЬ, КОТОРЫЙ ЕГО НЁС. Разбор
+ * в workspaceShell.tsx:655-666: в строке действий стояли ДВЕ кнопки в один и тот
+ * же раздел — подписанная «Прием» и безымянная кнопка-микрофон. Вторая была
+ * надмножеством первой, и подписи не имела именно она. Микрофон удалён, а его
+ * единственная собственная способность (курсор в поле диктовки) досталась
+ * подписанной кнопке: workspaceShell.tsx:676 — `onClick={onGoToDictation}`.
+ *
+ * Как и требование №1, это запрещено отдельным тестом:
+ * __tests__/workspaceTopbarActions.test.ts:207-210 проверяет
+ * `!classes.includes("top-dictation-button")` и объясняет, что для
+ * администратора, управляющего и ассистента кнопка была МЁРТВОЙ —
+ * getFilteredAppViews не содержит `visit`, и охранник маршрута возвращал их на
+ * «Смену».
+ *
+ * Требование заменено на проверку той же способности по её живому носителю:
+ * подписанная кнопка обязана быть подключена к onGoToDictation. Ярлык
+ * по-прежнему проверяем, но по поведению, а не по классу удалённой кнопки.
+ */
 requireIn(
 	shellSource,
-	"top-dictation-button",
-	"workspaceShell topbar must expose a testable dictation shortcut",
+	"onClick={onGoToDictation}",
+	"workspaceShell topbar must wire the labelled visit button to the dictation shortcut",
 );
 requireIn(
 	shellSource,
