@@ -125,7 +125,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		}
 
 		return {
-			scope: { organizationId: context.organizationId, from: period.from, to: period.to },
+			// Пояс клиники доходит до отчётов: группировка в PostgreSQL иначе считается
+			// в поясе сессии, и день с часом съезжают на величину смещения.
+			scope: { organizationId: context.organizationId, from: period.from, to: period.to, timeZone },
 			query: parsed.data
 		};
 	}

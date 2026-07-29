@@ -50,7 +50,50 @@ export type ReportPeriod = {
 
 export type ReportScope = ReportPeriod & {
 	readonly organizationId: string;
+	/**
+	 * Часовой пояс клиники. Нужен там, где группировка делается в PostgreSQL:
+	 * `date_trunc` и `extract` считают в поясе СЕССИИ, а не клиники.
+	 *
+	 * Необязателен намеренно: без него поведение прежнее, и ни один вызывающий
+	 * не ломается. Отсутствие пояса — не ошибка, а «неизвестно»; выдумывать
+	 * московский за клинику нельзя.
+	 */
+	readonly timeZone?: string | null;
 };
+
+/**
+ * ПОЯС, КОТОРЫЙ POSTGRESQL ЗНАЕТ. Иначе `AT TIME ZONE` бросает 22023
+ * (`time zone "…" not recognized`) и отчёт превращается в 500.
+ *
+ * Проверять обязательно: `clinics.timezone` — свободный текст со значением по
+ * умолчанию `Europe/Samara`, без ограничения на список
+ * (`apps/api/src/db/schema.ts:298`). Единственная проверка при записи —
+ * `timeZoneSchema` в общем пакете, и она спрашивает ICU, а не PostgreSQL:
+ * `pg_timezone_names` знает 598 имён, набор ICU другой. Значит имя, принятое
+ * при записи, здесь может оказаться неизвестным.
+ *
+ * Ответ кэшируется на процесс: список поясов внутри одной версии сервера не
+ * меняется, а отчёты зовут это на каждый запрос.
+ */
+const knownTimeZoneCache = new Map<string, boolean>();
+
+async function postgresKnowsTimeZone(timeZone: string | null | undefined): Promise<string | null> {
+	if (!timeZone) return null;
+	const cached = knownTimeZoneCache.get(timeZone);
+	if (cached !== undefined) return cached ? timeZone : null;
+	try {
+		const found = await db.execute(
+			sql`select 1 as ok from pg_timezone_names where name = ${timeZone} limit 1`
+		);
+		const known = found.rows.length > 0;
+		knownTimeZoneCache.set(timeZone, known);
+		return known ? timeZone : null;
+	} catch {
+		// До базы не дошли — считаем пояс неизвестным и работаем как раньше.
+		// Ронять отчёт из-за неудачной сверки списка поясов нельзя.
+		return null;
+	}
+}
 
 /**
  * Смещение пояса в миллисекундах для заданного мгновения. `null` — пояса не
@@ -1126,10 +1169,28 @@ export type ScheduleLoadReport = {
  * пусто» из общей цифры за месяц не видно.
  */
 export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadReport> {
+	/*
+	 * ТЕПЛОВАЯ КАРТА СЧИТАЛАСЬ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+	 *
+	 * `extract(isodow …)` и `extract(hour …)` для колонки с часовым поясом берут
+	 * пояс СЕССИИ. Значит день недели и час приёма съезжали на всю величину
+	 * смещения: вечерние приёмы уезжали на предыдущие сутки, а карта «когда
+	 * открывать смены» советовала клинике не те часы. Для Камчатки это половина
+	 * суток. Измерено прогоном на живой базе: один и тот же момент при
+	 * `SET TIME ZONE 'UTC'` даёт isodow=3 hour=22, при `Europe/Samara` —
+	 * isodow=4 hour=2, при `Asia/Kamchatka` — isodow=4 hour=10.
+	 *
+	 * Приведение делается только к поясу, который PostgreSQL знает: иначе
+	 * `AT TIME ZONE` бросает 22023 и восемь рабочих отчётов руководителя
+	 * превращаются в 500. Пояс неизвестен — поведение прежнее, и это честнее
+	 * подставленного наугад московского.
+	 */
+	const zone = await postgresKnowsTimeZone(scope.timeZone);
+	const localStart = zone ? sql`(${appointments.startsAt} AT TIME ZONE ${zone})` : sql`${appointments.startsAt}`;
 	const rows = await db
 		.select({
-			weekday: sql<number>`extract(isodow from ${appointments.startsAt})::int`,
-			hour: sql<number>`extract(hour from ${appointments.startsAt})::int`,
+			weekday: sql<number>`extract(isodow from ${localStart})::int`,
+			hour: sql<number>`extract(hour from ${localStart})::int`,
 			appointments: sql<number>`count(*)::int`,
 			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`
 		})
@@ -1142,7 +1203,7 @@ export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadRepo
 				lte(appointments.startsAt, scope.to)
 			)
 		)
-		.groupBy(sql`extract(isodow from ${appointments.startsAt})`, sql`extract(hour from ${appointments.startsAt})`);
+		.groupBy(sql`extract(isodow from ${localStart})`, sql`extract(hour from ${localStart})`);
 
 	const cells = rows
 		.map((row) => ({
