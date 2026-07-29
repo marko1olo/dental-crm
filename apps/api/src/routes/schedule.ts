@@ -1,6 +1,10 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createAppointmentSchema, dashboardSchema, updateAppointmentSchema } from "@dental/shared";
+import {
+  clinicSessionMissingMessage,
+  clinicSessionRejectedMessage
+} from "../utils/clinicSessionRefusal.js";
 
 import { repairMojibakeText } from "../text/repairMojibake.js";
 
@@ -158,6 +162,54 @@ async function requireScheduleMutationAccess(request: FastifyRequest, reply: Fas
 
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { TOKEN_SECRET } from "./auth.js";
+
+/**
+ * ОТКАЗ ЗАПИСИ НА ПРИЁМ БЕЗ ЕДИНОГО СЛОВА ДЛЯ ЧЕЛОВЕКА.
+ *
+ * ЧТО БЫЛО. Оба обработчика расписания начинались одной и той же
+ * пятистрочной преамбулой и отвечали телом `{"error":"AuthRequired"}` и
+ * `{"error":"AuthExpired"}` — без поля `message`. Доказано запросом в процессе
+ * (`app.inject`, не дев-сервер): четыре ветки, четыре тела без текста.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Это самое частое действие администратора за день:
+ * поставить пациента в сетку и перенести приём. Экран
+ * (`apps/web/src/hooks/domains/useScheduleLogic.ts:758` и `:657`) строит текст
+ * через `responseErrorMessage(response, "Запись не создана")`, а тот берёт
+ * `message`, и только если его нет — подпись по коду ответа. То есть
+ * администратор получал «Запись не создана» и ни слова о том, что дело в
+ * истёкшем входе в кабинет: ни причины, ни следующего шага. Он повторяет
+ * нажатие, потом звонит в поддержку, а пациент в это время стоит у стойки. При
+ * этом сервер причину ЗНАЕТ точно и различает два состояния — токена нет и
+ * токен не принят, — потому что `verifyToken` вызывается только когда токен
+ * вообще пришёл.
+ *
+ * ЧТО ИЗМЕНИЛОСЬ, А ЧТО НЕТ. Коды ответа и значения поля `error` сохранены
+ * дословно, оба 401: интерфейс по ним ветвится, и ломать машинное поле, чтобы
+ * поставить в него человеческую фразу, значило бы поставить фасад вместо
+ * починки. Добавлено поле `message`.
+ *
+ * ПОЧЕМУ ПРЕАМБУЛА СВЕДЕНА В ОДНУ ФУНКЦИЮ. Две копии одной проверки — это две
+ * копии одного текста, и следующая правка попала бы в одну из них. Текст берётся
+ * из общего дома `utils/clinicSessionRefusal.ts` по той же причине.
+ */
+function requireClinicOrganizationId(request: FastifyRequest, reply: FastifyReply): string | null {
+  const clinicHeader = request.headers["x-dente-clinic-token"];
+  const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+  if (typeof clinicToken !== "string" || !clinicToken) {
+    reply.code(401).send({
+      error: "AuthRequired",
+      message: clinicSessionMissingMessage("расписание клиники ведётся только из кабинета")
+    });
+    return null;
+  }
+  const payload = verifyToken(clinicToken, TOKEN_SECRET());
+  if (!payload || !payload.organizationId) {
+    reply.code(401).send({ error: "AuthExpired", message: clinicSessionRejectedMessage });
+    return null;
+  }
+  return payload.organizationId as string;
+}
+
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -165,13 +217,8 @@ import { invalidateAppointmentReminders } from "../services/communications/appoi
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
-
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const input = parseSchedulePayload(createAppointmentSchema, request.body);
     if (!input) {
@@ -195,12 +242,8 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
   });
 
   async function updateAppointmentHandler(request: FastifyRequest<{ Params: { appointmentId?: string } }>, reply: FastifyReply) {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const params = request.params as { appointmentId?: string };
     if (!params.appointmentId) {
