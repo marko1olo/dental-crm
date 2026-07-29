@@ -149,6 +149,23 @@ describe("разбор квитанций провайдеров", () => {
 		assert.equal(parseSmscReceipt({ id: "12345" }), null);
 		assert.equal(parseSmscReceipt({ id: "12345", status: "не число" }), null);
 	});
+
+	test("SMSC: числовые параметры разбираются наравне со строковыми", () => {
+		const receipt = parseSmscReceipt({ id: 12345, status: 1 });
+		assert.equal(receipt?.providerMessageId, "12345");
+		assert.equal(receipt?.state, "delivered");
+	});
+
+	test("SMSC: неизвестный статус сохраняется как unknown", () => {
+		const receipt = parseSmscReceipt({ id: "12345", status: 999 });
+		assert.equal(receipt?.state, "unknown");
+		assert.ok(receipt?.detail.includes("состояние не распознано"));
+	});
+
+	test("SMSC: нулевой код ошибки не добавляет суффикс", () => {
+		const receipt = parseSmscReceipt({ id: "12345", status: "20", err: "0" });
+		assert.ok(!receipt?.detail.includes("код ошибки 0"));
+	});
 });
 
 describe("применение квитанций к очереди", () => {
