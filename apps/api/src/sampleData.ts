@@ -153,8 +153,12 @@ import {
 } from "./persistentState.js";
 import { createTelegramQrSvg } from "./telegramQr.js";
 import {
+	buildPatientLedger,
 	buildVisitLedger,
+	debtNumericText,
+	type Kopecks,
 	MoneyPrecisionError,
+	patientOwesClinicKopecks,
 	QuantityContractError,
 	type VisitLedger,
 	visitOutstandingKopecks,
@@ -8622,38 +8626,79 @@ function buildDenteTelegramOutboxItem(
 	};
 }
 
+/**
+ * Ключ идемпотентности напоминания об оплате — С КОПЕЙКАМИ ДОЛГА.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Здесь стояло
+ * `payment-reminder:${patientId}:${Math.max(0, Math.round(balanceDueRub))}` —
+ * долг округлялся до ЦЕЛОГО РУБЛЯ внутри ключа дедупликации. Пациент доплачивал
+ * 39 копеек, долг становился другим, а ключ оставался прежним, поэтому
+ * напоминание считалось уже отправленным и второе не уходило НИКОГДА. Обратный
+ * случай так же плох: изменение долга на одну копейку через границу полурубля
+ * рождало новый ключ и повторное напоминание на ту же сумму.
+ *
+ * Замер боевым маршрутом `GET /api/telegram/outbox` (2026-07-29, своя клиника):
+ * долг 1 000,49 ₽ давал id `payment-reminder:…:1000`, и после доплаты 0,39 ₽ id
+ * оставался `payment-reminder:…:1000`. Стало: `…:1000.49` → `…:1000.10`.
+ *
+ * ПОЧЕМУ КОПЕЙКИ, А НЕ РУБЛИ ЧИСЛОМ. Ключ печатает `debtNumericText` из единого
+ * дома формулы долга — то есть ровно тот текст, каким сумма легла бы в колонку
+ * `numeric(12,2)`: «1000.10», а не «1000.1». Иначе один и тот же долг давал бы
+ * два разных ключа в зависимости от того, как число напечаталось.
+ *
+ * ПОСЛЕДСТВИЕ ДЛЯ ЖИВЫХ ДАННЫХ, КОТОРОЕ НЕЛЬЗЯ ЗАМОЛЧАТЬ. Отправленность
+ * напоминания хранится как событие журнала с `entityId` = этим ключом
+ * (`telegramOutboxItemAlreadySent` ищет `telegram_outbox` /
+ * `telegram_outbound_sent` в `auditEvents`). Ключи прежнего вида
+ * (`payment-reminder:…:1000`) с новыми (`payment-reminder:…:1000.10`) не
+ * совпадут, поэтому на установке, где напоминания уже отправлялись, одна волна
+ * может уйти повторно. Замер на этой установке: в таблице `audit_events` строк
+ * `telegram_outbox` — 0, в сохранённом состоянии `.data/dental-crm-state.json`
+ * из 183 событий журнала `telegram_outbox` — 0, ключей `payment-reminder:*` — 0,
+ * то есть здесь повторяться нечему. На чужой установке это надо проверить тем же
+ * запросом ПЕРЕД обновлением.
+ */
 function paymentReminderOutboxId(
 	patientId: string,
-	balanceDueRub: number,
+	balanceDueKopecks: Kopecks,
 ): string {
-	return `payment-reminder:${patientId}:${Math.max(0, Math.round(balanceDueRub))}`;
+	return `payment-reminder:${patientId}:${debtNumericText(Math.max(0, balanceDueKopecks))}`;
 }
 
 function paymentReminderAlreadyCovered(outboxItemId: string): boolean {
 	return telegramOutboxItemAlreadySent(outboxItemId);
 }
 
-function patientPaymentBalanceRub(
+/**
+ * Сколько пациент должен клинике — для напоминания об оплате.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Здесь стояла СВОЯ копия формулы долга
+ * (`patientPaymentBalanceRub`): те же два `reduce`, но БЕЗ округления до
+ * копейки. На суммах с копейками она отдавала плавающую грязь — три позиции
+ * 1 000,00 + 1 001,82 + 1 489,67 давали `3491.4900000000002` вместо 3 491,49, и
+ * это число уходило в ключ идемпотентности. Разбор всех девяти прежних расчётов
+ * долга — `.agents/lead/recon-debt-formula-sprawl.md`.
+ *
+ * ДЕСЯТОЙ ФОРМУЛЫ НЕ ЗАВЕДЕНО: считает `money/patientDebt.ts`, тот же дом, что
+ * отвечает на вопросы карточки, сводки и приёма. Здесь остался отбор строк по
+ * клинике — сама арифметика в копейках живёт в модуле.
+ *
+ * ОТМЕНЁННЫЕ ПОЗИЦИИ отбрасывает модуль (`CANCELLED_ITEM_STATUS`), поэтому
+ * прежний фильтр `status !== "cancelled"` из отбора убран: два фильтра в двух
+ * местах — это ровно тот способ, которым они однажды разойдутся.
+ */
+function patientPaymentDebtKopecks(
 	patientId: string,
 	organizationScope = denteTelegramBotSettings.organizationId,
-): number {
-	const plannedRub = treatmentPlanItems
-		.filter(
-			(item) =>
-				item.organizationId === organizationScope &&
-				item.patientId === patientId &&
-				item.status !== "cancelled",
-		)
-		.reduce((total, item) => total + treatmentLineTotal(item), 0);
-	const paidRub = payments
-		.filter(
-			(payment) =>
-				payment.organizationId === organizationScope &&
-				payment.patientId === patientId &&
-				payment.status === "paid",
-		)
-		.reduce((total, payment) => total + payment.amountRub, 0);
-	return Math.max(0, plannedRub - paidRub);
+): Kopecks {
+	const ledger = buildPatientLedger(
+		patientId,
+		treatmentPlanItems.filter(
+			(item) => item.organizationId === organizationScope,
+		),
+		payments.filter((payment) => payment.organizationId === organizationScope),
+	);
+	return patientOwesClinicKopecks(ledger);
 }
 
 function patientPaymentReminderScheduledAt(
@@ -8684,13 +8729,37 @@ function buildDenteTelegramPaymentReminderItems(
 		if (patient.organizationId !== organizationScope) return [];
 		if (patient.status !== "active") return [];
 
-		const balanceDueRub = patientPaymentBalanceRub(
-			patient.id,
-			organizationScope,
-		);
-		if (balanceDueRub <= 0) return [];
+		/*
+		 * Отказ модуля ловится, а не летит наверх. Модуль отвергает суммы,
+		 * потерявшие точность, и количество вне общего контракта; одна такая
+		 * строка у одного пациента не должна ронять ВСЮ очередь отправок клиники
+		 * пятисоткой — иначе из-за одной испорченной цены не уйдёт ни одно
+		 * напоминание, ни одно подтверждение записи, ни одна памятка. Цена этой
+		 * ветки названа прямо: напоминание этому пациенту не уйдёт, и причина
+		 * обязана быть в журнале целиком, иначе потерянные деньги никто не найдёт.
+		 */
+		let balanceDueKopecks: Kopecks;
+		try {
+			balanceDueKopecks = patientPaymentDebtKopecks(
+				patient.id,
+				organizationScope,
+			);
+		} catch (error) {
+			if (
+				error instanceof MoneyPrecisionError ||
+				error instanceof QuantityContractError
+			) {
+				console.error(
+					`[Telegram] Напоминание об оплате пациенту ${patient.id} не построено: ${error.message} ` +
+						"Долг не рассчитан, поэтому напоминание не уйдёт — почините строку денег, названную в причине.",
+				);
+				return [];
+			}
+			throw error;
+		}
+		if (balanceDueKopecks <= 0) return [];
 
-		const itemId = paymentReminderOutboxId(patient.id, balanceDueRub);
+		const itemId = paymentReminderOutboxId(patient.id, balanceDueKopecks);
 		if (paymentReminderAlreadyCovered(itemId)) return [];
 
 		return [
