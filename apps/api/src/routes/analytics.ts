@@ -13,8 +13,22 @@ import {
 	users,
 	visits,
 } from "../db/schema.js";
+// Пояс клиники берётся ОДНИМ домом на проект — из отчётов руководителя. Своя
+// копия `clinicTimeZone` здесь стала бы вторым источником истины о поясе, а из
+// этой болезни в проекте уже выросли четыре разных расчёта долга.
+import {
+	clinicTimeZone,
+	inClinicZone,
+	postgresKnowsTimeZone,
+} from "../services/reports/managerReports.js";
 
-const RU_MONTHS = [
+/**
+ * Названия месяцев для ярлыка когорты. Экспортируются, чтобы тест-замок на пояс
+ * когорты сверял ярлык с ЭТОЙ таблицей, а не с собственной копией: вторая копия
+ * разошлась бы с первой, и тест перестал бы проверять то, что показывают
+ * владельцу клиники.
+ */
+export const RU_MONTHS = [
 	"Янв", "Фев", "Мар", "Апр",
 	"Май", "Июн", "Июл", "Авг",
 	"Сен", "Окт", "Ноя", "Дек",
@@ -165,9 +179,48 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const ltvStartDate = new Date(now);
 			ltvStartDate.setMonth(ltvStartDate.getMonth() - 12);
 
+			/*
+			 * МЕСЯЦ КОГОРТЫ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+			 *
+			 * `date_trunc('month', …)` для колонки с часовым поясом режет месяц по
+			 * поясу СЕССИИ. У всех российских поясов смещение положительное, поэтому
+			 * день в поясе сессии ОТСТАЁТ от местного каждую ночь: в Самаре (пояс
+			 * клиники по умолчанию в схеме) до 04:00, на Камчатке половину суток.
+			 * Пациент, зарегистрированный вечером последнего дня месяца, попадал в
+			 * когорту СЛЕДУЮЩЕГО месяца — и оставался там навсегда, потому что
+			 * когорта присваивается один раз, по дате регистрации.
+			 *
+			 * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Владелец сравнивает когорты между собой и
+			 * по этому сравнению решает, какая реклама сработала. Сдвинутый пациент
+			 * уносит свою выручку в чужой месяц: месяц регистрации недосчитывает
+			 * его, следующий получает подарок. Средний чек когорты — деление на
+			 * число пациентов в ней, поэтому ошибаются ОБА месяца сразу.
+			 *
+			 * ИЗМЕРЕНО на живой базе: момент 30 июня 2026 23:30 по часам клиники
+			 * (Europe/Moscow) при поясе сессии Europe/Samara даёт когорту 2026-07,
+			 * в поясе клиники — 2026-06. Пояс режет и ГРУППИРОВКУ, а не только
+			 * ярлык: два момента (30 июня 23:30 и 1 июля 10:00 по Москве) в поясе
+			 * сессии дают ОДНУ корзину 2026-07 из двух строк, в поясе клиники —
+			 * две корзины по одной.
+			 *
+			 * Приведение делается только к поясу, который PostgreSQL знает: иначе
+			 * `AT TIME ZONE` бросает 22023 и дашборд отдаёт 503. Пояс неизвестен —
+			 * поведение прежнее, ответ тот же, что и до правки.
+			 *
+			 * ВЫРАЖЕНИЕ ОБЪЯВЛЕНО ОДИН РАЗ на все ТРИ места (SELECT, GROUP BY,
+			 * ORDER BY). Через три отдельных фрагмента имя пояса ушло бы
+			 * параметром трижды и получило РАЗНЫЕ номера ($1, $6, $7) —
+			 * PostgreSQL считает такие выражения разными и отвергает запрос
+			 * целиком с «column must appear in the GROUP BY clause». Приведение
+			 * `::text` тут не спасает: дело не в типе, а в номере. Так уже дважды
+			 * падала в 500 тепловая карта смен.
+			 */
+			const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
+			const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
+
 			const cohortRaw = await db
 				.select({
-					cohortMonth: sql<string>`to_char(date_trunc('month', ${patients.createdAt}), 'YYYY-MM')`,
+					cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
 					patientId: payments.patientId,
 					totalRevenue: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 				})
@@ -181,11 +234,8 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 						eq(payments.status, "paid"),
 					),
 				)
-				.groupBy(
-					sql`date_trunc('month', ${patients.createdAt})`,
-					payments.patientId,
-				)
-				.orderBy(sql`date_trunc('month', ${patients.createdAt})`);
+				.groupBy(cohortMonthBucket, payments.patientId)
+				.orderBy(cohortMonthBucket);
 
 			const cohortMap = new Map<string, { m1: number[]; m12: number[] }>();
 			for (const row of cohortRaw) {
