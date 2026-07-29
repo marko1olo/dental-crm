@@ -8463,11 +8463,104 @@ export type SharedBrowserImagingScanProgress = z.infer<typeof sharedBrowserImagi
 export const visitFlowStepStatusSchema = z.enum(["pending", "running", "success", "skipped", "error"]);
 export type VisitFlowStepStatus = z.infer<typeof visitFlowStepStatusSchema>;
 
-export const visitFlowStepResultSchema = z.object({
+/**
+ * ВИД ШАГА РАЗБОРА ПРИЁМА — ОН ЖЕ РАЗЛИЧИТЕЛЬ ОБЪЕДИНЕНИЯ.
+ *
+ * БЫЛО: `visitFlowStepResultSchema.data = z.unknown().nullable()`, то есть у
+ * содержимого шага не было НИ ОДНОГО известного поля. Замерено компилятором на
+ * этом дереве: `step.data?.diagnosisSummary` даёт
+ * «TS2339: Property 'diagnosisSummary' does not exist on type '{}'», прямое
+ * чтение — «TS18046: 'step.data' is of type 'unknown'».
+ *
+ * ЧЕМ ЭТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Это панель «Ассистент обработки приема» — то,
+ * что врач читает после диктовки: диагноз ДЛЯ ПАЦИЕНТА, рекомендации после
+ * процедуры, список документов на подпись. Сервер эти поля отдаёт, экран их
+ * печатает, а контракт о них не знал — поэтому каждый потребитель приводил тип
+ * руками (`as any`), и опечатка в имени поля не ловилась ничем: приведение к
+ * полю, которого в данных нет, молча даёт `undefined`, блок с диагнозом
+ * пропадает из панели, и врач не видит, что разбор что-то сказал.
+ *
+ * Схемы шагов заново НЕ пишутся: `visitNoteDraftSchema`,
+ * `treatmentPlanPayloadSchema` и `postVisitRecommendationsPayloadSchema` уже
+ * описывают ровно то, что складывает `apps/api/src/ai/visitFlowOrchestrator.ts`.
+ */
+export const visitFlowStepKindSchema = z.enum(["draft", "plan", "recommendations", "documents"]);
+export type VisitFlowStepKind = z.infer<typeof visitFlowStepKindSchema>;
+
+/**
+ * Документы на подпись, предложенные разбором.
+ *
+ * Здесь СТРОКИ, а не `documentKindSchema`, и это не лень. Оркестратор
+ * складывает `"procedure_specific_consent"`, а в перечислении видов документов
+ * такого члена нет — там `"procedure_specific_consent_packet"`. Объявить тут
+ * `documentKindSchema` значило бы, что контракт разошёлся с сервером в первый же
+ * день и разбор удаления зуба перестал бы проходить проверку. Расхождение имён
+ * названо здесь как долг, а не спрятано под удобный тип.
+ */
+export const visitFlowDocumentSuggestionsSchema = z.object({
+  suggestions: z.array(z.string().trim().min(1).max(120)).max(24)
+});
+export type VisitFlowDocumentSuggestions = z.infer<typeof visitFlowDocumentSuggestionsSchema>;
+
+export const visitFlowDraftStepResultSchema = z.object({
+  step: z.literal("draft"),
   status: visitFlowStepStatusSchema,
   message: z.string().nullable(),
-  data: z.unknown().nullable()
+  data: visitNoteDraftSchema.nullable()
 });
+export type VisitFlowDraftStepResult = z.infer<typeof visitFlowDraftStepResultSchema>;
+
+export const visitFlowPlanStepResultSchema = z.object({
+  step: z.literal("plan"),
+  status: visitFlowStepStatusSchema,
+  message: z.string().nullable(),
+  data: treatmentPlanPayloadSchema.nullable()
+});
+export type VisitFlowPlanStepResult = z.infer<typeof visitFlowPlanStepResultSchema>;
+
+export const visitFlowRecommendationsStepResultSchema = z.object({
+  step: z.literal("recommendations"),
+  status: visitFlowStepStatusSchema,
+  message: z.string().nullable(),
+  data: postVisitRecommendationsPayloadSchema.nullable()
+});
+export type VisitFlowRecommendationsStepResult = z.infer<typeof visitFlowRecommendationsStepResultSchema>;
+
+export const visitFlowDocumentsStepResultSchema = z.object({
+  step: z.literal("documents"),
+  status: visitFlowStepStatusSchema,
+  message: z.string().nullable(),
+  data: visitFlowDocumentSuggestionsSchema.nullable()
+});
+export type VisitFlowDocumentsStepResult = z.infer<typeof visitFlowDocumentsStepResultSchema>;
+
+/**
+ * Шаг разбора вообще — разделяемое объединение по виду шага.
+ *
+ * Нужно там, где шаги перебираются одним списком (панель рисует четыре точки
+ * подряд, `apps/web/src/components/visit/VisitFlowProgress.tsx`): `status` и
+ * `message` читаются без сужения, а `data` — только после проверки `step`.
+ * Поля `visitFlowResultSchema` объявлены КОНКРЕТНЫМИ вариантами, поэтому
+ * `result.plan.data.diagnosisSummary` читается напрямую, без приведения и без
+ * сужения.
+ *
+ * ЧЕГО ЗДЕСЬ СОЗНАТЕЛЬНО НЕТ: разбором этой схемы ответ `/api/ai/visit-flow` на
+ * клиенте не проверяется. `treatmentPlanPayloadSchema` описывает план, ГОТОВЫЙ К
+ * ПОДПИСАНИЮ, — у него `treatmentGoals`, `alternatives`, `risksAndLimitations` и
+ * `clinicalToothRows` объявлены `.min(1)`. Оркестратор в запасной ветке
+ * (`extractPlanPayload`) отдаёт их пустыми, потому что придумывать пациенту цели
+ * лечения и альтернативы, которых врач не называл, — это выдумка того же класса,
+ * что и выдуманный идентификатор приёма. Значит `safeParse` резал бы всю панель
+ * целиком ровно тогда, когда врач уже продиктовал приём. Объединение даёт
+ * компилятору ИМЕНА полей; проверка значений остаётся там, где план
+ * действительно подписывают.
+ */
+export const visitFlowStepResultSchema = z.discriminatedUnion("step", [
+  visitFlowDraftStepResultSchema,
+  visitFlowPlanStepResultSchema,
+  visitFlowRecommendationsStepResultSchema,
+  visitFlowDocumentsStepResultSchema
+]);
 export type VisitFlowStepResult = z.infer<typeof visitFlowStepResultSchema>;
 
 export const visitFlowRequestSchema = z.object({
@@ -8501,10 +8594,10 @@ export const visitFlowRequestSchema = z.object({
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
 
 export const visitFlowResultSchema = z.object({
-  draft: visitFlowStepResultSchema,
-  plan: visitFlowStepResultSchema,
-  recommendations: visitFlowStepResultSchema,
-  documents: visitFlowStepResultSchema,
+  draft: visitFlowDraftStepResultSchema,
+  plan: visitFlowPlanStepResultSchema,
+  recommendations: visitFlowRecommendationsStepResultSchema,
+  documents: visitFlowDocumentsStepResultSchema,
   overallStatus: z.enum(["success", "partial", "error"])
 });
 export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;

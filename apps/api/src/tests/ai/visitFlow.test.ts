@@ -3,16 +3,20 @@ import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { runVisitFlow } from "../../ai/visitFlowOrchestrator.js";
 
 /*
- * В контракте (visitFlowStepResultSchema, packages/shared/src/index.ts) поле
- * data каждого этапа объявлено как z.unknown().nullable(), то есть у него нет
- * ни одного известного свойства: `data?.x` сужает unknown до `{}` и читать x
- * нельзя. Ниже перечислено ровно то, что читают эти тесты, — не весь ответ
- * этапа, а его проверяемая часть.
+ * ЗДЕСЬ БЫЛИ ЧЕТЫРЕ ТИПА, ОБЪЯВЛЕННЫЕ ТОЛЬКО РАДИ ПРИВЕДЕНИЯ.
+ *
+ * Контракт объявлял `visitFlowStepResultSchema.data` как `z.unknown().nullable()`
+ * — у содержимого шага не было ни одного известного свойства, `data?.x` сужало
+ * unknown до `{}`, и каждый тест описывал заново тот кусок ответа, который
+ * читает. Такой самодельный тип подтверждает сам себя: он объявляет поле, а не
+ * проверяет, что сервер его отдаёт, и опечатка в имени поля даёт `undefined`
+ * вместо провала.
+ *
+ * Теперь `data` описан по виду шага (`visitFlowDraftStepResultSchema` и
+ * остальные три), поэтому поля читаются прямо из ответа: если сервер перестанет
+ * отдавать `telegramSummary` или `suggestions`, красным станет компилятор, а не
+ * тихо `undefined` в утверждении.
  */
-type PlanStageData = { treatmentGoals?: unknown; patientFriendlyExplanation?: string };
-type RecommendationsStageData = { telegramSummary?: string };
-type DraftStageData = { warnings?: unknown[] };
-type DocumentsStageData = { suggestions: string[] };
 
 describe("runVisitFlow Orchestrator", () => {
 	const originalEnv = process.env;
@@ -96,8 +100,8 @@ describe("runVisitFlow Orchestrator", () => {
 		assert.strictEqual(result.documents.status, "success");
 		assert.strictEqual(result.overallStatus, "success");
 
-		const planData = result.plan.data as PlanStageData | null;
-		const recommendationsData = result.recommendations.data as RecommendationsStageData | null;
+		const planData = result.plan.data;
+		const recommendationsData = result.recommendations.data;
 
 		assert.deepStrictEqual(planData?.treatmentGoals, []);
 		assert.strictEqual(planData?.patientFriendlyExplanation, "Все будет ок");
@@ -125,7 +129,7 @@ describe("runVisitFlow Orchestrator", () => {
 		});
 
 		assert.strictEqual(result.draft.status, "success");
-		const draftData = result.draft.data as DraftStageData | null;
+		const draftData = result.draft.data;
 		/*
 		 * Скобки здесь обязательны, и не ради вкуса. Написание
 		 * `length ?? 0 > 0` разбирается как `length ?? (0 > 0)`, потому что `>`
@@ -159,8 +163,8 @@ describe("runVisitFlow Orchestrator", () => {
 			completedServices: [{ title: "Лечение кариеса", priceRub: 1000, serviceId: "1", quantity: 1 }],
 		});
 
-		const planData = result.plan.data as PlanStageData | null;
-		const recommendationsData = result.recommendations.data as RecommendationsStageData | null;
+		const planData = result.plan.data;
+		const recommendationsData = result.recommendations.data;
 
 		assert.strictEqual(result.draft.status, "success");
 		assert.strictEqual(result.plan.status, "success");
@@ -200,7 +204,7 @@ describe("runVisitFlow Orchestrator", () => {
 			completedServices: [{ title: "Сложное удаление зуба", priceRub: 1000, serviceId: "1", quantity: 1 }],
 		});
 
-		const documentsData = result.documents.data as DocumentsStageData | null;
+		const documentsData = result.documents.data;
 
 		assert.strictEqual(result.documents.status, "success");
 		assert.ok(documentsData?.suggestions.includes("procedure_specific_consent"));

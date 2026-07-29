@@ -1,8 +1,23 @@
-type VisitFlowResult = any;
+import {
+	type VisitFlowResult,
+	type VisitFlowStepResult,
+	type VisitFlowStepStatus,
+	visitFlowStepStatusSchema,
+} from "@dental/shared";
 import type React from "react";
 import "./VisitFlowProgress.css";
 
-export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({
+/*
+ * ЗДЕСЬ СТОЯЛО `type VisitFlowResult = any;` — САМОДЕЛЬНЫЙ ТИП ВМЕСТО КОНТРАКТА.
+ *
+ * Пока `visitFlowStepResultSchema.data` был `z.unknown()`, читать поля разбора
+ * было нечем: панель приводила каждый шаг руками (`as any`, `as string[]`), и
+ * компилятор не мог сказать ни одного слова о том, что сервер отдаёт. Опечатка в
+ * имени поля давала `undefined`, блок молча исчезал из панели, и врач не узнавал,
+ * что разбор что-то сообщил. Теперь тип берётся из контракта, а приведений нет ни
+ * одного.
+ */
+export const VisitFlowProgress: React.FC<{ result: VisitFlowResult | null | undefined }> = ({
 	result,
 }) => {
 	const getStatusColor = (status: string) => {
@@ -24,19 +39,23 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({
 	 * ОТВЕТ СЕРВЕРА ЧИТАЕТСЯ ЗАЩИЩЁННО, ПОТОМУ ЧТО ОН НЕ ПРОВЕРЯЕТСЯ СХЕМОЙ.
 	 *
 	 * Было: result.draft.status, result.plan.status и так далее — прямое чтение
-	 * четырёх вложенных объектов. Ответ /api/ai/visit-flow приводится к типу
-	 * приведением (`as VisitFlowResult`) без разбора схемой, то есть любой
-	 * неполный ответ (упал один шаг, вернулся объект ошибки, вернулся 200 с
-	 * пустым телом) роняет рендер этой панели, а вместе с ней — раздел «Прием»
-	 * целиком, потому что перехватчик показывает падение как «Раздел временно
-	 * не открылся». Врач в этот момент уже продиктовал приём.
+	 * четырёх вложенных объектов. Ответ /api/ai/visit-flow к типу только
+	 * ОБЪЯВЛЕН, разбором схемы он не проходит (почему — сказано у
+	 * `visitFlowStepResultSchema`: план из запасной ветки не прошёл бы `.min(1)`),
+	 * то есть любой неполный ответ (упал один шаг, вернулся объект ошибки,
+	 * вернулся 200 с пустым телом) роняет рендер этой панели, а вместе с ней —
+	 * раздел «Прием» целиком, потому что перехватчик показывает падение как
+	 * «Раздел временно не открылся». Врач в этот момент уже продиктовал приём.
+	 *
+	 * Поэтому статус шага проверяется схемой ОДНОГО поля, а не приведением: пришло
+	 * не то слово или не строка — показываем «ожидает», а не роняем панель.
 	 */
-	const stepStatus = (step: unknown): string =>
-		typeof (step as { status?: unknown } | null)?.status === "string"
-			? ((step as { status: string }).status)
-			: "pending";
-	const stepMessage = (step: unknown): string | null => {
-		const message = (step as { message?: unknown } | null)?.message;
+	const stepStatus = (step: VisitFlowStepResult | null | undefined): VisitFlowStepStatus => {
+		const parsed = visitFlowStepStatusSchema.safeParse(step?.status);
+		return parsed.success ? parsed.data : "pending";
+	};
+	const stepMessage = (step: VisitFlowStepResult | null | undefined): string | null => {
+		const message = step?.message;
 		return typeof message === "string" && message.trim() ? message : null;
 	};
 
@@ -98,14 +117,15 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({
 
 	if (!result) return null;
 
-	const planData = (result?.plan?.data ?? null) as any;
-	const recommendationsData = (result?.recommendations?.data ?? null) as any;
-	const documentsData = (result?.documents?.data ?? null) as any;
+	const planData = result.plan?.data ?? null;
+	const recommendationsData = result.recommendations?.data ?? null;
+	const documentsData = result.documents?.data ?? null;
+	// Array.isArray остаётся: тип обещает массив, а ответ схемой не проверен.
 	const temporaryRestrictions = Array.isArray(recommendationsData?.temporaryRestrictions)
-		? (recommendationsData.temporaryRestrictions as string[])
+		? recommendationsData.temporaryRestrictions
 		: [];
 	const documentSuggestions = Array.isArray(documentsData?.suggestions)
-		? (documentsData.suggestions as string[])
+		? documentsData.suggestions
 		: [];
 
 	return (

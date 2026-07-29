@@ -14,9 +14,9 @@ import {
 	type SpeechTranscriptionResponse,
 	type SpeechTranscriptPolishResponse,
 	type VisitDraftAutosaveResponse,
+	type VisitFlowResult,
 	type VisitNoteDraft,
 } from "@dental/shared";
-type VisitFlowResult = any;
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	acceptedVisitSaveFailureIsRetryable,
@@ -1085,21 +1085,27 @@ export function useVisitLogic({
 					),
 				);
 			}
-			const result = (await response.json()) as VisitFlowResult;
+			/*
+			 * Тип ОБЪЯВЛЕН, а не приведён (`as`). Разница не косметическая: при
+			 * объявлении компилятор сверяет каждое последующее чтение с контрактом,
+			 * при приведении — молчит. Раньше здесь стояло `as VisitFlowResult`, где
+			 * сам `VisitFlowResult` был локальным `any`, то есть проверки не было
+			 * вообще: отметки зубов из разбора уходили в хранилище через `as any`, и
+			 * состояние зуба, которого нет в перечислении, никто бы не поймал.
+			 */
+			const result: VisitFlowResult = await response.json();
 			setVisitFlowResult(result);
 
-			if (result.draft.data) {
-				setDraft(result.draft.data);
-				setVisitNoteForm(visitNoteFormFromDraft(result.draft.data));
+			const draftData = result.draft.data;
+			if (draftData) {
+				setDraft(draftData);
+				setVisitNoteForm(visitNoteFormFromDraft(draftData));
 				// Auto-update tooth map from AI-detected tooth codes
-				if (
-					result.draft.data.quality?.detectedToothCodes?.length ||
-					result.draft.data.quality?.detectedToothStates
-				) {
+				if (draftData.quality?.detectedToothCodes?.length || draftData.quality?.detectedToothStates) {
 					applyAiToothCodes(
-						result.draft.data.quality?.detectedToothCodes || [],
+						draftData.quality?.detectedToothCodes || [],
 						"planned",
-						result.draft.data.quality?.detectedToothStates as any,
+						draftData.quality?.detectedToothStates,
 					);
 				}
 			}

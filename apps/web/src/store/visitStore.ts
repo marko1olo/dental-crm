@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import type { 
-  DentalSpecialty, 
-  VisitNoteDraft, 
-  AcceptVisitDraftResponse, 
-  SpeechTranscriptionResponse 
+import type {
+  DentalSpecialty,
+  VisitNoteDraft,
+  AcceptVisitDraftResponse,
+  SpeechTranscriptionResponse,
+  VisitFlowResult
 } from "@dental/shared";
 import { emptyVisitNoteForm, type VisitNoteForm, loadUiPreferences, defaultUiPreferences } from "../AppHelpers";
 
@@ -80,8 +81,17 @@ export interface VisitStore {
   isDraftAccepting: boolean;
   setIsDraftAccepting: (val: boolean | ((prev: boolean) => boolean)) => void;
 
-  visitFlowResult: any;
-  setVisitFlowResult: (val: any | ((prev: any) => any)) => void;
+  /*
+   * Было `any`, и именно это хранилище обрывало тип по дороге к панели: сервер
+   * отдаёт разбор приёма по контракту, а панель «Ассистент обработки приема»
+   * получала его как `any` и приводила поля руками. Диагноз ДЛЯ ПАЦИЕНТА,
+   * рекомендации после процедуры и список документов на подпись врач читает
+   * отсюда — здесь и должен стоять тип из контракта.
+   */
+  visitFlowResult: VisitFlowResult | null;
+  setVisitFlowResult: (
+    val: VisitFlowResult | null | ((prev: VisitFlowResult | null) => VisitFlowResult | null)
+  ) => void;
 
   isPendingVisitSyncing: boolean;
   setIsPendingVisitSyncing: (val: boolean | ((prev: boolean) => boolean)) => void;
