@@ -844,6 +844,33 @@ export type PatientFlowReport = {
  * клиники окажутся первичными.
  */
 export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport> {
+	/*
+	 * МЕСЯЦ ВОРОНКИ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+	 *
+	 * `date_trunc('month', …)` для колонки с часовым поясом режет месяц по поясу
+	 * СЕССИИ. Значит вечерний приём последнего дня месяца уезжал в СЛЕДУЮЩИЙ
+	 * месяц, а первый приём пациента вместе с ним: клиника видела первичного не
+	 * в том месяце, когда он пришёл. Отчёт «сколько новых пациентов дал июнь»
+	 * недосчитывал их и дарил июлю, и по этим числам оценивают рекламу.
+	 *
+	 * ИЗМЕРЕНО на живой базе: приём 30 июня 23:30 по Москве при поясе сессии
+	 * Europe/Samara попадает в 2026-07, в поясе клиники — в 2026-06. Пояс режет
+	 * и ГРУППИРОВКУ: те же два приёма в поясе сессии дают одну корзину 2026-07,
+	 * в поясе клиники — две (2026-06 и 2026-07).
+	 *
+	 * Приведение делается только к поясу, который PostgreSQL знает: иначе
+	 * `AT TIME ZONE` бросает 22023 и восемь рабочих отчётов руководителя
+	 * превращаются в 500. Пояс неизвестен — поведение прежнее.
+	 *
+	 * Выражение месяца объявлено ОДИН раз и используется и в SELECT, и в
+	 * GROUP BY. Через два отдельных фрагмента имя пояса ушло бы параметром
+	 * дважды и получило РАЗНЫЕ номера ($1 в SELECT и $6 в GROUP BY) —
+	 * PostgreSQL считает их разными выражениями и отвергает запрос целиком.
+	 * Именно так уже дважды падала в 500 тепловая карта смен.
+	 */
+	const zone = await postgresKnowsTimeZone(scope.timeZone);
+	const monthBucket = sql`date_trunc('month', ${inClinicZone(appointments.startsAt, zone)})`;
+
 	// Два запроса вместо одного с оконной функцией: тот вариант возвращал по
 	// строке на КАЖДЫЙ завершённый приём за всю историю клиники и складывал их
 	// в память. Здесь первый запрос агрегирован до одной строки на пациента, а
@@ -870,7 +897,7 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 
 	const periodRows = await db
 		.select({
-			bucket: sql<string>`to_char(date_trunc('month', ${appointments.startsAt}), 'YYYY-MM')`,
+			bucket: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
 			patientId: appointments.patientId,
 			// Момент первого приёма пациента ВНУТРИ периода: сравнивать нужно с
 			// ним, иначе повторный приём того же дня посчитался бы первичным.
@@ -886,7 +913,7 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 				lte(appointments.startsAt, scope.to)
 			)
 		)
-		.groupBy(sql`date_trunc('month', ${appointments.startsAt})`, appointments.patientId);
+		.groupBy(monthBucket, appointments.patientId);
 
 	const byBucket = new Map<string, { newPatients: Set<string>; returningPatients: Set<string> }>();
 	for (const row of periodRows) {

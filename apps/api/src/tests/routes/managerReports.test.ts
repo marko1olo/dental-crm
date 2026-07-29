@@ -364,6 +364,84 @@ describe("отчёты руководителю", () => {
 		assert.equal(body.returningTotal, 1, JSON.stringify(body));
 	});
 
+	/**
+	 * МЕСЯЦ ВОРОНКИ — КАЛЕНДАРНОЕ ПОНЯТИЕ ПОЯСА КЛИНИКИ, А НЕ ПОЯСА СЕССИИ БАЗЫ.
+	 *
+	 * ЧТО БЫЛО СЛОМАНО. `date_trunc('month', starts_at)` режет месяц по поясу
+	 * СЕССИИ PostgreSQL. Приём в первые часы месяца по часам клиники попадал в
+	 * ПРЕДЫДУЩИЙ месяц, и первичный пациент числился пришедшим не в тот месяц:
+	 * отчёт «сколько новых дал июль» дарил их июню, а по этим числам оценивают
+	 * рекламу.
+	 *
+	 * ЧЕМ ПРОВЕРЯЕТСЯ. Клинике на время теста ставится пояс +12
+	 * (`Asia/Kamchatka`), а приём — через полчаса после начала месяца по её
+	 * часам. В любом поясе сессии западнее (на этом хосте `Europe/Samara`, +4)
+	 * тот же момент — ещё предыдущий месяц. Значит корзина предыдущего месяца в
+	 * ответе означает возврат дефекта.
+	 *
+	 * Пояс восстанавливается в `finally`: остальные тесты считают период по
+	 * умолчанию в поясе клиники, и оставленный +12 сдвинул бы им месяц в
+	 * последние сутки.
+	 */
+	test("месяц воронки берётся в поясе клиники, а не в поясе сессии базы", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const FAR_ZONE = "Asia/Kamchatka";
+		const monthIn = (zone: string, at: Date): string => {
+			const parts = new Map(
+				new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit" })
+					.formatToParts(at)
+					.map((part) => [part.type, part.value])
+			);
+			return `${parts.get("year")}-${parts.get("month")}`;
+		};
+
+		const clinicMonthStart = currentMonthPeriod(new Date(), FAR_ZONE).from;
+		const justAfterMonthStart = new Date(clinicMonthStart.getTime() + 30 * 60_000);
+		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
+		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
+
+		await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+		const [boundaryPatient] = await db
+			.insert(patients)
+			.values({ organizationId: ORG_ID, fullName: "Ночной Пациент Границевич" })
+			.returning({ id: patients.id });
+		const [boundaryAppointment] = await db
+			.insert(appointments)
+			.values({
+				organizationId: ORG_ID,
+				patientId: boundaryPatient?.id ?? "",
+				status: "completed",
+				startsAt: justAfterMonthStart,
+				endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
+			})
+			.returning({ id: appointments.id });
+
+		try {
+			// Задан только `from`: пояс клиники маршрут читает лишь когда период
+			// не пришёл целиком из запроса (routes/reports.ts, scopeFor).
+			const from = new Date(clinicMonthStart.getTime() - 2 * 60 * 60_000).toISOString();
+			const response = await app.inject({
+				method: "GET",
+				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}`,
+				headers: ORG_HEADERS
+			});
+			assert.equal(response.statusCode, 200, response.body);
+			const body = JSON.parse(response.body);
+			const buckets = body.points.map((point: { bucket: string }) => point.bucket);
+
+			assert.ok(buckets.includes(clinicMonth), `${clinicMonth} нет в ${JSON.stringify(buckets)}`);
+			assert.ok(
+				!buckets.includes(previousMonth),
+				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`
+			);
+		} finally {
+			await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+			await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
+			await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+		}
+	});
+
 	test("услуги показывают назначенные суммы и оговаривают это", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
