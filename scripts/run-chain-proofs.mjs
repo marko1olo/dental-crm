@@ -31,6 +31,7 @@
 
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 
 const apiRoot = path.resolve("apps/api");
@@ -42,6 +43,32 @@ const SCENARIO_TIMEOUT_MS = 300_000;
 /** Признаки того, что до базы не дошли вовсе, а не что сценарий не сошёлся. */
 const DATABASE_UNAVAILABLE =
   /ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|getaddrinfo|Connection terminated|password authentication failed|database "[^"]*" does not exist|role "[^"]*" does not exist|сервер закрыл соединение/i;
+
+/**
+ * Заявил ли сценарий нарушение САМ. Экспортируется ради самопроверки
+ * (`scripts/tests/run-chain-proofs.test.mjs`).
+ *
+ * ЧИСЛО ЧИТАЕТСЯ ЧИСЛОМ, А НЕ ОТРИЦАТЕЛЬНЫМ ПРОСМОТРОМ ВПЕРЁД — и это не вкус.
+ * Здесь стояло `/НАРУШЕНИЙ:\s*(?!0\b)\d+/`, но в файле на месте `\b` лежал
+ * НАСТОЯЩИЙ байт 0x08 (backspace). Просмотр `(?!0<BS>)` не срабатывает никогда,
+ * поэтому «НАРУШЕНИЙ: 0» — заявление о том, что всё чисто — читалось как
+ * заявленное нарушение. Проверено дампом кодпоинтов: `[?, !, 0, 8, )]`.
+ *
+ * Символ невидим во всех инструментах чтения: и `cat`, и редактор, и вывод
+ * поиска показывают ровно `(?!0)`. То есть глазами такую опечатку не найти
+ * никогда, а строковую правку она переживёт. Поэтому граница «ноль или больше
+ * нуля» больше не выражается экранированием: число вынимается группой и
+ * сравнивается как число. Опечатка в экранировании этого сломать не может.
+ *
+ * Почему это не осталось незамеченным раньше: единственный сценарий, печатавший
+ * счётчик при нуле, писал «НАРУШЕНИЙ НЕ НАЙДЕНО» — без двоеточия и цифры. То
+ * есть ловушка стояла заряженной и ждала первого, кто напечатает «НАРУШЕНИЙ: 0».
+ */
+export function declaresViolationsIn(output) {
+  const counted = [...output.matchAll(/НАРУШЕНИЙ:\s*(\d+)/g)].map((match) => Number(match[1]));
+  if (counted.some((count) => count > 0)) return true;
+  return /\[УТЕЧКА\]/.test(output);
+}
 
 function collect(directory) {
   const found = [];
@@ -106,7 +133,7 @@ function runScenario(file) {
        * Прозаические упоминания расхождений выносятся отдельным списком «стоит
        * посмотреть глазами» и прогон не валят.
        */
-      const declaresViolations = /НАРУШЕНИЙ:\s*(?!0)\d+|\[УТЕЧКА\]/.test(output);
+      const declaresViolations = declaresViolationsIn(output);
       const mentionsMismatch = /РАСХОЖДЕНИ[ЕЯЙ]|РАЗРЫВ/i.test(output);
       const outcome =
         DATABASE_UNAVAILABLE.test(output) && code !== 0
@@ -130,6 +157,21 @@ function summaryLine(output) {
   const verdict = [...lines].reverse().find((line) => /СОШЛИСЬ|РАСХОЖДЕНИ|ШВЫ|разрыв/i.test(line));
   return (verdict ?? lines.at(-1) ?? "(пусто)").slice(0, 160);
 }
+
+/*
+ * Прогон запускается ТОЛЬКО когда этот файл вызвали напрямую.
+ *
+ * Без этой проверки самопроверка `scripts/tests/run-chain-proofs.test.mjs`,
+ * импортируя отсюда `declaresViolationsIn`, запускала бы все тринадцать сквозных
+ * сценариев по живой базе — минуты работы и порча данных вместо проверки одной
+ * функции. Сравнение идёт по URL, а не по имени: на Windows `process.argv[1]`
+ * приходит как `C:\...`, а `import.meta.url` — как `file:///C:/...`.
+ */
+const invokedDirectly = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+if (!invokedDirectly) {
+  // Импортирован ради самопроверки: ничего не запускаем, экспорт уже отдан.
+} else {
 
 const filter = process.argv[2] ?? "";
 const scenarios = collect(testsRoot)
@@ -198,3 +240,5 @@ if (unavailable.length && !diverged.length && !timedOut.length) {
 } else if (diverged.length || timedOut.length) {
   process.exitCode = 1;
 }
+
+} // конец ветки «вызван напрямую»
