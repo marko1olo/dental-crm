@@ -418,8 +418,14 @@ describe("отчёты руководителю", () => {
 			.returning({ id: appointments.id });
 
 		try {
-			// Задан только `from`: пояс клиники маршрут читает лишь когда период
-			// не пришёл целиком из запроса (routes/reports.ts, scopeFor).
+			/*
+			 * Задан только `from`. Раньше это было ВЫНУЖДЕННО: маршрут читал пояс
+			 * клиники лишь когда период не пришёл из запроса целиком, и с обоими
+			 * границами проверка не увидела бы починку. Теперь пояс читается
+			 * всегда, и форму запроса панели — обе границы — держит отдельный
+			 * тест ниже. Этот случай оставлен как проверка второй ветки: период
+			 * по умолчанию.
+			 */
 			const from = new Date(clinicMonthStart.getTime() - 2 * 60 * 60_000).toISOString();
 			const response = await app.inject({
 				method: "GET",
@@ -434,6 +440,92 @@ describe("отчёты руководителю", () => {
 			assert.ok(
 				!buckets.includes(previousMonth),
 				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`
+			);
+		} finally {
+			await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));
+			await db.delete(patients).where(eq(patients.id, boundaryPatient?.id ?? ""));
+			await db.update(clinics).set({ timezone: "Europe/Moscow" }).where(eq(clinics.id, CLINIC_ID));
+		}
+	});
+
+	/**
+	 * ПОЯС ЧИТАЕТСЯ И ТОГДА, КОГДА КЛИЕНТ ПРИСЛАЛ ОБЕ ГРАНИЦЫ ПЕРИОДА.
+	 *
+	 * ПОЧЕМУ ЭТО ОТДЕЛЬНЫЙ ТЕСТ, А НЕ ПОВТОР ПРЕДЫДУЩЕГО. Панель отчётов
+	 * посылает `from` И `to` при КАЖДОЙ загрузке: оба поля заполнены из
+	 * `monthBounds()` ещё до первого щелчка оператора
+	 * (`apps/web/src/components/reports/ManagerReportsPanel.tsx:222-237`).
+	 * Маршрут же читал пояс клиники ТОЛЬКО когда период не пришёл целиком —
+	 * значит на единственном пути, которым ходит клиент, пояс был `null` всегда,
+	 * и ни одна починка поясов в отчётах не исполнялась ни разу: ни динамика
+	 * выручки, ни тепловая карта смен, ни воронка пациентов. Предыдущий тест
+	 * проходил потому, что посылал только `from`.
+	 *
+	 * Это ТРЕТИЙ случай одного класса в этом дереве: панель обзвона всегда
+	 * посылала `?date=` и отменяла серверный расчёт «на завтра», а три починки
+	 * диктовки не дошли до врача, потому что экран не открывался. Зелёный тест на
+	 * маршруте не доказывает работу пути, которым ходит клиент, — поэтому здесь
+	 * запрос собран ровно так, как его собирает панель.
+	 *
+	 * ЧЕМ ПРОВЕРЯЕТСЯ. Клинике ставится пояс +12, приём — через полчаса после
+	 * начала месяца по её часам. Границы периода задаются ОБЕ и с запасом в обе
+	 * стороны, чтобы приём в них попадал заведомо: проверяется не отбор по
+	 * периоду, а пояс ГРУППИРОВКИ внутри него. Корзина предыдущего месяца в
+	 * ответе означает возврат дефекта.
+	 */
+	test("месяц воронки берётся в поясе клиники и когда клиент прислал обе границы", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const FAR_ZONE = "Asia/Kamchatka";
+		const monthIn = (zone: string, at: Date): string => {
+			const parts = new Map(
+				new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit" })
+					.formatToParts(at)
+					.map((part) => [part.type, part.value])
+			);
+			return `${parts.get("year")}-${parts.get("month")}`;
+		};
+
+		const clinicMonthStart = currentMonthPeriod(new Date(), FAR_ZONE).from;
+		const justAfterMonthStart = new Date(clinicMonthStart.getTime() + 30 * 60_000);
+		const clinicMonth = monthIn(FAR_ZONE, justAfterMonthStart);
+		const previousMonth = monthIn(FAR_ZONE, new Date(clinicMonthStart.getTime() - 60 * 60_000));
+
+		await db.update(clinics).set({ timezone: FAR_ZONE }).where(eq(clinics.id, CLINIC_ID));
+		const [boundaryPatient] = await db
+			.insert(patients)
+			.values({ organizationId: ORG_ID, fullName: "Панельный Пациент Границевич" })
+			.returning({ id: patients.id });
+		const [boundaryAppointment] = await db
+			.insert(appointments)
+			.values({
+				organizationId: ORG_ID,
+				patientId: boundaryPatient?.id ?? "",
+				status: "completed",
+				startsAt: justAfterMonthStart,
+				endsAt: new Date(justAfterMonthStart.getTime() + 30 * 60_000)
+			})
+			.returning({ id: appointments.id });
+
+		try {
+			const from = new Date(clinicMonthStart.getTime() - 3 * 60 * 60_000).toISOString();
+			const to = new Date(justAfterMonthStart.getTime() + 3 * 60 * 60_000).toISOString();
+			const response = await app.inject({
+				method: "GET",
+				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				headers: ORG_HEADERS
+			});
+			assert.equal(response.statusCode, 200, response.body);
+			const body = JSON.parse(response.body);
+			const buckets = body.points.map((point: { bucket: string }) => point.bucket);
+
+			assert.ok(
+				buckets.includes(clinicMonth),
+				`${clinicMonth} нет в ${JSON.stringify(buckets)}: с обеими границами маршрут снова не читает пояс клиники`
+			);
+			assert.ok(
+				!buckets.includes(previousMonth),
+				`приём попал в предыдущий месяц ${previousMonth}: с обеими границами месяц считается в поясе сессии — ${JSON.stringify(buckets)}`
 			);
 		} finally {
 			await db.delete(appointments).where(eq(appointments.id, boundaryAppointment?.id ?? ""));

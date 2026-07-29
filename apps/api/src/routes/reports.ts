@@ -18,12 +18,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { requireClinicalReadContext } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { clinics } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
 	appointmentFunnel,
 	chairLoad,
+	clinicTimeZone,
 	currentMonthPeriod,
 	doctorPerformance,
 	patientFlow,
@@ -51,24 +50,23 @@ function badRequest(reply: FastifyReply, message: string) {
 	return reply.code(400).send({ error: "ReportValidationError", message });
 }
 
-/**
- * Часовой пояс клиники, `null` — определить не удалось.
+/*
+ * Часовой пояс клиники берётся из `managerReports.js`, а СВОЕЙ копии здесь
+ * больше нет.
  *
- * Нужен для периода по умолчанию: месяц отчёта — календарное понятие, и считать
- * его границы обязан тот, кто знает пояс клиники, а не пояс серверного процесса.
+ * Она тут была — байт в байт та же выборка `clinics.timezone` с тем же
+ * возвратом `null` при сбое. Пояс клиники — источник истины о календарной дате
+ * для всего сервера, и второй читатель означает второе место, куда придётся
+ * вносить каждое следующее правило (проверка имени по каталогу PostgreSQL, кэш,
+ * поведение при отсутствии клиники). Из такой же экономии в этом дереве выросли
+ * четыре разных расчёта долга пациента.
+ *
+ * Выплаты уже импортируют канонический (`routes/billing.ts:15`). Осталась ТРЕТЬЯ
+ * копия — `apps/api/src/migration/loader.ts:63`; она читает пояс из настроек
+ * рассылки и возвращает `Promise<string>`, то есть при отсутствии значения
+ * ПОДСТАВЛЯЕТ пояс по умолчанию вместо «неизвестно». Это отдельный долг, он
+ * записан в очередь, и здесь его молча не трогаю.
  */
-async function clinicTimeZone(organizationId: string): Promise<string | null> {
-	try {
-		const [clinic] = await db
-			.select({ timezone: clinics.timezone })
-			.from(clinics)
-			.where(eq(clinics.organizationId, organizationId))
-			.limit(1);
-		return clinic?.timezone ?? null;
-	} catch {
-		return null;
-	}
-}
 
 /**
  * Период из запроса. Слишком широкий диапазон отклоняется, а не обрезается
@@ -113,11 +111,39 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			badRequest(reply, "Проверьте параметры отчёта: даты, детализацию и пределы.");
 			return null;
 		}
-		// Пояс читается ТОЛЬКО когда период не задан запросом: явные from/to уже
-		// приходят полным ISO со смещением, и лишний запрос к базе там ни на что
-		// не влияет.
-		const timeZone =
-			parsed.data.from && parsed.data.to ? null : await clinicTimeZone(context.organizationId);
+		/*
+		 * Пояс клиники читается ВСЕГДА, а не только когда период не задан.
+		 *
+		 * Прежнее условие («явные from/to уже приходят полным ISO со смещением,
+		 * значит пояс не нужен») смешивало две РАЗНЫЕ роли пояса:
+		 *
+		 *  1. ГРАНИЦЫ периода. Здесь довод верен: полный ISO однозначен сам по
+		 *     себе, и `resolvePeriod` берёт пояс только для ЗАПАСНОГО периода,
+		 *     когда from/to не пришли вовсе. Поэтому эта правка границы не
+		 *     двигает — проверено прогоном всех 18 тестов отчётов.
+		 *  2. ГРУППИРОВКА внутри периода. Здесь довод неверен: `date_trunc` в
+		 *     PostgreSQL режет месяц, неделю и день по поясу СЕССИИ, и никакое
+		 *     смещение в границах на это не влияет. Без пояса группировка
+		 *     возвращается в пояс сессии.
+		 *
+		 * ЦЕНА ОШИБКИ. Панель отчётов посылает from И to при КАЖДОЙ загрузке:
+		 * оба поля заполнены из `monthBounds()` ещё до первого щелчка оператора
+		 * (`apps/web/src/components/reports/ManagerReportsPanel.tsx:222-237`).
+		 * То есть на единственном пути, которым ходит клиент, пояс был `null`
+		 * всегда, и ни одна из починок поясов в отчётах не исполнялась ни разу:
+		 * ни динамика выручки, ни тепловая карта смен, ни воронка пациентов.
+		 * Тест воронки это видел и обходил — он посылает только `from` без `to`.
+		 *
+		 * Это ТРЕТИЙ случай одного класса в этом дереве: панель обзвона так же
+		 * всегда посылала `?date=` и отменяла серверный расчёт «на завтра», а
+		 * три починки диктовки не дошли до врача, потому что экран не
+		 * открывался. Зелёный тест на маршруте не доказывает работу пути,
+		 * которым ходит клиент.
+		 *
+		 * Лишний запрос к базе не лишний: `clinicTimeZone` держит кэш на
+		 * процесс, а сверка имени по каталогу PostgreSQL кэшируется отдельно.
+		 */
+		const timeZone = await clinicTimeZone(context.organizationId);
 		const period = resolvePeriod(parsed.data, timeZone);
 		if (!period.ok) {
 			badRequest(reply, period.message);
