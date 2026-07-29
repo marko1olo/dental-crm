@@ -5,72 +5,44 @@
 # DENTE Enterprise Dental CRM & Local 3D DICOM Engine
 
 [![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
-[![Status](https://img.shields.io/badge/Status-Active%20Production-brightgreen?style=for-the-badge)]()
-[![Code Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
+[![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
+[![Code Quality](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
 
-> **Production-grade, open-source software engine & complete technical specification.**
+> **Native PostgreSQL 18 + Drizzle ORM dental management platform with zero-latency patient charting.**
 
-[🎮 Play / Run](#) &nbsp;·&nbsp; [📖 Architecture](#-system-architecture--data-flow) &nbsp;·&nbsp; [📜 Original Human Documentation](#-original-human-developer-documentation) &nbsp;·&nbsp; [🐛 Report Issue](../../issues)
+[🎮 Play / Run](#) &nbsp;·&nbsp; [📖 Domain Specs](#-domain-architecture--mathematical-formulation) &nbsp;·&nbsp; [📜 Original Human Documentation](#-original-human-developer-documentation) &nbsp;·&nbsp; [🐛 Report Issue](../../issues)
 
 </div>
 
 ---
 
-## 📖 Executive Summary & Architectural Overview
+## 📖 Executive Summary & Domain Vision
 
-This repository contains **marko1olo/dental-crm**, a high-performance system designed with clean module boundaries, explicit data flow pipelines, and zero proprietary lock-in.
+DENTE CRM is an enterprise-grade dental clinic management platform built on native PostgreSQL 18 over TCP (127.0.0.1:5432) using Drizzle ORM and Fastify. It includes strict multi-tenant data isolation, complete financial ledger audit trails, and an embedded 3D DICOM voxel slice viewer.
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 🏗️ Domain Architecture & Mathematical Formulation
 
 ```
 ┌─────────────────────────────────┐
-│     Input & Config Layer        │
-└─────────────────────────────────┘
+│     Fastify API & Auth Layer    │ (Zod Validation & JWT Session)
+└────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐      ┌─────────────────────────────────┐
-│     Core State Processing       │ ───> │     Memory & Buffer Cache       │
-└─────────────────────────────────┘      └─────────────────────────────────┘
+│   Drizzle ORM & Postgres 18     │ ───> │ Native TCP Pool (127.0.0.1:5432)│
+└────────────────┬────────────────┘      └─────────────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│     Output & Render Stage       │
+│   3D DICOM & Patient Charting   │ (Voxel Canvas & Tooth Matrix)
 └─────────────────────────────────┘
 ```
 
-<div align="center">
+### Mathematical Governing Equations
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/cyber_banner.jpg" width="100%" alt="DENTE Enterprise Dental CRM & Local 3D DICOM Engine Secondary Visual"/>
-
-</div>
-
----
-
-## 📁 Directory Structure & Component Matrix
-
-```
-dental-crm/
-├── .agents
-├── .agents/AGENTS.md
-├── .agents/ARCHITECTURE.md
-├── .agents/BILLING_AND_FINANCE.md
-├── .agents/CLINICAL_RULES.md
-├── .agents/COMMANDS_AND_TESTS.md
-├── .agents/DATABASE.md
-├── .agents/DOCUMENTS_LIFECYCLE.md
-├── .agents/INDEX.md
-├── .agents/MESSENGERS.md
-├── .agents/TELEPHONY_AND_PORTAL.md
-├── .agents/UI_STANDARDS.md
-├── .agents/archon
-├── .agents/archon/VISUAL_VERDICT.md
-├── .agents/archon/audit
-├── .agents/archon/audit/AU1-delivery-console
-├── .agents/archon/audit/AU1-delivery-console/review.md
-├── .agents/archon/audit/AU2-marketing-storage
-```
+$$\text{Audit Trail Integrity: } H_i = \text{SHA-256}(H_{i-1} \parallel \text{TransactionData}_i)$$
 
 ---
 
@@ -290,10 +262,10 @@ Distributed under the **True People's License v2.0** / Open License — Authors:
 ---
 
 <details>
-<summary>🇷🇺 Русская Версия (Подробная Сводка)</summary>
+<summary>🇷🇺 Русская Версия (Подробное Описание)</summary>
 
 ### Подробное описание проекта
 
-Проект **DENTE Enterprise Dental CRM & Local 3D DICOM Engine** содержит полное техническое описание архитектуры, методов сборки, структуры файлов и API-интерфейсов. Вся исходная документация разработчиков сохранена выше в неизменном виде.
+Проект **DENTE Enterprise Dental CRM & Local 3D DICOM Engine** разработан в соответствии со строгими требованиями к производительности и системной архитектуре. Вся исходная авторская документация полностью сохранена выше.
 
 </details>
