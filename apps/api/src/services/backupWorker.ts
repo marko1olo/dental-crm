@@ -34,13 +34,16 @@ const REQUIRED_KEY_BYTES = 32;
 const PUBLIC_SAMPLE_KEY = "0123456789abcdef0123456789abcdef";
 
 export interface BackupResult {
-	success: boolean;
-	filePath?: string;
-	error?: string;
+  success: boolean;
+  filePath?: string;
+  error?: string;
 }
 
 function backupsDirectory(): string {
-	return process.env.DENTE_BACKUP_DIR?.trim() || path.resolve(process.cwd(), "../../backups");
+  return (
+    process.env.DENTE_BACKUP_DIR?.trim() ||
+    path.resolve(process.cwd(), "../../backups")
+  );
 }
 
 /**
@@ -49,38 +52,42 @@ function backupsDirectory(): string {
  * известным всем ключом.
  */
 function resolveEncryptionKey(): { key: Buffer } | { error: string } {
-	const raw = process.env.CLINIC_ENCRYPTION_KEY?.trim();
-	if (!raw) {
-		return {
-			error:
-				"CLINIC_ENCRYPTION_KEY не задан. Копии не создаются: без ключа их нельзя зашифровать, а копия медицинских данных без шифрования недопустима.",
-		};
-	}
-	if (raw === PUBLIC_SAMPLE_KEY) {
-		return {
-			error: "CLINIC_ENCRYPTION_KEY равен примеру из репозитория. Задайте собственный ключ длиной 32 байта.",
-		};
-	}
-	const keyBytes = Buffer.from(raw, "utf8");
-	if (keyBytes.length < REQUIRED_KEY_BYTES) {
-		return {
-			error: `CLINIC_ENCRYPTION_KEY короче ${REQUIRED_KEY_BYTES} байт. Короткий ключ раньше молча дополнялся нулями, что резко ослабляло шифрование.`,
-		};
-	}
-	// Ровно 32 байта: длинный ключ сворачиваем через SHA-256, чтобы не терять
-	// энтропию простой обрезкой.
-	const key =
-		keyBytes.length === REQUIRED_KEY_BYTES
-			? keyBytes
-			: crypto.createHash("sha256").update(keyBytes).digest();
-	return { key };
+  const raw = process.env.CLINIC_ENCRYPTION_KEY?.trim();
+  if (!raw) {
+    return {
+      error:
+        "CLINIC_ENCRYPTION_KEY не задан. Копии не создаются: без ключа их нельзя зашифровать, а копия медицинских данных без шифрования недопустима.",
+    };
+  }
+  if (raw === PUBLIC_SAMPLE_KEY) {
+    return {
+      error:
+        "CLINIC_ENCRYPTION_KEY равен примеру из репозитория. Задайте собственный ключ длиной 32 байта.",
+    };
+  }
+  const keyBytes = Buffer.from(raw, "utf8");
+  if (keyBytes.length < REQUIRED_KEY_BYTES) {
+    return {
+      error: `CLINIC_ENCRYPTION_KEY короче ${REQUIRED_KEY_BYTES} байт. Короткий ключ раньше молча дополнялся нулями, что резко ослабляло шифрование.`,
+    };
+  }
+  // Ровно 32 байта: длинный ключ сворачиваем через SHA-256, чтобы не терять
+  // энтропию простой обрезкой.
+  const key =
+    keyBytes.length === REQUIRED_KEY_BYTES
+      ? keyBytes
+      : crypto.createHash("sha256").update(keyBytes).digest();
+  return { key };
 }
 
 function pgDumpExecutable(): string {
-	const configured = process.env.PG_DUMP_PATH?.trim();
-	if (configured && fs.existsSync(configured)) return configured;
-	const portable = path.resolve(process.cwd(), "../../.postgres/bin/pg_dump.exe");
-	return fs.existsSync(portable) ? portable : "pg_dump";
+  const configured = process.env.PG_DUMP_PATH?.trim();
+  if (configured && fs.existsSync(configured)) return configured;
+  const portable = path.resolve(
+    process.cwd(),
+    "../../.postgres/bin/pg_dump.exe",
+  );
+  return fs.existsSync(portable) ? portable : "pg_dump";
 }
 
 /**
@@ -88,24 +95,27 @@ function pgDumpExecutable(): string {
  * иначе копия снимается не с той базы, с которой работает приложение.
  */
 function pgDumpArguments(): string[] {
-	const baseArgs = ["--clean", "--if-exists", "--no-owner", "--no-acl"];
-	const databaseUrl = process.env.DATABASE_URL?.trim();
-	if (databaseUrl) return ["--dbname", databaseUrl, ...baseArgs];
-	return [
-		"-U",
-		process.env.POSTGRES_USER || "dental",
-		"-d",
-		process.env.POSTGRES_DB || "dental_crm",
-		...baseArgs,
-	];
+  const baseArgs = ["--clean", "--if-exists", "--no-owner", "--no-acl"];
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (databaseUrl) return ["--dbname", databaseUrl, ...baseArgs];
+  return [
+    "-U",
+    process.env.POSTGRES_USER || "dental",
+    "-d",
+    process.env.POSTGRES_DB || "dental_crm",
+    ...baseArgs,
+  ];
 }
 
 function removePartialFile(filePath: string): void {
-	try {
-		if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-	} catch (error) {
-		console.warn("[BackupWorker] Не удалось удалить незавершённый файл копии:", error);
-	}
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch (error) {
+    console.warn(
+      "[BackupWorker] Не удалось удалить незавершённый файл копии:",
+      error,
+    );
+  }
 }
 
 /**
@@ -113,25 +123,26 @@ function removePartialFile(filePath: string): void {
  * и со временем занимала весь диск клиники.
  */
 export function pruneOldBackups(
-	retentionDays = Number(process.env.DENTE_BACKUP_RETENTION_DAYS ?? 30),
+  retentionDays = Number(process.env.DENTE_BACKUP_RETENTION_DAYS ?? 30),
 ): void {
-	if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
-	const dir = backupsDirectory();
-	if (!fs.existsSync(dir)) return;
-	const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
-	try {
-		for (const name of fs.readdirSync(dir)) {
-			if (!name.startsWith("dente_crm_backup_") || !name.endsWith(".sql.enc")) continue;
-			const full = path.join(dir, name);
-			try {
-				if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
-			} catch {
-				// Файл мог быть удалён параллельно — остальные это не должно останавливать.
-			}
-		}
-	} catch (error) {
-		console.warn("[BackupWorker] Не удалось очистить старые копии:", error);
-	}
+  if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
+  const dir = backupsDirectory();
+  if (!fs.existsSync(dir)) return;
+  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      if (!name.startsWith("dente_crm_backup_") || !name.endsWith(".sql.enc"))
+        continue;
+      const full = path.join(dir, name);
+      try {
+        if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
+      } catch {
+        // Файл мог быть удалён параллельно — остальные это не должно останавливать.
+      }
+    }
+  } catch (error) {
+    console.warn("[BackupWorker] Не удалось очистить старые копии:", error);
+  }
 }
 
 /**
@@ -139,114 +150,127 @@ export function pruneOldBackups(
  * success означает, что файл ПОЛНОСТЬЮ записан и закрыт.
  */
 export async function createEncryptedBackup(): Promise<BackupResult> {
-	const keyResult = resolveEncryptionKey();
-	if ("error" in keyResult) {
-		console.error(`[BackupWorker] ${keyResult.error}`);
-		return { success: false, error: keyResult.error };
-	}
+  const keyResult = resolveEncryptionKey();
+  if ("error" in keyResult) {
+    console.error(`[BackupWorker] ${keyResult.error}`);
+    return { success: false, error: keyResult.error };
+  }
 
-	let filePath = "";
-	try {
-		const backupsDir = backupsDirectory();
-		fs.mkdirSync(backupsDir, { recursive: true });
+  let filePath = "";
+  try {
+    const backupsDir = backupsDirectory();
+    fs.mkdirSync(backupsDir, { recursive: true });
 
-		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-		filePath = path.join(backupsDir, `dente_crm_backup_${timestamp}.sql.enc`);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    filePath = path.join(backupsDir, `dente_crm_backup_${timestamp}.sql.enc`);
 
-		const iv = crypto.randomBytes(IV_LENGTH);
-		const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, keyResult.key, iv);
-		const writeStream = fs.createWriteStream(filePath, { mode: 0o600 });
-		// IV пишется в начало файла — он нужен для расшифровки.
-		writeStream.write(iv);
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(
+      ENCRYPTION_ALGORITHM,
+      keyResult.key,
+      iv,
+    );
+    const writeStream = fs.createWriteStream(filePath, { mode: 0o600 });
+    // IV пишется в начало файла — он нужен для расшифровки.
+    writeStream.write(iv);
 
-		const pgDump = spawn(pgDumpExecutable(), pgDumpArguments(), { env: { ...process.env } });
+    const pgDump = spawn(pgDumpExecutable(), pgDumpArguments(), {
+      env: { ...process.env },
+    });
 
-		const stderrChunks: string[] = [];
-		pgDump.stderr.on("data", (data) => {
-			const text = String(data);
-			stderrChunks.push(text);
-			console.warn(`[BackupWorker] pg_dump: ${text.trim()}`);
-		});
+    const stderrChunks: string[] = [];
+    pgDump.stderr.on("data", (data) => {
+      const text = String(data);
+      stderrChunks.push(text);
+      console.warn(`[BackupWorker] pg_dump: ${text.trim()}`);
+    });
 
-		pgDump.stdout.pipe(cipher).pipe(writeStream);
+    pgDump.stdout.pipe(cipher).pipe(writeStream);
 
-		const outcome = await new Promise<BackupResult>((resolve) => {
-			let settled = false;
-			const settle = (result: BackupResult) => {
-				if (settled) return;
-				settled = true;
-				resolve(result);
-			};
+    const outcome = await new Promise<BackupResult>((resolve) => {
+      let settled = false;
+      const settle = (result: BackupResult) => {
+        if (settled) return;
+        settled = true;
+        resolve(result);
+      };
 
-			// БЫЛО: обработчика 'error' не было — отсутствующий pg_dump ронял
-			// весь процесс API необработанным исключением.
-			pgDump.on("error", (error) => {
-				writeStream.destroy();
-				settle({
-					success: false,
-					error: `Не удалось запустить pg_dump (${(error as Error).message}). Укажите путь в PG_DUMP_PATH.`,
-				});
-			});
+      // БЫЛО: обработчика 'error' не было — отсутствующий pg_dump ронял
+      // весь процесс API необработанным исключением.
+      pgDump.on("error", (error) => {
+        writeStream.destroy();
+        settle({
+          success: false,
+          error: `Не удалось запустить pg_dump (${(error as Error).message}). Укажите путь в PG_DUMP_PATH.`,
+        });
+      });
 
-			writeStream.on("error", (error) => {
-				settle({ success: false, error: `Ошибка записи файла копии: ${(error as Error).message}` });
-			});
+      writeStream.on("error", (error) => {
+        settle({
+          success: false,
+          error: `Ошибка записи файла копии: ${(error as Error).message}`,
+        });
+      });
 
-			let dumpExitCode: number | null = null;
-			pgDump.on("close", (code) => {
-				dumpExitCode = code;
-				if (code !== 0) {
-					writeStream.destroy();
-					settle({
-						success: false,
-						error: `pg_dump завершился с кодом ${code}. ${stderrChunks.join(" ").trim()}`.trim(),
-					});
-				}
-			});
+      let dumpExitCode: number | null = null;
+      pgDump.on("close", (code) => {
+        dumpExitCode = code;
+        if (code !== 0) {
+          writeStream.destroy();
+          settle({
+            success: false,
+            error:
+              `pg_dump завершился с кодом ${code}. ${stderrChunks.join(" ").trim()}`.trim(),
+          });
+        }
+      });
 
-			// БЫЛО: успех резолвился по закрытию pg_dump — до того, как поток
-			// шифра дописал последний блок на диск.
-			writeStream.on("finish", () => {
-				if (dumpExitCode === 0 || dumpExitCode === null) {
-					settle({ success: true, filePath });
-				}
-			});
-		});
+      // БЫЛО: успех резолвился по закрытию pg_dump — до того, как поток
+      // шифра дописал последний блок на диск.
+      writeStream.on("finish", () => {
+        if (dumpExitCode === 0 || dumpExitCode === null) {
+          settle({ success: true, filePath });
+        }
+      });
+    });
 
-		if (!outcome.success) {
-			// Незавершённый файл удаляем: иначе в папке остаются копии
-			// правильного вида и ненулевого размера, которые не расшифровать.
-			removePartialFile(filePath);
-			console.error(`[BackupWorker] Копия НЕ создана: ${outcome.error}`);
-			return outcome;
-		}
+    if (!outcome.success) {
+      // Незавершённый файл удаляем: иначе в папке остаются копии
+      // правильного вида и ненулевого размера, которые не расшифровать.
+      removePartialFile(filePath);
+      console.error(`[BackupWorker] Копия НЕ создана: ${outcome.error}`);
+      return outcome;
+    }
 
-		const sizeBytes = fs.statSync(filePath).size;
-		// Файл, состоящий практически из одного IV, означает пустой дамп.
-		if (sizeBytes <= IV_LENGTH + 64) {
-			removePartialFile(filePath);
-			const error = "pg_dump вернул пустой дамп: копия признана недействительной и удалена.";
-			console.error(`[BackupWorker] ${error}`);
-			return { success: false, error };
-		}
+    const sizeBytes = fs.statSync(filePath).size;
+    // Файл, состоящий практически из одного IV, означает пустой дамп.
+    if (sizeBytes <= IV_LENGTH + 64) {
+      removePartialFile(filePath);
+      const error =
+        "pg_dump вернул пустой дамп: копия признана недействительной и удалена.";
+      console.error(`[BackupWorker] ${error}`);
+      return { success: false, error };
+    }
 
-		console.log(`[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ)`);
-		pruneOldBackups();
-		return outcome;
-	} catch (error) {
-		if (filePath) removePartialFile(filePath);
-		const message = error instanceof Error ? error.message : String(error);
-		console.error("[BackupWorker] Исключение при создании копии:", error);
-		return { success: false, error: message };
-	}
+    console.log(
+      `[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ)`,
+    );
+    pruneOldBackups();
+    return outcome;
+  } catch (error) {
+    if (filePath) removePartialFile(filePath);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[BackupWorker] Исключение при создании копии:", error);
+    return { success: false, error: message };
+  }
 }
 
 let backupInterval: NodeJS.Timeout | null = null;
 
 function backupIntervalMs(): number {
-	const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
-	const hours = Number.isFinite(configured) && configured > 0 ? configured : 24;
-	return hours * 60 * 60 * 1000;
+  const configured = Number(process.env.DENTE_BACKUP_INTERVAL_HOURS ?? 24);
+  const hours = Number.isFinite(configured) && configured > 0 ? configured : 24;
+  return hours * 60 * 60 * 1000;
 }
 
 /**
@@ -257,33 +281,39 @@ function backupIntervalMs(): number {
  * клинике, где компьютер выключают на ночь, копия не создавалась никогда.
  */
 export function startBackupDaemon(): void {
-	if (backupInterval) return;
+  if (backupInterval) return;
 
-	const keyResult = resolveEncryptionKey();
-	if ("error" in keyResult) {
-		// Молчать нельзя: клиника должна знать, что копий НЕТ.
-		console.error(`[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. ${keyResult.error}`);
-		return;
-	}
+  const keyResult = resolveEncryptionKey();
+  if ("error" in keyResult) {
+    // Молчать нельзя: клиника должна знать, что копий НЕТ.
+    console.error(
+      `[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. ${keyResult.error}`,
+    );
+    return;
+  }
 
-	console.log("[BackupWorker] Резервное копирование включено.");
+  console.log("[BackupWorker] Резервное копирование включено.");
 
-	const firstRunDelayMs = Number(process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000);
-	const firstRun: ReturnType<typeof setTimeout> = setTimeout(() => {
-		void createEncryptedBackup();
-	}, Math.max(0, firstRunDelayMs));
-	// unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
-	(firstRun as unknown as { unref?: () => void }).unref?.();
+  const firstRunDelayMs = Number(
+    process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000,
+  );
+  const firstRun: ReturnType<typeof setTimeout> = setTimeout(
+    () => {
+      void createEncryptedBackup();
+    },
+    Math.max(0, firstRunDelayMs),
+  );
+  // unref, чтобы отложенный первый прогон не удерживал процесс при остановке.
+  (firstRun as unknown as { unref?: () => void }).unref?.();
 
-	backupInterval = setInterval(() => {
-		void createEncryptedBackup();
-	}, backupIntervalMs());
+  backupInterval = setInterval(() => {
+    void createEncryptedBackup();
+  }, backupIntervalMs());
 }
 
 export function stopBackupDaemon(): void {
-	if (backupInterval) {
-		clearInterval(backupInterval);
-		backupInterval = null;
-		console.log("[BackupWorker] Резервное копирование остановлено.");
-	}
+  if (backupInterval) {
+    clearInterval(backupInterval);
+    backupInterval = null;
+  }
 }
