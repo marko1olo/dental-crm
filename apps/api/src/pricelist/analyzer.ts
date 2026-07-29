@@ -406,6 +406,8 @@ type PriceCandidate = PriceSpan & {
   priceRub: number;
   priceMaxRub: number | null;
   explicit: boolean;
+  /** Число приклеено к букве слева — см. gluedToWordPattern. */
+  glued: boolean;
 };
 
 /*
@@ -443,6 +445,42 @@ type PriceCandidate = PriceSpan & {
  * неверный, и стоил он 157-кратной переплаты в подписываемом документе.
  */
 const amountPattern = "\\d{1,3}(?:[\\s.]\\d{3})+(?:[.,]\\d{1,2})?(?!\\d)|\\d{3,7}(?:[.,]\\d{1,2})?";
+
+/*
+ * ЧИСЛО, ПРИКЛЕЕННОЕ К БУКВЕ СЛЕВА, — ЭТО ХВОСТ КОДА МОДЕЛИ, А НЕ ЦЕНА.
+ *
+ * `(?!\d)` выше починил склейку разрядов, но вторую половину дефекта не закрыл:
+ * «Пломба Filtek Z550 3500» отдавала цену null. Вторая альтернатива
+ * `\d{3,7}` находит «550» ВНУТРИ самого «Z550», кандидаты расходятся (550 и
+ * 3500), и разборщик отказывается назначать цену — а написанные в строке 3500
+ * человек видит. Измерено на дереве до этой правки, все формы дают null:
+ *   «Пломба Filtek Z550 3500»       null   вместо 3500
+ *   «Пломба Filtek Z550 3500,50»    null   вместо 3500,50
+ *   «Пломба Filtek Z550 12 500»     null   вместо 12 500
+ *   «Пломба Filtek Z5500 3500»      null   вместо 3500
+ * Бренд с цифрой стоит в русском стоматологическом прайсе повсеместно: Filtek
+ * Z550 и Z250, Osstem TS3, Zoom 4, Damon Q, Nobel Active 3.0, IPS e.max.
+ *
+ * ЗАПРЕТ СЛЕВА, КАК У ЗНАКА РУБЛЯ ЗАПРЕТ СПРАВА, ЗДЕСЬ БЫЛ БЫ НЕВЕРЕН, и это
+ * измерено, а не выведено. Прямой lookbehind в amountPattern (или гашение через
+ * notMoneyPatterns) уносит цену из трёх форм, которые СЕГОДНЯ читаются верно:
+ *   «Осмотр1500»              1500 ₽        цена приклеена к названию услуги
+ *   «от12000 до 18000»        12000–18000   предлог приклеен к нижней границе
+ *   «от 12000 до18000»        12000–18000   предлог приклеен к верхней
+ * Отличить «Z550» от «Осмотр1500» ни регистром, ни длиной слова нельзя: русский
+ * прайс пишет названия капслоком, а «КТ», «ОПТГ», «ТРГ» — это короткие
+ * заглавные аббревиатуры настоящих услуг, а не коды моделей.
+ *
+ * Поэтому приклеенность — не запрет, а ПОНИЖЕНИЕ В РАНГЕ, ровно как знак рубля
+ * повышает: приклеенный кандидат выбрасывается ТОЛЬКО если в строке есть
+ * отдельно стоящий (см. extractPrice). Если он единственный — он и остаётся
+ * ценой, и ни одна строка цену не теряет.
+ *
+ * Дефис и точка внутри кода модели считаются частью склейки («RelyX U-550»,
+ * «e.max550»): цифрам слева от них буква тоже приклеена. Разделителю диапазона
+ * это не мешает — в «12000-18000» слева от дефиса стоит цифра, а не буква.
+ */
+const gluedToWordPattern = /[А-Яа-яЁёA-Za-z][-.]?$/u;
 
 /*
  * Знак рубля с ЯВНЫМ запретом буквы справа.
@@ -566,8 +604,19 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
     const matchSpan = match.indices?.[0];
     const matchText = match[0] ?? "";
     if (!matchSpan || !matchText) continue;
-    const low = parseMoney(groups.low);
+    const lowText = groups.low ?? "";
+    const low = parseMoney(lowText);
     if (low === null) continue;
+    /*
+     * Приклеенность считается у НИЖНЕЙ ГРАНИЦЫ, а не у начала совпадения:
+     * совпадение может начинаться с «от», и тогда слева от него стоит пробел или
+     * начало строки, а буква — вплотную к самой цифре («от12000»).
+     *
+     * indexOf по тексту совпадения даёт точную позицию нижней границы: левее неё
+     * в совпадении может стоять только «от» с пробелами, а цифр там нет ни одной.
+     */
+    const lowStart = matchSpan[0] + matchText.indexOf(lowText);
+    const glued = gluedToWordPattern.test(scanText.slice(0, lowStart));
     const hasCurrency = /(?:₽|руб|р)\.?$/iu.test(matchText.trimEnd());
     /*
      * Номер документа ценой не считается ЦЕЛИКОМ, включая левую часть: признать
@@ -612,6 +661,7 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
         priceRub: low,
         priceMaxRub: null,
         explicit: lowHasCurrency,
+        glued,
         start: matchSpan[0],
         end: lowEnd > 0 ? matchSpan[0] + lowEnd : matchSpan[1]
       });
@@ -635,6 +685,7 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
       priceRub: Math.min(low, high),
       priceMaxRub: Math.max(low, high) > Math.min(low, high) ? Math.max(low, high) : null,
       explicit: true,
+      glued,
       start: matchSpan[0],
       end: matchSpan[1]
     });
@@ -645,7 +696,25 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
 function extractPrice(line: string): { priceRub: number | null; priceMaxRub: number | null; pricedSpan: PriceSpan | null } {
   const candidates = collectPriceCandidates(line);
   const explicit = candidates.filter((candidate) => candidate.explicit);
-  const pool = explicit.length ? explicit : candidates;
+  const withCurrency = explicit.length ? explicit : candidates;
+  /*
+   * ПРИКЛЕЕННОЕ К БУКВЕ ЧИСЛО ВЫБРАСЫВАЕТСЯ ТОЛЬКО ПРИ НАЛИЧИИ ОТДЕЛЬНО
+   * СТОЯЩЕГО.
+   *
+   * «Пломба Filtek Z550 3500» даёт двух кандидатов: «550» из кода модели и
+   * настоящие «3500». Раньше они расходились, строка объявлялась неоднозначной и
+   * цену не получала вовсе. Хвост кода модели ценой не бывает никогда, а число,
+   * стоящее отдельно, бывает всегда, поэтому выбор между ними структурный, а не
+   * позиционный — угадывать позицию этот файл отказывается (см. ниже).
+   *
+   * ОТКАТА К ПУСТОМУ НАБОРУ ЗДЕСЬ НЕТ, И ЭТО НЕ ЗАПАС ПРОЧНОСТИ, А ЕДИНСТВЕННЫЙ
+   * СПОСОБ НЕ СЛОМАТЬ ТРИ РАБОЧИЕ ФОРМЫ. «Осмотр1500» (цена вплотную к названию)
+   * и «от12000 до 18000» / «от 12000 до18000» (предлог вплотную к границе
+   * диапазона) состоят из ОДНОГО приклеенного кандидата, и жёсткий запрет унёс бы
+   * их цену. Измерено на этих строках: сегодня они дают 1500 ₽ и 12000–18000 ₽.
+   */
+  const detached = withCurrency.filter((candidate) => !candidate.glued);
+  const pool = detached.length ? detached : withCurrency;
   /*
    * БЕЗ ЗНАКА РУБЛЯ НЕОДНОЗНАЧНАЯ СТРОКА ОСТАЁТСЯ БЕЗ ЦЕНЫ.
    *
