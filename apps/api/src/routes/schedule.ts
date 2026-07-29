@@ -1,6 +1,7 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createAppointmentSchema, dashboardSchema, updateAppointmentSchema } from "@dental/shared";
+import { unguardedBypassAllowed } from "../accessGuard.js";
 import {
   clinicSessionMissingMessage,
   clinicSessionRejectedMessage
@@ -59,6 +60,37 @@ const appointmentOutsideHoursCreateMessage =
   "Запись не создана: выбранное время не входит в рабочее расписание клиники, сотрудника или кресла.";
 const appointmentOutsideHoursUpdateMessage =
   "Запись не обновлена: выбранное время не входит в рабочее расписание клиники, сотрудника или кресла.";
+
+/**
+ * ТРИ ОТКАЗА ПЕРИМЕТРА РАСПИСАНИЯ, И У КАЖДОГО СВОЁ ДЕЙСТВИЕ.
+ *
+ * Отказ кодом ответа администратору не помогает: экран расписания подставляет
+ * поле `message` после своего заголовка (`responseErrorMessage` в
+ * apps/web/src/AppHelpers.tsx — `${заголовок}: ${message}`), а без `message`
+ * человек читает «Запись не создана» и подпись по коду. Поэтому у каждого текста
+ * названы причина и следующий шаг, и шаги РАЗНЫЕ:
+ *
+ *  1. секрета в запросе нет      — ввести секрет в окне расписания;
+ *  2. секрет пришёл и не совпал  — проверить раскладку и взять действующий;
+ *  3. секрет не задан на сервере — вводить бесполезно, идти к тому, кто ставил
+ *     программу. Свести этот случай с первыми двумя значило бы гонять
+ *     администратора по кругу с правильным секретом в руках.
+ *
+ * Латиницы в текстах нет намеренно: клиент гасит фразу целиком, если в ней есть
+ * латинское слово из шести и более букв (`technicalWorkflowFailurePattern` под
+ * флагом `/i`), — имя переменной окружения в тексте означало бы пустой экран.
+ * Двоеточий внутри фраз нет по той же причине, что и в utils/clinicSessionRefusal.ts:
+ * заголовок экрана уже заканчивается двоеточием.
+ */
+const scheduleSecretMissingInRequestMessage =
+  "Требуется секрет администратора клиники — расписание меняется только с ним, а в запросе секрет не пришёл. " +
+  "Введите секрет администратора в окне расписания и повторите действие; если секрета у вас нет, его выдаёт администратор клиники.";
+const scheduleSecretMismatchMessage =
+  "Секрет администратора клиники не принят — присланный секрет не совпал с тем, что задан на сервере этой клиники. " +
+  "Проверьте раскладку и регистр, введите секрет заново и повторите действие; если он не подходит, возьмите действующий секрет у администратора клиники.";
+const scheduleSecretNotConfiguredMessage =
+  "На сервере клиники не задан секрет администратора для изменения расписания — без него сервер не может проверить право на правку и отказывает. " +
+  "Вводить секрет в окне расписания бесполезно, его задаёт в настройках сервера тот, кто устанавливал программу — обратитесь к нему.";
 
 function parseSchedulePayload<T>(schema: SchedulePayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
@@ -130,32 +162,91 @@ function sendAppointmentRejection(reply: FastifyReply, rejection: AppointmentRej
   });
 }
 
+/**
+ * Секрет ТОЛЬКО расписания, без подстановки соседних доменов.
+ *
+ * `docs/00-product-architecture.md` требует ровно этого: секреты доменные, и
+ * сервер не имеет права молча повышать секрет настроек или телеграма до права
+ * менять расписание. Развёртывание может задать одно и то же значение осознанно —
+ * это его выбор, а не поведение кода. Сторож на подстановку соседнего секрета
+ * уже есть: scripts/smoke-schedule-admin-guard.mjs.
+ */
 function configuredScheduleAdminSecret(): string | null {
   return process.env.DENTE_SCHEDULE_ADMIN_SECRET?.trim() || null;
 }
 
+/**
+ * Послабление для разработки: работает ТОЛЬКО при явно названном режиме
+ * разработки и ТОЛЬКО при явно выставленном флаге.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ОБЩИЙ ПРЕДИКАТ, А НЕ ПРЕЖНЕЕ `NODE_ENV !== "production"`.
+ * Прежнее условие истинно, когда NODE_ENV НЕ ЗАДАН ВОВСЕ, а незаданный NODE_ENV —
+ * типовое состояние настоящего сервера: `apps/api/package.json` объявляет
+ * `"start": "node dist/server.js"` и режим не задаёт. То есть в клинике условие
+ * «мы не в production» было ИСТИННЫМ, и от обхода охраны расписания защищало
+ * только то, что второй флаг где-то не выставлен. `accessGuard.ts` разбирает эту
+ * инверсию подробно и НАЗЫВАЕТ ЭТОТ ФАЙЛ как одну из четырёх копий, которую
+ * должен переписать владелец. Пятой копии условия безопасности здесь не будет.
+ *
+ * Смысл послабления не изменился: `development`/`test` плюс
+ * `DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS=1`. Закрылся ровно один случай —
+ * пустой или незнакомый NODE_ENV («staging», «prod», опечатка) больше не считается
+ * разработкой.
+ */
 function scheduleUnguardedMutationsAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return unguardedBypassAllowed("DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS");
 }
 
-async function requireScheduleMutationAccess(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
+/**
+ * Секрет периметра для изменения расписания.
+ *
+ * Форма повторяет `accessGuard.requireClinicalMutationAccess` дословно: тот же
+ * заголовок, то же сравнение постоянным временем, те же три состояния. Различие
+ * одно и оно намеренное — машинные коды `ScheduleAdminSecretMissing` /
+ * `ScheduleAdminSecretRequired` сохранены дословно, потому что по ним ветвится
+ * экран расписания (`apps/web/src/ScheduleView.tsx`: на `…Missing` он ЧЕСТНО
+ * говорит, что вводить секрет бесполезно, на `…Required` показывает поле ввода).
+ * Подменить их клиническими кодами значило бы сломать этот разбор.
+ *
+ * @param protectedArea машинная метка участка для журнала. В человеческий текст
+ *   она не попадает: латинское слово из шести и более букв гасит фразу на экране
+ *   целиком.
+ */
+async function requireScheduleMutationAccess(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  protectedArea = "schedule mutation"
+): Promise<boolean> {
   const adminSecret = configuredScheduleAdminSecret();
   if (!adminSecret) {
     if (scheduleUnguardedMutationsAllowed()) return true;
     reply.code(503).send({
       error: "ScheduleAdminSecretMissing",
-      message: "На сервере не задан секрет администратора клиники для изменения расписания."
+      message: scheduleSecretNotConfiguredMessage,
+      protectedArea
     });
     return false;
   }
   const providedSecret = request.headers[denteAdminSecretHeader];
   const normalizedProvidedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
-  if (timingSafeSecretEqual(typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null, adminSecret)) {
+  const providedSecretText = typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null;
+  if (timingSafeSecretEqual(providedSecretText, adminSecret)) {
     return true;
   }
+  /*
+   * «Секрета нет» и «секрет не совпал» — разные состояния, и сервер их знает
+   * точно. Действия у них тоже разные (ввести против взять действующий), поэтому
+   * текст разный, а машинный код один: экран ветвится по коду, и дробить его
+   * значило бы сломать разбор ради того, что человек читает словами. Оракула для
+   * подбора здесь нет — отправитель и без ответа знает, посылал он заголовок или
+   * нет, а сравнение самого значения идёт постоянным временем.
+   */
   reply.code(403).send({
     error: "ScheduleAdminSecretRequired",
-    message: "Для изменения расписания нужен действующий секрет администратора клиники."
+    message: providedSecretText === null || providedSecretText.trim() === ""
+      ? scheduleSecretMissingInRequestMessage
+      : scheduleSecretMismatchMessage,
+    protectedArea
   });
   return false;
 }
@@ -210,6 +301,69 @@ function requireClinicOrganizationId(request: FastifyRequest, reply: FastifyRepl
   return payload.organizationId as string;
 }
 
+/**
+ * ЕДИНСТВЕННАЯ ДВЕРЬ ВО ВСЕ ИЗМЕНЯЮЩИЕ МАРШРУТЫ РАСПИСАНИЯ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. `requireScheduleMutationAccess` в этом файле был ОБЪЯВЛЕН и не
+ * вызывался ни разу: единственное вхождение имени во всём дереве — само
+ * объявление, остальные — текст комментариев. Замерено запросом в процессе
+ * (`app.inject`, дев-сервер на 4100 отдаёт старую сборку и доказательством не
+ * считается), при заданном `DENTE_SCHEDULE_ADMIN_SECRET` и снятой лазейке:
+ *   POST  /api/appointments                    без секрета -> 201, строка в базе
+ *   POST  /api/appointments        с ЗАВЕДОМО НЕВЕРНЫМ секретом -> 201
+ *   PATCH /api/appointments/<id>               без секрета -> 200
+ *   PUT   /api/schedule/appointments/<id>      без секрета -> 200
+ * Заголовок не читался вовсе — неверный секрет проходил так же, как никакой.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Любой, у кого есть токен кабинета, писал в
+ * расписание клиники в обход гейта администратора, при том что тот же барьер на
+ * клинических маршрутах отвечает 403. Практически это чужая рука в сетке приёмов
+ * администратора — перенести приём, отменить его, занять кресло и врача, — и
+ * поверх этого молчаливое расхождение с экраном, где поле «секрет
+ * администратора» существует и обещает защиту, которой не было.
+ *
+ * ПОЧЕМУ ПРОВЕРКА В МАРШРУТЕ, А НЕ В СЛОЕ ДОСТУПА (ВЫБОР НАЗВАН НАМЕРЕННО).
+ * Рядом есть обратный пример: межклиничную утечку ссылок закрыли в слое доступа
+ * (`db/appointmentsQuery.ts`, `assertAppointmentResourcesBelongToOrganization`) —
+ * и там это верно, потому что проверялись ДАННЫЕ, которые слой доступа видит
+ * сам. Здесь проверяется ЗАГОЛОВОК ЗАПРОСА, а `createAppointmentInDb` и
+ * `updateAppointmentInDb` принимают `organizationId` и разобранное тело и о
+ * `FastifyRequest` не знают. Чтобы проверять там, пришлось бы протащить запрос и
+ * ответ в слой доступа — то есть дать слою данных отвечать по протоколу, а
+ * заодно сделать так, что любой вызов из планировщика, импорта или скрипта
+ * потребовал бы админский секрет, которого у фоновой задачи нет.
+ *
+ * Настоящая причина, по которой слой доступа выглядел привлекательно, — «у
+ * переноса маршрутов ДВА, в маршруте придётся помнить про каждый». Она снимается
+ * не сменой слоя, а тем, что дверь ОДНА: обработчику нужен `organizationId`, а
+ * получить его можно только здесь, и охрана стоит внутри. Новый изменяющий
+ * маршрут физически не сможет обойтись без этой функции, не оставшись без
+ * организации; на случай, если кто-то всё же выпишет её вручную, стоит сторож
+ * `tests/routes/scheduleMutationGuard.test.ts` — он находит изменяющие маршруты в
+ * этом файле обходом исходника и требует отказа от КАЖДОГО.
+ *
+ * ПОЧЕМУ СНАЧАЛА КАБИНЕТ, ПОТОМ СЕКРЕТ (в accessGuard порядок обратный).
+ * Пройти нужно оба барьера, поэтому порядок не меняет НИЧЕГО в том, что проходит
+ * насквозь — только то, какую причину человек слышит первой. Если поставить
+ * секрет первым, то на любом развёртывании, где секрет расписания не задан,
+ * отказ по входу в кабинет становится НЕДОСТИЖИМ: вместо «войдите в кабинет
+ * заново» администратор с истёкшим входом получит 503 про настройку сервера и
+ * пойдёт не туда. Эти два текста разделяли отдельной правкой (`2d46134c9`) и
+ * закрепили сторожем `tests/routes/scheduleRefusalText.test.ts`; хоронить
+ * работающий отказ ради порядка проверок нельзя. Секрет — повышение прав ПОВЕРХ
+ * входа в кабинет, и спрашивать его после того, как известно, кто пришёл, честнее.
+ */
+async function requireScheduleMutationContext(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  protectedArea = "schedule mutation"
+): Promise<{ organizationId: string } | null> {
+  const organizationId = requireClinicOrganizationId(request, reply);
+  if (!organizationId) return null;
+  if (!(await requireScheduleMutationAccess(request, reply, protectedArea))) return null;
+  return { organizationId };
+}
+
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -217,8 +371,9 @@ import { invalidateAppointmentReminders } from "../services/communications/appoi
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
-    const orgId = requireClinicOrganizationId(request, reply);
-    if (!orgId) return reply;
+    const context = await requireScheduleMutationContext(request, reply, "schedule appointment create");
+    if (!context) return reply;
+    const orgId = context.organizationId;
 
     const input = parseSchedulePayload(createAppointmentSchema, request.body);
     if (!input) {
@@ -242,8 +397,14 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
   });
 
   async function updateAppointmentHandler(request: FastifyRequest<{ Params: { appointmentId?: string } }>, reply: FastifyReply) {
-    const orgId = requireClinicOrganizationId(request, reply);
-    if (!orgId) return reply;
+    /*
+     * Один обработчик на ДВА адреса переноса (PATCH и PUT ниже) — поэтому охрана
+     * стоит здесь, а не у каждой регистрации: иначе второй адрес однажды
+     * останется без неё, и это будет та же дыра под другим адресом.
+     */
+    const context = await requireScheduleMutationContext(request, reply, "schedule appointment update");
+    if (!context) return reply;
+    const orgId = context.organizationId;
 
     const params = request.params as { appointmentId?: string };
     if (!params.appointmentId) {
