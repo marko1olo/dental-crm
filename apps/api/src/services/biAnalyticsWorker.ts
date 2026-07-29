@@ -517,9 +517,6 @@ export async function computeBiAnalyticsSnapshots() {
 
 		if (snapshots.length > 0) {
 			await db.insert(biAnalyticsSnapshots).values(snapshots);
-			for (const org of orgs) {
-				console.log(`[BI Worker] Snapshot generated for org ${org.id}`);
-			}
 		}
 	} catch (err) {
 		console.error("[BI Worker] Error generating snapshots:", err);
