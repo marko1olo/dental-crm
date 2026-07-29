@@ -37,9 +37,17 @@ export async function registerVkRoutes(server: FastifyInstance) {
 			// чужой сервер приёма событий VK.
 			const confirmationToken = process.env.VK_CONFIRMATION_TOKEN?.trim();
 			if (!confirmationToken) {
+				// Имя переменной окружения ушло из тела ответа в журнал сервера:
+				// маршрут публичный, и называть в его ответе внутренние настройки
+				// значит выдавать их первому, кто постучится. Тому, кто настраивает
+				// приём событий, имя нужно — но он читает журнал сервера.
+				request.log.error(
+					{ requiredEnv: ["VK_CONFIRMATION_TOKEN"] },
+					"Подтверждение сервера событий ВКонтакте отклонено: токен подтверждения не задан в окружении сервера",
+				);
 				return reply.code(503).send({
 					error: "VkConfirmationTokenMissing",
-					message: "Не задан VK_CONFIRMATION_TOKEN в окружении сервера.",
+					message: "Приём сообщений из ВКонтакте на этом сервере не настроен: токен подтверждения не задан.",
 				});
 			}
 			return confirmationToken;

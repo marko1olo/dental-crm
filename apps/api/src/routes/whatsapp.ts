@@ -339,10 +339,17 @@ export async function registerWhatsappRoutes(
 				// ingest in production; allow (with a warning) in development so local
 				// webhook testing works without Meta credentials.
 				if (process.env.NODE_ENV === "production") {
+					// Имя переменной окружения ушло из тела ответа в журнал сервера:
+					// маршрут публичный, и его ответ читает кто угодно. Настройщику
+					// имя нужно, и оно есть — в журнале, а не в ответе наружу.
+					request.log.error(
+						{ requiredEnv: ["WHATSAPP_APP_SECRET"] },
+						"Вебхук WhatsApp отклонён: секрет приложения не задан в окружении сервера",
+					);
 					return reply.code(503).send({
 						error: "WhatsappAppSecretRequired",
 						message:
-							"WHATSAPP_APP_SECRET не настроен — приём вебхуков WhatsApp отключён.",
+							"Приём сообщений WhatsApp на этом сервере не настроен: секрет приложения не задан, и подпись вебхука проверить нечем.",
 					});
 				}
 				console.warn(
