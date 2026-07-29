@@ -315,23 +315,41 @@ export const users = pgTable("users", {
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
   /**
-   * ПРАВА, КОТОРЫЕ БАЗА ХРАНИТ ПОФАМИЛЬНО, А КОД РАЗДАВАЛ ВСЕМ ПОДРЯД.
+   * ПОЛНОМОЧИЯ, КОТОРЫЕ БАЗА ХРАНИТ ПОФАМИЛЬНО.
    *
-   * Обе колонки созданы миграцией 0000 (строки 1078-1079) как
-   * `boolean DEFAULT false NOT NULL` и не были объявлены здесь ни разу. Пока
-   * объявления нет, ни один запрос drizzle этих колонок не читает — и
-   * потребители подставляли вместо них своё: settingsQuery.ts отдаёт КАЖДОМУ
-   * сотруднику `canSignMedicalRecords: true` и `canManageMoney: true`
-   * константой, а domainStateHydration.ts выводит те же два права из роли.
-   * То есть право подписывать медицинские записи и право распоряжаться
-   * деньгами выдавались не тем значением, которое хранит база, а догадкой.
+   * Все ТРИ колонки созданы миграцией 0000 (строки 1078-1080) как
+   * `boolean DEFAULT false NOT NULL`. Форма проверена на живой базе, а не по
+   * файлу миграции (`information_schema.columns`, 2026-07-29): три boolean,
+   * `is_nullable = NO`, `column_default = false`, и во всех живых строках
+   * (7 сотрудников, две организации) лежит `false`.
+   *
+   * ЗДЕСЬ БЫЛИ ОБЪЯВЛЕНЫ ДВЕ ИЗ ТРЁХ, и это ломало запись целиком:
+   * `can_manage_imports` не объявлен — значит drizzle его не видит, и ни
+   * прочитать, ни записать его было нельзя, сколько бы полей ни принимал
+   * маршрут. Третья колонка добавлена, набор снова совпадает с таблицей.
+   *
+   * ЧТО ЭТИ КОЛОНКИ ЗНАЧАТ, И ЧЕГО ОНИ НЕ ЗНАЧАТ. Читают полномочия сейчас НЕ
+   * отсюда: и `db/settingsQuery.ts`, и `db/domainStateHydration.ts` выводят их
+   * из роли через `security/permissions.ts: staffAuthorityFlags`, то есть из той
+   * же матрицы `ROLE_PERMISSIONS`, по которой `requirePermission` отказывает на
+   * маршруте. Причина в данных: значение по умолчанию `false` и все живые строки
+   * `false`, поэтому «честное» чтение колонок сняло бы право подписи ЭМК со всех
+   * четырёх врачей И с владельца одновременно.
+   *
+   * Поэтому колонка — НАДБАВКА К РОЛИ, а не полное значение полномочия:
+   * `true` добавляет право, которого роль не даёт, `false` означает «надбавки
+   * нет, действует роль», и НЕ означает запрета. Иначе прочитать существующие
+   * строки было бы нельзя вовсе: в базе `false` стоит и у владельца, который
+   * может всё. Единственный писатель — `db/staffAuthorityQuery.ts`
+   * (маршрут PUT /api/settings/staff/:staffId/authority).
    *
    * `.default(false)` повторяет базу дословно и обязателен по второй причине:
-   * без него drizzle потребовал бы оба поля в каждом `insert` в users, а таких
-   * мест в маршрутах и тестах десятки.
+   * без него drizzle потребовал бы все три поля в каждом `insert` в users, а
+   * таких мест в маршрутах и тестах десятки.
    */
   canSignMedicalRecords: boolean("can_sign_medical_records").notNull().default(false),
   canManageMoney: boolean("can_manage_money").notNull().default(false),
+  canManageImports: boolean("can_manage_imports").notNull().default(false),
   specialties: jsonb("specialties"),
   uiPreferences: jsonb("ui_preferences"),
   workingHours: jsonb("working_hours"),

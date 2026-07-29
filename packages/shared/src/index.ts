@@ -4529,6 +4529,90 @@ export const updateStaffWorkingHoursSchema = z.object({
 });
 export type UpdateStaffWorkingHoursInput = z.infer<typeof updateStaffWorkingHoursSchema>;
 
+/* ─── ПЕРСОНАЛЬНЫЕ ПОЛНОМОЧИЯ СОТРУДНИКА ──────────────────────────────────────
+ *
+ * Три полномочия из карточки сотрудника (`staffMemberSchema`:
+ * canSignMedicalRecords, canManageMoney, canManageImports) хранятся в базе
+ * пофамильно — колонки `users.can_sign_medical_records`, `can_manage_money`,
+ * `can_manage_imports`, все три `boolean NOT NULL DEFAULT false` (проверено на
+ * живой базе через information_schema.columns 2026-07-29).
+ *
+ * ЧТО БЫЛО. Записать их было нельзя ничем: `createStaffMemberSchema` этих полей
+ * не объявляет, и ни один маршрут настроек их не принимал. При этом вкладка
+ * «Настройки → Персонал» (`components/settings/SettingsStaffTab.tsx:127-129`)
+ * посылает все три в теле POST — zod молча отбрасывал незаявленные ключи, форма
+ * закрывалась как после успешного сохранения, и выбор «кто допущен к кассе» не
+ * имел последствий ни разу.
+ *
+ * ПОЧЕМУ НАДБАВКА, А НЕ ПОЛНОЕ ЗНАЧЕНИЕ. `false` в этих колонках неотличим от
+ * «никогда не настраивали»: это значение по умолчанию, и оно стоит во ВСЕХ живых
+ * строках, включая владельца клиники, который может всё. Поэтому колонка
+ * добавляет полномочие к тому, что даёт роль, и никогда не отнимает:
+ *   `итог = роль ИЛИ надбавка`.
+ * `true` — «этому человеку дано сверх роли», `false` — «надбавки нет, действует
+ * роль». Тристейта (nullable-колонка или отдельный признак «настроено») в базе
+ * нет, а завести его — это миграция; до неё запрет отдельному человеку не
+ * выражается, и маршрут такой запрос ОТКЛОНЯЕТ вместо того, чтобы записать
+ * `false` и промолчать.
+ *
+ * Отдельная схема, а не поля в `updateStaffMemberProfileSchema`: правку ФИО и
+ * телефона делает администратор ресепшена, а выдачу полномочий — только
+ * владелец (право `settings.write`), и это разные проверки на разных адресах.
+ */
+export const staffAuthorityFlagsSchema = z.object({
+  canSignMedicalRecords: z.boolean(),
+  canManageMoney: z.boolean(),
+  canManageImports: z.boolean()
+});
+export type StaffAuthorityFlagsDto = z.infer<typeof staffAuthorityFlagsSchema>;
+
+/** Ключи полномочий одним списком: по нему маршрут перечисляет отклонённые поля. */
+export const staffAuthorityFlagKeys = ["canSignMedicalRecords", "canManageMoney", "canManageImports"] as const;
+export type StaffAuthorityFlagKey = (typeof staffAuthorityFlagKeys)[number];
+
+/**
+ * Тело запроса на выдачу полномочий. Все три поля необязательны: интерфейс
+ * правит один переключатель, а не весь набор, и присланное «ничего не менять» не
+ * должно превращаться в три надбавки. Пустое тело маршрут отвергает 400-м, как
+ * и остальные частичные правки настроек (`updateStaffMemberProfileSchema`), —
+ * ответить 200 на запрос, который ничего не изменил, значит соврать оператору.
+ */
+export const updateStaffAuthorityGrantsSchema = z.object({
+  canSignMedicalRecords: z.boolean().optional(),
+  canManageMoney: z.boolean().optional(),
+  canManageImports: z.boolean().optional()
+});
+export type UpdateStaffAuthorityGrantsInput = z.infer<typeof updateStaffAuthorityGrantsSchema>;
+
+/**
+ * Ответ маршрута: три набора, а не один.
+ *
+ * `roleDerived` — что даёт роль (матрица ROLE_PERMISSIONS на сервере),
+ * `grants` — что лежит в колонках `users`, `effective` — «роль ИЛИ надбавка».
+ * Разведены намеренно: по одному итоговому значению интерфейс не смог бы
+ * показать, откуда взялось полномочие, и снятая галочка у врача выглядела бы
+ * потерянной правкой вместо «это даёт роль врача».
+ *
+ * ДОЛГ, о котором обязан знать читатель этого ответа: сводка клиники
+ * (`GET /api/settings/clinic`) и гидратация (`db/domainStateHydration.ts`)
+ * сейчас отдают именно `roleDerived` и колонок не читают. Пока чтение не
+ * переведено на `effective`, надбавка — это записанное решение клиники, а не
+ * действующий доступ: маршруты по-прежнему судит `requirePermission` по роли.
+ *
+ * `role` — строка, а НЕ `staffRoleSchema`: в живой базе роль лежит сырой, а
+ * матрица прав знает легаси-написание `admin`, которого в `staffRoleSchema` нет
+ * (см. `security/permissions.ts`, ASSIGNABLE_ROLES). Разбор такой строки
+ * перечислением уронил бы ответ на 500 у клиники со старой записью сотрудника.
+ */
+export const staffAuthorityStateSchema = z.object({
+  staffId: z.string().uuid(),
+  role: z.string(),
+  roleDerived: staffAuthorityFlagsSchema,
+  grants: staffAuthorityFlagsSchema,
+  effective: staffAuthorityFlagsSchema
+});
+export type StaffAuthorityState = z.infer<typeof staffAuthorityStateSchema>;
+
 export const updateChairWorkingHoursSchema = z.object({
   workingHours: staffWorkingHoursSchema
 });

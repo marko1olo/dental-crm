@@ -32,15 +32,25 @@ import {
   imagingStudyKindSchema,
   nonNegativeMoneyRubSchema,
   serviceCategorySchema,
+  staffAuthorityStateSchema,
   staffMemberSchema,
   uiPreferencesInputSchema,
   uiPreferencesSchema,
   updateClinicModeSchema,
   updateClinicProfileSchema,
   updateChairWorkingHoursSchema,
+  updateStaffAuthorityGrantsSchema,
   updateStaffWorkingHoursSchema,
-  staffRoleSchema
+  staffRoleSchema,
+  type StaffAuthorityFlagKey
 } from "@dental/shared";
+import { requirePermission } from "../security/permissions.js";
+import {
+  grantStaffAuthorityInDb,
+  StaffAuthorityRevocationUnsupportedError,
+  StaffAuthorityStaffNotFoundError,
+  StaffAuthorityStorageDisabledError
+} from "../db/staffAuthorityQuery.js";
 import {
   createServiceCatalogItemInDb,
   deactivateServiceCatalogItemInDb,
@@ -310,6 +320,32 @@ const doctorCommissionValidationMessage =
   "Ставка врача не сохранена: укажите процент от кассы числом от 0 до 100.";
 const doctorCommissionNotFoundMessage = "Ставка врача не сохранена: сотрудник не найден в этой клинике.";
 const doctorCommissionRejectedMessage = "Ставка врача не сохранена: проверьте выбранного сотрудника и процент.";
+const staffAuthorityRouteValidationMessage = "Полномочия не сохранены: выберите сотрудника.";
+const staffAuthorityValidationMessage =
+  "Полномочия не сохранены: каждое полномочие задаётся признаком «да» или «нет».";
+const staffAuthorityEmptyUpdateMessage = "Полномочия не сохранены: не переданы поля для изменения.";
+const staffAuthorityNotFoundMessage = "Полномочия не сохранены: сотрудник не найден в этой клинике.";
+const staffAuthoritySelfMessage =
+  "Полномочия не сохранены: свои собственные полномочия не выдают. " +
+  "Роль, которая может их выдавать, все три полномочия уже имеет, поэтому такая правка ничего не добавляет.";
+const staffAuthorityUnverifiedMessage =
+  "Полномочия не сохранены: клиника определена не подписанным токеном, а заголовком разработки. " +
+  "Выдача полномочий по такому запросу не выполняется: войдите в рабочий кабинет клиники.";
+const staffAuthorityRejectedMessage = "Полномочия не сохранены: проверьте выбранного сотрудника и переданные поля.";
+
+/**
+ * Названия полномочий для человека. Отдельный словарь, потому что отказ должен
+ * называть КОНКРЕТНУЮ галочку, которая не снялась, а не набор целиком:
+ * `PERMISSION_ACTIONS` в security/permissions.ts подписывает права матрицы, а не
+ * поля карточки сотрудника, и одно право стоит за разными полномочиями. Тип
+ * закрыт: четвёртое полномочие не скомпилируется без подписи.
+ */
+const staffAuthorityFlagTitles: Record<StaffAuthorityFlagKey, string> = {
+  canSignMedicalRecords: "подпись медицинской документации",
+  canManageMoney: "работа с кассой, оплатами и возвратами",
+  canManageImports: "перенос данных из прежней программы"
+};
+
 const chairDeactivateRouteValidationMessage = "Кресло не отключено: выберите кресло.";
 const chairDeactivateNotFoundMessage = "Кресло не отключено: кресло не найдено в этой клинике.";
 const chairDeactivateRejectedMessage = "Кресло не отключено: проверьте выбранное кресло.";
@@ -523,6 +559,59 @@ function protocolTemplateMutationRejection(
     error: `${errorCode}Rejected`,
     reason: "protocol_template_mutation_rejected",
     message: rejectedMessage
+  });
+}
+
+/**
+ * Отказы по персональным полномочиям. Четыре исхода разведены, потому что
+ * следующий шаг владельца в каждом свой: «писать некуда» (503) — включить базу,
+ * «сотрудника нет» (404) — выбрать другого, «это даёт роль» (409) — менять роль,
+ * а не галочку, остальное (409) — проверить переданные поля.
+ */
+function staffAuthorityMutationRejection(reply: FastifyReply, error: unknown) {
+  if (error instanceof StaffAuthorityStorageDisabledError) {
+    return reply.code(503).send({
+      error: "StaffAuthorityStorageUnavailable",
+      reason: "state_persistence_off",
+      message: error.message
+    });
+  }
+  if (error instanceof StaffAuthorityStaffNotFoundError) {
+    return reply.code(404).send({
+      error: "StaffAuthorityNotFound",
+      reason: "staff_not_found",
+      message: staffAuthorityNotFoundMessage
+    });
+  }
+  if (error instanceof StaffAuthorityRevocationUnsupportedError) {
+    /*
+     * ЭТО НЕ ОШИБКА ОПЕРАТОРА И НЕ ОТКАЗ ХРАНЕНИЯ. Полномочие даёт роль
+     * сотрудника, а колонка умеет только ДОБАВЛЯТЬ к роли: `false` в ней
+     * означает «надбавки нет», а не «запрещено». Записать `false` и ответить 200
+     * значило бы показать владельцу снятую галочку при сохранившемся праве —
+     * ровно тот дефект, из-за которого выбор «кто допущен к кассе» не работал
+     * годами, только теперь с подтверждением на экране.
+     *
+     * Отклонённые поля уходят машинным списком: интерфейсу нужно вернуть именно
+     * их в прежнее положение, а не перечитывать всю карточку.
+     */
+    const titles = error.flags.map((flag) => staffAuthorityFlagTitles[flag]).join(", ");
+    return reply.code(409).send({
+      error: "StaffAuthorityRevocationUnsupported",
+      reason: "role_grants_authority",
+      flags: error.flags,
+      message:
+        `Полномочия не сохранены: сотруднику это даёт его роль в клинике (${titles}), ` +
+        "поэтому отдельной галочкой снять их нельзя — измените роль в карточке сотрудника."
+    });
+  }
+  // Причина уходит в журнал целиком: наружу идёт текст для человека, но без
+  // записи здесь отказ по полномочиям был бы неотличим от опечатки в запросе.
+  console.error("[настройки] полномочия сотрудника не сохранены:", error);
+  return reply.code(409).send({
+    error: "StaffAuthorityRejected",
+    reason: "staff_authority_rejected",
+    message: staffAuthorityRejectedMessage
   });
 }
 
@@ -876,6 +965,112 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
         doctorCommissionRejectedMessage,
         "DoctorCommission"
       );
+    }
+  });
+
+  /**
+   * ПЕРСОНАЛЬНЫЕ ПОЛНОМОЧИЯ СОТРУДНИКА: подпись медицинской документации, касса,
+   * перенос данных. Первый и единственный адрес, которым их можно записать.
+   *
+   * ЧТО БЫЛО. Ни одного. Колонки `users.can_sign_medical_records`,
+   * `can_manage_money`, `can_manage_imports` существуют с миграции 0000
+   * (`boolean NOT NULL DEFAULT false`, проверено на живой базе), но
+   * `createStaffMemberSchema` их не объявляет, а `can_manage_imports` не был
+   * объявлен даже в модели drizzle. Вкладка «Настройки → Персонал» посылает все
+   * три флага в теле POST (`SettingsStaffTab.tsx:127-129`), zod отбрасывает
+   * незаявленные ключи молча, и форма закрывается как после успешного
+   * сохранения: выбор «кто допущен к кассе» не имел последствий ни разу.
+   *
+   * ПОЧЕМУ НЕ ДОБАВЛЕНЫ В `createStaffMemberSchema`, ГДЕ ИХ ЖДЁТ ФОРМА. Форма
+   * посылает `canManageImports: true` ЖЁСТКО, каждому создаваемому сотруднику
+   * (там литерал, а не выбор оператора). Принять это поле на создании значило бы
+   * выдавать право на перенос картотеки каждому новому ассистенту — молча, самим
+   * фактом приёма на работу. Форму правит другая сессия; сервер не обязан
+   * принимать поле, которое интерфейс заполняет неверно.
+   *
+   * СЕМАНТИКА — НАДБАВКА К РОЛИ (итог = роль ИЛИ надбавка), разобрана в
+   * `db/staffAuthorityQuery.ts`. Коротко: в живой базе `false` лежит во всех
+   * строках, включая владельца, поэтому `false` неотличим от «не настраивали» и
+   * читать его как запрет нельзя. Снять надбавку можно; опустить ниже роли —
+   * нельзя, и такой запрос отклоняется, а не сохраняется втихую.
+   *
+   * ОХРАНА ТРОЙНАЯ, И КАЖДЫЙ БАРЬЕР ЗАКРЫВАЕТ СВОЁ.
+   *  1. `requireSettingsAccess` — секрет периметра и клиника из подписанного
+   *     токена, как на всех соседних маршрутах настроек.
+   *  2. Проверенная клиника: непроверенная организация приходит из
+   *     dev-заголовка, то есть её называет сам отправитель запроса. На
+   *     работающем сервере её уже отбрасывает `security/identity.ts`, но
+   *     внутрипроцессный вызов (`app.inject`) под это правило не попадает —
+   *     выдача полномочий не должна быть достижима и оттуда.
+   *  3. `requirePermission(settings.write)` — ИМЕННО ЭТО ПРАВО, и это выбор:
+   *     • `settings.write` в матрице `ROLE_PERMISSIONS` есть только у владельца
+   *       клиники (и легаси-роли с полным доступом). Тот, кто раздаёт
+   *       полномочия, обязан быть тем, кто отвечает за клинику целиком.
+   *     • `finance.write` не годится: оно есть у администратора ресепшена, и
+   *       тогда доступ к кассе мог бы выдать другому человеку тот, кому саму
+   *       кассу доверили, но раздачу доступа — нет.
+   *     • `clinical.write` не годится по той же причине: его имеет каждый врач,
+   *       и право подписи ЭМК уходило бы ассистенту по решению врача.
+   *     • Проверка строгая (`requirePermission`, а не
+   *       `enforcePermissionWhenStaffKnown`): мягкая пропускает запрос без
+   *       токена сотрудника, то есть полномочие выдавалось бы БЕЗ ИМЕНИ. Здесь
+   *       это недопустимо, а сломать переходные сценарии нечем — маршрут новый.
+   *
+   * СЕБЕ НЕ ВЫДАЮТ. Сегодня это тождественно пустой правке: у роли с
+   * `settings.write` все три полномочия и так есть по роли, надбавка себе не
+   * добавляет ничего. Проверка стоит ради будущего: как только `settings.write`
+   * получит роль без `clinical.write`, без неё появился бы путь выдать себе
+   * право подписи медицинской документации.
+   */
+  app.put("/api/settings/staff/:staffId/authority", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    if (!getRequestIdentity(request).verified) {
+      return reply.code(401).send({
+        error: "VerifiedOrganizationRequired",
+        message: staffAuthorityUnverifiedMessage
+      });
+    }
+    const granter = await requirePermission(request, reply, "settings.write");
+    if (!granter) return;
+    const params = request.params as { staffId?: string };
+    if (!params.staffId) {
+      return reply.code(400).send({
+        error: "SettingsRouteValidationError",
+        message: staffAuthorityRouteValidationMessage
+      });
+    }
+    if (params.staffId === granter.userId) {
+      return reply.code(403).send({
+        error: "StaffAuthoritySelfGrantRejected",
+        reason: "self_grant",
+        message: staffAuthoritySelfMessage
+      });
+    }
+    const input = parseSettingsPayload(updateStaffAuthorityGrantsSchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: staffAuthorityValidationMessage });
+    }
+    // Тело из одних неизвестных полей после разбора неотличимо от пустого: схема
+    // отбрасывает лишние ключи. Ответить 200 на запрос, который ничего не менял,
+    // значило бы повторить исходный дефект — теперь с подтверждением на экране.
+    if (Object.keys(input).length === 0) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: staffAuthorityEmptyUpdateMessage });
+    }
+    try {
+      /*
+       * Клиника берётся из личности выдающего, а не из возврата
+       * `requireSettingsAccess`: там есть запасные ветки (единственная
+       * организация в базе, отключённое хранение), и ни одна из них не должна
+       * определять клинику при выдаче полномочий. Разойтись эти два значения не
+       * могут — `requirePermission` требует организацию в токене, то есть ровно
+       * ту, которую вернул бы и первый барьер; личность в запросе разбирается
+       * один раз и кэшируется (`security/identity.ts`).
+       */
+      const state = await grantStaffAuthorityInDb(granter.organizationId, params.staffId, input);
+      return staffAuthorityStateSchema.parse(state);
+    } catch (error) {
+      return staffAuthorityMutationRejection(reply, error);
     }
   });
 
