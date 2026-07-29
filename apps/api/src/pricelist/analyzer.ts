@@ -1074,17 +1074,27 @@ export function itemFromGroq(raw: unknown, index: number, request: DentalPriceli
   if (!sourceText) return null;
 
   const fallback = buildItemFromLine(sourceText, index + 1, request, catalog);
-  const priceRub = readMoneyRubOrNull(record.priceRub) ?? fallback.priceRub;
+  const priceRubFromModel = readMoneyRubOrNull(record.priceRub) ?? fallback.priceRub;
   const priceMaxRubFromModel = readMoneyRubOrNull(record.priceMaxRub) ?? fallback.priceMaxRub;
   /*
-   * Верхняя граница ниже нижней — не диапазон, а мусор: врач увидел бы «от 18 000
-   * до 12 000 ₽». Детерминированный разбор отбрасывает такую границу в
-   * extractPrice, нейро-ветка не проверяла её вовсе.
+   * Убывающая пара СОРТИРУЕТСЯ, а не схлопывается в первое число.
+   *
+   * БЫЛО: верхняя граница ниже нижней просто обнулялась, а ценой оставалась
+   * нижняя ПОЗИЦИЯ пары — на убывающей паре это бо́льшее из двух чисел. Модель,
+   * прочитавшая «Консультация 1000/500» как priceRub 1000 и priceMaxRub 500,
+   * ставила в каталог консультацию за 1000 ₽, и 500 ₽ исчезали: услуга дорожала
+   * вдвое, молча. Проверка «max < min» безопасности не давала — она делала исход
+   * дороже для пациента.
+   *
+   * Тот же дефект убран из детерминированного разбора (collectPriceCandidates),
+   * а нейро-ветка осталась с ним, и две ветки на одном прайсе давали РАЗНЫЕ
+   * цены. Два числа — это либо диапазон, либо две опции; в обоих случаях меньшее
+   * есть нижняя граница, и порядок в ответе модели на это не влияет.
    */
-  const priceMaxRub =
-    priceMaxRubFromModel !== null && priceRub !== null && priceMaxRubFromModel < priceRub
-      ? null
-      : priceMaxRubFromModel;
+  const descendingPair =
+    priceRubFromModel !== null && priceMaxRubFromModel !== null && priceMaxRubFromModel < priceRubFromModel;
+  const priceRub = descendingPair ? priceMaxRubFromModel : priceRubFromModel;
+  const priceMaxRub = descendingPair ? priceRubFromModel : priceMaxRubFromModel;
   const item: DentalPricelistItem = {
     ...fallback,
     id: `price-ai-${index + 1}`,
