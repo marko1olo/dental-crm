@@ -399,7 +399,63 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * (PublicBookingWidget заявлен долгом выше), затем настоящий идентификатор
 	 * организации в клиенте.
 	 */
-	"components/crm/CustomCrmTaskTypesWidget.tsx:CustomCrmTaskTypesWidget",
+	/*
+	 * ПЯТЬ ВИДЖЕТОВ «КОНКУРЕНТНОГО ПАРИТЕТА» УДАЛЕНЫ — здесь стояли строки
+	 * components/crm/CustomCrmTaskTypesWidget.tsx,
+	 * components/integrations/DadataGeocodedAddressesWidget.tsx,
+	 * components/integrations/LandingFieldMappingsWidget.tsx,
+	 * components/marketing/FamilyRecommendationSourcesWidget.tsx и
+	 * components/settings/SingleSessionEnforcementsWidget.tsx. Разбор стоит один
+	 * раз, за все пять: у них общий дефект и общее доказательство.
+	 *
+	 * У КАЖДОЙ ТАБЛИЦЫ НЕТ ПИСАТЕЛЯ. Замер по всему дереву (apps/api/src,
+	 * scripts, packages): ни одной вставки в custom_crm_task_types,
+	 * landing_field_mappings, dadata_geocoded_addresses,
+	 * single_session_enforcements, family_recommendation_sources — только по
+	 * одному SELECT в apps/api/src/db/*Query.ts. Замер в живой PostgreSQL 18: во
+	 * всех пяти таблицах 0 строк. Это не «клиника ещё не заполнила», а некому
+	 * заполнить: экрана создания нет ни у одной, формы нет ни у одной, импорта
+	 * нет ни у одной.
+	 *
+	 * ИХ УЖЕ СНЯЛИ С ЭКРАНОВ СОЗНАТЕЛЬНО, И ПРИЧИНА ЗАПИСАНА НА МЕСТЕ СНЯТИЯ.
+	 * Осиротели они не по забывчивости — каждую убрали отдельным решением, и
+	 * каждое место снятия просит удалить сам файл:
+	 *   CustomCrmTaskTypesWidget — снят из трёх мест сразу (PatientsView.tsx:819,
+	 *     MarketingView.tsx:599, components/settings/SettingsRulesTab.tsx:593):
+	 *     одна и та же пустота повторялась на трёх экранах;
+	 *   DadataGeocodedAddressesWidget — SettingsView.tsx:1606: он обещал
+	 *     стандартизацию адреса пациента, которого в карточке НЕТ вовсе — ни
+	 *     колонки, ни поля ввода;
+	 *   LandingFieldMappingsWidget — MarketingView.tsx:578: обещал интеграцию с
+	 *     конструкторами лендингов, которой в коде нет ни для одного из них, а
+	 *     надпись «Сопоставления полей лендингов не настроены» читалась как
+	 *     «настрой меня», хотя настраивать негде;
+	 *   FamilyRecommendationSourcesWidget — MarketingView.tsx:590: показывал 404
+	 *     под видом «данных пока нет», потому что маршрута
+	 *     /api/marketing/family-recommendation-sources в apps/api нет вообще
+	 *     (в отличие от остальных четырёх — у тех маршрут есть и только читает);
+	 *   SingleSessionEnforcementsWidget — SettingsView.tsx:1615 и
+	 *     components/settings/SettingsAccessTab.tsx:281: он обещал не журнал
+	 *     входов, а ВЫТЕСНЕНИЕ сессии, которого в системе нет — токены
+	 *     подписанные и stateless, хранилища сессий и отзыва токенов не
+	 *     существует.
+	 *
+	 * ПОЧЕМУ УДАЛЕНИЕ, А НЕ ДОЛГ. Пустая панель на рабочем экране — не нейтральный
+	 * ноль. Владелец читает «данных нет» как факт о своей клинике и делает вывод:
+	 * что рекомендаций у него не бывает, что параллельных входов нет, что дубли
+	 * адресов не встречаются. Ни одно из этих утверждений не измерено — просто
+	 * никто не пишет в таблицу. Вернуть каждую можно только вместе с писателем:
+	 * колонкой, формой и экраном, где значение задают. Это новая возможность, а
+	 * не подъём этих файлов, и лежать рядом с настоящими цифрами до тех пор они
+	 * не должны — они подрывают доверие именно к настоящим.
+	 *
+	 * Серверную часть (по одному GET в routes/clinical.ts и по одному
+	 * db/*Query.ts на каждую из четырёх таблиц, у которых маршрут есть) этот
+	 * коммит НЕ трогает: она вне зоны достижимости интерфейса и вынесена долгом.
+	 * Строка /api/marketing/family-recommendation-sources убрана из KNOWN_MISSING
+	 * в apps/api/src/tests/webCallsExistingRoutes.test.ts вместе с виджетом —
+	 * адрес, которого больше никто не зовёт, не долг, а мусор в списке.
+	 */
 	/*
 	 * DicomToolbar и ViewportOverlays УДАЛЕНЫ. Тулбар просмотрщика КТ и подписи
 	 * поверх срезов — вынесенные копии, а оригиналы остались inline в живом
@@ -425,9 +481,6 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * сироты с выдуманным.
 	 */
 	"components/documents/DocumentUkepSignButton.tsx:DocumentUkepSignButton",
-	"components/integrations/DadataGeocodedAddressesWidget.tsx:DadataGeocodedAddressesWidget",
-	"components/integrations/LandingFieldMappingsWidget.tsx:LandingFieldMappingsWidget",
-	"components/marketing/FamilyRecommendationSourcesWidget.tsx:FamilyRecommendationSourcesWidget",
 	/*
 	 * SmartImportStudio и LegacyMigrationStudio удалены, поэтому строк здесь
 	 * больше нет. Это не потерянная работа, а две устаревшие КОПИИ вкладки
@@ -457,7 +510,6 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
 	 * пропсы из God Context (объявлены они были без пропсов вообще), тогда как
 	 * живая вкладка получает их прямо. Сетевых вызовов ноль в обеих.
 	 */
-	"components/settings/SingleSessionEnforcementsWidget.tsx:SingleSessionEnforcementsWidget",
 	"components/visit/DoctorDesktopHeader.tsx:DoctorDesktopHeader",
 	/*
 	 * components/visit/VisitDictation.tsx УДАЛЁН — вторая диктовка на экране приёма.
@@ -521,13 +573,23 @@ const LEGACY_UNMOUNTED_BACKLOG: readonly string[] = [
  * причиной, и нельзя расширять. Без этого числа список стал бы той самой
  * лазейкой, из-за которой удалён внешний страж.
  */
-const LEGACY_BACKLOG_CEILING = 7;
+const LEGACY_BACKLOG_CEILING = 2;
 
-/** Минимальный размер переписи: ниже него она заведомо выродилась. */
+/**
+ * Минимальный размер переписи: ниже него она заведомо выродилась.
+ *
+ * Порог `components` опущен 170 → 160 вместе с удалением пяти виджетов без
+ * писателя (разбор выше): замер после удаления — 168 компонентов на 321 файле,
+ * то есть прежние 170 стали не порогом вырождения, а запретом на удаление
+ * мёртвого кода. Порог обязан ловить поломку РАЗБОРА, а она даёт обвал до нуля
+ * или до единиц, а не минус пять. Опускать его молча нельзя: если следующий
+ * замер снова упрётся, сначала проверьте, что перепись видит все формы
+ * объявления, и только потом двигайте число — с датой и замером, как здесь.
+ */
 const CENSUS_FLOOR = {
 	sourceFiles: 250,
 	componentFiles: 150,
-	components: 170,
+	components: 160,
 	reachableFiles: 200,
 };
 

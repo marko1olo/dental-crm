@@ -63,7 +63,15 @@ const KNOWN_MISSING: readonly string[] = [
 	"/api/crm/patient-duplicate-merge-queues",
 	"/api/integrations/egisz-blank-permissions",
 	"/api/integrations/yandex-calendar-syncs",
-	"/api/marketing/family-recommendation-sources",
+	/*
+	 * Отсюда убрана строка /api/marketing/family-recommendation-sources: её звал
+	 * ровно один виджет, FamilyRecommendationSourcesWidget, и он удалён вместе с
+	 * обещанием. Маршрута в apps/api нет вообще, в family_recommendation_sources
+	 * ноль вставок на весь репозиторий и 0 строк в живой базе, а сам виджет не
+	 * импортировал никто — то есть 404 не показывался даже ему. Адрес, которого
+	 * никто не зовёт, не долг, а мусор в списке; разбор всех пяти таких виджетов
+	 * стоит в apps/web/src/tests/panelsAreMounted.test.ts на месте их строк.
+	 */
 	"/api/schedule/external-schedule-action-logs",
 	"/api/system/ram-watchdogs",
 	// Незаконченные разделы.
