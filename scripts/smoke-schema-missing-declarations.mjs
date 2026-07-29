@@ -15,13 +15,20 @@
  * Честное предупреждение, но покрытия у класса от этого не появляется.
  *
  * ЧТО СЧИТАЕТСЯ ИСТИНОЙ. Живая база на 127.0.0.1:5432 через `information_schema`,
- * только `select`. Не миграции: воспроизведение DDL из `apps/api/drizzle/*.sql`
- * не отслеживает `DROP`/`RENAME`, поэтому давало бы ложные срабатывания, а на
- * каждое ложное срабатывание в список исключений добавляется запись — то самое
- * гниение, против которого страж и написан. И проверено: НИ ОДНА из 18 таблиц и
- * НИ ОДНА из 134 колонок этой переписи не создаётся ни миграцией, ни кодом
- * `apps/api/src` — они появились в базе вне репозитория (`drizzle-kit push`,
- * ручной SQL или восстановленный дамп). По миграциям их не найти в принципе.
+ * только `select`. Именно база, а не миграции: воспроизведение DDL из
+ * `apps/api/drizzle/*.sql` не отслеживает `DROP`/`RENAME`, поэтому давало бы ложные
+ * срабатывания, а на каждое ложное срабатывание в список исключений добавляется
+ * запись — то самое гниение, против которого страж и написан.
+ *
+ * ОТКУДА ВЗЯЛСЯ ДРЕЙФ (измерено, а не предположено). Все 18 таблиц и все 134
+ * колонки этой переписи создаются миграциями самого репозитория, 15 таблиц — той же
+ * миграцией 0000, что и `egisz_logs`. То есть DDL репозитория и объявления Drizzle
+ * расходятся внутри репозитория, и это расхождение не проверял никто. Исключение
+ * одно: `_dente_migrations` — DDL нет нигде, её создаёт сам раскатчик миграций.
+ *
+ * Отсюда следствие для ведущего: сверку «DDL миграций против объявлений» можно
+ * сделать и без базы, и она поймала бы `egisz_logs` ещё на 0000. Здесь она не
+ * сделана намеренно (см. выше про DROP/RENAME), а не потому, что бесполезна.
  *
  * СПИСОК ИСКЛЮЧЕНИЙ ТРЕБУЕТ ПРИЧИНУ НА ЗАПИСЬ — как `unauthenticatedByDesign`
  * в маршрутном гейте и `knownUnwiredPatientComponents` в тесте декомпозиции.
@@ -69,40 +76,45 @@ const SERVICE_LEDGER =
 	"журнал применённых миграций: его пишет и читает только раскатчик миграций, " +
 	"объявление в Drizzle открыло бы приложению запись в собственный храповик";
 
-const NO_DDL_ANYWHERE =
-	"таблица есть в живой базе, но DDL нет НИ в apps/api/drizzle/*.sql, НИ в apps/api/src — " +
-	"появилась вне репозитория (push/ручной SQL/дамп); перепись KK5 от 2026-07-29; " +
-	"снять запись можно только объявив таблицу в Drizzle или удалив её из базы миграцией";
+const MIGRATED_NEVER_DECLARED =
+	"таблицу создаёт миграция репозитория (поле since), а в Drizzle её нет — тот же класс, " +
+	"что egisz_logs: ни один аудит этой таблицы не видит по построению; перепись KK5 от 2026-07-29; " +
+	"снять запись — объявив таблицу в Drizzle или удалив её из базы миграцией";
 
-const NO_DDL_COLUMNS =
-	"колонки есть в живой базе, но DDL нет НИ в миграциях, НИ в apps/api/src — " +
-	"появились вне репозитория; перепись KK5 от 2026-07-29; drizzle-kit push по текущим " +
-	"объявлениям снёс бы их вместе с данными; снять запись — объявив колонки или удалив их миграцией";
+const MIGRATED_COLUMNS_NEVER_DECLARED =
+	"колонки создают миграции репозитория (проверено по всем 134 колонкам переписи KK5), " +
+	"а объявлений в Drizzle нет: аудиты их не видят, а drizzle-kit push по текущим объявлениям " +
+	"снёс бы их вместе с данными; снять запись — объявив колонки или удалив их миграцией";
 
 /**
  * Таблицы живой базы без объявления в Drizzle.
  * `permanent: true` — объявлять НЕЛЬЗЯ никогда. Без него запись — долг.
+ * `since` — миграция, которая таблицу создаёт; страж проверяет, что файл на месте,
+ * поэтому провенанс в записи не превращается в невидимое вранье при пересборке миграций.
  */
 const undeclaredTables = new Map([
 	["_dente_migrations", { reason: SERVICE_LEDGER, permanent: true }],
-	["analytics_snapshots", { reason: NO_DDL_ANYWHERE }],
-	["cash_shifts", { reason: NO_DDL_ANYWHERE }],
-	["clinic_workflows", { reason: NO_DDL_ANYWHERE }],
-	["clinical_tasks", { reason: NO_DDL_ANYWHERE }],
-	["dental_lab_orders", { reason: NO_DDL_ANYWHERE }],
-	["doctor_assistants", { reason: NO_DDL_ANYWHERE }],
-	["doctor_payrolls", { reason: NO_DDL_ANYWHERE }],
-	["document_templates", { reason: NO_DDL_ANYWHERE }],
-	["drill_protocols", { reason: NO_DDL_ANYWHERE }],
-	["ingested_patients_mapping", { reason: NO_DDL_ANYWHERE }],
-	["ingestion_sources", { reason: NO_DDL_ANYWHERE }],
-	["migration_templates", { reason: NO_DDL_ANYWHERE }],
-	["patient_anamnesis", { reason: NO_DDL_ANYWHERE }],
-	["payment_installments", { reason: NO_DDL_ANYWHERE }],
-	["scheduler_reservations", { reason: NO_DDL_ANYWHERE }],
-	["signed_outpatient_cards", { reason: NO_DDL_ANYWHERE }],
-	["treatment_plan_stages_auto_archive", { reason: NO_DDL_ANYWHERE }],
-	["ztl_lab_orders", { reason: NO_DDL_ANYWHERE }],
+	["analytics_snapshots", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["cash_shifts", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["clinic_workflows", { reason: MIGRATED_NEVER_DECLARED, since: "0008_add_settings.sql" }],
+	["clinical_tasks", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["dental_lab_orders", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["doctor_assistants", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["doctor_payrolls", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["document_templates", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["drill_protocols", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["ingested_patients_mapping", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["ingestion_sources", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["migration_templates", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["patient_anamnesis", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["payment_installments", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["scheduler_reservations", { reason: MIGRATED_NEVER_DECLARED, since: "0000_freezing_randall_flagg.sql" }],
+	["signed_outpatient_cards", { reason: MIGRATED_NEVER_DECLARED, since: "0002_aromatic_smiling_tiger.sql" }],
+	[
+		"treatment_plan_stages_auto_archive",
+		{ reason: MIGRATED_NEVER_DECLARED, since: "0067_add_treatment_plan_stages_auto_archive.sql" },
+	],
+	["ztl_lab_orders", { reason: MIGRATED_NEVER_DECLARED, since: "0006_nostalgic_maverick.sql" }],
 ]);
 
 /**
@@ -110,33 +122,33 @@ const undeclaredTables = new Map([
  * Запись = таблица: объявить недостающие колонки одной таблицы — одна правка.
  */
 const undeclaredColumns = new Map([
-	["appointments", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
+	["appointments", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
 	[
 		"bulk_image_operation_logs",
-		{ reason: NO_DDL_COLUMNS, columns: ["assigned_tooth_number", "patient_name", "selected_images_count"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["assigned_tooth_number", "patient_name", "selected_images_count"] },
 	],
-	["chairs", { reason: NO_DDL_COLUMNS, columns: ["created_at", "status"] }],
+	["chairs", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["created_at", "status"] }],
 	[
 		"chat_message_dispatch_statuses",
-		{ reason: NO_DDL_COLUMNS, columns: ["can_retry", "dispatch_timestamp", "recipient_name"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["can_retry", "dispatch_timestamp", "recipient_name"] },
 	],
 	[
 		"clinics",
-		{ reason: NO_DDL_COLUMNS, columns: ["is_synced", "marketing_settings", "reporting_settings", "version"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "marketing_settings", "reporting_settings", "version"] },
 	],
 	[
 		"collaborative_chat_processing_states",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["assigned_agent_name", "has_agent_replied", "is_archived", "updated_at"],
 		},
 	],
-	["communication_events", { reason: NO_DDL_COLUMNS, columns: ["read_at"] }],
-	["crm_leads", { reason: NO_DDL_COLUMNS, columns: ["expected_revenue"] }],
+	["communication_events", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["read_at"] }],
+	["crm_leads", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["expected_revenue"] }],
 	[
 		"diagnocat_ai_findings",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: [
 				"ai_confidence_score",
 				"detected_pathologies_json",
@@ -147,41 +159,41 @@ const undeclaredColumns = new Map([
 			],
 		},
 	],
-	["doctor_commissions", { reason: NO_DDL_COLUMNS, columns: ["effective_to"] }],
+	["doctor_commissions", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["effective_to"] }],
 	[
 		"egisz_blank_permissions",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["field_name", "form_code", "is_export_allowed", "patient_opt_out_respect", "updated_at"],
 		},
 	],
-	["generated_documents", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
+	["generated_documents", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
 	[
 		"message_template_catalogs",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["body_text", "channel_type", "dynamic_tags", "is_default", "template_name"],
 		},
 	],
 	[
 		"messenger_file_attachments",
-		{ reason: NO_DDL_COLUMNS, columns: ["delivery_status", "file_name", "patient_name", "target_messenger"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["delivery_status", "file_name", "patient_name", "target_messenger"] },
 	],
 	[
 		"mkb10_auto_directories",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["auto_updated", "bound_template_package", "last_version_date", "mkb_code", "mkb_title"],
 		},
 	],
 	[
 		"ndfl_tax_calculators",
-		{ reason: NO_DDL_COLUMNS, columns: ["has_anomaly_warning", "patient_name", "tax_code", "total_eligible_rub"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["has_anomaly_warning", "patient_name", "tax_code", "total_eligible_rub"] },
 	],
 	[
 		"organizations",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: [
 				"ai_enable_documents",
 				"ai_enable_recommendations",
@@ -218,14 +230,14 @@ const undeclaredColumns = new Map([
 	[
 		"patient_duplicate_merge_queues",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["duplicate_patient_name", "match_confidence_percent", "merge_status", "primary_patient_name"],
 		},
 	],
 	[
 		"patient_invoices",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: [
 				"insurance_amount_rub",
 				"items_json",
@@ -235,40 +247,40 @@ const undeclaredColumns = new Map([
 			],
 		},
 	],
-	["patients", { reason: NO_DDL_COLUMNS, columns: ["insurance_contract_id", "insurance_policy_number"] }],
-	["payments", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
+	["patients", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["insurance_contract_id", "insurance_policy_number"] }],
+	["payments", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
 	[
 		"previous_chat_dialog_histories",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["closed_at", "dialog_session_id", "message_count", "patient_name", "summary_note"],
 		},
 	],
 	[
 		"system_ram_watchdogs",
-		{ reason: NO_DDL_COLUMNS, columns: ["client_host_name", "total_ram_mb", "used_ram_mb", "warning_level"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["client_host_name", "total_ram_mb", "used_ram_mb", "warning_level"] },
 	],
-	["treatment_items", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
-	["treatment_plan_items_new", { reason: NO_DDL_COLUMNS, columns: ["commission_amount"] }],
-	["treatment_scenarios", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
+	["treatment_items", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	["treatment_plan_items_new", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["commission_amount"] }],
+	["treatment_scenarios", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
 	[
 		"uis_call_speech_transcripts",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["call_session_id", "key_timestamps_json", "patient_name", "sentiment_score", "transcript_text"],
 		},
 	],
 	[
 		"uis_sms_chat_quotas",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: ["daily_quota_limit", "is_quota_exceeded", "sent_today_count", "updated_at"],
 		},
 	],
 	[
 		"users",
 		{
-			reason: NO_DDL_COLUMNS,
+			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
 			columns: [
 				"can_manage_imports",
 				"can_manage_money",
@@ -281,17 +293,17 @@ const undeclaredColumns = new Map([
 			],
 		},
 	],
-	["visit_diaries", { reason: NO_DDL_COLUMNS, columns: ["diagnosis_text"] }],
+	["visit_diaries", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["diagnosis_text"] }],
 	[
 		"visit_diary_revisions",
-		{ reason: NO_DDL_COLUMNS, columns: ["previous_diagnosis_tooth", "revision_reason"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["previous_diagnosis_tooth", "revision_reason"] },
 	],
 	[
 		"visit_examination_photo_links",
-		{ reason: NO_DDL_COLUMNS, columns: ["examination_form_id", "patient_name"] },
+		{ reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["examination_form_id", "patient_name"] },
 	],
-	["visits", { reason: NO_DDL_COLUMNS, columns: ["is_synced", "version"] }],
-	["yandex_calendar_syncs", { reason: NO_DDL_COLUMNS, columns: ["doctor_name", "last_synced_at"] }],
+	["visits", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
+	["yandex_calendar_syncs", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["doctor_name", "last_synced_at"] }],
 ]);
 
 /* ═══════════════════════ объявления Drizzle ═══════════════════════ */
@@ -432,6 +444,20 @@ function reasonProblem(reason) {
 	return null;
 }
 
+/** Миграции на диске: `since` в записи обязан указывать на существующий файл. */
+const MIGRATION_FILES = new Set(
+	readdirSync(join(REPO_ROOT, "apps", "api", "drizzle")).filter((f) => f.endsWith(".sql")),
+);
+
+function sinceFileProblem(entry) {
+	if (entry.permanent) return entry.since ? "запись permanent не должна ссылаться на миграцию" : null;
+	if (!entry.since) return "не указана миграция (since), создающая таблицу";
+	if (!MIGRATION_FILES.has(entry.since)) {
+		return `since="${entry.since}" — такой миграции в apps/api/drizzle нет, провенанс записи устарел`;
+	}
+	return null;
+}
+
 /* ═══════════════════════ прогон ═══════════════════════ */
 
 const { tables: declared, fallbackNames } = declarationsFromSchema();
@@ -482,6 +508,8 @@ for (const table of [...live.keys()].sort()) {
 	}
 	const problem = reasonProblem(entry.reason);
 	if (problem) failures.push(`undeclaredTables["${table}"]: ${problem}`);
+	const sinceProblem = sinceFileProblem(entry);
+	if (sinceProblem) failures.push(`undeclaredTables["${table}"]: ${sinceProblem}`);
 }
 
 /* 2. Колонка есть в базе, объявления нет (таблица объявлена). */
