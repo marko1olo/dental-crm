@@ -6,6 +6,14 @@ import {
 	patients,
 	treatmentPlans,
 } from "../db/schema.js";
+// Пояс клиники берётся ОДНИМ домом на проект — из отчётов руководителя. Своя
+// копия `clinicTimeZone` здесь стала бы вторым источником истины о поясе, а из
+// этой болезни в проекте уже выросли четыре разных расчёта долга.
+import {
+	clinicTimeZone,
+	inClinicZone,
+	postgresKnowsTimeZone,
+} from "../services/reports/managerReports.js";
 
 /**
  * Сырая строка запроса прибыльности. Числа объявлены `string | number`, потому
@@ -95,12 +103,43 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 			`[BI Analytics] Starting aggregation for organization: ${orgId}`,
 		);
 
+		/*
+		 * МЕСЯЦ КОГОРТЫ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+		 *
+		 * `to_char(created_at, 'YYYY-MM')` для колонки с часовым поясом печатает
+		 * месяц по поясу СЕССИИ. У всех российских поясов смещение положительное,
+		 * поэтому день в поясе сессии ОТСТАЁТ от местного каждую ночь: в Самаре
+		 * (пояс клиники по умолчанию в схеме) до 04:00, на Камчатке половину
+		 * суток. Пациент, зарегистрированный вечером последнего дня месяца,
+		 * попадал в когорту СЛЕДУЮЩЕГО месяца и оставался там навсегда: когорта
+		 * присваивается один раз, по дате регистрации.
+		 *
+		 * ИЗМЕРЕНО на живой базе: момент 30 июня 2026 23:30 по часам клиники
+		 * (Europe/Moscow) при поясе сессии Europe/Samara даёт когорту 2026-07, в
+		 * поясе клиники — 2026-06. Владелец сравнивает когорты и по ним решает,
+		 * какая реклама сработала; сдвинутый пациент уносит свою выручку в чужой
+		 * месяц, и ошибаются оба месяца сразу.
+		 *
+		 * ПОЯС ЗДЕСЬ ЕСТЬ ОТКУДА ВЗЯТЬ, и это проверено: `orgId` — аргумент этой
+		 * функции, поэтому фоновая задача знает своего арендатора. Подставлять
+		 * московский за клинику было бы нельзя: в схеме пояс по умолчанию
+		 * Europe/Samara. Если пояс всё-таки не определён — это «неизвестно», и
+		 * поведение остаётся прежним, месяц режется в поясе сессии, как до
+		 * правки.
+		 *
+		 * Приведение делается только к поясу, который PostgreSQL знает: иначе
+		 * `AT TIME ZONE` бросает 22023 и агрегация валится в catch, оставляя
+		 * снимок ненаписанным.
+		 */
+		const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
+		const cohortMonth = sql`to_char(date_trunc('month', ${inClinicZone(sql.raw("created_at"), cohortZone)}), 'YYYY-MM')`;
+
 		// 1. Cohort LTV (Real Implementation)
 		const rawLtv = await db.execute(sql`
 			WITH cohorts AS (
-				SELECT 
-					id as patient_id, 
-					to_char(created_at, 'YYYY-MM') as cohort
+				SELECT
+					id as patient_id,
+					${cohortMonth} as cohort
 				FROM patients
 				WHERE organization_id = ${orgId}
 			),
