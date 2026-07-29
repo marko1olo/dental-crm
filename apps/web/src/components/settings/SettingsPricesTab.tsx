@@ -26,8 +26,10 @@ import {
 import "./SettingsPricesTab.css";
 import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
+import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { PriceDictationBar } from "../../PriceDictationBar";
+import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -38,11 +40,42 @@ const NEW_SERVICE_TEMPLATE = {
 	code: "",
 	category: "therapy" as ServiceCategory,
 	specialty: "therapist" as DentalSpecialty,
+	/*
+	   Значение по умолчанию нужно только для формы запроса: настоящая цена
+	   набирается в priceRubInput строкой и подставляется сюда при сохранении
+	   (см. handleSaveService). Читать её из этого объекта нельзя — она устарела.
+	*/
 	basePriceRub: 0,
 	durationMinutes: 30,
 	taxDeductible: true,
 	active: true,
 };
+
+/**
+ * Цена из каталога — в текстовое поле формы.
+ *
+ * Возвращает ровно ту запись, которую потом принимает normalizeRubAmountInput:
+ * круглая сумма без дробной части, копейки — через запятую («1500», «1500,50»).
+ * Округление считается целыми копейками: у части значений умножение на сто на
+ * двоичной плавающей точке даёт хвост (1500.505 * 100 = 150050.49999999999).
+ *
+ * Строка на входе допущена намеренно: колонка base_price_rub имеет тип numeric
+ * и у драйвера базы такие значения умеют приходить строками.
+ */
+function rubToPriceInput(value: number | string | null | undefined): string {
+	const amountRub = typeof value === "string" ? Number(value) : value;
+	if (
+		typeof amountRub !== "number" ||
+		!Number.isFinite(amountRub) ||
+		amountRub < 0
+	) {
+		return "";
+	}
+	const kopecks = Math.round(amountRub * 100);
+	return kopecks % 100 === 0
+		? String(kopecks / 100)
+		: (kopecks / 100).toFixed(2).replace(".", ",");
+}
 
 export function SettingsPricesTab() {
 	const appLogic = useAppLogicContext();
@@ -88,6 +121,15 @@ export function SettingsPricesTab() {
 
 	const [editServiceId, setEditServiceId] = useState<string | null>(null);
 	const [editServiceForm, setEditServiceForm] = useState(NEW_SERVICE_TEMPLATE);
+	/*
+	   Цена живёт строкой, пока её набирают, и превращается в число один раз —
+	   при сохранении. Число в состоянии означало разбор на каждом нажатии
+	   клавиши, а разбор на каждом нажатии означал, что незаконченный ввод
+	   («1500,» на пути к «1500,50») обязан во что-то превратиться немедленно.
+	   Превращался он в ноль.
+	*/
+	const [priceRubInput, setPriceRubInput] = useState("");
+	const [priceProblem, setPriceProblem] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 
 	const [isImporting, setIsImporting] = useState(false);
@@ -179,12 +221,34 @@ export function SettingsPricesTab() {
 			mergedProps.setError?.("API недоступно");
 			return;
 		}
+		/*
+		   Разбор цены — общей normalizeRubAmountInput, той же, что в кассе, в
+		   заказах ЗТЛ и в плане лечения. Она понимает запятую и разделители
+		   разрядов и отказывает на трёх знаках после запятой, а не округляет за
+		   пользователя. Непонятная цена больше не превращается в ноль молча:
+		   услуга не сохраняется, а поле говорит, что поправить.
+
+		   Ноль допущен: серверная схема basePriceRub — nonNegativeMoneyRubSchema,
+		   бесплатная позиция в каталоге законна. Запрещено другое — НЕЯВНЫЙ ноль,
+		   которого никто не вводил.
+		*/
+		const basePriceRub = normalizeRubAmountInput(priceRubInput);
+		if (basePriceRub === null) {
+			setPriceProblem(
+				priceRubInput.trim()
+					? "Цена непонятна. Впишите сумму цифрами, копейки после запятой: 1500 или 1500,50."
+					: "Укажите цену услуги: например 1500 или 1500,50.",
+			);
+			return;
+		}
+		setPriceProblem(null);
 		setIsSaving(true);
 		try {
+			const servicePayload = { ...editServiceForm, basePriceRub };
 			if (editServiceId === "new") {
-				await createServiceCatalogItem(editServiceForm);
+				await createServiceCatalogItem(servicePayload);
 			} else {
-				await updateServiceCatalogItem(editServiceId, editServiceForm);
+				await updateServiceCatalogItem(editServiceId, servicePayload);
 			}
 			setEditServiceId(null);
 		} catch (error: any) {
@@ -258,6 +322,9 @@ export function SettingsPricesTab() {
 								className="primary-button"
 								onClick={() => {
 									setEditServiceForm(NEW_SERVICE_TEMPLATE);
+									// Пустое поле, а не подставленный «0»: цену вводит человек.
+									setPriceRubInput("");
+									setPriceProblem(null);
 									setEditServiceId("new");
 								}}
 							>
@@ -293,12 +360,14 @@ export function SettingsPricesTab() {
 											</div>
 											<div className="catalog-item-actions">
 												<div className="catalog-item-price">
-													{(
-														item.priceRub ||
-														item.basePriceRub ||
-														0
-													).toLocaleString("ru-RU")}{" "}
-													₽<small>{item.durationMinutes} мин.</small>
+													{/* Было `(...).toLocaleString("ru-RU")} ₽`: у русской
+													    локали по умолчанию до трёх знаков после запятой,
+													    поэтому 1500,50 печаталось как «1 500,5» — полтинник
+													    читается как пять копеек. Формат денег в приложении
+													    один, `money` из AppHelpers: копейки либо двумя
+													    знаками, либо не показаны вовсе. */}
+													{money(item.basePriceRub ?? item.priceRub ?? 0)}
+													<small>{item.durationMinutes} мин.</small>
 												</div>
 												<button
 													className="icon-button"
@@ -314,6 +383,16 @@ export function SettingsPricesTab() {
 															taxDeductible: item.taxDeductible,
 															active: item.isActive,
 														});
+														/* Копейки сохранённой цены попадают в поле как
+														   «1500,50», а не теряются при открытии формы:
+														   проекция прайса читает base_price_rub, её и
+														   показываем первой. */
+														setPriceRubInput(
+															rubToPriceInput(
+																item.basePriceRub ?? item.priceRub ?? 0,
+															),
+														);
+														setPriceProblem(null);
 														setEditServiceId(item.id);
 													}}
 												>
@@ -333,8 +412,27 @@ export function SettingsPricesTab() {
 						))}
 						{Object.keys(groupedCatalog).length === 0 && (
 							<div className="empty-catalog-state">
-								<FolderTree size={48} color="var(--border)" />
-								<p>Ничего не найдено</p>
+								{/* БЫЛО: color="var(--border)". Имени --border нет ни в одном файле
+								    стилей — есть --line, --line-strong и псевдонимы
+								    --border-default/--border-subtle (styles/token-aliases.css).
+								    Недействительное значение у наследуемого свойства color
+								    означает «наследовать», поэтому значок брал цвет текста
+								    родителя (--muted) и в пустом состоянии весил больше самой
+								    надписи. Проверка scripts/check-css-tokens.mjs читает только
+								    .css и инлайновые стили в TSX не видит — отсюда и жило. */}
+								<FolderTree size={48} color="var(--line-strong)" />
+								{/* Пустота без подсказки — тупик: непонятно, каталог пуст или
+								    поиск ничего не нашёл, и что делать дальше. */}
+								<p>
+									{searchQuery.trim()
+										? `По запросу «${searchQuery.trim()}» ничего не найдено`
+										: "В каталоге клиники пока нет услуг"}
+								</p>
+								<small style={{ color: "var(--muted)", marginTop: "4px" }}>
+									{searchQuery.trim()
+										? "Проверьте написание или очистите поиск — возможно, услуга названа иначе."
+										: "Добавьте услугу кнопкой «Добавить услугу» или перенесите прайс целиком на вкладке «ИИ-Распознавание»."}
+								</small>
 							</div>
 						)}
 					</div>
@@ -592,7 +690,7 @@ export function SettingsPricesTab() {
 										<div className="pricelist-item-price">
 											<span>
 												{item.priceRub !== null
-													? `${item.priceRub.toLocaleString("ru-RU")} ₽`
+													? money(item.priceRub)
 													: "цена ?"}
 											</span>
 										</div>
@@ -710,19 +808,54 @@ export function SettingsPricesTab() {
 								</div>
 								<div className="staff-form-group">
 									<label>Цена (₽)</label>
+									{/*
+										ЦЕНА УНИЧТОЖАЛАСЬ ЗДЕСЬ ТРЕМЯ СПОСОБАМИ СРАЗУ.
+
+										Стояло: <input type="number" min="0" step="100"
+										onChange={... parseInt(e.target.value) || 0}>.
+
+										1. `parseInt` читает до первого нецифрового знака: «1500,50»
+										   сохранялось как 1500, «1500.50» — тоже как 1500. Копейки
+										   ради которых починены разборщик прайса, схема
+										   nonNegativeMoneyRubSchema и колонка numeric(12,2),
+										   срезались в последней точке — при вводе руками.
+
+										2. `|| 0`: NaN, пустая строка и любой мусор превращались в
+										   ноль. Услуга сохранялась бесплатной, окно закрывалось,
+										   ничего не сообщив. Ноль здесь законен как решение
+										   человека, но не как результат непонятого ввода.
+
+										3. `type="number" step="100"` — двойная западня. Русский
+										   браузер в числовом поле не считает «1500,50» числом и
+										   отдаёт в e.target.value пустую строку: запятая исчезала
+										   прямо под рукой, а `|| 0` дописывал ноль. Плюс step
+										   делал недействительным ЛЮБОЕ значение, не кратное сотне:
+										   форма без noValidate не отправляется вовсе, и цену 6850 ₽
+										   или сохранённую 1500,50 нельзя было записать — нажатие
+										   «Сохранить» просто ничего не делало.
+
+										Стало как в кассе и в заказах ЗТЛ: обычное текстовое поле с
+										цифровой клавиатурой на телефоне, разбор общей
+										normalizeRubAmountInput при сохранении.
+									*/}
 									<input
-										type="number"
-										min="0"
-										step="100"
-										value={editServiceForm.basePriceRub}
-										onChange={(e) =>
-											setEditServiceForm({
-												...editServiceForm,
-												basePriceRub: parseInt(e.target.value) || 0,
-											})
-										}
+										type="text"
+										inputMode="decimal"
+										value={priceRubInput}
+										onChange={(e) => {
+											setPriceRubInput(e.target.value);
+											setPriceProblem(null);
+										}}
+										placeholder="например 1500 или 1500,50"
 										required
 									/>
+									{priceProblem && (
+										<small
+											style={{ color: "var(--danger-color)", marginTop: "4px" }}
+										>
+											{priceProblem}
+										</small>
+									)}
 								</div>
 							</div>
 
