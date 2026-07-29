@@ -353,6 +353,15 @@ function assertKopecks(value: Kopecks, field: string): void {
 /** Позиция лечения в том виде, в каком её отдаёт `treatment_items`. */
 export interface TreatmentChargeRow {
 	readonly patientId: string;
+	/**
+	 * Приём, к которому привязана позиция (`treatment_items.visit_id`, nullable).
+	 *
+	 * Для вопросов про пациента и клинику поле не нужно и потому необязательно:
+	 * долг пациента складывается из ВСЕХ его позиций, привязаны они к приёму или
+	 * нет. Нужно оно ровно одному ответу — сальдо ОДНОГО приёма, см.
+	 * `buildVisitLedger`.
+	 */
+	readonly visitId?: string | null;
 	/** `"cancelled"` исключается из назначенного — это часть канона. */
 	readonly status: string;
 	readonly unitPriceRub: MoneyInput;
@@ -364,6 +373,8 @@ export interface TreatmentChargeRow {
 /** Платёж в том виде, в каком его отдаёт `payments`. */
 export interface PaymentRow {
 	readonly patientId: string;
+	/** Приём, к которому привязан платёж (`payments.visit_id`, nullable). */
+	readonly visitId?: string | null;
 	/** Только `"paid"` считается полученными деньгами. */
 	readonly status: string;
 	readonly amountRub: MoneyInput;
@@ -428,7 +439,11 @@ function assertContractQuantity(value: number | string): number {
 }
 
 /**
- * Сальдо одного пациента. Первичная величина: все пять ответов ниже — её чтения.
+ * Сальдо одного пациента. Первичная величина: пять ответов ниже — её чтения.
+ *
+ * Область здесь — пациент целиком, поэтому позиции и оплаты берутся независимо
+ * от того, привязаны они к приёму или нет. Для вопроса про ОДИН приём есть своя
+ * первичная величина — `VisitLedger`, та же арифметика с другим ключом отбора.
  */
 export interface PatientLedger {
 	readonly patientId: string;
@@ -515,12 +530,19 @@ export function buildPatientLedger(
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
- * ПЯТЬ ОТВЕТОВ НА ПЯТЬ ВОПРОСОВ ОПЕРАТОРА
+ * ПЯТЬ ОТВЕТОВ НА ПЯТЬ ВОПРОСОВ ОПЕРАТОРА — ПРО ПАЦИЕНТА И ПРО КЛИНИКУ
  *
  * Функций ровно столько, сколько РАЗНЫХ вопросов задаёт оператор, и каждое имя
  * отвечает на свой вопрос. Девять расчётов до этого модуля отвечали на эти же
  * пять вопросов, но их имена этого не сообщали: три разных величины назывались
  * словом «долг».
+ *
+ * Шестой и седьмой вопрос — про ОДИН ПРИЁМ (`VisitLedger`,
+ * `visitOutstandingKopecks`, `visitOverpaidKopecks`) — стоят ниже отдельной
+ * секцией: у них другая область отбора, а не другая формула. Тот вопрос, который
+ * `.agents/lead/recon-debt-formula-sprawl.md` называет шестой величиной («к
+ * оплате пациентом после страховки», веб), здесь по-прежнему НЕ отвечен: сервер
+ * данных договора ДМС в сводку не отдаёт вовсе.
  * ═════════════════════════════════════════════════════════════════════════ */
 
 /**
@@ -691,6 +713,158 @@ export function explainDebtTotals(totals: ClinicDebtTotals): string {
 		`${formatKopecksRu(totals.netUncollectedKopecks)}. Это две РАЗНЫЕ величины, и ` +
 		`переплату одного пациента нельзя зачитывать в долг другого.`
 	);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+ * ЕЩЁ ДВА ВОПРОСА — ПРО ОДИН ПРИЁМ, А НЕ ПРО ПАЦИЕНТА И НЕ ПРО КЛИНИКУ
+ *
+ * «Сколько осталось получить ПО ЭТОМУ ПРИЁМУ?» и «Сколько по ЭТОМУ приёму
+ * заплачено сверх назначенного?». Это ДРУГИЕ вопросы, чем пять выше: там область
+ * — пациент и клиника, здесь — один приём. Тот же пациент за год приходит
+ * двадцать раз, и «он должен 26 500» не отвечает администратору, закрывающему
+ * приём, ни да, ни нет.
+ *
+ * НОВОЙ ФОРМУЛЫ ЗДЕСЬ НЕТ, И ЭТО ПРОВЕРЯЕМО. Первичная величина та же —
+ * `назначено − оплачено`; строка позиции считается тем же `chargeLineKopecks`,
+ * отменённые отбрасываются той же `CANCELLED_ITEM_STATUS`, оплаты отбираются тем
+ * же `PAID_PAYMENT_STATUS`, сложение — тем же `sumKopecks`. Меняется РОВНО ОДНО:
+ * ключ отбора строк. Что это не разошедшаяся копия, а та же величина в другой
+ * области, закреплено тестом «сальдо приёма совпадает с сальдо пациента, когда
+ * у пациента один приём и все его строки к нему привязаны»
+ * (`patientDebt.test.ts`).
+ *
+ * ПОЧЕМУ НЕ ПЕРЕИСПОЛЬЗОВАН `buildPatientLedgers` С ДРУГИМ КЛЮЧОМ. Он группирует
+ * по пациенту, и вынести из него общий сборщик значило бы переписать функцию, на
+ * которой стоит канон и 49 проверок. Здесь повторён цикл, а не арифметика; цена
+ * — восемь строк перебора, выигрыш — канон не тронут.
+ *
+ * ЧЕГО ЭТОТ ОТВЕТ НЕ ЗНАЕТ, И ЭТО НАДО ГОВОРИТЬ ВСЛУХ. Он видит только то, что
+ * привязано к приёму. Оплата, принятая без приёма (`payments.visit_id` = null —
+ * маршрут это разрешает: `db/billingQuery.ts`, `visitId: input.visitId || null`),
+ * в сальдо приёма не попадёт, и приём покажет остаток, которого пациент уже не
+ * должен. Поэтому наружу вместе с суммой уходят СЧЁТЧИКИ строк: «остаток 26 500,
+ * позиций 1, оплат 0» отличимо от «остаток 26 500, позиций 1, оплат 1». Вопрос
+ * «должен ли пациент вообще» остаётся за `patientOwesClinicKopecks`, и подменять
+ * один ответ другим нельзя ни в ту, ни в другую сторону.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Сальдо ОДНОГО приёма. Первичная величина для обоих ответов ниже.
+ *
+ * Счётчики строк — часть ответа, а не отладка: без них ноль неотличим от
+ * незнания, а именно на этом различии стоит галочка «оплата связана» в карточке
+ * закрытия приёма.
+ */
+export interface VisitLedger {
+	readonly visitId: string;
+	/** Назначено по приёму: сумма строк позиций, кроме отменённых. */
+	readonly chargedKopecks: Kopecks;
+	/** Оплачено по приёму: сумма платежей в статусе `paid`. */
+	readonly paidKopecks: Kopecks;
+	/** Назначено − оплачено. Знак тот же, что у `PatientLedger`. */
+	readonly balanceKopecks: Kopecks;
+	/** Всего позиций приёма, включая отменённые. */
+	readonly chargeRowCount: number;
+	/** Из них попавших в назначенное. */
+	readonly billedLineCount: number;
+	/** Всего платежей приёма, включая неоплаченные. */
+	readonly paymentRowCount: number;
+	/** Из них попавших в оплаченное. */
+	readonly paidPaymentCount: number;
+	/**
+	 * Есть ли по приёму ХОТЬ ОДНА строка денег — в любом статусе.
+	 *
+	 * `false` означает «ответа нет», а не «остаток ноль». Различие не
+	 * стилистическое: приём, к которому ещё не завели ни позиций, ни оплат, и
+	 * приём, оплаченный до копейки, для администратора — разные состояния, и
+	 * закрытая по незнанию галочка хуже незакрытой.
+	 *
+	 * Отменённые позиции и неоплаченные платежи считаются ЗДЕСЬ намеренно: их
+	 * наличие доказывает, что деньги приёма кто-то заводил. Приём с единственной
+	 * отменённой позицией назначил ноль ИЗМЕРЕННО, а не по незнанию.
+	 */
+	readonly hasRecords: boolean;
+}
+
+/**
+ * Сальдо приёма из строк, ещё не отфильтрованных по нему.
+ *
+ * Пустой идентификатор — отказ, а не «ничего не нашлось»: строки с
+ * `visitId = null` не совпали бы с ним ни разу, и вызывающий получил бы
+ * уверенный ноль по приёму, которого не назвал.
+ */
+export function buildVisitLedger(
+	visitId: string,
+	charges: readonly TreatmentChargeRow[],
+	payments: readonly PaymentRow[],
+): VisitLedger {
+	if (typeof visitId !== "string" || visitId.trim() === "") {
+		throw new MoneyPrecisionError(
+			"приём",
+			visitId,
+			"сальдо приёма нельзя собрать по пустому идентификатору: ни одна строка с visit_id = null с ним не совпадёт, и ответом стал бы уверенный ноль",
+		);
+	}
+
+	const chargeLines: Kopecks[] = [];
+	let chargeRowCount = 0;
+	for (const row of charges) {
+		if (row.visitId !== visitId) continue;
+		chargeRowCount += 1;
+		if (row.status === CANCELLED_ITEM_STATUS) continue;
+		chargeLines.push(chargeLineKopecks(row));
+	}
+
+	const paymentLines: Kopecks[] = [];
+	let paymentRowCount = 0;
+	for (const row of payments) {
+		if (row.visitId !== visitId) continue;
+		paymentRowCount += 1;
+		if (row.status !== PAID_PAYMENT_STATUS) continue;
+		paymentLines.push(toKopecks(row.amountRub, "сумма платежа"));
+	}
+
+	const chargedKopecks = sumKopecks(chargeLines);
+	const paidKopecks = sumKopecks(paymentLines);
+	return {
+		visitId,
+		chargedKopecks,
+		paidKopecks,
+		balanceKopecks: chargedKopecks - paidKopecks,
+		chargeRowCount,
+		billedLineCount: chargeLines.length,
+		paymentRowCount,
+		paidPaymentCount: paymentLines.length,
+		hasRecords: chargeRowCount > 0 || paymentRowCount > 0,
+	};
+}
+
+/**
+ * «Сколько осталось получить ПО ЭТОМУ ПРИЁМУ?»
+ *
+ * `null` — «ответа нет»: по приёму не заведено ни позиций, ни оплат. Тип
+ * возврата назван так СПЕЦИАЛЬНО: `Kopecks | null` заставляет вызывающего
+ * написать ветку незнания, тогда как ноль он подставил бы молча. Именно молчаливый
+ * ноль и есть тот дефект, из-за которого в карточке закрытия приёма стоял остаток
+ * по всей клинике.
+ */
+export function visitOutstandingKopecks(ledger: VisitLedger): Kopecks | null {
+	if (!ledger.hasRecords) return null;
+	return Math.max(0, ledger.balanceKopecks);
+}
+
+/**
+ * «Сколько по ЭТОМУ приёму заплачено сверх назначенного?»
+ *
+ * Отдельный ответ по той же причине, по которой рядом с
+ * `patientOwesClinicKopecks` стоит `clinicOwesPatientKopecks`: остаток зажат в
+ * ноль, поэтому без этой величины «ноль» означал бы сразу и «рассчитались
+ * ровно», и «переплатили». На живой базе такой приём есть — назначено 6 400,00,
+ * получено 7 200,00 (приём `…-000000000400`, замер 2026-07-29).
+ */
+export function visitOverpaidKopecks(ledger: VisitLedger): Kopecks | null {
+	if (!ledger.hasRecords) return null;
+	return Math.max(0, -ledger.balanceKopecks);
 }
 
 /**

@@ -153,6 +153,14 @@ import {
 } from "./persistentState.js";
 import { createTelegramQrSvg } from "./telegramQr.js";
 import {
+	buildVisitLedger,
+	MoneyPrecisionError,
+	QuantityContractError,
+	type VisitLedger,
+	visitOutstandingKopecks,
+	visitOverpaidKopecks,
+} from "./money/patientDebt.js";
+import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "./text/repairMojibake.js";
@@ -1355,6 +1363,73 @@ export function buildBillingSummary(): BillingSummary {
 }
 
 /**
+ * Деньги ЭТОГО приёма для карточки закрытия — через единый дом формулы долга.
+ *
+ * ЧТО БЫЛО НЕ ТАК. Здесь стояло `billing: buildBillingSummary()`. Эта функция не
+ * принимает аргументов и складывает ВСЕ позиции лечения и ВСЕ платежи клиники,
+ * вычитая одно из другого одним действием (`:1349`, `totalDueRub`). Приём в
+ * расчёт не входил вообще, поэтому карточка любого приёма показывала одно и то же
+ * число — нетто по клинике. Замер на живой базе 2026-07-29: 51 400,00 ₽ во всех
+ * десяти приёмах клиники `d0000000-…-d001`, включая приём `…-000000000401`, где
+ * получено 5 400,00 из 5 400,00. Разбор величины и приговор ей —
+ * `.agents/lead/recon-debt-formula-sprawl.md` (место #3, «иная семантика: нетто
+ * по клинике, а не долг пациента»).
+ *
+ * ШЕСТОЙ ФОРМУЛЫ ЗДЕСЬ НЕ ЗАВЕДЕНО. Сальдо приёма считает
+ * `money/patientDebt.ts` (`buildVisitLedger`) — тот же дом, что отвечает на
+ * вопросы про пациента и клинику, и та же первичная величина
+ * `назначено − оплачено`. В этом файле осталась только пересадка полей
+ * коллекций в строки модуля.
+ *
+ * ПОЧЕМУ ОТКАЗ МОДУЛЯ ЛОВИТСЯ, А НЕ ЛЕТИТ НАВЕРХ. Модуль отвергает суммы,
+ * потерявшие точность, и нецелое количество — это правильно для расчёта, но эти
+ * факты собираются в том числе на пути ПОДПИСАНИЯ приёма, где исключение
+ * означает HTTP 500 на уже подписанной карте (ровно тот дефект, из-за которого
+ * появился `visitCloseChecklist.ts`; см. `db/visitsQuery.ts`,
+ * `VisitSignedResponseIncompleteError`). Врач теряет подтверждение подписи из-за
+ * испорченной цены в чужой позиции — цена несоразмерная. Поэтому отказ
+ * превращается в честное «остаток по приёму не рассчитан» С ПРИЧИНОЙ: галочка
+ * остаётся незакрытой, число не выдумывается, а причина уходит на экран
+ * администратору. Любая ДРУГАЯ ошибка летит наверх как раньше.
+ */
+function visitBillingChecklistFacts(
+	visit: Visit,
+): VisitCloseChecklistFacts["billing"] {
+	let ledger: VisitLedger;
+	try {
+		ledger = buildVisitLedger(visit.id, treatmentPlanItems, payments);
+	} catch (error) {
+		if (
+			error instanceof MoneyPrecisionError ||
+			error instanceof QuantityContractError
+		) {
+			return { known: false, reason: error.message };
+		}
+		throw error;
+	}
+
+	const outstandingKopecks = visitOutstandingKopecks(ledger);
+	const overpaidKopecks = visitOverpaidKopecks(ledger);
+	if (outstandingKopecks === null || overpaidKopecks === null) {
+		// «Ноль» и «неизвестно» — разные ответы, и второй обязан выглядеть иначе.
+		return {
+			known: false,
+			reason:
+				"по приёму не заведено ни одной позиции лечения и ни одной оплаты. " +
+				"Свяжите позиции плана и платежи с этим приёмом, иначе закрывать оплату нечем.",
+		};
+	}
+
+	return {
+		known: true,
+		outstandingKopecks,
+		overpaidKopecks,
+		billedLineCount: ledger.billedLineCount,
+		paidPaymentCount: ledger.paidPaymentCount,
+	};
+}
+
+/**
  * Факты для карточки закрытия КОНКРЕТНОГО приёма.
  *
  * Сам расчёт переехал в visitCloseChecklist.ts и он один на весь проект. Здесь
@@ -1366,8 +1441,14 @@ export function buildBillingSummary(): BillingSummary {
  * КОНКРЕТНЫЙ приём и обязан отдать карточку именно по нему. Пока приём брался из
  * общего состояния, воспользоваться этим расчётом он не мог — и врач на
  * подписании карты получал HTTP 500 при уже подписанном приёме.
+ *
+ * ЭКСПОРТИРУЕТСЯ РАДИ ЕДИНСТВЕННОГО СБОРЩИКА ФАКТОВ. Слой доступа собирал этот
+ * же объект своим литералом (`db/visitsQuery.ts`), то есть сборка фактов
+ * существовала в двух копиях при одном расчёте. Пока в фактах были только
+ * коллекции, копии совпадали; с появлением денег ПО ПРИЁМУ вторая копия стала бы
+ * тем самым местом, куда правку не внесли. Теперь обе стороны зовут одну функцию.
  */
-function visitCloseChecklistFactsFor(visit: Visit): VisitCloseChecklistFacts {
+export function visitCloseChecklistFactsFor(visit: Visit): VisitCloseChecklistFacts {
 	return {
 		visit,
 		imagingStudies,
@@ -1375,7 +1456,7 @@ function visitCloseChecklistFactsFor(visit: Visit): VisitCloseChecklistFacts {
 		aiRecognitionJobs,
 		communicationTasks,
 		clinical: buildClinicalRuleSummary(visit.patientId),
-		billing: buildBillingSummary(),
+		billing: visitBillingChecklistFacts(visit),
 	};
 }
 

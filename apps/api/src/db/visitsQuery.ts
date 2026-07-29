@@ -10,14 +10,7 @@ import type {
   VisitSaveReceipt
 } from "@dental/shared";
 import { createHash } from "node:crypto";
-import {
-  aiRecognitionJobs,
-  buildBillingSummary,
-  buildClinicalRuleSummary,
-  communicationTasks,
-  documents,
-  imagingStudies
-} from "../sampleData.js";
+import { visitCloseChecklistFactsFor } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
 import { withHydratedDomainState } from "./domainStateHydration.js";
@@ -231,15 +224,16 @@ export async function acceptVisitDraftInDb(
       if (!report.organizationFound) {
         throw new Error("Клиника приема не подтверждена в базе: карточку закрытия собирать не по чему.");
       }
-      return buildVisitCloseChecklist({
-        visit: signedVisit,
-        imagingStudies,
-        documents,
-        aiRecognitionJobs,
-        communicationTasks,
-        clinical: buildClinicalRuleSummary(signedVisit.patientId),
-        billing: buildBillingSummary()
-      });
+      /*
+       * Факты собирает ТА ЖЕ функция, что и на пути без базы
+       * (sampleData.ts, visitCloseChecklistFactsFor). Здесь стоял свой литерал с
+       * тем же набором полей, то есть сборка фактов жила в двух копиях при одном
+       * расчёте. Пока в фактах были только коллекции, копии совпадали; деньги ПО
+       * ПРИЁМУ появились бы в одной из них — и подписание отдавало бы врачу
+       * другое число, чем главный экран. Расхождение такого рода в этом дереве
+       * уже стоило четырёх разных ответов на вопрос о долге.
+       */
+      return buildVisitCloseChecklist(visitCloseChecklistFactsFor(signedVisit));
     });
 
     return {

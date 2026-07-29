@@ -12,6 +12,7 @@ import {
 import {
 	buildPatientLedger,
 	buildPatientLedgers,
+	buildVisitLedger,
 	chargeLineKopecks,
 	clinicDebtTotals,
 	clinicOwesPatientKopecks,
@@ -26,6 +27,8 @@ import {
 	QuantityContractError,
 	rublesFromKopecks,
 	type TreatmentChargeRow,
+	visitOutstandingKopecks,
+	visitOverpaidKopecks,
 } from "./patientDebt.js";
 
 /**
@@ -50,16 +53,23 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Живые строки клиники d0000000-0000-4000-8000-00000000d001 (выгрузка 2026-07-29)
 //
-// $ psql -c "select right(patient_id::text,4), status, unit_price_rub::text,
-//            quantity::text, discount_rub::text from treatment_items …"
+// $ psql -c "select right(patient_id::text,4), right(visit_id::text,4), status,
+//            unit_price_rub::text, quantity::text, discount_rub::text
+//            from treatment_items …"
 //
 // Суммы записаны ТЕКСТОМ, ровно как их отдаёт колонка numeric(12,2): фикстура,
 // переписанная в число, проверяла бы уже испорченные данные.
+//
+// ПРИВЯЗКА К ПРИЁМУ (`visitId`) добавлена 2026-07-29 тем же прогоном: в живой базе
+// её несут ВСЕ 10 позиций и ВСЕ 8 оплат, и без неё фикстура была беднее таблицы.
+// Вопросы про пациента и клинику это поле не читают — их ответы не изменились ни
+// на копейку, что и проверяют прежние наборы ниже.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	{
 		patientId: "0100",
+		visitId: "0405",
 		status: "completed",
 		unitPriceRub: "5400.00",
 		quantity: 1,
@@ -67,6 +77,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0101",
+		visitId: "0406",
 		status: "completed",
 		unitPriceRub: "14800.00",
 		quantity: 1,
@@ -74,6 +85,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0101",
+		visitId: "0400",
 		status: "completed",
 		unitPriceRub: "7200.00",
 		quantity: 1,
@@ -81,6 +93,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0102",
+		visitId: "0401",
 		status: "completed",
 		unitPriceRub: "5400.00",
 		quantity: 1,
@@ -88,6 +101,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0103",
+		visitId: "0402",
 		status: "completed",
 		unitPriceRub: "14800.00",
 		quantity: 1,
@@ -95,6 +109,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0103",
+		visitId: "0407",
 		status: "completed",
 		unitPriceRub: "26500.00",
 		quantity: 1,
@@ -102,6 +117,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0104",
+		visitId: "0403",
 		status: "completed",
 		unitPriceRub: "26500.00",
 		quantity: 1,
@@ -109,6 +125,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0104",
+		visitId: "0408",
 		status: "completed",
 		unitPriceRub: "7200.00",
 		quantity: 1,
@@ -116,6 +133,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0105",
+		visitId: "0409",
 		status: "completed",
 		unitPriceRub: "5400.00",
 		quantity: 1,
@@ -123,6 +141,7 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 	},
 	{
 		patientId: "0106",
+		visitId: "0404",
 		status: "completed",
 		unitPriceRub: "7200.00",
 		quantity: 1,
@@ -131,14 +150,14 @@ const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
 ];
 
 const LIVE_PAYMENTS: readonly PaymentRow[] = [
-	{ patientId: "0100", status: "paid", amountRub: "5400.00" },
-	{ patientId: "0101", status: "paid", amountRub: "14800.00" },
-	{ patientId: "0101", status: "paid", amountRub: "7200.00" },
-	{ patientId: "0102", status: "paid", amountRub: "5400.00" },
-	{ patientId: "0103", status: "paid", amountRub: "14800.00" },
-	{ patientId: "0104", status: "paid", amountRub: "7200.00" },
-	{ patientId: "0105", status: "paid", amountRub: "5400.00" },
-	{ patientId: "0106", status: "paid", amountRub: "7200.00" },
+	{ patientId: "0100", visitId: "0405", status: "paid", amountRub: "5400.00" },
+	{ patientId: "0101", visitId: "0406", status: "paid", amountRub: "14800.00" },
+	{ patientId: "0101", visitId: "0400", status: "paid", amountRub: "7200.00" },
+	{ patientId: "0102", visitId: "0401", status: "paid", amountRub: "5400.00" },
+	{ patientId: "0103", visitId: "0402", status: "paid", amountRub: "14800.00" },
+	{ patientId: "0104", visitId: "0408", status: "paid", amountRub: "7200.00" },
+	{ patientId: "0105", visitId: "0409", status: "paid", amountRub: "5400.00" },
+	{ patientId: "0106", visitId: "0404", status: "paid", amountRub: "7200.00" },
 ];
 
 /**
@@ -1053,6 +1072,398 @@ describe("моя собственная ошибка, закрытая пров�
 		assert.throws(() => clinicDebtTotals(pairs), MoneyPrecisionError);
 		assert.throws(
 			() => clinicDebtTotals([undefined] as unknown as Iterable<never>),
+			MoneyPrecisionError,
+		);
+	});
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ОСТАТОК ПО ОДНОМУ ПРИЁМУ
+//
+// Вопрос администратора, закрывающего приём, — «сколько осталось получить ПО
+// ЭТОМУ приёму», и до появления VisitLedger на него не отвечал никто: карточка
+// закрытия приёма показывала buildBillingSummary().totalDueRub, то есть нетто по
+// ВСЕЙ КЛИНИКЕ. Замер на живой базе 2026-07-29: одна и та же строка «Остаток по
+// плану 51 400 ₽» стояла во всех ДЕСЯТИ приёмах клиники d0000000-…-d001,
+// включая полностью оплаченные.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("остаток по приёму: три разных ответа на одних и тех же данных", () => {
+	test("полностью оплаченный приём даёт 0, а клиника в это время не собрала 51 400,00", () => {
+		// Приём 0401 (пациент 0102): назначено 5 400,00, получено 5 400,00.
+		const ledger = buildVisitLedger("0401", LIVE_CHARGES, LIVE_PAYMENTS);
+		assert.strictEqual(ledger.chargedKopecks, 540_000);
+		assert.strictEqual(ledger.paidKopecks, 540_000);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 0);
+		assert.strictEqual(visitOverpaidKopecks(ledger), 0);
+
+		// А в карточке этого приёма стояло вот это число — по всей клинике.
+		const clinic = clinicDebtTotals(
+			buildPatientLedgers(LIVE_CHARGES, LIVE_PAYMENTS),
+		);
+		assert.strictEqual(
+			clinic.netUncollectedKopecks,
+			LIVE_SQL.netUncollectedKopecks,
+		);
+		assert.strictEqual(
+			clinic.netUncollectedKopecks - (visitOutstandingKopecks(ledger) ?? 0),
+			5_140_000,
+			"расхождение между «по приёму» и «по клинике» на этом приёме — вся сумма целиком",
+		);
+	});
+
+	test("три области — три разных ответа для ОДНОГО приёма", () => {
+		/*
+		 * Приём 0402 пациента 0103: по приёму рассчитались ровно (14 800,00 из
+		 * 14 800,00), но у пациента открыт второй приём 0407 на 26 500,00 без
+		 * оплаты. Все три числа законны и отвечают на РАЗНЫЕ вопросы; подставить
+		 * одно вместо другого — это и есть дефект карточки.
+		 */
+		const visit = buildVisitLedger("0402", LIVE_CHARGES, LIVE_PAYMENTS);
+		const patient = buildPatientLedger("0103", LIVE_CHARGES, LIVE_PAYMENTS);
+		const clinic = clinicDebtTotals(
+			buildPatientLedgers(LIVE_CHARGES, LIVE_PAYMENTS),
+		);
+
+		assert.strictEqual(visitOutstandingKopecks(visit), 0, "по приёму — ноль");
+		assert.strictEqual(
+			patientOwesClinicKopecks(patient),
+			2_650_000,
+			"по пациенту — 26 500,00",
+		);
+		assert.strictEqual(
+			clinic.netUncollectedKopecks,
+			5_140_000,
+			"по клинике — 51 400,00",
+		);
+	});
+
+	test("недоплаченный приём: остаток равен назначенному, а оплат по нему НОЛЬ строк", () => {
+		// Приём 0403 (пациент 0104): 26 500,00 назначено, ни одной оплаты.
+		const ledger = buildVisitLedger("0403", LIVE_CHARGES, LIVE_PAYMENTS);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 2_650_000);
+		assert.strictEqual(ledger.billedLineCount, 1);
+		assert.strictEqual(
+			ledger.paymentRowCount,
+			0,
+			"счётчик оплат обязан отличать «недоплатил» от «оплату не привязали к приёму»",
+		);
+		assert.strictEqual(formatKopecksRu(2_650_000), `26${NBSP}500,00${NBSP}₽`);
+	});
+
+	test("переплаченный приём: остаток 0 И переплата названа отдельным числом", () => {
+		// Приём 0400 (пациент 0101): назначено 7 200,00 − 800,00 = 6 400,00,
+		// получено 7 200,00.
+		const ledger = buildVisitLedger("0400", LIVE_CHARGES, LIVE_PAYMENTS);
+		assert.strictEqual(ledger.chargedKopecks, 640_000);
+		assert.strictEqual(ledger.paidKopecks, 720_000);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 0);
+		assert.strictEqual(
+			visitOverpaidKopecks(ledger),
+			80_000,
+			"без этого числа ноль означал бы сразу «рассчитались ровно» и «переплатили 800,00»",
+		);
+	});
+
+	test("сумма приёмов пациента равна сальдо пациента: это одна величина, а не вторая формула", () => {
+		for (const patientId of [
+			"0100",
+			"0101",
+			"0102",
+			"0103",
+			"0104",
+			"0105",
+			"0106",
+		]) {
+			const patient = buildPatientLedger(
+				patientId,
+				LIVE_CHARGES,
+				LIVE_PAYMENTS,
+			);
+			const visitIds = [
+				...new Set(
+					[...LIVE_CHARGES, ...LIVE_PAYMENTS]
+						.filter((row) => row.patientId === patientId)
+						.map((row) => row.visitId)
+						.filter(
+							(visitId): visitId is string => typeof visitId === "string",
+						),
+				),
+			];
+			const visits = visitIds.map((visitId) =>
+				buildVisitLedger(visitId, LIVE_CHARGES, LIVE_PAYMENTS),
+			);
+
+			// Все живые строки привязаны к приёму, поэтому разбивка обязана сойтись
+			// с целым до копейки. Разойдётся — значит в дереве снова две формулы.
+			assert.strictEqual(
+				visits.reduce((sum, visit) => sum + visit.chargedKopecks, 0),
+				patient.chargedKopecks,
+				`назначено по приёмам пациента ${patientId} не сошлось с назначенным по пациенту`,
+			);
+			assert.strictEqual(
+				visits.reduce((sum, visit) => sum + visit.paidKopecks, 0),
+				patient.paidKopecks,
+				`оплачено по приёмам пациента ${patientId} не сошлось с оплаченным по пациенту`,
+			);
+		}
+	});
+
+	test("у пациента с единственным приёмом сальдо приёма побитово равно сальдо пациента", () => {
+		const patient = buildPatientLedger("0102", LIVE_CHARGES, LIVE_PAYMENTS);
+		const visit = buildVisitLedger("0401", LIVE_CHARGES, LIVE_PAYMENTS);
+		assert.strictEqual(visit.chargedKopecks, patient.chargedKopecks);
+		assert.strictEqual(visit.paidKopecks, patient.paidKopecks);
+		assert.strictEqual(visit.balanceKopecks, patient.balanceKopecks);
+		assert.strictEqual(
+			visitOutstandingKopecks(visit),
+			patientOwesClinicKopecks(patient),
+		);
+	});
+
+	test("чужие приёмы и строки без приёма в сальдо приёма не попадают", () => {
+		const charges: readonly TreatmentChargeRow[] = [
+			{
+				patientId: "0102",
+				visitId: "0401",
+				status: "completed",
+				unitPriceRub: "1000.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+			{
+				patientId: "0102",
+				visitId: null,
+				status: "completed",
+				unitPriceRub: "9999.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+			{
+				patientId: "0102",
+				visitId: "0402",
+				status: "completed",
+				unitPriceRub: "7777.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+			{
+				patientId: "0102",
+				status: "completed",
+				unitPriceRub: "5555.00",
+				quantity: 1,
+				discountRub: "0.00",
+			},
+		];
+		const ledger = buildVisitLedger("0401", charges, []);
+		assert.strictEqual(ledger.chargedKopecks, 100_000);
+		assert.strictEqual(ledger.chargeRowCount, 1);
+	});
+});
+
+describe("остаток по приёму: «ноль» и «неизвестно» — РАЗНЫЕ ответы", () => {
+	test("приём без позиций и без оплат отвечает null, а не 0", () => {
+		const ledger = buildVisitLedger("0499", LIVE_CHARGES, LIVE_PAYMENTS);
+		assert.strictEqual(ledger.hasRecords, false);
+		assert.strictEqual(ledger.chargeRowCount, 0);
+		assert.strictEqual(ledger.paymentRowCount, 0);
+		assert.strictEqual(
+			visitOutstandingKopecks(ledger),
+			null,
+			"ноль здесь означал бы «доплачивать нечего» по приёму, о котором модуль не знает ничего",
+		);
+		assert.strictEqual(visitOverpaidKopecks(ledger), null);
+		// Сальдо при этом посчитано и равно нулю: null возвращает ЧТЕНИЕ, а не
+		// первичная величина, — иначе ноль и незнание нельзя было бы различить.
+		assert.strictEqual(ledger.balanceKopecks, 0);
+	});
+
+	test("приём с единственной ОТМЕНЁННОЙ позицией — это измеренный ноль, а не незнание", () => {
+		const ledger = buildVisitLedger(
+			"0500",
+			[
+				{
+					patientId: "0102",
+					visitId: "0500",
+					status: "cancelled",
+					unitPriceRub: "26500.00",
+					quantity: 1,
+					discountRub: "0.00",
+				},
+			],
+			[],
+		);
+		assert.strictEqual(
+			ledger.hasRecords,
+			true,
+			"строка есть — значит деньги приёма кто-то заводил",
+		);
+		assert.strictEqual(ledger.chargeRowCount, 1);
+		assert.strictEqual(ledger.billedLineCount, 0, "отменённое не назначено");
+		assert.strictEqual(ledger.chargedKopecks, 0);
+		assert.strictEqual(
+			visitOutstandingKopecks(ledger),
+			0,
+			"лечение отменено — требовать нечего, и это ЗНАНИЕ, а не его отсутствие",
+		);
+	});
+
+	test("неоплаченный платёж приёма делает ответ известным, но в оплаченное не попадает", () => {
+		const ledger = buildVisitLedger(
+			"0501",
+			[],
+			[
+				{
+					patientId: "0102",
+					visitId: "0501",
+					status: "pending",
+					amountRub: "5400.00",
+				},
+			],
+		);
+		assert.strictEqual(ledger.paymentRowCount, 1);
+		assert.strictEqual(ledger.paidPaymentCount, 0);
+		assert.strictEqual(ledger.paidKopecks, 0);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 0);
+	});
+
+	test("пустой идентификатор приёма — отказ, а не уверенный ноль", () => {
+		assert.throws(
+			() => buildVisitLedger("", LIVE_CHARGES, LIVE_PAYMENTS),
+			MoneyPrecisionError,
+		);
+		assert.throws(
+			() => buildVisitLedger("   ", LIVE_CHARGES, LIVE_PAYMENTS),
+			MoneyPrecisionError,
+		);
+		assert.throws(
+			() =>
+				buildVisitLedger(
+					null as unknown as string,
+					LIVE_CHARGES,
+					LIVE_PAYMENTS,
+				),
+			MoneyPrecisionError,
+		);
+	});
+});
+
+describe("остаток по приёму: копейки", () => {
+	test("1500,50 + 1990,99 = ровно 3491,49, а не 3491.4900000000002", () => {
+		const ledger = buildVisitLedger(
+			"0600",
+			[
+				{
+					patientId: "0102",
+					visitId: "0600",
+					status: "completed",
+					unitPriceRub: "1500.50",
+					quantity: 1,
+					discountRub: "0.00",
+				},
+				{
+					patientId: "0102",
+					visitId: "0600",
+					status: "completed",
+					unitPriceRub: "1990.99",
+					quantity: 1,
+					discountRub: "0.00",
+				},
+			],
+			[],
+		);
+		assert.strictEqual(ledger.chargedKopecks, 349_149);
+		assert.strictEqual(debtNumericText(ledger.chargedKopecks), "3491.49");
+		assert.strictEqual(rublesFromKopecks(ledger.chargedKopecks), 3491.49);
+
+		const outstanding = visitOutstandingKopecks(ledger);
+		assert.strictEqual(outstanding, 349_149);
+		assert.strictEqual(formatKopecksRu(349_149), `3${NBSP}491,49${NBSP}₽`);
+
+		/*
+		 * МОЯ ОШИБКА, ЗАКРЫТАЯ ЭТИМ ЖЕ ТЕСТОМ. Сначала здесь стояло утверждение
+		 * `1500.50 + 1990.99 === 3491.4900000000002`, и оно покраснело: эта пара
+		 * складывается в плавающей точке ТОЧНО. Грязь даёт другой набор слагаемых —
+		 * тот, что назван в patientDebt.ts, — и три позиции на 3 491,49 ₽ ниже
+		 * показывают её на настоящем приёме, а не в отвлечённом примере.
+		 */
+		assert.strictEqual(1500.5 + 1990.99, 3491.49);
+		assert.strictEqual(1000.0 + 1001.82 + 1489.67, 3491.4900000000002);
+	});
+
+	test("три позиции, чья сумма в рублях даёт 3491.4900000000002, в копейках дают ровно 3491,49", () => {
+		const ledger = buildVisitLedger(
+			"0603",
+			["1000.00", "1001.82", "1489.67"].map((unitPriceRub) => ({
+				patientId: "0102",
+				visitId: "0603",
+				status: "completed",
+				unitPriceRub,
+				quantity: 1,
+				discountRub: "0.00",
+			})),
+			[],
+		);
+
+		assert.strictEqual(ledger.billedLineCount, 3);
+		assert.strictEqual(ledger.chargedKopecks, 349_149);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 349_149);
+		assert.strictEqual(debtNumericText(349_149), "3491.49");
+
+		// Тот же итог в рублях — с третьим знаком, который не проходит
+		// moneyRubSchema и который колонка numeric(12,2) молча обрежет.
+		const inRubles = [1000.0, 1001.82, 1489.67].reduce(
+			(sum, value) => sum + value,
+			0,
+		);
+		assert.strictEqual(inRubles, 3491.4900000000002);
+		assert.notStrictEqual(inRubles, rublesFromKopecks(ledger.chargedKopecks));
+		assert.strictEqual(rublesFromKopecks(ledger.chargedKopecks), 3491.49);
+	});
+
+	test("частичная оплата с копейками: 3491,49 − 1500,50 = 1990,99", () => {
+		const ledger = buildVisitLedger(
+			"0601",
+			[
+				{
+					patientId: "0102",
+					visitId: "0601",
+					status: "completed",
+					unitPriceRub: "3491.49",
+					quantity: 1,
+					discountRub: "0.00",
+				},
+			],
+			[
+				{
+					patientId: "0102",
+					visitId: "0601",
+					status: "paid",
+					amountRub: "1500.50",
+				},
+			],
+		);
+		assert.strictEqual(visitOutstandingKopecks(ledger), 199_099);
+		assert.strictEqual(debtNumericText(199_099), "1990.99");
+	});
+
+	test("грязь float в строке приёма отвергается, а не сглаживается", () => {
+		assert.throws(
+			() =>
+				buildVisitLedger(
+					"0602",
+					[
+						{
+							patientId: "0102",
+							visitId: "0602",
+							status: "completed",
+							unitPriceRub: 1500.1 * 3,
+							quantity: 1,
+							discountRub: "0.00",
+						},
+					],
+					[],
+				),
 			MoneyPrecisionError,
 		);
 	});
