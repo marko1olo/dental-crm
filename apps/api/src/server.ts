@@ -74,6 +74,7 @@ import { registerRateLimiting } from "./security/rateLimit.js";
 import { startBackupDaemon, stopBackupDaemon } from "./services/backupWorker.js";
 import { authTokenSecret } from "./security/authSecret.js";
 import { getRequestIdentity } from "./security/identity.js";
+import { registerRouteNotFoundHandler } from "./utils/routeNotFound.js";
 
 loadAdditionalServerEnv();
 startWatchdog();
@@ -321,6 +322,12 @@ export async function createDenteApiApp(options: {
     // чтобы маршруты не парсили заголовки самостоятельно и не расходились в логике.
     getRequestIdentity(request);
   });
+
+  /* Несуществующий адрес отвечал штатным английским текстом Fastify с методом и
+     путём внутри; фильтр клиента строку без русских букв отбрасывает целиком,
+     поэтому человек не получал ни причины, ни шага. Текст и причина — в
+     utils/routeNotFound.ts. */
+  registerRouteNotFoundHandler(app);
 
   app.setErrorHandler((error, request, reply) => {
     // БЫЛО: каждый обработчик ошибок синхронно дописывал стектрейс в
