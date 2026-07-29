@@ -3,7 +3,7 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 } from "@dental/shared";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	appointments,
@@ -14,6 +14,14 @@ import {
 	users,
 	visitDiaries,
 } from "../db/schema.js";
+// Пояс клиники берётся ОДНИМ домом на проект — из отчётов руководителя. Своя
+// копия `clinicTimeZone` здесь стала бы вторым источником истины о поясе, а из
+// этой болезни в проекте уже выросли четыре разных расчёта долга.
+import {
+	clinicTimeZone,
+	inClinicZone,
+	postgresKnowsTimeZone,
+} from "./reports/managerReports.js";
 
 /**
  * ЕДИНИЦА И ОТБОР ВЫРУЧКИ.
@@ -31,32 +39,76 @@ import {
  */
 const PAID_PAYMENTS_ONLY = eq(payments.status, "paid");
 
-async function computeCohortLtvAll() {
-	// Aggregate actual payments by month and organization
-	const result = await db
-		.select({
-			organizationId: payments.organizationId,
-			month: sql<string>`to_char(${payments.createdAt}, 'Mon')`,
-			total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-		})
-		.from(payments)
-		.where(PAID_PAYMENTS_ONLY)
-		.groupBy(payments.organizationId, sql`to_char(${payments.createdAt}, 'Mon')`);
-
+/**
+ * МЕСЯЦ КОГОРТЫ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+ *
+ * `to_char(created_at, …)` для колонки с часовым поясом печатает месяц по поясу
+ * СЕССИИ. У всех российских поясов смещение положительное, поэтому день в поясе
+ * сессии ОТСТАЁТ от местного каждую ночь: в Самаре (пояс клиники по умолчанию в
+ * схеме) до 04:00, на Камчатке половину суток. Платёж, принятый вечером
+ * последнего дня месяца, уезжал в СЛЕДУЮЩИЙ месяц вместе со своей суммой.
+ *
+ * ИЗМЕРЕНО на живой базе: момент 30 июня 2026 23:30 по часам клиники
+ * (Europe/Moscow) при поясе сессии Europe/Samara даёт `Jul`, в поясе клиники —
+ * `Jun`. Пояс режет и ГРУППИРОВКУ, а не только ярлык: два платежа (30 июня
+ * 23:30 и 1 июля 10:00 по Москве) в поясе сессии дают ОДНУ корзину из двух
+ * строк, в поясе клиники — две по одной.
+ *
+ * ЗАПРОС РАЗБИТ ПО ОРГАНИЗАЦИЯМ, и это не дробление ради дробления. Пояс —
+ * свойство КЛИНИКИ, у каждой свой; одним запросом на все организации месяц
+ * нельзя нарезать правильно сразу для всех, потому что резать надо разными
+ * поясами. Организаций в этой базе единицы, а задача фоновая и раз в час,
+ * поэтому цена запроса на организацию несущественна. Заодно исчез фильтр
+ * `if (!r.organizationId) continue` — организация теперь в условии запроса.
+ *
+ * ЯРЛЫК СТАЛ `YYYY-MM` ВМЕСТО `Mon`, потому что `Mon` — сломанный КЛЮЧ
+ * ГРУППИРОВКИ, а не только вопрос языка: в нём нет года, поэтому июль 2025 и
+ * июль 2026 складывались в одну корзину «Jul» и выручка двух разных когорт
+ * суммировалась. Формат `YYYY-MM` — тот же, что уже отдают два других счётчика
+ * когорт (routes/analytics.ts и scripts/cronAnalyticsWorker.ts), так что три
+ * места наконец согласованы. Побочно уходит и дефект речи: `to_char(…, 'Mon')`
+ * даёт английский `Jul` независимо от `lc_time` (на этом хосте он
+ * `Russian_Russia.1251`, и `TMMon` дал бы `июл`), а название месяца по-русски
+ * рисует уже слой отображения.
+ *
+ * Приведение делается только к поясу, который PostgreSQL знает: иначе
+ * `AT TIME ZONE` бросает 22023 и вся сборка снимков валится в catch. Пояс
+ * неизвестен — поведение прежнее, месяц режется в поясе сессии.
+ */
+async function computeCohortLtvAll(organizationIds: readonly string[]) {
 	const map = new Map<string, any[]>();
 
-	for (const r of result) {
-		if (!r.organizationId) continue;
-		if (!map.has(r.organizationId)) {
-			map.set(r.organizationId, []);
-		}
-		map.get(r.organizationId)!.push({
-			cohort: r.month,
-			"Month 1": r.total || 0,
-			"Month 3": (r.total || 0) * 1.5,
-			"Month 6": (r.total || 0) * 2,
-			"Month 12": (r.total || 0) * 3,
-		});
+	for (const organizationId of organizationIds) {
+		const zone = await postgresKnowsTimeZone(await clinicTimeZone(organizationId));
+		// Выражение месяца объявлено ОДИН раз на SELECT, GROUP BY и ORDER BY.
+		// Через три отдельных фрагмента имя пояса ушло бы параметром трижды и
+		// получило РАЗНЫЕ номера — PostgreSQL считает такие выражения разными и
+		// отвергает запрос целиком с «column must appear in the GROUP BY clause».
+		// Приведение `::text` тут не спасает: дело не в типе, а в номере.
+		const monthBucket = sql`date_trunc('month', ${inClinicZone(payments.createdAt, zone)})`;
+
+		const rows = await db
+			.select({
+				month: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
+				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+			})
+			.from(payments)
+			.where(and(eq(payments.organizationId, organizationId), PAID_PAYMENTS_ONLY))
+			.groupBy(monthBucket)
+			.orderBy(monthBucket);
+
+		if (!rows.length) continue;
+
+		map.set(
+			organizationId,
+			rows.map((r) => ({
+				cohort: r.month,
+				"Month 1": r.total || 0,
+				"Month 3": (r.total || 0) * 1.5,
+				"Month 6": (r.total || 0) * 2,
+				"Month 12": (r.total || 0) * 3,
+			})),
+		);
 	}
 
 	return map;
@@ -223,7 +275,7 @@ export async function computeBiAnalyticsSnapshots() {
 			chairUtilizationMap,
 			doctorProfitabilityMap,
 		] = await Promise.all([
-			computeCohortLtvAll(),
+			computeCohortLtvAll(orgs.map((org) => org.id)),
 			computePlanFunnelAll(),
 			computeChairUtilizationAll(),
 			computeDoctorProfitabilityAll(),
