@@ -166,7 +166,7 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
  * помнить про каждую вкладку. Забыть в нём вкладку означало убрать её из меню
  * без всякого следа.
  */
-import { settingsTabGroups, type SettingsTabGroup } from "./AppHelpers";
+import { money, settingsTabGroups, type SettingsTabGroup } from "./AppHelpers";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
@@ -1289,6 +1289,34 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     []) as DentalPricelistAnalysisResponse["warnings"];
   const typedPricelistSummary = (pricelistAnalysis?.summary ??
     []) as DentalPricelistAnalysisResponse["summary"];
+  /*
+   * ОТСУТСТВИЕ ЦЕНЫ ОБЯЗАНО ЧИТАТЬСЯ КАК ОТСУТСТВИЕ, А НЕ КАК НОЛЬ.
+   *
+   * minPriceRub / maxPriceRub / averagePriceRub объявлены nullable
+   * (packages/shared/src/index.ts:1774-1776) и равны null у категории, где ни
+   * одна строка цены не отдала. Передать такое значение прямо в money() НЕЛЬЗЯ:
+   * money(null) внутри делает `Number.isFinite(amount) ? amount : 0` и печатает
+   * «0 ₽» (AppHelpers.tsx:2592-2594). Клиника прочитала бы «в ортопедии цены от
+   * 0 ₽» — то есть неизвестное превратилось бы в измеренный ноль, и владелец
+   * пошёл бы спорить с прайсом, в котором этой цены просто не было.
+   *
+   * Поэтому null отсекается ДО форматирования и печатается словами. Ноль как
+   * настоящая цена при этом остаётся отличим: 0 проходит проверку на null и
+   * уходит в money() как обычная сумма.
+   */
+  const pricelistSummaryPriceRangeText = (
+    summary: DentalPricelistAnalysisResponse["summary"][number],
+  ): string => {
+    if (summary.minPriceRub === null || summary.maxPriceRub === null)
+      return "не определяются — ни одна строка категории не отдала цену";
+    const range =
+      summary.minPriceRub === summary.maxPriceRub
+        ? money(summary.minPriceRub)
+        : `${money(summary.minPriceRub)} — ${money(summary.maxPriceRub)}`;
+    if (summary.averagePriceRub === null)
+      return `${range}, среднее не определяется`;
+    return `${range}, в среднем ${money(summary.averagePriceRub)}`;
+  };
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;
@@ -1713,13 +1741,23 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
                   {typedPricelistSummary.map((summary) => (
                     <li
                       key={`${summary.category}-${summary.specialty}`}
-                      style={{ marginBottom: "4px" }}
+                      style={{ marginBottom: "6px" }}
                     >
                       {serviceCategoryLabels[summary.category] ??
                         summary.category}{" "}
                       — строк {summary.count}, с ценой {summary.pricedCount}:{" "}
                       <span style={{ color: "var(--text-muted)" }}>
                         {pricelistMaterialSummaryText(summary)}
+                      </span>
+                      <br />
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "12px",
+                        }}
+                      >
+                        Цены в категории:{" "}
+                        {pricelistSummaryPriceRangeText(summary)}
                       </span>
                     </li>
                   ))}
