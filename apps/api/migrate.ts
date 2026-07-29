@@ -6,11 +6,11 @@ async function run() {
 	
     try {
         await client.query(`ALTER TABLE "clinics" ADD COLUMN "marketing_settings" jsonb;`);
-    } catch(e) { console.log(e.message) }
+    } catch {}
 
     try {
         await client.query(`ALTER TABLE "clinics" ADD COLUMN "reporting_settings" jsonb;`);
-    } catch(e) { console.log(e.message) }
+    } catch {}
 
     try {
         await client.query(`CREATE TABLE IF NOT EXISTS "clinic_workflows" (
@@ -22,7 +22,7 @@ async function run() {
             "created_at" timestamp with time zone DEFAULT now() NOT NULL,
             "updated_at" timestamp with time zone DEFAULT now() NOT NULL
         );`);
-    } catch(e) { console.log(e.message) }
+    } catch {}
 
     try {
         await client.query(`DO $$ BEGIN
@@ -30,7 +30,7 @@ async function run() {
         EXCEPTION
         WHEN duplicate_object THEN null;
         END $$;`);
-    } catch(e) { console.log(e.message) }
+    } catch {}
 
 	console.log("Migration applied.");
 	process.exit(0);
