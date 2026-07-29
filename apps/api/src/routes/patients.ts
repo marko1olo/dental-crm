@@ -306,12 +306,23 @@ const clinicAuthRejectedMessage =
 
 /**
  * Организация из ПОДПИСАННОГО токена кабинета, либо 401 с причиной и действием.
- * Возвращает null, когда ответ клиенту уже отправлен.
+ * Возвращает null, когда ответ клиенту уже отправлен. Единственная проверка
+ * доступа в этом файле: на ней стоят все пятнадцать обработчиков.
  *
- * ПОЧЕМУ ОТДЕЛЬНАЯ ФУНКЦИЯ, А НЕ readClinicOrgId НИЖЕ. Тот возвращает null на
- * оба состояния сразу и потому объяснить отказ не может — маршруты рекламаций и
- * задач, стоящие на нём, отвечают «требуется авторизация» и на испорченный
- * токен. Это остаётся долгом их участка; здесь два состояния различаются.
+ * ПРОВЕРОК БЫЛО ДВЕ. Второй помощник, readClinicOrgId, возвращал null и на
+ * отсутствие токена, и на негодный, поэтому восемь маршрутов рекламаций и задач
+ * отвечали одной и той же фразой «Требуется авторизация рабочего кабинета
+ * клиники.» в обоих состояниях. Человеку с истёкшим входом это читается как
+ * «доступа вам не давали»: клиент, не получив различия причин, строит совет по
+ * коду 401 (apps/web/src/lib/panelStateText.ts) и отправляет к администратору,
+ * хотя достаточно войти в кабинет заново. Врач с оборвавшейся смены бросал
+ * фиксацию рекламации, а рекламация — основание для гарантии, возврата и
+ * переделки, её не записывают «потом».
+ *
+ * Код ответа сохранён дословно: 401 в обоих состояниях, как и было, поэтому
+ * поведенческий гейт scripts/smoke-clinical-mutation-guard.mjs видит то же
+ * самое. Изменились поле error (AuthExpired вместо AuthRequired на негодном
+ * токене) и текст, который называет причину и следующий шаг.
  */
 function requireClinicOrganizationId(request: FastifyRequest, reply: FastifyReply): string | null {
   const clinicHeader = request.headers["x-dente-clinic-token"];
@@ -551,18 +562,9 @@ export async function registerPatientRoutes(app: FastifyInstance) {
    * ИМЕНА ПОЛЕЙ взяты из того, что экран уже отправляет и читает. Свой контракт
    * поверх работающего клиента сломал бы его молча.
    */
-  const readClinicOrgId = (request: { headers: Record<string, unknown> }): string | null => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (typeof clinicToken !== "string" || !clinicToken) return null;
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return null;
-    return payload.organizationId as string;
-  };
-
   app.get("/api/patients/:patientId/reclamations", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
       return sendPatientRouteValidationError(reply);
@@ -589,8 +591,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/patients/:patientId/reclamations", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
       return sendPatientRouteValidationError(reply);
@@ -642,8 +644,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/patients/:patientId/reclamations/:reclamationId", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId, reclamationId } = request.params as { patientId?: string; reclamationId?: string };
     if (
       !patientId ||
@@ -685,8 +687,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.delete("/api/patients/:patientId/reclamations/:reclamationId", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId, reclamationId } = request.params as { patientId?: string; reclamationId?: string };
     if (
       !patientId ||
@@ -734,8 +736,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
    * drizzle/0144_patient_task_tickets.sql.
    */
   app.get("/api/patients/:patientId/tickets", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
       return sendPatientRouteValidationError(reply);
@@ -762,8 +764,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/patients/:patientId/tickets", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
       return sendPatientRouteValidationError(reply);
@@ -827,8 +829,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/patients/:patientId/tickets/:ticketId", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId, ticketId } = request.params as { patientId?: string; ticketId?: string };
     if (
       !patientId ||
@@ -870,8 +872,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.delete("/api/patients/:patientId/tickets/:ticketId", async (request, reply) => {
-    const orgId = readClinicOrgId(request as never);
-    if (!orgId) return reply.code(401).send({ error: "AuthRequired", message: "Требуется авторизация рабочего кабинета клиники." });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId, ticketId } = request.params as { patientId?: string; ticketId?: string };
     if (
       !patientId ||
