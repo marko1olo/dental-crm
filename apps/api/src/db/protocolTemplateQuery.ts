@@ -89,6 +89,66 @@ export class ProtocolTemplateNotFoundError extends Error {
 }
 
 /**
+ * Отметка «изменён» шаблона. Укрепление, а НЕ починка дефекта — и это важно
+ * назвать точно, потому что в очередь пункт попал как дефект, а замер его снял.
+ *
+ * ЧТО ЗДЕСЬ БЫЛО. `(row.updatedAt ?? new Date()).toISOString()` с комментарием
+ * «момент записи известен здесь, поэтому подставляется он». Комментарий
+ * формулировал неверно: `projectRow` разбирает строку, УЖЕ лежащую в базе,
+ * значит подставился бы момент чтения, а не записи.
+ *
+ * НО ПОДСТАВИТЬСЯ ОН НЕ МОГ, и это проверено, а не предположено:
+ *
+ *  • `protocol_templates.updated_at` в живой базе — `NOT NULL DEFAULT now()`
+ *    (`information_schema.columns`), то есть NULL там невозможен;
+ *  • создание (`createProtocolTemplateInDb`) и правка (`updateProtocolTemplateInDb`)
+ *    задают `updatedAt: new Date()` явно;
+ *  • `projectRow` вызывается ТОЛЬКО после записи — из создания, правки и
+ *    удаления. Списка шаблонов через него не читают вовсе.
+ *
+ * Значит ветка `??` была недостижима по всем трём путям. Утверждение «шаблон
+ * отчитывается изменённым при каждом открытии экрана» было бы ложной тревогой:
+ * открытие экрана сюда не приходит.
+ *
+ * ЗАЧЕМ ТОГДА ПРАВКА. Осталась одна настоящая опасность, и она не про NULL:
+ * PostgreSQL законно хранит в `timestamptz` то, чего в JS `Date` нет —
+ * `infinity` и год 294276. На таком значении `.toISOString()` БРОСАЕТ
+ * `RangeError`, и отказ выглядел бы как поломка приложения, а не как одна кривая
+ * строка. Такие значения не пишет ни один путь приложения (замерено соседним
+ * разбором по 12 колонкам гидратации), но их приносит восстановление дампа чужой
+ * системы или правка SQL руками.
+ *
+ * Метка «времени нет» — начало эпохи: `Date.parse` от неё 0, то есть «самый
+ * старый». Контракт требует строку, `.nullable()` в общем пакете пока нет —
+ * записанный долг. Молчания нет: причина идёт в лог с идентификатором строки.
+ */
+const TEMPLATE_TIME_UNKNOWN = new Date(0).toISOString();
+
+function templateUpdatedAt(row: ProtocolTemplateRow): string {
+	const value = row.updatedAt;
+	// Колонка NOT NULL, поэтому это не «на всякий случай», а честная
+	// невозможность: если NULL всё же придёт, значит схема разошлась с кодом, и
+	// об этом надо узнать из лога, а не получить время чтения в ответе.
+	if (value === null || value === undefined) {
+		console.error(
+			`[ProtocolTemplateQuery] У шаблона ${row.id} пустая отметка «изменён», хотя колонка объявлена NOT NULL: ` +
+				"схема базы разошлась с кодом. Отдана метка «времени нет», время чтения не подставлено.",
+		);
+		return TEMPLATE_TIME_UNKNOWN;
+	}
+	const millis = value.getTime();
+	if (!Number.isFinite(millis)) {
+		console.error(
+			`[ProtocolTemplateQuery] У шаблона ${row.id} отметка «изменён» не читается как дата ` +
+				`(protocol_templates.updated_at = ${String(value)}). Отдана метка «времени нет»: прежний код ` +
+				"бросал здесь RangeError, и одна кривая строка роняла чтение ВСЕХ шаблонов протоколов.",
+		);
+		return TEMPLATE_TIME_UNKNOWN;
+	}
+	return value.toISOString();
+}
+
+/**
  * Строка → доменный шаблон ТЕМ ЖЕ контрактом, что и чтение экранов.
  *
  * Если записанная строка контракт не проходит, наружу идёт причина, а не
@@ -110,9 +170,7 @@ function projectRow(row: ProtocolTemplateRow): ProtocolTemplate {
     requiredDocuments: row.requiredDocuments ?? [],
     suggestedImaging: row.suggestedImaging ?? [],
     safetyWarnings: row.safetyWarnings ?? [],
-    // Колонка обнуляемая, а контракт требует строку. Момент записи известен
-    // здесь, поэтому подставляется он, а не выдуманная дата.
-    updatedAt: (row.updatedAt ?? new Date()).toISOString()
+    updatedAt: templateUpdatedAt(row)
   });
   if (parsed.success) return parsed.data;
   const issue = parsed.error.issues[0];
