@@ -1,6 +1,6 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, asc, desc, isNull, sql } from "drizzle-orm";
 import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile, ClinicMode, ClinicScheduleDefaults, StaffWorkingHours } from "@dental/shared";
 import { clinicModeSchema, clinicScheduleDefaultsSchema, staffWorkingHoursSchema, staffRoleSchema } from "@dental/shared";
 import type { StaffMember } from "@dental/shared";
@@ -58,21 +58,192 @@ function narrowStaffRole(value: unknown): StaffMember["role"] {
 
 const memoryUiPreferences = new Map<string, UiPreferences>();
 
-export async function getUiPreferencesFromDb(organizationId: string): Promise<UiPreferences | null> {
-  if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
-  if (!user || !user.uiPreferences) return null;
-  return user.uiPreferences as UiPreferences;
+/**
+ * НАСТРОЙКИ РАБОЧЕГО МЕСТА: УСТАРЕВШАЯ КОПИЯ НЕ ИМЕЕТ ПРАВА ЗАТИРАТЬ СВЕЖУЮ.
+ *
+ * ЧТО БЫЛО. `saveUiPreferencesInDb` писала присланное тело в `users.ui_preferences`
+ * одним `db.update` БЕЗ единого сравнения времени, а маршрут
+ * `PUT /api/settings/preferences` брал `savedAt` от клиента как есть. Ветка без
+ * базы писала в `memoryUiPreferences` тоже без сравнения. Замерено запросом в
+ * процессе (`app.inject`, не дев-сервер): второе сохранение с `savedAt`
+ * 2026-05-20T10:59 поверх сохранённого 11:00 отвечало 200, и роль рабочего места
+ * возвращалась с «владелец» на «ассистент».
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Администратор открывает настройки в двух вкладках, в
+ * первой меняет роль рабочего места и фильтры расписания, вторая всё это время
+ * держит копию, снятую ДО правки. Клиент досылает свою копию сам, отложенной
+ * синхронизацией (`apps/web/src/useAppLogic.tsx`,
+ * `flushPendingUiPreferencesServerSync`), — и правка первой вкладки исчезала без
+ * следа и без отказа. Ролью рабочего места решается, какой набор разделов человек
+ * видит; фильтрами расписания — кого администратор видит в сетке приёмов.
+ *
+ * ЗАЩИТА СУЩЕСТВОВАЛА, НО НЕ НА ПУТИ ЗАПРОСА. `sampleData.ts`
+ * (`saveUiPreferences`) сравнивает время с 5150-й строки, и правило там верное.
+ * Только вызывает его ровно один файл во всём дереве — тест
+ * `tests/mutableStateFlushCoalescing.test.ts`. Ни один маршрут в него не заходит:
+ * ветка «без базы» этого модуля держит СВОЙ `Map`. То есть обе достижимые ветки
+ * были одинаково слепы, а написанная защита охраняла хранилище, которого продукт
+ * не использует.
+ *
+ * ПРАВИЛО ЗДЕСЬ — ДОСЛОВНОЕ ПОВТОРЕНИЕ ТОГО, ЧТО НАПИСАНО В ПАМЯТИ, и второго
+ * правила не заводится: расхождение путей с базой и без — отдельный класс
+ * дефекта, в этом дереве его ловили дважды. Обе ветки ниже спрашивают ОДНИ И ТЕ ЖЕ
+ * две функции, поэтому разойтись им нечем.
+ */
+
+/**
+ * Время сохранения в том виде, в котором его записывает сервер.
+ *
+ * Неразбираемое значение заменяется штампом сервера, а не отвергается: клиент,
+ * который поля не присылает, обязан сохранять настройки как раньше. Важнее
+ * другое — мусорная строка НЕ ЛОЖИТСЯ в хранилище. До этой правки маршрут писал
+ * `input.savedAt ?? new Date().toISOString()`, то есть любую непустую строку
+ * клиента; замерено, что строка «позавчера вечером» доезжала до колонки. Пролежав
+ * там, она сломала бы сравнение для ВСЕХ последующих сохранений этой клиники.
+ */
+export function stampedUiPreferencesSavedAt(savedAt: string | null | undefined): string {
+  return savedAt && Number.isFinite(Date.parse(savedAt)) ? savedAt : new Date().toISOString();
 }
 
-export async function saveUiPreferencesInDb(organizationId: string, prefs: UiPreferences): Promise<void> {
-  if (useInMemory()) {
-    memoryUiPreferences.set(organizationId, prefs);
-    return;
+/**
+ * Перебито ли присланное сохранение тем, что уже лежит в хранилище.
+ *
+ * Сравнение СТРОГОЕ (`<`), поэтому ОДИНАКОВОЕ время проходит: обещание оператору
+ * — «оба сохранения прошли, победил последний». Это не мелочь и не вкус. Живой
+ * клиент повторяет неудавшуюся синхронизацию ТЕМ ЖЕ телом с тем же `savedAt`
+ * (`useAppLogic.tsx`: `delayMs: pending.savedAt === preferences.savedAt ? 5000 : 0`).
+ * Отвергай равенство — и повтор сохранения, чей ответ потерялся в сети, отвергался
+ * бы навсегда, показывая «не синхронизировано» на уже сохранённом.
+ *
+ * Неразбираемое время НА ЛЮБОЙ из сторон снимает проверку, а не роняет её: сервер
+ * не знает, что старше, и поэтому ничего не утверждает. Ровно так же поступает
+ * правило в памяти.
+ */
+export function uiPreferencesSaveIsSuperseded(
+  storedSavedAt: string | null | undefined,
+  incomingSavedAt: string | null | undefined
+): boolean {
+  if (!storedSavedAt || !incomingSavedAt) return false;
+  if (!Number.isFinite(Date.parse(storedSavedAt))) return false;
+  return Date.parse(stampedUiPreferencesSavedAt(incomingSavedAt)) < Date.parse(storedSavedAt);
+}
+
+export type UiPreferencesSaveOutcome = {
+  /** Легла ли присланная копия в хранилище. */
+  applied: boolean;
+  /** Что лежит в хранилище ПОСЛЕ вызова — присланное либо то, чем его перебили. */
+  stored: UiPreferences;
+};
+
+/**
+ * Одновременную правку из двух окон закрывает условная запись, а не порядок
+ * вызовов, поэтому попытка может проиграть сверку и повториться. Пять попыток —
+ * это пять писателей, успевших вклиниться подряд между чтением и записью одной
+ * строки настроек; исчерпание такого запаса означает не гонку, а что-то другое, и
+ * тогда честнее отказать, чем записать вслепую.
+ */
+const UI_PREFERENCES_SAVE_ATTEMPTS = 5;
+
+/**
+ * Сохранение проиграло сверку прежнего значения все попытки подряд. Отдельный
+ * класс от устаревшей копии: причина другая (записывали одновременно, а не
+ * раньше), а действие оператора то же — перечитать настройки и повторить правку.
+ * Маршрут различает их текстом отказа.
+ */
+export class UiPreferencesConcurrentSaveError extends Error {
+  constructor() {
+    super("Настройки рабочего места не сохранены: значение меняли одновременно из нескольких окон.");
+    this.name = "UiPreferencesConcurrentSaveError";
   }
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.organizationId, organizationId)).limit(1);
-  if (!user) throw new Error("No users found to save preferences to.");
-  await db.update(schema.users).set({ uiPreferences: prefs }).where(eq(schema.users.id, user.id));
+}
+
+/**
+ * Строка, в которой лежат настройки рабочего места этой клиники.
+ *
+ * ПОРЯДОК ЗДЕСЬ ОБЯЗАТЕЛЕН, А НЕ ЖЕЛАТЕЛЕН. Раньше и чтение, и запись брали
+ * `.limit(1)` БЕЗ `order by`. Порядок строк без него не определён, то есть
+ * сравнение могло прочитать копию одного сотрудника, а записать поверх копии
+ * другого — и защита от устаревшей записи разваливалась бы молча. На живой базе
+ * это не гипотеза: в одной организации четыре сотрудника, у всех четырёх своя
+ * копия настроек, и время сохранения у них РАЗНОЕ (две строки 10:59, две 11:00).
+ *
+ * Первой берётся строка, в которой копия уже есть: именно она и есть действующие
+ * настройки клиники. Дальше — самый ранний сотрудник, при равенстве — по
+ * идентификатору, чтобы выбор был воспроизводимым.
+ *
+ * ДОЛГ, который здесь не лечится: настройки рабочего места клиники хранятся в
+ * колонке СОТРУДНИКА, поэтому копий у организации столько, сколько строк успели
+ * записать. Единственное хранилище — это правка схемы, а схема правится не здесь.
+ */
+async function uiPreferencesRow(
+  organizationId: string
+): Promise<{ id: string; uiPreferences: unknown } | null> {
+  const [row] = await db
+    .select({ id: schema.users.id, uiPreferences: schema.users.uiPreferences })
+    .from(schema.users)
+    .where(eq(schema.users.organizationId, organizationId))
+    .orderBy(sql`${schema.users.uiPreferences} is null`, asc(schema.users.createdAt), asc(schema.users.id))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function getUiPreferencesFromDb(organizationId: string): Promise<UiPreferences | null> {
+  if (useInMemory()) return memoryUiPreferences.get(organizationId) ?? null;
+  const row = await uiPreferencesRow(organizationId);
+  if (!row || !row.uiPreferences) return null;
+  return row.uiPreferences as UiPreferences;
+}
+
+export async function saveUiPreferencesInDb(
+  organizationId: string,
+  prefs: UiPreferences
+): Promise<UiPreferencesSaveOutcome> {
+  if (useInMemory()) {
+    const stored = memoryUiPreferences.get(organizationId) ?? null;
+    if (stored && uiPreferencesSaveIsSuperseded(stored.savedAt, prefs.savedAt)) {
+      return { applied: false, stored };
+    }
+    memoryUiPreferences.set(organizationId, prefs);
+    return { applied: true, stored: prefs };
+  }
+
+  for (let attempt = 1; attempt <= UI_PREFERENCES_SAVE_ATTEMPTS; attempt += 1) {
+    const row = await uiPreferencesRow(organizationId);
+    if (!row) throw new Error("No users found to save preferences to.");
+    const stored = (row.uiPreferences ?? null) as UiPreferences | null;
+    if (stored && uiPreferencesSaveIsSuperseded(stored.savedAt, prefs.savedAt)) {
+      return { applied: false, stored };
+    }
+
+    /*
+     * Прежнее значение стоит в условии записи, и без него защиты нет вовсе.
+     * «Прочитал, сравнил, записал» тремя отдельными действиями не закрывает
+     * исходный сценарий двух вкладок: оба запроса читают одно и то же старое
+     * значение, оба считают себя свежими, и побеждает тот, чья запись доехала
+     * последней, — то есть ровно устаревшая копия, если она пришла позже.
+     * Сравнение идёт по jsonb, а не по времени: `=` для jsonb определён на
+     * канонической форме, поэтому порядок ключей и пробелы на него не влияют.
+     * Приведение времени в SQL здесь недопустимо — в колонке может лежать строка,
+     * которую `::timestamptz` отвергнет исключением, а порядок вычисления ветвей
+     * `or` Postgres не обещает.
+     */
+    const written = await db
+      .update(schema.users)
+      .set({ uiPreferences: prefs })
+      .where(
+        and(
+          eq(schema.users.id, row.id),
+          stored === null
+            ? isNull(schema.users.uiPreferences)
+            : sql`${schema.users.uiPreferences} = ${JSON.stringify(stored)}::jsonb`
+        )
+      )
+      .returning({ id: schema.users.id });
+    if (written.length === 0) continue;
+    return { applied: true, stored: prefs };
+  }
+
+  throw new UiPreferencesConcurrentSaveError();
 }
 
 export async function getClinicSettingsFromDb(organizationId: string): Promise<ClinicSettings> {

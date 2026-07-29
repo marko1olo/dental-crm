@@ -7,6 +7,8 @@ import {
   getClinicSettingsFromDb,
   getUiPreferencesFromDb,
   saveUiPreferencesInDb,
+  stampedUiPreferencesSavedAt,
+  UiPreferencesConcurrentSaveError,
   updateClinicModeInDb,
   updateClinicProfileInDb,
   createStaffMemberInDb,
@@ -271,6 +273,38 @@ type SettingsPayloadSchema<T> = {
 const denteAdminSecretHeader = "x-dente-admin-secret";
 const uiPreferencesValidationMessage =
   "Настройки интерфейса не сохранены: проверьте выбранную роль, разделы, фильтры и параметры рабочего места.";
+/**
+ * ОТКАЗ ПО УСТАРЕВШЕЙ КОПИИ НАСТРОЕК РАБОЧЕГО МЕСТА.
+ *
+ * ПОЧЕМУ ОТКАЗ, А НЕ ТИХОЕ ИГНОРИРОВАНИЕ. Не сохранить и ответить 200 — это
+ * «сохранено» на не сохранённом, то есть тот же класс дефекта, за который в этом
+ * файле уже отвергаются пустая правка карточки сотрудника, пустая правка кресла и
+ * пустая правка услуги прайса. Хранилище в обоих случаях сохранит верное
+ * значение; разница в том, узнает ли об этом человек, у которого на экране
+ * осталась перебитая копия.
+ *
+ * ПОЧЕМУ ТЕКСТ ЖИВЁТ ЗДЕСЬ, А НЕ В `utils/clinicSessionRefusal.ts`. Тот файл —
+ * дом ОДНОГО состояния, «запрос пришёл без рабочего кабинета клиники», и он сам
+ * прямо запрещает превращать себя во второй словарь сообщений: отказы по существу
+ * действия остаются рядом со своей проверкой, потому что их причину знает только
+ * она. Здесь рядом уже лежат сорок таких текстов в одной форме «<что> не
+ * сохранено: <причина и действие>», и эта форма продолжена.
+ *
+ * НИ ОДНОЙ ЛАТИНСКОЙ БУКВЫ И НИ ОДНОЙ ОТМЕТКИ ВРЕМЕНИ. Клиент гасит текст отказа
+ * целиком, если в нём есть латинское слово из шести и более букв
+ * (`operatorReadableErrorDetail` в `apps/web/src/AppHelpers.tsx`), поэтому назвать
+ * поле `savedAt` в тексте означало бы, что человек не увидит НИЧЕГО. По той же
+ * причине в текст не подставляется время в виде 2026-05-20T11:00:00.000Z: буквы
+ * «T» и «Z» латинские, и одна такая подстановка убила бы всю фразу. Действующее
+ * значение уходит машинным полем `preferences` — интерфейсу нужно именно оно, а не
+ * пересказ времени словами.
+ */
+const uiPreferencesStaleSaveMessage =
+  "Настройки рабочего места не сохранены: в другом окне их изменили позже, и открытая у вас копия устарела. " +
+  "Обновите страницу настроек, чтобы увидеть действующие значения, и повторите правку.";
+const uiPreferencesConcurrentSaveMessage =
+  "Настройки рабочего места не сохранены: их меняли из другого окна в этот же момент. " +
+  "Обновите страницу настроек и повторите правку.";
 const clinicModeValidationMessage = "Режим клиники не сохранен: выберите допустимый режим работы клиники.";
 const clinicProfileValidationMessage =
   "Профиль клиники не сохранен: проверьте название, реквизиты, лицензию, часовой пояс и рабочий график.";
@@ -714,6 +748,21 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     return { preferences: prefs ? uiPreferencesSchema.parse(prefs) : null };
   });
 
+  /**
+   * Сохранение настроек рабочего места. Отвечает тем, что ДЕЙСТВИТЕЛЬНО лежит в
+   * хранилище, а не пересказом присланного тела.
+   *
+   * Прежде здесь возвращался собранный на месте объект `updated` — то есть копия
+   * запроса. Даже на ветке без базы, где защита от устаревшей записи в
+   * `sampleData.ts` формально была написана, ответ подтверждал клиенту его
+   * собственную устаревшую копию: хранилище оставляло свежее значение, а маршрут
+   * отвечал старым и с кодом 200. Теперь источник ответа один — итог записи.
+   *
+   * Отметка времени штампуется той же функцией, которой пользуется сравнение
+   * (`stampedUiPreferencesSavedAt`), а не выражением `input.savedAt ?? now`.
+   * Разница видна на неразбираемой строке: прежняя форма записывала её в колонку
+   * как время, и следующее сохранение сравнивать было уже не с чем.
+   */
   app.put("/api/settings/preferences", async (request, reply) => {
     const orgId = await requireSettingsAccess(request, reply);
     if (!orgId) return;
@@ -721,10 +770,35 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: uiPreferencesValidationMessage });
     }
-    const savedAt = input.savedAt ?? new Date().toISOString();
-    const updated = { ...input, version: 1 as const, savedAt };
-    await saveUiPreferencesInDb(orgId, updated);
-    return uiPreferencesSchema.parse(updated);
+    const updated = { ...input, version: 1 as const, savedAt: stampedUiPreferencesSavedAt(input.savedAt) };
+    let outcome: Awaited<ReturnType<typeof saveUiPreferencesInDb>>;
+    try {
+      outcome = await saveUiPreferencesInDb(orgId, updated);
+    } catch (error) {
+      // Проигранная сверка прежнего значения — не ошибка оператора и не сбой
+      // базы: писали одновременно. Отвечать 500 значило бы отправить человека к
+      // администратору вместо того, чтобы обновить страницу и повторить правку.
+      if (error instanceof UiPreferencesConcurrentSaveError) {
+        console.error("[настройки] настройки рабочего места не сохранены:", error);
+        return reply.code(409).send({
+          error: "UiPreferencesConcurrentSave",
+          reason: "concurrent_ui_preferences_save",
+          message: uiPreferencesConcurrentSaveMessage
+        });
+      }
+      throw error;
+    }
+    if (!outcome.applied) {
+      // Действующее значение приложено к отказу: клиенту не нужен второй запрос,
+      // чтобы показать человеку, чем именно перебита его копия.
+      return reply.code(409).send({
+        error: "UiPreferencesStaleSave",
+        reason: "stale_ui_preferences_copy",
+        message: uiPreferencesStaleSaveMessage,
+        preferences: uiPreferencesSchema.parse(outcome.stored)
+      });
+    }
+    return uiPreferencesSchema.parse(outcome.stored);
   });
 
   app.post("/api/settings/clinic/mode", async (request, reply) => {
