@@ -46,7 +46,6 @@
 		"src/scripts/setup-fresh-db.ts",
 		"src/scripts/patch-owner-credentials.ts",
 		"src/scripts/seedPglite.ts",
-		"src/sampleData_opt.ts",
 		"src/telegram/legacyMocks.ts"
 	]
 }
