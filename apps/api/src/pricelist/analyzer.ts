@@ -323,9 +323,36 @@ function detectBrand(line: string): string | null {
   return brandRules.find((brand) => normalized.includes(normalizeKey(brand))) ?? null;
 }
 
+/*
+ * ТИП КОРОНКИ. «Многослойный цирконий» ТРЕБУЕТ, ЧТОБЫ МАТЕРИАЛ И БЫЛ ЦИРКОНИЕМ.
+ *
+ * БЫЛО: `if (/multi\s*layer|мульти/i.test(line)) return "zirconia multilayer";`
+ * стояло ПЕРВЫМ, до всякой проверки материала. «Мульти» — слишком широкий корень:
+ * «мультиюнит» (Multi-Unit) это тип АБАТМЕНТА у Straumann и Nobel, а не материал
+ * коронки. Замер ведущего (находка ревьюера волны OO):
+ *
+ *   «Коронка на мультиюнит абатменте 30000 руб»   материал abutment
+ *                                                 → crownType «zirconia multilayer»
+ *
+ * То есть разборщик объявлял ЦИРКОНИЙ в строке, где цирконий не назван ни словом,
+ * и материал сам определился как «абатмент». Это выдумывание МАТЕРИАЛА — родня
+ * выдумыванию цены, и уезжает оно тем же путём: в каталог, в план лечения, в
+ * документ, который подписывает пациент. Материал в подписанном документе — это
+ * обещание пациенту, чем ему поставят коронку.
+ *
+ * ПОЧИНКА СТРУКТУРНАЯ, А НЕ СПИСКОМ СЛОВ. Запрещать «мультиюнит» по имени значило
+ * бы ждать следующего слова с тем же корнем. «Многослойный цирконий» по
+ * определению цирконий, поэтому заявка требует материала `zirconia` — и тогда ни
+ * одно слово с корнем «мульти» не может назначить материал само.
+ *
+ * ЦЕНА ОШИБКИ В ДРУГУЮ СТОРОНУ МЕНЬШЕ: строка «Коронка multilayer» без названного
+ * материала теперь даёт «crown» вместо «zirconia multilayer». Это отказ от
+ * уточнения, а не выдумка, и он согласован со стоячим законом файла — не можешь
+ * определить, не угадывай.
+ */
 function detectCrownType(line: string, materialKind: DentalMaterialKind): string | null {
   if (!/корон|crown/i.test(line)) return null;
-  if (/multi\s*layer|мульти/i.test(line)) return "zirconia multilayer";
+  if (materialKind === "zirconia" && /multi\s*layer|мульти/i.test(line)) return "zirconia multilayer";
   if (materialKind === "zirconia") return "zirconia";
   if (materialKind === "lithium_disilicate") return "lithium disilicate";
   if (materialKind === "metal_ceramic") return "metal ceramic";
