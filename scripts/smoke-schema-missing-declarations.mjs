@@ -144,7 +144,7 @@ const undeclaredColumns = new Map([
 		},
 	],
 	["communication_events", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["read_at"] }],
-	["crm_leads", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["expected_revenue"] }],
+	// crm_leads: запись снята — expected_revenue объявлена в schema.ts (пакет MM6).
 	[
 		"diagnocat_ai_findings",
 		{
@@ -164,7 +164,8 @@ const undeclaredColumns = new Map([
 		"egisz_blank_permissions",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: ["field_name", "form_code", "is_export_allowed", "patient_opt_out_respect", "updated_at"],
+			// patient_opt_out_respect объявлена в schema.ts (пакет MM6) и из записи снята.
+			columns: ["field_name", "form_code", "is_export_allowed", "updated_at"],
 		},
 	],
 	["generated_documents", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["is_synced", "version"] }],
@@ -238,13 +239,8 @@ const undeclaredColumns = new Map([
 		"patient_invoices",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: [
-				"insurance_amount_rub",
-				"items_json",
-				"patient_amount_rub",
-				"total_amount_rub",
-				"updated_at",
-			],
+			// total_amount_rub объявлена в schema.ts (пакет MM6) и из записи снята.
+			columns: ["insurance_amount_rub", "items_json", "patient_amount_rub", "updated_at"],
 		},
 	],
 	["patients", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["insurance_contract_id", "insurance_policy_number"] }],
@@ -281,16 +277,9 @@ const undeclaredColumns = new Map([
 		"users",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			columns: [
-				"can_manage_imports",
-				"can_manage_money",
-				"can_sign_medical_records",
-				"color",
-				"is_synced",
-				"snils",
-				"updated_at",
-				"version",
-			],
+			// can_manage_money и can_sign_medical_records объявлены в schema.ts (пакет MM6)
+			// и из записи сняты.
+			columns: ["can_manage_imports", "color", "is_synced", "snils", "updated_at", "version"],
 		},
 	],
 	["visit_diaries", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["diagnosis_text"] }],

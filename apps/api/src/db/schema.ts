@@ -314,6 +314,24 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
+  /**
+   * ПРАВА, КОТОРЫЕ БАЗА ХРАНИТ ПОФАМИЛЬНО, А КОД РАЗДАВАЛ ВСЕМ ПОДРЯД.
+   *
+   * Обе колонки созданы миграцией 0000 (строки 1078-1079) как
+   * `boolean DEFAULT false NOT NULL` и не были объявлены здесь ни разу. Пока
+   * объявления нет, ни один запрос drizzle этих колонок не читает — и
+   * потребители подставляли вместо них своё: settingsQuery.ts отдаёт КАЖДОМУ
+   * сотруднику `canSignMedicalRecords: true` и `canManageMoney: true`
+   * константой, а domainStateHydration.ts выводит те же два права из роли.
+   * То есть право подписывать медицинские записи и право распоряжаться
+   * деньгами выдавались не тем значением, которое хранит база, а догадкой.
+   *
+   * `.default(false)` повторяет базу дословно и обязателен по второй причине:
+   * без него drizzle потребовал бы оба поля в каждом `insert` в users, а таких
+   * мест в маршрутах и тестах десятки.
+   */
+  canSignMedicalRecords: boolean("can_sign_medical_records").notNull().default(false),
+  canManageMoney: boolean("can_manage_money").notNull().default(false),
   specialties: jsonb("specialties"),
   uiPreferences: jsonb("ui_preferences"),
   workingHours: jsonb("working_hours"),
@@ -1646,6 +1664,28 @@ export const patientInvoices = pgTable("patient_invoices", {
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   visitId: uuid("visit_id"),
   totalRub: numeric("total_rub", { precision: 12, scale: 2 }).notNull(),
+  /**
+   * ИТОГ СЧЁТА ИЗ ИСХОДНОЙ СХЕМЫ — и это НЕ то же самое, что total_rub выше.
+   *
+   * Миграция 0000 (строка 841) создала `total_amount_rub numeric(12,2)
+   * DEFAULT '0' NOT NULL` единственной суммой счёта; total_rub в ней нет
+   * вообще. Объявления для total_amount_rub здесь не появилось, а миграция
+   * 0118 «выравнивание таблиц по схеме» дописала в базу ВТОРУЮ денежную
+   * колонку total_rub — под уже написанное объявление. Выравнивание пошло не в
+   * ту сторону: вместо объявления живой колонки в базе завели дубль.
+   *
+   * Чем это кончилось на деньгах: аналитика в
+   * apps/api/src/scripts/cronAnalyticsWorker.ts складывает сырым SQL именно
+   * total_amount_rub — выручку когорт LTV и выручку по врачам, — а всё, что
+   * пишет счёт через drizzle, заполняет total_rub. Незаявленная колонка
+   * остаётся на своём DEFAULT 0, и оба отчёта суммируют нули.
+   *
+   * `mode: "number"` не украшение: registerMoneyTypeParsers() ставит разбор
+   * numeric на весь процесс, поэтому драйвер отдаёт здесь число, и объявление
+   * без mode обещало бы строку — ровно тот денежный дрейф типа, против
+   * которого написан scripts/check-schema-type-drift.mjs.
+   */
+  totalAmountRub: numeric("total_amount_rub", { precision: 12, scale: 2, mode: "number" }).notNull().default(0),
   status: text("status").notNull().default("draft"),
   issuedAt: timestamp("issued_at", { withTimezone: true }),
   paidAt: timestamp("paid_at", { withTimezone: true }),
@@ -1743,6 +1783,23 @@ export const crmLeads = pgTable("crm_leads", {
   status: text("status").notNull().default("new"),
   assignedDoctorId: uuid("assigned_doctor_id"),
   notes: text("notes"),
+  /**
+   * ОЖИДАЕМАЯ ВЫРУЧКА ПО ЛИДУ — принималась маршрутом и терялась молча.
+   *
+   * Колонка создана миграцией 0000 (строка 293) как `numeric(12, 2)`, а
+   * объявления здесь не было. При этом `POST /api/leads` принимает
+   * `expectedRevenue` в своей схеме разбора и пишет лид через
+   * `db.insert(crmLeads).values({ ...data, organizationId })`: ключа, которого
+   * нет в форме таблицы, drizzle в запрос не переносит. Сумма, введённая
+   * администратором, не доходила до базы, а `GET /api/leads` возвращает
+   * `select()` по тем же объявлениям — то есть не вернул бы её и оттуда.
+   * Канбан лидов (apps/web/src/components/leads/LeadsKanbanView.tsx) показывал
+   * поле, которое нечем заполнить.
+   *
+   * Объявлено БЕЗ `mode: "number"` намеренно: маршрут разбирает это поле как
+   * `z.string()`, и строковый тип drizzle совпадает с его контрактом.
+   */
+  expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1914,6 +1971,20 @@ export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
   blankCode: text("blank_code").notNull(),
   blankTitle: text("blank_title").notNull(),
   isAllowed: boolean("is_allowed").notNull().default(true),
+  /**
+   * СОГЛАСИЕ ПАЦИЕНТА НА ВЫГРУЗКУ В ЕГИСЗ — флаг есть в базе, читать его нечем.
+   *
+   * Колонка создана миграцией 0103 (строка 7) как
+   * `boolean DEFAULT true NOT NULL` и здесь не объявлялась. Она решает, будет
+   * ли отказ пациента учтён при выгрузке его медицинских данных в
+   * государственный реестр, — то есть это не служебный признак, а согласие.
+   *
+   * Виджет apps/web/src/components/integrations/EgiszBlankPermissionsWidget.tsx
+   * уже показывает его словами «учитывается» / «не учитывается», но серверного
+   * маршрута к этой таблице нет ни одного, а через drizzle колонка недостижима:
+   * показывать было нечего. Объявление — первое, без чего маршрут не написать.
+   */
+  patientOptOutRespect: boolean("patient_opt_out_respect").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
