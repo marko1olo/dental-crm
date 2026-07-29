@@ -1,20 +1,27 @@
 <div align="center">
 
-![Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg)
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg" width="100%" alt="DENTE CRM Banner"/>
 
 # 🩺 DENTE Enterprise Dental CRM
 
 [![NestJS](https://img.shields.io/badge/NestJS-TypeScript-red?style=for-the-badge&logo=nestjs)]()
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)]()
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue?style=for-the-badge&logo=postgresql)]()
-[![DICOM](https://img.shields.io/badge/DICOM-Local%203D%20Render-00ff88?style=for-the-badge)]()
+[![DICOM](https://img.shields.io/badge/DICOM-Local%203D-00ff88?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Commercial%20Proprietary-orange?style=for-the-badge)](LICENSE.md)
+[![Stars](https://img.shields.io/github/stars/marko1olo/dental-crm?style=for-the-badge&color=gold)]()
 
-> **High-performance NestJS + React SPA for dental practices — zero-cloud local 3D DICOM rendering, smart scheduling, full financial ledger.**
+> **High-performance NestJS + React SPA for dental practices — zero-cloud local 3D DICOM, smart scheduling, full financial ledger.**
+
+[📖 Docs](#) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [📧 Contact](#)
 
 </div>
 
 ---
+
+# 🩺 DENTE Enterprise Dental CRM & DICOM Viewer
+
+![Dental CRM Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg)
 
 > **High-performance NestJS + React SPA platform for dental practices featuring zero-latency local 3D DICOM rendering.**
 
@@ -29,13 +36,3 @@
 
 ### 📜 License
 Licensed under **DENTE Commercial Proprietary & Source-Available License (Adolf Petushkov)**.
-
-
----
-
-<details>
-<summary>🇷🇺 Русская Версия</summary>
-
-**DENTE** — корпоративная CRM для стоматологий. Локальный 3D DICOM, умное расписание, финансовый учёт, Telegram-интеграция. NestJS · React 19 · PostgreSQL 18 · Drizzle ORM.
-
-</details>
