@@ -372,15 +372,64 @@ const NO_LITERAL_SELECTORS = [
 
 const COLOR_PROPERTIES = new Set(["color", "background", "background-color", "border", "border-color", "border-left"]);
 
+/**
+ * СЕЛЕКТОР, ПРИВЕДЁННЫЙ К СРАВНИМОМУ ВИДУ.
+ *
+ * ЧТО ОБХОДИЛО ОХРАНУ. Сравнение шло по СТРОКЕ селектора на точное равенство,
+ * поэтому те же классы в другом порядке давали другую строку и проходили молча.
+ * Доказано приёмкой участка: рядом с охраняемым правилом дописали
+ * `.risk-watch.patient-row .patient-row-meta .patient-risk-label` — та же
+ * специфичность, позже в каскаде, значит выигрывает, — и все зашитые цвета
+ * вернулись в силу при зелёной охране.
+ *
+ * Классы внутри каждого составного куска сортируются, пробелы сводятся к одному.
+ */
+function normalizeSelector(selector: string): string {
+	return selector
+		.trim()
+		.split(/\s+/)
+		.map((part) => {
+			const classes = part.match(/\.[\w-]+/g);
+			if (!classes || classes.length < 2) return part;
+			const rest = part.replace(/\.[\w-]+/g, "");
+			return [...classes].sort().join("") + rest;
+		})
+		.join(" ");
+}
+
+/**
+ * ЛИТЕРАЛЬНЫЙ ЦВЕТ ЛЮБОЙ НОТАЦИИ, А НЕ ТОЛЬКО HEX И RGB.
+ *
+ * ЧТО ОБХОДИЛО ОХРАНУ. Искались только hex и rgb. Приёмка вписала в само
+ * охраняемое правило `border-color: hsl(140 60% 45%)` — жёсткий цвет, от темы не
+ * зависящий, — и проверка осталась зелёной. Именованные цвета (`wheat`, `tomato`)
+ * проходили тем же путём.
+ *
+ * Список именованных не полон намеренно: он покрывает то, что встречается в
+ * рукописном CSS, а забытое имя ловится вторым утверждением — «красит не токеном»
+ * на измеряемых селекторах.
+ */
+const COLOR_FUNCTIONS = /\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\s*\(/i;
+const NAMED_COLORS = /\b(white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|silver|gold|navy|teal|olive|maroon|lime|aqua|cyan|magenta|fuchsia|indigo|violet|beige|ivory|khaki|salmon|coral|tomato|wheat|orchid|plum|crimson|turquoise|lavender|azure|snow|linen|seashell|honeydew|mintcream|aliceblue|ghostwhite|whitesmoke|gainsboro|lightgray|lightgrey|darkgray|darkgrey|dimgray|dimgrey|slategray|slategrey)\b/i;
+
+/** Литерал ли это. Ключевые слова, не задающие конкретный цвет, литералами не считаются. */
+function looksLikeColorLiteral(value: string): boolean {
+	const cleaned = value.replace(/\bvar\([^()]*\)/g, " ");
+	if (/#[0-9a-f]{3,8}\b/i.test(cleaned)) return true;
+	if (COLOR_FUNCTIONS.test(cleaned)) return true;
+	return NAMED_COLORS.test(cleaned);
+}
+
+
 describe("тронутые правила не возвращают литералы", () => {
 	test("ни в одном из них нет hex или rgb вне var()", () => {
 		// scripts/check-css-tokens.mjs сюда не смотрит: он разбирает только var() и запасы,
 		// поэтому голое `background: #fef2f2` в его корзины не попадает вообще.
-		const wanted = new Set<string>(NO_LITERAL_SELECTORS);
+		const wanted = new Set<string>(NO_LITERAL_SELECTORS.map(normalizeSelector));
 		const seen = new Set<string>();
 		for (const file of STYLESHEETS) {
 			for (const rule of rulesOf.get(file) ?? []) {
-				const hit = rule.selectors.filter((selector) => wanted.has(selector));
+				const hit = rule.selectors.filter((selector) => wanted.has(normalizeSelector(selector)));
 				if (hit.length === 0) continue;
 				for (const selector of hit) seen.add(selector);
 				for (const declaration of rule.body.split(";")) {
@@ -388,15 +437,61 @@ describe("тронутые правила не возвращают литера
 					if (colon < 0) continue;
 					const property = declaration.slice(0, colon).trim();
 					if (!COLOR_PROPERTIES.has(property)) continue;
-					const value = declaration.slice(colon + 1).replace(/var\([^()]*\)/g, "");
+					const value = declaration.slice(colon + 1);
 					assert.ok(
-						!/#[0-9a-f]{3,8}\b|\brgba?\(/i.test(value),
+						!looksLikeColorLiteral(value),
 						`${file}:${rule.line} ${hit.join(", ")} — ${property} снова на литерале: «${declaration.trim()}»`,
 					);
 				}
 			}
 		}
 		assert.deepEqual([...wanted].filter((selector) => !seen.has(selector)), [], "правило переименовано — охрана перестала его сторожить");
+	});
+
+	/*
+	 * САМОПРОВЕРКА ОТ ОБХОДОВ, КОТОРЫЕ ПРИЁМКА ДОКАЗАЛА ЖИВЫМИ.
+	 *
+	 * Три случая ниже проходили охрану молча, пока она сверяла строку селектора и
+	 * знала только hex и rgb: переставленные классы в селекторе, `hsl()` вместо
+	 * `#hex`, именованный цвет. Без этой проверки любая правка выражений вернёт
+	 * дыру, и заметить это будет нечем — сама охрана останется зелёной.
+	 */
+	test("охрана не обходится переставленными классами и другой нотацией цвета", () => {
+		assert.equal(
+			normalizeSelector(".risk-watch.patient-row .patient-row-meta .patient-risk-label"),
+			normalizeSelector(".patient-row.risk-watch .patient-row-meta .patient-risk-label"),
+			"те же классы в другом порядке дают другой ключ: правило можно перекрыть копией и остаться зелёным",
+		);
+
+		for (const literal of [
+			"#fff",
+			"#f4ead8",
+			"rgb(255 0 0)",
+			"rgba(0,0,0,.5)",
+			"hsl(140 60% 45%)",
+			"hsla(140, 60%, 45%, .5)",
+			"oklch(0.7 0.1 200)",
+			"color-mix(in srgb, red, blue)",
+			"wheat",
+			"tomato",
+		]) {
+			assert.ok(looksLikeColorLiteral(literal), `литерал «${literal}» не распознан — этой нотацией охрану обходят`);
+		}
+
+		for (const allowed of [
+			"var(--teal)",
+			"var(--ink, var(--teal))",
+			"transparent",
+			"currentColor",
+			"inherit",
+			"1px solid var(--line)",
+			"0 0 0 1px var(--teal-ring)",
+		]) {
+			assert.ok(
+				!looksLikeColorLiteral(allowed),
+				`«${allowed}» принято за литерал — охрана начнёт краснеть на верном коде, а такую выключают`,
+			);
+		}
 	});
 
 	test("рамки не берут --teal-glow: у имени два разных типа", () => {
