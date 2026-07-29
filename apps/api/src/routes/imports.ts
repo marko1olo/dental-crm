@@ -11,80 +11,102 @@ import {
   type ImportPreviewResponse,
   type ImportPreviewRow,
   splitLine,
-  normalizeDate
+  normalizeDate,
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { patients, importBatches, auditEvents } from "../db/schema.js";
-import { requireClinicalMutationContext, requireClinicalReadContext } from "../accessGuard.js";
+import {
+  requireClinicalMutationContext,
+  requireClinicalReadContext,
+} from "../accessGuard.js";
 
-const headerAliases: Record<string, keyof Pick<ImportPreviewRow, "fullName" | "phone" | "birthDate" | "notes">> = {
+const headerAliases: Record<
+  string,
+  keyof Pick<ImportPreviewRow, "fullName" | "phone" | "birthDate" | "notes">
+> = {
   fio: "fullName",
   "full name": "fullName",
   fullname: "fullName",
   name: "fullName",
-  "фио": "fullName",
-  "пациент": "fullName",
-  "имя": "fullName",
-  "клиент": "fullName",
-  "patient": "fullName",
+  фио: "fullName",
+  пациент: "fullName",
+  имя: "fullName",
+  клиент: "fullName",
+  patient: "fullName",
   "patient name": "fullName",
-  "наименование": "fullName",
+  наименование: "fullName",
   phone: "phone",
   tel: "phone",
   telephone: "phone",
   mobile: "phone",
   cellphone: "phone",
   whatsapp: "phone",
-  "телефон": "phone",
-  "номер": "phone",
-  "моб": "phone",
-  "мобильный": "phone",
-  "контакт": "phone",
+  телефон: "phone",
+  номер: "phone",
+  моб: "phone",
+  мобильный: "phone",
+  контакт: "phone",
   birthdate: "birthDate",
   birthday: "birthDate",
   dob: "birthDate",
   born: "birthDate",
   "дата рождения": "birthDate",
-  "др": "birthDate",
+  др: "birthDate",
   "д.р.": "birthDate",
-  "рождение": "birthDate",
+  рождение: "birthDate",
   comment: "notes",
   comments: "notes",
   notes: "notes",
   note: "notes",
   memo: "notes",
-  "примечание": "notes",
-  "комментарий": "notes",
-  "заметка": "notes",
-  "коммент": "notes"
+  примечание: "notes",
+  комментарий: "notes",
+  заметка: "notes",
+  коммент: "notes",
 };
 
 type ImportPayloadSchema<T> = {
-  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+  safeParse: (
+    value: unknown,
+  ) => { success: true; data: T } | { success: false };
 };
 
-function parseImportPayload<T>(schema: ImportPayloadSchema<T>, value: unknown, message: string) {
+function parseImportPayload<T>(
+  schema: ImportPayloadSchema<T>,
+  value: unknown,
+  message: string,
+) {
   const parsed = schema.safeParse(value);
   if (parsed.success) return { ok: true as const, data: parsed.data };
   return {
     ok: false as const,
     response: {
       error: "ImportValidationError",
-      message
-    }
+      message,
+    },
   };
 }
 
 function detectDelimiter(headerLine: string) {
   const candidates = [";", ",", "\t"];
-  return candidates
-    .map((delimiter) => ({ delimiter, count: headerLine.split(delimiter).length }))
-    .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ";";
+  return (
+    candidates
+      .map((delimiter) => ({
+        delimiter,
+        count: headerLine.split(delimiter).length,
+      }))
+      .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ";"
+  );
 }
 
 function normalizeHeader(value: string) {
-  return value.trim().toLowerCase().replaceAll("_", " ").replaceAll("-", " ").replace(/\s+/g, " ");
+  return value
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\s+/g, " ");
 }
 
 function normalizePhone(value: string | null) {
@@ -92,7 +114,8 @@ function normalizePhone(value: string | null) {
   const digits = value.replace(/\D/g, "");
   if (!digits) return null;
   if (digits.length === 10) return `+7${digits}`;
-  if (digits.length === 11 && digits.startsWith("8")) return `+7${digits.slice(1)}`;
+  if (digits.length === 11 && digits.startsWith("8"))
+    return `+7${digits.slice(1)}`;
   if (digits.length === 11 && digits.startsWith("7")) return `+${digits}`;
   return value.trim();
 }
@@ -106,7 +129,9 @@ function escapeCsvCell(value: string | null) {
 
 function hasKnownHeader(line: string) {
   const delimiter = detectDelimiter(line);
-  return splitLine(line, delimiter).some((cell) => headerAliases[normalizeHeader(cell)]);
+  return splitLine(line, delimiter).some(
+    (cell) => headerAliases[normalizeHeader(cell)],
+  );
 }
 
 function extractDateFromText(value: string) {
@@ -114,30 +139,50 @@ function extractDateFromText(value: string) {
 }
 
 function extractPhoneFromText(value: string) {
-  const withPrefix = value.match(/(?:\+7|7|8)[\s(.-]*\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}/);
-  const withoutPrefix = value.match(/\b\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b/);
+  const withPrefix = value.match(
+    /(?:\+7|7|8)[\s(.-]*\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}/,
+  );
+  const withoutPrefix = value.match(
+    /\b\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b/,
+  );
   return normalizePhone(withPrefix?.[0] ?? withoutPrefix?.[0] ?? null);
 }
 
-function extractNameFromText(value: string, phone: string | null, birthDate: string | null) {
+function extractNameFromText(
+  value: string,
+  phone: string | null,
+  birthDate: string | null,
+) {
   const phoneMatch =
-    value.match(/(?:\+7|7|8)[\s(.-]*\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}/) ??
-    value.match(/\b\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b/);
+    value.match(
+      /(?:\+7|7|8)[\s(.-]*\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}/,
+    ) ?? value.match(/\b\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b/);
   const dateMatch = value.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/);
-  const commentMatch = /комментарий|примечание|жалоба|нужно|надо|боится|первичный|повторный/gi.exec(value);
+  const commentMatch =
+    /комментарий|примечание|жалоба|нужно|надо|боится|первичный|повторный/gi.exec(
+      value,
+    );
   const cutAt = [phoneMatch?.index, dateMatch?.index, commentMatch?.index]
     .filter((index): index is number => typeof index === "number" && index > 0)
     .sort((left, right) => left - right)[0];
   let cleaned = (typeof cutAt === "number" ? value.slice(0, cutAt) : value)
-    .replace(/фио|пациент|клиент|телефон|номер|дата рождения|др|д\.р\.|комментарий|примечание/gi, " ")
+    .replace(
+      /фио|пациент|клиент|телефон|номер|дата рождения|др|д\.р\.|комментарий|примечание/gi,
+      " ",
+    )
     .replace(/[:=]/g, " ");
   if (phone) cleaned = cleaned.replace(phone, " ");
   const phoneDigits = phone?.replace(/\D/g, "");
   if (phoneDigits) {
-    cleaned = cleaned.replace(new RegExp(phoneDigits.split("").join("[\\s().-]*")), " ");
+    cleaned = cleaned.replace(
+      new RegExp(phoneDigits.split("").join("[\\s().-]*")),
+      " ",
+    );
   }
   if (birthDate) cleaned = cleaned.replace(birthDate, " ");
-  cleaned = cleaned.replace(/(?:\+?\d[\s().-]*){10,16}/g, " ").replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/g, " ");
+  cleaned = cleaned
+    .replace(/(?:\+?\d[\s().-]*){10,16}/g, " ")
+    .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/g, " ");
   const words = cleaned
     .split(/\s+/)
     .map((part) => part.trim())
@@ -165,21 +210,28 @@ function normalizeImportText(input: ImportPreviewRequest) {
   return ["ФИО;Телефон;Дата рождения;Комментарий", ...rows].join("\n");
 }
 
-export async function buildPatientImportIntake(orgId: string, input: ImportPreviewRequest): Promise<ImportIntakeResponse> {
+export async function buildPatientImportIntake(
+  orgId: string,
+  input: ImportPreviewRequest,
+): Promise<ImportIntakeResponse> {
   const normalizedText = normalizeImportText(input);
   const notes = [
     "Сначала выполняется распознавание полей, затем preview. Запись в базу только после подтверждения.",
-    "Поддержаны табличные выгрузки, вставка из Excel, свободный текст, OCR-текст с фото журнала и надиктовка."
+    "Поддержаны табличные выгрузки, вставка из Excel, свободный текст, OCR-текст с фото журнала и надиктовка.",
   ];
   if (input.sourceKind === "image_ocr") {
-    notes.push("Фото журнала должно проходить OCR/vision worker; этот endpoint принимает распознанный текст и нормализует его.");
+    notes.push(
+      "Фото журнала должно проходить OCR/vision worker; этот endpoint принимает распознанный текст и нормализует его.",
+    );
   }
   if (input.sourceKind === "voice_dictation") {
-    notes.push("Диктовка превращается в текст браузером или AI-worker, затем разбирается тем же безопасным preview.");
+    notes.push(
+      "Диктовка превращается в текст браузером или AI-worker, затем разбирается тем же безопасным preview.",
+    );
   }
   const preview = await buildPatientImportPreview(orgId, {
     ...input,
-    rawText: normalizedText
+    rawText: normalizedText,
   });
 
   return importIntakeResponseSchema.parse({
@@ -187,7 +239,7 @@ export async function buildPatientImportIntake(orgId: string, input: ImportPrevi
     sourceKind: input.sourceKind,
     normalizedText,
     preview,
-    recognitionNotes: notes
+    recognitionNotes: notes,
   });
 }
 
@@ -198,11 +250,14 @@ function emptyPreview(sourceName: string): ImportPreviewResponse {
     readyRows: 0,
     warningRows: 0,
     blockedRows: 0,
-    rows: []
+    rows: [],
   });
 }
 
-export async function buildPatientImportPreview(orgId: string, input: ImportPreviewRequest): Promise<ImportPreviewResponse> {
+export async function buildPatientImportPreview(
+  orgId: string,
+  input: ImportPreviewRequest,
+): Promise<ImportPreviewResponse> {
   const normalizedRawText = normalizeImportText(input);
   const lines = normalizedRawText
     .split(/\r?\n/)
@@ -220,11 +275,22 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
 
   const delimiter = detectDelimiter(headerLine);
   const headerCells = splitLine(headerLine, delimiter).map(normalizeHeader);
-  const mappedHeaders = headerCells.map((header) => headerAliases[header] ?? null);
-  
-  const existingPatients = await db.select().from(patients).where(eq(patients.organizationId, orgId));
-  const knownPhones = new Set(existingPatients.map((patient) => normalizePhone(patient.phone)).filter(Boolean));
-  const knownNames = new Set(existingPatients.map((patient) => patient.fullName.trim().toLowerCase()));
+  const mappedHeaders = headerCells.map(
+    (header) => headerAliases[header] ?? null,
+  );
+
+  const existingPatients = await db
+    .select()
+    .from(patients)
+    .where(eq(patients.organizationId, orgId));
+  const knownPhones = new Set(
+    existingPatients
+      .map((patient) => normalizePhone(patient.phone))
+      .filter(Boolean),
+  );
+  const knownNames = new Set(
+    existingPatients.map((patient) => patient.fullName.trim().toLowerCase()),
+  );
 
   const rows: ImportPreviewRow[] = lines.slice(1).map((line, index) => {
     const cells = splitLine(line, delimiter);
@@ -235,7 +301,7 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
       birthDate: null,
       notes: null,
       status: "ready",
-      warnings: []
+      warnings: [],
     };
 
     mappedHeaders.forEach((field, cellIndex) => {
@@ -269,7 +335,9 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
      * нет. Строки со статусом warning импортируются, см. commitPatientImport.
      */
     if (!row.phone) {
-      row.warnings.push("Нет телефона для связи — пациент будет перенесён, напоминания отправлять будет некуда");
+      row.warnings.push(
+        "Нет телефона для связи — пациент будет перенесён, напоминания отправлять будет некуда",
+      );
     }
 
     /**
@@ -280,12 +348,16 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
      */
     if (row.phone && knownPhones.has(row.phone)) {
       row.status = row.status === "blocked" ? "blocked" : "warning";
-      row.warnings.push("Возможный дубль по телефону — карточка не будет создана повторно");
+      row.warnings.push(
+        "Возможный дубль по телефону — карточка не будет создана повторно",
+      );
     }
 
     if (row.fullName && knownNames.has(row.fullName.trim().toLowerCase())) {
       row.status = row.status === "blocked" ? "blocked" : "warning";
-      row.warnings.push("Возможный дубль по ФИО — карточка не будет создана повторно");
+      row.warnings.push(
+        "Возможный дубль по ФИО — карточка не будет создана повторно",
+      );
     }
 
     return row;
@@ -297,7 +369,7 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
     readyRows: rows.filter((row) => row.status === "ready").length,
     warningRows: rows.filter((row) => row.status === "warning").length,
     blockedRows: rows.filter((row) => row.status === "blocked").length,
-    rows
+    rows,
   };
 
   return importPreviewResponseSchema.parse(response);
@@ -321,13 +393,17 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
  */
 export async function registerImportRoutes(app: FastifyInstance) {
   app.post("/api/imports/patients/intake", async (request, reply) => {
-    const context = await requireClinicalReadContext(request, reply, "patient import intake");
+    const context = await requireClinicalReadContext(
+      request,
+      reply,
+      "patient import intake",
+    );
     if (!context) return;
 
     const parsed = parseImportPayload(
       importIntakeRequestSchema,
       request.body,
-      "Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника."
+      "Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника.",
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
@@ -335,13 +411,17 @@ export async function registerImportRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/imports/patients/preview", async (request, reply) => {
-    const context = await requireClinicalReadContext(request, reply, "patient import preview");
+    const context = await requireClinicalReadContext(
+      request,
+      reply,
+      "patient import preview",
+    );
     if (!context) return;
 
     const parsed = parseImportPayload(
       importPreviewRequestSchema,
       request.body,
-      "Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов."
+      "Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов.",
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
@@ -349,13 +429,17 @@ export async function registerImportRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/imports/patients/commit", async (request, reply) => {
-    const context = await requireClinicalMutationContext(request, reply, "patient import commit");
+    const context = await requireClinicalMutationContext(
+      request,
+      reply,
+      "patient import commit",
+    );
     if (!context) return;
 
     const parsed = parseImportPayload(
       importCommitRequestSchema,
       request.body,
-      "Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью."
+      "Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью.",
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
@@ -363,9 +447,12 @@ export async function registerImportRoutes(app: FastifyInstance) {
   });
 }
 
-export async function commitPatientImport(orgId: string, input: ImportPreviewRequest) {
+export async function commitPatientImport(
+  orgId: string,
+  input: ImportPreviewRequest,
+) {
   const preview = await buildPatientImportPreview(orgId, input);
-  
+
   const result = await db.transaction(async (tx) => {
     const importedPatientIds: string[] = [];
     /**
@@ -374,46 +461,57 @@ export async function commitPatientImport(orgId: string, input: ImportPreviewReq
      * он переносится, а не теряется молча. Статус warning остался только за
      * дублями — их пропуск и есть желаемое поведение.
      */
-    const validRows = preview.rows.filter((row) => row.status === "ready" && row.fullName);
+    const validRows = preview.rows.filter(
+      (row) => row.status === "ready" && row.fullName,
+    );
 
-    for (const row of validRows) {
-      const [inserted] = await tx.insert(patients).values({
+    if (validRows.length > 0) {
+      const patientPayloads = validRows.map((row) => ({
         organizationId: orgId,
         fullName: row.fullName ?? "",
         birthDate: row.birthDate,
         phone: row.phone,
         notes: row.notes,
-        status: "active"
-      }).returning();
-      
-      importedPatientIds.push(inserted!.id);
+        status: "active" as const,
+      }));
 
-      await tx.insert(auditEvents).values({
+      const insertedPatients = await tx
+        .insert(patients)
+        .values(patientPayloads)
+        .returning();
+      importedPatientIds.push(...insertedPatients.map((p) => p.id));
+
+      const auditPayloads = insertedPatients.map((inserted, idx) => ({
         organizationId: orgId,
-        entityType: "patient",
-        entityId: inserted!.id,
-        action: "patient_imported",
-        reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`
-      });
+        entityType: "patient" as const,
+        entityId: inserted.id,
+        action: "patient_imported" as const,
+        reason: `Импорт из ${input.sourceName}, строка ${validRows[idx]!.rowNumber}.`,
+      }));
+
+      await tx.insert(auditEvents).values(auditPayloads);
     }
 
-    const [batch] = await tx.insert(importBatches).values({
-      organizationId: orgId,
-      sourceName: input.sourceName,
-      status: "completed",
-      totalRows: preview.totalRows,
-      importedRows: importedPatientIds.length,
-      skippedRows: preview.totalRows - importedPatientIds.length,
-      warningRows: preview.warningRows,
-      blockedRows: preview.blockedRows
-    }).returning();
+    const [batch] = await tx
+      .insert(importBatches)
+      .values({
+        organizationId: orgId,
+        sourceName: input.sourceName,
+        status: "completed",
+        totalRows: preview.totalRows,
+        importedRows: importedPatientIds.length,
+        skippedRows: preview.totalRows - importedPatientIds.length,
+        warningRows: preview.warningRows,
+        blockedRows: preview.blockedRows,
+      })
+      .returning();
 
     await tx.insert(auditEvents).values({
       organizationId: orgId,
       entityType: "import_batch",
       entityId: batch!.id,
       action: "import_committed",
-      reason: `Импортировано ${importedPatientIds.length}, пропущено ${preview.totalRows - importedPatientIds.length}.`
+      reason: `Импортировано ${importedPatientIds.length}, пропущено ${preview.totalRows - importedPatientIds.length}.`,
     });
 
     return { importedPatientIds };
@@ -423,6 +521,6 @@ export async function commitPatientImport(orgId: string, input: ImportPreviewReq
     preview,
     importedCount: result.importedPatientIds.length,
     skippedCount: preview.totalRows - result.importedPatientIds.length,
-    importedPatientIds: result.importedPatientIds
+    importedPatientIds: result.importedPatientIds,
   });
 }
