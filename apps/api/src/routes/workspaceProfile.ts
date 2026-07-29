@@ -48,6 +48,38 @@ export interface WorkspaceFeatureFlags {
   aiEnableTreatmentPlan: boolean;
   aiEnableRecommendations: boolean;
   aiEnableDocuments: boolean;
+  /*
+   * ДЕВЯТЬ ПРИЗНАКОВ, КОТОРЫЕ КЛИЕНТ ПРИСЫЛАЛ, А СЕРВЕР МОЛЧА ВЫБРАСЫВАЛ.
+   *
+   * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Набор клиента
+   * (apps/web/src/hooks/useWorkspaceProfile.ts) держит 28 признаков, здесь их
+   * было 19. workspaceFlagsFromStorage перебирает ключи ТОЛЬКО этого набора,
+   * поэтому девять признаков отбрасывались и на записи, и на чтении, а маршрут
+   * при этом отвечал 200 и возвращал сохранённый набор — клиент показывал
+   * галочку «сохранено». Дороже всего обошёлся hasClinicalRules: он закрывает
+   * вкладку клинических правил (SettingsView.tsx:1206) и её панель
+   * (components/settings/SettingsRulesTab.tsx:119-121), умолчание — выключено, а
+   * переключатель в WorkspaceFeaturesSelector.tsx:232-239 ничего не сохранял. То
+   * есть предупреждения по протоколам лечения — таблица и четыре живых маршрута
+   * (routes/clinical.ts:51,80,92,124) — включались только в одном браузере
+   * одного сотрудника и исчезали на втором устройстве, у второго врача и после
+   * очистки браузера. Тем же путём терялся hasEngineeringStatus — единственный
+   * признак, открывающий врачу состояние отправки документа в ЕГИСЗ
+   * (components/visit/VisitOdontogramTab.tsx:97-104).
+   *
+   * Умолчания совпадают с клиентскими, поэтому у работающих клиник не меняется
+   * ничего: меняется только то, что ВКЛЮЧЁННЫЙ признак теперь доживает до базы.
+   */
+  hasGnathology: boolean;
+  hasCsoScanner: boolean;
+  hasLeadsKanban: boolean;
+  hasOmnichannel: boolean;
+  hasEngineeringStatus: boolean;
+  hasClinicalRules: boolean;
+  hasReferralModule: boolean;
+  hasBpmWorkflows: boolean;
+  /* Число, а не признак: разбор ниже проверяет тип отдельно. */
+  numberOfDoctors: number;
 }
 
 /**
@@ -78,6 +110,18 @@ export const DEFAULT_WORKSPACE_FEATURE_FLAGS: WorkspaceFeatureFlags = {
   aiEnableTreatmentPlan: true,
   aiEnableRecommendations: true,
   aiEnableDocuments: true,
+  // Девять признаков, которых здесь не было: умолчания взяты из DEFAULT_FLAGS
+  // клиента (hooks/useWorkspaceProfile.ts), чтобы у работающих клиник ни один
+  // раздел не появился и не исчез от самого расширения контракта.
+  hasGnathology: false,
+  hasCsoScanner: false,
+  hasLeadsKanban: false,
+  hasOmnichannel: false,
+  hasEngineeringStatus: false,
+  hasClinicalRules: false,
+  hasReferralModule: false,
+  hasBpmWorkflows: false,
+  numberOfDoctors: 4,
 };
 
 /**
@@ -99,6 +143,12 @@ export function workspaceFlagsFromStorage(stored: unknown): WorkspaceFeatureFlag
     const value = source[key];
     if (typeof fallback === "boolean" && typeof value === "boolean") result[key] = value;
     else if (typeof fallback === "string" && typeof value === "string" && value) result[key] = value;
+    // Число проверяется отдельно: numberOfDoctors — единственный числовой
+    // признак, и без этой ветки он отбрасывался бы наравне с чужими ключами.
+    // NaN и Infinity в jsonb попасть могут (ручная правка базы), но признаком
+    // числа доктора быть не могут.
+    else if (typeof fallback === "number" && typeof value === "number" && Number.isFinite(value))
+      result[key] = value;
   }
   return result as unknown as WorkspaceFeatureFlags;
 }
@@ -118,9 +168,31 @@ export type PresetName =
 // ————————————————————————————————————————————————————————————————————————————
 // Preset definitions
 // ————————————————————————————————————————————————————————————————————————————
+/**
+ * Пресет задаёт выбор МОДУЛЕЙ, а не весь набор признаков.
+ *
+ * Девять признаков, добавленных в контракт выше (клинические правила, состояние
+ * отправки в ЕГИСЗ и остальные), ни один пресет не выбирает, и применение
+ * пресета не должно их сбрасывать: обработчик складывает пресет с уже
+ * сохранённым набором клиники. Поэтому Omit, а НЕ Partial — пропустить модуль,
+ * который пресет обязан задать, по-прежнему нельзя.
+ */
+export type WorkspacePresetFeatureFlags = Omit<
+  WorkspaceFeatureFlags,
+  | "hasGnathology"
+  | "hasCsoScanner"
+  | "hasLeadsKanban"
+  | "hasOmnichannel"
+  | "hasEngineeringStatus"
+  | "hasClinicalRules"
+  | "hasReferralModule"
+  | "hasBpmWorkflows"
+  | "numberOfDoctors"
+>;
+
 export const WORKSPACE_PRESETS: Record<
   Exclude<PresetName, "custom">,
-  WorkspaceFeatureFlags
+  WorkspacePresetFeatureFlags
 > = {
   solo_therapist: {
     hasAssistants: false,
