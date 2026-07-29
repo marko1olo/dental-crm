@@ -1917,9 +1917,7 @@ export function App() {
   operatorWorkflowFailureMessage,
   setSelectedPatientId,
   setScheduleDateFilter,
-  scheduleDateFilter,
-  handleFinishOnboarding,
-  setOnboardingDismissed
+  scheduleDateFilter
 } = appLogicValue;
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
@@ -2120,6 +2118,33 @@ export function App() {
               </div>
             </div>
 
+            {/*
+              ОТКАЗ ВНУТРИ МАСТЕРА ВИДЕН ЗДЕСЬ, А НЕ В РАБОЧЕЙ ОБЛАСТИ.
+
+              Полоса отказа в этом файле одна, и стоит она ниже — внутри рабочей
+              области (ищите `<section className="app-notice"` после этой ветки).
+              Мастер уходит из App.tsx досрочным return, то есть до неё дело не
+              доходит. А отказывать внутри мастера есть чему: moveOnboardingTo на
+              шаг «Готово» не пускает, пока нет врача с правом подписи ЭМК,
+              кресла и ассистента (useAppLogic.tsx:3107 и :3325);
+              saveClinicProfileIfDirty не пускает при незаполненных полях;
+              addStaffMember и addChair сообщают об отказе сервера. Все они зовут
+              setError — и все их сообщения пропадали в никуда, а кнопка при этом
+              выглядела не сломанной, а мёртвой.
+
+              Ровно тот класс дефекта, из-за которого удалили семишаговый мастер:
+              запрос отказывает, а экран об отказе молчит.
+            */}
+            {error ? (
+              <section className="app-notice" role="alert" aria-live="assertive">
+                <AlertTriangle aria-hidden="true" />
+                <p>{error}</p>
+                <button className="secondary-button" type="button" onClick={() => setError(null)}>
+                  Понятно
+                </button>
+              </section>
+            ) : null}
+
             {/* Step list if not intro */}
             {onboardingStep !== "intro" ? (
               <ol className="wizard-step-list" aria-label={`Шаг ${currentOnboardingIndex + 1} из ${onboardingSteps.length}`}>
@@ -2138,13 +2163,57 @@ export function App() {
               </ol>
             ) : null}
 
-            {/* Intro Step */}
+            {/*
+              ШАГ «РЕЖИМ ЗАПУСКА» — ЕДИНСТВЕННЫЙ ВЫХОД НОВОЙ КЛИНИКИ В ПРОГРАММУ.
+
+              ЧТО БЫЛО СЛОМАНО. Новая клиника всегда попадает именно на этот шаг:
+              AppHelpers.tsx:4325 принудительно ставит onboardingStep в "intro",
+              пока настройка не закрыта, а кнопки «Назад» и «Дальше» на этом шаге
+              не отрисовываются вовсе. То есть эти две карточки — все выходы,
+              какие есть.
+
+              Правая карточка, «Начать с чистого листа», не делала НИЧЕГО: её
+              обработчик звал только loadDashboard({}), который читает
+              /api/dashboard и больше ничего (useAppLogic.tsx:2732 — ни закрытия
+              настройки, ни смены шага). Экран после нажатия не менялся. Клиника,
+              отказавшаяся от демонстрационных данных, оставалась на первом
+              экране навсегда: единственный работающий выход — левая карточка,
+              то есть ровно то, от чего она отказалась.
+
+              ЧТО ТЕПЕРЬ ДЕЛАЕТ КАЖДАЯ КАРТОЧКА. Левая уводит в рабочее место
+              черновым входом (useAppLogic.tsx:3273) — это и есть «работать
+              можно, настройку закончите позже»: он сохраняет черновик профиля
+              клиники, пишет закрытие настройки и в браузер, и на сервер, и
+              оставляет отметку «настройка не закончена» (её показывает
+              App.tsx:3550). Правая НЕ закрывает мастер, а переводит на второй
+              шаг: у шага «Режим запуска» кнопки «Дальше» нет по построению, и
+              без этого перехода остальные четыре шага мастера были недостижимы
+              вообще.
+
+              ПОЧЕМУ ЧЕРНОВОЙ ВХОД, А НЕ dismissOnboarding. У строгого завершения
+              (useAppLogic.tsx:3225) первым стоит assertOnboardingReadyForFinish:
+              он требует врача с правом подписи ЭМК, кресло, ассистента, часовой
+              пояс. Ничего из этого пять шагов не спрашивают, так что на новой
+              клинике он отказал бы всегда — и отказ этот был бы НЕВИДИМ, потому
+              что setError рисуется ниже, уже в рабочей области. Строгое
+              завершение остаётся у полного мастера настройки в разделе
+              «Клиника», где спрашивают всё нужное.
+
+              ТЕКСТ КАРТОЧЕК ИСПРАВЛЕН ПО ФАКТУ. Обещания «запустить систему с
+              готовыми демонстрационными данными» и «полностью пустая база
+              данных» не выполнял никто: маршрута, который засеивает или чистит
+              базу по нажатию этих карточек, в дереве нет — обе звали один и тот
+              же loadDashboard. Обещание, которого система не держит, дороже
+              отсутствующего: по «полностью пустой базе» клиника начнёт вносить
+              настоящих пациентов рядом с тестовыми.
+            */}
             {onboardingStep === "intro" ? (
               <div className="onboarding-panel">
                 <div>
                   <h3>Режим запуска приложения</h3>
                   <p>
-                    Выберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.
+                    Выберите, с чего начать. Настройку клиники можно закончить позже в разделе «Настройки» — приём,
+                    расписание и картотека работают и без неё.
                   </p>
                 </div>
 
@@ -2154,33 +2223,31 @@ export function App() {
                     type="button"
                     onClick={async () => {
                       setResetting(true);
-                      setOnboardingDismissed(true);
+                      await continueOnboardingInDraftMode();
                       await loadDashboard({});
                       setResetting(false);
                     }}
                     disabled={resetting}
                   >
                     <span className="wizard-mode-icon" aria-hidden="true">🚀</span>
-                    <strong className="wizard-mode-title">Попробовать демо-режим</strong>
+                    <strong className="wizard-mode-title">Сначала осмотреться</strong>
                     <span className="wizard-mode-note">
-                      Запустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.
+                      Открыть рабочее место с тем, что уже есть в базе клиники, и пройтись по разделам. Ничего не
+                      удаляется и не досоздаётся.
                     </span>
                   </button>
 
                   <button
                     className="wizard-mode-card wizard-mode-card--clean"
                     type="button"
-                    onClick={async () => {
-                      setResetting(true);
-                      await loadDashboard({});
-                      setResetting(false);
-                    }}
+                    onClick={() => void moveOnboardingTo("clinic")}
                     disabled={resetting}
                   >
                     <span className="wizard-mode-icon" aria-hidden="true">✨</span>
-                    <strong className="wizard-mode-title">Начать с чистого листа</strong>
+                    <strong className="wizard-mode-title">Настроить клинику сейчас</strong>
                     <span className="wizard-mode-note">
-                      Полностью пустая база данных для настройки клиники с нуля. Вы сможете ввести свои данные, добавить врачей и кабинеты шаг за шагом.
+                      Название и телефон клиники, первый специалист и кресло — по шагам. Выйти в рабочее место можно
+                      на любом шаге.
                     </span>
                   </button>
                 </div>
@@ -2327,11 +2394,50 @@ export function App() {
                   Дальше
                 </button>
               ) : null}
+              {/*
+                «НАЧАТЬ РАБОТУ» ЗВАЛО ФУНКЦИЮ, КОТОРОЙ В ДЕРЕВЕ НЕТ.
+
+                Здесь стояло handleFinishOnboarding(newStaffName, newChairName).
+                Такого имени нет ни в useAppLogic, ни в двух его подмешанных
+                модулях (useTelegramSettings, useAuthLogic), ни в settingsStore,
+                ни в одном другом файле репозитория — оно приходило из
+                деструктуризации appLogicValue и равнялось undefined. То есть
+                последняя кнопка первичной настройки роняла TypeError, ничего не
+                сохраняла и мастер не закрывала. Тип не поймал этого, потому что
+                useAppLogic объявлена как `useAppLogic(): any` — любое имя из
+                такого объекта проходит проверку.
+
+                ЧТО СТАЛО. Кнопка выполняет то, что перечислено в сводке шага
+                «Готово», и ровно теми обработчиками, которыми это делает
+                достижимый мастер настройки: addStaffMember заводит первого
+                специалиста (useAppLogic.tsx:7533, POST /api/settings/staff),
+                addChair — кресло (:7588, POST /api/settings/chairs), после чего
+                черновой вход открывает рабочее место. Роль берётся ту, которую
+                человек выбрал на шаге «Команда»: все пять значений входят в
+                staffRoleSchema, то есть сервер их принимает.
+
+                Оба обработчика сами сообщают о своём отказе через setError, а он
+                теперь виден внутри мастера (полоса выше). Порядок именно такой:
+                сначала завести людей и кресло, потом входить — иначе отказ
+                сервера уехал бы за пределы экрана вместе с мастером.
+              */}
               {onboardingStep === "done" ? (
                 <button
                   className="primary-button"
                   type="button"
-                  onClick={() => void handleFinishOnboarding(newStaffName, newChairName)}
+                  disabled={resetting}
+                  onClick={async () => {
+                    setResetting(true);
+                    if (newStaffName.trim()) await addStaffMember(selectedWorkspaceRole);
+                    if (
+                      (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant") &&
+                      newChairName.trim()
+                    ) {
+                      await addChair();
+                    }
+                    await continueOnboardingInDraftMode();
+                    setResetting(false);
+                  }}
                 >
                   Начать работу
                 </button>
