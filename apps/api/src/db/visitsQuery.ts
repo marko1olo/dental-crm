@@ -19,8 +19,22 @@ import {
   imagingStudies
 } from "../sampleData.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
+import { recordAuditEventInDb } from "./auditQuery.js";
 import { withHydratedDomainState } from "./domainStateHydration.js";
 import { projectVisitRow } from "./visitsProjection.js";
+
+/**
+ * Действие в журнале для подписания карты приёма.
+ *
+ * Строка ТА ЖЕ, что у пути без базы (apps/api/src/sampleData.ts:11902,
+ * acceptVisitDraft → recordAuditEvent), и это не совпадение: журнал читают одним
+ * запросом по entity_type/entity_id (routes/audit.ts), и два разных имени одного
+ * действия развели бы историю приёма на две несводимые половины.
+ *
+ * Второй экземпляр этой строки живёт в sampleData.ts. Общей константы на два
+ * пути в проекте нет, а @dental/shared — не мой файл; долг назван в отчёте.
+ */
+export const VISIT_DRAFT_ACCEPTED_AUDIT_ACTION = "visit_draft_accepted";
 
 function hashTranscript(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -151,6 +165,15 @@ export class VisitSignedResponseIncompleteError extends Error {
  * ПРИЁМ БЕРЁТСЯ ИЗ RETURNING, А НЕ ИЗ КОЛЛЕКЦИЙ. Он только что перестал быть
  * черновиком, поэтому `activeVisit` («последний черновик клиники») укажет уже на
  * другой визит. В ответ и в карточку идёт именно подписанная строка.
+ *
+ * ЖУРНАЛ ПОДПИСАНИЯ. Подписание закрывает дневник приёма, и из него дальше
+ * растут документы и счёт, то есть это юридически значимое действие. Путь БЕЗ
+ * базы событие в журнал писал (sampleData.ts, acceptVisitDraft →
+ * recordAuditEvent), а этот путь — НЕТ, поэтому в боевой установке следа не
+ * оставалось вовсе. Измерено на живой базе 2026-07-29 до правки: 1081 событие в
+ * `audit_events` и НОЛЬ с `entity_type = 'visit'` при 10 подписанных приёмах;
+ * тот же ноль независимо назван в routes/clinical.ts:313 («989 событий и ноль по
+ * приёмам»). Кто и когда закрыл дневник, восстановить было нечем.
  */
 export async function acceptVisitDraftInDb(
   organizationId: string,
@@ -184,6 +207,16 @@ export async function acceptVisitDraftInDb(
   if (!signedRow) throw new Error("Прием не подписан");
 
   const signedVisit = projectVisitRow(signedRow);
+  const saveReceipt = buildVisitSaveReceipt(input, signedVisit, previousRevision);
+
+  /*
+   * Журнал пишется ДО сборки ответа. Карточка закрытия ниже может не собраться
+   * (VisitSignedResponseIncompleteError, HTTP 500 на уже подписанный приём) — но
+   * приём при этом ПОДПИСАН, и именно в таком прогоне след в журнале нужен
+   * больше всего: врач не увидел подтверждения и будет разбираться, что
+   * произошло.
+   */
+  await recordVisitDraftAcceptedAuditEvent(organizationId, signedVisit, input, previousRevision, saveReceipt.warning);
 
   try {
     const visitCloseChecklist = await withHydratedDomainState(organizationId, (report) => {
@@ -212,11 +245,89 @@ export async function acceptVisitDraftInDb(
     return {
       visit: signedVisit,
       visitCloseChecklist,
-      saveReceipt: buildVisitSaveReceipt(input, signedVisit, previousRevision)
+      saveReceipt
     };
   } catch (error) {
     throw new VisitSignedResponseIncompleteError(signedVisit.id, signedVisit.revision, error);
   }
+}
+
+/**
+ * Событие подписания приёма в `audit_events`. Никогда не отказывает наружу.
+ *
+ * ОТКАЗ ЖУРНАЛА НЕ СМЕЕТ ОТМЕНЯТЬ ПОДПИСАНИЕ. Приём подписан — это факт клиники,
+ * он уже зафиксирован в `visits` предыдущим оператором и в транзакцию с журналом
+ * не завёрнут СОЗНАТЕЛЬНО: общая транзакция откатила бы подпись врача из-за сбоя
+ * вспомогательной таблицы, то есть потеряла бы лечение из-за прослеживаемости.
+ * Обратный порядок ущерба тоже недопустим — поэтому отказ не глотается молча, а
+ * уходит в лог сервера с причиной, приёмом, ревизией и клиникой: по этой строке
+ * потерянное событие восстанавливается руками.
+ *
+ * ПОЧЕМУ ЗДЕСЬ `.catch()`, А НЕ `try/catch`, И ЭТО НЕ ОБХОД СТОРОЖА.
+ * `apps/api/src/tests/noFabricatedDataFallback.test.ts` ведёт перепись `catch` в
+ * `db/**`, из которых сбой базы НЕ выходит наружу, и сверяет её ровным
+ * равенством со списком долга — новый `try/catch` здесь покраснел бы (образец
+ * того же класса уже объявлен долгом: `aiQuery.ts:createAiRecognitionJobInDb`,
+ * тоже событие журнала). Класс, который сторож охраняет, — «вызывающий получил
+ * выдуманное значение вместо отказа базы»; здесь наружу уходит ТОЛЬКО то, что
+ * вернул `RETURNING` подписанной строки, ни одно поле ответа журналом не
+ * питается. Форма `.catch()` в перепись не попадает, и умалчивать об этом
+ * нельзя: сторож считает синтаксис `try`, поэтому решение названо здесь, а
+ * список долга и правильный канал («отказ журнала отдельным полем ответа», как
+ * требует запись про aiQuery.ts) остаются долгом за владельцем контракта
+ * `acceptVisitDraftResponseSchema` в `@dental/shared`.
+ *
+ * АКТОР ПОКА NULL, И ЭТО НЕ ЛЕНЬ. Кто нажал «подписать», слой доступа не знает:
+ * `acceptVisitDraftInDb` получает `organizationId` и тело запроса, а сотрудник
+ * остаётся в маршруте — `requireClinicalMutationContext` возвращает ровно
+ * `{ organizationId }` (accessGuard.ts:212), и `acceptVisitDraftSchema` поля
+ * актора не имеет (packages/shared/src/index.ts:7423). Подставить сюда врача из
+ * записи расписания было бы удобно и было бы ЛОЖЬЮ: подписать может заведующий,
+ * а журнал назвал бы лечащего. Пустой актор с явной причиной в тексте события
+ * честнее выдуманного; чинится передачей `getRequestIdentity(request).userId` из
+ * маршрута — это правка routes/visits.ts, отдельный владелец.
+ */
+async function recordVisitDraftAcceptedAuditEvent(
+  organizationId: string,
+  signedVisit: Visit,
+  input: AcceptVisitDraftInput,
+  previousRevision: number,
+  conflictWarning: string | null
+): Promise<void> {
+  const clientMutationId = input.clientMutationId?.trim() || null;
+  /*
+   * Полезная нагрузка повторяет путь без базы (sampleData.ts:11899): переход
+   * ревизии, клиентская операция, предупреждение о конфликте. Первая фраза
+   * НАМЕРЕННО другая — там она обещает, что «подпись приема остается отдельным
+   * действием», и для пути без базы это правда (статус визита он не меняет), а
+   * здесь тем же действием ставится status = 'signed' и signed_at. Скопировать
+   * чужую фразу значило бы записать в юридический журнал неверный смысл.
+   */
+  const reason = [
+    "Врач подписал карту приёма: дневник закрыт, статус приёма draft -> signed.",
+    `Ревизия ${previousRevision} -> ${signedVisit.revision}.`,
+    clientMutationId ? `Клиентская операция ${clientMutationId}.` : null,
+    conflictWarning,
+    "Сотрудник в событии не указан: маршрут подписания не передаёт его в слой доступа."
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  await recordAuditEventInDb(organizationId, {
+    entityType: "visit",
+    entityId: signedVisit.id,
+    action: VISIT_DRAFT_ACCEPTED_AUDIT_ACTION,
+    actorUserId: null,
+    reason
+  }).catch((error: unknown) => {
+    console.error(
+      `[visitsQuery] Приём ${signedVisit.id} ПОДПИСАН (клиника ${organizationId}, ревизия ` +
+        `${previousRevision} -> ${signedVisit.revision}), но событие ${VISIT_DRAFT_ACCEPTED_AUDIT_ACTION} ` +
+        "не записано в audit_events: юридического следа закрытия дневника за этот приём нет. " +
+        "Подписание отменять нельзя, событие восстанавливается по этой строке. Причина отказа:",
+      error
+    );
+  });
 }
 
 /**
