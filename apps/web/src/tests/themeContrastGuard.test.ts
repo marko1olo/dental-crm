@@ -244,6 +244,23 @@ const MEASURED = [
 	{ fg: ".save-pill.save-pill-dirty", bg: ".save-pill.save-pill-dirty", ratios: [15.93, 12.89, 10.56] },
 	{ fg: ".save-pill.save-pill-error", bg: ".save-pill.save-pill-error", ratios: [5.3, 5.26, 4.92] },
 	{ fg: ".save-pill.save-pill-saved", bg: ".save-pill.save-pill-saved", ratios: [4.57, 7.72, 7.26] },
+	/*
+	 * Метка риска в строке пациента. До правки её четыре цвета были литералами и
+	 * давали одно и то же отношение во всех трёх темах — 6.25 у «контроль» и 7.34 у
+	 * «риск», — потому что от темы не зависели вовсе: подложка яркостью 0.830 стояла
+	 * на бумаге яркостью 0.009 в обеих тёмных темах. Текст --ink, а не --warn-fg, по
+	 * той же измеренной причине, что и у плашки сохранения: 4.42 в светлой теме.
+	 */
+	{
+		fg: ".patient-row.risk-watch .patient-row-meta .patient-risk-label",
+		bg: ".patient-row.risk-watch .patient-row-meta .patient-risk-label",
+		ratios: [15.93, 12.89, 10.56],
+	},
+	{
+		fg: ".patient-row.risk-high .patient-row-meta .patient-risk-label",
+		bg: ".patient-row.risk-high .patient-row-meta .patient-risk-label",
+		ratios: [14.52, 13.89, 11.02],
+	},
 ] as const;
 
 /**
@@ -347,6 +364,10 @@ const NO_LITERAL_SELECTORS = [
 	".save-pill.save-pill-dirty",
 	".save-pill.save-pill-error",
 	".save-pill.save-pill-saved",
+	// Метка риска в строке пациента: держала четыре литерала и потому светилась в
+	// обеих тёмных темах. Возврат литерала сюда — возврат того же светлого пятна.
+	".patient-row.risk-watch .patient-row-meta .patient-risk-label",
+	".patient-row.risk-high .patient-row-meta .patient-risk-label",
 ] as const;
 
 const COLOR_PROPERTIES = new Set(["color", "background", "background-color", "border", "border-color", "border-left"]);
