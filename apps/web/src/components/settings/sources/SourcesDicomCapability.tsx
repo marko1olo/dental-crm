@@ -11,7 +11,6 @@ import {
 	FileText,
 	Gauge,
 	History,
-	ImageIcon,
 	Layers3,
 	RefreshCw,
 	RotateCcw,
@@ -19,9 +18,6 @@ import {
 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { CtPlanningToolsPanel } from "../../../ctPlanningTools";
-
-type MprClinicalPreset =
-	import("../../../mprClinicalStatus").MprClinicalPresetFitTarget;
 
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
@@ -37,11 +33,9 @@ import {
 	dicomRenderCachePriorityLabels,
 	dicomSeriesDisplayText,
 	dicomSeriesWarningText,
-	humanizeIntegrationInput,
 	humanizeMigrationText,
 } from "../SettingsViewHelpers";
 
-type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -50,9 +44,26 @@ export function SourcesDicomCapability() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	/*
+	 * `as any` выше не проверяет НИЧЕГО, и это измерено, а не предположено. Копия этого
+	 * механизма с чтением заведомо отсутствующего поля компилируется молча; канарейка
+	 * (`const x: number = "строка"`) в той же копии ошибку даёт, то есть копия была в
+	 * программе. Причина глубже одного каста: `ReturnType<typeof useAppLogicContext>` и
+	 * `ReturnType<typeof useSettingsDerivations>` РАВНЫ `any` (предикат
+	 * `0 extends 1 & T`), а `noImplicitAny: false` в tsconfig.base это скрывает.
+	 *
+	 * Из-за этого здесь жили мёртвые чтения, снятые 2026-07-29 по замеру
+	 * `npx tsc -p apps/web/tsconfig.json --noEmit --noUnusedLocals` (11 TS6133 + 2
+	 * TS6196 в этом файле): `imagingConnectorCards`, `imagingSourceLabels`,
+	 * `downloadDicomViewerToolStateBundle`, `applyIntegrationPreset`,
+	 * `dicomIntegrationProfileLabels`, три карты `integration*Labels`, а также
+	 * `integrationPresets` — поля, которого НЕТ ни в возврате `useAppLogic`, ни в
+	 * возврате `useSettingsDerivations`; настоящий путь —
+	 * `dashboard.clinicSettings.integrationPresets`. Соседние
+	 * `SourcesConnectorGrid`/`SourcesIntegrationPresets` от мешка пропсов отвязаны;
+	 * этот компонент читает из него 130+ имён, и разделить его — отдельная работа.
+	 */
 	const {
-		imagingConnectorCards,
-		imagingSourceLabels,
 		imagingViewerCapabilities,
 		previewDicomSeries,
 		isDicomSeriesPreviewLoading,
@@ -153,10 +164,6 @@ export function SourcesDicomCapability() {
 		dicomRenderMemoryBudgetClassLabels,
 		dicomDiagnosticPixelPolicyLabels,
 		isDicomToolStateBuilding,
-		downloadDicomViewerToolStateBundle,
-		integrationPresets,
-		applyIntegrationPreset,
-		dicomIntegrationProfileLabels,
 		isDicomRenderCachePlanning,
 		dicomWorkstationGuidanceId,
 		buildDicomRenderCachePlan,
@@ -183,10 +190,6 @@ export function SourcesDicomCapability() {
 		setDicomWebCheck,
 		setDicomWebEndpointUrl,
 		dicomWebEndpointUrl,
-
-		integrationCapabilityLabels,
-		integrationStatusLabels,
-		integrationCategoryLabels,
 		dicomViewerLaunchManifest,
 		dicomReadinessCheckLabels,
 		clearDicomWorkbenchRecovery,
@@ -205,11 +208,6 @@ export function SourcesDicomCapability() {
 		dicomWebCheck,
 	} = mergedProps;
 
-	const typedImagingConnectorCards = imagingConnectorCards as Array<{
-		title: string;
-		detail: string;
-		source: string;
-	}>;
 	const typedImagingViewerCapabilities = imagingViewerCapabilities as Array<{
 		icon: any;
 		title: string;
@@ -241,7 +239,6 @@ export function SourcesDicomCapability() {
 	const typedDicomWorkstationReadiness =
 		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
 	const typedDicomRenderCachePlan = mergedProps.dicomRenderCachePlan as any;
-	const typedIntegrationPresets = (integrationPresets ?? []) as Array<any>;
 
 	return (
 		<>
