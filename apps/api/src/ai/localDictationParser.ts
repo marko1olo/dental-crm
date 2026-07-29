@@ -96,10 +96,10 @@ function extractTime(text: string): string | null {
   }
   
   // Fix explicit word matching 'в 10 утра'
-  m = text.match(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:час|утра|дня|вечера))?(?!\s*\d)/i);
-  if (m) {
-    let h = parseInt(m[1] as string, 10);
-    if (isNaN(h)) h = parseWordNumber(m[1] as string) || 0;
+  const explicitMatches = [...text.matchAll(/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:час|часов|утра|дня|вечера))?(?!\s*\d)/gi)];
+  for (const match of explicitMatches) {
+    let h = parseInt(match[1] as string, 10);
+    if (isNaN(h)) h = parseWordNumber(match[1] as string) || 0;
     if (h > 0 && h <= 24) {
       if ((text.includes("дня") || text.includes("вечера")) && h < 12) h += 12;
       return `${h.toString().padStart(2, '0')}:00`;
