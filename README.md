@@ -13,6 +13,42 @@
 </div>
 
 ---
+---
+
+## 📸 Authentic Repository Media & Screenshots Gallery
+
+<p align="center"><i>Showing 24 verified screenshot(s) and visual assets directly from the repository source tree:</i></p>
+
+<div align="center">
+
+<a href=".data/screenshots/mobile-settings-clinic-fixed.png"><img src=".data/screenshots/mobile-settings-clinic-fixed.png" width="48%" alt="mobile settings clinic fixed"/></a> &nbsp; <a href=".data/screenshots/mobile-settings-clinic-fixed2.png"><img src=".data/screenshots/mobile-settings-clinic-fixed2.png" width="48%" alt="mobile settings clinic fixed2"/></a>
+<br/>
+<a href=".data/screenshots/mobile-settings-clinic-ready.png"><img src=".data/screenshots/mobile-settings-clinic-ready.png" width="48%" alt="mobile settings clinic ready"/></a> &nbsp; <a href=".data/screenshots/mobile-settings-clinic.png"><img src=".data/screenshots/mobile-settings-clinic.png" width="48%" alt="mobile settings clinic"/></a>
+<br/>
+<a href=".data/screenshots/mobile-settings-sources-smoke.png"><img src=".data/screenshots/mobile-settings-sources-smoke.png" width="48%" alt="mobile settings sources smoke"/></a> &nbsp; <a href="apps/web/scratch/documents_screenshot.png"><img src="apps/web/scratch/documents_screenshot.png" width="48%" alt="documents screenshot"/></a>
+<br/>
+<a href="apps/web/scratch/screenshots/3_visit.png"><img src="apps/web/scratch/screenshots/3_visit.png" width="48%" alt="3 visit"/></a> &nbsp; <a href="apps/web/scratch/screenshots/5_documents.png"><img src="apps/web/scratch/screenshots/5_documents.png" width="48%" alt="5 documents"/></a>
+<br/>
+<a href="apps/web/scratch/settings_screenshot.png"><img src="apps/web/scratch/settings_screenshot.png" width="48%" alt="settings screenshot"/></a> &nbsp; <a href="apps/web/screenshots/01_dashboard.png"><img src="apps/web/screenshots/01_dashboard.png" width="48%" alt="01 dashboard"/></a>
+<br/>
+<a href="apps/web/screenshots/01_shift_fixed.png"><img src="apps/web/screenshots/01_shift_fixed.png" width="48%" alt="01 shift fixed"/></a> &nbsp; <a href="apps/web/screenshots/02_schedule.png"><img src="apps/web/screenshots/02_schedule.png" width="48%" alt="02 schedule"/></a>
+<br/>
+<a href="apps/web/screenshots/02_schedule_fixed.png"><img src="apps/web/screenshots/02_schedule_fixed.png" width="48%" alt="02 schedule fixed"/></a> &nbsp; <a href="apps/web/screenshots/03_patients.png"><img src="apps/web/screenshots/03_patients.png" width="48%" alt="03 patients"/></a>
+<br/>
+<a href="apps/web/screenshots/03_patients_fixed.png"><img src="apps/web/screenshots/03_patients_fixed.png" width="48%" alt="03 patients fixed"/></a> &nbsp; <a href="apps/web/screenshots/04_settings.png"><img src="apps/web/screenshots/04_settings.png" width="48%" alt="04 settings"/></a>
+<br/>
+<a href="apps/web/screenshots/04_visit_fixed.png"><img src="apps/web/screenshots/04_visit_fixed.png" width="48%" alt="04 visit fixed"/></a> &nbsp; <a href="apps/web/screenshots/05_documents_fixed.png"><img src="apps/web/screenshots/05_documents_fixed.png" width="48%" alt="05 documents fixed"/></a>
+<br/>
+<a href="apps/web/screenshots/05_visit.png"><img src="apps/web/screenshots/05_visit.png" width="48%" alt="05 visit"/></a> &nbsp; <a href="apps/web/screenshots/audit_communications.png"><img src="apps/web/screenshots/audit_communications.png" width="48%" alt="audit communications"/></a>
+<br/>
+<a href="apps/web/screenshots/audit_documents.png"><img src="apps/web/screenshots/audit_documents.png" width="48%" alt="audit documents"/></a> &nbsp; <a href="apps/web/screenshots/audit_patients.png"><img src="apps/web/screenshots/audit_patients.png" width="48%" alt="audit patients"/></a>
+<br/>
+<a href="apps/web/screenshots/audit_schedule.png"><img src="apps/web/screenshots/audit_schedule.png" width="48%" alt="audit schedule"/></a> &nbsp; <a href="apps/web/screenshots/audit_settings.png"><img src="apps/web/screenshots/audit_settings.png" width="48%" alt="audit settings"/></a>
+<br/>
+
+</div>
+
+------
 
 ## 📖 Executive Architectural Overview
 
