@@ -1232,6 +1232,48 @@ function isPricelistServiceRow(item: DentalPricelistItem): boolean {
   return hasExplicitPriceMark(item.sourceText);
 }
 
+/** Формат предупреждения об отброшенных строках. Один владелец на оба режима. */
+const skippedRowsWarningPrefix = "pricelist_rows_skipped:";
+
+function skippedRowsWarnings(skippedRows: number): string[] {
+  return skippedRows > 0 ? [`${skippedRowsWarningPrefix}${skippedRows}`] : [];
+}
+
+/**
+ * ОДНО ПРАВИЛО СУЩЕСТВОВАНИЯ СТРОКИ ПРАЙСА НА ОБА РЕЖИМА РАЗБОРА.
+ *
+ * БЫЛО: у одного и того же прайса было ДВА разных правила. Детерминированная
+ * ветка звала isPricelistServiceRow, считала отброшенные строки и печатала
+ * pricelist_rows_skipped:N. Успешная НЕЙРО-ветка звала responseFromItems напрямую
+ * — без гейта, без счётчика и без предупреждения вовсе, — поэтому запись модели
+ * «Прайс-лист действителен с 01.01.2025» становилась услугой в каталоге, а
+ * потерянные записи не оставляли следа.
+ *
+ * НЕВИДИМА БЫЛА ИМЕННО ЧАСТИЧНАЯ ПОТЕРЯ, и это уточнение существенно: если
+ * itemFromGroq отбросил ВСЕ записи, callGroqPricelist дальше бросает исключение и
+ * ветка откатывается на детерминированный разбор с предупреждением groq_failed: —
+ * такой исход клиника видит. А когда часть записей модели прошла, а часть
+ * исчезла (itemFromGroq отдаёт null на не-объекте и на пустом sourceText), ответ
+ * приходил без единого признака недостачи. Поэтому счётчик обязан быть и в этой
+ * ветке, а не только гейт.
+ *
+ * Это тот же класс «двух владельцев одного правила», за который в этом файле уже
+ * заплачено дважды: свёртка убывающей пары цен жила отдельно на ветке ИИ, а
+ * граница длительности приёма стояла только в durationFromLine.
+ *
+ * `droppedBeforeGate` — записи, потерянные ДО гейта, то есть те, из которых
+ * позиция не собралась вовсе. Складывать их с отброшенными гейтом обязательно:
+ * клинике важно число строк, которые надо проверить руками, а не то, на каком
+ * шаге они выпали.
+ */
+export function selectPricelistServiceRows(
+  parsedRows: DentalPricelistItem[],
+  droppedBeforeGate = 0
+): { items: DentalPricelistItem[]; skippedRows: number } {
+  const items = parsedRows.filter((item) => isPricelistServiceRow(item));
+  return { items, skippedRows: droppedBeforeGate + (parsedRows.length - items.length) };
+}
+
 function analyzePricelistDeterministic(
   request: DentalPricelistAnalysisRequest,
   catalog: ServiceCatalogItem[],
@@ -1240,7 +1282,8 @@ function analyzePricelistDeterministic(
 ): DentalPricelistAnalysisResponse {
   const lines = splitPricelistLines(request.rawText);
   const parsedRows = lines.map((line, index) => buildItemFromLine(line, index + 1, request, catalog));
-  const items = parsedRows.filter((item) => isPricelistServiceRow(item));
+  const selected = selectPricelistServiceRows(parsedRows);
+  const items = selected.items;
   /*
    * УДАЛЕНИЕ СТРОКИ ОБЯЗАНО БЫТЬ ВИДНО КЛИНИКЕ.
    *
@@ -1254,7 +1297,6 @@ function analyzePricelistDeterministic(
    * Счётчик в предупреждении — минимум, который различим на экране: клиника
    * видит, что строк было больше, и знает, сколько проверить руками.
    */
-  const skippedRows = parsedRows.length - items.length;
   const warnings = [...extraWarnings];
   /*
    * no_pricelist_rows_detected ЗНАЧИТ «НИ ОДНОЙ СТРОКИ НЕ ПРИШЛО», а не «все
@@ -1267,7 +1309,7 @@ function analyzePricelistDeterministic(
    * строки, которые уже присланы.
    */
   if (!lines.length) warnings.push("no_pricelist_rows_detected");
-  if (skippedRows > 0) warnings.push(`pricelist_rows_skipped:${skippedRows}`);
+  warnings.push(...skippedRowsWarnings(selected.skippedRows));
   if (request.imageBase64 && !request.useServerAi) warnings.push("image_supplied_but_server_ai_disabled");
   return responseFromItems({
     request,
@@ -1472,7 +1514,35 @@ export function itemFromGroq(raw: unknown, index: number, request: DentalPriceli
   return dentalPricelistItemSchema.safeParse(item).success ? dentalPricelistItemSchema.parse(item) : fallback;
 }
 
-async function callGroqPricelist(request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): Promise<DentalPricelistItem[]> {
+/**
+ * Позиции прайса из массива записей ответа модели — вместе с числом ЗАПИСЕЙ,
+ * которые разобрать не удалось.
+ *
+ * БЫЛО: `rows.map(itemFromGroq).filter(Boolean)` прямо в callGroqPricelist, и
+ * отброшенные записи не считались никем. itemFromGroq отдаёт null на не-объекте и
+ * на пустом sourceText, то есть модель, вернувшая двадцать строк, из которых три
+ * без текста, отдавала семнадцать позиций и НИ ОДНОГО признака недостачи.
+ *
+ * Экспортируется по той же причине, что itemFromGroq: HTTP-путь Groq в этом
+ * окружении не исполняется (ключа нет, платный вызов запрещён), и единственное
+ * честное доказательство — вызвать сборку записей напрямую тем же массивом, какой
+ * возвращает модель.
+ */
+export function pricelistItemsFromGroqRows(
+  rows: unknown[],
+  request: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[]
+): { items: DentalPricelistItem[]; droppedRows: number } {
+  const items = rows
+    .map((row, index) => itemFromGroq(row, index, request, catalog))
+    .filter((item): item is DentalPricelistItem => Boolean(item));
+  return { items, droppedRows: rows.length - items.length };
+}
+
+async function callGroqPricelist(
+  request: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[]
+): Promise<{ items: DentalPricelistItem[]; droppedRows: number }> {
   const modelName = groqPricelistModelName();
   const tried = new Set<string>();
   const maxAttempts = keyRetryLimit(groqProviderId);
@@ -1517,14 +1587,17 @@ async function callGroqPricelist(request: DentalPricelistAnalysisRequest, catalo
       const contentText = contentToString(payload.choices?.[0]?.message?.content);
       const parsed = safeParseJsonObject(contentText);
       const rows = Array.isArray(parsed.items) ? parsed.items : [];
-      const items = rows
-        .map((row, index) => itemFromGroq(row, index, request, catalog))
-        .filter((item): item is DentalPricelistItem => Boolean(item));
-      if (!items.length) {
+      const parsedRows = pricelistItemsFromGroqRows(rows, request, catalog);
+      /*
+       * Отброшены ВСЕ записи — это видимый исход и без счётчика: исключение уводит
+       * ветку в откат на детерминированный разбор с предупреждением groq_failed:.
+       * Считать здесь нечего, чинить надо было частичную потерю.
+       */
+      if (!parsedRows.items.length) {
         throw new Error("Groq returned JSON without pricelist items.");
       }
       recordProviderKeySuccess(groqProviderId, key);
-      return items;
+      return parsedRows;
     } catch (error) {
       lastError = error;
       recordProviderKeyFailure(groqProviderId, key, error);
@@ -1555,12 +1628,26 @@ export async function analyzePricelist(request: DentalPricelistAnalysisRequest, 
   }
 
   try {
-    const items = await callGroqPricelist(request, catalog);
+    const parsedRows = await callGroqPricelist(request, catalog);
+    /*
+     * ГЕЙТ СТРОК И СЧЁТЧИК СТОЯТ И ЗДЕСЬ. Раньше эта ветка звала responseFromItems
+     * напрямую: запись модели «Прайс-лист действителен с 01.01.2025» становилась
+     * услугой каталога, а записи, из которых позиция не собралась, исчезали молча.
+     *
+     * no_pricelist_rows_detected здесь не появляется намеренно: оно значит «строк
+     * не пришло вовсе», а записи модели пришли — просто ни одна не оказалась
+     * услугой. Различие между пустым и отброшенным прайсом одинаково в обеих
+     * ветках.
+     */
+    const selected = selectPricelistServiceRows(parsedRows.items, parsedRows.droppedRows);
     return responseFromItems({
       request,
-      items,
+      items: selected.items,
       parserMode: "groq_json",
-      warnings: request.imageBase64 ? ["photo_ocr_requires_visual_review"] : [],
+      warnings: [
+        ...(request.imageBase64 ? ["photo_ocr_requires_visual_review"] : []),
+        ...skippedRowsWarnings(selected.skippedRows)
+      ],
       aiUsed: true,
       aiReason: "Серверная нейро-проверка разобрала текст или фото; результат проверен схемой перед показом.",
       modelName

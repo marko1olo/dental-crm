@@ -1,7 +1,14 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import type { ServiceCatalogItem } from "@dental/shared";
-import { analyzePricelist } from "./analyzer.js";
+import type {
+	DentalPricelistAnalysisRequest,
+	ServiceCatalogItem,
+} from "@dental/shared";
+import {
+	analyzePricelist,
+	pricelistItemsFromGroqRows,
+	selectPricelistServiceRows,
+} from "./analyzer.js";
 
 /**
  * ГОД РЕДАКЦИИ ПРАЙСА НЕ СТАНОВИТСЯ ЦЕНОЙ УСЛУГИ.
@@ -260,5 +267,143 @@ describe("отказ от года не сломал чтение обычных
 				`услуга исчезла из прайса целиком («${line}»)`,
 			);
 		}
+	});
+});
+
+/**
+ * ВТОРАЯ ЧАСТЬ ЭТОГО ФАЙЛА: У ОДНОГО ПРАЙСА ОДНО ПРАВИЛО СУЩЕСТВОВАНИЯ СТРОКИ,
+ * а не два разных в двух режимах разбора.
+ *
+ * Живёт здесь, а не в отдельном наборе, потому что предмет тот же: строка прайса,
+ * которая либо становится услугой каталога без права на это, либо исчезает молча.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Детерминированная ветка звала isPricelistServiceRow, считала
+ * отброшенные строки и печатала pricelist_rows_skipped:N. Успешная НЕЙРО-ветка
+ * звала responseFromItems напрямую — без гейта, без счётчика, без
+ * no_pricelist_rows_detected вовсе. Значит служебная запись модели («Прайс-лист
+ * действителен с 01.01.2025») становилась услугой каталога, а записи, из которых
+ * позиция не собралась, исчезали без следа: itemFromGroq отдаёт null на не-объекте
+ * и на пустом sourceText.
+ *
+ * НЕВИДИМА БЫЛА ИМЕННО ЧАСТИЧНАЯ ПОТЕРЯ. Если отброшены ВСЕ записи,
+ * callGroqPricelist бросает исключение, ветка откатывается на детерминированный
+ * разбор и клиника видит groq_failed:. А когда часть записей прошла, а часть
+ * исчезла, ответ приходил без единого признака недостачи.
+ *
+ * ЧЕСТНО О ПРЕДЕЛЕ. HTTP-путь Groq в этом окружении не исполняется: ключа
+ * провайдера нет, платный вызов запрещён, а поднять его подделкой fetch значило бы
+ * писать на диск состояние здоровья ключей (recordProviderKeySuccess →
+ * saveKeyHealthToDisk) — общий побочный эффект, которого проверка себе не
+ * позволяет. Поэтому здесь проверяются РОВНО ДВА ШАГА, которые нейро-ветка делает
+ * после ответа модели, — сборка записей и гейт со счётчиком, — тем же кодом, каким
+ * их делает она. Подстановка полученного числа в warnings ответа (две строки в
+ * analyzePricelist) остаётся НЕ ПРОВЕРЕННОЙ, как и весь сквозной путь
+ * POST /api/pricelist/analyze с useServerAi: true.
+ */
+
+/** Запрос того же вида, что приходит на POST /api/pricelist/analyze. */
+const AI_REQUEST: DentalPricelistAnalysisRequest = {
+	sourceName: "year-price-ai-test",
+	sourceKind: "text",
+	rawText: "Коронка 12 500 руб",
+	imageMimeType: "image/jpeg",
+	preferredSpecialty: "universal",
+	useServerAi: true,
+};
+
+/** Служебная строка: услугой не является ни в одном режиме разбора. */
+const SERVICE_HEADER_LINE = "Прайс-лист действителен с 01.01.2025";
+
+/** Настоящая услуга с ценой: обязана выжить в обоих режимах. */
+const REAL_SERVICE_LINE = "Коронка 12 500 руб";
+
+/**
+ * Те же два шага, которые нейро-ветка делает после ответа модели: сборка записей
+ * и гейт со счётчиком отброшенных.
+ */
+function analyzeGroqRows(rows: unknown[]) {
+	const parsed = pricelistItemsFromGroqRows(rows, AI_REQUEST, EMPTY_CATALOG);
+	return selectPricelistServiceRows(parsed.items, parsed.droppedRows);
+}
+
+describe("нейро-ветка считает потерянные строки прайса", () => {
+	test("частичная потеря записей модели больше не молчит", async () => {
+		// Запись без текста и запись-строка вместо объекта — ровно те два случая,
+		// на которых itemFromGroq отдаёт null.
+		const selected = analyzeGroqRows([
+			{ sourceText: REAL_SERVICE_LINE },
+			{},
+			REAL_SERVICE_LINE,
+		]);
+		assert.equal(selected.items.length, 1, "потеряна настоящая услуга");
+		assert.equal(
+			selected.skippedRows,
+			2,
+			"записи модели исчезли, не оставив следа",
+		);
+	});
+
+	test("служебная запись модели услугой каталога не становится", async () => {
+		const selected = analyzeGroqRows([
+			{ sourceText: SERVICE_HEADER_LINE },
+			{ sourceText: REAL_SERVICE_LINE },
+		]);
+		assert.equal(
+			selected.items.length,
+			1,
+			`гейт не применён к записям модели: ${JSON.stringify(selected.items.map((item) => item.title))}`,
+		);
+		assert.equal(selected.items[0]?.priceRub, 12500);
+		assert.equal(selected.skippedRows, 1, "отброшенная запись не посчитана");
+	});
+
+	test("потери на двух шагах складываются в одно число", async () => {
+		// Клинике важно, сколько строк проверить руками, а не на каком шаге они
+		// выпали: одна не собралась в позицию, одна отброшена гейтом.
+		const selected = analyzeGroqRows([
+			{ sourceText: REAL_SERVICE_LINE },
+			{ sourceText: "" },
+			{ sourceText: SERVICE_HEADER_LINE },
+		]);
+		assert.equal(selected.items.length, 1);
+		assert.equal(selected.skippedRows, 2);
+	});
+
+	test("без потерь счётчик не выдумывается", async () => {
+		const selected = analyzeGroqRows([
+			{ sourceText: REAL_SERVICE_LINE },
+			{ sourceText: "Лечение кариеса 1500,50" },
+		]);
+		assert.equal(selected.items.length, 2, "потеряна законная услуга");
+		assert.equal(
+			selected.skippedRows,
+			0,
+			"выдумано отбрасывание строк, которых не было",
+		);
+	});
+});
+
+describe("оба режима разбора дают одно правило существования строки", () => {
+	test("один и тот же прайс даёт одинаковый состав и одинаковый счёт потерь", async () => {
+		const lines = [SERVICE_HEADER_LINE, REAL_SERVICE_LINE];
+
+		const deterministic = await analyze(lines.join("\n"));
+		const neuro = analyzeGroqRows(lines.map((line) => ({ sourceText: line })));
+
+		assert.equal(
+			neuro.items.length,
+			deterministic.items.length,
+			"состав прайса зависит от режима разбора",
+		);
+		assert.deepEqual(
+			neuro.items.map((item) => item.title),
+			deterministic.items.map((item) => item.title),
+			"выжили разные строки",
+		);
+		assert.equal(
+			neuro.skippedRows,
+			skippedRows(deterministic.warnings),
+			"число потерянных строк зависит от режима разбора",
+		);
 	});
 });
