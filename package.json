@@ -14,7 +14,7 @@
 		"typecheck:tests": "npm run typecheck:tests -w @dental/api",
 		"chains": "npm run smoke:chains",
     "smoke:chains": "node scripts/run-chain-proofs.mjs",
-		"smoke:script-guards": "node --test \"scripts/tests/run-chain-proofs.test.mjs\"",
+		"smoke:script-guards": "node --test scripts/tests/*.test.mjs",
 		"check:encoding": "node scripts/check-encoding.mjs",
 		"check:dynamic-imports": "node scripts/check-dynamic-imports.mjs",
 		"check:guarded-headers": "node scripts/check-guarded-route-headers.mjs",

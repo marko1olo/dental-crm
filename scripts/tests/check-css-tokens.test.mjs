@@ -29,7 +29,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -76,6 +76,49 @@ function offenderTotals(output) {
 	const match = output.match(/НЕ РАЗРЕШАЕТСЯ НИ В ОДНОЙ ТЕМЕ:\s+(\d+) имён, (\d+) вхождений/);
 	assert.ok(match, `в выводе нет итоговой строки нарушений:\n${output}`);
 	return { names: Number(match[1]), occurrences: Number(match[2]) };
+}
+
+/**
+ * Список известного долга — ЧИТАЕТСЯ ИЗ ИСХОДНИКА ПРОВЕРКИ, а не повторяется
+ * здесь. Список меняется каждый раз, когда долг платят, и вписанная копия имени
+ * разошлась бы с ним молча — ровно та болезнь, из-за которой эти тесты и
+ * понадобились.
+ *
+ * Читаются ВСЕ записи, а не первая. Первая редакция этих тестов сеяла только
+ * первую и получила расхождение по второй — то есть проверка была права, а тест
+ * неверен. Фикстура обязана удовлетворять список целиком, иначе она проверяет не
+ * то, что заявляет.
+ */
+function debtEntries() {
+	const source = readFileSync(guardPath, "utf8");
+	return [...source.matchAll(/\["(--[\w-]+)",\s*\{\s*occurrences:\s*(\d+),\s*file:\s*"([^"]+)"\s*\}\]/g)].map(
+		(match) => ({ name: match[1], occurrences: Number(match[2]), file: match[3] }),
+	);
+}
+
+/** Путь записи долга -> имя внутри дерева-фикстуры (она пишет от apps/web/src). */
+const fixtureRelative = (repoPath) => repoPath.replace(/^apps\/web\/src\//, "");
+
+/** Светлый литерал: любой запас выше порога яркости годится, важен не оттенок. */
+const LIGHT_FALLBACK = "#f5f3ff";
+
+/**
+ * Css-файлы, в которых каждая запись долга получает ровно столько вхождений со
+ * светлым запасом, сколько в ней записано. Имя из `skip` не сеется вовсе — так
+ * получается расхождение записи с деревом, и ровно одно.
+ */
+function debtSatisfyingCss(entries, skip = null) {
+	const byFile = new Map();
+	for (const entry of entries) {
+		if (entry.name === skip) continue;
+		const key = fixtureRelative(entry.file);
+		const lines = byFile.get(key) ?? [];
+		for (let index = 0; index < entry.occurrences; index += 1) {
+			lines.push(`.debt-${entry.name.slice(2)}-${index} { background: var(${entry.name}, ${LIGHT_FALLBACK}); }`);
+		}
+		byFile.set(key, lines);
+	}
+	return Object.fromEntries([...byFile].map(([file, lines]) => [file, `${lines.join("\n")}\n`]));
 }
 
 test("суффикс класса перед псевдоклассом не считается объявлением токена", () => {
@@ -183,5 +226,72 @@ test("оба промаха на одном входе: проверка нах�
 	}
 	assert.equal(summaryNumber(output, "объявлено переменных в css:"), 0);
 	assert.equal(summaryNumber(output, "имён выставляется из js:"), 0);
+	assert.equal(status, 1);
+});
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ДВА ТЕСТА НА СПИСОК ИЗВЕСТНОГО ДОЛГА — ТОТ САМЫЙ ДЕФЕКТ, ИЗ-ЗА КОТОРОГО ЧЕТЫРЕ
+ * ТЕСТА ВЫШЕ КРАСНЕЛИ, И ОН БЫЛ НЕ В РАЗБОРЩИКЕ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Проверка расхождения списка долга стояла ПЕРЕД всеми списками нарушений и
+ * выходила из процесса сама. Поэтому на дереве, где имени из списка нет, человек
+ * получал одну строку про бухгалтерию — и ни одного настоящего нарушения, хотя
+ * сводка выше их уже посчитала верно. В боевом репозитории это срабатывает в
+ * первый же день, когда кто-то честно закроет долг: гейт краснеет, называет
+ * причиной список, а пропавший текст и прозрачные плашки не печатает вовсе.
+ *
+ * Ни один из пяти тестов выше этого не поймал бы и после починки: у них в дереве
+ * боевого файла нет, значит запись долга к их дереву не относится. Поэтому нужен
+ * вход, где записанный файл ЕСТЬ.
+ */
+
+test("расхождение списка долга не съедает список нарушений", () => {
+	const entries = debtEntries();
+	assert.ok(entries.length > 0, "в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем");
+	const paid = entries[0];
+
+	// Записанный файл в дереве ЕСТЬ, весь список удовлетворён — кроме одного
+	// имени: его долг заплачен, а запись осталась. Это расхождение. Рядом лежит
+	// настоящее нарушение, и оно обязано быть напечатано ПОИМЁННО, а не съедено.
+	const { status, output } = runGuardOn({
+		...debtSatisfyingCss(entries, paid.name),
+		"styles/real-offender.css": ".x { color: var(--definitely-missing-abc); }\n",
+	});
+
+	assert.match(output, /Запись известного долга разошлась с деревом/, "расхождение обязано называться");
+	assert.match(output, new RegExp(`${paid.name}\\b`), "имя из списка долга обязано быть названо");
+	assert.match(
+		output,
+		new RegExp(`записано ${paid.occurrences}, в дереве 0`),
+		"обе величины обязаны стоять рядом в одной строке",
+	);
+	assert.deepEqual(offenderTotals(output), { names: 1, occurrences: 1 });
+	assert.match(output, /--definitely-missing-abc/, "настоящее нарушение обязано попасть в список, а не быть съеденным");
+	assert.equal(status, 1);
+});
+
+test("разрешение долга действует только на записанное место", () => {
+	const entries = debtEntries();
+	assert.ok(entries.length > 0, "в KNOWN_LIGHT_FALLBACK_DEBT нет ни одной записи — механизм разрешений проверять нечем");
+	const moved = entries[0];
+
+	// То же имя, тот же светлый запас, но в ДРУГОМ файле. Пока разрешение
+	// действовало на имя вообще, такое вхождение проходило молча под чужой
+	// записью долга: перенеси нарушение в новый файл — и гейт его не видит.
+	const { status, output } = runGuardOn({
+		...debtSatisfyingCss(entries),
+		"styles/elsewhere.css": `.moved { background: var(${moved.name}, ${LIGHT_FALLBACK}); }\n`,
+	});
+
+	assert.equal(summaryNumber(output, "СВЕТЛЫЙ ЗАПАС ВО ВСЕХ ТЕМАХ:"), 1, "лишнее место обязано краснеть");
+	assert.match(output, /styles\/elsewhere\.css/, "красным обязано стать вхождение в НЕзаписанном файле");
+	assert.doesNotMatch(output, /Запись известного долга разошлась/, "в записанных файлах счёт сошёлся");
+	assert.equal(
+		summaryNumber(output, "известный долг \\(лестницы оттенков\\):"),
+		entries.length,
+		"все записанные места погашены",
+	);
 	assert.equal(status, 1);
 });
