@@ -1,6 +1,6 @@
 import { test, describe, afterEach, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
-import { requireClinicalMutationAccess, requireClinicalReadAccess, configuredClinicalAccessSecret, configuredClinicalMutationSecret, denteAdminSecretHeader } from '../accessGuard.js';
+import { requireClinicalMutationAccess, requireClinicalReadAccess, configuredClinicalAccessSecret, configuredClinicalMutationSecret, denteAdminSecretHeader, namedDevelopmentModeActive, unguardedBypassAllowed } from '../accessGuard.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 describe('accessGuard', () => {
@@ -315,6 +315,71 @@ describe('accessGuard', () => {
         'флаг чтения не должен открывать изменение защищённых данных'
       );
       assert.deepStrictEqual(codes, [503]);
+    });
+  });
+
+  /**
+   * Тот же предикат, но проверенный НАПРЯМУЮ, а не через клинические гейты.
+   *
+   * ЗАЧЕМ ОТДЕЛЬНО. Проверки выше идут через requireClinicalReadAccess и
+   * requireClinicalMutationAccess, то есть привязаны к двум флагам клинических
+   * данных. Обход же нужен и другим участкам — снимкам, расписанию, настройкам,
+   * панели Telegram, — и там условие до сих пор записано пятой копией
+   * `NODE_ENV !== "production"`. Эти проверки закрепляют контракт самой
+   * экспортируемой функции, чтобы участку было на что переписываться и чтобы
+   * условие нельзя было ослабить незаметно для тестов.
+   */
+  describe('unguardedBypassAllowed — предикат обхода сам по себе', () => {
+    const PROBE_FLAG = 'DENTE_TEST_PROBE_ALLOW_UNGUARDED';
+
+    function bypassWith(nodeEnv: string | undefined) {
+      if (nodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = nodeEnv;
+      process.env[PROBE_FLAG] = '1';
+      return unguardedBypassAllowed(PROBE_FLAG);
+    }
+
+    test('пустое окружение плюс флаг обхода НЕ даёт', () => {
+      assert.strictEqual(
+        bypassWith(undefined),
+        false,
+        'ДЕФЕКТ: незаданный NODE_ENV сработал как режим разработки и разрешил обход'
+      );
+      delete process.env.NODE_ENV;
+      assert.strictEqual(namedDevelopmentModeActive(), false);
+    });
+
+    test('названный режим разработки плюс флаг даёт обход', () => {
+      for (const mode of ['development', 'test']) {
+        assert.strictEqual(bypassWith(mode), true, `режим ${mode} должен разрешать обход при флаге`);
+        assert.strictEqual(namedDevelopmentModeActive(), true, `режим ${mode} — названный режим разработки`);
+      }
+    });
+
+    test('production плюс флаг обхода не даёт', () => {
+      assert.strictEqual(bypassWith('production'), false);
+      assert.strictEqual(namedDevelopmentModeActive(), false);
+    });
+
+    /**
+     * Направление отказа: ошибка в имени флага должна ЗАКРЫВАТЬ доступ.
+     * Неизвестная переменная читается как undefined, условие ложно.
+     */
+    test('неизвестное имя флага закрывает доступ, а не открывает', () => {
+      process.env.NODE_ENV = 'development';
+      assert.strictEqual(unguardedBypassAllowed('DENTE_TEST_FLAG_KOTOROGO_NET'), false);
+    });
+
+    test('значение флага, отличное от «1», обхода не даёт', () => {
+      process.env.NODE_ENV = 'development';
+      for (const value of ['0', 'true', 'yes', '', ' 1 ']) {
+        process.env[PROBE_FLAG] = value;
+        assert.strictEqual(
+          unguardedBypassAllowed(PROBE_FLAG),
+          false,
+          `значение «${value}» не должно включать обход`
+        );
+      }
     });
   });
 });
