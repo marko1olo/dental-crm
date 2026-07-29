@@ -52,6 +52,7 @@ export function SettingsProtocolsTab() {
 		documentLabels,
 		imagingKindLabels,
 		applyProtocolTemplate,
+		auth,
 	} = mergedProps;
 
 	const typedProtocolTemplates = (dashboard?.protocolTemplates ||
@@ -98,18 +99,33 @@ export function SettingsProtocolsTab() {
 		setError(null);
 		setLoading(true);
 		try {
-			const clinicToken = localStorage.getItem("dente_clinic_token");
 			const method = editingId ? "PUT" : "POST";
 			const url = editingId
 				? `/api/settings/protocols/${editingId}`
 				: "/api/settings/protocols";
 
+			/*
+			 * ЗАГОЛОВКИ БЕРУТСЯ У ОБЩЕГО ПОМОЩНИКА НАСТРОЕК, А НЕ СОБИРАЮТСЯ ЗДЕСЬ.
+			 *
+			 * БЫЛО: `"x-dente-admin-secret": clinicToken` с пометкой «for fallback
+			 * compatibility» — то есть токен клиники отправлялся ПОД ВИДОМ секрета
+			 * администратора настроек. Это работает ровно до тех пор, пока секрет на
+			 * сервере не задан: тогда охрана настроек пропускает запрос без него
+			 * вовсе. Как только установка получает DENTE_SETTINGS_ADMIN_SECRET —
+			 * а это и есть боевая установка, — сервер сравнивает присланное значение
+			 * с настоящим секретом, не находит совпадения и отвечает 403. Клиника
+			 * теряет возможность завести или исправить шаблон приёма, и причина
+			 * выглядит как «нет прав», хотя права есть.
+			 *
+			 * settingsAccessHeaders отправляет СЕССИОННЫЙ секрет домена настроек —
+			 * тот, который администратор ввёл в разблокировке, — и вместе с ним
+			 * токены клиники и сотрудника, каждый в своём заголовке. Секрета нет —
+			 * заголовка нет вовсе, и сервер отвечает своим человеческим отказом, а
+			 * не сравнивает мусор.
+			 */
 			const res = await fetch(url, {
 				method,
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-admin-secret": clinicToken || "", // For fallback compatibility
-				},
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(editForm),
 			});
 
@@ -137,12 +153,11 @@ export function SettingsProtocolsTab() {
 		if (!confirm("Вы уверены, что хотите удалить этот шаблон?")) return;
 		setLoading(true);
 		try {
-			const clinicToken = localStorage.getItem("dente_clinic_token");
+			// Тот же помощник, что при сохранении: удаление шло тем же путём и тем
+			// же образом упиралось бы в 403 в боевой установке.
 			const res = await fetch(`/api/settings/protocols/${id}`, {
 				method: "DELETE",
-				headers: {
-					"x-dente-admin-secret": clinicToken || "",
-				},
+				headers: auth.settingsAccessHeaders(),
 			});
 
 			if (!res.ok) {
