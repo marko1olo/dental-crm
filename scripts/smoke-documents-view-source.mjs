@@ -51,15 +51,41 @@ requireIn(
 	"requestFailureMessage",
 	"App.tsx must convert document network failures into visible errors.",
 );
+/*
+ * ЗАЩИТА ОТ ДУБЛЯ ЖИВА, НО ЖИВЁТ УЖЕ НЕ В useState.
+ *
+ * Прежние needle требовали именно пару из useState:
+ *   const [documentCreateSavingKind, setDocumentCreateSavingKind]
+ *   const [documentStatusSavingId, setDocumentStatusSavingId]
+ * Состояние переехало в хранилище документов (Zustand): объявление —
+ * store/documentStore.ts:537 и 546, начальные значения и сеттеры — 1671-1674.
+ * Форма useState исчезла, поведение — нет.
+ *
+ * Проверяется теперь САМА ЗАЩИТА, а не способ хранения: ранний возврат с видимым
+ * сообщением до отправки запроса — useAppLogic.tsx:12054-12058 («Дождитесь
+ * завершения текущего создания документа.») и 12391-12395 («Дождитесь завершения
+ * текущего действия с документом.»). Это прочнее прежнего: страж перестаёт
+ * зависеть от того, чем именно держат флаг, и падает только если пропадёт запрет.
+ */
 requireIn(
 	appSource,
-	"const [documentCreateSavingKind, setDocumentCreateSavingKind]",
+	"if (documentCreateSavingKind) {",
 	"App.tsx must guard duplicate document creation.",
 );
 requireIn(
 	appSource,
-	"const [documentStatusSavingId, setDocumentStatusSavingId]",
+	"Дождитесь завершения текущего создания документа.",
+	"Duplicate document creation must be refused with a visible message.",
+);
+requireIn(
+	appSource,
+	"if (documentStatusSavingId) {",
 	"App.tsx must guard duplicate document status actions.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущего действия с документом.",
+	"Duplicate document status action must be refused with a visible message.",
 );
 requireIn(
 	appSource,
@@ -71,10 +97,26 @@ requireIn(
 	"setDocumentStatusSavingId(documentId)",
 	"Document issue/void must mark the active document as saving.",
 );
+/*
+ * ТА ЖЕ ИСТОРИЯ: useState → хранилище документов, а показ на месте.
+ *
+ * Объявление и сеттер — store/documentStore.ts:1382 и 2525-2526. Показывается
+ * это в DocumentsView.tsx:2502-2506, причём как живая область: role="status" и
+ * aria-live="polite" появляются ровно тогда, когда есть текст, — то есть
+ * изменение подставленного текста не только видно, но и объявляется. Требование
+ * «у смены памятки есть видимая обратная связь» проверяется теперь и по
+ * состоянию, и по показу: одного объявления в хранилище мало, его можно и не
+ * нарисовать.
+ */
 requireIn(
 	appSource,
-	"const [postVisitPresetFeedback, setPostVisitPresetFeedback]",
+	"setPostVisitPresetFeedback: createSetter(set, \"postVisitPresetFeedback\")",
 	"Post-visit preset changes must have visible feedback state.",
+);
+requireIn(
+	documentsSource,
+	'role={postVisitPresetFeedback ? "status" : undefined}',
+	"Post-visit preset feedback must be announced when it appears.",
 );
 requireIn(
 	appSource,

@@ -10,11 +10,33 @@ const workspaceStaticOptionsSource = await readFile(
 	"apps/web/src/workspaceStaticOptions.ts",
 	"utf8",
 );
+/*
+ * КОМПОНЕНТЫ РАСПИСАНИЯ ЧИТАЮТСЯ ТОЖЕ.
+ *
+ * ScheduleView разобран на components/schedule/*, и поля ввода даты уехали туда:
+ * требование «редактор записи не показывает сырую ISO-дату» проверяется по
+ * type="datetime-local", а он теперь в AppointmentCard.tsx и
+ * NewAppointmentForm.tsx. В ScheduleView.tsx его больше нет, и страж падал на
+ * верном коде.
+ *
+ * Список перечислен, а не собран обходом каталога: обход подхватил бы новый
+ * компонент молча.
+ */
+const scheduleComponentSources = [
+	"AppointmentCard",
+	"NewAppointmentForm",
+];
+
 const webSource = [
 	appSource,
 	workspaceStaticOptionsSource,
 	await readFile("apps/web/src/SettingsView.tsx", "utf8"),
 	await readFile("apps/web/src/ScheduleView.tsx", "utf8"),
+	...(await Promise.all(
+		scheduleComponentSources.map((name) =>
+			readFile(`apps/web/src/components/schedule/${name}.tsx`, "utf8"),
+		),
+	)),
 ].join("\n");
 const apiSource = await readFile("apps/api/src/sampleData.ts", "utf8");
 const cssSource = await readFile("apps/web/src/styles/main.css", "utf8");
@@ -23,14 +45,63 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
+/*
+ * СРАВНЕНИЕ БЕЗ УЧЁТА ОТСТУПОВ И ПЕРЕНОСОВ.
+ *
+ * Половина утверждений этого стража была написана с отступом в два и четыре
+ * ПРОБЕЛА, а логика приложения давно переформатирована ТАБАМИ, и вызовы разложены
+ * по строкам. Ни одно требование от этого не изменилось — изменился только пробел,
+ * поэтому такие проверки сравниваются на схлопнутых пробелах. Это не смягчение:
+ * порядок токенов и все имена сохраняются полностью, пропадает лишь чувствительность
+ * к работе форматтера, которая красила стража на верном коде.
+ */
+function collapseSpace(value) {
+	/*
+	 * Пробелы убираются ПОЛНОСТЬЮ, а не схлопываются: форматтер не только
+	 * переносит строки, но и ставит пробел после «(» и запятую перед «)» при
+	 * разложении аргументов по строкам. Схлопывания до одного пробела для этого
+	 * мало — «f( a, b, )» так и не совпадёт с «f(a, b)». Порядок токенов и все
+	 * имена при этом сохраняются целиком, поэтому проверка не слабеет; применять
+	 * это можно только к needle с КОДОМ — в человеческом тексте пробелы значимы.
+	 */
+	return value.replace(/\s+/g, "").replace(/,(?=[)\]}])/g, "");
+}
+
+function assertLoose(source, needle, message) {
+	assert(collapseSpace(source).includes(collapseSpace(needle)), message);
+}
+
+/*
+ * ИЗВЛЕЧЕНИЕ ТЕЛА ФУНКЦИИ БЫЛО СЛОМАНО ОТСТУПОМ, И ЭТО ДЕЛАЛО ПРОВЕРКИ ТУПЫМИ.
+ *
+ * Прежняя версия искала конец тела по «\n  async function » и «\n  function » —
+ * то есть по отступу в ДВА ПРОБЕЛА. Логика приложения написана ТАБАМИ: замерено
+ * на живом файле — вхождений с двумя пробелами ноль, с табом сто тридцать одно.
+ * Значит конец не находился никогда, end падал в appSource.length, и «тело
+ * функции addStaffMember» занимало 571 907 символов из 1 029 834 — больше половины
+ * всей склейки, до самого конца AppHelpers.
+ *
+ * Чем это плохо: утверждение «внутри addStaffMember есть такая строка»
+ * превращалось в «где-нибудь ниже по файлам есть такая строка». Проверка,
+ * привязанная к функции, перестаёт отличать её от соседей — а именно на порядок
+ * внутри функции опираются утверждения ниже (сначала сохранить профиль, потом
+ * дёрнуть запрос).
+ *
+ * Теперь конец ищется по ОТСТУПУ ТОЙ ЖЕ ГЛУБИНЫ, что у самой функции, любыми
+ * пробельными символами: следующая функция того же уровня и есть граница тела.
+ * Вложенные функции внутри тела не считаются границей — у них отступ глубже.
+ */
 function functionBody(name) {
 	let start = appSource.indexOf(`async function ${name}`);
 	if (start < 0) start = appSource.indexOf(`function ${name}`);
 	assert(start >= 0, `${name} function missing`);
-	const next = appSource.indexOf("\n  async function ", start + 1);
-	const nextPlain = appSource.indexOf("\n  function ", start + 1);
-	const candidates = [next, nextPlain].filter((value) => value > start);
-	const end = candidates.length ? Math.min(...candidates) : appSource.length;
+
+	const lineStart = appSource.lastIndexOf("\n", start) + 1;
+	const indent = appSource.slice(lineStart, start).match(/^[\t ]*/)?.[0] ?? "";
+	const boundary = new RegExp(`\\n${indent}(?:async )?function `);
+	const rest = appSource.slice(start + 1);
+	const offset = rest.search(boundary);
+	const end = offset >= 0 ? start + 1 + offset : appSource.length;
 	return appSource.slice(start, end);
 }
 
@@ -96,29 +167,50 @@ assert(
 	addStaffMemberBody.includes("setNewStaffSpecialty(selectedSpecialty);"),
 	"staff onboarding must keep selected specialty as the next staff default",
 );
+/*
+ * ОДНОСТРОЧНЫЙ ВОЗВРАТ СТАЛ БЛОКОМ, ПОТОМУ ЧТО ПОЯВИЛАСЬ ЗАЩИТА ОТ ДВОЙНОГО КЛИКА.
+ *
+ * Требовалось «if (!(await saveClinicProfileIfDirty())) return;» — ровно в одну
+ * строку. Сохранение грязного профиля перед созданием сотрудника на месте
+ * (useAppLogic.tsx:7545-7549), но возврат теперь блочный: он ещё снимает
+ * staffCreateInFlightRef и флаг «сохраняю», иначе после отказа кнопка осталась бы
+ * навсегда занятой. Тот же вид у кресла (useAppLogic.tsx:7598-7602).
+ *
+ * Порядок — а он и есть предмет требования — проверяется отдельно: сохранение
+ * профиля обязано стоять ДО запроса на создание. Раньше порядок в этих двух
+ * утверждениях не проверялся вообще, только наличие строки.
+ */
 assert(
-	addStaffMemberBody.includes(
-		"if (!(await saveClinicProfileIfDirty())) return;",
-	),
+	addStaffMemberBody.includes("if (!(await saveClinicProfileIfDirty())) {"),
 	"new staff creation must save dirty clinic profile before inheriting working hours",
+);
+assert(
+	addStaffMemberBody.indexOf("saveClinicProfileIfDirty()") <
+		addStaffMemberBody.indexOf('fetch("/api/settings/staff"'),
+	"new staff creation must save the clinic profile before the create request",
 );
 assert(
 	addChairBody.includes("specialization: selectedSpecialty"),
 	"new chair must inherit selected doctor specialty",
 );
 assert(
-	addChairBody.includes("if (!(await saveClinicProfileIfDirty())) return;"),
+	addChairBody.includes("if (!(await saveClinicProfileIfDirty())) {"),
 	"new chair creation must save dirty clinic profile before inheriting working hours",
 );
 assert(
-	appSource.includes(
-		"useEffect(() => {\n    setNewStaffSpecialty(selectedSpecialty);\n  }, [selectedSpecialty]);",
-	),
+	addChairBody.indexOf("saveClinicProfileIfDirty()") <
+		addChairBody.indexOf('fetch("/api/settings/chairs"'),
+	"new chair creation must save the clinic profile before the create request",
+);
+assertLoose(
+	appSource,
+	"useEffect(() => {\n    setNewStaffSpecialty(selectedSpecialty);\n  }, [selectedSpecialty]);",
 	"onboarding staff specialty default must follow persisted selected specialty",
 );
 assert(
-	appSource.includes("saveOnboardingDismissed(\n      true,") &&
-		appSource.includes("setOnboardingDismissed(true)"),
+	collapseSpace(appSource).includes(
+		collapseSpace("saveOnboardingDismissed(\n      true,"),
+	) && appSource.includes("setOnboardingDismissed(true)"),
 	"onboarding dismissal must persist until reopened",
 );
 assert(
@@ -135,13 +227,13 @@ assert(
 );
 assert(
 	dismissOnboardingBody.includes(
-		"dashboard?.clinicSettings.profile.organizationId ?? null",
+		"dashboard?.clinicSettings?.profile?.organizationId ?? null",
 	),
 	"full onboarding dismissal must write clinic-scoped fallback state",
 );
 assert(
 	continueOnboardingInDraftModeBody.includes(
-		"dashboard?.clinicSettings.profile.organizationId ?? null",
+		"dashboard?.clinicSettings?.profile?.organizationId ?? null",
 	),
 	"draft-mode onboarding dismissal must write clinic-scoped fallback state",
 );
@@ -245,8 +337,9 @@ assert(
 	appSource.includes("saveTelegramSettings()"),
 	"onboarding Telegram must reuse the persistent Telegram settings save",
 );
-assert(
-	appSource.includes('onboardingStep === "telegram" && telegramSettingsDirty'),
+assertLoose(
+	appSource,
+	'onboardingStep === "telegram" && telegramSettingsDirty',
 	"leaving Telegram onboarding must save dirty settings",
 );
 assert(
@@ -377,8 +470,10 @@ assert(
 	continueOnboardingInDraftModeBody.includes(
 		"persistUiPreferences(savedPreferences)",
 	) &&
-		continueOnboardingInDraftModeBody.includes(
-			"saveOnboardingDismissed(\n      true,\n      dismissalSavedAt,\n      true,",
+		collapseSpace(continueOnboardingInDraftModeBody).includes(
+			collapseSpace(
+				"saveOnboardingDismissed(\n      true,\n      dismissalSavedAt,\n      true,",
+			),
 		),
 	"draft-mode onboarding must persist UI preferences before writing the fallback dismissal key",
 );
@@ -394,10 +489,9 @@ assert(
 	appSource.includes("showFullOnboardingGuide"),
 	"first-run guide must have an explicit full/compact render switch",
 );
-assert(
-	appSource.includes(
-		'currentView === "settings" && settingsTab === "clinic" && onboardingGuideExpanded',
-	),
+assertLoose(
+	appSource,
+	'currentView === "settings" && settingsTab === "clinic" && onboardingGuideExpanded',
 	"full first-run wizard must only auto-expand on settings/clinic",
 );
 assert(
@@ -436,9 +530,16 @@ assert(
 	cssSource.includes(".top-actions .secondary-button"),
 	"mobile top actions must keep text buttons readable",
 );
+/*
+ * ТОТ ЖЕ ОТКАТ, ТОЛЬКО С ЗАЩИТНЫМ «?.». Резервный выбор пациента на месте —
+ * hooks/domains/usePatientLogic.ts:134-139: сначала пациент открытого приёма,
+ * затем первый активный, затем первый в списке. Прежний needle требовал
+ * «dashboard.patients.find(...)» без опциональной цепочки и падал на добавленном
+ * «?.», хотя проверка стала строго осторожнее.
+ */
 assert(
 	appSource.includes(
-		'dashboard.patients.find((patient) => patient.status === "active")',
+		'dashboard?.patients?.find((patient) => patient.status === "active")',
 	),
 	"first-run UI must fall back to an active patient instead of endless loading when activeVisit points to missing patient",
 );
@@ -448,15 +549,36 @@ assert(
 		apiSource.includes("activeAppointment.patientId = patient.id"),
 	"first created patient must become the active visit/appointment patient when previous active patient is missing",
 );
+/*
+ * «|| !activePatient» УБРАЛИ ОСОЗНАННО, И ТРЕБОВАТЬ ЕГО НАЗАД НЕЛЬЗЯ.
+ *
+ * Прежний needle требовал «if (!dashboard || !activePatient)». Сейчас загрузочный
+ * барьер разделён: App.tsx:2479-2481 держит только `if (!dashboard)` с той же
+ * подписью «Загрузка рабочей смены», а на отсутствие пациента приложение больше
+ * не встаёт целиком — «!activePatient» в App.tsx не встречается вовсе.
+ *
+ * Это та же поломка, от которой защищает утверждение выше («вместо бесконечной
+ * загрузки подставить активного пациента»): клиника без единого пациента при
+ * прежнем условии не выходила из «Загрузка…» никогда. Родственный случай
+ * подробно описан в самом продукте (App.tsx:2037-2056) — там `if (!dashboard)`
+ * вешал экран навсегда, когда сводка не приходит вообще, и его тоже разобрали.
+ *
+ * Проверяется поэтому то, что требование и означает: барьер существует, назван
+ * по-человечески и опирается на отсутствие данных клиники, а не на отсутствие
+ * пациента.
+ */
 assert(
-	appSource.includes("if (!dashboard || !activePatient)") &&
+	appSource.includes("if (!dashboard) {") &&
 		appSource.includes("Загрузка рабочей смены"),
 	"first-run boot guard must remain explicit and readable",
 );
 assert(
-	dismissOnboardingBody.includes(
-		"await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession)",
-	),
+	!appSource.includes("if (!dashboard || !activePatient)"),
+	"boot guard must not block the whole app on a missing patient: that is the endless-loading trap",
+);
+assertLoose(
+	dismissOnboardingBody,
+	"await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession)",
 	"onboarding dismissal must synchronously persist server UI preferences",
 );
 assert(
@@ -466,10 +588,9 @@ assert(
 		),
 	"full onboarding dismissal must stay open and avoid local dismissal when server preference save fails",
 );
-assert(
-	continueOnboardingInDraftModeBody.includes(
-		"queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 })",
-	),
+assertLoose(
+	continueOnboardingInDraftModeBody,
+	"queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 })",
 	"draft-mode onboarding must queue server preference retry instead of losing the selected configuration",
 );
 assert(
@@ -484,12 +605,26 @@ assert(
 	appSource.includes("кресло / кабинет"),
 	"onboarding readiness must require an active chair",
 );
+/*
+ * ОБРАЩЕНИЯ К СВОДКЕ СТАЛИ ЗАЩИЩЁННЫМИ: «dashboard.activeVisit.appointmentId» →
+ * «dashboard?.activeVisit?.appointmentId», «appointmentReadiness.find» →
+ * «appointmentReadiness?.find» (useScheduleLogic.ts:402-412). Правило блокировки
+ * то же: незакрытые проверки «team» и «schedule» активного приёма попадают в
+ * список препятствий первичной настройки.
+ *
+ * ВНИМАНИЕ НА БУДУЩЕЕ: эта функция существует в продукте ДВАЖДЫ — в
+ * useAppLogic.tsx:2966 и hooks/domains/useScheduleLogic.ts:368, и на сегодня обе
+ * копии побайтово одинаковы (по 1867 символов, сверено программно). Извлекатель
+ * берёт ПЕРВУЮ по порядку склейки, то есть копию из useAppLogic. Если копии
+ * разойдутся, страж будет судить только одну и молчать про другую; сама
+ * двойственность вынесена в очередь как дефект продукта.
+ */
 assert(
 	onboardingFirstAppointmentBody.includes(
-		"dashboard.activeVisit.appointmentId",
+		"dashboard?.activeVisit?.appointmentId",
 	) &&
 		onboardingFirstAppointmentBody.includes(
-			"dashboard.appointmentReadiness.find",
+			"dashboard.appointmentReadiness?.find",
 		) &&
 		onboardingFirstAppointmentBody.includes('check.key === "team"') &&
 		onboardingFirstAppointmentBody.includes('check.key === "schedule"') &&
