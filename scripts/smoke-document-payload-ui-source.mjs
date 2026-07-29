@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import ts from "typescript";
+import {
+	appLogicSourceFiles,
+	readAppLogicSourceSync,
+} from "./lib/app-logic-source.mjs";
 
 /**
  * Формы документов больше не живут одним файлом: семь из них вынесены в
@@ -31,9 +35,30 @@ function documentComponentSources(directory) {
 	return collected;
 }
 
+/*
+ * ТРИ ФАЙЛА, КОТОРЫХ ЗДЕСЬ НЕ ХВАТАЛО. Из 49 пропавших игл 20 обнаружились
+ * целыми в файлах, которые проверка просто не читала:
+ *
+ *   documentLogic.ts       — сборщик содержимого документа. Из useAppLogic сюда
+ *                            вынесены documentPayloadForKind и
+ *                            validateDocumentPayloadForKind вместе с телами всех
+ *                            структурных видов (xrayCbctReferral,
+ *                            outpatientMedicalCard025u, completedWorksAct,
+ *                            treatmentCostEstimate, taxDeductionApplication …).
+ *   documentValidators.ts  — проверки обязательных полей форм.
+ *   AppHelpers.tsx         — локальное восстановление черновиков (loadDraft/
+ *                            saveDraft, normalizeOutpatient025uDocumentDraftFields).
+ *
+ * Ни одна из этих 20 игл не описывала пропавшее поведение — они описывали
+ * поведение, которое ПЕРЕЕХАЛО. Красная проверка на живом коде хуже отсутствующей:
+ * в её красноте не видно настоящей регрессии.
+ */
 const source = [
 	fs.readFileSync("apps/web/src/App.tsx", "utf8"),
 	readAppLogicSourceSync(),
+	fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
+	fs.readFileSync("apps/web/src/documentLogic.ts", "utf8"),
+	fs.readFileSync("apps/web/src/documentValidators.ts", "utf8"),
 	fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
 	...documentComponentSources("apps/web/src/components/documents"),
 	fs.readFileSync("apps/web/src/store/documentStore.ts", "utf8"),
@@ -47,8 +72,6 @@ const requiredSnippets = [
 	"type DocumentPayload",
 	"type DocumentAuditFacts",
 	"structuredPayloadDocumentKinds",
-	"validateDocumentPayloadForKind(kind)",
-	"documentPayloadForKind(kind)",
 	"selectedDocumentKind",
 	"normalizedDocumentKind",
 	"normalizedPatientIntakePregnancyStatus",
@@ -71,7 +94,6 @@ const requiredSnippets = [
 	"telegramCareRequestTaskCareTopics",
 	"telegramDocumentRequestWorkflowDocumentKinds",
 	"telegramCareRequestWorkflowCareTopics",
-	"task.workflowCode ? telegramDocumentRequestWorkflowDocumentKinds[task.workflowCode] : null",
 	'"Пациент запросил налоговые документы": [',
 	'"tax_deduction_certificate"',
 	'"legacy_tax_deduction_certificate"',
@@ -122,7 +144,27 @@ const requiredSnippets = [
 	"selectedDocumentCreateGuidanceId",
 	"selectedDocumentNeedsPayload",
 	"aria-describedby={selectedDocumentCreateGuidanceId}",
-	"Перед созданием CRM проверит обязательные поля этой формы",
+	/*
+	 * СНЯТА ИГЛА «Перед созданием CRM проверит обязательные поля этой формы».
+	 *
+	 * Это было требование ВЕРНУТЬ УЖЕ ПОЧИНЕННЫЙ ДЕФЕКТ. Текст убран намеренно, и
+	 * причина записана рядом с местом правки — DocumentsView.tsx:1161:
+	 *   «Было "Перед созданием CRM проверит обязательные поля" — программа
+	 *    говорила о себе аббревиатурой.»
+	 * Сейчас там: «Заполните форму ниже: без обязательных полей документ не
+	 * создастся.» — то же обещание словами для администратора, а не про CRM.
+	 *
+	 * Этот же страж НИЖЕ запрещает «Telegram-бота DENTE» ровно по той причине
+	 * («must use clinic-facing wording, not internal DENTE wording»). Оставить иглу
+	 * означало бы требовать в одном файле то, что запрещено в другом его абзаце.
+	 *
+	 * Требование сохранено по СУТИ, а не по фразе: подсказка обязана существовать,
+	 * быть привязана к полю через aria-describedby (обе иглы выше) и различать
+	 * случаи «нужна форма» и «можно создать сразу» — это проверяет
+	 * `selectedDocumentNeedsPayload` в паре с `selectedDocumentCreateGuidanceId`.
+	 * Конкретная формулировка требованием не является: она уже менялась один раз
+	 * по делу, и страж не должен запирать её навсегда.
+	 */
 	"documentAuditFacts",
 	"documentAuditFactsLoadingId",
 	"documentIssueSignatureStorageKey",
@@ -132,7 +174,6 @@ const requiredSnippets = [
 	"initialUiPreferences.documentIssueStaffFullName",
 	"initialUiPreferences.documentIssueStaffRole",
 	"loadDocumentIssueSignatureDraft(organizationId",
-	"saveDocumentIssueSignatureDraft(\n      dashboard?.clinicSettings.profile.organizationId ?? null",
 	"setDocumentIssueSignatureMode(normalizedDocumentIssueSignatureMode(event.target.value))",
 	"documentIssueAttestationReady",
 	"documentIssueIdentityChecked",
@@ -160,7 +201,6 @@ const requiredSnippets = [
 	"payloadForDocument",
 	"...(documentPayload ?? {})",
 	"taxPaymentSelection",
-	'taxApplicationForm === "knd_1151156" && normalizedInn && normalizedInn.length !== 12',
 	"12 цифр, если есть",
 	"paid_medical_services_contract",
 	"completed_works_act",
@@ -325,18 +365,10 @@ const requiredSnippets = [
 	"recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true",
 	"outpatient025uOfficialForm274nChecked: candidate.outpatient025uOfficialForm274nChecked === true",
 	"outpatient025uThirdPartyDataChecked: candidate.outpatient025uThirdPartyDataChecked === true",
-	'documentPayloadDraftKey(\n        "outpatient_medical_card_025u",\n        documentLocalPersistenceOrganizationId',
-	'documentPayloadDraftKey(\n        "medical_record_extract",\n        documentLocalPersistenceOrganizationId',
 	"loadOutpatient025uDocumentDraft(",
 	"saveOutpatient025uDocumentDraft(",
 	"loadMedicalRecordExtractDocumentDraft(",
 	"saveMedicalRecordExtractDocumentDraft(",
-	"loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, taxPaymentSelectionPersistenceKey)",
-	"saveDocumentPaymentSelection(\n      documentLocalPersistenceOrganizationId,",
-	"loadOutpatient025uDocumentDraft(documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey)",
-	"saveOutpatient025uDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
-	"loadMedicalRecordExtractDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
-	"saveMedicalRecordExtractDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
 	"outpatient025uDraftPersistenceKey",
 	"outpatient025uDraftHydratedKeyRef",
 	"medicalRecordExtractDraftPersistenceKey",
@@ -345,13 +377,9 @@ const requiredSnippets = [
 	"currentOutpatient025uDocumentDraftFields()",
 	"applyMedicalRecordExtractDocumentDraftFields(",
 	"currentMedicalRecordExtractDocumentDraftFields()",
-	"setRecordExtractPreparedFromSignedRecords(fields.recordExtractPreparedFromSignedRecords)",
 	"setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName)",
 	"setRecordExtractRecipientAuthority(fields.recordExtractRecipientAuthority)",
 	"setRecordExtractIssuedAt(fields.recordExtractIssuedAt)",
-	"setRecordExtractThirdPartyDataChecked(fields.recordExtractThirdPartyDataChecked)",
-	"setOutpatient025uOfficialForm274nChecked(fields.outpatient025uOfficialForm274nChecked)",
-	"setOutpatient025uThirdPartyDataChecked(fields.outpatient025uThirdPartyDataChecked)",
 	"taxPaymentSelectionPersistenceKey",
 	"paymentReceiptSelectionPersistenceKey",
 	"taxPaymentSelectionHydratedKeyRef",
@@ -396,27 +424,229 @@ const requiredSnippets = [
 	"documentPatient",
 	"documentPatientMatchesActiveVisit",
 	"patientId: documentPatient.id",
-	'useState<"" | "1" | "2">("")',
 	"taxDeductionCode: paymentTaxDeductionCode || null",
 	"Не выбран",
 ];
 
+/*
+ * ТРЕБОВАНИЯ-СВЯЗИ ВМЕСТО ТРЕБОВАНИЙ-НАПИСАНИЯ.
+ *
+ * Ниже — иглы, которые краснели НЕ на пропавшем поведении, а на форме записи. Три
+ * причины, все не про документы:
+ *
+ *  1. ПЕРЕНОС СТРОКИ. Игла записывала вызов одной строкой, форматтер разносит его
+ *     по аргументу на строку, потому что одной строкой он длиннее лимита. Так
+ *     краснели все шесть load/save локального восстановления черновиков: адрес
+ *     `loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId,
+ *     taxPaymentSelectionPersistenceKey)` в коде занимает четыре строки.
+ *  2. ОТСТУП. Игла несла 6 пробелов, а файл — табуляции.
+ *  3. `?.`. Игла требовала `dashboard?.clinicSettings.profile.organizationId`,
+ *     а в коде появилась защита от пустых полей:
+ *     `dashboard?.clinicSettings?.profile?.organizationId`. Страж покраснел на
+ *     ДОБАВЛЕННОЙ защите — то есть наказывал за правку в верную сторону.
+ *
+ * Что закрепляется взамен: не обёртка, а СВЯЗЬ. Идентификатор организации идёт
+ * ПЕРВЫМ аргументом в каждый load/save — именно в этом смысл требования, потому
+ * что без него черновики и выбранные чеки одной клиники всплывали бы в другой.
+ * Поменяйте аргументы местами, потеряйте организацию, подставьте чужой ключ —
+ * покраснеет. Переформатируйте — нет.
+ */
+const requiredPatterns = [
+	{
+		pattern: /validateDocumentPayloadForKind\(\s*kind\s*[,)]/,
+		as: "validateDocumentPayloadForKind must be called for the selected kind",
+	},
+	{
+		pattern: /documentPayloadForKind\(\s*kind\s*[,)]/,
+		as: "documentPayloadForKind must be called for the selected kind",
+	},
+	{
+		pattern:
+			/task\.workflowCode\s*\?\s*telegramDocumentRequestWorkflowDocumentKinds\[\s*task\.workflowCode\s*\]\s*:\s*null/,
+		as: "Telegram document request must resolve kinds through the stable workflowCode",
+	},
+	{
+		pattern:
+			/saveDocumentIssueSignatureDraft\(\s*dashboard\??\.clinicSettings\??\.profile\??\.organizationId\s*\?\?\s*null/,
+		as: "document issue signature draft must be saved under the clinic organization id",
+	},
+	{
+		pattern:
+			/taxApplicationForm === "knd_1151156"\s*&&\s*normalizedInn\s*&&\s*normalizedInn\.length !== 12/,
+		as: "KND 1151156 must require a 12-digit taxpayer INN when an INN is given",
+	},
+	{
+		pattern:
+			/documentPayloadDraftKey\(\s*"outpatient_medical_card_025u"\s*,\s*documentLocalPersistenceOrganizationId/,
+		as: "025/u draft key must be scoped by clinic organization id",
+	},
+	{
+		pattern:
+			/documentPayloadDraftKey\(\s*"medical_record_extract"\s*,\s*documentLocalPersistenceOrganizationId/,
+		as: "medical record extract draft key must be scoped by clinic organization id",
+	},
+	{
+		pattern:
+			/loadDocumentPaymentSelection\(\s*documentLocalPersistenceOrganizationId\s*,\s*taxPaymentSelectionPersistenceKey/,
+		as: "tax fiscal receipt selection must be loaded with the clinic organization id first",
+	},
+	{
+		pattern:
+			/saveDocumentPaymentSelection\(\s*documentLocalPersistenceOrganizationId\s*,/,
+		as: "payment selection must be saved with the clinic organization id first",
+	},
+	{
+		pattern:
+			/loadOutpatient025uDocumentDraft\(\s*documentLocalPersistenceOrganizationId\s*,\s*outpatient025uDraftPersistenceKey/,
+		as: "025/u draft must be loaded with the clinic organization id first",
+	},
+	{
+		pattern:
+			/saveOutpatient025uDocumentDraft\(\s*documentLocalPersistenceOrganizationId\s*,/,
+		as: "025/u draft must be saved with the clinic organization id first",
+	},
+	{
+		pattern:
+			/loadMedicalRecordExtractDocumentDraft\(\s*documentLocalPersistenceOrganizationId\s*,/,
+		as: "medical record extract draft must be loaded with the clinic organization id first",
+	},
+	{
+		pattern:
+			/saveMedicalRecordExtractDocumentDraft\(\s*documentLocalPersistenceOrganizationId\s*,/,
+		as: "medical record extract draft must be saved with the clinic organization id first",
+	},
+	{
+		pattern:
+			/setRecordExtractPreparedFromSignedRecords\(\s*fields\.recordExtractPreparedFromSignedRecords\s*,?\s*\)/,
+		as: "restored extract draft must rehydrate the signed-records attestation",
+	},
+	{
+		pattern:
+			/setRecordExtractThirdPartyDataChecked\(\s*fields\.recordExtractThirdPartyDataChecked\s*,?\s*\)/,
+		as: "restored extract draft must rehydrate the third-party data check",
+	},
+	{
+		pattern:
+			/setOutpatient025uOfficialForm274nChecked\(\s*fields\.outpatient025uOfficialForm274nChecked\s*,?\s*\)/,
+		as: "restored 025/u draft must rehydrate the order 274n form check",
+	},
+	{
+		pattern:
+			/setOutpatient025uThirdPartyDataChecked\(\s*fields\.outpatient025uThirdPartyDataChecked\s*,?\s*\)/,
+		as: "restored 025/u draft must rehydrate the third-party data check",
+	},
+	/*
+	 * Игла была `useState<"" | "1" | "2">("")`. Состояние переехало из useState в
+	 * хранилище useDocumentStore, поэтому требовать `useState` — требовать способ
+	 * хранения. Суть требования в другом: код налогового вычета имеет ТРИ значения,
+	 * и третье — пустая строка «не выбран», отличимая от «1» и «2». Подмена пустого
+	 * значения на "1" молча проставила бы вычет там, где его не выбирали, а
+	 * `?? 0`-подобная подстановка напечатала бы неизвестное как измеренное.
+	 */
+	{
+		pattern: /paymentTaxDeductionCode:\s*"" \| "1" \| "2";/,
+		as: 'tax deduction code must stay a tri-state including the explicit "not selected" empty value',
+	},
+	{
+		pattern: /paymentTaxDeductionCode:\s*"",/,
+		as: 'tax deduction code must default to the explicit "not selected" empty value',
+	},
+	{
+		pattern:
+			/selectedPaymentIds:\s*refundSelectedPaymentId\s*\?\s*\[\s*refundSelectedPaymentId\s*\]\s*:\s*\[\s*\]/,
+		as: "refund/correction payload must persist explicit selected source payment ids",
+	},
+];
+
 const missing = requiredSnippets.filter((snippet) => !source.includes(snippet));
+for (const { pattern, as } of requiredPatterns) {
+	if (!pattern.test(source)) missing.push(as);
+}
 
+/*
+ * ГРАНИЦЫ createDocument — У КОМПИЛЯТОРА, И ЭТО ПОЧИНКА ПУСТОЙ ПРОВЕРКИ.
+ *
+ * Здесь стояли две регулярки по тексту. Вторая, `fullCreateDocumentBlock`,
+ * заканчивалась маркером `\n {2}async function updateDocumentStatus` — ДВА
+ * ПРОБЕЛА отступа, тогда как useAppLogic.tsx набран ТАБУЛЯЦИЯМИ. Совпадений
+ * ноль, `?? ""` превращал промах в пустую строку, и опирающаяся на неё проверка
+ *
+ *   if (fullCreateDocumentBlock.includes("patientId: activePatient.id"))
+ *
+ * была ВАКУУМНОЙ: `"".includes(...)` — всегда false, требование не срабатывало
+ * никогда и не сработало бы ни при какой регрессии. Замерено: регулярка не
+ * матчит, `patientId: activePatient.id` в файле ЕСТЬ (useAppLogic.tsx:13523),
+ * просто вне createDocument (12054-12385) — то есть запрет молчал, а не был
+ * выполнен. Проверка, зелёная без правки, — не проверка.
+ *
+ * Тело функции теперь берётся у `ts.createSourceFile`: границы знает парсер,
+ * отступы и соседи не влияют. Часть «до отправки» отрезается от найденного тела
+ * по первому fetch — порядок здесь и есть требование (проверить поля ДО POST).
+ */
+function documentUiFunctionSource(name) {
+	const searchFiles = [
+		"apps/web/src/App.tsx",
+		...appLogicSourceFiles(),
+		"apps/web/src/AppHelpers.tsx",
+		"apps/web/src/DocumentsView.tsx",
+	];
+	for (const file of searchFiles) {
+		let text;
+		try {
+			text = fs.readFileSync(file, "utf8");
+		} catch {
+			continue;
+		}
+		const sourceFile = ts.createSourceFile(
+			file,
+			text,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TSX,
+		);
+		let found = null;
+		const visit = (node) => {
+			if (found) return;
+			const declaresName =
+				(ts.isFunctionDeclaration(node) && node.name?.text === name) ||
+				(ts.isVariableDeclaration(node) &&
+					ts.isIdentifier(node.name) &&
+					node.name.text === name &&
+					node.initializer &&
+					(ts.isArrowFunction(node.initializer) ||
+						ts.isFunctionExpression(node.initializer)));
+			if (declaresName) {
+				found = text.slice(node.getStart(sourceFile), node.getEnd());
+				return;
+			}
+			ts.forEachChild(node, visit);
+		};
+		ts.forEachChild(sourceFile, visit);
+		if (found) return found;
+	}
+	return null;
+}
+
+const fullCreateDocumentBlock = documentUiFunctionSource("createDocument");
+if (!fullCreateDocumentBlock) {
+	missing.push("createDocument declaration not found in document UI sources");
+}
+const createDocumentFetchIndex = fullCreateDocumentBlock
+	? fullCreateDocumentBlock.search(/const response = await fetch\("\/api\/documents"/)
+	: -1;
+if (fullCreateDocumentBlock && createDocumentFetchIndex < 0) {
+	missing.push("createDocument must POST the document to /api/documents");
+}
 const createDocumentBlock =
-	/async function createDocument\(kind: GeneratedDocument\["kind"\]\) \{[\s\S]*?const response = await fetch\("\/api\/documents"/.exec(
-		source,
-	)?.[0] ?? "";
-const fullCreateDocumentBlock =
-	/async function createDocument\(kind: GeneratedDocument\["kind"\]\) \{[\s\S]*?\n {2}async function updateDocumentStatus/.exec(
-		source,
-	)?.[0] ?? "";
+	fullCreateDocumentBlock && createDocumentFetchIndex >= 0
+		? fullCreateDocumentBlock.slice(0, createDocumentFetchIndex)
+		: "";
 
-if (!createDocumentBlock.includes("validateDocumentPayloadForKind(kind)")) {
+if (!/validateDocumentPayloadForKind\(\s*kind\s*[,)]/.test(createDocumentBlock)) {
 	missing.push("createDocument payload validation before fetch");
 }
 
-if (!createDocumentBlock.includes("documentPayloadForKind(kind)")) {
+if (!/documentPayloadForKind\(\s*kind\s*[,)]/.test(createDocumentBlock)) {
 	missing.push("createDocument payload builder before fetch");
 }
 if (!createDocumentBlock.includes("documentPatientMatchesActiveVisit")) {
@@ -429,7 +659,7 @@ if (!source.includes("patientId: documentPatient.id")) {
 		"createDocument must use selected/document patient instead of active visit patient",
 	);
 }
-if (fullCreateDocumentBlock.includes("patientId: activePatient.id")) {
+if (fullCreateDocumentBlock?.includes("patientId: activePatient.id")) {
 	missing.push("createDocument still posts documents for activePatient.id");
 }
 if (source.includes("setSelectedTaxPaymentIds(eligibleTaxPayments.map")) {
@@ -465,15 +695,11 @@ if (
 		"tax payment payload must merge with structured document payload instead of replacing it",
 	);
 }
-if (
-	!source.includes(
-		"selectedPaymentIds: refundSelectedPaymentId ? [refundSelectedPaymentId] : []",
-	)
-) {
-	missing.push(
-		"refund/correction payload must persist explicit selected source payment ids",
-	);
-}
+/*
+ * Требование «возврат несёт явно выбранный чек-источник» переехало в
+ * requiredPatterns: в documentLogic.ts (1236-1238) это тернарник на трёх строках,
+ * и игла в одну строку требовала бы отсутствия переноса.
+ */
 if (
 	!source.includes("selectRefundOriginalPayment") ||
 	!source.includes("eligibleRefundCorrectionPayments")
