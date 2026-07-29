@@ -45,6 +45,13 @@
  *      после main.tsx:16). Значит теневое использование недействительно, и оно
  *      в дереве одно. Счётчик пинуется: появится второе — тест краснеет.
  *
+ * ЧЕТВЁРТЫЙ ТЕСТ ПРОВЕРЯЕТ САМИ ДЕТЕКТОРЫ. На живом дереве первые два молчат — так
+ * и задумано, но такой страж прошёл бы и будучи сломанным: детектор, всегда
+ * возвращающий пустой список, даёт ровно те же три галочки. Поэтому тот же код
+ * гоняется на подделанном входе с заранее известным ответом: одно правило с
+ * дефектом, одно с обоими плечами, одно на токенах, полупрозрачное значение и
+ * светлый запас внутри var(). Ожидается ровно одна находка.
+ *
  * ЧЕГО ТЕСТ НЕ ДЕЛАЕТ. Не вычисляет каскад и не считает контраст: разбор здесь
  * текстовый, по правилам и объявлениям. Числа контраста считаны отдельно и
  * записаны в комментариях рядом с правилами (см. main.css:762-810,
@@ -263,16 +270,18 @@ const normalize = (selector) => selector.replace(/\s+/g, " ").trim();
 const splitSelectorList = (selectorList) => selectorList.split(",").map(normalize).filter(Boolean);
 const stripThemeArms = (selector) => normalize(selector.replace(ANY_ARM, " "));
 
-const allRules = readdirSync(stylesDirectory)
-	.filter((name) => name.endsWith(".css"))
-	.flatMap((name) => parseRules(blankComments(readFileSync(join(stylesDirectory, name), "utf8")), name));
-
-test("правила, переведённые на токены, не возвращают светлый литерал", () => {
+/**
+ * Светлые литералы в охраняемых правилах и охраняемые селекторы, которых в дереве
+ * нет. Вынесено в функцию, чтобы тот же детектор можно было прогнать на
+ * подделанном входе с заранее известным ответом (последний тест файла): страж,
+ * который никогда не краснел, ничего не доказывает.
+ */
+function scanGuarded(rules, guarded) {
 	const seen = new Set();
 	const offenders = [];
-	for (const rule of allRules) {
+	for (const rule of rules) {
 		for (const selector of splitSelectorList(rule.selector)) {
-			if (!GUARDED_SELECTORS.includes(selector)) continue;
+			if (!guarded.includes(selector)) continue;
 			seen.add(selector);
 			for (const hit of lightLiterals(rule.body)) {
 				offenders.push(
@@ -281,28 +290,20 @@ test("правила, переведённые на токены, не возв�
 			}
 		}
 	}
+	return { offenders, missing: guarded.filter((selector) => !seen.has(selector)) };
+}
 
-	const missing = GUARDED_SELECTORS.filter((selector) => !seen.has(selector));
-	assert.deepEqual(
-		missing,
-		[],
-		`охраняемый селектор исчез из дерева — переименован или удалён, охрана стала пустой:\n${missing.join("\n")}`,
-	);
-	assert.deepEqual(
-		offenders,
-		[],
-		`светлый литерал вернулся в правило, переведённое на токен палитры:\n${offenders.join("\n")}\n` +
-			"Плашка станет почти белой в темах «Ночь» и «Тепло», а текст в них светлый.\n" +
-			"Закрывать токеном, объявленным во всех трёх темах (--bad-bg/--warn-bg/--info-bg/--teal-surface).",
-	);
-});
-
-test("тёмное плечо без ночного плеча над светлым литералом: реестр из 24 мест закрыт", () => {
+/**
+ * Базовые селекторы, у которых есть плечо «Ночи», нет плеча «Тепла», а в самом
+ * базовом правиле стоит светлый литерал. Ключ — базовый селектор без плеча темы,
+ * значение — места, чтобы отчёт указывал на файл и строку.
+ */
+function collectDarkWithoutNight(rules) {
 	const nightBases = new Set();
 	const darkBases = new Map();
 	const litBases = new Map();
 
-	for (const rule of allRules) {
+	for (const rule of rules) {
 		for (const selector of splitSelectorList(rule.selector)) {
 			const base = stripThemeArms(selector);
 			if (NIGHT_ARM.test(selector)) {
@@ -324,6 +325,31 @@ test("тёмное плечо без ночного плеча над светл
 		const litAt = litBases.get(base);
 		if (litAt) hits.set(base, `база ${litAt}, плечо «Ночи» ${darkAt}`);
 	}
+	return hits;
+}
+
+const allRules = readdirSync(stylesDirectory)
+	.filter((name) => name.endsWith(".css"))
+	.flatMap((name) => parseRules(blankComments(readFileSync(join(stylesDirectory, name), "utf8")), name));
+
+test("правила, переведённые на токены, не возвращают светлый литерал", () => {
+	const { offenders, missing } = scanGuarded(allRules, GUARDED_SELECTORS);
+	assert.deepEqual(
+		missing,
+		[],
+		`охраняемый селектор исчез из дерева — переименован или удалён, охрана стала пустой:\n${missing.join("\n")}`,
+	);
+	assert.deepEqual(
+		offenders,
+		[],
+		`светлый литерал вернулся в правило, переведённое на токен палитры:\n${offenders.join("\n")}\n` +
+			"Плашка станет почти белой в темах «Ночь» и «Тепло», а текст в них светлый.\n" +
+			"Закрывать токеном, объявленным во всех трёх темах (--bad-bg/--warn-bg/--info-bg/--teal-surface).",
+	);
+});
+
+test("тёмное плечо без ночного плеча над светлым литералом: реестр из 24 мест закрыт", () => {
+	const hits = collectDarkWithoutNight(allRules);
 
 	const added = [...hits.keys()].filter((base) => !KNOWN_DARK_WITHOUT_NIGHT.has(base)).sort();
 	const gone = [...KNOWN_DARK_WITHOUT_NIGHT].filter((base) => !hits.has(base)).sort();
@@ -374,4 +400,50 @@ test("--teal-glow с двумя типами: теневое использов�
 	assert.ok(strip, "правило .onboarding-compact-strip обязано быть в дереве");
 	assert.match(strip.body, /border:[^;]*var\(--line-strong\)/, "рамка полосы готовности стоит на --line-strong");
 	assert.doesNotMatch(strip.body, /var\(--teal-glow\)/, "--teal-glow здесь мог стать тенью и убить рамку целиком");
+});
+
+/**
+ * Оба детектора выше на живом дереве молчат — так и должно быть. Но страж, который
+ * никогда не краснел, ничего не доказывает: три теста прошли бы и с детектором,
+ * возвращающим пустой список всегда. Здесь тот же код гоняется на подделанном
+ * входе с заранее известным ответом.
+ */
+test("детекторы краснеют на подделанном входе, а на токенах молчат", () => {
+	const fixture = parseRules(
+		blankComments(
+			[
+				"/* .plate: ровно прежний дефект — светлый литерал в базе, плечо «Ночи» есть, «Тепла» нет */",
+				".plate { background: #fef2f2; color: var(--ink); }",
+				'[data-theme="dark"] .plate { background: rgba(15, 23, 42, 0.92); }',
+				"/* .plate-ok: тот же светлый литерал, но перечислены ОБА плеча — не дефект этого правила */",
+				".plate-ok { background: #fdf5f5; }",
+				'[data-theme="dark"] .plate-ok { background: #111827; }',
+				'[data-theme="night"] .plate-ok { background: #201010; }',
+				"/* .tokenised: как стало после правки — литералов нет вообще */",
+				".tokenised { background: var(--bad-bg); color: var(--ink); }",
+				"/* полупрозрачное значение не считается светлым: его цвет решает подложка */",
+				".veil { background: rgba(255, 255, 255, 0.3); }",
+				"/* светлый запас внутри var() — область scripts/check-css-tokens.mjs, здесь не считается */",
+				".fallback { background: var(--surface-alt, #f8fafc); }",
+				"/* пример дефекта в комментарии не должен считаться: background: #ffffff */",
+				"",
+			].join("\n"),
+		),
+		"fixture.css",
+	);
+
+	const hits = collectDarkWithoutNight(fixture);
+	assert.deepEqual([...hits.keys()], [".plate"], "дефект — только .plate: у .plate-ok плечо «Тепла» есть");
+	assert.match(hits.get(".plate"), /база fixture\.css:2, плечо «Ночи» fixture\.css:3/);
+
+	const guarded = scanGuarded(fixture, [".plate", ".tokenised", ".veil", ".fallback"]);
+	assert.deepEqual(guarded.missing, [], "все четыре селектора в фикстуре есть");
+	assert.equal(guarded.offenders.length, 1, `светлым литералом обязано быть только .plate:\n${guarded.offenders.join("\n")}`);
+	assert.match(guarded.offenders[0], /^fixture\.css:2\s+\.plate\s+background: #fef2f2 \(яркость 0\.9\d\)$/);
+
+	assert.deepEqual(
+		scanGuarded(fixture, [".renamed-away"]).missing,
+		[".renamed-away"],
+		"переименованный селектор обязан попасть в missing, иначе охрана молча охраняет пустоту",
+	);
 });
