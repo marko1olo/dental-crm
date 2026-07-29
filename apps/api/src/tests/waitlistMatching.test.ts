@@ -19,6 +19,69 @@ import { parsePreferredRanges, parsePreferredWeekday, slotFitsRanges } from "../
  * единственный писатель, и вдобавок игнорировал день недели — человек,
  * просивший вторник, попадал в подбор на пятничное окно.
  */
+describe("разбор дня недели (parsePreferredWeekday)", () => {
+	test("числа от 0 до 6 понимаются как дни недели", () => {
+		assert.equal(parsePreferredWeekday(0), 0);
+		assert.equal(parsePreferredWeekday(3), 3);
+		assert.equal(parsePreferredWeekday(6), 6);
+	});
+
+	test("числа вне диапазона 0-6 возвращают null", () => {
+		assert.equal(parsePreferredWeekday(-1), null);
+		assert.equal(parsePreferredWeekday(7), null);
+		assert.equal(parsePreferredWeekday(10), null);
+	});
+
+	test("строковые числа от 0 до 6 понимаются как дни недели", () => {
+		assert.equal(parsePreferredWeekday("0"), 0);
+		assert.equal(parsePreferredWeekday("3"), 3);
+		assert.equal(parsePreferredWeekday("6"), 6);
+	});
+
+	test("строковые числа вне диапазона возвращают null", () => {
+		assert.equal(parsePreferredWeekday("-1"), null);
+		assert.equal(parsePreferredWeekday("7"), null);
+		assert.equal(parsePreferredWeekday("10"), null);
+	});
+
+	test("названия дней недели на русском и английском (полные и краткие) понимаются правильно", () => {
+		assert.equal(parsePreferredWeekday("понедельник"), 1);
+		assert.equal(parsePreferredWeekday("пн"), 1);
+		assert.equal(parsePreferredWeekday("monday"), 1);
+		assert.equal(parsePreferredWeekday("mon"), 1);
+		assert.equal(parsePreferredWeekday("суббота"), 6);
+		assert.equal(parsePreferredWeekday("сб"), 6);
+		assert.equal(parsePreferredWeekday("saturday"), 6);
+		assert.equal(parsePreferredWeekday("sat"), 6);
+	});
+
+	test("регистр и пробелы игнорируются при разборе названий", () => {
+		assert.equal(parsePreferredWeekday(" Вторник "), 2);
+		assert.equal(parsePreferredWeekday("  WEDNESDAY  "), 3);
+		assert.equal(parsePreferredWeekday("чТ"), 4);
+	});
+
+	test("конкретная дата в формате YYYY-MM-DD преобразуется в день недели", () => {
+		assert.equal(parsePreferredWeekday("2023-10-15"), 0);
+		assert.equal(parsePreferredWeekday("2023-10-18"), 3);
+	});
+
+	test("некорректная дата возвращает null", () => {
+		assert.equal(parsePreferredWeekday("2023-99-99"), null);
+		assert.equal(parsePreferredWeekday("not-a-date"), null);
+	});
+
+	test("пустые строки, null, undefined и другие типы возвращают null", () => {
+		assert.equal(parsePreferredWeekday(""), null);
+		assert.equal(parsePreferredWeekday("   "), null);
+		assert.equal(parsePreferredWeekday(null), null);
+		assert.equal(parsePreferredWeekday(undefined), null);
+		assert.equal(parsePreferredWeekday(true), null);
+		assert.equal(parsePreferredWeekday({}), null);
+		assert.equal(parsePreferredWeekday([]), null);
+	});
+});
+
 describe("контракт поля из POST /api/waitlist", () => {
 	test("форма {day, slot} с интервалом понимается", () => {
 		assert.deepEqual(parsePreferredRanges([{ day: "вт", slot: "10:00-13:00" }]), [
