@@ -10450,7 +10450,32 @@ export function buildDashboard(): Dashboard {
 		scheduleSuggestions: repairMojibakeDeep(
 			buildScheduleSuggestions(appointmentReadiness),
 		),
-		activeVisit: repairMojibakeDeep(activeVisit),
+		/*
+		 * ОТКРЫТОГО ПРИЁМА НЕТ — ТАК И СКАЗАНО, `null`, А НЕ НУЛЕВОЙ УУИД.
+		 *
+		 * `activeVisit` — общий на процесс объект, и гидратация базы кладёт в него
+		 * заготовку с `id = NIL_VISIT_UUID`, когда у клиники нет ни одного приёма
+		 * (`db/domainStateHydration.ts`, noVisitSkeleton). До этой строки заготовка
+		 * уходила в ответ как есть, и главный экран называл администратору
+		 * идентификатор приёма, строки которого в базе нет ни одной — замерено на
+		 * четырёх клиниках с нулём визитов.
+		 *
+		 * Нулевой ууид — НЕПУСТАЯ строка, то есть правдивая в булевом смысле, и
+		 * клиентские сторожа вида `if (!dashboard?.activeVisit?.id) return;` её
+		 * пропускали. Цена записана рядом с каждой заплаткой на клиенте: касса
+		 * отвечала «Прием для оплаты не найден» на нажатие «Принять оплату», а лента
+		 * снимков была пуста ВСЕГДА, пока приём не начат.
+		 *
+		 * Почему `null`, а не отсутствие поля: `null` — это утверждение «открытого
+		 * приёма нет», а отсутствие поля — молчание, которое не отличить от «сервер
+		 * не считал». Поле остаётся обязательным (`visitSchema.nullable()`).
+		 *
+		 * Охраняется `tests/routes/dashboardActiveVisitIsNotFabricated.test.ts`.
+		 * Остальные поля сводки ниже по-прежнему считаются от общего объекта: они
+		 * читают пациента заготовки и дают пустые наборы, это прежнее поведение и
+		 * оно правильное.
+		 */
+		activeVisit: activeVisit.id === NIL_VISIT_UUID ? null : repairMojibakeDeep(activeVisit),
 		visitCloseChecklist: repairMojibakeDeep(
 			buildVisitCloseChecklist(visitCloseChecklistFactsFor(activeVisit)),
 		),

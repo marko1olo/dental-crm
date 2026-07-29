@@ -4405,7 +4405,29 @@ export const dashboardSchema = z.object({
   appointments: z.array(appointmentSchema),
   appointmentReadiness: z.array(appointmentReadinessSchema),
   scheduleSuggestions: z.array(scheduleSuggestionSchema),
-  activeVisit: visitSchema,
+  /*
+   * `null` — ОТКРЫТОГО ПРИЁМА В КЛИНИКЕ НЕТ, И КОНТРАКТ ОБЯЗАН УМЕТЬ ЭТО СКАЗАТЬ.
+   *
+   * Было `visitSchema` без `.nullable()`, а `visitSchema.id` — `z.string().uuid()`,
+   * который не принимает ни `null`, ни пустую строку. То есть сказать «приёма нет»
+   * контракт физически не мог, и сервер говорил это единственным доступным ему
+   * способом — выдумывал приём: `id` и `patientId` из нулей, `status: "draft"`,
+   * `revision: 1`. Строки с таким идентификатором в базе нет ни одной.
+   *
+   * Нулевой ууид — НЕПУСТАЯ строка, поэтому клиентские сторожа
+   * `if (!dashboard?.activeVisit?.id) return;` его пропускали, и выдумка уезжала
+   * дальше как настоящий приём: касса отвечала «Прием для оплаты не найден» на
+   * нажатие «Принять оплату», а лента снимков была пуста всегда, пока приём не
+   * начат — врач не мог открыть ни прошлогоднюю ОПТГ, ни только что загруженный
+   * снимок. Это тот же запрещённый класс, что и неизвестное, напечатанное нулём
+   * (`apps/api/src/tests/unknownIsNotZero.test.ts`), только напечатали не сумму
+   * денег, а идентификатор записи.
+   *
+   * Поле остаётся ОБЯЗАТЕЛЬНЫМ, а не `.optional()`: `null` — это утверждение
+   * «приёма нет», отсутствие поля — молчание, которое не отличить от «сервер не
+   * посчитал».
+   */
+  activeVisit: visitSchema.nullable(),
   visitCloseChecklist: visitCloseChecklistSchema,
   documents: z.array(publicGeneratedDocumentSchema),
   imagingStudies: z.array(imagingStudySchema),

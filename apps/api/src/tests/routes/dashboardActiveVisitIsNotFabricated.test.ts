@@ -29,29 +29,41 @@
  * идентификатор записи, и от настоящего он не отличается ничем.
  *
  * ЧТО ОХРАНЯЕТСЯ ЗДЕСЬ
- *   1. Идентификатор приёма из сводки либо РАЗРЕШАЕТСЯ в строку `visits` этой
- *      клиники, либо равен РОВНО одной объявленной метке «приёма нет». Третьего
- *      быть не может: случайный uuid, идентификатор чужой клиники или уже
- *      удалённый приём — всё это красное.
- *   2. Заготовка «приёма нет» не выдумывает время: два соседних чтения обязаны
- *      совпасть целиком. Сервер не сообщает, что несуществующий приём изменён.
- *   3. Изменяющие маршруты приёма, получив метку, отвечают отказом, который
- *      называет ПРИЧИНУ и ДЕЙСТВИЕ, а не «приём не найден, выберите актуальный».
- *   4. Метка не несёт клинического содержания: жалоба, диагноз, план — пусты.
- *   5. Рабочий путь не сломан: как только приём в клинике есть, `activeVisit` —
- *      это НАСТОЯЩАЯ строка базы, а не заготовка.
+ *   1. Клиника без приёмов получает `activeVisit: null` — РОВНО `null`, а не
+ *      заготовку с нулевым идентификатором и не любой другой неразрешимый uuid.
+ *      Идентификатор приёма, если он есть, обязан РАЗРЕШАТЬСЯ в строку `visits`
+ *      этой клиники. Третьего быть не может.
+ *   2. Поле `activeVisit` в ответе ПРИСУТСТВУЕТ. `null` — это утверждение
+ *      «открытого приёма нет»; отсутствие поля — молчание, которое не отличить от
+ *      «сервер не посчитал».
+ *   3. Ответ проходит `dashboardSchema` разбором. Это и есть доказательство, что
+ *      контракт теперь УМЕЕТ сказать «приёма нет»: пока `activeVisit` был
+ *      объявлен без `.nullable()`, разбор такого ответа падал, и сервер выдумывал
+ *      приём просто потому, что сказать правду ему было нечем.
+ *   4. Два соседних чтения совпадают целиком. Сервер не сообщает, что
+ *      несуществующий приём изменён.
+ *   5. Изменяющие маршруты приёма, получив нулевой идентификатор, отвечают
+ *      отказом, который называет ПРИЧИНУ и ДЕЙСТВИЕ, а не «приём не найден,
+ *      выберите актуальный». Эти две проверки остаются нужными и после того, как
+ *      сводка перестала выдавать метку: нулевой идентификатор всё ещё может
+ *      прийти от клиента со СТАРОЙ сводкой в памяти, и «приём не найден» — ложь
+ *      про приём, которого никто не терял.
+ *   6. Рабочий путь не сломан: как только приём в клинике есть, `activeVisit` —
+ *      это НАСТОЯЩАЯ строка базы.
  *
- * ПОЧЕМУ НЕ ПРОВЕРЯЕТСЯ `activeVisit === null`, хотя правильный ответ именно он.
- * Три независимые причины, каждая проверена по исходнику:
- *   * `dashboardSchema` объявляет `activeVisit: visitSchema` без `.nullable()`
- *     (`packages/shared/src/index.ts:4408`), а `visitSchema.id` — `z.string().uuid()`;
- *   * `activeVisit` — общий на процесс мутируемый объект из `sampleData.ts`,
- *     обновляемый через `Object.assign`;
- *   * клиент разыменовывает `dashboard.activeVisit.appointmentId` БЕЗ `?.`
- *     (`apps/web/src/components/schedule/AppointmentCard.tsx:222`, `:241`) —
- *     на `null` карточка расписания упала бы при отрисовке.
- * Правка, от которой падает экран, хуже дефекта. Долг назван в отчёте и в
- * докстринге `db/domainStateHydration.ts`.
+ * ЧЕГО ЗДЕСЬ БОЛЬШЕ НЕТ И ПОЧЕМУ. До правки этот файл ТРЕБОВАЛ метку: он
+ * проверял, что неразрешимый идентификатор равен ровно нулевому ууиду, и что
+ * поля заготовки пусты. Требование было верным на тот день и названо честно —
+ * убрать метку мешали две вещи вне области того прогона:
+ *   * `dashboardSchema` объявлял `activeVisit: visitSchema` без `.nullable()`, а
+ *     `visitSchema.id` — `z.string().uuid()`, который не принимает ни `null`, ни
+ *     пустую строку;
+ *   * клиент разыменовывал `dashboard.activeVisit.appointmentId` БЕЗ `?.`
+ *     (`apps/web/src/components/schedule/AppointmentCard.tsx`) — на `null`
+ *     карточка расписания падала при отрисовке, а с ней весь экран расписания.
+ * Обе закрыты, поэтому требование перевёрнуто: теперь красным становится сама
+ * выдумка. Утверждения не ослаблены — их стало больше, и метка из разрешённого
+ * значения превратилась в запрещённое.
  *
  * ТРЕБУЕТСЯ живая PostgreSQL (DATABASE_URL из apps/api/.env).
  * ЗАПУСК: cd apps/api && npx tsx --test src/tests/routes/dashboardActiveVisitIsNotFabricated.test.ts
@@ -59,6 +71,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { dashboardSchema } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
@@ -72,11 +85,15 @@ import { signToken } from "../../utils/cryptoHelper.js";
 import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 
 /**
- * ЕДИНСТВЕННОЕ значение, которым сводке разрешено сказать «открытого приёма нет».
- * Записано здесь ЛИТЕРАЛОМ, а не импортом из проверяемого кода: константа,
+ * Нулевой идентификатор — теперь ЗАПРЕЩЁННОЕ значение в сводке, а не разрешённая
+ * метка. Записан здесь ЛИТЕРАЛОМ, а не импортом из проверяемого кода: константа,
  * использованная и в ответе, и в ожидании, подтверждает саму себя.
+ *
+ * Ниже он нужен дважды: как значение, которого в сводке быть НЕ должно, и как
+ * идентификатор, который клиент со старой сводкой в памяти всё ещё присылает в
+ * изменяющие маршруты приёма.
  */
-const DECLARED_NO_VISIT_ID = "00000000-0000-0000-0000-000000000000";
+const NIL_VISIT_ID = "00000000-0000-0000-0000-000000000000";
 
 const NAMESPACE = "dashboardActiveVisitIsNotFabricated";
 /** Клиника без единого приёма — то состояние, в котором подставлялся нулевой id. */
@@ -114,7 +131,14 @@ function headersFor(organizationId: string): Record<string, string> {
 	};
 }
 
-async function readActiveVisit(organizationId: string): Promise<ActiveVisit> {
+/**
+ * Читает сводку и отдаёт поле `activeVisit` как есть — включая `null`.
+ *
+ * Присутствие ключа проверяется здесь же: `null` обязан быть НАПИСАН, а не
+ * получиться из отсутствия поля. Для клиента это разные ответы — «приёма нет» и
+ * «про приём не сказано».
+ */
+async function readActiveVisit(organizationId: string): Promise<ActiveVisit | null> {
 	const response = await app.inject({
 		method: "GET",
 		url: "/api/dashboard",
@@ -125,13 +149,33 @@ async function readActiveVisit(organizationId: string): Promise<ActiveVisit> {
 		200,
 		`Сводка главного экрана не отдана: ${response.statusCode} ${response.body.slice(0, 300)}`,
 	);
-	const parsed = JSON.parse(response.body) as { activeVisit?: ActiveVisit };
+	const parsed = JSON.parse(response.body) as Record<string, unknown>;
 	assert.ok(
-		parsed.activeVisit && typeof parsed.activeVisit === "object",
-		"В сводке нет activeVisit вовсе. Контракт dashboardSchema требует это поле, и клиент " +
-			"разыменовывает его без защиты — экран расписания упал бы при отрисовке.",
+		Object.hasOwn(parsed, "activeVisit"),
+		"В сводке НЕТ ключа activeVisit вовсе. Контракт объявляет поле обязательным и разрешает ему " +
+			"быть только `null`: отсутствие поля — молчание, которое клиент не отличит от «сервер не " +
+			"посчитал», а `null` — утверждение «открытого приёма нет».",
 	);
-	return parsed.activeVisit as ActiveVisit;
+	const active = parsed.activeVisit;
+	assert.ok(
+		active === null || (typeof active === "object" && !Array.isArray(active)),
+		`Поле activeVisit не приём и не null, а ${JSON.stringify(active)}.`,
+	);
+
+	/*
+	 * Разбор контрактом стоит здесь, а не отдельным утверждением: он обязан
+	 * проходить на КАЖДОМ чтении, которое делает этот файл, включая рабочий путь.
+	 * Пока `activeVisit` был объявлен без `.nullable()`, ответ с `null` не прошёл
+	 * бы разбор — именно поэтому сервер и выдумывал приём.
+	 */
+	const contract = dashboardSchema.safeParse(parsed);
+	assert.ok(
+		contract.success,
+		"Сводка не проходит собственный контракт dashboardSchema: " +
+			JSON.stringify(contract.success ? [] : contract.error.issues.slice(0, 6)),
+	);
+
+	return active as ActiveVisit | null;
 }
 
 /** Есть ли в базе строка приёма с таким идентификатором у этой клиники. */
@@ -196,7 +240,7 @@ after(async () => {
 });
 
 describe("GET /api/dashboard: приём в сводке либо есть в базе, либо назван отсутствующим", () => {
-	it("клиника без приёмов: идентификатор приёма не разрешается в строку базы", async () => {
+	it("клиника без приёмов: сводка отдаёт РОВНО null, а не выдуманный приём", async () => {
 		// Посев проверяется отдельно: без этого «приёмов нет» было бы допущением.
 		const seeded = await db.execute<{ n: number }>(
 			sql`select count(*)::int as n from visits where organization_id = ${EMPTY_ORGANIZATION_ID}::uuid`,
@@ -204,52 +248,42 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 		assert.equal(seeded.rows[0]?.n, 0, "У клиники фикстуры не должно быть ни одного приёма.");
 
 		const active = await readActiveVisit(EMPTY_ORGANIZATION_ID);
-		const id = String(active.id ?? "");
 
-		const resolvable = await visitRowExists(EMPTY_ORGANIZATION_ID, id);
 		assert.equal(
-			resolvable,
-			0,
-			"Сводка отдала идентификатор приёма, который в базе есть, хотя приёмов у клиники ноль. Проверка не о том.",
-		);
-		assert.equal(
-			id,
-			DECLARED_NO_VISIT_ID,
-			`Сводка выдала НЕРАЗРЕШИМЫЙ идентификатор приёма «${id}», и это не объявленная метка «приёма нет». ` +
-				"Клиент отличает метку от настоящего приёма только сравнением с одним конкретным значением " +
-				"(apps/web/src/components/visit/visitIdentity.ts, NIL_UUID). Любое другое неразрешимое значение " +
-				"уедет с врачом в кассу и в документы как настоящий приём.",
-		);
-		assert.equal(
-			String(active.patientId ?? ""),
-			DECLARED_NO_VISIT_ID,
-			"Пациент заготовки — не метка. Тогда сводка называет ПАЦИЕНТА, привязанного к приёму, которого нет.",
+			active,
+			null,
+			`У клиники ноль приёмов, а сводка отдала объект приёма ${JSON.stringify(active)}. ` +
+				"Любой приём здесь — выдумка: разрешиться в строку базы он не может, потому что строк нет. " +
+				"Непустой идентификатор проходит клиентские сторожа `if (!dashboard?.activeVisit?.id) return;` " +
+				"как настоящий и уезжает с врачом в кассу и в документы.",
 		);
 	});
 
-	it("заготовка «приёма нет» не несёт клинического содержания", async () => {
-		const active = await readActiveVisit(EMPTY_ORGANIZATION_ID);
+	it("нулевой идентификатор приёма в сводке запрещён отдельным утверждением", async () => {
+		/*
+		 * Отдельная проверка, а не следствие предыдущей: `null` мог бы вернуться, а
+		 * нулевой ууид — уехать в другое поле сводки. Здесь ищется САМА СТРОКА в
+		 * теле ответа на месте приёма, чтобы правка «вернули заготовку, но под
+		 * другим именем» тоже краснела.
+		 */
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/dashboard",
+			headers: headersFor(EMPTY_ORGANIZATION_ID),
+		});
+		const parsed = JSON.parse(response.body) as { activeVisit?: unknown };
+		const printed = JSON.stringify(parsed.activeVisit ?? null);
 
-		for (const [field, value] of [
-			["жалоба", active.complaint],
-			["анамнез", active.anamnesis],
-			["объективный статус", active.objectiveStatus],
-			["диагноз", active.diagnosis],
-			["план лечения", active.treatmentPlan],
-			["заключение врача", active.doctorSummary],
-		] as const) {
-			assert.equal(
-				value,
-				null,
-				`В заготовке «приёма нет» заполнено поле «${field}» значением ${JSON.stringify(value)}. ` +
-					"Это запись о лечении приёма, которого не существует: она уедет в документ и в ЭМК.",
-			);
-		}
+		assert.ok(
+			!printed.includes(NIL_VISIT_ID),
+			`На месте приёма в сводке стоит нулевой идентификатор: ${printed}. Это тот же запрещённый класс, ` +
+				"что и неизвестное, напечатанное нулём (tests/unknownIsNotZero.test.ts) — только напечатали не " +
+				"сумму денег, а идентификатор записи, и от настоящего он не отличается ничем.",
+		);
 		assert.equal(
-			active.organizationId,
-			EMPTY_ORGANIZATION_ID,
-			"Заготовка называет ДРУГУЮ клинику. Доменные коллекции общие на процесс, и это ровно тот путь, " +
-				"которым в ответ попадали реквизиты последней прочитанной чужой клиники.",
+			await visitRowExists(EMPTY_ORGANIZATION_ID, NIL_VISIT_ID),
+			0,
+			"Строка приёма с нулевым идентификатором ЕСТЬ в базе. Тогда проверка не о том, и её надо переписать.",
 		);
 	});
 
@@ -260,35 +294,28 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 		await new Promise((resolve) => setTimeout(resolve, 30));
 		const second = await readActiveVisit(EMPTY_ORGANIZATION_ID);
 
-		assert.equal(
-			second.updatedAt,
-			first.updatedAt,
-			`Время изменения несуществующего приёма разъехалось между двумя чтениями: ` +
-				`${JSON.stringify(first.updatedAt)} против ${JSON.stringify(second.updatedAt)}. ` +
-				"Это выдуманный факт: изменять было нечего. Клиент читает это поле как отметку свежести " +
-				"серверной записи и сравнивает её со временем ЛОКАЛЬНО сохранённого черновика врача " +
-				"(apps/web/src/useAppLogic.tsx) — пока сервер отвечает «изменён сейчас», серверная отметка " +
-				"новее любой локальной всегда, и набранное врачом не восстанавливается никогда.",
-		);
-		assert.equal(second.createdAt, first.createdAt, "Время создания несуществующего приёма тоже меняется от запроса к запросу.");
 		assert.deepEqual(
 			second,
 			first,
-			"Заготовка «приёма нет» отличается между двумя соседними чтениями одной и той же клиники. " +
-				"Про несуществующий приём двух разных ответов быть не может.",
+			"Ответ про отсутствующий приём отличается между двумя соседними чтениями одной клиники. " +
+				"Про несуществующий приём двух разных ответов быть не может. До правки здесь расходилось " +
+				"время изменения: клиент читает его как отметку свежести серверной записи и сравнивает со " +
+				"временем ЛОКАЛЬНО сохранённого черновика врача — пока сервер отвечает «изменён сейчас», " +
+				"серверная отметка новее любой локальной всегда, и набранное врачом не восстанавливается никогда.",
 		);
+		assert.equal(second, null, "Оба чтения совпали, но не на `null`. Совпадение выдумки — всё ещё выдумка.");
 	});
 
 	it("рабочий путь не сломан: при живом приёме сводка отдаёт НАСТОЯЩУЮ строку базы", async () => {
 		const active = await readActiveVisit(STAFFED_ORGANIZATION_ID);
-		const id = String(active.id ?? "");
 
-		assert.notEqual(
-			id,
-			DECLARED_NO_VISIT_ID,
-			"У клиники есть черновик приёма, а сводка отдала метку «приёма нет». Правка сломала главный экран: " +
-				"врач не откроет карту приёма, а касса не примет оплату по нему.",
+		assert.ok(
+			active,
+			"У клиники есть черновик приёма, а сводка отдала `null`. Правка сломала главный экран: врач не " +
+				"откроет карту приёма, а касса не примет оплату по нему.",
 		);
+		const id = String(active.id ?? "");
+		assert.notEqual(id, NIL_VISIT_ID, "Настоящий приём подменён нулевым идентификатором.");
 		assert.equal(
 			await visitRowExists(STAFFED_ORGANIZATION_ID, id),
 			1,
@@ -298,6 +325,12 @@ describe("GET /api/dashboard: приём в сводке либо есть в б
 		assert.equal(active.id, REAL_VISIT_ID, "Сводка назвала не тот приём, что посеян.");
 		assert.equal(active.complaint, "скол пломбы 46", "Настоящие поля приёма потерялись по дороге в сводку.");
 		assert.equal(active.status, "draft");
+		assert.equal(
+			active.organizationId,
+			STAFFED_ORGANIZATION_ID,
+			"Приём в сводке принадлежит ДРУГОЙ клинике. Доменные коллекции общие на процесс, и это ровно тот " +
+				"путь, которым в ответ попадали реквизиты последней прочитанной чужой клиники.",
+		);
 	});
 });
 
@@ -311,7 +344,7 @@ describe("метка «приёма нет» в изменяющих маршр�
 	 * Дефект один и тот же, и разводить его по двум файлам значит потерять связь.
 	 */
 	const nilAutosave = {
-		patientId: DECLARED_NO_VISIT_ID,
+		patientId: NIL_VISIT_ID,
 		selectedSpecialty: "therapist",
 		transcript: "врач набрал текст на клинике, где приём не открыт",
 		draft: {
@@ -331,7 +364,7 @@ describe("метка «приёма нет» в изменяющих маршр�
 	): Promise<{ status: number; body: string; reason: string; message: string }> {
 		const response = await app.inject({
 			method,
-			url: `/api/visits/${DECLARED_NO_VISIT_ID}/draft/${suffix}`,
+			url: `/api/visits/${NIL_VISIT_ID}/draft/${suffix}`,
 			headers: { ...headersFor(EMPTY_ORGANIZATION_ID), "content-type": "application/json" },
 			payload: payload as Record<string, unknown>,
 		});

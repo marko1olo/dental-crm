@@ -4483,11 +4483,28 @@ export function useAppLogic(): any {
 		// Отметки зубов и ИИ-диагнозы относятся к КОНКРЕТНОМУ приёму. Без сброса
 		// они переносились на следующего пациента (см. resetVisitToothState).
 		resetVisitToothState();
-		const savedDraft = loadVisitLocalDraft(
-			dashboard?.activeVisit?.id,
-			activeOrganizationId,
-		);
-		const serverUpdatedAt = Date.parse(dashboard?.activeVisit?.updatedAt);
+		/*
+		 * ЧЕРНОВИК В ПАМЯТИ БРАУЗЕРА ПРИНАДЛЕЖИТ КОНКРЕТНОМУ ПРИЁМУ, А НЕ «ЛЮБОМУ».
+		 *
+		 * Сводка теперь честно отвечает `activeVisit: null`, когда в клинике не
+		 * открыт ни один приём (`dashboardSchema.activeVisit` — `visitSchema.nullable()`).
+		 * До этого сервер подставлял заготовку с нулевым идентификатором, и черновик
+		 * врача сохранялся в памяти браузера под ключом этого несуществующего приёма,
+		 * а затем восстанавливался в СЛЕДУЮЩИЙ открытый приём: ключ у всех «приёмов,
+		 * которых нет», один и тот же. Продиктованное про одного человека всплывало в
+		 * записи другого.
+		 *
+		 * Раннего выхода здесь НЕТ намеренно: ветка `else` ниже очищает поля ЭМК от
+		 * предыдущего приёма (`visitNoteFormFromVisit` на `null` даёт пустую форму).
+		 * Выйти сразу значило бы оставить на экране текст закрытого приёма.
+		 */
+		const openVisitId = dashboard.activeVisit?.id ?? null;
+		const savedDraft = openVisitId
+			? loadVisitLocalDraft(openVisitId, activeOrganizationId)
+			: null;
+		const serverUpdatedAt = dashboard.activeVisit
+			? Date.parse(dashboard.activeVisit.updatedAt)
+			: Number.NaN;
 		const savedAt = savedDraft ? Date.parse(savedDraft.savedAt) : Number.NaN;
 
 		if (savedDraft && Number.isFinite(savedAt) && savedAt > serverUpdatedAt) {
@@ -4556,13 +4573,16 @@ export function useAppLogic(): any {
 	]);
 
 	useEffect(() => {
-		if (!dashboard || !localAutosaveReady) return;
+		// Приёма нет — сохранять черновик некуда. Раньше он уходил под ключ
+		// несуществующего приёма и всплывал у следующего пациента.
+		const openVisitId = dashboard?.activeVisit?.id;
+		if (!dashboard || !localAutosaveReady || !openVisitId) return;
 		const savedAt = new Date().toISOString();
 		const timeout = window.setTimeout(() => {
 			saveVisitLocalDraft(
 				{
 					version: 1,
-					visitId: dashboard?.activeVisit?.id,
+					visitId: openVisitId,
 					savedAt,
 					transcript,
 					selectedSpecialty,
