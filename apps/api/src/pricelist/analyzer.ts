@@ -60,7 +60,13 @@ type GroqChatPayload = {
   };
 };
 
-const groqPromptVersion = "pricelist-json-v1";
+/*
+ * Версия промпта — v2: в системный промпт добавлено перечисление допустимых
+ * значений crownType (их не было, при четырёх перечисленных соседях). Номер
+ * уходит клиенту как groqJsonPromptVersion, поэтому текст промпта нельзя менять,
+ * оставляя прежний номер: тогда номер перестаёт что-либо идентифицировать.
+ */
+const groqPromptVersion = "pricelist-json-v2";
 const maxGroqImagesPerRequest = 1;
 const groqProviderId = "groq_whisper" as const;
 
@@ -1376,7 +1382,8 @@ function groqSystemPrompt(): string {
     "Allowed category values: consultation, therapy, surgery, prosthetics, orthodontics, periodontology, hygiene, imaging, documents, other.",
     "Allowed specialty values: therapist, orthopedist, surgeon, orthodontist, periodontist, hygienist, pediatric, implantologist, radiologist, universal.",
     "Allowed materialKind values: composite, glass_ionomer, sealant, ceramic, zirconia, lithium_disilicate, metal_ceramic, pmma, metal, titanium, implant_system, abutment, bone_graft, membrane, aligner, bracket, fluoride, whitening, anesthetic, imaging, lab, other, unknown.",
-    "Allowed restorationType values: filling, direct_restoration, inlay, onlay, overlay, veneer, crown, bridge, implant_crown, temporary_crown, post_core, denture, ortho_appliance, sealant, whitening, implant, surgical_guide, none, unknown."
+    "Allowed restorationType values: filling, direct_restoration, inlay, onlay, overlay, veneer, crown, bridge, implant_crown, temporary_crown, post_core, denture, ortho_appliance, sealant, whitening, implant, surgical_guide, none, unknown.",
+    "Allowed crownType values: zirconia multilayer, zirconia, lithium disilicate, metal ceramic, temporary PMMA, ceramic, crown. If the crown type is uncertain, use null for crownType: never the word unknown and never free text."
   ].join(" ");
 }
 
