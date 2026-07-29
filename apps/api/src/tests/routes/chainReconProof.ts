@@ -894,8 +894,23 @@ async function main(): Promise<void> {
 		sql`select status::text as status, count(*)::int as n from visits group by status order by status`,
 	);
 
-	console.log("\n=== ШАГ 1. РАЗРЫВ «ПИШЕМ В ОДНУ ТАБЛИЦУ, ЧИТАЕМ ИЗ ДРУГОЙ» ===");
-	await rows(
+	/*
+	 * ЗАГОЛОВОК ЭТОГО ШАГА НАЗЫВАЛ ШОВ РАЗРЫВОМ БЕЗУСЛОВНО — и это устарело.
+	 *
+	 * Замер под ним показывал `plan_items_new: 0, treatment_items: 16` на сумму
+	 * 148 300 ₽, то есть заполнена как раз ДЕНЕЖНАЯ таблица, а заголовок объявлял её
+	 * пустой стороной разрыва. Прогон от такого не падает (слово «РАЗРЫВ» его не
+	 * валит), поэтому неверная картина дерева жила в протоколе, который читают
+	 * глазами, и по ней шли чинить работающее.
+	 *
+	 * Теперь заголовок называет ШОВ, а его состояние выводится из тех же двух чисел
+	 * НИЖЕ запроса. Нарушением это не объявляется: обе таблицы пустые — законное
+	 * состояние свежей установки, а страж, кричащий на верном коде, будет выключен
+	 * (в этом дереве так уже случилось трижды). Утверждение здесь обязано быть
+	 * верным, а не громким.
+	 */
+	console.log("\n=== ШАГ 1. ШОВ «ПИШЕМ В ОДНУ ТАБЛИЦУ, ЧИТАЕМ ИЗ ДРУГОЙ» ===");
+	const seamRows = await rows(
 		"план из odontogram (treatment_plan_items_new) против денежной таблицы (treatment_items)",
 		sql`select
 			(select count(*)::int from treatment_plan_items_new) as plan_items_new,
@@ -904,6 +919,29 @@ async function main(): Promise<void> {
 			(select count(*)::int from treatment_items) as treatment_items,
 			(select coalesce(sum(greatest(unit_price_rub * greatest(quantity,1) - discount_rub, 0)), 0)::numeric(12,2) from treatment_items) as treatment_items_sum`,
 	);
+	const seam = seamRows[0] ?? {};
+	const planSideRows = Number(seam.plan_items_new ?? 0);
+	const moneySideRows = Number(seam.treatment_items ?? 0);
+	const moneySideSum = money(seam.treatment_items_sum);
+	if (planSideRows > 0 && moneySideRows === 0) {
+		console.log(
+			`РАЗРЫВ ЖИВ: план держит ${planSideRows} позиции(й), денежная таблица treatment_items ПУСТА. ` +
+				"Все денежные читатели клиники читают только её, значит главный экран показывает «назначено 0 ₽», " +
+				"а отчёт дебиторки — «должников 0».",
+		);
+	} else if (moneySideRows > 0) {
+		console.log(
+			`ШОВ ЦЕЛ: денежная таблица treatment_items держит ${moneySideRows} строк(и) на ${moneySideSum} ₽ ` +
+				`при ${planSideRows} позиции(ях) в treatment_plan_items_new — деньги плана видят. ` +
+				"Пустой план при заполненной денежной таблице разрывом НЕ является: маршрут сметы проводит позиции " +
+				"в обе таблицы, а часть строк пришла из демо-посева снимков напрямую.",
+		);
+	} else {
+		console.log(
+			"СВЕРЯТЬ НЕЧЕГО: и план, и денежная таблица пусты — состояние шва этим прогоном не подтверждено " +
+				"ни в одну сторону.",
+		);
+	}
 	await rows(
 		"строки «Выполнено:» в тексте плана приёма — читаемы человеком, не программой",
 		sql`select count(*)::int as visits_with_done_text
