@@ -649,6 +649,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     previewImport,
     previewSmartImport,
     previewTelegramTemplate,
+    pricelistAnalysis,
+    pricelistWarningsText,
     recognitionJob,
     recognitionKind,
     recognitionPresets,
@@ -1212,6 +1214,30 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
    */
   if (activeStaffUser?.role === "doctor")
     typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "telegram");
+  /*
+   * Строки прайса, которые разбор просит проверить руками.
+   *
+   * Правило отказа от догадки о цене (apps/api/src/pricelist/analyzer.ts:713)
+   * обосновано тем, что клиника видит price_not_found и проверяет одну строку
+   * руками. Обоснование было ложным для отгруженного интерфейса: analyzer
+   * складывал предупреждения в item.warnings, useAppLogic отдавал
+   * pricelistWarningsText наружу, а нарисовать его не пробовал никто — имя
+   * доезжало до трёх вкладок и в каждой обрывалось на строке деструктуризации.
+   * Отказ выглядел как молчаливая потеря цены.
+   *
+   * Считаю по ВСЕМ позициям, а не по предпросмотру: SettingsPricesTab
+   * показывает только items.slice(0, 12), и за пределами первых двенадцати
+   * строк отказ не был виден вовсе.
+   */
+  const typedPricelistItems = (pricelistAnalysis?.items ?? []) as Array<{
+    id: string;
+    sourceLine: number;
+    title: string;
+    warnings: string[];
+  }>;
+  const pricelistWarningRows = typedPricelistItems.filter(
+    (item) => item.warnings.length > 0,
+  );
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;
@@ -1511,7 +1537,58 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 
         {settingsTab === "rules" ? <SettingsRulesTab /> : null}
 
-        {settingsTab === "prices" ? <SettingsPricesTab /> : null}
+        {settingsTab === "prices" ? (
+          <>
+            {pricelistWarningRows.length > 0 ? (
+              <section
+                aria-label="Строки прайса, требующие ручной проверки"
+                style={{
+                  border: "1px solid var(--warning-color)",
+                  borderRadius: "10px",
+                  padding: "14px 16px",
+                  marginBottom: "16px",
+                  background: "var(--surface-muted)",
+                }}
+              >
+                <strong style={{ color: "var(--warning-color)" }}>
+                  Проверьте руками: строк с предупреждениями —{" "}
+                  {pricelistWarningRows.length} из {typedPricelistItems.length}
+                </strong>
+                <p
+                  style={{
+                    margin: "6px 0 10px",
+                    color: "var(--text-muted)",
+                    fontSize: "13px",
+                  }}
+                >
+                  Разбор не подтвердил эти строки. Откройте исходный прайс,
+                  найдите каждую строку по её номеру и сверьте цену и категорию
+                  вручную: кнопка «Сохранить в каталог клиники» занесёт разобранные
+                  строки как есть, а строку без цены пропустит молча.
+                </p>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: "18px",
+                    maxHeight: "220px",
+                    overflowY: "auto",
+                    fontSize: "13px",
+                  }}
+                >
+                  {pricelistWarningRows.map((item) => (
+                    <li key={item.id} style={{ marginBottom: "4px" }}>
+                      Строка {item.sourceLine} — {item.title}:{" "}
+                      <span style={{ color: "var(--warning-color)" }}>
+                        {pricelistWarningsText(item.warnings)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            <SettingsPricesTab />
+          </>
+        ) : null}
         {settingsTab === "sources" ? <SettingsSourcesTab /> : null}
         {settingsTab === "ai" ? <SettingsAiTab /> : null}
         {settingsTab === "modules" ? <SettingsModulesTab /> : null}
