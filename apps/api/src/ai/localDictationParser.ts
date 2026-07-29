@@ -91,8 +91,21 @@ function extractTime(text: string): string | null {
   if (m) {
     const isQuarter = (m[1] ?? "").includes("четверть");
     const word = (m[2] ?? "").substring(0, 3);
-    const hourMap: Record<string, number> = { "пер": 12, "вто": 13, "тре": 14, "чет": 15, "пят": 16, "шес": 17, "сед": 18, "вос": 19, "дев": 20, "дес": 21, "оди": 10, "две": 11 };
-    if (hourMap[word]) return `${hourMap[word]}:${isQuarter ? "15" : "30"}`;
+    const hourMap: Record<string, number> = { "пер": 12, "вто": 13, "тре": 14, "чет": 15, "пят": 16, "шес": 17, "сед": 18, "вос": 19, "дев": 8, "дес": 9, "оди": 10, "две": 11 };
+    let h = hourMap[word];
+    if (h !== undefined) {
+      if (text.includes("ночи")) {
+         if (h >= 12) h -= 12; // 12 -> 0, 1 -> 1, 2 -> 2
+         else if (h === 11) h += 12; // 11:30 ночи = 23:30
+      } else if (text.includes("дня")) {
+         if (h < 11) h += 12; // 8-10 -> 20-22
+         // 11 stays 11, 12 stays 12
+      } else {
+         if (text.includes("утра") && h >= 12) h -= 12;
+         if (text.includes("вечера") && h < 12) h += 12;
+      }
+      return `${h.toString().padStart(2, '0')}:${isQuarter ? "15" : "30"}`;
+    }
   }
   
   // Fix explicit word matching 'в 10 утра'
