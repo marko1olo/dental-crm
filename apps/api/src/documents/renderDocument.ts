@@ -761,6 +761,31 @@ function treatmentPlanTotalRub(document: GeneratedDocument, context: DocumentRen
   return totalKopecks === null ? null : rublesFromKopecks(totalKopecks);
 }
 
+/**
+ * Остаток к оплате в целых копейках, либо null — «не определяется».
+ *
+ * Неизвестная сумма плана даёт неизвестный остаток, а не нулевой: вычитать
+ * оплаченное из подставленного нуля значит печатать пациенту «вы ничего не
+ * должны» по документу, стоимость которого никто не назвал. Ноль здесь ничем не
+ * отличается от честного «всё оплачено», и именно эта неразличимость и есть
+ * дефект — вместе с тем, что в одной и той же таблице строка «Общая сумма плана»
+ * печатала «не указана», а строка «Остаток» под ней — «0 руб.».
+ */
+function remainingKopecksOrNull(
+  document: GeneratedDocument,
+  context: DocumentRenderContext
+): number | null {
+  const totalKopecks = treatmentPlanTotalKopecks(document, context);
+  if (totalKopecks === null) return null;
+  return Math.max(0, totalKopecks - paidTotalKopecksForDocument(document, context));
+}
+
+/** Тот же остаток в рублях для печати. null уходит в rub() и печатается «не указана». */
+function remainingRubOrNull(document: GeneratedDocument, context: DocumentRenderContext): number | null {
+  const remainingKopecks = remainingKopecksOrNull(document, context);
+  return remainingKopecks === null ? null : rublesFromKopecks(remainingKopecks);
+}
+
 function financialServiceRows(document: GeneratedDocument, context: DocumentRenderContext, includeStatus = false) {
   const services = serviceCatalogMap(context);
   const items = financialDocumentTreatmentItems(document, context);
@@ -819,9 +844,21 @@ function paidTotalForDocument(document: GeneratedDocument, context: DocumentRend
  * через splitKopecks, который гарантирует, что сумма частей РАВНА остатку.
  */
 function installmentRows(document: GeneratedDocument, context: DocumentRenderContext) {
-  const totalKopecks = treatmentPlanTotalKopecks(document, context) ?? 0;
+  const remainingKopecks = remainingKopecksOrNull(document, context);
   const paidKopecks = paidTotalKopecksForDocument(document, context);
-  const remainingKopecks = Math.max(0, totalKopecks - paidKopecks);
+  /*
+   * Сумма плана не определилась — графика оплат нет.
+   *
+   * БЫЛО: `treatmentPlanTotalKopecks(...) ?? 0`. Неизвестная сумма плана
+   * становилась нулём, остаток выходил `max(0, 0 - оплачено)` = 0, ни одна ветка
+   * ниже не срабатывала, и функция печатала пациенту последнюю строку: «План
+   * полностью оплачен — 0 руб.». Про план, чья стоимость неизвестна, а оплат по
+   * которому может не быть вовсе. Это денежный документ: такая строка означает
+   * «клиника ничего вам не выставляет».
+   */
+  if (remainingKopecks === null) {
+    return `<tr><td>Сумма плана не определяется: в плане лечения нет позиций с ценой, а сумма документа не заполнена</td><td>график оплат не построен</td><td>требует заполнения</td></tr>`;
+  }
   const rows: string[] = [];
   if (paidKopecks > 0) {
     rows.push(
@@ -2588,17 +2625,7 @@ function installmentPaymentSchedule(document: GeneratedDocument, context: Docume
     <table>
       ${row("Общая сумма плана", rub(treatmentPlanTotalRub(document, context)))}
       ${row("Оплачено", rub(paidTotalForDocument(document, context)))}
-      ${row(
-        "Остаток",
-        rub(
-          rublesFromKopecks(
-            Math.max(
-              0,
-              (treatmentPlanTotalKopecks(document, context) ?? 0) - paidTotalKopecksForDocument(document, context)
-            )
-          )
-        )
-      )}
+      ${row("Остаток", rub(remainingRubOrNull(document, context)))}
       ${row("Связанный договор/план", document.title)}
     </table>
     <h2>Платежи</h2>

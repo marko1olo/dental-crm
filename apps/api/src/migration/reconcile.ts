@@ -491,7 +491,27 @@ export function reconciliationReportCsv(report: MigrationReconciliationReport): 
         .join(";")
     );
   }
-  if (report.sourceMoneyTotalRub !== null) {
+  /*
+   * ДЕНЬГИ ПЕЧАТАЮТСЯ ВСЕГДА, КОГДА ХОТЬ ОДНА ИЗ ТРЁХ СУММ ИЗВЕСТНА.
+   *
+   * БЫЛО: `if (report.sourceMoneyTotalRub !== null)` — весь денежный раздел акта
+   * исчезал, если не определилась ОДНА из трёх сумм, сумма источника. Вместе с
+   * ней из акта пропадали «Загружено» и «В карантине» — измеренные значения,
+   * которые к неопределившейся сумме источника отношения не имеют. Клиника
+   * подписывала акт о переносе, в котором про деньги не сказано ничего, и
+   * отличить «денег в переносе не было» от «сумму источника определить не
+   * удалось» по такому акту нельзя никак. Молчание — не честность: пустое место
+   * читается как «вопрос не возникал».
+   *
+   * Теперь неизвестная сумма печатается словами «не определяется». Пустая клетка
+   * («») больше не используется: в CSV она неотличима от нуля, потерянного при
+   * открытии в Excel.
+   */
+  const anyMoneyFigure =
+    report.sourceMoneyTotalRub !== null ||
+    report.loadedMoneyTotalRub !== null ||
+    report.quarantinedMoneyTotalRub !== null;
+  if (anyMoneyFigure) {
     lines.push("");
     lines.push("Деньги;Значение");
     /**
@@ -500,10 +520,21 @@ export function reconciliationReportCsv(report: MigrationReconciliationReport): 
      * «24901.5» — точка вместо запятой и один знак копеек; это не денежная
      * запись, и клиника, которая этот акт подписывает, читает её неправильно.
      */
-    const csvMoney = (value: number | null): string => (value === null ? "" : formatKopecksRu(parseKopecks(value)));
+    const csvMoney = (value: number | null): string =>
+      value === null ? "не определяется" : formatKopecksRu(parseKopecks(value));
     lines.push(`Сумма в источнике;${cell(csvMoney(report.sourceMoneyTotalRub))}`);
     lines.push(`Загружено;${cell(csvMoney(report.loadedMoneyTotalRub))}`);
     lines.push(`В карантине;${cell(csvMoney(report.quarantinedMoneyTotalRub))}`);
+    if (report.sourceMoneyTotalRub === null) {
+      lines.push(
+        `Почему сумма в источнике не определяется;${cell(
+          "Независимая сумма платежей источника не посчитана: часть значений в колонке суммы суммой не является, " +
+            "либо перенос шёл потоковым путём, где такая сумма сегодня не считается. Значит проверка «сумма " +
+            "разобранных платежей совпадает с суммой источника» в этом акте НЕ ВЫПОЛНЯЛАСЬ, и полноту переноса " +
+            "денег этот акт не подтверждает — сверьте суммы по выгрузке источника вручную."
+        )}`
+      );
+    }
   }
 
   return lines.join("\r\n");

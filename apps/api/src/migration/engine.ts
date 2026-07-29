@@ -31,7 +31,8 @@ import { missingRequiredFields, resolveDeterministicMapping } from "./mapping.js
 import { parseSource, type ParsedSource, type ParsedTable } from "./parsers/index.js";
 import { reconcileRun } from "./reconcile.js";
 import { transformRow } from "./rowTransform.js";
-import { dateOnlyPart, normalizeMoneyValue, type DateFormatHint } from "./valueNormalize.js";
+import { sourceMoneyTotalFromRows } from "./sourceMoney.js";
+import { dateOnlyPart, type DateFormatHint } from "./valueNormalize.js";
 
 /**
  * Управляющий движок переноса.
@@ -183,11 +184,17 @@ async function prepareSource(input: EngineInput): Promise<{
     if (amountColumn) {
       const index = table.columns.indexOf(amountColumn.sourceColumn);
       if (index >= 0) {
-        // normalizeMoneyValue возвращает копейки — суммируем целые, без потерь.
-        sourceMoneyTotalKopecks = table.rows.reduce((sum, row) => {
-          const parsedAmount = normalizeMoneyValue(row[index] ?? "");
-          return sum + (parsedAmount.value ?? 0);
-        }, 0);
+        const sourceMoney = sourceMoneyTotalFromRows(table.rows, index);
+        sourceMoneyTotalKopecks = sourceMoney.totalKopecks;
+        if (sourceMoney.unreadableCells > 0) {
+          tableWarnings.push(
+            `Сумма платежей источника НЕ ОПРЕДЕЛЯЕТСЯ: ${sourceMoney.unreadableCells} значени(й) в колонке «${amountColumn.sourceColumn}» суммой не являются, и сколько денег в них записано, не знает никто. Сверка не сможет доказать, что деньги перенесены полностью, — исправьте эти значения в источнике или сопоставьте колонку суммы заново.`
+          );
+        } else if (sourceMoney.totalKopecks === null) {
+          tableWarnings.push(
+            `Сумма платежей источника НЕ ОПРЕДЕЛЯЕТСЯ: в колонке «${amountColumn.sourceColumn}» не заполнено ни одно значение. Сверка сможет сравнить только строки, но не деньги.`
+          );
+        }
       }
     }
 
@@ -408,8 +415,23 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
     let quarantinedTotal = 0;
     /** Точная сумма платежей источника в копейках — независимая точка отсчёта сверки. */
     let sourceMoneyTotalKopecks: number | null = null;
+    /**
+     * Хотя бы одна таблица с платежами, чью сумму определить не удалось, делает
+     * НЕОПРЕДЕЛИМОЙ сумму всего прогона.
+     *
+     * БЫЛО: `sourceMoneyTotalKopecks = (sourceMoneyTotalKopecks ?? 0) + prepared…`
+     * с пропуском null-таблиц. Тот же дефект, что и внутри таблицы, но на уровень
+     * выше: из двух таблиц с платежами одна могла быть неопределимой, и её деньги
+     * входили в итог слагаемым 0. Сверка получала число, считала его суммой ВСЕГО
+     * источника и снова печатала «разобрана полностью» — теперь уже про источник,
+     * половина которого не сосчитана.
+     */
+    let sourceMoneyUndeterminable = false;
 
     for (const prepared of tables) {
+      if (prepared.entityKind === "payment" && prepared.sourceMoneyTotalKopecks === null) {
+        sourceMoneyUndeterminable = true;
+      }
       if (prepared.sourceMoneyTotalKopecks !== null) {
         sourceMoneyTotalKopecks = (sourceMoneyTotalKopecks ?? 0) + prepared.sourceMoneyTotalKopecks;
       }
@@ -567,7 +589,7 @@ export async function runMigration(input: EngineInput): Promise<MigrationRunResp
       runId: run.id,
       organizationId: input.organizationId,
       sourceRowsParsed: totalSourceRows,
-      sourceMoneyTotalKopecks,
+      sourceMoneyTotalKopecks: sourceMoneyUndeterminable ? null : sourceMoneyTotalKopecks,
       dryRun: input.dryRun
     });
 

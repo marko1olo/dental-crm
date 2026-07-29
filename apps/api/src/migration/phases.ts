@@ -22,7 +22,6 @@ import {
   markRowsSkipped,
   readReadyRows,
   readyEntityKinds,
-  stagedMoneyKopecks,
   updateRun,
   STAGING_PAGE_SIZE
 } from "./runStore.js";
@@ -516,7 +515,6 @@ export async function finishRunPhase(context: {
   dryRun: boolean;
 }): Promise<MigrationReconciliationReport> {
   const counts = await countStagingByStatus(context.runId);
-  const money = await stagedMoneyKopecks(context.runId);
   const run = await findRun(context.runId, context.organizationId);
 
   const reconciliation = await reconcileRun({
@@ -524,7 +522,29 @@ export async function finishRunPhase(context: {
     organizationId: context.organizationId,
     // Точка отсчёта — число строк, прочитанных разбором и записанных в прогон.
     sourceRowsParsed: run?.sourceRows ?? counts.total,
-    sourceMoneyTotalKopecks: money,
+    /*
+     * НЕ ОПРЕДЕЛЯЕТСЯ, и это единственный честный ответ на потоковом пути.
+     *
+     * БЫЛО: `sourceMoneyTotalKopecks: await stagedMoneyKopecks(runId)`. Эта
+     * функция суммирует normalized_json.amountKopecks по стейджингу — то есть
+     * РОВНО ТО ЖЕ ЧИСЛО, которое сверка считает своей второй стороной
+     * (moneyTotals().stagedKopecks в reconcile.ts). Проверка
+     * money_parse_completeness_kopecks сравнивала стейджинг сам с собой:
+     * разность тождественно 0, passed всегда true, и акт переноса печатал
+     * «Сумма платежей источника … разобрана полностью, копейка в копейку» как
+     * доказательство. Докстринг reconcile.ts запрещает именно это: «если бы она
+     * проверяла числа, которые сама же загрузка и посчитала, она подтверждала бы
+     * не перенос, а внутреннюю непротиворечивость собственной арифметики».
+     *
+     * Независимой суммы источника у потокового пути СЕГОДНЯ НЕТ: stageRunPhase
+     * укладывает строки через streamSourceRows и нигде не считает сумму по
+     * исходным значениям до нормализации (в одноразовом пути её считает
+     * sourceMoneyTotalFromRows в engine.ts). Пока её не считают, точки отсчёта не
+     * существует, и подставлять вместо неё стейджинг нельзя: неизвестное обязано
+     * остаться неизвестным. Сверка при null пропускает проверку 5.1, а акт
+     * печатает «не определяется» вместо выдуманного «сошлось».
+     */
+    sourceMoneyTotalKopecks: null,
     dryRun: context.dryRun
   });
 

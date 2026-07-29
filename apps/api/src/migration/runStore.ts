@@ -446,7 +446,23 @@ export async function markRemainingReadyAsSkipped(runId: string, entityKind?: Mi
   return updated.length;
 }
 
-/** Сумма платежей источника в копейках по данным стейджинга. */
+/**
+ * Сумма платежей в копейках ПО ДАННЫМ СТЕЙДЖИНГА.
+ *
+ * ЭТО НЕ СУММА ИСТОЧНИКА, и подставлять её в reconcileRun под именем
+ * sourceMoneyTotalKopecks нельзя. Сверка считает вторую сторону того же баланса
+ * ровно этим же выражением (moneyTotals().stagedKopecks в reconcile.ts), поэтому
+ * проверка money_parse_completeness_kopecks сравнивала бы стейджинг сам с собой:
+ * разность тождественно ноль, проверка не может провалиться, а акт переноса
+ * печатает «разобрана полностью, копейка в копейку» как доказательство. Так и
+ * было в finishRunPhase (phases.ts) до этой правки. Независимая точка отсчёта
+ * считается ДО загрузки, из исходных значений: sourceMoneyTotalFromRows в
+ * engine.ts.
+ *
+ * Сейчас у функции нет вызывающих. Оставлена как диагностика (сколько денег
+ * лежит в стейджинге) вместе с этим предупреждением: без него следующий автор
+ * вернёт её ровно на то место, откуда её убрали.
+ */
 export async function stagedMoneyKopecks(runId: string): Promise<number | null> {
   const [row] = await db
     .select({

@@ -1969,7 +1969,25 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     sourceHeight: metadata.rows,
     bitsAllocated: metadata.bitsAllocated,
     bitsStored: metadata.bitsStored,
-    pixelRepresentation: metadata.pixelRepresentation ?? 0,
+    /*
+     * Отсутствующий тег (0028,0103) — это «неизвестно», а НЕ «0».
+     *
+     * БЫЛО: `metadata.pixelRepresentation ?? 0`. Ноль в этом теге DICOM —
+     * содержательное значение «беззнаковые значения пикселей», а не пустое место,
+     * поэтому подстановка превращала отсутствие атрибута в измеренный факт: ответ
+     * предпросмотра утверждал, что снимок размечен как беззнаковый, хотя разбор
+     * тега (0028,0103) его в файле не нашёл вовсе. Та же ветка «unsupported» на
+     * тот же самый отсутствующий тег отвечает null — то есть один разбор давал два
+     * разных ответа про одно и то же неизвестное.
+     *
+     * Контракт это допускает: pixelRepresentation объявлен
+     * `z.number().int().min(0).max(1).nullable()` в packages/shared/src/index.ts.
+     * Решение отрисовщика при этом НЕ МЕНЯЕТСЯ: renderDicomPreviewImage читает
+     * metadata.pixelRepresentation напрямую и трактует «не 1» как беззнаковый —
+     * это его собственный выбор по умолчанию, и он остаётся там, где стоял. Здесь
+     * же печатается разобранный атрибут, и печатать в нём выдуманный ноль нельзя.
+     */
+    pixelRepresentation: metadata.pixelRepresentation,
     windowCenter: result.finalCenter,
     windowWidth: result.finalWindow,
     imageDataUrl: result.imageDataUrl,
