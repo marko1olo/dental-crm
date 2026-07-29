@@ -175,6 +175,23 @@ type SwallowedCatch = {
 	 * охранять пустое место, оставаясь зелёным.
 	 */
 	fn: string;
+	/**
+	 * Который по счёту проглатывающий catch ВНУТРИ этой функции: 1, 2, 3…
+	 *
+	 * БЕЗ НЕГО КАЖДАЯ ОБЪЯВЛЕННАЯ ФУНКЦИЯ — БЕЗРАЗМЕРНЫЙ МОЛЧАЛИВЫЙ СЛОТ.
+	 * Ключ был «файл:функция», а сравнение идёт множествами ключей, поэтому
+	 * ВТОРОЙ проглатывающий catch внутри уже объявленной функции давал тот же
+	 * ключ и проходил незамеченным. Измерено приёмкой этого же участка: в
+	 * getPatientByIdFromDb добавили второй catch, читающий пациента БЕЗ фильтра
+	 * по организации и подставляющий выдуманные данные при сбое, — то есть
+	 * межарендную утечку прямо в изготовление документов, — и сторож дал семь из
+	 * семи зелёных.
+	 *
+	 * Это ровно тот класс, который осуждает сообщение коммита этого же файла:
+	 * «порог с запасом — это молчаливые слоты под следующий такой же дефект».
+	 * Запас убрали у порога и оставили у функции.
+	 */
+	ordinal: number;
 	/** Только для человека в сообщении об ошибке. В ключ не входит. */
 	line: number;
 	kind: SwallowKind;
@@ -291,6 +308,7 @@ export function scanModule(file: string, source: string): ModuleScan {
 		ts.ScriptKind.TS,
 	);
 	const swallowed: SwallowedCatch[] = [];
+	const swallowsByFunction = new Map<string, number>();
 	let databaseTryBlocks = 0;
 
 	const visit = (node: ts.Node): void => {
@@ -302,9 +320,15 @@ export function scanModule(file: string, source: string): ModuleScan {
 					body,
 					(current) => ts.isReturnStatement(current) && current.expression !== undefined,
 				);
+				const fn = enclosingName(node);
+				// Обход идёт сверху вниз по файлу, поэтому счётчик даёт устойчивый
+				// номер: правки в других функциях его не сдвигают.
+				const ordinal = (swallowsByFunction.get(fn) ?? 0) + 1;
+				swallowsByFunction.set(fn, ordinal);
 				swallowed.push({
 					file,
-					fn: enclosingName(node),
+					fn,
+					ordinal,
 					line:
 						parsed.getLineAndCharacterOfPosition(node.catchClause.getStart(parsed)).line + 1,
 					kind: returnsValue ? "подстановка" : "проглатывание",
@@ -318,8 +342,8 @@ export function scanModule(file: string, source: string): ModuleScan {
 	return { swallowed, databaseTryBlocks };
 }
 
-function keyOf(found: { file: string; fn: string }): string {
-	return `${found.file}:${found.fn}`;
+function keyOf(found: { file: string; fn: string; ordinal: number }): string {
+	return `${found.file}:${found.fn}#${found.ordinal}`;
 }
 
 function databaseCatchCensus(): {
@@ -356,10 +380,11 @@ function databaseCatchCensus(): {
  * `isPatientBookingBlocked` (`patientArchiveReasonsAndBlacklistsQuery.ts`)
  * отвечают отказом с человеческим текстом, называющим причину и следующий шаг.
  */
-const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
+const DECLARED_SWALLOWING: { file: string; fn: string; ordinal: number; reason: string }[] = [
 	{
 		file: "patientsQuery.ts",
 		fn: "getPatientByIdFromDb",
+		ordinal: 1,
 		reason:
 			"При сбое базы возвращает пациента из sampleData.ts, не отфильтрованного по организации. " +
 			"Функция кормит не экран, а изготовление документов: routes/documents/create.ts:77, issue.ts:74, " +
@@ -370,6 +395,7 @@ const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
 	{
 		file: "pricelistQuery.ts",
 		fn: "getDefaultOrganizationId",
+		ordinal: 1,
 		reason:
 			"При сбое базы возвращает зашитый идентификатор организации 00000000-0000-0000-0000-000000000001 " +
 			"вместо отказа. Вызывающий считает, что определил клинику, и прайс с документами уезжает в чужую " +
@@ -379,6 +405,7 @@ const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
 	{
 		file: "patientArchiveReasonsAndBlacklistsQuery.ts",
 		fn: "setPatientArchiveStatusInDb",
+		ordinal: 1,
 		reason:
 			"Отказ записи в чёрный список проглочен целиком: администратор видит успех, строки в базе нет, а " +
 			"после перезапуска процесса запрет исчезает вместе с набором в памяти. Чёрный список — защита " +
@@ -388,6 +415,7 @@ const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
 	{
 		file: "aiQuery.ts",
 		fn: "createAiRecognitionJobInDb",
+		ordinal: 1,
 		reason:
 			"Сбой записи события аудита не доходит до вызывающего: он уходит в console.warn, и на этом всё, " +
 			"хотя собственный комментарий на месте называет это пробелом прослеживаемости по 152-ФЗ. Решение " +
@@ -397,6 +425,7 @@ const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
 	{
 		file: "domainStateHydration.ts",
 		fn: "selectByOrganization",
+		ordinal: 1,
 		reason:
 			"При сбое чтения таблицы возвращает пустой массив, и гидратация подменяет рабочее состояние " +
 			"клиники пустотой: раздел открывается и показывает «данных нет» вместо отказа. Смягчение есть — " +
@@ -406,6 +435,7 @@ const DECLARED_SWALLOWING: { file: string; fn: string; reason: string }[] = [
 	{
 		file: "domainStateHydration.ts",
 		fn: "findLatestVisitIdForPatient",
+		ordinal: 1,
 		reason:
 			"При сбое базы возвращает null, то есть «у пациента нет ни одного приёма». Маршруты, открывающие " +
 			"карточку, по этому ответу заводят новый приём вместо продолжения существующего, и запись о " +
@@ -436,7 +466,7 @@ test("сканер находит проглатывающий catch и не к�
 	);
 	assert.deepEqual(
 		real.swallowed.map(keyOf),
-		["fixture.ts:getThingFromDb"],
+		["fixture.ts:getThingFromDb#1"],
 		"Сканер не увидел заведомую подмену при сбое базы — значит его зелёный ничего не значит.",
 	);
 	assert.equal(real.swallowed[0]?.kind, "подстановка", "Возврат значения из catch назван не тем видом.");
@@ -516,7 +546,7 @@ test("сканер находит проглатывающий catch и не к�
 	);
 	assert.deepEqual(
 		inCallback.swallowed.map(keyOf),
-		["fixture.ts:getThingFromDb"],
+		["fixture.ts:getThingFromDb#1"],
 		"throw внутри колбэка до вызывающего не доходит и возвратом ошибки считаться не может.",
 	);
 });
