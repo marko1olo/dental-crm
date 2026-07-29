@@ -20,16 +20,6 @@ export const wsBroker = {
 			clients.delete(conn);
 		});
 	},
-	broadcast(message: object) {
-		// Kept for backward compatibility if needed, but discouraged
-		const data = JSON.stringify(message);
-		for (const client of clients) {
-			if (client.ws.readyState === 1) {
-				// OPEN
-				client.ws.send(data);
-			}
-		}
-	},
 	broadcastToOrganization(organizationId: string, message: object) {
 		const data = JSON.stringify(message);
 		for (const client of clients) {
