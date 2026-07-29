@@ -88,6 +88,28 @@ export type ReportScope = ReportPeriod & {
  * Выдумывать московский за клинику нельзя — в базе пояс по умолчанию
  * Europe/Samara, и подстановка сдвинула бы границы месяца на час.
  */
+/**
+ * Фрагмент «в поясе клиники» для группировки в PostgreSQL.
+ *
+ * ПОЧЕМУ ИМЯ ПОЯСА ВСТАВЛЯЕТСЯ ЛИТЕРАЛОМ, А НЕ ПАРАМЕТРОМ. Через параметр
+ * (`AT TIME ZONE $1`) выражение в SELECT и в GROUP BY получает РАЗНЫЕ номера
+ * ($1 и $6), PostgreSQL считает их разными выражениями и отвергает запрос —
+ * «column must appear in the GROUP BY clause». Именно так моя первая редакция
+ * этой правки уронила отчёты в 500, и поймал это набор, а не рассуждение.
+ *
+ * ЛИТЕРАЛ ЗДЕСЬ БЕЗОПАСЕН, и это не «доверимся». Значение приходит только из
+ * postgresKnowsTimeZone, то есть уже НАЙДЕНО в собственном каталоге
+ * pg_timezone_names этого же сервера. Плюс форма имени сверяется ниже: буквы,
+ * цифры, подчёркивание, плюс, минус и косая черта. Что не прошло — не
+ * подставляется вовсе, и группировка остаётся в поясе сессии, как раньше.
+ */
+const TIME_ZONE_NAME_SHAPE = /^[A-Za-z0-9_+/-]+$/;
+
+function inClinicZone(column: unknown, zone: string | null) {
+	if (!zone || !TIME_ZONE_NAME_SHAPE.test(zone)) return sql`${column}`;
+	return sql`(${column} AT TIME ZONE ${sql.raw(`'${zone}'`)})`;
+}
+
 export async function clinicTimeZone(organizationId: string): Promise<string | null> {
 	try {
 		const [clinic] = await db
@@ -273,12 +295,26 @@ export async function revenueTimeline(
 	scope: ReportScope,
 	granularity: TimelineGranularity = "day"
 ): Promise<RevenueTimeline> {
+	/*
+	 * ДЕНЬ ВЫРУЧКИ СЧИТАЛСЯ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
+	 *
+	 * `date_trunc` для колонки с часовым поясом группирует по поясу СЕССИИ. Значит
+	 * вечерняя оплата уезжала в предыдущий день: касса за смену не сходилась с
+	 * кассой в динамике, и администратор искал недостачу там, где её нет. Величина
+	 * разъезда равна смещению пояса — четыре часа для Самары, двенадцать для
+	 * Камчатки; измерено прямым запросом при починке тепловой карты смен.
+	 *
+	 * Тот же приём, что и там: приведение только к поясу, который PostgreSQL знает,
+	 * иначе AT TIME ZONE бросает 22023 и отчёт превращается в 500.
+	 */
+	const zone = await postgresKnowsTimeZone(scope.timeZone);
+	const localPaidAt = inClinicZone(payments.paidAt, zone);
 	const truncated =
 		granularity === "month"
-			? sql`date_trunc('month', ${payments.paidAt})`
+			? sql`date_trunc('month', ${localPaidAt})`
 			: granularity === "week"
-				? sql`date_trunc('week', ${payments.paidAt})`
-				: sql`date_trunc('day', ${payments.paidAt})`;
+				? sql`date_trunc('week', ${localPaidAt})`
+				: sql`date_trunc('day', ${localPaidAt})`;
 
 	const rows = await db
 		.select({
@@ -1212,7 +1248,7 @@ export async function scheduleLoad(scope: ReportScope): Promise<ScheduleLoadRepo
 	 * подставленного наугад московского.
 	 */
 	const zone = await postgresKnowsTimeZone(scope.timeZone);
-	const localStart = zone ? sql`(${appointments.startsAt} AT TIME ZONE ${zone})` : sql`${appointments.startsAt}`;
+	const localStart = inClinicZone(appointments.startsAt, zone);
 	const rows = await db
 		.select({
 			weekday: sql<number>`extract(isodow from ${localStart})::int`,
