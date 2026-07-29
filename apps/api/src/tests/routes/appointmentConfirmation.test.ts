@@ -127,6 +127,36 @@ describe("код ссылки на приём", () => {
 	});
 });
 
+/**
+ * Одна и та же уборка ДО засева и после прогона — иначе она не уборка.
+ *
+ * ЧТО ЛОМАЛОСЬ. Уборка стояла только в `after`. Прогон, оборванный до него
+ * (Ctrl+C, закрытая труба вида `| head`, убитый процесс, падение соединения),
+ * оставлял фикстуру в живой базе, и `onConflictDoNothing` на засеве следующего
+ * прогона молча оставлял старые строки вместо своих выданных.
+ *
+ * ЗДЕСЬ ЭТО БЬЁТ ПРЯМО В ПРОВЕРЯЕМОЕ. Тесты этого файла МЕНЯЮТ status приёма:
+ * подтверждение переводит `planned` -> `confirmed`, отмена -> `cancelled`.
+ * Остаток от прошлого прогона приходит уже подтверждённым и отменённым, засев
+ * его не перезаписывает, и проверки судят по чужому исходу: «подтверждение
+ * ставит confirmed» зеленеет на строке, которую подтвердил ПРЕДЫДУЩИЙ прогон, а
+ * «повторное подтверждение не меняет состояние» теряет смысл целиком. Время
+ * приёма отсчитывается от «сейчас», поэтому остаток вдобавок несёт чужие
+ * `startsAt`/`endsAt` — вчерашний «завтрашний» приём становится прошедшим.
+ *
+ * Уборка общая на все три describe этого файла: организация `dce70000-…-0601` у
+ * них одна. Порядок удаления — от зависимых строк к организации.
+ */
+async function purgeFixtures(): Promise<void> {
+	await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
+	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+	await db.delete(communicationTasks).where(eq(communicationTasks.organizationId, ORG_ID));
+	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("страница подтверждения приёма", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -139,15 +169,15 @@ describe("страница подтверждения приёма", () => {
 		await registerPublicAppointmentActionRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" }).onConflictDoNothing();
+			// Сначала расчистить место за оборванным прогоном, потом сеять: иначе
+			// приёмы придут уже подтверждёнными и отменёнными, см. purgeFixtures.
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
 			await db
 				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Клиника на Ленина", timezone: "Europe/Moscow" })
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" })
-				.onConflictDoNothing();
+				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Клиника на Ленина", timezone: "Europe/Moscow" });
+			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
 			await db
 				.insert(appointments)
 				.values([
@@ -175,8 +205,7 @@ describe("страница подтверждения приёма", () => {
 						startsAt: soon,
 						endsAt: new Date(soon.getTime() + 3_600_000)
 					}
-				])
-				.onConflictDoNothing();
+				]);
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -185,13 +214,7 @@ describe("страница подтверждения приёма", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(appointmentActionCodes).where(eq(appointmentActionCodes.organizationId, ORG_ID));
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(communicationTasks).where(eq(communicationTasks.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 	});
@@ -424,11 +447,16 @@ describe("снятие устаревших напоминаний", () => {
 
 	before(async () => {
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" })
-				.onConflictDoNothing();
+			/*
+			 * Уборка и здесь, хотя describe выше уже убрал за собой: гарантию даёт
+			 * не сосед, а собственный вход. Проверка ниже вставляет напоминания с
+			 * dedupeKey, а у communication_outbox есть unique(org, dedupe_key) —
+			 * остаток от оборванного прогона ронял бы вставку на этом ограничении.
+			 */
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника подтверждений" });
+			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Подтвердов Пётр Петрович" });
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -437,9 +465,7 @@ describe("снятие устаревших напоминаний", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 	});
 
