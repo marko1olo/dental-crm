@@ -91,7 +91,57 @@ import {
 import * as schema from "./schema.js";
 import { projectVisitRow } from "./visitsProjection.js";
 
+/**
+ * ОБЪЯВЛЕННАЯ МЕТКА «ПРИЁМА НЕТ», А НЕ ПРОСТО КОНСТАНТА.
+ *
+ * Это единственное значение, которым сводке разрешено ответить на вопрос «какой
+ * приём открыт», когда открытого приёма нет. Оно объявлено ровно потому, что
+ * ЛЮБОЕ другое было бы хуже: случайный uuid клиент от настоящего приёма не
+ * отличит и уйдёт с ним в кассу и в документы. Ту же метку знает и клиент —
+ * `apps/web/src/components/visit/visitIdentity.ts` экспортирует её как `NIL_UUID`,
+ * а `realVisitFieldId()` переводит её в `null`.
+ *
+ * ЧТО ЗДЕСЬ НЕ ПОЧИНЕНО И ПОЧЕМУ. Правильный ответ на «приёма нет» — это
+ * `activeVisit: null`, и он недостижим из этого файла по трём независимым
+ * причинам, каждая проверена:
+ *   1. `dashboardSchema` объявляет `activeVisit: visitSchema` БЕЗ `.nullable()`
+ *      (`packages/shared/src/index.ts:4408`), а `visitSchema.id` — `z.string().uuid()`:
+ *      ни `null`, ни пустая строка контракт не проходят;
+ *   2. `activeVisit` — общий на процесс МУТИРУЕМЫЙ объект из `sampleData.ts`,
+ *      здесь он обновляется через `Object.assign`; заменить его на `null` нечем;
+ *   3. клиент разыменовывает `dashboard.activeVisit.appointmentId` БЕЗ `?.`
+ *      (`apps/web/src/components/schedule/AppointmentCard.tsx:222` и `:241`) — на
+ *      `null` карточка расписания упала бы при отрисовке.
+ * Оба файла из пунктов 1 и 3 принадлежат другим владельцам. Долг: nullable
+ * `activeVisit` в контракте плюс `?.` в карточке расписания.
+ */
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Время в заготовке «приёма нет». Постоянная величина, а НЕ `new Date()`.
+ *
+ * ЧТО БЫЛО. `createdAt` и `updatedAt` заготовки собирались текущими часами, и
+ * сводка на клинику БЕЗ приёмов отвечала новым временем на КАЖДЫЙ запрос. То есть
+ * сервер сообщал, что несуществующий приём был изменён только что, и два соседних
+ * чтения расходились в этом между собой. Замерено через app.inject на живой
+ * PostgreSQL: две подряд `GET /api/dashboard` по одной клинике с нулём визитов
+ * дают разные `activeVisit.updatedAt` при `select count(*) from visits … = 0`.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. `apps/web/src/useAppLogic.tsx` читает именно это поле
+ * как отметку свежести серверной записи: `Date.parse(dashboard.activeVisit.updatedAt)`
+ * сравнивается со временем ЛОКАЛЬНО сохранённого черновика врача, и локальный
+ * черновик восстанавливается только если он новее. Пока сервер отвечал «изменён
+ * сейчас», серверная отметка была новее любой локальной ВСЕГДА — набранное врачом
+ * не восстанавливалось никогда. Это же поле стоит в списке зависимостей того
+ * эффекта, поэтому каждая перезагрузка сводки выглядела как «приём изменился» и
+ * запускала сброс состояния заново.
+ *
+ * ПОЧЕМУ ИМЕННО НАЧАЛО ЭПОХИ, а не любая другая дата. `Date.parse` даёт для него
+ * ноль — «времени нет, считать самым старым», — поэтому сравнение свежести
+ * работает в верную сторону, а не в обратную. И его нельзя принять за настоящую
+ * клиническую отметку так, как принимается «минуту назад».
+ */
+const NO_VISIT_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
 /** В режиме "off" источник истины — сами доменные массивы, синхронизировать нечего. */
 function inMemoryMode(): boolean {
@@ -895,20 +945,23 @@ function replaceAll<T>(target: T[], source: T[]): void {
 }
 
 /**
- * Текущий приём: последний незакрытый черновик клиники. Если черновиков нет —
- * пустая заготовка с нулевым идентификатором, чтобы карточка приёма открывалась
- * пустой, а не показывала чужой демонстрационный визит.
+ * Заготовка «в этой клинике открытого приёма нет».
+ *
+ * Собирается ТОЛЬКО из объявленной метки и идентификатора клиники: ни одного поля
+ * из часов, из другой строки базы или из состояния предыдущего запроса. Поэтому
+ * два соседних чтения сводки отвечают о несуществующем приёме одно и то же — до
+ * правки они расходились временем.
+ *
+ * `status: "draft"` оставлен НАМЕРЕННО и это не недосмотр: `visitStatusSchema`
+ * знает только `draft`/`signed`/`voided` (`packages/shared/src/index.ts:49`),
+ * значения «приёма нет» среди них нет, а `signed` или `voided` были бы уже не
+ * заготовкой, а утверждением о закрытом лечении. Кроме того `buildDashboard()`
+ * ветвится по этому полю в нескольких местах (`sampleData.ts`), и смена статуса
+ * поехала бы по сводке целиком. Отсутствие приёма читается по метке
+ * идентификатора, а не по статусу.
  */
-function applyActiveVisit(organizationId: string, visitRecords: Visit[]): void {
-	const draft = visitRecords
-		.filter((visit) => visit.status === "draft")
-		.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
-	const latest =
-		draft ??
-		visitRecords.slice().sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
-
-	const nowIso = new Date().toISOString();
-	const next: Visit = latest ?? {
+function noVisitSkeleton(organizationId: string): Visit {
+	return {
 		id: NIL_UUID,
 		organizationId,
 		patientId: NIL_UUID,
@@ -921,10 +974,42 @@ function applyActiveVisit(organizationId: string, visitRecords: Visit[]): void {
 		diagnosis: null,
 		treatmentPlan: null,
 		doctorSummary: null,
-		createdAt: nowIso,
-		updatedAt: nowIso,
+		createdAt: NO_VISIT_TIMESTAMP,
+		updatedAt: NO_VISIT_TIMESTAMP,
 	};
-	Object.assign(activeVisit, next);
+}
+
+/**
+ * Текущий приём: последний незакрытый черновик клиники, иначе последний приём
+ * любого статуса. Если приёмов нет вовсе — заготовка с объявленной меткой «приёма
+ * нет» (см. NIL_UUID выше), чтобы карточка приёма открывалась пустой, а не
+ * показывала чужой демонстрационный визит.
+ *
+ * ЧТО ЗДЕСЬ ВЫДУМЫВАЛОСЬ. Заготовка брала время из часов, поэтому сводка сообщала
+ * о несуществующем приёме, что он изменён только что, и на каждый запрос — новое
+ * время. Разбор и замер — в докстринге NO_VISIT_TIMESTAMP.
+ *
+ * ЧТО ОСТАЛОСЬ ДОЛГОМ, И ОН НАЗВАН, А НЕ ЗАМОЛЧАН. Сама метка `NIL_UUID` — это
+ * «неизвестное, напечатанное нулём», тот же запрещённый класс, что и нулевая сумма
+ * в `apps/api/src/tests/unknownIsNotZero.test.ts`. Убрать её из этого файла нельзя:
+ * контракт требует объект с полем `id` формы uuid, а клиент разыменовывает
+ * `activeVisit` без защиты. Цена метки уже измерена в дереве и записана рядом с
+ * каждой её проверкой на клиенте: касса отвечала «Прием для оплаты не найден»
+ * (`useAppLogic.tsx`, realActiveVisitId), а лента снимков была пуста ВСЕГДА, пока
+ * приём не начат (`useAppLogic.tsx`, activeImagingStudies). Сторож на эту метку —
+ * `tests/routes/dashboardActiveVisitIsNotFabricated.test.ts`: он требует, чтобы
+ * идентификатор приёма из сводки либо РАЗРЕШАЛСЯ в строку базы, либо был ровно
+ * этой одной объявленной меткой, и запрещает выдавать что-либо третье.
+ */
+function applyActiveVisit(organizationId: string, visitRecords: Visit[]): void {
+	const draft = visitRecords
+		.filter((visit) => visit.status === "draft")
+		.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+	const latest =
+		draft ??
+		visitRecords.slice().sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+
+	Object.assign(activeVisit, latest ?? noVisitSkeleton(organizationId));
 }
 
 /** Последний приём пациента — нужен маршрутам, которые открывают карточку. */

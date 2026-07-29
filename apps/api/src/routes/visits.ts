@@ -82,6 +82,53 @@ const visitDraftVoidedNoDraftMessage =
 const visitDraftAutosaveClosedMessage = "Черновик приема не сохранен: этот прием уже недоступен для изменений.";
 const visitDraftAcceptClosedMessage = "Черновик приема не принят: этот прием уже недоступен для изменений.";
 const visitDraftMutationRejectedMessage = "Черновик приема не изменен: обновите прием и повторите действие.";
+
+/**
+ * Метка «открытого приёма нет», которую сводка главного экрана ставит в
+ * `activeVisit.id`, когда в клинике не открыто ни одного приёма
+ * (`db/domainStateHydration.ts`, applyActiveVisit — там же разбор, почему её пока
+ * нельзя заменить на `null`).
+ *
+ * ПОЧЕМУ ЭТО ПРОВЕРЯЕТСЯ ЗДЕСЬ, А НЕ ТОЛЬКО В ЧТЕНИИ. Метка — непустая строка, то
+ * есть ПРАВДИВАЯ в булевом смысле, и клиентские сторожа вида
+ * `if (!dashboard?.activeVisit?.id) return;` её пропускают: замерено на
+ * `useVisitLogic.ts` — так поступают и `syncVisitDraftAutosave`, и
+ * `acceptDraftToVisit`. Поэтому обе изменяющие ветки уходили на сервер с этой
+ * меткой в адресе, база честно не находила строку, и врач получал «Прием не
+ * найден. Обновите рабочий экран и выберите актуальный прием» — про приём, который
+ * никто не открывал. Обновление рабочего экрана возвращало ту же метку, и выбирать
+ * было нечего: в клинике нет ни одного приёма.
+ *
+ * Отказ обязан назвать это состояние как оно есть, и назвать выполнимое действие —
+ * открыть приём по записи расписания (POST /api/appointments/:id/visit, тот самый
+ * маршрут выше в этом файле).
+ */
+const noActiveVisitId = "00000000-0000-0000-0000-000000000000";
+const visitDraftAutosaveNoActiveVisitMessage =
+  "Черновик приема не сохранен: в клинике сейчас не открыт ни один прием, поэтому записывать некуда. Набранный текст остался на экране — " +
+  "откройте прием по записи в расписании и повторите сохранение.";
+const visitDraftAcceptNoActiveVisitMessage =
+  "Черновик приема не принят: в клинике сейчас не открыт ни один прием, поэтому подписывать нечего. Набранный текст остался на экране — " +
+  "откройте прием по записи в расписании и повторите сохранение.";
+
+/**
+ * Отказ на метку «открытого приёма нет».
+ *
+ * Код 409, а не 404: строки с таким идентификатором не существует и существовать
+ * не может, значит «не найден» здесь означало бы, что приём когда-то был и
+ * потерялся. Состояние другое — действие невозможно в текущем состоянии клиники, и
+ * это ровно та же семья, в которой уже стоит отказ закрытого приёма (409
+ * `visit_closed`). Машинное поле `error` взято прежнее, чтобы интерфейс, который по
+ * нему ветвится, не увидел незнакомого класса.
+ */
+function sendNoActiveVisitRefusal(reply: FastifyReply, operation: VisitDraftMutationOperation) {
+  return reply.code(409).send({
+    error: "VisitDraftMutationRejected",
+    reason: "no_active_visit",
+    message:
+      operation === "accept" ? visitDraftAcceptNoActiveVisitMessage : visitDraftAutosaveNoActiveVisitMessage
+  });
+}
 /*
  * ЭТОТ ОТВЕТ — ПОСЛЕДНЯЯ ЛИНИЯ, А НЕ РАБОЧИЙ РЕЖИМ. ИСТОРИЯ ВАЖНА.
  *
@@ -268,8 +315,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     const orgId = context.organizationId;
 
     const { visitId } = request.params as { visitId: string };
-    // Zero UUID = placeholder for "no active visit" — return empty 200, not 404
-    if (!visitId || visitId === "00000000-0000-0000-0000-000000000000") {
+    // Метка «открытого приёма нет» (см. noActiveVisitId): читать черновик не у
+    // чего, и это не отказ — пустой ответ 200 без обращения к базе.
+    if (!visitId || visitId === noActiveVisitId) {
       return visitDraftAutosaveResponseSchema.parse({ serverDraft: null });
     }
     const lookup = await getVisitDraftAutosaveFromDb(orgId, visitId);
@@ -311,6 +359,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     const orgId = context.organizationId;
 
     const { visitId } = request.params as { visitId: string };
+    // Проверка стоит ДО разбора тела: иначе врач получил бы отказ по форме запроса
+    // там, где дело не в форме — приёма нет вовсе.
+    if (visitId === noActiveVisitId) return sendNoActiveVisitRefusal(reply, "autosave");
     const input = parseVisitPayload(
       visitDraftAutosaveRequestSchema,
       { ...visitRequestBody(request.body), visitId },
@@ -333,6 +384,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     const orgId = context.organizationId;
 
     const { visitId } = request.params as { visitId: string };
+    // Подписание — юридически значимое действие, и подписывать нечего: приём не
+    // открыт. Причина названа до разбора тела, чтобы врач не искал ошибку в тексте.
+    if (visitId === noActiveVisitId) return sendNoActiveVisitRefusal(reply, "accept");
     const input = parseVisitPayload(
       acceptVisitDraftSchema,
       { ...visitRequestBody(request.body), visitId },
