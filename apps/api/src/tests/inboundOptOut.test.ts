@@ -88,6 +88,12 @@ describe("распознавание отказа от сообщений", () =
 		assert.ok(text.includes("Клиника на Ленина"));
 		assert.ok(text.includes("СТАРТ"));
 	});
+
+	test("подтверждение возобновления рассылки содержит нужный текст", () => {
+		const text = optOutAcknowledgement("opt_in", "Клиника на Ленина");
+		assert.ok(text.includes("Клиника на Ленина"));
+		assert.ok(text.includes("рассылка возобновлена"));
+	});
 });
 
 describe("разбор входящих сообщений", () => {
