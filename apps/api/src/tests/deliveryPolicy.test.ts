@@ -40,6 +40,22 @@ test("тихие часы через полночь считаются прав�
 	assert.equal(isQuietMinute(20 * 60 + 59, 21 * 60, 9 * 60), false);
 });
 
+test("тихие часы без перехода через полночь считаются правильно", () => {
+	// Окно 09:00 → 21:00 (дневной отдых)
+	assert.equal(isQuietMinute(8 * 60 + 59, 9 * 60, 21 * 60), false);
+	assert.equal(isQuietMinute(9 * 60, 9 * 60, 21 * 60), true);
+	assert.equal(isQuietMinute(15 * 60, 9 * 60, 21 * 60), true);
+	assert.equal(isQuietMinute(20 * 60 + 59, 9 * 60, 21 * 60), true);
+	assert.equal(isQuietMinute(21 * 60, 9 * 60, 21 * 60), false);
+	assert.equal(isQuietMinute(22 * 60, 9 * 60, 21 * 60), false);
+});
+
+test("тихие часы корректно обрабатывают отрицательные минуты и минуты больше суток", () => {
+	assert.equal(isQuietMinute(-60, 21 * 60, 9 * 60), true); // -60 mod 1440 = 1380 (23:00)
+	assert.equal(isQuietMinute(-600, 9 * 60, 21 * 60), true); // -600 mod 1440 = 840 (14:00)
+	assert.equal(isQuietMinute(1440 + 60, 21 * 60, 9 * 60), true); // 1500 mod 1440 = 60 (01:00)
+});
+
 test("окно нулевой длины означает отсутствие тихих часов", () => {
 	assert.equal(isQuietMinute(3 * 60, 9 * 60, 9 * 60), false);
 });
