@@ -5026,44 +5026,76 @@ export function useAppLogic(): any {
 		);
 	}, [dashboard, documentPatient?.id]);
 
-	const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
-		if (!dashboard || !documentPatient)
-			return {
-				totalPlannedRub: 0,
-				totalDiscountRub: 0,
-				totalPaidRub: 0,
-				totalDueRub: 0,
-				taxDeductionEligibleRub: 0,
-				draftDocumentAmountRub: 0,
-				openTreatmentItems: 0,
-				unpaidDocuments: 0,
-				insuranceCoverageRub: 0,
-			};
+	/*
+	 * НЕПОСЧИТАННЫЙ ИТОГ — null, А НЕ ОБЪЕКТ ИЗ НУЛЕЙ.
+	 *
+	 * БЫЛО: при `!dashboard || !documentPatient` возвращалась сводка, у которой
+	 * все восемь полей равны нулю. Общая money() (AppHelpers.tsx) к тому времени
+	 * уже печатала «не определено» вместо «0 ₽» для неизвестной суммы, но через
+	 * ЭТУ дверь та правка ИНЕРТНА: до форматирования доезжал настоящий ноль, и
+	 * экран финансов уверенно писал «План лечения 0 ₽ · Оплачено 0 ₽ · Остаток
+	 * 0 ₽». Администратор читает это как «пациент ничего не должен», тогда как
+	 * программа утверждала «дашборд ещё не загружен» или «пациент не выбран».
+	 * Про деньги это два разных утверждения, и на экране они были одним.
+	 *
+	 * ПОЧЕМУ ПРИЗНАК СТОИТ НА СВОДКЕ, А НЕ В ПОЛЯХ ОБЩЕЙ СХЕМЫ. Поля
+	 * billingSummarySchema объявлены nonNegativeMoneyRubSchema, то есть number
+	 * без null (packages/shared/src/index.ts). Сделать их nullable — правка
+	 * общего контракта денег: рябь в api, в базу и во всех потребителей сводки.
+	 * Здесь же неизвестна ВСЯ сводка целиком, а не отдельное поле, поэтому
+	 * неопределённость выражена самим отсутствием объекта. Потребитель ровно
+	 * один: App.tsx -> FinanceView -> FinancePlanningOverview, и он рисует блок
+	 * как неопределённый.
+	 */
+	const patientBillingSummary = useMemo<Dashboard["billingSummary"] | null>(() => {
+		if (!dashboard || !documentPatient) return null;
 		const activePlanItems = activeTreatmentPlanItems.filter(
 			(item) => item.status !== "cancelled",
 		);
+		/*
+		 * Округление до копейки, а не до рубля.
+		 *
+		 * Умножение и сложение денег в плавающей точке оставляет хвост
+		 * (1500.10 * 3 = 4500.299999999999), и без этого шага он доезжает до
+		 * экрана и до тела запроса. Тот же приём — Math.round(x * 100) / 100 —
+		 * уже применяется на сервере в apps/api/src/documents/guards.ts, где
+		 * строки сметы сверяются с итогом, поэтому веб и сервер считают строку
+		 * одинаково. Целочисленная алгебра копеек живёт в
+		 * packages/shared/src/utils/money.ts, но её parseKopecks по замыслу
+		 * БРОСАЕТ на неожидаемом значении, а данные дашборда на клиенте схемой не
+		 * проверяются: исключение внутри useMemo погасило бы экран целиком.
+		 */
+		const roundToKopecks = (value: number) =>
+			Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
 		const treatmentLineTotal = (item: (typeof activePlanItems)[number]) =>
-			Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
-		const totalPlannedRub = activePlanItems.reduce(
-			(total, item) => total + treatmentLineTotal(item),
-			0,
-		);
-		const totalDiscountRub = activePlanItems.reduce(
-			(total, item) => total + item.discountRub,
-			0,
-		);
-		const totalPaidRub = activePayments
-			.filter((payment) => payment.status === "paid")
-			.reduce((total, payment) => total + payment.amountRub, 0);
-		const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-			const service = dashboard.serviceCatalog?.find(
-				(candidate) => candidate.id === item.serviceId,
+			Math.max(
+				0,
+				roundToKopecks(item.unitPriceRub * item.quantity - item.discountRub),
 			);
-			return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
-		}, 0);
-		const draftDocumentAmountRub = activeUsableDocuments
-			.filter((document) => document.status === "draft")
-			.reduce((total, document) => total + (document.totalAmountRub ?? 0), 0);
+		const totalPlannedRub = roundToKopecks(
+			activePlanItems.reduce((total, item) => total + treatmentLineTotal(item), 0),
+		);
+		const totalDiscountRub = roundToKopecks(
+			activePlanItems.reduce((total, item) => total + item.discountRub, 0),
+		);
+		const totalPaidRub = roundToKopecks(
+			activePayments
+				.filter((payment) => payment.status === "paid")
+				.reduce((total, payment) => total + payment.amountRub, 0),
+		);
+		const taxDeductionEligibleRub = roundToKopecks(
+			activePlanItems.reduce((total, item) => {
+				const service = dashboard.serviceCatalog?.find(
+					(candidate) => candidate.id === item.serviceId,
+				);
+				return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
+			}, 0),
+		);
+		const draftDocumentAmountRub = roundToKopecks(
+			activeUsableDocuments
+				.filter((document) => document.status === "draft")
+				.reduce((total, document) => total + (document.totalAmountRub ?? 0), 0),
+		);
 		const unpaidDocuments = activeUsableDocuments.filter(
 			(document) =>
 				document.status === "draft" &&
@@ -5106,17 +5138,23 @@ export function useAppLogic(): any {
 
 					// БЫЛО: накапливалась сырая дробь. 8 999 ₽ при покрытии 70% дают
 					// 6299.299999999999, из-за чего долг превращался в
-					// 2699.7000000000007 — поле оплаты принимает только целые рубли,
-					// и кнопка «оплатить долг» переставала работать.
-					// Округляем каждую строку отдельно, как это делает страховая.
-					insuranceCoverageRub += Math.round((treatmentLineTotal(item) * pct) / 100);
+					// 2699.7000000000007.
+					// Округляем каждую строку отдельно, как это делает страховая, но до
+					// КОПЕЙКИ: Math.round до целого рубля отбрасывал у клиники до 50
+					// копеек с каждой строки покрытия, а на плане из двадцати позиций
+					// это уже десять рублей, взявшихся из округления.
+					insuranceCoverageRub += roundToKopecks(
+						(treatmentLineTotal(item) * pct) / 100,
+					);
 				}
 
 				// БЫЛО: annualLimitRub сохранялся в договоре, но нигде не читался.
 				// План на 500 000 ₽ при покрытии 70% и лимите 100 000 ₽ показывал
 				// покрытие 350 000 ₽ — клиника недосчитывалась 250 000 ₽ и узнавала
 				// об этом только при отказе страховой.
-				const annualLimitRub = Number(contract.annualLimitRub ?? 0);
+				const annualLimitRub = roundToKopecks(
+						Number(contract.annualLimitRub ?? 0),
+					);
 				if (annualLimitRub > 0) {
 					insuranceCoverageRub = Math.min(insuranceCoverageRub, annualLimitRub);
 				}
@@ -5127,11 +5165,22 @@ export function useAppLogic(): any {
 			totalPlannedRub,
 			totalDiscountRub,
 			totalPaidRub,
-			// Долг — целое число рублей: ровно так его принимает поле оплаты
-			// и колонка payments.amount_rub (integer).
+			/*
+			 * Долг — с копейками.
+			 *
+			 * БЫЛО: Math.round до целого рубля с объяснением «ровно так его
+			 * принимает поле оплаты и колонка payments.amount_rub (integer)».
+			 * Обе половины этого утверждения к моменту правки уже были неверны:
+			 * колонка payments.amount_rub — numeric(12, 2), createPaymentSchema
+			 * .amountRub — positiveMoneyRubSchema, а поле ввода суммы разбирает
+			 * копейки (apps/web/src/rubAmountInput.ts). Округление осталось и
+			 * врало: при долге 1500,50 кнопка «оплатить долг» подставляла 1501, и
+			 * пациент переплачивал полтинник, либо — при 1500,49 — недоплачивал и
+			 * оставался в должниках на копейки без объяснимой причины.
+			 */
 			totalDueRub: Math.max(
 				0,
-				Math.round(totalPlannedRub - insuranceCoverageRub - totalPaidRub),
+				roundToKopecks(totalPlannedRub - insuranceCoverageRub - totalPaidRub),
 			),
 			taxDeductionEligibleRub,
 			draftDocumentAmountRub,

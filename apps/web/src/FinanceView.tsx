@@ -21,7 +21,16 @@ type FinanceViewProps = {
   activePayments: Payment[];
   activeTreatmentPlanItems: TreatmentPlanItem[];
   activeTreatmentPlanScenarios: TreatmentPlanScenario[];
-  billingSummary: Dashboard["billingSummary"];
+  /*
+   * null — «итог не посчитан», а не «нулевой итог».
+   *
+   * Источник (useAppLogic.tsx, patientBillingSummary) отдаёт null, пока нет
+   * дашборда или не выбран пациент. Раньше в этом случае приходил объект из
+   * восьми нулей, и экран заявлял «пациент ничего не должен». Признак стоит на
+   * самой сводке, потому что неизвестна она целиком; поля общей схемы
+   * (billingSummarySchema) остаются number — общий контракт денег не тронут.
+   */
+  billingSummary: Dashboard["billingSummary"] | null;
   clinicalRuleEvaluations: ClinicalRuleEvaluation[];
   clinicalRuleActionLabels: Record<ClinicalRuleEvaluation["action"], string>;
   clinicalRuleSeverityLabels: Record<ClinicalRuleEvaluation["severity"], string>;
@@ -108,25 +117,26 @@ type FinanceViewComponentProps = Partial<FinanceViewProps>;
 const noLabels = <Key extends string>(): Record<Key, string> => ({}) as Record<Key, string>;
 
 /*
- * Нулевая финансовая сводка.
+ * ЗДЕСЬ БЫЛА НУЛЕВАЯ ФИНАНСОВАЯ СВОДКА `EMPTY_BILLING_SUMMARY` — ВОСЕМЬ НУЛЕЙ
+ * ПО УМОЛЧАНИЮ. Её больше нет, умолчание пропса — null.
  *
- * БЫЛО: `{ totalPaidRub: 0, totalDueRub: 0, outstandingPaidRub: 0 }`. Поля
- * outstandingPaidRub в сводке не существует вовсе (billingSummarySchema,
- * packages/shared/src/index.ts), а четырёх настоящих полей не хватало. На экран
- * это не попадало только потому, что дочерняя панель подставляет `?? 0` каждому
- * полю, — то есть код лгал о форме данных и ждал, когда кто-нибудь на эту ложь
- * положится. Держалось это ровно на том же `any` в параметре функции.
+ * Причина не в опрятности. Ноль по умолчанию и есть тот самый дефект, который
+ * закрывается в этом пакете, только другой дверью: пока сводки нет, «Остаток
+ * 0 ₽» неотличим от «пациент рассчитался». Источник (useAppLogic.tsx,
+ * patientBillingSummary) теперь честно отдаёт null, и оставить рядом умолчание
+ * из нулей означало бы вернуть ложь на единственном месте, где она ещё могла
+ * появиться.
+ *
+ * ЧТО ЭТА ДВЕРЬ ДЕЛАЛА ДО СИХ ПОР: ничего. Единственный вызывающий
+ * (App.tsx, `billingSummary={patientBillingSummary}`) пропс передаёт всегда,
+ * поэтому умолчание не подставлялось ни разу — проверено поштучно по всем
+ * местам отрисовки FinanceView. Вреда за ним не числится, и приписывать ему
+ * вред не нужно: она снята как заготовленная ловушка, не как живая авария.
+ *
+ * Прежний список полей вдобавок лгал о форме данных: в нём стояло
+ * `outstandingPaidRub`, которого в billingSummarySchema
+ * (packages/shared/src/index.ts) не существует вовсе.
  */
-const EMPTY_BILLING_SUMMARY: Dashboard["billingSummary"] = {
-  totalPlannedRub: 0,
-  totalDiscountRub: 0,
-  totalPaidRub: 0,
-  totalDueRub: 0,
-  taxDeductionEligibleRub: 0,
-  draftDocumentAmountRub: 0,
-  openTreatmentItems: 0,
-  unpaidDocuments: 0
-};
 
 /*
  * Нулевая сводка клинических правил. БЫЛО `{}`, а панель предупреждений читает
@@ -147,7 +157,7 @@ export function FinanceView({
   activePayments = [],
   activeTreatmentPlanItems = [],
   activeTreatmentPlanScenarios = [],
-  billingSummary = EMPTY_BILLING_SUMMARY,
+  billingSummary = null,
   clinicalRuleEvaluations = [],
   clinicalRuleActionLabels = noLabels(),
   clinicalRuleSeverityLabels = noLabels(),
@@ -236,6 +246,27 @@ export function FinanceView({
    */
   const createDocumentProp = onCreateDocument ? { onCreateDocument } : {};
 
+  /*
+   * Долг уезжает в форму приёма оплаты только когда он ПОСЧИТАН.
+   *
+   * PaymentCapture по этому числу рисует кнопку-подсказку «Долг: N ₽», которая
+   * одним нажатием подставляет сумму в поле. Пока сводки нет (сводка null),
+   * подставлять нечего: прежний ноль означал «долга нет», и кнопка молча
+   * пропадала по причине «пациент рассчитался» вместо «мы ещё не считали».
+   * Свойство именно ОТСУТСТВУЕТ, а не равно undefined: при
+   * exactOptionalPropertyTypes явное undefined считается переданным значением, а
+   * `remainingDebt?: number` в PaymentCapture объявлен без undefined.
+   *
+   * Ряд быстрых сумм (1000/2000/3000/5000) в PaymentCapture висит внутри той же
+   * проверки `remainingDebt !== undefined`, поэтому при неизвестной сводке он
+   * тоже скрыт. Это согласовано, а не потеряно: сводка null бывает ровно тогда,
+   * когда нет дашборда или не выбран пациент (useAppLogic.tsx,
+   * patientBillingSummary), а без выбранного пациента приём оплаты и так заперт
+   * — paymentPatientContextReady false и на экране стоит «Выберите пациента, за
+   * которого принимаете оплату» (hooks/domains/usePatientLogic.ts).
+   */
+  const remainingDebtProp = billingSummary ? { remainingDebt: billingSummary.totalDueRub } : {};
+
   const focusPaymentCapture = () => {
     const amountInput = document.getElementById("payment-amount-input") as HTMLInputElement | null;
     const paymentCapture = document.getElementById("payment-capture");
@@ -283,7 +314,7 @@ export function FinanceView({
       />
 
       <PaymentCapture
-        remainingDebt={billingSummary?.totalDueRub}
+        {...remainingDebtProp}
         amount={paymentAmount}
         feedback={paymentFeedback}
         fiscalCashierName={paymentFiscalCashierName}
@@ -386,6 +417,14 @@ export function FinanceView({
             чужой номер, надеясь на проверку в другом файле, нельзя: снимут
             проверку — уйдёт запрос. Пустая строка честно означает «пациент не
             выбран». */}
+        {/* `?? 0` ЗДЕСЬ ОСТАЁТСЯ СОЗНАТЕЛЬНО, И ЭТО НЕ НЕДОДЕЛКА.
+            Это число нигде не печатается как итог по пациенту: панель кошелька
+            берёт его только чтобы предложить сумму списания одним нажатием, а
+            кнопку-подсказку рисует под условием `debtSuggestionRub > 0`
+            (components/finance/FamilyWalletPanel.tsx). При неизвестной сводке
+            выходит 0, подсказки нет — и это верное поведение: списывать с
+            семейного счёта сумму, которую программа не посчитала, нельзя.
+            Ноль тут означает «не предлагать», а не «долга нет». */}
         <FamilyWalletPanel
           patientId={documentPatient?.id ?? ""}
           remainingDebtRub={billingSummary?.totalDueRub ?? 0}

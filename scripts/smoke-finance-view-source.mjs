@@ -65,7 +65,21 @@ requireIn(
 );
 requireIn(
 	appSource,
-	'const patientBillingSummary = useMemo<Dashboard["billingSummary"]>',
+	/*
+	 * ДОСЛОВНАЯ СТРОКА ЗАПРЕЩАЛА ЧЕСТНЫЙ ПРИЗНАК «НЕ ПОСЧИТАНО».
+	 *
+	 * Требовалось ровно `useMemo<Dashboard["billingSummary"]>`, то есть тип БЕЗ
+	 * null. Под этим требованием у сводки не оставалось способа сказать «итога
+	 * нет»: при отсутствии дашборда или невыбранном пациенте
+	 * patientBillingSummary возвращал объект из восьми нулей, и экран финансов
+	 * печатал «Остаток 0 ₽» там, где верное утверждение — «не определено».
+	 * Дословное требование, как и в двух случаях ниже, наказывало за починку.
+	 *
+	 * Закреплена СВЯЗЬ: сводка по пациенту выводится через useMemo и типизирована
+	 * формой Dashboard["billingSummary"]. Нулевой признак (` | null`) допускается,
+	 * подмена типа на чужой — нет.
+	 */
+	/const patientBillingSummary = useMemo<Dashboard\["billingSummary"\](?:\s*\|\s*null)?>/,
 	"App.tsx must derive a patient-scoped finance summary",
 );
 requireIn(

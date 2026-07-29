@@ -15,9 +15,29 @@ function ruCount(value: number, forms: [string, string, string]): string {
   return `${value} ${form}`;
 }
 
+/*
+ * ПОДПИСЬ ДЛЯ НЕПОСЧИТАННОГО СЧЁТЧИКА.
+ *
+ * Дословно то же слово, которым общая money() (AppHelpers.tsx,
+ * `moneyUnknownLabel`) печатает неизвестную сумму: в одной плитке стоят сумма и
+ * счётчик, и два разных слова про одно и то же состояние читались бы как два
+ * разных состояния. Своя константа, а не импорт: AppHelpers — модуль на шесть
+ * тысяч строк, который тянет за собой разметку и таблицы стилей, и лист-панели
+ * незачем на него завязываться. Расхождение слов не оставлено на честное слово —
+ * равенство закреплено проверкой (tests/financeSummaryUnknownIsNotZero.test.tsx).
+ */
+export const financeSummaryUnknownLabel = "не определено";
+
 type FinancePlanningOverviewProps = {
   activePaymentsCount: number;
-  billingSummary: Dashboard["billingSummary"];
+  /*
+   * null — «сводка не посчитана», а не «сводка нулевая».
+   *
+   * Источник: useAppLogic.tsx, patientBillingSummary — null, пока нет дашборда
+   * или не выбран пациент. Общая схема (billingSummarySchema) не тронута: её
+   * поля остаются number, неопределённость выражена отсутствием всего объекта.
+   */
+  billingSummary: Dashboard["billingSummary"] | null;
   money: MoneyFormatter;
   onGoToVisit: () => void;
   priorityLabels: Record<TreatmentPlanScenario["priority"], string>;
@@ -51,35 +71,60 @@ export function FinancePlanningOverview({
         ноль ДО форматирования, и общая правка money() до этих плиток не
         доставала. Пока сводки нет, экран уверенно показывал «План лечения 0 ₽,
         Оплачено 0 ₽, Остаток 0 ₽» — то же самое, что «пациент ничего не
-        должен». Счётчики позиций (`ruCount`) свои `?? 0` сохранили: ноль
-        открытых позиций — это осмысленное «позиций нет», а не молчание.
+        должен».
 
-        Отдельным долгом (не в этом файле): apps/web/src/useAppLogic.tsx:5030
-        при отсутствии дашборда или пациента ВОЗВРАЩАЕТ сводку из нулей, а не
-        признак «не посчитано». Пока это так, сюда доезжают настоящие нули, и
-        разница не видна. Тип Dashboard["billingSummary"] нулей не допускает
-        (packages/shared/src/index.ts:2056), поэтому честный признак требует
-        правки общей схемы — она шире одного экрана.
+        ДОЛГ, КОТОРЫЙ ЗДЕСЬ БЫЛ ОПИСАН, ЗАКРЫТ. Прежний текст говорил:
+        useAppLogic.tsx при отсутствии дашборда или пациента ВОЗВРАЩАЕТ сводку из
+        нулей, поэтому сюда доезжают настоящие нули и правка money() инертна.
+        Теперь `patientBillingSummary` в этом случае отдаёт null, и до money()
+        доезжает undefined — она печатает «не определено». Общая схема при этом не
+        менялась: nonNegativeMoneyRubSchema так и не допускает null
+        (packages/shared/src/index.ts), признак неопределённости стоит на самой
+        сводке, а не в её полях.
+
+        СЧЁТЧИКИ ТОЖЕ ПЕРЕСТАЛИ ВРАТЬ, И ЭТО НЕ ЗАОДНО. Прежнее объяснение
+        оставляло им `?? 0` с доводом «ноль открытых позиций — осмысленное
+        „позиций нет“». Довод верен, только пока число приходит из посчитанной
+        сводки. Когда сводки нет вовсе, «0 открытых позиций» под суммой «не
+        определено» — это два противоположных утверждения в одной плитке.
+        Поэтому: сводка есть — печатаем число как есть (ноль остаётся нулём),
+        сводки нет — та же подпись «не определено».
+
+        `activePaymentsCount` НЕ ТРОНУТ намеренно: это отдельный пропс со своей
+        правдой (список платежей), а не поле неизвестной сводки. Гасить его по
+        чужому признаку — значит прятать настоящий счётчик, если сводку когда-то
+        передадут null вместе с непустым списком платежей.
+
+        ПОЧЕМУ В СУММАХ СТОИТ `?? null`, И ЭТО НЕ ВОЗВРАТ `?? 0` ДРУГИМИ БУКВАМИ.
+        MoneyFormatter в этом файле объявлен `(value: number | null) => string` —
+        undefined он не принимает. Пока сводка была не-nullable, `?.` не мог дать
+        undefined и запись `money(billingSummary?.totalPaidRub)` компилировалась;
+        с признаком «не посчитано» она перестала (tsc: TS2345, четыре плитки).
+        Тип формата НАМЕРЕННО не расширен до undefined: пусть каждое место скажет
+        словом, что означает «значения нет». `?? null` отдаёт money() ровно то,
+        чем она печатает «не определено», а `?? 0` вернул бы «0 ₽» — тот самый
+        дефект. Разница именно в этом знаке, и охрана (tests/moneyUnknownNotZero)
+        ловит только нулевой вариант.
       */}
       <div className="finance-summary-grid bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3 mb-4" aria-label="Финансовая сводка" data-testid="finance-planning">
         <article>
           <span>План лечения</span>
-          <strong>{money(billingSummary?.totalPlannedRub)}</strong>
-          <p>{ruCount(billingSummary?.openTreatmentItems ?? 0, ["открытая позиция", "открытые позиции", "открытых позиций"])}</p>
+          <strong>{money(billingSummary?.totalPlannedRub ?? null)}</strong>
+          <p>{billingSummary ? ruCount(billingSummary.openTreatmentItems, ["открытая позиция", "открытые позиции", "открытых позиций"]) : financeSummaryUnknownLabel}</p>
         </article>
         <article>
           <span>Оплачено</span>
-          <strong>{money(billingSummary?.totalPaidRub)}</strong>
+          <strong>{money(billingSummary?.totalPaidRub ?? null)}</strong>
           <p>{ruCount(activePaymentsCount, ["платеж", "платежа", "платежей"])} по текущему пациенту</p>
         </article>
         <article className={(billingSummary?.totalDueRub ?? 0) > 0 ? "finance-due" : ""}>
           <span>Остаток</span>
-          <strong>{money(billingSummary?.totalDueRub)}</strong>
-          <p>{ruCount(billingSummary?.unpaidDocuments ?? 0, ["документ", "документа", "документов"])} без оплаты</p>
+          <strong>{money(billingSummary?.totalDueRub ?? null)}</strong>
+          <p>{billingSummary ? `${ruCount(billingSummary.unpaidDocuments, ["документ", "документа", "документов"])} без оплаты` : financeSummaryUnknownLabel}</p>
         </article>
         <article>
           <span>Вычет</span>
-          <strong>{money(billingSummary?.taxDeductionEligibleRub)}</strong>
+          <strong>{money(billingSummary?.taxDeductionEligibleRub ?? null)}</strong>
           <p>медицинские услуги, пригодные для справки</p>
         </article>
       </div>
