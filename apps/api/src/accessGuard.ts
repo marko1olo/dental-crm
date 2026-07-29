@@ -38,18 +38,43 @@ const namedDevelopmentModes = new Set(["development", "test"]);
  * ПЛЮС флаг. Незаданный, пустой или незнакомый NODE_ENV ("staging", "prod", "qa",
  * опечатка в имени) больше не разрешает ничего — он просто не режим разработки.
  * Ошибка в имени режима теперь закрывает доступ, а не открывает его.
+ *
+ * ЭКСПОРТИРУЕТСЯ НАМЕРЕННО. Тот же перевёрнутый предикат скопирован ещё в четыре
+ * места, и каждое даёт обход секрета администратора:
+ *   apps/api/src/routes/imaging.ts   — dicomWebSettingsUnguardedAllowed
+ *   apps/api/src/routes/schedule.ts  — scheduleUnguardedMutationsAllowed
+ *   apps/api/src/routes/settings.ts  — settingsUnguardedMutationsAllowed
+ *   apps/api/src/routes/telegram.ts  — isExplicitlyUnguardedControlPlaneAllowed
+ * Их должен переписать владелец соответствующих файлов — на этот предикат, а не на
+ * пятую копию. Пять копий условия безопасности — это то, как следующая инверсия
+ * проникает незамеченной: правку внесут в одну, а остальные останутся открытыми.
  */
-function namedDevelopmentModeActive(): boolean {
+export function namedDevelopmentModeActive(): boolean {
   const mode = process.env.NODE_ENV?.trim().toLowerCase();
   return mode !== undefined && namedDevelopmentModes.has(mode);
 }
 
+/**
+ * unguardedBypassAllowed — единственная законная форма проверки «разрешено ли
+ * работать без секрета администратора»: названный режим разработки ПЛЮС явно
+ * выставленный флаг.
+ *
+ * Имя переменной окружения передаётся строкой, чтобы одно и то же условие
+ * обслуживало все участки и нигде не переписывалось заново. Опечатка в имени
+ * флага здесь безопасна: неизвестная переменная читается как undefined, условие
+ * становится ложным и доступ ЗАКРЫВАЕТСЯ. Ошибка в этой функции не может открыть
+ * данные, только закрыть — направление отказа выбрано осознанно.
+ */
+export function unguardedBypassAllowed(flagEnvironmentVariable: string): boolean {
+  return namedDevelopmentModeActive() && process.env[flagEnvironmentVariable] === "1";
+}
+
 function clinicalMutationsUnguardedAllowed(): boolean {
-  return namedDevelopmentModeActive() && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS");
 }
 
 function clinicalReadsUnguardedAllowed(): boolean {
-  return namedDevelopmentModeActive() && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
+  return unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_READS");
 }
 
 
