@@ -3,177 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DENTE CRM — Official Interactive Showcase</title>
-    <meta name="description" content="Enterprise Dental CRM & Local 3D DICOM Interactive Viewer">
-    <meta property="og:title" content="DENTE CRM">
-    <meta property="og:description" content="Enterprise Dental CRM & Local 3D DICOM Interactive Viewer">
-    <meta property="og:image" content="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DENTE CRM">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>dental-crm — Official Technical Showcase</title>
+    <meta name="description" content="Enterprise dental clinic automation with 2D/3D DICOM viewer and KND 1151156 tax drafts.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #090a0f;
-            --card-bg: rgba(18, 22, 34, 0.75);
-            --border: rgba(255, 255, 255, 0.12);
-            --accent: #00f2fe;
-            --accent-glow: rgba(0, 242, 254, 0.35);
-            --text: #f0f4f8;
-            --muted: #8a99ad;
-        }
+        :root { --bg: #091319; --accent: #10b981; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-        }
-        .header-banner {
-            width: 100%;
-            max-width: 1200px;
-            margin: 2rem auto 0;
-            padding: 0 1rem;
-        }
-        .banner-img {
-            width: 100%;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px var(--accent-glow);
-            aspect-ratio: 16/9;
-            object-fit: cover;
-        }
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-        }
-        h1 {
-            font-size: 3.2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-        p.subtitle {
-            font-size: 1.25rem;
-            color: var(--muted);
-            margin-bottom: 2rem;
-        }
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 3rem;
-        }
-        .btn {
-            padding: 0.85rem 1.8rem;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: #000;
-            box-shadow: 0 4px 15px var(--accent-glow);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--accent-glow);
-        }
-        .btn-secondary {
-            background: rgba(255,255,255,0.05);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            text-align: left;
-            margin-top: 2rem;
-        }
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            backdrop-filter: blur(10px);
-            transition: border-color 0.3s ease;
-        }
-        .card:hover {
-            border-color: var(--accent);
-        }
-        .card h3 {
-            font-size: 1.2rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-        .card p {
-            font-size: 0.95rem;
-            color: var(--muted);
-        }
-        footer {
-            margin-top: auto;
-            padding: 2rem;
-            color: var(--muted);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border);
-            width: 100%;
-            text-align: center;
-        }
+        body { background: var(--bg); color: #f1f5f9; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; overflow-x: hidden; }
+        .hero-box { max-width: 900px; width: 100%; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 3rem 2rem; backdrop-filter: blur(10px); box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 30px var(--accent); }
+        h1 { font-size: 3.5rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; text-shadow: 0 0 20px var(--accent); }
+        .tag { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--accent); color: var(--accent); font-weight: 700; padding: 0.4rem 1.2rem; border-radius: 4px; font-size: 0.85rem; margin-bottom: 1.5rem; letter-spacing: 1px; }
+        p.desc { font-size: 1.2rem; color: #94a3b8; max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.6; }
+        .btn-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 1rem 2.2rem; background: var(--accent); color: #000; font-weight: 700; text-decoration: none; border-radius: 6px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; }
+        .btn:hover { background: #fff; box-shadow: 0 0 30px #fff; transform: translateY(-2px); }
+        .btn-sec { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-sec:hover { background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
-
-    <div class="header-banner">
-        <img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg" class="banner-img" alt="DENTE CRM Showcase Banner"/>
-    </div>
-
-    <div class="container">
-        <h1>DENTE CRM</h1>
-        <p class="subtitle">Enterprise Dental CRM & Local 3D DICOM Interactive Viewer</p>
-
+    <div class="hero-box">
+        <h1>dental-crm</h1>
+        <div class="tag">POSTGRESQL 18 // DENTE DENTAL CRM & DICOM VIEWER</div>
+        <p class="desc">Enterprise dental clinic automation with 2D/3D DICOM viewer and KND 1151156 tax drafts.</p>
         <div class="btn-group">
-            <a href="https://github.com/marko1olo/dental-crm" class="btn btn-primary" target="_blank">🚀 View on GitHub</a>
-            <a href="https://github.com/marko1olo/dental-crm#readme" class="btn btn-secondary" target="_blank">📖 Read Full Documentation</a>
-        </div>
-
-        <div class="grid">
-            <div class="card">
-                <h3>⚡ Zero-Bloat Execution</h3>
-                <p>Designed for low execution latency, deterministic memory management, and explicit hardware control.</p>
-            </div>
-            <div class="card">
-                <h3>🔍 100% Audited Codebase</h3>
-                <p>Fully open-source under True People's License v2.0 with complete architectural transparency.</p>
-            </div>
-            <div class="card">
-                <h3>🌐 Production Ready</h3>
-                <p>Includes structured file matrices, CLI parameters, and automated verification build suites.</p>
-            </div>
+            <a href="https://github.com/marko1olo/dental-crm" class="btn" target="_blank">🚀 Open GitHub Repo</a>
+            <a href="https://github.com/marko1olo/dental-crm#readme" class="btn btn-sec" target="_blank">📖 Read Spec</a>
         </div>
     </div>
-
-    <footer>
-        <p>&copy; 2026 DENTE CRM Maintainers & Community. Free & Open Source.</p>
-    </footer>
-
 </body>
 </html>
