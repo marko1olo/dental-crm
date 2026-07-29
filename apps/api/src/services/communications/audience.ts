@@ -27,6 +27,19 @@ import { and, eq, gte, inArray, isNotNull, ne, sql, type SQL } from "drizzle-orm
 import { db } from "../../db/client.js";
 import { appointments, patients, payments, treatmentItems } from "../../db/schema.js";
 import { isValidEmailAddress } from "../../emailTransport.js";
+/*
+ * Пояс клиники берётся из ЕДИНСТВЕННОГО дома, а не читается здесь ещё раз.
+ *
+ * Дом сегодня физически лежит в модуле отчётов, и это не идеал — читателю пояса
+ * из рассылок незачем зависеть от отчётов. Но выбор здесь был между зависимостью
+ * и ЧЕТВЁРТОЙ копией: копий `clinicTimeZone` в дереве уже три
+ * (`services/reports/managerReports.ts` — канон, `migration/loader.ts` — читает
+ * другую таблицу и подставляет пояс по умолчанию вместо «неизвестно», и одна
+ * снята из `routes/reports.ts`). Четвёртая была бы четвёртым источником истины о
+ * календарной дате. Перенос дома в нейтральное место — отдельная задача, она
+ * записана в очередь; зависимость дешевле копии и обратима.
+ */
+import { clinicTimeZone } from "../reports/managerReports.js";
 import { normalizeRussianMsisdn } from "../../smsTransport.js";
 import { normalizeWhatsappRecipient } from "../../whatsappTransport.js";
 import type { CommunicationChannelCode, CommunicationConsentScope } from "./channelRouter.js";
@@ -123,14 +136,56 @@ export function estimateAudienceCost(input: EstimateAudienceCostInput): Audience
 	};
 }
 
+/**
+ * Календарная дата «сегодня» ГЛАЗАМИ КЛИНИКИ, разложенная на числа.
+ *
+ * ЗАЧЕМ. Здесь брались `now.getUTCFullYear()`/`getUTCMonth()`/`getUTCDate()`, то
+ * есть сегодняшний день по UTC. У всех российских поясов смещение
+ * ПОЛОЖИТЕЛЬНОЕ, поэтому UTC отстаёт от местного календаря каждую ночь: в Самаре
+ * (пояс по умолчанию в схеме) до 04:00, на Камчатке половину суток.
+ *
+ * ЧТО ЭТО ЗНАЧИЛО ДЛЯ КЛИНИКИ. У пациента день рождения. Администратор открывает
+ * рассылку в 09:00 по местному времени — на Камчатке это ещё 21:00 ПРЕДЫДУЩЕГО
+ * дня по UTC. Отбор «день рождения сегодня» (`0` дней) пациента НЕ находит: по
+ * UTC до него ещё сутки. Зато находит отбор «через 1 день» — и поздравление
+ * уходит на день позже, уже после праздника. То же с возрастом: пациент, которому
+ * сегодня исполнилось 18, ещё сутки числится семнадцатилетним, а от возраста
+ * зависит согласие на обработку данных и право самому подписывать документы.
+ *
+ * Пояс неизвестен — поведение прежнее, по поясу процесса. «Неизвестно» здесь не
+ * превращается в «Москва»: подставленный пояс сдвинул бы поздравления у той
+ * клиники, про которую мы как раз ничего не знаем.
+ */
+function calendarPartsIn(timeZone: string | null, at: Date): { year: number; month: number; day: number } {
+	if (timeZone) {
+		try {
+			const parts = new Map(
+				new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+					.formatToParts(at)
+					.map((part) => [part.type, part.value])
+			);
+			const year = Number(parts.get("year"));
+			const month = Number(parts.get("month"));
+			const day = Number(parts.get("day"));
+			if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+				return { year, month: month - 1, day };
+			}
+		} catch {
+			// Имени пояса не существует — это не повод не отобрать получателей.
+		}
+	}
+	return { year: at.getUTCFullYear(), month: at.getUTCMonth(), day: at.getUTCDate() };
+}
+
 /** Возраст в полных годах по дате рождения в виде «ГГГГ-ММ-ДД». */
-function ageFromBirthDate(birthDate: string | null, now: Date): number | null {
+function ageFromBirthDate(birthDate: string | null, now: Date, timeZone: string | null): number | null {
 	if (!birthDate) return null;
 	const parsed = new Date(birthDate);
 	if (Number.isNaN(parsed.getTime())) return null;
-	let age = now.getUTCFullYear() - parsed.getUTCFullYear();
-	const monthDelta = now.getUTCMonth() - parsed.getUTCMonth();
-	if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < parsed.getUTCDate())) age -= 1;
+	const today = calendarPartsIn(timeZone, now);
+	let age = today.year - parsed.getUTCFullYear();
+	const monthDelta = today.month - parsed.getUTCMonth();
+	if (monthDelta < 0 || (monthDelta === 0 && today.day < parsed.getUTCDate())) age -= 1;
 	return age >= 0 && age < 130 ? age : null;
 }
 
@@ -138,15 +193,21 @@ function ageFromBirthDate(birthDate: string | null, now: Date): number | null {
  * Через сколько дней день рождения. Считается по дню и месяцу, поэтому 29
  * февраля у невисокосного года попадает на 1 марта — так же, как это делает
  * администратор вручную.
+ *
+ * Сравнение остаётся в UTC-миллисекундах намеренно: обе стороны — календарные
+ * тройки без времени, `Date.UTC` здесь просто способ вычесть одну календарную
+ * дату из другой без арифметики по длине месяцев. Пояс влияет на то, КАКАЯ дата
+ * считается сегодняшней, а не на то, как считается разница.
  */
-function daysUntilBirthday(birthDate: string | null, now: Date): number | null {
+function daysUntilBirthday(birthDate: string | null, now: Date, timeZone: string | null): number | null {
 	if (!birthDate) return null;
 	const parsed = new Date(birthDate);
 	if (Number.isNaN(parsed.getTime())) return null;
 
-	const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+	const today = calendarPartsIn(timeZone, now);
+	const todayUtc = Date.UTC(today.year, today.month, today.day);
 	for (let yearOffset = 0; yearOffset <= 1; yearOffset += 1) {
-		const candidate = Date.UTC(now.getUTCFullYear() + yearOffset, parsed.getUTCMonth(), parsed.getUTCDate());
+		const candidate = Date.UTC(today.year + yearOffset, parsed.getUTCMonth(), parsed.getUTCDate());
 		if (candidate >= todayUtc) {
 			return Math.round((candidate - todayUtc) / 86_400_000);
 		}
@@ -233,6 +294,12 @@ export type ResolveAudienceInput = {
 	readonly scope: CommunicationConsentScope;
 	readonly criteria: AudienceCriteria;
 	readonly now?: Date;
+	/**
+	 * Пояс клиники для календарных признаков (день рождения, возраст). Не задан —
+	 * читается из клиники по `organizationId`. Поле нужно проверкам: задать пояс
+	 * без заведения клиники дешевле, чем сеять клинику ради одного числа.
+	 */
+	readonly timeZone?: string | null;
 	/** Ограничить размер выборки — предпросмотр не должен тянуть всю картотеку. */
 	readonly limit?: number;
 };
@@ -246,6 +313,18 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 	const now = input.now ?? new Date();
 	const limit = Math.max(1, Math.min(20_000, input.limit ?? 5000));
 	const criteria = input.criteria;
+
+	/*
+	 * Пояс читается ТОЛЬКО когда он нужен — то есть когда отбор смотрит на день
+	 * рождения или на возраст. Лишний запрос к базе на каждый предпросмотр
+	 * рассылки не нужен: остальные признаки календарной даты не касаются.
+	 * Явно переданный пояс (`input.timeZone`) не перезапрашивается — так тест
+	 * может задать пояс, не заводя клинику.
+	 */
+	const needsCalendarDate = criteria.birthdayWithinDays !== undefined || criteria.ageFrom !== undefined || criteria.ageTo !== undefined;
+	const timeZone = needsCalendarDate
+		? (input.timeZone ?? (await clinicTimeZone(input.organizationId)))
+		: (input.timeZone ?? null);
 
 	const filters: SQL[] = [eq(patients.organizationId, input.organizationId)];
 	filters.push(eq(patients.status, criteria.status ?? "active"));
@@ -323,14 +402,14 @@ export async function resolveAudience(input: ResolveAudienceInput): Promise<Audi
 			continue;
 		}
 		if (criteria.birthdayWithinDays !== undefined) {
-			const days = daysUntilBirthday(row.birthDate, now);
+			const days = daysUntilBirthday(row.birthDate, now, timeZone);
 			if (days === null || days > criteria.birthdayWithinDays) {
 				excluded.excluded_by_criteria += 1;
 				continue;
 			}
 		}
 		if (criteria.ageFrom !== undefined || criteria.ageTo !== undefined) {
-			const age = ageFromBirthDate(row.birthDate, now);
+			const age = ageFromBirthDate(row.birthDate, now, timeZone);
 			if (age === null) {
 				excluded.excluded_by_criteria += 1;
 				continue;
