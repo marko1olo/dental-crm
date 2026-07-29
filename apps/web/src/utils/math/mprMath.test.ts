@@ -1,6 +1,35 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clampMprSlabMm } from "./mprMath.js";
+import { clampMprSlabMm, clampMprAxisDeg } from "./mprMath.js";
+
+describe("clampMprAxisDeg", () => {
+  it("should return the value correctly rounded if within bounds [-90, 90]", () => {
+    assert.equal(clampMprAxisDeg(45), 45);
+    assert.equal(clampMprAxisDeg(45.1), 45);
+    assert.equal(clampMprAxisDeg(45.5), 46);
+    assert.equal(clampMprAxisDeg(-45.5), -45);
+    assert.equal(clampMprAxisDeg(-90), -90);
+    assert.equal(clampMprAxisDeg(90), 90);
+  });
+
+  it("should clamp values below the minimum bound (-90)", () => {
+    assert.equal(clampMprAxisDeg(-91), -90);
+    assert.equal(clampMprAxisDeg(-100), -90);
+    assert.equal(clampMprAxisDeg(-90.5), -90);
+  });
+
+  it("should clamp values above the maximum bound (90)", () => {
+    assert.equal(clampMprAxisDeg(91), 90);
+    assert.equal(clampMprAxisDeg(100), 90);
+    assert.equal(clampMprAxisDeg(90.5), 90);
+  });
+
+  it("should handle non-finite values by returning the fallback value (0)", () => {
+    assert.equal(clampMprAxisDeg(NaN), 0);
+    assert.equal(clampMprAxisDeg(Infinity), 0);
+    assert.equal(clampMprAxisDeg(-Infinity), 0);
+  });
+});
 
 describe("clampMprSlabMm", () => {
   it("should return the value correctly rounded if within bounds [1, 30]", () => {
