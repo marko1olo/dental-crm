@@ -1,20 +1,50 @@
 import { readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
-const appSource =
-	readFileSync("apps/web/src/App.tsx", "utf8") +
-	"\n" +
-	readAppLogicSourceSync();
-const communicationsSource = readFileSync(
-	"apps/web/src/CommunicationsView.tsx",
-	"utf8",
-);
-const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
+/*
+ * Переводы строк нормализуются: в дереве `core.autocrlf=true` и файлы лежат
+ * смешанно — styles/main.css целиком в CRLF, App.tsx целиком в LF. Требование с
+ * литералом `\n` иначе проверяет не содержимое файла, а способ его выгрузки.
+ */
+function readSource(relativePath) {
+	return readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
+}
+
+const appSource = `${readSource("apps/web/src/App.tsx")}\n${readAppLogicSourceSync().replace(/\r\n/g, "\n")}`;
+const communicationsSource = readSource("apps/web/src/CommunicationsView.tsx");
+const cssSource = readSource("apps/web/src/styles/main.css");
 
 const missing = [];
 
+/*
+ * Требование сопоставляется терпимо к переносам, но строго к токенам. Замерено
+ * 29.07.2026: из четырёх непрошедших требований этого стража НИ ОДНО не было
+ * дефектом продукта, и одно из четырёх — просто перенос аргументов Biome:
+ *   требовалось `async function completeCommunicationTask(taskId: string, outcome: CommunicationTaskOutcome)`
+ *   в коде     useAppLogic.tsx:12988 — та же подпись на четырёх строках.
+ * Идиом «закрепляем связь, а не написание вокруг неё» — из
+ * smoke-finance-ledger-source.mjs ведущего (bc0c1e7db).
+ */
+function flexiblePattern(snippet) {
+	const tokens = snippet
+		.split(/\s+/)
+		.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+		.join("\\s*");
+	return new RegExp(
+		tokens
+			.replace(/\\\./g, "\\s*\\??\\s*\\.")
+			.replace(/(\\[({])/g, "$1\\s*")
+			.replace(/(\\[)}])/g, "(?:\\s*,)?\\s*$1"),
+	);
+}
+
 function requireIn(source, snippet, message) {
-	if (!source.includes(snippet)) missing.push(message);
+	if (snippet instanceof RegExp) {
+		if (!snippet.test(source)) missing.push(message);
+		return;
+	}
+	if (!source.includes(snippet) && !flexiblePattern(snippet).test(source))
+		missing.push(message);
 }
 
 function forbidIn(source, snippet, message) {
@@ -124,7 +154,13 @@ requireIn(
 );
 requireIn(
 	communicationsSource,
-	'<div className="panel communications-panel" id="communications">',
+	/*
+	 * Закрытая скобка `>` из требования убрана: в CommunicationsView.tsx:302 у
+	 * панели появился ещё `data-testid="communications-view"`. Добавленный
+	 * тестовый крючок — улучшение, а не регресс, и закреплять на нём отсутствие
+	 * атрибутов нельзя.
+	 */
+	'<div className="panel communications-panel" id="communications"',
 	"CommunicationsView must own panel markup",
 );
 requireIn(
@@ -139,7 +175,18 @@ requireIn(
 );
 requireIn(
 	communicationsSource,
-	'className="communication-empty-state"',
+	/*
+	 * ПУСТОЕ СОСТОЯНИЕ ПЕРЕВЕДЕНО НА ОБЩИЙ КОМПОНЕНТ, А НЕ УДАЛЕНО.
+	 *
+	 * Требовалась своя разметка `className="communication-empty-state"`; теперь
+	 * очередь связи рисует общий `<EmptyState>` из components/EmptyState.tsx
+	 * (CommunicationsView.tsx:5 — импорт, :470 — использование). Требование к
+	 * СОДЕРЖАНИЮ пустого состояния не изменилось и проходит рядом: «Очередь связи
+	 * пуста», «Открыть расписание», действие на onGoToSchedule. Проверяется теперь
+	 * использование общего компонента: своя копия того же блока — это то, от чего
+	 * уходили.
+	 */
+	"<EmptyState",
 	"CommunicationsView must show an explicit empty state",
 );
 requireIn(
@@ -159,8 +206,28 @@ requireIn(
 );
 requireIn(
 	communicationsSource,
-	"function ruCount",
-	"CommunicationsView must own Russian count formatting",
+	/*
+	 * ТРЕБОВАНИЕ ОБРАЩЕНО: СВОЯ КОПИЯ ПРАВИЛА СКЛОНЕНИЯ — ЭТО ТО, ОТ ЧЕГО УШЛИ.
+	 *
+	 * Раньше требовалось `function ruCount`, то есть СОБСТВЕННАЯ функция
+	 * согласования числа внутри экрана. Её убрали намеренно, и причина записана
+	 * прямо на её месте — CommunicationsView.tsx:40-46: правило склонения в
+	 * проекте одно, владелец у него один (`countLabel` из lib/russianPlural.ts,
+	 * реэкспортируется AppHelpers), а вторая копия того же правила через полгода
+	 * даёт два разных ответа на один вопрос.
+	 *
+	 * Требовать `function ruCount` — значит требовать вернуть дубль правила, что
+	 * прямо противоречит .agents/AGENTS.md (MONOLITH PREVENTION: декомпозировать в
+	 * переиспользуемые части). Поэтому проверяется не наличие своей функции, а
+	 * использование общей: экран обязан согласовывать числа общим владельцем.
+	 */
+	"countLabel(",
+	"CommunicationsView must format Russian counts through the shared countLabel owner",
+);
+requireIn(
+	communicationsSource,
+	'from "./lib/russianPlural"',
+	"CommunicationsView must take Russian plural rules from the single shared module",
 );
 requireIn(
 	communicationsSource,

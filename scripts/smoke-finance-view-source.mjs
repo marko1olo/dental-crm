@@ -14,8 +14,19 @@ const viteSource = readFileSync("apps/web/vite.config.ts", "utf8");
 
 const missing = [];
 
+/*
+ * ТРЕБОВАНИЕ МОЖЕТ БЫТЬ ОБРАЗЦОМ, А НЕ ДОСЛОВНОЙ СТРОКОЙ.
+ *
+ * Идиом ведущего из smoke-finance-ledger-source.mjs (коммит bc0c1e7db):
+ * закрепляем СВЯЗЬ (какой пропс из какого источника), а НЕ защитную обёртку
+ * вокруг неё. Замерено 29.07.2026: оба непрошедших требования этого стража
+ * оказались наказанием за улучшение кода, дефектом продукта — ни одно.
+ * Дословную строку по-прежнему можно передать строкой, где важен именно текст.
+ */
 function requireIn(source, snippet, message) {
-	if (!source.includes(snippet)) missing.push(message);
+	const found =
+		snippet instanceof RegExp ? snippet.test(source) : source.includes(snippet);
+	if (!found) missing.push(message);
 }
 
 function forbidIn(source, snippet, message) {
@@ -155,7 +166,15 @@ requireIn(
 );
 requireIn(
 	financeViewSource,
-	"evaluations={clinicalRuleEvaluations}",
+	/*
+	 * ЗАКРЕПЛЕНА СВЯЗЬ, А НЕ ОБЁРТКА. В FinanceView.tsx:278 стоит
+	 * `evaluations={clinicalRuleEvaluations ?? []}` — кто-то добавил запас на
+	 * отсутствие списка правил. Поведение сохранилось и улучшилось, а дословное
+	 * требование за этим не пошло. Требовать написание без `?? []` — значит
+	 * требовать менее безопасный код. Источник пропса закреплён по-прежнему
+	 * точно: подставят другую коллекцию — страж упадёт.
+	 */
+	/evaluations=\{clinicalRuleEvaluations\b/,
 	"FinanceView must render patient-scoped clinical rules",
 );
 forbidIn(
@@ -200,7 +219,22 @@ requireIn(
 );
 requireIn(
 	viteSource,
-	'"/api": apiProxyTarget',
+	/*
+	 * ТРЕБОВАЛСЯ УСТАРЕВШИЙ СОКРАЩЁННЫЙ ВИД ПРОКСИ, И ОН УЖЕ НЕ ГОДИТСЯ.
+	 *
+	 * Дословно требовалось `"/api": apiProxyTarget`. В vite.config.ts:158 стоит
+	 * `"/api": { target: apiProxyTarget, changeOrigin: true, ws: true }`, и
+	 * причина расширения записана рядом (:155-157): при сокращённой форме
+	 * веб-сокет шёл обычным HTTP, рукопожатие с /api/ws/schedule висело до
+	 * таймаута, и компоненты, собирающие адрес от window.location.host (например
+	 * FamilyWalletPanel), не получали обновлений вовсе.
+	 *
+	 * То есть дословное требование велело откатить починку веб-сокетов.
+	 * Закреплено то, что оно защищало на самом деле: адрес прокси /api берётся из
+	 * настраиваемого apiProxyTarget, а не вписан числом. Обе формы записи
+	 * допускаются, подстановка литерального адреса — нет.
+	 */
+	/"\/api":\s*(?:apiProxyTarget\b|\{[^}]*target:\s*apiProxyTarget\b)/,
 	"Vite dev proxy must use the configurable API target",
 );
 forbidIn(
