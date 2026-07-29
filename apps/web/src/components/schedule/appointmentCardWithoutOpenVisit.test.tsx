@@ -101,15 +101,17 @@ function propsFor(activeVisit: ActiveVisitProp, useManualSelects: boolean): Appo
 		dashboard: dashboardWith(activeVisit),
 		visibleScheduleSuggestions: [],
 		appointmentReadinessById: new Map(),
+		// Без приведения: приведение здесь СКРЫЛО мою же опечатку «in_progress»
+		// вместо настоящего члена перечисления «in_treatment».
 		appointmentLabels: {
 			planned: "Запланирован",
 			confirmed: "Подтвержден",
 			arrived: "Пришел",
-			in_progress: "На приеме",
+			in_treatment: "На приеме",
 			completed: "Завершен",
 			cancelled: "Отменен",
 			no_show: "Не пришел",
-		} as AppointmentCardProps["appointmentLabels"],
+		},
 		appointmentDraft: {
 			startsAt: appointment.startsAt,
 			endsAt: appointment.endsAt,
