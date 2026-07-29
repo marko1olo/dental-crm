@@ -28,7 +28,7 @@
  *
  * Чинить нужно общий путь, а не эти обработчики: строгий код сносить нельзя.
  */
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createPatientSchema, patientSchema, updatePatientAdministrativeProfileSchema, updatePatientSchema } from "@dental/shared";
 
 type PatientPayloadSchema<T> = {
@@ -272,33 +272,86 @@ import {
   updatePatientAdministrativeProfileInDb
 } from "../db/patientsQuery.js";
 
+/**
+ * ОТКАЗЫ КАРТОТЕКИ БЕЗ ЕДИНОГО СЛОВА ДЛЯ ЧЕЛОВЕКА.
+ *
+ * Семь обработчиков этого файла начинались одной и той же шестистрочной
+ * преамбулой и отвечали `{ error: "AuthRequired" }` и
+ * `{ error: "AuthExpired" }` — телом без поля `message`. Клиенту нечего
+ * показать, поэтому он строит фразу по коду 401
+ * (`apps/web/src/lib/panelStateText.ts`): «у вашей смены нет доступа к этим
+ * данным — войдите в смену заново или попросите администратора открыть доступ».
+ * Для «нет входа вовсе» и «вход больше не принимается» это один и тот же совет,
+ * и в половине случаев он ложный: администратору предлагают идти к
+ * администратору, хотя достаточно войти в кабинет.
+ *
+ * Разница между двумя состояниями сервер ЗНАЕТ и теперь её называет. Коды ответа
+ * сохранены дословно: на них стоит tests/routes/patientArchiveStatusScope.test.ts
+ * и смоук scripts/smoke-clinical-mutation-guard.mjs.
+ *
+ * ЧЕГО СЕРВЕР НЕ ЗНАЕТ, ТОГО И НЕ УТВЕРЖДАЕТ. `verifyToken` возвращает `null` и
+ * на истёкшем сроке, и на неверной подписи, и на токене без организации
+ * (utils/cryptoHelper.ts) — различить их нельзя. Поэтому текст называет обе
+ * возможные причины и одно действие, которое лечит любую из них.
+ */
+/*
+ * Двоеточия внутри фраз нет намеренно: клиент подставляет текст после своего
+ * заголовка («Пациенты не загружены: …»), и второе двоеточие в одном
+ * предложении читается как обрывок.
+ */
+const clinicAuthRequiredMessage =
+  "Требуется авторизация рабочего кабинета клиники — картотека пациентов открывается только из кабинета. Войдите в кабинет клиники и повторите действие.";
+const clinicAuthRejectedMessage =
+  "Вход в рабочий кабинет клиники не принят — срок входа истёк или запись о входе повреждена. Войдите в кабинет клиники заново и повторите действие.";
+
+/**
+ * Организация из ПОДПИСАННОГО токена кабинета, либо 401 с причиной и действием.
+ * Возвращает null, когда ответ клиенту уже отправлен.
+ *
+ * ПОЧЕМУ ОТДЕЛЬНАЯ ФУНКЦИЯ, А НЕ readClinicOrgId НИЖЕ. Тот возвращает null на
+ * оба состояния сразу и потому объяснить отказ не может — маршруты рекламаций и
+ * задач, стоящие на нём, отвечают «требуется авторизация» и на испорченный
+ * токен. Это остаётся долгом их участка; здесь два состояния различаются.
+ */
+function requireClinicOrganizationId(request: FastifyRequest, reply: FastifyReply): string | null {
+  const clinicHeader = request.headers["x-dente-clinic-token"];
+  const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+  if (typeof clinicToken !== "string" || !clinicToken) {
+    reply.code(401).send({ error: "AuthRequired", message: clinicAuthRequiredMessage });
+    return null;
+  }
+  const payload = verifyToken(clinicToken, TOKEN_SECRET());
+  if (!payload || !payload.organizationId) {
+    reply.code(401).send({ error: "AuthExpired", message: clinicAuthRejectedMessage });
+    return null;
+  }
+  return payload.organizationId as string;
+}
+
 export async function registerPatientRoutes(app: FastifyInstance) {
   app.get("/api/patients", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
-    const orgId = payload.organizationId as string;
-    
     try {
       const dbPatients = await getPatientsFromDb(orgId);
       return dbPatients.map((patient) => patientSchema.parse(patient));
     } catch (e) {
       console.error("[Patients] Error fetching from DB:", e);
-      return reply.code(500).send({ error: "DatabaseError" });
+      // Пустой список вместо отказа читается как «пациентов нет», а картотека —
+      // это первый экран смены: администратор решит, что база пуста, и начнёт
+      // заводить карты заново.
+      return reply.code(500).send({
+        error: "DatabaseError",
+        message:
+          "Сервер клиники не смог прочитать список пациентов. Не считайте, что картотека пуста — повторите через минуту, а если повторится, сообщите администратору."
+      });
     }
   });
 
   app.post("/api/patients", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const input = parsePatientPayload(createPatientSchema, request.body);
     if (!input) {
@@ -318,17 +371,25 @@ export async function registerPatientRoutes(app: FastifyInstance) {
       return reply.code(201).send(patientSchema.parse(patient));
     } catch (e) {
       console.error("[Patients] Create error:", e);
-      return reply.code(500).send({ error: "DatabaseError" });
+      /*
+       * «Мог не сохраниться», а не «не сохранён», и это точность, а не
+       * осторожность: в try стоят и вставка в базу, и разбор ответа
+       * patientSchema.parse ПОСЛЕ успешной вставки. Тот же промах на соседнем
+       * PUT уже приводил к дублям карт (см. комментарий ниже, ветка catch у
+       * обновления). Поэтому текст велит проверить список, а не создавать
+       * вторую карту того же человека.
+       */
+      return reply.code(500).send({
+        error: "DatabaseError",
+        message:
+          "Сервер клиники не подтвердил запись — пациент мог не сохраниться. Найдите его в списке перед повторным созданием, иначе на одного человека появятся две карты."
+      });
     }
   });
 
   app.put("/api/patients/:patientId", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);
@@ -359,12 +420,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/patients/:patientId/administrative-profile", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);
@@ -433,12 +490,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
    * границы утверждения — в services/patients/patientCommunicationLog.ts.
    */
   app.get("/api/patients/:patientId/communication-timelines", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
 
     const { patientId } = request.params as { patientId?: string };
     // Проверка формата до обращения к базе: patients.id и
@@ -852,12 +905,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 
   // COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
   app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId) return sendPatientRouteValidationError(reply);
 
@@ -884,12 +933,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/patients/:patientId/archive-status", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = requireClinicOrganizationId(request, reply);
+    if (!orgId) return reply;
     const { patientId } = request.params as { patientId?: string };
     if (!patientId) return sendPatientRouteValidationError(reply);
 
