@@ -74,11 +74,105 @@ const pricelistCrownTypeLabels: Record<string, string> = {
 	crown: "Коронка",
 };
 
+/*
+ * АНГЛОЯЗЫЧНЫЕ НАПИСАНИЯ ТЕХ ЖЕ СЕМИ ЗНАЧЕНИЙ — СПИСКОМ, А НЕ ПОИСКОМ ПОДСТРОКИ.
+ *
+ * Слева — то, что реально приезжает с нейро-пути, справа — ключ карты выше.
+ * Каждая строка здесь переводит, а не домысливает: «pfm» — общепринятое
+ * porcelain-fused-to-metal, «zro2» — оксид циркония, «full/all ceramic» —
+ * цельная керамика. Подстрочный поиск («если содержит zirconia») здесь
+ * запрещён сознательно: он молча превратил бы «non-zirconia» и любую будущую
+ * формулировку модели в утверждение о материале, которого модель не сказала.
+ */
+const pricelistCrownTypeSynonyms: Record<string, string> = {
+	zirconium: "zirconia",
+	zro2: "zirconia",
+	"zirconia crown": "zirconia",
+	"zirconium crown": "zirconia",
+	"zirconium oxide": "zirconia",
+	"monolithic zirconia": "zirconia",
+	"multilayer zirconia": "zirconia multilayer",
+	"zirconia multilayer crown": "zirconia multilayer",
+	emax: "lithium disilicate",
+	"e.max": "lithium disilicate",
+	"ips e.max": "lithium disilicate",
+	"lithium disilicate crown": "lithium disilicate",
+	pfm: "metal ceramic",
+	"porcelain fused to metal": "metal ceramic",
+	"metal ceramic crown": "metal ceramic",
+	"full ceramic": "ceramic",
+	"all ceramic": "ceramic",
+	"ceramic crown": "ceramic",
+	porcelain: "ceramic",
+	pmma: "temporary PMMA",
+	"pmma crown": "temporary PMMA",
+	"temporary pmma crown": "temporary PMMA",
+};
+
+/** Регистр, подчёркивания, дефисы и двойные пробелы не меняют смысл ключа. */
+function normalizePricelistCrownTypeKey(value: string): string {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/[\s_-]+/g, " ");
+}
+
+const pricelistCrownTypeNormalizedLabels = new Map<string, string>();
+for (const [key, label] of Object.entries(pricelistCrownTypeLabels)) {
+	pricelistCrownTypeNormalizedLabels.set(
+		normalizePricelistCrownTypeKey(key),
+		label,
+	);
+}
+for (const [alias, canonical] of Object.entries(pricelistCrownTypeSynonyms)) {
+	const label = pricelistCrownTypeLabels[canonical];
+	// Синоним без карты — ошибка этого файла, а не повод придумать подпись.
+	if (label)
+		pricelistCrownTypeNormalizedLabels.set(
+			normalizePricelistCrownTypeKey(alias),
+			label,
+		);
+}
+
+/*
+ * ТИП КОРОНКИ С НЕЙРО-ПУТИ — СВОБОДНЫЙ ТЕКСТ, А НЕ ПЕРЕЧИСЛЕНИЕ.
+ *
+ * В контракте crownType объявлен z.string().nullable()
+ * (packages/shared/src/index.ts), НЕ enum, а системный промпт Groq перечисляет
+ * допустимые значения для category, specialty, materialKind и restorationType и
+ * НЕ перечисляет их для crownType, прямо разрешая «If a material/brand/crown
+ * type is uncertain, use unknown or null». Разбор ответа модели пропускает
+ * строку как есть (asString + `|| null` обнуляет только пустую), поэтому в это
+ * поле законно приезжает всё что угодно.
+ *
+ * БЫЛО: `pricelistCrownTypeLabels[value] ?? value` — неизвестное значение
+ * печаталось КАК ЕСТЬ, и русская клиника читала на экране английский машинный
+ * токен. Измерено исполнением функции на HEAD до этой правки:
+ *     crownType "unknown"                         -> «unknown»
+ *     crownType "zirconia crown"                  -> «zirconia crown»
+ *     "full ceramic" + ceramic + crown            -> «full ceramic · Керамика · Коронка»
+ * Детерминированный detectCrownType отдаёт ровно 7 значений и все 7 в карте
+ * есть, поэтому утечка была только на нейро-пути — но он продуктовый, и до
+ * прошлой волны эту функцию не звал никто, из-за чего `?? value` годами не
+ * стоил ничего.
+ *
+ * СТАЛО: ключ нормализуется, ищется в карте вместе со списком синонимов, и всё
+ * НЕ ОПОЗНАННОЕ считается ОТСУТСТВИЕМ ДАННЫХ — null, метка не печатается. Сырой
+ * токен на экран не попадает ни при каком ответе модели; строка при этом честно
+ * вырождается в «материал не распознан», который до правки был недостижим,
+ * потому что метка коронки всегда оказывалась непустой.
+ *
+ * ПОЧЕМУ НЕ ЗАГЛУШКА «Коронка, материал уточнить»: это текст, которого модель не
+ * сказала. Отсутствие данных обязано выглядеть как отсутствие, иначе следующий
+ * читатель примет заглушку за разобранное значение — ровно та подмена, из-за
+ * которой `?? 0` печатает неизвестную сумму как измеренный ноль.
+ */
 function pricelistCrownTypeLabel(
 	value: string | null | undefined,
 ): string | null {
 	if (!value) return null;
-	return pricelistCrownTypeLabels[value] ?? value;
+	const normalized = normalizePricelistCrownTypeKey(value);
+	return pricelistCrownTypeNormalizedLabels.get(normalized) ?? null;
 }
 
 function pricelistMaterialKindLabel(kind: DentalMaterialKind): string {
