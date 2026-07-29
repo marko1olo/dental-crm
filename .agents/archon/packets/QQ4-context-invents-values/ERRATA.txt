@@ -1,0 +1,23 @@
+ПОПРАВКА К ЧИСЛАМ В СООБЩЕНИИ КОММИТА 2e734ce52.
+
+Сообщение того коммита называет два числа, и оба неверны. Правка сообщения
+невозможна (amend в этой волне запрещён), поэтому поправка лежит здесь, рядом.
+
+ЗАЯВЛЕНО:
+  тема — «шесть комментариев»;
+  тело — «ИСПРАВЛЕНО (9 комментариев в 6 файлах)».
+
+ИЗМЕРЕНО (`git show 2e734ce52 --unified=0`, подсчёт правленых блоков комментариев):
+  ВОСЕМЬ комментариев в ПЯТИ файлах исходников.
+    apps/web/src/App.tsx — 2 (блок у <AppLogicProvider>; пропс loadDashboard)
+    apps/web/src/ScheduleView.tsx — 3 (импорт auth; useScheduleRealtime; пропс auth
+      у ящика листа ожидания)
+    apps/web/src/components/imaging/VisiographAnalyzer.tsx — 1
+    apps/web/src/components/communications/CampaignPanel.tsx — 1
+    apps/web/src/components/communications/MessageDeliveryConsole.tsx — 1
+  «6 файлов» в теле получилось из статистики коммита, где шестым файлом идёт сам
+  commitmsg3.txt. Файлов с исходниками — пять.
+
+Ни один другой замер того коммита это не задевает: 327 тестов / 327 pass / 0 fail /
+0 skipped, 0 ошибок компилятора на apps/web, пять смоков код 0 — всё это прогонялось
+командой и остаётся в силе. Неверны именно два счётчика комментариев.
