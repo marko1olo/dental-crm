@@ -45,7 +45,6 @@
 		"src/services/syncEngine.ts",
 		"src/scripts/setup-fresh-db.ts",
 		"src/scripts/patch-owner-credentials.ts",
-		"src/scripts/seedPglite.ts",
-		"src/telegram/legacyMocks.ts"
+		"src/scripts/seedPglite.ts"
 	]
 }
