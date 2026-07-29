@@ -8,8 +8,34 @@ const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 
 const missing = [];
 
+/*
+ * ТРЕБОВАНИЕ МОЖЕТ БЫТЬ ОБРАЗЦОМ, А НЕ ДОСЛОВНОЙ СТРОКОЙ, И ЭТО НЕ ПОСЛАБЛЕНИЕ.
+ *
+ * Проверка по подстроке привязывает стража к НАПИСАНИЮ выражения, включая имена
+ * переменных. Замерено ведущим в цикле 25: из 41 стража с суффиксом -source
+ * красными оказались 31, и этот — потому, что код СТАЛ БЕЗОПАСНЕЕ, а дословные
+ * строки за ним не пошли:
+ *
+ *   страж требовал                              в коде стало
+ *   treatmentItems={activeTreatmentPlanItems}   treatmentItems={activeTreatmentPlanItems ?? []}
+ *   payments={activePayments}                   payments={activePayments ?? []}
+ *   documents={dashboard.documents}             documents={dashboard?.documents ?? []}
+ *   documents.find((document) => …)             safeDocuments.find((document) => …)
+ *
+ * То есть страж наказывал за добавление `?.` и `?? []` и за переименование
+ * коллекции в `safeDocuments`. Поведение не только сохранилось, но и улучшилось —
+ * у поиска документа появился явный запас «документ не найден». Страж, который
+ * краснеет на улучшении кода, перестают читать, и тогда он не защищает ничего.
+ *
+ * Поэтому требование теперь может быть RegExp: закрепляем СВЯЗЬ (какой пропс из
+ * какого источника, какой поиск по какому полю) и НЕ закрепляем защитную обёртку
+ * вокруг неё. Дословную строку по-прежнему можно передать строкой — там, где
+ * важен именно текст, например локализованная подпись.
+ */
 function requireIn(source, snippet, message) {
-	if (!source.includes(snippet)) missing.push(message);
+	const found =
+		snippet instanceof RegExp ? snippet.test(source) : source.includes(snippet);
+	if (!found) missing.push(message);
 }
 
 function forbidIn(source, snippet, message) {
@@ -41,19 +67,20 @@ requireIn(
 	"Сводка по пациенту",
 	"FinanceView must make the patient finance scope explicit",
 );
+// Закреплена СВЯЗЬ пропса с источником; `?? []` и `?.` вокруг неё допускаются.
 requireIn(
 	financeViewSource,
-	"treatmentItems={activeTreatmentPlanItems}",
+	/treatmentItems=\{activeTreatmentPlanItems\b/,
 	"FinanceView must pass patient-specific treatment items",
 );
 requireIn(
 	financeViewSource,
-	"payments={activePayments}",
+	/payments=\{activePayments\b/,
 	"FinanceView must pass patient-specific payments",
 );
 requireIn(
 	financeViewSource,
-	"documents={dashboard.documents}",
+	/documents=\{dashboard\??\.documents\b/,
 	"FinanceView must pass documents so payment history can show document links",
 );
 requireIn(
@@ -122,9 +149,14 @@ requireIn(
 	"payment.documentId",
 	"FinanceLedger must inspect payment document links",
 );
+/*
+ * Имя коллекции НЕ закрепляется: сегодня это `safeDocuments`, и обёртка,
+ * гарантирующая массив, — улучшение, а не нарушение. Закреплён сам поиск
+ * документа по payment.documentId, то есть требуемое поведение.
+ */
 requireIn(
 	ledgerSource,
-	"documents.find((document) => document.id === payment.documentId)",
+	/\.find\(\(document\) => document\.id === payment\.documentId\)/,
 	"FinanceLedger must resolve linked payment document titles",
 );
 requireIn(
