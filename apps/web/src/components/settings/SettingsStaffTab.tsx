@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { UserPlus, ShieldCheck, Edit2, AlertTriangle, KeyRound } from "lucide-react";
+import { UserPlus, ShieldCheck, Edit2, AlertTriangle, KeyRound, Phone } from "lucide-react";
 import type { StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -36,10 +36,36 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
    */
   const [newStaffRole, setNewStaffRole] = useState<StaffRole>("doctor");
   const [newStaffEmail, setNewStaffEmail] = useState("");
+  /*
+   * ТЕЛЕФОН СОТРУДНИКА БЫЛО НЕГДЕ ВВЕСТИ НИ НА ОДНОМ ДОСТИЖИМОМ ЭКРАНЕ.
+   *
+   * Колонка users.phone есть, создание её пишет (db/settingsQuery.ts:194),
+   * правка её пишет (:227), чтение её отдаёт (:128), схема запроса её принимает
+   * (packages/shared createStaffMemberSchema.phone,
+   * updateStaffMemberProfileSchema.phone) — а поля ввода не было ни здесь, ни
+   * где-либо ещё в вебе. Единственным местом, где номер когда-либо вводился
+   * руками, был шаг «Сотрудники» семишагового мастера первого запуска, и тот
+   * мастер не отрисовывался нигде, а затем был удалён (разбор —
+   * tests/panelsAreMounted.test.ts). Долг записан там же и закрывается здесь.
+   *
+   * Что это значит для клиники: врача не дозвониться. Замена в смене, срочный
+   * пациент, опоздание — номера нет в системе вовсе, при том что место для него
+   * есть на всём пути от формы до базы.
+   *
+   * Полей три, потому что возможность из трёх частей: ввести при заведении,
+   * УВИДЕТЬ на карточке (иначе запись невидима и через неделю никто не знает,
+   * заполнена ли она) и исправить у того, кто уже заведён, — иначе клиника с
+   * пятью сотрудниками осталась бы без номеров навсегда.
+   */
+  const [newStaffPhone, setNewStaffPhone] = useState("");
 
   // PIN editing state
   const [editingPinForId, setEditingPinForId] = useState<string | null>(null);
   const [newPin, setNewPin] = useState("");
+
+  // Phone editing state
+  const [editingPhoneForId, setEditingPhoneForId] = useState<string | null>(null);
+  const [phoneDraft, setPhoneDraft] = useState("");
 
   // Password editing state
   const [editingPasswordForId, setEditingPasswordForId] = useState<string | null>(null);
@@ -77,6 +103,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
         body: JSON.stringify({
           fullName: newStaffName.trim(),
           role: newStaffRole,
+          phone: newStaffPhone.trim() || null,
           email: newStaffEmail.trim() || null,
           active: true,
           canSignMedicalRecords: newStaffRole === "doctor",
@@ -99,6 +126,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
       const addedName = newStaffName.trim();
       setNewStaffName("");
       setNewStaffEmail("");
+      setNewStaffPhone("");
       /*
        * БЫЛО: «Сотрудник успешно добавлен. Пожалуйста, перезагрузите страницу.»
        *
@@ -123,6 +151,63 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
     } catch (err) {
       // Текст исключения наружу не идёт: он английский («Failed to fetch»).
       console.error("[персонал] добавление не дошло до сервера", err);
+      showToast(actionFailureToast(failedAction, null), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+   * Правка телефона уже заведённого сотрудника — PUT /api/settings/staff/:id.
+   *
+   * Маршрут существует и принимает частичное обновление
+   * (routes/settings.ts:745, схема updateStaffMemberProfileSchema), но до этой
+   * правки его не звал из веба НИКТО: updateStaffMember в useAppLogic.tsx:7504
+   * объявлен и не вызывается ни из одного файла. То есть карточку сотрудника
+   * нельзя было исправить вообще ничем.
+   *
+   * Пустая строка отправляется как null, а не как "": колонка nullable, и
+   * «номер стёрли» должно храниться пустотой, а не пустой строкой, иначе на
+   * карточке появится подпись «телефон указан», под которой ничего нет.
+   */
+  const handleUpdatePhone = async (e: React.FormEvent, staffId: string) => {
+    e.preventDefault();
+    const staffName = staffNameById(staffId);
+    setLoading(true);
+    const failedAction = `Телефон ${staffName} не сохранён`;
+    try {
+      const clinicToken = localStorage.getItem("dente_clinic_token");
+      const res = await fetch(`/api/settings/staff/${staffId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-dente-clinic-token": clinicToken || "",
+        },
+        body: JSON.stringify({ phone: phoneDraft.trim() || null }),
+      });
+      const outcome = parseStaffMutationPayload(res.status, await res.text());
+      if (!outcome.ok) {
+        console.error("[персонал] телефон не сохранён, ответ", outcome.status);
+        /* Поле ввода НЕ закрываем при отказе: набранный номер должен остаться
+           на экране, иначе его придётся вспоминать заново. */
+        showToast(
+          outcome.message ?? actionFailureToast(failedAction, outcome.status),
+          "error",
+        );
+        return;
+      }
+      const savedPhone = phoneDraft.trim();
+      setEditingPhoneForId(null);
+      setPhoneDraft("");
+      if (typeof loadDashboard === "function") await loadDashboard();
+      showToast(
+        savedPhone
+          ? `Телефон ${staffName} сохранён: ${savedPhone}`
+          : `Телефон ${staffName} удалён`,
+        "success",
+      );
+    } catch (err) {
+      console.error("[персонал] сохранение телефона не дошло до сервера", err);
       showToast(actionFailureToast(failedAction, null), "error");
     } finally {
       setLoading(false);
@@ -272,11 +357,44 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                     <span className="text-xs text-slate-500 dark:text-slate-400">
                       {staffRoleTitle(String(member.role ?? ""))}
                     </span>
+                    {/*
+                      Номер показан, а его отсутствие названо словами. Пустое
+                      место на карточке нельзя отличить от «поля не существует» —
+                      именно так телефон и потерялся: колонка есть на всём пути от
+                      формы до базы, а на экране про неё нет ни буквы.
+                    */}
+                    {member.phone ? (
+                      <a
+                        className="block text-xs text-slate-600 dark:text-slate-300 no-underline hover:underline"
+                        href={`tel:${String(member.phone).replace(/[^\d+]/g, "")}`}
+                      >
+                        {member.phone}
+                      </a>
+                    ) : (
+                      <span className="block text-xs text-slate-400 dark:text-slate-500">телефон не указан</span>
+                    )}
                   </div>
                 </div>
-                
+
                 <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
-                  {editingPinForId === member.id ? (
+                  {editingPhoneForId === member.id ? (
+                    <form onSubmit={(e) => handleUpdatePhone(e, member.id)} className="flex flex-wrap gap-2">
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        maxLength={80}
+                        placeholder="+7..."
+                        aria-label={`Телефон сотрудника ${member.fullName || ""}`}
+                        value={phoneDraft}
+                        onChange={(e) => setPhoneDraft(e.target.value)}
+                        className="min-w-[7rem] flex-1 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        autoFocus
+                      />
+                      <button type="submit" className="primary-button px-3 py-1 text-xs" disabled={loading}>ОК</button>
+                      <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPhoneForId(null)}>Отмена</button>
+                    </form>
+                  ) : editingPinForId === member.id ? (
                     <form onSubmit={(e) => handleUpdatePin(e, member.id)} className="flex gap-2">
                       <input 
                         type="password" 
@@ -304,20 +422,34 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
                       <button type="button" className="secondary-button px-3 py-1 text-xs" onClick={() => setEditingPasswordForId(null)}>Отмена</button>
                     </form>
                   ) : (
-                    <div className="flex gap-2">
-                      <button 
-                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer" 
-                        onClick={() => { setEditingPinForId(member.id); setEditingPasswordForId(null); setNewPin(""); }}
+                    /* flex-wrap: три кнопки в колонке от 280 px не встают в один
+                       ряд на телефоне и обрезались бы справа. */
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
+                        onClick={() => { setEditingPinForId(member.id); setEditingPasswordForId(null); setEditingPhoneForId(null); setNewPin(""); }}
                         title="Назначить PIN-код для планшета"
                       >
                         <KeyRound size={14} /> PIN
                       </button>
-                      <button 
-                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer" 
-                        onClick={() => { setEditingPasswordForId(member.id); setEditingPinForId(null); setNewPassword(""); }}
+                      <button
+                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
+                        onClick={() => { setEditingPasswordForId(member.id); setEditingPinForId(null); setEditingPhoneForId(null); setNewPassword(""); }}
                         title="Назначить пароль для входа"
                       >
                         <ShieldCheck size={14} /> Пароль
+                      </button>
+                      <button
+                        className="secondary-button flex-1 justify-center py-1 text-xs flex items-center gap-1 cursor-pointer"
+                        onClick={() => {
+                          setEditingPhoneForId(member.id);
+                          setEditingPinForId(null);
+                          setEditingPasswordForId(null);
+                          setPhoneDraft(typeof member.phone === "string" ? member.phone : "");
+                        }}
+                        title="Указать или исправить телефон сотрудника"
+                      >
+                        <Phone size={14} /> Телефон
                       </button>
                     </div>
                   )}
@@ -366,10 +498,23 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
             </label>
 
             <label>
+              Телефон
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={80}
+                placeholder="+7..."
+                value={newStaffPhone}
+                onChange={(e) => setNewStaffPhone(e.target.value)}
+              />
+            </label>
+
+            <label>
               Email (логин для личного доступа)
-              <input 
-                type="email" 
-                placeholder="doctor@clinic.com" 
+              <input
+                type="email"
+                placeholder="doctor@clinic.com"
                 value={newStaffEmail}
                 onChange={(e) => setNewStaffEmail(e.target.value)}
               />
