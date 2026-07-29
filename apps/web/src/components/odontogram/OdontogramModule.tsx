@@ -18,7 +18,6 @@ import {
 	panelStateText,
 } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
-import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
@@ -628,25 +627,24 @@ export const OdontogramModule = ({
 			return;
 		}
 
-		// Push suggestion to global state for ComparativePlannerDashboard
-		const { addPendingPlanSuggestion } = usePatientStore.getState();
-		for (const t of toothNumbers) {
-			if (
-				state === "Caries" ||
-				state === "Pulpitis" ||
-				state === "Planned_Implant" ||
-				state === "Missing" ||
-				state === "Crown"
-			) {
-				addPendingPlanSuggestion({
-					toothNumber: t,
-					state,
-					surfaces: activeSurfaces.length > 0 ? [...activeSurfaces] : undefined,
-					suggestedAt: new Date().toISOString(),
-				});
-			}
-		}
-
+		/*
+		 * ЗДЕСЬ БЫЛА ЗАПИСЬ В ОЧЕРЕДЬ pendingPlanSuggestions — «Push suggestion to
+		 * global state for ComparativePlannerDashboard». Читателя у неё не было ни
+		 * одной минуты: единственный, ComparativePlannerDashboard, не рендерился ни
+		 * из одного достижимого модуля и удалён этим же коммитом.
+		 *
+		 * То есть каждая отметка патологии дописывала объект в массив глобального
+		 * стора, который никто не читает и никто не чистит (чистил его тот же
+		 * недостижимый экран), — он рос до перезагрузки страницы.
+		 *
+		 * Мост «диагноз → смета» от этого не пострадал, он идёт другой дорогой и
+		 * работает: смонтированный TreatmentEstimator (:945) получает currentTeeth
+		 * прямо из этого состояния и подбирает позиции по зубной формуле сам —
+		 * reconcileAutoSuggestions/estimatorRulesForTooth в
+		 * ./treatmentEstimatorPricing.ts (Caries, Pulpitis, Crown,
+		 * Planned_Implant; Missing не обрабатывается сознательно, :133). Он же
+		 * помнит, какие строки врач снял корзиной, чего очередь не умела.
+		 */
 		setActiveSurfaces([]);
 	};
 

@@ -68,9 +68,19 @@ export interface PatientStore {
   newRulePatientText: string;
   setNewRulePatientText: (val: string | ((prev: string) => string)) => void;
 
-  pendingPlanSuggestions: any[];
-  addPendingPlanSuggestion: (suggestion: any) => void;
-  clearPendingPlanSuggestions: () => void;
+  /*
+   * pendingPlanSuggestions / addPendingPlanSuggestion / clearPendingPlanSuggestions
+   * УДАЛЕНЫ вместе с последним читателем — components/plan/ComparativePlannerDashboard.tsx,
+   * который не рендерился ни из одного достижимого модуля.
+   *
+   * Порядок обязателен и тот же, что при снятии components/Odontogram.tsx: писатель
+   * (OdontogramModule, отметка патологии на зубе) снят в этом же коммите. Иначе в
+   * дереве осталась бы запись в массив, у которого нет ни читателя, ни того, кто его
+   * чистит: очередь росла на каждую отметку зуба до перезагрузки страницы.
+   *
+   * Подбор услуг по зубной формуле стор не проходит и никогда не проходил: он идёт
+   * пропсом currentTeeth в смонтированный TreatmentEstimator.
+   */
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
@@ -109,8 +119,4 @@ export const usePatientStore = create<PatientStore>((set) => ({
 
   newRulePatientText: "Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.",
   setNewRulePatientText: (val) => set((state) => ({ newRulePatientText: typeof val === "function" ? val(state.newRulePatientText) : val })),
-
-  pendingPlanSuggestions: [],
-  addPendingPlanSuggestion: (suggestion) => set((state) => ({ pendingPlanSuggestions: [...state.pendingPlanSuggestions, suggestion] })),
-  clearPendingPlanSuggestions: () => set({ pendingPlanSuggestions: [] }),
 }));
