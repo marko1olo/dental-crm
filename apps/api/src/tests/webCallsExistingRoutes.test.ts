@@ -60,7 +60,16 @@ const KNOWN_MISSING: readonly string[] = [
 	 * импортировал никто — то есть даже 404 никому не показывался. Адрес,
 	 * которого никто не зовёт, не долг, а мусор в списке.
 	 */
-	"/api/crm/patient-duplicate-merge-queues",
+	/*
+	 * Отсюда убрана строка /api/crm/patient-duplicate-merge-queues: её больше не
+	 * зовёт НИКТО. Поиск по apps/web/src и apps/api/src даёт восемь упоминаний, и
+	 * все восемь — комментарии, объясняющие, что маршрута нет
+	 * (db/patientsSchema.ts:14, services/patients/duplicateDetection.ts:13,
+	 * routes/patientDuplicates.ts:9, server.ts:493, SettingsView.tsx:28 и :1307,
+	 * PatientDuplicateMergeQueuesWidget.tsx:4), плюс сама эта строка. Ни одного
+	 * fetch. Виджет разбора дублей переведён на живой адрес, а адрес, которого
+	 * никто не зовёт, — не долг, а мусор в списке.
+	 */
 	"/api/integrations/egisz-blank-permissions",
 	"/api/integrations/yandex-calendar-syncs",
 	/*
@@ -72,8 +81,15 @@ const KNOWN_MISSING: readonly string[] = [
 	 * никто не зовёт, не долг, а мусор в списке; разбор всех пяти таких виджетов
 	 * стоит в apps/web/src/tests/panelsAreMounted.test.ts на месте их строк.
 	 */
-	"/api/schedule/external-schedule-action-logs",
-	"/api/system/ram-watchdogs",
+	/*
+	 * Отсюда убраны ещё две строки по той же причине — их не зовёт никто:
+	 * /api/schedule/external-schedule-action-logs встречается ровно один раз, в
+	 * комментарии ScheduleView.tsx:1109, который рассказывает, за что удалён
+	 * запрашивавший блок; /api/system/ram-watchdogs — дважды, оба раза в
+	 * комментариях SettingsView.tsx:27 и :1307 про удалённые списки под мёртвые
+	 * адреса. Запросов нет ни одного, и вырезание комментариев в сканере это
+	 * подтверждает: страж их даже не видит вызовами.
+	 */
 	// Незаконченные разделы.
 	/*
 	 * Отсюда убрана строка /api/ai/predict-no-show: маршрут СДЕЛАН (routes/ai.ts).
@@ -93,16 +109,42 @@ const KNOWN_MISSING: readonly string[] = [
 	 * не знал. Долг, который не убирают после починки, за месяц превращается в
 	 * список, на который никто не смотрит.
 	 */
-	"/api/clinic/marketing-settings",
-	"/api/clinic/reporting-settings",
+	/*
+	 * Отсюда убраны /api/clinic/marketing-settings и /api/clinic/reporting-settings.
+	 * Их нашла не разведка и не глаз, а новая проверка «в списке долга нет адресов,
+	 * которых никто не зовёт» — и это ровно то, зачем она написана: правило
+	 * соблюдали вручную, поэтому список набрал мёртвых строк вдвое больше, чем
+	 * заметил человек. Оба адреса встречаются только в комментариях
+	 * SettingsMarketingTab.tsx:17 и SettingsReportingTab.tsx:16, где рассказано, что
+	 * формы с них уже переведены, и в списках других тестов — но ни один файл
+	 * интерфейса их не запрашивает.
+	 */
 	"/api/clinic/workflows",
-	"/api/communications/inbox",
-	"/api/communications/patients/search",
+	/*
+	 * Отсюда убраны /api/communications/inbox и /api/communications/patients/search,
+	 * и эти две показательнее всех прежних: каждая встречалась в дереве РОВНО ОДИН
+	 * раз — здесь, в собственном списке долга. Ни вызова, ни маршрута, ни даже
+	 * комментария о них. То есть строки описывали не расхождение фронта с сервером,
+	 * а сами себя: пока они стояли, список утверждал, что интерфейс зовёт два
+	 * адреса, которых он не зовёт. Ровно тот мусор, о котором предупреждает
+	 * правило выше, — и он появляется в списке долга сам, если этого не проверять.
+	 */
 	"/api/egisz/send",
 	"/api/egisz/logs",
-	"/api/reporting/token/generate",
+	/*
+	 * Отсюда убрана строка /api/reporting/token/generate: её запрашивала только
+	 * генерация токена отчётности, и вызов уже снят — остался комментарий
+	 * SettingsReportingTab.tsx:17, который это объясняет. Найдено проверкой на
+	 * незвонимые строки, а не глазом.
+	 */
 	"/api/settings/catalog-import",
-	"/api/system/analyze-legacy-db",
+	/*
+	 * Отсюда убрана строка /api/system/analyze-legacy-db. Комментарий в
+	 * tests/routes/onboardingPurgeProof.ts:13 утверждает, что адрес зовёт
+	 * Step7Migration, — в apps/web/src такого вызова НЕТ ни одного, остались
+	 * упоминания только в тестах и объяснениях. Проверять надо было список, а не
+	 * комментарий про список.
+	 */
 	"/api/visits/quick",
 	/*
 	 * Найдено этой же проверкой при вводе — аудит их не заметил. Проверено
@@ -141,6 +183,41 @@ const KNOWN_MISSING: readonly string[] = [
 	// Строки /api/settings/staff/:param и /api/settings/chairs/:param убраны:
 	// в routes/settings.ts добавлены PUT/DELETE на саму сущность сотрудника и
 	// кресла, раньше там жили только вложенные /credentials и /working-hours.
+];
+
+/**
+ * Известные пары «путь есть, метода нет» — тот же храповик, но по методу.
+ *
+ * Оба случая найдены этой проверкой при вводе сравнения по методу и подтверждены
+ * чтением routes/: прежняя редакция сравнивала только путь и объявляла оба адреса
+ * обслуживаемыми, хотя Fastify отвечает на них 404. Починка каждого — правка
+ * apps/api, то есть работа за границей этого файла; поэтому здесь долг назван, а
+ * не спрятан. Список не должен расти.
+ */
+const KNOWN_METHOD_MISMATCH: readonly string[] = [
+	/*
+	 * Кнопка удаления клинического правила (useAppLogic.tsx, removeClinicalRule).
+	 * В routes/clinical.ts зарегистрированы только POST /api/clinical/rules/evaluate,
+	 * POST /api/clinical/rules и PATCH /api/clinical/rules/:ruleId — DELETE нет.
+	 * Правило можно создать и выключить, но не удалить: врач жмёт «удалить» и
+	 * получает отказ. Отказ здесь честный, текст показывается — но обещание кнопки
+	 * не выполняется никогда и ни на какой машине.
+	 */
+	"DELETE /api/clinical/rules/:param",
+	/*
+	 * Заключение AI по прицельному снимку (VisiographAnalyzer.tsx). В routes/xray.ts
+	 * зарегистрированы POST /api/xray/scans, POST /api/xray/scans/:id/analyze,
+	 * GET /api/xray/scans, GET /api/xray/scans/:id и DELETE /api/xray/scans/:id —
+	 * ни PUT, ни PATCH. Снимок ложится в карту, текст заключения не сохраняется, и
+	 * после перезагрузки страницы его в карте нет. Вызывающий про это знает и
+	 * показывает плашку (комментарий на месте вызова), то есть пустоты без ошибки
+	 * здесь нет — но запись не работает.
+	 *
+	 * Рабочий путь УЖЕ написан и не зовётся никем: POST /api/xray/scans/:id/analyze
+	 * сам считает разбор и пишет aiReport/aiSummary/status. Это делает случай
+	 * дешёвым в починке, но починка — правка apps/web и apps/api, не этого файла.
+	 */
+	"PUT /api/xray/scans/:param",
 ];
 
 /** Префиксы, под которыми модули регистрируются в server.ts. */
@@ -288,9 +365,19 @@ function stripComments(source: string): string {
 	return out;
 }
 
-/** Адреса, которые сервер действительно обслуживает. */
-function serverRoutes(): Set<string> {
-	const routes = new Set<string>();
+/**
+ * Адреса, которые сервер действительно обслуживает.
+ *
+ * Возвращается ДВА набора, потому что у вопроса «обслуживается ли адрес» два
+ * разных ответа. `paths` — только путь, для проверки «фронт зовёт путь, которого
+ * нет». `withMethod` — ключ вида `DELETE /api/clinical/rules/:param`, потому что
+ * Fastify маршрутизирует по паре метод+путь и на верный путь с чужим методом
+ * отвечает 404 ровно так же, как на несуществующий путь. Проверка, знающая
+ * только путь, весь этот класс дефектов объявляет живым.
+ */
+function serverRoutes(): { paths: Set<string>; withMethod: Set<string> } {
+	const paths = new Set<string>();
+	const withMethod = new Set<string>();
 	/*
 	 * Дженерик перед скобкой матчится НЕЖАДНО и допускает вложенные «>».
 	 * Первая редакция писала (?:<[^>]*>)? и спотыкалась на реальном коде
@@ -298,24 +385,37 @@ function serverRoutes(): Set<string> {
 	 * класс [^>] обрывался на «>» внутри Record<…>, маршрут не попадал в набор, и
 	 * страж объявлял несуществующими девять живых адресов. Ложная тревога в
 	 * такой проверке хуже её отсутствия — на неё перестают смотреть.
+	 *
+	 * Глагол теперь ЗАХВАТЫВАЕТСЯ, а не проглатывается: без него метод сравнить
+	 * нечем. Других способов регистрации в дереве нет — ни `app.route({ method })`,
+	 * ни `app.all`, ни массива методов (проверено поиском по apps/api/src/routes);
+	 * появится такой — маршрут просто не попадёт в набор, и страж покраснеет на
+	 * живом адресе, а не промолчит.
 	 */
-	const pattern = /\b(?:app|fastify|server|instance)\.(?:get|post|put|patch|delete)\s*(?:<[\s\S]*?>\s*)?\(\s*["'`]([^"'`]+)["'`]/g;
+	const pattern = /\b(?:app|fastify|server|instance)\.(get|post|put|patch|delete)\s*(?:<[\s\S]*?>\s*)?\(\s*["'`]([^"'`]+)["'`]/g;
 
 	for (const file of collectFiles(path.join(apiSrc, "routes"), [".ts"])) {
 		if (file.endsWith(".test.ts")) continue;
 		const source = readFileSync(file, "utf8");
 		for (const match of source.matchAll(pattern)) {
-			const raw = match[1];
-			if (!raw) continue;
+			const raw = match[2];
+			const verb = match[1];
+			if (!raw || !verb) continue;
+			const method = verb.toUpperCase();
 			const normalized = normalizePath(raw);
-			routes.add(normalized);
+			paths.add(normalized);
+			withMethod.add(`${method} ${normalized}`);
 			// Маршрут внутри модуля с префиксом объявлен без него.
 			if (!normalized.startsWith("/api")) {
-				for (const prefix of REGISTERED_PREFIXES) routes.add(normalizePath(prefix + normalized));
+				for (const prefix of REGISTERED_PREFIXES) {
+					const prefixed = normalizePath(prefix + normalized);
+					paths.add(prefixed);
+					withMethod.add(`${method} ${prefixed}`);
+				}
 			}
 		}
 	}
-	return routes;
+	return { paths, withMethod };
 }
 
 /** Адреса, которые зовёт интерфейс. */
@@ -349,10 +449,129 @@ function webCalls(): Map<string, string[]> {
 }
 
 /**
+ * РАЗБОР ВЫЗОВА `fetch(...)` ЦЕЛИКОМ — АДРЕС И МЕТОД ИЗ ОДНОГО ВЫРАЖЕНИЯ.
+ *
+ * Поиск метода «рядом с адресом» по окну текста давал бы ложные привязки: в
+ * соседних строках лежит `method:` от другого вызова. Поэтому здесь берётся
+ * содержимое скобок вызова со учётом вложенности и кавычек, и метод читается
+ * ТОЛЬКО из второго аргумента этого же вызова.
+ *
+ * Молчание вместо догадки. Если адрес лежит в переменной, если второй аргумент
+ * не объектный литерал, если в нём есть расширение (`...init`) или значение
+ * `method` не строковый литерал (`method: isNew ? "POST" : "PUT"`) — вызов
+ * пропускается без утверждений. Ложная тревога в такой проверке хуже пропуска:
+ * на страж, который краснеет на живом коде, перестают смотреть.
+ *
+ * Отсутствующий второй аргумент и объектный литерал без `method` — это GET, так
+ * определён сам `fetch`, а не наша догадка.
+ */
+function callArguments(source: string, openParen: number): string[] | null {
+	const args: string[] = [];
+	let depth = 0;
+	let quote: string | null = null;
+	let start = openParen + 1;
+	for (let index = openParen; index < source.length; index += 1) {
+		const char = source[index];
+		if (quote) {
+			if (char === "\\") {
+				index += 1;
+				continue;
+			}
+			if (char === quote) quote = null;
+			continue;
+		}
+		if (char === '"' || char === "'" || char === "`") {
+			quote = char;
+			continue;
+		}
+		if (char === "(" || char === "[" || char === "{") {
+			depth += 1;
+			continue;
+		}
+		if (char === ")" || char === "]" || char === "}") {
+			depth -= 1;
+			if (depth === 0) {
+				args.push(source.slice(start, index));
+				return args;
+			}
+			continue;
+		}
+		if (char === "," && depth === 1) {
+			args.push(source.slice(start, index));
+			start = index + 1;
+		}
+	}
+	return null;
+}
+
+/** Строковый литерал целиком, без подстановок с кавычками внутри. */
+function literalValue(raw: string): string | null {
+	const text = raw.trim();
+	const quote = text[0];
+	if (quote !== '"' && quote !== "'" && quote !== "`") return null;
+	if (text.length < 2 || text[text.length - 1] !== quote) return null;
+	const inner = text.slice(1, -1);
+	return inner.includes(quote) ? null : inner;
+}
+
+/** Метод из объектного литерала настроек `fetch`; null — утверждать нельзя. */
+function methodFromOptions(raw: string): string | null {
+	const text = raw.trim();
+	if (text === "") return "GET";
+	if (!text.startsWith("{") || !text.endsWith("}")) return null;
+	const body = text.slice(1, -1);
+	if (body.includes("...")) return null;
+	const entries = callArguments(`(${body})`, 0);
+	if (!entries) return null;
+	for (const entry of entries) {
+		const match = /^\s*(?:method|"method"|'method')\s*:([\s\S]*)$/.exec(entry);
+		if (!match) continue;
+		const value = literalValue(match[1] ?? "");
+		if (!value) return null;
+		return value.trim().toUpperCase();
+	}
+	return "GET";
+}
+
+/** Пары «метод + адрес», которые зовёт интерфейс, и файлы вызывающих. */
+function webCallsWithMethod(): Map<string, string[]> {
+	const calls = new Map<string, string[]>();
+
+	for (const file of collectFiles(webSrc, [".ts", ".tsx"])) {
+		if (file.includes(`${path.sep}tests${path.sep}`) || file.endsWith(".test.ts") || file.endsWith(".test.tsx")) continue;
+		const source = stripComments(readFileSync(file, "utf8"));
+		for (const match of source.matchAll(/\bfetch\s*\(/g)) {
+			const openParen = source.indexOf("(", match.index);
+			if (openParen === -1) continue;
+			const args = callArguments(source, openParen);
+			if (!args || args.length === 0) continue;
+			const raw = literalValue(args[0] ?? "");
+			if (!raw || !raw.startsWith("/api/")) continue;
+			const normalized = normalizePath(raw);
+			if (!normalized.startsWith("/api/") || normalized.includes("${") || normalized.includes("...")) continue;
+			const method = methodFromOptions(args.length > 1 ? (args[1] ?? "") : "");
+			if (!method) continue;
+			const key = `${method} ${normalized}`;
+			const where = calls.get(key) ?? [];
+			where.push(path.relative(webSrc, file));
+			calls.set(key, where);
+		}
+	}
+	return calls;
+}
+
+/**
  * Совпадение с учётом параметров: `/api/patients/:param/duplicates` со стороны
  * фронта и та же форма со стороны сервера. Дополнительно принимается вариант,
  * когда фронт зовёт адрес глубже зарегистрированного (например, статический
  * файл под маршрутом) — такое сравнение делается по префиксу сегментов.
+ *
+ * ТА ЖЕ ФУНКЦИЯ СРАВНИВАЕТ ПАРУ МЕТОД+ПУТЬ. Ключ `DELETE /api/x/:param` при
+ * разбиении по косой черте даёт нулевым сегментом `DELETE ` — метод участвует в
+ * сравнении как обычный сегмент, а подстановкой `:param` он не подменяется
+ * никогда, потому что в методе нет двоеточия. Отдельной копии логики сравнения
+ * для методов нет специально: разъехавшиеся копии — это способ получить
+ * проверку, которая на одном наборе краснеет, а на другом молчит.
  */
 function isServed(candidate: string, routes: Set<string>): boolean {
 	if (routes.has(candidate)) return true;
@@ -412,7 +631,7 @@ describe("адреса, которые зовёт интерфейс", () => {
 	});
 
 	test("каждый вызванный адрес обслуживается сервером", () => {
-		const routes = serverRoutes();
+		const routes = serverRoutes().paths;
 		assert.ok(routes.size > 50, `маршруты сервера не собрались: найдено ${routes.size}`);
 
 		const missing: string[] = [];
@@ -432,19 +651,70 @@ describe("адреса, которые зовёт интерфейс", () => {
 		);
 	});
 
+	test("сравнение видит метод, а не только путь", () => {
+		/*
+		 * ИСКУССТВЕННОЕ НАРУШЕНИЕ, НА КОТОРОМ ПРОВЕРКА ОБЯЗАНА ПАДАТЬ. Прежняя
+		 * редакция сравнивала только пути, поэтому такой случай проходил молча —
+		 * первое утверждение показывает ровно это поведение, второе показывает, что
+		 * пара метод+путь его отклоняет. Если сравнение когда-нибудь снова потеряет
+		 * метод, покраснеет эта строка, а не пользователь на пустом экране.
+		 */
+		const pathsOnly = new Set(["/api/clinical/rules/:param"]);
+		assert.ok(isServed("/api/clinical/rules/:param", pathsOnly), "сравнение по пути сломано");
+
+		const withMethod = new Set(["PATCH /api/clinical/rules/:param"]);
+		assert.ok(isServed("PATCH /api/clinical/rules/:param", withMethod), "тот же метод обязан совпадать");
+		assert.ok(
+			!isServed("DELETE /api/clinical/rules/:param", withMethod),
+			"путь есть, метода нет — Fastify отвечает 404, а страж считает адрес живым",
+		);
+		assert.ok(!isServed("GET /api/clinical/rules/:param", withMethod), "чужой метод принят за обслуживаемый");
+	});
+
+	test("каждый вызванный адрес обслуживается ТЕМ ЖЕ методом", () => {
+		const { paths, withMethod } = serverRoutes();
+		assert.ok(withMethod.size > 50, `маршруты сервера не собрались: найдено ${withMethod.size}`);
+
+		const missing: string[] = [];
+		for (const [candidate, files] of webCallsWithMethod()) {
+			if (isServed(candidate, withMethod)) continue;
+			// Путь целиком отсутствует — это другой класс, он разобран проверкой выше
+			// и своим списком долга. Здесь только «путь есть, метод чужой».
+			const candidatePath = candidate.slice(candidate.indexOf(" ") + 1);
+			if (!isServed(candidatePath, paths)) continue;
+			if (KNOWN_METHOD_MISMATCH.some((known) => candidate === known)) continue;
+			missing.push(`${candidate} — зовут: ${[...new Set(files)].slice(0, 3).join(", ")}`);
+		}
+
+		assert.deepEqual(
+			missing,
+			[],
+			"Интерфейс зовёт существующий путь чужим методом. Fastify отвечает на такой запрос 404 ровно " +
+				"так же, как на несуществующий путь, и обёртка вида `.catch(() => {})` превращает отказ в " +
+				"тишину:\n" +
+				missing.join("\n")
+		);
+	});
+
 	test("список известного долга не разрастается молча", () => {
 		/*
 		 * Верхняя граница ровно по текущему размеру списка: добавить строку можно
 		 * только осознанно, вместе с этим числом. Начиналось с 33 — это 28 находок
 		 * аудита плюс 5, найденных самой этой проверкой при вводе.
 		 *
-		 * Сейчас 23, и последняя убранная строка отличается от всех прежних по
-		 * причине. До неё адреса уходили вместе с удалённым виджетом: обещание
-		 * снимали, потому что выполнить его было нечем. А /api/billing/payouts
-		 * ушёл потому, что маршрут НАПИСАН и работает, — долг закрыт исполнением,
-		 * а не отказом. До него: /api/documents/ndfl-tax-calculators вместе с
-		 * NdflTaxCalculatorsWidget, до неё — /api/crm/bulk-image-operation-logs
-		 * таким же образом.
+		 * Сейчас 8. Причины ухода строк разные: часть адресов уходила вместе с
+		 * удалённым виджетом (обещание снимали, потому что выполнить его было
+		 * нечем), /api/billing/payouts ушёл потому, что маршрут НАПИСАН и работает —
+		 * долг закрыт исполнением, а не отказом.
+		 *
+		 * Последние девять ушли по третьей причине, и она про сам список: их не звал
+		 * НИКТО. Правило было объявлено выше давно («адрес, которого никто не зовёт,
+		 * — не долг, а мусор в списке»), но ни один тест его не проверял, и список
+		 * успел набрать девять таких строк — две встречались в дереве только в самих
+		 * себе, а четыре нашла уже сама новая проверка, потому что глазом их не
+		 * заметили. Число при этом стояло 20 при фактической длине 17: три свободные
+		 * единицы означали, что три строки долга можно добавить молча — ровно то,
+		 * что этот тест обязан запрещать.
 		 *
 		 * Число ставится по фактической длине списка, а не «с запасом»: свободная
 		 * единица означает, что одну строку долга можно добавить молча, а ради
@@ -452,14 +722,51 @@ describe("адреса, которые зовёт интерфейс", () => {
 		 * уменьшите и это число.
 		 */
 		assert.ok(
-			KNOWN_MISSING.length <= 20,
+			KNOWN_MISSING.length <= 8,
 			`Известных отсутствующих адресов стало больше: ${KNOWN_MISSING.length}. ` +
+				"Долг должен уменьшаться, а не расти."
+		);
+		/*
+		 * Тот же запрет для долга по методу. Обе строки поставлены при вводе
+		 * сравнения по методу, замером, а не на глаз: проверка нашла ровно два
+		 * случая на всём дереве. Появится третий — его придётся объявить вместе с
+		 * этим числом, а не добавить тихо.
+		 */
+		assert.ok(
+			KNOWN_METHOD_MISMATCH.length <= 2,
+			`Известных расхождений по методу стало больше: ${KNOWN_METHOD_MISMATCH.length}. ` +
 				"Долг должен уменьшаться, а не расти."
 		);
 	});
 
+	test("в списке долга нет адресов, которых никто не зовёт", () => {
+		/*
+		 * ПРАВИЛО, КОТОРОЕ ФАЙЛ ОБЪЯВЛЯЛ И НЕ ПРОВЕРЯЛ. «Адрес, которого никто не
+		 * зовёт, — не долг, а мусор в списке» написано в комментариях к трём
+		 * убранным строкам, но соблюдалось только вручную, поэтому к моменту ввода
+		 * этой проверки список набрал пять мёртвых строк, две из которых
+		 * встречались в дереве ТОЛЬКО в самих себе.
+		 *
+		 * Почему это не мелочь: строка мёртвого долга утверждает, что интерфейс
+		 * зовёт адрес, которого он не зовёт. Следующий инженер идёт искать
+		 * вызывающего, не находит и перестаёт верить списку целиком — а вместе со
+		 * списком обесценивается и проверка, которая на него опирается.
+		 */
+		const called = new Set(webCalls().keys());
+		const uncalled = KNOWN_MISSING.filter(
+			(known) => ![...called].some((candidate) => candidate === known || candidate.startsWith(`${known}/`))
+		);
+		assert.deepEqual(
+			uncalled,
+			[],
+			"Эти строки долга не зовёт ни один файл интерфейса — уберите их из KNOWN_MISSING: " +
+				`${uncalled.join(", ")}. Долг — это расхождение фронта с сервером; строка, у которой нет ` +
+				"вызывающего, описывает только саму себя."
+		);
+	});
+
 	test("починенные адреса удаляются из списка долга", () => {
-		const routes = serverRoutes();
+		const routes = serverRoutes().paths;
 		const alreadyServed = KNOWN_MISSING.filter((known) => isServed(known, routes));
 		assert.deepEqual(
 			alreadyServed,
