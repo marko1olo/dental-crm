@@ -877,7 +877,7 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 	// строке на КАЖДЫЙ завершённый приём за всю историю клиники и складывал их
 	// в память. Здесь первый запрос агрегирован до одной строки на пациента, а
 	// второй ограничен периодом.
-	const firstEverRows = await db
+	const firstEverQuery = db
 		.select({
 			patientId: appointments.patientId,
 			firstAt: sql<Date>`min(${appointments.startsAt})`
@@ -892,12 +892,7 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 		)
 		.groupBy(appointments.patientId);
 
-	const firstEverByPatient = new Map<string, number>();
-	for (const row of firstEverRows) {
-		if (row.patientId && row.firstAt) firstEverByPatient.set(row.patientId, new Date(row.firstAt).getTime());
-	}
-
-	const periodRows = await db
+	const periodQuery = db
 		.select({
 			bucket: sql<string>`to_char(${monthBucket}, 'YYYY-MM')`,
 			patientId: appointments.patientId,
@@ -916,6 +911,13 @@ export async function patientFlow(scope: ReportScope): Promise<PatientFlowReport
 			)
 		)
 		.groupBy(monthBucket, appointments.patientId);
+
+	const [firstEverRows, periodRows] = await Promise.all([firstEverQuery, periodQuery]);
+
+	const firstEverByPatient = new Map<string, number>();
+	for (const row of firstEverRows) {
+		if (row.patientId && row.firstAt) firstEverByPatient.set(row.patientId, new Date(row.firstAt).getTime());
+	}
 
 	const byBucket = new Map<string, { newPatients: Set<string>; returningPatients: Set<string> }>();
 	for (const row of periodRows) {
