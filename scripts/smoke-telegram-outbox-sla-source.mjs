@@ -2,11 +2,37 @@ import fs from "node:fs";
 
 const source = fs.readFileSync("apps/api/src/sampleData.ts", "utf8");
 
+/*
+ * ТРЕБОВАНИЯ-СВЯЗИ, А НЕ ТРЕБОВАНИЯ-НАПИСАНИЕ.
+ *
+ * Здесь стояла строка-игла
+ *   `if (!appointmentReminderInsideDispatchWindow(appointment, leadTimeHours, nowMs)) return [];`
+ * и проверка краснела, хотя поведение на месте: в sampleData.ts тот же самый
+ * оператор занимает восемь строк (форматтер разнёс аргументы вызова по одному на
+ * строку, потому что одной строкой он длиннее лимита). То есть игла требовала
+ * ПЕРЕНОСЫ СТРОК, а не защиту от просроченных напоминаний.
+ *
+ * Ровно эта односрочная запись сохранилась только в apps/api/src/sampleData_opt.ts —
+ * мёртвой копии на 429 КБ, которую не импортирует никто и которую этот страж не
+ * читает. Игла совпадала бы с мёртвым файлом и не совпадала с живым.
+ *
+ * Поэтому связь закрепляется регулярным выражением: отрицание оконного стража с
+ * теми же тремя аргументами обязано немедленно вести к `return []`. Уберите `!`,
+ * потеряйте аргумент, замените ранний выход на что-то другое — проверка покраснеет.
+ * Переформатируйте те же 8 строк в 1 или обратно — не покраснеет.
+ */
+const requiredPatterns = [
+	{
+		pattern:
+			/if\s*\(\s*!\s*appointmentReminderInsideDispatchWindow\(\s*appointment\s*,\s*leadTimeHours\s*,\s*nowMs\s*,?\s*\)\s*\)\s*(?:\{\s*)?return\s*\[\s*\]\s*;/,
+		as: "!appointmentReminderInsideDispatchWindow(appointment, leadTimeHours, nowMs) must early-return []",
+	},
+];
+
 const requiredSnippets = [
 	"appointmentReminderDispatchGraceMs",
 	"appointmentReminderInsideDispatchWindow",
 	"nowMs - scheduledAtMs <= appointmentReminderDispatchGraceMs",
-	"if (!appointmentReminderInsideDispatchWindow(appointment, leadTimeHours, nowMs)) return [];",
 	"postVisitInstructionTaskKeepsOutboxClaim",
 	'["sent", "delivered", "completed"].includes(task.status)',
 	'task.channel === "telegram" && isOpenCommunicationTask(task)',
@@ -45,6 +71,9 @@ const forbiddenSnippets = [
 ];
 
 const missing = requiredSnippets.filter((snippet) => !source.includes(snippet));
+for (const { pattern, as } of requiredPatterns) {
+	if (!pattern.test(source)) missing.push(as);
+}
 const forbidden = forbiddenSnippets.filter((snippet) =>
 	source.includes(snippet),
 );

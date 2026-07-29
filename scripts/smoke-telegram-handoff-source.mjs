@@ -25,7 +25,6 @@ const requiredAppSnippets = [
 	'url.searchParams.get("dente_source") !== "telegram"',
 	'url.searchParams.get("dente_section")',
 	"stripDenteTelegramHandoffQuery",
-	"initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget()",
 	'url.search = ""',
 	"url.hash = `#${target.hash}`",
 	"window.history.replaceState",
@@ -37,6 +36,35 @@ const requiredAppSnippets = [
 
 for (const snippet of requiredAppSnippets) {
 	if (!appSource.includes(snippet)) missing.push(`App.tsx missing ${snippet}`);
+}
+
+/*
+ * ТРЕБОВАНИЕ-СВЯЗЬ, А НЕ ТРЕБОВАНИЕ-НАПИСАНИЕ.
+ *
+ * Здесь в списке строк стояла игла
+ *   `initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget()`
+ * и страж краснел, хотя переход из Telegram работает: в useAppLogic.tsx (строки
+ * 4392-4393 и 4402-4403) это же выражение форматтер разбил после `??` на две
+ * строки, потому что одной строкой оно длиннее лимита. Игла требовала ОТСУТСТВИЯ
+ * переноса, а не сохранённой цели перехода.
+ *
+ * Смысл требования другой, и закрепляется он связью: цель перехода читается из
+ * ref, снятого при первом рендере, и ТОЛЬКО при пустом ref перечитывается из
+ * адреса. Порядок здесь и есть защита — query к этому моменту уже вычищен
+ * stripDenteTelegramHandoffQuery, так что чтение из адреса первым потеряло бы
+ * цель. Поменяйте операнды местами, потеряйте `?? readDenteTelegramHandoffTarget()`,
+ * замените ref на прямое чтение адреса — покраснеет. Перенос строки — нет.
+ */
+const requiredAppPatterns = [
+	{
+		pattern:
+			/initialTelegramHandoffTargetRef\.current\s*\?\?\s*readDenteTelegramHandoffTarget\(\)/,
+		as: "handoff target must read the first-render ref first and only then fall back to the URL",
+	},
+];
+
+for (const { pattern, as } of requiredAppPatterns) {
+	if (!pattern.test(appSource)) missing.push(`App.tsx missing ${as}`);
 }
 
 const forbiddenAppPatterns = [
