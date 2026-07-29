@@ -749,11 +749,49 @@ const documentEditionPatterns = [
  *
  * Прайс, который клиника грузит сегодня, помечен сегодняшним годом, годом
  * прошлой редакции или следующим («Тарифы на 2027»). Год редакции — величина
- * относительно текущей даты по своей природе, поэтому и границы считаются от
- * new Date().getFullYear(), а не вписаны числом.
+ * относительно даты загрузки по своей природе, поэтому границы и считаются от
+ * сегодняшнего года, а не вписаны числом.
  */
 const editionYearsBack = 6;
 const editionYearsAhead = 1;
+
+/**
+ * КАЛЕНДАРНАЯ ОПОРА РАЗБОРА: год, который для ЭТОГО разбора считается
+ * сегодняшним.
+ *
+ * ЗАЧЕМ ВХОД, А НЕ ЧТЕНИЕ ЧАСОВ НА МЕСТЕ. Окно года редакции обязано считаться
+ * от сегодняшней даты — это сказано выше и остаётся верным. Но пока
+ * `new Date().getFullYear()` стоял ВНУТРИ looksLikeEditionYear, у результата
+ * разбора не было опоры, кроме даты прогона:
+ *   • один и тот же прайс разбирался по-разному в разные годы, и никто этого не
+ *     выбирал. Измерено подменой Date.prototype.getFullYear (зонд, истинный код
+ *     выхода 0): «Отбеливание 2025» отдаёт priceRub: null при часах 2026-2031 и
+ *     2025 ₽ при часах 2032-2033 — заголовок раздела прайса становится услугой
+ *     за 2025 ₽ сам собой, от смены года на машине;
+ *   • разбор нельзя воспроизвести: чтобы объяснить клинике, почему в её прайсе
+ *     цена не прочитана, надо знать не только текст, но и день прогона;
+ *   • проверка, закрепляющая поведение на конкретном годе, молча перестаёт
+ *     проверять дефект, когда окно с этого года уезжает, — и остаётся зелёной.
+ *     Такая проверка хуже отсутствующей: она создаёт уверенность.
+ * Часы читаются РОВНО ОДИН РАЗ на разбор — в calendarFromClock, у входа, — а год
+ * едет вниз входом. Заодно это закрывает вторую, более редкую беду: чтение часов
+ * стояло в цикле по кандидатам цены, и разбор, начавшийся 31 декабря, мог
+ * применить к разным строкам ОДНОГО прайса разные окна.
+ *
+ * Календарь — отдельный тип, а не голое число, УМЫШЛЕННО: он едет пятым
+ * аргументом рядом с номером строки и индексом записи, и два числа в такой
+ * цепочке рано или поздно меняются местами молча. Тип делает подмену ошибкой
+ * компиляции, а на месте вызова видно, что передаётся именно год.
+ *
+ * `generatedAt` в ответе часы читает по-прежнему и законно: там время генерации
+ * ответа, а не вход разбора.
+ */
+export type PricelistCalendar = { currentYear: number };
+
+/** Единственное место разбора прайса, где читаются часы машины. */
+function calendarFromClock(): PricelistCalendar {
+  return { currentYear: new Date().getFullYear() };
+}
 
 /**
  * Четырёхзначное число в строке — это ГОД ДОКУМЕНТА, а не цена услуги.
@@ -782,15 +820,40 @@ const editionYearsAhead = 1;
  * а сама строка остаётся видимой в прайсе вместе с написанным в ней числом. Это
  * стоячий закон этого файла: не можешь определить цену — откажись, а не угадывай.
  */
-function looksLikeEditionYear(line: string, yearText: string): boolean {
+function looksLikeEditionYear(line: string, yearText: string, calendar: PricelistCalendar): boolean {
   if (!looksLikeYear(yearText)) return false;
   if (matchesAny(line, documentEditionPatterns)) return true;
   const year = Number(yearText);
-  const currentYear = new Date().getFullYear();
-  return year >= currentYear - editionYearsBack && year <= currentYear + editionYearsAhead;
+  return year >= calendar.currentYear - editionYearsBack && year <= calendar.currentYear + editionYearsAhead;
 }
 
-function collectPriceCandidates(line: string): PriceCandidate[] {
+/**
+ * ЧИСЛО, СТОЯЩЕЕ В scanText НА ПОЗИЦИИ start, — ГОД ДОКУМЕНТА, А НЕ ЦЕНА УСЛУГИ.
+ *
+ * ОДИН ВЛАДЕЛЕЦ ОТКАЗА ОТ ГОДА НА ОБА РЕЖИМА РАЗБОРА. Детерминированная ветка
+ * спрашивает это про кандидата своего сканера, нейро-ветка — про число из ответа
+ * модели (см. priceIsDocumentYear). Пока правило стояло только внутри
+ * collectPriceCandidates, модель, прочитавшая «Прайс-лист 2025» как услугу за
+ * 2025 ₽, проходила в каталог мимо него: дефект, закрытый в одной ветке, жил во
+ * второй. Измерено прямым вызовом itemFromGroq до правки (истинный код выхода 0):
+ *   «Прайс-лист 2025» + priceRub 2025 модели  →  услуга за 2025 ₽
+ *   «Редакция 2024»   + priceRub 2024 модели  →  услуга за 2024 ₽
+ * Этот файл платил за «двух владельцев одного правила» уже трижды: свёртка
+ * убывающей пары цен жила отдельно на ветке ИИ, граница длительности приёма
+ * стояла только в durationFromLine, гейт строк прайса не применялся к записям
+ * модели вовсе.
+ */
+function editionYearInsteadOfPrice(
+  line: string,
+  scanText: string,
+  start: number,
+  numberText: string,
+  calendar: PricelistCalendar
+): boolean {
+  return !numberCarriesPriceMark(scanText, start) && looksLikeEditionYear(line, numberText, calendar);
+}
+
+function collectPriceCandidates(line: string, calendar: PricelistCalendar): PriceCandidate[] {
   const scanText = blankNotMoney(line);
   const candidates: PriceCandidate[] = [];
   for (const match of scanText.matchAll(priceRegex)) {
@@ -892,7 +955,7 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
        * и знает все написания («2025 рублей» тоже), поэтому законная цена не
        * теряется, а чужая подпись больше не действует.
        */
-      if (!numberCarriesPriceMark(scanText, lowStart) && looksLikeEditionYear(line, lowGroupText)) continue;
+      if (editionYearInsteadOfPrice(line, scanText, lowStart, lowGroupText, calendar)) continue;
       /*
        * Разделитель в отрезок цены НЕ включается, и висеть в названии его
        * оставляет не эта ветка: он снимается на срезе, в stripPriceFromTitle.
@@ -936,8 +999,11 @@ function collectPriceCandidates(line: string): PriceCandidate[] {
   return candidates;
 }
 
-function extractPrice(line: string): { priceRub: number | null; priceMaxRub: number | null; pricedSpan: PriceSpan | null } {
-  const candidates = collectPriceCandidates(line);
+function extractPrice(
+  line: string,
+  calendar: PricelistCalendar
+): { priceRub: number | null; priceMaxRub: number | null; pricedSpan: PriceSpan | null } {
+  const candidates = collectPriceCandidates(line, calendar);
   const explicit = candidates.filter((candidate) => candidate.explicit);
   const withCurrency = explicit.length ? explicit : candidates;
   /*
@@ -1139,11 +1205,12 @@ function buildItemFromLine(
   line: string,
   lineNumber: number,
   input: DentalPricelistAnalysisRequest,
-  catalog: ServiceCatalogItem[]
+  catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar
 ): DentalPricelistItem {
   const classification = classifyLine(line, input.preferredSpecialty);
   const material = classifyMaterial(line);
-  const price = extractPrice(line);
+  const price = extractPrice(line, calendar);
   const title = stripPriceFromTitle(line, price.pricedSpan) || line;
   const item: DentalPricelistItem = {
     id: `price-${lineNumber}`,
@@ -1399,14 +1466,21 @@ export function selectPricelistServiceRows(
   return { items, skippedRows: droppedBeforeGate + (parsedRows.length - items.length) };
 }
 
+/*
+ * Календарь здесь ОБЯЗАТЕЛЕН и стоит перед необязательными аргументами не по
+ * прихоти: значение по умолчанию из часов на этом уровне вернуло бы разбору вторую
+ * опору на дату прогона — ровно то, что правка убирает. Часы читает только вход
+ * (analyzePricelist), и все четыре его вызова передают один и тот же календарь.
+ */
 function analyzePricelistDeterministic(
   request: DentalPricelistAnalysisRequest,
   catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar,
   parserMode: PricelistParserMode = "deterministic",
   extraWarnings: string[] = []
 ): DentalPricelistAnalysisResponse {
   const lines = splitPricelistLines(request.rawText);
-  const parsedRows = lines.map((line, index) => buildItemFromLine(line, index + 1, request, catalog));
+  const parsedRows = lines.map((line, index) => buildItemFromLine(line, index + 1, request, catalog, calendar));
   const selected = selectPricelistServiceRows(parsedRows);
   const items = selected.items;
   /*
@@ -1555,6 +1629,59 @@ function readMoneyRubOrNull(value: unknown): number | null {
 }
 
 /**
+ * ЦЕНА ИЗ ОТВЕТА МОДЕЛИ — ЭТО ГОД ДОКУМЕНТА, А НЕ ЦЕНА УСЛУГИ.
+ *
+ * Вопрос задаётся ТЕМИ ЖЕ функциями, что в детерминированной ветке
+ * (editionYearInsteadOfPrice → looksLikeEditionYear, numberCarriesPriceMark,
+ * documentEditionPatterns), потому что второго владельца правила года в этом файле
+ * быть не должно. У модели есть sourceText — исходная строка прайса, — значит ей
+ * можно задать те же вопросы, а не изобретать проверку года заново.
+ *
+ * ЗДЕСЬ ЛЕГКО УНЕСТИ ЗАКОННУЮ ЦЕНУ, ПОЭТОМУ ПОРЯДОК ПРОВЕРОК ИМЕННО ТАКОЙ:
+ *   1. looksLikeYear отсекает всё, что на год не похоже, ПЕРВЫМ. 2025 ₽ — вполне
+ *      реальная цена услуги (прицельный снимок, анестезия, консультация стоят
+ *      300-3000 ₽), и полосу 1900-2099 целиком отвергать нельзя; но 12 500 и
+ *      1500,50 до остальных проверок не доходят вовсе. Он же делает numberText
+ *      заведомо четырьмя цифрами — только поэтому его можно вставлять в регулярку.
+ *   2. Подпись деньгами ищется у КАЖДОГО вхождения этого числа в строку, и хотя бы
+ *      одна подпись снимает вопрос: «Консультация 2025 руб» остаётся ценой 2025 ₽.
+ *      Вхождения ищутся с запретом цифры по краям, иначе «2025» нашлось бы внутри
+ *      «12025» и чужая подпись сошла бы за свою.
+ *   3. Числа, которого в строке НЕТ ВООБЩЕ, подписать нечем: подписи нет ни у
+ *      одного вхождения, потому что вхождений ноль. Такое число модель не
+ *      прочитала, а придумала — промпт запрещает выдумывать цены прямо, — и год
+ *      редакции ценой от этого не становится. Цена при этом не теряется: отказ
+ *      уводит запись в детерминированный откат по той же строке (см. itemFromGroq),
+ *      то есть к цене, которая в строке НАПИСАНА.
+ *
+ * Год ищется в тексте без подписанных не-денег (blankNotMoney) — тем же взглядом,
+ * каким его видит сканер цены, иначе «Гарантия 2025 дней» отвечала бы на вопрос о
+ * подписи по погашенному числу.
+ */
+function priceIsDocumentYear(sourceText: string, priceRub: number, calendar: PricelistCalendar): boolean {
+  const numberText = String(priceRub);
+  if (!looksLikeYear(numberText)) return false;
+  const scanText = blankNotMoney(sourceText);
+  const occurrences = Array.from(scanText.matchAll(new RegExp(`(?<!\\d)${numberText}(?!\\d)`, "gu")))
+    .map((match) => match.index)
+    .filter((index): index is number => index !== undefined);
+  return occurrences.length
+    ? occurrences.every((start) =>
+        editionYearInsteadOfPrice(sourceText, scanText, start, numberText, calendar)
+      )
+    : looksLikeEditionYear(sourceText, numberText, calendar);
+}
+
+/** Цена из ответа модели, если это цена, и НЕИЗВЕСТНО (null), если это год документа. */
+function moneyUnlessDocumentYear(
+  value: number | null,
+  sourceText: string,
+  calendar: PricelistCalendar
+): number | null {
+  return value !== null && priceIsDocumentYear(sourceText, value, calendar) ? null : value;
+}
+
+/**
  * Счётное значение из ответа модели: целое, не меньше единицы, не больше
  * `maxValue`. Ноль и отрицательное — не счёт, а отсутствие значения.
  */
@@ -1584,15 +1711,38 @@ function asWarnings(value: unknown): string[] {
  * разбора — вызвать эту функцию напрямую с записью того же вида, какую
  * возвращает модель. Тест apps/api/src/pricelist/groqPricelistKopecks.test.ts.
  */
-export function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): DentalPricelistItem | null {
+export function itemFromGroq(
+  raw: unknown,
+  index: number,
+  request: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar = calendarFromClock()
+): DentalPricelistItem | null {
   if (!raw || typeof raw !== "object") return null;
   const record = raw as Record<string, unknown>;
   const sourceText = normalizeText(asString(record.sourceText, asString(record.title)));
   if (!sourceText) return null;
 
-  const fallback = buildItemFromLine(sourceText, index + 1, request, catalog);
-  const priceRubFromModel = readMoneyRubOrNull(record.priceRub) ?? fallback.priceRub;
-  const priceMaxRubFromModel = readMoneyRubOrNull(record.priceMaxRub) ?? fallback.priceMaxRub;
+  const fallback = buildItemFromLine(sourceText, index + 1, request, catalog, calendar);
+  /*
+   * ОТКАЗ ОТ ГОДА РЕДАКЦИИ ДЕЙСТВУЕТ И ЗДЕСЬ, А НЕ ТОЛЬКО В ДЕТЕРМИНИРОВАННОЙ
+   * ВЕТКЕ. Раньше стояло `readMoneyRubOrNull(record.priceRub) ?? fallback.priceRub`,
+   * и число модели проверок на год не проходило ВООБЩЕ: детерминированный разбор от
+   * года уже отказывался, а запись модели с priceRub 2025 по строке «Прайс-лист
+   * 2025» вставала в каталог услугой за 2025 ₽ — и оттуда в план лечения, в счёт и в
+   * документ, который подписывает пациент.
+   *
+   * Отказ уводит цену в ОТКАТ ПО ТОЙ ЖЕ СТРОКЕ, а не в null: `?? fallback` ниже
+   * читает ту же строку детерминированным разбором. Поэтому «Гигиена от 2025 до 2500
+   * руб» цену не теряет — там пара границ, а не одиночный год, — и решает в итоге
+   * одно правило на оба режима, а не два разных представления о годе.
+   *
+   * Верхняя граница проверяется тем же правилом: без этого «Коронка 12 500 руб
+   * (прайс 2025)» с priceMaxRub 2025 от модели получила бы выдуманный диапазон
+   * 12 500-2025 ₽ вместо отсутствующей верхней границы.
+   */
+  const priceRubFromModel = moneyUnlessDocumentYear(readMoneyRubOrNull(record.priceRub), sourceText, calendar) ?? fallback.priceRub;
+  const priceMaxRubFromModel = moneyUnlessDocumentYear(readMoneyRubOrNull(record.priceMaxRub), sourceText, calendar) ?? fallback.priceMaxRub;
   /*
    * Убывающая пара СОРТИРУЕТСЯ, а не схлопывается в первое число.
    *
@@ -1657,17 +1807,19 @@ export function itemFromGroq(raw: unknown, index: number, request: DentalPriceli
 export function pricelistItemsFromGroqRows(
   rows: unknown[],
   request: DentalPricelistAnalysisRequest,
-  catalog: ServiceCatalogItem[]
+  catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar = calendarFromClock()
 ): { items: DentalPricelistItem[]; droppedRows: number } {
   const items = rows
-    .map((row, index) => itemFromGroq(row, index, request, catalog))
+    .map((row, index) => itemFromGroq(row, index, request, catalog, calendar))
     .filter((item): item is DentalPricelistItem => Boolean(item));
   return { items, droppedRows: rows.length - items.length };
 }
 
 async function callGroqPricelist(
   request: DentalPricelistAnalysisRequest,
-  catalog: ServiceCatalogItem[]
+  catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar
 ): Promise<{ items: DentalPricelistItem[]; droppedRows: number }> {
   const modelName = groqPricelistModelName();
   const tried = new Set<string>();
@@ -1713,7 +1865,7 @@ async function callGroqPricelist(
       const contentText = contentToString(payload.choices?.[0]?.message?.content);
       const parsed = safeParseJsonObject(contentText);
       const rows = Array.isArray(parsed.items) ? parsed.items : [];
-      const parsedRows = pricelistItemsFromGroqRows(rows, request, catalog);
+      const parsedRows = pricelistItemsFromGroqRows(rows, request, catalog, calendar);
       /*
        * Отброшены ВСЕ записи — это видимый исход и без счётчика: исключение уводит
        * ветку в откат на детерминированный разбор с предупреждением groq_failed:.
@@ -1734,27 +1886,48 @@ async function callGroqPricelist(
   throw new Error(sanitizeProviderErrorMessage(lastError instanceof Error ? lastError.message : "Groq pricelist extraction failed."));
 }
 
-export async function analyzePricelist(request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): Promise<DentalPricelistAnalysisResponse> {
+/**
+ * Разбор прайса целиком.
+ *
+ * `calendar` — год, который для ЭТОГО разбора считается сегодняшним. Он объявлен
+ * входом с значением по умолчанию из часов, потому что окно года редакции — это
+ * свойство ДАТЫ ЗАГРУЗКИ, а не свойство функции: боевой вызов (routes/pricelist.ts)
+ * передаёт два аргумента и работает как раньше, а проверка передаёт год явно и
+ * получает один и тот же результат в любую дату прогона. Подробности и цена
+ * прежнего поведения — у объявления PricelistCalendar.
+ *
+ * Часы читаются здесь ОДИН РАЗ на запрос: ниже календарь едет аргументом во все
+ * ветки, включая нейро-ветку и все четыре отката на детерминированный разбор.
+ * Клиентский контракт (DentalPricelistAnalysisRequest) года не содержит намеренно —
+ * иначе окном года редакции управлял бы браузер, а не сервер.
+ */
+export async function analyzePricelist(
+  request: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[],
+  calendar: PricelistCalendar = calendarFromClock()
+): Promise<DentalPricelistAnalysisResponse> {
   const keyPool = getProviderKeyPoolSummary(groqProviderId);
   const modelName = groqPricelistModelName();
 
   if (!request.useServerAi) {
-    return analyzePricelistDeterministic(request, catalog);
+    return analyzePricelistDeterministic(request, catalog, calendar);
   }
 
   if (request.imageBase64 && !isExpectedImagePayload(request)) {
-    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", [
+    return analyzePricelistDeterministic(request, catalog, calendar, "deterministic_groq_fallback", [
       "image_payload_invalid",
       "groq_skipped_invalid_image_payload"
     ]);
   }
 
   if (!keyPool.configuredKeyCount) {
-    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", ["groq_key_pool_empty"]);
+    return analyzePricelistDeterministic(request, catalog, calendar, "deterministic_groq_fallback", [
+      "groq_key_pool_empty"
+    ]);
   }
 
   try {
-    const parsedRows = await callGroqPricelist(request, catalog);
+    const parsedRows = await callGroqPricelist(request, catalog, calendar);
     /*
      * ГЕЙТ СТРОК И СЧЁТЧИК СТОЯТ И ЗДЕСЬ. Раньше эта ветка звала responseFromItems
      * напрямую: запись модели «Прайс-лист действителен с 01.01.2025» становилась
@@ -1779,7 +1952,7 @@ export async function analyzePricelist(request: DentalPricelistAnalysisRequest, 
       modelName
     });
   } catch (error) {
-    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", [
+    return analyzePricelistDeterministic(request, catalog, calendar, "deterministic_groq_fallback", [
       `groq_failed:${sanitizeProviderErrorMessage(error instanceof Error ? error.message : "unknown")}`
     ]);
   }
