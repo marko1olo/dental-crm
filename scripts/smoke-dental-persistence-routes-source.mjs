@@ -176,15 +176,15 @@ requireCallIn(
  * НАСТОЯЩИЙ ДЕФЕКТ ПРОДУКТА, А НЕ ПОЛОМКА СТРАЖА. НЕ СНИМАТЬ ЭТУ ПРОВЕРКУ.
  *
  * Проверено 29.07.2026 по живому коду. Требование верное, и продукт его не
- * выполняет: apps/api/src/routes/odontogram.ts:341 рассылает обновление
+ * выполняет: apps/api/src/routes/odontogram.ts рассылает обновление
  * одонтограммы через `wsBroker.broadcastToOrganization(organizationId, {...})`
  * с payload `{ patientId, states: inserted }` — то есть состояния зубов
  * КОНКРЕТНОГО пациента уходят ВСЕМ сокетам клиники.
  *
- * Узкий канал существует и протестирован: websocketBroker.ts:44
+ * Узкий канал существует и протестирован: services/websocketBroker.ts:44
  * `broadcastToPatient(organizationId, patientId, message)` фильтрует по
- * `client.patientId === patientId`, а websocketBroker.test.ts:87 проверяет, что
- * доставка идёт только подписке на этого пациента этой клиники. Подписки с
+ * `client.patientId === patientId`, а tests/websocketBroker.test.ts:87 проверяет,
+ * что доставка идёт только подписке на этого пациента этой клиники. Подписки с
  * patientId в продакшене реальны: websocket.ts:142 передаёт patientId в
  * addClient. Значит сокет, подписавшийся на пациента B, получает одонтограмму
  * пациента A.
@@ -195,11 +195,22 @@ requireCallIn(
  *
  * Правка — не в этом пакете: она в продукте, в чужом файле. Страж остаётся
  * красным законно и указывает на настоящую причину.
+ *
+ * КООРДИНАТЫ В СООБЩЕНИИ БОЛЬШЕ НЕ ХРАНЯТСЯ. Раньше требование называло
+ * «odontogram.ts:341», и к 29.07.2026 номер уехал: рассылка стоит на строке 426,
+ * а на 341 лежит разбор тела запроса. Страж, отправляющий читателя не на ту
+ * строку, обесценивает верный диагноз, поэтому место дефекта теперь ищется в
+ * файле на месте прогона, а не переписывается руками. Путь к брокеру в
+ * комментарии выше тоже был неполон (services/ пропущен) — проверено: файла
+ * apps/api/src/websocketBroker.ts не существует.
  */
+const broadcastLine = odontogramRoutes
+	.slice(0, odontogramRoutes.indexOf("wsBroker.broadcastToOrganization"))
+	.split("\n").length;
 requireCallIn(
 	odontogramRoutes,
 	"wsBroker.broadcastToPatient(organizationId, patientId",
-	"Odontogram websocket updates must stay tenant/patient scoped: odontogram.ts:341 still uses broadcastToOrganization, so one patient's tooth states reach every clinic socket.",
+	`Odontogram websocket updates must stay tenant/patient scoped: odontogram.ts:${broadcastLine} still uses broadcastToOrganization, so one patient's tooth states reach every clinic socket.`,
 );
 requireCallIn(
 	odontogramRoutes,
