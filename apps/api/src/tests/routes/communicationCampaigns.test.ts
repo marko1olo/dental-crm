@@ -41,6 +41,37 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Одна и та же уборка ДО засева и после прогона — иначе она не уборка.
+ *
+ * ЧТО ЛОМАЛОСЬ. Уборка стояла только в `after`. Прогон, оборванный до него
+ * (Ctrl+C, закрытая труба вида `| head`, убитый процесс, падение соединения),
+ * оставлял строки фикстуры в живой базе, и засев следующего прогона наследовал
+ * их: у `patient_communication_consents` есть unique(org, patient, channel,
+ * scope), поэтому `onConflictDoNothing` попадал в конфликт и молча оставлял
+ * ЧУЖОЕ согласие вместо своего выданного. Отозванное согласие от прошлого
+ * прогона переживало засев, и `resolveAudience` честно отвечал
+ * `deliverable: 0`, `no_consent: 2`.
+ *
+ * ЗАМЕРЕНО НА ЭТОМ ФАЙЛЕ: чистый прогон 15/15 зелёных (код выхода 0), после
+ * подложенного остатка — 6 упавших из 15 (код выхода 1), причём падали
+ * проверки отбора, предпросмотра, запуска, повторного запуска, снимка
+ * аудитории и отмены. Ни одна из них не касается кода, который якобы проверяет.
+ *
+ * Удаление идёт по organization_id тестовой клиники `dce70000-…-02xx`, поэтому
+ * чужих данных оно не задевает.
+ */
+async function purgeFixtures(): Promise<void> {
+	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+	await db.delete(communicationCampaigns).where(eq(communicationCampaigns.organizationId, ORG_ID));
+	await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+	await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
+	await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("рассылки пациентам", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -60,15 +91,17 @@ describe("рассылки пациентам", () => {
 		await registerCommunicationOutboxRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника рассылок" }).onConflictDoNothing();
+			// Сначала расчистить место за оборванным прогоном, потом сеять.
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника рассылок" });
 			await db
 				.insert(patients)
 				.values([
 					{ id: CONSENTED, organizationId: ORG_ID, fullName: "Согласный Пётр Иванович", phone: "+7 916 000-01-01" },
 					{ id: NO_CONSENT, organizationId: ORG_ID, fullName: "Отказной Иван Петрович", phone: "+7 916 000-01-02" },
 					{ id: NO_PHONE, organizationId: ORG_ID, fullName: "Безномера Сергей Сергеевич", phone: null }
-				])
-				.onConflictDoNothing();
+				]);
 
 			// Приём годичной давности — для отбора «давно не были».
 			const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
@@ -81,21 +114,24 @@ describe("рассылки пациентам", () => {
 					status: "completed",
 					startsAt: yearAgo,
 					endsAt: new Date(yearAgo.getTime() + 3_600_000)
-				})
-				.onConflictDoNothing();
+				});
 
-			// Согласие на рекламу есть только у одного пациента.
-			await db
-				.insert(patientCommunicationConsents)
-				.values({
-					organizationId: ORG_ID,
-					patientId: CONSENTED,
-					channel: "sms",
-					scope: "marketing",
-					state: "granted",
-					source: "contract"
-				})
-				.onConflictDoNothing();
+			/*
+			 * Согласие на рекламу есть только у одного пациента.
+			 *
+			 * Без onConflictDoNothing НАМЕРЕННО: место расчищено выше, и конфликт
+			 * по unique(org, patient, channel, scope) здесь означал бы, что уборка
+			 * не сработала. Прежде он молчал и подменял выданное согласие остатком
+			 * прошлого прогона — см. purgeFixtures выше.
+			 */
+			await db.insert(patientCommunicationConsents).values({
+				organizationId: ORG_ID,
+				patientId: CONSENTED,
+				channel: "sms",
+				scope: "marketing",
+				state: "granted",
+				source: "contract"
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -104,14 +140,7 @@ describe("рассылки пациентам", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(communicationCampaigns).where(eq(communicationCampaigns.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-			await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;

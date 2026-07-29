@@ -44,6 +44,32 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Одна и та же уборка ДО засева и после прогона — иначе она не уборка.
+ *
+ * ЧТО ЛОМАЛОСЬ. Уборка стояла только в `after`. Прогон, оборванный до него,
+ * оставлял фикстуру в живой базе, и `onConflictDoNothing` на засеве следующего
+ * прогона молча оставлял старые строки вместо своих. Здесь это бьёт по самому
+ * смыслу файла: проверка «напоминание встаёт в очередь РОВНО ОДИН РАЗ» считает
+ * строки в `communication_outbox`, а `startsAt` приёма отсчитывается от «сейчас»
+ * в момент прогона. Остаток от прошлого прогона несёт ЧУЖОЕ время приёма и своё
+ * напоминание: приём в окно уже не попадает, зато напоминание в очереди есть —
+ * и проверка либо краснеет на верном коде, либо зеленеет на чужом напоминании.
+ *
+ * Порядок удаления — от зависимых строк к организации.
+ */
+async function purgeFixtures(): Promise<void> {
+	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+	await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+	await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
+	await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(users).where(eq(users.organizationId, ORG_ID));
+	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("автоматические напоминания о приёме", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -62,42 +88,38 @@ describe("автоматические напоминания о приёме", 
 		await registerCommunicationOutboxRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника напоминаний" }).onConflictDoNothing();
-			await db
-				.insert(clinics)
-				.values({
-					id: CLINIC_ID,
-					organizationId: ORG_ID,
-					name: "Клиника на Ленина",
-					phone: "+7 495 000-00-00",
-					timezone: "Europe/Moscow"
-				})
-				.onConflictDoNothing();
+			// Сначала расчистить место за оборванным прогоном, потом сеять.
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника напоминаний" });
+			await db.insert(clinics).values({
+				id: CLINIC_ID,
+				organizationId: ORG_ID,
+				name: "Клиника на Ленина",
+				phone: "+7 495 000-00-00",
+				timezone: "Europe/Moscow"
+			});
 			await db
 				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Иванов Иван Иванович", role: "doctor" })
-				.onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Орлова Марина Петровна",
-					phone: "+7 916 000-00-02"
-				})
-				.onConflictDoNothing();
-			await db
-				.insert(appointments)
-				.values({
-					id: APPOINTMENT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					doctorUserId: DOCTOR_ID,
-					status: "planned",
-					startsAt: appointmentStart,
-					endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000)
-				})
-				.onConflictDoNothing();
+				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Иванов Иван Иванович", role: "doctor" });
+			await db.insert(patients).values({
+				id: PATIENT_ID,
+				organizationId: ORG_ID,
+				fullName: "Орлова Марина Петровна",
+				phone: "+7 916 000-00-02"
+			});
+			// Время приёма отсчитывается от «сейчас», поэтому строка обязана быть
+			// СВОЕЙ: onConflictDoNothing здесь оставил бы приём прошлого прогона с
+			// его временем, и окно напоминания считалось бы по чужой дате.
+			await db.insert(appointments).values({
+				id: APPOINTMENT_ID,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				doctorUserId: DOCTOR_ID,
+				status: "planned",
+				startsAt: appointmentStart,
+				endsAt: new Date(appointmentStart.getTime() + 60 * 60 * 1000)
+			});
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -106,15 +128,7 @@ describe("автоматические напоминания о приёме", 
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-			await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;

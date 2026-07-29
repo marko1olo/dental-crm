@@ -34,6 +34,24 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Одна и та же уборка ДО засева и после прогона — иначе она не уборка.
+ *
+ * ЧТО ЛОМАЛОСЬ. Уборка стояла только в `after`. Прогон, оборванный до него,
+ * оставлял три сообщения фикстуры в живой базе, и засев следующего прогона
+ * попадал в конфликт первичного ключа, где `onConflictDoNothing` молча оставлял
+ * СТАРЫЕ строки. Здесь это подменяет ровно то, что проверяется: тесты применяют
+ * квитанции и читают получившийся `status`, а остаток от прошлого прогона уже
+ * переведён в `delivered`/`failed` предыдущим применением. Проверка «отменённое
+ * сообщение квитанция не оживляет» на таком остатке зеленеет, ничего не
+ * проверив, — статус просто не менялся.
+ */
+async function purgeFixtures(): Promise<void> {
+	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("разбор квитанций провайдеров", () => {
 	test("SMS.RU: несколько квитанций одним запросом", () => {
 		const receipts = parseSmsRuReceipts("000000-10000001=103\n000000-10000002=104\n000000-10000003=110");
@@ -148,11 +166,11 @@ describe("применение квитанций к очереди", () => {
 		await registerCommunicationReceiptRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника квитанций" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Квитанция Тест Тестович" })
-				.onConflictDoNothing();
+			// Сначала расчистить место за оборванным прогоном, потом сеять.
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника квитанций" });
+			await db.insert(patients).values({ id: PATIENT_ID, organizationId: ORG_ID, fullName: "Квитанция Тест Тестович" });
 
 			await db
 				.insert(communicationOutbox)
@@ -194,8 +212,7 @@ describe("применение квитанций к очереди", () => {
 						providerMessageId: "receipt-delivered-1",
 						dedupeKey: "receipt:test:delivered"
 					}
-				])
-				.onConflictDoNothing();
+				]);
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -204,9 +221,7 @@ describe("применение квитанций к очереди", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;

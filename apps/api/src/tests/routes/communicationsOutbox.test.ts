@@ -36,6 +36,28 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Одна и та же уборка ДО засева и после прогона — иначе она не уборка.
+ *
+ * ЧТО ЛОМАЛОСЬ. Уборка стояла только в `after`. Прогон, оборванный до него
+ * (Ctrl+C, закрытая труба вида `| head`, убитый процесс, падение соединения),
+ * оставлял строки фикстуры в живой базе, а `onConflictDoNothing` на засеве
+ * следующего прогона молча оставлял их как есть — то есть тест продолжал на
+ * данных, которых сам не создавал. Особенно дорого это стоило в
+ * `communication_outbox`: остаток сообщений от прошлого прогона попадает в
+ * журнал и в разбор очереди, а проверки здесь считают строки.
+ *
+ * Порядок удаления — от зависимых строк к организации.
+ */
+async function purgeFixtures(): Promise<void> {
+	await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+	await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+	await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
+	await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("маршруты сообщений пациентам", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -65,17 +87,17 @@ describe("маршруты сообщений пациентам", () => {
 		await registerCommunicationOutboxRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Тестовая клиника (сообщения)" }).onConflictDoNothing();
-			await db
-				.insert(patients)
-				.values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Тестов Тест Тестович",
-					phone: "+7 916 000-00-01",
-					email: "test-patient@example.ru"
-				})
-				.onConflictDoNothing();
+			// Сначала расчистить место за оборванным прогоном, потом сеять.
+			await purgeFixtures();
+
+			await db.insert(organizations).values({ id: ORG_ID, name: "Тестовая клиника (сообщения)" });
+			await db.insert(patients).values({
+				id: PATIENT_ID,
+				organizationId: ORG_ID,
+				fullName: "Тестов Тест Тестович",
+				phone: "+7 916 000-00-01",
+				email: "test-patient@example.ru"
+			});
 
 			/*
 			 * Тихие часы выключены явно.
@@ -111,13 +133,7 @@ describe("маршруты сообщений пациентам", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			// Порядок важен: сначала зависимые строки, потом организация.
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(communicationTemplates).where(eq(communicationTemplates.organizationId, ORG_ID));
-			await db.delete(communicationSettings).where(eq(communicationSettings.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;
