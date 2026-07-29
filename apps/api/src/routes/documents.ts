@@ -1027,6 +1027,27 @@ import { register as registerTaxXml } from "./documents/taxXml.js";
 import { register as registerAuditFacts } from "./documents/auditFacts.js";
 import { register as registerPdf } from "./documents/pdf.js";
 import { register as registerHtml } from "./documents/html.js";
+import { register as registerSignUkep } from "./documents/signUkep.js";
+
+/*
+ * ПОЧЕМУ ЗДЕСЬ ПОЯВИЛСЯ registerSignUkep, И ЧЕГО КЛИНИКА ЛИШАЛАСЬ БЕЗ НЕГО.
+ * Модуль documents/signUkep.ts объявляет POST /api/documents/:id/sign-ukep и был
+ * написан целиком — скоуп по организации, 409 на повторное подписание, защита от
+ * повторного использования той же крипто-подписи, isNull прямо в UPDATE против
+ * гонки двух одновременных подписаний. Но его register не звал НИКТО, а модуль ESM
+ * не регистрирует маршрут Fastify, если его не вызвали: адрес отвечал 404. Значит
+ * подписать документ усиленной квалифицированной подписью было нельзя ничем, а без
+ * УКЭП выписка, договор и отказ от вмешательства в электронном виде юридической
+ * силы не имеют — клиника обязана печатать и хранить бумагу.
+ *
+ * Соседний documents/sign.ts (POST /api/documents/:id/sign, рукописная подпись
+ * SVG) СОЗНАТЕЛЬНО оставлен незарегистрированным: во всём apps/web/src нет ни
+ * одного вызова этого адреса и нет экрана захвата рукописной подписи — отметка о
+ * подписании ставится галочками при выдаче документа. Регистрировать маршрут, у
+ * которого нет вызывающего, значит открыть путь записи в документ без единого
+ * человека, который им пользуется. Его судьба — отдельное решение: либо экран
+ * захвата подписи, либо удаление модуля.
+ */
 
 export async function registerDocumentRoutes(app: FastifyInstance) {
   await registerCreate(app);
@@ -1036,4 +1057,5 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
   await registerAuditFacts(app);
   await registerPdf(app);
   await registerHtml(app);
+  await registerSignUkep(app);
 }

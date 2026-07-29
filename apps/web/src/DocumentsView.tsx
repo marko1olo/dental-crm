@@ -9,6 +9,7 @@ import {
   type MedicalDocumentReleaseChannel,
 } from "./store/documentStore";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
+import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { appendChipToText } from "./components/documents/documentChipText";
 import { PaidContractRequiredFieldsPanel } from "./components/documents/PaidContractRequiredFieldsPanel";
 import { paidContractRequiredFieldsReview } from "./components/documents/paidContractRequiredFields";
@@ -4102,6 +4103,46 @@ export function DocumentsView(props: DocumentsViewProps) {
                         ? `${documentAuditFacts.signatureAttestation.recipientFullName} · ${documentAuditFacts.signatureAttestation.staffFullName}`
                         : "PDF и файл ФНС заблокированы до фиксации получения"}
                     </small>
+                    {/*
+                      КНОПКА ПОДПИСАНИЯ УКЭП. До этой правки подписать документ
+                      усиленной квалифицированной подписью было нельзя ничем: кнопку
+                      не монтировал ни один экран, а её адрес на сервере отвечал 404,
+                      потому что documents/signUkep.ts был написан, но не подключён к
+                      registerDocumentRoutes. Без УКЭП выписка, договор и отказ от
+                      вмешательства в электронном виде юридической силы не имеют.
+
+                      ПОЧЕМУ ИМЕННО ЗДЕСЬ, А НЕ В РЯДУ ДЕЙСТВИЙ ДОКУМЕНТА. Паспорт
+                      выдачи открывается кнопкой «Паспорт» ровно для ОДНОГО документа,
+                      и это обязательное свойство места монтирования: компонент при
+                      появлении опрашивает плагин КриптоПро и читает личное хранилище
+                      сертификатов, а его список сертификатов имеет постоянный
+                      идентификатор ukep-cert-select. В ряду действий он появился бы в
+                      каждой строке списка — столько же опросов хранилища и столько же
+                      элементов с одним и тем же идентификатором, то есть подпись под
+                      документом выбиралась бы в чужом поле. Здесь же он стоит в той
+                      самой ячейке «Подписание», где клиника и смотрит на отметки.
+
+                      ГРАНИЦА ПОКАЗА. Только выданный документ и только при готовом
+                      PDF: кнопка подписывает печатную копию, которую берёт из
+                      /api/documents/:id/pdf, а сервер отдаёт её лишь для выданного
+                      документа с отметкой о подписании. Для аннулированного
+                      подписание запрещено и на сервере (409), поэтому статус здесь
+                      сверяется явно, а не через общий признак доступности архива.
+
+                      ОСТАЁТСЯ ДОЛГОМ: в паспорте не видно, что крипто-подпись уже
+                      стоит. Признака в нагрузке /audit-facts нет, а добавить его —
+                      это правка схемы в packages/shared с пересборкой её dist, то
+                      есть общий гейт. Пока факт повторного подписания сообщает сам
+                      сервер: 409 «Документ уже подписан УКЭП. Замена подписи
+                      запрещена», и кнопка показывает это человеческим текстом и
+                      оставляет на экране до следующей попытки.
+                    */}
+                    {documentAuditFacts.status === "issued" && documentAuditFacts.canExportPdf ? (
+                      <DocumentUkepSignButton
+                        documentId={documentAuditFacts.documentId}
+                        onSuccess={() => void loadDocumentAuditFacts(documentAuditFacts.documentId)}
+                      />
+                    ) : null}
                   </div>
                   {documentAuditFacts.voidAttestation ? (
                     <div>
