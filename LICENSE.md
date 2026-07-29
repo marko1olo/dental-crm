@@ -1,23 +1,29 @@
-# DENTE Enterprise CRM & DICOM Rendering License
+# DENTE Enterprise CRM & Clinic MVP: Proprietary & Source-Available Commercial License
 
-**Copyright (c) 2026 Адольф Петушков**
-
----
-
-### 🩺 Enterprise Scalpel License
-Лицензия высокопроизводительной CRM-системы стоматологий с DICOM-рендерингом.
-Разрешено коммерческое и клиническое использование при сохранении оригинального авторства Адольфа Петушкова.
----
-
-### 🤝 Мейнтейнеры, Контрибьюторы и ИИ (Maintainers & AI Welcome)
-* **Приветствуем всех контрибьюторов:** Мы искренне рады пул-реквестам (PR), багрепортам, оптимизациям и помощи в развитии проекта от любых мейнтейнеров и разработчиков!
-* **Разрешение на обучение ИИ:** Код, документация и архитектура открыты для исследования, обучения нейросетей, агентных ИИ-инструментов (Claude, Codex, Antigravity, LLM) и машинного обучения. Пользуйтесь на здоровье!
-
+**Copyright (c) 2026 Адольф Петушков. All Rights Reserved.**
 
 ---
 
-### 📜 Official MIT Terms / Standard Disclaimer
+### 🛡️ 1. Статус Проекта и Просмотр (Source-Available & Audit Rights)
+* **Статус:** Данный проект (DENTE CRM, ShadowAnalyst AI X-Ray, Clinic MVP, StomChat) является коммерческой медицинской платформой.
+* **Права на просмотр:** Исходный код, архитектура, API и медицинские алгоритмы предоставляются в режиме **Source-Available** — для аудита, изучения, безопасности и внутреннего тестирования.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the condition that the above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+---
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+### 🔴 2. Ограничения на Коммерческое Использование (Commercial Restrictions)
+1. **Запрет несанкционированной коммерции:** Категорически запрещено продавать, перепродавать, сдавать в субаренду, предоставлять в качестве платного облачного сервиса (SaaS / B2B) или разворачивать данный софт в сторонних клиниках без коммерческой лицензии или письменного соглашения с **Адольфом Петушковым**.
+2. **Запрет на приватизацию и ребрендинг:** Запрещено удалять копирайты, скрывать авторство или продавать данный продукт под видом собственного коммерческого решения.
+
+---
+
+### 🤝 3. Партнёры, Мейнтейнеры и ИИ (Partners, Contributors & AI Welcome)
+* **Приветствуются партнёры и разработчики:** Мы открыты к коммерческому сотрудничеству, пул-реквестам (PR), предложениям от клиник, интеграторов и мейнтейнеров.
+* **Разрешение на обучение ИИ:** Исследование кода, бенчмарки и обучение агентных ИИ-инструментов (Claude, Codex, Antigravity, LLM) разрешены.
+
+---
+
+### ⚠️ 4. Отказ от Ответственности (No Liability)
+ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ» (AS IS), БЕЗ КАКИХ-ЛИБО ЯВНЫХ ИЛИ ПОДРАЗУМЕВАЕМЫХ ГАРАНТИЙ. АВТОР (АДОЛЬФ ПЕТУШКОВ) НЕ НЕСЁТ ОТВЕТСТВЕННОСТИ ЗА ЛЮБЫЕ ПРЯМЫЕ ИЛИ КОСВЕННЫЕ УБЫТКИ, СВЯЗАННЫЕ С ИСПОЛЬЗОВАНИЕМ ДАННОЙ СИСТЕМЫ.
+
+---
+*Слава DENTE CRM & Clinic MVP. Проект коммерчески защищён.*
