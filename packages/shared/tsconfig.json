@@ -1,6 +1,26 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
+		// ЗДЕСЬ noImplicitAny ВКЛЮЧЁН, ХОТЯ В БАЗЕ ОН ВЫКЛЮЧЕН. Это храповик, а не вкусовщина.
+		//
+		// tsconfig.base.json объявляет "strict": true и следом СНИМАЕТ самую важную его часть:
+		// "noImplicitAny": false. Строгий режим объявлен и отключён. Это корень того, с чем кампания
+		// борется весь диалог: useAppLogic(): any, "as any" в девяти компонентах настроек,
+		// "return {} as AppLogicContextType" — все они живут именно потому, что неявный any разрешён.
+		//
+		// ЦЕНА ВКЛЮЧЕНИЯ ИЗМЕРЕНА, а не оценена (npx tsc -p <область> --noEmit --noImplicitAny):
+		//   packages/shared   0 неявных any
+		//   apps/api          7
+		//   apps/web        149
+		// То есть здесь включение стоит НОЛЬ работы и делается сегодня, а не «когда-нибудь».
+		//
+		// ПОЧЕМУ ИМЕННО ЭТОТ ПАКЕТ ПЕРВЫЙ: packages/shared — единственный владелец денежных контрактов
+		// (billingSummarySchema, nonNegativeMoneyRubSchema, parseKopecks, splitKopecks) и схем, которыми
+		// проверяются ответы api. Неявный any здесь означал бы непроверяемые деньги в основании проекта.
+		//
+		// ХРАПОВИК В ТОМ, ЧТО ОБРАТНО НЕ УЕДЕТ: новый неявный any в этом пакете теперь ломает сборку, а
+		// не проходит молча. apps/api (7 мест) и apps/web (149) остаются долгом с ИЗМЕРЕННОЙ ценой.
+		"noImplicitAny": true,
 		"outDir": "dist",
 		"rootDir": "src",
 		"declaration": true,
