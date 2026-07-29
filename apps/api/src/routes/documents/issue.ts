@@ -12,6 +12,7 @@ import {
 import {
   paymentRefundCorrectionSelectionErrorForDocument
 } from "../../documents/guards.js";
+import { settleRefundedPaymentsForPatient } from "../../documents/refundSettlement.js";
 
 import {
   buildTaxPaymentSnapshotForIssue,
@@ -190,6 +191,24 @@ export async function register(app: FastifyInstance) {
     });
     if (!document) {
       return reply.code(409).send(apiError("Статус документа нельзя изменить."));
+    }
+
+    // ВЫДАЧА ЗАЯВЛЕНИЯ НА ВОЗВРАТ — ЭТО МОМЕНТ, КОГДА ДЕНЬГИ ПОКИДАЮТ КАССУ.
+    // БЫЛО: заявление выдавалось (HTTP 200), а payments.status оставался "paid",
+    // поэтому выручка `sum(amount_rub) where status = 'paid'` считала
+    // возвращённые пациенту деньги полученными. Полный разбор решения, включая
+    // то, почему частичный возврат существующими столбцами не выражается, —
+    // documents/refundSettlement.ts.
+    if (document.kind === "payment_refund_correction_request") {
+      const settlement = await settleRefundedPaymentsForPatient(orgId, document.patientId);
+      request.log.info(
+        {
+          documentId: document.id,
+          refundedPaymentIds: settlement.refunded,
+          partiallyRefundedPaymentIds: settlement.partiallyRefunded.map((item) => item.paymentId)
+        },
+        "возврат сведён с кассой при выдаче заявления"
+      );
     }
     return reply.send(publicGeneratedDocumentSchema.parse(document));
   });

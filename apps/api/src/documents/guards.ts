@@ -455,24 +455,32 @@ export function paymentReceiptSelectionErrorForDocument(
 }
 
 /**
- * Сумма, уже возвращённая по платежу ВЫДАННЫМИ документами возврата/коррекции.
+ * Копейки, уже возвращённые по платежу ВЫДАННЫМИ документами возврата/коррекции.
  *
  * ЗАЧЕМ: без этого учёта возврат по одному чеку можно было оформить сколько
  * угодно раз. Проверка сравнивала каждую заявку с ИСХОДНОЙ суммой платежа,
- * а не с остатком, и нигде в коде не выставлялся статус "refunded"
- * (db.update(payments) не вызывается ни разу). Два возврата по 30 000 ₽
- * с чека на 50 000 ₽ проходили оба — клиника выплачивала 60 000 ₽.
+ * а не с остатком. Два возврата по 30 000 ₽ с чека на 50 000 ₽ проходили оба —
+ * клиника выплачивала 60 000 ₽.
  *
  * Считаем по фактически выданным документам, поэтому отдельная колонка в БД
  * и миграция не нужны: источник истины — сами документы возврата.
+ *
+ * ПОЧЕМУ ЦЕЛЫЕ КОПЕЙКИ, А НЕ СУММА РУБЛЁВЫХ `Number`. Прежняя реализация
+ * складывала рубли в плавающей точке (`total += amount`). Для сравнения «больше
+ * остатка» это ещё сходило, но на этой же сумме теперь стоит решение «чек
+ * возвращён ПОЛНОСТЬЮ», а это равенство, а не «примерно». Замерено: четыре
+ * частичных возврата 100.10 + 100.10 + 100.10 + 99.70 по чеку на 400.00 ₽ дают
+ * в double 399.99999999999994 — то есть полностью возвращённый чек выглядит как
+ * «остался почти ноль» и НАВСЕГДА остаётся в выручке клиники. В целых копейках
+ * равенство точное, и такой чек уходит из выручки, как и должен.
  */
-export function alreadyRefundedRubForPayment(
+export function alreadyRefundedKopecksForPayment(
 	paymentId: string,
 	documents: readonly GeneratedDocument[] | null | undefined,
 	excludeDocumentId?: string | null,
 ): number {
 	if (!documents?.length) return 0;
-	let total = 0;
+	const refundedKopecks: number[] = [];
 	for (const candidate of documents) {
 		if (candidate.kind !== "payment_refund_correction_request") continue;
 		if (candidate.status !== "issued") continue;
@@ -482,9 +490,98 @@ export function alreadyRefundedRubForPayment(
 		const selected = refund.selectedPaymentIds ?? [];
 		if (!selected.includes(paymentId)) continue;
 		const amount = Number(refund.amountRub ?? 0);
-		if (Number.isFinite(amount) && amount > 0) total += amount;
+		// Повреждённая или неположительная сумма пропускается ровно как раньше:
+		// `parseKopecks` по контракту бросает на NaN, а расчёт остатка по чеку
+		// обязан продолжиться и на битом соседнем документе.
+		if (!Number.isFinite(amount) || amount <= 0) continue;
+		refundedKopecks.push(parseKopecks(amount));
 	}
-	return total;
+	return sumKopecks(refundedKopecks);
+}
+
+/**
+ * Чем возврат обязан кончиться для КАССЫ по одному платежу.
+ *
+ * ЗАЧЕМ ЭТО ПОЯВИЛОСЬ. Возврат существовал только как документ. Ни один маршрут
+ * не переводил платёж в статус `refunded` — во всём `apps/api/src` было
+ * объявление перечисления, чтение в этом файле и признание проблемы в
+ * комментарии. Замерено сквозным прогоном: заявление на возврат 500 ₽ оформлено
+ * и ВЫДАНО (HTTP 200), а `payments.status` того платежа остался `paid`. Выручка
+ * (`sum(amount_rub) where status = 'paid'`, services/reports/managerReports.ts)
+ * и отчёты руководителю считали возвращённые деньги полученными: касса не
+ * сходилась с фактическим остатком, а налоговая справка собрала бы возвращённую
+ * сумму как оплату пациента.
+ *
+ * ЧАСТИЧНЫЙ ВОЗВРАТ НЕ ВЫРАЖАЕТСЯ СУЩЕСТВУЮЩИМИ СТОЛБЦАМИ, И ЭТО ПРОВЕРЕНО ПО
+ * СХЕМЕ. В `payments` (db/schema.ts) есть `status` — один флаг на всю строку из
+ * перечисления planned/paid/refunded/voided — и `amount_rub`, сумма ИСХОДНОГО
+ * фискального чека. Колонки «возвращено столько-то» нет ни одной. Поэтому:
+ *   • `amount_rub` править нельзя — этот номер напечатан на чеке у пациента, и с
+ *     ним же сравнивается остаток по чеку выше;
+ *   • ставить `refunded` при частичном возврате нельзя — это убрало бы из
+ *     выручки ВЕСЬ чек вместо возвращённой части, то есть промах кассы в другую
+ *     сторону, и соврало бы налоговой справке о полном возврате.
+ * Значит статус меняется ТОЛЬКО когда выданные возвраты покрыли чек целиком, до
+ * копейки. Частичный возврат остаётся `paid` и объявлен долгом: выразить его
+ * нечем без новой колонки, а выдумывать колонку здесь запрещено.
+ */
+export type PaymentRefundSettlement = {
+	paymentId: string;
+	/** Сумма исходного чека в копейках. */
+	amountKopecks: number;
+	/** Уже возвращено выданными заявлениями, в копейках. */
+	refundedKopecks: number;
+	/** Возврат покрыл чек целиком — платёж обязан уйти из выручки. */
+	fullyRefunded: boolean;
+};
+
+/**
+ * Сведение возвратов с кассой по всем платежам, которых касались заявления
+ * на возврат этого пациента.
+ *
+ * Считается ОТ ДОКУМЕНТОВ, а не от предыдущего состояния платежа, поэтому
+ * функция самовосстанавливающаяся: она одинаково верно отвечает и после выдачи
+ * заявления, и после его аннулирования. Аннулирование обязано быть учтено —
+ * `alreadyRefundedKopecksForPayment` считает только `issued`, и без обратного
+ * хода платёж навсегда остался бы `refunded` при нулевом учтённом возврате:
+ * выручка занижена, а новый возврат по этому чеку заблокирован проверкой
+ * «уже выполнен полный возврат» выше.
+ *
+ * Черновик заявления кассы не касается: его можно изменить или удалить, деньги
+ * ещё не выходили, и снимать их с выручки без юридического основания нельзя.
+ */
+export function paymentRefundSettlements(
+	payments: readonly Payment[],
+	documents: readonly GeneratedDocument[] | null | undefined,
+): PaymentRefundSettlement[] {
+	const touchedPaymentIds = new Set<string>();
+	for (const candidate of documents ?? []) {
+		if (candidate.kind !== "payment_refund_correction_request") continue;
+		const selected =
+			candidate.payload?.paymentRefundCorrection?.selectedPaymentIds ?? [];
+		for (const paymentId of selected) touchedPaymentIds.add(paymentId);
+	}
+	if (!touchedPaymentIds.size) return [];
+
+	const settlements: PaymentRefundSettlement[] = [];
+	for (const payment of payments) {
+		if (!touchedPaymentIds.has(payment.id)) continue;
+		// Между `paid` и `refunded` сведение и ходит. `planned` — ещё не деньги,
+		// `voided` — отменённая строка кассы; ни ту, ни другую возврат не двигает.
+		if (payment.status !== "paid" && payment.status !== "refunded") continue;
+		const amountKopecks = parseKopecks(payment.amountRub);
+		const refundedKopecks = alreadyRefundedKopecksForPayment(
+			payment.id,
+			documents,
+		);
+		settlements.push({
+			paymentId: payment.id,
+			amountKopecks,
+			refundedKopecks,
+			fullyRefunded: amountKopecks > 0 && refundedKopecks >= amountKopecks,
+		});
+	}
+	return settlements;
 }
 
 export function paymentRefundCorrectionSelectionErrorForDocument(
@@ -530,19 +627,30 @@ export function paymentRefundCorrectionSelectionErrorForDocument(
 		}
 		// БЫЛО: сравнение с ПОЛНОЙ суммой платежа без учёта предыдущих возвратов —
 		// по чеку на 50 000 ₽ проходили два возврата по 30 000 ₽ подряд.
-		const alreadyRefundedRub = alreadyRefundedRubForPayment(
+		//
+		// ОСТАТОК СЧИТАЕТСЯ В ЦЕЛЫХ КОПЕЙКАХ, И ЭТО НЕ КОСМЕТИКА. Вычитание рублей
+		// в плавающей точке отбивало ЗАКОННЫЙ последний возврат: по чеку на 400.00 ₽
+		// после возвратов 100.10 + 100.10 + 100.10 остаток равен ровно 99.70 ₽, а
+		// `400 − 300.30` в double даёт 99.69999999999999, то есть `99.70 > остаток` —
+		// правда, и пациенту отказывают в его же деньгах словами «превышает остаток
+		// по чеку». Прежняя реализация промахивалась в ДРУГУЮ сторону и по
+		// случайности: она складывала рубли и получала 300.29999999999995, откуда
+		// остаток 99.70000000000005. Обе цифры — мусор разного знака; в копейках
+		// 40000 − 30030 = 9970 и сравнение точное.
+		const alreadyRefundedKopecks = alreadyRefundedKopecksForPayment(
 			payment.id,
 			issuedDocuments,
 			currentDocumentId,
 		);
-		const refundableRub = payment.amountRub - alreadyRefundedRub;
-		if (refundableRub <= 0) {
-			return `По чеку на ${moneyRubText(payment.amountRub)} руб. уже возвращено ${moneyRubText(alreadyRefundedRub)} руб. Свободного остатка для возврата нет.`;
+		const paymentKopecks = parseKopecks(payment.amountRub);
+		const refundableKopecks = paymentKopecks - alreadyRefundedKopecks;
+		if (refundableKopecks <= 0) {
+			return `По чеку на ${moneyKopecksText(paymentKopecks)} руб. уже возвращено ${moneyKopecksText(alreadyRefundedKopecks)} руб. Свободного остатка для возврата нет.`;
 		}
-		if (payload.amountRub > refundableRub) {
-			return alreadyRefundedRub > 0
-				? `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) превышает остаток по чеку: из ${moneyRubText(payment.amountRub)} руб. уже возвращено ${moneyRubText(alreadyRefundedRub)} руб., доступно ${moneyRubText(refundableRub)} руб.`
-				: `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) не может превышать сумму исходного чека (${moneyRubText(payment.amountRub)} руб.).`;
+		if (parseKopecks(payload.amountRub) > refundableKopecks) {
+			return alreadyRefundedKopecks > 0
+				? `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) превышает остаток по чеку: из ${moneyKopecksText(paymentKopecks)} руб. уже возвращено ${moneyKopecksText(alreadyRefundedKopecks)} руб., доступно ${moneyKopecksText(refundableKopecks)} руб.`
+				: `Сумма возврата (${moneyRubText(payload.amountRub)} руб.) не может превышать сумму исходного чека (${moneyKopecksText(paymentKopecks)} руб.).`;
 		}
 		if (!payment.fiscalReceiptNumber?.trim()) {
 			return "Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.";

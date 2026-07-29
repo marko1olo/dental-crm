@@ -17,6 +17,7 @@ import {
   taxPaymentSelectionErrorForDocument,
   validateDocumentCreation
 } from "../../documents/guards.js";
+import { settleRefundedPaymentsForPatient } from "../../documents/refundSettlement.js";
 
 import {
   buildTaxPaymentSnapshotForIssue,
@@ -130,6 +131,20 @@ export async function register(app: FastifyInstance) {
     });
     if (!document) {
       return reply.code(409).send(apiError("Статус документа нельзя изменить."));
+    }
+
+    // ОБРАТНЫЙ ХОД ТОГО ЖЕ ШВА. Учёт возвратов ведётся только по ВЫДАННЫМ
+    // заявлениям (documents/guards.ts: alreadyRefundedKopecksForPayment), поэтому
+    // аннулирование заявления обнуляет учтённый возврат по чеку. Без этого вызова
+    // платёж навсегда остался бы "refunded" при нулевом учтённом возврате: деньги
+    // пропали бы из выручки без действующего основания, а новый возврат по тому же
+    // чеку упирался бы в отказ «уже выполнен полный возврат средств».
+    if (document.kind === "payment_refund_correction_request") {
+      const settlement = await settleRefundedPaymentsForPatient(orgId, document.patientId);
+      request.log.info(
+        { documentId: document.id, restoredPaymentIds: settlement.restored },
+        "аннулирование заявления на возврат сведено с кассой"
+      );
     }
     return reply.send(publicGeneratedDocumentSchema.parse(document));
   });
