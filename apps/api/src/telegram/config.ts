@@ -1,12 +1,14 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { denteTelegramBotConfigs } from "../db/schema.js";
-import type { DenteTelegramBotSettings, UpdateDenteTelegramBotSettingsInput } from "@dental/shared";
+import type {
+  DenteTelegramBotSettings,
+  UpdateDenteTelegramBotSettingsInput,
+} from "@dental/shared";
 
-// We'll assume a default single bot config for now since it's an MVP
-const DEFAULT_BOT_CONFIG_ID = "default";
-
-export async function getDenteTelegramBotSettings(organizationId: string): Promise<DenteTelegramBotSettings> {
+export async function getDenteTelegramBotSettings(
+  organizationId: string,
+): Promise<DenteTelegramBotSettings> {
   const [config] = await db
     .select()
     .from(denteTelegramBotConfigs)
@@ -31,7 +33,7 @@ export async function getDenteTelegramBotSettings(organizationId: string): Promi
         billing: null,
         care: null,
         review: null,
-        staff: null
+        staff: null,
       },
       clinicReviewUrl: null,
       clinicMapsUrl: null,
@@ -50,12 +52,12 @@ export async function getDenteTelegramBotSettings(organizationId: string): Promi
         prosthetics: 48,
         orthodontics: 72,
         periodontology: 72,
-        other: 48
+        other: 48,
       },
       allowVoiceIntake: false,
       privacyMode: "no_phi_by_default",
       staffEscalationChannel: null,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
   }
 
@@ -76,25 +78,32 @@ export async function getDenteTelegramBotSettings(organizationId: string): Promi
       billing: null,
       care: null,
       review: null,
-      staff: null
+      staff: null,
     },
     clinicReviewUrl: config.clinicReviewUrl,
     clinicMapsUrl: config.clinicMapsUrl,
     enabledFeatures: JSON.parse(config.enabledFeaturesJson) as any[],
     patientLinkTokenTtlMinutes: config.patientLinkTokenTtlMinutes,
-    appointmentReminderLeadTimesHours: JSON.parse(config.appointmentReminderLeadTimesHoursJson) as number[],
+    appointmentReminderLeadTimesHours: JSON.parse(
+      config.appointmentReminderLeadTimesHoursJson,
+    ) as number[],
     reviewRequestDelayHours: config.reviewRequestDelayHours,
-    postVisitCheckupDelayHoursByTopic: JSON.parse(config.postVisitCheckupDelayHoursJson),
+    postVisitCheckupDelayHoursByTopic: JSON.parse(
+      config.postVisitCheckupDelayHoursJson,
+    ),
     allowVoiceIntake: config.allowVoiceIntake,
-    privacyMode: config.privacyMode as "no_phi_by_default" | "limited_admin_only" | "consented_phi_templates",
+    privacyMode: config.privacyMode as
+      | "no_phi_by_default"
+      | "limited_admin_only"
+      | "consented_phi_templates",
     staffEscalationChannel: config.staffEscalationChannel,
-    updatedAt: config.updatedAt.toISOString()
+    updatedAt: config.updatedAt.toISOString(),
   };
 }
 
 export async function updateDenteTelegramBotSettings(
   organizationId: string,
-  input: UpdateDenteTelegramBotSettingsInput
+  input: UpdateDenteTelegramBotSettingsInput,
 ): Promise<DenteTelegramBotSettings> {
   const existingConfig = await getDenteTelegramBotSettings(organizationId);
 
@@ -104,8 +113,8 @@ export async function updateDenteTelegramBotSettings(
     ...(input as any),
     visualCardUrls: {
       ...existingConfig.visualCardUrls,
-      ...(input.visualCardUrls ?? {})
-    }
+      ...(input.visualCardUrls ?? {}),
+    },
   };
 
   const [existing] = await db
@@ -130,17 +139,20 @@ export async function updateDenteTelegramBotSettings(
         privacyMode: updatedSettings.privacyMode,
         enabledFeaturesJson: JSON.stringify(updatedSettings.enabledFeatures),
         patientLinkTokenTtlMinutes: updatedSettings.patientLinkTokenTtlMinutes,
-        appointmentReminderLeadTimesHoursJson: JSON.stringify(updatedSettings.appointmentReminderLeadTimesHours),
+        appointmentReminderLeadTimesHoursJson: JSON.stringify(
+          updatedSettings.appointmentReminderLeadTimesHours,
+        ),
         reviewRequestDelayHours: updatedSettings.reviewRequestDelayHours,
-        postVisitCheckupDelayHoursJson: JSON.stringify(updatedSettings.postVisitCheckupDelayHoursByTopic),
+        postVisitCheckupDelayHoursJson: JSON.stringify(
+          updatedSettings.postVisitCheckupDelayHoursByTopic,
+        ),
         allowVoiceIntake: updatedSettings.allowVoiceIntake,
-        staffEscalationChannel: updatedSettings.staffEscalationChannel
+        staffEscalationChannel: updatedSettings.staffEscalationChannel,
       })
       .where(eq(denteTelegramBotConfigs.id, existing.id));
   } else {
     await db.insert(denteTelegramBotConfigs).values({
       organizationId,
-      botConfigId: DEFAULT_BOT_CONFIG_ID,
       mode: updatedSettings.mode,
       botUsername: updatedSettings.botUsername,
       ownBotUsername: updatedSettings.ownBotUsername,
@@ -153,11 +165,15 @@ export async function updateDenteTelegramBotSettings(
       privacyMode: updatedSettings.privacyMode,
       enabledFeaturesJson: JSON.stringify(updatedSettings.enabledFeatures),
       patientLinkTokenTtlMinutes: updatedSettings.patientLinkTokenTtlMinutes,
-      appointmentReminderLeadTimesHoursJson: JSON.stringify(updatedSettings.appointmentReminderLeadTimesHours),
+      appointmentReminderLeadTimesHoursJson: JSON.stringify(
+        updatedSettings.appointmentReminderLeadTimesHours,
+      ),
       reviewRequestDelayHours: updatedSettings.reviewRequestDelayHours,
-      postVisitCheckupDelayHoursJson: JSON.stringify(updatedSettings.postVisitCheckupDelayHoursByTopic),
+      postVisitCheckupDelayHoursJson: JSON.stringify(
+        updatedSettings.postVisitCheckupDelayHoursByTopic,
+      ),
       allowVoiceIntake: updatedSettings.allowVoiceIntake,
-      staffEscalationChannel: updatedSettings.staffEscalationChannel
+      staffEscalationChannel: updatedSettings.staffEscalationChannel,
     });
   }
 
