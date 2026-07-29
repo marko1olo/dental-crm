@@ -1,26 +1,73 @@
 import { readFile } from "node:fs/promises";
 import { readAppLogicSource } from "./lib/app-logic-source.mjs";
 
-const appSource = [
-	await readFile("apps/web/src/App.tsx", "utf8"),
-	await readAppLogicSource(),
-	await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
-].join("\n");
-const settingsSource = await readFile("apps/web/src/SettingsView.tsx", "utf8");
+/*
+ * ПРЕДМЕТ — ЧТО ОТМЕНА ДОХОДИТ ДО ЗАПРОСА, А НЕ КАК BIOME РАЗЛОЖИЛ АРГУМЕНТЫ.
+ *
+ * Из 10 непройденных требований восемь краснели на переносах строк, а два — на
+ * переезде разметки. Замерено по apps/web/src/useAppLogic.tsx:
+ *   9983-9987   await fetchDicomFolderWorkup( folderPath, "dicom_folder_workup",
+ *                 { signal: controller.signal }, ) — разложен по строкам;
+ *   10032-10033 await fetch( "/api/imaging/dicom/viewer-workbench-manifest", —
+ *                 образец требовал fetch("… без переноса;
+ *   10254-10257 await saveDicomWorkbenchBundleToServer(result, clientSavedAt, {
+ *                 silent: true, signal: controller.signal, }) — объект раскрыт.
+ * Четыре из этих образцов лежали ВНУТРИ assertFunctionIncludes, поэтому перенос в
+ * одной строке гасил проверку целой функции.
+ *
+ * Сравнение идёт по нормализованному тексту: переносы и отступы сводятся к одному
+ * пробелу, пробелы вокруг разделителей убираются, висячая запятая Biome перед
+ * закрывающей скобкой отбрасывается. Токены и их порядок сохраняются целиком —
+ * пропажа { signal: controller.signal } по-прежнему красит стража, что проверено
+ * искусственной поломкой копии (см. отчёт пакета OO5).
+ *
+ * settingsSource: кнопка «Остановить КТ» переехала из SettingsView.tsx в
+ * components/settings/SettingsImportsTab.tsx (там же:3189 её data-testid, :3192
+ * подпись). Добавлен ровно файл-владелец экрана; useSettingsDerivations.tsx со
+ * стеной «// Compliance: …» не добавлен — маркер из комментария не разметка.
+ */
+function normalizeFormatting(text) {
+	return text
+		.replace(/\s+/g, " ")
+		.replace(/\s*([(),;{}[\]])\s*/g, "$1")
+		.replace(/,([)\]}])/g, "$1");
+}
+
+const appSource = normalizeFormatting(
+	[
+		await readFile("apps/web/src/App.tsx", "utf8"),
+		await readAppLogicSource(),
+		await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
+	].join("\n"),
+);
+const settingsSource = normalizeFormatting(
+	(
+		await Promise.all(
+			[
+				"apps/web/src/SettingsView.tsx",
+				"apps/web/src/components/settings/SettingsImportsTab.tsx",
+			].map((file) => readFile(file, "utf8")),
+		)
+	).join("\n"),
+);
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 
 function assertIncludes(source, marker, label) {
-	if (!source.includes(marker)) {
+	if (!source.includes(normalizeFormatting(marker))) {
 		throw new Error(`${label} missing marker: ${marker}`);
 	}
 }
 
 function sourceSlice(startMarker, endMarker, label) {
-	const start = appSource.indexOf(startMarker);
+	const normalizedStart = normalizeFormatting(startMarker);
+	const start = appSource.indexOf(normalizedStart);
 	if (start === -1) {
 		throw new Error(`${label} missing start marker: ${startMarker}`);
 	}
-	const end = appSource.indexOf(endMarker, start + startMarker.length);
+	const end = appSource.indexOf(
+		normalizeFormatting(endMarker),
+		start + normalizedStart.length,
+	);
 	if (end === -1) {
 		throw new Error(`${label} missing end marker: ${endMarker}`);
 	}

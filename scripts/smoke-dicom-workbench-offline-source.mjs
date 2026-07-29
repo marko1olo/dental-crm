@@ -1,26 +1,64 @@
 import { readFile } from "node:fs/promises";
 import { readAppLogicSource } from "./lib/app-logic-source.mjs";
 
-const source = [
-	await readFile("apps/web/src/App.tsx", "utf8"),
-	await readAppLogicSource(),
-	await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
-].join("\n");
-const browserContinuitySource = await readFile(
-	"apps/web/src/browserContinuity.ts",
-	"utf8",
+/*
+ * ТРЕБОВАНИЯ ЗДЕСЬ ОПИСЫВАЮТ КОД, А НЕ ЕГО РАСКЛАДКУ ПО СТРОКАМ.
+ *
+ * Все 14 непройденных требований этого стража краснели на форматировании, а не на
+ * поведении. Замерено по apps/web/src/useAppLogic.tsx и browserContinuity.ts:
+ *   4292-4294  const restore = async () => { const recovered =
+ *              await loadLocalDicomWorkbenchDraft(activeOrganizationId);
+ *              — Biome перенёс присваивание, а образец требовал одну строку
+ *                И РОВНО ШЕСТЬ ПРОБЕЛОВ отступа, хотя в файле табы;
+ *   6484-6485  useEffect(() => { if (!activeImagingStudies.length) { — то же;
+ *   10066      const savedLocally = await saveLocalDicomWorkbenchDraft(
+ *                manifest, clientSavedAt, activeOrganizationId,
+ *              ) — разложен по строкам и с висячей запятой;
+ *   133-135    const directoryPickerSupported =
+ *                typeof fileAccessWindow?.showDirectoryPicker === "function";
+ *   7219-7220  browserContinuity?.browserCtOfflineStorageBoundary.mode ===
+ *                "metadata_only".
+ * Два из этих образцов служили ГРАНИЦАМИ sourceSlice, поэтому один перенос строки
+ * гасил ещё пять требований внутри блока: страж терял не одно поведение, а шесть.
+ *
+ * Поэтому сравнение идёт по нормализованному тексту: переносы и отступы сводятся к
+ * одному пробелу, пробелы вокруг разделителей убираются, висячая запятая Biome
+ * перед закрывающей скобкой отбрасывается. ПОСЛЕДОВАТЕЛЬНОСТЬ ТОКЕНОВ СОХРАНЯЕТСЯ
+ * ЦЕЛИКОМ: пропажа await, аргумента, поля или вызова по-прежнему красит стража.
+ * Проверено искусственной поломкой копии — см. отчёт пакета OO5.
+ *
+ * Образцы в файле оставлены дословно, в исходном виде, чтобы требование читалось
+ * и находилось поиском.
+ */
+function normalizeFormatting(text) {
+	return text
+		.replace(/\s+/g, " ")
+		.replace(/\s*([(),;{}[\]])\s*/g, "$1")
+		.replace(/,([)\]}])/g, "$1");
+}
+
+function includesMarker(normalizedText, marker) {
+	return normalizedText.includes(normalizeFormatting(marker));
+}
+
+const source = normalizeFormatting(
+	[
+		await readFile("apps/web/src/App.tsx", "utf8"),
+		await readAppLogicSource(),
+		await readFile("apps/web/src/AppHelpers.tsx", "utf8"),
+	].join("\n"),
 );
-const ctPlanningExportSource = await readFile(
-	"apps/web/src/ctPlanningExport.ts",
-	"utf8",
+const browserContinuitySource = normalizeFormatting(
+	await readFile("apps/web/src/browserContinuity.ts", "utf8"),
 );
-const ctPlanningImplantModelSource = await readFile(
-	"apps/web/src/ctPlanningImplantModel.ts",
-	"utf8",
+const ctPlanningExportSource = normalizeFormatting(
+	await readFile("apps/web/src/ctPlanningExport.ts", "utf8"),
 );
-const ctPlanningViewerBridgeHandoffSource = await readFile(
-	"apps/web/src/ctPlanningViewerBridgeHandoff.ts",
-	"utf8",
+const ctPlanningImplantModelSource = normalizeFormatting(
+	await readFile("apps/web/src/ctPlanningImplantModel.ts", "utf8"),
+);
+const ctPlanningViewerBridgeHandoffSource = normalizeFormatting(
+	await readFile("apps/web/src/ctPlanningViewerBridgeHandoff.ts", "utf8"),
 );
 const packageJson = await readFile("package.json", "utf8");
 
@@ -29,9 +67,9 @@ function fail(message) {
 }
 
 function sourceSlice(startMarker, endMarker) {
-	const start = source.indexOf(startMarker);
+	const start = source.indexOf(normalizeFormatting(startMarker));
 	if (start === -1) fail(`Missing marker: ${startMarker}`);
-	const end = source.indexOf(endMarker, start);
+	const end = source.indexOf(normalizeFormatting(endMarker), start);
 	if (end === -1) fail(`Missing marker: ${endMarker}`);
 	return source.slice(start, end);
 }
@@ -65,6 +103,29 @@ function forbidPattern(sourceText, pattern, message) {
 	if (pattern.test(sourceText)) fail(message);
 }
 
+function requirePattern(sourceText, pattern, message) {
+	if (!pattern.test(sourceText)) fail(message);
+}
+
+/*
+ * ЗАКРЫТИЕ БАЗЫ ПО versionchange — ПРЕДМЕТ; ОДНОСТРОЧНОСТЬ ОБРАБОТЧИКА — НЕТ.
+ *
+ * Образец был дословной строкой "db.onversionchange = () => db.close();" и
+ * покраснел ровно потому, что обработчик СТАЛ ЛУЧШЕ: apps/web/src/AppHelpers.tsx
+ * 5322-5325 теперь сбрасывает и кэш обещания, и только потом закрывает базу —
+ *   db.onversionchange = () => { speechChunkDbPromise = null; db.close(); };
+ * без сброса кэша соседняя вкладка получила бы закрытую базу из кэша.
+ *
+ * Образец закрепляет СВЯЗЬ «обработчик versionchange закрывает базу», допускает
+ * и одну строку, и блок, но [^}]* не даёт выйти за тело обработчика: если
+ * db.close() из него исчезнет, страж краснеет.
+ */
+requirePattern(
+	source,
+	/db\.onversionchange\s*=\s*\(\)\s*=>\s*\{?[^}]*db\.close\(\)/,
+	"DICOM workbench IndexedDB versionchange handler must close the database: db.onversionchange = () => db.close();",
+);
+
 for (const marker of [
 	"type DicomWorkbenchIndexedDbDraft",
 	"type MprWorkbenchIndexedDbDraft",
@@ -72,7 +133,6 @@ for (const marker of [
 	"const requiredSpeechChunkDbStoreNames = [",
 	"function assertSpeechChunkDbStores(db: IDBDatabase): void",
 	"assertSpeechChunkDbStores(db);",
-	"db.onversionchange = () => db.close();",
 	"speechChunkDbPromise = null;",
 	'const dicomWorkbenchDraftStoreName = "dicomWorkbenchDrafts";',
 	'const mprWorkbenchDraftStoreName = "mprWorkbenchDrafts";',
@@ -82,7 +142,7 @@ for (const marker of [
 	'store.createIndex("seriesKey", "seriesKey")',
 	'store.createIndex("clientSavedAt", "clientSavedAt")',
 ]) {
-	if (!source.includes(marker))
+	if (!includesMarker(source, marker))
 		fail(`DICOM workbench IndexedDB marker missing: ${marker}`);
 }
 
@@ -103,7 +163,7 @@ for (const marker of [
 	'const filePickerSupported = typeof fileAccessWindow?.showOpenFilePicker === "function";',
 	'const opfsSupported = typeof storageManager?.getDirectory === "function";',
 ]) {
-	if (!browserContinuitySource.includes(marker))
+	if (!includesMarker(browserContinuitySource, marker))
 		fail(`Browser CT offline storage boundary marker missing: ${marker}`);
 }
 
@@ -128,7 +188,7 @@ for (const marker of [
 	'sourceKind === "dicomweb" || sourceKind === "pacs"',
 	'return "local_offline_available";',
 ]) {
-	if (!ctPlanningExportSource.includes(marker))
+	if (!includesMarker(ctPlanningExportSource, marker))
 		fail(`CT planning runtime truth marker missing: ${marker}`);
 }
 
@@ -139,7 +199,7 @@ for (const marker of [
 	'heavyDataOwner: "external_viewer_or_local_3d_module"',
 	"Поверхности черепа/кости",
 ]) {
-	if (!ctPlanningImplantModelSource.includes(marker))
+	if (!includesMarker(ctPlanningImplantModelSource, marker))
 		fail(`CT local 3D no-heavy-geometry marker missing: ${marker}`);
 }
 
@@ -149,7 +209,7 @@ for (const marker of [
 	"browserStoresHeavyGeometry: false",
 	'heavyDataOwner: "external_viewer_or_local_3d_module"',
 ]) {
-	if (!ctPlanningViewerBridgeHandoffSource.includes(marker))
+	if (!includesMarker(ctPlanningViewerBridgeHandoffSource, marker))
 		fail(`CT viewer bridge runtime truth marker missing: ${marker}`);
 }
 
@@ -161,7 +221,7 @@ for (const marker of [
 	"Выбор локальной КТ",
 	"Граница КТ-хранилища",
 ]) {
-	if (!source.includes(marker))
+	if (!includesMarker(source, marker))
 		fail(`Browser CT offline audit UI marker missing: ${marker}`);
 }
 
@@ -171,7 +231,7 @@ forbidPattern(
 	"DICOM workbench offline draft types must not embed files, diagnostic image payloads, or mesh geometry.",
 );
 
-if (source.includes("const speechChunkDbVersion = 3;")) {
+if (includesMarker(source, "const speechChunkDbVersion = 3;")) {
 	fail(
 		"DICOM workbench IndexedDB migration must not stay on v3 after CT stores were added.",
 	);
@@ -185,7 +245,10 @@ for (const marker of [
 	"loadLocalMprWorkbenchDraftFromLocalStorage",
 	"saveLocalMprWorkbenchDraftToLocalStorage",
 ]) {
-	if (!storageKeyBlock.includes(marker) && !source.includes(marker))
+	if (
+		!includesMarker(storageKeyBlock, marker) &&
+		!includesMarker(source, marker)
+	)
 		fail(`DICOM workbench fallback/migration marker missing: ${marker}`);
 }
 
@@ -200,7 +263,10 @@ for (const marker of [
 	"removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId)",
 	"window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey, organizationId))",
 ]) {
-	if (!indexedDbBlock.includes(marker) && !source.includes(marker))
+	if (
+		!includesMarker(indexedDbBlock, marker) &&
+		!includesMarker(source, marker)
+	)
 		fail(`DICOM workbench IndexedDB helper missing: ${marker}`);
 }
 
@@ -209,7 +275,7 @@ for (const marker of [
 	"void loadDicomWorkbenchBundles({ silent: true, restoreLatest: !recovered });",
 	"if (cancelled) return;",
 ]) {
-	if (!restoreEffectBlock.includes(marker))
+	if (!includesMarker(restoreEffectBlock, marker))
 		fail(`DICOM workbench restore effect must be async/cancellable: ${marker}`);
 }
 
@@ -217,7 +283,7 @@ for (const marker of [
 	"async function restoreMprWorkbenchLocalDraft()",
 	"const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);",
 ]) {
-	if (!mprRestoreBlock.includes(marker))
+	if (!includesMarker(mprRestoreBlock, marker))
 		fail(`MPR manual restore must await IndexedDB: ${marker}`);
 }
 
@@ -227,7 +293,7 @@ for (const marker of [
 	").then((saved) => {",
 	"if (saved) setMprWorkbenchLocalSavedAt(clientSavedAt);",
 ]) {
-	if (!mprAutoRestoreBlock.includes(marker))
+	if (!includesMarker(mprAutoRestoreBlock, marker))
 		fail(`MPR auto restore/save must use async IndexedDB path: ${marker}`);
 }
 
@@ -237,7 +303,7 @@ for (const marker of [
 	"setDicomWorkbenchLocalSavedAt(savedLocally ? clientSavedAt : null);",
 	"void removeLocalDicomWorkbenchDraft(activeOrganizationId);",
 ]) {
-	if (!source.includes(marker))
+	if (!includesMarker(source, marker))
 		fail(
 			`DICOM workbench UI must await durable local recovery path: ${marker}`,
 		);

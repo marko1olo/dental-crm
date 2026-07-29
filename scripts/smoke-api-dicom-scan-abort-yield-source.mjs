@@ -15,6 +15,12 @@ function assertNotIncludes(source, marker, label) {
 	}
 }
 
+function assertMatches(source, pattern, label) {
+	if (!pattern.test(source)) {
+		throw new Error(`${label} missing pattern: ${pattern}`);
+	}
+}
+
 [
 	'import { setImmediate as yieldImmediate } from "node:timers/promises";',
 	"type ApiDicomScanOptions",
@@ -93,9 +99,32 @@ function assertNotIncludes(source, marker, label) {
 	"discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest, options: ApiDicomScanOptions = {})",
 	"organizeLocalImagingSources(input: LocalImagingOrganizerRequest, options: ApiDicomScanOptions = {})",
 	"buildDicomFolderSeriesPreview(input: {",
-	"buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, options: ApiDicomScanOptions = {})",
 ].forEach((marker) =>
 	assertIncludes(imagingSource, marker, "API DICOM scan helper threading"),
+);
+
+/*
+ * ПРЕДМЕТ ЗДЕСЬ — ПРОБРОС СИГНАЛА ОТМЕНЫ, А НЕ ФОРМА СПИСКА АРГУМЕНТОВ.
+ *
+ * Раньше эти три требования были дословными подстроками одной строки, например
+ * "buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, options:
+ * ApiDicomScanOptions = {})". Они покраснели от двух безобидных изменений:
+ *   1) у помощников появился третий параметр organizationId (разбор папки от
+ *      имени вызывающей клиники, а не «первой строки таблицы organizations»);
+ *   2) Biome перенёс подписи и вызовы на несколько строк.
+ * Проброс options никуда не делся: apps/api/src/routes/imaging.ts:6179-6182
+ * (подпись), :6184 и :6442 (buildDicomFolderSeriesPreview(input, options, …)),
+ * :6469 (buildDicomFolderWorkupPlan(input, options, workupOrgId)).
+ *
+ * Образцы закрепляют СВЯЗЬ «имя помощника → options на своём месте», допускают
+ * перенос строк и следующий за options аргумент, но НЕ допускают исчезновение
+ * самого options: без него AbortSignal до обхода папки не доходит и «Остановить»
+ * перестаёт останавливать.
+ */
+assertMatches(
+	imagingSource,
+	/buildDicomFolderWorkupPlan\(\s*input:\s*DicomFolderWorkupPlanRequest,\s*options:\s*ApiDicomScanOptions\s*=\s*\{\}\s*[,)]/,
+	"API DICOM scan helper threading",
 );
 
 [
@@ -104,9 +133,7 @@ function assertNotIncludes(source, marker, label) {
 	"await buildDicomHeaderManifest(",
 	"discoverLocalDicomFolders(input, options)",
 	"organizeLocalImagingSources(input, options)",
-	"buildDicomFolderSeriesPreview(input, options)",
 	"buildDicomFirstFramePreview(input, options)",
-	"buildDicomFolderWorkupPlan(input, options)",
 ].forEach((marker) =>
 	assertIncludes(
 		imagingSource,
@@ -114,6 +141,19 @@ function assertNotIncludes(source, marker, label) {
 		"API DICOM scan callsite signal propagation",
 	),
 );
+
+/* Те же два вызова, что и выше: options обязан оставаться вторым аргументом,
+ * organizationId после него разрешён. */
+for (const pattern of [
+	/buildDicomFolderSeriesPreview\(\s*input,\s*options\s*[,)]/,
+	/buildDicomFolderWorkupPlan\(\s*input,\s*options\s*[,)]/,
+]) {
+	assertMatches(
+		imagingSource,
+		pattern,
+		"API DICOM scan callsite signal propagation",
+	);
+}
 
 [
 	'const canUseWorker = renderPlan.useWebWorker && renderPlan.textureStrategy !== "external_viewer"',

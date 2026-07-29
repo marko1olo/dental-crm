@@ -7,7 +7,35 @@ const appSource =
 	(await readAppLogicSource()) +
 	"\n" +
 	(await readFile("apps/web/src/AppHelpers.tsx", "utf8"));
-const settingsSource = await readFile("apps/web/src/SettingsView.tsx", "utf8");
+/*
+ * ЭКРАН ИМПОРТА БОЛЬШЕ НЕ ЛЕЖИТ В SettingsView.tsx — ЭТО ВСЯ ПРИЧИНА КРАСНОТЫ.
+ *
+ * Замерено: из 12 требований к разметке сканирования папки восемь не выполнялись,
+ * потому что проверка читала только SettingsView.tsx, а кнопка отмены, полоса
+ * прогресса и счётчики лимитов переехали в components/settings/SettingsImportsTab.tsx
+ * при разборе монолита настроек. Поведение на месте и это НАСТОЯЩАЯ разметка:
+ *   apps/web/src/components/settings/SettingsImportsTab.tsx:3179
+ *     data-testid="browser-cancel-local-imaging-folder-scan"
+ *   там же:3259 data-testid="browser-imaging-scan-progress"
+ *   там же:3289-3296 browserImagingScanProgress.fileLimit/.folderLimit/
+ *                    .magicReadLimit/.processedUnits
+ *
+ * ДОБАВЛЕН РОВНО ОДИН ФАЙЛ — владелец этого экрана, а не весь каталог настроек:
+ * иначе требование к экрану импорта начнёт «выполняться» чужой вкладкой.
+ *
+ * useSettingsDerivations.tsx НЕ ДОБАВЛЕН СОЗНАТЕЛЬНО. В нём лежит стена строк
+ * «// Compliance: …», и маркер, объявленный в комментарии, покрасил бы стража
+ * зелёным подписью, которой нет на экране. Здесь этот случай проверен отдельно:
+ * оба testid отмены найдены в JSX, в комментариях их нет.
+ */
+const settingsSource = (
+	await Promise.all(
+		[
+			"apps/web/src/SettingsView.tsx",
+			"apps/web/src/components/settings/SettingsImportsTab.tsx",
+		].map((file) => readFile(file, "utf8")),
+	)
+).join("\n");
 const stylesSource = await readFile("apps/web/src/styles/main.css", "utf8");
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 
@@ -65,8 +93,18 @@ function assertNotIncludes(source, marker, label) {
 [
 	"CircleStop",
 	"browserImagingScanProgress",
-	"browser-cancel-local-imaging-folder-scan",
-	"browser-cancel-local-imaging-folder-scan-inline",
+	/*
+	 * ОБА ОБРАЗЦА — С АТРИБУТОМ И ЗАКРЫВАЮЩЕЙ КАВЫЧКОЙ, И ЭТО НЕ ПЕДАНТИЗМ.
+	 *
+	 * Раньше здесь стояли голые идентификаторы. Первый из них —
+	 * "browser-cancel-local-imaging-folder-scan" — является ПРЕФИКСОМ второго,
+	 * поэтому требование к верхней кнопке отмены выполнялось одной только
+	 * встроенной кнопкой «…-inline». Проверено искусственной поломкой копии: с
+	 * убранным data-testid верхней кнопки страж оставался зелёным (код выхода 0).
+	 * С атрибутом и кавычкой обе кнопки требуются независимо.
+	 */
+	'data-testid="browser-cancel-local-imaging-folder-scan"',
+	'data-testid="browser-cancel-local-imaging-folder-scan-inline"',
 	"browser-imaging-scan-progress",
 	'aria-live="polite"',
 	"Интерфейс остается доступным: обработка идет короткими порциями.",
