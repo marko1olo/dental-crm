@@ -78,6 +78,51 @@ export const treatmentPlanItemStatus = pgEnum("treatment_plan_item_status", [
   "completed",
   "cancelled"
 ]);
+
+/**
+ * СТАТУС ПЛАНА ЛЕЧЕНИЯ. ЗНАЧЕНИЯ С БОЛЬШОЙ БУКВЫ, И ЭТО НЕ ОПЕЧАТКА.
+ *
+ * Тип `treatment_plan_status` существует в базе с миграции 0000 — объявление
+ * здесь ничего не создаёт и миграции не требует (тот же случай, что у
+ * `egiszStatus` ниже). Набор снят с живой базы, а не с догадки:
+ * `select enumlabel from pg_enum` (2026-07-29) даёт ровно
+ * `Draft, Active, Approved, Completed, Rejected`.
+ *
+ * ЗДЕСЬ СТОЯЛО `text("status").notNull().default("draft")`, и строчного `draft`
+ * в перечислении НЕТ ВОВСЕ. Тип `text` не запрещает ничего: компилятор пропустил
+ * бы любую строку, а PostgreSQL отвечает на неизвестное значение
+ * `invalid input value for enum treatment_plan_status` уже в рантайме — на живом
+ * сохранении плана.
+ *
+ * ПОЧЕМУ ЭТО НЕ БЫЛО ВИДНО. Единственный боевой писатель
+ * (`routes/odontogram.ts`) статус не передаёт вовсе, а для колонки со
+ * статическим `.default(...)` drizzle пишет в SQL ключевое слово `default` — то
+ * есть база подставляет СВОЁ умолчание `'Draft'`, и строчный `"draft"` из
+ * объявления в запрос не попадает никогда. Расхождение ждало первого, кто
+ * передаст статус явно или сравнит с ним.
+ *
+ * ЧТО РЕГИСТР УЖЕ СТОИЛ КЛИНИКЕ. `scripts/cronAnalyticsWorker.ts` строит воронку
+ * планов лечения для отчётов руководителю по строчным ключам
+ * (`{ draft, proposed, approved, active, completed }`) и проверяет
+ * `if (p.status in funnelMap)`. База отдаёт `Draft` — условие не выполняется
+ * НИКОГДА, ни для одного статуса, и воронка показывает нули при любом числе
+ * планов. Отказа нет, есть тихий ноль, которому руководитель верит. Правка самой
+ * воронки — не этот участок: там надо решить, какие ветви показывать (в
+ * перечислении базы нет `proposed`, зато есть `Rejected`, которого воронка не
+ * знает). Долг записан ведущему в
+ * `.agents/lead/recon-schema-vs-live-database.md`.
+ *
+ * Контракта `treatmentPlanStatusSchema` в `packages/shared` нет; причина
+ * объявлена в `tests/enumContractDrift.test.ts` (NO_CONTRACT_PAIR), пакет вне
+ * этого участка.
+ */
+export const treatmentPlanStatus = pgEnum("treatment_plan_status", [
+  "Draft",
+  "Active",
+  "Approved",
+  "Completed",
+  "Rejected"
+]);
 export const treatmentPlanScenarioStrategy = pgEnum("treatment_plan_scenario_strategy", [
   "urgent",
   "standard",
@@ -509,7 +554,27 @@ export const treatmentItems = pgTable("treatment_items", {
   status: treatmentPlanItemStatus("status").notNull().default("proposed"),
   plannedDoctorUserId: uuid("planned_doctor_user_id").references(() => users.id),
   plannedChairId: uuid("planned_chair_id").references(() => chairs.id),
-  notes: text("notes")
+  notes: text("notes"),
+  /**
+   * УЧЁТ ОФЛАЙН-ОБМЕНА ПО КНИГЕ ЛЕЧЕНИЯ. Обе колонки созданы миграцией 0000 и
+   * здесь не объявлялись: в базе таблица имеет 17 колонок, в модели их было 15
+   * (замерено `pg_attribute` живой базы, 2026-07-29 —
+   * `is_synced boolean NOT NULL DEFAULT false`, `version integer NOT NULL
+   * DEFAULT 1`).
+   *
+   * Незаявленная колонка через drizzle НЕДОСТИЖИМА: ключ, которого нет в форме
+   * таблицы, он в запрос не переносит — ни на запись, ни на чтение. Поэтому
+   * `services/syncDaemon.ts` не мог ни узнать, что позиция книги лечения ещё не
+   * ушла на сервер, ни поднять счётчик версии при правке: обмен с офлайн-клиентом
+   * по деньгам пациента был слеп. Ровно этот класс правили у `visit_diaries` и
+   * `tooth_states` — комментарии ниже в этом файле.
+   *
+   * `.default(...)` повторяет базу дословно и обязателен по второй причине: без
+   * него drizzle потребовал бы оба поля в КАЖДОЙ вставке в `treatment_items`, а
+   * их пишет проводка сметы в книгу лечения (`routes/odontogram.ts`).
+   */
+  isSynced: boolean("is_synced").notNull().default(false),
+  version: integer("version").notNull().default(1)
 });
 
 export const treatmentScenarios = pgTable("treatment_scenarios", {
@@ -1436,36 +1501,106 @@ export const labOrders = pgTable("lab_orders", {
 // treatment plans (multi-stage treatment planning)
 export const treatmentPlans = pgTable("treatment_plans", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /**
+   * Изоляция по клинике. `NOT NULL` в базе — с миграции 0146; до неё колонка
+   * допускала NULL, то есть план лечения с суммой мог оказаться бесхозным и
+   * достаться любому арендатору базы. Прецедент дословный:
+   * `family_groups.organization_id` закрывали миграцией 0119 после того, как
+   * бесхозная группа вместе с балансом семейного кошелька досталась первой
+   * обратившейся клинике. Ограничение поставлено на пустую таблицу (0 строк на
+   * 2026-07-29), поэтому backfill не потребовался ни на одну строку.
+   */
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   doctorId: uuid("doctor_id"),
   title: text("title").notNull().default(""),
-  // alias — some routes call it name
-  name: text("name").notNull().default("План лечения"),
-  status: text("status").notNull().default("draft"),
+  /**
+   * ЗДЕСЬ БЫЛО `.default("План лечения")`, И ЭТО УМОЛЧАНИЕ ДО БАЗЫ НЕ ДОХОДИЛО
+   * НИКОГДА.
+   *
+   * Для колонки со статическим умолчанием, значение которой не передано, drizzle
+   * пишет в SQL ключевое слово `default` — не значение из этого файла. У колонки
+   * `name` в базе умолчания НЕТ (проверено `pg_attrdef`, 2026-07-29), а `NOT
+   * NULL` есть: вставка без имени плана давала бы `null value in column "name"
+   * violates not-null constraint`. Объявление обещало, что поле необязательно,
+   * база это обещание отвергала.
+   *
+   * ПОЧЕМУ УМОЛЧАНИЕ НЕ ЗАВЕДЕНО В БАЗЕ, А СНЯТО ИЗ ОБЪЯВЛЕНИЯ. План лечения,
+   * тихо сохранённый под общим именем «План лечения», врач не найдёт в списке из
+   * десяти таких же, а подпись пациента будет стоять под безымянной сметой.
+   * Требовать имя правильнее, и требовать его надо на этапе компиляции: без
+   * `.default(...)` `name` обязателен в типе вставки, и пропуск поля становится
+   * ошибкой компилятора вместо отказа базы на живом сохранении.
+   */
+  name: text("name").notNull(),
+  /**
+   * Перечисление, а не `text`: набор значений принадлежит базе. Умолчание `Draft`
+   * повторяет `DEFAULT 'Draft'::treatment_plan_status` дословно — см. докстринг
+   * `treatmentPlanStatus` выше о том, чем строчный `"draft"` стоил отчётам.
+   */
+  status: treatmentPlanStatus("status").notNull().default("Draft"),
   totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
-  // alias — some routes call it totalPrice
-  totalPrice: numeric("total_price", { precision: 12, scale: 2 }),
+  /**
+   * Итог сметы. `NOT NULL DEFAULT '0'` в базе с миграции 0000, а объявление
+   * разрешало NULL: тип обещал `string | null` там, где база гарантирует
+   * значение, и каждый читатель суммы обязан был проверять её на пустоту.
+   * Смета без итога — это ноль, а не «неизвестно».
+   */
+  totalPrice: numeric("total_price", { precision: 12, scale: 2 }).notNull().default("0"),
   patientSignature: text("patient_signature"),
   isSynced: boolean("is_synced").notNull().default(false),
   version: integer("version").notNull().default(1),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // treatment plan items new (items inside treatment plan)
 export const treatmentPlanItemsNew = pgTable("treatment_plan_items_new", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /**
+   * ДОЛГ, А НЕ РАСХОЖДЕНИЕ: колонка допускает NULL И в базе, И здесь, поэтому
+   * сторож схемы молчит. Но это позиции сметы без принадлежности клинике — та же
+   * дыра изоляции, что закрывали у `family_groups`. Таблица пуста (0 строк на
+   * 2026-07-29), то есть закрыть её стоит одного `SET NOT NULL`; решение за
+   * ведущим, разбор в `.agents/lead/recon-schema-vs-live-database.md`.
+   */
   organizationId: uuid("organization_id").references(() => organizations.id),
   planId: uuid("plan_id").notNull(),
   toothNumber: integer("tooth_number"),
+  /** `NOT NULL` в базе — с миграции 0146: позицию без ссылки на прайс нечем сопоставить с услугой. */
   priceId: text("price_id").notNull(),
   quantity: integer("quantity").notNull().default(1),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
-  discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
+  /*
+   * Точность повторяет базу: колонки созданы `numeric(12,2)`, а объявлены были
+   * `numeric(10, 2)`. Объявление ОБЕЩАЛО МЕНЬШЕ, чем база принимает, — то есть
+   * занижало предел суммы позиции на два разряда. Расхождение не ловил
+   * `scripts/check-schema-type-drift.mjs`: он сверяет `data_type`, а он у обоих
+   * `numeric`, без точности.
+   *
+   * Без `mode: "number"` — намеренно, как у `crm_leads.expected_revenue`:
+   * `routes/odontogram.ts` пишет сюда `item.price.toString()`, то есть строковый
+   * тип drizzle совпадает с контрактом единственного писателя.
+   */
+  price: numeric("price", { precision: 12, scale: 2 }).notNull().default("0"),
+  discount: numeric("discount", { precision: 12, scale: 2 }).notNull().default("0"),
   phase: integer("phase").notNull().default(1),
   isBundle: boolean("is_bundle").notNull().default(false),
+  /**
+   * НАЧИСЛЕНИЕ ВРАЧУ ПО ПОЗИЦИИ СМЕТЫ — колонка есть в базе, читать её было нечем.
+   *
+   * Создана как `numeric(12,2) NOT NULL DEFAULT '0'` (проверено `pg_attribute`
+   * живой базы, 2026-07-29) и здесь не объявлялась, поэтому через drizzle была
+   * недостижима: ни прочитать, ни записать. Это деньги врача за оказанную
+   * услугу — тот же класс, которым `patient_invoices.total_amount_rub` обнулял
+   * выручку в отчётах руководителю.
+   *
+   * Точность и умолчание повторяют базу дословно; `mode: "number"` не ставится по
+   * той же причине, что у `price` и `discount` рядом — иначе одна таблица
+   * отдавала бы деньги двумя разными типами.
+   */
+  commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  /** `NOT NULL` в базе — с миграции 0146; умолчание `now()` там было и раньше. */
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -1888,22 +2023,62 @@ export const clinicalAuditLogs = pgTable("clinical_audit_logs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// patient CT plannings (CBCT implant planning)
+/**
+ * РАЗМЕТКА ПЛАНИРОВАНИЯ ИМПЛАНТАЦИИ ПО КЛКТ.
+ *
+ * ТРИ КОЛОНКИ РАЗМЕТКИ БЫЛИ ОБЪЯВЛЕНЫ `jsonb`, А ФИЗИЧЕСКИ ОНИ `text`.
+ * Созданы `drizzle/0000_freezing_randall_flagg.sql:828-830` как
+ * `text DEFAULT '[]' NOT NULL`; миграция 0118 их не переписывала, и в живой базе
+ * они `text NOT NULL DEFAULT '[]'` (проверено `pg_attribute`, 2026-07-29).
+ *
+ * ЧЕМ РАСХОЖДЕНИЕ СТОИЛО КЛИНИКЕ. Класс `jsonb` у drizzle на записи делает
+ * `JSON.stringify`, поэтому готовая строка `[{"x":1}]` ложилась в текстовую
+ * колонку как `"[{\"x\":1}]"` — с внешними кавычками и экранированием. На чтении
+ * тот же класс делает `JSON.parse`, круг сходился, и снаружи дефект был невидим.
+ * При этом в базе лежал текст в двойной кодировке — разметку операции нельзя было
+ * прочитать ни отчётом, ни запросом, — а строка, оставленная умолчанием колонки
+ * (`'[]'`), возвращалась МАССИВОМ, тогда как записанная маршрутом — СТРОКОЙ: одна
+ * колонка, два разных типа на выходе.
+ *
+ * ПОЧЕМУ `text`, А НЕ НАСТОЯЩИЙ `jsonb`. Довод за `jsonb` — проверка формы на
+ * входе — на этом участке не работает, и это решение фактом, а не вкусом:
+ *   1. проволочный контракт закреплён с двух сторон как СТРОКА:
+ *      `routes/imaging_planning.ts` принимает `z.string()`,
+ *      `apps/web/src/components/dicom/ctPlanningPersistence.ts` объявляет у
+ *      ответа `splinePointsJson: string`, а `tests/routes/
+ *      ctPlanningMarkupPersists.test.ts` уже утверждает `typeof … === "string"`;
+ *   2. `jsonb` не дал бы обещанной проверки, пока маршрут передаёт строку: класс
+ *      `jsonb` завернул бы её в ещё один `JSON.stringify`, то есть вернул бы ту
+ *      самую двойную кодировку;
+ *   3. девятнадцать колонок с суффиксом `_json` в этом файле, хранящих текст,
+ *      объявлены `text` — `patient_ct_plannings` была исключением, а не образцом.
+ * Разбор целиком: `.agents/lead/recon-schema-vs-live-database.md`, раздел 6.
+ *
+ * `.notNull().default("[]")` повторяет базу дословно: разметки «нет» не бывает,
+ * бывает пустая.
+ */
 export const patientCtPlannings = pgTable("patient_ct_plannings", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   imagingStudyId: uuid("imaging_study_id"),
-  // DICOM study instance UID for linking to imaging
-  studyInstanceUid: text("study_instance_uid"),
+  /**
+   * DICOM study instance UID — по нему разметка привязана к снимку. `NOT NULL` в
+   * базе с миграции 0000, а объявление разрешало NULL: вставка без номера
+   * исследования проходила компилятор и падала в PostgreSQL уже на живом
+   * сохранении обведённой врачом дуги. Разметка без номера исследования вообще ни
+   * к чему не привязана — её нечем найти.
+   */
+  studyInstanceUid: text("study_instance_uid").notNull(),
   implantPositions: jsonb("implant_positions"),
   // Spline / curve planning points for surgical guide
-  splinePointsJson: jsonb("spline_points_json"),
-  nervePointsJson: jsonb("nerve_points_json"),
-  implantsJson: jsonb("implants_json"),
+  splinePointsJson: text("spline_points_json").notNull().default("[]"),
+  nervePointsJson: text("nerve_points_json").notNull().default("[]"),
+  implantsJson: text("implants_json").notNull().default("[]"),
+  /** `NOT NULL` в базе — с миграции 0146: разметка операции без статуса не имеет смысла. */
   planStatus: text("plan_status").notNull().default("draft"),
   notes: text("notes"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

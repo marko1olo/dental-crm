@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { patientCtPlannings, patients } from "../db/schema.js";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
@@ -19,28 +19,32 @@ import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
  *
  * ТРИ ВЕЩИ, ИСПРАВЛЕННЫЕ ЗДЕСЬ ПРИ СШИВАНИИ.
  *
- * 1. РАЗБОР КОЛОНОК БЫЛ СБИТ РАСХОЖДЕНИЕМ СХЕМЫ С БАЗОЙ. `db/schema.ts:1901-1903`
- *    объявляет `spline_points_json`, `nerve_points_json`, `implants_json` типом
- *    `jsonb`. Миграция, создавшая таблицу, объявила их
- *    `text DEFAULT '[]' NOT NULL` (`drizzle/0000_freezing_randall_flagg.sql:828-830`),
- *    и в живой базе они `text` — миграция 0118 их не переписывала, она лишь
- *    добавила четыре других столбца. Расходится именно `schema.ts`.
+ * 1. РАЗБОР КОЛОНОК БЫЛ СБИТ РАСХОЖДЕНИЕМ СХЕМЫ С БАЗОЙ — ПРИЧИНА УСТРАНЕНА,
+ *    ОБХОД СНЯТ.
  *
- *    Цена расхождения ИЗМЕРЕНА независимым psql, а не выведена из кода. У drizzle
- *    класс `jsonb` при записи делает `JSON.stringify`
- *    (`drizzle-orm/pg-core/columns/jsonb.js:22`), поэтому строка `[{"x":1}]`
- *    ложилась в текстовую колонку как `"[{\"x\":1}]"` — с внешними кавычками и
- *    экранированием. При чтении тот же класс делает `JSON.parse` (`:24-33`), так
- *    что круг сходился и дефект был невидим снаружи. Но:
- *      • в базе лежал текст в двойной кодировке, то есть ни отчётом, ни запросом
- *        разметку прочитать было нельзя;
- *      • строка, оставленная значением колонки по умолчанию (`'[]'`),
- *        возвращалась МАССИВОМ, а записанная маршрутом — СТРОКОЙ. Одна колонка,
- *        два разных типа на выходе, и клиент обязан был угадывать.
- *    Обход здесь местный и явный: три колонки читаются и пишутся с приведением к
- *    тексту, минуя сбитый разбор. `db/schema.ts` занят другой волной, поэтому
- *    правка типа колонки уходит следующей волне; приведение к тексту верно и для
- *    `text` (сегодня), и для `jsonb` (если схема когда-нибудь победит) на чтении.
+ *    Было так: `db/schema.ts` объявлял `spline_points_json`, `nerve_points_json`,
+ *    `implants_json` типом `jsonb`, тогда как миграция, создавшая таблицу,
+ *    объявила их `text DEFAULT '[]' NOT NULL`
+ *    (`drizzle/0000_freezing_randall_flagg.sql:828-830`), и в живой базе они
+ *    `text`. Класс `jsonb` у drizzle при записи делает `JSON.stringify`, поэтому
+ *    готовая строка `[{"x":1}]` ложилась в текстовую колонку как
+ *    `"[{\"x\":1}]"` — с внешними кавычками и экранированием. При чтении тот же
+ *    класс делает `JSON.parse`, круг сходился, и дефект был невидим снаружи. Но в
+ *    базе лежал текст в двойной кодировке (прочитать разметку операции отчётом или
+ *    запросом было нельзя), а строка, оставленная умолчанием колонки (`'[]'`),
+ *    возвращалась МАССИВОМ, тогда как записанная маршрутом — СТРОКОЙ: одна
+ *    колонка, два разных типа на выходе.
+ *
+ *    Здесь стоял местный обход: три колонки читались и писались с приведением
+ *    `::text`, минуя сбитый разбор. Обхода больше нет, потому что нет причины —
+ *    объявление приведено к базе (`text`, `.notNull().default("[]")`), и drizzle
+ *    отдаёт и принимает строку без преобразований. Почему выбран `text`, а не
+ *    настоящий `jsonb`: контракт этого маршрута и клиента — СТРОКА
+ *    (`z.string()` здесь, `splinePointsJson: string` в
+ *    `apps/web/src/components/dicom/ctPlanningPersistence.ts`), а `jsonb` завернул
+ *    бы её в ещё один `JSON.stringify`, то есть вернул бы двойную кодировку.
+ *    Разбор с замерами: `.agents/lead/recon-schema-vs-live-database.md`, раздел 6.
+ *    Сторож против возврата расхождения: `tests/schemaMatchesLiveDatabase.test.ts`.
  *
  * 2. ЛЮБОЙ ПРОМАХ РАЗБОРА ТЕЛА ОТВЕЧАЛ 500 «Internal server error». Схема
  *    вызывалась через `parse`, её исключение ловил общий `catch`, и врач читал
@@ -108,26 +112,30 @@ const LOAD_FAILED_MESSAGE =
 	"Откройте снимок заново через минуту.";
 
 /**
- * Значение для трёх текстовых колонок разметки, минуя разбор `jsonb` из
- * `schema.ts`. Без приведения drizzle обернул бы уже готовый текст ещё в один
- * `JSON.stringify` — см. пункт 1 в шапке файла.
+ * Значение для трёх текстовых колонок разметки.
+ *
+ * Пустая разметка — это `[]`, а не отсутствие значения: колонки в базе
+ * `NOT NULL DEFAULT '[]'`, и врач, стерший дугу, обязан получить обратно пустой
+ * массив, а не прошлую разметку. Поэтому обе половины upsert передают все три
+ * колонки всегда, даже когда клиент прислал не все.
  */
-function markupText(json: string | undefined) {
-	return sql`${json ?? "[]"}::text`;
+function markupText(json: string | undefined): string {
+	return json ?? "[]";
 }
 
 /**
- * Поля строки разметки для ответа клиенту. Три колонки разметки читаются
- * приведением к тексту по той же причине, по которой пишутся: иначе значение
- * колонки по умолчанию вернулось бы массивом, а записанное маршрутом — строкой.
+ * Поля строки разметки для ответа клиенту. Три колонки разметки читаются как
+ * есть: объявление в `db/schema.ts` теперь совпадает с базой (`text`), поэтому
+ * drizzle отдаёт строку — ту же, что записал маршрут, — и приведение `::text`,
+ * которое здесь стояло, больше ничего не исправляет.
  */
 const planningSelection = {
 	id: patientCtPlannings.id,
 	patientId: patientCtPlannings.patientId,
 	studyInstanceUid: patientCtPlannings.studyInstanceUid,
-	splinePointsJson: sql<string>`${patientCtPlannings.splinePointsJson}::text`,
-	nervePointsJson: sql<string>`${patientCtPlannings.nervePointsJson}::text`,
-	implantsJson: sql<string>`${patientCtPlannings.implantsJson}::text`,
+	splinePointsJson: patientCtPlannings.splinePointsJson,
+	nervePointsJson: patientCtPlannings.nervePointsJson,
+	implantsJson: patientCtPlannings.implantsJson,
 	updatedAt: patientCtPlannings.updatedAt,
 	createdAt: patientCtPlannings.createdAt,
 } as const;

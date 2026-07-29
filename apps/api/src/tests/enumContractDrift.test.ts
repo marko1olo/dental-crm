@@ -692,6 +692,18 @@ const NO_CONTRACT_PAIR: readonly {
 			"подставлять его сюда нельзя. Долг ведущему.",
 	},
 	{
+		exportName: "treatmentPlanStatus",
+		reason:
+			"Контракта НЕТ вовсе: ни treatmentPlanStatusSchema, ни набора Draft/Active/Approved/Completed/" +
+			"Rejected в packages/shared/src не встречается — ближайший по имени treatmentPlanItemStatusSchema " +
+			"это ДРУГАЯ таблица и другой набор (proposed/approved/in_progress/completed/cancelled), он уже " +
+			"спарен с pgEnum treatment_plan_item_status. Перечисление живое: тип treatment_plan_status создан " +
+			"миграцией 0000 и типизирует колонку status в treatment_plans. До 2026-07-29 колонка была объявлена " +
+			"как text с умолчанием «draft» — значения, которого в наборе НЕТ, — поэтому регистр никто не " +
+			"сверял: воронка планов в scripts/cronAnalyticsWorker.ts ищет строчные ключи и считает нули. " +
+			"Долг ведущему: packages/shared вне зоны участка.",
+	},
+	{
 		exportName: "ledgerPaymentMethod",
 		reason:
 			"Контракта НЕТ вовсе: поиск по \"installment_balance\" в packages/shared/src даёт ноль совпадений. " +
