@@ -527,11 +527,19 @@ function summarizeRowsOutsideFixtures(results) {
 	const existing = results.filter((r) => r.exists);
 	const known = existing.filter((r) => r.rowsOutsideFixtures !== null && r.rowsOutsideFixtures !== undefined);
 	const undetermined = existing.filter((r) => r.rowsOutsideFixtures === null || r.rowsOutsideFixtures === undefined);
+	// Существующая таблица без числа в `total` — сломанный вызов, а не «ноль строк».
+	// Тихий `?? 0` здесь был бы тем же дефектом, который правит этот пакет, поэтому
+	// такой случай падает, а не занижает число строк с неустановленной принадлежностью.
+	for (const r of undetermined) {
+		if (typeof r.total !== "number") {
+			throw new Error(`у таблицы ${r.table} нет счёта строк — итог не может быть посчитан честно`);
+		}
+	}
 	return {
 		knownSum: known.reduce((n, r) => n + r.rowsOutsideFixtures, 0),
 		knownTables: known.length,
 		undeterminedTables: undetermined.map((r) => r.table),
-		undeterminedRowsTotal: undetermined.reduce((n, r) => n + (typeof r.total === "number" ? r.total : 0), 0),
+		undeterminedRowsTotal: undetermined.reduce((n, r) => n + r.total, 0),
 		naiveZeroCoalesced: existing.reduce((n, r) => n + (r.rowsOutsideFixtures ?? 0), 0),
 	};
 }
