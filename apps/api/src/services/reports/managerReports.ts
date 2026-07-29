@@ -35,6 +35,7 @@ import { db } from "../../db/client.js";
 import {
 	appointments,
 	chairs,
+	clinics,
 	communicationOutbox,
 	patients,
 	payments,
@@ -75,6 +76,31 @@ export type ReportScope = ReportPeriod & {
  * Ответ кэшируется на процесс: список поясов внутри одной версии сервера не
  * меняется, а отчёты зовут это на каждый запрос.
  */
+/**
+ * ЧАСОВОЙ ПОЯС КЛИНИКИ, ОДИН НА ПРОЕКТ. `null` — определить не удалось.
+ *
+ * ЖИВЁТ ЗДЕСЬ, А НЕ В МАРШРУТЕ, потому что нужен уже двум разным маршрутам:
+ * отчётам руководителя и выплатам врачам. Вторая копия этой функции стала бы
+ * вторым источником истины о поясе клиники — ровно та болезнь, из которой в этом
+ * проекте выросли четыре разных расчёта долга.
+ *
+ * Отказ базы не роняет отчёт: пояс неизвестен, и вызывающий работает как раньше.
+ * Выдумывать московский за клинику нельзя — в базе пояс по умолчанию
+ * Europe/Samara, и подстановка сдвинула бы границы месяца на час.
+ */
+export async function clinicTimeZone(organizationId: string): Promise<string | null> {
+	try {
+		const [clinic] = await db
+			.select({ timezone: clinics.timezone })
+			.from(clinics)
+			.where(eq(clinics.organizationId, organizationId))
+			.limit(1);
+		return clinic?.timezone ?? null;
+	} catch {
+		return null;
+	}
+}
+
 const knownTimeZoneCache = new Map<string, boolean>();
 
 async function postgresKnowsTimeZone(timeZone: string | null | undefined): Promise<string | null> {

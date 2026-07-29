@@ -12,6 +12,7 @@ import {
   createPaymentInDb
 } from "../db/billingQuery.js";
 import { doctorPayouts, resolvePayoutPeriod } from "../services/finance/doctorPayouts.js";
+import { clinicTimeZone } from "../services/reports/managerReports.js";
 import { explainNegativePayouts } from "../services/finance/payoutNegativeExplain.js";
 
 function documentCanReceivePayment(documentKind: keyof typeof documentKindMetadata): boolean {
@@ -298,7 +299,10 @@ export async function registerBillingRoutes(app: FastifyInstance) {
       });
     }
 
-    const period = resolvePayoutPeriod(parsedQuery.data);
+    // Границы месяца по умолчанию считает тот, кто знает пояс клиники, а не
+    // пояс серверного процесса: иначе приёмы последнего вечера месяца уезжают
+    // в следующий расчёт зарплаты либо попадают в оба.
+    const period = resolvePayoutPeriod(parsedQuery.data, new Date(), await clinicTimeZone(access.organizationId));
     if (!period.ok) {
       return reply.code(400).send({ error: "PayoutValidationError", message: period.message });
     }

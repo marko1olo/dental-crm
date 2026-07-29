@@ -91,8 +91,19 @@ export type ResolvedPayoutPeriod =
 export function resolvePayoutPeriod(
 	input: { readonly from?: string | undefined; readonly to?: string | undefined },
 	now = new Date(),
+	/**
+	 * Часовой пояс клиники. Без него границы месяца считались в поясе СЕРВЕРНОГО
+	 * процесса: зарплату за месяц клиника получала с чужими границами, и приёмы
+	 * последнего вечера уезжали в следующий расчётный период либо считались
+	 * дважды. Зарплату считают раз в месяц, поэтому ошибка границы — это не
+	 * копейки, а целая смена.
+	 *
+	 * Необязателен: без него поведение прежнее, ни один вызывающий не ломается,
+	 * а отсутствие пояса означает «неизвестно», а не «подставить московский».
+	 */
+	timeZone?: string | null,
 ): ResolvedPayoutPeriod {
-	const fallback = currentMonthPeriod(now);
+	const fallback = currentMonthPeriod(now, timeZone);
 	const from = input.from ? new Date(input.from) : fallback.from;
 	const to = input.to ? new Date(input.to) : fallback.to;
 
