@@ -30,6 +30,7 @@ import {
 	organizations,
 	patients,
 	payments,
+	serviceCatalogItems,
 	treatmentItems,
 	users,
 	visits
@@ -377,6 +378,47 @@ async function seed(): Promise<void> {
 	}));
 	await db.insert(appointments).values(pastAppointments);
 
+	/*
+	 * ПРАЙС КЛИНИКИ. Без него демонстрационная клиника не может ни договор
+	 * посчитать, ни счёт, ни справку для налогового вычета — сервер прямо об этом
+	 * предупреждает при каждой сборке сводки: «Прайс-лист пуст: в справочнике
+	 * услуг клиники нет ни одной позиции».
+	 *
+	 * Измерено запросом: в обеих организациях базы прайс был пуст, ноль строк.
+	 * Для новой клиники это норма — прайс заполняет она сама, и писатель для
+	 * этого появился только сегодня. Но демонстрационная клиника обслуживает
+	 * снимки и сквозные денежные цепочки: на пустом прайсе они проверяют нули, то
+	 * есть зелены по бессодержательности.
+	 *
+	 * Цены с копейками намеренно: рубли с копейками — это тот случай, где
+	 * сложение в плавающей точке уже отклоняло верные квитанции, и цепочке денег
+	 * нужен материал, на котором копейка видна.
+	 */
+	const catalog = [
+		{ code: "T01", title: "Лечение кариеса", category: "therapy" as const, specialty: "therapist" as const, price: 7200.5, minutes: 60 },
+		{ code: "H01", title: "Профессиональная гигиена", category: "hygiene" as const, specialty: "hygienist" as const, price: 5400, minutes: 45 },
+		{ code: "T02", title: "Лечение пульпита", category: "therapy" as const, specialty: "therapist" as const, price: 14800.99, minutes: 90 },
+		{ code: "P01", title: "Установка коронки", category: "prosthetics" as const, specialty: "orthopedist" as const, price: 26500, minutes: 60 },
+		{ code: "C01", title: "Консультация", category: "consultation" as const, specialty: "universal" as const, price: 1500.5, minutes: 30 }
+	];
+	const catalogIds = new Map<string, string>();
+	for (const [index, service] of catalog.entries()) {
+		const id = `d0000000-0000-4000-8000-0000000${String(600 + index).padStart(5, "0")}`;
+		catalogIds.set(service.title, id);
+		await db.insert(serviceCatalogItems).values({
+			id,
+			organizationId: ORG_ID,
+			code: service.code,
+			title: service.title,
+			category: service.category,
+			specialty: service.specialty,
+			basePriceRub: service.price,
+			priceRub: service.price,
+			durationMinutes: service.minutes,
+			taxDeductible: true
+		});
+	}
+
 	// Визиты, позиции лечения и платежи — чтобы в отчётах были деньги и долг.
 	const completed = pastAppointments.filter((appointment) => appointment.status === "completed");
 	for (const [index, appointment] of completed.entries()) {
@@ -389,11 +431,16 @@ async function seed(): Promise<void> {
 			status: "signed",
 			createdAt: appointment.startsAt
 		});
+		const itemTitle = ["Лечение кариеса", "Профессиональная гигиена", "Лечение пульпита", "Установка коронки"][index % 4] ?? "Приём";
 		await db.insert(treatmentItems).values({
 			organizationId: ORG_ID,
 			patientId: appointment.patientId,
 			visitId,
-			title: ["Лечение кариеса", "Профессиональная гигиена", "Лечение пульпита", "Установка коронки"][index % 4] ?? "Приём",
+			// Ссылка на прайс, а не только название: без неё позиция лечения
+			// «висит в воздухе», правила списания материалов её не находят, а
+			// изменение цены в прайсе не связано с уже назначенным лечением.
+			serviceId: catalogIds.get(itemTitle) ?? null,
+			title: itemTitle,
 			quantity: "1",
 			priceRub: [7200, 5400, 14800, 26500][index % 4] ?? 7000,
 			unitPriceRub: [7200, 5400, 14800, 26500][index % 4] ?? 7000,
