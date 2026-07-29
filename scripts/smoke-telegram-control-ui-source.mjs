@@ -11,6 +11,36 @@ const useAppLogicSource = fs.readFileSync(
 	"utf8",
 );
 const appHelpersSource = fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
+/*
+ * УПРАВЛЯЮЩИЙ СЛОЙ TELEGRAM ПЕРЕЕХАЛ В ОТДЕЛЬНЫЙ ХУК — ЕГО НАДО ЧИТАТЬ.
+ *
+ * Тринадцать требований этого стража описывают адреса и параметры управляющего
+ * слоя Telegram (status, feature-plan, outbox, chat-links, приведение режима
+ * бота, область organizationId/botConfigId). Всё это вынесено из монолита в
+ * apps/web/src/hooks/useTelegramSettings.ts, которого в наборе стража не было.
+ * На экране функции работают, человек ими пользуется, а страж сообщал «client UI
+ * missing …» — то есть краснел на верном коде.
+ *
+ * Файл добавлен перечислением, а не обходом каталога hooks/: обход подхватил бы
+ * новый хук молча, и требование считалось бы выполненным файлом, которого автор
+ * требования не видел. Причина та же, что у перечисления вкладок настроек в
+ * smoke-pricelist-analyzer.mjs.
+ */
+const telegramSettingsHookSource = fs.readFileSync(
+	"apps/web/src/hooks/useTelegramSettings.ts",
+	"utf8",
+);
+/*
+ * Операторская копия про серверные настройки клиники переехала в доменный хук
+ * авторизации: строка «если он включен в серверных настройках клиники» лежит
+ * теперь в apps/web/src/hooks/domains/useAuthLogic.ts. Требование к ней —
+ * читаемость формулировки для оператора, а не место её объявления, поэтому
+ * правится набор файлов, а не требование.
+ */
+const authLogicSource = fs.readFileSync(
+	"apps/web/src/hooks/domains/useAuthLogic.ts",
+	"utf8",
+);
 const settingsStoreSource = fs.readFileSync(
 	"apps/web/src/store/settingsStore.ts",
 	"utf8",
@@ -32,23 +62,101 @@ const telegramTransportSource = fs.readFileSync(
 );
 const qrSource = fs.readFileSync("apps/api/src/telegramQr.ts", "utf8");
 const dbSource = fs.readFileSync("apps/api/src/db/schema.ts", "utf8");
-const migrationSource = [
-	fs.readFileSync("apps/api/drizzle/0008_document_payload_storage.sql", "utf8"),
-	fs.readFileSync("apps/api/drizzle/0015_telegram_welcome_image.sql", "utf8"),
-	fs.readFileSync("apps/api/drizzle/0021_telegram_visual_cards.sql", "utf8"),
-	fs.readFileSync(
-		"apps/api/drizzle/0022_telegram_post_visit_checkup_delays.sql",
-		"utf8",
-	),
-	fs.readFileSync(
-		"apps/api/drizzle/0023_telegram_review_request_delay.sql",
-		"utf8",
-	),
-].join("\n");
+/*
+ * НАБОР МИГРАЦИЙ ЧИТАЕТСЯ ТАК ЖЕ, КАК ЕГО ЧИТАЕТ ЖИВОЙ ПРИМЕНЯТЕЛЬ.
+ *
+ * Здесь были перечислены пять файлов по именам: 0008_document_payload_storage,
+ * 0015_telegram_welcome_image, 0021_telegram_visual_cards,
+ * 0022_telegram_post_visit_checkup_delays, 0023_telegram_review_request_delay.
+ * НИ ОДНОГО из них в дереве больше нет — линию миграций пересобрали, и, скажем,
+ * номер 0008 занят теперь совсем другим файлом (0008_add_settings.sql). Страж
+ * падал с ENOENT на первом же чтении и не доходил ни до одной проверки.
+ *
+ * Замечание к отчёту цикла 24: путь здесь собран ВЕРНО. Истинная ошибка —
+ * `ENOENT ... 'C:\Clinic_MVP\dental-crm\apps\api\drizzle\0008_document_payload_storage.sql'`.
+ * «dental-crmppspi» в отчёте — артефакт чтения лога: Node печатает путь с
+ * двойными обратными слэшами, а слой, трактующий `\a` как escape (BEL, 0x07),
+ * съедает букву «a» у «apps» и у «api». Конкатенации пути в этом файле нет.
+ *
+ * ПОЧЕМУ ЗДЕСЬ ОБХОД КАТАЛОГА, А НЕ НОВОЕ ПЕРЕЧИСЛЕНИЕ. Перечислять миграции по
+ * именам нельзя: имена уже один раз сгнили и сгниют снова при следующей
+ * пересборке линии. Требование при этом не «колонку добавил файл номер N», а
+ * «колонку создаёт применяемая история миграций». Набор берётся ровно так, как
+ * его берёт apps/api/src/scripts/migrate.ts:70 — readdirSync каталога drizzle с
+ * фильтром .sql. Это тот самый набор, который реально применяется к базе.
+ *
+ * ЖУРНАЛ ЗДЕСЬ СОЗНАТЕЛЬНО НЕ ИСПОЛЬЗУЕТСЯ, и это не небрежность:
+ * drizzle/meta/_journal.json описывает 28 миграций, ни один тег которых не
+ * существует на диске, а на диске лежат 103 файла, ни один из которых в журнале
+ * не зарегистрирован — два непересекающихся множества. Это известное и
+ * задокументированное состояние (migrate.ts:12-14: журнал остался от удалённой
+ * линии миграций), поэтому применятель обходит журнал, и страж обязан смотреть
+ * туда же, куда смотрит применятель. Сверять с журналом значило бы проверять
+ * метаданные, которые к живой базе отношения не имеют.
+ */
+const MIGRATIONS_DIR = "apps/api/drizzle";
+const migrationFileNames = fs
+	.readdirSync(MIGRATIONS_DIR)
+	.filter((name) => name.endsWith(".sql"))
+	.sort();
+if (!migrationFileNames.length) {
+	throw new Error(
+		`В ${MIGRATIONS_DIR} нет ни одного .sql — проверять историю миграций нечем.`,
+	);
+}
+const migrationSource = migrationFileNames
+	.map((name) => fs.readFileSync(`${MIGRATIONS_DIR}/${name}`, "utf8"))
+	.join("\n");
 
 const secretPattern = /\b\d{8,12}:AA[A-Za-z0-9_-]{30,}\b/;
 const missing = [];
-const clientUiSource = `${appSource}\n${settingsSource}\n${settingsTelegramTabSource}\n${useAppLogicSource}\n${appHelpersSource}\n${settingsStoreSource}\n${appStoreSource}`;
+const clientUiSource = `${appSource}\n${settingsSource}\n${settingsTelegramTabSource}\n${useAppLogicSource}\n${appHelpersSource}\n${settingsStoreSource}\n${appStoreSource}\n${telegramSettingsHookSource}\n${authLogicSource}`;
+
+/*
+ * СРАВНЕНИЕ ТЕРПИТ ПЕРЕНОСЫ СТРОК И `?.`, НО НЕ ТЕРПИТ ПОДМЕНУ ТОКЕНОВ.
+ *
+ * Замерено 29.07.2026: после снятия ENOENT из ~700 требований не прошли 32, и
+ * настоящим дефектом продукта не было НИ ОДНО. Три причины, все — форма записи:
+ *
+ *  1. Biome перенёс аргументы. Нужен `fetch(`/api/telegram/outbox/send-due…`, а
+ *     в исходнике `await fetch(\n\t\t\t\t`/api/telegram/outbox/send-due…`.
+ *     useAppLogic.tsx:13460 — вызов на месте, `includes` его не видит.
+ *  2. Продукт стал защищённее, и страж это наказывал. Нужен
+ *     `dashboard.clinicSettings.profile.organizationId`, а в
+ *     useTelegramSettings.ts:542 стоит
+ *     `dashboard?.clinicSettings?.profile?.organizationId?.trim()` — то же
+ *     обращение с опциональной цепочкой. Требовать отсутствия `?.` значит
+ *     требовать менее безопасный код.
+ *  3. Needle написаны по МЁРТВОЙ копии. Шесть требований к sampleData совпадали
+ *     только с apps/api/src/sampleData_opt.ts — файлом, про который
+ *     telegram/legacyMocks.ts:8 и money/patientDebt.ts:114 прямо говорят, что на
+ *     него не ссылается никто. Отличие видно по отступу: в needle два пробела, в
+ *     живом sampleData.ts табуляции. Страж читает ЖИВОЙ файл (это верно), а
+ *     проверял форму мёртвого.
+ *
+ * Поэтому проверка сначала пробует точное вхождение, а если его нет — терпимый
+ * шаблон: любой пробел между токенами, висячая запятая Biome, необязательный
+ * `?.` вместо `.`. Имена, порядок аргументов, строковые литералы и адреса
+ * маршрутов по-прежнему обязательны точно, поэтому подмена «read» на «update»
+ * или чужой адрес маршрута шаблон НЕ пройдут.
+ */
+function flexibleSnippetPattern(snippet) {
+	const tokens = snippet
+		.split(/\s+/)
+		.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+		.join("\\s*");
+	const flexible = tokens
+		// `.foo` и `?.foo` — одно и то же обращение; перенос перед точкой разрешён
+		.replace(/\\\./g, "\\s*\\??\\s*\\.")
+		.replace(/(\\[({])/g, "$1\\s*")
+		.replace(/(\\[)}])/g, "(?:\\s*,)?\\s*$1");
+	return new RegExp(flexible);
+}
+
+function sourceHasSnippet(source, snippet) {
+	if (source.includes(snippet)) return true;
+	return flexibleSnippetPattern(snippet).test(source);
+}
 
 for (const [label, source] of [
 	["App.tsx", appSource],
@@ -125,7 +233,30 @@ for (const forbiddenCast of [
 }
 
 const appSnippets = [
-	'{ id: "telegram", title: "ТГ-бот" }',
+	/*
+	 * ВКЛАДКА ПЕРЕИМЕНОВАНА СОЗНАТЕЛЬНО, И ЭТО ЗАЩИЩЕНО ТЕСТОМ.
+	 *
+	 * Требование `{ id: "telegram", title: "ТГ-бот" }` снято не потому, что
+	 * вкладка исчезла: AppHelpers.tsx:6121 объясняет переименование — за разделом
+	 * давно живут ещё WhatsApp и MAX, и по названию «ТГ-бот» об этом никто не
+	 * догадывался. Живая строка — AppHelpers.tsx:6151. Более того, требовать
+	 * старое название теперь ЗАПРЕЩЕНО другим тестом:
+	 * components/settings/settingsDeepLinks.test.ts:104 утверждает
+	 * `assert.notEqual(settingsTabTitle(MESSENGERS_SETTINGS_TAB), "ТГ-бот")`.
+	 * Страж, требующий «ТГ-бот», прямо противоречил бы этому тесту.
+	 *
+	 * Проверяется то, что важно и что ломалось раньше: идентификатор вкладки и её
+	 * группа. Именно из-за отсутствия группы кнопка настроек Telegram однажды уже
+	 * пропадала из левого меню молча (AppHelpers.tsx:6124-6134).
+	 */
+	'{ id: "telegram", title: "Мессенджеры", group: "main" }',
+	/*
+	 * А ВОТ ШАГ ОНБОРДИНГА «ТГ-бот» ЖИВ — AppHelpers.tsx:6183. Переименование
+	 * доведено только до списка настроек, поэтому требование к нему оставлено
+	 * отдельной строкой: если шаг переименуют вслед за вкладкой, страж упадёт и
+	 * заставит обновить это место осознанно, а не молча.
+	 */
+	'{ id: "telegram", title: "ТГ-бот", detail: "бот, QR и отзывы" }',
 	"type DenteTelegramBotStatus",
 	"type DenteTelegramChatLinkListResponse",
 	"type DenteTelegramChatLinkPublic",
@@ -202,7 +333,15 @@ const appSnippets = [
 	"setTelegramOutboxStatusFilter",
 	"setTelegramOutboxTemplateFilter",
 	"telegramLinkStaffOptions",
-	"dashboard?.clinicSettings.staff.filter((member) => member.active)",
+	/*
+	 * Живая форма — useAppLogic.tsx:4656-4660. Между `staff` и `.filter` теперь
+	 * стоит `|| []`, то есть отсутствие списка сотрудников больше не роняет
+	 * подбор: это защита, а не регресс, и терпимый шаблон её перепрыгнуть не
+	 * может (вставлено выражение, а не пробел). Требование «варианты связки — это
+	 * только активные сотрудники» сохранено дословно.
+	 */
+	"(dashboard?.clinicSettings?.staff || []).filter(",
+	"(member) => member.active,",
 	"Нет активных сотрудников",
 	"isTelegramOutboxItemDueForUi",
 	"telegramSendingItemId",
@@ -214,7 +353,15 @@ const appSnippets = [
 	"isTelegramSendingDue || Boolean(telegramSendingItemId)",
 	"telegramModeDraft",
 	"telegramOwnBotUsernameDraft",
-	"initialUiPreferences.telegramBotConfigId",
+	/*
+	 * Переменной `initialUiPreferences` больше нет: засев состояния идёт
+	 * выражением `(loadUiPreferences() ?? defaultUiPreferences).<поле>` прямо в
+	 * литерале initialSettingsState (store/settingsStore.ts:197 и :189). Это тот
+	 * самый засев на этапе вычисления модуля, который описан в
+	 * .agents/AGENTS.md, правило 11. Требование — «поле засевается из сохранённых
+	 * настроек с падением на значения по умолчанию» — сохранено полностью.
+	 */
+	"(loadUiPreferences() ?? defaultUiPreferences).telegramBotConfigId",
 	"telegramBotUsernameDraft",
 	"telegramWebhookBaseUrlDraft",
 	"telegramPatientPortalBaseUrlDraft",
@@ -283,7 +430,7 @@ const appSnippets = [
 	"telegramLinkCodeStatusLabels",
 	"telegramLinkSubjectType: TelegramLinkSubjectType",
 	"telegramLinkStaffId: string | null",
-	"initialUiPreferences.telegramLinkSubjectType",
+	"(loadUiPreferences() ?? defaultUiPreferences).telegramLinkSubjectType",
 	"telegramLinkStaffId: telegramLinkStaffId || null",
 	"telegramLinkTargetKey",
 	"previousTelegramLinkTargetKeyRef",
@@ -602,19 +749,19 @@ const migrationSnippets = [
 ];
 
 for (const snippet of appSnippets) {
-	if (!clientUiSource.includes(snippet))
+	if (!sourceHasSnippet(clientUiSource, snippet))
 		missing.push(`client UI missing ${snippet}`);
 }
 for (const snippet of sharedSnippets) {
-	if (!sharedSource.includes(snippet))
+	if (!sourceHasSnippet(sharedSource, snippet))
 		missing.push(`shared schema missing ${snippet}`);
 }
 for (const snippet of apiSnippets) {
-	if (!apiSource.includes(snippet))
+	if (!sourceHasSnippet(apiSource, snippet))
 		missing.push(`sampleData missing ${snippet}`);
 }
 for (const snippet of telegramRouteSnippets) {
-	if (!telegramRoutesSource.includes(snippet))
+	if (!sourceHasSnippet(telegramRoutesSource, snippet))
 		missing.push(`telegram routes missing ${snippet}`);
 }
 for (const rawEnvUrlPattern of [
