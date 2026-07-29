@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clampMprSlabMm } from "./mprMath.js";
+import { clampMprSlabMm, mprSliceNudgeSteps } from "./mprMath.js";
 
 describe("clampMprSlabMm", () => {
   it("should return the value correctly rounded if within bounds [1, 30]", () => {
@@ -27,5 +27,12 @@ describe("clampMprSlabMm", () => {
     assert.equal(clampMprSlabMm(NaN), 1);
     assert.equal(clampMprSlabMm(Infinity), 1);
     assert.equal(clampMprSlabMm(-Infinity), 1);
+  });
+});
+
+describe("mprSliceNudgeSteps", () => {
+  it("should be defined and contain the expected constant array values", () => {
+    assert.ok(Array.isArray(mprSliceNudgeSteps));
+    assert.deepEqual(mprSliceNudgeSteps as unknown as number[], [-10, -1, 1, 10]);
   });
 });
