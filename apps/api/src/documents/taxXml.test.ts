@@ -73,6 +73,69 @@ describe('buildKnd1151156Xml', () => {
     assert.strictEqual(result.xml.includes('<Пациент'), false);
   });
 
+  /*
+   * ДАТА ДОКУМЕНТА В XML ДЛЯ НАЛОГОВОЙ НЕ ВЫДУМЫВАЕТСЯ.
+   *
+   * Здесь стояло `document.issuedAt || new Date().toISOString()`: документ без
+   * даты выдачи получал в поле `ДатаДок` СЕГОДНЯШНЮЮ дату. `ДатаДок` — не
+   * оформление, а содержание: по ней налоговая относит расход к году вычета.
+   * Справка, выданная в декабре и выгруженная в январе, ушла бы с январской датой
+   * и попала бы в НЕ ТОТ год. Пациент получил бы отказ и не понял, почему: в
+   * бумажной справке одна дата, в электронной другая, и обе выданы клиникой.
+   *
+   * Достижимо, а не гипотетично: замер на живой базе показал документ-черновик с
+   * `issued_at IS NULL`. Черновику даты выдачи и не положено — он не выдан.
+   */
+  test('документ без даты выдачи отвергается, а не получает сегодняшнюю дату', () => {
+    const withoutIssuedAt = { ...baseDocument };
+    delete (withoutIssuedAt as { issuedAt?: string }).issuedAt;
+
+    const result = buildKnd1151156Xml(
+      withoutIssuedAt as GeneratedDocument,
+      basePatient as Patient,
+      baseContext
+    );
+
+    assert.strictEqual(
+      result.ok,
+      false,
+      'XML собрался без даты выдачи — значит в ДатаДок ушла выдуманная дата, и расход попадёт в чужой год вычета'
+    );
+    if (result.ok) return;
+    assert.strictEqual(result.statusCode, 409);
+    assert.match(
+      result.error,
+      /дат[аы] выдачи/i,
+      `отказ обязан называть ПРИЧИНУ словами оператора, получено: ${result.error}`
+    );
+    assert.match(
+      result.error,
+      /Выдайте документ/,
+      `отказ обязан называть ДЕЙСТВИЕ, а не только причину, получено: ${result.error}`
+    );
+  });
+
+  test('дата выдачи из документа доезжает до ДатаДок без подмены', () => {
+    // Обратная сторона: проверка не должна краснеть на верном коде. Дата, которая
+    // ЕСТЬ, обязана попасть в XML как есть — и заведомо не совпадать с сегодняшней,
+    // иначе утверждение прошло бы и на выдуманной дате.
+    const result = buildKnd1151156Xml(
+      { ...baseDocument, issuedAt: '2023-12-28T09:00:00Z' } as GeneratedDocument,
+      basePatient as Patient,
+      baseContext
+    );
+    assert.strictEqual(result.ok, true);
+    if (!result.ok) return;
+    assert.match(result.xml, /ДатаДок="28\.12\.2023"/);
+    const today = new Date();
+    const todayRu = `${String(today.getDate()).padStart(2, '0')}.${String(today.getMonth() + 1).padStart(2, '0')}.${today.getFullYear()}`;
+    assert.strictEqual(
+      result.xml.includes(`ДатаДок="${todayRu}"`),
+      false,
+      'в ДатаДок оказалась сегодняшняя дата вместо даты выдачи документа'
+    );
+  });
+
   test('happy path: generates valid XML for other payer', () => {
     const payment = { ...basePayment, payerRelationship: 'child', payerFullName: 'Иванова Мария Ивановна', patientId: 'patient-1', status: 'paid', paidAt: '2024-05-15T12:00:00Z' } as Payment;
     const doc = { ...baseDocument, patientId: 'patient-1', payload: { taxPaymentSelection: { selectedPaymentIds: ['payment-1'] } } };
