@@ -10,8 +10,19 @@ import {
 	UploadCloud,
 } from "lucide-react";
 import "./SettingsAiTab.css";
+import type {
+	AiJobKind,
+	AiRecognitionJob,
+	AiRecognitionTarget,
+	SpeechGatewayHealthReport,
+	SpeechGatewayStatus,
+	SpeechProvider,
+	SpeechProviderHealth,
+	SpeechProviderRuntimeStatus,
+} from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import type { RecognitionPreset } from "../../settingsStaticData";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 /* Форматтер предупреждений — константа модуля, а не пропс. */
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
@@ -19,20 +30,55 @@ import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
+/*
+ * Контракт вкладки: перечислены ТОЛЬКО те пропсы, которые вкладка реально читает.
+ * Аннотация обязательна: useAppLogic объявлен как `(): any`, поэтому и
+ * useAppLogicContext(), и useSettingsDerivations() (её return спредит ...appLogic)
+ * имеют тип any. Без этой аннотации компилятор пропускает чтение любого имени —
+ * и `as any` тут был не причиной потери типов, а лишь маскировкой.
+ * Типы взяты из существующих деклараций (@dental/shared, settingsStaticData),
+ * второй источник правды не заводится.
+ */
+type SettingsAiTabProps = {
+	recognitionPresets: RecognitionPreset[] | undefined;
+	speechProviders: SpeechProvider[] | undefined;
+	recognitionJob: AiRecognitionJob | null;
+	speechProviderRuntimeById: Map<string, SpeechProviderRuntimeStatus>;
+	speechProviderHealthById: Map<string, SpeechProviderHealth>;
+	speechProviderModeLabels: Record<SpeechProvider["mode"], string>;
+	speechProviderHealthLabels: Record<string, string>;
+	recognitionKind: AiJobKind;
+	recognitionTarget: AiRecognitionTarget;
+	chooseRecognitionPreset: (preset: RecognitionPreset) => void;
+	recognitionText: string;
+	setRecognitionText: (value: string) => void;
+	setRecognitionJob: (value: AiRecognitionJob | null) => void;
+	recognitionTargetLabels: Record<AiRecognitionTarget, string>;
+	runRecognitionJob: () => void | Promise<void>;
+	isRecognitionLoading: boolean;
+	recognitionInputReady: boolean;
+	sendRecognitionResultToImport: () => void;
+	speechGatewayHealthReport: SpeechGatewayHealthReport | null;
+	refreshSpeechRuntime: (options: { silent?: boolean }) => void | Promise<void>;
+	speechGatewayCanUpload: (status: SpeechGatewayStatus | null) => boolean;
+	speechGatewayStatus: SpeechGatewayStatus | null;
+};
+
 export function SettingsAiTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const mergedProps: SettingsAiTabProps = Object.assign(
+		{},
+		appLogic,
+		derivations,
+	);
 	const {
 		recognitionPresets,
 		speechProviders,
-		dictationHistory,
 		recognitionJob,
 		speechProviderRuntimeById,
 		speechProviderHealthById,
-		speechProviderStatusLabels,
 		speechProviderModeLabels,
-		speechProviderConnectorLabels,
 		speechProviderHealthLabels,
 		recognitionKind,
 		recognitionTarget,
@@ -45,23 +91,15 @@ export function SettingsAiTab() {
 		isRecognitionLoading,
 		recognitionInputReady,
 		sendRecognitionResultToImport,
-		speechRecoveryStateLabels,
-		speechRecordingPathLabels,
-		speechRecordingStrategy,
-		activeSpeechProviderHealth,
 		speechGatewayHealthReport,
 		refreshSpeechRuntime,
-		speechProviderSelectionLabels,
 		speechGatewayCanUpload,
 		speechGatewayStatus,
 	} = mergedProps;
 
-	const typedRecognitionPresets = (recognitionPresets ?? []) as any[];
-	const typedSpeechProviders = (speechProviders ?? []) as any[];
-	const typedSpeechRecordingRecovery =
-		mergedProps.speechRecordingRecovery as any;
-	const _typedDictationHistory = (dictationHistory ?? []) as any[];
-	const typedRecognitionJob = recognitionJob as any;
+	const typedRecognitionPresets = recognitionPresets ?? [];
+	const typedSpeechProviders = speechProviders ?? [];
+	const typedRecognitionJob = recognitionJob;
 
 	return (
 		<div className="ai-studio-container animate-fade-in">
@@ -180,7 +218,7 @@ export function SettingsAiTab() {
 									</div>
 									{health && (
 										<span
-											className={`status-pill status-${health.healthLevel === "healthy" ? "confirmed" : "cancelled"}`}
+											className={`status-pill status-${health.healthLevel === "ready" ? "confirmed" : "cancelled"}`}
 										>
 											{speechProviderHealthLabels[health.healthLevel] ??
 												health.healthLevel}
