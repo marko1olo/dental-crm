@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine } from '../utils/strings.js';
+import { splitLine, isValidRussianSnils, isValidRussianInn, isValidRussianPassport } from '../utils/strings.js';
 
 describe('splitLine', () => {
   test('splits simple strings with a delimiter', () => {
@@ -97,4 +97,68 @@ describe('splitLine', () => {
   });
 
 
+});
+describe('isValidRussianSnils', () => {
+  test('returns true for null or undefined', () => {
+    assert.strictEqual(isValidRussianSnils(null), true);
+    assert.strictEqual(isValidRussianSnils(undefined), true);
+    assert.strictEqual(isValidRussianSnils(''), true);
+  });
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianSnils('1234567890'), false);
+    assert.strictEqual(isValidRussianSnils('123456789012'), false);
+  });
+  test('returns false if all digits are the same', () => {
+    assert.strictEqual(isValidRussianSnils('111-111-111 11'), false);
+    assert.strictEqual(isValidRussianSnils('22222222222'), false);
+  });
+  test('returns true for numPart <= 1001001 regardless of checksum', () => {
+    assert.strictEqual(isValidRussianSnils('001-001-001 00'), true);
+  });
+  test('returns true for valid SNILS with sum == 100', () => {
+    assert.strictEqual(isValidRussianSnils('20000799900'), true);
+  });
+  test('returns true for valid SNILS with sum > 101 and sum % 101 < 100', () => {
+    assert.strictEqual(isValidRussianSnils('20000898901'), true);
+  });
+  test('returns true for standard valid SNILS', () => {
+    assert.strictEqual(isValidRussianSnils('112-233-445 95'), true);
+  });
+  test('returns false for invalid SNILS', () => {
+    assert.strictEqual(isValidRussianSnils('112-233-445 96'), false);
+  });
+});
+describe('isValidRussianInn', () => {
+  test('returns true for null or undefined', () => {
+    assert.strictEqual(isValidRussianInn(null), true);
+    assert.strictEqual(isValidRussianInn(undefined), true);
+    assert.strictEqual(isValidRussianInn(''), true);
+  });
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianInn('123456789'), false);
+    assert.strictEqual(isValidRussianInn('12345678901'), false);
+  });
+  test('validates 10-digit INN', () => {
+    assert.strictEqual(isValidRussianInn('7707083893'), true);
+    assert.strictEqual(isValidRussianInn('7707083892'), false);
+  });
+  test('validates 12-digit INN', () => {
+    assert.strictEqual(isValidRussianInn('500100732259'), true);
+    assert.strictEqual(isValidRussianInn('500100732258'), false);
+  });
+});
+describe('isValidRussianPassport', () => {
+  test('returns true for null or undefined', () => {
+    assert.strictEqual(isValidRussianPassport(null), true);
+    assert.strictEqual(isValidRussianPassport(undefined), true);
+    assert.strictEqual(isValidRussianPassport(''), true);
+  });
+  test('returns false for invalid lengths', () => {
+    assert.strictEqual(isValidRussianPassport('1234 56789'), false);
+    assert.strictEqual(isValidRussianPassport('1234 5678901'), false);
+  });
+  test('returns true for valid 10-digit passport', () => {
+    assert.strictEqual(isValidRussianPassport('1234 567890'), true);
+    assert.strictEqual(isValidRussianPassport('1234567890'), true);
+  });
 });
