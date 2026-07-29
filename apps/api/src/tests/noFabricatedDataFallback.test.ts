@@ -38,25 +38,48 @@ import ts from "typescript";
  * пустой массив. Сбой — значит исключение до обработчика. Демонстрационные
  * данные заводятся сид-скриптом, схема — миграциями (scripts/migrate.ts).
  *
- * ПОЧЕМУ ЗДЕСЬ ПОЯВИЛСЯ РАЗБОР ДЕРЕВА, А НЕ ЕЩЁ ОДНА РЕГУЛЯРКА.
+ * ПОЧЕМУ ЗДЕСЬ ВЕЗДЕ РАЗБОР ДЕРЕВА, А НЕ РЕГУЛЯРКИ.
  *
- * Три текстовых проверки ниже судили по ТЕКСТУ исходника: искали строку
- * `DB Fallback`, дословную строку `if (rows && rows.length > 0) return rows;` и
- * `console.warn` СРАЗУ после закрывающей скобки `catch (…)`. Каждый из трёх
- * шаблонов обходится, не убирая дефект:
- *   * подмену можно вернуть, не написав слова «Fallback» — так и стоит сегодня
- *     в `patientsQuery.ts` (`catch { return inMemoryPatients.find(...) }`);
- *   * дословную строку достаточно переписать в две;
- *   * между `catch (err) {` и `console.warn` достаточно вставить одну строку
- *     комментария — так под шаблон не попадает `aiQuery.ts`.
- * Измерено на живом дереве: при трёх настоящих нарушениях все три проверки были
- * зелёными, а слова `DB Fallback` и дословной строки в `db/**` не осталось
- * вовсе, то есть две из трёх охраняли уже несуществующий текст.
+ * Здесь стояли три текстовых проверки, судившие по ТЕКСТУ исходника: искали
+ * строку `DB Fallback`, дословную строку `if (rows && rows.length > 0) return
+ * rows;` и `console.warn` СРАЗУ после закрывающей скобки `catch (…)`. Измерено
+ * на живом дереве: совпадений НОЛЬ по всем трём, то есть все три были зелены ПО
+ * ПОСТРОЕНИЮ — при живых нарушениях в тех же файлах. Каждый шаблон обходится, не
+ * убирая дефект: подмену можно вернуть, не написав слова «Fallback»; дословную
+ * строку достаточно переписать в две или переименовать переменную; между
+ * `catch (err) {` и `console.warn` достаточно вставить строку комментария.
  *
- * Поэтому решает ФОРМА кода: `try`, внутри которого есть обращение к базе, и
- * `catch`, из которого исключение НЕ выходит. `catch` вокруг `JSON.parse`
- * (`clinicalQuery.ts`) под правило не попадает не по списку исключений, а
- * потому, что в его `try` обращения к базе нет.
+ * Судьба каждой из трёх, по классам, а не по тексту:
+ *
+ *   1. `catch (…) { console.warn` — УДАЛЕНА. Её класс целиком покрыт разбором
+ *      дерева ниже, и покрыт строго шире: разбору всё равно, `console.warn` там,
+ *      `console.log` или ничего, и сколько строк стоит между скобкой и вызовом.
+ *      Доказательство её слепоты живое, а не гипотетическое: `aiQuery.ts` — это
+ *      ровно `} catch (e) {`, две строки комментария, `console.warn`. Шаблон его
+ *      не видит, разбор дерева видит и держит в списке долга. Проверка, слепая на
+ *      единственном живом образце своего класса, даёт не защиту, а ложную
+ *      уверенность, и стоит она столько же, сколько отсутствие проверки.
+ *
+ *   2. `DB Fallback` — УДАЛЕНА. Это была охрана СТРОКИ ЛОГА, а не класса. Слова
+ *      этого в `db/**` не осталось вовсе, и вернуть подмену, не написав его,
+ *      ничего не стоит — что и сделано в `patientsQuery.ts`.
+ *
+ *   3. `if (rows && rows.length > 0) return rows;` — ЗАМЕНЕНА разбором дерева, а
+ *      не удалена, потому что её класс НЕ покрыт проверкой `catch`: здесь база не
+ *      отказывала. Выборка прошла, вернула ноль строк, и функция вместо пустого
+ *      списка отдаёт что-то другое. Замена нашла живое нарушение в первый же
+ *      прогон — `lostPatientsFiltersQuery.ts`, — которое дословный шаблон не
+ *      видел никогда: там другое имя переменной и другой источник подмены.
+ *
+ *   4. `CREATE TABLE IF NOT EXISTS` — ОСТАВЛЕНА как класс, но переведена на
+ *      строковые литералы дерева и расширена на `ALTER/DROP/CREATE INDEX/…`.
+ *      Её класс не покрыт ничем другим, а поиск подстроки по всему файлу краснел
+ *      бы на комментарии, объясняющем, что рантайм-DDL отсюда убрали.
+ *
+ * Итог: решает ФОРМА кода. Для проглатывания это `try`, внутри которого есть
+ * обращение к базе, и `catch`, из которого исключение НЕ выходит. `catch` вокруг
+ * `JSON.parse` (`clinicalQuery.ts`) под правило не попадает не по списку
+ * исключений, а потому, что в его `try` обращения к базе нет.
  *
  * И ОБРАТНАЯ ЛОВУШКА, КОТОРАЯ В ЭТОМ ПРОЕКТЕ УЖЕ СРАБОТАЛА. Наивный шаблон
  * «catch … inMemory» по `db/*Query.ts` даёт три совпадения, и два из них —
@@ -67,10 +90,18 @@ import ts from "typescript";
  * комментарии не видит по построению, и это проверяется самопроверкой ниже —
  * не «по построению, поверьте», а прогоном на фикстуре.
  *
- * ЧЕГО ЭТА ПРОВЕРКА НЕ УМЕЕТ, честно. Она не видит `throw` из вызванного
- * помощника: `catch { await failLoudly(err); }` для неё проглатывание. Такой
- * случай сегодня в дереве не встречается; если появится, его место — в списке
- * долга ниже, с причиной, а не в ослаблении правила.
+ * ЧЕГО ЭТИ ПРОВЕРКИ НЕ УМЕЮТ, честно.
+ *   * Не видят `throw` из вызванного помощника: `catch { await failLoudly(err); }`
+ *     для них проглатывание. В дереве сегодня не встречается; если появится, его
+ *     место — в списке долга, с причиной, а не в ослаблении правила.
+ *   * Подмена на пустом пути ищется только там, где непустой результат отдаётся
+ *     через `return`. Родственная форма «обновить состояние, только если строк
+ *     больше нуля» (`if (ruleRecords.length > 0) replaceAll(...)`,
+ *     `domainStateHydration.ts`) под правило не попадает: там наружу не уходит
+ *     подставленное значение, там остаётся ПРЕЖНЕЕ состояние. Класс родственный, и
+ *     он не охраняется — это долг, а не покрытая земля.
+ *   * DDL ищется в строковых литералах. Инструкция, собранная конкатенацией из
+ *     кусков по отдельности безобидных, не будет найдена.
  */
 
 const dbDir = path.resolve(
@@ -115,50 +146,6 @@ function read(relativePath: string): string {
 	return readFileSync(path.join(dbDir, ...relativePath.split("/")), "utf8");
 }
 
-test("слой доступа к данным не создаёт таблицы во время запроса", () => {
-	const offenders = dbSourceFiles().filter((name) =>
-		read(name).includes("CREATE TABLE IF NOT EXISTS"),
-	);
-
-	assert.deepEqual(
-		offenders,
-		[],
-		"Схему определяют файлы drizzle/*.sql и scripts/migrate.ts, а не обработчик " +
-			`запроса. Рантайм-DDL найден в: ${offenders.join(", ")}`,
-	);
-});
-
-test("слой доступа к данным не подменяет результат выдуманными строками", () => {
-	const offenders = dbSourceFiles().filter((name) => {
-		const source = read(name);
-		return (
-			/DB Fallback/.test(source) ||
-			// «вернуть строки только если их больше нуля» — маркер подмены:
-			// у честной выборки нет причин отличать пустой результат от непустого.
-			/if \(rows && rows\.length > 0\) return rows;/.test(source)
-		);
-	});
-
-	assert.deepEqual(
-		offenders,
-		[],
-		`Пустая таблица — это пустой список, а не демонстрационные данные: ${offenders.join(", ")}`,
-	);
-});
-
-test("слой доступа к данным не глушит ошибки базы через console.warn", () => {
-	const offenders = dbSourceFiles().filter((name) =>
-		/catch \([^)]*\) \{\s*\n\s*console\.warn/.test(read(name)),
-	);
-
-	assert.deepEqual(
-		offenders,
-		[],
-		"Сбой базы должен дойти до обработчика и до клиента, иначе он выглядит как " +
-			`«данных нет». Проглатывание найдено в: ${offenders.join(", ")}`,
-	);
-});
-
 /* ------------------------------------------------------------------ *
  * Разбор дерева: catch, из которого сбой базы не выходит наружу.
  * ------------------------------------------------------------------ */
@@ -197,10 +184,38 @@ type SwallowedCatch = {
 	kind: SwallowKind;
 };
 
+/**
+ * Подмена на ПУСТОМ пути: выборка прошла успешно и вернулась пустой, а функция
+ * вместо пустого ответа отдаёт что-то другое.
+ *
+ * Это второй класс, и с проглатыванием catch он не пересекается: здесь база не
+ * отказала, отказа нет вовсе, поэтому ни один `catch` в деле не участвует.
+ */
+type EmptyPathSubstitution = {
+	file: string;
+	fn: string;
+	/** Который по счёту такой возврат внутри функции; зачем — см. ordinal у SwallowedCatch. */
+	ordinal: number;
+	line: number;
+};
+
+/** DDL, выполняемый из обработчика запроса: схему определяют миграции, а не он. */
+type RuntimeDdl = {
+	file: string;
+	fn: string;
+	line: number;
+	/** Начало найденной инструкции — чтобы человек сразу увидел, о чём речь. */
+	statement: string;
+};
+
 type ModuleScan = {
 	swallowed: SwallowedCatch[];
+	emptyPath: EmptyPathSubstitution[];
+	runtimeDdl: RuntimeDdl[];
 	/** Сколько `try` с обращением к базе просмотрено. Нужно самопроверке от вырождения. */
 	databaseTryBlocks: number;
+	/** Сколько функций с обращением к базе просмотрено. Тоже самопроверке от вырождения. */
+	databaseFunctions: number;
 };
 
 /**
@@ -212,6 +227,30 @@ const DATABASE_RECEIVERS = new Set(["db", "tx", "trx", "pool"]);
 
 /** Соглашение проекта: функция доступа к базе называется `...FromDb` или `...InDb`. */
 const DATABASE_CALL_SUFFIXES = ["InDb", "FromDb"];
+
+/**
+ * DDL, которому в обработчике запроса делать нечего. Ищется ТОЛЬКО в строковых
+ * литералах, поэтому объяснение в комментарии под правило не попадает по
+ * построению — а прежняя редакция искала подстроку по всему тексту файла и
+ * покраснела бы на первой же фразе «прежний код делал CREATE TABLE во время
+ * запроса». В этом дереве сторож краснел на объяснении уже трижды.
+ *
+ * Набор шире прежней дословной строки `CREATE TABLE IF NOT EXISTS`: класс дефекта —
+ * «схему определяет обработчик запроса», и `ALTER TABLE … ADD COLUMN` в нём ровно
+ * так же, как и создание таблицы. Именно расхождение колонок, созданных рантаймом,
+ * со схемой из drizzle и валило SELECT у 17 таблиц.
+ */
+const RUNTIME_DDL =
+	/\b(create\s+table|alter\s+table|drop\s+table|truncate\s+table|create\s+(unique\s+)?index|drop\s+index|create\s+type|alter\s+type)\b/i;
+
+function isTextLiteral(node: ts.Node): node is ts.LiteralLikeNode {
+	return (
+		ts.isStringLiteralLike(node) ||
+		node.kind === ts.SyntaxKind.TemplateHead ||
+		node.kind === ts.SyntaxKind.TemplateMiddle ||
+		node.kind === ts.SyntaxKind.TemplateTail
+	);
+}
 
 function isFunctionLike(node: ts.Node): boolean {
 	return (
@@ -278,6 +317,87 @@ function hasOwnNode(block: ts.Block, matches: (node: ts.Node) => boolean): boole
 	return found;
 }
 
+/** Узлы поддерева, удовлетворяющие условию, БЕЗ захода во вложенные функции. */
+function collectOwnNodes(root: ts.Node, matches: (node: ts.Node) => boolean): ts.Node[] {
+	const found: ts.Node[] = [];
+	const visit = (current: ts.Node): void => {
+		if (matches(current)) found.push(current);
+		if (isFunctionLike(current)) return;
+		ts.forEachChild(current, visit);
+	};
+	ts.forEachChild(root, visit);
+	return found;
+}
+
+/**
+ * Проверка «в наборе есть хотя бы одна строка» в любой записи: `rows.length > 0`,
+ * `rows?.length >= 1`, `rows.length !== 0`, `0 < rows.length`.
+ *
+ * Дословная строка `if (rows && rows.length > 0) return rows;`, которую охраняла
+ * прежняя редакция этого файла, — лишь одна из них, и переименование переменной
+ * или перенос на две строки обходили её, не убирая дефект.
+ */
+function isNonEmptyLengthTest(condition: ts.Node): boolean {
+	const isLength = (node: ts.Node): boolean =>
+		ts.isPropertyAccessExpression(node) && node.name.text === "length";
+	const isNumber = (node: ts.Node, value: string): boolean =>
+		ts.isNumericLiteral(node) && node.text === value;
+
+	let found = false;
+	const visit = (current: ts.Node): void => {
+		if (found) return;
+		if (ts.isBinaryExpression(current)) {
+			const operator = current.operatorToken.kind;
+			const leftIsLength =
+				isLength(current.left) &&
+				((operator === ts.SyntaxKind.GreaterThanToken && isNumber(current.right, "0")) ||
+					(operator === ts.SyntaxKind.GreaterThanEqualsToken && isNumber(current.right, "1")) ||
+					((operator === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
+						operator === ts.SyntaxKind.ExclamationEqualsToken) &&
+						isNumber(current.right, "0")));
+			const rightIsLength =
+				isLength(current.right) &&
+				((operator === ts.SyntaxKind.LessThanToken && isNumber(current.left, "0")) ||
+					(operator === ts.SyntaxKind.LessThanEqualsToken && isNumber(current.left, "1")));
+			if (leftIsLength || rightIsLength) {
+				found = true;
+				return;
+			}
+		}
+		ts.forEachChild(current, visit);
+	};
+	visit(condition);
+	return found;
+}
+
+/**
+ * Заведомо пустой ответ: `[]`, `null`, `undefined`, `0`, `""`, `return` без значения.
+ * Пустую выборку в пустой ответ — это честно и нарушением не является, даже если
+ * записано через проверку длины. Исключение задано ФОРМОЙ возвращаемого значения, а
+ * не списком функций, поэтому обойти его нельзя переименованием.
+ */
+function isEmptyAnswer(expression: ts.Expression | undefined): boolean {
+	if (expression === undefined) return true;
+	if (ts.isArrayLiteralExpression(expression)) return expression.elements.length === 0;
+	if (expression.kind === ts.SyntaxKind.NullKeyword) return true;
+	if (ts.isIdentifier(expression) && expression.text === "undefined") return true;
+	if (ts.isNumericLiteral(expression)) return expression.text === "0";
+	if (ts.isStringLiteralLike(expression)) return expression.text === "";
+	return false;
+}
+
+/** Отдаёт ли ветка `then` какое-то значение — прямым `return` или через свой блок. */
+function returnsSomeValue(statement: ts.Statement): boolean {
+	if (ts.isReturnStatement(statement)) return statement.expression !== undefined;
+	if (ts.isBlock(statement)) {
+		return hasOwnNode(
+			statement,
+			(node) => ts.isReturnStatement(node) && node.expression !== undefined,
+		);
+	}
+	return false;
+}
+
 function enclosingName(node: ts.Node): string {
 	let current: ts.Node | undefined = node.parent;
 	while (current) {
@@ -308,10 +428,56 @@ export function scanModule(file: string, source: string): ModuleScan {
 		ts.ScriptKind.TS,
 	);
 	const swallowed: SwallowedCatch[] = [];
+	const emptyPath: EmptyPathSubstitution[] = [];
+	const runtimeDdl: RuntimeDdl[] = [];
 	const swallowsByFunction = new Map<string, number>();
+	const emptyPathByFunction = new Map<string, number>();
 	let databaseTryBlocks = 0;
+	let databaseFunctions = 0;
 
 	const visit = (node: ts.Node): void => {
+		if (isTextLiteral(node) && RUNTIME_DDL.test(node.text)) {
+			runtimeDdl.push({
+				file,
+				fn: enclosingName(node),
+				line: parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1,
+				statement: node.text.trim().replace(/\s+/g, " ").slice(0, 90),
+			});
+		}
+		if (isFunctionLike(node)) {
+			const body = (node as ts.FunctionLikeDeclaration).body;
+			if (body !== undefined && ts.isBlock(body) && touchesDatabase(body)) {
+				databaseFunctions += 1;
+				// Возвраты ПОСЛЕ проверки на непустоту: именно они и есть подмена.
+				// Возврат внутри самой проверки лежит до её конца и потому не считается.
+				const fallbacks = collectOwnNodes(
+					body,
+					(current) => ts.isReturnStatement(current) && !isEmptyAnswer(current.expression),
+				);
+				const gates = collectOwnNodes(
+					body,
+					(current) =>
+						ts.isIfStatement(current) &&
+						isNonEmptyLengthTest(current.expression) &&
+						returnsSomeValue(current.thenStatement),
+				);
+				for (const gate of gates) {
+					const substituted = fallbacks.some(
+						(candidate) => candidate.getStart(parsed) >= gate.getEnd(),
+					);
+					if (!substituted) continue;
+					const fn = enclosingName(gate);
+					const ordinal = (emptyPathByFunction.get(fn) ?? 0) + 1;
+					emptyPathByFunction.set(fn, ordinal);
+					emptyPath.push({
+						file,
+						fn,
+						ordinal,
+						line: parsed.getLineAndCharacterOfPosition(gate.getStart(parsed)).line + 1,
+					});
+				}
+			}
+		}
 		if (ts.isTryStatement(node) && node.catchClause && touchesDatabase(node.tryBlock)) {
 			databaseTryBlocks += 1;
 			const body = node.catchClause.block;
@@ -339,7 +505,7 @@ export function scanModule(file: string, source: string): ModuleScan {
 	};
 	ts.forEachChild(parsed, visit);
 
-	return { swallowed, databaseTryBlocks };
+	return { swallowed, emptyPath, runtimeDdl, databaseTryBlocks, databaseFunctions };
 }
 
 function keyOf(found: { file: string; fn: string; ordinal: number }): string {
@@ -349,19 +515,52 @@ function keyOf(found: { file: string; fn: string; ordinal: number }): string {
 function databaseCatchCensus(): {
 	files: string[];
 	swallowed: SwallowedCatch[];
+	emptyPath: EmptyPathSubstitution[];
+	runtimeDdl: RuntimeDdl[];
 	databaseTryBlocks: number;
+	databaseFunctions: number;
 } {
 	const files = dbSourceFiles();
 	const swallowed: SwallowedCatch[] = [];
+	const emptyPath: EmptyPathSubstitution[] = [];
+	const runtimeDdl: RuntimeDdl[] = [];
 	let databaseTryBlocks = 0;
+	let databaseFunctions = 0;
 	for (const file of files) {
 		const scan = scanModule(file, read(file));
 		swallowed.push(...scan.swallowed);
+		emptyPath.push(...scan.emptyPath);
+		runtimeDdl.push(...scan.runtimeDdl);
 		databaseTryBlocks += scan.databaseTryBlocks;
+		databaseFunctions += scan.databaseFunctions;
 	}
 	swallowed.sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
-	return { files, swallowed, databaseTryBlocks };
+	emptyPath.sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
+	return { files, swallowed, emptyPath, runtimeDdl, databaseTryBlocks, databaseFunctions };
 }
+
+/**
+ * Список долга по подмене на ПУСТОМ пути. Форма и требования те же, что у
+ * DECLARED_SWALLOWING: точное множество, причина у каждой строки, отписка короче
+ * 120 символов валит прогон.
+ */
+const DECLARED_EMPTY_PATH: { file: string; fn: string; ordinal: number; reason: string }[] = [
+	{
+		file: "lostPatientsFiltersQuery.ts",
+		fn: "getLostPatientsFiltersFromDb",
+		ordinal: 1,
+		reason:
+			"Когда выборка честно не нашла ни одного потерянного пациента — то есть у всех есть будущая " +
+			"запись, это ХОРОШЕЕ состояние клиники, — функция вместо пустого списка делает второй запрос и " +
+			"отдаёт строки ДРУГОЙ таблицы, lost_patients_filters. В эту таблицу в проекте не пишет никто: " +
+			"ни одного insert ни в коде, ни в миграциях (проверено поиском по apps, packages, drizzle, " +
+			"scripts). Сегодня ответ поэтому случайно верен, и дефект скрытый. Он станет видимым в день, " +
+			"когда таблицу заполнит импорт, сид или восстановление из старой копии: раздел «потерянные " +
+			"пациенты» назовёт людей, у которых запись есть, и обзвон пойдёт по уже записанным. Тем же " +
+			"снимком в этом дереве уже кормились три виджета, и все три удалили именно за это. Честный " +
+			"ответ на пустую выборку — пустой список; вторую ветку надо убрать вместе с чтением снимка.",
+	},
+];
 
 /**
  * Список долга. Ровно те `catch`, что сегодня скрывают сбой базы, с причиной у
@@ -611,6 +810,119 @@ test("сканер находит проглатывающий catch и не к�
 	);
 });
 
+test("сканер находит подмену на пустом пути и не считает нарушением честный пустой ответ", () => {
+	const substituted = scanModule(
+		"fixture.ts",
+		[
+			"export async function getThingsFromDb(orgId: string) {",
+			"	const rows = await db.select().from(things).where(eq(things.orgId, orgId));",
+			"	if (rows.length > 0) {",
+			"		return rows;",
+			"	}",
+			"	return SAMPLE_THINGS;",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		substituted.emptyPath.map(keyOf),
+		["fixture.ts:getThingsFromDb#1"],
+		"Сканер не увидел заведомую подмену пустой выборки: выборка прошла, строк нет, а наружу уходит " +
+			"не пустой список. Отказа базы здесь нет вовсе, поэтому проверка catch этот класс не ловит.",
+	);
+
+	// Запись, которую прежний дословный шаблон уже не узнавал: другое имя
+	// переменной, другая форма проверки, ветка без фигурных скобок.
+	const renamed = scanModule(
+		"fixture.ts",
+		[
+			"export async function getThingsFromDb(orgId: string) {",
+			"	const found = await db.select().from(things).where(eq(things.orgId, orgId));",
+			"	if (0 < found.length) return found;",
+			"	return buildDemoThings(orgId);",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		renamed.emptyPath.map(keyOf),
+		["fixture.ts:getThingsFromDb#1"],
+		"Переименование переменной и зеркальная запись условия обходили дословный шаблон " +
+			"`if (rows && rows.length > 0) return rows;`, не убирая дефект. Разбор дерева обязан их видеть.",
+	);
+
+	const honest = scanModule(
+		"fixture.ts",
+		[
+			"export async function getThingsFromDb(orgId: string) {",
+			"	const rows = await db.select().from(things).where(eq(things.orgId, orgId));",
+			"	if (rows.length > 0) return rows;",
+			"	return [];",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		honest.emptyPath,
+		[],
+		"Пустая выборка отдана пустым списком — это честно, даже если записано через проверку длины. " +
+			"Сторож, краснеющий здесь, требует переписать верный код и потому будет выключен.",
+	);
+
+	const explained = scanModule(
+		"fixture.ts",
+		[
+			"export async function getThingsFromDb(orgId: string) {",
+			"	// БЫЛО: if (rows.length > 0) return rows; return SAMPLE_THINGS;",
+			"	// Убрали: пустая таблица — это пустой список, а не демонстрационные данные.",
+			"	return db.select().from(things).where(eq(things.orgId, orgId));",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		explained.emptyPath,
+		[],
+		"Сторож покраснел на комментарии о том, как дефект УБРАЛИ. В db/domainStateHydration.ts такой " +
+			"комментарий уже лежит («БЫЛО: if (serviceRecords.length > 0)»), и текстовый шаблон наказал бы " +
+			"за него автора починки.",
+	);
+});
+
+test("сканер находит DDL в строке и не краснеет на DDL в комментарии", () => {
+	const runtime = scanModule(
+		"fixture.ts",
+		[
+			"export async function ensureThingsTable() {",
+			"	await db.execute(sql`CREATE TABLE IF NOT EXISTS things (id uuid primary key)`);",
+			"	await pool.query('ALTER TABLE things ADD COLUMN note text');",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		runtime.runtimeDdl.map((found) => found.line),
+		[2, 3],
+		"Сканер не увидел DDL в обработчике. Ищется и шаблонная строка, и обычная: рантайм-DDL " +
+			"конкурировал с миграциями за право определять схему, и у 17 таблиц набор колонок разошёлся.",
+	);
+
+	const documented = scanModule(
+		"fixture.ts",
+		[
+			"/**",
+			" * ПРЕЖДЕ здесь был CREATE TABLE IF NOT EXISTS во время запроса, и колонки",
+			" * расходились со schema.ts. Теперь схему задают только миграции.",
+			" */",
+			"export async function getThingsFromDb(orgId: string) {",
+			"	// ALTER TABLE отсюда убран намеренно",
+			"	return db.select().from(things).where(eq(things.orgId, orgId));",
+			"}",
+		].join("\n"),
+	);
+	assert.deepEqual(
+		documented.runtimeDdl,
+		[],
+		"Сторож покраснел на объяснении. Прежняя редакция искала подстроку по всему тексту файла и " +
+			"покраснела бы на этом докстринге — то есть заставила бы стереть объяснение вместо правки кода.",
+	);
+});
+
 /*
  * ПОЧЕМУ ПОРОГИ НИЖЕ СТОЯТ РОВНО ПО ИЗМЕРЕННОМУ ЧИСЛУ, А НЕ «С ЗАПАСОМ».
  *
@@ -737,5 +1049,59 @@ test("сбой базы в слое доступа доходит до вызы�
 			"правьте вид И причину отдельным коммитом, чтобы решение было видно в истории. Обратный " +
 			"переход «подстановка» → «проглатывание» тоже красный: причина в списке описывает уже не тот " +
 			"код, а список долга, которому нельзя верить, охраняет ровно ничего.",
+	);
+});
+
+test("схему определяют миграции, а не обработчик запроса", () => {
+	const census = databaseCatchCensus();
+	const offenders = census.runtimeDdl.map(
+		(found) => `${found.file}:${found.line} ${found.fn}: ${found.statement}`,
+	);
+
+	assert.deepEqual(
+		offenders,
+		[],
+		`DDL выполняется из слоя доступа: ${offenders.join("; ")}. Схему задают drizzle/*.sql и ` +
+			"scripts/migrate.ts. Рантайм-DDL конкурирует с файлами миграций за право определять таблицу: " +
+			"у 17 таблиц так разошёлся набор колонок, drizzle подставлял в SELECT имена из schema.ts, " +
+			"которых в созданной таблице не было, запрос падал, и наружу шли выдуманные строки. Сломано " +
+			"было полностью, а выглядело работающим.",
+	);
+});
+
+test("пустая выборка отдаётся пустым ответом, а не подменяется другим источником", () => {
+	const census = databaseCatchCensus();
+	const declared = new Set(DECLARED_EMPTY_PATH.map(keyOf));
+	const actual = new Set(census.emptyPath.map(keyOf));
+
+	const shallow = DECLARED_EMPTY_PATH.filter((debt) => debt.reason.trim().length < 120).map(keyOf);
+	assert.deepEqual(
+		shallow,
+		[],
+		`Долг заявлен отпиской вместо причины: ${shallow.join(", ")}. Причина обязана называть, что ` +
+			"уходит наружу вместо пустого списка и кто это увидит.",
+	);
+
+	const added = census.emptyPath
+		.filter((found) => !declared.has(keyOf(found)))
+		.map((found) => `${found.file}:${found.line} ${found.fn}`);
+	assert.deepEqual(
+		added,
+		[],
+		`Пустая выборка подменяется другим ответом: ${added.join("; ")}. Отказа базы здесь нет — запрос ` +
+			"прошёл и честно вернул ноль строк, поэтому проверка проглатывания catch этот класс не видит " +
+			`вовсе. Просмотрено функций с обращением к базе: ${census.databaseFunctions}. У честной ` +
+			"выборки нет причин отличать пустой результат от непустого: пусто — значит пустой список. " +
+			"Всё остальное — вторая ветка, про которую вызывающий не знает, и разница между «никого нет» " +
+			"и «вот вам чужие строки» до человека уже не доходит.",
+	);
+
+	const stale = [...declared].filter((key) => !actual.has(key)).sort();
+	assert.deepEqual(
+		stale,
+		[],
+		`Долг заявлен на подмену, которой перепись не находит: ${stale.join(", ")}. Либо она вылечена — ` +
+			"тогда удалите запись, иначе список хранит свободный слот, — либо разбор дерева перестал " +
+			"находить этот класс, и тогда зелёное выше не значит ничего.",
 	);
 });
