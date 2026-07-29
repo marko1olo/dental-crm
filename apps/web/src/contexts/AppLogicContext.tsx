@@ -54,7 +54,7 @@ export function AppLogicProvider({ children, value }: { children: React.ReactNod
 export function useAppLogicContext(): AppLogicContextType {
   const context = useContext(AppLogicContext);
   if (!context) {
-    return {} as AppLogicContextType;
+    throw new Error("ОШИБКА: useAppLogicContext вызван вне AppLogicProvider. Убедитесь, что компонент обернут в AppLogicProvider, иначе данные будут недоступны.");
   }
   return context;
 }

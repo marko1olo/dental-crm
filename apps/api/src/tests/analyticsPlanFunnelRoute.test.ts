@@ -77,7 +77,7 @@ const OTHER_ORG_HEADERS = { "x-organization-id": OTHER_ORG_ID };
  * дословно: значение, которого в `pg_enum` нет, отвергнет сама база, а не
  * разойдётся с ней молча. Числа разные, чтобы перестановка ветвей была видна.
  */
-const PLANS_BY_STATUS: Readonly<Record<string, number>> = {
+const PLANS_BY_STATUS = {
 	Draft: 1,
 	Active: 2,
 	Approved: 3,
@@ -100,7 +100,7 @@ const OLD_PLAN_STATUS = "Draft";
 const OLD_PLAN_AGE_DAYS = 400;
 
 /** Ожидания за всё время: посеянное плюс план соседского пациента плюс годичной давности. */
-const EXPECTED_ALL_TIME: Readonly<Record<string, number>> = {
+const EXPECTED_ALL_TIME = {
 	Draft: PLANS_BY_STATUS.Draft + 1,
 	Active: PLANS_BY_STATUS.Active,
 	Approved: PLANS_BY_STATUS.Approved + 1,
@@ -109,7 +109,7 @@ const EXPECTED_ALL_TIME: Readonly<Record<string, number>> = {
 };
 
 /** Ожидания за последний месяц: без плана годичной давности. */
-const EXPECTED_LAST_MONTH: Readonly<Record<string, number>> = {
+const EXPECTED_LAST_MONTH = {
 	...EXPECTED_ALL_TIME,
 	Draft: PLANS_BY_STATUS.Draft,
 };

@@ -596,7 +596,7 @@ async function runNeuroBranch(options: {
 	rawText: string;
 	reply: () => Response;
 	poolKey?: string;
-	calendar?: PricelistCalendar;
+	calendar?: PricelistCalendar | undefined;
 }): Promise<NeuroRun> {
 	const originalFetch = globalThis.fetch;
 	const calls: GroqStubCall[] = [];

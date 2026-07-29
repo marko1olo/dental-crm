@@ -31,7 +31,7 @@ type ClinicalRuleRow = typeof schema.clinicalRules.$inferSelect;
 
 /** Имя колонки в БД -> имя поля в строке. Берётся из самой схемы, не переписывается руками. */
 const FIELD_BY_COLUMN = new Map<string, string>();
-for (const [field, column] of Object.entries(schema.clinicalRules as Record<string, unknown>)) {
+for (const [field, column] of Object.entries(schema.clinicalRules as unknown as Record<string, unknown>)) {
 	const candidate = column as { name?: unknown; columnType?: unknown } | null;
 	if (candidate && typeof candidate.name === "string" && typeof candidate.columnType === "string") {
 		FIELD_BY_COLUMN.set(candidate.name, field);

@@ -52,8 +52,8 @@ function birthDateIssues(birthDate: string): string[] {
 		columns: ["ФИО", "Дата рождения"],
 		row: ["Границев Ночной Поясович", birthDate],
 		mapping: [
-			{ sourceColumn: "ФИО", targetField: "patient.fullName", confidence: 1 },
-			{ sourceColumn: "Дата рождения", targetField: "patient.birthDate", confidence: 1 }
+			{ sourceColumn: "ФИО", targetField: "patient.fullName", confidence: 1, decidedBy: "deterministic", rationale: "", sampleValues: [] },
+			{ sourceColumn: "Дата рождения", targetField: "patient.birthDate", confidence: 1, decidedBy: "deterministic", rationale: "", sampleValues: [] }
 		],
 		dateHints: new Map(),
 		confidenceThreshold: 0.5
@@ -153,8 +153,8 @@ test("предупреждение о будущей дате не блокир�
 		columns: ["ФИО", "Дата рождения"],
 		row: ["Границев Ночной Поясович", farFuture],
 		mapping: [
-			{ sourceColumn: "ФИО", targetField: "patient.fullName", confidence: 1 },
-			{ sourceColumn: "Дата рождения", targetField: "patient.birthDate", confidence: 1 }
+			{ sourceColumn: "ФИО", targetField: "patient.fullName", confidence: 1, decidedBy: "deterministic", rationale: "", sampleValues: [] },
+			{ sourceColumn: "Дата рождения", targetField: "patient.birthDate", confidence: 1, decidedBy: "deterministic", rationale: "", sampleValues: [] }
 		],
 		dateHints: new Map(),
 		confidenceThreshold: 0.5

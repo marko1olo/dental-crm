@@ -371,7 +371,7 @@ async function main(): Promise<void> {
 		);
 		console.log(`посеяно: ${JSON.stringify(seeded)}`);
 		check("клиник посеяно", seeded?.organizations, 2);
-		check("пояс клиники А отличается от пояса сессии", CLINIC_A_TIMEZONE === CLINIC_B_TIMEZONE, false);
+		check("пояс клиники А отличается от пояса сессии", (CLINIC_A_TIMEZONE as string) === (CLINIC_B_TIMEZONE as string), false);
 
 		/*
 		 * РЕКВИЗИТЫ КЛИНИКИ — ЧАСТЬ ДЕНЕЖНОГО ШВА, А НЕ КОСМЕТИКА. Без ИНН, адреса,

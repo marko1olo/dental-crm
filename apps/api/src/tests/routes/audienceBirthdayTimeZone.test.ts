@@ -91,7 +91,9 @@ describe("отбор получателей рассылки: день рожд�
 	async function rejectedByCalendar(timeZone: string | null, withinDays: number): Promise<boolean> {
 		const preview = await resolveAudience({
 			organizationId: ORG,
-			criteria: { birthdayWithinDays: withinDays, channels: ["sms"] },
+			criteria: { birthdayWithinDays: withinDays },
+			channel: "sms",
+			scope: "marketing",
 			now: NOW,
 			timeZone
 		});
@@ -101,7 +103,9 @@ describe("отбор получателей рассылки: день рожд�
 	async function rejectedByAge(timeZone: string | null, ageFrom: number): Promise<boolean> {
 		const preview = await resolveAudience({
 			organizationId: ORG,
-			criteria: { ageFrom, channels: ["sms"] },
+			criteria: { ageFrom },
+			channel: "sms",
+			scope: "marketing",
 			now: NOW,
 			timeZone
 		});

@@ -314,7 +314,7 @@ describe("список подтверждений на день", () => {
 				})
 				.onConflictDoNothing();
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});

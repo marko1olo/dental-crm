@@ -53,7 +53,7 @@ describe("doctorProfitabilityRow", () => {
 	});
 
 	test("материалы и комиссия не подставляются вовсе", () => {
-		const row: Record<string, unknown> = doctorProfitabilityRow("Врач", 1000);
+		const row: Record<string, unknown> = doctorProfitabilityRow("Врач", 1000) as unknown as Record<string, unknown>;
 		assert.strictEqual(
 			row.materialCost,
 			undefined,
