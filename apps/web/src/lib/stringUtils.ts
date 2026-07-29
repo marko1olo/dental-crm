@@ -231,9 +231,9 @@ export function textToNumbers(text: string): string {
     }
     
     const match = token.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
-    const prefix = match ? match[1] : '';
-    const word = match ? match[2]!.toLowerCase() : token.toLowerCase();
-    const suffix = match ? match[3] : '';
+    const prefix = match ? match[1] || '' : '';
+    const word = match ? (match[2] || '').toLowerCase() : token.toLowerCase();
+    const suffix = match ? match[3] || '' : '';
     
     let matchedVal = numValues[word];
     if (matchedVal === undefined) {
@@ -317,7 +317,7 @@ export function textToNumbers(text: string): string {
       for (let j = i + 1; j < tokens.length; j++) {
         if (tokens[j]!.trim() !== '') {
           const wMatch = tokens[j]!.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
-          const nextWord = wMatch ? wMatch[2]!.toLowerCase() : tokens[j]!.toLowerCase();
+          const nextWord = wMatch ? (wMatch[2] || '').toLowerCase() : tokens[j]!.toLowerCase();
           
           /* Загляд вперёд обязан пользоваться тем же строгим правилом.
              С прежним isFuzzyRootMatch медицинское слово после числа
