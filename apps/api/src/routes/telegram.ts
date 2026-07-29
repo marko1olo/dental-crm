@@ -18,6 +18,7 @@ import {
   denteTelegramWebhookUpdateSchema,
   updateDenteTelegramBotSettingsSchema,
   type DenteTelegramBotSettings,
+  type DenteTelegramChatLink,
   type DenteTelegramFeature,
   type DenteTelegramOutboxDeliveryReceipt,
   type DenteTelegramOutboxDeliveryStatus,
@@ -34,7 +35,6 @@ import {
 } from "@dental/shared";
 import type { BuildDenteTelegramOutboxOptions, DenteTelegramOutboxRuntimeScope, DenteTelegramOutboxStatusFilter } from "../sampleData.js";
 import {
-  buildDenteTelegramChatLinkList,
   buildDenteTelegramLinkCodeList,
   buildDenteTelegramLinkedScheduleReply,
   buildDenteTelegramOutbox,
@@ -52,17 +52,35 @@ import {
   getDenteTelegramBotSettings,
   handleDenteTelegramAppointmentCallback,
   hasDenteTelegramWebhookUpdate,
-  listDenteTelegramChatLinks,
   listDenteTelegramLinkCodes,
   listDenteTelegramWebhookEvents,
   prepareDenteTelegramOutboxDelivery,
   recordDenteTelegramWebhookEvent,
   recordDenteTelegramOutboxDelivery,
   renderDenteTelegramMessagePreview,
-  revokeDenteTelegramChatLink,
+  revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
   safeDenteTelegramPublicHttpsUrl,
   updateDenteTelegramBotSettings
 } from "../sampleData.js";
+/**
+ * СВЯЗКИ TELEGRAM-ЧАТОВ ЧИТАЮТСЯ И ПИШУТСЯ В POSTGRES.
+ *
+ * Владельцев у этого правила было два: реализация в памяти (`sampleData.ts`) и
+ * реализация на базе (`telegram/chatLinks.ts`), и подключена была та, что живёт
+ * в массиве процесса. Отправители же — `services/notificationWorker.ts` и
+ * `services/communications/channelRouter.ts` — читают ТАБЛИЦУ, поэтому
+ * привязанного пациента не видел никто из них.
+ *
+ * Синхронная версия отзыва пока вызывается ВТОРОЙ, рядом: очередь отправки ещё
+ * не переведена и ищет связку в массиве. Снять привязку только в базе означало
+ * бы продолжать отправку в чат, который клиника уже отключила.
+ */
+import {
+  buildDenteTelegramChatLinkList,
+  countActiveDenteTelegramChatLinks,
+  revokeDenteTelegramChatLink,
+  upsertDenteTelegramChatLink
+} from "../telegram/chatLinks.js";
 import type {
   BuildDenteTelegramChatLinkListOptions,
   BuildDenteTelegramLinkCodeListOptions,
@@ -1483,6 +1501,46 @@ async function hydrateTelegramDomainState(request: FastifyRequest, organizationI
   }
 }
 
+/**
+ * Переносит только что созданную связку чата в таблицу `dente_telegram_chat_links`.
+ *
+ * ЗАЧЕМ ЭТО ВООБЩЕ НУЖНО. Привязка приходит из синхронной реализации, которая
+ * держит связки в массиве процесса. Читают же связку из ТАБЛИЦЫ два живых
+ * отправителя: `services/notificationWorker.ts` (кому отправлять) и
+ * `services/communications/channelRouter.ts` (адрес чата `chatTransportRef`, без
+ * которого сообщение не уходит). Без этой записи пациент нажимал `/start` с
+ * кодом, получал «привязано» — и оставался невидимым для обоих, а после
+ * перезапуска без файла состояния привязка исчезала совсем.
+ *
+ * Сбой записи НЕ роняет веб-хук: Telegram на 5xx повторяет доставку и в итоге
+ * отключает адрес, а код привязки к этому моменту уже использован — повтор всё
+ * равно ничего не исправит. Поэтому ошибка попадает в журнал с уровнем error,
+ * а не наружу.
+ */
+async function persistTelegramChatLinkToDatabase(
+  request: FastifyRequest,
+  runtime: TelegramRuntimeContext,
+  chatLink: DenteTelegramChatLink
+): Promise<void> {
+  try {
+    await upsertDenteTelegramChatLink({
+      organizationId: runtime.organizationId,
+      clinicId: chatLink.clinicId ?? runtime.clinicId,
+      botConfigId: runtime.botConfigId,
+      subjectType: chatLink.subjectType,
+      subjectId: chatLink.subjectId,
+      chatFingerprint: chatLink.chatFingerprint,
+      chatTransportRef: chatLink.chatTransportRef ?? null,
+      chatIdLast4: chatLink.chatIdLast4 ?? null
+    });
+  } catch (error) {
+    request.log.error(
+      { err: error, organizationId: runtime.organizationId, subjectType: chatLink.subjectType },
+      "[Telegram] Связка чата не записана в базу: напоминания этому пациенту не уйдут"
+    );
+  }
+}
+
 function configuredTelegramAdminSecret(): string | null {
   return process.env.DENTE_TELEGRAM_ADMIN_SECRET?.trim() || null;
 }
@@ -2254,7 +2312,14 @@ function suggestedReplyFor(
   };
 }
 
-function buildStatus(requestedOrganizationId: string | null = null, requestedBotConfigId: string | null = null) {
+/**
+ * Стала асинхронной вместе с переездом связок чатов в базу: счётчик активных
+ * привязок теперь запрос к таблице, а не длина массива процесса. Показывать
+ * здесь длину массива после переезда означало бы разные числа на панели и в
+ * списке связок — при выключенном файле состояния панель после перезапуска
+ * рисовала бы ноль привязок при полной таблице.
+ */
+async function buildStatus(requestedOrganizationId: string | null = null, requestedBotConfigId: string | null = null) {
   const runtimeResult = resolveTelegramRuntimeContext(requestedOrganizationId, requestedBotConfigId);
   if (!runtimeResult.ok) {
     throw new Error(runtimeResult.message);
@@ -2284,6 +2349,21 @@ function buildStatus(requestedOrganizationId: string | null = null, requestedBot
     nextActions.push("Укажите patientPortalBaseUrl перед отправкой ссылок на готовые документы и налоговые документы.");
   }
 
+  // Считает база, а не память: `where status = 'active'` вместо выборки
+  // страницы и `filter` по ней — прежний вариант с лимитом 100 переставал
+  // расти после сотой связки и молча занижал счётчик.
+  //
+  // Условие `isPrimaryRuntime` здесь снято намеренно. Оно существовало потому,
+  // что реализация в памяти игнорировала запрошенную клинику и отдавала связки
+  // основной: для второй клиники единственным безопасным ответом был ноль.
+  // Запрос ниже отбирает по `organizationId`, поэтому число верно для любой
+  // клиники, а ноль вместо него был бы уже неправдой.
+  const activeChatLinkCount = await countActiveDenteTelegramChatLinks({
+    organizationId: runtime.organizationId,
+    clinicId: runtime.clinicId,
+    botConfigId: runtime.botConfigId
+  });
+
   return denteTelegramBotStatusSchema.parse(readableTelegramPayload({
     settings,
     organizationId: runtime.organizationId,
@@ -2299,7 +2379,7 @@ function buildStatus(requestedOrganizationId: string | null = null, requestedBot
     nextActions,
     processedUpdateCount: listDenteTelegramWebhookEvents(300, runtime.organizationId, runtime.botConfigId).filter((event) => event.status === "processed").length,
     pendingLinkCodeCount: isPrimaryRuntime ? listDenteTelegramLinkCodes(100).filter((code) => code.status === "pending").length : 0,
-    activeChatLinkCount: isPrimaryRuntime ? listDenteTelegramChatLinks(100).filter((link) => link.status === "active").length : 0,
+    activeChatLinkCount,
     recentEvents: listDenteTelegramWebhookEvents(50, runtime.organizationId, runtime.botConfigId)
   }));
 }
@@ -2499,6 +2579,9 @@ async function handleWebhook(
           botConfigId: runtime.botConfigId
         })
       : null;
+  if (linkResult?.ok === true && linkResult.chatLink) {
+    await persistTelegramChatLinkToDatabase(request, runtime, linkResult.chatLink);
+  }
   const warnings = [
     ...webhookClaim.event.warnings,
     ...appointmentCallbackResult.warnings,
@@ -2645,7 +2728,7 @@ export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
 
 
 function registerTelegramStatusRoutes(app: FastifyInstance, telegramControlPlaneRouteOptions: { preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void> }) {
-  app.get("/api/telegram/status", telegramControlPlaneRouteOptions, async () => buildStatus());
+  app.get("/api/telegram/status", telegramControlPlaneRouteOptions, async () => await buildStatus());
 
   app.get<{ Params: { organizationId: string } }>("/api/telegram/status/:organizationId", telegramControlPlaneRouteOptions, async (request, reply) => {
     const runtimeResult = resolveTelegramRuntimeContext(request.params.organizationId);
@@ -2655,7 +2738,7 @@ function registerTelegramStatusRoutes(app: FastifyInstance, telegramControlPlane
         message: runtimeResult.message
       });
     }
-    return buildStatus(request.params.organizationId);
+    return await buildStatus(request.params.organizationId);
   });
 
   app.get<{ Params: { organizationId: string; botConfigId: string } }>(
@@ -2669,13 +2752,13 @@ function registerTelegramStatusRoutes(app: FastifyInstance, telegramControlPlane
           message: runtimeResult.message
         });
       }
-      return buildStatus(request.params.organizationId, request.params.botConfigId);
+      return await buildStatus(request.params.organizationId, request.params.botConfigId);
     }
   );
 }
 
 function registerTelegramSettingsRoutes(app: FastifyInstance, telegramControlPlaneRouteOptions: { preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void> }) {
-  app.get("/api/settings/telegram", telegramControlPlaneRouteOptions, async () => buildStatus());
+  app.get("/api/settings/telegram", telegramControlPlaneRouteOptions, async () => await buildStatus());
 
   app.put("/api/settings/telegram", telegramControlPlaneRouteOptions, async (request, reply) => {
     const parsedInput = parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body);
@@ -2696,7 +2779,7 @@ function registerTelegramSettingsRoutes(app: FastifyInstance, telegramControlPla
         message: readableTelegramSettingsValidationMessage(settingsError)
       });
     }
-    return buildStatus();
+    return await buildStatus();
   });
 
   app.get("/api/telegram/feature-plan", telegramControlPlaneRouteOptions, async () => buildFeaturePlan(getDenteTelegramBotSettings()));
@@ -2818,7 +2901,7 @@ function registerTelegramLinkRoutes(app: FastifyInstance, telegramControlPlaneRo
       });
     }
     const runtime = runtimeResult.runtime.context;
-    return buildDenteTelegramChatLinkList({
+    return await buildDenteTelegramChatLinkList({
       ...parseTelegramChatLinkListQuery(request.query),
       organizationId: runtime.organizationId,
       clinicId: runtime.clinicId,
@@ -2835,7 +2918,18 @@ function registerTelegramLinkRoutes(app: FastifyInstance, telegramControlPlaneRo
       });
     }
     const runtime = runtimeResult.runtime.context;
-    const revoked = revokeDenteTelegramChatLink(request.params.linkId, {
+    const revoked = await revokeDenteTelegramChatLink(
+      {
+        organizationId: runtime.organizationId,
+        clinicId: runtime.clinicId,
+        botConfigId: runtime.botConfigId
+      },
+      request.params.linkId
+    );
+    // Копия в памяти снимается второй и её результат ни на что не влияет: пока
+    // очередь отправки читает массив процесса, оставить там активную связку
+    // значило бы продолжать писать в отключённый чат.
+    revokeLegacyInMemoryTelegramChatLink(request.params.linkId, {
       organizationId: runtime.organizationId,
       clinicId: runtime.clinicId,
       botConfigId: runtime.botConfigId
