@@ -160,6 +160,7 @@ import {
 	MoneyPrecisionError,
 	patientOwesClinicKopecks,
 	QuantityContractError,
+	rublesFromKopecks,
 	type VisitLedger,
 	visitOutstandingKopecks,
 	visitOverpaidKopecks,
@@ -1754,6 +1755,76 @@ function groupByPatientId<T extends { patientId?: string | null }>(
 	return grouped;
 }
 
+/**
+ * ДОЛГ ПАЦИЕНТА ДЛЯ ПОДСКАЗКИ АДМИНИСТРАТОРУ — ИЗ ЕДИНОГО ДОМА ФОРМУЛЫ.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Здесь стояла своя копия формулы долга, и позиции
+ * для неё группировались БЕЗ фильтра `status !== "cancelled"`
+ * (`groupByPatientId(treatmentPlanItems)`), тогда как все остальные расчёты
+ * денег отменённое лечение исключают. То есть отменённый план продолжал висеть
+ * на пациенте долгом ровно там, где администратор читает сумму перед звонком:
+ * чип суммы в строке пациента (`PatientsView.tsx`) и «💰 Долг …» в смене
+ * (`ShiftView.tsx`). Пациенту звонили и требовали денег за лечение, которое
+ * клиника сама отменила.
+ *
+ * ЗАМЕР БОЕВЫМ МАРШРУТОМ `GET /api/dashboard` на своей клинике (2026-07-29):
+ * пациент с 10 000,00 активного лечения и 5 000,00 отменённого показывал
+ * 15 000,00 ₽; пациент с полностью отменённым планом на 26 500,00 — 26 500,00 ₽.
+ * Стало 10 000,00 ₽ и 0,00 ₽. На демонстрационной клинике `d0000000-…-d001`
+ * расхождение равно нулю, потому что отменённых позиций там нет ни одной, —
+ * именно поэтому дефект и жил.
+ *
+ * ДЕСЯТОЙ ФОРМУЛЫ НЕ ЗАВЕДЕНО: считает `money/patientDebt.ts`
+ * (`buildPatientLedger` + `patientOwesClinicKopecks`) — тот же дом, что отвечает
+ * на вопросы карточки, приёма и клиники. Отмену отбрасывает модуль, поэтому
+ * второго фильтра статуса здесь нет: два фильтра в двух местах — ровно тот
+ * способ, которым они однажды разойдутся. Разбор девяти прежних расчётов —
+ * `.agents/lead/recon-debt-formula-sprawl.md`.
+ *
+ * `Math.max(0, …)` внутри `patientOwesClinicKopecks` здесь на месте: контракт
+ * требует неотрицательного долга (`patientInsight.balanceDueRub` —
+ * `nonNegativeMoneyRubSchema`). Цена — переплата в этом ответе безымянна, и это
+ * не оговорка, а известная граница: «0» означает и «рассчитался ровно», и
+ * «переплатил». Отдельное имя для переплаты в модуле есть
+ * (`clinicOwesPatientKopecks`), но в контракте подсказки поля под неё нет.
+ *
+ * ПОЧЕМУ ОТКАЗ МОДУЛЯ НЕ ЛЕТИТ НАВЕРХ. Подсказки собираются внутри
+ * `buildDashboard()`, то есть исключение здесь означает HTTP 500 на ГЛАВНОМ
+ * экране клиники: смена не открывается вовсе. Поэтому отказ превращается в
+ * `null`-долг с причиной, и причина уходит в подсказку администратору отдельной
+ * строкой — «остаток не рассчитан». Ноль в этом поле молча выглядел бы как
+ * «пациент ничего не должен», а это неправда: сумма НЕИЗВЕСТНА.
+ */
+function patientInsightDebt(
+	patientId: string,
+	planItems: readonly TreatmentPlanItem[],
+	paidPayments: readonly Payment[],
+): { balanceDueRub: number; balanceUnknownReason: string | null } {
+	try {
+		const ledger = buildPatientLedger(patientId, planItems, paidPayments);
+		return {
+			balanceDueRub: rublesFromKopecks(patientOwesClinicKopecks(ledger)),
+			balanceUnknownReason: null,
+		};
+	} catch (error) {
+		if (
+			error instanceof MoneyPrecisionError ||
+			error instanceof QuantityContractError
+		) {
+			console.error(
+				`[Dashboard] Долг пациента ${patientId} для подсказки администратору не рассчитан: ${error.message}`,
+			);
+			return {
+				balanceDueRub: 0,
+				balanceUnknownReason:
+					"остаток не рассчитан: в позициях лечения или оплатах этого пациента есть сумма, " +
+					"которую нельзя представить в копейках. Не звоните по нулю — сумма неизвестна.",
+			};
+		}
+		throw error;
+	}
+}
+
 function buildPatientInsights(): PatientInsight[] {
 	const requiredDocuments: Array<
 		PatientInsight["missingDocumentKinds"][number]
@@ -1793,16 +1864,11 @@ function buildPatientInsights(): PatientInsight[] {
 					(document) => document.kind === kind && document.status !== "voided",
 				),
 		);
-		const plannedRub = roundToKopecks(
-			patientPlanItems.reduce(
-				(total, item) => total + treatmentLineTotal(item),
-				0,
-			),
+		const { balanceDueRub, balanceUnknownReason } = patientInsightDebt(
+			patient.id,
+			patientPlanItems,
+			patientPayments,
 		);
-		const paidRub = roundToKopecks(
-			patientPayments.reduce((total, payment) => total + payment.amountRub, 0),
-		);
-		const balanceDueRub = Math.max(0, roundToKopecks(plannedRub - paidRub));
 		const recallTask = patientTasks
 			.filter((task) => task.intent === "recall")
 			.sort((left, right) => left.dueAt.localeCompare(right.dueAt))[0];
@@ -1821,6 +1887,11 @@ function buildPatientInsights(): PatientInsight[] {
 				: []),
 		];
 		const adminFlags = [
+			/* «Остаток не рассчитан» стоит ПЕРВЫМ и вместо суммы: ноль в этом поле
+			   администратор прочитал бы как «пациент ничего не должен», а это
+			   неправда — сумма неизвестна. Молчаливый ноль на деньгах и есть тот
+			   класс дефекта, из-за которого весь этот переезд затеян. */
+			...(balanceUnknownReason ? [balanceUnknownReason] : []),
 			...(balanceDueRub > 0
 				? [`остаток ${balanceDueRub.toLocaleString("ru-RU")} ₽`]
 				: []),
