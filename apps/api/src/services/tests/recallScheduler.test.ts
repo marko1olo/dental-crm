@@ -76,6 +76,10 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
+      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+      // колонка пропускалась, и вставка опиралась на дырку изоляции.
+      organizationId: orgId,
       planId,
       priceId,
       toothNumber: 11, // Upper jaw
@@ -112,6 +116,10 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
+      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+      // колонка пропускалась, и вставка опиралась на дырку изоляции.
+      organizationId: orgId,
       planId,
       priceId,
       toothNumber: 31, // Lower jaw
@@ -146,6 +154,10 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
+      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+      // колонка пропускалась, и вставка опиралась на дырку изоляции.
+      organizationId: orgId,
       planId,
       priceId,
       toothNumber: 11,
@@ -174,6 +186,10 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
+      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+      // колонка пропускалась, и вставка опиралась на дырку изоляции.
+      organizationId: orgId,
       planId,
       priceId,
       toothNumber: 11,
@@ -202,6 +218,10 @@ describe("RecallScheduler", () => {
 
     await db.insert(treatmentPlanItemsNew).values({
       id: randomUUID(),
+      // organization_id стал NOT NULL миграцией 0147: позиция сметы без клиники не
+      // принадлежит никому, и запрос с отбором по клинике её не видит. До миграции
+      // колонка пропускалась, и вставка опиралась на дырку изоляции.
+      organizationId: orgId,
       planId,
       priceId,
       toothNumber: null,
