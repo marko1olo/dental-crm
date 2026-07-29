@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile, ClinicMode, ClinicScheduleDefaults, StaffWorkingHours } from "@dental/shared";
 import { clinicModeSchema, clinicScheduleDefaultsSchema, staffWorkingHoursSchema, staffRoleSchema } from "@dental/shared";
 import type { StaffMember } from "@dental/shared";
+import { staffAuthorityFlags } from "../security/permissions.js";
 import {
   buildClinicSettings as getClinicSettingsInMemory,
   updateClinicProfile as updateClinicProfileInMemory,
@@ -121,9 +122,28 @@ export async function getClinicSettingsFromDb(organizationId: string): Promise<C
       role: narrowStaffRole(s.role),
       specialties: ["universal"],
       active: s.isActive,
-      canSignMedicalRecords: true,
-      canManageMoney: true,
-      canManageImports: true,
+      /*
+       * БЫЛО: `true`, `true`, `true` — жёстко, каждому сотруднику, независимо от
+       * роли. Ассистент уходил на клиент с правом подписи ЭМК, с доступом к
+       * кассе и к импорту, и это не оставалось внутри сервера: ответ POST
+       * /api/settings/clinic/mode и PUT /api/settings/clinic/profile клиент
+       * кладёт целиком в dashboard.clinicSettings
+       * (apps/web/src/useAppLogic.tsx), затирая значения, посчитанные по роли на
+       * пути сводки. То есть после смены режима клиники или сохранения её
+       * реквизитов права на экране становились «всё разрешено всем».
+       *
+       * Полномочия выводятся из той же матрицы ROLE_PERMISSIONS, по которой
+       * requirePermission отказывает на маршруте, поэтому флаг в карточке и
+       * решение сервера совпадают по построению. Разбор соответствия
+       * флаг → право и причина отказа от чтения одноимённых колонок —
+       * security/permissions.ts, staffAuthorityFlags.
+       *
+       * Роль передаётся сырой (s.role), а не через narrowStaffRole: матрица сама
+       * не выдаёт ничего роли, которой в ней нет, а narrowStaffRole сводит
+       * неизвестное значение к «assistant» и тем скрыл бы испорченную запись за
+       * правами настоящей должности.
+       */
+      ...staffAuthorityFlags(s.role),
       color: "#000000",
       phone: s.phone || null,
       email: s.email || null,

@@ -81,6 +81,7 @@ import {
 	treatmentPlanItems,
 	validScheduleTimeZone,
 } from "../sampleData.js";
+import { staffAuthorityFlags } from "../security/permissions.js";
 import { db } from "./client.js";
 import {
 	projectServiceCatalogRows,
@@ -458,9 +459,24 @@ async function hydrateDomainStateFromDbUnsynchronized(
 			phone: user.phone ?? null,
 			email: user.email ?? null,
 			active: user.isActive,
-			canSignMedicalRecords: user.role === "doctor" || user.role === "owner",
-			canManageMoney: user.role === "owner" || user.role === "administrator",
-			canManageImports: user.role === "owner" || user.role === "administrator",
+			/*
+			 * БЫЛО: три собственных набора условий по роли прямо здесь. Они были
+			 * ЧЕТВЁРТЫМ мнением о полномочиях сотрудника и расходились и с
+			 * матрицей прав (security/permissions.ts), и с путём настроек
+			 * (db/settingsQuery.ts, где стояло жёсткое `true` всем), и с путём без
+			 * базы (sampleData.ts, permissionsForRole). Управляющий (manager)
+			 * терял здесь и кассу, и импорт, хотя finance.write у него есть, —
+			 * то есть сервер разрешал ему провести оплату, а карточка сообщала
+			 * клиенту, что он к деньгам не допущен.
+			 *
+			 * Теперь вывод один и тот же на всех путях чтения. Сырая user.role
+			 * передаётся намеренно: строкой выше роль сводится через
+			 * staffRoleSchema.catch("doctor"), и вывод из НЕЁ выдал бы испорченной
+			 * или устаревшей записи сотрудника право подписи медицинской карты —
+			 * fail-open там, где нужен отказ. Матрица неизвестной роли не выдаёт
+			 * ничего.
+			 */
+			...staffAuthorityFlags(user.role),
 			color: "#1e293b",
 			workingHours: user.workingHours ?? null,
 			createdAt: isoOrNow(user.createdAt),
