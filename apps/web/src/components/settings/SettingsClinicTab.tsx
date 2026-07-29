@@ -3,6 +3,13 @@ import { showToast } from "../GlobalToast";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { ShieldCheck, Plus, ExternalLink, RefreshCw, Copy, CheckCircle2, Search, CalendarDays, KeyRound } from "lucide-react";
 import { ClinicMode, StaffRole, Chair, RoleQueue, StaffMember, DentalSpecialty } from "@dental/shared";
+import { actionFailureToast } from "../../lib/panelStateText";
+import {
+  planStaffCredentialUpdate,
+  reloadStaffList,
+  requestStaffMutation,
+  type SettingsAccessHeaders,
+} from "./staffMutationRequest";
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
@@ -37,85 +44,219 @@ const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
   manual_public_targets: "Из введенных реквизитов"
 };
 
+/** Что реально ушло на сервер. Уведомление обязано перечислить именно это. */
+type IssuedCredential = "email" | "password" | "pin";
+
+const issuedCredentialLabels: Record<IssuedCredential, string> = {
+  email: "логин",
+  password: "пароль",
+  pin: "PIN-код",
+};
+
+type StaffCredentialsSaveResult =
+  /** `issued` непуст всегда: без единого поля запрос не отправляется вовсе. */
+  | { readonly ok: true; readonly issued: readonly IssuedCredential[] }
+  /** Отказ уже показан человеку здесь — вызывающей стороне добавлять нечего. */
+  | { readonly ok: false };
+
 /**
- * Сохранение доступов сотрудника: логин, пароль, PIN.
+ * Сохранение доступов сотрудника: логин, пароль, PIN — ОДНИМ запросом.
  *
- * Функция была объявлена в пропсах как `saveStaffCredentials` и не приходила
- * ниоткуда — во всём проекте её не существует. То есть кнопка «Сохранить
- * доступы» падала на вызове undefined. Маршрут при этом рабочий:
- * `POST /api/settings/staff/:staffId/credentials` принимает любую из трёх
- * величин и хеширует их на сервере (routes/settings.ts).
+ * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО, И ЭТО НЕ «ДУБЛИРОВАНИЕ КОДА».
  *
- * Проверки здесь такие же, как во вкладке «Сотрудники»: PIN ровно из четырёх
- * цифр, пароль не короче шести символов. Иначе сервер примет короткий пароль, и
- * сотрудник останется с доступом, который подбирается за минуту.
+ * Здесь стоял свой собственный `fetch` со своими руками собранными заголовками:
+ * `Content-Type` плюс `x-dente-clinic-token` из localStorage. Охрана маршрутов
+ * `/api/settings/*` требует НЕ токен кабинета, а `x-dente-admin-secret`
+ * (`requireSettingsAccess`, routes/settings.ts:648; отказ 403 на :667; сам
+ * маршрут закрыт ею на :774 — проверено 2026-07-29, номера строк гниют).
+ * Пропускает запрос без секрета она ровно в одном случае: секрет на сервере НЕ
+ * ЗАДАН И включена лазейка `DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS=1` И
+ * `NODE_ENV !== "production"` (:640-646).
+ *
+ * Общая обёртка `lib/apiAuthFetch.ts` секрет НЕ подставляет: она знает ровно два
+ * заголовка — токен кабинета и токен сотрудника (:22-23, ставятся на :86-87).
+ * Значит на машине разработчика кнопка «Сохранить доступы» зелёная, а в клинике
+ * с заданным `DENTE_SETTINGS_ADMIN_SECRET` она отвечала 403 ВСЕГДА: ни логина,
+ * ни пароля, ни PIN-кода сотруднику не выдать ни одному.
+ *
+ * Это была ТРЕТЬЯ реализация одного маршрута
+ * `POST /api/settings/staff/:staffId/credentials`. Две другие — PIN и пароль во
+ * вкладке «Сотрудники» — уже сведены в общий путь `./staffMutationRequest.ts`, и
+ * там же, в :184, эта копия названа долгом. Теперь маршрут зовётся из одного
+ * места, а заголовки берутся оттуда же, откуда их берут все остальные вкладки
+ * настроек: `auth.settingsAccessHeaders`.
+ *
+ * ПОЧЕМУ ЗАПРОС ОСТАЛСЯ ОДИН, А НЕ РАСПАЛСЯ НА ТРИ. Сервер принимает `email`,
+ * `password` и `pinCode` одним телом (routes/settings.ts:781-789), а форма ниже
+ * даёт заполнить все три сразу. Три вызова по одному полю дали бы три запроса и
+ * три уведомления на одно нажатие. Сами ПРАВИЛА проверки при этом взяты у общего
+ * пути (`planStaffCredentialUpdate`), поэтому третьей копии «ровно 4 цифры» и
+ * «не короче 6 знаков» в дереве больше нет.
+ *
+ * ПОЧЕМУ ОТКАЗ БОЛЬШЕ НЕ НАЗЫВАЕТСЯ «сервер не ответил». Прежний `catch`
+ * печатал эту фразу и на обрыве связи, и на 403, и на 500 — то есть называл
+ * причину, которой сервер не сообщал. Общий путь разводит «до сервера не дошли»
+ * (`status === null`) и код ответа, а текст на каждый случай даёт
+ * `actionFailureToast` из `lib/panelStateText.ts`.
  */
 async function saveStaffCredentialsRequest(
   staffId: string,
-  email?: string,
-  password?: string,
-  pin?: string
-): Promise<boolean> {
+  staffName: string,
+  email: string,
+  password: string,
+  pin: string,
+  accessHeaders: SettingsAccessHeaders | undefined,
+): Promise<StaffCredentialsSaveResult> {
   const payload: { email?: string; password?: string; pinCode?: string } = {};
-  const trimmedEmail = (email ?? "").trim();
-  if (trimmedEmail) payload.email = trimmedEmail;
+  const issued: IssuedCredential[] = [];
+
+  const trimmedEmail = email.trim();
+  if (trimmedEmail) {
+    payload.email = trimmedEmail;
+    issued.push("email");
+  }
   if (password) {
-    if (password.length < 6) {
-      showToast("Пароль должен быть не короче 6 символов", "warning");
-      return false;
+    const plan = planStaffCredentialUpdate("password", password);
+    if (!plan.ok) {
+      showToast(plan.warning, "warning");
+      return { ok: false };
     }
-    payload.password = password;
+    Object.assign(payload, plan.body);
+    issued.push("password");
   }
   if (pin) {
-    if (!/^\d{4}$/.test(pin)) {
-      showToast("PIN-код состоит ровно из 4 цифр", "warning");
-      return false;
+    const plan = planStaffCredentialUpdate("pin", pin);
+    if (!plan.ok) {
+      showToast(plan.warning, "warning");
+      return { ok: false };
     }
-    payload.pinCode = pin;
+    Object.assign(payload, plan.body);
+    issued.push("pin");
   }
-  if (Object.keys(payload).length === 0) {
+  if (issued.length === 0) {
     showToast("Заполните логин, пароль или PIN-код", "warning");
-    return false;
+    return { ok: false };
   }
 
-  try {
-    const response = await fetch(`/api/settings/staff/${staffId}/credentials`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-dente-clinic-token": localStorage.getItem("dente_clinic_token") ?? "",
-      },
-      body: JSON.stringify(payload),
-    });
-    const body = await response.json().catch(() => ({}) as { message?: string });
-    if (!response.ok) {
-      showToast(body.message || "Доступы не сохранены", "error");
-      return false;
-    }
-    return true;
-  } catch (error) {
-    showToast("Доступы не сохранены: сервер не ответил", "error");
-    return false;
+  const failedAction = `Доступы для ${staffName} не сохранены`;
+  const outcome = await requestStaffMutation({
+    url: `/api/settings/staff/${staffId}/credentials`,
+    method: "POST",
+    accessHeaders,
+    logLabel: failedAction,
+    body: payload,
+  });
+  if (!outcome.ok) {
+    showToast(
+      outcome.message ?? actionFailureToast(failedAction, outcome.status),
+      "error",
+    );
+    return { ok: false };
   }
+  return { ok: true, issued };
 }
 
-function StaffCredentialsEditor({ member, saveCredentials }: { member: any, saveCredentials?: (staffId: string, email?: string, password?: string, pin?: string) => Promise<boolean> }) {
+/**
+ * Уведомление об успехе.
+ *
+ * БЫЛО «Доступы обновлены» — три умолчания в трёх словах. Не сказано, ЧТО
+ * выдано (логин, пароль или PIN-код — а форма отправляет до трёх сразу), не
+ * сказано, КОМУ (редактор доступов стоит на карточке каждого сотрудника, и при
+ * пяти сотрудниках подряд администратор не знает, тому ли он сменил пароль), и
+ * не сказано, что СТАРЫЙ доступ перестал работать — сотрудник придёт к планшету
+ * со старым PIN-кодом и решит, что сломалась программа.
+ *
+ * Общие тексты `staffCredentialSavedMessage` сюда не подошли: они описывают
+ * ровно ОДИН вид доступа, а этот запрос несёт до трёх. Согласование («его
+ * больше не работает» против «их больше не работают») считается по числу
+ * выданных секретов, а не подставляется в одну форму: ровно на таком
+ * согласовании в этом дереве уже получали «Статус не загружены».
+ */
+function staffCredentialsSavedMessage(
+  staffName: string,
+  issued: readonly IssuedCredential[],
+  listRefreshed: boolean,
+): string {
+  const listed = issued.map((item) => issuedCredentialLabels[item]).join(", ");
+  const secretCount = issued.filter((item) => item !== "email").length;
+  const replaced =
+    secretCount === 0
+      ? ""
+      : secretCount === 1
+        ? " Сообщите его сотруднику: старый больше не работает."
+        : " Сообщите их сотруднику: старые больше не работают.";
+  /* Логин виден на самой кнопке редактора, поэтому непрочитанный список данных
+     клиники — это стоящая на экране неправда, а не мелкая задержка. */
+  const staleHint = listRefreshed
+    ? ""
+    : " Обновите страницу, чтобы увидеть это на карточке.";
+  return `Для ${staffName} сохранено: ${listed}.${replaced}${staleHint}`;
+}
+
+/**
+ * УБРАН МЁРТВЫЙ ШОВ ВНЕДРЕНИЯ. Здесь стоял необязательный проп
+ * `saveCredentials`, а на вызове — `props.saveStaffCredentials ||
+ * saveStaffCredentials`. Это тавтология: второе имя получено деструктуризацией
+ * ИЗ ТОГО ЖЕ `props`, то есть выражение читало одно и то же свойство дважды.
+ * Объявления `saveStaffCredentials` в дереве нет вовсе — поиск по `apps`,
+ * `scripts` и `packages` даёт только вхождения внутри этого файла, — поэтому обе
+ * половины всегда `undefined` и живым путём всегда был запрос выше. Шов, который
+ * выглядит как выбор из двух источников, а не даёт ни одного, дороже
+ * отсутствующего: следующий читатель ищет реализацию, которой нет.
+ *
+ * Взамен приходят две настоящие зависимости. `accessHeaders` — без него секрет
+ * администратора настроек не уйдёт и сервер ответит 403. `loadDashboard` —
+ * список персонала берётся из дашборда, а подпись кнопки ниже читает
+ * `member.email`: без перечитывания выданный логин на экране не появится.
+ */
+function StaffCredentialsEditor({
+  member,
+  accessHeaders,
+  loadDashboard,
+}: {
+  member: any;
+  accessHeaders: SettingsAccessHeaders | undefined;
+  loadDashboard: unknown;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState(member.email || "");
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
   const [saving, setSaving] = useState(false);
 
+  /* Имя в кавычках, как во вкладке «Сотрудники»: подстановка идёт в середину
+     предложения — Доступы для «Иванова» не сохранены. Без имени подставляется
+     слово «сотрудника», а не пустое место: безымянная строка на экране выглядит
+     как оборванный текст, и непонятно, кого именно касается отказ. */
+  const staffName =
+    typeof member?.fullName === "string" && member.fullName.trim()
+      ? `«${member.fullName.trim()}»`
+      : "сотрудника";
+
   const handleSave = async () => {
     setSaving(true);
-    const save = saveCredentials ?? saveStaffCredentialsRequest;
-    const success = await save(member.id, email, password, pin);
-    setSaving(false);
-    if (success) {
-      showToast("Доступы обновлены", "success");
+    try {
+      const result = await saveStaffCredentialsRequest(
+        member.id,
+        staffName,
+        email,
+        password,
+        pin,
+        accessHeaders,
+      );
+      /* Отказ уже назван внутри запроса. Поля НЕ чистим и редактор НЕ закрываем:
+         иначе набранный пароль придётся вспоминать заново. */
+      if (!result.ok) return;
       setPassword("");
       setPin("");
       setIsOpen(false);
+      /* Доступы на сервере уже изменены, поэтому об успехе говорим и тогда, когда
+         данные клиники не удалось перечитать: отказ перечитывания меняет только
+         подсказку, а не сам факт сохранения. */
+      const listRefreshed = await reloadStaffList(loadDashboard);
+      showToast(staffCredentialsSavedMessage(staffName, result.issued, listRefreshed), "success");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -162,6 +303,15 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
   const p = props || {};
   const {
     dashboard,
+    /*
+     * `auth` и `loadDashboard` приходят тем же мешком пропсов, что и всё
+     * остальное: `SettingsView.tsx:1188` собирает `settingsProps` как
+     * `{...appLogic, ...settingsStore, ...derivations}`, а `auth` — ключ
+     * возвращаемого объекта `useAppLogic` (:13792 в `return` с :13771). Тот же
+     * путь используют `SettingsStaffTab.tsx:25` и `SettingsProtocolsTab.tsx:55`.
+     */
+    auth,
+    loadDashboard,
     changeClinicMode,
     clinicProfileDraft,
     clinicProfileSaveState,
@@ -179,7 +329,6 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
     setNewStaffName,
     addStaffMember,
     deleteChair,
-    saveStaffCredentials,
     newStaffReadyToCreate,
     newStaffRole,
     setNewStaffRole,
@@ -227,6 +376,14 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
   } = p;
 
   if (settingsTab !== "clinic") return null;
+
+  /*
+   * Один источник заголовков домена настроек на всю вкладку. `settingsAccessHeaders`
+   * отправляет СЕССИОННЫЙ секрет домена настроек плюс оба токена, каждый в своём
+   * заголовке; отсутствие помощника не молчит — общий путь пишет об этом в журнал
+   * разработчика (`staffMutationHeaders` в ./staffMutationRequest.ts).
+   */
+  const accessHeaders = auth?.settingsAccessHeaders as SettingsAccessHeaders | undefined;
 
   const typedClinicModes = Object.keys(clinicModeLabels || {}) as ClinicMode[];
   const typedModeHints = (dashboard?.clinicSettings?.modeHints ?? []) as string[];
@@ -717,7 +874,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                             </button>
                           </div>
                         </div>
-                        <StaffCredentialsEditor member={member} saveCredentials={props.saveStaffCredentials || saveStaffCredentials} />
+                        <StaffCredentialsEditor member={member} accessHeaders={accessHeaders} loadDashboard={loadDashboard} />
                       </div>
                     );
                   })}
