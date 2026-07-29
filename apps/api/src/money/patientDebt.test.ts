@@ -65,6 +65,16 @@ import {
 // её несут ВСЕ 10 позиций и ВСЕ 8 оплат, и без неё фикстура была беднее таблицы.
 // Вопросы про пациента и клинику это поле не читают — их ответы не изменились ни
 // на копейку, что и проверяют прежние наборы ниже.
+//
+// ЭТО СНИМОК ДО ПРИВЕДЕНИЯ ЦЕН К ПРАЙСУ, И ОБНОВЛЯТЬ ЕГО НЕ НАДО. Позже в тот же
+// день демо-цены исправили по прайсу (коммит 4759d63f0: `7200.00` стало `7200.50`,
+// `14800.00` — `14800.99`), поэтому суммы ниже живой базе больше НЕ равны. Это не
+// устаревшая фикстура, а нарочно замороженный набор круглых чисел: на нём стоят
+// проверки, где важна арифметика, а не копейки. Числа ПОСЛЕ правки прайса — и
+// вместе с ними единственный в базе долг меньше рубля — живут отдельным набором
+// внизу файла (`SUB_THRESHOLD_LIVE`), и именно он ловит потерю копейки. Переписать
+// суммы здесь значит потерять сравнение «круглые числа против копеек», на котором
+// видно, почему дефект прожил незамеченным.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LIVE_CHARGES: readonly TreatmentChargeRow[] = [
@@ -1598,6 +1608,342 @@ describe("остаток по приёму: копейки", () => {
 					[],
 				),
 			MoneyPrecisionError,
+		);
+	});
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ЗАМОК НА ПОТЕРЮ КОПЕЙКИ ПОРОГОМ ЗНАЧИМОСТИ
+//
+// ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Порог 1 ₽ — шумовой фильтр СПИСКА должников: строка
+// на 50 копеек в обзвоне не нужна. Но итог клиники «не собрано, нетто» собирался
+// из ОТФИЛЬТРОВАННЫХ сторон (`receivableKopecks − refundLiabilityKopecks`), и
+// фильтр списка молча уносил деньги из итога. Замер живой демо-клиники
+// `d0000000-…-d001` от 2026-07-29, уже после приведения цен к прайсу (4759d63f0):
+// у пациента `…0106` назначено 7 200,50, оплачено 7 200,00, долг РОВНО 0,50 ₽.
+// Итог модуля дал 51 402,98 ₽, главный экран — 51 403,48 ₽. Бухгалтеру нечем
+// объяснить дырку в 50 копеек: строки, из которой она взялась, в отчёте нет —
+// её и убрали.
+//
+// ПОЧЕМУ ЧИСЛА ЗАДАНЫ ЗДЕСЬ, А НЕ ПРОЧИТАНЫ ИЗ БАЗЫ. Проверка, зависящая от живых
+// данных, бывает зелёной на возвращённом дефекте: ровно этот дефект и прожил всю
+// жизнь на круглых ценах, где 0,50 ₽ не встречалось ни в одной сумме. Пересев
+// демо-клиники круглыми ценами обнулит расхождение — эти тесты обязаны остаться
+// красными на возврате округления при любом состоянии базы.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Сальдо семи пациентов живой демо-клиники — ровно как их печатает точный
+ * `numeric` PostgreSQL (замер 2026-07-29, после `4759d63f0`).
+ *
+ * Каждая строка — один пациент: одна позиция лечения и одна оплата. Величина
+ * важна не тем, из чего сложена, а тем, что `…0106` даёт долг НИЖЕ порога.
+ */
+const SUB_THRESHOLD_LIVE: readonly {
+	readonly patientId: string;
+	readonly chargedRub: string;
+	readonly paidRub: string;
+	readonly balanceRub: string;
+}[] = [
+	{
+		patientId: "0103",
+		chargedRub: "41300.99",
+		paidRub: "14800.00",
+		balanceRub: "26500.99",
+	},
+	{
+		patientId: "0104",
+		chargedRub: "33700.50",
+		paidRub: "7200.00",
+		balanceRub: "26500.50",
+	},
+	// ВОТ ОН, ПОЛТИННИК: долг 0,50 ₽ — меньше порога 1 ₽.
+	{
+		patientId: "0106",
+		chargedRub: "7200.50",
+		paidRub: "7200.00",
+		balanceRub: "0.50",
+	},
+	{
+		patientId: "0102",
+		chargedRub: "5400.00",
+		paidRub: "5400.00",
+		balanceRub: "0.00",
+	},
+	{
+		patientId: "0105",
+		chargedRub: "5400.00",
+		paidRub: "5400.00",
+		balanceRub: "0.00",
+	},
+	{
+		patientId: "0101",
+		chargedRub: "21201.49",
+		paidRub: "22000.00",
+		balanceRub: "-798.51",
+	},
+	{
+		patientId: "0100",
+		chargedRub: "4600.00",
+		paidRub: "5400.00",
+		balanceRub: "-800.00",
+	},
+];
+
+function subThresholdLedgers() {
+	return buildPatientLedgers(
+		SUB_THRESHOLD_LIVE.map((row) => ({
+			patientId: row.patientId,
+			status: "completed",
+			unitPriceRub: row.chargedRub,
+			quantity: 1,
+			discountRub: "0.00",
+		})),
+		SUB_THRESHOLD_LIVE.map((row) => ({
+			patientId: row.patientId,
+			status: "paid",
+			amountRub: row.paidRub,
+		})),
+	);
+}
+
+describe("порог значимости: фильтр списка не имеет права уносить копейки из итога", () => {
+	const ledgers = subThresholdLedgers();
+	const totals = clinicDebtTotals(ledgers);
+
+	test("фикстура воспроизводит замер: сальдо каждого пациента до копейки", () => {
+		assert.strictEqual(ledgers.size, 7);
+		for (const row of SUB_THRESHOLD_LIVE) {
+			const ledger = ledgers.get(row.patientId);
+			assert.ok(ledger, `пациент ${row.patientId} потерян`);
+			assert.strictEqual(
+				debtNumericText(ledger.balanceKopecks),
+				row.balanceRub,
+				`сальдо ${row.patientId} разошлось с замером psql`,
+			);
+		}
+	});
+
+	test("проверка не выродилась: копеечный должник в фикстуре ЕСТЬ", () => {
+		/*
+		 * Без этого утверждения весь набор ниже стал бы зелёным на данных без
+		 * копеек — то есть ровно там, где дефект и жил незамеченным.
+		 */
+		assert.strictEqual(totals.subThresholdDebtorCount, 1);
+		assert.strictEqual(
+			debtNumericText(totals.subThresholdReceivableKopecks),
+			"0.50",
+		);
+		assert.ok(
+			totals.subThresholdReceivableKopecks < DEFAULT_SIGNIFICANCE_KOPECKS,
+			"копеечный долг обязан быть НИЖЕ порога, иначе фильтр его не тронет и проверять нечего",
+		);
+	});
+
+	test("список должников — с порогом: 53 001,49 у двоих, копеечный должник не в списке", () => {
+		assert.strictEqual(debtNumericText(totals.receivableKopecks), "53001.49");
+		assert.strictEqual(totals.debtorCount, 2);
+	});
+
+	test("полная дебиторка — без порога: 53 001,99, как её показывают карточки пациентов", () => {
+		assert.strictEqual(
+			debtNumericText(totals.fullReceivableKopecks),
+			"53001.99",
+		);
+		// Карточка считает по пациенту и порога не имеет: сумма её долгов и есть
+		// полная дебиторка. Это то самое число, которое сквозная сверка сравнивала
+		// со списочным и объявляла расхождением.
+		const cardSum = [...ledgers.values()].reduce(
+			(sum, ledger) => sum + patientOwesClinicKopecks(ledger),
+			0,
+		);
+		assert.strictEqual(cardSum, totals.fullReceivableKopecks);
+		assert.strictEqual(
+			totals.fullReceivableKopecks - totals.receivableKopecks,
+			50,
+			"разница списка и полной дебиторки — ровно те 50 копеек, что порог унёс",
+		);
+	});
+
+	test("ИТОГ КЛИНИКИ = Σ сальдо всех пациентов: 51 403,48, а не 51 402,98", () => {
+		const sumOfBalances = [...ledgers.values()].reduce(
+			(sum, ledger) => sum + ledger.balanceKopecks,
+			0,
+		);
+		assert.strictEqual(
+			totals.netUncollectedKopecks,
+			sumOfBalances,
+			"итог клиники обязан равняться сумме сальдо: иначе деньги пропали между пациентом и итогом",
+		);
+		assert.strictEqual(
+			debtNumericText(totals.netUncollectedKopecks),
+			"51403.48",
+		);
+
+		// Прежняя формула итога — дословно, из отфильтрованных сторон.
+		const withThresholdLeak =
+			totals.receivableKopecks - totals.refundLiabilityKopecks;
+		assert.strictEqual(debtNumericText(withThresholdLeak), "51402.98");
+		assert.strictEqual(
+			totals.netUncollectedKopecks - withThresholdLeak,
+			50,
+			"порог уносил из итога клиники ровно 50 копеек — это и есть тот полтинник",
+		);
+	});
+
+	test("ЗАМОК: итог клиники ОДИН И ТОТ ЖЕ при любом пороге", () => {
+		/*
+		 * Главное утверждение набора и есть замок. Порог — свойство СПИСКА, значит
+		 * итог от него не зависит вовсе: ни при нулевом, ни при рублёвом, ни при
+		 * стократном. Любое возвращение фильтра в итог красит эту проверку, каким бы
+		 * способом его ни вернули.
+		 */
+		const expected = totals.netUncollectedKopecks;
+		for (const significanceKopecks of [0, 1, 50, 100, 10_000, 10_000_000]) {
+			const shifted = clinicDebtTotals(ledgers, { significanceKopecks });
+			assert.strictEqual(
+				shifted.netUncollectedKopecks,
+				expected,
+				`порог ${significanceKopecks} копеек изменил итог клиники — фильтр списка снова уносит деньги`,
+			);
+			// И сходимость внутри самого ответа: списочное плюс отброшенное = полное.
+			assert.strictEqual(
+				shifted.receivableKopecks + shifted.subThresholdReceivableKopecks,
+				shifted.fullReceivableKopecks,
+				`порог ${significanceKopecks}: отброшенные долги не сошлись с полной дебиторкой`,
+			);
+			assert.strictEqual(
+				shifted.refundLiabilityKopecks + shifted.subThresholdRefundKopecks,
+				shifted.fullRefundLiabilityKopecks,
+				`порог ${significanceKopecks}: отброшенные переплаты не сошлись с полным возвратом`,
+			);
+		}
+		// Порог 100 000 ₽ выше любого живого сальдо и уносит из списков ВСЁ — итог
+		// обязан остаться тем же до копейки, потому что деньги никуда не делись.
+		const everythingFiltered = clinicDebtTotals(ledgers, {
+			significanceKopecks: 10_000_000,
+		});
+		assert.strictEqual(everythingFiltered.receivableKopecks, 0);
+		assert.strictEqual(everythingFiltered.refundLiabilityKopecks, 0);
+		assert.strictEqual(everythingFiltered.debtorCount, 0);
+		assert.strictEqual(everythingFiltered.subThresholdDebtorCount, 3);
+		assert.strictEqual(
+			debtNumericText(everythingFiltered.netUncollectedKopecks),
+			"51403.48",
+		);
+	});
+
+	test("расхождение двух экранов сходится ТОЧНО, с названными причинами", () => {
+		/*
+		 * Ровно то утверждение, которое краснело в сквозной сверке. Список отчёта
+		 * минус долг главного экрана — это НЕ просто переплаты: это переплаты минус
+		 * долги, которые порог из списка выкинул. Обе причины названы, допуска нет.
+		 */
+		const dashboardDueKopecks = Math.max(0, totals.netUncollectedKopecks);
+		const screenGap = totals.receivableKopecks - dashboardDueKopecks;
+		assert.strictEqual(debtNumericText(screenGap), "1598.01");
+		assert.strictEqual(
+			screenGap,
+			totals.fullRefundLiabilityKopecks - totals.subThresholdReceivableKopecks,
+			"разница экранов не свелась к переплатам минус отброшенные порогом долги",
+		);
+		// А без копеечного должника это была бы просто сумма переплат — и именно так
+		// утверждение и было записано, пока в базе стояли круглые цены.
+		assert.strictEqual(
+			debtNumericText(totals.fullRefundLiabilityKopecks),
+			"1598.51",
+		);
+		assert.strictEqual(
+			totals.fullRefundLiabilityKopecks - screenGap,
+			50,
+			"расхождение утверждения со «просто переплатами» — те же 50 копеек",
+		);
+	});
+
+	test("объяснение оператору называет порог, сумму под ним и сходится глазами", () => {
+		const text = explainDebtTotals(totals);
+		assert.ok(text.includes(`53${NBSP}001,99`), text);
+		assert.ok(text.includes(`1${NBSP}598,51`), text);
+		assert.ok(text.includes(`51${NBSP}403,48`), text);
+		assert.match(text, /Ниже порога значимости/);
+		assert.ok(text.includes(`0,50${NBSP}₽`), text);
+		assert.match(text, /1 чел/);
+		// Печатное вычитание обязано сходиться: пока итог считался с порогом, в
+		// объяснении стояло «53 001,49 − 1 598,51 = 51 402,98» при 51 403,48 на экране.
+		assert.ok(
+			!text.includes(`51${NBSP}402,98`),
+			`объяснение всё ещё печатает итог, посчитанный с порогом: ${text}`,
+		);
+	});
+
+	test("грязь float не заменяет копейку: итог точен там, где сложение рублей врёт", () => {
+		/*
+		 * Три пациента, чьи долги в рублях складываются с хвостом. Итог клиники
+		 * обязан быть ровно 3 491,49 — а не 3491.4900000000002, который
+		 * `Math.round(value * 100)` молча признал бы за 3 491,49 (в этом дереве этот
+		 * приём уже отвергали).
+		 */
+		const dirty = clinicDebtTotals(
+			buildPatientLedgers(
+				["1000.00", "1001.82", "1489.67"].map((unitPriceRub, index) => ({
+					patientId: `dirty-${index}`,
+					status: "completed",
+					unitPriceRub,
+					quantity: 1,
+					discountRub: "0.00",
+				})),
+				[],
+			),
+		);
+		assert.strictEqual(dirty.netUncollectedKopecks, 349_149);
+		assert.strictEqual(debtNumericText(dirty.netUncollectedKopecks), "3491.49");
+		assert.strictEqual(1000.0 + 1001.82 + 1489.67, 3491.4900000000002);
+		assert.notStrictEqual(
+			rublesFromKopecks(dirty.netUncollectedKopecks),
+			1000.0 + 1001.82 + 1489.67,
+		);
+	});
+
+	test("копеечная переплата тоже не теряется: порог симметричен", () => {
+		// Долг 100 ₽ у одного и переплата 0,50 ₽ у другого: порог уносит из списка
+		// переплату, но не из итога.
+		const totalsWithSmallRefund = clinicDebtTotals(
+			buildPatientLedgers(
+				[
+					{
+						patientId: "debtor",
+						status: "completed",
+						unitPriceRub: "100.00",
+						quantity: 1,
+						discountRub: "0.00",
+					},
+					{
+						patientId: "overpaid",
+						status: "completed",
+						unitPriceRub: "100.00",
+						quantity: 1,
+						discountRub: "0.00",
+					},
+				],
+				[{ patientId: "overpaid", status: "paid", amountRub: "100.50" }],
+			),
+		);
+		assert.strictEqual(totalsWithSmallRefund.refundLiabilityKopecks, 0);
+		assert.strictEqual(totalsWithSmallRefund.overpaidCount, 0);
+		assert.strictEqual(totalsWithSmallRefund.subThresholdRefundKopecks, 50);
+		assert.strictEqual(totalsWithSmallRefund.subThresholdOverpaidCount, 1);
+		assert.strictEqual(
+			debtNumericText(totalsWithSmallRefund.netUncollectedKopecks),
+			"99.50",
+			"переплата 0,50 ₽ обязана уменьшить «не собрано», даже если в список возвратов не попала",
+		);
+		assert.strictEqual(
+			debtNumericText(
+				totalsWithSmallRefund.receivableKopecks -
+					totalsWithSmallRefund.refundLiabilityKopecks,
+			),
+			"100.00",
+			"прежняя формула итога вернула бы 100,00 — на 50 копеек больше, чем клинике причитается",
 		);
 	});
 });

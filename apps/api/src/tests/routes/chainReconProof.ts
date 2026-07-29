@@ -50,8 +50,11 @@ import {
 import {
 	buildPatientLedgers,
 	clinicDebtTotals,
+	debtNumericText,
 	explainDebtTotals,
+	type Kopecks,
 	rublesFromKopecks,
+	toKopecks,
 } from "../../money/patientDebt.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import { registerReportRoutes } from "../../routes/reports.js";
@@ -61,8 +64,106 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ДЕНЬГИ В ЭТОМ ФАЙЛЕ СЧИТАЮТСЯ В ЦЕЛЫХ КОПЕЙКАХ, А НЕ ОКРУГЛЯЮТСЯ
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Здесь стояло `Math.round(Number(value ?? 0) * 100) / 100`. Для сравнения двух
+ * сумм это не безобидное приведение, а ГЛУШИТЕЛЬ: он молча признаёт
+ * `3491.4900000000002` за `3491.49`, то есть скрывает ровно тот класс дефекта,
+ * ради поиска которого сквозная сверка и написана. В этом дереве такой приём уже
+ * отвергали (`money/patientDebt.ts`, `kopecksFromRubles`), а здесь он к тому же
+ * стоял НА САМОМ ДАТЧИКЕ и был для него несущим: разница двух экранов
+ * `53001.49 − 51403.48` в плавающей точке даёт `1598.0099999999948`, и
+ * утверждение проходило только потому, что округление приводило её к `1598.01`.
+ *
+ * Теперь любая сумма превращается в целые копейки общим домом денег
+ * (`toKopecks`), суммирование и вычитание идут в копейках, и обратно в рубли
+ * значение переводится ОДИН раз — только чтобы напечатать его человеку и сравнить
+ * с рублёвым ожиданием. Грязь ниже копейки больше не сглаживается: она поднимает
+ * исключение, потому что сумма, потерявшая точность, — это находка, а не помеха.
+ */
+
+/** Копейки из суммы маршрута или колонки `numeric`. Грязь — отказ, не округление. */
+function moneyKopecks(value: unknown): Kopecks {
+	/*
+	 * Непришедшее поле остаётся нулём — так было и раньше (`value ?? 0`), и менять
+	 * это здесь нельзя: пустая клиника законно отдаёт нули, а отсутствие поля ловят
+	 * отдельные утверждения о числе строк плюс датчик вырождения. Отказ здесь
+	 * означал бы падение прогона на законных данных.
+	 */
+	if (value === null || value === undefined) return 0;
+	if (typeof value !== "number" && typeof value !== "string") {
+		throw new TypeError(
+			`сумма пришла типом ${typeof value}: ожидалось число рублей или текст колонки numeric`,
+		);
+	}
+	return toKopecks(value, "сумма сверки");
+}
+
+/** Точные рубли из суммы: для печати и сравнения с рублёвым ожиданием. */
 function money(value: unknown): number {
-	return Math.round(Number(value ?? 0) * 100) / 100;
+	return rublesFromKopecks(moneyKopecks(value));
+}
+
+/** Сумма нескольких сумм — в копейках, поэтому итог РАВЕН сумме частей. */
+function sumMoneyKopecks(values: readonly unknown[]): Kopecks {
+	let total = 0;
+	for (const value of values) total += moneyKopecks(value);
+	return total;
+}
+
+/**
+ * Суммы, которые пришли в прогон УЖЕ потеряв точность у своего производителя.
+ *
+ * Список печатается в приговоре по именам и значениям. Нарушением прогона он не
+ * объявляется: производитель здесь один и назван (`services/reports/
+ * managerReports.ts`, `receivables()`), а правка канона в эту задачу не входит —
+ * перенос его точной `numeric`-арифметики в JS даёт нулевой выигрыш при
+ * максимальном риске. Молчать о нём нельзя тем более: пока сверка округляла такие
+ * суммы про себя, потеря точности была невидима вообще.
+ */
+const producerFloatDirt: string[] = [];
+
+/**
+ * Копейки из суммы, чей ПРОИЗВОДИТЕЛЬ считает деньги в плавающей точке.
+ *
+ * ЗАМЕР 2026-07-29, живая демо-клиника. `GET /api/reports/receivables` отдаёт в
+ * строке пациента `debtRub = 26500.989999999998`. Это не «почти 26 500,99»: три
+ * знака после запятой не проходят `moneyRubSchema`, а колонка `numeric(12,2)` их
+ * молча обрежет. Причина в каноне и названа построчно: `managerReports.ts:1145`
+ * считает `debtRub` вычитанием В ПЛАВАЮЩЕЙ ТОЧКЕ
+ * (`41300.99 − 14800 = 26500.989999999998`), `:1206` кладёт результат в ответ как
+ * есть, а `:1218` округляет до копейки ТОЛЬКО итог. То есть строки отчёта и его
+ * итог посчитаны по-разному, и совпадают они лишь пока округление не меняет сумму.
+ *
+ * Здесь такое значение приводится к копейке — ровно тем же способом, которым
+ * производитель приводит свой собственный итог, иначе сравнивались бы величины
+ * разной точности. Отличие от прежнего `money()` принципиальное: КАЖДЫЙ случай
+ * приведения записывается и печатается с именем поля и исходным числом, а не
+ * исчезает молча.
+ */
+function producerMoneyKopecks(value: unknown, field: string): Kopecks {
+	if (value === null || value === undefined) return 0;
+	const asNumber = typeof value === "string" ? Number(value) : value;
+	if (typeof asNumber !== "number" || !Number.isFinite(asNumber)) {
+		throw new TypeError(`${field}: сумма пришла не числом — ${String(value)}`);
+	}
+	const kopecks = Math.round(asNumber * 100);
+	if (!Number.isSafeInteger(kopecks)) {
+		throw new TypeError(`${field}: сумма вне денежного диапазона — ${String(value)}`);
+	}
+	if (rublesFromKopecks(kopecks) !== asNumber) {
+		const finding = `${field}: производитель отдал ${asNumber}, в копейках это ${debtNumericText(kopecks)}`;
+		if (!producerFloatDirt.includes(finding)) producerFloatDirt.push(finding);
+	}
+	return kopecks;
+}
+
+/** Точные рубли из суммы производителя, считающего в плавающей точке. */
+function producerMoney(value: unknown, field: string): number {
+	return rublesFromKopecks(producerMoneyKopecks(value, field));
 }
 
 /*
@@ -327,7 +428,16 @@ const FIXTURE_SUBSTANCE_ROSTER: readonly string[] = [
 	"переплата отчёта = возврат по канону",
 	"должников в отчёте = должников по канону",
 	"переплативших в отчёте = переплативших по канону",
-	"разница дебиторки и главного экрана = переплаты пациентов",
+	/*
+	 * Прежнее имя — «разница дебиторки и главного экрана = переплаты пациентов» —
+	 * называло тождество, которого нет: слева стоит итог отчёта, посчитанный С
+	 * ПОРОГОМ значимости 1 ₽, справа стояли переплаты БЕЗ порога. Пока в клинике не
+	 * было ни одного долга меньше рубля, разница не проявлялась; появился долг
+	 * 0,50 ₽ — и утверждение стало ложным на ВЕРНЫХ данных. Теперь в имени названы
+	 * обе причины расхождения экранов, и обе считаются точными копейками.
+	 */
+	"разница дебиторки и главного экрана = переплаты минус долги ниже порога отчёта",
+	"долг главного экрана = не собрано нетто по канону (порог не уносит копейки)",
 	/*
 	 * Прежнее имя записи — «сумма balanceDueRub = дебиторка по формуле главного
 	 * экрана (с отменёнными позициями)» — описывало ДЕФЕКТ как норму: сценарий
@@ -336,7 +446,7 @@ const FIXTURE_SUBSTANCE_ROSTER: readonly string[] = [
 	 * покраснело на ВЕРНОЙ правке (маршрут отдал 10 000, сверка ждала 15 000).
 	 * Реестр это поймал как «проверка потеряна» — ровно то, для чего он и заведён.
 	 */
-	"сумма balanceDueRub = дебиторка по канону: отменённое лечение НЕ долг",
+	"сумма balanceDueRub = ПОЛНАЯ дебиторка по канону: отменённое лечение НЕ долг, копеечный — долг",
 	"формула с отменёнными даёт БОЛЬШЕ канона — значит фильтр статуса вправду работает",
 	// Врачи, услуги, выручка.
 	"выручка врачей = оплаты, дошедшие до врача через приём",
@@ -361,6 +471,9 @@ const FIXTURE_SUBSTANCE_ROSTER: readonly string[] = [
 	"посев: отменённая позиция вне назначенного",
 	"посев: дебиторка по канону",
 	"посев: возврат по канону",
+	"посев: полная дебиторка по канону (порога нет)",
+	"посев: долг ниже порога отчёта",
+	"посев: не собрано нетто = полная дебиторка − возврат",
 ];
 
 interface RosterVerdict {
@@ -437,27 +550,39 @@ async function rows(label: string, query: ReturnType<typeof sql>): Promise<Recor
  * ЧИСЛА ВЫБРАНЫ ТАК, ЧТОБЫ КАЖДОЕ ЗВЕНО БЫЛО НЕНУЛЕВЫМ И ПРОВЕРЯЕМЫМ:
  *
  *   пациент     назначено            оплачено   сальдо
- *   Долгов      5000×2−800 + 800     4000+1000  +5000  ← должник
+ *   Долгов      5000×2−800 + 800     4000+1000  +5000    ← должник
  *               = 10 000             = 5000
- *   Переплатова 5000                 5800       −800   ← клиника должна ему
- *   Ровнова     5000−500 + 5000      4500       +5000  ← должник, есть незакрытая
- *               = 9 500                                  позиция в статусе proposed
+ *   Переплатова 5000                 5800       −800     ← клиника должна ему
+ *   Ровнова     5000−500 + 5000      4500       +5000    ← должник, есть незакрытая
+ *               = 9 500                                    позиция в статусе proposed
+ *   Копейкина   1500,50              1500       +0,50    ← должник НИЖЕ порога отчёта
  *
- *   назначено всего            24 500
- *   оплачено (только paid)     15 300
- *   предоплата (planned)        2 500  ← деньгами ещё не является
- *   оплата без визита           1 000  ← к врачу отнести нечем
- *   отменённая позиция          5 000  ← в назначенное не входит по канону
+ *   назначено всего            26 000,50
+ *   оплачено (только paid)     16 800
+ *   предоплата (planned)        2 500     ← деньгами ещё не является
+ *   оплата без визита           1 000     ← к врачу отнести нечем
+ *   отменённая позиция          5 000     ← в назначенное не входит по канону
  *
- *   дебиторка по канону        10 000  (5000 + 5000, переплата НЕ вычитается)
+ *   дебиторка СПИСКА           10 000     (5000 + 5000; порог 1 ₽ и переплату, и
+ *                                          копеечный долг из списка выкидывает)
+ *   полная дебиторка           10 000,50  ← её показывают карточки пациентов
+ *   долг ниже порога                0,50  ← в списке для звонков его нет
  *   возврат по канону             800
- *   не собрано, нетто           9 200  (10 000 − 800) — это и есть число
- *                                       главного экрана
+ *   не собрано, нетто           9 200,50  (10 000,50 − 800) — это и есть число
+ *                                          главного экрана
  *
- * Эти три величины РАЗНЫЕ, и именно на них расходились девять формул долга в
- * этом дереве (разбор — money/patientDebt.ts). На пустой клинике все три равны
- * нулю, поэтому их расхождение там не проверяется вообще: ровно то, ради чего
- * нужна своя клиника с деньгами.
+ * ЗАЧЕМ В ПОСЕВЕ КОПЕЙКИ И ПОЧЕМУ ИМЕННО ДОЛГ 0,50 ₽. Прогон 2026-07-29 объявил
+ * два расхождения по 50 копеек на живой демо-клинике, и оба оказались НЕ дефектом
+ * расчёта, а дефектом самой сверки: она сравнивала итог отчёта, посчитанный с
+ * порогом значимости 1 ₽, с величинами, у которых порога нет. На круглых суммах
+ * такое тождество держится, поэтому дефект жил ровно до первой копейки в данных.
+ * Своя клиника теперь несёт такой долг сама: пересев демо-клиники круглыми ценами
+ * больше не может вернуть сверку в состояние «зелено по счастливой случайности».
+ *
+ * Эти величины РАЗНЫЕ, и именно на них расходились девять формул долга в этом
+ * дереве (разбор — money/patientDebt.ts). На пустой клинике все они равны нулю,
+ * поэтому их расхождение там не проверяется вообще: ровно то, ради чего нужна
+ * своя клиника с деньгами.
  */
 
 /** Пространство фикстур выводится из имени файла, а не назначается вручную. */
@@ -470,8 +595,11 @@ const FIXTURE_OWNER_ID = fixtureUuid(FIXTURE_NAMESPACE, 12);
 const FIXTURE_DEBTOR_ID = fixtureUuid(FIXTURE_NAMESPACE, 21);
 const FIXTURE_OVERPAID_ID = fixtureUuid(FIXTURE_NAMESPACE, 22);
 const FIXTURE_EVEN_ID = fixtureUuid(FIXTURE_NAMESPACE, 23);
+/** Пациент с долгом НИЖЕ порога значимости отчёта — тот самый полтинник. */
+const FIXTURE_KOPECK_DEBTOR_ID = fixtureUuid(FIXTURE_NAMESPACE, 24);
 const FIXTURE_SERVICE_TAXED_ID = fixtureUuid(FIXTURE_NAMESPACE, 31);
 const FIXTURE_SERVICE_PLAIN_ID = fixtureUuid(FIXTURE_NAMESPACE, 32);
+const FIXTURE_SERVICE_KOPECK_ID = fixtureUuid(FIXTURE_NAMESPACE, 33);
 
 /**
  * Суммы посева. Вынесены в константы, потому что каждая участвует и в записи, и
@@ -482,11 +610,20 @@ const FIXTURE_PLAIN_PRICE = 800;
 const FIXTURE_DISCOUNT_TWO_UNITS = 800;
 const FIXTURE_DISCOUNT_ONE_UNIT = 500;
 const FIXTURE_CANCELLED_LINE = 5000;
-const FIXTURE_PLANNED_TOTAL = 24_500;
-const FIXTURE_PAID_TOTAL = 15_300;
+/**
+ * Цена с копейками и оплата без них: долг получается 0,50 ₽, то есть НИЖЕ порога
+ * значимости отчёта (1 ₽). Цена совпадает с прайсовой строкой этой же услуги —
+ * иначе покраснеет `tests/priceListMatchesTreatmentItems.test.ts`, и правильно
+ * покраснеет: цена позиции обязана совпадать с прайсом, на который она ссылается.
+ */
+const FIXTURE_KOPECK_PRICE = 1500.5;
+const FIXTURE_KOPECK_PAID = 1500;
+const FIXTURE_PLANNED_TOTAL = 26_000.5;
+const FIXTURE_PAID_TOTAL = 16_800;
 const FIXTURE_ADVANCE_PLANNED = 2_500;
 const FIXTURE_PAID_WITHOUT_VISIT = 1_000;
 const FIXTURE_RECEIVABLE = 10_000;
+const FIXTURE_SUB_THRESHOLD_DEBT = 0.5;
 const FIXTURE_REFUND = 800;
 
 /**
@@ -522,6 +659,7 @@ async function seedFixtureChain(): Promise<void> {
 		{ id: FIXTURE_DEBTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Долгов Артём Юрьевич" },
 		{ id: FIXTURE_OVERPAID_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Переплатова Мария Львовна" },
 		{ id: FIXTURE_EVEN_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Ровнова Ольга Дмитриевна" },
+		{ id: FIXTURE_KOPECK_DEBTOR_ID, organizationId: FIXTURE_ORGANIZATION_ID, fullName: "Копейкина Вера Павловна" },
 	]);
 
 	/*
@@ -569,6 +707,19 @@ async function seedFixtureChain(): Promise<void> {
 			// дашборд считает к вычету НЕ всё назначенное подряд.
 			taxDeductible: false,
 		},
+		{
+			id: FIXTURE_SERVICE_KOPECK_ID,
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			code: "CHAIN-RECON-3",
+			title: "Полировка пломбы, сверка цепочки",
+			category: "therapy",
+			// Прайс с копейками: без него в посеве не было бы ни одной суммы, на
+			// которой видно потерю копейки, — и сверка снова стала бы зелёной
+			// по счастливой случайности круглых чисел.
+			basePriceRub: FIXTURE_KOPECK_PRICE,
+			priceRub: FIXTURE_KOPECK_PRICE,
+			taxDeductible: false,
+		},
 	]);
 
 	const appointmentFor = (slot: number, patientId: string, status: "completed" | "cancelled") => ({
@@ -586,6 +737,7 @@ async function seedFixtureChain(): Promise<void> {
 		appointmentFor(43, FIXTURE_EVEN_ID, "completed"),
 		// Отменённая запись без приёма: в выручку не идёт, в загрузку врача идёт.
 		appointmentFor(44, FIXTURE_DEBTOR_ID, "cancelled"),
+		appointmentFor(45, FIXTURE_KOPECK_DEBTOR_ID, "completed"),
 	]);
 
 	const visitFor = (slot: number, patientId: string, appointmentSlot: number | null, status: "signed" | "draft") => ({
@@ -605,6 +757,7 @@ async function seedFixtureChain(): Promise<void> {
 		// Черновик без записи (пациент пришёл без расписания): на нём проверяется,
 		// что автосохранение карты приёма вообще работает, а не только отказывает.
 		visitFor(54, FIXTURE_DEBTOR_ID, null, "draft"),
+		visitFor(55, FIXTURE_KOPECK_DEBTOR_ID, 45, "signed"),
 	]);
 
 	const itemFor = (options: {
@@ -699,6 +852,20 @@ async function seedFixtureChain(): Promise<void> {
 			discountRub: 0,
 			status: "proposed",
 		}),
+		itemFor({
+			// Позиция с копейками: 1 500,50 против оплаты 1 500,00 даёт долг 0,50 ₽ —
+			// ниже порога значимости отчёта. Ровно на таком долге сверка и поймала,
+			// что сравнивала итог СПИСКА с величинами без порога.
+			slot: 67,
+			patientId: FIXTURE_KOPECK_DEBTOR_ID,
+			visitSlot: 55,
+			serviceId: FIXTURE_SERVICE_KOPECK_ID,
+			title: "Полировка пломбы, сверка цепочки",
+			quantity: "1",
+			unitPriceRub: FIXTURE_KOPECK_PRICE,
+			discountRub: 0,
+			status: "completed",
+		}),
 	]);
 
 	await db.insert(payments).values([
@@ -748,11 +915,22 @@ async function seedFixtureChain(): Promise<void> {
 			status: "planned",
 			paidAt: FIXTURE_PAID_AT,
 		},
+		{
+			// Оплата без копеек по позиции с копейками: остаётся долг 0,50 ₽.
+			id: fixtureUuid(FIXTURE_NAMESPACE, 76),
+			organizationId: FIXTURE_ORGANIZATION_ID,
+			patientId: FIXTURE_KOPECK_DEBTOR_ID,
+			visitId: fixtureUuid(FIXTURE_NAMESPACE, 55),
+			amountRub: FIXTURE_KOPECK_PAID,
+			status: "paid",
+			paidAt: FIXTURE_PAID_AT,
+		},
 	]);
 
 	console.log(
 		`Посев цепочки: клиника «${FIXTURE_ORGANIZATION_NAME}» ${FIXTURE_ORGANIZATION_ID} — ` +
-			"3 пациента, 4 записи, 4 приёма, 6 позиций лечения, 5 оплат.",
+			"4 пациента, 5 записей, 5 приёмов, 7 позиций лечения, 6 оплат, " +
+			`долг ниже порога ${FIXTURE_SUB_THRESHOLD_DEBT} ₽.`,
 	);
 }
 
@@ -768,8 +946,21 @@ async function seedFixtureChain(): Promise<void> {
  * узнать о грязи, а не подтвердить её своей подписью.
  */
 async function canonDebt(organizationId: string): Promise<{
+	/** Дебиторка СПИСКА должников: с порогом значимости, как в отчёте. */
 	receivableRub: number;
+	/** Возврат СПИСКА переплативших: с тем же порогом. */
 	refundRub: number;
+	/**
+	 * ПОЛНАЯ дебиторка: порог не применялся. Именно её показывают карточки
+	 * пациентов на главном экране — у карточки порога нет и быть не может.
+	 */
+	fullReceivableRub: number;
+	/** Полный возврат: порог не применялся. */
+	fullRefundRub: number;
+	/** Долги, которые порог выкинул из списка. Ноль — фильтр ничего не унёс. */
+	subThresholdReceivableRub: number;
+	/** Переплаты, которые порог выкинул из списка. */
+	subThresholdRefundRub: number;
 	netUncollectedRub: number;
 	debtorCount: number;
 	overpaidCount: number;
@@ -840,11 +1031,17 @@ async function canonDebt(organizationId: string): Promise<{
 	return {
 		receivableRub: rublesFromKopecks(totals.receivableKopecks),
 		refundRub: rublesFromKopecks(totals.refundLiabilityKopecks),
+		fullReceivableRub: rublesFromKopecks(totals.fullReceivableKopecks),
+		fullRefundRub: rublesFromKopecks(totals.fullRefundLiabilityKopecks),
+		subThresholdReceivableRub: rublesFromKopecks(
+			totals.subThresholdReceivableKopecks,
+		),
+		subThresholdRefundRub: rublesFromKopecks(totals.subThresholdRefundKopecks),
 		netUncollectedRub: rublesFromKopecks(totals.netUncollectedKopecks),
 		debtorCount: totals.debtorCount,
 		overpaidCount: totals.overpaidCount,
 		chargedRub: rublesFromKopecks(chargedKopecks),
-		screenReceivableRub: rublesFromKopecks(screenTotals.receivableKopecks),
+		screenReceivableRub: rublesFromKopecks(screenTotals.fullReceivableKopecks),
 		explanation: explainDebtTotals(totals),
 	};
 }
@@ -1122,8 +1319,11 @@ async function main(): Promise<void> {
 				 * Разбор — money/patientDebt.ts. Здесь сверяется именно та формула,
 				 * которую экран считает, иначе утверждение краснело бы на верном коде.
 				 */
-				const netUncollected = money(
-					Math.max(0, money(totals.planned_dashboard_rounded) - money(totals.paid_sql)),
+				const netUncollected = rublesFromKopecks(
+					Math.max(
+						0,
+						moneyKopecks(totals.planned_dashboard_rounded) - moneyKopecks(totals.paid_sql),
+					),
 				);
 				same(
 					org.name,
@@ -1194,8 +1394,16 @@ async function main(): Promise<void> {
 						"дашборд в totalDueRub её НЕ использует, берёт все не отменённые.",
 				);
 				const insights = dashboard.patientInsights ?? [];
-				const insightDebt = money(
-					insights.reduce((sum: number, row: { balanceDueRub?: unknown }) => sum + money(row.balanceDueRub), 0),
+				/*
+				 * Сумма долгов КАРТОЧЕК пациентов — в копейках, а не сложением рублей.
+				 * Слагаемых здесь столько, сколько пациентов в клинике (на демо — 14), и
+				 * ровно на таких сложениях плавающая точка даёт хвост, который прежнее
+				 * округление подписывало как ровную сумму.
+				 */
+				const insightDebt = rublesFromKopecks(
+					sumMoneyKopecks(
+						(insights as { balanceDueRub?: unknown }[]).map((row) => row.balanceDueRub),
+					),
 				);
 				console.log(`patientInsights: строк ${insights.length}, сумма balanceDueRub=${insightDebt}`);
 				dashboardInsightDebt = insightDebt;
@@ -1222,7 +1430,10 @@ async function main(): Promise<void> {
 						`итог долга=${money(receivables.totalDebtRub)}, корзины=${JSON.stringify(receivables.byBucket)}`,
 				);
 				for (const row of (receivables.rows ?? []).slice(0, 10)) {
-					console.log(`   ${row.patientName}: ${money(row.debtRub)} ₽ (${row.bucket}, с ${row.oldestChargeAt})`);
+					console.log(
+						`   ${row.patientName}: ${producerMoney(row.debtRub, "receivables.rows[].debtRub")} ₽ ` +
+							`(${row.bucket}, с ${row.oldestChargeAt})`,
+					);
 				}
 				/*
 				 * Две внутренние сходимости отчёта дебиторки. Обе не зависят ни от
@@ -1232,10 +1443,23 @@ async function main(): Promise<void> {
 				 * базу.
 				 */
 				const debtRows = (receivables.rows ?? []) as { debtRub?: unknown }[];
-				const rowsDebt = money(debtRows.reduce((sum, row) => sum + money(row.debtRub), 0));
-				const bucketDebt = money(
-					Object.values((receivables.byBucket ?? {}) as Record<string, unknown>).reduce(
-						(sum: number, value) => sum + money(value),
+				/*
+				 * Строки и корзины отчёта приходят от производителя, считающего долг
+				 * пациента в плавающей точке (`managerReports.ts:1145`), поэтому идут через
+				 * `producerMoneyKopecks`: он приводит к копейке и НАЗЫВАЕТ каждый такой
+				 * случай в приговоре. Итог отчёта производитель округляет сам (`:1218`),
+				 * поэтому он читается точным путём — и сходимость «строки = итог» остаётся
+				 * настоящей проверкой, а не сравнением двух по-разному сглаженных чисел.
+				 */
+				const rowsDebt = rublesFromKopecks(
+					debtRows.reduce(
+						(sum, row) => sum + producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub"),
+						0,
+					),
+				);
+				const bucketDebt = rublesFromKopecks(
+					Object.entries((receivables.byBucket ?? {}) as Record<string, unknown>).reduce(
+						(sum, [bucket, value]) => sum + producerMoneyKopecks(value, `receivables.byBucket.${bucket}`),
 						0,
 					),
 				);
@@ -1251,7 +1475,7 @@ async function main(): Promise<void> {
 					org.name,
 					"должников в отчёте = строк с положительным долгом",
 					receivables.rows?.length ?? 0,
-					debtRows.filter((row) => money(row.debtRub) > 0).length,
+					debtRows.filter((row) => producerMoneyKopecks(row.debtRub, "receivables.rows[].debtRub") > 0).length,
 					[receivables.rows?.length ?? 0, debtRows.length],
 				);
 
@@ -1289,18 +1513,72 @@ async function main(): Promise<void> {
 					[receivables.prepayments?.length ?? 0, canon.overpaidCount],
 				);
 				if (dashboardDueRub !== null) {
-					const screenGap = money(money(receivables.totalDebtRub) - dashboardDueRub);
-					console.log(
-						`РАСХОЖДЕНИЕ ДВУХ ЭКРАНОВ: дебиторка ${money(receivables.totalDebtRub)} − долг главного экрана ` +
-							`${dashboardDueRub} = ${screenGap}; переплаты пациентов ${canon.refundRub}. ` +
-							"Это не дефект расчёта, а две разные величины: главный экран считает нетто по клинике одним " +
-							"вычитанием, поэтому переплата одного пациента гасит долг другого.",
+					/*
+					 * ═════════════════════════════════════════════════════════════════
+					 * ЗДЕСЬ УТВЕРЖДЕНИЕ БЫЛО НЕВЕРНЫМ — И ПОЙМАЛ ЭТО ПОЛТИННИК
+					 * ═════════════════════════════════════════════════════════════════
+					 *
+					 * Стояло «разница дебиторки и главного экрана = переплаты пациентов».
+					 * На круглых ценах это сходилось, а после приведения демо-цен к прайсу
+					 * (4759d63f0) разошлось ровно на 0,50 ₽: получено 1598.01, ожидалось
+					 * 1598.51.
+					 *
+					 * Прав оказался ПРОГОН, а не утверждение. Слева стоит итог ОТЧЁТА, а он
+					 * считается с порогом значимости 1 ₽ (`receivables`, `minDebtRub`);
+					 * справа стояли переплаты БЕЗ порога. Величины разной семантики, и
+					 * тождество между ними держалось только пока в клинике не было ни
+					 * одного долга меньше рубля. Появился (пациент …0106: назначено
+					 * 7 200,50, оплачено 7 200,00 — долг 0,50 ₽), и утверждение стало
+					 * ложным на ВЕРНЫХ данных.
+					 *
+					 * Тождество записано полностью, с обеими причинами и без допуска:
+					 *
+					 *   итог отчёта − долг главного экрана
+					 *       = полные переплаты − долги, отброшенные порогом отчёта
+					 *
+					 * Ослаблением это не является: правая часть считается из строк базы
+					 * точными копейками и НЕ зависит ни от одного из двух экранов, поэтому
+					 * дрейф любого из них по-прежнему красит утверждение.
+					 */
+					const reportDebtKopecks = moneyKopecks(receivables.totalDebtRub);
+					const screenGap = rublesFromKopecks(
+						reportDebtKopecks - moneyKopecks(dashboardDueRub),
 					);
-					same(org.name, "разница дебиторки и главного экрана = переплаты пациентов", screenGap, canon.refundRub, [
-						money(receivables.totalDebtRub),
+					const overpaidMinusDropped = rublesFromKopecks(
+						moneyKopecks(canon.fullRefundRub) - moneyKopecks(canon.subThresholdReceivableRub),
+					);
+					console.log(
+						`РАСХОЖДЕНИЕ ДВУХ ЭКРАНОВ: дебиторка отчёта ${money(receivables.totalDebtRub)} − долг главного ` +
+							`экрана ${dashboardDueRub} = ${screenGap}; полные переплаты ${canon.fullRefundRub} − ` +
+							`отброшенные порогом долги ${canon.subThresholdReceivableRub} = ${overpaidMinusDropped}. ` +
+							"Это не дефект расчёта, а три разные величины: главный экран считает нетто по клинике одним " +
+							"вычитанием, поэтому переплата одного пациента гасит долг другого; а отчёт вдобавок не " +
+							"показывает долги меньше рубля, считая их шумом обзвона.",
+					);
+					same(
+						org.name,
+						"разница дебиторки и главного экрана = переплаты минус долги ниже порога отчёта",
+						screenGap,
+						overpaidMinusDropped,
+						[money(receivables.totalDebtRub), dashboardDueRub, canon.fullRefundRub],
+					);
+					/*
+					 * НОВОЕ УТВЕРЖДЕНИЕ, И ИМЕННО ОНО ЗАПИРАЕТ ПОЛТИННИК НАПРЯМУЮ.
+					 *
+					 * Итог клиники обязан сходиться с главным экраном до копейки. До правки
+					 * `clinicDebtTotals` собирал его из ОТФИЛЬТРОВАННЫХ порогом сторон и
+					 * давал 51 402,98 против 51 403,48 у экрана — те же 50 копеек, только
+					 * это утверждение их не проверяло вовсе, потому что его не было.
+					 * Зажим нулём — поведение самого экрана (`buildBillingSummary`:
+					 * `Math.max(0, …)`), поэтому он назван здесь, а не спрятан.
+					 */
+					same(
+						org.name,
+						"долг главного экрана = не собрано нетто по канону (порог не уносит копейки)",
 						dashboardDueRub,
-						canon.refundRub,
-					]);
+						rublesFromKopecks(Math.max(0, moneyKopecks(canon.netUncollectedRub))),
+						[dashboardDueRub, canon.netUncollectedRub],
+					);
 				}
 				if (dashboardInsightDebt !== null) {
 					/*
@@ -1325,13 +1603,22 @@ async function main(): Promise<void> {
 					 * ненулевом отменённом лечении он ОБЯЗАН быть больше канона — и
 					 * маршрут обязан совпасть с каноном, а не с ним. Возврат дефекта
 					 * ломает это утверждение, а верная правка — нет.
+					 *
+					 * СВЕРЯЕТСЯ С ПОЛНОЙ ДЕБИТОРКОЙ, А НЕ С ИТОГОМ ОТЧЁТА — и вот почему.
+					 * Здесь стоял `canon.receivableRub`, то есть дебиторка СПИСКА, с порогом
+					 * значимости 1 ₽. Карточка пациента порога не имеет и не должна иметь:
+					 * пациент, задолжавший 50 копеек, обязан видеть 50 копеек, а не ноль.
+					 * На круглых ценах разницы не было, после приведения цен к прайсу
+					 * утверждение разошлось ровно на 0,50 ₽ (53001.99 против 53001.49) — и
+					 * прав был маршрут, а не сверка. Сравнивать сумму карточек с итогом
+					 * СПИСКА нельзя: это разные величины, и одна из них шумовой фильтр.
 					 */
 					same(
 						org.name,
-						"сумма balanceDueRub = дебиторка по канону: отменённое лечение НЕ долг",
+						"сумма balanceDueRub = ПОЛНАЯ дебиторка по канону: отменённое лечение НЕ долг, копеечный — долг",
 						dashboardInsightDebt,
-						canon.receivableRub,
-						[dashboardInsightDebt, canon.receivableRub],
+						canon.fullReceivableRub,
+						[dashboardInsightDebt, canon.fullReceivableRub],
 					);
 					const cancelledWeight = money(totals.cancelled_line_sql);
 					if (cancelledWeight > 0) {
@@ -1340,19 +1627,23 @@ async function main(): Promise<void> {
 						 * значит совпадение с каноном — это содержательный ответ, а не
 						 * совпадение двух нулей.
 						 */
+						/*
+						 * Обе стороны БЕЗ порога: сравнивается влияние одного признака —
+						 * фильтра статуса, — а не смесь «фильтр статуса плюс шумовой порог».
+						 */
 						same(
 							org.name,
 							"формула с отменёнными даёт БОЛЬШЕ канона — значит фильтр статуса вправду работает",
-							canon.screenReceivableRub > canon.receivableRub,
+							canon.screenReceivableRub > canon.fullReceivableRub,
 							true,
-							[canon.screenReceivableRub, canon.receivableRub, cancelledWeight],
+							[canon.screenReceivableRub, canon.fullReceivableRub, cancelledWeight],
 						);
 						console.log(
-							`ШОВ ЦЕЛ: карточки пациентов считают долг ${dashboardInsightDebt} ₽ и совпадают с каноном ` +
-								`${canon.receivableRub} ₽ при отменённом лечении на ${cancelledWeight} ₽. Формула без фильтра ` +
-								`статуса дала бы ${canon.screenReceivableRub} ₽ — разница ` +
-								`${money(canon.screenReceivableRub - canon.receivableRub)} ₽ и есть та сумма, которую ` +
-								"администратор раньше требовал с пациента за отменённое лечение.",
+							`ШОВ ЦЕЛ: карточки пациентов считают долг ${dashboardInsightDebt} ₽ и совпадают с полной ` +
+								`дебиторкой канона ${canon.fullReceivableRub} ₽ при отменённом лечении на ${cancelledWeight} ₽. ` +
+								`Формула без фильтра статуса дала бы ${canon.screenReceivableRub} ₽ — разница ` +
+								`${rublesFromKopecks(moneyKopecks(canon.screenReceivableRub) - moneyKopecks(canon.fullReceivableRub))} ₽ ` +
+								"и есть та сумма, которую администратор раньше требовал с пациента за отменённое лечение.",
 						);
 					}
 				}
@@ -1387,8 +1678,11 @@ async function main(): Promise<void> {
 					revenueRub?: unknown;
 					appointmentsTotal?: unknown;
 				}[];
-				const attributed = money(doctorRows.reduce((sum, row) => sum + money(row.revenueRub), 0));
-				doctorsPeriodRevenue = money(attributed + money(doctors.unattributedRevenueRub));
+				const attributedKopecks = sumMoneyKopecks(doctorRows.map((row) => row.revenueRub));
+				const attributed = rublesFromKopecks(attributedKopecks);
+				doctorsPeriodRevenue = rublesFromKopecks(
+					attributedKopecks + moneyKopecks(doctors.unattributedRevenueRub),
+				);
 				same(
 					org.name,
 					"выручка врачей = оплаты, дошедшие до врача через приём",
@@ -1467,7 +1761,9 @@ async function main(): Promise<void> {
 					);
 				}
 				const revenuePoints = (revenue.points ?? []) as { revenueRub?: unknown }[];
-				const pointsTotal = money(revenuePoints.reduce((sum, row) => sum + money(row.revenueRub), 0));
+				const pointsTotal = rublesFromKopecks(
+					sumMoneyKopecks(revenuePoints.map((row) => row.revenueRub)),
+				);
 				same(org.name, "сумма точек динамики = итог динамики", pointsTotal, money(revenue.totalRub), [
 					pointsTotal,
 					money(revenue.totalRub),
@@ -1659,16 +1955,16 @@ async function main(): Promise<void> {
 	console.log(`посев в базе: ${JSON.stringify(seeded)}`);
 
 	const seedClinic = FIXTURE_ORGANIZATION_NAME;
-	same(seedClinic, "посев: приёмов", Number(seeded.appointments ?? 0), 4, [Number(seeded.appointments ?? 0), 4]);
-	same(seedClinic, "посев: визитов", Number(seeded.visits ?? 0), 4, [Number(seeded.visits ?? 0), 4]);
-	same(seedClinic, "посев: визитов, созданных из записи", Number(seeded.visits_from_appointment ?? 0), 3, [
+	same(seedClinic, "посев: приёмов", Number(seeded.appointments ?? 0), 5, [Number(seeded.appointments ?? 0), 5]);
+	same(seedClinic, "посев: визитов", Number(seeded.visits ?? 0), 5, [Number(seeded.visits ?? 0), 5]);
+	same(seedClinic, "посев: визитов, созданных из записи", Number(seeded.visits_from_appointment ?? 0), 4, [
 		Number(seeded.visits_from_appointment ?? 0),
-		3,
+		4,
 	]);
-	same(seedClinic, "посев: позиций лечения", Number(seeded.items ?? 0), 6, [Number(seeded.items ?? 0), 6]);
-	same(seedClinic, "посев: оплат", Number(seeded.payments ?? 0), 5, [Number(seeded.payments ?? 0), 5]);
-	same(seedClinic, "посев: назначено", money(seeded.planned), 24_500, [money(seeded.planned), 24_500]);
-	same(seedClinic, "посев: оплачено", money(seeded.paid), 15_300, [money(seeded.paid), 15_300]);
+	same(seedClinic, "посев: позиций лечения", Number(seeded.items ?? 0), 7, [Number(seeded.items ?? 0), 7]);
+	same(seedClinic, "посев: оплат", Number(seeded.payments ?? 0), 6, [Number(seeded.payments ?? 0), 6]);
+	same(seedClinic, "посев: назначено", money(seeded.planned), 26_000.5, [money(seeded.planned), 26_000.5]);
+	same(seedClinic, "посев: оплачено", money(seeded.paid), 16_800, [money(seeded.paid), 16_800]);
 	same(seedClinic, "посев: предоплата в статусе planned", money(seeded.advance), 2_500, [money(seeded.advance), 2_500]);
 	same(seedClinic, "посев: оплата без визита", money(seeded.paid_without_visit), 1_000, [
 		money(seeded.paid_without_visit),
@@ -1681,6 +1977,27 @@ async function main(): Promise<void> {
 	const seedCanon = await canonDebt(FIXTURE_ORGANIZATION_ID);
 	same(seedClinic, "посев: дебиторка по канону", seedCanon.receivableRub, 10_000, [seedCanon.receivableRub, 10_000]);
 	same(seedClinic, "посев: возврат по канону", seedCanon.refundRub, 800, [seedCanon.refundRub, 800]);
+	/*
+	 * ТРИ УТВЕРЖДЕНИЯ ПРО КОПЕЙКИ ПОСЕВА — они и есть замок на тот полтинник.
+	 *
+	 * Ожидания — литералы замысла, не выражения из констант посева: величина
+	 * «долг ниже порога» обязана быть названа числом отдельно от того, чем её
+	 * посеяли. Если долг 0,50 ₽ из посева исчезнет, все три покраснеют, а реестр
+	 * назовёт их по имени — то есть вернуть сверку к «зелено на круглых числах»
+	 * молча больше нельзя.
+	 */
+	same(seedClinic, "посев: полная дебиторка по канону (порога нет)", seedCanon.fullReceivableRub, 10_000.5, [
+		seedCanon.fullReceivableRub,
+		10_000.5,
+	]);
+	same(seedClinic, "посев: долг ниже порога отчёта", seedCanon.subThresholdReceivableRub, 0.5, [
+		seedCanon.subThresholdReceivableRub,
+		0.5,
+	]);
+	same(seedClinic, "посев: не собрано нетто = полная дебиторка − возврат", seedCanon.netUncollectedRub, 9_200.5, [
+		seedCanon.netUncollectedRub,
+		9_200.5,
+	]);
 
 	console.log("\nГОТОВО. Единственная возможная запись по живым клиникам — PUT автосохранения выше, и он отвечает отказом на подписанном визите.");
 }
@@ -1764,6 +2081,26 @@ function printVerdict(extraViolations: readonly string[]): number {
 		console.log(
 			`НАРУШЕНИЕ: утверждение «${label}» по своей клинике сравнивало ноль с нулём — ` +
 				"посев не состоялся или маршрут перестал отдавать данные",
+		);
+	}
+
+	/*
+	 * СУММЫ, ПОТЕРЯВШИЕ ТОЧНОСТЬ ДО ВХОДА В ПРОГОН.
+	 *
+	 * Печатается всегда, включая слово «пусто»: пока прежний `money()` округлял
+	 * такие суммы про себя, отсутствие строк здесь читалось бы как отсутствие
+	 * проблемы, а на деле означало отсутствие датчика. Нарушением не объявляется —
+	 * производитель назван, и правка канона в эту задачу не входит.
+	 */
+	console.log("\n===== СУММЫ, ПОТЕРЯВШИЕ ТОЧНОСТЬ У СВОЕГО ПРОИЗВОДИТЕЛЯ =====");
+	if (producerFloatDirt.length === 0) {
+		console.log("ни одна сумма не пришла с хвостом плавающей точки");
+	} else {
+		for (const finding of producerFloatDirt) console.log(`  НАХОДКА: ${finding}`);
+		console.log(
+			`  всего таких сумм: ${producerFloatDirt.length}. Прогон их приводит к копейке тем же способом, ` +
+				"которым производитель приводит свой итог, и называет каждую по имени. Правка производителя " +
+				"(managerReports.ts:1145 — вычитание долга пациента в плавающей точке) в эту задачу не входит.",
 		);
 	}
 
