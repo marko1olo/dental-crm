@@ -88,6 +88,7 @@ import {
 	type ServiceCatalogRow,
 } from "./pricelistQuery.js";
 import * as schema from "./schema.js";
+import { projectVisitRow } from "./visitsProjection.js";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -216,6 +217,32 @@ export function hydrateDomainStateFromDb(organizationId: string): Promise<Domain
 		() => hydrateDomainStateFromDbUnsynchronized(organizationId),
 		() => hydrateDomainStateFromDbUnsynchronized(organizationId),
 	);
+	hydrationChain = run.catch(() => undefined);
+	return run;
+}
+
+/**
+ * Наполнить состояние и СРАЗУ им воспользоваться, не выпуская очередь.
+ *
+ * ЗАЧЕМ ЭТО НУЖНО ОТДЕЛЬНОЙ ФУНКЦИЕЙ. `hydrateDomainStateFromDb` отдаёт отчёт, а
+ * сами данные лежат в общих на процесс массивах. Между «гидратация завершилась» и
+ * «я прочитал массивы» очередь свободна, поэтому запрос ДРУГОЙ клиники успевает
+ * подменить содержимое, и расчёт собирается по чужим данным. Для сводки главного
+ * экрана это межклиничная утечка, для карточки закрытия приёма — тоже.
+ *
+ * Здесь `use` выполняется внутри той же цепочки, что и гидратация: пока он не
+ * закончил, никто не имеет права заменить массивы. Возвращать наружу ссылки на
+ * доменные коллекции из `use` нельзя — только уже собранное значение.
+ */
+export function withHydratedDomainState<T>(
+	organizationId: string,
+	use: (report: DomainStateHydrationReport) => T | Promise<T>,
+): Promise<T> {
+	const hydrateThenUse = async (): Promise<T> => {
+		const report = await hydrateDomainStateFromDbUnsynchronized(organizationId);
+		return use(report);
+	};
+	const run = hydrationChain.then(hydrateThenUse, hydrateThenUse);
 	hydrationChain = run.catch(() => undefined);
 	return run;
 }
@@ -534,23 +561,10 @@ async function hydrateDomainStateFromDbUnsynchronized(
 	);
 
 	// ── Приёмы ────────────────────────────────────────────────────────────────
+	// Проекция строки приёма одна на проект (db/visitsProjection.ts): её же
+	// применяет слой подписания карты приёма, и расходиться им нельзя.
 	const visitRecords = collect<Visit>(
-		visitRows.map((visit) => ({
-			id: visit.id,
-			organizationId: visit.organizationId,
-			patientId: visit.patientId,
-			appointmentId: visit.appointmentId ?? null,
-			status: visit.status,
-			revision: visit.revision,
-			complaint: visit.complaint ?? null,
-			anamnesis: visit.anamnesis ?? null,
-			objectiveStatus: visit.objectiveStatus ?? null,
-			diagnosis: visit.diagnosis ?? null,
-			treatmentPlan: visit.treatmentPlan ?? null,
-			doctorSummary: visit.doctorSummary ?? null,
-			createdAt: isoOrNow(visit.createdAt),
-			updatedAt: isoOrNow(visit.updatedAt),
-		})),
+		visitRows.map(projectVisitRow),
 		visitSchema,
 		"visits",
 		report,

@@ -129,7 +129,6 @@ import type {
 	UpdatePatientInput,
 	UpdateStaffWorkingHoursInput,
 	Visit,
-	VisitCloseChecklist,
 	VisitDraftAutosave,
 	VisitDraftAutosaveRequest,
 	VisitNoteDraft,
@@ -157,6 +156,10 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "./text/repairMojibake.js";
+import {
+	buildVisitCloseChecklist,
+	type VisitCloseChecklistFacts,
+} from "./visitCloseChecklist.js";
 
 type PatientAdministrativeProfilePatch = {
 	[K in keyof PatientAdministrativeProfile]?:
@@ -1351,202 +1354,28 @@ export function buildBillingSummary(): BillingSummary {
 	};
 }
 
-type ChecklistItem = VisitCloseChecklist["items"][number];
-
-function buildVisitNoteChecklistItem(): ChecklistItem {
-	const visitNoteReady = Boolean(
-		activeVisit.complaint &&
-			activeVisit.objectiveStatus &&
-			activeVisit.diagnosis &&
-			activeVisit.treatmentPlan,
-	);
+/**
+ * Факты для карточки закрытия КОНКРЕТНОГО приёма.
+ *
+ * Сам расчёт переехал в visitCloseChecklist.ts и он один на весь проект. Здесь
+ * остался только сбор данных из доменных коллекций — тех же, что читались
+ * раньше, поэтому главный экран собирается прежним. Разница в одном: приём
+ * передаётся аргументом, а не берётся из общей переменной `activeVisit`.
+ *
+ * Почему это важно: слой доступа к базе (db/visitsQuery.ts) подписывает
+ * КОНКРЕТНЫЙ приём и обязан отдать карточку именно по нему. Пока приём брался из
+ * общего состояния, воспользоваться этим расчётом он не мог — и врач на
+ * подписании карты получал HTTP 500 при уже подписанном приёме.
+ */
+function visitCloseChecklistFactsFor(visit: Visit): VisitCloseChecklistFacts {
 	return {
-		id: "visit-note",
-		visitId: activeVisit.id,
-		title: "ЭМК заполнена",
-		detail: visitNoteReady
-			? "Жалобы, статус, диагноз и план готовы к подписи."
-			: "Заполните жалобы, объективный статус, диагноз и план лечения.",
-		ready: visitNoteReady,
-		blocking: true,
-		ownerRole: "doctor",
-		section: "visit",
-		actionLabel: "Проверить запись",
-	};
-}
-
-function buildClinicalRulesChecklistItem(
-	clinical: ReturnType<typeof buildClinicalRuleSummary>,
-): ChecklistItem {
-	return {
-		id: "clinical-rules",
-		visitId: activeVisit.id,
-		title: "Клинические предупреждения",
-		detail: clinical.unresolved
-			? `${clinical.unresolved} правил требуют внимания, важных предупреждений ${clinical.blockers}.`
-			: "Бандлы, ограничения и предупреждения закрыты.",
-		ready: clinical.blockers === 0,
-		blocking: clinical.blockers > 0,
-		ownerRole: "doctor",
-		section: "visit",
-		actionLabel:
-			clinical.blockers > 0 ? "Проверить предупреждения" : "Посмотреть правила",
-	};
-}
-
-function buildImagingReviewChecklistItem(): ChecklistItem {
-	const activeImages = imagingStudies.filter(
-		(study) =>
-			study.patientId === activeVisit.patientId &&
-			study.visitId === activeVisit.id,
-	);
-	const reviewImages = activeImages.filter(
-		(study) => study.status === "needs_review",
-	);
-	return {
-		id: "imaging-review",
-		visitId: activeVisit.id,
-		title: "Снимки проверены",
-		detail: reviewImages.length
-			? `${reviewImages.length} снимок требует врачебной проверки перед закрытием.`
-			: activeImages.length
-				? "Снимки связаны с приемом и не ждут проверки."
-				: "К приему не прикреплены снимки.",
-		ready: reviewImages.length === 0,
-		blocking: reviewImages.length > 0,
-		ownerRole: "doctor",
-		section: "visit",
-		actionLabel: "Открыть снимки",
-	};
-}
-
-function buildLegalDocumentsChecklistItem(): ChecklistItem {
-	const activeDocuments = documents.filter(
-		(document) =>
-			document.patientId === activeVisit.patientId &&
-			document.visitId === activeVisit.id &&
-			document.status !== "voided",
-	);
-	const requiredDocumentKinds: DocumentKind[] = [
-		"paid_medical_services_contract",
-		"informed_consent",
-		"completed_works_act",
-	];
-	const missingDocumentKinds = requiredDocumentKinds.filter(
-		(kind) => !activeDocuments.some((document) => document.kind === kind),
-	);
-	return {
-		id: "legal-documents",
-		visitId: activeVisit.id,
-		title: "Документы готовы",
-		detail: missingDocumentKinds.length
-			? `Не хватает документов: ${missingDocumentKinds.length}.`
-			: "Договор, согласие и акт привязаны к приему.",
-		ready: missingDocumentKinds.length === 0,
-		blocking: missingDocumentKinds.length > 0,
-		ownerRole: "administrator",
-		section: "documents",
-		actionLabel: "Собрать документы",
-	};
-}
-
-function buildAiDraftReviewChecklistItem(): ChecklistItem {
-	const hasReviewedAiDraft = aiRecognitionJobs.some(
-		(job) =>
-			job.patientId === activeVisit.patientId &&
-			job.target === "visit_note" &&
-			(job.status === "accepted" || job.status === "needs_review"),
-	);
-	return {
-		id: "ai-draft-review",
-		visitId: activeVisit.id,
-		title: "AI-черновик проверен",
-		detail: hasReviewedAiDraft
-			? "AI-черновик уже прошел врачебный контроль."
-			: "AI не подписывает прием: врач сверяет текст вручную.",
-		ready: hasReviewedAiDraft,
-		blocking: false,
-		ownerRole: "doctor",
-		section: "visit",
-		actionLabel: "Сверить черновик",
-	};
-}
-
-function buildPaymentLinkChecklistItem(
-	billing: ReturnType<typeof buildBillingSummary>,
-): ChecklistItem {
-	const formatRub = (amountRub: number) =>
-		`${amountRub.toLocaleString("ru-RU")} ₽`;
-	return {
-		id: "payment-link",
-		visitId: activeVisit.id,
-		title: "Оплата связана",
-		detail: billing.totalDueRub
-			? `Остаток по плану ${formatRub(billing.totalDueRub)}.`
-			: "Оплата закрыта или не требуется.",
-		ready: billing.totalDueRub === 0,
-		blocking: false,
-		ownerRole: "administrator",
-		section: "finance",
-		actionLabel: "Проверить оплату",
-	};
-}
-
-function buildPostVisitInstructionsChecklistItem(): ChecklistItem {
-	const postVisitInstruction = communicationTasks.find(
-		(task) =>
-			task.visitId === activeVisit.id &&
-			task.intent === "post_visit_instruction",
-	);
-	const postVisitInstructionReady =
-		postVisitInstruction?.status === "completed" ||
-		postVisitInstruction?.status === "sent";
-	return {
-		id: "post-visit-instructions",
-		visitId: activeVisit.id,
-		title: "Рекомендации пациенту",
-		detail: postVisitInstructionReady
-			? "Пациент получил рекомендации после приема."
-			: "Ассистенту нужно отправить короткую памятку после лечения.",
-		ready: Boolean(postVisitInstructionReady),
-		blocking: false,
-		ownerRole: "assistant",
-		section: "communications",
-		actionLabel: "Отправить памятку",
-	};
-}
-
-function buildVisitCloseChecklist(): VisitCloseChecklist {
-	const clinical = buildClinicalRuleSummary();
-	const billing = buildBillingSummary();
-
-	const items: VisitCloseChecklist["items"] = [
-		buildVisitNoteChecklistItem(),
-		buildClinicalRulesChecklistItem(clinical),
-		buildImagingReviewChecklistItem(),
-		buildLegalDocumentsChecklistItem(),
-		buildAiDraftReviewChecklistItem(),
-		buildPaymentLinkChecklistItem(billing),
-		buildPostVisitInstructionsChecklistItem(),
-	];
-
-	const readyItems = items.filter((item) => item.ready).length;
-	const firstOpenBlocking = items.find((item) => item.blocking && !item.ready);
-	const firstOpenOptional = items.find((item) => !item.ready);
-	const blockingItems = items.filter(
-		(item) => item.blocking && !item.ready,
-	).length;
-
-	return {
-		visitId: activeVisit.id,
-		readyToSign: blockingItems === 0,
-		score: Math.round((readyItems / items.length) * 100),
-		nextAction:
-			firstOpenBlocking?.actionLabel ??
-			firstOpenOptional?.actionLabel ??
-			"Можно подписывать прием",
-		blockingItems,
-		items,
+		visit,
+		imagingStudies,
+		documents,
+		aiRecognitionJobs,
+		communicationTasks,
+		clinical: buildClinicalRuleSummary(visit.patientId),
+		billing: buildBillingSummary(),
 	};
 }
 
@@ -1649,8 +1478,14 @@ export function evaluateClinicalRules(
 	};
 }
 
-function buildClinicalRuleEvaluations(): ClinicalRuleEvaluation[] {
-	const patientId = activeVisit.patientId;
+/**
+ * Клинические правила считаются по ПАЦИЕНТУ, поэтому пациент — аргумент.
+ *
+ * БЫЛО: `activeVisit.patientId` прямо внутри. Из-за этого правила нельзя было
+ * посчитать ни для одного приёма, кроме «последнего черновика клиники»: карточка
+ * закрытия конкретного приёма получала предупреждения ЧУЖОГО пациента.
+ */
+function buildClinicalRuleEvaluations(patientId: string): ClinicalRuleEvaluation[] {
 	const patientPlanItems = treatmentPlanItems.filter(
 		(item) => item.patientId === patientId && item.status !== "cancelled",
 	);
@@ -1674,8 +1509,8 @@ function buildClinicalRuleEvaluations(): ClinicalRuleEvaluation[] {
 	}).evaluations;
 }
 
-export function buildClinicalRuleSummary(): ClinicalRuleSummary {
-	return summarizeClinicalEvaluations(buildClinicalRuleEvaluations());
+export function buildClinicalRuleSummary(patientId: string): ClinicalRuleSummary {
+	return summarizeClinicalEvaluations(buildClinicalRuleEvaluations(patientId));
 }
 
 function normalizedClinicalRuleServiceIds(values: string[]): string[] {
@@ -3283,7 +3118,7 @@ function buildScheduleWarnings(): ScheduleWarning[] {
 	const warnings: ScheduleWarning[] = [];
 	const billing = buildBillingSummary();
 	const communication = buildCommunicationSummary();
-	const clinical = buildClinicalRuleSummary();
+	const clinical = buildClinicalRuleSummary(activeVisit.patientId);
 	const activeAppointment = appointments.find(
 		(appointment) => appointment.id === activeAppointmentId,
 	);
@@ -10395,7 +10230,9 @@ export function buildDashboard(): Dashboard {
 			buildScheduleSuggestions(appointmentReadiness),
 		),
 		activeVisit: repairMojibakeDeep(activeVisit),
-		visitCloseChecklist: repairMojibakeDeep(buildVisitCloseChecklist()),
+		visitCloseChecklist: repairMojibakeDeep(
+			buildVisitCloseChecklist(visitCloseChecklistFactsFor(activeVisit)),
+		),
 		documents: repairMojibakeDeep(buildDashboardDocuments()),
 		imagingStudies: repairMojibakeDeep(imagingStudies),
 		protocolTemplates: repairMojibakeDeep(protocolTemplates),
@@ -10403,8 +10240,12 @@ export function buildDashboard(): Dashboard {
 		treatmentPlanItems: repairMojibakeDeep(treatmentPlanItems),
 		treatmentPlanScenarios: repairMojibakeDeep(treatmentPlanScenarios),
 		clinicalRules: repairMojibakeDeep(clinicalRules),
-		clinicalRuleEvaluations: repairMojibakeDeep(buildClinicalRuleEvaluations()),
-		clinicalRuleSummary: repairMojibakeDeep(buildClinicalRuleSummary()),
+		clinicalRuleEvaluations: repairMojibakeDeep(
+			buildClinicalRuleEvaluations(activeVisit.patientId),
+		),
+		clinicalRuleSummary: repairMojibakeDeep(
+			buildClinicalRuleSummary(activeVisit.patientId),
+		),
 		payments: repairMojibakeDeep(payments),
 		billingSummary: repairMojibakeDeep(buildBillingSummary()),
 		communicationTemplates: repairMojibakeDeep(communicationTemplates),
@@ -12014,7 +11855,9 @@ export function acceptVisitDraft(
 	if (duplicateReceipt) {
 		return {
 			visit: activeVisit,
-			visitCloseChecklist: buildVisitCloseChecklist(),
+			visitCloseChecklist: buildVisitCloseChecklist(
+				visitCloseChecklistFactsFor(activeVisit),
+			),
 			saveReceipt: {
 				...duplicateReceipt,
 				status: "duplicate",
@@ -12069,7 +11912,9 @@ export function acceptVisitDraft(
 
 	return {
 		visit: activeVisit,
-		visitCloseChecklist: buildVisitCloseChecklist(),
+		visitCloseChecklist: buildVisitCloseChecklist(
+			visitCloseChecklistFactsFor(activeVisit),
+		),
 		saveReceipt,
 	};
 }

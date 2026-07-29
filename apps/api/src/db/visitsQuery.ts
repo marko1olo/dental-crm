@@ -1,8 +1,26 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
-import type { VisitDraftAutosaveRequest, VisitDraftAutosave, AcceptVisitDraftInput } from "@dental/shared";
+import type {
+  AcceptVisitDraftInput,
+  AcceptVisitDraftResponse,
+  Visit,
+  VisitDraftAutosave,
+  VisitDraftAutosaveRequest,
+  VisitSaveReceipt
+} from "@dental/shared";
 import { createHash } from "node:crypto";
+import {
+  aiRecognitionJobs,
+  buildBillingSummary,
+  buildClinicalRuleSummary,
+  communicationTasks,
+  documents,
+  imagingStudies
+} from "../sampleData.js";
+import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
+import { withHydratedDomainState } from "./domainStateHydration.js";
+import { projectVisitRow } from "./visitsProjection.js";
 
 function hashTranscript(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -79,14 +97,74 @@ export async function upsertVisitDraftAutosaveInDb(organizationId: string, input
   return serverDraft;
 }
 
-export async function acceptVisitDraftInDb(organizationId: string, input: AcceptVisitDraftInput): Promise<{ acceptedVisitId: string, newRevision: number }> {
+/**
+ * ПРИЁМ ПОДПИСАН, А ОТВЕТ СОБРАТЬ НЕ УДАЛОСЬ.
+ *
+ * Отдельный тип нужен из-за порядка: запись в базе уже зафиксирована. Любая
+ * ошибка ПОСЛЕ этого не смеет доехать до общего разбора доменных отказов
+ * (routes/visits.ts, sendVisitDraftMutationError) — тот отвечает 409 «обновите
+ * прием и повторите действие», а повторить нельзя: приём больше не черновик, и
+ * повтор упрётся в «этот прием уже недоступен для изменений». Врач при этом
+ * считает, что его запись не сохранилась.
+ *
+ * Здесь несётся то, что уже стало фактом: приём и его новая ревизия. Маршрут
+ * обязан назвать состояние честно.
+ */
+export class VisitSignedResponseIncompleteError extends Error {
+  readonly acceptedVisitId: string;
+  readonly newRevision: number;
+
+  constructor(acceptedVisitId: string, newRevision: number, cause: unknown) {
+    super("Прием подписан, но ответ по контракту собрать не удалось.", { cause });
+    this.name = "VisitSignedResponseIncompleteError";
+    this.acceptedVisitId = acceptedVisitId;
+    this.newRevision = newRevision;
+  }
+}
+
+/**
+ * Подписать карту приёма и отдать ПОЛНЫЙ ответ по контракту
+ * acceptVisitDraftResponseSchema: подписанный приём, карточку закрытия приёма и
+ * квитанцию сохранения.
+ *
+ * ЧТО БЫЛО НЕ ТАК (измерено: apps/api/src/tests/routes/chainWeldProof.ts, шаг 9).
+ * Функция возвращала `{ acceptedVisitId, newRevision }` — два поля, которых в
+ * контракте нет вовсе. Маршрут разбирал этот результат схемой ответа, разбор не
+ * сходился НИКОГДА, и врач на своём главном действии всегда получал ошибку при
+ * подписанном приёме.
+ *
+ * ОТКУДА БЕРУТСЯ ФАКТЫ КАРТОЧКИ. Из тех же доменных коллекций, по которым
+ * собирается главный экран (db/domainStateHydration.ts наполняет их строками этой
+ * клиники, db/dashboardQuery.ts делает то же самое перед buildDashboard). Это
+ * сделано сознательно: расчёт карточки в проекте ОДИН
+ * (apps/api/src/visitCloseChecklist.ts), и числа в ответе на подписание обязаны
+ * совпадать с тем, что врач видит на экране. Второй расчёт «для базы» здесь
+ * заводить нельзя — из этого выросли четыре разошедшихся расчёта долга.
+ *
+ * ПОЧЕМУ ГИДРАТАЦИЯ ВНУТРИ ОДНОГО ЗАМКА. Коллекции общие на процесс. Прочитать их
+ * после того, как гидратация отпустила очередь, значит рискнуть собрать карточку
+ * по данным ДРУГОЙ клиники, успевшей вклиниться. `withHydratedDomainState`
+ * выполняет сбор внутри той же очереди. Цена — полное чтение данных клиники на
+ * одно подписание; подписание бывает раз на приём, а сводка главного экрана делает
+ * то же самое на каждый запрос.
+ *
+ * ПРИЁМ БЕРЁТСЯ ИЗ RETURNING, А НЕ ИЗ КОЛЛЕКЦИЙ. Он только что перестал быть
+ * черновиком, поэтому `activeVisit` («последний черновик клиники») укажет уже на
+ * другой визит. В ответ и в карточку идёт именно подписанная строка.
+ */
+export async function acceptVisitDraftInDb(
+  organizationId: string,
+  input: AcceptVisitDraftInput
+): Promise<AcceptVisitDraftResponse> {
   const [visit] = await db.select().from(schema.visits).where(and(eq(schema.visits.id, input.visitId), eq(schema.visits.organizationId, organizationId))).limit(1);
   if (!visit) throw new Error("Визит не найден");
   if (visit.status !== "draft") throw new Error("Прием уже закрыт или аннулирован");
 
-  const newRevision = visit.revision + 1;
-  
-  await db.update(schema.visits)
+  const previousRevision = visit.revision;
+  const newRevision = previousRevision + 1;
+  const savedAt = new Date();
+
+  const [signedRow] = await db.update(schema.visits)
     .set({
       status: "signed",
       revision: newRevision,
@@ -96,12 +174,92 @@ export async function acceptVisitDraftInDb(organizationId: string, input: Accept
       diagnosis: input.draft.diagnosis,
       treatmentPlan: input.draft.treatmentPlan,
       doctorSummary: input.doctorSummary,
-      signedAt: new Date(),
-      updatedAt: new Date()
+      signedAt: savedAt,
+      updatedAt: savedAt
     })
-    .where(eq(schema.visits.id, input.visitId));
+    .where(eq(schema.visits.id, input.visitId))
+    .returning();
+  // До этой строки приём ещё черновик: пустой RETURNING значит, что подписания не
+  // случилось, и обычный доменный отказ здесь правдив.
+  if (!signedRow) throw new Error("Прием не подписан");
 
-  return { acceptedVisitId: visit.id, newRevision };
+  const signedVisit = projectVisitRow(signedRow);
+
+  try {
+    const visitCloseChecklist = await withHydratedDomainState(organizationId, (report) => {
+      /*
+       * Клиника не подтверждена — карточку собирать НЕЛЬЗЯ. Гидратация в этом
+       * случае сознательно не трогает общие коллекции, поэтому в них осталось то,
+       * что прочитал предыдущий запрос, то есть данные ДРУГОЙ клиники. Отдать их
+       * врачу хуже, чем не отдать ничего. По внешнему ключу visits ->
+       * organizations такого быть не должно; сюда попадает только сбой чтения
+       * самой строки клиники, и он обязан кончиться честным отказом.
+       */
+      if (!report.organizationFound) {
+        throw new Error("Клиника приема не подтверждена в базе: карточку закрытия собирать не по чему.");
+      }
+      return buildVisitCloseChecklist({
+        visit: signedVisit,
+        imagingStudies,
+        documents,
+        aiRecognitionJobs,
+        communicationTasks,
+        clinical: buildClinicalRuleSummary(signedVisit.patientId),
+        billing: buildBillingSummary()
+      });
+    });
+
+    return {
+      visit: signedVisit,
+      visitCloseChecklist,
+      saveReceipt: buildVisitSaveReceipt(input, signedVisit, previousRevision)
+    };
+  } catch (error) {
+    throw new VisitSignedResponseIncompleteError(signedVisit.id, signedVisit.revision, error);
+  }
+}
+
+/**
+ * Квитанция сохранения — по фактически сохранённой строке приёма.
+ *
+ * `serverRevision` и `savedAt` берутся из подписанного приёма, а не из времени
+ * ответа: врач сверяет по ним, что на сервере лежит именно его правка, а панель
+ * ЭМК сверяет `visitId` и чужую квитанцию не показывает
+ * (apps/web/src/components/visit/visitFlowResultOwner.ts).
+ *
+ * `conflict_accepted` — настоящее состояние, а не украшение: клиент присылает
+ * `baseRevision` — ревизию, с которой он правил. Если на сервере она уже была
+ * выше, правки всё равно приняты (приём подписан), но врач обязан узнать, что
+ * поверх его версии уже была другая.
+ *
+ * СТАТУС `duplicate` ЭТОТ ПУТЬ НЕ ВЫДАЁТ, И ЭТО ДОЛГ, А НЕ НЕДОСМОТР. Чтобы
+ * отличить повторную отправку той же операции от новой, нужен след
+ * `clientMutationId` в базе. У платежей такой столбец есть
+ * (payments.client_mutation_id, db/billingQuery.ts), у приёмов — нет. Пока его
+ * нет, повторный POST по уже подписанному приёму получает отказ «этот прием уже
+ * недоступен для изменений» (409), а не квитанцию-дубликат. Объём долга: столбец
+ * в `visits` + миграция (.sql + журнал + снимок) + проверка в этой функции.
+ */
+function buildVisitSaveReceipt(
+  input: AcceptVisitDraftInput,
+  signedVisit: Visit,
+  previousRevision: number
+): VisitSaveReceipt {
+  const baseRevision = input.baseRevision ?? null;
+  const conflictWarning =
+    baseRevision !== null && baseRevision < previousRevision
+      ? `На сервере уже была ревизия ${previousRevision}, сохранение пришло с ревизии ${baseRevision}. ` +
+        "Правки врача приняты и подписаны; сверьте запись, если приём правили с двух рабочих мест."
+      : null;
+
+  return {
+    visitId: signedVisit.id,
+    clientMutationId: input.clientMutationId?.trim() || null,
+    status: conflictWarning ? "conflict_accepted" : "accepted",
+    serverRevision: signedVisit.revision,
+    savedAt: signedVisit.updatedAt,
+    warning: conflictWarning
+  };
 }
 
 export async function getVisitByIdInDb(organizationId: string, id: string) {

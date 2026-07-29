@@ -21,23 +21,27 @@ const visitDraftAutosaveClosedMessage = "Черновик приема не со
 const visitDraftAcceptClosedMessage = "Черновик приема не принят: этот прием уже недоступен для изменений.";
 const visitDraftMutationRejectedMessage = "Черновик приема не изменен: обновите прием и повторите действие.";
 /*
- * ИЗМЕРЕНО, а не предположено (apps/api/src/tests/routes/chainWeldProof.ts, шаг 9,
- * свой процесс, живая база): POST /api/visits/:id/draft/accept подписывает прием
- * в базе (visits.status становится 'signed'), после чего сборка ответа падает —
- * acceptVisitDraftInDb возвращает {acceptedVisitId, newRevision}, а
- * acceptVisitDraftResponseSchema требует {visit, visitCloseChecklist,
- * saveReceipt}. Исключение разбора попадало в общий catch и превращалось в 409
- * «Черновик приема не изменен: обновите прием и повторите действие».
+ * ЭТОТ ОТВЕТ — ПОСЛЕДНЯЯ ЛИНИЯ, А НЕ РАБОЧИЙ РЕЖИМ. ИСТОРИЯ ВАЖНА.
  *
- * Для врача это была ложь дважды: прием УЖЕ подписан, а предложенное действие
- * («повторите») упирается в 409 «этот прием уже недоступен для изменений» —
- * карта закрыта, а врач считает, что не сохранилась, и переписывает ее заново
- * или зовет администратора. Текст ниже говорит фактическое состояние и
- * единственное полезное действие. Сама сборка полного ответа — долг: карточку
- * закрытия приема (visitCloseChecklist) в apps/api строит единственная функция
- * buildVisitCloseChecklist() в sampleData.ts, и она читает модульное общее
- * состояние, а не конкретный визит. Второй такой построитель заводить нельзя —
- * это ровно та болезнь, из которой выросли четыре разных расчета долга.
+ * БЫЛО, и это измерено (apps/api/src/tests/routes/chainWeldProof.ts, шаг 9, свой
+ * процесс, живая база): POST /api/visits/:id/draft/accept подписывал прием в базе
+ * (visits.status становился 'signed'), после чего сборка ответа падала —
+ * acceptVisitDraftInDb возвращала {acceptedVisitId, newRevision}, а
+ * acceptVisitDraftResponseSchema требует {visit, visitCloseChecklist,
+ * saveReceipt}. Разбор не сходился НИКОГДА, и врач на своем главном действии
+ * получал ошибку при подписанной карте. До этого было еще хуже: исключение
+ * попадало в общий catch и превращалось в 409 «обновите прием и повторите
+ * действие», а повтор упирался в «этот прием уже недоступен для изменений».
+ *
+ * СТАЛО: слой доступа собирает полный ответ сам (db/visitsQuery.ts) — подписанную
+ * строку приема из RETURNING, карточку закрытия ЭТОГО приема единственным на
+ * проект расчетом (apps/api/src/visitCloseChecklist.ts, приём передается
+ * аргументом) и квитанцию по фактически сохраненной ревизии.
+ *
+ * Текст ниже остается для случая, когда приём подписан, а ответ собрать не
+ * удалось (VisitSignedResponseIncompleteError или расхождение с контрактом). На
+ * зафиксированную в базе подпись нельзя отвечать «повторите»: он говорит
+ * фактическое состояние и единственное полезное действие.
  */
 const visitDraftAcceptResponseIncompleteMessage =
   "Прием подписан и сохранен в карте пациента, но рабочий экран не получил карточку закрытия приема. " +
@@ -98,7 +102,8 @@ import {
   getVisitDraftAutosaveFromDb,
   upsertVisitDraftAutosaveInDb,
   acceptVisitDraftInDb,
-  openVisitForAppointmentInDb
+  openVisitForAppointmentInDb,
+  VisitSignedResponseIncompleteError
 } from "../db/visitsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -265,26 +270,43 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     try {
       result = await acceptVisitDraftInDb(orgId, input);
     } catch (error) {
+      /*
+       * Отказ ПОСЛЕ подписания разбирается отдельно от доменных отказов. Общий
+       * разбор отвечает 409 «обновите прием и повторите действие» — на уже
+       * зафиксированную подпись это ложь, и предложенный повтор невозможен.
+       */
+      if (error instanceof VisitSignedResponseIncompleteError) {
+        request.log.error(
+          { visitId: error.acceptedVisitId, revision: error.newRevision, cause: error.cause },
+          "Прием подписан, но слой доступа не собрал ответ по контракту acceptVisitDraftResponseSchema"
+        );
+        return reply.code(500).send({
+          error: "VisitDraftAcceptResponseIncomplete",
+          reason: "visit_signed_response_incomplete",
+          visitId: error.acceptedVisitId,
+          revision: error.newRevision,
+          message: visitDraftAcceptResponseIncompleteMessage
+        });
+      }
       return sendVisitDraftMutationError(error, reply, "accept");
     }
 
     /*
-     * Разбор ответа отделен от подписания намеренно: после успешного
-     * acceptVisitDraftInDb прием в базе уже подписан, и отвечать «не изменен,
-     * повторите» на committed запись нельзя (см. комментарий у
-     * visitDraftAcceptResponseIncompleteMessage).
+     * Проверка контракта остается сторожем, хотя слой доступа теперь собирает
+     * ответ полностью: разойдутся контракт и сборка — врач узнает фактическое
+     * состояние приема, а не «повторите действие» на подписанной карте.
      */
     const response = acceptVisitDraftResponseSchema.safeParse(result);
     if (!response.success) {
       request.log.error(
-        { visitId: result.acceptedVisitId, revision: result.newRevision, issues: response.error.issues },
+        { visitId: result.visit.id, revision: result.visit.revision, issues: response.error.issues },
         "Прием подписан, но ответ маршрута не собран по контракту acceptVisitDraftResponseSchema"
       );
       return reply.code(500).send({
         error: "VisitDraftAcceptResponseIncomplete",
         reason: "visit_signed_response_incomplete",
-        visitId: result.acceptedVisitId,
-        revision: result.newRevision,
+        visitId: result.visit.id,
+        revision: result.visit.revision,
         message: visitDraftAcceptResponseIncompleteMessage
       });
     }
