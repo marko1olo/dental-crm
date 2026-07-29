@@ -1,0 +1,2 @@
+START: JJ1-egisz-logs-no-tenant — egisz_logs: no organization_id, not declared in Drizzle. Target: schema.ts + new migration.
+DONE: egiszLogs объявлена в apps/api/src/db/schema.ts по факту DDL; миграция apps/api/drizzle/0145_egisz_logs_organization_id.sql (дозаполнение по пациенту, затем NOT NULL) НЕ применена — база общий гейт ведущего. Сигналы: enumContractDrift.test.ts 5/5 exit 0; smoke-schema-column-parity по egisz_logs расхождений не даёт.

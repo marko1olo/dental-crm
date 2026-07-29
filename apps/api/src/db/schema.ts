@@ -1917,6 +1917,41 @@ export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * ЖУРНАЛ ОБМЕНА С ЕГИСЗ.
+ *
+ * Таблица существует в базе с миграции 0000 (строки 521-529), но в этом файле не
+ * была объявлена ни разу — поэтому её не видела ни одна перепись схемы, которая
+ * ходит по объявлениям drizzle, и отсутствие изоляции по клинике прожило
+ * незамеченным. Колонки перечислены по факту DDL, а не по догадке.
+ */
+export const egiszLogs = pgTable("egisz_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  /**
+   * Добавлена миграцией 0145. Это журнал передачи медицинских данных в
+   * государственную систему: без принадлежности клинике он одинаково открыт
+   * любому арендатору базы, а строка журнала называет пациента и приём.
+   */
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id, { onDelete: "cascade" }),
+  visitId: uuid("visit_id").notNull().references(() => visits.id, { onDelete: "cascade" }),
+  /**
+   * В базе колонка имеет тип `egisz_status_enum` со значениями
+   * Pending/Sent/Error/Accepted (миграция 0000, строка 26) — тот же набор, что
+   * у панели apps/web/src/components/integrations/egiszAvailability.ts.
+   * Объявлена здесь как text намеренно: pgEnum в этом файле обязан иметь
+   * одноимённый контракт `<имя>Schema` в @dental/shared, иначе перепись
+   * перечислений (tests/enumContractDrift.test.ts) краснеет; контракта для
+   * статуса ЕГИСЗ нет. text читает и пишет те же значения — параметр уходит без
+   * типа, и Postgres приводит его к перечислению сам, — но проверку набора
+   * держит только база.
+   */
+  status: text("status").notNull().default("Pending"),
+  transactionId: text("transaction_id"),
+  errorDetails: jsonb("error_details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // external schedule action logs (Zabota2.0 / LoyalMed AI booking)
 export const externalScheduleActionLogs = pgTable("external_schedule_action_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
