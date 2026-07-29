@@ -980,28 +980,57 @@ async function main(): Promise<void> {
 		}
 
 		/*
-		 * ТРЕТИЙ РАЗРЫВ: ДЕНЬГИ ВЕРНУЛИ НА БУМАГЕ, А КАССА ИХ ВСЁ ЕЩЁ СЧИТАЕТ.
-		 * Ни один маршрут не переводит платёж в статус `refunded` — поиск по
-		 * apps/api/src даёт только объявление перечисления, чтение в guards.ts и
-		 * тесты. То есть возврат существует как документ и не существует как
-		 * движение денег.
+		 * ВОЗВРАТ ДОЛЖЕН БЫТЬ И ДОКУМЕНТОМ, И ДВИЖЕНИЕМ ДЕНЕГ.
+		 *
+		 * Здесь был ТРЕТИЙ РАЗРЫВ: ни один маршрут не переводил платёж в статус
+		 * `refunded`, и возврат существовал как бумага, но не как деньги. Он
+		 * закрыт (`5f35a43c2`), и это место переписано так, чтобы работать в ОБОИХ
+		 * мирах — со сваренным швом и с разорванным.
+		 *
+		 * ПОЧЕМУ НЕ ПРОСТО «ОБНОВИТЬ ОЖИДАНИЕ». Прежняя редакция утверждала
+		 * `касса после оформления возврата НЕ изменилась` и ждала 3991,49 — то есть
+		 * закрепляла дефект как ожидаемое поведение. Такое утверждение краснеет в
+		 * день, когда дефект чинят, и чинящий видит красное на ВЕРНОЙ правке. В
+		 * этом дереве сторожа, кричащие на верном коде, выключали трижды.
+		 *
+		 * Поэтому ожидание выводится из ФАКТА статуса платежа, а не зашито. Если
+		 * шов снова порвётся, сценарий скажет об этом разрывом, а не молча
+		 * подстроится: ветка `paid` по-прежнему зовёт `weldBroken`.
 		 */
 		const paymentAfterRefund = await firstRow<{ status: string; amount_rub: string }>(
 			sql`select status::text as status, amount_rub::text as amount_rub from payments where id = ${overpaymentId}::uuid`,
 		);
 		console.log(`платёж переплаты после возврата: ${JSON.stringify(paymentAfterRefund)}`);
-		if (paymentAfterRefund?.status === "paid") {
+		const refundReachedTheTill = paymentAfterRefund?.status === "refunded";
+		if (!refundReachedTheTill) {
 			weldBroken(
 				"возврат → статус платежа в кассе",
-				`заявление на возврат оформлено, а payments.status платежа ${overpaymentId} остался «paid» на ${paymentAfterRefund?.amount_rub} ₽`,
+				`заявление на возврат оформлено и выдано, а payments.status платежа ${overpaymentId} остался «${paymentAfterRefund?.status}» на ${paymentAfterRefund?.amount_rub} ₽`,
 				"выручка и отчёты руководителю считают возвращённые деньги полученными: касса не сходится с фактическим остатком, а налоговая справка соберёт возвращённую сумму как оплату пациента",
 			);
 		}
 		const paidAfterRefundDocument = await paidTotalText(ORG_A);
-		check("касса после оформления возврата не изменилась", paidAfterRefundDocument, PAID_AFTER_OVERPAY_TEXT);
+		check(
+			refundReachedTheTill
+				? "касса уменьшилась на возврат сразу при выдаче документа"
+				: "касса после оформления возврата не изменилась (шов разорван)",
+			paidAfterRefundDocument,
+			refundReachedTheTill ? PAID_AFTER_TWO_TEXT : PAID_AFTER_OVERPAY_TEXT,
+		);
 
-		step("ШАГ 11. СВАРКА ТРЕТЬЕГО РАЗРЫВА: статус возврата ставится прямым SQL");
-		await db.execute(sql`update payments set status = 'refunded' where id = ${overpaymentId}::uuid`);
+		step("ШАГ 11. КАССА ПОСЛЕ ВОЗВРАТА СХОДИТСЯ, КАК БЫ ШОВ НИ СРАБОТАЛ");
+		/*
+		 * Прямой SQL остался ТОЛЬКО как обход разорванного шва: без него цепочка
+		 * не доходит до отчётов и карта разрывов обрывается на первом. Когда шов
+		 * сварен, обход не нужен — и делать его нельзя, иначе прогон скроет
+		 * повторное списание, если оно когда-нибудь появится.
+		 */
+		if (!refundReachedTheTill) {
+			console.log("обход разорванного шва: статус возврата ставится прямым SQL, чтобы дойти до отчётов");
+			await db.execute(sql`update payments set status = 'refunded' where id = ${overpaymentId}::uuid`);
+		} else {
+			console.log("обход не нужен: маршрут сам перевёл платёж в «refunded»");
+		}
 		const paidAfterWeldedRefund = await paidTotalText(ORG_A);
 		check("касса после возврата", paidAfterWeldedRefund, PAID_AFTER_TWO_TEXT);
 		const receivablesAfterRefund = await call("GET", "/api/reports/receivables", headersA);
