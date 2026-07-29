@@ -1,5 +1,6 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { useEffect, useMemo, useRef } from "react";
+import { shouldResetPatientDraftState } from "../../components/patients/patientDraftResetDecision.js";
 import type {
 	PatientAdministrativeProfileDraft,
 	PatientCoreDraft,
@@ -100,6 +101,27 @@ export function usePatientLogic({
 		setNewRulePatientText,
 	} = usePatientStore();
 
+	/*
+	 * Отметка времени, которую вернуло НАШЕ собственное сохранение.
+	 *
+	 * ЗАЧЕМ. Оба сброса черновика ниже стоят на зависимостях
+	 * [selectedPatient?.id, selectedPatient?.updatedAt] и в теле возвращают
+	 * состояние сохранения в «idle». Зависимость от updatedAt нужна: если карточку
+	 * поправили в другом месте, черновик обязан подхватить свежие данные.
+	 *
+	 * Но updatedAt меняет и наше собственное сохранение — сервер возвращает
+	 * обновлённую строку, она кладётся в dashboard, selectedPatient пересчитывается
+	 * из него, и эффект срабатывает НА ТОЛЬКО ЧТО СОСТОЯВШЕМСЯ сохранении. Он гасил
+	 * выставленное строкой ниже «saved», и подтверждение записи не показывалось
+	 * никогда: регистратор жал «Сохранить» и не получал ни одного признака, что
+	 * карточка записана.
+	 *
+	 * Здесь запоминается отметка, пришедшая от нашего сохранения. Эффект по ней
+	 * узнаёт своё изменение и не сбрасывает состояние — черновик при этом уже
+	 * приведён в порядок самим сохранением. Чужое изменение отметки по-прежнему
+	 * сбрасывает всё, как и раньше.
+	 */
+	const savedByThisScreenUpdatedAtRef = useRef<string | null>(null);
 	const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
 
 	const patientAdministrativeProfileDraftRef =
@@ -295,12 +317,29 @@ export function usePatientLogic({
 	}, [documentPatient?.id]);
 
 	useEffect(() => {
+		// Наше же сохранение: черновик и признак изменений уже выставлены в
+		// savePatientCore, а гасить подтверждение записи нельзя.
+		if (
+			!shouldResetPatientDraftState({
+				incomingUpdatedAt: selectedPatient?.updatedAt,
+				savedByThisScreenUpdatedAt: savedByThisScreenUpdatedAtRef.current,
+			})
+		)
+			return;
 		setPatientCoreDraft(patientCoreDraftFromPatient(selectedPatient));
 		setPatientCoreSaveState("idle");
 		setPatientCoreDirty(false);
 	}, [selectedPatient?.id, selectedPatient?.updatedAt]);
 
 	useEffect(() => {
+		// То же самое для реквизитов: их сохранение тоже двигает updatedAt.
+		if (
+			!shouldResetPatientDraftState({
+				incomingUpdatedAt: selectedPatient?.updatedAt,
+				savedByThisScreenUpdatedAt: savedByThisScreenUpdatedAtRef.current,
+			})
+		)
+			return;
 		setPatientAdministrativeProfileDraft(
 			patientAdministrativeProfileDraftFromPatient(selectedPatient),
 		);
@@ -423,6 +462,7 @@ export function usePatientLogic({
 				setPatientCoreDraft(patientCoreDraftFromPatient(savedPatient));
 				setPatientCoreDirty(false);
 			}
+			savedByThisScreenUpdatedAtRef.current = savedPatient.updatedAt ?? null;
 			setPatientCoreSaveState(latestMatchesSaved ? "saved" : "idle");
 			setError(null);
 			return true;
@@ -497,6 +537,7 @@ export function usePatientLogic({
 				);
 				setPatientAdministrativeProfileDirty(false);
 			}
+			savedByThisScreenUpdatedAtRef.current = savedPatient.updatedAt ?? null;
 			setPatientAdministrativeProfileSaveState(
 				latestMatchesSaved ? "saved" : "idle",
 			);
