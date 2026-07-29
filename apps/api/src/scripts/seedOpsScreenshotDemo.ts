@@ -402,9 +402,31 @@ async function seed(): Promise<void> {
 		{ code: "C01", title: "Консультация", category: "consultation" as const, specialty: "universal" as const, price: 1500.5, minutes: 30 }
 	];
 	const catalogIds = new Map<string, string>();
+	/*
+	 * ЦЕНА ПОЗИЦИИ БЕРЁТСЯ ИЗ ПРАЙСА, А НЕ ИЗ ВТОРОГО МАССИВА.
+	 *
+	 * Ниже стоял второй список цен — `[7200, 5400, 14800, 26500]`, круглый, — и
+	 * позиции лечения с платежами заполнялись ИЗ НЕГО, тогда как прайс рядом
+	 * объявляет `7200.5` и `14800.99`. Замер на живой демо-клинике: в прайсе
+	 * `7200.50` и `14800.99`, в позициях `7200.00` и `14800.00`. Потеря 3,48 ₽
+	 * прямо в демо-данных при пяти позициях.
+	 *
+	 * Беда не в трёх рублях, а в том, ЧТО ЭТО ЗА ДАННЫЕ. Комментарий выше прямо
+	 * говорит: «цепочке денег нужен материал, на котором копейка видна». Второй
+	 * массив стирал копейки ровно там, где они должны быть видны, — и снимки
+	 * визуального гейта, и сквозные денежные сценарии сверяли круглые числа. То
+	 * есть дефект округления в квитанции или в счёте не проявился бы на демо
+	 * никогда.
+	 *
+	 * Теперь источник один: цена приходит из того же прайса, на который позиция
+	 * ссылается через `service_id`. Расхождение прайса и позиции стало
+	 * невозможным по построению, а не по внимательности того, кто правит массив.
+	 */
+	const catalogPrices = new Map<string, number>();
 	for (const [index, service] of catalog.entries()) {
 		const id = `d0000000-0000-4000-8000-0000000${String(600 + index).padStart(5, "0")}`;
 		catalogIds.set(service.title, id);
+		catalogPrices.set(service.title, service.price);
 		await db.insert(serviceCatalogItems).values({
 			id,
 			organizationId: ORG_ID,
@@ -432,6 +454,20 @@ async function seed(): Promise<void> {
 			createdAt: appointment.startsAt
 		});
 		const itemTitle = ["Лечение кариеса", "Профессиональная гигиена", "Лечение пульпита", "Установка коронки"][index % 4] ?? "Приём";
+		/*
+		 * Позиции без цены в прайсе быть не может: `itemTitle` берётся из того же
+		 * списка заголовков, что и прайс. Если списки разойдутся, посев обязан
+		 * упасть с внятной причиной, а не тихо подставить запасное число — тихая
+		 * подстановка и была исходным дефектом.
+		 */
+		const itemPriceRub = catalogPrices.get(itemTitle);
+		if (itemPriceRub === undefined) {
+			throw new Error(
+				`Посев демо-данных остановлен: позиции «${itemTitle}» нет в прайсе этой же сеялки. ` +
+					"Список заголовков позиций и список прайса разошлись — добавьте услугу в прайс, " +
+					"иначе позиция получит цену, не совпадающую с прайсом, и копейки в демо снова исчезнут."
+			);
+		}
 		await db.insert(treatmentItems).values({
 			organizationId: ORG_ID,
 			patientId: appointment.patientId,
@@ -442,8 +478,8 @@ async function seed(): Promise<void> {
 			serviceId: catalogIds.get(itemTitle) ?? null,
 			title: itemTitle,
 			quantity: "1",
-			priceRub: [7200, 5400, 14800, 26500][index % 4] ?? 7000,
-			unitPriceRub: [7200, 5400, 14800, 26500][index % 4] ?? 7000,
+			priceRub: itemPriceRub,
+			unitPriceRub: itemPriceRub,
 			discountRub: index % 5 === 0 ? 800 : 0,
 			status: "completed"
 		});
@@ -453,7 +489,7 @@ async function seed(): Promise<void> {
 				organizationId: ORG_ID,
 				patientId: appointment.patientId,
 				visitId,
-				amountRub: [7200, 5400, 14800, 26500][index % 4] ?? 7000,
+				amountRub: itemPriceRub,
 				status: "paid",
 				paidAt: appointment.startsAt
 			});
