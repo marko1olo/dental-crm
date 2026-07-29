@@ -191,8 +191,13 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
  */
 export function useWorkspaceProfile() {
 	const store = useWorkspaceProfileStore();
+	// `?.` после вызова хука убран: useAppLogicContext() либо отдаёт контекст, либо
+	// бросает исключение (contexts/AppLogicContext.tsx). Пустого объекта он больше
+	// не выдумывает, `null` не возвращает, значит эта ветка была недостижима — а
+	// `?.` обещал возможность, которой нет. Внутренние `?.` по dashboard остаются:
+	// сводки клиники может не быть, и тогда режим не известен.
 	const clinicMode = resolveClinicMode(
-		useAppLogicContext()?.dashboard?.clinicSettings?.profile?.mode,
+		useAppLogicContext().dashboard?.clinicSettings?.profile?.mode,
 	);
 	return useMemo(() => applyClinicModeToFlags(store, clinicMode), [store, clinicMode]);
 }

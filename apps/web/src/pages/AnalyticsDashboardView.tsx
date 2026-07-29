@@ -75,7 +75,11 @@ function appointmentCountTooltip(value: unknown): string {
 }
 
 export function AnalyticsDashboardView() {
-	const appLogic = (useAppLogicContext() || {}) as any;
+	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
+	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
+	// выдумывает, и вторая ветка была недостижима. Проверка на сам `auth` ниже
+	// остаётся: контекст может быть, а раздела авторизации в нём — нет.
+	const appLogic = useAppLogicContext() as any;
 	const authContext = appLogic?.auth;
 	const getReadHeaders = () =>
 		authContext

@@ -2,7 +2,10 @@ import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function VisitSpecialtyFocus() {
-	const context = useAppLogicContext() || {};
+	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
+	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
+	// выдумывает, и вторая ветка была недостижима.
+	const context = useAppLogicContext();
 	const {
 		activeDoctor,
 		activeChair,

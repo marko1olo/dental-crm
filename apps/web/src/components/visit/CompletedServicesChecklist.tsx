@@ -95,7 +95,10 @@ function completedLineOf(item: any): string {
 }
 
 export const CompletedServicesChecklist: React.FC = () => {
-	const context = (useAppLogicContext() || {}) as any;
+	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
+	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
+	// выдумывает, и вторая ветка была недостижима.
+	const context = useAppLogicContext() as any;
 	const { visitNoteForm = {}, updateVisitNoteField, dashboard, activeVisitPatient } = context;
 
 	/*

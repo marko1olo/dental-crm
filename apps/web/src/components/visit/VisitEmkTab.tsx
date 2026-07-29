@@ -38,7 +38,10 @@ function appendClinicalText(current: string, addition: string, separator: string
 }
 
 export function VisitEmkTab() {
-	const appLogic = (useAppLogicContext() || {}) as any;
+	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
+	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
+	// выдумывает, и вторая ветка была недостижима.
+	const appLogic = useAppLogicContext() as any;
 	const {
 		visitNoteForm = {},
 		updateVisitNoteField,
