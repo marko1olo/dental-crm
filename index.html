@@ -3,32 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dental-crm — Official Technical Showcase</title>
-    <meta name="description" content="Enterprise dental clinic automation with 2D/3D DICOM viewer and KND 1151156 tax drafts.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>DENTE — Intelligent Dental CRM/MIS & DICOM Workstation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #091319; --accent: #10b981; }
+        :root { --bg: #091319; --card: #11222c; --emerald: #10b981; --teal: #06b6d4; --text: #f0f4f8; --border: rgba(16,185,129,0.2); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: #f1f5f9; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; overflow-x: hidden; }
-        .hero-box { max-width: 900px; width: 100%; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 3rem 2rem; backdrop-filter: blur(10px); box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 30px var(--accent); }
-        h1 { font-size: 3.5rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; text-shadow: 0 0 20px var(--accent); }
-        .tag { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--accent); color: var(--accent); font-weight: 700; padding: 0.4rem 1.2rem; border-radius: 4px; font-size: 0.85rem; margin-bottom: 1.5rem; letter-spacing: 1px; }
-        p.desc { font-size: 1.2rem; color: #94a3b8; max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.6; }
-        .btn-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .btn { padding: 1rem 2.2rem; background: var(--accent); color: #000; font-weight: 700; text-decoration: none; border-radius: 6px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; }
-        .btn:hover { background: #fff; box-shadow: 0 0 30px #fff; transform: translateY(-2px); }
-        .btn-sec { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-sec:hover { background: rgba(255,255,255,0.1); }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        nav { background: #060d11; border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #fff, var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+        .hero { text-align: center; padding: 3rem 0; }
+        h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; }
+        p.sub { font-size: 1.25rem; color: #8fa0b0; max-width: 800px; margin: 0 auto 2.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card h3 { color: var(--emerald); font-size: 1.3rem; margin-bottom: 0.8rem; }
+        .xray-slider { width: 100%; height: 200px; background: #000; border-radius: 8px; border: 1px solid #333; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .xray-circle { width: 120px; height: 120px; border: 2px dashed var(--teal); border-radius: 50%; animation: spin 10s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .btn { display: inline-block; padding: 0.8rem 1.8rem; background: linear-gradient(135deg, var(--teal), var(--emerald)); color: #000; font-weight: 700; text-decoration: none; border-radius: 8px; margin-top: 1rem; }
     </style>
 </head>
 <body>
-    <div class="hero-box">
-        <h1>dental-crm</h1>
-        <div class="tag">POSTGRESQL 18 // DENTE DENTAL CRM & DICOM VIEWER</div>
-        <p class="desc">Enterprise dental clinic automation with 2D/3D DICOM viewer and KND 1151156 tax drafts.</p>
-        <div class="btn-group">
-            <a href="https://github.com/marko1olo/dental-crm" class="btn" target="_blank">🚀 Open GitHub Repo</a>
-            <a href="https://github.com/marko1olo/dental-crm#readme" class="btn btn-sec" target="_blank">📖 Read Spec</a>
+    <nav>
+        <div class="logo">DENTE // DENTAL MIS</div>
+        <div><a href="https://github.com/marko1olo/dental-crm" target="_blank" style="color:var(--emerald);text-decoration:none;font-weight:600;">GitHub Repository 🚀</a></div>
+    </nav>
+    <div class="container">
+        <div class="hero">
+            <h1>DENTE Clinical Engine</h1>
+            <p class="sub">Production-grade SaaS architecture for small-clinic dental automation, DICOM 2D/3D imaging, and KND 1151156 tax document generation.</p>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>🗄️ Native PostgreSQL 18 Architecture</h3>
+                <p>Native PostgreSQL 18 over TCP (`127.0.0.1:5432`) with Drizzle ORM and strict multi-tenant organization isolation.</p>
+            </div>
+            <div class="card">
+                <h3>🦷 DICOM 2D/3D X-Ray Viewer</h3>
+                <div class="xray-slider"><div class="xray-circle"></div><span style="position:absolute;color:var(--teal);font-size:0.85rem;">[ 2D/3D DICOM RENDER PASS ]</span></div>
+            </div>
+            <div class="card">
+                <h3>📜 Medical Card 025/у & Tax Automation</h3>
+                <p>Structured generation of Order N 274n outpatient medical card 025/у and KND 1151156 tax deduction paperwork.</p>
+            </div>
         </div>
     </div>
 </body>
