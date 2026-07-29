@@ -1,14 +1,14 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type {
 	DentalPricelistAnalysisRequest,
+	DentalPricelistAnalysisResponse,
 	ServiceCatalogItem,
 } from "@dental/shared";
-import {
-	analyzePricelist,
-	pricelistItemsFromGroqRows,
-	selectPricelistServiceRows,
-} from "./analyzer.js";
+import { analyzePricelist } from "./analyzer.js";
 
 /**
  * ГОД РЕДАКЦИИ ПРАЙСА НЕ СТАНОВИТСЯ ЦЕНОЙ УСЛУГИ.
@@ -290,26 +290,34 @@ describe("отказ от года не сломал чтение обычных
  * разбор и клиника видит groq_failed:. А когда часть записей прошла, а часть
  * исчезла, ответ приходил без единого признака недостачи.
  *
- * ЧЕСТНО О ПРЕДЕЛЕ. HTTP-путь Groq в этом окружении не исполняется: ключа
- * провайдера нет, платный вызов запрещён, а поднять его подделкой fetch значило бы
- * писать на диск состояние здоровья ключей (recordProviderKeySuccess →
- * saveKeyHealthToDisk) — общий побочный эффект, которого проверка себе не
- * позволяет. Поэтому здесь проверяются РОВНО ДВА ШАГА, которые нейро-ветка делает
- * после ответа модели, — сборка записей и гейт со счётчиком, — тем же кодом, каким
- * их делает она. Подстановка полученного числа в warnings ответа (две строки в
- * analyzePricelist) остаётся НЕ ПРОВЕРЕННОЙ, как и весь сквозной путь
- * POST /api/pricelist/analyze с useServerAi: true.
+ * ПОЧЕМУ ЭТО ЗОВЁТСЯ ЧЕРЕЗ analyzePricelist, А НЕ ПЕРЕСОБИРАЕТСЯ ТЕСТОМ. Здесь
+ * стояла версия этих же четырёх проверок, которая звала pricelistItemsFromGroqRows
+ * и selectPricelistServiceRows подряд сама, помощником analyzeGroqRows. Она
+ * проверяла КОМПОЗИЦИЮ ДВУХ ФУНКЦИЙ, КОТОРУЮ СОБИРАЛ САМ ТЕСТ, а что эту
+ * композицию собирает analyzePricelist — не проверяла ничем. Измерено ревьюером:
+ * он вернул в analyzePricelist ровно тот дефект, который здесь описан
+ * (responseFromItems прямо с parsedRows.items — без гейта и без счётчика), прогнал
+ * набор и получил tests 15, pass 15, fail 0. Проверка, зелёная на сломанном коде,
+ * хуже отсутствующей: она создаёт уверенность.
+ *
+ * ПРЕЖНЕЕ ОБОСНОВАНИЕ ОТКАЗА ОТ НАСТОЯЩЕЙ ВЕТКИ ОПРОВЕРГНУТО. Оно гласило, что
+ * поднять ветку подделкой fetch нельзя, потому что recordProviderKeySuccess писала
+ * бы на диск состояние здоровья ключей. Побочный эффект реален, но у него есть
+ * выключатель: keyHealthFilePath в apps/api/src/speech/keyPool.ts возвращает null
+ * при DENTAL_SPEECH_KEY_HEALTH_FILE=off, и saveKeyHealthToDisk на этом выходит. Им
+ * уже пользуются scripts/smoke-speech-key-rotation.mjs,
+ * scripts/smoke-speech-provider-errors.mjs и
+ * scripts/smoke-speech-groq-chunk-floor.mjs. Что выключатель ДЕЙСТВИТЕЛЬНО
+ * отменяет запись, измерено ниже отдельным тестом, а не принято на слово.
+ *
+ * ЧЕСТНО О ПРЕДЕЛЕ. Платного вызова Groq здесь нет: HTTP-ответ отдаёт заглушка
+ * globalThis.fetch. Значит НЕ проверены сама сеть, приём заголовков стороной Groq и
+ * поведение при смене формата ответа модели. Всё, что ниже этой границы, —
+ * выбор ключа из пула, чтение JSON из choices[0].message.content, сборка позиций,
+ * гейт строк, счёт потерь и подстановка счёта в warnings ответа — исполняется
+ * настоящим кодом analyzePricelist. Сквозной путь POST /api/pricelist/analyze
+ * остаётся не проверенным: маршрут в этом наборе не поднимается.
  */
-
-/** Запрос того же вида, что приходит на POST /api/pricelist/analyze. */
-const AI_REQUEST: DentalPricelistAnalysisRequest = {
-	sourceName: "year-price-ai-test",
-	sourceKind: "text",
-	rawText: "Коронка 12 500 руб",
-	imageMimeType: "image/jpeg",
-	preferredSpecialty: "universal",
-	useServerAi: true,
-};
 
 /** Служебная строка: услугой не является ни в одном режиме разбора. */
 const SERVICE_HEADER_LINE = "Прайс-лист действителен с 01.01.2025";
@@ -317,78 +325,281 @@ const SERVICE_HEADER_LINE = "Прайс-лист действителен с 01.
 /** Настоящая услуга с ценой: обязана выжить в обоих режимах. */
 const REAL_SERVICE_LINE = "Коронка 12 500 руб";
 
+/** Вторая настоящая услуга: нужна там, где потерь быть не должно вовсе. */
+const SECOND_SERVICE_LINE = "Лечение кариеса 1500,50";
+
 /**
- * Те же два шага, которые нейро-ветка делает после ответа модели: сборка записей
- * и гейт со счётчиком отброшенных.
+ * Запрос того же вида, что приходит на POST /api/pricelist/analyze. rawText
+ * вынесен из фикстуры намеренно: у каждого прогона он свой, и значение по
+ * умолчанию однажды стало бы молчаливой подменой присланного прайса.
  */
-function analyzeGroqRows(rows: unknown[]) {
-	const parsed = pricelistItemsFromGroqRows(rows, AI_REQUEST, EMPTY_CATALOG);
-	return selectPricelistServiceRows(parsed.items, parsed.droppedRows);
+const AI_REQUEST: Omit<DentalPricelistAnalysisRequest, "rawText"> = {
+	sourceName: "year-price-ai-test",
+	sourceKind: "text",
+	imageMimeType: "image/jpeg",
+	preferredSpecialty: "universal",
+	useServerAi: true,
+};
+
+/*
+ * СРЕДА НЕЙРО-ВЕТКИ. Стоит на верхнем уровне модуля, потому что тела тестов
+ * node:test исполняются только после того, как модуль вычислен целиком, а keyPool
+ * читает переменные среды в момент вызова, а не в момент импорта.
+ */
+
+/**
+ * Синтетический ключ пула. В Groq не уходит и для Groq непригоден: он нужен
+ * ровно затем, чтобы selectProviderKey вернул кандидата, — иначе analyzePricelist
+ * уйдёт в откат с groq_key_pool_empty, не дойдя до разбора.
+ */
+const SYNTHETIC_GROQ_KEY = "gsk_synthetic_pricelist_branch_key_do_not_leak_4444";
+
+/**
+ * Отдельный ключ для прогона с отказом Groq: отказ 500 ставит ключу остывание
+ * (recordProviderKeyFailure), и общий ключ унёс бы за собой остальные прогоны
+ * файла — независимо от порядка тестов.
+ */
+const SYNTHETIC_GROQ_FAILURE_KEY =
+	"gsk_synthetic_pricelist_failure_key_do_not_leak_5555";
+
+process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
+/*
+ * Пул обязан состоять РОВНО из одного синтетического ключа. Ключи машины,
+ * попавшие в пул, сделали бы выбор ключа случайным, а число попыток — переменным.
+ */
+delete process.env.GROQ_API_KEYS;
+process.env.DENTAL_SPEECH_MAX_NUMBERED_KEYS = "1";
+delete process.env.GROQ_API_KEY_1;
+process.env.GROQ_API_KEY = SYNTHETIC_GROQ_KEY;
+/*
+ * Прокси снимается намеренно: при заданном PROXY_URL/HTTPS_PROXY/HTTP_PROXY
+ * fetchWithProviderTimeout зовёт undici напрямую, минуя globalThis.fetch, и
+ * заглушка перестала бы перехватывать вызов — прогон ушёл бы в настоящую сеть.
+ */
+delete process.env.PROXY_URL;
+delete process.env.HTTPS_PROXY;
+delete process.env.HTTP_PROXY;
+
+/** Куда и с каким ключом ветка постучалась вместо Groq. */
+type GroqStubCall = {
+	url: string;
+	authorization: string | null;
+	body: string;
+};
+
+type NeuroRun = {
+	response: DentalPricelistAnalysisResponse;
+	calls: GroqStubCall[];
+};
+
+const GROQ_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+/** Успешный ответ Groq того вида, который читает callGroqPricelist. */
+function groqSuccessReply(rows: unknown[]): Response {
+	const content = JSON.stringify({ items: rows, warnings: [] });
+	return new Response(
+		JSON.stringify({ choices: [{ message: { content } }] }),
+		{ status: 200, headers: { "content-type": "application/json" } },
+	);
+}
+
+function stubbedUrl(input: string | URL | Request): string {
+	if (typeof input === "string") return input;
+	return input instanceof URL ? input.href : input.url;
+}
+
+/**
+ * Один прогон НАСТОЯЩЕЙ нейро-ветки analyzePricelist: подменён только HTTP-вызов.
+ * Всё остальное — выбор ключа, чтение ответа, сборка позиций, гейт и счётчик —
+ * исполняет analyzer.ts.
+ */
+async function runNeuroBranch(options: {
+	rawText: string;
+	reply: () => Response;
+	poolKey?: string;
+}): Promise<NeuroRun> {
+	const originalFetch = globalThis.fetch;
+	const calls: GroqStubCall[] = [];
+	if (options.poolKey) process.env.GROQ_API_KEY = options.poolKey;
+	const stub = async (
+		input: string | URL | Request,
+		init?: RequestInit,
+	): Promise<Response> => {
+		calls.push({
+			url: stubbedUrl(input),
+			authorization: new Headers(init?.headers).get("authorization"),
+			body: typeof init?.body === "string" ? init.body : "",
+		});
+		return options.reply();
+	};
+	globalThis.fetch = stub as typeof globalThis.fetch;
+	try {
+		const response = await analyzePricelist(
+			{ ...AI_REQUEST, rawText: options.rawText },
+			EMPTY_CATALOG,
+		);
+		return { response, calls };
+	} finally {
+		globalThis.fetch = originalFetch;
+		process.env.GROQ_API_KEY = SYNTHETIC_GROQ_KEY;
+	}
+}
+
+/**
+ * ЛЮБОЕ УТВЕРЖДЕНИЕ О НЕЙРО-ВЕТКЕ ЛОЖНО, ЕСЛИ ВЕТКА ОТКАТИЛАСЬ.
+ *
+ * При отказе Groq analyzePricelist возвращает разбор ТОГО ЖЕ rawText
+ * детерминированной ветвью, где гейт и счётчик стоят всегда. Такой ответ на части
+ * прайсов совпадает с ожидаемым нейро-ответом, то есть тест был бы зелен, ни разу
+ * не исполнив предмет проверки. Поэтому признаки исполнения ветки проверяются в
+ * одном месте и на каждом прогоне.
+ */
+function assertGroqBranchExecuted(run: NeuroRun): void {
+	assert.equal(
+		run.calls.length,
+		1,
+		`нейро-ветка сделала не один вызов Groq, а ${run.calls.length}`,
+	);
+	assert.equal(run.calls[0]?.url, GROQ_COMPLETIONS_URL, "стучались не в Groq");
+	assert.equal(
+		run.calls[0]?.authorization,
+		`Bearer ${SYNTHETIC_GROQ_KEY}`,
+		"ключ пришёл не из пула ключей",
+	);
+	assert.ok(
+		run.calls[0]?.body.includes("json_object"),
+		"у Groq не запрошен JSON-ответ",
+	);
+	assert.equal(
+		run.response.parserMode,
+		"groq_json",
+		`ветка откатилась на детерминированный разбор: ${JSON.stringify(run.response.warnings)}`,
+	);
+	assert.equal(run.response.aiVision.used, true, "нейро-разбор не отмечен");
+	assert.ok(
+		!run.response.warnings.some((warning) => warning.startsWith("groq_failed:")),
+		`Groq отказал: ${JSON.stringify(run.response.warnings)}`,
+	);
+}
+
+/**
+ * Нейро-разбор прайса: rawText — присланный клиникой текст, rows — записи, которые
+ * вернула модель. Они умышленно задаются раздельно: расхождение между присланным
+ * текстом и ответом модели — это и есть предмет проверки.
+ */
+async function analyzeWithModelRows(
+	rawText: string,
+	rows: unknown[],
+): Promise<DentalPricelistAnalysisResponse> {
+	const run = await runNeuroBranch({
+		rawText,
+		reply: () => groqSuccessReply(rows),
+	});
+	assertGroqBranchExecuted(run);
+	return run.response;
 }
 
 describe("нейро-ветка считает потерянные строки прайса", () => {
 	test("частичная потеря записей модели больше не молчит", async () => {
 		// Запись без текста и запись-строка вместо объекта — ровно те два случая,
 		// на которых itemFromGroq отдаёт null.
-		const selected = analyzeGroqRows([
-			{ sourceText: REAL_SERVICE_LINE },
-			{},
-			REAL_SERVICE_LINE,
-		]);
-		assert.equal(selected.items.length, 1, "потеряна настоящая услуга");
+		const response = await analyzeWithModelRows(
+			[REAL_SERVICE_LINE, SECOND_SERVICE_LINE].join("\n"),
+			[{ sourceText: REAL_SERVICE_LINE }, {}, REAL_SERVICE_LINE],
+		);
+		assert.equal(response.items.length, 1, "потеряна настоящая услуга");
 		assert.equal(
-			selected.skippedRows,
+			skippedRows(response.warnings),
 			2,
-			"записи модели исчезли, не оставив следа",
+			`записи модели исчезли, не оставив следа: ${JSON.stringify(response.warnings)}`,
 		);
 	});
 
 	test("служебная запись модели услугой каталога не становится", async () => {
-		const selected = analyzeGroqRows([
-			{ sourceText: SERVICE_HEADER_LINE },
-			{ sourceText: REAL_SERVICE_LINE },
-		]);
-		assert.equal(
-			selected.items.length,
-			1,
-			`гейт не применён к записям модели: ${JSON.stringify(selected.items.map((item) => item.title))}`,
+		const response = await analyzeWithModelRows(
+			[SERVICE_HEADER_LINE, REAL_SERVICE_LINE].join("\n"),
+			[{ sourceText: SERVICE_HEADER_LINE }, { sourceText: REAL_SERVICE_LINE }],
 		);
-		assert.equal(selected.items[0]?.priceRub, 12500);
-		assert.equal(selected.skippedRows, 1, "отброшенная запись не посчитана");
+		assert.equal(
+			response.items.length,
+			1,
+			`гейт не применён к записям модели: ${JSON.stringify(response.items.map((item) => item.title))}`,
+		);
+		assert.equal(response.items[0]?.priceRub, 12500);
+		assert.equal(
+			skippedRows(response.warnings),
+			1,
+			`отброшенная запись не посчитана: ${JSON.stringify(response.warnings)}`,
+		);
 	});
 
 	test("потери на двух шагах складываются в одно число", async () => {
 		// Клинике важно, сколько строк проверить руками, а не на каком шаге они
 		// выпали: одна не собралась в позицию, одна отброшена гейтом.
-		const selected = analyzeGroqRows([
-			{ sourceText: REAL_SERVICE_LINE },
-			{ sourceText: "" },
-			{ sourceText: SERVICE_HEADER_LINE },
-		]);
-		assert.equal(selected.items.length, 1);
-		assert.equal(selected.skippedRows, 2);
+		const response = await analyzeWithModelRows(
+			[REAL_SERVICE_LINE, SERVICE_HEADER_LINE].join("\n"),
+			[
+				{ sourceText: REAL_SERVICE_LINE },
+				{ sourceText: "" },
+				{ sourceText: SERVICE_HEADER_LINE },
+			],
+		);
+		assert.equal(response.items.length, 1);
+		assert.equal(skippedRows(response.warnings), 2);
 	});
 
 	test("без потерь счётчик не выдумывается", async () => {
-		const selected = analyzeGroqRows([
-			{ sourceText: REAL_SERVICE_LINE },
-			{ sourceText: "Лечение кариеса 1500,50" },
-		]);
-		assert.equal(selected.items.length, 2, "потеряна законная услуга");
-		assert.equal(
-			selected.skippedRows,
-			0,
-			"выдумано отбрасывание строк, которых не было",
+		const response = await analyzeWithModelRows(
+			[REAL_SERVICE_LINE, SECOND_SERVICE_LINE].join("\n"),
+			[{ sourceText: REAL_SERVICE_LINE }, { sourceText: SECOND_SERVICE_LINE }],
 		);
+		assert.equal(response.items.length, 2, "потеряна законная услуга");
+		// Именно null, а не 0: предупреждения нет вовсе, и подставлять вместо него
+		// число значило бы печатать клинике измеренный ноль потерь.
+		assert.equal(
+			skippedRows(response.warnings),
+			null,
+			`выдумано отбрасывание строк, которых не было: ${JSON.stringify(response.warnings)}`,
+		);
+	});
+
+	test("отказ Groq виден клинике, а нейро-разбором не выдаётся", async () => {
+		/*
+		 * Обратная сторона assertGroqBranchExecuted: parserMode groq_json стоит в
+		 * ответе НЕ всегда, поэтому проверка исполнения ветки не тавтология. Здесь
+		 * же видно, что при отказе прайс клиника всё равно получает.
+		 */
+		const run = await runNeuroBranch({
+			rawText: REAL_SERVICE_LINE,
+			reply: () =>
+				new Response(JSON.stringify({ error: { message: "upstream down" } }), {
+					status: 500,
+					statusText: "Internal Server Error",
+				}),
+			poolKey: SYNTHETIC_GROQ_FAILURE_KEY,
+		});
+		assert.equal(run.calls.length, 1);
+		assert.equal(run.response.parserMode, "deterministic_groq_fallback");
+		assert.equal(run.response.aiVision.used, false);
+		assert.ok(
+			run.response.warnings.some((warning) =>
+				warning.startsWith("groq_failed:"),
+			),
+			`отказ модели не показан клинике: ${JSON.stringify(run.response.warnings)}`,
+		);
+		assert.equal(run.response.items.length, 1, "прайс потерян вместе с отказом");
 	});
 });
 
 describe("оба режима разбора дают одно правило существования строки", () => {
 	test("один и тот же прайс даёт одинаковый состав и одинаковый счёт потерь", async () => {
-		const lines = [SERVICE_HEADER_LINE, REAL_SERVICE_LINE];
+		const rawText = [SERVICE_HEADER_LINE, REAL_SERVICE_LINE].join("\n");
 
-		const deterministic = await analyze(lines.join("\n"));
-		const neuro = analyzeGroqRows(lines.map((line) => ({ sourceText: line })));
+		const deterministic = await analyze(rawText);
+		const neuro = await analyzeWithModelRows(rawText, [
+			{ sourceText: SERVICE_HEADER_LINE },
+			{ sourceText: REAL_SERVICE_LINE },
+		]);
 
 		assert.equal(
 			neuro.items.length,
@@ -401,9 +612,55 @@ describe("оба режима разбора дают одно правило с
 			"выжили разные строки",
 		);
 		assert.equal(
-			neuro.skippedRows,
+			skippedRows(neuro.warnings),
 			skippedRows(deterministic.warnings),
 			"число потерянных строк зависит от режима разбора",
 		);
+	});
+});
+
+describe("проверка нейро-ветки не пишет состояние ключей на диск", () => {
+	test("выключатель отменяет запись, а без выключателя запись есть", async () => {
+		/*
+		 * ЗАЧЕМ ЭТО ИЗМЕРЕНО ЗДЕСЬ. Отказ прежней версии набора от настоящей
+		 * нейро-ветки обосновывался тем, что подделка fetch заставила бы
+		 * recordProviderKeySuccess писать состояние здоровья ключей на диск. Эффект
+		 * реален — и первая половина этого теста его показывает, иначе проверять
+		 * выключатель было бы нечего. Вторая половина показывает, что
+		 * DENTAL_SPEECH_KEY_HEALTH_FILE=off его отменяет. Это утверждение о
+		 * продукте, а не о тесте, поэтому оно измерено, а не описано словами.
+		 *
+		 * Путь ведёт в каталог временных файлов ОС: боевой .data-файл состояния
+		 * ключей набор не читает и не пишет ни в одной половине.
+		 */
+		const sentinel = join(
+			tmpdir(),
+			`dental-pricelist-key-health-${process.pid}-${Date.now()}.json`,
+		);
+		try {
+			process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = sentinel;
+			await analyzeWithModelRows(REAL_SERVICE_LINE, [
+				{ sourceText: REAL_SERVICE_LINE },
+			]);
+			assert.equal(
+				existsSync(sentinel),
+				true,
+				"запись состояния ключей не исполнилась — выключать было бы нечего",
+			);
+
+			rmSync(sentinel);
+			process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
+			await analyzeWithModelRows(REAL_SERVICE_LINE, [
+				{ sourceText: REAL_SERVICE_LINE },
+			]);
+			assert.equal(
+				existsSync(sentinel),
+				false,
+				"выключатель не отменил запись состояния ключей на диск",
+			);
+		} finally {
+			process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
+			rmSync(sentinel, { force: true });
+		}
 	});
 });
