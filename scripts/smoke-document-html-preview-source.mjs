@@ -1,12 +1,39 @@
+/*
+ * ГДЕ НУЖЕН РАЗБОР TYPESCRIPT — ЗОВЁТСЯ TYPESCRIPT.
+ *
+ * Здесь стоял `sourceBetween(source, startNeedle, endNeedle)`: тело функции
+ * вырезалось от текста её сигнатуры до текста сигнатуры СЛЕДУЮЩЕЙ функции. Это
+ * разбор языка текстовым поиском, и он развалился ровно так, как обязан был:
+ * у `downloadIssuedDocumentPdf` убрали параметр `overrideUrl?: string`, страж
+ * потерял замыкающую границу и упал сообщением
+ *   «Missing source end after async function openIssuedDocumentHtml(documentId: string)»
+ * — то есть ПРО СВОЮ РАЗМЕТКУ, а не про предпросмотр документов. Ни одно
+ * требование о поведении при этом даже не проверялось: падение случалось на
+ * тридцать второй строке, до первой проверки.
+ *
+ * Хрупкость тут двойная. Граница ломалась от правки ЧУЖОЙ, соседней функции, а
+ * `indexOf` по склейке трёх файлов мог увести границу за конец файла, где начало
+ * искомой функции, и молча вырезать чужой код.
+ *
+ * Теперь тело берётся у компилятора: `ts.createSourceFile` + обход дерева до
+ * объявления с нужным именем. Границы функции знает парсер, соседи не влияют,
+ * переименование параметров и перенос строк — тоже. `typescript` уже в
+ * зависимостях, тем же ходом пользуются scripts/check-css-tokens.mjs и
+ * scripts/lib/route-topology.mjs.
+ */
 import { readFileSync } from "node:fs";
-import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+import ts from "typescript";
+import { appLogicSourceFiles } from "./lib/app-logic-source.mjs";
 
-const appSource =
-	readFileSync("apps/web/src/App.tsx", "utf8") +
-	"\n" +
-	readAppLogicSourceSync() +
-	"\n" +
-	readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
+const webSourceFiles = [
+	"apps/web/src/App.tsx",
+	...appLogicSourceFiles(),
+	"apps/web/src/AppHelpers.tsx",
+];
+
+const appSource = webSourceFiles
+	.map((file) => readFileSync(file, "utf8"))
+	.join("\n");
 const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
 
 function assert(condition, message) {
@@ -17,27 +44,55 @@ function requireIn(source, needle, message) {
 	assert(source.includes(needle), message);
 }
 
+function requireMatch(source, pattern, message) {
+	assert(pattern.test(source), message);
+}
+
 function forbidIn(source, needle, message) {
 	assert(!source.includes(needle), message);
 }
 
-function sourceBetween(source, startNeedle, endNeedle) {
-	const start = source.indexOf(startNeedle);
-	assert(start >= 0, `Missing source start: ${startNeedle}`);
-	const end = source.indexOf(endNeedle, start + startNeedle.length);
-	assert(end > start, `Missing source end after ${startNeedle}: ${endNeedle}`);
-	return source.slice(start, end);
+/**
+ * Тело функции по ИМЕНИ, границами от компилятора TypeScript.
+ * Ищутся и `function name()`, и `const name = () => {}` — форма объявления
+ * требованием не является.
+ */
+function functionSource(name) {
+	for (const file of webSourceFiles) {
+		const text = readFileSync(file, "utf8");
+		const sourceFile = ts.createSourceFile(
+			file,
+			text,
+			ts.ScriptTarget.Latest,
+			true,
+			ts.ScriptKind.TSX,
+		);
+		let found = null;
+		const visit = (node) => {
+			if (found) return;
+			const declaresName =
+				(ts.isFunctionDeclaration(node) && node.name?.text === name) ||
+				(ts.isVariableDeclaration(node) &&
+					ts.isIdentifier(node.name) &&
+					node.name.text === name &&
+					node.initializer &&
+					(ts.isArrowFunction(node.initializer) ||
+						ts.isFunctionExpression(node.initializer)));
+			if (declaresName) {
+				found = text.slice(node.getStart(sourceFile), node.getEnd());
+				return;
+			}
+			ts.forEachChild(node, visit);
+		};
+		ts.forEachChild(sourceFile, visit);
+		if (found) return found;
+	}
+	assert(false, `Function declaration not found in web sources: ${name}`);
 }
 
-const openIssuedDocumentHtmlSource = sourceBetween(
-	appSource,
-	"async function openIssuedDocumentHtml(documentId: string)",
-	"async function downloadIssuedDocumentPdf(documentId: string, overrideUrl?: string)",
-);
-const downloadIssuedDocumentHtmlSource = sourceBetween(
-	appSource,
-	"async function downloadIssuedDocumentHtml(documentId: string",
-	"async function openIssuedDocumentHtml(documentId: string)",
+const openIssuedDocumentHtmlSource = functionSource("openIssuedDocumentHtml");
+const downloadIssuedDocumentHtmlSource = functionSource(
+	"downloadIssuedDocumentHtml",
 );
 
 requireIn(
@@ -102,9 +157,17 @@ requireIn(
 	"Popup-blocked fallback message must point operators to the visible HTML download action.",
 );
 
-requireIn(
+/*
+ * СВЯЗЬ, А НЕ НАПИСАНИЕ. Игла требовала весь вызов одной строкой и с голым
+ * `denteClinicalReadHeaders()`. В useAppLogic.tsx вызов занимает четыре строки, а
+ * заголовки берутся через `auth.denteClinicalReadHeaders()` — заголовки уехали в
+ * объект auth. Требуется же ровно три вещи: качается именно download-адрес, кэш
+ * выключен, и заголовки — аутентифицированные клинические (с любым префиксом
+ * объекта-владельца).
+ */
+requireMatch(
 	downloadIssuedDocumentHtmlSource,
-	'fetch(issuedDocumentHtmlDownloadUrl(documentId), { cache: "no-store", headers: denteClinicalReadHeaders() })',
+	/fetch\(\s*issuedDocumentHtmlDownloadUrl\(documentId\)\s*,\s*\{[\s\S]{0,200}?cache:\s*"no-store"[\s\S]{0,200}?headers:\s*(?:[A-Za-z_$][\w$]*\.)*denteClinicalReadHeaders\(\)/,
 	"Issued HTML download fallback must keep the authenticated no-store fetch path.",
 );
 requireIn(
