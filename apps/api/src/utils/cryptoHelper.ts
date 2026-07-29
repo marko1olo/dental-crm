@@ -60,25 +60,21 @@ export async function hashCredential(value: string): Promise<string> {
 
 /**
  * Verify a plaintext credential against a stored hash (salt:hash format).
- * Falls back to simple equality check for legacy plain-stored values.
  */
 export async function verifyCredential(plain: string, stored: string): Promise<boolean> {
   try {
-    if (stored.includes(":")) {
-      const [salt, hash] = stored.split(":");
-      if (!salt || !hash) return false;
-      const derived = await pbkdf2Async(plain, salt, ITERATIONS, KEYLEN, DIGEST);
-      const candidate = derived.toString("hex");
-      // Сравнение хешей идёт timingSafeEqual, а не `===`: посимвольное
-      // сравнение выходит на первом несовпавшем знаке, и по времени ответа
-      // хеш восстанавливается знак за знаком.
-      const a = Buffer.from(candidate, "utf8");
-      const b = Buffer.from(hash, "utf8");
-      if (a.length !== b.length) return false;
-      return timingSafeEqual(a, b);
-    }
-    // Legacy: plain equality for initial seeding
-    return plain === stored;
+    if (!stored.includes(":")) return false;
+    const [salt, hash] = stored.split(":");
+    if (!salt || !hash) return false;
+    const derived = await pbkdf2Async(plain, salt, ITERATIONS, KEYLEN, DIGEST);
+    const candidate = derived.toString("hex");
+    // Сравнение хешей идёт timingSafeEqual, а не `===`: посимвольное
+    // сравнение выходит на первом несовпавшем знаке, и по времени ответа
+    // хеш восстанавливается знак за знаком.
+    const a = Buffer.from(candidate, "utf8");
+    const b = Buffer.from(hash, "utf8");
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
   } catch {
     return false;
   }
