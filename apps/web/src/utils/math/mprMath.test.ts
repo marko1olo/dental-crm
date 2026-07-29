@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { clampMprSlabMm } from "./mprMath.js";
+import { clampMprSlabMm, clampMprSliceIndex } from "./mprMath.js";
 
 describe("clampMprSlabMm", () => {
   it("should return the value correctly rounded if within bounds [1, 30]", () => {
@@ -27,5 +27,33 @@ describe("clampMprSlabMm", () => {
     assert.equal(clampMprSlabMm(NaN), 1);
     assert.equal(clampMprSlabMm(Infinity), 1);
     assert.equal(clampMprSlabMm(-Infinity), 1);
+  });
+});
+
+describe("clampMprSliceIndex", () => {
+  it("should return the value correctly rounded if within bounds [0, maxIndex]", () => {
+    assert.equal(clampMprSliceIndex(5, 10), 5);
+    assert.equal(clampMprSliceIndex(5.5, 10), 6);
+  });
+
+  it("should clamp values below the minimum bound (0)", () => {
+    assert.equal(clampMprSliceIndex(0, 10), 0);
+    assert.equal(clampMprSliceIndex(-5, 10), 0);
+  });
+
+  it("should clamp values above the maximum bound", () => {
+    assert.equal(clampMprSliceIndex(15, 10), 10);
+  });
+
+  it("should handle non-finite values by returning the fallback value (0)", () => {
+    assert.equal(clampMprSliceIndex(NaN, 10), 0);
+    assert.equal(clampMprSliceIndex(Infinity, 10), 0);
+    assert.equal(clampMprSliceIndex(-Infinity, 10), 0);
+  });
+
+  it("should handle non-finite or negative maxIndex by clamping to 0", () => {
+    assert.equal(clampMprSliceIndex(5, NaN), 0);
+    assert.equal(clampMprSliceIndex(5, -5), 0);
+    assert.equal(clampMprSliceIndex(5, Infinity), 0);
   });
 });
