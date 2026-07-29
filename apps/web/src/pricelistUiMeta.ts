@@ -126,6 +126,7 @@ const pricelistWarningLabels: Record<string, string> = {
 	title_too_short: "Название слишком короткое",
 	photo_ocr_requires_visual_review: "Фото прайса требует ручной проверки",
 	no_pricelist_rows_detected: "В прайсе не найдены строки услуг",
+	pricelist_rows_skipped: "Часть строк прайса не признана услугами",
 	image_supplied_but_server_ai_disabled:
 		"Фото добавлено, но нейро-проверка выключена",
 	image_payload_invalid: "Фото прайса не прочитано",
@@ -141,6 +142,18 @@ function pricelistWarningText(warning: string): string {
 	if (!normalized) return "Требуется проверка";
 	if (normalized.startsWith("groq_failed:"))
 		return "Нейро-проверка прайса недоступна";
+	// Счётчик отброшенных строк приезжает в самом ключе
+	// («pricelist_rows_skipped:3»), как и текст ошибки в «groq_failed:». Без
+	// разбора префикса клиника увидела бы на экране сырой машинный ключ, а число
+	// строк, выброшенных из её прайса, — единственное, что здесь важно.
+	if (normalized.startsWith("pricelist_rows_skipped:")) {
+		const skipped = Number(
+			normalized.slice("pricelist_rows_skipped:".length).trim(),
+		);
+		return Number.isFinite(skipped) && skipped > 0
+			? `Строк не признано услугами: ${skipped} — проверьте прайс`
+			: "Часть строк прайса не признана услугами";
+	}
 	if (technicalPricelistWarningPattern.test(normalized))
 		return "Требуется ручная проверка прайса";
 	return (

@@ -613,6 +613,33 @@ function blankNotMoney(line: string): string {
   );
 }
 
+/*
+ * ЗНАК РУБЛЯ РЯДОМ С ЧИСЛОМ — ПОДПИСЬ ЧЕЛОВЕКА «ЭТО ЦЕНА УСЛУГИ».
+ *
+ * Проверка нужна там, где parseMoney от цены ОТКАЗАЛСЯ: ниже 300 ₽, выше
+ * 2 000 000 ₽ или неоднозначно. Отказ от цены — законный исход (price_not_found),
+ * а вот удаление всей позиции из прайса законным не является, и решать это по
+ * категории нельзя: список ключевых слов categoryRules конечен, «полировка» и
+ * «реабилитация» в него не входят, и строка исчезала целиком (см.
+ * isPricelistServiceRow).
+ *
+ * ЭТО НЕ currencyPattern, И РАЗЛИЧИЕ СУЩЕСТВЕННО. Тот запрещает букву справа,
+ * потому что отдаёт ГРАНИЦЫ ОТРЕЗКА, и из названия услуги нельзя вырезать «руб»
+ * из «рублей». Здесь отрезок не нужен — нужен факт «человек написал знак рубля»,
+ * поэтому «290 рублей» и «290 рубля» считаются подписью так же, как «290 руб».
+ * Ошибка в другую сторону дороже: она удаляет услугу из прайса клиники.
+ *
+ * Знак обязан стоять ВПЛОТНУЮ к числу (между ними только пробелы): «Прайс 2025 в
+ * рублях» подписью не является, и служебная строка услугой от этого не станет.
+ * Не-деньги гасятся тем же blankNotMoney, что и в сканере цены, поэтому «дата
+ * редакции», номер кабинета и телефон до проверки не доходят.
+ */
+const explicitPriceMarkRegex = /\d\s*(?:₽|руб(?:л[а-яё]+)?\.?|р\.?)(?![А-Яа-яЁёA-Za-z])/iu;
+
+function hasExplicitPriceMark(line: string): boolean {
+  return explicitPriceMarkRegex.test(blankNotMoney(line));
+}
+
 /**
  * Четырёхзначный год: 1900–2099.
  *
@@ -1069,6 +1096,38 @@ function responseFromItems(input: {
   });
 }
 
+/**
+ * Строка прайса — это услуга, а не адрес клиники, дата редакции или заголовок
+ * колонки.
+ *
+ * Гейт нужен: в присланном тексте стоят «Прайс-лист действителен с 01.01.2025»,
+ * «г. Москва, ул. Ленина, д. 5», телефон записи. Оставить всё — значит завести
+ * услугу на каждую такую строку.
+ *
+ * НО ЗНАК РУБЛЯ ГЕЙТ СНИМАЕТ, и это третье условие здесь появилось потому, что
+ * без него ЗАКОННАЯ УСЛУГА ИСЧЕЗАЛА ИЗ ПРАЙСА ЦЕЛИКОМ — не цена, а позиция.
+ * Условие было «цена прочитана ИЛИ категория опознана», и обе неизвестности
+ * складывались в удаление. Измерено на дереве до правки (зонд
+ * scratch/probe-row-gate.ts, код выхода 0):
+ *   «Полировка одного зуба 290 руб»                  0 позиций (цена < 300 ₽)
+ *   «Полная реабилитация обеих челюстей 2 500 000 руб» 0 позиций (цена > 2 000 000 ₽)
+ *   «Полная реабилитация 2 000 001 руб»              0 позиций
+ *   «Полная реабилитация 2 000 000 руб»              позиция с ценой 2 000 000 ₽
+ * То есть рубль сверху потолка удалял услугу, а рубль снизу — оставлял: разница
+ * в один рубль решала, есть ли позиция в прайсе. «Фторлак 200 руб» при той же
+ * отвергнутой цене выживал только потому, что в categoryRules есть /фтор/, а
+ * слов «полировка» и «реабилитация» там нет ни в одном правиле.
+ *
+ * Порядок проверок — от самого дешёвого к самому дорогому: пустое название и
+ * прочитанная цена решают строку без регулярок.
+ */
+function isPricelistServiceRow(item: DentalPricelistItem): boolean {
+  if (!item.title.length) return false;
+  if (item.priceRub !== null) return true;
+  if (item.category !== "other") return true;
+  return hasExplicitPriceMark(item.sourceText);
+}
+
 function analyzePricelistDeterministic(
   request: DentalPricelistAnalysisRequest,
   catalog: ServiceCatalogItem[],
@@ -1076,11 +1135,35 @@ function analyzePricelistDeterministic(
   extraWarnings: string[] = []
 ): DentalPricelistAnalysisResponse {
   const lines = splitPricelistLines(request.rawText);
-  const items = lines
-    .map((line, index) => buildItemFromLine(line, index + 1, request, catalog))
-    .filter((item) => item.title.length > 0 && (item.priceRub !== null || item.category !== "other"));
+  const parsedRows = lines.map((line, index) => buildItemFromLine(line, index + 1, request, catalog));
+  const items = parsedRows.filter((item) => isPricelistServiceRow(item));
+  /*
+   * УДАЛЕНИЕ СТРОКИ ОБЯЗАНО БЫТЬ ВИДНО КЛИНИКЕ.
+   *
+   * Отказ от ЦЕНЫ виден всегда (price_not_found у позиции), а удаление ПОЗИЦИИ
+   * не было видно никак: измерено на тексте из четырёх строк — «Прайс-лист
+   * действителен с 01.01.2025», адрес, «Коронка 12 500 руб», «Цены указаны в
+   * рублях» — приходила одна позиция и warnings: [] , то есть три выброшенные
+   * строки не оставляли ни одного следа. Клиника загружает прайс и не узнаёт,
+   * что услуги в нём нет.
+   *
+   * Счётчик в предупреждении — минимум, который различим на экране: клиника
+   * видит, что строк было больше, и знает, сколько проверить руками.
+   */
+  const skippedRows = parsedRows.length - items.length;
   const warnings = [...extraWarnings];
-  if (!items.length) warnings.push("no_pricelist_rows_detected");
+  /*
+   * no_pricelist_rows_detected ЗНАЧИТ «НИ ОДНОЙ СТРОКИ НЕ ПРИШЛО», а не «все
+   * отброшены».
+   *
+   * БЫЛО: `if (!items.length)`, и одно предупреждение покрывало два разных
+   * события — пустой текст (или фото без OCR, где строк нет вовсе) и текст, из
+   * которого гейт выбросил всё. Различить их было нельзя, а действия у них
+   * противоположные: в первом случае прайс надо прислать, во втором — проверить
+   * строки, которые уже присланы.
+   */
+  if (!lines.length) warnings.push("no_pricelist_rows_detected");
+  if (skippedRows > 0) warnings.push(`pricelist_rows_skipped:${skippedRows}`);
   if (request.imageBase64 && !request.useServerAi) warnings.push("image_supplied_but_server_ai_disabled");
   return responseFromItems({
     request,
