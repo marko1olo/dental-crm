@@ -126,7 +126,19 @@ describe("runVisitFlow Orchestrator", () => {
 
 		assert.strictEqual(result.draft.status, "success");
 		const draftData = result.draft.data as DraftStageData | null;
-		assert.ok(draftData?.warnings?.length ?? 0 > 0);
+		/*
+		 * Скобки здесь обязательны, и не ради вкуса. Написание
+		 * `length ?? 0 > 0` разбирается как `length ?? (0 > 0)`, потому что `>`
+		 * связывает крепче `??`. На фактических значениях поведение совпадает с
+		 * задуманным (непустая длина истинна, ноль и отсутствие ложны), то есть
+		 * дефекта тут не было — но прочитать это как «утверждение всегда истинно»
+		 * успели уже двое, включая ведущего. Утверждение заодно получило текст:
+		 * падение без объяснения заставляет читать тест целиком.
+		 */
+		assert.ok(
+			(draftData?.warnings?.length ?? 0) > 0,
+			"Разбор диктовки отказал, но предупреждений для врача не выдал: на экране это молчание вместо причины."
+		);
 		// Since completedServices is provided, plan and recommendations should still be generated
 		assert.strictEqual(result.overallStatus, "success");
 		assert.strictEqual(result.plan.status, "success");
