@@ -15,25 +15,51 @@ interface StaffOption {
 
 type MessengerTabId = "telegram" | "whatsapp" | "max";
 
+/*
+ * Контракт вкладки: только то, что она реально читает из объединённого мешка.
+ * Аннотация обязательна — useAppLogic объявлен как `(): any`
+ * (apps/web/src/useAppLogic.tsx:934), поэтому appLogic, derivations и результат
+ * Object.assign имеют тип any, и снятие `as any` само по себе не включает ни
+ * одной проверки. С этой аннотацией опечатка в имени пропса становится ошибкой.
+ *
+ * serverBaseUrl — шов для развёртываний, где API живёт не на том же хосте, что
+ * SPA. Сегодня его НИКТО не заполняет: производителя нет ни в useAppLogic, ни в
+ * SettingsView.settingsProps (там `Record<string, any>`, тоже стирающий типы).
+ * Поэтому значение всегда undefined, и WhatsappSettingsPanel/MaxSettingsPanel
+ * всегда уходят на свой запасной путь window.location.origin. Шов сохранён и
+ * типизирован, но URL здесь не выдумывается: VITE_API_URL несёт суффикс /api,
+ * а строители вебхуков дописывают /api сами.
+ */
+type MessengersMergedProps = {
+	staffOptions?: StaffOption[] | undefined;
+	serverBaseUrl?: string | undefined;
+};
+
 export function SettingsMessengersTab({
 	props: incomingProps,
 	settingsTab,
 }: {
-	props?: any;
+	props?: MessengersMergedProps;
 	settingsTab: string;
 }) {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	const props = Object.assign({}, appLogic, derivations, incomingProps) as any;
+	/*
+	 * mergedBag остаётся непроверяемым намеренно: он целиком передаётся вниз в
+	 * SettingsTelegramTab, у которого свой (пока тоже нетипизированный) набор
+	 * пропсов. Сужать его до двух полей нельзя — во время исполнения вниз уходят
+	 * все поля, и узкий тип соврал бы читателю о том, что нужно дочерней вкладке.
+	 */
+	const mergedBag = Object.assign({}, appLogic, derivations, incomingProps);
+	const props: MessengersMergedProps = mergedBag;
 	const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
 		settingsTab === "telegram" ? "telegram" : "whatsapp",
 	);
 
 	if (settingsTab !== "messengers" && settingsTab !== "telegram") return null;
 
-	const staffOptions = (props.staffOptions ?? []) as StaffOption[];
-	const serverBaseUrl =
-		typeof props.serverBaseUrl === "string" ? props.serverBaseUrl : undefined;
+	const staffOptions = props.staffOptions ?? [];
+	const serverBaseUrl = props.serverBaseUrl;
 
 	return (
 		<section className="messengers-settings" aria-label="Мессенджеры клиники">
@@ -106,7 +132,7 @@ export function SettingsMessengersTab({
 				aria-labelledby="messenger-tab-telegram"
 				hidden={activeMessenger !== "telegram"}
 			>
-				<SettingsTelegramTab props={props} settingsTab="telegram" />
+				<SettingsTelegramTab props={mergedBag} settingsTab="telegram" />
 
 			</div>
 
