@@ -212,4 +212,109 @@ describe('accessGuard', () => {
       assert.strictEqual(codeMock.mock.calls.length, 0);
     });
   });
+
+  /**
+   * Режим обхода: НАЗВАННЫЙ, а не «любой кроме production».
+   *
+   * Прежде условие обхода было записано как `process.env.NODE_ENV !== "production"`.
+   * Оно ИСТИННО, когда NODE_ENV не задан вовсе, поэтому безопасность по умолчанию
+   * была перевёрнута: защищало не наличие запрета, а наличие правильно выставленной
+   * настройки. Пустое окружение — типовое состояние настоящего развёртывания:
+   * `apps/api/package.json` объявляет `"start": "node dist/server.js"` и NODE_ENV
+   * не задаёт, ни один Dockerfile тоже.
+   *
+   * Случаи `test` и `production` выше были закрыты и раньше. Здесь проверяются
+   * режимы, на которых старый код пускал без секрета администратора: незаданный,
+   * пустой и незнакомый по имени.
+   */
+  describe('режим обхода определяется по имени, а не по «не production»', () => {
+    /**
+     * Прогоняет оба гейта при заданном NODE_ENV. Секрет администратора НЕ задан,
+     * ОБА флага обхода выставлены — то есть обход разрешён настолько, насколько
+     * это вообще возможно, и остаётся только вопрос режима.
+     */
+    async function gateDecisionsFor(nodeEnv: string | undefined) {
+      if (nodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = nodeEnv;
+      delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+      process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = '1';
+      process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = '1';
+
+      const codes: number[] = [];
+      const reply = { code: (value: number) => { codes.push(value); return { send: () => {} }; } };
+      const mutation = await requireClinicalMutationAccess(
+        { headers: {} } as FastifyRequest,
+        reply as unknown as FastifyReply
+      );
+      const read = await requireClinicalReadAccess(
+        { headers: {} } as FastifyRequest,
+        reply as unknown as FastifyReply
+      );
+      return { mutation, read, codes };
+    }
+
+    test('незаданный NODE_ENV не даёт обхода даже с выставленными флагами', async () => {
+      const decisions = await gateDecisionsFor(undefined);
+
+      assert.strictEqual(
+        decisions.mutation,
+        false,
+        'ДЕФЕКТ: пустое окружение разрешило изменение защищённых данных без секрета администратора'
+      );
+      assert.strictEqual(
+        decisions.read,
+        false,
+        'ДЕФЕКТ: пустое окружение разрешило чтение защищённых данных без секрета администратора'
+      );
+      assert.deepStrictEqual(decisions.codes, [503, 503]);
+    });
+
+    test('пустая строка в NODE_ENV не является режимом разработки', async () => {
+      const decisions = await gateDecisionsFor('');
+
+      assert.strictEqual(decisions.mutation, false);
+      assert.strictEqual(decisions.read, false);
+      assert.deepStrictEqual(decisions.codes, [503, 503]);
+    });
+
+    test('незнакомое имя режима не разрешает обход', async () => {
+      for (const mode of ['staging', 'prod', 'qa', 'developement', 'PRODUCTION']) {
+        const decisions = await gateDecisionsFor(mode);
+
+        assert.strictEqual(decisions.mutation, false, `режим ${mode} разрешил изменение защищённых данных`);
+        assert.strictEqual(decisions.read, false, `режим ${mode} разрешил чтение защищённых данных`);
+      }
+    });
+
+    test('названный режим разработки плюс флаг даёт обход', async () => {
+      for (const mode of ['development', 'test']) {
+        const decisions = await gateDecisionsFor(mode);
+
+        assert.strictEqual(decisions.mutation, true, `режим ${mode} должен разрешать обход при флаге`);
+        assert.strictEqual(decisions.read, true, `режим ${mode} должен разрешать обход при флаге`);
+        assert.deepStrictEqual(decisions.codes, [], `режим ${mode}: ответ клиенту отправлять не нужно`);
+      }
+    });
+
+    test('флаг чтения не открывает запись', async () => {
+      process.env.NODE_ENV = 'development';
+      delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+      delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+      process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = '1';
+
+      const codes: number[] = [];
+      const reply = { code: (value: number) => { codes.push(value); return { send: () => {} }; } };
+
+      assert.strictEqual(
+        await requireClinicalReadAccess({ headers: {} } as FastifyRequest, reply as unknown as FastifyReply),
+        true
+      );
+      assert.strictEqual(
+        await requireClinicalMutationAccess({ headers: {} } as FastifyRequest, reply as unknown as FastifyReply),
+        false,
+        'флаг чтения не должен открывать изменение защищённых данных'
+      );
+      assert.deepStrictEqual(codes, [503]);
+    });
+  });
 });
