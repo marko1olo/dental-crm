@@ -66,6 +66,21 @@ interface TabUnderTest {
 	 * Включено там, где это уже достигнуто; см. объявленный долг ниже.
 	 */
 	readonly everyNameMustBeRead: boolean;
+	/**
+	 * ХРАПОВИК ОБЪЯВЛЕННОГО ДОЛГА: замеренное число мёртвых имён на этой правке.
+	 *
+	 * Без него `everyNameMustBeRead: false` — просто способ сделать проверку
+	 * зелёной: долг объявлен, и дальше в него можно доливать сколько угодно.
+	 * Число работает в обе стороны. Вырос долг — красный, потому что появился
+	 * новый мёртвый пропс. Упал до нуля — тоже красный, потому что запись о долге
+	 * начала врать читателю, и её место занимает `everyNameMustBeRead: true`.
+	 * Идиом взят у declaredMissingUi в scripts/smoke-pricelist-analyzer.mjs, где
+	 * незакрытая запись о СДЕЛАННОМ пропуске уже стоила кампании красного HEAD.
+	 *
+	 * Для вкладки с полной чистотой это ноль, и храповик совпадает с общей
+	 * проверкой — так и должно быть.
+	 */
+	readonly measuredDeadNames: number;
 }
 
 const tabsUnderTest: readonly TabUnderTest[] = [
@@ -74,6 +89,7 @@ const tabsUnderTest: readonly TabUnderTest[] = [
 		bagName: "mergedProps",
 		minimumDestructuredNames: 20,
 		everyNameMustBeRead: true,
+		measuredDeadNames: 0,
 	},
 	{
 		file: "SettingsAuditTab.tsx",
@@ -92,14 +108,38 @@ const tabsUnderTest: readonly TabUnderTest[] = [
 		 * проверку красной и перестать её читать.
 		 */
 		everyNameMustBeRead: false,
+		measuredDeadNames: 338,
 	},
 	{
 		file: "SettingsImportsTab.tsx",
 		bagName: "props",
 		minimumDestructuredNames: 400,
 		everyNameMustBeRead: false,
+		measuredDeadNames: 251,
 	},
 ];
+
+/**
+ * Пропсы, которые App.tsx передавал в <SettingsView …> и которые там не читались.
+ *
+ * Проверка узкая нарочно: она сторожит ровно снятое здесь, а не общее правило.
+ * Общее правило нарушено гораздо шире, и это замерено, а не предположено: в
+ * <SettingsView …> передаётся 493 пропса, а SettingsView.tsx разбирает из них
+ * РОВНО один — activeStaffUser (SettingsView.tsx:367), всё остальное читает сам из
+ * useAppLogicContext(), хранилища настроек и производных значений. Остальные 492
+ * пропса выбрасываются, и молчит компилятор из-за индексной подписи
+ * [key: string]: any в SettingsViewProps. Снимать 492 строки — отдельный предмет
+ * размером с App.tsx, и записывать его сюда числом-храповиком нельзя: пока правило
+ * нарушено почти повсеместно, храповик стерёг бы не дефект, а его размер.
+ */
+const namesThatMustNotBePassedToSettingsView = [
+	"pricelistWarningsText",
+	"pricelistImageNote",
+	"pricelistItemMaterialText",
+	"pricelistMaterialSummaryText",
+	"pricelistImageName",
+	"pricelistParserModeLabels",
+] as const;
 
 /**
  * Имена, ради которых проверка написана: они доезжали до трёх вкладок и в каждой
@@ -213,6 +253,19 @@ describe("вкладки настроек не держат мёртвых пр�
 					`${file} вынимает из мешка имена, которых не читает (${namesNeverRead(reading).slice(0, 10).join(", ")})`,
 				);
 			});
+		} else {
+			it(`${file}: объявленный долг по мёртвым именам не растёт и не врёт`, () => {
+				const deadNow = namesNeverRead(reading).length;
+				assert.ok(
+					deadNow <= reading.tab.measuredDeadNames,
+					`в ${file} мёртвых имён стало ${deadNow} против замеренных ${reading.tab.measuredDeadNames} — в мешок долили новый пропс, который вынимают и не читают`,
+				);
+				assert.notEqual(
+					deadNow,
+					0,
+					`в ${file} мёртвых имён больше нет — снимите объявленный долг и поставьте everyNameMustBeRead: true, иначе запись о долге начнёт врать следующему читателю`,
+				);
+			});
 		}
 	}
 
@@ -236,5 +289,28 @@ describe("вкладки настроек не держат мёртвых пр�
 				`SettingsView.tsx больше не содержит «${call}» — подпись снята с вкладок и потеряна совсем, а не перенесена`,
 			);
 		}
+	});
+
+	it("App.tsx не пробрасывает эти имена в <SettingsView …>", () => {
+		/*
+		 * Второй конец той же цепочки. Снять имя из вкладки и оставить проброс в
+		 * родителя — не починка: пропс продолжают передавать, и никто не принимает.
+		 * Разбор идёт по блоку самого элемента, а не по всему файлу: те же имена
+		 * законно живут в App.tsx для других мест.
+		 */
+		const app = withoutComments(readFileSync(join(here, "..", "App.tsx"), "utf8"));
+		const openAt = app.indexOf("<SettingsView");
+		assert.ok(openAt > 0, "в App.tsx не найден элемент <SettingsView …> — проверка смотрела бы не туда");
+		const closeAt = app.indexOf("/>", openAt);
+		assert.ok(closeAt > openAt, "в App.tsx не найден конец элемента <SettingsView …>");
+		const element = app.slice(openAt, closeAt);
+		const stillPassed = namesThatMustNotBePassedToSettingsView.filter((name) =>
+			element.includes(`${name}={`),
+		);
+		assert.deepEqual(
+			stillPassed,
+			[],
+			`App.tsx снова передаёт в <SettingsView …> пропсы, которых тот не принимает (${stillPassed.join(", ")}): SettingsView разбирает из пропсов только activeStaffUser`,
+		);
 	});
 });
