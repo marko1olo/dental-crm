@@ -1694,7 +1694,30 @@ function readMoneyRubOrNull(value: unknown): number | null {
  * подписи по погашенному числу.
  */
 function priceIsDocumentYear(sourceText: string, priceRub: number, calendar: PricelistCalendar): boolean {
-  const numberText = String(priceRub);
+  /*
+   * ГОД СПРАШИВАЕТСЯ ПО ЦЕЛОЙ ЧАСТИ, А НЕ ПО СТРОКОВОМУ ВИДУ ЧИСЛА.
+   *
+   * БЫЛО: `String(priceRub)`, а `looksLikeYear` — это `/^(?:19|20)\d{2}$/`.
+   * Дробное число этому образцу не подходит НИКОГДА, поэтому весь отказ от года
+   * выключался одной десятой копейки. Замер ревьюера пакета PP4, перемерен
+   * ведущим прямым вызовом `itemFromGroq` (календарь передан явно):
+   *
+   *   «Отбеливание 2025» + модель priceRub 2025    → null      правило работает
+   *   «Отбеливание 2025» + модель priceRub 2025.5  → 2025.5    ПРАВИЛО ВЫКЛЮЧЕНО
+   *   «Прайс-лист 2025»  + модель priceRub 2025.5  → 2025.5
+   *
+   * То есть заголовок раздела прайса встаёт услугой за 2025,50 ₽ — ровно тот
+   * дефект, против которого написан весь отказ от года, только через дробь.
+   * Дробные рубли здесь не экзотика: под копейки в этом файле отдельный набор
+   * `groqPricelistKopecks.test.ts` и отдельный коммит, то есть модель именно такие
+   * значения и присылает.
+   *
+   * `2025.0` дырой не был и не является: `String(2025.0) === "2025"`. Дыра ровно в
+   * непустой дробной части, поэтому лечится отбрасыванием этой части — и целая
+   * часть же используется дальше для поиска числа в строке, иначе «2025.5» не
+   * нашлось бы в тексте «Отбеливание 2025» вовсе.
+   */
+  const numberText = String(Math.trunc(priceRub));
   if (!looksLikeYear(numberText)) return false;
   const scanText = blankNotMoney(sourceText);
   const occurrences = Array.from(scanText.matchAll(new RegExp(`(?<!\\d)${numberText}(?!\\d)`, "gu")))
