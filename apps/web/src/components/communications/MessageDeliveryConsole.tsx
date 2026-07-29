@@ -214,8 +214,11 @@ export function MessageDeliveryConsole() {
 	 * молчит, а клиника по-прежнему получает 403. Контекстные подставляют
 	 * `clinicalAdminSecretSession` (hooks/domains/useAuthLogic.ts).
 	 *
-	 * Проверка на `auth` — не перестраховка: useAppLogicContext() вне провайдера
-	 * возвращает пустой объект (contexts/AppLogicContext.tsx:21).
+	 * Проверка на `auth` остаётся, но обоснование ей нужно другое, чем стояло здесь.
+	 * БЫЛО: «useAppLogicContext() вне провайдера возвращает пустой объект
+	 * (contexts/AppLogicContext.tsx:21)». Больше НЕ возвращает — вне провайдера хук
+	 * бросает исключение, пустого объекта он не выдумывает. Проверка нужна потому, что
+	 * провайдер может стоять, а раздела `auth` в его значении не быть.
 	 */
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
