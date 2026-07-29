@@ -7,6 +7,16 @@ process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
 process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-clinical-secret";
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Сценарий работает под `NODE_ENV=production` намеренно, а там
+ * `authTokenSecret()` СПРАВЕДЛИВО отказывается подписывать без
+ * `AUTH_TOKEN_SECRET`. Без этой строки сценарий падал бы на своём же правильном
+ * стороже, не дойдя до предмета проверки.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-clinical-rule-contract-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/clinical.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
@@ -127,9 +137,31 @@ const orgs = await db.select().from(organizations).limit(1).catch(() => []);
 const org = orgs[0];
 const orgId = org ? org.id : "00000000-0000-0000-0000-000000000001";
 
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, А ЗАГОЛОВКА `x-dente-organization-id` НЕ СУЩЕСТВУЕТ.
+ *
+ * Здесь стоял заголовок `x-dente-organization-id`. Такого заголовка НЕТ во всём
+ * продукте: `security/identity.ts` знает `x-dente-clinic-token`,
+ * `x-dente-staff-token` и (только под явным послаблением) `x-organization-id`.
+ * То есть сценарий сообщал клинику НИКОМУ, получал 401 «Требуется авторизация
+ * рабочего кабинета клиники» на первом же запросе и ни одного дня не проверял ни
+ * обрезку пробелов на маршруте, ни дедупликацию услуг-триггеров, ни сохранение
+ * явного `active: false` — то есть ровно то, ради чего заведён.
+ *
+ * Токен подписывается ТЕМ ЖЕ секретом, что и в бою (`authTokenSecret`), поэтому
+ * гейт остаётся настоящим, а не обойдённым послаблением. Клиника берётся из
+ * базы, чтобы правило легло в существующую организацию.
+ */
 const headers = {
 	"x-dente-admin-secret": "synthetic-clinical-secret",
-	"x-dente-organization-id": orgId,
+	"x-dente-clinic-token": signToken({ organizationId: orgId }, authTokenSecret()),
 };
 const invalidCreate = await app.inject({
 	method: "POST",

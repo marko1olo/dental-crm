@@ -5,6 +5,41 @@ import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
+/*
+ * ОКРУЖЕНИЕ БОЕВОГО ЗАПУСКА ЗАДАЁТ СЦЕНАРИЙ, А НЕ МАШИНА.
+ *
+ * `dist/server.js` выполняет `assertSecurityConfiguration()` на верхнем уровне
+ * модуля, поэтому под `NODE_ENV=production` импорт падал ДО единственной строки,
+ * которую этот сценарий проверяет, и общий прогон получал стек вместо вердикта.
+ * Падал он по двум причинам, обе — правильная работа сторожей сервера:
+ *   1) без `AUTH_TOKEN_SECRET` сервер отказывается подписывать токены известным
+ *      секретом;
+ *   2) при включённых флагах-послаблениях (в `.env` разработчика их четыре) в
+ *      production сервер отказывается стартовать вовсе.
+ * Поэтому секрет задаётся синтетическим, а послабления снимаются: сценарий
+ * проверяет боевую границу ошибок, а не окружение чужой машины.
+ *
+ * Послабления именно ГАСЯТСЯ значением "0", а не удаляются: и `accessGuard.ts`, и
+ * `server.ts` тянут `dotenv/config`, поэтому удалённая переменная возвращается из
+ * `.env` разработчика при первом же импорте (проверено: удаление не помогло,
+ * сервер снова отказался стартовать). Значение "0" переживает dotenv, потому что
+ * dotenv не перезаписывает уже заданное, и закрывает охрану, а не открывает:
+ * послабление требует ровно "1".
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-global-error-boundary-smoke";
+for (const escapeFlag of [
+	"DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS",
+	"DENTE_CLINICAL_ALLOW_UNGUARDED_READS",
+	"DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS",
+	"DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS",
+	"DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE",
+	"DENTE_DEV_ALLOW_HEADER_ORG",
+	"DENTE_ALLOW_DEMO_LOGIN",
+	"DENTE_ALLOW_DEMO_FIXTURES",
+]) {
+	process.env[escapeFlag] = "0";
+}
 
 const serverPath = path.resolve("apps/api/dist/server.js");
 

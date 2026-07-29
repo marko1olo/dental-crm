@@ -6,6 +6,16 @@ import { pathToFileURL } from "node:url";
 process.env.DENTAL_STATE_PERSISTENCE = "off";
 process.env.NODE_ENV = "production";
 process.env.DENTE_SCHEDULE_ADMIN_SECRET = "synthetic-schedule-secret";
+/*
+ * СЕКРЕТ ПОДПИСИ ТОКЕНОВ — СИНТЕТИЧЕСКИЙ И ОБЯЗАТЕЛЕН ЗДЕСЬ.
+ *
+ * Сценарий работает под `NODE_ENV=production` намеренно, а там
+ * `authTokenSecret()` СПРАВЕДЛИВО отказывается подписывать без
+ * `AUTH_TOKEN_SECRET`. Без этой строки сценарий падал бы на своём же правильном
+ * стороже, не дойдя до предмета проверки.
+ */
+process.env.AUTH_TOKEN_SECRET ??=
+	"synthetic-auth-token-secret-for-active-visit-status-smoke";
 
 const routePath = path.resolve("apps/api/dist/routes/schedule.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
@@ -50,8 +60,32 @@ assert(
 const app = Fastify({ logger: false });
 await registerScheduleRoutes(app);
 
+/*
+ * ТОКЕН КАБИНЕТА ОБЯЗАТЕЛЕН, ИНАЧЕ ПРОВЕРЯЕТСЯ НЕ ЗАМОК ОТКРЫТОГО ПРИЁМА, А ВХОД.
+ *
+ * В `routes/schedule.ts` порядок барьеров такой: сначала кабинет
+ * (`requireClinicOrganizationId`), потом секрет расписания, и только потом замок
+ * «на приёме открыт визит». Запрос без токена получал 401 «расписание клиники
+ * ведётся только из кабинета» и до замка не доходил НИКОГДА — то есть ни один из
+ * пяти отказов (`completed`, `cancelled`, `no_show`, передача пациента, 404 на
+ * несуществующую запись) не проверялся ни одного дня.
+ *
+ * Токен подписывается ТЕМ ЖЕ секретом, что и в бою (`authTokenSecret`), поэтому
+ * гейт остаётся настоящим; организация берётся из фикстуры приёма.
+ */
+const { signToken } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/utils/cryptoHelper.js")).href
+);
+const { authTokenSecret } = await import(
+	pathToFileURL(path.resolve("apps/api/dist/security/authSecret.js")).href
+);
+
 const mutationHeaders = {
 	"x-dente-admin-secret": process.env.DENTE_SCHEDULE_ADMIN_SECRET,
+	"x-dente-clinic-token": signToken(
+		{ organizationId: activeVisit.organizationId },
+		authTokenSecret(),
+	),
 };
 const originalStatus = activeAppointment.status;
 const terminalStatuses = ["completed", "cancelled", "no_show"];
