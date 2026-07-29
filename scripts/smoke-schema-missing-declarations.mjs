@@ -506,9 +506,13 @@ const undeclaredColumns = new Map([
 		"users",
 		{
 			reason: MIGRATED_COLUMNS_NEVER_DECLARED,
-			// can_manage_money и can_sign_medical_records объявлены в schema.ts (пакет MM6)
-			// и из записи сняты.
-			columns: ["can_manage_imports", "color", "is_synced", "snils", "updated_at", "version"],
+			// ВСЕ ТРИ полномочия объявлены в schema.ts и из записи сняты: can_manage_money и
+			// can_sign_medical_records — пакетом MM6, can_manage_imports — позже
+			// (schema.ts:352, `canManageImports`), и запись про него осталась лежать.
+			// Храповик стража это поймал сам: «колонки уже объявлены — удалите их из записи».
+			// Тот же класс, что дал красный HEAD в цикле 24, когда маршрут
+			// DELETE /api/clinical/rules был СДЕЛАН, а строка долга утверждала обратное.
+			columns: ["color", "is_synced", "snils", "updated_at", "version"],
 		},
 	],
 	["visit_diaries", { reason: MIGRATED_COLUMNS_NEVER_DECLARED, columns: ["diagnosis_text"] }],
