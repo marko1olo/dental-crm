@@ -7,6 +7,11 @@ import { registerTelegramRoutes, registerTelegramWebhookRoutes } from "../../rou
 import { db } from "../../db/client.js";
 import { clinics, denteTelegramChatLinks, organizations } from "../../db/schema.js";
 import { denteTelegramChatLinks as inMemoryChatLinks } from "../../sampleData.js";
+import {
+  buildDenteTelegramChatLinkList,
+  countActiveDenteTelegramChatLinks,
+  revokeDenteTelegramChatLink
+} from "../../telegram/chatLinks.js";
 
 /**
  * ПРИВЯЗКА TELEGRAM ПЕРЕЖИВАЕТ ПЕРЕЗАПУСК СЕРВЕРА.
@@ -257,6 +262,71 @@ describe("привязка Telegram переживает перезапуск с
     assert.equal(revokedTwice.statusCode, 404, `повторный отзыв ответил ${revokedTwice.statusCode}`);
   });
 
+  test("отбор по состоянию и страницы считаются базой, а не после выборки", async () => {
+    // Вторая связка нужна ровно для страниц. Пишется прямо в базу: путь записи
+    // уже доказан первым тестом через настоящий веб-хук, здесь проверяется ЧТЕНИЕ.
+    const [second] = await db
+      .insert(denteTelegramChatLinks)
+      .values({
+        organizationId: runtime.organizationId,
+        clinicId: null,
+        botConfigId: runtime.botConfigId,
+        subjectType: "patient",
+        subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962797",
+        chatFingerprint: "e7c1a9b45de2f0138a6b4c11",
+        chatTransportRef: "synthetic-second-chat-transport-ref",
+        chatIdLast4: "0932",
+        status: "active"
+      })
+      .returning();
+    assert.ok(second, "вторая связка не записана");
+
+    const revokedOnly = await app.inject({ method: "GET", url: "/api/telegram/chat-links?status=revoked" });
+    assert.equal(revokedOnly.statusCode, 200, revokedOnly.body);
+    const revokedList = revokedOnly.json() as {
+      totalCount: number;
+      filteredCount: number;
+      activeCount: number;
+      revokedCount: number;
+      chatLinks: { status: string }[];
+    };
+    // totalCount описывает всю видимую клинике выборку, filteredCount — отбор.
+    // Раньше это были две длины одного и того же массива, и подменить одну
+    // другой было невозможно заметить.
+    assert.equal(revokedList.totalCount, 2, revokedOnly.body);
+    assert.equal(revokedList.filteredCount, 1, revokedOnly.body);
+    assert.equal(revokedList.activeCount, 1, revokedOnly.body);
+    assert.equal(revokedList.revokedCount, 1, revokedOnly.body);
+    assert.deepEqual(
+      revokedList.chatLinks.map((link) => link.status),
+      ["revoked"],
+      `отбор по состоянию вернул не то: ${revokedOnly.body}`
+    );
+
+    const firstPage = await app.inject({ method: "GET", url: "/api/telegram/chat-links?limit=1" });
+    assert.equal(firstPage.statusCode, 200, firstPage.body);
+    const firstPageList = firstPage.json() as { nextCursor: string | null; cursor: string | null; chatLinks: { id: string }[] };
+    assert.equal(firstPageList.chatLinks.length, 1, firstPage.body);
+    assert.equal(firstPageList.cursor, null, "у первой страницы не должно быть входного курсора");
+    assert.equal(firstPageList.nextCursor, "1", `следующая страница не предложена: ${firstPage.body}`);
+
+    const secondPage = await app.inject({
+      method: "GET",
+      url: `/api/telegram/chat-links?limit=1&cursor=${firstPageList.nextCursor}`
+    });
+    assert.equal(secondPage.statusCode, 200, secondPage.body);
+    const secondPageList = secondPage.json() as { nextCursor: string | null; chatLinks: { id: string }[] };
+    assert.equal(secondPageList.chatLinks.length, 1, secondPage.body);
+    assert.equal(secondPageList.nextCursor, null, "после второй страницы предложена третья");
+
+    // Страницы не пересекаются и вместе покрывают обе связки: при неустойчивом
+    // порядке одна связка показалась бы дважды, а другая пропала.
+    const pagedIds = [firstPageList.chatLinks[0]!.id, secondPageList.chatLinks[0]!.id];
+    assert.equal(new Set(pagedIds).size, 2, `страницы пересеклись: ${pagedIds.join(", ")}`);
+
+    await db.delete(denteTelegramChatLinks).where(eq(denteTelegramChatLinks.id, second.id));
+  });
+
   test("чужая клиника не видит связку и не может её отозвать", async () => {
     const rows = await rawChatLinkRows(runtime.organizationId);
     const linkId = rows[0]!.id;
@@ -276,5 +346,66 @@ describe("привязка Telegram переживает перезапуск с
     }
     assert.ok(!foreignList.body.includes(PATIENT_SUBJECT), "в ответе чужой клинике утёк пациент");
     assert.ok(!foreignList.body.includes(linkId), "в ответе чужой клинике утёк идентификатор связки");
+  });
+
+  test("отбор по арендатору стоит в самом запросе, а не в разборе маршрута", async () => {
+    /**
+     * ЗАЧЕМ ОТДЕЛЬНО ОТ ПРЕДЫДУЩЕГО ТЕСТА. Через маршрут чужая организация
+     * отсекается РАНЬШЕ обращения к базе: `resolveTelegramRuntimeContext`
+     * отвечает 404, потому что чужая клиника не описана в серверных настройках.
+     * Значит, маршрутом нельзя отличить «в SQL есть отбор по organizationId» от
+     * «отбора нет, но до него не дошли». Убери условие из запроса — и
+     * предыдущий тест останется зелёным.
+     *
+     * Поэтому здесь вызывается сам модуль, обеими клиниками, и у каждой в базе
+     * своя связка.
+     */
+    const [foreignLink] = await db
+      .insert(denteTelegramChatLinks)
+      .values({
+        organizationId: FOREIGN_ORG,
+        clinicId: null,
+        botConfigId: runtime.botConfigId,
+        subjectType: "patient",
+        subjectId: "3ebb4567-7777-4f19-8c23-2a78c9962798",
+        chatFingerprint: "f10ba9c8d7e6543210fedcba",
+        chatTransportRef: "synthetic-foreign-chat-transport-ref",
+        chatIdLast4: "0933",
+        status: "active"
+      })
+      .returning();
+    assert.ok(foreignLink, "связка чужой клиники не записана");
+
+    const mine = await buildDenteTelegramChatLinkList({ organizationId: runtime.organizationId });
+    const theirs = await buildDenteTelegramChatLinkList({ organizationId: FOREIGN_ORG });
+
+    assert.equal(mine.totalCount, 1, `своя клиника видит ${mine.totalCount} связок вместо одной`);
+    assert.equal(theirs.totalCount, 1, `чужая клиника видит ${theirs.totalCount} связок вместо одной`);
+    assert.deepEqual(
+      mine.chatLinks.map((link) => link.organizationId),
+      [runtime.organizationId],
+      "в выборке своей клиники оказалась связка чужой"
+    );
+    assert.deepEqual(
+      theirs.chatLinks.map((link) => link.organizationId),
+      [FOREIGN_ORG],
+      "в выборке чужой клиники оказалась своя связка"
+    );
+
+    // Счётчик активных связок отбирается по арендатору тем же условием.
+    assert.equal(await countActiveDenteTelegramChatLinks({ organizationId: FOREIGN_ORG }), 1);
+    assert.equal(await countActiveDenteTelegramChatLinks({ organizationId: runtime.organizationId }), 0);
+
+    // Отзыв чужой связки своим арендатором не проходит — и наоборот.
+    assert.equal(
+      await revokeDenteTelegramChatLink({ organizationId: runtime.organizationId }, foreignLink.id),
+      null,
+      "своя клиника отозвала связку чужой"
+    );
+    const [untouched] = await db
+      .select({ status: denteTelegramChatLinks.status })
+      .from(denteTelegramChatLinks)
+      .where(eq(denteTelegramChatLinks.id, foreignLink.id));
+    assert.equal(untouched!.status, "active", "чужая связка изменена запросом другой клиники");
   });
 });
