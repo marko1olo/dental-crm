@@ -119,6 +119,77 @@ async function assertNoResourceOverlap(
   throw new Error("Кресло уже занято другой записью в это время");
 }
 
+/**
+ * ПАЦИЕНТ, ВРАЧ И КРЕСЛО ОБЯЗАНЫ ПРИНАДЛЕЖАТЬ ЭТОЙ КЛИНИКЕ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Ни создание, ни перенос приёма не проверяли принадлежность
+ * ссылок из тела запроса. Проверялись чёрный список, время и пересечения — а
+ * проверка пересечений ограничена организацией, поэтому ЧУЖОЙ ресурс просто ни
+ * с чем не пересекался и проходил насквозь. POST /api/appointments с чужим
+ * пациентом отвечал 201.
+ *
+ * Измерено сквозным сценарием tests/security/crossTenantReconProof.ts: две
+ * клиники, запрос от клиники А с пациентом, врачом и креслом клиники Б — HTTP
+ * 201 трижды, и в базе {"patient_cross":1,"doctor_cross":1,"chair_cross":1}.
+ * Сценарий печатал «НАРУШЕНИЙ: 4» и при этом НИКЕМ НЕ ЗАПУСКАЛСЯ: он не
+ * оканчивается на .test.ts и не входил ни в один прогон.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. В расписании клиники А появляется приём с ФИО
+ * пациента клиники Б — это разглашение персональных данных чужого пациента, а не
+ * косметика. Приём при этом занимает врача и кресло, которых у клиники А нет:
+ * расписание считает занятым то, чего не существует. Обратная сторона тоже
+ * неприятна: клиника Б видит своего врача занятым приёмом, о котором не знает.
+ *
+ * ПОЧЕМУ ПРОВЕРКА ЗДЕСЬ, А НЕ В МАРШРУТЕ. Ссылки приходят двумя путями — при
+ * создании и при переносе, — и маршрутов у переноса два. Проверка в слое доступа
+ * закрывает все входы разом и не обходится новым маршрутом, который забудут
+ * прикрыть.
+ *
+ * ОТКАЗ, А НЕ ТИХОЕ ОБНУЛЕНИЕ ССЫЛКИ. Молча выбросить чужого пациента значит
+ * записать приём не на того человека: администратор увидит подтверждение и
+ * уйдёт. Причина называется прямо, потому что обычно это не злой умысел, а
+ * устаревший список на экране.
+ */
+async function assertAppointmentResourcesBelongToOrganization(
+  executor: any,
+  organizationId: string,
+  input: { patientId?: string | null | undefined; doctorUserId?: string | null | undefined; chairId?: string | null | undefined }
+): Promise<void> {
+  const checks: { id: string; table: any; what: string; action: string }[] = [];
+  if (input.patientId)
+    checks.push({
+      id: input.patientId,
+      table: schema.patients,
+      what: "Пациент",
+      action: "Обновите список пациентов и выберите карту из своей клиники.",
+    });
+  if (input.doctorUserId)
+    checks.push({
+      id: input.doctorUserId,
+      table: schema.users,
+      what: "Врач",
+      action: "Обновите список сотрудников и выберите врача своей клиники.",
+    });
+  if (input.chairId)
+    checks.push({
+      id: input.chairId,
+      table: schema.chairs,
+      what: "Кресло",
+      action: "Обновите список кресел и выберите кресло своей клиники.",
+    });
+
+  for (const check of checks) {
+    const [found] = await executor
+      .select({ id: check.table.id })
+      .from(check.table)
+      .where(and(eq(check.table.id, check.id), eq(check.table.organizationId, organizationId)))
+      .limit(1);
+    if (!found) {
+      throw new Error(`${check.what} не относится к вашей клинике, приём не записан. ${check.action}`);
+    }
+  }
+}
+
 export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput, tx?: any): Promise<Appointment> {
   if (useInMemory()) {
     return createAppointmentInMemory(input);
@@ -137,6 +208,9 @@ export async function createAppointmentInDb(organizationId: string, input: Creat
   const candidateEnds = new Date(endsAtMs);
 
   const insertChecked = async (executor: any) => {
+    // Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
+    // строку незачем, а отказ обязан прийти раньше любой записи.
+    await assertAppointmentResourcesBelongToOrganization(executor, organizationId, input);
     if (input.status !== "cancelled" && input.status !== "no_show") {
       await lockAppointmentResources(executor, organizationId, {
         chairId: input.chairId,
@@ -204,6 +278,10 @@ export async function updateAppointmentInDb(organizationId: string, appointmentI
       .for("update")
       .limit(1);
     if (!existing) throw new Error("Запись не найдена");
+
+    // Перенос принимает те же ссылки, что и создание, и тем же путём уводил
+    // приём за пределы клиники.
+    await assertAppointmentResourcesBelongToOrganization(tx, organizationId, input);
 
     const startsAtRaw = input.startsAt ?? existing.startsAt.toISOString();
     const endsAtRaw = input.endsAt ?? existing.endsAt.toISOString();
