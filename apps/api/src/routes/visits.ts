@@ -51,6 +51,34 @@ const visitDraftAutosaveValidationMessage =
 const visitDraftAcceptValidationMessage =
   "Черновик приема не принят: передайте текст приема, заполненные поля черновика и данные сохранения врача.";
 const visitDraftNotFoundMessage = "Прием не найден. Обновите рабочий экран и выберите актуальный прием.";
+/*
+ * ПРИЁМ ЕСТЬ, ЧЕРНОВИКА У НЕГО НЕТ — И ЭТО НЕ «ПРИЁМ НЕ НАЙДЕН».
+ *
+ * БЫЛО, замерено через app.inject на живой PostgreSQL 2026-07-29: три РАЗНЫХ
+ * состояния базы получали один и тот же отказ «VisitNotFound / Прием не найден.
+ * Обновите рабочий экран и выберите актуальный прием» — приёма нет вовсе, приём
+ * подписан, приём чужой клиники. Первое утверждение было правдой, второе — ложью:
+ * строка в базе есть, `status = 'signed'`, `signed_at` заполнен (сверено SQL в том
+ * же прогоне). Разбор причины — в db/visitsQuery.ts, VisitDraftAutosaveLookup.
+ *
+ * ЧЕМ ЛОЖЬ ХУЖЕ МОЛЧАНИЯ. Отказ не просто называл неверную причину, он давал
+ * невыполнимое действие: «выберите актуальный прием». На демо-клинике все приёмы
+ * подписаны, черновиков нет ни одного, и выбрать нечего — обновление рабочего
+ * экрана возвращает тот же подписанный приём. Человек за стойкой читает это как
+ * «приём потерялся» и идёт искать запись, с которой всё в порядке.
+ *
+ * Причины две, и действия у них разные, поэтому и текста два: подписанный приём
+ * дописывают новым приёмом по записи расписания, аннулированный не дописывают
+ * вовсе. Латиницы и двоеточий внутри фразы нет по той же причине, что и в
+ * utils/clinicSessionRefusal.ts: клиент гасит текст отказа целиком, если находит в
+ * нём латинское слово из шести и более букв.
+ */
+const visitDraftSignedNoDraftMessage =
+  "Черновик приема не открыт: этот прием уже подписан, поэтому черновика у него нет. Запись приема осталась в карте пациента — " +
+  "чтобы дописать лечение, откройте новый прием по записи в расписании.";
+const visitDraftVoidedNoDraftMessage =
+  "Черновик приема не открыт: этот прием аннулирован, поэтому черновика у него нет. Аннулированный прием не дописывают — " +
+  "создайте запись в расписании и откройте по ней новый прием.";
 const visitDraftAutosaveClosedMessage = "Черновик приема не сохранен: этот прием уже недоступен для изменений.";
 const visitDraftAcceptClosedMessage = "Черновик приема не принят: этот прием уже недоступен для изменений.";
 const visitDraftMutationRejectedMessage = "Черновик приема не изменен: обновите прием и повторите действие.";
@@ -244,9 +272,37 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     if (!visitId || visitId === "00000000-0000-0000-0000-000000000000") {
       return visitDraftAutosaveResponseSchema.parse({ serverDraft: null });
     }
-    const draft = await getVisitDraftAutosaveFromDb(orgId, visitId);
-    if (!draft) return reply.code(404).send({ error: "VisitNotFound", message: visitDraftNotFoundMessage });
-    return visitDraftAutosaveResponseSchema.parse({ serverDraft: draft });
+    const lookup = await getVisitDraftAutosaveFromDb(orgId, visitId);
+    if (lookup.outcome === "visit_absent") {
+      // Единственное состояние, где «приём не найден» — правда: строки с этим
+      // идентификатором в этой клинике нет. Чужой приём попадает сюда же, и это
+      // сознательно: подтвердить существование приёма другой клиники нельзя.
+      return reply.code(404).send({
+        error: "VisitNotFound",
+        reason: "visit_not_found",
+        message: visitDraftNotFoundMessage
+      });
+    }
+    if (lookup.outcome === "no_draft") {
+      /*
+       * Код остаётся 404: запрошенный ресурс — ЧЕРНОВИК этого приёма, и его
+       * действительно нет. Меняются машинный код и текст, потому что врали именно
+       * они. 200 с `serverDraft: null` здесь не годится: этим ответом маршрут уже
+       * отвечает на «приёма нет вовсе» (нулевая заготовка выше), и слить два
+       * состояния в один ответ значило бы вернуть ту же потерю различия, только с
+       * другой стороны.
+       */
+      return reply.code(404).send({
+        error: "VisitDraftAbsent",
+        reason: lookup.status === "signed" ? "visit_signed" : "visit_voided",
+        visitId: lookup.visitId,
+        visitStatus: lookup.status,
+        signedAt: lookup.signedAt,
+        message:
+          lookup.status === "signed" ? visitDraftSignedNoDraftMessage : visitDraftVoidedNoDraftMessage
+      });
+    }
+    return visitDraftAutosaveResponseSchema.parse({ serverDraft: lookup.serverDraft });
   });
 
   app.put("/api/visits/:visitId/draft/autosave", async (request, reply) => {

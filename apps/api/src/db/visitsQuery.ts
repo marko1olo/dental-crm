@@ -33,34 +33,96 @@ function hashTranscript(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
 
-export async function getVisitDraftAutosaveFromDb(organizationId: string, visitId: string): Promise<VisitDraftAutosave | null> {
+/**
+ * Чем кончился поиск черновика приёма. ТРИ состояния, а не два.
+ *
+ * ПОЧЕМУ ЭТО НЕ `VisitDraftAutosave | null`, КАК БЫЛО. Прежняя подпись отдавала
+ * `null` на ДВА разных состояния базы: строки приёма нет вовсе (включая приём
+ * чужой клиники) и строка есть, но приём уже не черновик. Маршрут различить их не
+ * мог ничем и называл оба одним отказом — «Прием не найден».
+ *
+ * ЗАМЕРЕНО в своём процессе через app.inject, живая PostgreSQL, 2026-07-29
+ * (свои фикстурные клиники, `dce70000-…`):
+ *   GET /api/visits/<ПОДПИСАННЫЙ>/draft/autosave -> 404 «Прием не найден…»
+ *   GET /api/visits/<НЕТ ТАКОГО>/draft/autosave  -> 404 «Прием не найден…»
+ *   GET /api/visits/<ЧУЖОЙ КЛИНИКИ>/draft/autosave -> 404 «Прием не найден…»
+ * Независимая сверка тем же прогоном: `select … from visits where id = <ПОДПИСАННЫЙ>`
+ * отдаёт ровно одну строку, `status = 'signed'`, `revision = 2`, `signed_at`
+ * заполнен. То есть выборка НЕ слепа — она эту строку находит; распознавание
+ * состояния терялось строкой ниже, `if (visit.status !== "draft") return null`.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. На живой демо-клинике все 10 приёмов подписаны и ни
+ * у одного нет черновика (проверено SQL), а `dashboard.activeVisit` — это
+ * «последний черновик клиники, иначе последний приём любого статуса»
+ * (db/domainStateHydration.ts, applyActiveVisit). Значит рабочий экран открывается
+ * на ПОДПИСАННОМ приёме и первым же запросом получает «Прием не найден. Обновите
+ * рабочий экран и выберите актуальный прием». Обновление не меняет ничего, а
+ * выбирать нечего: приём на месте, он подписан. Администратор за стойкой идёт
+ * искать пропавшую запись, которой ничего не угрожает.
+ *
+ * Различать обязан слой доступа, а не маршрут по тексту ошибки: текст сообщения —
+ * не тип, и разбор строк здесь уже стоил проекту одного дефекта
+ * (routes/visits.ts, sendVisitDraftMutationError).
+ */
+export type VisitDraftAutosaveLookup =
+  /** Приём — черновик, черновик отдан (сохранённый или пустая заготовка по приёму). */
+  | { readonly outcome: "draft"; readonly serverDraft: VisitDraftAutosave }
+  /** Строки приёма в этой клинике нет. Единственное состояние, где «приём не найден» — правда. */
+  | { readonly outcome: "visit_absent" }
+  /**
+   * Приём в базе ЕСТЬ, но он больше не черновик, поэтому черновика у него нет.
+   * `status` и `signedAt` несутся наружу, чтобы отказ назвал причину фактом, а не
+   * догадкой: «подписан» и «аннулирован» — разные причины и разные действия.
+   */
+  | {
+      readonly outcome: "no_draft";
+      readonly visitId: string;
+      readonly status: "signed" | "voided";
+      readonly signedAt: string | null;
+    };
+
+export async function getVisitDraftAutosaveFromDb(
+  organizationId: string,
+  visitId: string
+): Promise<VisitDraftAutosaveLookup> {
   const [visit] = await db.select().from(schema.visits).where(and(eq(schema.visits.id, visitId), eq(schema.visits.organizationId, organizationId))).limit(1);
-  if (!visit) return null;
-  if (visit.status !== "draft") return null;
-  
-  if (visit.draftAutosave) {
-    return visit.draftAutosave as VisitDraftAutosave;
+  if (!visit) return { outcome: "visit_absent" };
+  if (visit.status !== "draft") {
+    return {
+      outcome: "no_draft",
+      visitId: visit.id,
+      status: visit.status,
+      signedAt: visit.signedAt ? visit.signedAt.toISOString() : null
+    };
   }
-  
-  // Return empty skeleton if no draft autosave exists
+
+  if (visit.draftAutosave) {
+    return { outcome: "draft", serverDraft: visit.draftAutosave as VisitDraftAutosave };
+  }
+
+  // Черновик есть, автосохранения по нему ещё не было: заготовка собирается из
+  // полей САМОГО приёма, поэтому это не выдуманные данные, а то, что в строке.
   return {
-    visitId: visit.id,
-    patientId: visit.patientId,
-    selectedSpecialty: "therapist", // default fallback
-    transcript: visit.transcript || "",
-    draft: {
-      warnings: [],
-      complaint: visit.complaint || "",
-      anamnesis: visit.anamnesis || "",
-      objectiveStatus: visit.objectiveStatus || "",
-      diagnosis: visit.diagnosis || "",
-      treatmentPlan: visit.treatmentPlan || ""
-    },
-    baseRevision: visit.revision,
-    clientDraftId: null,
-    clientSavedAt: null,
-    serverSavedAt: visit.updatedAt.toISOString(),
-    transcriptHash: ""
+    outcome: "draft",
+    serverDraft: {
+      visitId: visit.id,
+      patientId: visit.patientId,
+      selectedSpecialty: "therapist", // default fallback
+      transcript: visit.transcript || "",
+      draft: {
+        warnings: [],
+        complaint: visit.complaint || "",
+        anamnesis: visit.anamnesis || "",
+        objectiveStatus: visit.objectiveStatus || "",
+        diagnosis: visit.diagnosis || "",
+        treatmentPlan: visit.treatmentPlan || ""
+      },
+      baseRevision: visit.revision,
+      clientDraftId: null,
+      clientSavedAt: null,
+      serverSavedAt: visit.updatedAt.toISOString(),
+      transcriptHash: ""
+    }
   };
 }
 
