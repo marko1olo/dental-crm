@@ -730,13 +730,6 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
     // Постановка импланта — законченное действие врача, значит момент записи.
     void saveMarkupNow();
-
-    // [OBLIQUE SNAP SIMULATION] 
-    // In a full implementation, we'd do:
-    // const D = vec3.sub(implantEnd, implantStart);
-    // const N = vec3.normalize(D);
-    // renderingEngine.getViewport('SAGITTAL').setCamera({ viewUp: N });
-    // renderingEngine.render();
   };
 
   // Одно из двух: причина отказа, либо параметры дуги, по которой панорама
