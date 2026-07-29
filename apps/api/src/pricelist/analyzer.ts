@@ -1697,10 +1697,49 @@ function readIntegerCountOrNull(value: unknown, maxValue: number): number | null
   return rounded >= 1 && rounded <= maxValue ? rounded : null;
 }
 
+/*
+ * ПРЕДУПРЕЖДЕНИЯ ОТ МОДЕЛИ ПРОХОДЯТ БЕЛЫЙ СПИСОК, А НЕ ЕДУТ НА ЭКРАН КАК ЕСТЬ.
+ *
+ * Список — ровно те ключи, которые ставит сам разбор (buildWarnings), потому что
+ * русская подпись на экране существует только для них. Незнакомый ключ клиника
+ * видела АНГЛИЙСКИМИ СЛОВАМИ: интерфейс превращал `price_ambiguous` в
+ * «price ambiguous», `two_prices_in_one_row` — в «two prices in one row», а любой
+ * выдуманный ключ — в его же текст через пробелы. Измерено ИСПОЛНЕНИЕМ функции
+ * подписи (находка ревьюера волны OO, перемерена ведущим).
+ *
+ * ПОЧЕМУ БЕЛЫЙ СПИСОК, А НЕ ФИЛЬТР ПО ВИДУ КЛЮЧА. `groqSystemPrompt` перечисляет
+ * допустимые значения для пяти полей и про `warnings` не говорит НИЧЕГО, то есть
+ * модель вправе прислать любую строку и присылает. Отличить «наш ключ, которого мы
+ * ещё не знаем» от выдумки модели по форме нельзя — только по списку. Это тот же
+ * выбор, что у `crownType` и `brand`: свободная строка из модели обязана
+ * сверяться с перечислением.
+ *
+ * НЕЗНАКОМОЕ НЕ ТЕРЯЕТСЯ МОЛЧА. Вместо выброшенных ключей ставится
+ * `material_uncertain` — строка остаётся помеченной «проверьте руками», и клиника
+ * видит русскую подпись. Тихо выбросить просьбу модели проверить строку было бы
+ * хуже, чем показать чужой ключ: просьба исчезла бы вместе с ключом, а это тот
+ * самый класс «молчаливой потери», против которого написан весь этот файл.
+ */
+const modelWarningAllowList = new Set([
+  "price_not_found",
+  "category_uncertain",
+  "material_uncertain",
+  "restoration_uncertain",
+  "title_too_short",
+  "photo_ocr_requires_visual_review"
+]);
+
 function asWarnings(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean).slice(0, 8)
-    : [];
+  if (!Array.isArray(value)) return [];
+  const raw = value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+    .slice(0, 8);
+  const known = raw.filter((warning) => modelWarningAllowList.has(warning));
+  const droppedUnknown = known.length < raw.length;
+  return droppedUnknown && !known.includes("material_uncertain")
+    ? [...known, "material_uncertain"]
+    : known;
 }
 
 /**

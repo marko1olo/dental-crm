@@ -291,9 +291,29 @@ function pricelistWarningText(warning: string): string {
 	}
 	if (technicalPricelistWarningPattern.test(normalized))
 		return "Требуется ручная проверка прайса";
-	return (
-		pricelistWarningLabels[normalized] ?? normalized.replace(/[_-]+/g, " ")
-	);
+	/*
+	 * НЕИЗВЕСТНЫЙ КЛЮЧ НЕ ПЕЧАТАЕТСЯ КЛИНИКЕ КАК ЕСТЬ.
+	 *
+	 * БЫЛО: `?? normalized.replace(/[_-]+/g, " ")` — незнакомый ключ выводился на
+	 * экран английскими словами. Измерено ИСПОЛНЕНИЕМ этой функции, а не чтением
+	 * (находка ревьюера волны OO, перемерена ведущим):
+	 *   "price_ambiguous"       → «price ambiguous»
+	 *   "two_prices_in_one_row" → «two prices in one row»
+	 *   "totally_made_up_key"   → «totally made up key»
+	 * Русская клиника видела английский текст в собственном прайсе.
+	 *
+	 * Источник незнакомых ключей — НЕЙРО-ВЕТКА: `itemFromGroq` сливает
+	 * `asWarnings(record.warnings)` от модели с предупреждениями разбора
+	 * (`analyzer.ts:1791`), а системный промпт перечисляет допустимые значения для
+	 * пяти полей и НЕ перечисляет их для `warnings`. Значит модель может прислать
+	 * любую строку. Это ТРЕТИЙ экземпляр одного класса: тем же способом утекали
+	 * `crownType` («unknown», «zirconia crown») и `brand`.
+	 *
+	 * Честная фраза вместо имени ключа: клинике важно не имя, а что делать со
+	 * строкой. Сам ключ не теряется — он остаётся в `item.warnings` ответа.
+	 * Это ВТОРОЙ рубеж; первый — белый список на стороне разбора.
+	 */
+	return pricelistWarningLabels[normalized] ?? "Строку нужно проверить руками";
 }
 
 export function pricelistWarningsText(warnings: string[]): string {
