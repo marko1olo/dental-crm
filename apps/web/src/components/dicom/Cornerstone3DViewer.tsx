@@ -20,6 +20,19 @@ import {
   type DrawnArchAnnotation,
   type PanoramicIssue,
 } from "./panoramicArch";
+import {
+  archControlPointsOf,
+  archFromStoredControlPoints,
+  ctPlanningMarkupIsEmpty,
+  ctPlanningRestoredLabel,
+  emptyCtPlanningMarkup,
+  loadCtPlanningMarkup,
+  saveCtPlanningMarkup,
+  worldTriple,
+  type CtPlanningMarkup,
+  type StoredImplant,
+  type WorldPoint3,
+} from "./ctPlanningPersistence";
 
 export interface ImplantData {
   id: string;
@@ -34,9 +47,71 @@ export interface ImplantData {
 
 interface Cornerstone3DViewerProps {
   imageIds: string[];
+  /**
+   * Пациент, чей снимок открыт. Без него разметку планирования некуда сохранять:
+   * строка в базе существует только в паре пациент + исследование. Приходит из
+   * `ImagingView` (`activePatient?.id`); когда пациент не выбран, просмотр
+   * работает как раньше, а сохранение честно отказывает текстом на экране.
+   */
+  patientId?: string | null;
 }
 
-export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
+/** Задержка перед записью правки уже обведённой дуги. Разбор — у `scheduleMarkupSave`. */
+const MARKUP_SAVE_DEBOUNCE_MS = 1500;
+
+/**
+ * Импланты компонента в форму, пригодную для записи.
+ *
+ * `startWorld`/`endWorld` — это `vec3`, то есть `Float32Array`, и
+ * `JSON.stringify` превращает его в объект `{"0":..,"1":..,"2":..}`, а не в
+ * массив (замерено). Поэтому векторы разбираются на тройки чисел здесь, рядом с
+ * gl-matrix, а не в модуле записи, который обязан оставаться без него.
+ */
+function storedImplantsOf(implants: readonly ImplantData[]): StoredImplant[] {
+  const out: StoredImplant[] = [];
+  for (const implant of implants) {
+    const startWorld = worldTriple(Array.from(implant.startWorld));
+    const endWorld = worldTriple(Array.from(implant.endWorld));
+    if (!startWorld || !endWorld) continue;
+    out.push({
+      id: implant.id,
+      fdiCode: implant.fdiCode,
+      diameter: implant.diameter,
+      length: implant.length,
+      startWorld,
+      endWorld,
+      boneDensity: { ...implant.boneDensity },
+      distanceToNerve: implant.distanceToNerve,
+    });
+  }
+  return out;
+}
+
+/** Обратное превращение: прочитанный из базы имплант снова получает векторы. */
+function implantDataOf(stored: readonly StoredImplant[]): ImplantData[] {
+  return stored.map((implant) => ({
+    id: implant.id,
+    fdiCode: implant.fdiCode,
+    diameter: implant.diameter,
+    length: implant.length,
+    startWorld: vec3.fromValues(implant.startWorld[0], implant.startWorld[1], implant.startWorld[2]),
+    endWorld: vec3.fromValues(implant.endWorld[0], implant.endWorld[1], implant.endWorld[2]),
+    boneDensity: { ...implant.boneDensity },
+    distanceToNerve: implant.distanceToNerve,
+  }));
+}
+
+/**
+ * Русский протокол по последнему импланту. Вынесен из `simulateImplantPlacement`,
+ * чтобы восстановленный из базы имплант получал ту же строку, что и только что
+ * поставленный: иначе после возврата на снимок список имплантов был бы, а
+ * протокола под ним — нет.
+ */
+function implantProtocolLog(implant: ImplantData): string {
+  return `В область зуба ${implant.fdiCode} запланирована установка имплантата ${implant.diameter.toFixed(1)}x${implant.length.toFixed(1)} мм. Плотность кости по HU соответствует типу ${implant.boneDensity.classification} (${implant.boneDensity.averageHU} HU). Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм.`;
+}
+
+export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3DViewerProps) {
   const axialRef = useRef<HTMLDivElement>(null);
   const sagittalRef = useRef<HTMLDivElement>(null);
   const coronalRef = useRef<HTMLDivElement>(null);
@@ -57,6 +132,48 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   const [activeTool, setActiveTool] = useState<string>("Crosshairs");
   const [implants, setImplants] = useState<ImplantData[]>([]);
   const [aiProtocolLog, setAiProtocolLog] = useState<string>("");
+  /**
+   * Код исследования DICOM — единственный устойчивый ключ разметки.
+   *
+   * ПОЧЕМУ НЕ `imageIds`. Локальный архив попадает в просмотрщик через
+   * `wadouri.fileManager.add`, который выдаёт `dicomfile:<номер по счёту>`
+   * (`fileManager.js:3-5`) — номер в массиве внутри модуля. После перезагрузки
+   * страницы `dicomfile:0` означает первый файл СЛЕДУЮЩЕГО открытого архива, то
+   * есть ключ, собранный из `imageIds`, либо не нашёл бы разметку никогда, либо
+   * нашёл бы РАЗМЕТКУ ДРУГОГО СНИМКА. Настоящий `StudyInstanceUID` живёт в теге
+   * DICOM и постоянен, и колонка в базе названа именно так.
+   *
+   * ЛОВУШКА ПОИСКА МЕТАДАННЫХ: у этого загрузчика `studyInstanceUID` лежит в
+   * `generalSeriesModule`, а НЕ в `generalStudyModule` — в модуле исследования
+   * его нет вовсе (`wadouri/metaData/metaDataProvider.js:42-49` против `:56`).
+   */
+  const [studyInstanceUid, setStudyInstanceUid] = useState<string | null>(null);
+  /** Разметка, прочитанная из базы при открытии снимка. */
+  const [restoredMarkup, setRestoredMarkup] = useState<CtPlanningMarkup | null>(null);
+  /**
+   * Состояние хранения разметки, видимое врачу. Отказ, ушедший только в консоль,
+   * для врача равен молчаливой потере работы — этот класс дефекта в дереве
+   * ловили многократно.
+   */
+  const [markupStatus, setMarkupStatus] = useState<
+    { tone: "saving" | "saved" | "issue"; text: string } | null
+  >(null);
+
+  /*
+   * Обработчики событий cornerstone и очистка эффекта живут вне цикла отрисовки
+   * React, поэтому им нужна не копия состояния на момент подписки, а ссылка на
+   * текущее. Без этого сохранение при уходе с экрана записало бы разметку,
+   * какой она была в момент подписки, — то есть пустую.
+   */
+  const patientIdRef = useRef<string | null>(patientId);
+  patientIdRef.current = patientId;
+  const studyUidRef = useRef<string | null>(studyInstanceUid);
+  studyUidRef.current = studyInstanceUid;
+  const implantsRef = useRef<ImplantData[]>(implants);
+  implantsRef.current = implants;
+  const restoredMarkupRef = useRef<CtPlanningMarkup | null>(restoredMarkup);
+  restoredMarkupRef.current = restoredMarkup;
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -101,6 +218,11 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     setPanorexVolume(null);
     setPanorexIssue(null);
     setArchSummary(null);
+    // Новая серия — и разметка предыдущей к ней не относится. Без сброса
+    // восстановленная разметка прошлого снимка была бы сохранена под кодом нового.
+    setStudyInstanceUid(null);
+    setRestoredMarkup(null);
+    setMarkupStatus(null);
 
     async function loadAndRender() {
       // БЫЛО: идентификатор тома жёстко "my-volume" и никогда не вытеснялся из
@@ -156,6 +278,23 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
 
       // Load the volume (decodes pixel data)
       volume.load();
+
+      /*
+       * Код исследования читается после разбора файлов: до
+       * `createAndCacheVolume` поставщик метаданных ещё ничего не знает об этих
+       * imageId. Пустое значение оставляем пустым — сохранять разметку под
+       * выдуманным кодом хуже, чем не сохранять: чужая разметка склеилась бы с
+       * этой по совпадению ключа.
+       */
+      const firstImageId = imageIds[0];
+      const seriesMeta = firstImageId
+        ? (cornerstone.metaData.get("generalSeriesModule", firstImageId) as
+            | { studyInstanceUID?: unknown }
+            | undefined)
+        : undefined;
+      const uid =
+        typeof seriesMeta?.studyInstanceUID === "string" ? seriesMeta.studyInstanceUID.trim() : "";
+      if (!cancelled) setStudyInstanceUid(uid.length > 0 ? uid : null);
 
       await cornerstone.setVolumesForViewports(
         renderingEngine,
@@ -244,6 +383,194 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
     };
   }, [isInitialized, imageIds]);
 
+  /*
+   * ЗАГРУЗКА РАЗМЕТКИ ПРИ ОТКРЫТИИ СНИМКА.
+   *
+   * Срабатывает, как только известны оба ключа — пациент и код исследования.
+   * Раньше здесь не было ничего: адрес чтения не вызывался из клиента ни разу,
+   * поэтому обведённая в прошлый раз дуга на экран не возвращалась никогда.
+   */
+  useEffect(() => {
+    if (!patientId || !studyInstanceUid) return;
+    let cancelled = false;
+
+    loadCtPlanningMarkup(patientId, studyInstanceUid)
+      .then((outcome) => {
+        if (cancelled) return;
+        if (outcome.status === "refused") {
+          // Пустой снимок без объяснения врач читает как «разметка пропала».
+          setMarkupStatus({ tone: "issue", text: outcome.message });
+          return;
+        }
+        setRestoredMarkup(outcome.markup);
+        if (outcome.markup.implants.length > 0) {
+          const restored = implantDataOf(outcome.markup.implants);
+          setImplants(restored);
+          const last = restored[restored.length - 1];
+          if (last) setAiProtocolLog(implantProtocolLog(last));
+        }
+        const label = ctPlanningRestoredLabel(outcome.markup);
+        setMarkupStatus(label ? { tone: "saved", text: label } : null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMarkupStatus({
+            tone: "issue",
+            text:
+              "Сохранённую разметку прочитать не удалось. Откройте снимок заново; если не поможет, " +
+              "сообщите администратору клиники.",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [patientId, studyInstanceUid]);
+
+  /**
+   * Разметка, какая она СЕЙЧАС: точки врача из хранилища аннотаций cornerstone
+   * плюс расставленные импланты.
+   *
+   * Читается `SplineROITool`, а если аннотации в хранилище нет (врач вернулся на
+   * снимок и ещё ничего не трогал), берутся восстановленные из базы точки —
+   * иначе сохранение по любому поводу затёрло бы прочитанную разметку пустотой.
+   */
+  const currentMarkup = (): CtPlanningMarkup => {
+    const element = axialRef.current;
+    let splinePoints: WorldPoint3[] = [];
+    if (element) {
+      try {
+        const annotations =
+          cornerstoneTools.annotation.state.getAnnotations(
+            cornerstoneTools.SplineROITool.toolName,
+            element,
+          ) ?? [];
+        splinePoints = archControlPointsOf(annotations);
+      } catch {
+        // getAnnotations бросает, если элемент ещё не включён в cornerstone.
+        splinePoints = [];
+      }
+    }
+    const restored = restoredMarkupRef.current;
+    if (splinePoints.length === 0 && restored) splinePoints = restored.splinePoints;
+    return {
+      splinePoints,
+      // Инструмента обводки канала нерва в этом просмотрщике нет вовсе, поэтому
+      // единственный источник этих точек — то, что уже лежит в базе. Затирать их
+      // пустотой было бы потерей чужой работы.
+      nervePoints: restored?.nervePoints ?? emptyCtPlanningMarkup().nervePoints,
+      implants: storedImplantsOf(implantsRef.current),
+    };
+  };
+
+  /**
+   * Записать разметку сейчас. `silent` — для сохранения при уходе с экрана: там
+   * показывать что-либо уже некому, экран разбирается.
+   */
+  const saveMarkupNow = async (silent = false): Promise<void> => {
+    const patient = patientIdRef.current;
+    const study = studyUidRef.current;
+    const markup = currentMarkup();
+    if (ctPlanningMarkupIsEmpty(markup)) return;
+
+    if (!patient) {
+      if (!silent) {
+        setMarkupStatus({
+          tone: "issue",
+          text:
+            "Разметку сохранить нельзя — пациент не выбран, а разметка хранится в его карточке. " +
+            "Откройте снимок из карточки пациента, обведённая дуга остаётся на экране.",
+        });
+      }
+      return;
+    }
+    if (!study) {
+      if (!silent) {
+        setMarkupStatus({
+          tone: "issue",
+          text:
+            "Разметку сохранить нельзя — в файлах снимка нет кода исследования, а без него разметку " +
+            "не отличить от разметки другого снимка. Загрузите архив КЛКТ целиком, обведённая дуга " +
+            "остаётся на экране.",
+        });
+      }
+      return;
+    }
+
+    if (!silent) setMarkupStatus({ tone: "saving", text: "Сохраняем разметку…" });
+    const outcome = await saveCtPlanningMarkup(patient, study, markup);
+    // Прочитанное принимаем за новую основу: иначе следующее сохранение снова
+    // сравнивалось бы с состоянием до правки.
+    if (outcome.status === "saved") setRestoredMarkup(markup);
+    if (silent) return;
+    setMarkupStatus(
+      outcome.status === "saved"
+        ? { tone: "saved", text: "Разметка сохранена в карточке пациента." }
+        : { tone: "issue", text: outcome.message },
+    );
+  };
+
+  /**
+   * ВЫБРАННЫЙ МОМЕНТ СОХРАНЕНИЯ, И ПОЧЕМУ ИМЕННО ОН.
+   *
+   * Сохранять на каждое движение мыши нельзя: `ANNOTATION_MODIFIED` приходит на
+   * каждый кадр перетаскивания точки, это десятки запросов в секунду на одну
+   * правку дуги. Кнопка, о которой врач не знает, равна отсутствию сохранения.
+   * Поэтому моментов три, и все они — законченные действия врача:
+   *   • `ANNOTATION_COMPLETED` — дуга обведена. Событие приходит РОВНО ОДИН РАЗ на
+   *     законченный обвод (двойной щелчок либо возврат на первую точку), это
+   *     единственный способ закончить `SplineROITool`, то есть основной случай, а
+   *     не краевой;
+   *   • `ANNOTATION_MODIFIED` с задержкой — врач поправил уже обведённое.
+   *     Задержка сворачивает перетаскивание в одну запись; без этой ветки
+   *     правки терялись бы, потому что второй раз «завершения» не будет;
+   *   • постановка импланта и уход с экрана — тот самый момент, в котором
+   *     разметка раньше умирала.
+   * Кнопка «Сохранить разметку» рядом тоже есть: на неё ссылаются тексты отказов,
+   * и она даёт врачу способ убедиться, что работа записана, не угадывая.
+   */
+  const scheduleMarkupSave = () => {
+    if (saveTimerRef.current !== null) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      void saveMarkupNow();
+    }, MARKUP_SAVE_DEBOUNCE_MS);
+  };
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    const target = cornerstone.eventTarget;
+    const onCompleted = () => {
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      void saveMarkupNow();
+    };
+    const onModified = () => scheduleMarkupSave();
+
+    // Аннотации cornerstone рассылают события на общий eventTarget, а не на
+    // элемент (`stateManagement/annotation/helpers/state.js:13`).
+    target.addEventListener(cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED, onCompleted);
+    target.addEventListener(cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED, onModified);
+
+    return () => {
+      target.removeEventListener(cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED, onCompleted);
+      target.removeEventListener(cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED, onModified);
+      // УХОД С ЭКРАНА — ровно тот момент, в котором разметка раньше исчезала:
+      // ниже по этому же файлу очистка уничтожает группу инструментов, а
+      // соседний эффект чистит кэш cornerstone. Отложенную запись здесь ждать
+      // нечем, поэтому она отправляется без ожидания ответа; показать отказ уже
+      // некому, и поэтому основной момент записи — завершение обвода, а не это.
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      void saveMarkupNow(true);
+    };
+  }, [isInitialized]);
+
   /** Отказ от построения: окно развёртки не открываем, причину показываем. */
   const refusePanorex = (reason: PanoramicIssue) => {
     setPanorexIssue(reason);
@@ -279,7 +606,18 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       return;
     }
 
-    const arch = buildPanoramicArch(annotations);
+    let arch = buildPanoramicArch(annotations);
+    if (arch.status !== "ready" && arch.reason === "no_arch") {
+      /*
+       * Врач вернулся на снимок: в хранилище аннотаций пусто, потому что оно
+       * живёт только пока смонтирован компонент, — но разметка прочитана из базы.
+       * Строим развёртку по ней, чтобы возвращённая разметка была рабочей, а не
+       * декоративной. Геометрия та же: сохранённые точки уходят в тот же
+       * `buildPanoramicArch`.
+       */
+      const stored = restoredMarkup?.splinePoints ?? [];
+      if (stored.length > 0) arch = archFromStoredControlPoints(stored);
+    }
     if (arch.status !== "ready") {
       refusePanorex(arch.reason);
       return;
@@ -381,12 +719,17 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
       distanceToNerve: distToNerve
     };
 
-    setImplants([...implants, newImplant]);
+    const nextImplants = [...implants, newImplant];
+    setImplants(nextImplants);
+    // Ссылка обновляется здесь же: сохранение ниже читает её, а не состояние,
+    // которое React перерисует только следующим кадром.
+    implantsRef.current = nextImplants;
 
     // AI AUTO-PROTOCOL GENERATION
-    const logStr = `В область зуба ${newImplant.fdiCode} запланирована установка имплантата ${newImplant.diameter.toFixed(1)}x${newImplant.length.toFixed(1)} мм. Плотность кости по HU соответствует типу ${newImplant.boneDensity.classification} (${newImplant.boneDensity.averageHU} HU). Дистанция до нижнечелюстного канала ${newImplant.distanceToNerve.toFixed(1)} мм.`;
-    
-    setAiProtocolLog(logStr);
+    setAiProtocolLog(implantProtocolLog(newImplant));
+
+    // Постановка импланта — законченное действие врача, значит момент записи.
+    void saveMarkupNow();
 
     // [OBLIQUE SNAP SIMULATION] 
     // In a full implementation, we'd do:
@@ -494,6 +837,18 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
           <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           Развернуть
         </button>
+
+        {/* Разметка записывается сама по законченным действиям врача; эта кнопка
+            даёт способ убедиться в этом не угадывая, и на неё ссылаются тексты
+            отказов. */}
+        <button
+          type="button"
+          data-testid="ct-planning-save"
+          style={{ marginLeft: '4px', backgroundColor: 'rgba(0,0,0,0.4)', color: '#d4d4d8', padding: '8px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 500, border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          onClick={() => void saveMarkupNow()}
+        >
+          Сохранить разметку
+        </button>
       </div>
 
       {/* Почему панорамы нет — или по какой именно дуге она построена.
@@ -511,6 +866,24 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
           }`}
         >
           {panorexBanner.text}
+        </div>
+      )}
+
+      {/* Судьба разметки, видимая врачу: восстановлена, сохраняется, сохранена
+          или не сохранена с причиной и действием. Отказ, ушедший только в
+          консоль, для врача равен молчаливой потере работы. */}
+      {markupStatus && (
+        <div
+          role={markupStatus.tone === "issue" ? "alert" : "status"}
+          aria-live="polite"
+          data-testid="ct-planning-storage-state"
+          className={`absolute left-1/2 top-40 z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
+            markupStatus.tone === "issue"
+              ? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
+              : "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
+          }`}
+        >
+          {markupStatus.text}
         </div>
       )}
 

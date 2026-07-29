@@ -641,7 +641,15 @@ export function ImagingView(props: ImagingViewProps) {
                     <>
                       <div className="imaging-viewer-stage" style={{ position: 'relative' }}>
                         {localImageIds.length > 0 ? (
-                          <Cornerstone3DViewer imageIds={localImageIds} />
+                          /*
+                            Пациент передаётся в просмотрщик, потому что разметка
+                            планирования имплантации хранится в его карточке — в паре
+                            с кодом исследования DICOM. Без этого признака обведённая
+                            врачом дуга умирала вместе с экраном: адреса
+                            /api/imaging/planning/save и /load не вызывались из
+                            клиента ни разу, хотя серверная половина дописана.
+                          */
+                          <Cornerstone3DViewer imageIds={localImageIds} patientId={activePatient?.id ?? null} />
                         ) : selectedImagingStudy?.kind === "cbct" ? (
                           /*
                             КЛКТ: раньше под загрузчиком стоял просмотрщик-обманка.
