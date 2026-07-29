@@ -58,7 +58,7 @@ type ChairRow = {
 	utilization: number | null;
 };
 
-type ReportsSummary = {
+export type ReportsSummary = {
 	period: { from: string; to: string };
 	revenue: { granularity: string; points: RevenuePoint[]; totalRub: number; isEmpty: boolean };
 	doctors: { rows: DoctorRow[]; unattributedRevenueRub: number; attributionNote: string; isEmpty: boolean };
@@ -167,6 +167,57 @@ function monthBounds(now = new Date()): { from: string; to: string } {
 	return { from: iso(first), to: iso(last) };
 }
 
+/**
+ * ЗАПРОС СВОДКИ. КАЛЕНДАРНАЯ ДАТА УХОДИТ НА СЕРВЕР КАК ЕСТЬ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Здесь границы превращались в мгновение: к календарной дате
+ * приклеивалось `T00:00:00` для начала и `T23:59:59` для конца, полученная строка
+ * скармливалась конструктору `Date`, и с него снималась строка ISO. Запись вида
+ * `2026-07-01T00:00:00` БЕЗ смещения разбирается в поясе БРАУЗЕРА, а не клиники.
+ * То есть календарную дату превращал в мгновение тот, кто пояс клиники не знает.
+ *
+ * Прежний вызов здесь НЕ ПРОЦИТИРОВАН дословно намеренно: страж
+ * `tests/periodBoundsGoToServerAsCalendarDate.test.ts` ищет это превращение по
+ * всему файлу, включая пояснения, и на цитате прежнего кода он справедливо
+ * падает. Тот же приём уже применён в `pages/DoctorPayoutDashboard.tsx` из-за
+ * стража оформления.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Владелец сети смотрит из Москвы (+3) камчатский
+ * филиал (+12) и выбирает «июль». Измерено: браузер в Москве посылал
+ * `2026-06-30T21:00:00.000Z`, браузер на Камчатке — `2026-06-30T12:00:00.000Z`,
+ * разница девять часов на одном и том же выборе. Для камчатской клиники
+ * московская граница — 1 июля 09:00 по её часам: месячный отчёт терял кассу
+ * первой смены месяца и захватывал девять часов 1 августа. Отчёт при этом
+ * выглядит правдоподобным, поэтому расхождение с кассой ищут в кассе.
+ *
+ * КАК ТЕПЕРЬ. Уходит ровно то, что показывает поле `<input type="date">` —
+ * `YYYY-MM-DD`. Календарную дату в мгновение превращает СЕРВЕР, который читает
+ * `clinics.timezone` (`apps/api/src/routes/reports.ts`, `resolvePeriodBoundary`);
+ * `to` разрешается концом суток включительно. Полный ISO со смещением маршрут
+ * по-прежнему принимает — его посылают тесты и другие клиенты.
+ *
+ * ПОЧЕМУ ЭТО ОТДЕЛЬНАЯ ФУНКЦИЯ, А НЕ ТЕЛО `load`. Внутри компонента путь, которым
+ * ходит клиент, проверить нечем: в этом дереве нет ни jsdom, ни happy-dom, тесты
+ * веба гоняются через `node --test` и рисуют компоненты `renderToStaticMarkup`, а
+ * он эффекты не исполняет — значит `fetch` из `useEffect` не случится и
+ * перехватывать будет нечего. Отдельная функция позволяет проверке подменить
+ * `globalThis.fetch` и прочитать АДРЕС, который уходит на сервер, а не состояние
+ * компонента. Зелёный тест на состоянии в этом дереве трижды не доказывал работу
+ * пути, которым ходит клиент.
+ */
+export async function fetchReportsSummary(
+	period: { readonly from: string; readonly to: string; readonly granularity: "day" | "week" | "month" },
+	headers: Record<string, string>
+): Promise<ReportsSummary> {
+	const query = new URLSearchParams({
+		from: period.from,
+		to: period.to,
+		granularity: period.granularity
+	});
+	const response = await fetch(`/api/reports/summary?${query.toString()}`, { headers });
+	return readJson<ReportsSummary>(response);
+}
+
 export type ManagerReportsPanelProps = {
 	/**
 	 * Режим клиники. Определяет, какие разрезы уместны: занятость единственного
@@ -231,11 +282,6 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 		setLoading(true);
 		setError(null);
 		try {
-			const query = new URLSearchParams({
-				from: new Date(`${from}T00:00:00`).toISOString(),
-				to: new Date(`${to}T23:59:59`).toISOString(),
-				granularity
-			});
 			/*
 			 * Заголовки собираются в момент запроса, а не при создании `load`:
 			 * см. пояснение к authRef выше. Проверка на `auth` — не
@@ -246,8 +292,12 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 			const auth = authRef.current;
 			const readHeaders =
 				auth && typeof auth.denteClinicalReadHeaders === "function" ? auth.denteClinicalReadHeaders() : {};
-			const response = await fetch(`/api/reports/summary?${query.toString()}`, { headers: readHeaders });
-			setSummary(await readJson<ReportsSummary>(response));
+			/*
+			 * `from` и `to` — календарные даты `YYYY-MM-DD` прямо из полей ввода.
+			 * Своего превращения в мгновение здесь больше НЕТ: пояс клиники знает
+			 * сервер, браузер — нет. Разбор в `fetchReportsSummary` выше.
+			 */
+			setSummary(await fetchReportsSummary({ from, to, granularity }, readHeaders));
 		} catch (loadError) {
 			setSummary(null);
 			setError(loadError instanceof Error ? loadError.message : String(loadError));

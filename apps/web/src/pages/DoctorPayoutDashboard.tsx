@@ -132,32 +132,80 @@ function currentMonthValue(now = new Date()): string {
 }
 
 /**
- * Границы месяца по местному времени.
+ * ГРАНИЦЫ ЗАРПЛАТНОГО МЕСЯЦА — КАЛЕНДАРНЫМИ ДАТАМИ, БЕЗ ЕДИНОГО МГНОВЕНИЯ.
  *
- * ПОЧЕМУ МЕСТНОЕ, А НЕ UTC. Сервер по умолчанию считает текущий месяц местным
- * временем (`services/reports/managerReports.ts`, `currentMonthPeriod`). Если
- * клиент пришлёт границы в UTC, у клиники в UTC+3 первые три часа первого числа
- * уедут в предыдущий месяц — оплата, принятая утром 1-го, попала бы в зарплату
- * за прошлый месяц. `new Date(год, месяц, число)` строит именно местную дату.
+ * ЧТО БЫЛО СЛОМАНО. Здесь стояло `new Date(year, monthIndex, 1, 0, 0, 0, 0)`, и
+ * ниже с этого мгновения снималась строка ISO, которая и уходила на сервер.
+ * Прежнее пояснение говорило «местное, а не UTC» и было право ровно наполовину:
+ * `new Date(год, месяц, число)` строит местную дату БРАУЗЕРА, а не клиники. Пояс
+ * клиники живёт в `clinics.timezone`, и браузер о нём не знает.
+ *
+ * Прежний вызов не процитирован дословно: страж
+ * `tests/periodBoundsGoToServerAsCalendarDate.test.ts` ищет это превращение по
+ * всему файлу, включая пояснения, — тот же приём, что и с цитатой цвета для
+ * стража оформления в шапке этого файла.
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. ЭТО ЗАРПЛАТА, и граница месяца здесь стоит денег.
+ * Измерено на выборе «июль 2026»: браузер в Москве (+3) посылал начало месяца как
+ * `2026-06-30T21:00:00.000Z`, браузер на Камчатке (+12) — `2026-06-30T12:00:00.000Z`.
+ * Для камчатской клиники московская граница — 1 июля 09:00 по её часам: касса
+ * первой смены месяца не попадала в зарплату за июль, а девять часов 1 августа —
+ * попадали. Владелец сети, считающий зарплату филиалам из своего часового пояса,
+ * получал у каждого филиала СВОЙ сдвиг границы, и ни один не совпадал с кассовой
+ * сменой.
+ *
+ * КАК ТЕПЕРЬ. На сервер уходит календарная дата `YYYY-MM-DD`, а превращает её в
+ * мгновение тот, кто знает пояс клиники (`apps/api/src/routes/billing.ts`, где
+ * границы разрешаются через `clinicTimeZone` до вызова `resolvePayoutPeriod`).
+ * Номер последнего дня месяца от пояса не зависит вовсе — он определяется только
+ * годом и месяцем, поэтому берётся через `Date.UTC`: нулевой день следующего
+ * месяца есть последний день этого, без таблицы длин и без местного времени.
  */
-function monthBoundsOf(monthValue: string): { from: Date; to: Date } | null {
+export function payoutMonthCalendarBounds(monthValue: string): { from: string; to: string } | null {
 	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
 	if (!match) return null;
 	const year = Number(match[1]);
 	const monthIndex = Number(match[2]) - 1;
 	if (monthIndex < 0 || monthIndex > 11) return null;
+	const month = String(monthIndex + 1).padStart(2, "0");
+	const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 	return {
-		from: new Date(year, monthIndex, 1, 0, 0, 0, 0),
-		// Нулевой день следующего месяца — последний день этого, без таблицы длин.
-		to: new Date(year, monthIndex + 1, 0, 23, 59, 59, 999)
+		from: `${year}-${month}-01`,
+		to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`
 	};
+}
+
+/**
+ * ЗАПРОС РАСЧЁТА ВЫПЛАТ. Вынесен из компонента ради проверяемости.
+ *
+ * В этом дереве нет ни jsdom, ни happy-dom: тесты веба гоняются через
+ * `node --test` и рисуют компоненты `renderToStaticMarkup`, который эффекты не
+ * исполняет, — значит `fetch` из `useEffect` не случится и перехватывать было бы
+ * нечего. Отдельная функция позволяет проверке подменить `globalThis.fetch` и
+ * прочитать АДРЕС, который уходит на сервер, а не состояние компонента. Ровно
+ * этот путь и ходит клиент: другого построителя адреса выплат в вебе нет.
+ */
+export async function requestDoctorPayouts(bounds: { readonly from: string; readonly to: string }): Promise<Response> {
+	const query = new URLSearchParams({ from: bounds.from, to: bounds.to });
+	/*
+	 * Токены кабинета и сотрудника подставляет обёртка глобального fetch
+	 * (`lib/apiAuthFetch.ts`), как и во всех остальных чтениях. Прежняя версия
+	 * посылала только `x-dente-admin-secret` — а маршрут выплат требует
+	 * ОПОЗНАННОГО сотрудника, потому что зарплата бывает «своя» и «чужая», и
+	 * по одному секрету периметра сервер не знает, кто смотрит.
+	 */
+	return fetch(`/api/billing/payouts?${query.toString()}`);
 }
 
 /** Подпись месяца человеческим видом: «июль 2026 г.». */
 function monthLabelOf(monthValue: string): string {
-	const bounds = monthBoundsOf(monthValue);
-	if (!bounds) return monthValue;
-	return bounds.from.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+	const match = /^(\d{4})-(\d{2})$/.exec(monthValue);
+	if (!match) return monthValue;
+	const monthIndex = Number(match[2]) - 1;
+	if (monthIndex < 0 || monthIndex > 11) return monthValue;
+	// Подпись — не граница периода: местная дата здесь безвредна, потому что
+	// названием месяца она и форматируется обратно, а на сервер не уходит.
+	return new Date(Number(match[1]), monthIndex, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 }
 
 /** Сообщение сервера, если оно есть. Своё придумывать поверх чужого нельзя. */
@@ -227,7 +275,7 @@ export function DoctorPayoutDashboard() {
 	const [rateSave, setRateSave] = useState<CommissionSaveState>({ kind: "idle" });
 
 	const load = useCallback(async (monthValue: string) => {
-		const bounds = monthBoundsOf(monthValue);
+		const bounds = payoutMonthCalendarBounds(monthValue);
 		if (!bounds) {
 			setState({
 				kind: "failed",
@@ -239,18 +287,9 @@ export function DoctorPayoutDashboard() {
 
 		setState({ kind: "loading" });
 		try {
-			const query = new URLSearchParams({
-				from: bounds.from.toISOString(),
-				to: bounds.to.toISOString()
-			});
-			/*
-			 * Токены кабинета и сотрудника подставляет обёртка глобального fetch
-			 * (`lib/apiAuthFetch.ts`), как и во всех остальных чтениях. Прежняя версия
-			 * посылала только `x-dente-admin-secret` — а маршрут выплат требует
-			 * ОПОЗНАННОГО сотрудника, потому что зарплата бывает «своя» и «чужая», и
-			 * по одному секрету периметра сервер не знает, кто смотрит.
-			 */
-			const response = await fetch(`/api/billing/payouts?${query.toString()}`);
+			// Уходят календарные даты `YYYY-MM-DD`. Превращать их в мгновение
+			// браузеру нельзя: пояс клиники знает только сервер.
+			const response = await requestDoctorPayouts(bounds);
 			const payload = (await response.json().catch(() => null)) as unknown;
 
 			if (response.status === 403) {
