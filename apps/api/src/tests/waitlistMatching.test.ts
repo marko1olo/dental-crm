@@ -65,9 +65,15 @@ describe("желаемое время в листе ожидания", () => {
 		assert.deepEqual(parsePreferredRanges([{ from: "14:30", to: "18:00" }]), [{ fromMinute: 870, toMinute: 1080 }]);
 	});
 
+	test("однозначные часы и пробелы по краям корректно обрабатываются", () => {
+		assert.deepEqual(parsePreferredRanges([" 9:30-10:00 "]), [{ fromMinute: 570, toMinute: 600 }]);
+		assert.deepEqual(parsePreferredRanges([" 09:30 - 10:00 "]), [{ fromMinute: 570, toMinute: 600 }]);
+	});
+
 	test("мусор и невозможное время отбрасываются, а не роняют подбор", () => {
 		assert.deepEqual(parsePreferredRanges("после обеда"), []);
 		assert.deepEqual(parsePreferredRanges(["25:00-26:00"]), []);
+		assert.deepEqual(parsePreferredRanges(["10:60-12:00"]), []);
 		// Конец раньше начала — это не интервал.
 		assert.deepEqual(parsePreferredRanges(["18:00-09:00"]), []);
 		assert.deepEqual(parsePreferredRanges(null), []);
