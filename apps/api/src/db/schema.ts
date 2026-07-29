@@ -1918,6 +1918,14 @@ export const egiszBlankPermissions = pgTable("egisz_blank_permissions", {
 });
 
 /**
+ * Статусы журнала обмена с ЕГИСЗ. Тип `egisz_status_enum` существует в базе с
+ * миграции 0000 (строка 26) — объявление здесь ничего не создаёт и миграции не
+ * требует, оно лишь возвращает набор в модель drizzle и в перепись перечислений
+ * (tests/enumContractDrift.test.ts), которая сверяет его с egiszStatusSchema.
+ */
+export const egiszStatus = pgEnum("egisz_status_enum", ["Pending", "Sent", "Error", "Accepted"]);
+
+/**
  * ЖУРНАЛ ОБМЕНА С ЕГИСЗ.
  *
  * Таблица существует в базе с миграции 0000 (строки 521-529), но в этом файле не
@@ -1939,14 +1947,8 @@ export const egiszLogs = pgTable("egisz_logs", {
    * В базе колонка имеет тип `egisz_status_enum` со значениями
    * Pending/Sent/Error/Accepted (миграция 0000, строка 26) — тот же набор, что
    * у панели apps/web/src/components/integrations/egiszAvailability.ts.
-   * Объявлена здесь как text намеренно: pgEnum в этом файле обязан иметь
-   * одноимённый контракт `<имя>Schema` в @dental/shared, иначе перепись
-   * перечислений (tests/enumContractDrift.test.ts) краснеет; контракта для
-   * статуса ЕГИСЗ нет. text читает и пишет те же значения — параметр уходит без
-   * типа, и Postgres приводит его к перечислению сам, — но проверку набора
-   * держит только база.
    */
-  status: text("status").notNull().default("Pending"),
+  status: egiszStatus("status").notNull().default("Pending"),
   transactionId: text("transaction_id"),
   errorDetails: jsonb("error_details"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

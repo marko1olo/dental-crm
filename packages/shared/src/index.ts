@@ -794,6 +794,23 @@ export const imagingSourceKindSchema = z.enum([
 ]);
 export type ImagingSourceKind = z.infer<typeof imagingSourceKindSchema>;
 
+/**
+ * СОСТОЯНИЕ ПЕРЕДАЧИ ДОКУМЕНТА В ЕГИСЗ (таблица egisz_logs).
+ *
+ * Заглавная буква здесь — часть контракта, а не оформление. В базе это
+ * перечисление `egisz_status_enum` (apps/api/drizzle/0000_freezing_randall_flagg.sql,
+ * строка 26) ровно с такими значениями, и «sent» вместо «Sent» Postgres
+ * отклоняет при ВСТАВКЕ строки журнала — то есть в тот момент, когда передача
+ * медицинских данных в государственную систему уже произошла, а записать её не
+ * удалось. Пока этого контракта не было, набор проверяла только база, и опечатка
+ * в регистре проходила и типизацию, и все тесты.
+ *
+ * Тот же набор у панели apps/web/src/components/integrations/egiszAvailability.ts
+ * (строка 82 и TRANSMISSION_STATUSES на строке 203) — сверено, расхождений нет.
+ */
+export const egiszStatusSchema = z.enum(["Pending", "Sent", "Error", "Accepted"]);
+export type EgiszStatus = z.infer<typeof egiszStatusSchema>;
+
 export const clinicModeSchema = z.enum(["solo_doctor", "one_chair", "small_clinic", "network_clinic"]);
 export type ClinicMode = z.infer<typeof clinicModeSchema>;
 
