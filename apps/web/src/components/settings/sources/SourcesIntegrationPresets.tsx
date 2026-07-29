@@ -1,44 +1,81 @@
 import type { IntegrationPreset } from "@dental/shared";
 import { Database } from "lucide-react";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
+import {
+	integrationCapabilityLabels,
+	integrationCategoryLabels,
+	integrationStatusLabels,
+} from "../../../workspaceUiLabels";
 import { humanizeIntegrationInput } from "../SettingsViewHelpers";
 
 /*
- * Контракт панели пресетов: `Pick` по типу возврата хука, а НЕ `as any`.
+ * ЗАМЕР, КОТОРЫЙ ОТМЕНИЛ ПРЕДЫДУЩУЮ ПОПЫТКУ. Первая правка этого пакета объявила
+ * контракт как `Pick<ReturnType<typeof useSettingsDerivations>, ...>` и утверждала,
+ * что несуществующее имя станет ошибкой TS2344. ЭТО НЕВЕРНО. Копия файла с ключом
+ * `"totallyBogusKeyName"` в `Pick` компилируется МОЛЧА; канарейка
+ * (`const x: number = "строка"`) в той же копии ошибку даёт, значит копия в программе.
+ * Причина: `ReturnType<typeof useSettingsDerivations>` и
+ * `ReturnType<typeof useAppLogicContext>` РАВНЫ `any` — проверено предикатом
+ * `type IsAny<T> = 0 extends 1 & T ? "ANY" : "NOT_ANY"`: присваивание `"NOT_ANY"`
+ * отвергается, присваивание `"ANY"` проходит для обоих типов. `keyof any` — это
+ * `string | number | symbol`, поэтому `Pick` по `any` принимает любой ключ, а
+ * `noImplicitAny: false` в tsconfig.base гасит любое предупреждение об этом.
  *
- * Что здесь было. Файл читал девятнадцать имён из
- * `Object.assign({}, appLogic, derivations) as any`, а разметка использует ЧЕТЫРЕ.
- * Пятнадцать лишних «отмывались» через промежуточные `const typed*`.
+ * ОТСЮДА ДВА ПРАВИЛА ФАЙЛА.
  *
- * И одно из тех четырёх было хуже мёртвого. `integrationPresets` НЕ является полем
- * возврата ни `useAppLogic`, ни `useSettingsDerivations` — там есть только
- * `dashboard.clinicSettings.integrationPresets`. Под `as any` чтение
- * несуществующего поля давало `undefined`, `?? []` превращало его в пустой массив,
- * и `.preset-grid` рендерился БЕЗ ЕДИНОЙ карточки. Ни одной ошибки, ни в
- * компиляторе, ни в консоли: панель просто молча показывала заголовок над пустым
- * местом. Так же читали это поле `SourcesConnectorGrid` и `SourcesDicomCapability`.
+ * 1. Подписи — не состояние. `integrationCapabilityLabels`,
+ *    `integrationCategoryLabels`, `integrationStatusLabels` — константы
+ *    `workspaceUiLabels`; `useAppLogic` импортирует их (строки 904-906) и возвращает
+ *    без изменений (строки 14065-14067), локализации по пути нет. Прямой импорт даёт
+ *    `Record<IntegrationCapability, string>` и родню вместо `any`, а опечатка в имени
+ *    становится ошибкой TS2305 на импорте.
  *
- * Отсюда правило файла: источник пресетов — типизированный путь по `dashboard`,
- * тот же, которым пользуются `SettingsView` и `SettingsImportsTab`. Опечатка в нём
- * теперь ошибка компиляции, а не пустая сетка.
+ * 2. Единственное настоящее состояние здесь — `dashboard`, и оно читается через
+ *    ЯВНО ОБЪЯВЛЕННЫЙ структурный тип, а не через `Pick` по `any`. Явный тип
+ *    проверяет чтения ВНУТРИ компонента даже когда источник `any`: обращение к полю,
+ *    которого в типе нет, — ошибка TS2339. Это и есть та проверка, которой не было.
+ *    Оговорка честности: раз источник `any`, само присваивание компилятором не
+ *    verifiable — форма ниже сверена с `clinicSettingsSchema` в `packages/shared`
+ *    (`integrationPresets: z.array(integrationPresetSchema)`) вручную.
+ *
+ * ЧТО БЫЛО СЛОМАНО ПО СУТИ. Файл читал `integrationPresets` прямо из мешка пропсов,
+ * а такого поля нет ни в возврате `useAppLogic` (return на строке 13771), ни в
+ * возврате `useSettingsDerivations` (return на строке 2254) — есть только
+ * `dashboard.clinicSettings.integrationPresets`. Под `as any` чтение давало
+ * `undefined`, `?? []` превращало его в пустой массив, и `.preset-grid` рендерился
+ * БЕЗ ЕДИНОЙ КАРТОЧКИ: заголовок над пустым местом, ни ошибки в компиляторе, ни
+ * ошибки в консоли. Ещё девятнадцать имён читались тем же способом, до разметки
+ * доходило четыре.
  */
-type SourcesIntegrationPresetsContract = Pick<
-	ReturnType<typeof useSettingsDerivations>,
-	| "dashboard"
-	| "integrationCapabilityLabels"
-	| "integrationCategoryLabels"
-	| "integrationStatusLabels"
->;
+type SourcesIntegrationPresetsContract = {
+	dashboard:
+		| { clinicSettings?: { integrationPresets?: IntegrationPreset[] } }
+		| null
+		| undefined;
+};
+
+/*
+ * `preset.riskLevel` — это `"low" | "medium" | "high"` из `integrationPresetSchema`,
+ * и раньше он печатался в русскую строку как есть: «риск low». Тип
+ * `Record<IntegrationPreset["riskLevel"], string>` держит карту полной: добавится
+ * уровень в схему — здесь будет ошибка, а не английское слово на экране. Карта живёт
+ * рядом с разметкой по образцу `WaitlistDrawer`; в `workspaceUiLabels` её не выносим,
+ * этот файл держит другой пакет волны.
+ */
+const integrationPresetRiskLabels: Record<
+	IntegrationPreset["riskLevel"],
+	string
+> = {
+	low: "низкий",
+	medium: "средний",
+	high: "высокий",
+};
 
 export function SourcesIntegrationPresets() {
-	const {
-		dashboard,
-		integrationCapabilityLabels,
-		integrationCategoryLabels,
-		integrationStatusLabels,
-	}: SourcesIntegrationPresetsContract = useSettingsDerivations();
+	const derivations: SourcesIntegrationPresetsContract =
+		useSettingsDerivations();
 	const integrationPresets: IntegrationPreset[] =
-		dashboard?.clinicSettings?.integrationPresets ?? [];
+		derivations.dashboard?.clinicSettings?.integrationPresets ?? [];
 
 	return (
 		<section
@@ -72,7 +109,7 @@ export function SourcesIntegrationPresets() {
 								<strong>{preset.title}</strong>
 								<p>
 									{preset.vendor} · {integrationCategoryLabels[preset.category]} ·
-									риск {preset.riskLevel}
+									риск {integrationPresetRiskLabels[preset.riskLevel]}
 								</p>
 							</div>
 							<span>{integrationStatusLabels[preset.status]}</span>
