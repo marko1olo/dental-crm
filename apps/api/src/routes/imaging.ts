@@ -90,6 +90,7 @@ import {
   type DentalModelWorkbenchPairingHint,
   type ImagingImportPreviewRow,
   type ImagingSourceKind,
+  type ImagingStudy,
   type ImagingStudyKind,
   type LocalImagingOrganizerCase,
   type LocalImagingOrganizerRecommendedAction,
@@ -912,7 +913,21 @@ function escapeXml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function previewSvg(study: any) {
+/*
+ * ТИП ЗДЕСЬ УЖЕ БЫЛ, ЕГО ПРОСТО НЕ ДОТЯНУЛИ.
+ *
+ * Стояло `study: any`, и из-за этого `kindLabels[study.kind]` давало
+ * «TS7053: Element implicitly has an any type» при включённом noImplicitAny.
+ * Второй владелец типа не нужен: `getImagingStudyById` (db/imagingQuery.ts:95) уже
+ * объявлен как `Promise<ImagingStudy | null>`, единственный вызывающий (:6725) зовёт
+ * эту функцию ПОСЛЕ проверки на null, а читает она ровно четыре поля — kind, title,
+ * toothCode, region, — и все четыре есть в `imagingStudySchema`.
+ *
+ * Цена `any` здесь не абстрактная: `kindLabels[study.kind]` с посторонним значением
+ * в `kind` молча даёт undefined, и в SVG-предпросмотр снимка уехала бы пустая
+ * подпись вместо названия исследования.
+ */
+function previewSvg(study: ImagingStudy) {
   const label = kindLabels[study.kind];
   const detail = study.toothCode ? `Зуб ${study.toothCode}` : study.region ?? "Область не указана";
   const anatomy =

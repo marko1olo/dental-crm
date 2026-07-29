@@ -226,5 +226,8 @@ export async function getClinicalTasksFromDb(
     ? sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid AND patient_id = ${patientId}::uuid ORDER BY created_at DESC`
     : sql`SELECT * FROM clinical_tasks WHERE organization_id = ${organizationId}::uuid ORDER BY created_at DESC`;
   const res = await db.execute(query);
-  return (res.rows ?? []).map((row) => mapClinicalTaskRow(row as Record<string, unknown>));
+  // `row: unknown`, а не выведенный any: у сырого SQL через db.execute тип строки
+  // неизвестен, и приведение к Record<string, unknown> уже стоит внутри вызова.
+  // Аннотация делает это явным для noImplicitAny и не меняет поведения.
+  return (res.rows ?? []).map((row: unknown) => mapClinicalTaskRow(row as Record<string, unknown>));
 }
