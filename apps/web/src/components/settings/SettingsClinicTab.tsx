@@ -178,6 +178,7 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
     newStaffName,
     setNewStaffName,
     addStaffMember,
+    deleteChair,
     saveStaffCredentials,
     newStaffReadyToCreate,
     newStaffRole,
@@ -873,6 +874,42 @@ export function SettingsClinicTab({ props = {}, settingsTab }: { props?: Record<
                               disabled={scheduleSaving}
                             >
                               {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+                            </button>
+                            {/*
+                              До этой правки кресло нельзя было отключить ни из одного места веб-приложения:
+                              deleteChair существовал в useAppLogic и не имел ни одного вызова, а дубликата,
+                              в отличие от createStaffMember и updateStaffMember, никто не написал. Маршрут на
+                              сервере при этом рабочий.
+
+                              Написано «Отключить», а не «Удалить», и это не выбор формулировки. Маршрут DELETE
+                              /api/settings/chairs/:chairId делает мягкую деактивацию: deactivateChairInDb
+                              выполняет UPDATE chairs SET is_active = false, строка остаётся, и это сделано
+                              намеренно — на chairs.id ссылаются приёмы через appointments.chair_id. Сервер
+                              отвечает 200 с телом обновлённого кресла, а не 204, поэтому интерфейс, который
+                              решит «строка исчезла», будет неправ. Проверки на занятые приёмы у маршрута нет и
+                              не требуется: ничего не удаляется, внешние ключи остаются целыми.
+
+                              Предупреждение в подтверждении — про реальное последствие, а не ритуальное:
+                              ScheduleView фильтрует кресла по chair.active, поэтому отключённое кресло теряет
+                              свою колонку в расписании вместе с уже записанными на него будущими приёмами.
+                              Приёмы никуда не денутся, но перестанут быть видны в сетке, и человек должен
+                              узнать это до нажатия, а не после.
+                            */}
+                            <button
+                              className="secondary-button compact-button"
+                              type="button"
+                              onClick={() => {
+                                if (
+                                  !window.confirm(
+                                    `Отключить кресло «${chair.name}»? Оно исчезнет из расписания вместе с уже записанными на него будущими приёмами. Сами приёмы сохранятся.`,
+                                  )
+                                ) {
+                                  return;
+                                }
+                                void deleteChair(chair.id);
+                              }}
+                            >
+                              Отключить
                             </button>
                           </div>
                         </div>
