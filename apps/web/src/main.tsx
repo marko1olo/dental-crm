@@ -6,6 +6,7 @@ import { GuestLabPortal } from "./GuestLabPortal";
 import { installApiAuthFetch } from "./lib/apiAuthFetch";
 import { publicPortalRouteFromHash } from "./lib/publicPortalRoute";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
+import { PublicBookingWidget } from "./pages/PublicBookingWidget";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -62,9 +63,22 @@ if (publicPortalRoute) {
   //
   // GlobalToast приходится ставить рядом: подтверждение смены статуса портал
   // отправляет через showToast, а внутри AppShell этот приёмник остался.
+  // Онлайн-запись пациента — второй адрес того же публичного контура.
+  //
+  // ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Страница записи (pages/PublicBookingWidget.tsx)
+  // существовала целиком и звала три ЖИВЫХ серверных адреса
+  // (apps/api/src/routes/publicBooking.ts: врачи, свободное время, запись), а
+  // отрисовывать её было некому: ни одного импортёра во всём apps/web/src. То
+  // есть онлайн-записи у клиники не было вовсе — пациент по-прежнему звонил, а
+  // готовый бэкенд отвечал в пустоту. Разбор адреса появился вместе с порталом
+  // зуботехника, и теперь второй вид адреса стоит рядом с первым.
   appRoot.render(
     <React.StrictMode>
-      <GuestLabPortal token={publicPortalRoute.token} />
+      {publicPortalRoute.kind === "booking" ? (
+        <PublicBookingWidget organizationId={publicPortalRoute.organizationId} />
+      ) : (
+        <GuestLabPortal token={publicPortalRoute.token} />
+      )}
       <GlobalToast />
     </React.StrictMode>
   );

@@ -43,12 +43,22 @@ function formatLocalDateLabel(value: string): string {
   return new Date(year, month - 1, day).toLocaleDateString("ru-RU");
 }
 
-export const PublicBookingWidget: React.FC = () => {
-	const searchParams = new URLSearchParams(
-		window.location.hash.split("?")[1] || "",
-	);
-	const organizationId = searchParams.get("orgId");
+export interface PublicBookingWidgetProps {
+	/**
+	 * Клиника из ссылки, по которой пациент пришёл. Разбор адреса живёт в
+	 * lib/publicPortalRoute.ts, а не здесь: тот же разбор решает, показывать
+	 * публичную страницу или рабочее место клиники, и два разных чтения одного
+	 * адреса развели бы эти решения.
+	 *
+	 * null — ссылка без клиники. Загружать нечего, и это не ошибка пациента:
+	 * ниже он получает человеческий отказ вместо пустого экрана.
+	 */
+	readonly organizationId: string | null;
+}
 
+export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
+	organizationId,
+}) => {
 	const [doctors, setDoctors] = useState<BookingDoctor[]>([]);
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
 	const todayStr = localDateString();
@@ -220,10 +230,23 @@ export const PublicBookingWidget: React.FC = () => {
 		}
 	};
 
+	/*
+	 * Ссылка без клиники. БЫЛО написано «Ошибка конфигурации: orgId не указан» —
+	 * это текст для того, кто правит код, а читает его пациент: он не знает ни
+	 * что такое orgId, ни что ему теперь делать, и уходит, решив, что клиника
+	 * сломана. Причина у страницы установлена ровно такая (в адресе нет
+	 * клиники), и сказать надо действие: открыть запись заново с сайта клиники
+	 * или позвонить.
+	 */
 	if (!organizationId) {
 		return (
-			<div className="p-8 text-center text-red-500 font-medium">
-				Ошибка конфигурации: orgId не указан.
+			<div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-950 p-6 text-center text-slate-900 dark:text-slate-100">
+				<h2 className="text-xl font-bold mb-2">Запись по этой ссылке не открывается</h2>
+				<p className="text-gray-600 dark:text-slate-400 max-w-sm">
+					В ссылке не указана клиника, поэтому расписание загрузить не из чего.
+					Откройте запись заново с сайта клиники или позвоните в клинику — там
+					запишут на приём.
+				</p>
 			</div>
 		);
 	}

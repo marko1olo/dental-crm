@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import {
 	LAB_ORDER_PORTAL_PATH,
+	PUBLIC_BOOKING_PORTAL_PATH,
 	publicPortalRouteFromHash,
 } from "../lib/publicPortalRoute";
 
@@ -83,9 +84,6 @@ test("адреса рабочего места остаются за viewFromHas
 		// иначе внешний участник получит пустую страницу вместо понятного отказа.
 		"#/portal/lab-order/",
 		"#/portal/lab-order",
-		// Похожий, но чужой публичный адрес: онлайн-запись пациента живёт отдельно
-		// и в этом контуре пока не заявлена (см. panelsAreMounted.test.ts).
-		"#/portal/booking/abc",
 		// Подстрока в середине не должна открывать портал: разбор идёт от начала.
 		"#patients/portal/lab-order/abc",
 	]) {
@@ -95,6 +93,69 @@ test("адреса рабочего места остаются за viewFromHas
 			`адрес «${hash}» уводит в публичный портал — клиника потеряет свой экран`,
 		);
 	}
+});
+
+test("ссылка онлайн-записи разбирается в клинику из пути", () => {
+	const organizationId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
+
+	assert.deepEqual(
+		publicPortalRouteFromHash(`#${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}`),
+		{ kind: "booking", organizationId },
+	);
+	// Тот же адрес без «#»: hash в некоторых браузерных API приходит без решётки.
+	assert.deepEqual(
+		publicPortalRouteFromHash(`${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}`),
+		{ kind: "booking", organizationId },
+	);
+
+	// Хвост, который дописывают сайт клиники и рекламный кабинет.
+	for (const tail of ["/", "?utm_source=vk", "/?from=maps", "#anchor", "&x=1"]) {
+		assert.deepEqual(
+			publicPortalRouteFromHash(
+				`#${PUBLIC_BOOKING_PORTAL_PATH}${organizationId}${tail}`,
+			),
+			{ kind: "booking", organizationId },
+			`хвост «${tail}» попал в идентификатор клиники — сервер ответит «клиника не найдена» на рабочей ссылке`,
+		);
+	}
+});
+
+/*
+ * Адрес записи БЕЗ клиники обязан остаться публичным.
+ *
+ * Верни разбор здесь null — и по неполной ссылке (клиника обрезала её при
+ * вставке на сайт, шаблон подставил пустое значение) ПАЦИЕНТ открыл бы рабочее
+ * место клиники: viewFromHash() на таком хеше откатывается на «Смену». Отказ на
+ * этот случай написан в самой странице записи, поэтому пустой идентификатор
+ * доезжает до неё как null, а не подменяется рабочим местом.
+ */
+test("ссылка записи без клиники остаётся публичной страницей, а не рабочим местом", () => {
+	for (const hash of [
+		"#/portal/booking/",
+		"#/portal/booking",
+		"#/portal/booking?utm_source=vk",
+	]) {
+		assert.deepEqual(
+			publicPortalRouteFromHash(hash),
+			{ kind: "booking", organizationId: null },
+			`адрес «${hash}» уводит пациента в рабочее место клиники`,
+		);
+	}
+});
+
+test("страницу записи рендерит точка монтирования, а не только разбор", () => {
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<PublicBookingWidget"),
+		"main.tsx больше не рендерит PublicBookingWidget. Онлайн-записи у клиники снова нет: " +
+			"три живых серверных адреса (apps/api/src/routes/publicBooking.ts) отвечают в пустоту, " +
+			"а по ссылке записи пациент открывает рабочее место клиники.",
+	);
+	assert.ok(
+		entry.includes('kind === "booking"'),
+		"main.tsx больше не различает вид публичного адреса — по ссылке записи откроется портал " +
+			"зуботехника, а по ссылке зуботехника страница записи.",
+	);
 });
 
 test("процентное кодирование снимается, битое — не роняет разбор", () => {

@@ -25,18 +25,59 @@
  */
 
 /** Публичный адрес: страница, которую открывает не клиника, а внешний участник. */
-export type PublicPortalRoute = {
-	/** Портал зуботехнической лаборатории: один заказ по одному токену. */
-	readonly kind: "lab-order";
-	/** Токен заказа из ссылки. Клиника выдаёт его кнопкой «Ссылка технику». */
-	readonly token: string;
-};
+export type PublicPortalRoute =
+	| {
+			/** Портал зуботехнической лаборатории: один заказ по одному токену. */
+			readonly kind: "lab-order";
+			/** Токен заказа из ссылки. Клиника выдаёт его кнопкой «Ссылка технику». */
+			readonly token: string;
+	  }
+	| {
+			/** Онлайн-запись пациента: страница, которую клиника вешает на свой сайт. */
+			readonly kind: "booking";
+			/**
+			 * Клиника из ссылки. null — в адресе её нет; страница записи покажет
+			 * человеческий отказ, а не пустоту, поэтому такой адрес всё равно
+			 * остаётся публичным (см. ниже).
+			 */
+			readonly organizationId: string | null;
+	  };
 
 /**
  * Путь ссылки, которую строит LabOrdersPanel. Строка одна на весь клиент:
  * разойдись адрес в двух местах — ссылка снова открывала бы рабочее место.
  */
 export const LAB_ORDER_PORTAL_PATH = "/portal/lab-order/";
+
+/**
+ * Путь страницы онлайн-записи: `#/portal/booking/<идентификатор клиники>`.
+ *
+ * ПОЧЕМУ КЛИНИКА В ПУТИ, А НЕ ПАРАМЕТРОМ. Живой серверный маршрут ждёт её
+ * в ПУТИ — apps/api/src/server.ts регистрирует префикс /api/public/booking,
+ * а обработчики стоят на «/:organizationId/doctors», «/:organizationId/slots/
+ * :doctorId» и «/:organizationId/book». Ровно на этом уже сломалась удалённая
+ * QrGatewayPanel: она печатала QR-код с «?clinicId=» параметром, и наклеенный
+ * на стойку код вёл в никуда. Форма адреса теперь одна и совпадает с сервером.
+ */
+export const PUBLIC_BOOKING_PORTAL_PATH = "/portal/booking/";
+
+/**
+ * Снимает процентное кодирование с одного сегмента адреса.
+ *
+ * Битая последовательность (%zz) роняет decodeURIComponent через URIError.
+ * Такая ссылка не откроет ни заказ, ни расписание ни при каком разборе, но и
+ * уводить по ней в рабочее место клиники нельзя: адрес заведомо публичный, и
+ * отказ должен прийти от сервера человеческим текстом, а не белым экраном от
+ * необработанного throw. Помощник один на оба адреса — разойдись они, один из
+ * двух внешних участников снова получил бы чужой экран.
+ */
+function decodeSegment(rawSegment: string): string {
+	try {
+		return decodeURIComponent(rawSegment).trim();
+	} catch {
+		return rawSegment.trim();
+	}
+}
 
 /**
  * Разбор хеша страницы.
@@ -51,6 +92,35 @@ export const LAB_ORDER_PORTAL_PATH = "/portal/lab-order/";
  */
 export function publicPortalRouteFromHash(hash: string): PublicPortalRoute | null {
 	const path = hash.startsWith("#") ? hash.slice(1) : hash;
+
+	/*
+	 * Онлайн-запись разбирается ПЕРВОЙ и, в отличие от портала зуботехника,
+	 * остаётся публичным адресом даже без идентификатора клиники.
+	 *
+	 * ПОЧЕМУ РАЗНО. У портала зуботехника без токена показать нечего — он ушёл бы
+	 * в пустую страницу, поэтому такой адрес отдаётся рабочему месту. У страницы
+	 * записи отказ написан (pages/PublicBookingWidget.tsx: «В ссылке не указана
+	 * клиника… позвоните в клинику»). Вернуть здесь null значило бы открыть
+	 * ПАЦИЕНТУ рабочее место клиники — тот самый дефект, из-за которого эта
+	 * развилка и появилась, только теперь с клинической частью наружу.
+	 */
+	const bookingBase = PUBLIC_BOOKING_PORTAL_PATH.replace(/\/$/, "");
+	if (
+		path === bookingBase ||
+		path.startsWith(`${bookingBase}/`) ||
+		path.startsWith(`${bookingBase}?`)
+	) {
+		const rawOrganizationId =
+			path
+				.slice(bookingBase.length)
+				.replace(/^\//, "")
+				.split(/[/?#&]/)[0] ?? "";
+		return {
+			kind: "booking",
+			organizationId: decodeSegment(rawOrganizationId) || null,
+		};
+	}
+
 	if (!path.startsWith(LAB_ORDER_PORTAL_PATH)) return null;
 
 	// Хвост после токена отбрасывается: ссылку копируют в мессенджер, и он умеет
@@ -58,15 +128,7 @@ export function publicPortalRouteFromHash(hash: string): PublicPortalRoute | nul
 	const rawToken = path.slice(LAB_ORDER_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
 	if (!rawToken) return null;
 
-	let token: string;
-	try {
-		token = decodeURIComponent(rawToken).trim();
-	} catch {
-		// Битая процентная последовательность (%zz) — decodeURIComponent бросает
-		// URIError. Такая ссылка не откроет заказ ни при каком разборе, но и
-		// уводить по ней в рабочее место клиники нельзя: адрес заведомо портальный.
-		token = rawToken.trim();
-	}
+	const token = decodeSegment(rawToken);
 
 	return token ? { kind: "lab-order", token } : null;
 }
