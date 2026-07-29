@@ -5,7 +5,41 @@ import {
   visitDraftAutosaveRequestSchema,
   visitDraftAutosaveResponseSchema
 } from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+/*
+ * ОДНА ИДИОМА ДОСТУПА НА ФАЙЛ, И ОНА ВЫПОЛНЯЕТСЯ.
+ *
+ * БЫЛО: этот импорт назывался `requireClinicalMutationAccess,
+ * requireClinicalReadAccess` — и НИ ОДИН из двух охранников не вызывался в файле
+ * ни разу. Все четыре маршрута проверяли только подпись токена кабинета вручную
+ * (`verifyToken` + `TOKEN_SECRET`), а гейт секрета администратора клиники,
+ * который стоит на каждом другом клиническом маршрутном файле (imaging.ts,
+ * clinical.ts, diary.ts, templates.ts, xray.ts, speech.ts, smartImports.ts),
+ * здесь отсутствовал — включая POST /draft/accept, ПОДПИСЫВАЮЩИЙ карту приёма.
+ *
+ * Мёртвый импорт был хуже отсутствующего: и рецензент, и поиск по имени
+ * охранника находили его в файле, а комментарий теста прямо утверждал, что
+ * охранник работает «перед проверкой токена». Проверка по исходнику показывала
+ * гейт, которого в работе не было.
+ *
+ * ЗАМЕРЕНО ЧЕРЕЗ app.inject, а не прочитано: при заданном
+ * DENTE_CLINICAL_ADMIN_SECRET и БЕЗ заголовка x-dente-admin-secret маршруты
+ * отвечали 404 / 200 / 400 / 400 — то есть запрос доходил до базы и до разбора
+ * тела. Любой другой клинический маршрут отвечает на это 403.
+ *
+ * Клиент всё это время свою часть договора выполнял:
+ * apps/web/src/hooks/domains/useVisitLogic.ts зовёт эти самые маршруты через
+ * `auth.denteClinicalMutationHeaders()` / `auth.denteClinicalReadHeaders()`,
+ * которые секрет ПРИСЫЛАЮТ (apps/web/src/lib/denteRequestHeaders.ts). Сервер его
+ * не читал. Поэтому включение гейта не ломает экран врача — оно возвращает тот
+ * договор, который клиент уже соблюдает.
+ *
+ * Взяты именно `*Context`-формы: две идиомы в этом файле решали РАЗНЫЕ вопросы —
+ * ручная проверка отвечала «какая это клиника» (даёт organizationId), охранник
+ * отвечает «есть ли секрет администратора» (возвращает boolean, организацию не
+ * даёт). Заменить одно другим значило бы удалить слой. `*Context` выполняет оба
+ * шага и возвращает готовый organizationId либо null (ответ уже отправлен).
+ */
+import { requireClinicalMutationContext, requireClinicalReadContext } from "../accessGuard.js";
 
 type VisitPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -96,8 +130,6 @@ export function sendVisitDraftMutationError(error: unknown, reply: FastifyReply,
   });
 }
 
-import { verifyToken } from "../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "./auth.js";
 import {
   getVisitDraftAutosaveFromDb,
   upsertVisitDraftAutosaveInDb,
@@ -156,22 +188,18 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   /**
    * Открыть приём по записи расписания — недостающее звено цепочки.
    *
-   * Барьер тот же, что у автосохранения и подписания карты приёма в этом файле:
-   * токен рабочего кабинета клиники. Отдельного секрета администратора здесь
-   * быть не должно — открывает приём врач у кресла, а не администратор, и
-   * записи в `visits` этим же токеном уже делают PUT автосохранения и POST
-   * подписания ниже.
+   * Барьер тот же, что у автосохранения и подписания карты приёма в этом файле,
+   * и теперь он действительно один: токен рабочего кабинета клиники ПЛЮС гейт
+   * клинических изменений. Этот маршрут создаёт строку в `visits`, поэтому он
+   * относится к изменениям, а не к чтению.
    *
    * Повторный вызов возвращает тот же приём с `created: false` — см.
    * db/visitsQuery.ts, почему второй визит по одной записи недопустим.
    */
   app.post("/api/appointments/:appointmentId/visit", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const context = await requireClinicalMutationContext(request, reply, "visit open");
+    if (!context) return;
+    const orgId = context.organizationId;
 
     const { appointmentId } = request.params as { appointmentId?: string };
     if (!appointmentId) {
@@ -207,13 +235,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
-    
+    const context = await requireClinicalReadContext(request, reply, "visit draft read");
+    if (!context) return;
+    const orgId = context.organizationId;
+
     const { visitId } = request.params as { visitId: string };
     // Zero UUID = placeholder for "no active visit" — return empty 200, not 404
     if (!visitId || visitId === "00000000-0000-0000-0000-000000000000") {
@@ -225,12 +250,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const context = await requireClinicalMutationContext(request, reply, "visit draft autosave");
+    if (!context) return;
+    const orgId = context.organizationId;
 
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
@@ -250,12 +272,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/visits/:visitId/draft/accept", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const context = await requireClinicalMutationContext(request, reply, "visit draft accept");
+    if (!context) return;
+    const orgId = context.organizationId;
 
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
