@@ -243,7 +243,6 @@ import {
   mprUnavailableProjectionLabel,
   mprWindowPresetLabels,
   policyAuditEventLabels,
-  pricelistParserModeLabels,
   type MprClinicalPreset,
   type MprProjection,
   type MprWindowPreset
@@ -293,12 +292,9 @@ import { postVisitCarePresets } from "./postVisitCareData";
 import {
   dentalMaterialKindLabels,
   dentalRestorationTypeLabels,
-  pricelistItemMaterialText,
-  pricelistMaterialSummaryText,
   pricelistRecognitionBrandGroups,
   pricelistRecognitionServiceGroups,
-  pricelistSourceKindLabels,
-  pricelistWarningsText
+  pricelistSourceKindLabels
 } from "./pricelistUiMeta";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";

@@ -261,7 +261,6 @@ import {
   mprUnavailableProjectionLabel,
   mprWindowPresetLabels,
   policyAuditEventLabels,
-  pricelistParserModeLabels,
   type MprClinicalPreset,
   type MprProjection,
   type MprWindowPreset
@@ -311,12 +310,9 @@ import { postVisitCarePresets } from "./postVisitCareData";
 import {
   dentalMaterialKindLabels,
   dentalRestorationTypeLabels,
-  pricelistItemMaterialText,
-  pricelistMaterialSummaryText,
   pricelistRecognitionBrandGroups,
   pricelistRecognitionServiceGroups,
-  pricelistSourceKindLabels,
-  pricelistWarningsText
+  pricelistSourceKindLabels
 } from "./pricelistUiMeta";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
@@ -1530,17 +1526,27 @@ export function App() {
     previousOnboardingStep,
     pricelistAnalysis,
     pricelistImageBase64,
-    pricelistImageName,
-    pricelistImageNote,
-    pricelistItemMaterialText,
-    pricelistMaterialSummaryText,
-    pricelistParserModeLabels,
+    /*
+      ШЕСТЬ ИМЁН УБРАНЫ ИЗ ЭТОГО РАЗБОРА, ПОТОМУ ЧТО ОТСЮДА ИХ НЕ ЧИТАЛ НИКТО.
+
+      App.tsx вынимал их из useAppLogic() и передавал в <SettingsView …> — а
+      SettingsView (SettingsView.tsx:367) берёт из пропсов РОВНО activeStaffUser,
+      всё остальное читает сам из useAppLogicContext(), хранилища настроек и
+      производных значений. Индексная подпись [key: string]: any в
+      SettingsViewProps позволяла компилятору молчать: пропс передавался и
+      выбрасывался.
+
+      Значения при этом живы и нужны — их берут из контекста SettingsView.tsx
+      (замечания разбора, подпись фото, сводка материалов, материал строки) и
+      components/settings/SettingsPricesTab.tsx (имя файла фото, режимы
+      разборщика). Поэтому убран именно проброс, а не сами значения: в
+      useAppLogic.tsx они остаются в возвращаемом объекте.
+    */
     pricelistRecognitionBrandGroups,
     pricelistRecognitionServiceGroups,
     pricelistSourceKind,
     pricelistSourceKindLabels,
     pricelistText,
-    pricelistWarningsText,
     primaryVisitWarning,
     probeMigrationDiscoveryCandidate,
     procedureSpecificConsentProcedureOptions,
@@ -4706,12 +4712,6 @@ export function App() {
               previewTelegramTemplate={previewTelegramTemplate}
               pricelistAnalysis={pricelistAnalysis}
               pricelistImageBase64={pricelistImageBase64}
-              pricelistImageName={pricelistImageName}
-              pricelistImageNote={pricelistImageNote}
-              pricelistItemMaterialText={pricelistItemMaterialText}
-              pricelistMaterialSummaryText={pricelistMaterialSummaryText}
-              pricelistWarningsText={pricelistWarningsText}
-              pricelistParserModeLabels={pricelistParserModeLabels}
               pricelistRecognitionBrandGroups={pricelistRecognitionBrandGroups}
               pricelistRecognitionServiceGroups={pricelistRecognitionServiceGroups}
               pricelistSourceKind={pricelistSourceKind}

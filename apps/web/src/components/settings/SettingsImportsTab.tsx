@@ -96,7 +96,6 @@ import type {
   ClinicMode,
   Dashboard,
   DentalModelWorkbenchManifest,
-  DentalPricelistAnalysisResponse,
   DentalMaterialKind,
   DentalRestorationType,
   DentalSpecialty,
@@ -150,7 +149,6 @@ import type {
   MigrationProbeArtifact,
   MigrationReadinessItem,
   LocalImagingOrganizerResponse,
-  PricelistSourceKind,
   ProtocolTemplate,
   RoleQueue,
   ServiceCatalogItem,
@@ -189,7 +187,6 @@ type RoleAccessPolicy = DashboardClinicSettings["roleAccessPolicies"][number];
 type WeekdayOption = { value: WeekdayIndex; label: string };
 type TelegramInlineButton = { text: string; target: string; kind: string };
 type TelegramInlineButtonRow = TelegramInlineButton[];
-type StringTokenGroup = { title: string; items: string[] };
 
 function formatBrowserImagingScanElapsed(elapsedMs: number | null | undefined): string {
   const safeMs = typeof elapsedMs === "number" && Number.isFinite(elapsedMs) ? Math.max(0, Math.round(elapsedMs)) : 0;
@@ -738,9 +735,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
     activeWorkspaceProfile,
     addChair,
     addStaffMember,
-    analyzePricelist,
     applyProtocolTemplate,
-    attachPricelistImage,
     browserCanRequestPersistentStorage,
     browserContinuity,
     browserContinuityChecks,
@@ -779,7 +774,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
     clearBrowserPickedImagingFolderPreview,
     clearDicomWorkbenchRecovery,
     clearLocalImagingFolderRecovery,
-    clearPricelistImage,
     clinicalRuleActionLabels,
     clinicalRuleSeverityLabels,
     clinicModeLabels,
@@ -905,7 +899,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
     isMigrationSourceProbeLoading,
     isMigrationSourceWorkupLoading,
     isPersistenceExporting,
-    isPricelistAnalyzing,
     isRecognitionLoading,
     isSmartImportCommitting,
     isSmartImportLoading,
@@ -1011,19 +1004,25 @@ export function SettingsImportsTab(props: Record<string, any>) {
     previewImport,
     previewSmartImport,
     previewTelegramTemplate,
-    pricelistAnalysis,
-    pricelistImageBase64,
-    pricelistImageName,
-    pricelistImageNote,
-    pricelistItemMaterialText,
-    pricelistMaterialSummaryText,
-    pricelistWarningsText,
-    pricelistParserModeLabels,
-    pricelistRecognitionBrandGroups,
-    pricelistRecognitionServiceGroups,
-    pricelistSourceKind,
-    pricelistSourceKindLabels,
-    pricelistText,
+    /*
+      ВСЯ ПОВЕРХНОСТЬ РАЗБОРА ПРАЙСА УБРАНА ИЗ ЭТОЙ ВКЛАДКИ, ПОТОМУ ЧТО ЕЁ ЗДЕСЬ НЕ БЫЛО.
+
+      Вкладка «Импорт» вынимала из мешка настроек двадцать два имени про прайс-лист
+      — тринадцать значений и подписей, два признака состояния и семь действий, — и
+      НИ ОДНО из них не читалось ниже ни разу: строка деструктуризации была
+      единственным вхождением каждого имени в файле. Вместе с ними уехали три
+      локальных приведения типа, которые эти имена и обслуживали. Так вышло при
+      разборе монолита настроек на вкладки: мешок скопировали целиком, а разметку
+      прайса забрала вкладка «Цены».
+
+      Соблазн включить их именно здесь самый сильный: вкладка и правда про загрузку
+      файлов. Но загрузка прайса и его разбор живут в отдельной вкладке «Цены» со
+      своим состоянием и своей кнопкой «Сохранить в каталог клиники»; вторая точка
+      входа в тот же разбор дала бы клинике два места, где прайс «уже загружен», и
+      разные ответы на вопрос, какой из них поедет в каталог. Поэтому имена сняты,
+      а не включены. Живая поверхность — SettingsView.tsx (вкладка «Цены») и
+      components/settings/SettingsPricesTab.tsx.
+    */
     recognitionJob,
     recognitionKind,
     recognitionPresets,
@@ -1112,9 +1111,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
     setNewStaffRole,
     setNewStaffSpecialty,
     setOhifBaseUrl,
-    setPricelistAnalysis,
-    setPricelistSourceKind,
-    setPricelistText,
     setRecognitionJob,
     setRecognitionText,
     setSettingsTab,
@@ -1125,7 +1121,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
     settingsTab,
     settingsTabs,
     setUiLanguage,
-    setUsePricelistAi,
     smartImportCommit,
     smartImportMode,
     smartImportModeLabels,
@@ -1232,7 +1227,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
     updateStaffScheduleDraft,
     updateTelegramPostVisitCheckupDelayDraft,
     updateTelegramVisualCardUrlDraft,
-    usePricelistAi,
     visibleTelegramOutboxItems,
     weekdayOptions,
     workspaceScopeLabels
@@ -1339,9 +1333,6 @@ export function SettingsImportsTab(props: Record<string, any>) {
   const typedTelegramVisualCardFields = telegramVisualCardFields as TelegramVisualCardField[];
   const getTypedTelegramInlineButtonRows = (replyMarkup: Record<string, unknown> | null) =>
     telegramInlineButtonRowsFromReplyMarkup(replyMarkup) as TelegramInlineButtonRow[];
-  const typedPricelistAnalysis = pricelistAnalysis as DentalPricelistAnalysisResponse | null;
-  const typedPricelistRecognitionServiceGroups = pricelistRecognitionServiceGroups as StringTokenGroup[];
-  const typedPricelistRecognitionBrandGroups = pricelistRecognitionBrandGroups as StringTokenGroup[];
   const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
   const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
   const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";

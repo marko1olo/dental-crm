@@ -1,10 +1,4 @@
-import type {
-	DentalMaterialKind,
-	DentalRestorationType,
-	DentalSpecialty,
-	PricelistSourceKind,
-	ServiceCategory,
-} from "@dental/shared";
+import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
 import {
 	Bot,
 	CheckCircle2,
@@ -89,13 +83,10 @@ export function SettingsPricesTab() {
 		clearPricelistImage,
 		setPricelistAnalysis,
 		pricelistRecognitionServiceGroups,
-		dentalMaterialKindLabels,
-		dentalRestorationTypeLabels,
 		pricelistRecognitionBrandGroups,
 		pricelistText,
 		setPricelistText,
 		pricelistImageName,
-		pricelistImageNote,
 		attachPricelistImage,
 		usePricelistAi,
 		setUsePricelistAi,
@@ -106,9 +97,25 @@ export function SettingsPricesTab() {
 		pricelistParserModeLabels,
 		serviceCategoryLabels,
 		specialtyLabels,
-		pricelistMaterialSummaryText,
-		pricelistItemMaterialText,
-		pricelistWarningsText,
+		/*
+		   ШЕСТИ ИМЁН ЗДЕСЬ БОЛЬШЕ НЕТ, И ЭТО НЕ ПОТЕРЯ ПОВЕРХНОСТИ.
+
+		   Вкладка вынимала из общего мешка подпись к фото прайса, сводку
+		   материалов по категориям, материал отдельной строки, разбор кодов
+		   предупреждений и две таблицы подписей к материалам и типам реставраций —
+		   и не читала ни одно из шести нигде ниже. Строка деструктуризации была
+		   ЕДИНСТВЕННЫМ вхождением каждого имени в файле, то есть значение
+		   доезжало до вкладки и обрывалось на ней.
+
+		   Рисует их родитель — SettingsView.tsx, четырьмя блоками прямо над
+		   <SettingsPricesTab />, в той же вкладке «Цены» (замечания ко всему
+		   файлу, «Фото прайса: …», «Материалы, распознанные в прайсе», «Проверьте
+		   руками: строк с предупреждениями — N из M»); таблицы подписей читает
+		   pricelistUiMeta внутри этих же вызовов. Нарисовать их здесь ещё раз
+		   значило бы показать клинике один и тот же текст дважды на одном экране,
+		   поэтому имена сняты, а не включены. Возвращать их сюда можно только
+		   вместе с переносом блоков из родителя, а не рядом с ними.
+		*/
 		createServiceCatalogItem,
 		updateServiceCatalogItem,
 		deleteServiceCatalogItem,
