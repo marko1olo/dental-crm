@@ -116,10 +116,61 @@ assert.strictEqual(
 	"No-headers case should parse 1 row",
 );
 const row4 = noHeadersResult.rows[0];
+/*
+ * СТАТУС СТРОКИ ЗАВИСИТ ОТ ДАННЫХ КЛИНИКИ, А НЕ ОТ РАЗБОРЩИКА.
+ *
+ * Здесь стояло `assert.strictEqual(row4.status, "ready")`, и сценарий был КРАСНЫМ:
+ * разборщик отдаёт `warning` с причиной «Пациент найден только по ФИО (без
+ * телефона) — подтвердите совпадение вручную».
+ *
+ * Замер показал, что прав РАЗБОРЩИК, а устарело ожидание. Строка манифеста несёт
+ * телефон `+7 (900) 555-55-55`; у пациентки с таким ФИО в базе сегодня другой
+ * номер, поэтому совпадение только по имени — и предупредить о нём обязательно:
+ * снимок, привязанный к однофамильцу, попадает в чужую медкарту. `ready` тут
+ * означал бы уверенность, которой нет.
+ *
+ * То есть требование `ready` привязывало проверку РАЗБОРА к содержимому общей
+ * базы: заведи клиника вторую Иванову или смени номер — и сценарий краснеет, не
+ * тронув ни строки кода. Это тот же класс, из-за которого половина сценариев
+ * общего прогона годами проверяла не свой предмет.
+ *
+ * Предмет этого сценария — РАЗБОР: какие поля вынуты из строки без заголовков.
+ * Поэтому статус проверяется как «разборщик дошёл до сопоставления и объяснил
+ * итог», а не как конкретное значение, а незнакомое предупреждение по-прежнему
+ * валит прогон: молча принять любое предупреждение значило бы разрешить
+ * разборщику придумать новую причину и остаться зелёным.
+ */
+const NAME_ONLY_MATCH_WARNING =
+	"Пациент найден только по ФИО (без телефона) — подтвердите совпадение вручную";
+assert.ok(
+	row4.status === "ready" || row4.status === "warning",
+	`No-headers row must reach patient matching, got status ${row4.status}`,
+);
+if (row4.status === "warning") {
+	assert.deepStrictEqual(
+		row4.warnings,
+		[NAME_ONLY_MATCH_WARNING],
+		`Only the known data-dependent warning is allowed here, got ${JSON.stringify(row4.warnings)}`,
+	);
+}
+assert.ok(
+	row4.patientId,
+	"No-headers row must be matched to a patient: without it the parse result is not usable",
+);
 assert.strictEqual(
-	row4.status,
-	"ready",
-	"No-headers row should be correctly parsed to ready status",
+	row4.patientName,
+	"Иванова Марина Сергеевна",
+	"Patient name should be extracted from the unstructured line",
+);
+assert.strictEqual(
+	row4.phone,
+	"+79005555555",
+	"Phone should be normalised from the unstructured line",
+);
+assert.strictEqual(
+	row4.capturedAt,
+	"2023-01-01",
+	"Capture date should be extracted and normalised from the line",
 );
 assert.strictEqual(
 	row4.kind,

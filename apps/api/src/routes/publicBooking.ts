@@ -9,6 +9,13 @@ import {
 	patients,
 	users,
 } from "../db/schema.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts). Этот
+ * маршрут — единственное место того класса, обращённое к ПАЦИЕНТУ, а не к
+ * сотруднику: пациент, не понявший отказ, не звонит в поддержку, он уходит.
+ */
+import { schemaIssuePhrase, schemaRefusalMessage } from "../utils/schemaRefusalWords.js";
 
 /**
  * Статусы записей, которые НЕ занимают время в расписании.
@@ -308,6 +315,22 @@ const bookingRequestSchema = z.object({
 	comment: z.string().trim().max(500).optional(),
 });
 
+/**
+ * Русские подписи полей формы записи: ключ схемы → подпись, которую пациент
+ * видит в виджете на сайте клиники.
+ *
+ * Без словаря отказ называл бы поле латинским ключом (`patientPhone` — 12
+ * знаков), а виджет печатает текст пациенту без всякого фильтра.
+ */
+const publicBookingFieldLabels: Record<string, string> = {
+	doctorId: "врач",
+	startsAt: "начало приёма",
+	endsAt: "окончание приёма",
+	patientName: "имя пациента",
+	patientPhone: "телефон",
+	comment: "комментарий",
+};
+
 export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 	// 1. Get doctors for an organization
 	server.get<{ Params: { organizationId: string } }>(
@@ -600,11 +623,44 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return reply.status(400).send({ error: "Missing organizationId" });
 		}
 
+		/*
+		 * ОТКАЗ ЗАПИСИ ОБЪЯСНЯЕТСЯ ПАЦИЕНТУ, А НЕ РАЗБОРЩИКУ.
+		 *
+		 * БЫЛО: `details: parsed.error.issues.map((i) => i.message)`. Замерено
+		 * `app.inject` в своём процессе, пустая форма записи:
+		 *
+		 *   POST /api/public/booking/<клиника>/book
+		 *     → 400 {"error":"Некорректные данные записи",
+		 *            "details":["Required","Required","Required","Required","Required"]}
+		 *
+		 * Пять слов разборщика подряд. Виджет читает `details[0]`
+		 * (`apps/web/src/pages/PublicBookingWidget.tsx:93`) и печатает пациенту то,
+		 * что там лежит, БЕЗ фильтра, которым защищены экраны сотрудников. То есть
+		 * здесь машинное слово доезжает до человека буквально, а не гасится.
+		 *
+		 * Часть полей этой схемы УЖЕ несёт написанный человеком текст
+		 * («Некорректный идентификатор врача», «Неверный формат номера телефона»).
+		 * Такой текст общий перевод пропускает как есть — переписывать чужую точную
+		 * формулировку он не вправе, — и дописывает к нему следующий шаг.
+		 *
+		 * Поле `message` добавлено рядом: виджет предпочитает его и `error`, а `error`
+		 * здесь занят человеческой строкой исторически. Формы ответа это не меняет,
+		 * `details` остаётся на месте — теперь по-русски.
+		 */
 		const parsed = bookingRequestSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
 				error: "Некорректные данные записи",
-				details: parsed.error.issues.map((i) => i.message),
+				message: schemaRefusalMessage({
+					issues: parsed.error.issues,
+					fieldLabels: publicBookingFieldLabels,
+					retryAction: "запись на приём",
+					fallbackMessage:
+						"Форма записи заполнена не полностью. Заполните врача, дату, время, имя и телефон и повторите запись на приём.",
+				}),
+				details: parsed.error.issues.map((issue) =>
+					schemaIssuePhrase(issue, publicBookingFieldLabels),
+				),
 			});
 		}
 		const { doctorId, startsAt, endsAt, patientName, patientPhone, comment } =

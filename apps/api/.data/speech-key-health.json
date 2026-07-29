@@ -1,7 +1,15 @@
 {
   "version": 1,
-  "savedAt": "2026-07-03T14:53:08.173Z",
+  "savedAt": "2026-07-29T12:41:01.386Z",
   "health": {
+    "google_speech:26987e457b44": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "successes": 263,
+      "lastUsedAt": 1785328861385,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "google_speech:3e0ef4ad3f5a": {
       "cooldownUntil": 0,
       "failures": 0,
@@ -79,6 +87,14 @@
       "failures": 0,
       "successes": 128,
       "lastUsedAt": 1783090388172,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "groq_whisper:6058314b22ec": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "successes": 1,
+      "lastUsedAt": 1785239300896,
       "lastStatusCode": null,
       "lastError": null
     },

@@ -1,5 +1,6 @@
 import { CreditCard, UserRound, Mic, Bot } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
+import { money } from "./AppHelpers";
 import { validateRubAmountInput, rubAmountInputMissingStep, normalizeRubAmountInput } from "./rubAmountInput";
 import { textToNumbers } from "./lib/stringUtils";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
@@ -377,10 +378,21 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
           </div>
         </div>
         
-        <div style={{ display: "flex", justifyContent: "space-between", background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-200)" }}>
+        {/* БЫЛО: border: 1px solid var(--brand-200). Имени --brand-200 нет ни в
+            одном файле стилей (проверка scripts/check-css-tokens.mjs инлайновые
+            стили в TSX не видит, поэтому и не поймала). Недействительное
+            значение в border-color не наследуется и не откатывается к каскаду —
+            берётся начальное currentColor, то есть цвет текста. Рамка вокруг
+            итоговой плашки рассрочки рисовалась почти чёрной вместо светлой
+            брендовой. Взят объявленный --brand-100 (бирюза темы, есть во всех
+            трёх темах): ближайший по смыслу к тому, что задумывали. */}
+        <div style={{ display: "flex", justifyContent: "space-between", background: "var(--paper)", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-100)" }}>
           <div>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Сумма лечения</div>
-            <div style={{ fontSize: "16px", fontWeight: 600 }}>{totalAmount.toLocaleString('ru-RU')} ₽</div>
+            {/* Деньги — общим money(). Своё toLocaleString('ru-RU') печатало
+                «120 000,7 ₽» для суммы с копейками: полтинник в такой записи
+                читается как пять копеек. */}
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>{money(totalAmount)}</div>
           </div>
           <div>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Первый взнос</div>
@@ -391,22 +403,22 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
                 Это денежная цифра: читаемость важнее акцента. Оставляем тот же
                 цвет, что у соседней «Суммы лечения» — они равноправны, а
                 выделен и без того «Ежемесячный платеж»: он крупнее и цветной. */}
-            <div style={{ fontSize: "16px", fontWeight: 600 }}>{downPayment.toLocaleString('ru-RU')} ₽</div>
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>{money(downPayment)}</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Ежемесячный платеж</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rust)" }}>{monthlyPayment.toLocaleString('ru-RU')} ₽</div>
+            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--rust)" }}>{money(monthlyPayment)}</div>
             {/* Остаток от деления добирается последним месяцем, чтобы сумма
                 платежей в точности равнялась стоимости лечения. */}
             {hasUnevenLastPayment && (
               <div style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "2px" }}>
-                последний месяц — {lastMonthPayment.toLocaleString('ru-RU')} ₽
+                последний месяц — {money(lastMonthPayment)}
               </div>
             )}
           </div>
         </div>
         <div style={{ fontSize: "12px", color: "var(--slate-500)", marginTop: "12px" }}>
-          Итого по графику: {(downPayment + monthlyPayment * Math.max(0, months - 1) + lastMonthPayment).toLocaleString('ru-RU')} ₽
+          Итого по графику: {money(downPayment + monthlyPayment * Math.max(0, months - 1) + lastMonthPayment)}
         </div>
       </div>
     </details>
@@ -640,7 +652,10 @@ export function PaymentCapture({
                    долг одним нажатием» просто не работала. Округляем. */
                 onClick={() => onAmountChange(String(Math.round(remainingDebt)))}
               >
-                Долг: {Math.round(remainingDebt).toLocaleString("ru-RU")} ₽
+                {/* Подпись — общим money(). Показываем ровно то целое число,
+                    которое кнопка подставит в поле, иначе кассир видел бы одну
+                    сумму, а в поле получал другую. */}
+                Долг: {money(Math.round(remainingDebt))}
               </button>
             )}
             {[1000, 2000, 3000, 5000].map((val) => (

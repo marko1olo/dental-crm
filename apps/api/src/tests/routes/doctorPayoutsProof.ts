@@ -222,12 +222,35 @@ async function proveAgainstLiveData(app: FastifyInstance): Promise<void> {
 			.from(users)
 			.where(eq(users.organizationId, org.id))
 			.limit(1);
-		const ownerToken = signToken(
-			{ organizationId: org.id, userId: owner?.id ?? null, role: "owner" },
-			authTokenSecret(),
-		);
 
 		console.log(`\n=== ОРГАНИЗАЦИЯ «${org.name}» (${org.id}) ===`);
+
+		/*
+		 * КЛИНИКА БЕЗ СОТРУДНИКОВ — ЭТО НЕ ПРОВАЛ, А ЗАКОННОЕ СОСТОЯНИЕ.
+		 *
+		 * Здесь стояло `userId: owner?.id ?? null` без ветки на отсутствие
+		 * сотрудника. Токен с `userId: null` сервер справедливо отвергает 401 —
+		 * зарплата не отдаётся неопознанному, — и сценарий объявлял ПРОВАЛ
+		 * «владелец не получил расчёт» о клинике, у которой владельца нет вовсе.
+		 *
+		 * Обнаружено фактом: другой прогон оставил в общей базе две организации с
+		 * нулём сотрудников, и этот сценарий покраснел, уронив общий прогон
+		 * цепочек в 12 из 13 — при том что дефекта в расчёте зарплаты не было.
+		 * Страж, кричащий на верном состоянии данных, будет выключен: в этом
+		 * дереве так уже случилось трижды.
+		 *
+		 * Клиника без сотрудников пропускается вслух, а не молча: молчаливый
+		 * пропуск превратил бы «нечего проверять» в «проверено».
+		 */
+		if (!owner?.id) {
+			console.log(
+				"  СПРАВКА: в клинике ноль сотрудников — расчёт зарплаты проверять не на кого, организация пропущена. " +
+					"Это законное состояние (например, клиника только что создана), а не дефект расчёта.",
+			);
+			continue;
+		}
+
+		const ownerToken = signToken({ organizationId: org.id, userId: owner.id, role: "owner" }, authTokenSecret());
 		const anonymous = await callPayouts(app, { "x-dente-clinic-token": clinicToken });
 		check("запрос без сотрудника отклонён", anonymous.statusCode, 401);
 		console.log(`  тело отказа: ${anonymous.body.slice(0, 200)}`);

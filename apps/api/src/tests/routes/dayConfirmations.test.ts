@@ -13,6 +13,7 @@ import {
 	users
 } from "../../db/schema.js";
 import { dayBoundsInTimeZone, registerDayConfirmationRoutes, tomorrowInTimeZone } from "../../routes/dayConfirmations.js";
+import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 
 /**
  * Утренний обзвон.
@@ -27,26 +28,42 @@ import { dayBoundsInTimeZone, registerDayConfirmationRoutes, tomorrowInTimeZone 
  * ответа поводом для звонка не является: у пациента был выбор.
  */
 
-const ORG_ID = "dce70000-0000-4000-8000-000000000701";
-const CLINIC_ID = "dce70000-0000-4000-8000-000000000702";
-const DOCTOR_ID = "dce70000-0000-4000-8000-000000000703";
+/*
+ * БЛОК ИДЕНТИФИКАТОРОВ ВЫВЕДЕН ИЗ ИМЕНИ ФАЙЛА.
+ *
+ * Прежде он был выписан руками как `dce70000-…-07xx` — и тот же блок держал
+ * patientRecall.test.ts: организация `…-701` у обоих одна, пациенты `…-711`,
+ * `…-712` и `…-713` тоже одни. `node --test` запускает файлы параллельно, каждый
+ * в своём процессе, поэтому `after` соседа удалял приёмы посреди этого теста, а
+ * onConflictDoNothing при совпадении первичного ключа молча оставлял ЧУЖОГО
+ * пациента. Замерено на этой паре файлов в одном прогоне: 4 упавших теста, среди
+ * них «в дне с четырьмя приёмами не вернулось ни одной строки» — то есть обзвон
+ * оставался БЕЗ ЕДИНОЙ СТРОКИ на верном ответе маршрута. По отдельности каждый
+ * файл зелёный, поэтому набор краснел «через прогон» без единой правки в коде.
+ *
+ * fixtureUuid выводит блок из имени пространства, поэтому выдать его второму
+ * файлу нельзя — для этого файлам пришлось бы совпасть именем. Реестра блоков
+ * не нужно, см. tests/support/fixtureOrganizations.ts.
+ */
+const FIXTURE = "dayConfirmations";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const CLINIC_ID = fixtureUuid(FIXTURE, 2);
+const DOCTOR_ID = fixtureUuid(FIXTURE, 3);
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 // Четыре пациента под четыре разных случая.
-const CONFIRMED_PATIENT = "dce70000-0000-4000-8000-000000000711";
-const DELIVERED_PATIENT = "dce70000-0000-4000-8000-000000000712";
-const FAILED_PATIENT = "dce70000-0000-4000-8000-000000000713";
-const NO_REMINDER_PATIENT = "dce70000-0000-4000-8000-000000000714";
+const CONFIRMED_PATIENT = fixtureUuid(FIXTURE, 0x11);
+const DELIVERED_PATIENT = fixtureUuid(FIXTURE, 0x12);
+const FAILED_PATIENT = fixtureUuid(FIXTURE, 0x13);
+const NO_REMINDER_PATIENT = fixtureUuid(FIXTURE, 0x14);
 
-const CONFIRMED_APPOINTMENT = "dce70000-0000-4000-8000-000000000721";
-const DELIVERED_APPOINTMENT = "dce70000-0000-4000-8000-000000000722";
-const FAILED_APPOINTMENT = "dce70000-0000-4000-8000-000000000723";
-const NO_REMINDER_APPOINTMENT = "dce70000-0000-4000-8000-000000000724";
+const CONFIRMED_APPOINTMENT = fixtureUuid(FIXTURE, 0x21);
+const DELIVERED_APPOINTMENT = fixtureUuid(FIXTURE, 0x22);
+const FAILED_APPOINTMENT = fixtureUuid(FIXTURE, 0x23);
+const NO_REMINDER_APPOINTMENT = fixtureUuid(FIXTURE, 0x24);
 
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
-}
+/** Чужая организация для проверки изоляции: своя же, но с другим слотом. */
+const FOREIGN_ORG = fixtureUuid(FIXTURE, 0xff);
 
 /*
  * Ответ маршрута в том виде, в каком его читают проверки ниже. Без этого
@@ -193,15 +210,23 @@ describe("список подтверждений на день", () => {
 		await registerDayConfirmationRoutes(app);
 
 		try {
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника обзвона" }).onConflictDoNothing();
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
-				.onConflictDoNothing();
+			/*
+			 * Уборка ПЕРЕД засевом, по каталогу базы, а не только в after(): прогон,
+			 * убитый снаружи, до after не доходит и оставляет свою клинику в живой
+			 * базе. Здесь все места засева ключевые (явные id, unique(organization_id,
+			 * dedupe_key) у очереди сообщений, code как первичный ключ у кодов
+			 * действий), поэтому досева поверх остатка не было — но остаток прежнего
+			 * блока `…-07xx`, общего с patientRecall, снять всё равно нужно.
+			 */
+			await purgeFixtureOrganizations([ORG_ID, FOREIGN_ORG]);
+
+			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника обзвона" });
+			await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
 			await db
 				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Смирнов Сергей Сергеевич", role: "doctor" })
-				.onConflictDoNothing();
+				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Смирнов Сергей Сергеевич", role: "doctor" });
 			await db
 				.insert(patients)
 				.values([
@@ -210,8 +235,7 @@ describe("список подтверждений на день", () => {
 					{ id: FAILED_PATIENT, organizationId: ORG_ID, fullName: "Недоставлен Дмитрий", phone: "+7 916 000-07-03" },
 					// Без телефона: напоминание отправить некуда, звонить тоже.
 					{ id: NO_REMINDER_PATIENT, organizationId: ORG_ID, fullName: "Безномера Николай", phone: null }
-				])
-				.onConflictDoNothing();
+				]);
 
 			/*
 			 * Приёмы привязываются К САМОЙ ДАТЕ, а не к «сейчас плюс сутки»: 09:00
@@ -233,8 +257,7 @@ describe("список подтверждений на день", () => {
 					{ id: DELIVERED_APPOINTMENT, organizationId: ORG_ID, patientId: DELIVERED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(1) },
 					{ id: FAILED_APPOINTMENT, organizationId: ORG_ID, patientId: FAILED_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(2) },
 					{ id: NO_REMINDER_APPOINTMENT, organizationId: ORG_ID, patientId: NO_REMINDER_PATIENT, doctorUserId: DOCTOR_ID, status: "planned", ...slot(3) }
-				])
-				.onConflictDoNothing();
+				]);
 
 			await db
 				.insert(communicationOutbox)
@@ -276,8 +299,7 @@ describe("список подтверждений на день", () => {
 						lastErrorMessage: "Не доставлено: истёк срок жизни сообщения",
 						dedupeKey: `reminder:${FAILED_APPOINTMENT}:24`
 					}
-				])
-				.onConflictDoNothing();
+				]);
 
 			// Пациент нажал ссылку — это видно отдельно от статуса записи.
 			await db

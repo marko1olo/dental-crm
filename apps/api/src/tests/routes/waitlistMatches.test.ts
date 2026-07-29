@@ -9,29 +9,46 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointmentWaitlists, appointments, chairs, clinics, organizations, patients, users } from "../../db/schema.js";
 import { registerWaitlistMatchRoutes } from "../../routes/waitlistMatches.js";
+import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 
-const ORG_ID = "dce70000-0000-4000-8000-000000000801";
-const OTHER_ORG = "dce70000-0000-4000-8000-000000000802";
-const DOCTOR_A = "dce70000-0000-4000-8000-000000000811";
-const DOCTOR_B = "dce70000-0000-4000-8000-000000000812";
-const CHAIR_ID = "dce70000-0000-4000-8000-000000000813";
-const CLINIC_ID = "dce70000-0000-4000-8000-000000000814";
+/*
+ * БЛОК ИДЕНТИФИКАТОРОВ ВЫВЕДЕН ИЗ ИМЕНИ ФАЙЛА.
+ *
+ * Прежде он был выписан руками как `dce70000-…-08xx` — и тот же блок держал
+ * patientDuplicates.test.ts: организация `…-801` у обоих одна, пациенты `…-821`
+ * и `…-822` тоже одни. `node --test` запускает файлы параллельно, каждый в своём
+ * процессе, поэтому `after` соседа удалял пациентов посреди этого теста, а
+ * onConflictDoNothing при совпадении первичного ключа молча оставлял ЧУЖУЮ
+ * строку: «Ковалёва Ольга Ивановна» из теста дублей вместо «Подходящего
+ * Пациента». Замерено на этой паре файлов в одном прогоне: 4 упавших теста,
+ * тогда как каждый файл по отдельности зелёный.
+ *
+ * fixtureUuid выводит блок из имени пространства, поэтому выдать его второму
+ * файлу нельзя — для этого файлам пришлось бы совпасть именем. Реестра блоков
+ * не нужно, см. tests/support/fixtureOrganizations.ts.
+ */
+const FIXTURE = "waitlistMatches";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const OTHER_ORG = fixtureUuid(FIXTURE, 2);
+const DOCTOR_A = fixtureUuid(FIXTURE, 0x11);
+const DOCTOR_B = fixtureUuid(FIXTURE, 0x12);
+const CHAIR_ID = fixtureUuid(FIXTURE, 0x13);
+const CLINIC_ID = fixtureUuid(FIXTURE, 0x14);
 /** Пациент, чей приём отменён: его окно и предлагаем. */
-const CANCELLED_PATIENT = "dce70000-0000-4000-8000-000000000821";
+const CANCELLED_PATIENT = fixtureUuid(FIXTURE, 0x21);
 /** Ждёт того же врача и это же время — должен быть первым. */
-const BEST_MATCH = "dce70000-0000-4000-8000-000000000822";
+const BEST_MATCH = fixtureUuid(FIXTURE, 0x22);
 /** Ждёт другого врача — ниже. */
-const OTHER_DOCTOR_WAITER = "dce70000-0000-4000-8000-000000000823";
+const OTHER_DOCTOR_WAITER = fixtureUuid(FIXTURE, 0x23);
 /** Срочный, но время не то. */
-const URGENT_WRONG_TIME = "dce70000-0000-4000-8000-000000000824";
+const URGENT_WRONG_TIME = fixtureUuid(FIXTURE, 0x24);
 
-const CANCELLED_APPOINTMENT = "dce70000-0000-4000-8000-000000000831";
-const ACTIVE_APPOINTMENT = "dce70000-0000-4000-8000-000000000832";
-const PAST_CANCELLED = "dce70000-0000-4000-8000-000000000833";
+const CANCELLED_APPOINTMENT = fixtureUuid(FIXTURE, 0x31);
+const ACTIVE_APPOINTMENT = fixtureUuid(FIXTURE, 0x32);
+const PAST_CANCELLED = fixtureUuid(FIXTURE, 0x33);
 
 /*
  * У СТРОК ЛИСТА ОЖИДАНИЯ ИДЕНТИФИКАТОРЫ ЗАДАНЫ ЯВНО.
@@ -43,16 +60,11 @@ const PAST_CANCELLED = "dce70000-0000-4000-8000-000000000833";
  * а ниже стоит `matches.length === 3`. Замерено на остатке: `actual: 4,
  * expected: 3` при одной лишней строке. Тест краснел на верном ответе маршрута.
  */
-const WAIT_BEST = "dce70000-0000-4000-8000-000000000841";
-const WAIT_OTHER_DOCTOR = "dce70000-0000-4000-8000-000000000842";
-const WAIT_URGENT = "dce70000-0000-4000-8000-000000000843";
+const WAIT_BEST = fixtureUuid(FIXTURE, 0x41);
+const WAIT_OTHER_DOCTOR = fixtureUuid(FIXTURE, 0x42);
+const WAIT_URGENT = fixtureUuid(FIXTURE, 0x43);
 
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
-
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(message);
-}
 
 /** Завтра в 10:00 по местному времени — окно, которое освободилось. */
 function tomorrowAt(hour: number): Date {
@@ -67,52 +79,41 @@ describe("подбор на освободившееся окно", () => {
 	let databaseAvailable = true;
 	const originalEnv = process.env;
 
-	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
-	async function purgeFixtures(): Promise<void> {
-		await db.delete(appointmentWaitlists).where(eq(appointmentWaitlists.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-		await db.delete(users).where(eq(users.organizationId, ORG_ID));
-		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-		await db.delete(organizations).where(eq(organizations.id, OTHER_ORG));
-	}
-
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
 		app = Fastify();
 		await registerWaitlistMatchRoutes(app);
 
 		try {
-			// Уборка ПЕРЕД засевом, а не только после: прогон, упавший до after(),
-			// иначе оставляет строки листа ожидания, и подбор находит лишних.
-			await purgeFixtures();
+			/*
+			 * Уборка ПЕРЕД засевом, а не только после: прогон, упавший или убитый до
+			 * after(), иначе оставляет строки листа ожидания, и подбор находит лишних.
+			 * Уборка идёт по КАТАЛОГУ базы, а не по поимённому списку таблиц: список
+			 * устаревает при появлении любой новой таблицы со ссылкой на организацию,
+			 * каталог отстать не может.
+			 */
+			await purgeFixtureOrganizations([ORG_ID, OTHER_ORG]);
 
 			await db
 				.insert(organizations)
 				.values([
 					{ id: ORG_ID, name: "Клиника листа ожидания" },
 					{ id: OTHER_ORG, name: "Соседняя клиника" }
-				])
-				.onConflictDoNothing();
+				]);
 			await db
 				.insert(users)
 				.values([
 					{ id: DOCTOR_A, organizationId: ORG_ID, fullName: "Врач Первый", role: "doctor" },
 					{ id: DOCTOR_B, organizationId: ORG_ID, fullName: "Врач Второй", role: "doctor" }
-				])
-				.onConflictDoNothing();
+				]);
 			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
 			// клиника заводится здесь же, как в остальных тестах по живой базе.
 			await db
 				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
-				.onConflictDoNothing();
+				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
 			await db
 				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло" })
-				.onConflictDoNothing();
+				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло" });
 
 			await db
 				.insert(patients)
@@ -121,8 +122,7 @@ describe("подбор на освободившееся окно", () => {
 					{ id: BEST_MATCH, organizationId: ORG_ID, fullName: "Подходящий Пациент", phone: "+7 916 000-08-02" },
 					{ id: OTHER_DOCTOR_WAITER, organizationId: ORG_ID, fullName: "Ждёт Другого", phone: "+7 916 000-08-03" },
 					{ id: URGENT_WRONG_TIME, organizationId: ORG_ID, fullName: "Срочный Неудобный", phone: "+7 916 000-08-04" }
-				])
-				.onConflictDoNothing();
+				]);
 
 			await db
 				.insert(appointments)
@@ -160,8 +160,7 @@ describe("подбор на освободившееся окно", () => {
 						startsAt: new Date(Date.now() - 3 * 24 * 3_600_000),
 						endsAt: new Date(Date.now() - 3 * 24 * 3_600_000 + 3_600_000)
 					}
-				])
-				.onConflictDoNothing();
+				]);
 
 			await db
 				.insert(appointmentWaitlists)
@@ -193,17 +192,16 @@ describe("подбор на освободившееся окно", () => {
 						preferredTimeRanges: ["18:00-20:00"],
 						status: "waiting"
 					}
-				])
-				.onConflictDoNothing();
+				]);
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});
 
 	after(async () => {
 		if (databaseAvailable) {
-			await purgeFixtures();
+			await purgeFixtureOrganizations([ORG_ID, OTHER_ORG]);
 		}
 		await app.close();
 		process.env = originalEnv;

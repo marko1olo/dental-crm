@@ -33,6 +33,11 @@ import { and, eq } from "drizzle-orm";
 import { protocolTemplateSchema, type ProtocolTemplate } from "@dental/shared";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
+ */
+import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 
 /** Строка шаблона ровно в той форме, в которой её отдаёт база. */
 export type ProtocolTemplateRow = typeof schema.protocolTemplates.$inferSelect;
@@ -149,6 +154,30 @@ function templateUpdatedAt(row: ProtocolTemplateRow): string {
 }
 
 /**
+ * Русские подписи полей шаблона протокола: ключ контракта → подпись из формы
+ * «Настройки → Протоколы».
+ *
+ * Без словаря причина отказа называла поле латинским ключом, а латинское слово
+ * из шести и более знаков гасит всю фразу фильтром клиента.
+ */
+const protocolTemplateFieldLabels: Record<string, string> = {
+	id: "опознавательный номер шаблона",
+	organizationId: "клиника шаблона",
+	specialty: "специальность врача",
+	title: "название шаблона",
+	visitReason: "причина визита",
+	defaultDurationMinutes: "длительность приёма в минутах",
+	complaintPrompt: "заготовка жалоб",
+	objectiveTemplate: "заготовка объективного статуса",
+	diagnosisHints: "подсказки по диагнозу",
+	treatmentPlanTemplate: "заготовка плана лечения",
+	requiredDocuments: "обязательные документы",
+	suggestedImaging: "нужные снимки",
+	safetyWarnings: "предупреждения по безопасности",
+	updatedAt: "отметка «изменён»",
+};
+
+/**
  * Строка → доменный шаблон ТЕМ ЖЕ контрактом, что и чтение экранов.
  *
  * Если записанная строка контракт не проходит, наружу идёт причина, а не
@@ -173,11 +202,30 @@ function projectRow(row: ProtocolTemplateRow): ProtocolTemplate {
     updatedAt: templateUpdatedAt(row)
   });
   if (parsed.success) return parsed.data;
+  /*
+   * ПРИЧИНА НАЗЫВАЕТСЯ ПО-РУССКИ, включая имя поля.
+   *
+   * БЫЛО: `поле «${field}»: ${issue.message}` — латинский ключ контракта плюс
+   * слово разборщика, например «поле «requiredDocuments»: Required». Эта ошибка
+   * доходит до администратора через общий разборщик ответов сервера, а он гасит
+   * фразу с латинским словом из шести и более знаков ЦЕЛИКОМ
+   * (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern` под флагом
+   * `/i`; `requiredDocuments` — 17 знаков). Администратор жал «Сохранить»,
+   * получал отказ без причины и не знал, какое из десяти полей формы поправить —
+   * то есть повторялся ровно тот дефект, из-за которого этот файл и появился.
+   *
+   * Перевод машинных слов берётся из общего дома `utils/schemaRefusalWords.ts`.
+   */
   const issue = parsed.error.issues[0];
-  const field = issue?.path.join(".") ?? "";
-  const message = issue?.message ?? "строка не соответствует контракту шаблона";
+  if (!issue) {
+    throw new Error(
+      "Шаблон сохранён в базу, но не проходит контракт протокола: строка не соответствует контракту шаблона. " +
+        "Откройте шаблон в настройках протоколов, заполните поля заново и сохраните его."
+    );
+  }
+  const words = schemaIssueWords(issue, protocolTemplateFieldLabels);
   throw new Error(
-    `Шаблон сохранён в базу, но не проходит контракт протокола: ${field ? `поле «${field}»: ` : ""}${message}`
+    `Шаблон сохранён в базу, но не проходит контракт протокола: ${words.cause} — ${words.action} в настройках протоколов.`
   );
 }
 

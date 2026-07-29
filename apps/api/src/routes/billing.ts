@@ -22,6 +22,14 @@ import { clinicTimeZone } from "../services/reports/managerReports.js";
  */
 import { resolvePeriodBoundary } from "./reports.js";
 import { explainNegativePayouts } from "../services/finance/payoutNegativeExplain.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер. Своей копии
+ * здесь нет намеренно: местная заплата этого класса уже написана в
+ * routes/telegram.ts со своим списком латинских слов, и она отстала от
+ * установленного zod на шесть кодов замечаний из шестнадцати. Второй словарь —
+ * та же болезнь, из которой в этом дереве выросли девять расчётов долга.
+ */
+import { schemaRefusalMessage, type SchemaIssueLike } from "../utils/schemaRefusalWords.js";
 
 function documentCanReceivePayment(documentKind: keyof typeof documentKindMetadata): boolean {
   const metadata = documentKindMetadata[documentKind];
@@ -29,12 +37,17 @@ function documentCanReceivePayment(documentKind: keyof typeof documentKindMetada
 }
 
 const paymentValidationMessage =
-  "Оплата не записана: проверьте сумму, дату, способ оплаты, фискальный чек и явные данные плательщика.";
+  "Ни одно поле оплаты не прошло проверку. Проверьте сумму, дату, способ оплаты, фискальный чек и данные плательщика и повторите запись оплаты.";
 const billingPaymentScopeError = "BillingPaymentScopeError" as const;
 
-/** Названия полей оплаты по-русски, чтобы отказ указывал на конкретное поле. */
+/**
+ * Названия полей оплаты по-русски, чтобы отказ указывал на конкретное поле.
+ *
+ * Подписи стоят в кавычках после слова «поле», поэтому нужны в ИМЕНИТЕЛЬНОМ
+ * падеже и должны читаться самостоятельно: кассир видит их без окружающей формы.
+ */
 const paymentFieldLabels: Record<string, string> = {
-  amountRub: "сумма",
+  amountRub: "сумма оплаты",
   patientId: "пациент",
   visitId: "прием",
   documentId: "документ",
@@ -55,27 +68,52 @@ const paymentFieldLabels: Record<string, string> = {
 };
 
 /**
- * Отказ должен называть поле и причину.
+ * Отказ должен называть поле, причину И следующий шаг.
  *
- * БЫЛО: на любую ошибку возвращался один и тот же перечень из пяти пунктов —
- * «проверьте сумму, дату, способ оплаты, фискальный чек и явные данные
- * плательщика». Кассир, набравший 1500,50, получал предложение проверить пять
- * вещей и не узнавал, что дело в копейках. Разбирать такое в очереди у кассы
- * невозможно.
+ * БЫЛО, первый проход: на любую ошибку возвращался один и тот же перечень из
+ * пяти пунктов — «проверьте сумму, дату, способ оплаты, фискальный чек и явные
+ * данные плательщика». Кассир, набравший 1500,50, получал предложение проверить
+ * пять вещей и не узнавал, что дело в копейках. Разбирать такое в очереди у
+ * кассы невозможно. Называние поля — правильное решение того прохода, и оно
+ * остаётся: словарь `paymentFieldLabels` выше и есть его результат.
+ *
+ * БЫЛО, второй дефект, который чинится здесь. Рядом с русской подписью поля
+ * ставилось `issue.message` — слово РАЗБОРЩИКА. Замерено `app.inject`:
+ *
+ *   POST /api/billing/payments, пустое тело
+ *     → «Оплата не записана. пациент: Required; сумма: Required.»
+ *   POST /api/billing/payments, сумма с запятой, способ оплаты по-русски
+ *     → «… способ оплаты: Invalid enum value. Expected 'cash' | 'card' |
+ *        'bank_transfer' | 'online' | 'insurance' | 'family_wallet' | 'other',
+ *        received 'нал' …»
+ *
+ * То есть кассиру выводился внутренний перечень значений колонки базы. И хуже:
+ * он не видел даже смеси языков. Клиент гасит фразу ЦЕЛИКОМ, если в ней есть
+ * латинское слово из шести и более знаков (`apps/web/src/AppHelpers.tsx`,
+ * `technicalWorkflowFailurePattern` под флагом `/i`) — `Required`, `Expected`,
+ * `received`, `string`, `number`, `Invalid` попадают все. На экране оставалась
+ * общая подпись по коду ответа.
+ *
+ * СТАЛО: перевод машинных слов в человеческие берётся из ОДНОГО дома —
+ * `utils/schemaRefusalWords.ts`. Своего списка латинских слов здесь нет и не
+ * будет: такой список уже написали по месту в `routes/telegram.ts`, и он отстал
+ * от установленного `zod` на шесть кодов замечаний из шестнадцати.
+ *
+ * Заголовок «Оплата не записана» из текста УБРАН: экран приписывает его сам
+ * (`responseErrorMessage(response, "Оплата не записана")` в
+ * `apps/web/src/useAppLogic.tsx`), и кассир читал его дважды.
+ *
+ * Машинный код ответа `BillingValidationError` не менялся: интерфейс по нему
+ * ветвится, и подменять машинное поле человеческой фразой значило бы поставить
+ * фасад вместо починки.
  */
-function paymentValidationDetail(issues: Array<{ path: Array<string | number>; message: string }>): string {
-  const named = issues
-    .slice(0, 3)
-    .map((issue) => {
-      const field = issue.path.find((part) => typeof part === "string");
-      const label = typeof field === "string" ? paymentFieldLabels[field] ?? String(field) : null;
-      return label ? `${label}: ${issue.message}` : issue.message;
-    })
-    .filter((text) => text.trim().length > 0);
-  if (named.length === 0) return paymentValidationMessage;
-  const rest = issues.length - named.length;
-  const tail = rest > 0 ? ` И ещё замечаний: ${rest}.` : "";
-  return `Оплата не записана. ${named.join("; ")}.${tail}`;
+function paymentValidationDetail(issues: ReadonlyArray<SchemaIssueLike>): string {
+  return schemaRefusalMessage({
+    issues,
+    fieldLabels: paymentFieldLabels,
+    retryAction: "запись оплаты",
+    fallbackMessage: paymentValidationMessage
+  });
 }
 
 function sendBillingPaymentScopeError(reply: FastifyReply, statusCode: 404 | 409, message: string) {

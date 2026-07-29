@@ -41,6 +41,11 @@ import {
 } from "@dental/shared";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
+ */
+import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 
 /** Строка прайса ровно в той форме, в которой её отдаёт база. */
 export type ServiceCatalogRow = typeof schema.serviceCatalogItems.$inferSelect;
@@ -88,11 +93,60 @@ function readDurationMinutes(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * Русские подписи полей услуги: ключ контракта → подпись из настроек прайса.
+ *
+ * Без словаря причина называла поле ЛАТИНСКИМ ключом контракта, и это гасило
+ * фразу целиком — `basePriceRub` (12 знаков), `durationMinutes` (15),
+ * `organizationId` (14), `taxDeductible` (13) попадают под правило фильтра
+ * клиента о латинском слове из шести и более знаков.
+ */
+const serviceCatalogFieldLabels: Record<string, string> = {
+  id: "опознавательный номер услуги",
+  organizationId: "клиника услуги",
+  code: "код услуги",
+  title: "название услуги",
+  aliases: "синонимы названия",
+  category: "раздел прайса",
+  specialty: "специальность врача",
+  basePriceRub: "цена услуги",
+  durationMinutes: "длительность услуги в минутах",
+  taxDeductible: "признак налогового вычета",
+  active: "признак «услуга в работе»"
+};
+
+/**
+ * Причина отклонения строки прайса — словами администратора клиники.
+ *
+ * БЫЛО: `поле «${field}»: ${issue.message}` — латинский ключ контракта плюс
+ * слово разборщика. Замерено прямым вызовом проекции на строке с пустым
+ * разделом прайса:
+ *
+ *   «поле «category»: Expected 'consultation' | 'therapy' | 'surgery' |
+ *    'prosthetics' | 'orthodontics' | 'periodontology' | 'hygiene' | 'imaging' |
+ *    'documents' | 'other', received null»
+ *
+ * Причина уходит в два места, и оба читает человек: предупреждение гидратации
+ * (`db/domainStateHydration.ts:1003` — «Прайс: услуга … не принята — …») и текст
+ * ошибки, которую бросает `projectSingleRow` при записи услуги. Оба гасились
+ * фильтром клиента целиком, и администратор видел вместо причины подпись по коду
+ * ответа: услуга просто не появлялась на экране без объяснения.
+ *
+ * Замысел «человеческая причина» был записан в шапке этого файла с самого
+ * начала — здесь он наконец выполняется. Перевод машинных слов берётся из
+ * общего дома, своего списка латинских слов тут нет.
+ */
 function firstIssueMessage(issues: readonly { path: (string | number)[]; message: string }[]): string {
   const issue = issues[0];
-  if (!issue) return "строка не соответствует контракту услуги";
-  const field = issue.path.join(".");
-  return field ? `поле «${field}»: ${issue.message}` : issue.message;
+  if (!issue) return "строка не соответствует контракту услуги, поэтому исправьте её в настройках прайса";
+  /*
+   * Строчная буква и отсутствие точки на конце — не небрежность: причина
+   * встраивается в СЕРЕДИНУ чужой фразы у обоих вызывающих
+   * («…услуга «Х» не принята — <причина>. Пока строка не исправлена…»), и
+   * готовое предложение с заглавной буквы и точкой дало бы там две точки подряд.
+   */
+  const words = schemaIssueWords(issue, serviceCatalogFieldLabels);
+  return `${words.cause} — ${words.action}`;
 }
 
 /**

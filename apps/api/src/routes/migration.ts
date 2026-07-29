@@ -23,6 +23,13 @@ import {
 } from "../migration/engine.js";
 import { reconciliationReportCsv } from "../migration/reconcile.js";
 import { getRequestIdentity } from "../security/identity.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts). Второй
+ * словарь — та болезнь, из которой в этом дереве выросли девять расчётов долга
+ * пациента и три копии часового пояса.
+ */
+import { schemaRefusalMessage } from "../utils/schemaRefusalWords.js";
 
 /**
  * Маршруты переноса данных из чужих систем.
@@ -49,18 +56,69 @@ type PayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false; error: { issues: Array<{ path: Array<string | number>; message: string }> } };
 };
 
-function parsePayload<T>(schema: PayloadSchema<T>, value: unknown): { ok: true; data: T } | { ok: false; message: string } {
+/**
+ * Русские подписи полей переноса: ключ схемы → то, как поле названо на экране
+ * мастера переноса.
+ *
+ * Без словаря отказ называл поле ЛАТИНСКИМ ключом схемы, и это гасило фразу
+ * целиком: латинское слово из шести и более знаков (`sourceName` — 10,
+ * `contentBase64` — 13) отбрасывает весь текст фильтром клиента.
+ */
+const migrationFieldLabels: Record<string, string> = {
+  sourceName: "название источника",
+  sourceKind: "вид источника",
+  rawText: "содержимое источника",
+  contentBase64: "файл источника",
+  entityKind: "вид переносимых записей",
+  allowLlm: "разрешение обращаться к языковой модели",
+  vendorProfile: "код чужой системы",
+  dryRun: "сухой прогон без записи",
+  sourceSystem: "код системы-источника",
+  mappingOverrides: "поправки карты соответствия",
+  sourceColumn: "колонка источника",
+  targetField: "поле карточки клиники",
+  runId: "прогон переноса",
+  confirm: "подтверждение отката"
+};
+
+/**
+ * Разбор тела запроса с человеческим отказом.
+ *
+ * БЫЛО, замерено `app.inject` в своём процессе:
+ *
+ *   POST /api/migration/analyze,  пустое тело → «sourceName: Required»
+ *   POST /api/migration/rollback, runId числом
+ *     → «runId: Expected string, received number; confirm: Invalid literal
+ *        value, expected true»
+ *
+ * В этих строках НЕТ НИ ОДНОГО русского слова. Оператор переноса не видел даже
+ * смеси языков: клиент гасит текст без кириллицы целиком
+ * (`apps/web/src/AppHelpers.tsx`, `operatorReadableErrorDetail`), и на экране
+ * мастера оставалась подпись по коду ответа. Замысел «сообщать поле и причину»
+ * (он был записан в прежнем комментарии здесь) не выполнялся: поле называлось
+ * латинским ключом схемы, а причина — словом разборщика.
+ *
+ * СТАЛО: и подпись поля, и причина, и следующий шаг по-русски. Перевод машинных
+ * слов берётся из ОДНОГО дома `utils/schemaRefusalWords.ts`, своей копии здесь
+ * нет: местная заплата этого класса уже написана в `routes/telegram.ts` и
+ * отстала от установленного `zod` на шесть кодов замечаний из шестнадцати.
+ *
+ * Машинные коды ответа (`MigrationValidationError`) не менялись: интерфейс по
+ * ним ветвится.
+ */
+function parsePayload<T>(schema: PayloadSchema<T>, value: unknown, retryAction: string): { ok: true; data: T } | { ok: false; message: string } {
   const parsed = schema.safeParse(value);
   if (parsed.success) return { ok: true, data: parsed.data };
-  /**
-   * Причина отказа сообщается полем и текстом, а не общим «неверный запрос»:
-   * оператор клиники и разработчик интерфейса должны понимать, что именно не так.
-   */
-  const details = parsed.error.issues
-    .slice(0, 5)
-    .map((issue) => `${issue.path.join(".") || "тело запроса"}: ${issue.message}`)
-    .join("; ");
-  return { ok: false, message: details || "Запрос не прошёл проверку." };
+  return {
+    ok: false,
+    message: schemaRefusalMessage({
+      issues: parsed.error.issues,
+      fieldLabels: migrationFieldLabels,
+      retryAction,
+      fallbackMessage:
+        "Запрос переноса не прошёл проверку. Выберите источник заново в мастере переноса и повторите действие."
+    })
+  };
 }
 
 /** Приводит запрос к входным данным движка. */
@@ -101,7 +159,7 @@ export async function registerMigrationRoutes(app: FastifyInstance) {
     const context = await requireClinicalReadContext(request, reply, "migration analyze");
     if (!context) return;
 
-    const parsed = parsePayload(migrationAnalyzeRequestSchema, request.body);
+    const parsed = parsePayload(migrationAnalyzeRequestSchema, request.body, "разбор источника");
     if (!parsed.ok) {
       return reply.code(400).send({ error: "MigrationValidationError", message: parsed.message });
     }
@@ -127,7 +185,7 @@ export async function registerMigrationRoutes(app: FastifyInstance) {
     const context = await requireClinicalMutationContext(request, reply, "migration run");
     if (!context) return;
 
-    const parsed = parsePayload(migrationRunRequestSchema, request.body);
+    const parsed = parsePayload(migrationRunRequestSchema, request.body, "запуск переноса");
     if (!parsed.ok) {
       return reply.code(400).send({ error: "MigrationValidationError", message: parsed.message });
     }
@@ -278,7 +336,7 @@ export async function registerMigrationRoutes(app: FastifyInstance) {
     const context = await requireClinicalMutationContext(request, reply, "migration rollback");
     if (!context) return;
 
-    const parsed = parsePayload(migrationRollbackRequestSchema, request.body);
+    const parsed = parsePayload(migrationRollbackRequestSchema, request.body, "откат переноса");
     if (!parsed.ok) {
       return reply.code(400).send({ error: "MigrationValidationError", message: parsed.message });
     }

@@ -27,6 +27,11 @@ import {
 } from "../migration/uploadStore.js";
 import { migrationWorkerStatus } from "../migration/worker.js";
 import { getRequestIdentity } from "../security/identity.js";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
+ */
+import { schemaIssuePhrase, schemaRefusalMessage, type SchemaIssueLike } from "../utils/schemaRefusalWords.js";
 
 /**
  * Оркестрация переноса по фазам: заливка, сопоставление, выполнение, сверка.
@@ -87,6 +92,72 @@ function fail(
   details: ApiErrorDetails = {}
 ): FastifyReply {
   return reply.code(httpStatus).send({ error: { code, message, details } });
+}
+
+/**
+ * Русские подписи полей запросов переноса: ключ схемы → подпись с экрана
+ * мастера. Свой словарь у этого файла потому, что схемы здесь свои
+ * (`mapRequestSchema`, `executeRequestSchema`, `discoverRequestSchema`,
+ * `dicomInspectSchema`), а перевод машинных слов — общий и живёт в
+ * `utils/schemaRefusalWords.ts`.
+ */
+const migrationRunFieldLabels: Record<string, string> = {
+  entityKind: "вид переносимых записей",
+  vendorProfile: "код чужой системы",
+  allowLlm: "разрешение обращаться к языковой модели",
+  mappingOverrides: "поправки карты соответствия",
+  sourceColumn: "колонка источника",
+  targetField: "поле карточки клиники",
+  dryRun: "сухой прогон без записи",
+  sourceSystem: "код системы-источника",
+  roots: "каталоги для поиска",
+  maxDepth: "глубина обхода каталогов",
+  timeBudgetMs: "предел времени поиска",
+  filePath: "путь к снимку"
+};
+
+/**
+ * Отказ разбора тела запроса — один сборщик на все четыре адреса этого файла.
+ *
+ * БЫЛО: четыре ОДИНАКОВЫЕ строки формата, по одной на адрес,
+ *
+ *     issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
+ *
+ * то есть латинский ключ схемы, латинское слово `body` и слово разборщика.
+ * Замерено `app.inject` в своём процессе:
+ *
+ *   POST /api/migration/<прогон>/map     → ["vendorProfile: Expected string, received number",
+ *                                          "allowLlm: Expected boolean, received string"]
+ *   POST /api/migration/<прогон>/execute → ["dryRun: Expected boolean, received string"]
+ *
+ * Ни одного русского слова, поэтому клиент гасит каждую строку целиком
+ * (`apps/web/src/AppHelpers.tsx`, `operatorReadableErrorDetail`). Поле `message`
+ * этого конверта по-русски было и раньше, но говорило лишь «запрос не прошёл
+ * проверку» — без причины и без действия. Оператор переноса читал только это.
+ *
+ * Четыре копии одной строки формата — это и есть способ, которым дефект
+ * расползается: правку внесли бы в одну, остальные три остались бы прежними.
+ * Теперь сборщик один, а перевод машинных слов берётся из общего дома
+ * `utils/schemaRefusalWords.ts`.
+ *
+ * Машинные коды (`ValidationError` и остальные) не менялись: интерфейс по ним
+ * ветвится. Форма конверта тоже сохранена — список строк в
+ * `error.details.issues`.
+ */
+function failSchemaRefusal(
+  reply: FastifyReply,
+  issues: ReadonlyArray<SchemaIssueLike>,
+  headline: string,
+  retryAction: string
+): FastifyReply {
+  return fail(reply, 400, "ValidationError", schemaRefusalMessage({
+    issues,
+    fieldLabels: migrationRunFieldLabels,
+    retryAction,
+    fallbackMessage: `${headline} Заполните поля мастера переноса заново и повторите ${retryAction}.`
+  }), {
+    issues: issues.map((issue) => schemaIssuePhrase(issue, migrationRunFieldLabels))
+  });
 }
 
 /** Переводит отказ фазы в ответ API с сохранением машинного кода. */
@@ -319,9 +390,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     const parsed = mapRequestSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return fail(reply, 400, "ValidationError", "Запрос сопоставления не прошёл проверку.", {
-        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
-      });
+      return failSchemaRefusal(reply, parsed.error.issues, "Запрос сопоставления не прошёл проверку.", "сопоставление колонок");
     }
 
     try {
@@ -394,9 +463,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     const parsed = executeRequestSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return fail(reply, 400, "ValidationError", "Запрос выполнения не прошёл проверку.", {
-        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
-      });
+      return failSchemaRefusal(reply, parsed.error.issues, "Запрос выполнения не прошёл проверку.", "выполнение прогона");
     }
 
     const run = await findRun(request.params.runId, context.organizationId);
@@ -569,9 +636,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     const parsed = discoverRequestSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return fail(reply, 400, "ValidationError", "Запрос поиска не прошёл проверку.", {
-        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
-      });
+      return failSchemaRefusal(reply, parsed.error.issues, "Запрос поиска не прошёл проверку.", "поиск источников");
     }
 
     try {
@@ -646,9 +711,7 @@ export async function registerMigrationRunRoutes(app: FastifyInstance) {
 
     const parsed = dicomInspectSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
-      return fail(reply, 400, "ValidationError", "Запрос разбора снимка не прошёл проверку.", {
-        issues: parsed.error.issues.map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
-      });
+      return failSchemaRefusal(reply, parsed.error.issues, "Запрос разбора снимка не прошёл проверку.", "разбор снимка");
     }
 
     try {

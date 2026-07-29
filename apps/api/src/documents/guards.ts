@@ -22,6 +22,11 @@ import {
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
+/*
+ * Перевод слов разборщика в слова человека — ОДИН на весь сервер, рядом с домом
+ * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
+ */
+import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
 
 /**
  * Сравнение денег до копейки, и печать денег человеку.
@@ -1002,6 +1007,30 @@ function completedWorksActMismatchReason(
 	);
 }
 
+/**
+ * Русские подписи полей заявления на налоговый вычет: ключ контракта → подпись
+ * из формы заявления.
+ *
+ * Без словаря отказ называл бы поле латинским ключом (`taxpayerIdentityDocument`
+ * — 24 знака), а латинское слово из шести и более знаков гасит фразу целиком
+ * фильтром клиента.
+ */
+const taxDeductionApplicationFieldLabels: Record<string, string> = {
+	taxpayerFullName: "ФИО налогоплательщика",
+	taxpayerInn: "ИНН налогоплательщика",
+	taxpayerBirthDate: "дата рождения налогоплательщика",
+	taxpayerIdentityDocument: "документ налогоплательщика",
+	relationshipToPatient: "родство с пациентом",
+	requestedTaxYear: "год вычета",
+	requestedForm: "форма справки",
+	selectedPaymentIds: "выбранные оплаты",
+	deliveryChannel: "способ выдачи документа",
+	contactForReadyDocument: "контакт для готового документа",
+	applicantAuthorityDocument: "документ о полномочиях заявителя",
+	requestedAt: "дата заявления",
+	duplicateWarningAccepted: "подтверждение о повторном заявлении",
+};
+
 function documentPayloadConsistencyReason(
 	input: CreateDocumentInput,
 	facts: DocumentCreationFacts,
@@ -1053,10 +1082,33 @@ function documentPayloadConsistencyReason(
 		const applicationPayloadResult =
 			taxDeductionApplicationPayloadSchema.safeParse(application);
 		if (!applicationPayloadResult.success) {
-			return (
-				applicationPayloadResult.error.issues[0]?.message ??
-				"Заявление на налоговый вычет содержит некорректные данные."
-			);
+			/*
+			 * ПРИЧИНА ОТКАЗА НАЗЫВАЕТ ПОЛЕ ЗАЯВЛЕНИЯ И СЛЕДУЮЩИЙ ШАГ.
+			 *
+			 * БЫЛО: `issues[0]?.message` — сообщение разборщика ЦЕЛИКОМ и БЕЗ
+			 * подписи поля, например «Required» либо
+			 * «Number must be greater than or equal to 2021». Здесь дефект хуже, чем
+			 * у соседей: поле не называлось вовсе, то есть даже прочитав фразу,
+			 * администратор не узнал бы, какое из шестнадцати полей заявления
+			 * поправить. А прочитать её он не мог: фильтр клиента
+			 * (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern` под
+			 * флагом `/i`) гасит фразу с латинским словом из шести и более знаков
+			 * целиком.
+			 *
+			 * Заявление на налоговый вычет — юридический документ, и пациент ждёт
+			 * его в срок подачи декларации. Отказ без имени поля означает, что
+			 * документ не выпущен и никто не знает почему.
+			 *
+			 * Часть проверок этой схемы уже несёт написанный человеком текст
+			 * («Для старой налоговой справки нужен 10- или 12-значный ИНН
+			 * налогоплательщика.») — общий перевод пропускает его как есть.
+			 */
+			const issue = applicationPayloadResult.error.issues[0];
+			if (!issue) {
+				return "Заявление на налоговый вычет содержит некорректные данные. Откройте заявление, проверьте поля налогоплательщика и суммы и оформите документ заново.";
+			}
+			const words = schemaIssueWords(issue, taxDeductionApplicationFieldLabels);
+			return `Заявление на налоговый вычет не оформлено: ${words.cause} — ${words.action} и оформите документ заново.`;
 		}
 		if (input.taxYear && input.taxYear !== application.requestedTaxYear) {
 			return `Заявление на налоговый вычет: год документа ${input.taxYear} не совпадает с годом заявления ${application.requestedTaxYear}.`;

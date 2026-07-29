@@ -12,14 +12,33 @@ import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { appointments, chairs, clinics, communicationOutbox, organizations, patients, users } from "../../db/schema.js";
 import { registerPatientRecallRoutes } from "../../routes/patientRecall.js";
+import { fixtureUuid, isDatabaseUnavailable, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
 
-const ORG_ID = "dce70000-0000-4000-8000-000000000701";
-const DOCTOR_ID = "dce70000-0000-4000-8000-000000000702";
-const CHAIR_ID = "dce70000-0000-4000-8000-000000000703";
-const CLINIC_ID = "dce70000-0000-4000-8000-000000000704";
-const DUE_PATIENT = "dce70000-0000-4000-8000-000000000711";
-const RECENT_PATIENT = "dce70000-0000-4000-8000-000000000712";
-const BOOKED_PATIENT = "dce70000-0000-4000-8000-000000000713";
+/*
+ * БЛОК ИДЕНТИФИКАТОРОВ ВЫВЕДЕН ИЗ ИМЕНИ ФАЙЛА.
+ *
+ * Прежде он был выписан руками как `dce70000-…-07xx` — и тот же блок держал
+ * dayConfirmations.test.ts: организация `…-701` у обоих одна, пациенты `…-711`,
+ * `…-712` и `…-713` тоже одни. `node --test` запускает файлы параллельно, каждый
+ * в своём процессе, поэтому `after` соседа удалял приёмы посреди этого теста, а
+ * onConflictDoNothing при совпадении первичного ключа молча оставлял ЧУЖОГО
+ * пациента: «Подтвердил Пётр» из теста обзвона вместо «Давнего Пациента».
+ * Замерено на этой паре файлов в одном прогоне: 4 упавших теста, в том числе «в
+ * дне с четырьмя приёмами не вернулось ни одной строки», тогда как каждый файл
+ * по отдельности зелёный.
+ *
+ * fixtureUuid выводит блок из имени пространства, поэтому выдать его второму
+ * файлу нельзя — для этого файлам пришлось бы совпасть именем. Реестра блоков
+ * не нужно, см. tests/support/fixtureOrganizations.ts.
+ */
+const FIXTURE = "patientRecall";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const DOCTOR_ID = fixtureUuid(FIXTURE, 2);
+const CHAIR_ID = fixtureUuid(FIXTURE, 3);
+const CLINIC_ID = fixtureUuid(FIXTURE, 4);
+const DUE_PATIENT = fixtureUuid(FIXTURE, 0x11);
+const RECENT_PATIENT = fixtureUuid(FIXTURE, 0x12);
+const BOOKED_PATIENT = fixtureUuid(FIXTURE, 0x13);
 
 /*
  * ПРИЁМАМ ЗАДАНЫ ЯВНЫЕ ИДЕНТИФИКАТОРЫ.
@@ -30,17 +49,12 @@ const BOOKED_PATIENT = "dce70000-0000-4000-8000-000000000713";
  * и следующий считал давность визитов по чужим строкам — то есть проходил или
  * падал на данных, которых сам не создавал.
  */
-const DUE_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000721";
-const RECENT_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000722";
-const BOOKED_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000723";
-const BOOKED_FUTURE_APPOINTMENT = "dce70000-0000-4000-8000-000000000724";
+const DUE_PAST_APPOINTMENT = fixtureUuid(FIXTURE, 0x21);
+const RECENT_PAST_APPOINTMENT = fixtureUuid(FIXTURE, 0x22);
+const BOOKED_PAST_APPOINTMENT = fixtureUuid(FIXTURE, 0x23);
+const BOOKED_FUTURE_APPOINTMENT = fixtureUuid(FIXTURE, 0x24);
 
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
-
-function isMissingDatabase(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /ECONNREFUSED|does not exist|password authentication|ENOTFOUND/i.test(message);
-}
 
 function monthsAgo(months: number): Date {
 	const date = new Date();
@@ -53,17 +67,6 @@ describe("возврат пациентов", () => {
 	let databaseAvailable = true;
 	const originalEnv = process.env;
 
-	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
-	async function purgeFixtures(): Promise<void> {
-		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-		await db.delete(users).where(eq(users.organizationId, ORG_ID));
-		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-	}
-
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
 		app = Fastify();
@@ -71,29 +74,24 @@ describe("возврат пациентов", () => {
 
 		try {
 			/*
-			 * Уборка ПЕРЕД засевом. Здесь она снимает не только приёмы: остаток в
-			 * communication_outbox от упавшего прогона делал проверку «повторное
-			 * приглашение в том же месяце не отправляется» самоисполняющейся —
-			 * маршрут отвечал duplicate=true уже на ПЕРВОЕ приглашение, и проверка
-			 * зеленела, ничего не проверив.
+			 * Уборка ПЕРЕД засевом, по каталогу базы. Здесь она снимает не только
+			 * приёмы: остаток в communication_outbox от упавшего прогона делал
+			 * проверку «повторное приглашение в том же месяце не отправляется»
+			 * самоисполняющейся — маршрут отвечал duplicate=true уже на ПЕРВОЕ
+			 * приглашение, и проверка зеленела, ничего не проверив.
 			 */
-			await purgeFixtures();
+			await purgeFixtureOrganizations([ORG_ID]);
 
-			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника возврата" }).onConflictDoNothing();
-			await db
-				.insert(users)
-				.values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Врач Возвратов", role: "doctor" })
-				.onConflictDoNothing();
+			// Без onConflictDoNothing: место расчищено выше, и конфликт первичного
+			// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
+			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника возврата" });
+			await db.insert(users).values({ id: DOCTOR_ID, organizationId: ORG_ID, fullName: "Врач Возвратов", role: "doctor" });
 			// Кресло стоит в клинике: chairs.clinic_id объявлен notNull, поэтому
 			// клиника заводится здесь же, как в остальных тестах по живой базе.
-			await db
-				.insert(clinics)
-				.values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" })
-				.onConflictDoNothing();
+			await db.insert(clinics).values({ id: CLINIC_ID, organizationId: ORG_ID, name: "Главная", timezone: "Europe/Moscow" });
 			await db
 				.insert(chairs)
-				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" })
-				.onConflictDoNothing();
+				.values({ id: CHAIR_ID, organizationId: ORG_ID, clinicId: CLINIC_ID, name: "Кресло 1" });
 
 			await db
 				.insert(patients)
@@ -101,8 +99,7 @@ describe("возврат пациентов", () => {
 					{ id: DUE_PATIENT, organizationId: ORG_ID, fullName: "Давний Пациент", phone: "+7 916 000-09-01" },
 					{ id: RECENT_PATIENT, organizationId: ORG_ID, fullName: "Недавний Пациент", phone: "+7 916 000-09-02" },
 					{ id: BOOKED_PATIENT, organizationId: ORG_ID, fullName: "Уже Записан", phone: "+7 916 000-09-03" }
-				])
-				.onConflictDoNothing();
+				]);
 
 			await db
 				.insert(appointments)
@@ -150,17 +147,16 @@ describe("возврат пациентов", () => {
 						startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
 						endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000)
 					}
-				])
-				.onConflictDoNothing();
+				]);
 		} catch (error) {
-			if (!isMissingDatabase(error)) throw error;
+			if (!isDatabaseUnavailable(error)) throw error;
 			databaseAvailable = false;
 		}
 	});
 
 	after(async () => {
 		if (databaseAvailable) {
-			await purgeFixtures();
+			await purgeFixtureOrganizations([ORG_ID]);
 		}
 		await app.close();
 		process.env = originalEnv;
