@@ -45,6 +45,30 @@ function isMissingDatabase(error: unknown): boolean {
 	return /ECONNREFUSED|ENOTFOUND|password authentication|does not exist|getaddrinfo|Connection terminated/i.test(message);
 }
 
+/**
+ * Удаление всех строк фикстуры. Вызывается ДО засева, а не только после.
+ *
+ * ЗАЧЕМ. База одна на весь прогон, а четыре приёма из пяти вставляются без
+ * заданного id, поэтому `onConflictDoNothing` их не отсекает — он не с чем
+ * сравнивать. Стоит одному прогону упасть до `after` (потеря соединения,
+ * убитый процесс, Ctrl+C), и в базе остаются приёмы прошлого прогона. Следующий
+ * прогон досеивает свои поверх, и `body.total` становится 8 вместо 4 — тест
+ * краснеет на данных, которых сам не заводил, а причина не видна в сообщении.
+ * Префикс `dce70000-…-04xx` принадлежит только этому файлу, поэтому удаление по
+ * organization_id ничьи чужие данные не задевает.
+ */
+async function removeFixtureRows(): Promise<void> {
+	await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
+	await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
+	await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
+	await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+	await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+	await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
+	await db.delete(users).where(eq(users.organizationId, ORG_ID));
+	await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+	await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+}
+
 describe("отчёты руководителю", () => {
 	let app: FastifyInstance;
 	let databaseAvailable = true;
@@ -65,6 +89,9 @@ describe("отчёты руководителю", () => {
 		await registerReportRoutes(app);
 
 		try {
+			// Сначала подчистить за упавшим прогоном, потом сеять: иначе к своим
+			// пяти приёмам добавятся чужие и все счётчики удвоятся.
+			await removeFixtureRows();
 			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника отчётов" }).onConflictDoNothing();
 			await db
 				.insert(clinics)
@@ -208,15 +235,7 @@ describe("отчёты руководителю", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
-			await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-			await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await removeFixtureRows();
 		}
 		await app.close();
 		process.env = originalEnv;
@@ -245,6 +264,7 @@ describe("отчёты руководителю", () => {
 			url: "/api/reports/revenue?granularity=month",
 			headers: ORG_HEADERS
 		});
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.granularity, "month");
 		assert.equal(body.totalRub, 10_000);
@@ -284,6 +304,7 @@ describe("отчёты руководителю", () => {
 			.returning({ id: payments.id });
 
 		const response = await app.inject({ method: "GET", url: "/api/reports/doctors", headers: ORG_HEADERS });
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.unattributedRevenueRub, 3_000, JSON.stringify(body));
 		assert.ok(body.attributionNote.includes("не отнесена"), body.attributionNote);
@@ -317,6 +338,7 @@ describe("отчёты руководителю", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const response = await app.inject({ method: "GET", url: "/api/reports/appointments", headers: ORG_HEADERS });
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		assert.equal(body.total, 4);
@@ -438,6 +460,7 @@ describe("отчёты руководителю", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const response = await app.inject({ method: "GET", url: "/api/reports/receivables", headers: ORG_HEADERS });
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		assert.equal(body.totalPrepaidRub, 0, JSON.stringify(body.prepayments));
@@ -449,6 +472,12 @@ describe("отчёты руководителю", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const response = await app.inject({ method: "GET", url: "/api/reports/schedule-load", headers: ORG_HEADERS });
+		// Код ответа проверяется ДО чтения полей. Без этой строки ошибка 500
+		// превращалась в «undefined !== false»: тело ответа — это
+		// {statusCode:500,message:"Failed query: …"}, полей isEmpty и cells в нём
+		// нет. Сообщение указывало на данные, хотя падал сам SQL, и по нему
+		// диагноз ставился неверный.
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.isEmpty, false);
 		assert.ok(body.cells.length > 0);
