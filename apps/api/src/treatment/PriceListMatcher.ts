@@ -11,14 +11,13 @@ export class PriceListMatcher {
   private fuse: Fuse<ServiceCatalogItem>;
 
   constructor(catalog: ServiceCatalogItem[]) {
-    // Fuse is configured for hybrid search across title and aliases
     this.fuse = new Fuse(catalog, {
       keys: [
         { name: "title", weight: 0.7 },
-        { name: "aliases", weight: 0.9 }, // Aliases have higher weight because they map exact doctor slang
+        { name: "aliases", weight: 0.9 },
         { name: "code", weight: 0.3 }
       ],
-      threshold: 0.4, // Requires a reasonably close match
+      threshold: 0.4,
       ignoreLocation: true,
       includeScore: true
     });
