@@ -2,8 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { communicationTaskSchema, completeCommunicationTaskSchema } from "@dental/shared";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { communicationTasks, communicationEvents, organizations } from "../db/schema.js";
-import { requireClinicalMutationAccess } from "../accessGuard.js";
+import { communicationTasks, communicationEvents } from "../db/schema.js";
+import { requireClinicalMutationAccess, requireResolvedOrganizationId } from "../accessGuard.js";
 
 const communicationTaskValidationMessage =
   "Задача связи не закрыта: выберите задачу, сотрудника и корректный исход действия.";
@@ -19,13 +19,55 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
         message: communicationTaskValidationMessage
       });
     }
-    const [org] = await db.select().from(organizations).limit(1);
-    if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена." });
+    /*
+     * АРЕНДАТОР БЕРЁТСЯ ИЗ ПОДПИСАННОГО ТОКЕНА, А НЕ ИЗ ПЕРВОЙ СТРОКИ ТАБЛИЦЫ.
+     *
+     * БЫЛО: `const [org] = await db.select().from(organizations).limit(1);` —
+     * то есть `SELECT * FROM organizations LIMIT 1`. Организация не выводилась из
+     * звонящего ВООБЩЕ, ни при каком значении секрета периметра. Последствия при
+     * нескольких клиниках в одной базе, каждое замерено разведкой на живом сервере:
+     *   • задача связи закрывалась в ПЕРВОЙ организации таблицы независимо от того,
+     *     чья клиника её закрывает;
+     *   • строка в communicationEvents писалась с organizationId первой организации,
+     *     то есть в историю коммуникаций ЧУЖОЙ клиники;
+     *   • клиника, не являющаяся первой строкой, не могла закрыть даже свою задачу —
+     *     фильтр по organizationId был прибит к организации №1.
+     *
+     * ЭТО НЕ НОВЫЙ КЛАСС, А ПОСЛЕДНИЙ ЖИВОЙ ЭКЗЕМПЛЯР УЖЕ ИЗВЕСТНОГО. Три соседних
+     * файла описывают тот же анти-паттерн как ИСПРАВЛЕННЫЙ дефект и стоило это денег
+     * и клинических данных:
+     *   routes/billing.ts:371  — «Оплата любой клиники записывалась в ПЕРВУЮ
+     *                            организацию таблицы: деньги попадали в чужую кассу»;
+     *   routes/clinical.ts:57  — «Клиника Б проверяла противопоказания по НАБОРУ
+     *                            ПРАВИЛ КЛИНИКИ А»;
+     *   routes/ai.ts:90, :104, :157 — то же.
+     * Здесь он оставался живым, потому что маршрут проверял ПРАВО на изменение
+     * (requireClinicalMutationAccess) и не проверял ГРАНИЦУ АРЕНДАТОРА. Это две
+     * разные проверки, и наличие первой маскировало отсутствие второй.
+     *
+     * Взят тот же охранник, что в починенном billing.ts — requireResolvedOrganizationId,
+     * возвращающий организацию из проверенного токена либо 401. Второго способа
+     * выводить арендатора в проекте быть не должно.
+     *
+     * СОЗНАТЕЛЬНО НЕ ВЗЯТ requireResolvedStaffOrAdminOrganizationId, хотя обработчик
+     * пишет actorUserId: он дополнительно требует входа СОТРУДНИКА, то есть меняет
+     * доступ шире самого дефекта. Ужесточение доступа — отдельное решение, и делать
+     * его заодно с починкой границы арендатора нельзя.
+     *
+     * Ответ 500 NoOrganizationFound снят не по недосмотру: организации «не найтись»
+     * больше не может — при отсутствии токена охранник отвечает 401 раньше.
+     */
+    const organizationId = await requireResolvedOrganizationId(
+      request,
+      reply,
+      "communication task complete",
+    );
+    if (!organizationId) return;
 
     try {
       const result = await db.transaction(async (tx) => {
         const [task] = await tx.select().from(communicationTasks)
-          .where(and(eq(communicationTasks.id, parsedInput.data.taskId), eq(communicationTasks.organizationId, org.id)))
+          .where(and(eq(communicationTasks.id, parsedInput.data.taskId), eq(communicationTasks.organizationId, organizationId)))
           .limit(1);
           
         if (!task) {
@@ -41,7 +83,7 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
           .returning();
 
         await tx.insert(communicationEvents).values({
-          organizationId: org.id,
+          organizationId,
           clinicId: task.clinicId,
           taskId: task.id,
           patientId: task.patientId,
