@@ -13,6 +13,14 @@ import {
 } from "../db/billingQuery.js";
 import { doctorPayouts, resolvePayoutPeriod } from "../services/finance/doctorPayouts.js";
 import { clinicTimeZone } from "../services/reports/managerReports.js";
+/*
+ * Разбор границы периода один на весь сервер и живёт в маршрутах отчётов. Своей
+ * копии здесь нет намеренно: календарная дата — источник истины о том, какой
+ * день считать, и второй её разбор разъехался бы с первым при первой же правке.
+ * Ровно из такой экономии в этом дереве выросли четыре расчёта долга пациента и
+ * три копии `clinicTimeZone`. Цикла нет: `routes/reports.ts` про выплаты не знает.
+ */
+import { resolvePeriodBoundary } from "./reports.js";
 import { explainNegativePayouts } from "../services/finance/payoutNegativeExplain.js";
 
 function documentCanReceivePayment(documentKind: keyof typeof documentKindMetadata): boolean {
@@ -302,7 +310,41 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     // Границы месяца по умолчанию считает тот, кто знает пояс клиники, а не
     // пояс серверного процесса: иначе приёмы последнего вечера месяца уезжают
     // в следующий расчёт зарплаты либо попадают в оба.
-    const period = resolvePayoutPeriod(parsedQuery.data, new Date(), await clinicTimeZone(access.organizationId));
+    const timeZone = await clinicTimeZone(access.organizationId);
+    /*
+     * КАЛЕНДАРНАЯ ДАТА РАЗРЕШАЕТСЯ ЗДЕСЬ, В ПОЯСЕ КЛИНИКИ, ДО РАСЧЁТА.
+     *
+     * ЧТО БЫЛО СЛОМАНО. Схема принимает любую непустую строку, поэтому маршрут и
+     * раньше «принимал» `2026-07-01` — но разбирал её `new Date("2026-07-01")`
+     * внутри `resolvePayoutPeriod`, а это по спецификации UTC-полночь. То есть
+     * календарная дата молча разрешалась в ЧУЖОМ поясе: для клиники в UTC+4
+     * зарплатный месяц начинался 1-го числа в 04:00 по её часам, и касса первой
+     * смены уезжала в предыдущий расчёт. Отказа не было — была неверная сумма.
+     *
+     * Клиент при этом посылал мгновение, посчитанное в поясе БРАУЗЕРА
+     * (`apps/web/src/pages/DoctorPayoutDashboard.tsx`), то есть у владельца сети
+     * каждый филиал получал свой сдвиг границы. Теперь клиент посылает
+     * календарную дату, а разрешает её тот, кто знает `clinics.timezone`.
+     *
+     * ЗАРПЛАТА — это то место, где граница месяца стоит денег: ошибка не в
+     * копейках, а в целой смене, и её замечают не в отчёте, а в разговоре с
+     * врачом. Полный ISO со смещением проходит насквозь, как и прежде.
+     */
+    const bounds: { from?: string; to?: string } = {};
+    for (const edge of ["from", "to"] as const) {
+      const raw = parsedQuery.data[edge];
+      if (raw === undefined) continue;
+      const resolved = resolvePeriodBoundary(raw, edge, timeZone);
+      if (resolved === null) {
+        return reply.code(400).send({
+          error: "PayoutValidationError",
+          message:
+            "Границы периода не разобраны. Передайте календарную дату вида ГГГГ-ММ-ДД либо дату со временем и смещением."
+        });
+      }
+      bounds[edge] = resolved.toISOString();
+    }
+    const period = resolvePayoutPeriod(bounds, new Date(), timeZone);
     if (!period.ok) {
       return reply.code(400).send({ error: "PayoutValidationError", message: period.message });
     }

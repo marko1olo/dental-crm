@@ -25,6 +25,7 @@ import {
 	clinicTimeZone,
 	currentMonthPeriod,
 	doctorPerformance,
+	instantOfLocalTime,
 	patientFlow,
 	receivables,
 	reminderEffect,
@@ -34,9 +35,37 @@ import {
 	type ReportScope
 } from "../services/reports/managerReports.js";
 
+/** Календарная дата: ровно то, что показывает и отдаёт `<input type="date">`. */
+const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * ГРАНИЦА ПЕРИОДА: ЛИБО КАЛЕНДАРНАЯ ДАТА, ЛИБО ПОЛНЫЙ ISO СО СМЕЩЕНИЕМ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Здесь стоял только `z.string().datetime({ offset: true })`,
+ * то есть маршрут требовал МГНОВЕНИЕ. Календарную дату из поля ввода в мгновение
+ * приходилось превращать браузеру, а он делал это в СВОЁМ поясе:
+ * `new Date("2026-07-01T00:00:00")` без смещения разбирается в поясе клиента.
+ * Измерено: браузер в Москве (+3) посылал `2026-06-30T21:00:00.000Z`, браузер на
+ * Камчатке (+12) — `2026-06-30T12:00:00.000Z`, разница девять часов на одном и том
+ * же выборе «июль».
+ *
+ * ЧЕМ ЭТО ПЛОХО ДЛЯ КЛИНИКИ. Владелец сети из Москвы смотрит камчатский филиал:
+ * для клиники московская граница — 1 июля 09:00 по её часам. Месячный отчёт терял
+ * кассу первой смены месяца и захватывал девять часов 1 августа. Суммы при этом
+ * правдоподобны, поэтому расхождение с кассой ищут в кассе, а не в границах.
+ *
+ * ЗАЧЕМ СОЮЗ, А НЕ ЗАМЕНА. Полный ISO принимают тесты и, возможно, другие
+ * клиенты; отобрать его — сломать работающее. Набор принимаемых значений
+ * РАСШИРЯЕТСЯ, а не меняется.
+ */
+const periodBoundarySchema = z.union([
+	z.string().regex(CALENDAR_DATE_PATTERN),
+	z.string().datetime({ offset: true })
+]);
+
 const periodQuerySchema = z.object({
-	from: z.string().datetime({ offset: true }).optional(),
-	to: z.string().datetime({ offset: true }).optional(),
+	from: periodBoundarySchema.optional(),
+	to: periodBoundarySchema.optional(),
 	granularity: z.enum(["day", "week", "month"]).optional(),
 	minutesPerDay: z.coerce.number().int().min(60).max(1440).optional(),
 	workingDaysPerWeek: z.coerce.number().int().min(1).max(7).optional(),
@@ -69,6 +98,62 @@ function badRequest(reply: FastifyReply, message: string) {
  */
 
 /**
+ * ГРАНИЦА ПЕРИОДА В МГНОВЕНИЕ. КАЛЕНДАРНУЮ ДАТУ РАЗРЕШАЕТ ТОТ, КТО ЗНАЕТ ПОЯС.
+ *
+ * Календарная дата (`YYYY-MM-DD`) — не мгновение: «1 июля» на Камчатке
+ * начинается на девять часов раньше, чем «1 июля» в Москве. Превращать одно в
+ * другое имеет право только тот, кто знает пояс клиники, то есть сервер.
+ *
+ * `from` — начало суток в поясе клиники. `to` — КОНЕЦ суток ВКЛЮЧИТЕЛЬНО, и он
+ * считается как начало СЛЕДУЮЩИХ суток минус миллисекунда. Так ни длина месяца,
+ * ни сутки длиной 23 и 25 часов на переходе зимнего времени не считаются руками:
+ * «следующий день» задаётся номером дня, а `Date.UTC` внутри `instantOfLocalTime`
+ * нормализует переполнение сам (день 32 июля — это 1 августа).
+ *
+ * СМЕЩЕНИЕ СНИМАЕТСЯ ДВАЖДЫ, и это делает `instantOfLocalTime`
+ * (`services/reports/managerReports.ts`). Своей копии зонной арифметики здесь
+ * НЕТ намеренно: это был бы пятый источник истины о календарной дате, а из такой
+ * экономии в этом дереве уже выросли четыре разных расчёта долга пациента и три
+ * копии `clinicTimeZone`.
+ *
+ * ПОЛНЫЙ ISO проходит насквозь: мгновение однозначно само по себе, и пояс ему не
+ * нужен.
+ *
+ * ПОЯС НЕИЗВЕСТЕН — прежнее поведение: сутки берутся в поясе серверного
+ * процесса. Отчёт обязан вернуть какой-то период; отказ здесь хуже
+ * приблизительного ответа, и точно так же поступает `currentMonthPeriod`.
+ *
+ * `null` — дату разобрать нельзя. Несуществующая календарная дата (`2026-02-30`,
+ * `2026-13-01`) отклоняется, а НЕ нормализуется молча в 2 марта и январь 2027:
+ * правдоподобный ответ на невозможный запрос хуже отказа.
+ */
+export function resolvePeriodBoundary(raw: string, edge: "from" | "to", timeZone: string | null): Date | null {
+	const calendar = CALENDAR_DATE_PATTERN.exec(raw);
+	if (!calendar) {
+		const instant = new Date(raw);
+		return Number.isNaN(instant.getTime()) ? null : instant;
+	}
+
+	const year = Number(calendar[1]);
+	const month = Number(calendar[2]);
+	const day = Number(calendar[3]);
+	if (month < 1 || month > 12 || day < 1) return null;
+	// Нулевой день следующего месяца — последний день этого. Номер последнего дня
+	// от пояса не зависит: он определяется только годом и месяцем.
+	if (day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return null;
+
+	const boundaryDay = edge === "to" ? day + 1 : day;
+	if (timeZone) {
+		const instant = instantOfLocalTime(timeZone, year, month, boundaryDay);
+		if (instant !== null) return new Date(edge === "to" ? instant - 1 : instant);
+	}
+
+	const local = new Date(year, month - 1, boundaryDay, 0, 0, 0, 0);
+	if (Number.isNaN(local.getTime())) return null;
+	return new Date(edge === "to" ? local.getTime() - 1 : local.getTime());
+}
+
+/**
  * Период из запроса. Слишком широкий диапазон отклоняется, а не обрезается
  * молча: отчёт «за всё время», выданный за отчёт «за год», хуже отказа.
  */
@@ -77,10 +162,10 @@ function resolvePeriod(
 	timeZone: string | null
 ): { ok: true; from: Date; to: Date } | { ok: false; message: string } {
 	const fallback = currentMonthPeriod(new Date(), timeZone);
-	const from = query.from ? new Date(query.from) : fallback.from;
-	const to = query.to ? new Date(query.to) : fallback.to;
+	const from = query.from === undefined ? fallback.from : resolvePeriodBoundary(query.from, "from", timeZone);
+	const to = query.to === undefined ? fallback.to : resolvePeriodBoundary(query.to, "to", timeZone);
 
-	if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+	if (from === null || to === null) {
 		return { ok: false, message: "Даты периода не разобраны." };
 	}
 	if (from > to) return { ok: false, message: "Начало периода позже его конца." };

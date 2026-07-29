@@ -189,7 +189,7 @@ function zoneOffsetMsAt(timeZone: string, instantMs: number): number | null {
  * смещение ДРУГОЙ стороны границы. Уточняющий повторный замер — тот же приём,
  * что уже применён в `routes/publicBooking.ts:153-226`.
  */
-function instantOfLocalTime(
+export function instantOfLocalTime(
 	timeZone: string,
 	year: number,
 	month: number,
