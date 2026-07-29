@@ -45,9 +45,20 @@ test("окно нулевой длины означает отсутствие �
 });
 
 test("ожидание до конца тихих часов", () => {
+	// Переход через полночь (21:00 -> 09:00)
 	assert.equal(minutesUntilQuietHoursEnd(22 * 60, 21 * 60, 9 * 60), 11 * 60);
 	assert.equal(minutesUntilQuietHoursEnd(2 * 60, 21 * 60, 9 * 60), 7 * 60);
 	assert.equal(minutesUntilQuietHoursEnd(14 * 60, 21 * 60, 9 * 60), 0);
+
+	// Без перехода через полночь (18:00 -> 23:00)
+	assert.equal(minutesUntilQuietHoursEnd(19 * 60, 18 * 60, 23 * 60), 4 * 60);
+	assert.equal(minutesUntilQuietHoursEnd(22 * 60, 18 * 60, 23 * 60), 1 * 60);
+	assert.equal(minutesUntilQuietHoursEnd(10 * 60, 18 * 60, 23 * 60), 0); // Не тихие часы
+
+	// Точное совпадение с границами
+	assert.equal(minutesUntilQuietHoursEnd(21 * 60, 21 * 60, 9 * 60), 12 * 60); // Ровно начало
+	assert.equal(minutesUntilQuietHoursEnd(9 * 60 - 1, 21 * 60, 9 * 60), 1); // За минуту до конца
+	assert.equal(minutesUntilQuietHoursEnd(9 * 60, 21 * 60, 9 * 60), 0); // Конец тихих часов = не тихие часы
 });
 
 test("время считается в часовом поясе клиники, а не сервера", () => {
