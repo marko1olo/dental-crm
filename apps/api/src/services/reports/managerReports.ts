@@ -105,7 +105,7 @@ export type ReportScope = ReportPeriod & {
  */
 const TIME_ZONE_NAME_SHAPE = /^[A-Za-z0-9_+/-]+$/;
 
-function inClinicZone(column: unknown, zone: string | null) {
+export function inClinicZone(column: unknown, zone: string | null) {
 	if (!zone || !TIME_ZONE_NAME_SHAPE.test(zone)) return sql`${column}`;
 	return sql`(${column} AT TIME ZONE ${sql.raw(`'${zone}'`)})`;
 }
@@ -125,7 +125,7 @@ export async function clinicTimeZone(organizationId: string): Promise<string | n
 
 const knownTimeZoneCache = new Map<string, boolean>();
 
-async function postgresKnowsTimeZone(timeZone: string | null | undefined): Promise<string | null> {
+export async function postgresKnowsTimeZone(timeZone: string | null | undefined): Promise<string | null> {
 	if (!timeZone) return null;
 	const cached = knownTimeZoneCache.get(timeZone);
 	if (cached !== undefined) return cached ? timeZone : null;
