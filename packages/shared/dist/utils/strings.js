@@ -1,6 +1,12 @@
 export function splitLine(line, delimiter) {
+    if (delimiter === "") {
+        return [line];
+    }
+    if (line.indexOf('"') === -1) {
+        return line.split(delimiter).map((v) => v.trim());
+    }
     const values = [];
-    let current = "";
+    const current = [];
     let inQuotes = false;
     for (let index = 0; index < line.length; index += 1) {
         const char = line[index];
@@ -9,13 +15,13 @@ export function splitLine(line, delimiter) {
             continue;
         }
         if (char === delimiter && !inQuotes) {
-            values.push(current.trim());
-            current = "";
+            values.push(current.join("").trim());
+            current.length = 0;
             continue;
         }
-        current += char;
+        current.push(char);
     }
-    values.push(current.trim());
+    values.push(current.join("").trim());
     return values;
 }
 export function isValidRussianSnils(snilsRaw) {
@@ -44,7 +50,7 @@ export function isValidRussianSnils(snilsRaw) {
     }
     else {
         const rem = sum % 101;
-        control = (rem === 100 || rem === 101) ? 0 : rem;
+        control = rem === 100 || rem === 101 ? 0 : rem;
     }
     const expectedControl = parseInt(digits.slice(9), 10);
     return control === expectedControl;

@@ -1,25 +1,34 @@
 export function splitLine(line: string, delimiter: string) {
+  if (delimiter === "") {
+    return [line];
+  }
+  if (line.indexOf('"') === -1) {
+    return line.split(delimiter).map((v) => v.trim());
+  }
+
   const values: string[] = [];
-  let current = "";
+  const current: string[] = [];
   let inQuotes = false;
   for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
+    const char = line[index] as string;
     if (char === '"') {
       inQuotes = !inQuotes;
       continue;
     }
     if (char === delimiter && !inQuotes) {
-      values.push(current.trim());
-      current = "";
+      values.push(current.join("").trim());
+      current.length = 0;
       continue;
     }
-    current += char;
+    current.push(char);
   }
-  values.push(current.trim());
+  values.push(current.join("").trim());
   return values;
 }
 
-export function isValidRussianSnils(snilsRaw: string | null | undefined): boolean {
+export function isValidRussianSnils(
+  snilsRaw: string | null | undefined,
+): boolean {
   if (!snilsRaw) return true;
   const digits = snilsRaw.replace(/\D/g, "");
   if (digits.length !== 11) return false;
@@ -41,7 +50,7 @@ export function isValidRussianSnils(snilsRaw: string | null | undefined): boolea
     control = 0;
   } else {
     const rem = sum % 101;
-    control = (rem === 100 || rem === 101) ? 0 : rem;
+    control = rem === 100 || rem === 101 ? 0 : rem;
   }
 
   const expectedControl = parseInt(digits.slice(9), 10);
@@ -75,12 +84,16 @@ export function isValidRussianInn(innRaw: string | null | undefined): boolean {
   const w12 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
   const d10 = digits[10];
   const d11 = digits[11];
-  const check11 = d10 !== undefined && getCheckDigit(digits, w11) === parseInt(d10, 10);
-  const check12 = d11 !== undefined && getCheckDigit(digits, w12) === parseInt(d11, 10);
+  const check11 =
+    d10 !== undefined && getCheckDigit(digits, w11) === parseInt(d10, 10);
+  const check12 =
+    d11 !== undefined && getCheckDigit(digits, w12) === parseInt(d11, 10);
   return check11 && check12;
 }
 
-export function isValidRussianPassport(passportRaw: string | null | undefined): boolean {
+export function isValidRussianPassport(
+  passportRaw: string | null | undefined,
+): boolean {
   if (!passportRaw) return true;
   const digits = passportRaw.replace(/\D/g, "");
   return digits.length === 10;
