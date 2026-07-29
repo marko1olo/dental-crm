@@ -219,7 +219,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                 <select
                   value={appointmentDraft.patientId || ''}
                   onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
-                  disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                  disabled={appointment.id === dashboard.activeVisit?.appointmentId}
                   className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
                   aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                 >
@@ -238,7 +238,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                         type="button"
                         className={`quick-chip ${appointmentDraft.patientId === patient.id ? 'active' : ''}`}
                         onClick={() => updateAppointmentScheduleDraft(appointment.id, "patientId", patient.id)}
-                        disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                        disabled={appointment.id === dashboard.activeVisit?.appointmentId}
                       >
                         {patient.fullName}
                       </button>
