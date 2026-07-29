@@ -1195,6 +1195,88 @@ export function plannedAmountRubForDocument(
 		.reduce((total, item) => total + treatmentLineTotal(item), 0);
 }
 
+/**
+ * Итог, НАПЕЧАТАННЫЙ В ТЕЛЕ документа с плановой суммой.
+ *
+ * Это не «ещё один расчёт денег», а чтение той единственной суммы, которую
+ * документ уже показывает человеку: строки счёта, итог сметы, сумма договора.
+ * Каждое из этих полей к этому месту уже проверено — состав строк сходится с
+ * итогом (`financialServiceLinesMismatchReason`), а при существующем плане
+ * лечения итог обязан совпасть с планом (`plannedFactsTotalMismatchReason`,
+ * иначе документ отбит с 409).
+ *
+ * `lab_work_order` здесь отсутствует намеренно: у заказ-наряда в лабораторию
+ * денежного поля нет вовсе, и придумывать ему сумму нечем.
+ */
+function printedPlannedTotalRub(input: CreateDocumentInput): number | null {
+	const payload = input.payload;
+	if (!payload) return null;
+	switch (input.kind) {
+		case "payment_invoice":
+			return payload.paymentInvoice?.totalAmountRub ?? null;
+		case "treatment_cost_estimate":
+			return payload.treatmentCostEstimate?.totalAmountRub ?? null;
+		case "installment_payment_schedule":
+			return payload.installmentPaymentSchedule?.totalAmountRub ?? null;
+		case "paid_medical_services_contract":
+			return payload.paidMedicalServicesContract?.estimatedTotalRub ?? null;
+		case "treatment_plan":
+			return payload.treatmentPlan?.estimatedTotalRub ?? null;
+		case "treatment_plan_acceptance":
+			return payload.treatmentPlanAcceptance?.estimatedTotalRub ?? null;
+		default:
+			return null;
+	}
+}
+
+/**
+ * Сумма для денежной колонки документа с плановой суммой.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Здесь стояло
+ * `totalAmountRub = facts.plannedAmountRub > 0 ? facts.plannedAmountRub : null`,
+ * и это БЕЗУСЛОВНО затирало присланный итог. Замерено сквозным прогоном: счёт
+ * создан (HTTP 201), в теле счёта строки на 3491,49 ₽ — они прошли все проверки
+ * состава и итога, — а `generated_documents.total_amount_rub = NULL`. Пациент
+ * получал счёт без суммы, бухгалтерия не видела выставленного требования: счёт
+ * есть, денег в нём нет.
+ *
+ * ЭТО НЕ «СУММА НЕИЗВЕСТНА», А ПОТЕРЯ. Документ, у которого в теле напечатано
+ * 3491,49 ₽, а в денежной колонке пусто, противоречит сам себе: печатная форма
+ * и учёт расходятся ВНУТРИ одного документа, и какая из двух половин правда —
+ * по данным не определить.
+ *
+ * ПОЧЕМУ ПОРЯДОК ИМЕННО ТАКОЙ.
+ *  1. План лечения, когда он есть, остаётся главным: при `plannedAmountRub > 0`
+ *     итог документа обязан совпасть с планом, иначе документ уже отбит с 409
+ *     (`plannedFactsTotalMismatchReason`). Так что первый источник ничего не
+ *     меняет по сравнению с прежним поведением — правка не ослабляет проверку.
+ *  2. Когда позиции плана до `treatment_items` не дошли, `plannedAmountRub`
+ *     равен нулю. Тогда напечатанный в теле итог — ЕДИНСТВЕННАЯ существующая
+ *     сумма этого документа, и она же на руках у пациента.
+ *  3. `input.totalAmountRub` — последняя опора: её присылает экран для
+ *     документов, у которых своего денежного поля в теле нет.
+ *  4. `null` остаётся законным ответом «суммы в этом документе нет вообще» —
+ *     например для заказ-наряда в лабораторию. Пустая колонка при пустом теле
+ *     — правда; пустая колонка при напечатанной сумме — нет.
+ *
+ * КОПЕЙКИ ПРИВОДЯТСЯ К ТОЧНЫМ. `plannedAmountRub` складывается из позиций
+ * плана в плавающей точке (`unitPriceRub * quantity - discountRub`), и такая
+ * сумма умеет приносить грязь ниже копейки: 300.01 + 300.05 + 300.07 даёт
+ * 900.1299999999999. В денежную колонку уходит значение, приведённое через
+ * целые копейки, поэтому в ответе маршрута и в базе стоит одно и то же число.
+ */
+function plannedDocumentTotalRub(
+	input: CreateDocumentInput,
+	facts: DocumentCreationFacts,
+): number | null {
+	const source =
+		facts.plannedAmountRub > 0
+			? facts.plannedAmountRub
+			: (printedPlannedTotalRub(input) ?? input.totalAmountRub ?? null);
+	if (source === null) return null;
+	return Number(kopecksToNumericString(parseKopecks(source)));
+}
+
 export function validateDocumentCreation(
 	input: CreateDocumentInput,
 	facts: DocumentCreationFacts,
@@ -1394,7 +1476,7 @@ export function validateDocumentCreation(
 	}
 
 	if (metadata.amountSource === "planned") {
-		totalAmountRub = facts.plannedAmountRub > 0 ? facts.plannedAmountRub : null;
+		totalAmountRub = plannedDocumentTotalRub(input, facts);
 	}
 
 	return {
