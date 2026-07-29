@@ -26,6 +26,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Patient } from "@dental/shared";
+import { AppLogicProvider, type AppLogicContextType } from "../../contexts/AppLogicContext";
 import { PatientsView } from "../../PatientsView";
 import { usePatientStore } from "../../store/patientStore";
 import {
@@ -50,15 +51,27 @@ function resetPatientStore(): void {
 }
 
 /**
- * Свойства экрана задаются здесь целиком, а не берутся из контекста: экран
- * поднимается без провайдера, useAppLogicContext в этом случае возвращает пустой
- * объект, и всё, что рисуется, приходит отсюда.
+ * Свойства экрана задаются здесь целиком, а не берутся из контекста: всё, что
+ * рисуется, приходит отсюда.
+ *
+ * ПОЧЕМУ ВОКРУГ СТОИТ ПРОВАЙДЕР С ПУСТЫМ ЗНАЧЕНИЕМ. Прежде экран поднимался
+ * вовсе без провайдера: `useAppLogicContext()` тогда возвращал
+ * `{} as AppLogicContextType` — выдуманный пустой объект вместо отказа, — и
+ * сторож этим молча пользовался. Теперь хук вне провайдера бросает исключение
+ * (contexts/AppLogicContext.tsx), потому что отсутствие провайдера — дефект
+ * сборки дерева, а не состояние данных. Поблажки в продукте ради теста быть не
+ * может, поэтому отсутствие данных сказано вслух ЗДЕСЬ: провайдер есть, значение
+ * в нём пустое, приведение стоит в тесте. Проверяемое поведение от этого не
+ * меняется — экран и раньше читал из контекста пустоту.
  */
+const emptyAppLogicValue = {} as AppLogicContextType;
+
 function patientsViewMarkup(options: {
 	readonly selectedPatient?: Patient | null;
 	readonly patientAdministrativeProfileValidationMessage?: string | null;
 }): string {
 	return renderToStaticMarkup(
+		<AppLogicProvider value={emptyAppLogicValue}>
 		<PatientsView
 			createPatient={() => undefined}
 			filteredPatients={[]}
@@ -77,7 +90,8 @@ function patientsViewMarkup(options: {
 			updatePatientAdministrativeProfileDraft={() => undefined}
 			updatePatientCoreDraft={() => undefined}
 			weekdayOptions={[{ label: "Пн", value: 1 }]}
-		/>,
+		/>
+		</AppLogicProvider>,
 	);
 }
 
