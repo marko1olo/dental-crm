@@ -1,6 +1,7 @@
 import { Camera, Paperclip, Search } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AUTHED_API_FILE_FAILURE, fetchAuthedApiFileObjectUrl } from "../lib/authedApiFile";
 import { showToast } from "./GlobalToast";
 
 interface Attachment {
@@ -22,6 +23,19 @@ export function VisitDiaryPhotoUpload({
 }: VisitDiaryPhotoUploadProps) {
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const [isUploading, setIsUploading] = useState(false);
+	/* Объектные адреса снимков по идентификатору вложения.
+	   ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ: адрес сервера подставлялся прямо в <img src>,
+	   а такой запрос посылает браузер без единого заголовка — подмена fetch из
+	   lib/apiAuthFetch.ts на разметку не действует. Сервер вложений требует
+	   токен кабинета (apps/api/src/routes/files.ts:86-118), то есть отвечал
+	   401, и врач вместо фотографий лечения видел значки битых картинок. */
+	const [photoObjectUrls, setPhotoObjectUrls] = useState<Record<string, string>>({});
+	const [unreadablePhotoIds, setUnreadablePhotoIds] = useState<readonly string[]>([]);
+	/* Ссылка, а не состояние: освобождать объектные адреса нужно при смене приёма
+	   и при размонтировании, а не на каждое прикрепление нового фото. Без
+	   revokeObjectURL рабочее место держало бы в памяти копию каждого снимка
+	   каждого открытого за смену приёма. */
+	const createdPhotoObjectUrls = useRef<Map<string, string>>(new Map());
 	useEffect(() => {
 		/* Сброс идёт до всех проверок и до запроса. Иначе при переходе к
 		   другому приёму в списке остаются снимки предыдущего, и они
@@ -29,6 +43,8 @@ export function VisitDiaryPhotoUpload({
 		   поздний ответ по прошлому приёму не перетёр уже загруженный
 		   список текущего. */
 		setAttachments([]);
+		setPhotoObjectUrls({});
+		setUnreadablePhotoIds([]);
 		if (!visitId) return;
 
 		const controller = new AbortController();
@@ -58,8 +74,56 @@ export function VisitDiaryPhotoUpload({
 		return () => {
 			cancelled = true;
 			controller.abort();
+			// Снимки прошлого приёма освобождаются здесь: React вызывает уборку
+			// прежнего эффекта до тела нового, поэтому и переход к другому приёму,
+			// и уход с экрана закрыты одной строкой.
+			for (const objectUrl of createdPhotoObjectUrls.current.values()) {
+				URL.revokeObjectURL(objectUrl);
+			}
+			createdPhotoObjectUrls.current = new Map();
 		};
 	}, [visitId]);
+
+	/* Снимки забираются через fetch по тому же адресу, который отдал сервер в
+	   поле url (apps/api/src/routes/files.ts:137,185), и только потом попадают в
+	   разметку объектным адресом blob:. Так запрос идёт через подмену
+	   window.fetch и получает токен кабинета, а браузеру для показа картинки уже
+	   не нужно ни авторизации, ни второго запроса.
+	   Освобождение обязательно: без revokeObjectURL каждый переход между приёмами
+	   оставлял бы в памяти рабочего места копию каждого снимка. */
+	useEffect(() => {
+		if (attachments.length === 0) return;
+
+		let cancelled = false;
+
+		void (async () => {
+			for (const attachment of attachments) {
+				if (cancelled) return;
+				// Уже забранные снимки не перезапрашиваются: прикрепление нового
+				// фото меняет список, а освобождать адреса показанных снимков
+				// на этом шаге значит вернуть врачу битые картинки.
+				if (createdPhotoObjectUrls.current.has(attachment.id)) continue;
+				try {
+					const objectUrl = await fetchAuthedApiFileObjectUrl(attachment.url);
+					if (cancelled) {
+						URL.revokeObjectURL(objectUrl);
+						return;
+					}
+					createdPhotoObjectUrls.current.set(attachment.id, objectUrl);
+					setPhotoObjectUrls((prev) => ({ ...prev, [attachment.id]: objectUrl }));
+				} catch {
+					if (cancelled) return;
+					setUnreadablePhotoIds((prev) =>
+						prev.includes(attachment.id) ? prev : [...prev, attachment.id],
+					);
+				}
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [attachments]);
 
 	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -152,23 +216,42 @@ export function VisitDiaryPhotoUpload({
 			</label>
 			{attachments.length > 0 ? (
 				<div className="flex gap-3 overflow-x-auto pb-2">
-					{attachments.map((att) => (
-						<div key={att.id} className="relative group shrink-0">
-							<img
-								src={att.url}
-								alt={att.name}
-								className="h-20 w-20 object-cover rounded-lg border border-zinc-700 shadow-sm"
-							/>
-							<a
-								href={att.url}
-								target="_blank"
-								rel="noreferrer"
-								className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center"
-							>
-								<Search className="w-5 h-5 text-white" />
-							</a>
-						</div>
-					))}
+					{attachments.map((att) => {
+						const objectUrl = photoObjectUrls[att.id];
+						if (!objectUrl) {
+							/* Пока снимок не забран — рамка с текстом, а не битая
+							   картинка: врач должен видеть разницу между «идёт
+							   загрузка» и «сервер отказал». */
+							const failed = unreadablePhotoIds.includes(att.id);
+							return (
+								<div
+									key={att.id}
+									title={failed ? AUTHED_API_FILE_FAILURE : att.name}
+									className="h-20 w-20 shrink-0 rounded-lg border border-dashed border-zinc-700 bg-zinc-900/60 text-[10px] leading-tight text-zinc-500 flex items-center justify-center text-center px-1"
+								>
+									{failed ? "Снимок не открылся" : "Загрузка…"}
+								</div>
+							);
+						}
+						return (
+							<div key={att.id} className="relative group shrink-0">
+								<img
+									src={objectUrl}
+									alt={att.name}
+									className="h-20 w-20 object-cover rounded-lg border border-zinc-700 shadow-sm"
+								/>
+								<a
+									href={objectUrl}
+									target="_blank"
+									rel="noreferrer"
+									download={att.name}
+									className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center"
+								>
+									<Search className="w-5 h-5 text-white" />
+								</a>
+							</div>
+						);
+					})}
 				</div>
 			) : (
 				<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">

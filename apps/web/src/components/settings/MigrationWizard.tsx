@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AUTHED_API_FILE_FAILURE, downloadAuthedApiFile } from "../../lib/authedApiFile";
 import "./MigrationWizard.css";
 
 /**
@@ -868,14 +869,60 @@ function ReportPanel(props: {
             Откатить перенос
           </button>
         )}
-        <a className="mw-btn mw-btn-ghost" href={`/api/migration/${props.runId}/reconciliation.csv`} download>
-          Скачать акт сверки
-        </a>
+        <ReconciliationActDownloadButton runId={props.runId} />
         <button type="button" className="mw-btn mw-btn-ghost" onClick={props.onRestart}>
           Перенести ещё файл
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Кнопка скачивания акта сверки.
+ *
+ * ЧТО БЫЛО ПЛОХО ДЛЯ КЛИНИКИ. Здесь стояла ссылка
+ * `<a href="/api/migration/<прогон>/reconciliation.csv" download>`. По такой
+ * ссылке запрос отправляет БРАУЗЕР, а не fetch, и заголовков у него нет:
+ * подмена window.fetch из lib/apiAuthFetch.ts к разметке не относится. Маршрут
+ * же закрыт requireClinicalReadContext (apps/api/src/routes/migrationRuns.ts:509-511)
+ * и отвечал `401 AuthRequired`. То есть акт сверки — единственный документ, по
+ * которому клиника проверяет, что перенос базы сошёлся по деньгам и по числу
+ * карточек, — не скачивался ни разу, хотя сервер собирал его целиком, вместе с
+ * BOM для русского Excel.
+ */
+function ReconciliationActDownloadButton(props: { runId: string }) {
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="mw-btn mw-btn-ghost"
+        disabled={busy}
+        onClick={async () => {
+          setFailure(null);
+          setBusy(true);
+          let objectUrl: string | null = null;
+          try {
+            objectUrl = await downloadAuthedApiFile(
+              `/api/migration/${props.runId}/reconciliation.csv`,
+              `акт-сверки-${props.runId}.csv`,
+            );
+          } catch (error) {
+            setFailure(error instanceof Error ? error.message : AUTHED_API_FILE_FAILURE);
+          } finally {
+            setBusy(false);
+            // Освобождается после клика: до него браузер файл ещё не забрал.
+            if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl as string), 60_000);
+          }
+        }}
+      >
+        {busy ? "Готовим акт…" : "Скачать акт сверки"}
+      </button>
+      {failure !== null && <span className="mw-error">{failure}</span>}
+    </>
   );
 }
 
