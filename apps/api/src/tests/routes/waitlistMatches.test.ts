@@ -33,6 +33,20 @@ const CANCELLED_APPOINTMENT = "dce70000-0000-4000-8000-000000000831";
 const ACTIVE_APPOINTMENT = "dce70000-0000-4000-8000-000000000832";
 const PAST_CANCELLED = "dce70000-0000-4000-8000-000000000833";
 
+/*
+ * У СТРОК ЛИСТА ОЖИДАНИЯ ИДЕНТИФИКАТОРЫ ЗАДАНЫ ЯВНО.
+ *
+ * appointment_waitlists имеет только первичный ключ defaultRandom() и ни одного
+ * уникального ограничения. Без явного id вставка каждый раз получала новый ключ,
+ * конфликта не возникало НИКОГДА, и onConflictDoNothing() не отсекал ничего.
+ * Прогон, упавший до after(), оставлял три строки, следующий досеивал ещё три —
+ * а ниже стоит `matches.length === 3`. Замерено на остатке: `actual: 4,
+ * expected: 3` при одной лишней строке. Тест краснел на верном ответе маршрута.
+ */
+const WAIT_BEST = "dce70000-0000-4000-8000-000000000841";
+const WAIT_OTHER_DOCTOR = "dce70000-0000-4000-8000-000000000842";
+const WAIT_URGENT = "dce70000-0000-4000-8000-000000000843";
+
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
@@ -53,12 +67,28 @@ describe("подбор на освободившееся окно", () => {
 	let databaseAvailable = true;
 	const originalEnv = process.env;
 
+	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
+	async function purgeFixtures(): Promise<void> {
+		await db.delete(appointmentWaitlists).where(eq(appointmentWaitlists.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, OTHER_ORG));
+	}
+
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
 		app = Fastify();
 		await registerWaitlistMatchRoutes(app);
 
 		try {
+			// Уборка ПЕРЕД засевом, а не только после: прогон, упавший до after(),
+			// иначе оставляет строки листа ожидания, и подбор находит лишних.
+			await purgeFixtures();
+
 			await db
 				.insert(organizations)
 				.values([
@@ -137,6 +167,7 @@ describe("подбор на освободившееся окно", () => {
 				.insert(appointmentWaitlists)
 				.values([
 					{
+						id: WAIT_BEST,
 						organizationId: ORG_ID,
 						patientId: BEST_MATCH,
 						preferredDoctorId: DOCTOR_A,
@@ -145,6 +176,7 @@ describe("подбор на освободившееся окно", () => {
 						status: "waiting"
 					},
 					{
+						id: WAIT_OTHER_DOCTOR,
 						organizationId: ORG_ID,
 						patientId: OTHER_DOCTOR_WAITER,
 						preferredDoctorId: DOCTOR_B,
@@ -153,6 +185,7 @@ describe("подбор на освободившееся окно", () => {
 						status: "waiting"
 					},
 					{
+						id: WAIT_URGENT,
 						organizationId: ORG_ID,
 						patientId: URGENT_WRONG_TIME,
 						preferredDoctorId: DOCTOR_A,
@@ -170,14 +203,7 @@ describe("подбор на освободившееся окно", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(appointmentWaitlists).where(eq(appointmentWaitlists.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, OTHER_ORG));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;

@@ -21,6 +21,20 @@ const DUE_PATIENT = "dce70000-0000-4000-8000-000000000711";
 const RECENT_PATIENT = "dce70000-0000-4000-8000-000000000712";
 const BOOKED_PATIENT = "dce70000-0000-4000-8000-000000000713";
 
+/*
+ * ПРИЁМАМ ЗАДАНЫ ЯВНЫЕ ИДЕНТИФИКАТОРЫ.
+ *
+ * Прежний засев вставлял четыре приёма без id и вообще без onConflictDoNothing:
+ * первичный ключ у appointments — defaultRandom(), так что каждый прогон
+ * добавлял четыре НОВЫХ приёма. Прогон, упавший до after(), оставлял их в базе,
+ * и следующий считал давность визитов по чужим строкам — то есть проходил или
+ * падал на данных, которых сам не создавал.
+ */
+const DUE_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000721";
+const RECENT_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000722";
+const BOOKED_PAST_APPOINTMENT = "dce70000-0000-4000-8000-000000000723";
+const BOOKED_FUTURE_APPOINTMENT = "dce70000-0000-4000-8000-000000000724";
+
 const ORG_HEADERS = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
@@ -39,12 +53,32 @@ describe("возврат пациентов", () => {
 	let databaseAvailable = true;
 	const originalEnv = process.env;
 
+	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
+	async function purgeFixtures(): Promise<void> {
+		await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	}
+
 	before(async () => {
 		process.env = { ...originalEnv, DENTE_DEV_ALLOW_HEADER_ORG: "1" };
 		app = Fastify();
 		await registerPatientRecallRoutes(app);
 
 		try {
+			/*
+			 * Уборка ПЕРЕД засевом. Здесь она снимает не только приёмы: остаток в
+			 * communication_outbox от упавшего прогона делал проверку «повторное
+			 * приглашение в том же месяце не отправляется» самоисполняющейся —
+			 * маршрут отвечал duplicate=true уже на ПЕРВОЕ приглашение, и проверка
+			 * зеленела, ничего не проверив.
+			 */
+			await purgeFixtures();
+
 			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника возврата" }).onConflictDoNothing();
 			await db
 				.insert(users)
@@ -70,47 +104,54 @@ describe("возврат пациентов", () => {
 				])
 				.onConflictDoNothing();
 
-			await db.insert(appointments).values([
-				// Девять месяцев назад — попадает в список.
-				{
-					organizationId: ORG_ID,
-					patientId: DUE_PATIENT,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
-					status: "completed",
-					startsAt: monthsAgo(9),
-					endsAt: new Date(monthsAgo(9).getTime() + 3_600_000)
-				},
-				// Месяц назад — звать рано.
-				{
-					organizationId: ORG_ID,
-					patientId: RECENT_PATIENT,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
-					status: "completed",
-					startsAt: monthsAgo(1),
-					endsAt: new Date(monthsAgo(1).getTime() + 3_600_000)
-				},
-				// Давно не был, НО уже записан на будущее — звать не нужно.
-				{
-					organizationId: ORG_ID,
-					patientId: BOOKED_PATIENT,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
-					status: "completed",
-					startsAt: monthsAgo(20),
-					endsAt: new Date(monthsAgo(20).getTime() + 3_600_000)
-				},
-				{
-					organizationId: ORG_ID,
-					patientId: BOOKED_PATIENT,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
-					status: "planned",
-					startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
-					endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000)
-				}
-			]);
+			await db
+				.insert(appointments)
+				.values([
+					// Девять месяцев назад — попадает в список.
+					{
+						id: DUE_PAST_APPOINTMENT,
+						organizationId: ORG_ID,
+						patientId: DUE_PATIENT,
+						doctorUserId: DOCTOR_ID,
+						chairId: CHAIR_ID,
+						status: "completed",
+						startsAt: monthsAgo(9),
+						endsAt: new Date(monthsAgo(9).getTime() + 3_600_000)
+					},
+					// Месяц назад — звать рано.
+					{
+						id: RECENT_PAST_APPOINTMENT,
+						organizationId: ORG_ID,
+						patientId: RECENT_PATIENT,
+						doctorUserId: DOCTOR_ID,
+						chairId: CHAIR_ID,
+						status: "completed",
+						startsAt: monthsAgo(1),
+						endsAt: new Date(monthsAgo(1).getTime() + 3_600_000)
+					},
+					// Давно не был, НО уже записан на будущее — звать не нужно.
+					{
+						id: BOOKED_PAST_APPOINTMENT,
+						organizationId: ORG_ID,
+						patientId: BOOKED_PATIENT,
+						doctorUserId: DOCTOR_ID,
+						chairId: CHAIR_ID,
+						status: "completed",
+						startsAt: monthsAgo(20),
+						endsAt: new Date(monthsAgo(20).getTime() + 3_600_000)
+					},
+					{
+						id: BOOKED_FUTURE_APPOINTMENT,
+						organizationId: ORG_ID,
+						patientId: BOOKED_PATIENT,
+						doctorUserId: DOCTOR_ID,
+						chairId: CHAIR_ID,
+						status: "planned",
+						startsAt: new Date(Date.now() + 7 * 24 * 3_600_000),
+						endsAt: new Date(Date.now() + 7 * 24 * 3_600_000 + 3_600_000)
+					}
+				])
+				.onConflictDoNothing();
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -119,13 +160,7 @@ describe("возврат пациентов", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationOutbox).where(eq(communicationOutbox.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;

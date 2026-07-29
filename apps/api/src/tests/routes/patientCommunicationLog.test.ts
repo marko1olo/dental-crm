@@ -52,7 +52,29 @@ const PATIENT_MAIN = "cc110000-0000-4000-8000-0000000000b1";
 const PATIENT_NEIGHBOUR = "cc110000-0000-4000-8000-0000000000b2";
 const PATIENT_FOREIGN = "cc110000-0000-4000-8000-0000000000b3";
 const PATIENT_UNKNOWN = "cc110000-0000-4000-8000-0000000000b9";
+const PATIENT_EMPTY = "cc110000-0000-4000-8000-0000000000b4";
 const TEST_SECRET = "x7-patient-communication-log-secret-".padEnd(48, "z");
+
+/*
+ * Идентификаторы обращений ЗАДАНЫ ЯВНО, и это не косметика.
+ *
+ * Прежний засев не указывал id и не имел onConflictDoNothing вообще. У
+ * communication_events первичный ключ — defaultRandom(), других уникальных
+ * ограничений нет, поэтому каждая вставка создавала НОВЫЕ строки, а конфликта не
+ * возникало никогда. Прогон, упавший до after(), оставлял четыре обращения в
+ * базе, следующий досеивал поверх — и тест требовал ровно 4, а маршрут честно
+ * отдавал 8. Замерено: `actual: 8, expected: 4`. Тест краснел на верном ответе.
+ *
+ * С явными id вторая вставка отсекается по первичному ключу, а purgeFixtures()
+ * перед засевом снимает и остаток от ПРЕЖНЕЙ версии фикстуры, чьи id уже
+ * поменялись.
+ */
+const EVENT_NEWEST = "cc110000-0000-4000-8000-0000000000e1";
+const EVENT_INBOUND = "cc110000-0000-4000-8000-0000000000e2";
+const EVENT_NEEDS_CALL = "cc110000-0000-4000-8000-0000000000e3";
+const EVENT_SKIPPED = "cc110000-0000-4000-8000-0000000000e4";
+const EVENT_NEIGHBOUR = "cc110000-0000-4000-8000-0000000000e5";
+const EVENT_FOREIGN = "cc110000-0000-4000-8000-0000000000e6";
 
 const DOCTOR_NAME = "Иванова Анна Петровна";
 const MESSAGE_NEWEST = "Напомнили о приёме 14 июля в 10:00.";
@@ -99,6 +121,17 @@ describe("журнал обращений пациента", () => {
 	let foreignToken = "";
 	let databaseAvailable = true;
 
+	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
+	async function purgeFixtures(): Promise<void> {
+		await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_MINE));
+		await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_FOREIGN));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
+		await db.delete(users).where(eq(users.organizationId, ORG_MINE));
+		await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
+		await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
+	}
+
 	before(async () => {
 		process.env.NODE_ENV = "development";
 		process.env.AUTH_TOKEN_SECRET = TEST_SECRET;
@@ -112,6 +145,10 @@ describe("журнал обращений пациента", () => {
 		await app.ready();
 
 		try {
+			// Уборка ПЕРЕД засевом, а не только после: прогон, упавший до after(),
+			// иначе оставляет обращения, и следующий прогон считает их своими.
+			await purgeFixtures();
+
 			await db
 				.insert(organizations)
 				.values([
@@ -132,63 +169,72 @@ describe("журнал обращений пациента", () => {
 				])
 				.onConflictDoNothing();
 
-			await db.insert(communicationEvents).values([
-				{
-					organizationId: ORG_MINE,
-					patientId: PATIENT_MAIN,
-					actorUserId: DOCTOR_ID,
-					channel: "sms",
-					direction: "outbound",
-					status: "delivered",
-					message: MESSAGE_NEWEST,
-					createdAt: AT_NEWEST,
-				},
-				{
-					organizationId: ORG_MINE,
-					patientId: PATIENT_MAIN,
-					channel: "telegram",
-					direction: "inbound",
-					status: "completed",
-					message: MESSAGE_INBOUND,
-					createdAt: AT_INBOUND,
-				},
-				{
-					organizationId: ORG_MINE,
-					patientId: PATIENT_MAIN,
-					channel: "phone",
-					direction: "outbound",
-					status: "needs_call",
-					message: MESSAGE_NEEDS_CALL,
-					createdAt: AT_NEEDS_CALL,
-				},
-				{
-					organizationId: ORG_MINE,
-					patientId: PATIENT_MAIN,
-					channel: "sms",
-					direction: "outbound",
-					status: "skipped",
-					message: MESSAGE_SKIPPED,
-					createdAt: AT_SKIPPED,
-				},
-				{
-					organizationId: ORG_MINE,
-					patientId: PATIENT_NEIGHBOUR,
-					channel: "sms",
-					direction: "outbound",
-					status: "delivered",
-					message: MESSAGE_NEIGHBOUR,
-					createdAt: AT_INBOUND,
-				},
-				{
-					organizationId: ORG_FOREIGN,
-					patientId: PATIENT_FOREIGN,
-					channel: "sms",
-					direction: "outbound",
-					status: "delivered",
-					message: MESSAGE_FOREIGN,
-					createdAt: AT_INBOUND,
-				},
-			]);
+			await db
+				.insert(communicationEvents)
+				.values([
+					{
+						id: EVENT_NEWEST,
+						organizationId: ORG_MINE,
+						patientId: PATIENT_MAIN,
+						actorUserId: DOCTOR_ID,
+						channel: "sms",
+						direction: "outbound",
+						status: "delivered",
+						message: MESSAGE_NEWEST,
+						createdAt: AT_NEWEST,
+					},
+					{
+						id: EVENT_INBOUND,
+						organizationId: ORG_MINE,
+						patientId: PATIENT_MAIN,
+						channel: "telegram",
+						direction: "inbound",
+						status: "completed",
+						message: MESSAGE_INBOUND,
+						createdAt: AT_INBOUND,
+					},
+					{
+						id: EVENT_NEEDS_CALL,
+						organizationId: ORG_MINE,
+						patientId: PATIENT_MAIN,
+						channel: "phone",
+						direction: "outbound",
+						status: "needs_call",
+						message: MESSAGE_NEEDS_CALL,
+						createdAt: AT_NEEDS_CALL,
+					},
+					{
+						id: EVENT_SKIPPED,
+						organizationId: ORG_MINE,
+						patientId: PATIENT_MAIN,
+						channel: "sms",
+						direction: "outbound",
+						status: "skipped",
+						message: MESSAGE_SKIPPED,
+						createdAt: AT_SKIPPED,
+					},
+					{
+						id: EVENT_NEIGHBOUR,
+						organizationId: ORG_MINE,
+						patientId: PATIENT_NEIGHBOUR,
+						channel: "sms",
+						direction: "outbound",
+						status: "delivered",
+						message: MESSAGE_NEIGHBOUR,
+						createdAt: AT_INBOUND,
+					},
+					{
+						id: EVENT_FOREIGN,
+						organizationId: ORG_FOREIGN,
+						patientId: PATIENT_FOREIGN,
+						channel: "sms",
+						direction: "outbound",
+						status: "delivered",
+						message: MESSAGE_FOREIGN,
+						createdAt: AT_INBOUND,
+					},
+				])
+				.onConflictDoNothing();
 		} catch (error) {
 			if (!isMissingDatabase(error)) throw error;
 			databaseAvailable = false;
@@ -197,13 +243,7 @@ describe("журнал обращений пациента", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_MINE));
-			await db.delete(communicationEvents).where(eq(communicationEvents.organizationId, ORG_FOREIGN));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_MINE));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_FOREIGN));
-			await db.delete(users).where(eq(users.organizationId, ORG_MINE));
-			await db.delete(organizations).where(eq(organizations.id, ORG_MINE));
-			await db.delete(organizations).where(eq(organizations.id, ORG_FOREIGN));
+			await purgeFixtures();
 		}
 		await app?.close();
 		process.env = originalEnv;
@@ -378,13 +418,12 @@ describe("журнал обращений пациента", () => {
 
 		// Заводим карту без единого обращения: экран обязан отличать «через
 		// систему не обращались» от «прочитать не удалось».
-		const EMPTY_PATIENT = "cc110000-0000-4000-8000-0000000000b4";
 		await db
 			.insert(patients)
-			.values({ id: EMPTY_PATIENT, organizationId: ORG_MINE, fullName: "Без Обращений" })
+			.values({ id: PATIENT_EMPTY, organizationId: ORG_MINE, fullName: "Без Обращений" })
 			.onConflictDoNothing();
 
-		const { status, body } = await readLog(clinicToken, EMPTY_PATIENT);
+		const { status, body } = await readLog(clinicToken, PATIENT_EMPTY);
 		assert.equal(status, 200, body);
 		const log = JSON.parse(body) as LogResponse;
 		assert.deepEqual(log.entries, []);

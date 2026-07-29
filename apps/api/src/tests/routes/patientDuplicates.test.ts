@@ -100,6 +100,22 @@ describe("поиск и слияние дублей", () => {
 	let databaseAvailable = true;
 	const originalEnv = { ...process.env };
 	const visitId = "dce70000-0000-4000-8000-000000000841";
+	const paymentId = "dce70000-0000-4000-8000-000000000861";
+
+	/** Одна и та же уборка до засева и после прогона — иначе она не уборка. */
+	async function purgeFixtures(): Promise<void> {
+		await db.delete(patientDuplicateDecisions).where(eq(patientDuplicateDecisions.organizationId, ORG_ID));
+		await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
+		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
+		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
+		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
+		// Ссылка карточки на карточку снимается до удаления: иначе своя же FK.
+		await db.update(patients).set({ mergedIntoPatientId: null }).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
+		await db.delete(users).where(eq(users.organizationId, ORG_ID));
+		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
+		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+	}
 
 	before(async () => {
 		process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
@@ -111,6 +127,16 @@ describe("поиск и слияние дублей", () => {
 		await registerPatientDuplicateRoutes(app);
 
 		try {
+			/*
+			 * Уборка ПЕРЕД засевом. Здесь она критична вдвойне: слияние ПЕРЕПИСЫВАЕТ
+			 * фикстуры — переносит ссылки, ставит карточке статус archived и
+			 * mergedIntoPatientId. Остаток от упавшего прогона означает, что второй
+			 * прогон начинает с УЖЕ ОБЪЕДИНЁННЫХ карточек, и onConflictDoNothing по
+			 * их id молча оставляет их такими: «слияние переносит все записи»
+			 * получает 409 «уже объединена» вместо 200.
+			 */
+			await purgeFixtures();
+
 			await db.insert(organizations).values({ id: ORG_ID, name: "Клиника дублей" }).onConflictDoNothing();
 			await db
 				.insert(clinics)
@@ -155,9 +181,24 @@ describe("поиск и слияние дублей", () => {
 				.insert(visits)
 				.values({ id: visitId, organizationId: ORG_ID, patientId: DUP_SECOND, status: "signed" })
 				.onConflictDoNothing();
+			/*
+			 * У ОПЛАТЫ ИДЕНТИФИКАТОР ЗАДАН ЯВНО.
+			 *
+			 * У payments только первичный ключ defaultRandom() и НИ ОДНОГО
+			 * уникального ограничения — есть лишь обычный индекс по (org, paid_at).
+			 * Без явного id вставка каждый раз получала новый ключ, конфликта не
+			 * возникало никогда, и onConflictDoNothing() не отсекал ничего. Прогон,
+			 * упавший до after(), оставлял оплату в базе, следующий добавлял вторую —
+			 * а ниже стоит `movedPayments.length === 1`, то есть тест краснел бы на
+			 * верном слиянии.
+			 *
+			 * Согласия ниже трогать не нужно: у patient_communication_consents есть
+			 * unique(org, patient, channel, scope), по нему onConflictDoNothing()
+			 * действительно срабатывает и без id.
+			 */
 			await db
 				.insert(payments)
-				.values({ organizationId: ORG_ID, patientId: DUP_SECOND, visitId, amountRub: 5400, status: "paid" })
+				.values({ id: paymentId, organizationId: ORG_ID, patientId: DUP_SECOND, visitId, amountRub: 5400, status: "paid" })
 				.onConflictDoNothing();
 			// Согласие есть у ОБОИХ по одному каналу — это конфликт уникальности,
 			// который слияние обязано разобрать.
@@ -176,16 +217,7 @@ describe("поиск и слияние дублей", () => {
 
 	after(async () => {
 		if (databaseAvailable) {
-			await db.delete(patientDuplicateDecisions).where(eq(patientDuplicateDecisions.organizationId, ORG_ID));
-			await db.delete(patientCommunicationConsents).where(eq(patientCommunicationConsents.organizationId, ORG_ID));
-			await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-			await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-			await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-			await db.update(patients).set({ mergedIntoPatientId: null }).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			await purgeFixtures();
 		}
 		await app.close();
 		process.env = originalEnv;
