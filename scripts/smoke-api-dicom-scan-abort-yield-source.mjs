@@ -21,6 +21,13 @@ function assertMatches(source, pattern, label) {
 	}
 }
 
+function assertNoMatch(source, pattern, label) {
+	const found = source.match(pattern);
+	if (found) {
+		throw new Error(`${label} forbidden pattern hit: ${found[0].trim()}`);
+	}
+}
+
 [
 	'import { setImmediate as yieldImmediate } from "node:timers/promises";',
 	"type ApiDicomScanOptions",
@@ -152,6 +159,31 @@ for (const pattern of [
 		imagingSource,
 		pattern,
 		"API DICOM scan callsite signal propagation",
+	);
+}
+
+/*
+ * КАЖДЫЙ ВЫЗОВ, А НЕ ХОТЯ БЫ ОДИН. Требование выше выполняется первым же
+ * совпадением, и у buildDicomFolderSeriesPreview вызовов ДВА (imaging.ts:6184 и
+ * :6442). Найдено искусственной поломкой: если снять options только с одного
+ * вызова, второй держит требование зелёным в одиночку, и маршрут без проброса
+ * сигнала уезжает молча — «Остановить» на нём перестаёт останавливать обход папки.
+ * Отрицательные образцы ловят ровно это: вызов с input первым аргументом и
+ * чем угодно кроме options вторым.
+ *
+ * Проверка «нет пробела перед options» стоит ВНУТРИ опережающей проверки, сразу
+ * за запятой. Если написать \s*(?!options), движок откатит \s* на ноль символов и
+ * увидит впереди " options" — строку, которая с "options" не начинается; образец
+ * тогда срабатывает на исправном коде. Так и вышло с первой попытки.
+ */
+for (const pattern of [
+	/buildDicomFolderSeriesPreview\(\s*input,(?!\s*options)[^)]{0,60}/,
+	/buildDicomFolderWorkupPlan\(\s*input,(?!\s*options)[^)]{0,60}/,
+]) {
+	assertNoMatch(
+		imagingSource,
+		pattern,
+		"API DICOM scan callsite must thread scan options at every callsite",
 	);
 }
 
