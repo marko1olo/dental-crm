@@ -10,9 +10,16 @@ import {
 	chairs,
 	payments,
 	patients,
+	treatmentPlans,
 	users,
 	visits,
 } from "../db/schema.js";
+// Ветви воронки планов лечения выводятся из перечисления базы ОДНИМ местом на
+// проект — той же функцией, что пишет колонку `bi_analytics_snapshots.plan_funnel_json`
+// (`services/biAnalyticsWorker.ts` и `scripts/cronAnalyticsWorker.ts`). Своя карта
+// состояний здесь стала бы ТРЕТЬИМ списком, а второй уже разошёлся с `pg_enum` и по
+// регистру, и по составу: воронка показывала нули при любом числе планов (d1ff7ab21).
+import { buildPlanFunnel } from "../services/biAnalyticsWorker.js";
 // Пояс клиники берётся ОДНИМ домом на проект — из отчётов руководителя. Своя
 // копия `clinicTimeZone` здесь стала бы вторым источником истины о поясе, а из
 // этой болезни в проекте уже выросли четыре разных расчёта долга.
@@ -81,33 +88,87 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			const withDate = (orgCol: any, dateCol?: any) =>
 				startDate ? and(eq(orgCol, orgId), gte(dateCol, startDate)) : eq(orgCol, orgId);
 
-			// 1. Appointment Funnel (Planned, Confirmed, Completed, Cancelled)
-			const apptRes = await db
+			/*
+			 * 1. ВОРОНКА ПЛАНОВ ЛЕЧЕНИЯ. ЗДЕСЬ СЧИТАЛИСЬ ПРИЁМЫ.
+			 *
+			 * Поле называется `planFunnelJson`, экран рисует его под заголовком
+			 * «Воронка планов лечения» и подписывает числа склонением «план / плана /
+			 * планов» (`AnalyticsDashboardView.tsx:412` и `:66-69`), а расчёт брал
+			 * `appointments.status` — четыре ветви `planned / confirmed / completed /
+			 * cancelled` под подписями «Запланированы, Подтверждены, Завершены,
+			 * Отменены». Планов лечения он не касался вовсе.
+			 *
+			 * ЗАМЕРЕНО на живой базе 2026-07-29 (демонстрационная клиника
+			 * `d0000000-…-d001`: 27 приёмов, НОЛЬ планов лечения):
+			 *   [{Запланированы 8}, {Подтверждены 2}, {Завершены 13}, {Отменены 4}],
+			 *   сумма 27 — ровно `kpis.totalAppointments`.
+			 * То есть владельцу клиники предъявлялось 27 «планов лечения», из них 13
+			 * «завершённых», при полном отсутствии планов. Пустое состояние виджета
+			 * («Планов лечения ещё нет. Составьте план в карточке пациента») не
+			 * показывалось НИКОГДА, пока в клинике есть хоть один приём: указание,
+			 * которое оператору и надо было выполнить, оказалось недостижимо.
+			 *
+			 * ВТОРАЯ ПОЛОВИНА ДЕФЕКТА — ветка `else`. Карта знала четыре статуса приёма
+			 * из семи (`appointment_status`: planned, confirmed, arrived, in_treatment,
+			 * completed, cancelled, no_show), а незнакомые молча прибавлялись к
+			 * «Запланированы»: в том же замере 8 = 5 `planned` + 3 `no_show`, то есть
+			 * три НЕЯВИВШИХСЯ пациента предъявлялись как приёмы, которые ещё
+			 * состоятся. `st.toLowerCase()` был заряженным ружьём рядом: регистр
+			 * совпадал случайно — `appointment_status` в базе строчный, в отличие от
+			 * `treatment_plan_status`, — и в день смены регистра перечисления все семь
+			 * статусов ушли бы в ту же ветку `else` одной строкой «Запланированы».
+			 *
+			 * ПОЧЕМУ ВЫБРАНЫ ПЛАНЫ, А НЕ ПЕРЕИМЕНОВАНИЕ ПОЛЯ В «воронку приёмов».
+			 * Решает то, что видит оператор: заголовок, пустое состояние, указание
+			 * «составьте план в карточке пациента» и единица измерения в подсказке —
+			 * всё это про планы лечения, и на том же экране приёмы показаны уже дважды
+			 * (плитка «Приёмов за период» и «Загруженность кресел» со своим склонением
+			 * «приём / приёма / приёмов»). Плюс состояние `Rejected` — отказ пациента
+			 * от сметы — среди статусов приёма не имеет соответствия вовсе, а это
+			 * единственное место в продукте, где владелец видит, продаётся ли смета.
+			 * И колонка снимка `plan_funnel_json` теперь считается по планам у обоих
+			 * писателей (d1ff7ab21): оставить здесь приёмы значило бы дать одному имени
+			 * поля два разных смысла в одном продукте.
+			 *
+			 * АРЕНДАТОР — из `treatment_plans.organization_id`, собственной колонки
+			 * таблицы, как у всех остальных запросов этого файла и как в
+			 * `services/biAnalyticsWorker.ts`. Колонка `NOT NULL` с миграции 0146,
+			 * поэтому план не может выпасть из воронки из-за отсутствия арендатора.
+			 * `scripts/cronAnalyticsWorker.ts` идёт к организации соединением с
+			 * `patients` — это ДРУГОЕ правило: план, чей пациент заведён в соседней
+			 * клинике, уходит по нему к соседям и исчезает из своей воронки, а сумма
+			 * ветвей перестаёт сходиться с числом планов. Расхождение оставлено как
+			 * есть и не приведено к единому виду тихой правкой: это вопрос правила
+			 * аренды, а не оформления, и файл воркера принадлежит другой задаче.
+			 *
+			 * ПЕРИОД — по `createdAt` плана, как у всех виджетов этого экрана
+			 * (приёмы по `startsAt`, платежи и пациенты по `createdAt`). Даты смены
+			 * состояния в схеме нет (есть только `approvedAt`), поэтому иначе воронка
+			 * перестала бы слушаться переключателя периода.
+			 */
+			const planCounts = await db
 				.select({
-					status: appointments.status,
-					count: sql<number>`count(*)`,
+					status: treatmentPlans.status,
+					count: sql<number>`count(*)::int`,
 				})
-				.from(appointments)
-				.where(withDate(appointments.organizationId, appointments.startsAt))
-				.groupBy(appointments.status);
+				.from(treatmentPlans)
+				.where(withDate(treatmentPlans.organizationId, treatmentPlans.createdAt))
+				.groupBy(treatmentPlans.status);
 
-			const apptCounts = { planned: 0, confirmed: 0, completed: 0, cancelled: 0 };
-			for (const r of apptRes) {
-				const st = r.status || "planned";
-				const key = st.toLowerCase();
-				if (key in apptCounts) {
-					apptCounts[key as keyof typeof apptCounts] += Number(r.count);
-				} else {
-					apptCounts.planned += Number(r.count);
-				}
-			}
-
-			const planFunnelJson = [
-				{ name: "Запланированы", value: apptCounts.planned, fill: "#a1a1aa" },
-				{ name: "Подтверждены", value: apptCounts.confirmed, fill: "#3b82f6" },
-				{ name: "Завершены", value: apptCounts.completed, fill: "#10b981" },
-				{ name: "Отменены", value: apptCounts.cancelled, fill: "#ef4444" },
-			].filter((x) => x.value > 0);
+			/*
+			 * Ветви — из перечисления базы, подписи и цвета — из `Record` по нему,
+			 * поэтому сумма ветвей всегда равна числу планов: состояние, которого нет в
+			 * объявлении, попадает в воронку под сырым именем и кричит в лог, а не
+			 * исчезает в `else`. Именно из-за `else` соседний писатель этой же колонки
+			 * объявлял завершёнными планы, которых никто не завершал.
+			 *
+			 * Нулевые ветви отбрасываются, и это не потеря данных: экран сам скрывает
+			 * ветви со нулём (`AnalyticsDashboardView.tsx:416`), а ПУСТАЯ воронка —
+			 * единственный признак, по которому он показывает «Планов лечения ещё нет»
+			 * с указанием, что делать, и по которому считается `isEmpty` всего
+			 * дашборда. Сумма от этого не меняется: отброшенные ветви несут ноль.
+			 */
+			const planFunnelJson = buildPlanFunnel(planCounts).filter((x) => x.value > 0);
 
 			// 2. Doctor Profitability — payments grouped by doctorUserId
 			const docProfRes = await db
