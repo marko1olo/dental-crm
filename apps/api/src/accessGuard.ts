@@ -14,12 +14,42 @@ export function configuredClinicalMutationSecret(): string | null {
   return configuredClinicalAccessSecret();
 }
 
+/**
+ * Режимы, в которых вообще допустимо обсуждать обход охраны клинических данных.
+ * Список ЗАКРЫТЫЙ и перечисляет режимы по имени.
+ */
+const namedDevelopmentModes = new Set(["development", "test"]);
+
+/**
+ * namedDevelopmentModeActive — включён ли ЯВНО НАЗВАННЫЙ режим разработки.
+ *
+ * ПОЧЕМУ БЕЛЫЙ СПИСОК, А НЕ `NODE_ENV !== "production"`.
+ * Прежнее условие было `process.env.NODE_ENV !== "production"`, и оно истинно,
+ * когда NODE_ENV НЕ ЗАДАН ВОВСЕ. Безопасность по умолчанию была перевёрнута:
+ * охраняло не наличие запрета, а наличие правильно выставленной настройки.
+ * Пустое окружение — типовое состояние production-развёртывания: `apps/api/package.json`
+ * объявляет `"start": "node dist/server.js"` и NODE_ENV не задаёт, ни один Dockerfile
+ * тоже. То есть на настоящем сервере условие «мы не в production» было ИСТИННЫМ,
+ * и от раздачи карт пациентов без секрета администратора защищало только то, что
+ * второй флаг где-то не выставлен. Система держалась на отсутствии второго условия,
+ * а не на первом.
+ *
+ * Теперь обход требует ЯВНОГО разрешения с двух сторон: названный режим разработки
+ * ПЛЮС флаг. Незаданный, пустой или незнакомый NODE_ENV ("staging", "prod", "qa",
+ * опечатка в имени) больше не разрешает ничего — он просто не режим разработки.
+ * Ошибка в имени режима теперь закрывает доступ, а не открывает его.
+ */
+function namedDevelopmentModeActive(): boolean {
+  const mode = process.env.NODE_ENV?.trim().toLowerCase();
+  return mode !== undefined && namedDevelopmentModes.has(mode);
+}
+
 function clinicalMutationsUnguardedAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return namedDevelopmentModeActive() && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1";
 }
 
 function clinicalReadsUnguardedAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
+  return namedDevelopmentModeActive() && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
 }
 
 
