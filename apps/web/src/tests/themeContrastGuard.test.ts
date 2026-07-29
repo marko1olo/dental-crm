@@ -230,6 +230,20 @@ const MEASURED = [
 	{ fg: ".chip-chair", bg: ".chip-chair", ratios: [15.93, 12.89, 10.56] },
 	// Подпись лежит на поверхности карточки, своей подложки у правила нет.
 	{ fg: ".smart-field input:focus ~ label", bg: "--paper", ratios: [5.93, 8.33, 8.35] },
+	/*
+	 * Плашка состояния СОХРАНЕНИЯ карточки пациента (dente-redesign.css, раздел 8a).
+	 * Она попала под охрану потому, что раньше брала класс из словаря статусов
+	 * ПРИЁМА — .status-pill.status-confirmed: в светлой теме это --info-bg
+	 * «справочно» вместо --ok-bg «успех», а в ночной, тёплой теме плашка была
+	 * единственным холодным элементом экрана. Текст 11.5px, то есть норма AA для
+	 * обычного текста — 4.5:1, а не 3:1 для крупного.
+	 */
+	{ fg: ".save-pill.save-pill-saving", bg: ".save-pill.save-pill-saving", ratios: [7.74, 11.73, 10.25] },
+	// Текст здесь --ink, а не --warn-fg: штатная пара предупреждения даёт в светлой
+	// теме 4.42 и норму не держит. Замер и причина — в комментарии рядом с правилом.
+	{ fg: ".save-pill.save-pill-dirty", bg: ".save-pill.save-pill-dirty", ratios: [15.93, 12.89, 10.56] },
+	{ fg: ".save-pill.save-pill-error", bg: ".save-pill.save-pill-error", ratios: [5.3, 5.26, 4.92] },
+	{ fg: ".save-pill.save-pill-saved", bg: ".save-pill.save-pill-saved", ratios: [4.57, 7.72, 7.26] },
 ] as const;
 
 /**
@@ -325,6 +339,14 @@ const NO_LITERAL_SELECTORS = [
 	".chip-reason",
 	".chip-doctor",
 	".chip-chair",
+	// Плашка сохранения карточки пациента: у неё своя палитра ровно для того, чтобы
+	// не одалживать цвет у статусов приёма, и литерал здесь вернул бы её к тому же —
+	// светлому пятну в тёмной и ночной темах.
+	".save-pill",
+	".save-pill.save-pill-saving",
+	".save-pill.save-pill-dirty",
+	".save-pill.save-pill-error",
+	".save-pill.save-pill-saved",
 ] as const;
 
 const COLOR_PROPERTIES = new Set(["color", "background", "background-color", "border", "border-color", "border-left"]);

@@ -15,6 +15,7 @@ import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientAdministrativeForm } from "./components/patient/PatientAdministrativeForm";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { featureDistinguishes, patientListFeatureSalience } from "./components/patients/patientListFeatureSalience";
+import { PatientCardSavePill } from "./components/patients/patientCardSavePill";
 import { PatientArchiveReasonsAndBlacklistsWidget } from "./components/crm/PatientArchiveReasonsAndBlacklistsWidget";
 import { PatientCommunicationTimelinesWidget } from "./components/crm/PatientCommunicationTimelinesWidget";
 import { PatientDuplicateMergeQueuesWidget } from "./components/crm/PatientDuplicateMergeQueuesWidget";
@@ -543,17 +544,35 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 {selectedPatient ? selectedPatient.fullName : "Карточка пациента"}
               </span>
             </div>
-            <span className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}>
-              {patientCoreSaveState === "saving"
-                ? "Сохраняю..."
-                : patientAdministrativeProfileSaveState === "saving"
-                  ? "Сохраняю..."
-                  : patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error"
-                    ? "Ошибка"
-                    : patientCoreDirty || patientAdministrativeProfileDirty
-                      ? "Не сохранено"
-                      : "Сохранено"}
-            </span>
+            {/*
+              БЫЛО: цепочка условий прямо здесь, у которой последняя ветка
+              безусловная — «Сохранено» по умолчанию. Плашка стояла зелёной на
+              пустой карточке без выбранного пациента и утверждала запись,
+              которой не было. Правило и словарь классов — в
+              components/patients/patientCardSavePill.tsx, там же разобрано,
+              почему это не правится подменой слова и почему класс статуса приёма
+              здесь был чужим.
+            */}
+            {/*
+              Сообщение валидации реквизитов сюда НЕ передаётся намеренно.
+              patientAdministrativeProfileDraftIssue (AppHelpers.tsx) выдаёт его и
+              по одним загруженным данным: полупару «удобно приходить с/до»
+              создаёт нормализация на сервере, и она есть у пациентов, которых
+              регистратор в этот раз даже не открывал. «Ошибка» у заголовка
+              карточки в таком случае была бы ложным утверждением
+              противоположного знака. Оно остаётся у плашки самого блока
+              реквизитов — там рядом стоит текст, который объясняет причину.
+            */}
+            <PatientCardSavePill
+              hasSelectedPatient={Boolean(selectedPatient)}
+              sections={[
+                { dirty: patientCoreDirty, saveState: patientCoreSaveState },
+                {
+                  dirty: patientAdministrativeProfileDirty,
+                  saveState: patientAdministrativeProfileSaveState,
+                },
+              ]}
+            />
           </div>
 
           {/* Core Info Form */}
@@ -724,17 +743,26 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
                 <div>
                   <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>Документы и СНИЛС</span>
                 </div>
-                <span className={`status-pill status-${patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage ? "cancelled" : "confirmed"}`}>
-                  {patientAdministrativeProfileSaveState === "saving"
-                    ? "Сохраняю..."
-                    : patientAdministrativeProfileSaveState === "saved"
-                      ? "Сохранено"
-                      : patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage
-                        ? "Ошибка"
-                        : patientAdministrativeProfileDirty
-                          ? "Не сохранено"
-                          : "Заполнено"}
-                </span>
+                {/*
+                  БЫЛО: та же цепочка со своей безусловной последней ветвью —
+                  «Заполнено». Она утверждала, что паспорт, ИНН и СНИЛС внесены, у
+                  пациента, у которого не заполнено ни одно из шестнадцати полей;
+                  ветка «Сохранено» здесь была честной, но словарь классов —
+                  такой же чужой, статуса приёма. Общий компонент с плашкой
+                  заголовка карточки взят намеренно: две копии одного выражения
+                  рядом уже разошлись — у одной ветка "saved" проверялась, у
+                  другой нет.
+                */}
+                <PatientCardSavePill
+                  hasSelectedPatient={Boolean(selectedPatient)}
+                  sections={[
+                    {
+                      dirty: patientAdministrativeProfileDirty,
+                      saveState: patientAdministrativeProfileSaveState,
+                      validationMessage: patientAdministrativeProfileValidationMessage,
+                    },
+                  ]}
+                />
               </div>
               {patientAdministrativeProfileValidationMessage ? (
                 <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>

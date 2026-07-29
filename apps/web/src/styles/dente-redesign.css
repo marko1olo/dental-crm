@@ -542,6 +542,53 @@ textarea:focus, input:focus, select:focus {
 .status-pill.status-completed { background: var(--teal-soft); color: var(--teal-dark); border-color: transparent; }
 .status-pill.status-cancelled, .status-pill.status-no_show { background: var(--bad-bg); color: var(--bad-fg); border-color: transparent; }
 
+/* ---------- 8a. СОСТОЯНИЕ СОХРАНЕНИЯ — СВОЙ СЛОВАРЬ, НЕ СТАТУС ПРИЁМА ----------
+ *
+ * Плашка «Сохранено» на карточке пациента брала класс .status-pill.status-confirmed
+ * — из словаря статусов ПРИЁМА выше. Два следствия, оба измерены:
+ *   • в светлой теме это --info-bg (#e0f2fe), цвет «справочно», а не успеха
+ *     (--ok-bg, #dcfce7): успешное сохранение красилось информационной палитрой;
+ *   • в ночной теме --info-bg холодный (rgba(143,184,201,...)), и плашка была
+ *     единственным нетёплым элементом тёплого вечернего экрана.
+ *
+ * Перекрасить .status-pill.status-confirmed нельзя: прогрессия planned ->
+ * confirmed -> arrived -> in_treatment -> completed -> cancelled связная, и класс
+ * стоит в 16 местах приложения — правка перекрасила бы статусы приёмов во всей
+ * клинике. Поэтому у состояния СОХРАНЕНИЯ свой словарь из четырёх состояний.
+ *
+ * Геометрия повторена, а не унаследована от .status-pill: одалживать основу у
+ * чужого словаря — это ровно то, с чего начался дефект, и любая будущая правка
+ * .status-pill (например добавление цвета в основу) снова протекла бы сюда.
+ *
+ * Только токены, ни одного литерала: значения --ok/--warn/--bad объявлены во всех
+ * трёх темах (строки 28-31 светлая, 83-86 «Ночь», 148-151 «Тепло»), поэтому
+ * плашка следует за темой. Контраст текста к своей подложке пересчитывается из
+ * живого CSS в src/tests/themeContrastGuard.test.ts — числа в комментарии не
+ * могут разойтись с тем, что покажет браузер.
+ */
+.save-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 11px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+/* Ход работы — нейтрально: сообщение о ходе не является ни успехом, ни отказом.
+   Контраст (светлая / «Ночь» / «Тепло»): 7.74 / 11.73 / 10.25. */
+.save-pill.save-pill-saving { background: var(--paper-soft); color: var(--ink-2); border-color: var(--line); }
+/* Есть изменения, которых нет на сервере. Предупреждение, а не ошибка.
+   Текст --ink, а НЕ --warn-fg, и это замер, а не вкус: --warn-fg на --warn-bg даёт
+   в светлой теме 4.42 при норме AA 4.5 для текста 11.5px — то есть штатная пара
+   предупреждения норму не держит (её же берёт .status-pill.status-arrived выше,
+   это чужой долг). На --ink: 15.93 / 12.89 / 10.56, цвет предупреждения при этом
+   остаётся в подложке. */
+.save-pill.save-pill-dirty { background: var(--warn-bg); color: var(--ink); }
+/* Сервер не принял данные — введённое на сервер не попало. 5.30 / 5.26 / 4.92. */
+.save-pill.save-pill-error { background: var(--bad-bg); color: var(--bad-fg); }
+/* Единственное состояние, утверждающее факт записи. Цвет успеха, а не «справочно».
+   4.57 / 7.72 / 7.26 — в светлой теме запас над нормой мал, поэтому пара под охраной. */
+.save-pill.save-pill-saved { background: var(--ok-bg); color: var(--ok-fg); }
+
 /* ---------- 9. РАСПИСАНИЕ ДНЯ (Смена) ---------- */
 .today-schedule-item {
   background: var(--paper) !important;
