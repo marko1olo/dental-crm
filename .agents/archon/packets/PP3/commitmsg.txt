@@ -1,0 +1,36 @@
+[ARCHON] PP3: страж финансового планирования краснел за `?? []` — класс BRITTLE, четыре требования на образцы
+
+Четыре требования smoke:finance-planning-source краснели не на потере
+поведения, а на том, что код СТАЛ БЕЗОПАСНЕЕ. Замер по живому коду 29.07.2026:
+
+  требовалось activePaymentsCount={activePayments.length}
+  в продукте   activePaymentsCount={(activePayments ?? []).length}   FinanceView.tsx:266
+  требовалось scenarios={activeTreatmentPlanScenarios}
+  в продукте   scenarios={activeTreatmentPlanScenarios ?? []}        FinanceView.tsx:271
+  требовалось services.slice(0, 6)
+  в продукте   (services ?? []).slice(0, 6)                          FinancePlanning.tsx:139
+  требовалось className="finance-summary-grid"
+  в продукте   className="finance-summary-grid bg-white dark:bg-slate-900 ...
+                                                                     FinancePlanning.tsx:48
+
+Первые три отличаются РОВНО добавленным `?? []`. Четвёртое — дописанными в тот
+же атрибут классами оформления. Ни одна передача данных не пропала, ни один
+компонент не перестал владеть разметкой. Продукт не тронут: ни одного файла
+apps/web в этом коммите.
+
+Требования переведены на образцы, закрепляющие СВЯЗЬ, а не обёртку: «в
+activePaymentsCount приходит длина activePayments», «в scenarios приходит
+activeTreatmentPlanScenarios», «услуги обрезаются по 6», «класс
+finance-summary-grid стоит на элементе». Сегодняшнее написание с `?? []`
+подставлять было нельзя — следующая правка обёртки (`?.`, `!`, `Array.from`)
+вернула бы тот же ложный красный.
+
+КУСАЕМОСТЬ 4/4, проверена, а не заявлена. Мутировались КОПИИ исходников в
+C:/tmp/bite-fp, копия стража направлена на них, продукт не тронут:
+  activePaymentsCount={(activePayments ?? []).length} -> activePaymentsCount={0}
+  scenarios={activeTreatmentPlanScenarios ?? []} -> scenarios={dashboard?.treatmentPlanScenarios ?? []}
+  className="finance-summary-grid bg-white -> className="bg-white
+  (services ?? []).slice(0, 6) -> (services ?? [])
+Каждая мутация даёт exit 1 И называет ИМЕННО своё требование, а не любое другое.
+
+Код выхода стража: было 1 (четыре красных), стало 0.

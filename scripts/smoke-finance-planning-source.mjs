@@ -15,6 +15,61 @@ function forbidIn(source, snippet, message) {
 	if (source.includes(snippet)) missing.push(message);
 }
 
+/*
+ * ПОЧЕМУ ЗДЕСЬ ПОЯВИЛИСЬ ОБРАЗЦЫ ВМЕСТО ДОСЛОВНЫХ СТРОК.
+ *
+ * Класс BRITTLE: четыре требования краснели за то, что код СТАЛ БЕЗОПАСНЕЕ, а не
+ * за то, что поведение исчезло. Замер 29.07.2026 по живому коду:
+ *
+ *   требовалось activePaymentsCount={activePayments.length}
+ *   в продукте   activePaymentsCount={(activePayments ?? []).length}   FinanceView.tsx:266
+ *
+ *   требовалось scenarios={activeTreatmentPlanScenarios}
+ *   в продукте   scenarios={activeTreatmentPlanScenarios ?? []}        FinanceView.tsx:271
+ *
+ *   требовалось services.slice(0, 6)
+ *   в продукте   (services ?? []).slice(0, 6)                         FinancePlanning.tsx:139
+ *
+ *   требовалось className="finance-summary-grid"
+ *   в продукте   className="finance-summary-grid bg-white dark:bg-slate-900 …"
+ *                                                                     FinancePlanning.tsx:48
+ *
+ * Первые три отличаются РОВНО добавленным `?? []` — защитой от null. Четвёртое —
+ * дописанными в тот же атрибут классами оформления. Ни одна передача данных не
+ * пропала, ни один компонент не перестал владеть разметкой.
+ *
+ * ЧТО ЗАКРЕПЛЯЕТ ОБРАЗЕЦ. Связь, а не обёртку: «в activePaymentsCount приходит
+ * длина activePayments», «в scenarios приходит activeTreatmentPlanScenarios»,
+ * «услуги обрезаются по 6», «класс finance-summary-grid стоит на элементе».
+ * Подставить сегодняшнее написание с `?? []` было НЕЛЬЗЯ: следующая же правка
+ * обёртки (`?.`, `!`, `Array.from`) вернула бы тот же ложный красный, и требование
+ * снова прибилось бы к форме вместо смысла. Поэтому источник данных в образце
+ * назван по имени, а обёртка вокруг него — свободная.
+ *
+ * КУСАЕМОСТЬ ПРОВЕРЕНА, а не заявлена: по копии исходника в /tmp с убранной
+ * связью (activePaymentsCount={0}; scenarios из dashboard вместо активного
+ * пациента; snapshot без .slice(0, 6); класс finance-summary-grid снят) — страж
+ * краснеет на каждом из четырёх. См. commitmsg этого пакета.
+ */
+function requirePattern(source, pattern, message) {
+	if (!pattern.test(source)) missing.push(message);
+}
+
+/** Класс CSS стоит на элементе — один он в атрибуте или в списке оформления. */
+function classNameToken(token) {
+	return new RegExp(`className="(?:[^"]*\\s)?${token}(?:\\s[^"]*)?"`);
+}
+
+/**
+ * Значение приходит из названного источника, сколько бы защитных обёрток
+ * (`?? []`, `?.`, `!`, скобки) вокруг него ни стояло.
+ */
+function propFromSource(prop, sourceExpression) {
+	return new RegExp(
+		`${prop}=\\{[^}]*\\b${sourceExpression.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+	);
+}
+
 requireIn(
 	appSource,
 	'lazy(() => import("./FinanceView")',
@@ -66,14 +121,14 @@ forbidIn(
 	"billingSummary={dashboard.billingSummary}",
 	"FinanceView must not pass global finance totals into patient planning overview",
 );
-requireIn(
+requirePattern(
 	financeViewSource,
-	"activePaymentsCount={activePayments.length}",
+	/activePaymentsCount=\{[^}]*\bactivePayments\b[^}]*\.length/,
 	"FinanceView must pass active payment count",
 );
-requireIn(
+requirePattern(
 	financeViewSource,
-	"scenarios={activeTreatmentPlanScenarios}",
+	propFromSource("scenarios", "activeTreatmentPlanScenarios"),
 	"FinanceView must pass patient-specific plan scenarios",
 );
 forbidIn(
@@ -102,9 +157,9 @@ requireIn(
 	"export function ServiceCatalogStrip",
 	"FinancePlanning must export catalog strip component",
 );
-requireIn(
+requirePattern(
 	financeSource,
-	'className="finance-summary-grid"',
+	classNameToken("finance-summary-grid"),
 	"FinancePlanning must own finance summary markup",
 );
 requireIn(
@@ -142,9 +197,9 @@ requireIn(
 	"onClick={onGoToPrices}",
 	"Empty service catalog must have a direct price-list action",
 );
-requireIn(
+requirePattern(
 	financeSource,
-	"services.slice(0, 6)",
+	/\bservices\b[^;\n]*\.slice\(0,\s*6\)/,
 	"Service catalog strip must stay compact",
 );
 
