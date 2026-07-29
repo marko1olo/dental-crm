@@ -1,26 +1,16 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg" width="100%" alt="dental-crm Banner"/>
+# DENTE — Enterprise Dental CRM & DICOM Interactive Engine
 
-# DENTAL-CRM — Technical Engine & Interactive Showcase
-
-[![Live Website](https://img.shields.io/badge/Live%20Website-GitHub%20Pages-00f2fe?style=for-the-badge&logo=github)](https://marko1olo.github.io/dental-crm/)
-[![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2018-blue?style=for-the-badge&logo=postgresql)][][![Live Website](https://img.shields.io/badge/Website-GitHub%20Pages-00f2fe?style=for-the-badge)](https://marko1olo.github.io/dental-crm/)
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
 [![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
 
 > **Production-grade software architecture & complete human developer specification.**
 
-[🌐 Open Live Showcase Site](https://marko1olo.github.io/dental-crm/) &nbsp;·&nbsp; [🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow](#-execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Developer Docs](#-original-human-developer-documentation)
+[🌐 Open Live Showcase](https://marko1olo.github.io/dental-crm/) &nbsp;·&nbsp; [📊 Architectural Diagram](#-system-architecture--pipeline) &nbsp;·&nbsp; [📜 Developer Specs](#-original-human-developer-documentation)
 
 </div>
-
----
-
-## 🌐 Live Interactive GitHub Pages Website
-
-The official interactive web showcase for **marko1olo/dental-crm** is live and hosted on GitHub Pages:
-👉 **[Click here to visit the live site](https://marko1olo.github.io/dental-crm/)**
 
 ---
 
@@ -30,25 +20,26 @@ This repository contains **marko1olo/dental-crm**. The system architecture enfor
 
 ---
 
-## 📊 Execution Pipeline & Data Flow
+## 📊 System Architecture & Pipeline
 
 ```mermaid
 graph TD
-    A[Input Config / Signals] --> B[Core Processing Subsystem]
-    B --> C{Memory Pool & State Check}
-    C -- Hit --> D[Direct Buffer Pipeline]
-    C -- Miss --> E[Execution Compute Engine]
-    E --> F[State Mutation & Telemetry Audit]
-    F --> D
-    D --> G[Output Interface / Render Pass]
+    A[Telegram Bot & Web Shell] --> B[Fastify API & Drizzle ORM]
+    B --> C[PostgreSQL 18 TCP Persistence]
+    C --> D[Structured Medical Card 025/у Generator]
+    D --> E[Interactive 2D/3D DICOM X-Ray Canvas]
 ```
 
 ---
 
-## 🔧 Technical Configuration & Parameter Specifications
+## 🔧 Technical Configuration & Deep Domain Specifications
+
+- **Native PostgreSQL 18**: Multi-tenant isolation over TCP on `127.0.0.1:5432`.
+- **KND 1151156 Tax Compliance**: Structured generation of tax certificates and 025/у medical records.
+- **Telegram Bot Webhook Scope**: Multi-clinic scoped webhook routing with zero PHI leakage.
 
 <details open>
-<summary><b>⚙️ System Configuration Parameters (Click to Collapse)</b></summary>
+<summary><b>⚙️ Core System Configuration Parameters (Click to Collapse)</b></summary>
 
 | Parameter Key | Type | Default Value | Description |
 |---|---|---|---|
@@ -56,18 +47,6 @@ graph TD
 | `FRAME_RATE_TARGET` | Int | `60` | Target loop frequency in Hz |
 | `ENABLE_TELEMETRY` | Bool | `true` | Emit real-time JSON metrics to stdout |
 | `THREAD_POOL_COUNT` | Int | `8` | Worker thread allocations for parallel processing |
-
-</details>
-
-<details>
-<summary><b>⚡ Performance Budget & Resource Allocations (Click to Expand)</b></summary>
-
-### Memory & Execution Profile
-
-- **GC Allocation Budget**: `0 B / frame` (Strict Zero Allocation).
-- **Target Frame Time**: `< 16.6 ms` (60 FPS minimum lock).
-- **VRAM Budget**: `< 512 MB` allocated statically at startup.
-- **CPU Bottleneck**: Single-thread tick loop with multi-worker job dispatcher.
 
 </details>
 
