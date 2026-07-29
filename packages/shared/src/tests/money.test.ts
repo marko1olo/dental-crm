@@ -45,9 +45,27 @@ describe("parseKopecks", () => {
 	});
 
 	test("мусор не превращается молча в ноль", () => {
-		assert.throws(() => parseKopecks("сто рублей"));
-		assert.throws(() => parseKopecks("12.345"));
-		assert.throws(() => parseKopecks(Number.NaN));
+		assert.throws(() => parseKopecks("сто рублей"), {
+			message: 'Не похоже на денежное значение: "сто рублей"',
+		});
+		assert.throws(() => parseKopecks("12.345"), {
+			message: 'Не похоже на денежное значение: "12.345"',
+		});
+		assert.throws(() => parseKopecks("12."), {
+			message: 'Не похоже на денежное значение: "12."',
+		});
+		assert.throws(() => parseKopecks(".34"), {
+			message: 'Не похоже на денежное значение: ".34"',
+		});
+		assert.throws(() => parseKopecks(Number.NaN), {
+			message: "Денежное значение не является числом: NaN",
+		});
+		assert.throws(() => parseKopecks(Infinity), {
+			message: "Денежное значение не является числом: Infinity",
+		});
+		assert.throws(() => parseKopecks(-Infinity), {
+			message: "Денежное значение не является числом: -Infinity",
+		});
 	});
 
 	test("не теряет копейки там, где ошибается плавающая точка", () => {
