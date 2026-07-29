@@ -8,7 +8,11 @@ import type {
 	DentalPricelistAnalysisResponse,
 	ServiceCatalogItem,
 } from "@dental/shared";
-import { analyzePricelist } from "./analyzer.js";
+import {
+	analyzePricelist,
+	itemFromGroq,
+	type PricelistCalendar,
+} from "./analyzer.js";
 
 /**
  * ГОД РЕДАКЦИИ ПРАЙСА НЕ СТАНОВИТСЯ ЦЕНОЙ УСЛУГИ.
@@ -65,12 +69,41 @@ const EMPTY_CATALOG: ServiceCatalogItem[] = [];
 const SKIPPED_PREFIX = "pricelist_rows_skipped:";
 
 /**
- * Год берётся от сегодняшней даты, а не вписан числом, потому что и правило в
- * analyzer.ts считает окно от new Date().getFullYear(). Вписанный «2025»
- * прошёл бы сегодня и молча перестал проверять дефект через несколько лет.
- * В момент замера ведущего (2026 год) это ровно «2025» из зонда.
+ * Год для проверок, которые идут БЕЗ переданного календаря, то есть проверяют
+ * поведение по умолчанию — от часов машины.
+ *
+ * Здесь он и обязан считаться от сегодняшней даты: значение по умолчанию у
+ * analyzePricelist берётся из часов, и вписанное «2025» проверяло бы этот путь
+ * только до тех лет, пока окно редакции 2025 накрывает. Своей опоры у такой
+ * проверки нет — она не может отличить верное поведение от съехавшего окна, —
+ * поэтому окно закрепляют отдельные проверки ниже, с переданным годом.
  */
 const previousEditionYear = new Date().getFullYear() - 1;
+
+/**
+ * ГОД «СЕГОДНЯ», ПЕРЕДАННЫЙ ЯВНО: опора проверок окна года редакции.
+ *
+ * Разбор принимает его входом (PricelistCalendar в analyzer.ts), поэтому проверки
+ * ниже дают один и тот же результат в любую дату прогона — и в декабре, и 1 января,
+ * и в 2032 году. До этого окно считалось от часов машины ПОСРЕДИ разбора, и
+ * закрепить его было нечем: проверка с вписанным годом молча перестала бы проверять
+ * дефект, как только окно с этого года уедет.
+ */
+const PINNED_YEAR = 2026;
+const PINNED_CALENDAR: PricelistCalendar = { currentYear: PINNED_YEAR };
+
+/**
+ * ГРАНИЦЫ ОКНА ПРИ ПЕРЕДАННОМ ГОДЕ 2026: editionYearsBack = 6, editionYearsAhead = 1.
+ *
+ * Числа вписаны умышленно, а не выведены из констант analyzer.ts: они закрепляют
+ * договор «какие годы разбор считает годом редакции». Смена ширины окна — это
+ * смена поведения продукта, и она ОБЯЗАНА уронить эти проверки, а не проехать
+ * молча вместе с ними.
+ */
+const WINDOW_OLDEST_YEAR = 2020;
+const WINDOW_NEWEST_YEAR = 2027;
+const BEFORE_WINDOW_YEAR = 2019;
+const AFTER_WINDOW_YEAR = 2028;
 
 /**
  * Год, заведомо далёкий от окна редакции, и одновременно обычная цена русского
@@ -79,18 +112,35 @@ const previousEditionYear = new Date().getFullYear() - 1;
  */
 const FAR_YEAR_PRICE = 2000;
 
-async function analyze(rawText: string) {
-	return analyzePricelist(
-		{
-			sourceName: "year-price-test",
-			sourceKind: "text",
-			rawText,
-			imageMimeType: "image/jpeg",
-			preferredSpecialty: "universal",
-			useServerAi: false,
-		},
-		EMPTY_CATALOG,
-	);
+async function analyze(rawText: string, calendar?: PricelistCalendar) {
+	const request: DentalPricelistAnalysisRequest = {
+		sourceName: "year-price-test",
+		sourceKind: "text",
+		rawText,
+		imageMimeType: "image/jpeg",
+		preferredSpecialty: "universal",
+		useServerAi: false,
+	};
+	/*
+	 * Календарь передаётся ТОЛЬКО когда он задан, и ветка здесь не косметика: вызов
+	 * из двух аргументов — это боевой вызов routes/pricelist.ts, где третьего
+	 * аргумента нет вовсе. Подставив календарь всегда, набор перестал бы проверять
+	 * значение по умолчанию, то есть ровно тот путь, которым продукт и работает.
+	 */
+	return calendar
+		? analyzePricelist(request, EMPTY_CATALOG, calendar)
+		: analyzePricelist(request, EMPTY_CATALOG);
+}
+
+/** Цена одной строки: у проверок окна года остальные поля позиции не спрашиваются. */
+async function priceOf(
+	line: string,
+	calendar?: PricelistCalendar,
+): Promise<number | null> {
+	const response = await analyze(line, calendar);
+	const item = response.items[0];
+	assert.ok(item, `строка исчезла из прайса целиком («${line}»)`);
+	return item.priceRub;
 }
 
 /** Сколько строк отброшено по предупреждению ответа; null — предупреждения нет. */
@@ -228,6 +278,135 @@ describe("законная цена из полосы года не теряет
 		assert.ok(item, "позиция исчезла из прайса");
 		assert.equal(item.priceRub, 1900);
 		assert.equal(item.priceMaxRub, 2500);
+	});
+});
+
+/**
+ * ОКНО ГОДА РЕДАКЦИИ ЗАКРЕПЛЕНО ПЕРЕДАННЫМ ГОДОМ, А НЕ ЧАСАМИ МАШИНЫ.
+ *
+ * ЧТО БЫЛО СЛОМАНО. `new Date().getFullYear()` стоял ВНУТРИ looksLikeEditionYear,
+ * то есть окно считалось от часов машины посреди разбора. Измерено на дереве до
+ * правки подменой Date.prototype.getFullYear (истинный код выхода 0):
+ *   «Отбеливание 2025», часы 2026, 2027, 2031  →  priceRub: null
+ *   «Отбеливание 2025», часы 2032, 2033        →  priceRub: 2025 ₽
+ * То есть заголовок раздела прайса становился услугой за 2025 ₽ сам собой, от
+ * смены года на машине. Три следствия, и третье — про сам этот файл:
+ *   • один прайс разбирался по-разному в разные годы, и никто этого не выбирал;
+ *   • разбор нельзя воспроизвести: чтобы объяснить клинике, почему цена не
+ *     прочитана, надо знать не только текст прайса, но и день прогона;
+ *   • проверка, закрепляющая поведение на конкретном годе, молча перестаёт
+ *     проверять дефект, когда окно с этого года уезжает, — и остаётся ЗЕЛЁНОЙ.
+ *     Проверка, зелёная на сломанном коде, хуже отсутствующей.
+ *
+ * ЧЕМ ЗАМЕНЕНО. Год «сегодня» стал ВХОДОМ разбора со значением по умолчанию из
+ * часов. Окно осталось относительным — это его природа, прайс помечают недавним
+ * годом, — но проверяемым: проверки ниже передают год явно и обязаны давать один и
+ * тот же результат в любую дату прогона.
+ */
+describe("окно года редакции считается от переданного года", () => {
+	test("обе границы окна закреплены: внутри — не цена, за окном — цена", async () => {
+		/*
+		 * Проверяются ЧЕТЫРЕ года вокруг двух границ окна и сегодняшний год: шаг
+		 * внутрь окна и шаг за него с каждой стороны. Внутри окна год ценой не
+		 * становится (priceRub: null и price_not_found), за окном — становится,
+		 * потому что от строки «Прицельный снимок 2000» такая строка не отличается
+		 * ничем и отказ унёс бы законную цену.
+		 */
+		const expected: Array<[number, number | null]> = [
+			[BEFORE_WINDOW_YEAR, BEFORE_WINDOW_YEAR],
+			[WINDOW_OLDEST_YEAR, null],
+			[PINNED_YEAR, null],
+			[WINDOW_NEWEST_YEAR, null],
+			[AFTER_WINDOW_YEAR, AFTER_WINDOW_YEAR],
+		];
+		for (const [year, price] of expected) {
+			const line = `Отбеливание ${year}`;
+			assert.equal(
+				await priceOf(line, PINNED_CALENDAR),
+				price,
+				`окно года редакции при переданном ${PINNED_YEAR} годе сдвинулось («${line}»)`,
+			);
+		}
+	});
+
+	test("переданный год решает исход: одна строка по разные стороны окна", async () => {
+		/*
+		 * ГЛАВНАЯ ПРОВЕРКА ВОСПРОИЗВОДИМОСТИ. Предыдущая закрепляет границы, но была
+		 * бы зелена и на разборе, который переданный год игнорирует, а окно берёт из
+		 * часов: сегодня на машине 2026 год, то есть ровно PINNED_YEAR. Здесь один и
+		 * тот же текст разбирается ДВАЖДЫ с разными переданными годами и обязан дать
+		 * РАЗНЫЕ цены — этого разбор от часов дать не может ни в какую дату прогона.
+		 */
+		const beforeWindowLine = `Отбеливание ${BEFORE_WINDOW_YEAR}`;
+		assert.equal(
+			await priceOf(beforeWindowLine, PINNED_CALENDAR),
+			BEFORE_WINDOW_YEAR,
+			`${BEFORE_WINDOW_YEAR} при переданном ${PINNED_YEAR} годе лежит за окном и остаётся ценой`,
+		);
+		assert.equal(
+			await priceOf(beforeWindowLine, { currentYear: BEFORE_WINDOW_YEAR + 6 }),
+			null,
+			`${BEFORE_WINDOW_YEAR} при переданном ${BEFORE_WINDOW_YEAR + 6} годе лежит на краю окна и ценой быть не может`,
+		);
+
+		const afterWindowLine = `Отбеливание ${WINDOW_NEWEST_YEAR}`;
+		assert.equal(
+			await priceOf(afterWindowLine, PINNED_CALENDAR),
+			null,
+			`${WINDOW_NEWEST_YEAR} при переданном ${PINNED_YEAR} годе лежит на краю окна и ценой быть не может`,
+		);
+		assert.equal(
+			await priceOf(afterWindowLine, { currentYear: WINDOW_NEWEST_YEAR + 8 }),
+			WINDOW_NEWEST_YEAR,
+			`${WINDOW_NEWEST_YEAR} при переданном ${WINDOW_NEWEST_YEAR + 8} годе лежит за окном и остаётся ценой`,
+		);
+	});
+
+	test("переданный год перебивает часы машины, а не складывается с ними", async () => {
+		/*
+		 * ЕДИНСТВЕННАЯ ПРОВЕРКА, КОТОРАЯ ПРЯМО ОТВЕЧАЕТ «ВОСПРОИЗВОДИМО». Остальные
+		 * закрепляют поведение при переданном годе, но не спрашивают, смотрит ли
+		 * разбор ЗАОДНО и на часы.
+		 *
+		 * Часы подделываются тем же способом, каким дефект был измерен до правки —
+		 * подменой Date.prototype.getFullYear, — и возвращаются в finally: утёкший
+		 * фальшивый год испортил бы остальные проверки файла.
+		 *
+		 * ПЕРВОЕ УТВЕРЖДЕНИЕ ЗДЕСЬ ОБЯЗАТЕЛЬНО, И ОНО НЕ ПРО ПРАВКУ. Оно проверяет,
+		 * что подделка часов ДЕЙСТВИТЕЛЬНО в силе: без него проверка была бы зелена и
+		 * при неработающей подмене, то есть не проверяла бы ничего. Оно же
+		 * закрепляет заявленное поведение по умолчанию — окно едет за часами, когда
+		 * год не передан.
+		 */
+		const realGetFullYear = Date.prototype.getFullYear;
+		/*
+		 * Год строки обязан лежать ВНУТРИ окна переданного года и ЗА окном подделанных
+		 * часов, иначе оба ответа совпадут и проверка ничего не различит: 2025 внутри
+		 * 2020..2027 (переданный 2026) и за 2026..2033 (подделанные часы 2032).
+		 */
+		const fakeClockYear = 2032;
+		const line = `Отбеливание ${PINNED_YEAR - 1}`;
+		let priceFromClock: number | null = null;
+		let priceFromCalendar: number | null = null;
+		try {
+			Date.prototype.getFullYear = function fakeGetFullYear(): number {
+				return fakeClockYear;
+			};
+			priceFromClock = await priceOf(line);
+			priceFromCalendar = await priceOf(line, PINNED_CALENDAR);
+		} finally {
+			Date.prototype.getFullYear = realGetFullYear;
+		}
+		assert.equal(
+			priceFromClock,
+			PINNED_YEAR - 1,
+			`подделка часов не сработала — проверять было бы нечего (окно ${fakeClockYear - 6}..${fakeClockYear + 1})`,
+		);
+		assert.equal(
+			priceFromCalendar,
+			null,
+			`переданный год ${PINNED_YEAR} не перебил часы машины: разбор снова зависит от даты прогона`,
+		);
 	});
 });
 
@@ -417,6 +596,7 @@ async function runNeuroBranch(options: {
 	rawText: string;
 	reply: () => Response;
 	poolKey?: string;
+	calendar?: PricelistCalendar;
 }): Promise<NeuroRun> {
 	const originalFetch = globalThis.fetch;
 	const calls: GroqStubCall[] = [];
@@ -434,10 +614,12 @@ async function runNeuroBranch(options: {
 	};
 	globalThis.fetch = stub as typeof globalThis.fetch;
 	try {
-		const response = await analyzePricelist(
-			{ ...AI_REQUEST, rawText: options.rawText },
-			EMPTY_CATALOG,
-		);
+		// Как и в детерминированных прогонах: нет календаря — работает значение по
+		// умолчанию из часов, то есть боевой вызов маршрута.
+		const request = { ...AI_REQUEST, rawText: options.rawText };
+		const response = options.calendar
+			? await analyzePricelist(request, EMPTY_CATALOG, options.calendar)
+			: await analyzePricelist(request, EMPTY_CATALOG);
 		return { response, calls };
 	} finally {
 		globalThis.fetch = originalFetch;
@@ -490,10 +672,12 @@ function assertGroqBranchExecuted(run: NeuroRun): void {
 async function analyzeWithModelRows(
 	rawText: string,
 	rows: unknown[],
+	calendar?: PricelistCalendar,
 ): Promise<DentalPricelistAnalysisResponse> {
 	const run = await runNeuroBranch({
 		rawText,
 		reply: () => groqSuccessReply(rows),
+		calendar,
 	});
 	assertGroqBranchExecuted(run);
 	return run.response;
@@ -662,5 +846,224 @@ describe("проверка нейро-ветки не пишет состоян�
 			process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
 			rmSync(sentinel, { force: true });
 		}
+	});
+});
+
+/**
+ * ТРЕТЬЯ ЧАСТЬ ЭТОГО ФАЙЛА: ОТКАЗ ОТ ГОДА РЕДАКЦИИ ДЕЙСТВУЕТ В ОБОИХ РЕЖИМАХ,
+ * а не только в детерминированном.
+ *
+ * ЧТО БЫЛО СЛОМАНО. Детерминированный разбор от года редакции отказывается, а
+ * itemFromGroq брал priceRub из ответа модели через readMoneyRubOrNull и проверок
+ * на год не делал ВООБЩЕ. Измерено прямым вызовом itemFromGroq на дереве до правки
+ * (истинный код выхода 0):
+ *   «Прайс-лист 2025»  + priceRub 2025 от модели  →  услуга за 2025 ₽
+ *   «Редакция 2024»    + priceRub 2024 от модели  →  услуга за 2024 ₽
+ *   «Отбеливание 2025» + priceRub 2025 от модели  →  услуга за 2025 ₽
+ * То есть дефект, закрытый в одной ветке, целиком жил во второй: модель,
+ * прочитавшая заголовок раздела прайса как услугу, ставила её в каталог, оттуда в
+ * план лечения, в счёт и в документ, который подписывает пациент. Это ЧЕТВЁРТЫЙ
+ * случай «двух владельцев одного правила» в analyzer.ts — до него так же жили
+ * отдельно свёртка убывающей пары цен, граница длительности приёма и гейт строк.
+ *
+ * ЗДЕСЬ ЛЕГКО СЛОМАТЬ ЗАКОННУЮ ЦЕНУ, поэтому проверяются ОБЕ стороны: 2025 ₽ —
+ * вполне реальная цена услуги (прицельный снимок, анестезия, консультация стоят
+ * 300-3000 ₽), и отказ обязан опираться на те же признаки, что в
+ * детерминированной ветке, — подпись деньгами у ЭТОГО числа и окно года редакции.
+ *
+ * ПОЧЕМУ ЗДЕСЬ И ПРЯМОЙ ВЫЗОВ, И НАСТОЯЩАЯ ВЕТКА. Прямой вызов itemFromGroq
+ * закрепляет само правило на записи модели (ветка Groq в этом окружении не
+ * исполняется: ключа нет, платный вызов запрещён). Но проверка, которая ЗОВЁТ
+ * функцию сама, не проверяет, что её зовёт analyzePricelist — на этом файле такое
+ * уже стоило зелёного прогона на сломанном коде (см. вторую часть). Поэтому оба
+ * ключевых исхода перемеряны через настоящую ветку с подделанным только HTTP.
+ */
+
+/** Каталожная позиция из одной записи ответа модели: разбор настоящий, запись поддельная. */
+function modelItem(
+	record: Record<string, unknown>,
+	calendar?: PricelistCalendar,
+) {
+	const sourceText = String(record.sourceText ?? "");
+	const request: DentalPricelistAnalysisRequest = {
+		...AI_REQUEST,
+		rawText: sourceText,
+	};
+	const item = calendar
+		? itemFromGroq(record, 0, request, EMPTY_CATALOG, calendar)
+		: itemFromGroq(record, 0, request, EMPTY_CATALOG);
+	assert.ok(item, `запись модели не стала позицией прайса («${sourceText}»)`);
+	return item;
+}
+
+/**
+ * Позиция, разобранная из записи модели, имеет id «price-ai-N». Утверждение о
+ * нейро-разборе без этой проверки ложно: контракт мог отвергнуть позицию модели и
+ * молча подставить детерминированный откат с id «price-N».
+ */
+const AI_ITEM_ID = "price-ai-1";
+
+/** Год, подписанный деньгами: законная цена, которую отказ унести не имеет права. */
+const SIGNED_YEAR_PRICE_LINE = `Консультация ${PINNED_YEAR - 1} руб`;
+
+describe("нейро-ветка отказывается от года редакции тем же правилом", () => {
+	test("год документа из ответа модели ценой услуги не становится", () => {
+		/*
+		 * Цена записи задана числом рядом со строкой, а не вычислена из неё
+		 * регуляркой: вычисленное значение однажды стало бы NaN, проверка молча
+		 * проверяла бы отказ от NaN вместо отказа от года и осталась бы зелёной.
+		 */
+		const modelRows: Array<[string, number]> = [
+			["Прайс-лист 2025", 2025],
+			["Редакция 2024", 2024],
+			[`Отбеливание ${PINNED_YEAR - 1}`, PINNED_YEAR - 1],
+		];
+		for (const [sourceText, modelPriceRub] of modelRows) {
+			const item = modelItem(
+				{ sourceText, priceRub: modelPriceRub },
+				PINNED_CALENDAR,
+			);
+			assert.equal(
+				item.priceRub,
+				null,
+				`год стал ценой услуги в нейро-ветке («${sourceText}»): ${item.priceRub} ₽`,
+			);
+			assert.equal(
+				item.priceMaxRub,
+				null,
+				`выдумана верхняя граница цены («${sourceText}»)`,
+			);
+			assert.ok(
+				item.warnings.includes("price_not_found"),
+				`отказ от цены не показан клинике («${sourceText}»): ${JSON.stringify(item.warnings)}`,
+			);
+			// Разобрана именно запись МОДЕЛИ: иначе проверка говорила бы о детерминированном откате.
+			assert.equal(item.id, AI_ITEM_ID, `позиция пришла из отката («${sourceText}»)`);
+		}
+	});
+
+	test("подпись деньгами оставляет год ценой и в записи модели", () => {
+		const item = modelItem(
+			{ sourceText: SIGNED_YEAR_PRICE_LINE, priceRub: PINNED_YEAR - 1 },
+			PINNED_CALENDAR,
+		);
+		assert.equal(
+			item.priceRub,
+			PINNED_YEAR - 1,
+			`унесена законная цена, подписанная знаком рубля («${SIGNED_YEAR_PRICE_LINE}»)`,
+		);
+		assert.ok(
+			!item.warnings.includes("price_not_found"),
+			`цена прочитана, а объявлена ненайденной: ${JSON.stringify(item.warnings)}`,
+		);
+		assert.equal(item.id, AI_ITEM_ID);
+	});
+
+	test("окно года у записи модели тоже считается от переданного года", () => {
+		/*
+		 * Тот же текст и та же запись модели по разные стороны окна: календарь
+		 * доезжает до нейро-ветки, а не теряется по дороге. Без этой проверки правка
+		 * могла бы читать в нейро-ветке часы машины, и никто бы не заметил.
+		 */
+		const sourceText = `Отбеливание ${PINNED_YEAR - 1}`;
+		const record = { sourceText, priceRub: PINNED_YEAR - 1 };
+		assert.equal(
+			modelItem(record, PINNED_CALENDAR).priceRub,
+			null,
+			`${PINNED_YEAR - 1} внутри окна при переданном ${PINNED_YEAR} годе ценой быть не может`,
+		);
+		const farCalendar: PricelistCalendar = { currentYear: PINNED_YEAR + 9 };
+		assert.equal(
+			modelItem(record, farCalendar).priceRub,
+			PINNED_YEAR - 1,
+			`${PINNED_YEAR - 1} за окном при переданном ${farCalendar.currentYear} годе обязан остаться ценой`,
+		);
+	});
+
+	test("верхняя граница из ответа модели проверяется тем же правилом", () => {
+		/*
+		 * Иначе отказ закрывал бы половину дефекта: priceRub проверен, а priceMaxRub
+		 * приносит год в тот же каталог — услуга получает выдуманный диапазон
+		 * 12 500-2025 ₽ вместо отсутствующей верхней границы.
+		 */
+		const sourceText = "Коронка 12 500 руб (прайс 2025)";
+		const item = modelItem(
+			{ sourceText, priceRub: 12500, priceMaxRub: 2025 },
+			PINNED_CALENDAR,
+		);
+		assert.equal(item.priceRub, 12500, "потеряна настоящая цена коронки");
+		assert.equal(
+			item.priceMaxRub,
+			null,
+			`год редакции стал верхней границей цены: ${item.priceMaxRub} ₽`,
+		);
+	});
+
+	test("обычные цены из ответа модели правку не заметили", () => {
+		// Ни 12 500, ни 1500,50 годом не являются, поэтому до проверки года они не
+		// доходят вовсе — включая копейки, за которые в этом файле стоит свой коммит.
+		assert.equal(
+			modelItem({ sourceText: REAL_SERVICE_LINE, priceRub: 12500 }).priceRub,
+			12500,
+		);
+		assert.equal(
+			modelItem({ sourceText: SECOND_SERVICE_LINE, priceRub: 1500.5 }).priceRub,
+			1500.5,
+		);
+		assert.equal(
+			modelItem({ sourceText: "Прицельный снимок 2000", priceRub: 2000 }, PINNED_CALENDAR)
+				.priceRub,
+			2000,
+			"цена вне окна года редакции унесена вместе с годами",
+		);
+		/*
+		 * Пара границ проверки года не касается ни в одном режиме: год диапазоном не
+		 * пишут. Числа взяты В ОКНЕ умышленно — 2025 при переданном 2026 годе, — иначе
+		 * проверка проходила бы мимо предмета.
+		 */
+		const range = modelItem(
+			{ sourceText: "Гигиена от 2025 до 2500 руб", priceRub: 2025, priceMaxRub: 2500 },
+			PINNED_CALENDAR,
+		);
+		assert.equal(range.priceRub, 2025, "нижняя граница диапазона принята за год редакции");
+		assert.equal(range.priceMaxRub, 2500, "верхняя граница диапазона потеряна");
+	});
+
+	test("настоящая нейро-ветка: запись модели с годом-ценой в каталог не проходит", async () => {
+		const response = await analyzeWithModelRows(
+			["Прайс-лист 2025", REAL_SERVICE_LINE].join("\n"),
+			[
+				{ sourceText: "Прайс-лист 2025", priceRub: 2025 },
+				{ sourceText: REAL_SERVICE_LINE, priceRub: 12500 },
+			],
+			PINNED_CALENDAR,
+		);
+		assert.equal(
+			response.items.length,
+			1,
+			`служебная запись с годом вместо цены стала услугой: ${JSON.stringify(
+				response.items.map((item) => [item.title, item.priceRub]),
+			)}`,
+		);
+		assert.equal(response.items[0]?.priceRub, 12500, "потеряна настоящая услуга");
+		assert.equal(
+			skippedRows(response.warnings),
+			1,
+			`отброшенная запись не посчитана: ${JSON.stringify(response.warnings)}`,
+		);
+	});
+
+	test("настоящая нейро-ветка: подписанный деньгами год остаётся ценой", async () => {
+		const response = await analyzeWithModelRows(
+			SIGNED_YEAR_PRICE_LINE,
+			[{ sourceText: SIGNED_YEAR_PRICE_LINE, priceRub: PINNED_YEAR - 1 }],
+			PINNED_CALENDAR,
+		);
+		assert.equal(response.items.length, 1, "позиция исчезла из прайса");
+		assert.equal(
+			response.items[0]?.priceRub,
+			PINNED_YEAR - 1,
+			"настоящая ветка унесла законную цену, подписанную знаком рубля",
+		);
 	});
 });
