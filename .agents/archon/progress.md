@@ -1223,3 +1223,38 @@ lead's hands.
 **Standing consequence:** a direct function call bypasses the schema defaults that every real caller gets.
 Probing a route's internals is not probing the route. Either call through the schema or pass what the
 schema would have supplied — and when a probe contradicts a green suite, the probe is the suspect.
+
+## CYCLE 18 DISPATCHED. THE LEAD CONFIRMED THE TITLE DEFECT ITSELF BEFORE BRIEFING IT.
+
+Fixed and pushed by the lead first (`ce04f7385`): the 12× underprice. `hasCurrency` tested the end of the
+WHOLE regex match, which in the no-upper-bound branch runs past the currency and ends on a swallowed digit,
+so a currency-marked price was demoted to non-explicit and `extractPrice`'s `.at(-1)` let the ROOM NUMBER
+win. «Седация 5000 руб/120 мин кабинет 412» went 412 → 5000. Three suites green (33/33, 6/6, 13/13), api
+typecheck 0.
+
+**Stated plainly in that commit and not dressed up: it fixed one of four.** The variant with NO currency
+marker still yields 412, because there `explicit: false` is correct and the fault is one level down in the
+`.at(-1)` fallback itself.
+
+### THREE DEFECTS THE LEAD RE-MEASURED AT HEAD BEFORE DISPATCHING THEM
+Run through the real `analyzePricelist` with `preferredSpecialty` supplied (the lesson from the invalid
+probe last cycle):
+
+    «Пломба 3500 руб 4000 руб»                    price 4000, title «Пломба 3500 руб»
+    «Имплантация 45000 руб, с коронкой 60000 руб» price 60000, title «Имплантация 45000 руб, с коронкой»
+    «Имплантация до 90000 руб»                    price 90000, title «Имплантация до»
+
+**The first is the worst and it is not cosmetic: the title displays one price while the price field holds
+another.** A dentist browsing the catalogue reads «Пломба 3500 руб» on a service that costs 4000 ₽. One
+record contradicting itself, and the title is the half a human actually reads.
+
+### WHY `.at(-1)` IS THE REAL DEFECT AND THE PACKET IS TOLD IT MAY REFUSE
+In a Russian price list the last number on a line is far more often a room number, a service code, a
+duration or a quantity than a price. So HH1 is explicitly permitted to conclude that a line with no
+currency marker and several numbers **cannot be priced** and must report `price_not_found`. §10 forbids
+inventing a value where none is determinable, and the arithmetic of the two failure modes is not close: a
+clinic shown «цена не распознана, проверьте строку» loses nothing, a clinic silently selling sedation at
+412 ₽ loses money on every sale.
+
+Also handed over: the untouched twin on the AI path (`analyzer.ts:~1003-1006` still collapses a
+model-returned descending pair, the exact shape removed from the deterministic path 460 lines above).
