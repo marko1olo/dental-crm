@@ -230,7 +230,6 @@ export async function createEncryptedBackup(): Promise<BackupResult> {
 			return { success: false, error };
 		}
 
-		console.log(`[BackupWorker] Копия создана: ${filePath} (${Math.round(sizeBytes / 1024)} КБ)`);
 		pruneOldBackups();
 		return outcome;
 	} catch (error) {
@@ -266,7 +265,6 @@ export function startBackupDaemon(): void {
 		return;
 	}
 
-	console.log("[BackupWorker] Резервное копирование включено.");
 
 	const firstRunDelayMs = Number(process.env.DENTE_BACKUP_FIRST_RUN_DELAY_MS ?? 120_000);
 	const firstRun: ReturnType<typeof setTimeout> = setTimeout(() => {
@@ -284,6 +282,5 @@ export function stopBackupDaemon(): void {
 	if (backupInterval) {
 		clearInterval(backupInterval);
 		backupInterval = null;
-		console.log("[BackupWorker] Резервное копирование остановлено.");
 	}
 }
