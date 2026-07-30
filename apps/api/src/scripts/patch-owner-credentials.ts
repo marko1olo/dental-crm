@@ -20,9 +20,15 @@ const db = new PGlite(DB_PATH, {
 await (db as any).waitReady;
 console.log("[PATCH] PGlite ready.");
 
-const ownerEmail = "owner@clinic.com";
-const ownerPassword = "dente2026";
-const ownerPin = "1234";
+const ownerEmail = process.env.OWNER_EMAIL;
+const ownerPassword = process.env.OWNER_PASSWORD;
+const ownerPin = process.env.OWNER_PIN;
+
+if (!ownerEmail || !ownerPassword || !ownerPin) {
+  console.error("[PATCH] Error: Missing required environment variables.");
+  console.error("Please provide OWNER_EMAIL, OWNER_PASSWORD, and OWNER_PIN.");
+  process.exit(1);
+}
 const passwordHash = await hashCredential(ownerPassword);
 const pinHash = await hashCredential(ownerPin);
 
@@ -77,8 +83,8 @@ console.log("  Clinic:", row.clinic_name, "(login:", row.login_id + ")");
 console.log("  Owner:", row.full_name, "(email:", row.email + ")");
 console.log("  Onboarding complete:", row.onboarding_completed);
 console.log("\n[PATCH] Login options:");
-console.log("  Clinic PC mode: clinic@example.com / dente2026");
-console.log("  User mode:      owner@clinic.com / dente2026");
-console.log("  PIN pad:        1234");
+console.log("  Clinic PC mode: clinic@example.com / [REDACTED]");
+console.log(`  User mode:      ${ownerEmail} / [REDACTED]`);
+console.log("  PIN pad:        [REDACTED]");
 
 await (db as any).close();
