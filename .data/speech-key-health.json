@@ -1,7 +1,15 @@
 {
   "version": 1,
-  "savedAt": "2026-07-29T10:35:35.560Z",
+  "savedAt": "2026-07-30T00:50:31.904Z",
   "health": {
+    "google_speech:26987e457b44": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "successes": 1,
+      "lastUsedAt": 1785372631904,
+      "lastStatusCode": null,
+      "lastError": null
+    },
     "google_speech:3e0ef4ad3f5a": {
       "cooldownUntil": 1785321464136,
       "failures": 26,
