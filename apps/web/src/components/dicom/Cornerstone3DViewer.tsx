@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import { PanoramicRendererWindow, type PanoramicVolumeInput } from "./PanoramicRendererWindow";
+import {
+  PanoramicRendererWindow,
+  type PanoramicVolumeInput,
+} from "./PanoramicRendererWindow";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
 import dicomParser from "dicom-parser";
 import { vec3, mat4 } from "gl-matrix";
@@ -41,7 +44,7 @@ export interface ImplantData {
   length: number;
   startWorld: vec3;
   endWorld: vec3;
-  boneDensity: { averageHU: number, classification: string };
+  boneDensity: { averageHU: number; classification: string };
   distanceToNerve: number;
 }
 
@@ -94,8 +97,16 @@ function implantDataOf(stored: readonly StoredImplant[]): ImplantData[] {
     fdiCode: implant.fdiCode,
     diameter: implant.diameter,
     length: implant.length,
-    startWorld: vec3.fromValues(implant.startWorld[0], implant.startWorld[1], implant.startWorld[2]),
-    endWorld: vec3.fromValues(implant.endWorld[0], implant.endWorld[1], implant.endWorld[2]),
+    startWorld: vec3.fromValues(
+      implant.startWorld[0],
+      implant.startWorld[1],
+      implant.startWorld[2],
+    ),
+    endWorld: vec3.fromValues(
+      implant.endWorld[0],
+      implant.endWorld[1],
+      implant.endWorld[2],
+    ),
     boneDensity: { ...implant.boneDensity },
     distanceToNerve: implant.distanceToNerve,
   }));
@@ -111,7 +122,10 @@ function implantProtocolLog(implant: ImplantData): string {
   return `В область зуба ${implant.fdiCode} запланирована установка имплантата ${implant.diameter.toFixed(1)}x${implant.length.toFixed(1)} мм. Плотность кости по HU соответствует типу ${implant.boneDensity.classification} (${implant.boneDensity.averageHU} HU). Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм.`;
 }
 
-export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3DViewerProps) {
+export function Cornerstone3DViewer({
+  imageIds,
+  patientId = null,
+}: Cornerstone3DViewerProps) {
   const axialRef = useRef<HTMLDivElement>(null);
   const sagittalRef = useRef<HTMLDivElement>(null);
   const coronalRef = useRef<HTMLDivElement>(null);
@@ -125,8 +139,12 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
   // Почему панорама НЕ построена, и по какой дуге она построена, если построена.
   // Раньше обоих состояний не было: кнопка всегда рисовала «панораму».
   const [panorexIssue, setPanorexIssue] = useState<PanoramicIssue | null>(null);
-  const [archSummary, setArchSummary] = useState<{ points: number; lengthMm: number } | null>(null);
-  const [panorexVolume, setPanorexVolume] = useState<PanoramicVolumeInput | null>(null);
+  const [archSummary, setArchSummary] = useState<{
+    points: number;
+    lengthMm: number;
+  } | null>(null);
+  const [panorexVolume, setPanorexVolume] =
+    useState<PanoramicVolumeInput | null>(null);
   const [panorexThickness, setPanorexThickness] = useState<number>(0);
   const [blendMode, setBlendMode] = useState<"mip" | "average">("mip");
   const [activeTool, setActiveTool] = useState<string>("Crosshairs");
@@ -149,15 +167,18 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
    */
   const [studyInstanceUid, setStudyInstanceUid] = useState<string | null>(null);
   /** Разметка, прочитанная из базы при открытии снимка. */
-  const [restoredMarkup, setRestoredMarkup] = useState<CtPlanningMarkup | null>(null);
+  const [restoredMarkup, setRestoredMarkup] = useState<CtPlanningMarkup | null>(
+    null,
+  );
   /**
    * Состояние хранения разметки, видимое врачу. Отказ, ушедший только в консоль,
    * для врача равен молчаливой потере работы — этот класс дефекта в дереве
    * ловили многократно.
    */
-  const [markupStatus, setMarkupStatus] = useState<
-    { tone: "saving" | "saved" | "issue"; text: string } | null
-  >(null);
+  const [markupStatus, setMarkupStatus] = useState<{
+    tone: "saving" | "saved" | "issue";
+    text: string;
+  } | null>(null);
 
   /*
    * Обработчики событий cornerstone и очистка эффекта живут вне цикла отрисовки
@@ -184,12 +205,14 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
       // 3. Initialize DICOM image loader
       cornerstoneDICOMImageLoader.init({
-        maxWebWorkers: navigator.hardwareConcurrency ? Math.min(navigator.hardwareConcurrency, 7) : 1,
+        maxWebWorkers: navigator.hardwareConcurrency
+          ? Math.min(navigator.hardwareConcurrency, 7)
+          : 1,
       });
 
       setIsInitialized(true);
     }
-    
+
     if (!isInitialized) {
       init();
     }
@@ -231,7 +254,9 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
       setVolumeId(vId);
       const renderingEngineId = "my-engine";
 
-      const renderingEngine = new cornerstone.RenderingEngine(renderingEngineId);
+      const renderingEngine = new cornerstone.RenderingEngine(
+        renderingEngineId,
+      );
 
       const viewportIds = {
         axial: "AXIAL",
@@ -293,25 +318,29 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
             | undefined)
         : undefined;
       const uid =
-        typeof seriesMeta?.studyInstanceUID === "string" ? seriesMeta.studyInstanceUID.trim() : "";
+        typeof seriesMeta?.studyInstanceUID === "string"
+          ? seriesMeta.studyInstanceUID.trim()
+          : "";
       if (!cancelled) setStudyInstanceUid(uid.length > 0 ? uid : null);
 
       await cornerstone.setVolumesForViewports(
         renderingEngine,
         [{ volumeId: vId }],
-        [viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]
+        [viewportIds.axial, viewportIds.sagittal, viewportIds.coronal],
       );
 
       // Add crosshairs tool
       const toolGroupId = "mpr-tool-group";
-      let toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+      let toolGroup =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
       if (!toolGroup) {
-        toolGroup = cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
+        toolGroup =
+          cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
       }
-      
+
       cornerstoneTools.addTool(cornerstoneTools.CrosshairsTool);
       toolGroup.addTool(cornerstoneTools.CrosshairsTool.toolName);
-      
+
       // We must configure crosshairs before setting active
       const crosshairsConfig = {
         viewportIndicators: false,
@@ -324,24 +353,33 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
           handleRadius: 6,
         },
       };
-      toolGroup.setToolConfiguration(cornerstoneTools.CrosshairsTool.toolName, crosshairsConfig);
-      
+      toolGroup.setToolConfiguration(
+        cornerstoneTools.CrosshairsTool.toolName,
+        crosshairsConfig,
+      );
+
       toolGroup.setToolActive(cornerstoneTools.CrosshairsTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
+        bindings: [
+          { mouseButton: cornerstoneTools.Enums.MouseBindings.Primary },
+        ],
       });
 
       // Also add WindowLevel on right click
       cornerstoneTools.addTool(cornerstoneTools.WindowLevelTool);
       toolGroup.addTool(cornerstoneTools.WindowLevelTool.toolName);
       toolGroup.setToolActive(cornerstoneTools.WindowLevelTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary }],
+        bindings: [
+          { mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary },
+        ],
       });
-      
+
       // Also add Zoom on Wheel
       cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
       toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
       toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary }],
+        bindings: [
+          { mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary },
+        ],
       });
 
       // Advanced Dental Tools
@@ -360,7 +398,11 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
       // Force render
       if (cancelled) return;
-      renderingEngine.renderViewports([viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]);
+      renderingEngine.renderViewports([
+        viewportIds.axial,
+        viewportIds.sagittal,
+        viewportIds.coronal,
+      ]);
     }
 
     loadAndRender()
@@ -369,7 +411,10 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
       })
       .catch((error) => {
         if (cancelled) return;
-        console.error("[Cornerstone3DViewer] Не удалось построить реконструкцию:", error);
+        console.error(
+          "[Cornerstone3DViewer] Не удалось построить реконструкцию:",
+          error,
+        );
         setIsVolumeLoading(false);
         setLoadError(
           "Не удалось построить реконструкцию. Возможно, серия неполная или формат не поддерживается. Попробуйте загрузить архив заново.",
@@ -453,7 +498,8 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
       }
     }
     const restored = restoredMarkupRef.current;
-    if (splinePoints.length === 0 && restored) splinePoints = restored.splinePoints;
+    if (splinePoints.length === 0 && restored)
+      splinePoints = restored.splinePoints;
     return {
       splinePoints,
       // Инструмента обводки канала нерва в этом просмотрщике нет вовсе, поэтому
@@ -498,7 +544,8 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
       return;
     }
 
-    if (!silent) setMarkupStatus({ tone: "saving", text: "Сохраняем разметку…" });
+    if (!silent)
+      setMarkupStatus({ tone: "saving", text: "Сохраняем разметку…" });
     const outcome = await saveCtPlanningMarkup(patient, study, markup);
     // Прочитанное принимаем за новую основу: иначе следующее сохранение снова
     // сравнивалось бы с состоянием до правки.
@@ -552,12 +599,24 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
     // Аннотации cornerstone рассылают события на общий eventTarget, а не на
     // элемент (`stateManagement/annotation/helpers/state.js:13`).
-    target.addEventListener(cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED, onCompleted);
-    target.addEventListener(cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED, onModified);
+    target.addEventListener(
+      cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED,
+      onCompleted,
+    );
+    target.addEventListener(
+      cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED,
+      onModified,
+    );
 
     return () => {
-      target.removeEventListener(cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED, onCompleted);
-      target.removeEventListener(cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED, onModified);
+      target.removeEventListener(
+        cornerstoneTools.Enums.Events.ANNOTATION_COMPLETED,
+        onCompleted,
+      );
+      target.removeEventListener(
+        cornerstoneTools.Enums.Events.ANNOTATION_MODIFIED,
+        onModified,
+      );
       // УХОД С ЭКРАНА — ровно тот момент, в котором разметка раньше исчезала:
       // ниже по этому же файлу очистка уничтожает группу инструментов, а
       // соседний эффект чистит кэш cornerstone. Отложенную запись здесь ждать
@@ -662,7 +721,10 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
     const [ox, oy, oz] = volume.origin;
     const [sx, sy, sz] = volume.spacing;
     setPanorexIssue(null);
-    setArchSummary({ points: arch.controlPoints.length, lengthMm: arch.lengthMm });
+    setArchSummary({
+      points: arch.controlPoints.length,
+      lengthMm: arch.lengthMm,
+    });
     setSplinePoints(arch.curve);
     setPanorexVolume({
       scalarData: toTransferableScalarData(voxels.scalarData),
@@ -678,9 +740,10 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
   const setTool = (toolName: string) => {
     const toolGroupId = "mpr-tool-group";
-    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+    const toolGroup =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
     if (!toolGroup) return;
-    
+
     // Disable previous
     toolGroup.setToolDisabled(activeTool);
     // Enable new
@@ -694,18 +757,18 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
     // 1. We mock the physical placing in 3D world space (DICOM coords)
     const implantStart = vec3.fromValues(10, 20, -50);
     const implantEnd = vec3.fromValues(10, 20, -60); // 10mm length
-    
+
     // 2. We mock nerve spline
     const nerveSpline = [
       vec3.fromValues(10, 22, -62),
-      vec3.fromValues(12, 24, -65)
+      vec3.fromValues(12, 24, -65),
     ];
 
     // 3. Collision Detection Math
     const distToNerve = distancePointToSpline(implantEnd, nerveSpline);
-    
+
     // 4. Bone Density Math (Mocking scalarData since we'd normally get it from volume)
-    const classification = "D2"; 
+    const classification = "D2";
     const avgHu = 650;
 
     const newImplant: ImplantData = {
@@ -716,7 +779,7 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
       startWorld: implantStart,
       endWorld: implantEnd,
       boneDensity: { averageHU: avgHu, classification },
-      distanceToNerve: distToNerve
+      distanceToNerve: distToNerve,
     };
 
     const nextImplants = [...implants, newImplant];
@@ -730,13 +793,6 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
 
     // Постановка импланта — законченное действие врача, значит момент записи.
     void saveMarkupNow();
-
-    // [OBLIQUE SNAP SIMULATION] 
-    // In a full implementation, we'd do:
-    // const D = vec3.sub(implantEnd, implantStart);
-    // const N = vec3.normalize(D);
-    // renderingEngine.getViewport('SAGITTAL').setCamera({ viewUp: N });
-    // renderingEngine.render();
   };
 
   // Одно из двух: причина отказа, либо параметры дуги, по которой панорама
@@ -752,77 +808,234 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
         : null;
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', backgroundColor: '#0a0a0a', color: '#fff', position: 'relative', fontFamily: 'sans-serif' }}>
-
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        minHeight: "600px",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#0a0a0a",
+        color: "#fff",
+        position: "relative",
+        fontFamily: "sans-serif",
+      }}
+    >
       {/* БЫЛО: ни индикатора загрузки, ни сообщения об ошибке — при сбое врач
           видел три чёрные панели и не понимал, идёт ли построение или всё упало. */}
       {(isVolumeLoading || loadError) && (
         <div
           role={loadError ? "alert" : "status"}
           style={{
-            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            zIndex: 30, maxWidth: '420px', textAlign: 'center', padding: '20px 24px',
-            borderRadius: '16px', backgroundColor: 'rgba(0,0,0,0.78)',
-            border: `1px solid ${loadError ? '#f87171' : 'rgba(255,255,255,0.2)'}`,
-            color: loadError ? '#fca5a5' : '#e4e4e7', fontSize: '14px', lineHeight: 1.5,
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 30,
+            maxWidth: "420px",
+            textAlign: "center",
+            padding: "20px 24px",
+            borderRadius: "16px",
+            backgroundColor: "rgba(0,0,0,0.78)",
+            border: `1px solid ${loadError ? "#f87171" : "rgba(255,255,255,0.2)"}`,
+            color: loadError ? "#fca5a5" : "#e4e4e7",
+            fontSize: "14px",
+            lineHeight: 1.5,
           }}
         >
-          {loadError ?? 'Строим объёмную реконструкцию — это может занять до минуты...'}
+          {loadError ??
+            "Строим объёмную реконструкцию — это может занять до минуты..."}
         </div>
       )}
 
       {/* KICKASS GLASSMORPHISM TOOLBAR */}
-      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', padding: '8px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#fff' : '#d4d4d8' }}
+      <div
+        style={{
+          position: "absolute",
+          top: "16px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          backgroundColor: "rgba(255,255,255,0.1)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          padding: "8px",
+          borderRadius: "16px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            borderRadius: "12px",
+            padding: "4px",
+            gap: "4px",
+          }}
+        >
+          <button
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+              border: "none",
+              transition: "all 0.2s",
+              backgroundColor:
+                activeTool === cornerstoneTools.CrosshairsTool.toolName
+                  ? "#2563eb"
+                  : "transparent",
+              color:
+                activeTool === cornerstoneTools.CrosshairsTool.toolName
+                  ? "#fff"
+                  : "#d4d4d8",
+            }}
             onClick={() => setTool(cornerstoneTools.CrosshairsTool.toolName)}
           >
             MPR (Oblique)
           </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.SplineROITool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.SplineROITool.toolName ? '#fff' : '#d4d4d8' }}
+          <button
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+              border: "none",
+              transition: "all 0.2s",
+              backgroundColor:
+                activeTool === cornerstoneTools.SplineROITool.toolName
+                  ? "#2563eb"
+                  : "transparent",
+              color:
+                activeTool === cornerstoneTools.SplineROITool.toolName
+                  ? "#fff"
+                  : "#d4d4d8",
+            }}
             onClick={() => setTool(cornerstoneTools.SplineROITool.toolName)}
           >
             Дуга (Spline)
           </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.ProbeTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.ProbeTool.toolName ? '#fff' : '#d4d4d8' }}
+          <button
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+              border: "none",
+              transition: "all 0.2s",
+              backgroundColor:
+                activeTool === cornerstoneTools.ProbeTool.toolName
+                  ? "#2563eb"
+                  : "transparent",
+              color:
+                activeTool === cornerstoneTools.ProbeTool.toolName
+                  ? "#fff"
+                  : "#d4d4d8",
+            }}
             onClick={() => setTool(cornerstoneTools.ProbeTool.toolName)}
           >
             Probe (HU)
           </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === 'Implant' ? '#4f46e5' : 'transparent', color: activeTool === 'Implant' ? '#fff' : '#d4d4d8' }}
+          <button
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+              border: "none",
+              transition: "all 0.2s",
+              backgroundColor:
+                activeTool === "Implant" ? "#4f46e5" : "transparent",
+              color: activeTool === "Implant" ? "#fff" : "#d4d4d8",
+            }}
             onClick={simulateImplantPlacement}
           >
             Implant (+Log)
           </button>
         </div>
 
-        <div style={{ width: '1px', height: '32px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
+        <div
+          style={{
+            width: "1px",
+            height: "32px",
+            backgroundColor: "rgba(255,255,255,0.2)",
+            margin: "0 4px",
+          }}
+        ></div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-          <span style={{ color: '#a3a3a3' }}>Толщина (ОПТГ):</span>
-          <input 
-            type="range" min="0" max="20" step="1" 
-            value={panorexThickness} 
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+          }}
+        >
+          <span style={{ color: "#a3a3a3" }}>Толщина (ОПТГ):</span>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="1"
+            value={panorexThickness}
             onChange={(e) => setPanorexThickness(Number(e.target.value))}
-            style={{ width: '96px', cursor: 'pointer' }}
+            style={{ width: "96px", cursor: "pointer" }}
           />
-          <span style={{ width: '24px', textAlign: 'right' }}>{panorexThickness}mm</span>
+          <span style={{ width: "24px", textAlign: "right" }}>
+            {panorexThickness}mm
+          </span>
         </div>
 
-        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px', marginLeft: '4px' }}>
-          <button 
-            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'mip' ? '#525252' : 'transparent', color: blendMode === 'mip' ? '#fff' : '#a3a3a3' }}
+        <div
+          style={{
+            display: "flex",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            borderRadius: "12px",
+            padding: "4px",
+            gap: "4px",
+            marginLeft: "4px",
+          }}
+        >
+          <button
+            style={{
+              padding: "6px 12px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 500,
+              cursor: panorexThickness === 0 ? "not-allowed" : "pointer",
+              border: "none",
+              opacity: panorexThickness === 0 ? 0.5 : 1,
+              transition: "all 0.2s",
+              backgroundColor: blendMode === "mip" ? "#525252" : "transparent",
+              color: blendMode === "mip" ? "#fff" : "#a3a3a3",
+            }}
             onClick={() => setBlendMode("mip")}
             disabled={panorexThickness === 0}
           >
             MIP
           </button>
-          <button 
-            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'average' ? '#525252' : 'transparent', color: blendMode === 'average' ? '#fff' : '#a3a3a3' }}
+          <button
+            style={{
+              padding: "6px 12px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 500,
+              cursor: panorexThickness === 0 ? "not-allowed" : "pointer",
+              border: "none",
+              opacity: panorexThickness === 0 ? 0.5 : 1,
+              transition: "all 0.2s",
+              backgroundColor:
+                blendMode === "average" ? "#525252" : "transparent",
+              color: blendMode === "average" ? "#fff" : "#a3a3a3",
+            }}
             onClick={() => setBlendMode("average")}
             disabled={panorexThickness === 0}
           >
@@ -830,11 +1043,38 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
           </button>
         </div>
 
-        <button 
-          style={{ marginLeft: '8px', background: 'linear-gradient(to right, #2563eb, #4f46e5)', color: '#fff', padding: '8px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(79,70,229,0.5)', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
+        <button
+          style={{
+            marginLeft: "8px",
+            background: "linear-gradient(to right, #2563eb, #4f46e5)",
+            color: "#fff",
+            padding: "8px 20px",
+            borderRadius: "12px",
+            fontSize: "14px",
+            fontWeight: "bold",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 15px rgba(79,70,229,0.5)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.2s",
+          }}
           onClick={handleGeneratePanorex}
         >
-          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          <svg
+            style={{ width: "16px", height: "16px" }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            ></path>
+          </svg>
           Развернуть
         </button>
 
@@ -844,7 +1084,17 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
         <button
           type="button"
           data-testid="ct-planning-save"
-          style={{ marginLeft: '4px', backgroundColor: 'rgba(0,0,0,0.4)', color: '#d4d4d8', padding: '8px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 500, border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+          style={{
+            marginLeft: "4px",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            color: "#d4d4d8",
+            padding: "8px 14px",
+            borderRadius: "12px",
+            fontSize: "13px",
+            fontWeight: 500,
+            border: "1px solid rgba(255,255,255,0.2)",
+            cursor: "pointer",
+          }}
           onClick={() => void saveMarkupNow()}
         >
           Сохранить разметку
@@ -903,37 +1153,181 @@ export function Cornerstone3DViewer({ imageIds, patientId = null }: Cornerstone3
         />
       )}
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', backgroundColor: '#262626', padding: '2px' }}>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#f87171', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>AXIAL</div>
-          <div ref={axialRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
+      <div
+        style={{
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "1fr 1fr",
+          gap: "2px",
+          backgroundColor: "#262626",
+          padding: "2px",
+        }}
+      >
+        <div style={{ position: "relative", backgroundColor: "#000" }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              left: "8px",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+              color: "#f87171",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.05em",
+              zIndex: 10,
+            }}
+          >
+            AXIAL
+          </div>
+          <div
+            ref={axialRef}
+            style={{ width: "100%", height: "100%" }}
+            onContextMenu={(e) => e.preventDefault()}
+          />
         </div>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#4ade80', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>SAGITTAL</div>
-          <div ref={sagittalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
+        <div style={{ position: "relative", backgroundColor: "#000" }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              left: "8px",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+              color: "#4ade80",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.05em",
+              zIndex: 10,
+            }}
+          >
+            SAGITTAL
+          </div>
+          <div
+            ref={sagittalRef}
+            style={{ width: "100%", height: "100%" }}
+            onContextMenu={(e) => e.preventDefault()}
+          />
         </div>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#60a5fa', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>CORONAL</div>
-          <div ref={coronalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
+        <div style={{ position: "relative", backgroundColor: "#000" }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "8px",
+              left: "8px",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+              color: "#60a5fa",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.05em",
+              zIndex: 10,
+            }}
+          >
+            CORONAL
+          </div>
+          <div
+            ref={coronalRef}
+            style={{ width: "100%", height: "100%" }}
+            onContextMenu={(e) => e.preventDefault()}
+          />
         </div>
-        <div style={{ position: 'relative', backgroundColor: '#171717', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginBottom: '16px' }}>Surgical Module Logs</div>
-          
+        <div
+          style={{
+            position: "relative",
+            backgroundColor: "#171717",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              color: "#737373",
+              fontSize: "14px",
+              fontWeight: 500,
+              marginBottom: "16px",
+            }}
+          >
+            Surgical Module Logs
+          </div>
+
           {aiProtocolLog && implants.length > 0 && (
-            <div style={{ width: '100%', maxWidth: '384px', padding: '16px', borderRadius: '12px', border: '1px solid', backgroundColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)', borderColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)', color: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? '#fecaca' : '#dcfce7' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "384px",
+                padding: "16px",
+                borderRadius: "12px",
+                border: "1px solid",
+                backgroundColor:
+                  (implants[implants.length - 1]?.distanceToNerve ?? Infinity) <
+                  2.0
+                    ? "rgba(239,68,68,0.2)"
+                    : "rgba(34,197,94,0.2)",
+                borderColor:
+                  (implants[implants.length - 1]?.distanceToNerve ?? Infinity) <
+                  2.0
+                    ? "rgba(239,68,68,0.5)"
+                    : "rgba(34,197,94,0.5)",
+                color:
+                  (implants[implants.length - 1]?.distanceToNerve ?? Infinity) <
+                  2.0
+                    ? "#fecaca"
+                    : "#dcfce7",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <svg
+                  style={{ width: "16px", height: "16px" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
                 AI Auto-Protocol
               </div>
-              <p style={{ fontSize: '12px', lineHeight: 1.5 }}>{aiProtocolLog}</p>
-              {(implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 && (
-                <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 'bold', color: '#f87171' }}>
+              <p style={{ fontSize: "12px", lineHeight: 1.5 }}>
+                {aiProtocolLog}
+              </p>
+              {(implants[implants.length - 1]?.distanceToNerve ?? Infinity) <
+                2.0 && (
+                <div
+                  style={{
+                    marginTop: "8px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#f87171",
+                  }}
+                >
                   ⚠️ КРИТИЧЕСКАЯ БЛИЗОСТЬ К НЕРВУ!
                 </div>
               )}
             </div>
           )}
-          
         </div>
       </div>
     </div>
