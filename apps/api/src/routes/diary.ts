@@ -564,7 +564,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 	app.post("/api/diaries", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "write diary")))
 			return;
-		const data = diaryUpsertSchema.parse(req.body);
+		const parsedUpsert = diaryUpsertSchema.safeParse(req.body);
+		if (!parsedUpsert.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Проверьте поля дневника приёма. Нужны корректные visitId и patientId (UUID).",
+			});
+		}
+		const data = parsedUpsert.data;
 		const userContext = (req as any).user;
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
