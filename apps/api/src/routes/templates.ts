@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import {
   requireClinicalMutationAccess,
@@ -83,6 +84,23 @@ const TEMPLATE_TITLE_REQUIRED_MESSAGE =
  */
 const TEMPLATE_BUILT_IN_MESSAGE =
   "Это встроенный протокол приёма, он поставляется вместе с программой и удалить его нельзя. Если он вам не подходит, создайте свой протокол приёма и выбирайте на приёме его — встроенный останется в списке, но пользоваться им никто не обязан.";
+
+
+/**
+ * POST /api/templates: тело раньше — bare cast `req.body as { title: string; … }`.
+ * null/array → TypeError на body.title (500). Zod safeParse после AUTH/org → 400.
+ */
+const templateCreateBodySchema = z.object({
+  title: z.unknown().optional(),
+  category: z.unknown().optional(),
+  specialty: z.unknown().optional(),
+  prefilledAnamnesis: z.unknown().optional(),
+  prefilledObjective: z.unknown().optional(),
+  prefilledTreatment: z.unknown().optional(),
+  defaultIcd10: z.unknown().optional(),
+  defaultIcd10Label: z.unknown().optional(),
+  suggestedProcedureIds: z.unknown().optional(),
+});
 
 export default async function registerTemplateRoutes(app: FastifyInstance) {
   app.get("/api/templates", async (req, reply) => {
@@ -189,39 +207,41 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
         message: TEMPLATES_CLINIC_UNKNOWN_CREATE_MESSAGE,
       });
 
-    const body = req.body as {
-      title: string;
-      category?: string;
-      specialty?: string;
-      prefilledAnamnesis?: string;
-      prefilledObjective?: string;
-      prefilledTreatment?: string;
-      defaultIcd10?: string;
-      defaultIcd10Label?: string;
-      suggestedProcedureIds?: string[];
-    };
-
-    if (!body.title?.trim())
-      return reply
-        .code(400)
-        .send({
-          error: "Title required",
-          message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
-        });
+    const parsedBody = templateCreateBodySchema.safeParse(req.body ?? {});
+    if (!parsedBody.success) {
+      return reply.code(400).send({
+        error: "Title required",
+        message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
+      });
+    }
+    const titleRaw = parsedBody.data.title;
+    const title = typeof titleRaw === "string" ? titleRaw.trim() : "";
+    if (!title) {
+      return reply.code(400).send({
+        error: "Title required",
+        message: TEMPLATE_TITLE_REQUIRED_MESSAGE,
+      });
+    }
+    const str = (v: unknown): string | undefined =>
+      typeof v === "string" ? v : undefined;
+    const suggestedRaw = parsedBody.data.suggestedProcedureIds;
+    const suggestedProcedureIds = Array.isArray(suggestedRaw)
+      ? suggestedRaw.filter((x): x is string => typeof x === "string")
+      : [];
 
     const [inserted] = await db
       .insert(visitTemplates)
       .values({
         organizationId: orgId,
-        title: body.title.trim(),
-        category: body.category,
-        specialty: body.specialty,
-        prefilledAnamnesis: body.prefilledAnamnesis,
-        prefilledObjective: body.prefilledObjective,
-        prefilledTreatment: body.prefilledTreatment,
-        defaultIcd10: body.defaultIcd10,
-        defaultIcd10Label: body.defaultIcd10Label,
-        suggestedProcedureIds: body.suggestedProcedureIds ?? [],
+        title,
+        category: str(parsedBody.data.category),
+        specialty: str(parsedBody.data.specialty),
+        prefilledAnamnesis: str(parsedBody.data.prefilledAnamnesis),
+        prefilledObjective: str(parsedBody.data.prefilledObjective),
+        prefilledTreatment: str(parsedBody.data.prefilledTreatment),
+        defaultIcd10: str(parsedBody.data.defaultIcd10),
+        defaultIcd10Label: str(parsedBody.data.defaultIcd10Label),
+        suggestedProcedureIds,
         isBuiltIn: false,
       })
       .returning();

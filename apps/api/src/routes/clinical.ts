@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
   clinicalRuleEvaluationInputSchema,
   clinicalRuleEvaluationResponseSchema,
@@ -46,6 +47,16 @@ function optionalUuid(value: unknown): string | null | undefined {
 }
 
 const clinicalPhaseCompletionValidationMessage = `Ошибка валидации: нужен patientId в формате UUID и completedPhaseCode из списка: ${CLINICAL_PHASE_CODES.join(", ")}.`;
+
+/**
+ * POST /api/hr/recent-patients: тело раньше — bare cast
+ * `request.body as { patientId?: unknown } | undefined`.
+ * Zod safeParse после requireStaffIdentity → 400 с прежним PatientIdRequired.
+ */
+const recentPatientViewBodySchema = z.object({
+	patientId: z.unknown().optional(),
+});
+
 
 export async function registerClinicalRoutes(app: FastifyInstance) {
   app.post("/api/clinical/rules/evaluate", async (request, reply) => {
@@ -386,8 +397,15 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 	app.post("/api/hr/recent-patients", async (request, reply) => {
 		const identity = requireStaffIdentity(request, reply);
 		if (!identity) return;
-		const body = request.body as { patientId?: unknown } | undefined;
-		const patientId = typeof body?.patientId === "string" ? body.patientId : "";
+		const parsedBody = recentPatientViewBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "PatientIdRequired",
+				message: "Не указан пациент, карточку которого открыли.",
+			});
+		}
+		const patientId =
+			typeof parsedBody.data.patientId === "string" ? parsedBody.data.patientId : "";
 		if (!patientId) {
 			return reply.status(400).send({
 				error: "PatientIdRequired",

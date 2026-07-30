@@ -172,6 +172,10 @@ const campaignCreateSchema = z.object({
 	scheduledAt: z.string().datetime({ offset: true }).nullable().optional()
 });
 
+const dispatchBodySchema = z.object({
+	batchSize: z.unknown().optional()
+});
+
 const outboxQuerySchema = z.object({
 	status: outboxStatusSchema.optional(),
 	channel: channelSchema.optional(),
@@ -702,7 +706,9 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 		if (!context) return;
 		if (!enforcePermissionWhenStaffKnown(request, reply, "communications.write")) return;
 
-		const batchSize = Number.parseInt(String((request.body as { batchSize?: unknown })?.batchSize ?? "25"), 10);
+		const parsedBody = dispatchBodySchema.safeParse(request.body ?? {});
+		const rawBatch = parsedBody.success ? parsedBody.data.batchSize : undefined;
+		const batchSize = Number.parseInt(String(rawBatch ?? "25"), 10);
 		const report = await dispatchDueMessages({
 			// Только своя организация: администратор одной клиники не разбирает
 			// очередь соседней, даже если процесс сервера общий.

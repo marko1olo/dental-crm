@@ -96,6 +96,24 @@ const diaryUpsertSchema = z.object({
 	pkcs7Signature: z.string().optional(),
 });
 
+/**
+ * POST /api/diaries/:id/lock и /revise: тела раньше — bare cast.
+ * Zod safeParse после requireClinicalMutationAccess (+ role/org gates где они
+ * стоят раньше чтения полей) → 400 при non-object; поля остаются optional.
+ */
+const diaryLockBodySchema = z.object({
+	pkcs7Signature: z.unknown().optional(),
+});
+
+const diaryReviseBodySchema = z.object({
+	anamnesis: z.unknown().optional(),
+	statusLocalis: z.unknown().optional(),
+	diagnosisIcd10: z.unknown().optional(),
+	diagnosisTooth: z.unknown().optional(),
+	treatmentDescription: z.unknown().optional(),
+	revisionReason: z.unknown().optional(),
+});
+
 function computeDiaryHash(
 	visitId: string,
 	patientId: string,
@@ -735,7 +753,17 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalMutationAccess(req, reply, "lock diary")))
 			return;
 		const { id } = req.params as { id: string };
-		const { pkcs7Signature } = (req.body as { pkcs7Signature?: string }) || {};
+		const parsedLockBody = diaryLockBodySchema.safeParse(req.body ?? {});
+		if (!parsedLockBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Тело запроса подписания дневника должно быть JSON-объектом.",
+			});
+		}
+		const pkcs7Signature =
+			typeof parsedLockBody.data.pkcs7Signature === "string"
+				? parsedLockBody.data.pkcs7Signature
+				: undefined;
 		const userContext = (req as any).user;
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
@@ -838,6 +866,14 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		)
 			return;
 		const { id } = req.params as { id: string };
+		/* Body Zod before role gate (как /lock): non-object → 400, не 403 oracle. */
+		const parsedReviseBody = diaryReviseBodySchema.safeParse(req.body ?? {});
+		if (!parsedReviseBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Тело запроса ревизии дневника должно быть JSON-объектом.",
+			});
+		}
 		const userContext = (req as any).user;
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
@@ -883,23 +919,41 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 				message: "Дневник не подписан — просто редактируйте его.",
 			});
 
-		const body = req.body as {
-			anamnesis?: string;
-			statusLocalis?: string;
-			diagnosisIcd10?: string;
-			diagnosisTooth?: string;
-			treatmentDescription?: string;
-			/**
-			 * ДОЛГ, НЕ ЗАКРЫТ ЗДЕСЬ: причина ревизии принимается, но сохранить её
-			 * некуда — в модели drizzle нет колонки. В САМОЙ БАЗЕ она есть:
-			 * миграция 0116_add_soap_template_fields.sql добавила
-			 * visit_diary_revisions.revision_reason TEXT и
-			 * visit_diary_revisions.previous_diagnosis_tooth VARCHAR(10) (проверено
-			 * чтением information_schema на 127.0.0.1:5432). Отстала только
-			 * apps/api/src/db/schema.ts:1421-1434, а её правка вне рамок этого
-			 * пакета. Пока строка ревизии не хранит ни причину, ни прежний номер зуба.
-			 */
-			revisionReason?: string;
+		/*
+		 * ДОЛГ, НЕ ЗАКРЫТ ЗДЕСЬ: причина ревизии принимается, но сохранить её
+		 * некуда — в модели drizzle нет колонки. В САМОЙ БАЗЕ она есть:
+		 * миграция 0116_add_soap_template_fields.sql добавила
+		 * visit_diary_revisions.revision_reason TEXT и
+		 * visit_diary_revisions.previous_diagnosis_tooth VARCHAR(10) (проверено
+		 * чтением information_schema на 127.0.0.1:5432). Отстала только
+		 * apps/api/src/db/schema.ts:1421-1434, а её правка вне рамок этого
+		 * пакета. Пока строка ревизии не хранит ни причину, ни прежний номер зуба.
+		 */
+		const body = {
+			anamnesis:
+				typeof parsedReviseBody.data.anamnesis === "string"
+					? parsedReviseBody.data.anamnesis
+					: undefined,
+			statusLocalis:
+				typeof parsedReviseBody.data.statusLocalis === "string"
+					? parsedReviseBody.data.statusLocalis
+					: undefined,
+			diagnosisIcd10:
+				typeof parsedReviseBody.data.diagnosisIcd10 === "string"
+					? parsedReviseBody.data.diagnosisIcd10
+					: undefined,
+			diagnosisTooth:
+				typeof parsedReviseBody.data.diagnosisTooth === "string"
+					? parsedReviseBody.data.diagnosisTooth
+					: undefined,
+			treatmentDescription:
+				typeof parsedReviseBody.data.treatmentDescription === "string"
+					? parsedReviseBody.data.treatmentDescription
+					: undefined,
+			revisionReason:
+				typeof parsedReviseBody.data.revisionReason === "string"
+					? parsedReviseBody.data.revisionReason
+					: undefined,
 		};
 
 		const newHash = computeDiaryHash(

@@ -40,6 +40,15 @@ const aiRecognitionStudyMissingMessage =
 const aiRecognitionStudyPatientMismatchMessage =
   "Снимок привязан к другому пациенту. Проверьте карту перед созданием AI-черновика.";
 
+/**
+ * POST /api/ai/predict-no-show: тело раньше — bare cast
+ * `request.body as { patientId?: unknown } | null | undefined`.
+ * Zod safeParse после clinic-token AUTH → 400 с прежним RU текстом.
+ */
+const predictNoShowBodySchema = z.object({
+  patientId: z.unknown().optional(),
+});
+
 function sendAiRecognitionScopeError(
   reply: FastifyReply,
   statusCode: 404 | 409,
@@ -315,8 +324,15 @@ export async function registerAiRoutes(app: FastifyInstance) {
       });
     }
 
-    const body = request.body as { patientId?: unknown } | null | undefined;
-    const patientId = typeof body?.patientId === "string" ? body.patientId.trim() : "";
+    const parsedBody = predictNoShowBodySchema.safeParse(request.body ?? {});
+    if (!parsedBody.success) {
+      return reply.code(400).send({
+        error: "ValidationError",
+        message: "Не указано, для какого пациента считать риск неявки."
+      });
+    }
+    const patientId =
+      typeof parsedBody.data.patientId === "string" ? parsedBody.data.patientId.trim() : "";
     if (!patientId) {
       return reply.code(400).send({
         error: "ValidationError",

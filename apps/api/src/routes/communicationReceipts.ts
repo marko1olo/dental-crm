@@ -26,7 +26,7 @@ import {
 function extractSecret(request: FastifyRequest): unknown {
 	const header = request.headers["x-dente-receipt-secret"];
 	if (typeof header === "string") return header;
-	const query = request.query as Record<string, unknown> | undefined;
+	const query = asRecord(request.query);
 	return query?.secret;
 }
 
@@ -60,11 +60,23 @@ function guardReceiptCall(request: FastifyRequest, reply: FastifyReply): boolean
 	return true;
 }
 
+/**
+ * Тело/query приходят form-urlencoded или JSON. Bare cast на non-object
+ * (null/array/string) давал бы TypeError при индексе — как у max/whatsapp:
+ * non-object → пустые поля, не 500.
+ */
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		return value as Record<string, unknown>;
+	}
+	return undefined;
+}
+
 /** Тело приходит и как form-urlencoded, и как JSON — берём из обоих. */
 function fieldFrom(request: FastifyRequest, name: string): unknown {
-	const body = request.body as Record<string, unknown> | undefined;
+	const body = asRecord(request.body);
 	if (body && body[name] !== undefined) return body[name];
-	const query = request.query as Record<string, unknown> | undefined;
+	const query = asRecord(request.query);
 	return query?.[name];
 }
 
