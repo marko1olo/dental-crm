@@ -35,7 +35,8 @@
 [x] P1 | leads+finance_family+sterilization body Zod (AUTH-first; null/array→400≠500; RU ValidationError) | leads.ts+finance_family.ts+sterilization.ts + leadsFinanceSterilBody.test.ts | 20/20 GREEN typecheck OK | a0eb58194
 
 [x] P1 | diary POST /api/diaries upsert body Zod (AUTH-first; null/array/{}→400≠500; RU ValidationError) | diary.ts + nextCastsBody.test.ts | 22/22 GREEN typecheck OK | 18050f0ec
-[x] P0 | diary gameplay: doSave → POST /api/diaries (not visit draft/autosave); return id for doLock; message-first RU toasts | useVisitDiaryLogic.ts | wired save/lock to diary API + Zod ValidationError surfaces
+[x] P0 | diary gameplay: doSave → POST /api/diaries (not visit draft/autosave); return id for doLock; message-first RU toasts | useVisitDiaryLogic.ts | ee9c055a9
+
 
 
 
