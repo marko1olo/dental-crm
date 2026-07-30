@@ -94,7 +94,6 @@ export async function startSyncEngine(pgliteClient: PGlite) {
 
 export async function stopSyncEngine() {
 	if (!isSyncing) return;
-	console.log("[SyncEngine] 🛑 Stopping Sync Engine...");
 
 	if (syncPlugin && typeof syncPlugin.unsubscribe === "function") {
 		try {
