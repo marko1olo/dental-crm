@@ -1,6 +1,48 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine } from '../utils/strings.js';
+import { splitLine, isValidRussianPassport } from '../utils/strings.js';
+
+describe('isValidRussianPassport', () => {
+  test('returns true for valid 10 digit string', () => {
+    assert.strictEqual(isValidRussianPassport('1234567890'), true);
+  });
+
+  test('returns true for valid 10 digit string with spaces', () => {
+    assert.strictEqual(isValidRussianPassport('12 34 567890'), true);
+  });
+
+  test('returns true for valid 10 digit string with dashes', () => {
+    assert.strictEqual(isValidRussianPassport('12-34-567890'), true);
+  });
+
+  test('returns false for string with fewer than 10 digits', () => {
+    assert.strictEqual(isValidRussianPassport('123456789'), false);
+  });
+
+  test('returns false for string with more than 10 digits', () => {
+    assert.strictEqual(isValidRussianPassport('12345678901'), false);
+  });
+
+  test('returns true for null', () => {
+    assert.strictEqual(isValidRussianPassport(null), true);
+  });
+
+  test('returns true for undefined', () => {
+    assert.strictEqual(isValidRussianPassport(undefined), true);
+  });
+
+  test('returns true for empty string', () => {
+    assert.strictEqual(isValidRussianPassport(''), true);
+  });
+
+  test('returns false for string with exactly 10 non-numeric characters', () => {
+    assert.strictEqual(isValidRussianPassport('abcdefghij'), false);
+  });
+
+  test('ignores non-numeric characters', () => {
+    assert.strictEqual(isValidRussianPassport('1a2b3c4d5e6f7g8h9i0j'), true);
+  });
+});
 
 describe('splitLine', () => {
   test('splits simple strings with a delimiter', () => {
