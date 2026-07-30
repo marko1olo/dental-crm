@@ -1,4 +1,8 @@
-import { fdiToothNumberSchema, sumKopecks } from "@dental/shared";
+import {
+	fdiToothNumberSchema,
+	nonNegativeMoneyRubSchema,
+	sumKopecks,
+} from "@dental/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -96,13 +100,25 @@ const batchToothStateSchema = z.object({
 	surfaces: z.array(z.string()).optional(),
 });
 
+/*
+ * Цена и скидка позиции сметы — деньги клиники, не «просто number».
+ * `z.number().finite().min(0)` пропускал 1500.505 (третья цифра после запятой),
+ * и отказ приходил только из `chargeLineKopecks` как 422. Единый контракт
+ * `nonNegativeMoneyRubSchema` режет подкопеечные суммы на входе (400), как прайс
+ * в settings. Верхняя граница — прежний потолок маршрута.
+ */
+const treatmentPlanMoneyRubSchema = nonNegativeMoneyRubSchema.refine(
+	(value) => value <= 100_000_000,
+	{ message: "сумма позиции плана не помещается в допустимый диапазон" },
+);
+
 const treatmentPlanItemSchema = z.object({
 	toothNumber: fdiToothNumberSchema.optional().nullable(),
 	priceId: z.string().trim().min(1).max(200),
 	name: z.string().trim().max(500).optional(),
 	quantity: z.number().int().min(1).max(999).default(1),
-	price: z.number().finite().min(0).max(100_000_000),
-	discount: z.number().finite().min(0).max(100_000_000).default(0),
+	price: treatmentPlanMoneyRubSchema,
+	discount: treatmentPlanMoneyRubSchema.default(0),
 	phase: z.number().int().min(1).max(12).default(1),
 	isAuto: z.boolean().optional(),
 });
@@ -493,11 +509,11 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				 * строкой позиции целиком, поэтому вычитается один раз из итога
 				 * строки, а не умножается на количество).
 				 *
-				 * Сумма мельче копейки (1500.505) схему маршрута проходит, но в
-				 * копейках не представима: `chargeLineKopecks` бросает
-				 * `MoneyPrecisionError` со `statusCode = 422`, и общий catch ниже
-				 * отвечает врачу причиной. Тихое округление подтвердило бы чужую
-				 * потерю точности подписью клиники.
+				 * Сумма мельче копейки (1500.505) уже отсекается схемой позиции
+				 * (`nonNegativeMoneyRubSchema` → 400). `chargeLineKopecks` остаётся
+				 * второй линией: если кто-то обойдёт Zod, бросит
+				 * `MoneyPrecisionError` со `statusCode = 422`. Тихое округление
+				 * подтвердило бы чужую потерю точности подписью клиники.
 				 */
 				const lineKopecks = input.items.map((item) =>
 					chargeLineKopecks({

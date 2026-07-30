@@ -641,10 +641,11 @@ describe("сохранённый план лечения виден деньга
 		if (!databaseReady) return t.skip("база недоступна");
 
 		/*
-		 * 1500.505 проходит проверку схемы маршрута (`z.number().finite().min(0)`),
-		 * но в копейках не представима. Тихое округление до 1500.51 подтвердило бы
-		 * чужую потерю точности подписью клиники; правильный ответ — отказ с
-		 * причиной, и он обязан быть 4xx, а не 500.
+		 * 1500.505 раньше проходила `z.number().finite().min(0)` и отсекалась
+		 * только в `chargeLineKopecks` (422). Теперь `nonNegativeMoneyRubSchema`
+		 * на позиции сметы режет её на входе — 400 TreatmentPlanValidationError.
+		 * Тихое округление до 1500.51 подтвердило бы чужую потерю точности
+		 * подписью клиники; правильный ответ — отказ 4xx, а не 500.
 		 */
 		const refused = await savePlan(PATIENT_SUBKOPECK, {
 			name: "План с подкопеечной ценой",
@@ -652,8 +653,13 @@ describe("сохранённый план лечения виден деньга
 		});
 		assert.equal(
 			refused.statusCode,
-			422,
+			400,
 			`подкопеечная цена дала HTTP ${refused.statusCode}: ${refused.body}`,
+		);
+		assert.equal(
+			refused.json.error,
+			"TreatmentPlanValidationError",
+			`ожидали TreatmentPlanValidationError, получили ${String(refused.json.error)}`,
 		);
 		const money = await moneyForPatient(PATIENT_SUBKOPECK);
 		assert.equal(
