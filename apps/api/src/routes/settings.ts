@@ -89,6 +89,22 @@ const updateStaffMemberProfileSchema = z.object({
 });
 
 /**
+ * Доступы сотрудника: POST /api/settings/staff/:staffId/credentials.
+ *
+ * Раньше тело читалось bare cast'ом:
+ *   (request.body as { email?: string; password?: string; pinCode?: string }) ?? {}
+ * Null body не ронял (?? {}), но number/object в email/password/pinCode давали
+ * TypeError на .toLowerCase() / hashCredential ДО try/catch → 500 InternalError.
+ * Zod safeParse после auth-first: не-строки → 400, пустой набор → прежнее
+ * «Не переданы данные для обновления.».
+ */
+const updateStaffCredentialsSchema = z.object({
+  email: z.string().max(240).optional(),
+  password: z.string().max(500).optional(),
+  pinCode: z.string().max(64).optional()
+});
+
+/**
  * Ставка врача: PUT /api/settings/staff/:staffId/commission.
  *
  * Процент от кассы, по которому клиника платит врачу. Границы взяты из
@@ -338,6 +354,9 @@ const staffProfileValidationMessage =
   "Карточка сотрудника не сохранена: проверьте ФИО, роль, телефон и почту в допустимом формате.";
 const staffProfileEmptyUpdateMessage =
   "Карточка сотрудника не сохранена: не переданы поля для изменения. Расписание меняется отдельным адресом.";
+const staffCredentialsValidationMessage =
+  "Доступы сотрудника не сохранены: проверьте почту, пароль и PIN в допустимом формате.";
+const staffCredentialsEmptyUpdateMessage = "Не переданы данные для обновления.";
 const staffProfileNotFoundMessage = "Карточка сотрудника не сохранена: сотрудник не найден в этой клинике.";
 const staffProfileRejectedMessage = "Карточка сотрудника не сохранена: проверьте переданные поля.";
 const staffDeactivateRouteValidationMessage = "Сотрудник не отключен: выберите сотрудника.";
@@ -851,10 +870,20 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!params.staffId) {
       return reply.code(400).send({ error: "SettingsRouteValidationError", message: "ID сотрудника обязателен." });
     }
-    
-    const { email, password, pinCode } = (request.body as { email?: string; password?: string; pinCode?: string }) ?? {};
+
+    const input = parseSettingsPayload(updateStaffCredentialsSchema, request.body);
+    if (!input) {
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: staffCredentialsValidationMessage
+      });
+    }
+    const { email, password, pinCode } = input;
     if (!email && !password && !pinCode) {
-      return reply.code(400).send({ error: "SettingsValidationError", message: "Не переданы данные для обновления." });
+      return reply.code(400).send({
+        error: "SettingsValidationError",
+        message: staffCredentialsEmptyUpdateMessage
+      });
     }
 
     const updates: { email?: string; passwordHash?: string; pinCodeHash?: string } = {};
