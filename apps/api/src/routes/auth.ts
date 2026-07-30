@@ -99,6 +99,31 @@ const loginBodySchema = z.object({
   password: z.string().min(1)
 });
 
+/**
+ * Кабинет клиники: POST /api/auth/clinic/login.
+ * Bare cast + email.toLowerCase() → 500 на number/object email.
+ * Сообщение пустого/битого тела сохранено дословно.
+ */
+const clinicLoginBodySchema = z.object({
+  email: z.string().min(1),
+  password: z.string().min(1)
+});
+
+/**
+ * PIN-разблокировка: POST /api/auth/staff/unlock.
+ * Bare cast; number pin допускается (как authPinSchema SaaS), object → 400.
+ */
+const staffUnlockBodySchema = z.object({
+  userId: z.string().min(1),
+  pinCode: z
+    .union([z.string(), z.number()])
+    .transform((value) => String(value))
+    .refine((value) => value.length > 0, { message: "required" })
+});
+
+const clinicLoginValidationMessage = "Введите логин и пароль клиники.";
+const staffUnlockValidationMessage = "Необходимо указать сотрудника и ввести PIN-код.";
+
 const createInviteBodySchema = z.object({
   email: z.string().trim().min(1),
   role: z.string().min(1)
@@ -223,11 +248,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-    const { email, password } = (request.body as ClinicLoginBody) ?? {};
-
-    if (!email || !password) {
-      return reply.code(400).send({ error: "ValidationError", message: "Введите логин и пароль клиники." });
+    const input = parseAuthPayload(clinicLoginBodySchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "ValidationError", message: clinicLoginValidationMessage });
     }
+    const { email, password } = input;
 
     const loginId = email.toLowerCase().trim();
 
@@ -306,11 +331,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   // ─── Staff PIN Unlock ─────────────────────────────────────────────────────────
   app.post("/api/auth/staff/unlock", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { userId, pinCode } = (request.body as StaffUnlockBody) ?? {};
-
-    if (!userId || !pinCode) {
-      return reply.code(400).send({ error: "ValidationError", message: "Необходимо указать сотрудника и ввести PIN-код." });
+    const input = parseAuthPayload(staffUnlockBodySchema, request.body);
+    if (!input) {
+      return reply.code(400).send({ error: "ValidationError", message: staffUnlockValidationMessage });
     }
+    const { userId, pinCode } = input;
 
     // Verify clinic token is present so we know the org context
     const clinicHeader = request.headers["x-dente-clinic-token"];
