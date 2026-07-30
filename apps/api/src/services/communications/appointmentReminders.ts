@@ -189,22 +189,24 @@ export async function scheduleAppointmentReminders(
 		.from(communicationSettings)
 		.where(and(...settingsFilter));
 
-	for (const { organizationId } of enabledRows) {
-		report.organizations += 1;
-		try {
-			await scheduleForOrganization(organizationId, now, report, namedSkips);
-		} catch (error) {
-			const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
-			/*
-			 * Идентификатор организации остаётся в журнале сервера и уходит из текста
-			 * для человека: администратор клиники видел строку вида «Организация
-			 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
-			 * именно идентификатор.
-			 */
-			console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
-			report.problems.push(`Напоминания поставить не удалось: ${detail}`);
-		}
-	}
+	await Promise.all(
+		enabledRows.map(async ({ organizationId }) => {
+			report.organizations += 1;
+			try {
+				await scheduleForOrganization(organizationId, now, report, namedSkips);
+			} catch (error) {
+				const detail = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
+				/*
+				 * Идентификатор организации остаётся в журнале сервера и уходит из текста
+				 * для человека: администратор клиники видел строку вида «Организация
+				 * 4a3420d1-6ffb-…: …» и не мог из неё ничего понять, а поддержке нужен
+				 * именно идентификатор.
+				 */
+				console.error(`[reminders] сбой постановки напоминаний, организация ${organizationId}: ${detail}`);
+				report.problems.push(`Напоминания поставить не удалось: ${detail}`);
+			}
+		})
+	);
 
 	return {
 		...report,
