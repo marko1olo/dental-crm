@@ -4,6 +4,7 @@ import { showToast } from "../GlobalToast";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { StaffRole } from "@dental/shared";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 import {
   INVITABLE_STAFF_ROLES,
   inviteRoleTitle,
@@ -65,7 +66,7 @@ export function SettingsAccessTab({ props = {}, settingsTab }: SettingsAccessTab
        ссылка от предыдущего приглашения, и её отправят не тому человеку. */
     setInviteLink('');
     try {
-      const staffToken = localStorage.getItem('dente_staff_token') || '';
+      const staffToken = readDenteStaffToken();
       const response = await fetch('/api/auth/invites/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-dente-staff-token': staffToken },

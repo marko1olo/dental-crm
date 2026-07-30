@@ -33,7 +33,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
   });
 
   const loadProfile = useCallback(async () => {
-    const staffToken = localStorage.getItem("dente_staff_token");
+    const staffToken = readDenteStaffToken();
     if (!staffToken) {
       // Входа нет — единственный случай, когда «войдите заново» верный совет.
       setLoadState({ phase: "noSession" });
@@ -102,7 +102,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+          "x-dente-staff-token": readDenteStaffToken(),
         },
         body: JSON.stringify({ oldPassword, newPassword }),
       });
@@ -154,7 +154,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+          "x-dente-staff-token": readDenteStaffToken(),
         },
         body: JSON.stringify({ oldPin, newPin }),
       });
