@@ -31,6 +31,8 @@
 [x] P1 | auth set-password/set-pin/setup-init body Zod (AUTH-first 403 anon; authorized/public 400 not 500; RU msgs preserved) | auth.ts + authAdminSetupBody.test.ts | 17/17 GREEN typecheck OK | b01f3cbcd
 [x] P1 | patient card body Zod (reclamations/tickets/archive-status; AUTH-first 401; empty→400≠500) | patients.ts + patientCardBody.test.ts | 10/10 GREEN typecheck OK | 8a50b0610
 [x] P1 | next bare-cast body Zod (ai predict-no-show, clinical recent-patients, diary lock/revise, templates, receipts asRecord, outbox dispatch; AUTH-first; empty/array->400!=500) | ai+clinical+diary+templates+comms + nextCastsBody.test.ts | 17/17 GREEN typecheck OK | dad4d596e
+[x] P1 | egisz snils + vk webhook + workspace preset body guards (AUTH-first; null/array; InvalidSnils* preserved) | egisz+vk+workspaceProfile + egiszVkBody.test.ts | 13/13 GREEN typecheck OK | c564d6fd9
+
 
 
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
