@@ -20,7 +20,7 @@
 [x] P2 | intake route proofs | apps/api/src/routes/imports.test.ts + documents tests | import intake 4/4 + documents 11+8 GREEN (bf6750c9d base)
 [x] P1 | Zod-validate auth SaaS bodies (register/login/invites/accept/update-password/update-pin) | auth.ts + auth.test.ts | 34/34 GREEN typecheck OK | 0789876b9
 [x] P1 | odontogram treatment plan price/discount → nonNegativeMoneyRubSchema (subkopeck 400 at Zod gate) | odontogram.ts + treatmentPlanFeedsMoney.test.ts | 5/5 GREEN typecheck OK | 88ce4ffcc
-[x] P1 | lab order priceRub → nonNegativeMoneyRubSchema (create+update; subkopeck 400) | lab.ts + labOrderMoney.test.ts | 3/3 GREEN
+[x] P1 | lab order priceRub → nonNegativeMoneyRubSchema (create+update; subkopeck 400) | lab.ts + labOrderMoney.test.ts | 3/3 GREEN | 9b07ec966
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
 [x] P2 | Push main after each green commit | origin main | auth Zod pushed (0789876b9)
 
