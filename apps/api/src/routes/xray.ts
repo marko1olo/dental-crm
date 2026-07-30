@@ -14,7 +14,10 @@ import { db } from "../db/client.js";
 import { xrayScans } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
-import { requireClinicalReadAccess, requireClinicalMutationAccess } from "../accessGuard.js";
+import {
+  requireClinicalReadAccess,
+  requireClinicalMutationAccess,
+} from "../accessGuard.js";
 import { requireOrganizationId } from "../security/identity.js";
 
 // ────────────────────────────────────────────────
@@ -27,7 +30,10 @@ const createXrayScanSchema = z.object({
   imageBase64: z.string().min(100), // data:image/... base64 string or raw base64
   originalFilename: z.string().optional(),
   mimeType: z.string().optional().default("image/jpeg"),
-  kind: z.enum(["periapical", "bitewing", "opg", "other"]).optional().default("periapical"),
+  kind: z
+    .enum(["periapical", "bitewing", "opg", "other"])
+    .optional()
+    .default("periapical"),
   toothCode: z.string().optional(), // e.g. "46"
   notes: z.string().optional(),
   organizationId: z.string().uuid().optional(), // resolved from session context
@@ -66,7 +72,10 @@ const xrayScanResponseSchema = z.object({
  * каждый запрос к БД дополнительно фильтруется по organizationId.
  */
 
-function scanToResponse(scan: typeof xrayScans.$inferSelect, includeImage = false) {
+function scanToResponse(
+  scan: typeof xrayScans.$inferSelect,
+  includeImage = false,
+) {
   return {
     id: scan.id,
     patientId: scan.patientId,
@@ -77,7 +86,10 @@ function scanToResponse(scan: typeof xrayScans.$inferSelect, includeImage = fals
     originalFilename: scan.originalFilename ?? null,
     aiReport: scan.aiReport ?? null,
     aiSummary: scan.aiSummary ?? null,
-    aiToothStates: (scan.aiToothStates ?? null) as Record<string, string> | null,
+    aiToothStates: (scan.aiToothStates ?? null) as Record<
+      string,
+      string
+    > | null,
     aiModelName: scan.aiModelName ?? null,
     aiAnalyzedAt: scan.aiAnalyzedAt?.toISOString() ?? null,
     aiError: scan.aiError ?? null,
@@ -94,10 +106,11 @@ function scanToResponse(scan: typeof xrayScans.$inferSelect, includeImage = fals
 // ────────────────────────────────────────────────
 
 export async function registerXrayRoutes(app: FastifyInstance) {
-
-  // ── POST /api/xray/scans — upload scan ──────────────────────────────────
   app.post("/api/xray/scans", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "upload xray scan"))) return;
+    if (
+      !(await requireClinicalMutationAccess(request, reply, "upload xray scan"))
+    )
+      return;
 
     const parsed = createXrayScanSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -134,15 +147,20 @@ export async function registerXrayRoutes(app: FastifyInstance) {
       .returning();
 
     if (!inserted) {
-      return reply.code(500).send({ error: "InsertError", message: "Не удалось сохранить снимок." });
+      return reply
+        .code(500)
+        .send({
+          error: "InsertError",
+          message: "Не удалось сохранить снимок.",
+        });
     }
 
     return reply.code(201).send(scanToResponse(inserted));
   });
 
-  // ── POST /api/xray/scans/:id/analyze — run AI analysis ─────────────────
   app.post("/api/xray/scans/:id/analyze", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "analyze xray scan"))) return;
+    if (!(await requireClinicalReadAccess(request, reply, "analyze xray scan")))
+      return;
 
     const organizationId = requireOrganizationId(request, reply);
     if (!organizationId) return;
@@ -152,26 +170,42 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     const [scan] = await db
       .select()
       .from(xrayScans)
-      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+      .where(
+        and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+      )
       .limit(1);
 
     if (!scan) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      return reply
+        .code(404)
+        .send({ error: "XrayScanNotFound", message: "Снимок не найден." });
     }
 
     if (!scan.imageDataUri) {
-      return reply.code(400).send({ error: "XrayScanNoImage", message: "Снимок не содержит изображения." });
+      return reply
+        .code(400)
+        .send({
+          error: "XrayScanNoImage",
+          message: "Снимок не содержит изображения.",
+        });
     }
 
     if (scan.status === "analyzing") {
-      return reply.code(409).send({ error: "XrayScanAlreadyAnalyzing", message: "Анализ уже выполняется." });
+      return reply
+        .code(409)
+        .send({
+          error: "XrayScanAlreadyAnalyzing",
+          message: "Анализ уже выполняется.",
+        });
     }
 
     // Mark as analyzing immediately
     await db
       .update(xrayScans)
       .set({ status: "analyzing", aiError: null })
-      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
+      .where(
+        and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+      );
 
     // Run analysis async — respond immediately with 202 so the UI can poll
     reply.code(202).send({ status: "analyzing", id });
@@ -189,43 +223,64 @@ export async function registerXrayRoutes(app: FastifyInstance) {
             aiSummary: extractSummary(result.report),
             aiToothStates: result.toothStates as any,
             aiAnalyzedAt: new Date(),
-            aiError: result.warnings.length > 0 ? result.warnings.join("; ") : null,
+            aiError:
+              result.warnings.length > 0 ? result.warnings.join("; ") : null,
           })
-          .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
+          .where(
+            and(
+              eq(xrayScans.id, id),
+              eq(xrayScans.organizationId, organizationId),
+            ),
+          );
       } catch (err: any) {
         console.error("[XRay AI] Analysis failed for scan", id, err?.message);
         await db
           .update(xrayScans)
-          .set({ status: "error", aiError: "Не удалось выполнить AI-анализ снимка." })
-          .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
+          .set({
+            status: "error",
+            aiError: "Не удалось выполнить AI-анализ снимка.",
+          })
+          .where(
+            and(
+              eq(xrayScans.id, id),
+              eq(xrayScans.organizationId, organizationId),
+            ),
+          );
       }
     });
   });
 
-  // ── GET /api/xray/scans — list scans for patient ────────────────────────
   app.get("/api/xray/scans", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "list xray scans"))) return;
+    if (!(await requireClinicalReadAccess(request, reply, "list xray scans")))
+      return;
 
     const organizationId = requireOrganizationId(request, reply);
     if (!organizationId) return;
 
     const { patientId } = request.query as { patientId?: string };
     if (!patientId) {
-      return reply.code(400).send({ error: "MissingPatientId", message: "Укажите patientId." });
+      return reply
+        .code(400)
+        .send({ error: "MissingPatientId", message: "Укажите patientId." });
     }
 
     const scans = await db
       .select()
       .from(xrayScans)
-      .where(and(eq(xrayScans.patientId, patientId), eq(xrayScans.organizationId, organizationId)))
+      .where(
+        and(
+          eq(xrayScans.patientId, patientId),
+          eq(xrayScans.organizationId, organizationId),
+        ),
+      )
       .orderBy(xrayScans.capturedAt);
 
     return scans.map((s) => scanToResponse(s, false));
   });
 
-  // ── GET /api/xray/scans/:id — single scan with full details + image ─────
   app.get("/api/xray/scans/:id", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "get xray scan"))) return;
+    if (!(await requireClinicalReadAccess(request, reply, "get xray scan")))
+      return;
 
     const organizationId = requireOrganizationId(request, reply);
     if (!organizationId) return;
@@ -235,19 +290,25 @@ export async function registerXrayRoutes(app: FastifyInstance) {
     const [scan] = await db
       .select()
       .from(xrayScans)
-      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+      .where(
+        and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+      )
       .limit(1);
 
     if (!scan) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      return reply
+        .code(404)
+        .send({ error: "XrayScanNotFound", message: "Снимок не найден." });
     }
 
     return scanToResponse(scan, true); // Include image
   });
 
-  // ── DELETE /api/xray/scans/:id ───────────────────────────────────────────
   app.delete("/api/xray/scans/:id", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "delete xray scan"))) return;
+    if (
+      !(await requireClinicalMutationAccess(request, reply, "delete xray scan"))
+    )
+      return;
 
     const organizationId = requireOrganizationId(request, reply);
     if (!organizationId) return;
@@ -256,11 +317,15 @@ export async function registerXrayRoutes(app: FastifyInstance) {
 
     const result = await db
       .delete(xrayScans)
-      .where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+      .where(
+        and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)),
+      )
       .returning({ id: xrayScans.id });
 
     if (!result.length) {
-      return reply.code(404).send({ error: "XrayScanNotFound", message: "Снимок не найден." });
+      return reply
+        .code(404)
+        .send({ error: "XrayScanNotFound", message: "Снимок не найден." });
     }
 
     return reply.code(204).send();
@@ -279,9 +344,14 @@ function extractSummary(report: string): string | null {
   if (!report) return null;
 
   // Try to find the "Заключение:" section
-  const conclusionMatch = report.match(/\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i);
+  const conclusionMatch = report.match(
+    /\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i,
+  );
   if (conclusionMatch?.[1]) {
-    return conclusionMatch[1].replace(/^[-*\s]+/gm, "").trim().substring(0, 500);
+    return conclusionMatch[1]
+      .replace(/^[-*\s]+/gm, "")
+      .trim()
+      .substring(0, 500);
   }
 
   // Fallback: first 2 sentences
