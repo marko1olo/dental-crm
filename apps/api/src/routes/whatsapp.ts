@@ -377,25 +377,55 @@ export async function registerWhatsappRoutes(
 			}
 
 			// Acknowledge immediately — Meta retries on non-200. Process async below.
+			// Shape-guard AFTER send so null/non-object body cannot TypeError on
+			// body.entry (cast-after-200) once the client already got 200.
 			reply.code(200).send({ received: true });
 
+			if (
+				!request.body ||
+				typeof request.body !== "object" ||
+				Array.isArray(request.body)
+			) {
+				return;
+			}
 			const body = request.body as Record<string, unknown>;
 			const entries = Array.isArray(body.entry) ? body.entry : [];
 
 			for (const entry of entries) {
+				if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+					continue;
+				}
 				const e = entry as Record<string, unknown>;
 				const changes = Array.isArray(e.changes)
 					? (e.changes as unknown[])
 					: [];
 
 				for (const change of changes) {
+					if (
+						!change ||
+						typeof change !== "object" ||
+						Array.isArray(change)
+					) {
+						continue;
+					}
 					const c = change as Record<string, unknown>;
-					const value = c.value as Record<string, unknown> | undefined;
-					if (!value) continue;
+					const valueRaw = c.value;
+					if (
+						!valueRaw ||
+						typeof valueRaw !== "object" ||
+						Array.isArray(valueRaw)
+					) {
+						continue;
+					}
+					const value = valueRaw as Record<string, unknown>;
 
-					const metadata = value.metadata as
-						| Record<string, unknown>
-						| undefined;
+					const metadataRaw = value.metadata;
+					const metadata =
+						metadataRaw &&
+						typeof metadataRaw === "object" &&
+						!Array.isArray(metadataRaw)
+							? (metadataRaw as Record<string, unknown>)
+							: undefined;
 					const phoneNumberId =
 						typeof metadata?.phone_number_id === "string"
 							? metadata.phone_number_id
@@ -439,9 +469,18 @@ export async function registerWhatsappRoutes(
 						: [];
 
 					for (const msg of messages) {
+						if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
+							continue;
+						}
 						const m = msg as Record<string, unknown>;
 						const fromId = typeof m.from === "string" ? m.from : "unknown";
-						const textObj = m.text as Record<string, unknown> | undefined;
+						const textRaw = m.text;
+						const textObj =
+							textRaw &&
+							typeof textRaw === "object" &&
+							!Array.isArray(textRaw)
+								? (textRaw as Record<string, unknown>)
+								: undefined;
 						const textBody =
 							typeof textObj?.body === "string" ? textObj.body : null;
 

@@ -251,13 +251,33 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	 * Bot is identified by x-max-bot-id header or ?botId query param.
 	 */
 	app.post("/api/max/webhook", async (request, reply) => {
+		// Always ACK first — MAX retries on non-200. Shape-guard AFTER send so a
+		// null/non-object body cannot TypeError on body.payload (cast-after-200).
 		reply.code(200).send({ ok: true });
 
+		if (
+			!request.body ||
+			typeof request.body !== "object" ||
+			Array.isArray(request.body)
+		) {
+			return;
+		}
 		const body = request.body as Record<string, unknown>;
-		const payload = body.payload as Record<string, unknown> | undefined;
-		if (!payload) return;
+		const payloadRaw = body.payload;
+		if (
+			!payloadRaw ||
+			typeof payloadRaw !== "object" ||
+			Array.isArray(payloadRaw)
+		) {
+			return;
+		}
+		const payload = payloadRaw as Record<string, unknown>;
 
-		const chat = payload.chat as Record<string, unknown> | undefined;
+		const chatRaw = payload.chat;
+		const chat =
+			chatRaw && typeof chatRaw === "object" && !Array.isArray(chatRaw)
+				? (chatRaw as Record<string, unknown>)
+				: undefined;
 		const textValue = payload.text;
 		const text = typeof textValue === "string" ? textValue : null;
 		const chatId = typeof chat?.chatId === "string" ? chat.chatId : "unknown";
