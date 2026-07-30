@@ -25,7 +25,9 @@
 [x] P1 | inventory+telephony body Zod (null body 400 not 500) | inventory.ts + telephony.ts + inventoryTelephonyBody.test.ts | 5/5 GREEN typecheck OK | c4d05f67d
 [x] P1 | insurance contract body Zod (null body 400 not 500; CompanyNameRequired preserved) | insurance.ts + insuranceBody.test.ts | 5/5 GREEN typecheck OK | ef9d2a984
 [x] P1 | max+whatsapp webhook cast-after-200 body guard (null/non-object → 200 silent, no throw) | max.ts + whatsapp.ts + messengerWebhookBody.test.ts | 5/5 GREEN typecheck OK | 0824008c9
+[x] P1 | imaging visiograph-ai body guard (null/non-object/empty → 400 Missing imageBase64, not 500) | imaging.ts + visiographBody.test.ts | 5/5 GREEN typecheck OK | PENDING
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
+
 
 [x] P2 | Push main after each green commit | origin main | auth Zod pushed (0789876b9)
 

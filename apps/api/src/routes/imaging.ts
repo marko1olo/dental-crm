@@ -6256,12 +6256,30 @@ async function buildDicomFolderWorkupPlan(
 export async function registerImagingRoutes(app: FastifyInstance) {
   app.post("/api/imaging/visiograph-ai", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "visiograph ai analysis"))) return;
+    // БЫЛО: bare cast `request.body as { imageBase64?: string }` — null body
+    // не падал из-за body?., но форма не проверялась (как у соседних imaging
+    // маршрутов через parseImagingPayload). Missing imageBase64 message сохранён.
+    const parsed = parseImagingPayload(
+      {
+        safeParse: (value: unknown) => {
+          if (!value || typeof value !== "object" || Array.isArray(value)) {
+            return { success: false as const };
+          }
+          const imageBase64 = (value as { imageBase64?: unknown }).imageBase64;
+          if (typeof imageBase64 !== "string" || !imageBase64.trim()) {
+            return { success: false as const };
+          }
+          return { success: true as const, data: { imageBase64 } };
+        },
+      },
+      request.body,
+      "Missing imageBase64",
+    );
+    if (!parsed.ok) {
+      return reply.code(400).send({ error: "Missing imageBase64" });
+    }
     try {
-      const body = request.body as { imageBase64?: string };
-      if (!body?.imageBase64) {
-        return reply.code(400).send({ error: "Missing imageBase64" });
-      }
-      const result = await analyzeVisiographImage(body.imageBase64);
+      const result = await analyzeVisiographImage(parsed.data.imageBase64);
       return reply.send(result);
     } catch (err: any) {
       console.error("[Visiograph AI] Error:", err);
