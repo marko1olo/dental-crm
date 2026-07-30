@@ -10,7 +10,6 @@ import {
 import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
 import { showToast } from "./GlobalToast";
-import { readDenteClinicToken } from "../lib/safeLocalStorage";
 
 export interface DiaryState {
 	anamnesis: string;
@@ -307,12 +306,16 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	}, []);
 
 	// ── Save
+	/**
+	 * Сохраняет черновик дневника на сервер.
+	 * @returns id дневника при успехе (для doLock без гонки setState), иначе null.
+	 */
 	const doSave = useCallback(
-		async (silent = false) => {
-			if (isLocked) return;
+		async (silent = false): Promise<string | null> => {
+			if (isLocked) return diaryId;
 			if (!activeDoctor) {
 				if (!silent) showToast("Выберите врача для приема", "error");
-				return;
+				return null;
 			}
 			/*
 			 * Пока дневник не прочитан, сохранять нельзя.
@@ -332,7 +335,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						8000,
 					);
 				}
-				return;
+				return null;
 			}
 			if (loadState.phase === "failed") {
 				if (!silent) {
@@ -342,21 +345,34 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 						14000,
 					);
 				}
-				return;
+				return null;
 			}
 			setIsSaving(true);
 			try {
-				const clinicToken = readDenteClinicToken() || null;
-				const res = await fetch(`/api/visits/${visitId}/draft/autosave`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						"x-dente-clinic-token": clinicToken || "",
-					},
+				/*
+				 * БЫЛО: PUT /api/visits/:id/draft/autosave с полями дневника 043/у.
+				 * Тот маршрут — снимок ЭМК (transcript + visitNoteDraft), схема другая.
+				 * Тело дневника там всегда ValidationError, id дневника не возвращался,
+				 * doLock видел diaryId=null и отказывался подписывать. Клинические поля
+				 * в visit_diaries не писались — «Сохранить черновик» не попадало в дневник.
+				 *
+				 * Сейчас: POST /api/diaries (draft) — тот же контракт, что load/lock,
+				 * с clinical mutation headers и message-first toast (json.message).
+				 */
+				const headerSource = authRef.current;
+				const res = await fetch("/api/diaries", {
+					method: "POST",
+					headers:
+						headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
+							? headerSource.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								})
+							: { "Content-Type": "application/json" },
 					body: JSON.stringify({
+						visitId,
 						patientId,
-						doctorId: activeDoctor.id,
-						instrumentTrayBarcode: trayBarcode || null,
+						status: "draft",
+						instrumentTrayBarcode: trayBarcode || undefined,
 						anamnesis: diary.anamnesis,
 						statusLocalis: diary.statusLocalis,
 						diagnosisIcd10: diary.diagnosisIcd10,
@@ -368,11 +384,21 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				});
 				const rawBody = await res.text();
 				if (!res.ok) {
-					// Код ответа и тело — разработчику в консоль, человеку — причина
-					// словами. Прежнее «Ошибка сохранения дневника» не говорило ни
-					// почему, ни что делать, а тихое автосохранение молчало вовсе.
-					console.error(`[diary autosave] ${res.status} ${rawBody.slice(0, 300)}`);
-					const message = `${actionFailureToast("Черновик дневника не сохранён", res.status)} Набранный текст остался на экране.`;
+					// Код и сырое тело — в консоль. Врачу — русское message с сервера,
+					// иначе status-only fallback. ValidationError от Zod guard доходит.
+					console.error(`[diary save] ${res.status} ${rawBody.slice(0, 300)}`);
+					const payload = jsonObjectOrNull(rawBody);
+					const serverDetail = operatorReadableErrorDetail(
+						typeof payload?.message === "string"
+							? payload.message
+							: typeof payload?.error === "string"
+								? payload.error
+								: null,
+					);
+					const message = `${
+						serverDetail ??
+						actionFailureToast("Черновик дневника не сохранён", res.status)
+					} Набранный текст остался на экране.`;
 					if (!silent) {
 						showToast(message, "error", 10000);
 					} else if (!autosaveFailureReportedRef.current) {
@@ -383,21 +409,24 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							14000,
 						);
 					}
-					return;
+					return null;
 				}
+				// Успех POST /api/diaries: { success, id, hash } — не { diary: { id } }.
 				const data = jsonObjectOrNull(rawBody);
-				const savedDiary = data?.diary;
-				const savedId =
-					savedDiary && typeof savedDiary === "object"
-						? (savedDiary as Record<string, unknown>).id
-						: undefined;
-				if (typeof savedId === "string" && savedId) setDiaryId(savedId);
+				const savedId = typeof data?.id === "string" ? data.id : undefined;
+				if (savedId) setDiaryId(savedId);
+				// После первого сохранения пустой приём перестаёт быть «empty»:
+				// подпись и повторное чтение опираются на ready + diaryId.
+				if (loadState.phase === "empty") {
+					setLoadState({ phase: "ready" });
+				}
 				autosaveFailureReportedRef.current = false;
 				setLastSavedAt(new Date());
 				if (!silent) showToast("Черновик сохранен", "success");
+				return savedId ?? diaryId;
 			} catch (err) {
 				// До сервера не дошли: сеть или выключенный сервер клиники.
-				console.error("[diary autosave] запрос не выполнен", err);
+				console.error("[diary save] запрос не выполнен", err);
 				const message = `${actionFailureToast("Черновик дневника не сохранён", null)} Набранный текст остался на экране.`;
 				if (!silent) {
 					showToast(message, "error", 10000);
@@ -405,18 +434,19 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 					autosaveFailureReportedRef.current = true;
 					showToast(message, "error", 14000);
 				}
+				return null;
 			} finally {
 				setIsSaving(false);
 			}
 		},
-		[activeDoctor, diary, isLocked, loadState, patientId, trayBarcode, visitId],
+		[activeDoctor, diary, diaryId, isLocked, loadState, patientId, trayBarcode, visitId],
 	);
 
 	// ── Autosave
 	useEffect(() => {
 		if (autosaveRef.current) clearInterval(autosaveRef.current);
 		autosaveRef.current = setInterval(() => {
-			doSave(true);
+			void doSave(true);
 		}, 30000);
 		return () => clearInterval(autosaveRef.current!);
 	}, [doSave]);
@@ -441,7 +471,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			return;
 		}
 
-		await doSave(true);
+		// doSave возвращает id сразу: setState из сохранения ещё не виден в этом
+		// замыкании, поэтому lock нельзя строить на diaryId из рендера.
+		const savedDiaryId = await doSave(true);
 
 		if (trayBarcode) {
 			try {
@@ -490,7 +522,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		 * экране «Ошибка: NotFound» — латиницей и без объяснения. Теперь причина
 		 * называется словами: подписывать нечего, пока дневник не сохранён.
 		 */
-		if (!diaryId) {
+		const lockTargetId = savedDiaryId ?? diaryId;
+		if (!lockTargetId) {
 			showToast(
 				"Дневник ещё не сохранён на сервере, поэтому подписывать нечего. Нажмите «Сохранить черновик», дождитесь отметки времени сохранения и повторите подписание.",
 				"error",
@@ -505,7 +538,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			 * незакрытым: подписать дневник в клинике было нечем.
 			 */
 			const headerSource = authRef.current;
-			const res = await fetch(`/api/diaries/${diaryId}/lock`, {
+			const res = await fetch(`/api/diaries/${lockTargetId}/lock`, {
 				method: "POST",
 				headers:
 					headerSource && typeof headerSource.denteClinicalMutationHeaders === "function"
