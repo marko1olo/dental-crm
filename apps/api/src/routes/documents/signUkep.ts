@@ -1,8 +1,30 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { generatedDocuments } from "../../db/schema.js";
+
+/**
+ * УКЭП-подпись документа. Тело раньше читалось через bare cast
+ * `request.body as { pkcs7Signature: string }`: при null body
+ * деструктуризация давала 500. Zod safeParse после auth-first — 400.
+ * Тексты ответов сохранены дословно: их ждёт proof documentUkepSignProof.
+ */
+const documentUkepSignParamsSchema = z.object({
+	id: z.string().uuid({
+		message: "ID and pkcs7Signature are required",
+	}),
+});
+
+const documentUkepSignBodySchema = z.object({
+	pkcs7Signature: z
+		.string({
+			required_error: "ID and pkcs7Signature are required",
+			invalid_type_error: "ID and pkcs7Signature are required",
+		})
+		.min(1, { message: "ID and pkcs7Signature are required" }),
+});
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/sign-ukep", async (request, reply) => {
@@ -13,15 +35,17 @@ export async function register(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const { id } = request.params as { id: string };
-		const { pkcs7Signature } = request.body as { pkcs7Signature: string };
-
-		if (!id || !pkcs7Signature || typeof pkcs7Signature !== "string") {
+		const parsedParams = documentUkepSignParamsSchema.safeParse(request.params);
+		const parsedBody = documentUkepSignBodySchema.safeParse(request.body);
+		if (!parsedParams.success || !parsedBody.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "ID and pkcs7Signature are required",
 			});
 		}
+
+		const { id } = parsedParams.data;
+		const { pkcs7Signature } = parsedBody.data;
 
 		try {
 			// First verify the document exists and is in a state that allows signing

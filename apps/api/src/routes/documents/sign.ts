@@ -1,8 +1,30 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { generatedDocuments } from "../../db/schema.js";
+
+/**
+ * Подпись документа — юридически значимое действие. Тело раньше читалось через
+ * `request.body as { signatureSvg: string }`: при null/undefined (пустой POST
+ * без JSON) деструктуризация бросала TypeError и клиент получал 500 вместо
+ * понятного 400. Zod safeParse после auth-first закрывает этот путь.
+ */
+const documentSignParamsSchema = z.object({
+	id: z.string().uuid({
+		message: "ID and signatureSvg are required",
+	}),
+});
+
+const documentSignBodySchema = z.object({
+	signatureSvg: z
+		.string({
+			required_error: "ID and signatureSvg are required",
+			invalid_type_error: "ID and signatureSvg are required",
+		})
+		.min(1, { message: "ID and signatureSvg are required" }),
+});
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/sign", async (request, reply) => {
@@ -13,15 +35,17 @@ export async function register(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const { id } = request.params as { id: string };
-		const { signatureSvg } = request.body as { signatureSvg: string };
-
-		if (!id || !signatureSvg || typeof signatureSvg !== "string") {
+		const parsedParams = documentSignParamsSchema.safeParse(request.params);
+		const parsedBody = documentSignBodySchema.safeParse(request.body);
+		if (!parsedParams.success || !parsedBody.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "ID and signatureSvg are required",
 			});
 		}
+
+		const { id } = parsedParams.data;
+		const { signatureSvg } = parsedBody.data;
 
 		if (!signatureSvg.startsWith("<svg") || !signatureSvg.endsWith("</svg>")) {
 			return reply.code(400).send({
