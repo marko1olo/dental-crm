@@ -300,7 +300,12 @@ import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
-import { readDenteClinicToken } from "./lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
 import {
@@ -853,15 +858,15 @@ export function loadDocumentIssueSignatureDraft(organizationId: string | null | 
   try {
     const localKey = documentIssueSignatureLocalKey(organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(documentIssueSignatureStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(documentIssueSignatureStorageKey) : null);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<DocumentIssueSignatureDraft>;
     if (parsed?.version !== 1) return fallback;
     const savedAt = typeof parsed.savedAt === "string" ? parsed.savedAt : "";
     if (!localSavedAtFresh(savedAt, localConvenienceRetentionMs)) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(documentIssueSignatureStorageKey);
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(documentIssueSignatureStorageKey);
       return fallback;
     }
     return {
@@ -885,7 +890,7 @@ export function saveDocumentIssueSignatureDraft(
 ): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       documentIssueSignatureLocalKey(organizationId),
       JSON.stringify({
         version: 1,
@@ -925,8 +930,8 @@ export function loadDocumentPaymentSelectionStore(organizationId: string | null 
   try {
     const localKey = documentPaymentSelectionLocalKey(organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(documentPaymentSelectionStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(documentPaymentSelectionStorageKey) : null);
     if (!raw) return emptyDocumentPaymentSelectionStore();
     const parsed = JSON.parse(raw) as Partial<DocumentPaymentSelectionStore>;
     if (parsed?.version !== 1 || !parsed.selections || typeof parsed.selections !== "object") {
@@ -952,11 +957,11 @@ export function loadDocumentPaymentSelectionStore(organizationId: string | null 
     }
     if (pruned || organizationId) {
       if (Object.keys(selections).length) {
-        window.localStorage.setItem(localKey, JSON.stringify({ version: 1, selections } satisfies DocumentPaymentSelectionStore));
+        safeLocalStorageSetItem(localKey, JSON.stringify({ version: 1, selections } satisfies DocumentPaymentSelectionStore));
       } else {
-        window.localStorage.removeItem(localKey);
+        safeLocalStorageRemoveItem(localKey);
       }
-      if (organizationId) window.localStorage.removeItem(documentPaymentSelectionStorageKey);
+      if (organizationId) safeLocalStorageRemoveItem(documentPaymentSelectionStorageKey);
     }
     return { version: 1, selections };
   } catch (error) {
@@ -989,7 +994,7 @@ export function saveDocumentPaymentSelection(
         .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
         .slice(0, 80)
     );
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       documentPaymentSelectionLocalKey(organizationId),
       JSON.stringify({ version: 1, selections: trimmedSelections } satisfies DocumentPaymentSelectionStore)
     );
@@ -1227,8 +1232,8 @@ export function loadDocumentPayloadDraftStore(organizationId: string | null | un
   try {
     const localKey = documentPayloadDraftLocalKey(organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(documentPayloadDraftStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(documentPayloadDraftStorageKey) : null);
     if (!raw) return emptyDocumentPayloadDraftStore();
     const parsed = JSON.parse(raw) as Partial<DocumentPayloadDraftStore>;
     if (parsed?.version !== 1 || !parsed.drafts || typeof parsed.drafts !== "object") return emptyDocumentPayloadDraftStore();
@@ -1270,11 +1275,11 @@ export function loadDocumentPayloadDraftStore(organizationId: string | null | un
     }
     if (pruned || organizationId) {
       if (Object.keys(drafts).length) {
-        window.localStorage.setItem(localKey, JSON.stringify({ version: 1, drafts } satisfies DocumentPayloadDraftStore));
+        safeLocalStorageSetItem(localKey, JSON.stringify({ version: 1, drafts } satisfies DocumentPayloadDraftStore));
       } else {
-        window.localStorage.removeItem(localKey);
+        safeLocalStorageRemoveItem(localKey);
       }
-      if (organizationId) window.localStorage.removeItem(documentPayloadDraftStorageKey);
+      if (organizationId) safeLocalStorageRemoveItem(documentPayloadDraftStorageKey);
     }
     return { version: 1, drafts };
   } catch {
@@ -1314,7 +1319,7 @@ export function saveOutpatient025uDocumentDraft(
         .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
         .slice(0, 60)
     );
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       documentPayloadDraftLocalKey(organizationId),
       JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
     );
@@ -1355,7 +1360,7 @@ export function saveMedicalRecordExtractDocumentDraft(
         .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
         .slice(0, 60)
     );
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       documentPayloadDraftLocalKey(organizationId),
       JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
     );
@@ -1375,13 +1380,13 @@ export function loadLocalImagingViewerDraft(studyId: string | null, organization
   try {
     const localKey = imagingViewerLocalKey(studyId, organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(imagingViewerLocalKey(studyId)) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(imagingViewerLocalKey(studyId)) : null);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ImagingViewerLocalDraft;
     if (!localSavedAtFresh(parsed?.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(imagingViewerLocalKey(studyId));
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(imagingViewerLocalKey(studyId));
       return null;
     }
     return parsed?.state && Array.isArray(parsed.annotations) ? parsed : null;
@@ -1439,13 +1444,13 @@ export function loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId: str
   try {
     const localKey = organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(dicomWorkbenchLocalStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(dicomWorkbenchLocalStorageKey) : null);
     if (!raw) return null;
     const parsed = normalizeLocalDicomWorkbenchDraft(JSON.parse(raw));
     if (!parsed) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(dicomWorkbenchLocalStorageKey);
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(dicomWorkbenchLocalStorageKey);
       return null;
     }
     return parsed;
@@ -1529,14 +1534,14 @@ export function loadLocalMprWorkbenchDraftFromLocalStorage(
   try {
     const localKey = mprWorkbenchLocalKey(seriesKey, organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(mprWorkbenchLocalKey(seriesKey)) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(mprWorkbenchLocalKey(seriesKey)) : null);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as MprWorkbenchLocalDraft;
     if (parsed?.version !== 1 || parsed.seriesKey !== seriesKey || !parsed.clientSavedAt) return null;
     if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey));
       return null;
     }
     const state = normalizeMprWorkbenchState(parsed.state);
@@ -1555,7 +1560,7 @@ export function saveLocalMprWorkbenchDraftToLocalStorage(
 ): boolean {
   if (typeof window === "undefined") return false;
   try {
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       mprWorkbenchLocalKey(seriesKey, organizationId),
       JSON.stringify({ version: 1, seriesKey, state, clientSavedAt } satisfies MprWorkbenchLocalDraft)
     );
@@ -2035,7 +2040,7 @@ export function saveBrowserPickedImagingFolderPreview(
 ): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId),
       JSON.stringify(preview)
     );
@@ -2052,14 +2057,14 @@ export function loadBrowserPickedImagingFolderPreview(
   try {
     const localKey = organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(browserPickedImagingFolderStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(browserPickedImagingFolderStorageKey) : null);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as BrowserPickedImagingFolderPreview;
     if (parsed?.version !== 1 || !parsed.folderFingerprint || !parsed.createdAt) return null;
     if (!localSavedAtFresh(parsed.createdAt, localConvenienceRetentionMs)) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(browserPickedImagingFolderStorageKey);
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(browserPickedImagingFolderStorageKey);
       return null;
     }
     return parsed;
@@ -2072,8 +2077,8 @@ export function loadBrowserPickedImagingFolderPreview(
 export function removeBrowserPickedImagingFolderPreview(organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId));
-    if (organizationId) window.localStorage.removeItem(browserPickedImagingFolderStorageKey);
+    safeLocalStorageRemoveItem(organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId));
+    if (organizationId) safeLocalStorageRemoveItem(browserPickedImagingFolderStorageKey);
   } catch {
     // ignore unavailable storage
   }
@@ -2124,14 +2129,14 @@ export function loadLocalImagingFolderDraft(organizationId: string | null | unde
   try {
     const localKey = organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId);
     const raw =
-      window.localStorage.getItem(localKey) ??
-      (organizationId ? window.localStorage.getItem(localImagingFolderStorageKey) : null);
+      safeLocalStorageGetItem(localKey) ??
+      (organizationId ? safeLocalStorageGetItem(localImagingFolderStorageKey) : null);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as LocalImagingFolderDraft;
     if (parsed?.version !== 1 || !parsed.folderPath?.trim() || !parsed.savedAt) return null;
     if (!localSavedAtFresh(parsed.savedAt, localConvenienceRetentionMs)) {
-      window.localStorage.removeItem(localKey);
-      if (organizationId) window.localStorage.removeItem(localImagingFolderStorageKey);
+      safeLocalStorageRemoveItem(localKey);
+      if (organizationId) safeLocalStorageRemoveItem(localImagingFolderStorageKey);
       return null;
     }
     return {
@@ -2150,7 +2155,7 @@ export function loadLocalImagingFolderDraft(organizationId: string | null | unde
 export function saveLocalImagingFolderDraft(draft: LocalImagingFolderDraft, organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId), JSON.stringify(draft));
+    safeLocalStorageSetItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId), JSON.stringify(draft));
   } catch {
     // Local folder recovery is best-effort and never sent to the server.
   }
@@ -2159,8 +2164,8 @@ export function saveLocalImagingFolderDraft(draft: LocalImagingFolderDraft, orga
 export function removeLocalImagingFolderDraft(organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId));
-    if (organizationId) window.localStorage.removeItem(localImagingFolderStorageKey);
+    safeLocalStorageRemoveItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId));
+    if (organizationId) safeLocalStorageRemoveItem(localImagingFolderStorageKey);
   } catch {
     // ignore unavailable storage
   }
@@ -2172,7 +2177,7 @@ export function saveLocalDicomWorkbenchDraftToLocalStorage(
 ): boolean {
   if (typeof window === "undefined") return false;
   try {
-    window.localStorage.setItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId), JSON.stringify(draft));
+    safeLocalStorageSetItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId), JSON.stringify(draft));
     return true;
   } catch {
     return false;
@@ -2204,8 +2209,8 @@ export function dicomWorkbenchManifestHasRedactedSource(manifest: DicomViewerWor
 export function removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId));
-    if (organizationId) window.localStorage.removeItem(dicomWorkbenchLocalStorageKey);
+    safeLocalStorageRemoveItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId));
+    if (organizationId) safeLocalStorageRemoveItem(dicomWorkbenchLocalStorageKey);
   } catch {
     // ignore unavailable storage
   }
@@ -2308,7 +2313,7 @@ export function saveLocalImagingViewerDraft(
 ): boolean {
   if (typeof window === "undefined") return false;
   try {
-    window.localStorage.setItem(imagingViewerLocalKey(studyId, organizationId), JSON.stringify(draft));
+    safeLocalStorageSetItem(imagingViewerLocalKey(studyId, organizationId), JSON.stringify(draft));
     return true;
   } catch {
     // Viewer state is still saved to server when available; local storage quota errors stay non-blocking.
@@ -4174,7 +4179,7 @@ export function normalizeUiPreferencesPayload(parsed: unknown): UiPreferences | 
 export function loadUiPreferences(): UiPreferences {
   if (typeof window === "undefined") return defaultUiPreferences;
   try {
-    const raw = window.localStorage.getItem(uiPreferencesStorageKey);
+    const raw = safeLocalStorageGetItem(uiPreferencesStorageKey);
     const preferences = raw ? normalizeUiPreferencesPayload(JSON.parse(raw)) ?? defaultUiPreferences : defaultUiPreferences;
     return mergeLocalOnboardingDismissal(preferences);
   } catch {
@@ -4193,7 +4198,7 @@ export function withSavedUiPreferenceTimestamp(preferences: UiPreferencesInput):
 export function persistUiPreferences(preferences: UiPreferences): UiPreferences | null {
   if (typeof window === "undefined") return null;
   try {
-    window.localStorage.setItem(uiPreferencesStorageKey, JSON.stringify(preferences));
+    safeLocalStorageSetItem(uiPreferencesStorageKey, JSON.stringify(preferences));
     return preferences;
   } catch {
     // Preferences are convenience only. Clinical drafts use separate guarded storage.
@@ -4337,12 +4342,12 @@ export function parseOnboardingDismissalState(raw: string | null): OnboardingDis
 export function loadOnboardingDismissalState(organizationId: string | null | undefined = null): OnboardingDismissalState | null {
   if (typeof window === "undefined") return null;
   try {
-    const scopedVal = window.localStorage.getItem(onboardingLocalKey(organizationId));
+    const scopedVal = safeLocalStorageGetItem(onboardingLocalKey(organizationId));
     if (scopedVal) {
       const parsed = parseOnboardingDismissalState(scopedVal);
       if (parsed) return parsed;
     }
-    const unscopedVal = window.localStorage.getItem(onboardingStorageKey);
+    const unscopedVal = safeLocalStorageGetItem(onboardingStorageKey);
     return parseOnboardingDismissalState(unscopedVal);
   } catch {
     return null;
@@ -4378,7 +4383,7 @@ export function saveOnboardingDismissed(
   const state = { dismissed, savedAt, draftMode: dismissed ? draftMode : false };
   if (typeof window === "undefined") return state;
   try {
-    window.localStorage.setItem(
+    safeLocalStorageSetItem(
       onboardingLocalKey(organizationId),
       JSON.stringify({ version: 1, ...state })
     );
@@ -5067,8 +5072,8 @@ export function loadVisitLocalDraft(visitId: string, organizationId: string | nu
   if (typeof window === "undefined") return null;
   try {
     const raw =
-      window.localStorage.getItem(visitLocalDraftKey(visitId, organizationId)) ??
-      (organizationId ? window.localStorage.getItem(visitLocalDraftKey(visitId)) : null);
+      safeLocalStorageGetItem(visitLocalDraftKey(visitId, organizationId)) ??
+      (organizationId ? safeLocalStorageGetItem(visitLocalDraftKey(visitId)) : null);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<VisitLocalDraft>;
     if (
@@ -5082,8 +5087,8 @@ export function loadVisitLocalDraft(visitId: string, organizationId: string | nu
       return null;
     }
     if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs)) {
-      window.localStorage.removeItem(visitLocalDraftKey(visitId, organizationId));
-      if (organizationId) window.localStorage.removeItem(visitLocalDraftKey(visitId));
+      safeLocalStorageRemoveItem(visitLocalDraftKey(visitId, organizationId));
+      if (organizationId) safeLocalStorageRemoveItem(visitLocalDraftKey(visitId));
       return null;
     }
     return parsed as VisitLocalDraft;
@@ -5094,7 +5099,7 @@ export function loadVisitLocalDraft(visitId: string, organizationId: string | nu
 
 export function saveVisitLocalDraft(draft: VisitLocalDraft, organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(visitLocalDraftKey(draft.visitId, organizationId), JSON.stringify(draft));
+  safeLocalStorageSetItem(visitLocalDraftKey(draft.visitId, organizationId), JSON.stringify(draft));
 }
 
 export function isNullableString(value: unknown): value is string | null {
@@ -5182,8 +5187,8 @@ export function loadPendingVisitSavesFromLocalStorage(organizationId: string | n
   if (typeof window === "undefined") return [];
   const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
   const localKey = pendingVisitSaveQueueLocalKey(normalizedOrganizationId);
-  const scopedRaw = window.localStorage.getItem(localKey);
-  const legacyRaw = normalizedOrganizationId ? window.localStorage.getItem(pendingVisitSaveQueueKey) : null;
+  const scopedRaw = safeLocalStorageGetItem(localKey);
+  const legacyRaw = normalizedOrganizationId ? safeLocalStorageGetItem(pendingVisitSaveQueueKey) : null;
   const byId = new Map<string, PendingVisitSave>();
   for (const item of parsePendingVisitSaveQueue(scopedRaw, normalizedOrganizationId)) {
     byId.set(item.id, item);
@@ -5194,7 +5199,7 @@ export function loadPendingVisitSavesFromLocalStorage(organizationId: string | n
   const queue = sortPendingVisitSaves(Array.from(byId.values()));
   if (normalizedOrganizationId && legacyRaw) {
     savePendingVisitSavesToLocalStorage(queue, normalizedOrganizationId);
-    window.localStorage.removeItem(pendingVisitSaveQueueKey);
+    safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
   }
   return queue;
 }
@@ -5213,10 +5218,10 @@ export function savePendingVisitSavesToLocalStorage(queue: PendingVisitSave[], o
       )
   );
   if (!scopedQueue.length) {
-    window.localStorage.removeItem(localKey);
+    safeLocalStorageRemoveItem(localKey);
     return;
   }
-  window.localStorage.setItem(localKey, JSON.stringify(scopedQueue));
+  safeLocalStorageSetItem(localKey, JSON.stringify(scopedQueue));
 }
 
 export function isPendingSpeechChunk(value: unknown): value is PendingSpeechChunk {
@@ -5257,8 +5262,8 @@ export function loadPendingSpeechChunksFromLocalStorage(organizationId: string |
   try {
     const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
     const localKey = pendingSpeechChunkQueueLocalKey(normalizedOrganizationId);
-    const scopedRaw = window.localStorage.getItem(localKey);
-    const legacyRaw = normalizedOrganizationId ? window.localStorage.getItem(pendingSpeechChunkQueueKey) : null;
+    const scopedRaw = safeLocalStorageGetItem(localKey);
+    const legacyRaw = normalizedOrganizationId ? safeLocalStorageGetItem(pendingSpeechChunkQueueKey) : null;
     const byId = new Map<string, PendingSpeechChunk>();
     for (const raw of [scopedRaw, legacyRaw]) {
       if (!raw) continue;
@@ -5272,7 +5277,7 @@ export function loadPendingSpeechChunksFromLocalStorage(organizationId: string |
     const queue = sortPendingSpeechChunks(Array.from(byId.values()));
     if (normalizedOrganizationId && legacyRaw) {
       savePendingSpeechChunksToLocalStorage(queue, normalizedOrganizationId);
-      window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+      safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
     }
     return queue;
   } catch {
@@ -5294,14 +5299,14 @@ export function savePendingSpeechChunksToLocalStorage(queue: PendingSpeechChunk[
       )
   );
   if (!scopedQueue.length) {
-    window.localStorage.removeItem(localKey);
+    safeLocalStorageRemoveItem(localKey);
     return;
   }
   const payload = JSON.stringify(scopedQueue);
   if (payload.length > speechLocalStorageFallbackMaxBytes) {
     throw new Error("Память для аудио на этом устройстве переполнена; освободите место или отправьте текущую запись.");
   }
-  window.localStorage.setItem(localKey, payload);
+  safeLocalStorageSetItem(localKey, payload);
 }
 
 export function speechChunkIndexedDbAvailable(): boolean {
@@ -5565,8 +5570,8 @@ export async function migrateLocalMprWorkbenchDraftFromLocalStorage(
     existing && Date.parse(existing.clientSavedAt) >= Date.parse(legacyDraft.clientSavedAt) ? existing : legacyDraft;
   await saveLocalMprWorkbenchDraftToIndexedDb(seriesKey, draft.state, draft.clientSavedAt, organizationId);
   if (typeof window !== "undefined") {
-    window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey, organizationId));
-    if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+    safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey, organizationId));
+    if (organizationId) safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey));
   }
 }
 
@@ -5594,8 +5599,8 @@ export async function saveLocalMprWorkbenchDraft(
     try {
       await saveLocalMprWorkbenchDraftToIndexedDb(seriesKey, state, clientSavedAt, organizationId);
       if (typeof window !== "undefined") {
-        window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey, organizationId));
-        if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+        safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey, organizationId));
+        if (organizationId) safeLocalStorageRemoveItem(mprWorkbenchLocalKey(seriesKey));
       }
       return true;
     } catch {
@@ -5700,8 +5705,8 @@ export async function migratePendingVisitSavesFromLocalStorage(organizationId: s
     byId.set(item.id, item);
   }
   await savePendingVisitSavesToIndexedDb(sortPendingVisitSaves(Array.from(byId.values())), normalizedOrganizationId);
-  window.localStorage.removeItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
-  if (normalizedOrganizationId) window.localStorage.removeItem(pendingVisitSaveQueueKey);
+  safeLocalStorageRemoveItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
+  if (normalizedOrganizationId) safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
 }
 
 export async function loadPendingVisitSaves(organizationId: string | null | undefined = null): Promise<PendingVisitSave[]> {
@@ -5719,8 +5724,8 @@ export async function savePendingVisitSaves(queue: PendingVisitSave[], organizat
   if (pendingVisitSaveIndexedDbAvailable()) {
     try {
       await savePendingVisitSavesToIndexedDb(queue, normalizedOrganizationId);
-      window.localStorage.removeItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
-      if (normalizedOrganizationId) window.localStorage.removeItem(pendingVisitSaveQueueKey);
+      safeLocalStorageRemoveItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
+      if (normalizedOrganizationId) safeLocalStorageRemoveItem(pendingVisitSaveQueueKey);
       return;
     } catch {
       // Keep accepted visits retryable on restricted browsers.
@@ -5816,8 +5821,8 @@ export async function migrateSpeechChunksFromLocalStorage(organizationId: string
     byId.set(chunk.id, chunk);
   }
   await savePendingSpeechChunksToIndexedDb(sortPendingSpeechChunks(Array.from(byId.values())), normalizedOrganizationId);
-  window.localStorage.removeItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
-  if (normalizedOrganizationId) window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+  safeLocalStorageRemoveItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
+  if (normalizedOrganizationId) safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
 }
 
 export async function loadPendingSpeechChunks(organizationId: string | null | undefined = null): Promise<PendingSpeechChunk[]> {
@@ -5868,8 +5873,8 @@ export async function queuePendingSpeechChunk(
     try {
       await migrateSpeechChunksFromLocalStorage(normalizedOrganizationId);
       await putPendingSpeechChunkToIndexedDb(queued);
-      window.localStorage.removeItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
-      if (normalizedOrganizationId) window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+      safeLocalStorageRemoveItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
+      if (normalizedOrganizationId) safeLocalStorageRemoveItem(pendingSpeechChunkQueueKey);
       return queued;
     } catch {
       // Fall through to the small legacy fallback. It may reject instead of silently dropping audio.

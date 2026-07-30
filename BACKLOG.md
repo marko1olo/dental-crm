@@ -10,8 +10,8 @@
 [x] P1 | denteRequestHeaders: staff/clinic via safeLocalStorage | denteRequestHeaders.ts | 5ec26b542
 [x] P1 | Sweep bare dente_* token localStorage (App, leads, ws, diary, apiAuthFetch, auth writes) | apps/web/src | cbfd51852 typecheck GREEN
 [x] P1 | Wire safeLocalStorage into apiAuthFetch readToken + DENTE_*_KEY | apiAuthFetch.ts | cbfd51852
-[ ] P1 | PatientPortal patient_token + themeStore + AuthArtBackground via safeLocalStorage | apps/web/src | rg + typecheck
-[ ] P1 | AppHelpers non-token localStorage drafts try/catch via safe helpers | AppHelpers.tsx | no bare window.localStorage throw
+[x] P1 | PatientPortal patient_token + themeStore + AuthArtBackground via safeLocalStorage | apps/web/src | 36d232886 typecheck GREEN
+[x] P1 | AppHelpers+App non-token localStorage drafts via safe helpers | AppHelpers.tsx App.tsx | typecheck GREEN
 [ ] P1 | Zod strict on settings staff/catalog routes | apps/api/src/routes/settings.ts | 400 on bad body proof test
 [ ] P2 | Integration tests schedule / intake / payroll | apps/api/src/tests | npm run test slice green
 [ ] P1 | Find UNVERIFIED in direction/packets related to settings auth | .agents | list + verify

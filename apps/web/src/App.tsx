@@ -10,7 +10,15 @@ import { CommandPalette } from './components/CommandPalette';
 import { IncomingCallToast } from './components/IncomingCallToast';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
-import { readDenteClinicToken, readDenteStaffToken, safeLocalStorageRemoveItem, DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY } from "./lib/safeLocalStorage";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+	safeLocalStorageRemoveItem,
+	DENTE_CLINIC_TOKEN_KEY,
+	DENTE_STAFF_TOKEN_KEY,
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "./lib/safeLocalStorage";
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -954,12 +962,12 @@ import {
 export function App() {
   // Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-    typeof window !== "undefined" && window.localStorage.getItem("dente_sidebar_collapsed") === "true"
+    typeof window !== "undefined" && safeLocalStorageGetItem("dente_sidebar_collapsed") === "true"
   );
   const toggleSidebarCollapsed = () => {
     setSidebarCollapsed((current) => {
       const next = !current;
-      window.localStorage.setItem("dente_sidebar_collapsed", String(next));
+      safeLocalStorageSetItem("dente_sidebar_collapsed", String(next));
       return next;
     });
   };
@@ -2011,8 +2019,8 @@ export function App() {
   };
 
   const isLocalOnboardingDismissed = typeof window !== "undefined" && (
-    window.localStorage.getItem("dental-crm:onboarding:v1")?.includes('"dismissed":true') ||
-    window.localStorage.getItem("dente_ui_preferences_v1")?.includes('"onboardingDismissed":true')
+    safeLocalStorageGetItem("dental-crm:onboarding:v1")?.includes('"dismissed":true') ||
+    safeLocalStorageGetItem("dente_ui_preferences_v1")?.includes('"onboardingDismissed":true')
   );
 
   /**
