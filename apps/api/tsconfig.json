@@ -44,11 +44,6 @@
 		"src/services/syncEngine.ts",
 		"src/scripts/setup-fresh-db.ts",
 		"src/scripts/patch-owner-credentials.ts",
-		"src/scripts/seedPglite.ts",
-		// Легаси-моки: не участвуют в боевых маршрутах. Третья копия
-		// sampleData_opt.ts удалена вместе со своим генератором, и записи о ней
-		// здесь больше нет: исключение несуществующего файла молча переживает его
-		// возвращение.
-		"src/telegram/legacyMocks.ts"
+		"src/scripts/seedPglite.ts"
 	]
 }
