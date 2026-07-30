@@ -241,10 +241,26 @@ export async function findWaitlistMatches(slot: FreedSlot, limit = 20): Promise<
 		 * Если день не разобрался ни у одной записи — ограничения нет, подходит
 		 * любой: выдуманное ограничение хуже отсутствующего.
 		 */
-		const wantedWeekdays = (Array.isArray(row.preferredTimeRanges) ? row.preferredTimeRanges : [])
-			.map((item) => (item && typeof item === "object" ? parsePreferredWeekday((item as Record<string, unknown>).day) : null))
-			.filter((day): day is number => day !== null);
-		const dayFits = wantedWeekdays.length === 0 || wantedWeekdays.includes(slotWeekday);
+		const rangesArray = Array.isArray(row.preferredTimeRanges) ? row.preferredTimeRanges : [];
+		let dayFits = rangesArray.length === 0;
+		if (!dayFits) {
+			let found = false;
+			let hasValidDay = false;
+			for (let i = 0; i < rangesArray.length; i++) {
+				const item = rangesArray[i];
+				if (item && typeof item === "object") {
+					const day = parsePreferredWeekday((item as Record<string, unknown>).day);
+					if (day !== null) {
+						hasValidDay = true;
+						if (day === slotWeekday) {
+							found = true;
+							break;
+						}
+					}
+				}
+			}
+			dayFits = !hasValidDay || found;
+		}
 		const timeFits = dayFits && slotFitsRanges(slotStartMinute, ranges);
 		const waitingDays = Math.max(
 			0,
