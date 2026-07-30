@@ -243,12 +243,7 @@ export function generatePanoramicImage(
   const thicknessSteps = Math.max(1, Math.floor(thickness / 0.5));
   const stepSizeNormal = thickness > 0 ? thickness / thicknessSteps : 0;
 
-  // --- Hoist loop-invariant world->index transform out of the per-pixel hot loop. ---
-  // worldToIndex() allocated 6 vec3 (Float32Array(3)) per call and recomputed the
-  // direction basis every pixel, even though origin/direction/spacing are constant
-  // for the whole image. For a WxH panoramic with T thickness steps that is
-  // O(W*H*T) allocations feeding the GC. Here we read the basis once as scalars and
-  // fold spacing division into the dot products so the inner loop is allocation-free.
+  // Precompute inverse spacing and direction basis to avoid allocation in the hot loop.
   const ox = origin[0], oy = origin[1], oz = origin[2];
   const invSx = 1 / spacing[0], invSy = 1 / spacing[1], invSz = 1 / spacing[2];
   const dx0 = direction[0] * invSx, dx1 = direction[1] * invSx, dx2 = direction[2] * invSx;
