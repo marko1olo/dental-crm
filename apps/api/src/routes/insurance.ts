@@ -5,12 +5,39 @@
  */
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { insuranceContracts } from "../db/schema.js";
+
+/**
+ * Тела договоров ДМС раньше читались через bare destructure `const { … } = request.body`.
+ * При null/undefined body (POST/PUT без JSON) TypeError → 500.
+ * Zod safeParse после auth-first → 400 с прежними текстами.
+ */
+const insuranceCreateBodySchema = z.object({
+	companyName: z.string().optional(),
+	policyNumberMask: z.string().optional(),
+	coverageTherapyPct: z.number().finite().optional(),
+	coverageSurgeryPct: z.number().finite().optional(),
+	coverageOrthoPct: z.number().finite().optional(),
+	coverageHygienePct: z.number().finite().optional(),
+	annualLimitRub: z.number().finite().optional(),
+});
+
+const insuranceUpdateBodySchema = z.object({
+	companyName: z.string().optional(),
+	policyNumberMask: z.string().optional(),
+	coverageTherapyPct: z.number().finite().optional(),
+	coverageSurgeryPct: z.number().finite().optional(),
+	coverageOrthoPct: z.number().finite().optional(),
+	coverageHygienePct: z.number().finite().optional(),
+	annualLimitRub: z.number().finite().nullable().optional(),
+	isActive: z.boolean().optional(),
+});
 
 /**
  * Название страховой компании — единственное обязательное поле договора ДМС.
@@ -104,6 +131,13 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const parsedCreate = insuranceCreateBodySchema.safeParse(request.body);
+		if (!parsedCreate.success) {
+			return reply.code(400).send({
+				error: "CompanyNameRequired",
+				message: INSURANCE_COMPANY_NAME_REQUIRED,
+			});
+		}
 		const {
 			companyName,
 			policyNumberMask,
@@ -112,7 +146,7 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			coverageOrthoPct = 0,
 			coverageHygienePct = 0,
 			annualLimitRub,
-		} = request.body;
+		} = parsedCreate.data;
 
 		if (!companyName?.trim()) {
 			// БЫЛО: `{"error":"companyName is required"}` без message. Панель договоров
@@ -197,6 +231,13 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				message: INSURANCE_CONTRACT_NOT_FOUND,
 			});
 
+		const parsedUpdate = insuranceUpdateBodySchema.safeParse(request.body);
+		if (!parsedUpdate.success) {
+			return reply.code(400).send({
+				error: "CompanyNameRequired",
+				message: INSURANCE_COMPANY_NAME_REQUIRED,
+			});
+		}
 		const {
 			companyName,
 			policyNumberMask,
@@ -206,7 +247,7 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			coverageHygienePct,
 			annualLimitRub,
 			isActive,
-		} = request.body;
+		} = parsedUpdate.data;
 
 		/*
 		 * НАЙДЕНО ЗАПРОСОМ, А НЕ ЧТЕНИЕМ, И ЭТО НЕ ПРО ТЕКСТ, А ПРО УТРАТУ ДАННЫХ.
