@@ -40,13 +40,17 @@ export function denteAdminSecretRequestHeaders(
 	const headers = secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : { ...extra };
 
 	if (typeof window !== "undefined") {
-		const clinicToken = localStorage.getItem("dente_clinic_token");
-		const staffToken = localStorage.getItem("dente_staff_token");
-		if (clinicToken) {
-			headers["x-dente-clinic-token"] = clinicToken;
-		}
-		if (staffToken) {
-			headers["x-dente-staff-token"] = staffToken;
+		try {
+			const clinicToken = localStorage.getItem("dente_clinic_token");
+			const staffToken = localStorage.getItem("dente_staff_token");
+			if (clinicToken) {
+				headers["x-dente-clinic-token"] = clinicToken;
+			}
+			if (staffToken) {
+				headers["x-dente-staff-token"] = staffToken;
+			}
+		} catch {
+			// Ignore localStorage access restrictions in private mode
 		}
 	}
 
