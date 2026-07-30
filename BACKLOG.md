@@ -23,7 +23,7 @@
 [x] P1 | lab order priceRub → nonNegativeMoneyRubSchema (create+update; subkopeck 400) | lab.ts + labOrderMoney.test.ts | 3/3 GREEN | 9b07ec966
 [x] P1 | document sign/sign-ukep body Zod (null body 400 not 500) | sign.ts + signUkep.ts + documentSignBody.test.ts | 5/5 GREEN typecheck OK | cf94aec15
 [x] P1 | inventory+telephony body Zod (null body 400 not 500) | inventory.ts + telephony.ts + inventoryTelephonyBody.test.ts | 5/5 GREEN typecheck OK | c4d05f67d
-[x] P1 | insurance contract body Zod (null body 400 not 500; CompanyNameRequired preserved) | insurance.ts + insuranceBody.test.ts | 5/5 GREEN typecheck OK | PENDING
+[x] P1 | insurance contract body Zod (null body 400 not 500; CompanyNameRequired preserved) | insurance.ts + insuranceBody.test.ts | 5/5 GREEN typecheck OK | ef9d2a984
 [x] P2 | TODO/FIXME in settings components | apps/web/src/components/settings | none real (CSS .shift-todo only)
 [x] P2 | Push main after each green commit | origin main | auth Zod pushed (0789876b9)
 
