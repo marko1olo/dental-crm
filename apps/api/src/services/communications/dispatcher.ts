@@ -602,6 +602,43 @@ async function markDeferred(row: OutboxRow, notBefore: Date, reason: string, now
  */
 export type RowOutcome = "sent" | "retried" | "failed" | "suppressed" | "not_configured" | "deferred";
 
+function recordOutcome(
+	report: {
+		sent: number;
+		retried: number;
+		failed: number;
+		suppressed: number;
+		notConfigured: number;
+		deferred: number;
+	},
+	outcome: RowOutcome
+): void {
+	switch (outcome) {
+		case "sent":
+			report.sent += 1;
+			break;
+		case "retried":
+			report.retried += 1;
+			break;
+		case "failed":
+			report.failed += 1;
+			break;
+		case "suppressed":
+			report.suppressed += 1;
+			break;
+		case "not_configured":
+			report.notConfigured += 1;
+			break;
+		case "deferred":
+			report.deferred += 1;
+			break;
+		default: {
+			const unhandled: never = outcome;
+			throw new Error(`Неизвестный итог отправки: ${String(unhandled)}`);
+		}
+	}
+}
+
 /**
  * Одна строка очереди: проверки, отправка, запись итога. Возвращает, что
  * именно произошло, — отчёт собирается вызывающим.
@@ -825,30 +862,7 @@ export async function dispatchDueMessages(options: DispatchOptions = {}): Promis
 				 * новый — и он тихо посчитался бы отложенным. Здесь недостающая ветка
 				 * не компилируется.
 				 */
-				switch (outcome) {
-					case "sent":
-						report.sent += 1;
-						break;
-					case "retried":
-						report.retried += 1;
-						break;
-					case "failed":
-						report.failed += 1;
-						break;
-					case "suppressed":
-						report.suppressed += 1;
-						break;
-					case "not_configured":
-						report.notConfigured += 1;
-						break;
-					case "deferred":
-						report.deferred += 1;
-						break;
-					default: {
-						const unhandled: never = outcome;
-						throw new Error(`Неизвестный итог отправки: ${String(unhandled)}`);
-					}
-				}
+				recordOutcome(report, outcome);
 			} catch (error) {
 				// Непредвиденный сбой не должен оставить строку захваченной
 				// навсегда: возвращаем её в очередь с записанной причиной.
