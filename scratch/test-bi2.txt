@@ -1,0 +1,1730 @@
+
+> dental-crm@0.1.0 test
+> npm run test -w @dental/shared && npm run test -w @dental/api
+
+
+> @dental/shared@0.1.0 test
+> node --import tsx --test "src/**/*.test.ts"
+
+▶ buildRuleBasedVisitDraftFromTranscript
+  ✔ parses a full transcript with all sections correctly (52.586ms)
+  ✔ handles empty transcript and returns fallbacks (5.0749ms)
+  ✔ uses custom sourceLabel in warnings (19.425ms)
+  ✔ detects treatment plan signals even without explicit section headers (7.9404ms)
+  ✔ uses different specialty profile (surgeon) (0.8031ms)
+✔ buildRuleBasedVisitDraftFromTranscript (93.101ms)
+▶ normalizeDate
+  ✔ returns null for empty values (0.7261ms)
+✔ normalizeDate (1.6903ms)
+▶ documentAmountSource
+  ✔ returns expected amount source for different document kinds (0.651ms)
+  ✔ handles all valid document kinds without throwing and returns a valid source (0.2461ms)
+✔ documentAmountSource (1.877ms)
+▶ documentRequiresPaidRecord
+  ✔ returns expected boolean for different document kinds (0.2119ms)
+  ✔ handles all valid document kinds without throwing (0.1254ms)
+  ✔ edge cases: handles invalid or missing document kinds gracefully (0.1ms)
+✔ documentRequiresPaidRecord (0.6248ms)
+▶ documentPayloadActualKeys
+  ✔ returns empty array for null or undefined (0.7136ms)
+  ✔ returns empty array for empty payload (0.1381ms)
+  ✔ returns defined keys (0.3046ms)
+  ✔ filters out undefined values (0.1526ms)
+✔ documentPayloadActualKeys (1.5671ms)
+▶ documentPayloadAllowedKeys
+  ✔ returns expected payload keys for specific document kinds (0.2615ms)
+  ✔ returns an empty array for unknown document kinds (0.0896ms)
+  ✔ handles all valid document kinds without throwing and returns an array (0.1306ms)
+✔ documentPayloadAllowedKeys (0.6204ms)
+▶ documentPayloadDisallowedKeys
+  ✔ returns empty array for null or undefined payload (0.2037ms)
+  ✔ returns empty array when payload is an empty object (0.0875ms)
+  ✔ returns empty array when payload only contains allowed keys (0.123ms)
+  ✔ returns array of disallowed keys when payload contains keys not allowed for the given kind (0.0971ms)
+  ✔ ignores keys with undefined values (0.0704ms)
+✔ documentPayloadDisallowedKeys (0.7215ms)
+▶ buildRuleBasedVisitDraftFromTranscript
+  ✔ happy path: extracts all sections perfectly from a structured transcript (50.1524ms)
+  ✔ fallback mechanisms: applies fallbacks when sections are missing (21.2893ms)
+  ✔ tooth extraction: correctly identifies multiple tooth codes (1.5253ms)
+  ✔ empty/garbage transcript: falls back gracefully (3.4765ms)
+  ✔ specialty differences: implantologist specialty alters fallbacks (1.3896ms)
+✔ buildRuleBasedVisitDraftFromTranscript (78.0463ms)
+▶ documentPayloadDisallowedKeys
+  ✔ returns empty array for null or undefined payload (0.0953ms)
+✔ documentPayloadDisallowedKeys (0.144ms)
+▶ parseKopecks
+  ✔ разбирает строку numeric из драйвера точно (0.8417ms)
+  ✔ пустое значение и null считаются нулём (0.1585ms)
+  ✔ отрицательный баланс — это долг, а не ошибка (0.1389ms)
+  ✔ целое число из колонки integer — это рубли (0.1281ms)
+  ✔ мусор не превращается молча в ноль (0.4033ms)
+  ✔ не теряет копейки там, где ошибается плавающая точка (0.2082ms)
+✔ parseKopecks (2.9395ms)
+▶ kopecksToNumericString
+  ✔ возвращает ровно два знака для записи в numeric(12, 2) (0.2756ms)
+  ✔ обход туда-обратно не меняет сумму (0.1669ms)
+  ✔ дробные копейки — признак прохода через float, это ошибка (0.1389ms)
+✔ kopecksToNumericString (0.8103ms)
+▶ rublesToKopecks / kopecksToWholeRubles
+  ✔ целые рубли переводятся точно в обе стороны (0.3574ms)
+  ✔ нецелые рубли не принимаются (0.1353ms)
+  ✔ сумма с копейками не выдаёт себя за целые рубли (0.109ms)
+✔ rublesToKopecks / kopecksToWholeRubles (0.7491ms)
+▶ multiplyKopecks
+  ✔ цена на количество считается точно (0.1794ms)
+  ✔ дробное количество отклоняется (0.1026ms)
+✔ multiplyKopecks (0.3685ms)
+▶ percentageOfKopecks
+  ✔ доля считается от точной суммы (0.1924ms)
+  ✔ остаток отбрасывается, доля не превышает саму сумму (0.1371ms)
+✔ percentageOfKopecks (4.2057ms)
+▶ splitKopecks
+  ✔ сумма частей равна исходной сумме (0.8767ms)
+  ✔ делится без остатка — части одинаковые (0.0921ms)
+  ✔ одна копейка на три платежа не исчезает (0.0745ms)
+  ✔ рассрочка любой длины сходится до копейки (1.0456ms)
+  ✔ долг делится с сохранением знака (0.097ms)
+✔ splitKopecks (2.3894ms)
+▶ formatKopecksRu
+  ✔ показывает копейки и разделяет разряды (0.2685ms)
+  ✔ разряды и знак рубля отделены неразрывным пробелом (0.1077ms)
+  ✔ долг показывается типографским минусом (0.0745ms)
+✔ formatKopecksRu (0.5693ms)
+▶ normalizeDentalSpeechTranscript
+  ✔ basic cleaning (5.0565ms)
+  ✔ tooth number normalization (5.2886ms)
+  ✔ terminology mapping (28.6618ms)
+  ✔ punctuation cleaning (0.8957ms)
+  ✔ diagnosis warnings (0.6762ms)
+  ✔ specialty label (0.6009ms)
+✔ normalizeDentalSpeechTranscript (42.2529ms)
+▶ splitLine
+  ✔ splits simple strings with a delimiter (1.63ms)
+  ✔ trims whitespace around values (0.1821ms)
+  ✔ ignores delimiters within double quotes (0.1402ms)
+  ✔ ignores delimiters within double quotes with spaces (0.212ms)
+  ✔ handles empty string delimiter (0.1513ms)
+  ✔ handles empty string (0.1347ms)
+  ✔ handles consecutive delimiters (0.1121ms)
+  ✔ handles leading and trailing delimiters (0.1204ms)
+  ✔ handles other delimiters (0.1737ms)
+  ✔ handles multiple quoted segments (0.1926ms)
+  ✔ handles empty quotes (0.1337ms)
+  ✔ handles unclosed quotes (0.1279ms)
+  ✔ handles strings with only delimiters (0.1087ms)
+  ✔ handles strings with only whitespaces (0.1207ms)
+  ✔ handles strings with no delimiters (0.0972ms)
+  ✔ handles emojis and unicode characters (0.0913ms)
+  ✔ handles newlines inside quotes (0.0843ms)
+  ✔ preserves spaces inside quotes but trims outside (0.0858ms)
+  ✔ handles whitespace around empty elements (0.0726ms)
+  ✔ handles quotes used as escape for delimiter only (0.0684ms)
+  ✔ handles quotes adjacent to characters without delimiters (0.0642ms)
+✔ splitLine (5.6875ms)
+ℹ tests 80
+ℹ suites 18
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 555.2773
+
+> @dental/api@0.1.0 test
+> node --import tsx --test "src/**/*.test.ts"
+
+▶ personalizeTreatmentPlan tests
+  ✔ returns rule-based fallback when neural configuration is disabled (2.6128ms)
+  ✔ uses primary explicitApiKey and calls fetch (10.5715ms)
+  ✔ handles non-JSON text wrapping from AI (1.5782ms)
+  ✔ cascades to fallback providers on primary provider failure (16.9127ms)
+  ✔ returns rule-based fallback when all AI calls fail (2.9088ms)
+✔ personalizeTreatmentPlan tests (37.1192ms)
+▶ recordAuditEvent
+  ✔ inserts audit event with provided organizationId (2.23ms)
+  ✔ fetches first organization when organizationId is missing (0.5283ms)
+  ✔ returns early without inserting if no organization is found (0.3619ms)
+✔ recordAuditEvent (4.3636ms)
+▶ auditFromRequest
+  ✔ extracts ip and user-agent from fastify request when both headers are present (5.6938ms)
+  ✔ uses request.ip when x-forwarded-for is missing (0.6158ms)
+  ✔ handles missing ip and user-agent (0.4424ms)
+  ✔ handles single ip in x-forwarded-for header without spaces (0.365ms)
+✔ auditFromRequest (9.0721ms)
+▶ recordAuditEventInDb
+  ✔ successfully inserts and returns an audit event with all fields (3.0383ms)
+  ✔ successfully inserts with minimal required fields (0.5473ms)
+  ✔ throws an error if insert returns empty array (0.7584ms)
+✔ recordAuditEventInDb (5.5373ms)
+▶ getPaymentsByPatientIdInDb
+  ✔ returns empty array when no payments are found (2.46ms)
+  ✖ maps createdAt and updatedAt dates to ISO strings correctly (2.4152ms)
+✖ getPaymentsByPatientIdInDb (6.2803ms)
+▶ clinicalQuery - getTreatmentPlanItemsForPatient
+  ✔ should return treatment plan items for a valid organization and patient (1.7874ms)
+  ✔ should return empty array when no items exist (0.8117ms)
+✔ clinicalQuery - getTreatmentPlanItemsForPatient (3.7698ms)
+▶ createPaymentInDb
+  ✖ successfully creates a payment (63.4174ms)
+  ✖ throws error when returning is empty (11.0932ms)
+✖ createPaymentInDb (76.6742ms)
+▶ evaluateClinicalRulesInDb
+  ✔ returns empty evaluations when no rules match (2.6831ms)
+  ✔ ignores inactive rules (0.8389ms)
+  ✔ resolves successfully when all required and completed services are present (0.6818ms)
+  ✔ does not resolve when missing required services (0.7336ms)
+  ✔ does not resolve when missing completed services (0.3924ms)
+  ✔ handles block_service logic correctly with blocked services (0.524ms)
+  ✔ show_warning and schedule_followup always remain unresolved (0.3688ms)
+✔ evaluateClinicalRulesInDb (7.5347ms)
+▶ normalizedDocumentChainValue
+  ✔ returns empty string for null (0.97ms)
+  ✔ returns empty string for undefined (0.2479ms)
+  ✔ trims whitespace (0.1625ms)
+  ✔ replaces multiple spaces with a single space (0.1549ms)
+  ✔ converts to lower case (ru-RU) (0.3847ms)
+  ✔ combines all transformations (0.1582ms)
+✔ normalizedDocumentChainValue (3.2722ms)
+▶ normalizedTaxpayerInn
+  ✔ returns empty string for null (0.2608ms)
+  ✔ returns empty string for undefined (0.1322ms)
+  ✔ removes all non-digit characters (0.1306ms)
+✔ normalizedTaxpayerInn (0.7589ms)
+▶ frozenTaxXmlPayments
+  ✔ returns payments from taxXmlSourceSnapshot if it exists (0.729ms)
+  ✔ returns fallback payments if taxXmlSourceSnapshot is missing (0.1428ms)
+  ✔ returns fallback payments if taxXmlSourceSnapshot is present but payments is undefined (0.1241ms)
+✔ frozenTaxXmlPayments (1.1594ms)
+▶ frozenTaxXmlPayments
+  ✔ returns payments from taxXmlSourceSnapshot if present (1.6038ms)
+  ✔ returns fallbackPayments if taxXmlSourceSnapshot is missing (0.2568ms)
+  ✔ returns fallbackPayments if payments is undefined in taxXmlSourceSnapshot (0.212ms)
+  ✔ returns empty array from taxXmlSourceSnapshot if it is empty (0.1626ms)
+✔ frozenTaxXmlPayments (3.3765ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null when valid selection is provided (1.6089ms)
+  ✔ returns null if input kind is not tax paid document (0.2821ms)
+  ✔ returns error if tax document requires payment selection but none selected (0.2115ms)
+  ✔ returns null if tax document does not require payment selection and none selected (0.2882ms)
+  ✔ returns error if there are duplicates in selected ids (0.2133ms)
+  ✔ returns error if a selected payment is not found (0.2174ms)
+  ✔ returns error if selected payment belongs to another patient (0.2196ms)
+  ✔ returns error if selected payment is not paid or amount is <= 0 (0.2515ms)
+  ✔ returns error if selected payment does not match tax year (0.2502ms)
+  ✔ returns error if taxYear is not provided but payments are selected (0.2931ms)
+  ✔ returns error if selected payment does not match payer INN (0.212ms)
+✔ taxPaymentSelectionErrorForDocument (5.8326ms)
+▶ taxDocumentSelectionScope - edge cases
+  ✔ uses taxDeductionApplication.requestedTaxYear when kind is tax_deduction_application (0.2531ms)
+✔ taxDocumentSelectionScope - edge cases (0.3865ms)
+▶ paidAmountRubForDocument
+  ✔ returns 0 if metadata requiresPaidRecord, group is not tax, and no visitId (0.4419ms)
+  ✔ returns 0 if taxPaidDocumentsNeedYear and no taxYear (0.1959ms)
+  ✔ returns 0 if taxPaidDocumentKindIsKnd and taxYear < taxDeductionCertificateMinYear (0.159ms)
+  ✔ returns 0 if taxPaidDocumentKindIsLegacy and taxYear is out of bounds (0.1161ms)
+  ✔ calculates sum for tax documents with payment selection (0.2056ms)
+  ✔ returns 0 for tax documents with payment selection but none selected (0.1103ms)
+  ✔ calculates sum for payment_receipt with specific payload (0.172ms)
+  ✔ calculates sum for payment_refund_correction_request with specific payload (0.1756ms)
+  ✔ calculates sum for generic tax documents without payment selection (fallback) (0.1676ms)
+  ✔ calculates sum for non-tax documents without specific payload (fallback) (0.1128ms)
+✔ paidAmountRubForDocument (2.2654ms)
+▶ documentHasUnresolvedPlaceholders
+  ✔ returns false for HTML without placeholders (0.9015ms)
+  ✖ returns true for various unresolved placeholders (2.2835ms)
+  ✔ ignores placeholders inside signatures block (0.2956ms)
+  ✖ detects placeholders if present both inside and outside signatures block (0.5437ms)
+✖ documentHasUnresolvedPlaceholders (5.2566ms)
+▶ taxDocumentDuplicateSensitive
+  ✔ returns true for tax_deduction_certificate (0.7322ms)
+  ✔ returns true for legacy_tax_deduction_certificate (0.1738ms)
+  ✔ returns false for other document kinds (0.1268ms)
+✔ taxDocumentDuplicateSensitive (2.089ms)
+▶ taxPaymentYear
+  ✔ returns null when neither fiscalReceiptIssuedAt nor paidAt are provided (0.3351ms)
+  ✔ uses fiscalReceiptIssuedAt when both are provided (0.1963ms)
+  ✔ uses paidAt when fiscalReceiptIssuedAt is absent (0.1729ms)
+  ✔ extracts the year from standard ISO dates starting with 4 digits (0.1628ms)
+  ✔ parses valid date strings that do not start with a 4-digit year (0.8894ms)
+  ✔ returns null for completely invalid strings (0.2183ms)
+  ✔ returns null for empty strings (and falls back if one is empty) (0.1878ms)
+  ✔ returns null for whitespace-only strings (0.1173ms)
+  ✔ returns null for missing/undefined fields (0.0934ms)
+✔ taxPaymentYear (2.8765ms)
+▶ taxPaymentsForIssueSnapshot
+  ✔ returns base selected payments when explicit payment IDs are selected (0.4155ms)
+  ✔ returns base payments when document is not duplicate sensitive (0.2088ms)
+  ✖ filters out payments already used by other issued tax certificates in the same scope (2.8724ms)
+  ✖ ensures payments that are not covered are still included for duplicate sensitive documents (0.5172ms)
+  ✖ returns base payments if there are no existing documents causing duplicates (0.3501ms)
+✖ taxPaymentsForIssueSnapshot (4.6752ms)
+▶ buildKnd1151156Xml
+  ✔ happy path: generates valid XML for self payer (2.6015ms)
+  ✔ happy path: generates valid XML for other payer (0.5446ms)
+  ✔ error: wrong document kind (1.4652ms)
+  ✔ error: wrong tax year (0.2776ms)
+  ✔ error: missing tax office code (0.2266ms)
+  ✔ error: missing clinic details (INN length) (0.2646ms)
+  ✔ error: no tax payments (0.2278ms)
+  ✔ error: invalid tax deduction code (0.2334ms)
+  ✔ error: missing payer details (no INN or identity doc) (0.3275ms)
+  ✔ error: different patient but missing patient details (0.3512ms)
+✔ buildKnd1151156Xml (8.0051ms)
+▶ loadAdditionalServerEnv
+  ✔ loads base env files if they exist (10.0921ms)
+  ✔ does not overwrite existing environment variables (9.6413ms)
+  ✔ merges mergeable env keys like GROQ_API_KEYS (11.1891ms)
+  ✔ loads explicit env files and does NOT recursively follow DENTAL_EXTRA_ENV_FILES since it does not overwrite existing ones (13.218ms)
+  ✔ ignores missing files without erroring (3.7205ms)
+✔ loadAdditionalServerEnv (49.4429ms)
+▶ getLoadedServerEnvFiles
+  ✖ returns deduplicated array of loaded env files (23.3723ms)
+  ✔ returns a new array instance to prevent accidental mutation of internal state (5.1962ms)
+✖ getLoadedServerEnvFiles (28.9397ms)
+▶ safeParseJsonObject
+  ✔ handles empty or whitespace strings (1.3922ms)
+  ✔ parses standard JSON object correctly (0.3394ms)
+  ✔ parses JSON object with text before and after (fallback logic) (0.3579ms)
+  ✔ returns empty object if fallback regex finds no object match (0.2519ms)
+  ✔ throws when fallback extracts invalid JSON (0.508ms)
+✔ safeParseJsonObject (4.5306ms)
+▶ auth routes
+  ▶ clinic login
+    ✔ returns 400 for missing credentials (903.9025ms)
+    ✖ returns 500 when database throws an error (238.012ms)
+    ✔ returns 401 when organization not found (224.9008ms)
+    ✔ returns 200 and token on success (147.4213ms)
+  ✖ clinic login (1517.73ms)
+  ▶ staff unlock
+    ✔ returns 401 if clinic token is missing (17.4517ms)
+    ✖ returns 404 when user not found (225.2989ms)
+    ✔ returns 200 on successful unlock (166.4917ms)
+  ✖ staff unlock (409.9197ms)
+  ▶ direct user login (/api/auth/login)
+    ✔ returns 400 for missing credentials (7.4686ms)
+    ✔ returns 401 for invalid credentials (212.3685ms)
+    ✔ returns 200 on successful direct login (149.0369ms)
+  ✔ direct user login (/api/auth/login) (369.3632ms)
+  ▶ user profile (/api/auth/user/me)
+    ✔ returns 401 if staff token missing (6.8831ms)
+    ✖ returns user1 demo profile directly (60.8876ms)
+    ✔ returns 200 with user profile (5.9535ms)
+  ✖ user profile (/api/auth/user/me) (74.2694ms)
+✖ auth routes (2372.2467ms)
+✖ DICOM route does not return wildcard CORS (494.216ms)
+▶ renderIssuedHtmlToPdf try-catch fall-through error handling
+  ✔ returns error when exception is thrown inside the try block (41.0801ms)
+✔ renderIssuedHtmlToPdf try-catch fall-through error handling (43.7104ms)
+▶ medicalRecordCopyRequestDatesAreValid
+  ✔ returns true when all dates are valid and chronological (0.7435ms)
+  ✔ returns true when periodStart and periodEnd are the same (0.2394ms)
+  ✔ returns true when period dates are blank or undefined (0.2098ms)
+  ✔ returns false when period is not chronological (0.1579ms)
+  ✔ returns false when periodStart has invalid format (0.1327ms)
+  ✔ returns false when periodEnd has invalid format (0.1686ms)
+  ✔ returns false when requestedAt has invalid format (0.1956ms)
+✔ medicalRecordCopyRequestDatesAreValid (2.3611ms)
+▶ parseDicomSeriesManifest
+  ✔ returns default preview response when rawText yields no lines (8.6122ms)
+✔ parseDicomSeriesManifest (11.8857ms)
+▶ buildPatientImportIntake
+  ✖ processes unstructured text and normalizes it (3.3434ms)
+  ✖ processes image_ocr source and appends recognition notes (0.3876ms)
+  ✖ processes voice_dictation source and appends recognition notes (0.2753ms)
+  ✖ returns empty preview for empty rawText (0.3301ms)
+✖ buildPatientImportIntake (5.5423ms)
+ℹ Error: Test "processes unstructured text and normalizes it" at src\routes\imports.test.ts:1:212 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of undefined (reading 'rawText')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+ℹ Error: Test "processes image_ocr source and appends recognition notes" at src\routes\imports.test.ts:1:1416 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of undefined (reading 'rawText')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+ℹ Error: Test "processes voice_dictation source and appends recognition notes" at src\routes\imports.test.ts:1:2246 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of undefined (reading 'rawText')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+ℹ Error: Test "returns empty preview for empty rawText" at src\routes\imports.test.ts:1:3081 generated asynchronous activity after the test ended. This activity created the error "TypeError: Cannot read properties of undefined (reading 'rawText')" and would have caused the test to fail, but instead triggered an unhandledRejection event.
+C:\Clinic_MVP\dental-crm\apps\api\src\routes\settings.test.ts:4
+import { clinicProfileMutationRejection } from "./settings.js";
+         ^
+SyntaxError: The requested module './settings.js' does not provide an export named 'clinicProfileMutationRejection'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:302:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:405:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.13.0
+✖ src\routes\settings.test.ts (1747.1734ms)
+▶ normalizedTaxpayerInn
+  ✔ removes all non-digit characters (1.6214ms)
+  ✔ handles null and undefined (0.2622ms)
+  ✔ handles empty strings (0.1647ms)
+  ✔ handles strings with only non-digits (0.1574ms)
+  ✔ returns the original string if it contains only digits (0.1493ms)
+✔ normalizedTaxpayerInn (3.7371ms)
+▶ commitImagingImport
+  ✖ processes valid records only and maps properties to the created study correctly (137.0163ms)
+✖ commitImagingImport (156.4103ms)
+▶ visits routes - accept visit draft errors
+  ✖ accept visit draft visit not found error path (627.8291ms)
+✖ visits routes - accept visit draft errors (629.8125ms)
+▶ validScheduleTimeZone
+  ✔ returns default timezone for invalid timezone (21.8193ms)
+  ✔ returns default timezone for null (1.1581ms)
+  ✔ returns default timezone for undefined (0.2153ms)
+  ✔ returns default timezone for empty string (0.1397ms)
+  ✔ returns default timezone for whitespace string (0.1443ms)
+  ✔ returns the provided valid timezone (0.5349ms)
+  ✔ trims whitespace from valid timezone strings (0.5122ms)
+✔ validScheduleTimeZone (26.2051ms)
+[BackupWorker] Резервное копирование ОТКЛЮЧЕНО. CLINIC_ENCRYPTION_KEY не задан. Копии не создаются: без ключа их нельзя зашифровать, а копия медицинских данных без шифрования недопустима.
+▶ BackupWorker start/stop
+  ✖ daemon starts, schedules, and executes callback using fake timers (17.1907ms)
+✖ BackupWorker start/stop (18.5025ms)
+[ClinicalRouter] Created handoff task: Phase II: Orthopedic Handoff
+[ClinicalRouter] Created handoff task: Phase II: Orthopedic Handoff after Surgery
+▶ ClinicalRouter
+  ✔ handlePhaseCompletion returns task for PHASE_1_THERAPY (2.5295ms)
+  ✔ handlePhaseCompletion returns task for PHASE_2_SURGERY (0.4275ms)
+  ✔ handlePhaseCompletion returns null for unknown phase code (0.1866ms)
+✔ ClinicalRouter (6.1131ms)
+▶ CompetitorSchemaRecon.matchSchema
+  ✔ successfully matches Open Dental schema (0.9557ms)
+  ✔ successfully matches Dentrix schema (0.2328ms)
+  ✔ matches schema case-insensitively (0.1789ms)
+  ✔ matches schema even if extra tables are present (0.16ms)
+  ✔ returns null if missing required tables (0.1356ms)
+  ✔ returns null if no known tables match (0.1229ms)
+  ✔ returns null if extracted tables are empty (0.1584ms)
+✔ CompetitorSchemaRecon.matchSchema (3.1869ms)
+[Dicom Vacuum] Scanning directory: /test/dicom/dir
+[Dicom Vacuum] Extracting central frame from /test/dicom/dir/1.2.840.113619.2.55.3.2831178355.dcm ...
+▶ DicomVacuum
+  ▶ scanDirectory
+    ✔ returns mocked DICOM metadata for a given directory (2.3878ms)
+  ✔ scanDirectory (3.2342ms)
+  ▶ generatePreviewSlide
+    ✔ generates a simulated preview slide path based on outputPath (0.4778ms)
+  ✔ generatePreviewSlide (0.6418ms)
+✔ DicomVacuum (4.4956ms)
+▶ CompetitorSchemaRecon.matchSchema
+  ✔ matches Open Dental (0.8432ms)
+  ✔ matches Dentrix (0.2643ms)
+  ✔ matches when additional unknown tables are present (0.202ms)
+  ✔ returns null if no match (0.1813ms)
+  ✔ returns null if partial match (missing visits table) (0.175ms)
+  ✔ returns null if input is empty object (0.1511ms)
+✔ CompetitorSchemaRecon.matchSchema (3.6921ms)
+▶ startNotificationWorker
+  ✔ calls setInterval with correct timing and handles queue processing (2.0609ms)
+✔ startNotificationWorker (3.1682ms)
+▶ doctorProfitabilityRow
+  ✔ выручка берётся в рублях, а не делится на 100 (1.2382ms)
+  ✔ материалы, комиссия и маржа в сумме дают выручку до копейки (0.448ms)
+  ✔ доли считаются точно: 15% и 25% от 1000 руб. (0.2444ms)
+  ✔ bigint из драйвера приходит строкой и разбирается без потерь (0.2722ms)
+  ✔ нулевая выручка не ломает расчёт (0.1823ms)
+✔ doctorProfitabilityRow (3.7912ms)
+✔ startBiAnalyticsWorker scheduling (1.517ms)
+▶ postOpCareTrigger
+  ✔ triggerPostOpCare inserts correct notification (2.959ms)
+✔ postOpCareTrigger (5.9727ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+[RecallScheduler] Created 1 recall tasks for admin.
+▶ RecallScheduler
+  ✔ should trigger recall for upper jaw (6 months) (224.0829ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+[RecallScheduler] Created 1 recall tasks for admin.
+  ✔ should trigger recall for lower jaw (3 months) (27.3432ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should not trigger recall if healing time has not elapsed (21.8021ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should ignore items not in phase 2 (21.4516ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should ignore items without toothNumber (24.0082ms)
+✔ RecallScheduler (320.6171ms)
+▶ speechJsonBodyLimitBytes
+  ✔ should calculate correct limit based on default env value when env var is not set (16.7138ms)
+  ✔ should calculate correct limit based on custom env value (5.3838ms)
+✔ speechJsonBodyLimitBytes (25.6426ms)
+▶ getSpeechGatewayStatus
+  ✖ should return default state when no environment variables are set (10.4772ms)
+  ✔ should handle external provider groq_whisper with keys configured (4.2247ms)
+  ✖ should handle external provider groq_whisper with missing config (4.4956ms)
+  ✔ should handle local provider local_whisper with URL configured (21.1575ms)
+  ✖ should handle local provider local_whisper with missing config (3.1592ms)
+  ✔ should apply threshold environment variables (2.979ms)
+✖ getSpeechGatewayStatus (47.5466ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Transform failed with 1 error:
+C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\tunnel.test.ts:103:4: ERROR: Expected "}" but found "mock"
+    at failureErrorWithLog (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) {
+  name: 'TransformError'
+}
+
+Node.js v24.13.0
+✖ src\speech\tests\tunnel.test.ts (361.8522ms)
+▶ safeDenteTelegramPublicHttpsUrl
+  ✔ returns valid URL string for a valid https URL (1.3ms)
+  ✔ returns null for an invalid URL string (0.3269ms)
+  ✔ returns null for a non-https URL (0.1666ms)
+  ✔ returns null for empty string or null/undefined (0.1789ms)
+  ✔ returns null for URL with username/password (0.2164ms)
+✔ safeDenteTelegramPublicHttpsUrl (3.6598ms)
+▶ accessGuard
+  ▶ configuredClinicalAccessSecret
+    ✔ returns trimmed secret when set (1.6056ms)
+    ✔ returns null when not set (0.4107ms)
+    ✔ returns null when empty (0.5205ms)
+  ✔ configuredClinicalAccessSecret (3.4617ms)
+  ▶ configuredClinicalMutationSecret
+    ✔ returns trimmed secret when set (0.3879ms)
+    ✔ returns null when not set (0.3954ms)
+    ✔ returns null when empty (0.3803ms)
+  ✔ configuredClinicalMutationSecret (1.4254ms)
+  ▶ requireClinicalMutationAccess
+    ✔ missing admin secret and guarded -> 503 (1.6441ms)
+    ✔ missing admin secret, but unguarded allowed in test -> true (0.2873ms)
+    ✔ missing admin secret, unguarded allowed but env is production -> 503 (0.2579ms)
+    ✔ secret configured, missing header -> 403 (0.4404ms)
+    ✔ secret configured, incorrect header -> 403 (0.3569ms)
+    ✔ secret configured, correct header -> true (0.3132ms)
+    ✔ secret configured with spaces, correct header -> true (0.3033ms)
+    ✔ secret configured, array header -> true (0.3816ms)
+  ✔ requireClinicalMutationAccess (4.4187ms)
+  ▶ requireClinicalReadAccess
+    ✔ missing admin secret and guarded -> 503 (0.4817ms)
+    ✔ missing admin secret, but unguarded allowed in test -> true (0.2264ms)
+    ✔ missing admin secret, unguarded allowed but env is production -> 503 (0.2631ms)
+    ✔ secret configured, missing header -> 403 (0.3495ms)
+    ✔ secret configured, incorrect header -> 403 (0.3082ms)
+    ✔ secret configured, correct header -> true (0.2444ms)
+  ✔ requireClinicalReadAccess (2.1068ms)
+✔ accessGuard (12.2434ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код портала по умолчанию 0000. В production все они выключены автоматически.
+{"level":30,"time":1785113409844,"pid":26352,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/ai/visit-note-draft","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113409894,"pid":26352,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":500},"responseTime":48.28710000216961,"msg":"request completed"}
+▶ AI Routes
+  ✖ POST /api/ai/visit-note-draft returns 400 on validation error (359.64ms)
+✖ AI Routes (361.5319ms)
+{"level":30,"time":1785113409941,"pid":26352,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/ai/visit-note-draft","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113409945,"pid":26352,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":500},"responseTime":2.9408999979496,"msg":"request completed"}
+▶ AI Routes Integration
+  ▶ POST /api/ai/visit-note-draft
+    ✖ handles missing patient (404) (45.9275ms)
+  ✖ POST /api/ai/visit-note-draft (46.3526ms)
+✖ AI Routes Integration (46.5765ms)
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: fetch failed
+[AI Draft Cascade] Модель gemini-2.5-flash (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель gemini-3-flash (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель gemini-3.1-flash-lite (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель llama-3.3-70b-versatile (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель meta-llama/llama-4-scout-17b-16e-instruct (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель qwen/qwen3-32b (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель openai/gpt-oss-120b (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель llama-3.1-8b-instant (groq) завершилась ошибкой: fetch failed
+▶ buildVisitDraftFromTranscript
+  ✔ falls back to rule-based parser on AI JSON parsing error (77.7387ms)
+✔ buildVisitDraftFromTranscript (78.0534ms)
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ИИ-генератор черновика вернул пустой или некорректный ответ.
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ИИ-генератор черновика вернул ответ не в формате JSON.
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[Speech Fetch] Direct connection failed (fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: fetch failed
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+▶ buildVisitDraftFromTranscript AI Errors
+  ✔ falls back to rule-based parser when AI returns empty/non-string content (45.8695ms)
+  ✔ falls back to rule-based parser when AI returns invalid JSON (31.1738ms)
+  ✔ falls back to rule-based parser on fetch network error (6.2849ms)
+  ✔ falls back to rule-based parser when AI returns invalid JSON even inside curly braces (3.5409ms)
+  ✔ successfully parses JSON wrapped in markdown using fallback regex (2.8778ms)
+✔ buildVisitDraftFromTranscript AI Errors (91.2542ms)
+[Speech Fetch] Direct connection failed (Draft fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: Draft fetch failed
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[Speech Fetch] Direct connection failed (Plan fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Plan Personalize Primary Failed]: Plan fetch failed
+[AI Plan Personalize]: All providers failed, returning rule-based fallback.
+▶ runVisitFlow Orchestrator
+  ✖ runVisitFlow - happy path (52.4482ms)
+  ✔ runVisitFlow - draft fallback creates warnings but continues (28.037ms)
+  ✔ runVisitFlow - plan and recs use fallback on error (3.5895ms)
+  ✔ runVisitFlow - skipped plan and recs when disabled (2.8725ms)
+  ✔ runVisitFlow - generates documents correctly (3.4393ms)
+✖ runVisitFlow Orchestrator (91.8381ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код портала по умолчанию 0000. В production все они выключены автоматически.
+{"level":30,"time":1785113409930,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113410192,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":401},"responseTime":260.4563999995589,"msg":"request completed"}
+{"level":30,"time":1785113410193,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-2","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113410395,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-2","res":{"statusCode":401},"responseTime":202.0574000030756,"msg":"request completed"}
+{"level":30,"time":1785113410395,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-3","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113410597,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-3","res":{"statusCode":401},"responseTime":202.07060000300407,"msg":"request completed"}
+{"level":30,"time":1785113410598,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-4","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113410800,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-4","res":{"statusCode":401},"responseTime":202.37389999628067,"msg":"request completed"}
+{"level":30,"time":1785113410800,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-5","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113411004,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-5","res":{"statusCode":401},"responseTime":203.38669999688864,"msg":"request completed"}
+✔ auth routes rate limiting - clinic login (1395.6524ms)
+{"level":30,"time":1785113411004,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-6","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785113411005,"pid":25220,"hostname":"DESKTOP-RAR7JQB","reqId":"req-6","res":{"statusCode":429},"responseTime":0.3498000055551529,"msg":"request completed"}
+▶ getClinicalRules
+  ✔ should return an empty array if no rules exist (2.1604ms)
+  ✔ should parse arrays correctly from json strings (0.783ms)
+✔ getClinicalRules (4.0244ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null for document kinds that do not require validation (1.2674ms)
+  ✔ requires payment selection for tax document if missing (0.3155ms)
+  ✔ detects duplicate selected payments (0.1843ms)
+  ✔ detects missing payments (0.1819ms)
+  ✔ detects payment for different patient (0.2579ms)
+  ✔ detects unpaid or zero amount payments (0.2206ms)
+  ✔ detects payment outside of tax year (0.3038ms)
+  ✔ detects payment with different payer INN (0.3349ms)
+  ✔ returns null for valid payment selection (0.2248ms)
+  ✔ returns null when tax_deduction_application has no payments but does not require them (0.2624ms)
+  ✔ validates payments for tax_deduction_application if provided (0.237ms)
+✔ taxPaymentSelectionErrorForDocument (5.3795ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null for non-tax document kinds (1.0357ms)
+  ✔ returns error when no payments are selected for a tax document (0.4481ms)
+  ✔ returns error for duplicate selected payment IDs (0.2708ms)
+  ✔ returns error when a selected payment is not found (0.3163ms)
+  ✔ returns error when a selected payment belongs to a different patient (0.2777ms)
+  ✔ returns error when a selected payment is not paid (0.1914ms)
+  ✔ returns error when a selected payment has zero amount (0.1777ms)
+  ✔ returns error when a selected payment is from a different tax year (0.356ms)
+  ✔ returns error when a selected payment has a different taxpayer INN (0.6602ms)
+  ✔ returns null when all checks pass (0.3737ms)
+  ✔ returns null for tax_deduction_application when all checks pass (0.2388ms)
+✔ taxPaymentSelectionErrorForDocument (7.317ms)
+▶ documentHasUnresolvedPlaceholders
+  ✔ returns false for empty string (1.1322ms)
+  ✔ returns false for html without placeholders (0.2664ms)
+  ✔ returns true for html with only opening placeholder marker (0.1782ms)
+  ✔ returns true for html with only closing placeholder marker (0.1825ms)
+  ✔ returns true for html with full placeholder marker (0.1685ms)
+  ✔ returns true for html with separated placeholder markers (0.1574ms)
+✔ documentHasUnresolvedPlaceholders (3.6344ms)
+▶ generateDentalCdaXml
+  ✔ generates valid XML with full parameters (1.9976ms)
+  ✔ handles missing optional parameters correctly (0.4302ms)
+  ✔ handles 'other' or null gender code (0.2535ms)
+✔ generateDentalCdaXml (3.9583ms)
+▶ loadServerEnv
+  ▶ getLoadedServerEnvFiles
+    ✔ should return an array of strings without duplicates (10.0735ms)
+    ✔ should handle read errors gracefully without throwing (5.0443ms)
+  ✔ getLoadedServerEnvFiles (16.3131ms)
+✔ loadServerEnv (17.0339ms)
+✔ parseImagingManifest - handles empty text (2.3686ms)
+✔ parseImagingManifest - handles text with only empty lines (0.3413ms)
+▶ CompetitorSchemaRecon
+  ▶ matchSchema
+    ✔ matches Open Dental schema exactly (1.4064ms)
+    ✔ matches Dentrix schema with different casing (0.246ms)
+    ✔ returns null for partial match (missing visits table) (0.1375ms)
+    ✔ returns null for empty input (0.1424ms)
+    ✔ returns null for completely unrecognized tables (0.1308ms)
+  ✔ matchSchema (3.2998ms)
+✔ CompetitorSchemaRecon (4.1422ms)
+[Dicom Vacuum] Scanning directory: /path/to/test/dir
+[Dicom Vacuum] Extracting central frame from /path/to/dicom/file.dcm ...
+▶ DicomVacuum
+  ▶ scanDirectory
+    ✔ simulates scanning a directory and returns expected metadata (1.2931ms)
+  ✔ scanDirectory (2.0177ms)
+  ▶ generatePreviewSlide
+    ✔ simulates generating a preview slide and returns valid path (0.3853ms)
+  ✔ generatePreviewSlide (0.5296ms)
+✔ DicomVacuum (3.1399ms)
+▶ documentExtractor
+  ▶ extractDocument
+    ✔ extracts plain text provided via rawText (5.705ms)
+    ✔ extracts simple text file provided via fileBase64 (1.2542ms)
+    ✔ handles JSON known format (0.6134ms)
+    ✔ handles PDF format (3.1298ms)
+    ✔ handles image format (0.8694ms)
+    ✔ handles legacy database format (1.3315ms)
+    ✔ truncates large text strings (3.4533ms)
+    ✔ decodes unknown format as text (0.6028ms)
+  ✔ extractDocument (18.3121ms)
+✔ documentExtractor (19.4118ms)
+[Speech Fetch] Direct connection failed (Network failure). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+▶ fetchWithProviderTimeout
+  ✔ returns successful response (10.8186ms)
+  ✔ throws SpeechProviderRequestError on AbortError timeout (1.2608ms)
+  ✔ re-throws generic errors without wrapping (1.6034ms)
+✔ fetchWithProviderTimeout (15.6986ms)
+▶ sanitizeProviderErrorMessage
+  ✔ redacts Bearer tokens (0.7292ms)
+  ✔ redacts Token tokens (0.3898ms)
+  ✔ redacts Authorization headers (0.2669ms)
+  ✔ redacts query parameters (api_key, token, access_token) (0.2652ms)
+  ✔ redacts secrets, passwords in key=value formats (0.2687ms)
+  ✔ redacts OpenAI-like keys (sk-...) (0.1903ms)
+  ✔ redacts long generic tokens (48+ characters) (0.2517ms)
+  ✔ truncates the message to 240 characters (0.1966ms)
+✔ sanitizeProviderErrorMessage (3.2354ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Transform failed with 1 error:
+C:\Clinic_MVP\dental-crm\apps\api\src\tests\persistentState.test.ts:1:0: ERROR: Unexpected "<<"
+    at failureErrorWithLog (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) {
+  name: 'TransformError'
+}
+
+Node.js v24.13.0
+✖ src\tests\persistentState.test.ts (344.8284ms)
+▶ buildPersistentStateExport
+  ✔ happy path - builds export with valid state file (26.6185ms)
+  ✔ error path - file missing (2.6881ms)
+  ✔ error path - invalid JSON (9.7044ms)
+✔ buildPersistentStateExport (40.9849ms)
+▶ repairMojibakeText
+  ✔ returns normal ascii strings unchanged (1.1396ms)
+  ✔ returns normal cyrillic strings unchanged (0.4189ms)
+  ✔ repairs fully mangled cyrillic mojibake (0.4635ms)
+  ✔ repairs token-mixed strings with mojibake (0.2356ms)
+  ✔ repairs various common mojibake strings (0.6017ms)
+  ✔ gracefully handles likely mojibake that cannot be decoded (0.3483ms)
+✔ repairMojibakeText (4.9228ms)
+▶ repairMojibakeDeep
+  ✔ repairs deep mojibake correctly (3.2442ms)
+  ✔ does not modify non-string primitive values (0.3523ms)
+✔ repairMojibakeDeep (3.8688ms)
+▶ clinical routes integration
+  ✔ POST /api/clinical/rules/evaluate validates input (187.7542ms)
+  ✖ POST /api/clinical/rules/evaluate handles organization not found (17.5763ms)
+  ✖ POST /api/clinical/rules/evaluate succeeds (7.6607ms)
+  ✔ POST /api/clinical/rules validates input (6.9659ms)
+  ✖ POST /api/clinical/rules handles organization not found (6.2126ms)
+  ✖ POST /api/clinical/rules succeeds (6.0408ms)
+  ✔ PATCH /api/clinical/rules/:ruleId validates input (5.705ms)
+  ✖ PATCH /api/clinical/rules/:ruleId handles organization not found (7.117ms)
+  ✖ PATCH /api/clinical/rules/:ruleId succeeds (6.1143ms)
+✖ clinical routes integration (253.0052ms)
+▶ documentRequiresIssuedArchive
+  ✔ returns false for draft documents (0.9318ms)
+  ✔ returns true for issued documents (0.2374ms)
+  ✔ returns false for voided documents without issuedAt (0.2421ms)
+  ✔ returns true for voided documents with issuedAt (0.1919ms)
+✔ documentRequiresIssuedArchive (3.1303ms)
+▶ documentHasIssuedArchiveMetadata
+  ✔ returns true when both sha256 and createdAt are present (0.4818ms)
+  ✔ returns false when sha256 is missing (0.4284ms)
+  ✔ returns false when createdAt is missing (0.1779ms)
+  ✔ returns false when both are missing (0.1627ms)
+✔ documentHasIssuedArchiveMetadata (1.5981ms)
+▶ visits routes integration
+  ✖ PUT /api/visits/:visitId/draft/autosave handles "Визит не найден" (188.4955ms)
+  ✖ PUT /api/visits/:visitId/draft/autosave handles "Прием уже закрыт или аннулирован" (8.7909ms)
+  ✖ POST /api/visits/:visitId/draft/accept handles "Прием уже закрыт или аннулирован" (3.9876ms)
+  ✖ PUT /api/visits/:visitId/draft/autosave handles generic errors (3.4557ms)
+✖ visits routes integration (205.9304ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Transform failed with 1 error:
+C:\Clinic_MVP\dental-crm\apps\api\src\tests\sampleData.test.ts:107:7: ERROR: Unexpected "{"
+    at failureErrorWithLog (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1748:15)
+    at C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:1017:50
+    at responseCallbacks.<computed> (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:884:9)
+    at handleIncomingPacket (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:939:12)
+    at Socket.readFromStdout (C:\Clinic_MVP\dental-crm\node_modules\esbuild\lib\main.js:862:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) {
+  name: 'TransformError'
+}
+
+Node.js v24.13.0
+✖ src\tests\sampleData.test.ts (294.7622ms)
+✔ секрет: production без AUTH_TOKEN_SECRET останавливает сервер (1.7053ms)
+✔ секрет: публичные демо-значения из репозитория запрещены (0.7348ms)
+✔ секрет: короткий секрет запрещён в production (0.3436ms)
+✔ изоляция: заголовок x-organization-id не даёт доступ к чужой клинике (0.5805ms)
+✔ изоляция: dev-послабление по заголовку не работает в production (0.4302ms)
+✔ изоляция: валидный токен кабинета определяет организацию (0.9115ms)
+✔ изоляция: токен, подписанный старым публичным секретом, отвергается (0.4877ms)
+✔ изоляция: истёкший токен отвергается (0.4218ms)
+✔ изоляция: токен сотрудника другой клиники не наследует роль (1.6227ms)
+✔ изоляция: requireOrganizationId отвечает 401 без токена (0.646ms)
+✔ роли: врач не проходит проверку административной роли (0.6379ms)
+✔ токены: подмена payload при сохранённой подписи отвергается (0.2124ms)
+✔ вебхуки: в production без настроенного секрета запрос отклоняется (0.5361ms)
+✔ вебхуки: неверный секрет отклоняется (0.512ms)
+✔ вебхуки: верный секрет пропускается (0.4071ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код портала по умолчанию 0000. В production все они выключены автоматически.
+✔ createDenteApiApp - rejects insecure origins in production (181.3061ms)
+▶ updateDenteTelegramBotSettings - normalizeTelegramPublicHttpsUrl
+  ✔ throws invalid_url for an unparseable URL (3.1126ms)
+✔ updateDenteTelegramBotSettings - normalizeTelegramPublicHttpsUrl (4.9658ms)
+▶ buildDenteTelegramMessagePreviewData
+  ✔ should render appointment_reminder correctly (4.794ms)
+  ✔ should render appointment_confirmation correctly (0.3076ms)
+  ✔ should render staff_daily_digest correctly (0.2349ms)
+  ✔ should format missing portal gracefully for payment_reminder_notice (0.2273ms)
+✔ buildDenteTelegramMessagePreviewData (7.0329ms)
+▶ createTelegramQrSvg
+  ✔ returns null for null payload (0.8533ms)
+  ✔ returns null for empty string payload (0.1757ms)
+  ✔ returns null if payload exceeds MAX_QR_BYTES (78 bytes) (0.2767ms)
+  ✔ generates valid SVG for normal payload (1.591ms)
+  ✔ handles exact max byte limit payload (78 bytes) (0.7434ms)
+  ✔ handles multibyte characters within limit (0.6408ms)
+  ✔ fails for multibyte characters exceeding limit (0.207ms)
+✔ createTelegramQrSvg (5.7779ms)
+▶ sendTelegramTextMessage
+  ✔ handles successful response (26.6844ms)
+  ✔ handles rate limit error (429) with retry_after (0.9542ms)
+  ✔ handles auth error (401) (0.7362ms)
+  ✔ handles timeout error (AbortError) (0.453ms)
+  ✔ handles generic network error (0.454ms)
+✔ sendTelegramTextMessage (30.6132ms)
+▶ runVisitFlow Orchestrator
+  ✖ executes all steps correctly when enabled (1.6205ms)
+  ✖ skips disabled steps based on orchestratorConfig (0.473ms)
+✖ runVisitFlow Orchestrator (3.3005ms)
+▶ repairMojibakeDeep
+  ✔ returns primitives as-is (1.4442ms)
+  ✔ repairs string values (0.5432ms)
+  ✔ repairs arrays deeply (1.074ms)
+  ✔ repairs objects deeply (0.3661ms)
+  ✔ repairs complex nested structures (0.345ms)
+✔ repairMojibakeDeep (5.4077ms)
+▶ TreatmentPlanBuilder
+  ✔ constructor and getItems (3.2175ms)
+  ▶ addItem - Success Cases
+    ✔ adds item without tooth code (1.2097ms)
+    ✔ adds item with valid tooth code and calculates snapshot correctly (0.4143ms)
+    ✔ prints wisdom tooth warning but adds item (0.3299ms)
+  ✔ addItem - Success Cases (2.8032ms)
+  ▶ addItem - Error Cases
+    ✔ throws if discount exceeds unit price (0.6417ms)
+    ✔ throws if treating missing tooth (0.3172ms)
+    ✔ throws if extracting already missing tooth (0.3246ms)
+  ✔ addItem - Error Cases (2.0015ms)
+  ✔ addItem - Surgery on missing teeth (0.3405ms)
+  ✔ calculateTotal (0.7044ms)
+  ▶ convertToAct
+    ✔ converts items, calculates totals, and deducts balance correctly (0.544ms)
+    ✔ handles zero initial balance gracefully (0.321ms)
+  ✔ convertToAct (1.3424ms)
+✔ TreatmentPlanBuilder (12.5107ms)
+▶ cryptoHelper
+  ▶ verifyCredential
+    ✔ returns true for legacy plain equality (2.6259ms)
+    ✔ returns false for incorrect legacy plain equality (0.2843ms)
+    ✔ returns true for valid salt:hash matching (126.6791ms)
+    ✔ returns false for invalid salt:hash matching (116.0106ms)
+    ✔ returns false when salt is missing in stored format (0.2255ms)
+    ✔ returns false when hash is missing in stored format (0.1544ms)
+    ✔ returns false when stored hash has different length than expected (55.8834ms)
+    ✔ returns false when try block throws exception (0.6129ms)
+  ✔ verifyCredential (304.049ms)
+✔ cryptoHelper (304.9794ms)
+▶ timingSafeSecretEqual
+  ✔ returns true when secrets match (2.7422ms)
+  ✔ returns false when provided secret is null (0.2941ms)
+  ✔ returns false when provided secret is empty (0.1725ms)
+  ✔ returns false when secrets have different lengths (0.2504ms)
+  ✔ returns false when secrets have the same length but differ (0.2266ms)
+  ✔ returns false when expected secret is undefined (prevents "undefined" string cast attacks) (0.1669ms)
+  ✔ returns false when expected secret is null (prevents "null" string cast attacks) (0.1784ms)
+  ✔ returns true when secrets match with unicode/emoji characters (0.2656ms)
+✔ timingSafeSecretEqual (5.8984ms)
+▶ toothGeometry
+  ▶ getToothPath
+    ✔ returns UPPER_CENTRAL_INCISOR for upper quadrants (1, 2) and index 1 (1.3914ms)
+    ✔ returns UPPER_LATERAL_INCISOR for upper quadrants (1, 2) and index 2 (0.2747ms)
+    ✔ returns UPPER_CANINE for upper quadrants (1, 2) and index 3 (0.1961ms)
+    ✔ returns UPPER_PREMOLAR for upper quadrants (1, 2) and index 4-5 (0.2333ms)
+    ✔ returns UPPER_MOLAR for upper quadrants (1, 2) and index >= 6 (0.2149ms)
+    ✔ returns LOWER_INCISOR for lower quadrants (3, 4) and index 1-2 (0.1951ms)
+    ✔ returns LOWER_CANINE for lower quadrants (3, 4) and index 3 (0.2033ms)
+    ✔ returns LOWER_PREMOLAR for lower quadrants (3, 4) and index 4-5 (0.168ms)
+    ✔ returns LOWER_MOLAR for lower quadrants (3, 4) and index >= 6 (0.1872ms)
+    ✔ handles invalid index (0 or negative) for upper quadrants (0.3217ms)
+    ✔ handles invalid index (0 or negative) for lower quadrants (0.1942ms)
+    ✔ handles large index for upper quadrants (0.1234ms)
+    ✔ handles large index for lower quadrants (0.1961ms)
+    ✔ handles negative toothId (0.1404ms)
+    ✔ handles non-integer toothId (0.1217ms)
+  ✔ getToothPath (6.0059ms)
+✔ toothGeometry (6.8617ms)
+✔ startWatchdog logs the expected deprecation message (1.5894ms)
+ℹ tests 420
+ℹ suites 90
+ℹ pass 378
+ℹ fail 42
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17143.8455
+
+✖ failing tests:
+
+test at src\db\billingQuery.test.ts:1:577
+✖ maps createdAt and updatedAt dates to ISO strings correctly (2.4152ms)
+  TypeError: Cannot read properties of undefined (reading 'toISOString')
+      at <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:154:22)
+      at Array.map (<anonymous>)
+      at getPaymentsByPatientIdInDb (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:133:14)
+      at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.test.ts:44:20)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at src\db\tests\billingQuery.test.ts:1:347
+✖ successfully creates a payment (63.4174ms)
+  Error: Failed query: select "id" from "patients" where ("patients"."organization_id" = $1 and "patients"."id" = $2) limit $3 for update
+  params: org-123,pat-123,1
+      at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+      ... 4 lines matching cause stack trace ...
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7) {
+    query: 'select "id" from "patients" where ("patients"."organization_id" = $1 and "patients"."id" = $2) limit $3 for update',
+    params: [ 'org-123', 'pat-123', 1 ],
+    cause: error: invalid input syntax for type uuid: "org-123"
+        at C:\Clinic_MVP\dental-crm\node_modules\pg\lib\client.js:646:17
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:161:13)
+        at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:67:29)
+        at async NodePgSession.transaction (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:259:19)
+        at async createPaymentInDb (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:65:10)
+        at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\tests\billingQuery.test.ts:44:20)
+        at async Test.run (node:internal/test_runner/test:1113:7) {
+      length: 139,
+      severity: 'ERROR',
+      code: '22P02',
+      detail: undefined,
+      hint: undefined,
+      position: undefined,
+      internalPosition: undefined,
+      internalQuery: undefined,
+      where: "unnamed portal parameter $1 = '...'",
+      schema: undefined,
+      table: undefined,
+      column: undefined,
+      dataType: undefined,
+      constraint: undefined,
+      file: 'uuid.c',
+      line: '177',
+      routine: 'string_to_uuid'
+    }
+  }
+
+test at src\db\tests\billingQuery.test.ts:1:1302
+✖ throws error when returning is empty (11.0932ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    Comparison {
+  +   message: 'Failed query: select "id" from "patients" where ("patients"."organization_id" = $1 and "patients"."id" = $2) limit $3 for update\n' +
+  +     'params: org-123,pat-123,1'
+  -   message: 'Failed to create payment'
+    }
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\tests\billingQuery.test.ts:61:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Failed query: select "id" from "patients" where ("patients"."organization_id" = $1 and "patients"."id" = $2) limit $3 for update
+    params: org-123,pat-123,1
+        at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+        ... 4 lines matching cause stack trace ...
+        at async ok.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\tests\billingQuery.test.ts:61:5)
+        at async Test.run (node:internal/test_runner/test:1113:7) {
+      [cause]: error: invalid input syntax for type uuid: "org-123"
+          at C:\Clinic_MVP\dental-crm\node_modules\pg\lib\client.js:646:17
+          at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:161:13)
+          at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+          at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+          at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:67:29)
+          at async NodePgSession.transaction (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:259:19)
+          at async createPaymentInDb (C:\Clinic_MVP\dental-crm\apps\api\src\db\billingQuery.ts:65:10)
+          at async waitForActual (node:assert:646:5)
+          at async ok.rejects (node:assert:769:25)
+    },
+    expected: { message: 'Failed to create payment' },
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src\documents\renderDocument.test.ts:1:379
+✖ returns true for various unresolved placeholders (2.2835ms)
+  AssertionError [ERR_ASSERTION]: Expected to return true for text containing: { 
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.test.ts:16:11)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\documents\renderDocument.test.ts:6:75
+✖ detects placeholders if present both inside and outside signatures block (0.5437ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\documents\renderDocument.test.ts:41:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\documents\taxPaymentSnapshot.test.ts:1:4101
+✖ filters out payments already used by other issued tax certificates in the same scope (2.8724ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\documents\taxPaymentSnapshot.test.ts:181:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\documents\taxPaymentSnapshot.test.ts:1:4841
+✖ ensures payments that are not covered are still included for duplicate sensitive documents (0.5172ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\documents\taxPaymentSnapshot.test.ts:216:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\documents\taxPaymentSnapshot.test.ts:1:5567
+✖ returns base payments if there are no existing documents causing duplicates (0.3501ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\documents\taxPaymentSnapshot.test.ts:235:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\env\loadServerEnv.test.ts:2:1144
+✖ returns deduplicated array of loaded env files (23.3723ms)
+  AssertionError [ERR_ASSERTION]: Should add exactly 2 new files
+  
+  9 !== 6
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\env\loadServerEnv.test.ts:147:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 9,
+    expected: 6,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\auth.test.ts:1:829
+✖ returns 500 when database throws an error (238.012ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 500
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\auth.test.ts:47:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 500,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\auth.test.ts:1:2443
+✖ returns 404 when user not found (225.2989ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 404
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\auth.test.ts:118:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\auth.test.ts:1:5095
+✖ returns user1 demo profile directly (60.8876ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 200
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\auth.test.ts:219:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\dicomweb.test.ts:1:257
+✖ DICOM route does not return wildcard CORS (494.216ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '*'
+  - 'http://example.com'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\dicomweb.test.ts:46:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '*',
+    expected: 'http://example.com',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\imports.test.ts:1:212
+✖ processes unstructured text and normalizes it (3.3434ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'test-source'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imports.test.ts:20:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at node:internal/test_runner/test:1516:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9
+      at Array.map (<anonymous>) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'test-source',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\routes\imports.test.ts:1:1416
+✖ processes image_ocr source and appends recognition notes (0.3876ms)
+  TypeError: Cannot read properties of undefined (reading 'length')
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imports.test.ts:43:46)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at src\routes\imports.test.ts:1:2246
+✖ processes voice_dictation source and appends recognition notes (0.2753ms)
+  TypeError: Cannot read properties of undefined (reading 'length')
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imports.test.ts:60:46)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at src\routes\imports.test.ts:1:3081
+✖ returns empty preview for empty rawText (0.3301ms)
+  TypeError: Cannot read properties of undefined (reading 'totalRows')
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imports.test.ts:76:37)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at src\routes\settings.test.ts:1:1
+✖ src\routes\settings.test.ts (1747.1734ms)
+  'test failed'
+
+test at src\routes\tests\imaging.test.ts:1:559
+✖ processes valid records only and maps properties to the created study correctly (137.0163ms)
+  Error: Failed query: insert into "imaging_studies" ("id", "organization_id", "patient_id", "visit_id", "kind", "title", "tooth_code", "region", "captured_at", "source_kind", "source_name", "status", "ai_summary", "storage_path", "dicom_study_uid", "created_at") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, default) returning "id", "organization_id", "patient_id", "visit_id", "kind", "title", "tooth_code", "region", "captured_at", "source_kind", "source_name", "status", "ai_summary", "storage_path", "dicom_study_uid", "created_at"
+  params: mock-org,3ebb4567-7777-4f19-8c23-2a78c9962796,,opg,Test OPG,12, 13,Maxilla,2023-10-27T10:00:00.000Z,dicom_file,test_import,needs_review,Импортировано из test_import. Требует проверки снимка и привязки к ЭМК.,C:\scans\valid.dcm,
+      at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+      ... 4 lines matching cause stack trace ...
+      at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\tests\imaging.test.ts:40:21)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0) {
+    query: 'insert into "imaging_studies" ("id", "organization_id", "patient_id", "visit_id", "kind", "title", "tooth_code", "region", "captured_at", "source_kind", "source_name", "status", "ai_summary", "storage_path", "dicom_study_uid", "created_at") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, default) returning "id", "organization_id", "patient_id", "visit_id", "kind", "title", "tooth_code", "region", "captured_at", "source_kind", "source_name", "status", "ai_summary", "storage_path", "dicom_study_uid", "created_at"',
+    params: [ 'mock-org', '3ebb4567-7777-4f19-8c23-2a78c9962796', null, 'opg', 'Test OPG', '12, 13', 'Maxilla', '2023-10-27T10:00:00.000Z', 'dicom_file', 'test_import', 'needs_review', 'Импортировано из test_import. Требует проверки снимка и привязки к ЭМК.', 'C:\\scans\\valid.dcm', null ],
+    cause: error: invalid input syntax for type uuid: "mock-org"
+        at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:161:13)
+        at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:154:19)
+        at async createImagingStudyInDb (C:\Clinic_MVP\dental-crm\apps\api\src\db\imagingQuery.ts:103:20)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imaging.ts:6714:19)
+        at async Promise.all (index 0)
+        at async commitImagingImport (C:\Clinic_MVP\dental-crm\apps\api\src\routes\imaging.ts:6713:27)
+        at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\tests\imaging.test.ts:40:21) {
+      length: 140,
+      severity: 'ERROR',
+      code: '22P02',
+      detail: undefined,
+      hint: undefined,
+      position: undefined,
+      internalPosition: undefined,
+      internalQuery: undefined,
+      where: "unnamed portal parameter $1 = '...'",
+      schema: undefined,
+      table: undefined,
+      column: undefined,
+      dataType: undefined,
+      constraint: undefined,
+      file: 'uuid.c',
+      line: '177',
+      routine: 'string_to_uuid'
+    }
+  }
+
+test at src\routes\visits.test.ts:1:500
+✖ accept visit draft visit not found error path (627.8291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 404
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\visits.test.ts:47:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\services\backupWorker.test.ts:5:540
+✖ daemon starts, schedules, and executes callback using fake timers (17.1907ms)
+  AssertionError [ERR_ASSERTION]: Should log start message
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\services\backupWorker.test.ts:52:16)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\speech\tests\gateway.test.ts:1:1430
+✖ should return default state when no environment variables are set (10.4772ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'groq_whisper'
+  - 'none'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\gateway.test.ts:61:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'groq_whisper',
+    expected: 'none',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\speech\tests\gateway.test.ts:1:2292
+✖ should handle external provider groq_whisper with missing config (4.4956ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'manual'
+  - 'disabled'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\gateway.test.ts:85:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'manual',
+    expected: 'disabled',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\speech\tests\gateway.test.ts:1:3327
+✖ should handle local provider local_whisper with missing config (3.1592ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'groq_whisper'
+  - 'local_whisper'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\gateway.test.ts:106:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'groq_whisper',
+    expected: 'local_whisper',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\speech\tests\tunnel.test.ts:1:1
+✖ src\speech\tests\tunnel.test.ts (361.8522ms)
+  'test failed'
+
+test at src\tests\ai.test.ts:1:770
+✖ POST /api/ai/visit-note-draft returns 400 on validation error (359.64ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 400
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\ai.test.ts:49:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\ai.test.ts:1:1579
+✖ handles missing patient (404) (45.9275ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 404
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\ai.test.ts:84:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\ai\visitFlow.test.ts:1:2372
+✖ runVisitFlow - happy path (52.4482ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'Рекомендации после лечения кариеса у доктора Врач клиники. Исключите красящую пищу на 24 часа. Не жуйте до окончания действия анестезии. Если пломба мешает при смыкании — сразу пишите нам.'
+  - 'Рекомендации'
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\ai\visitFlow.test.ts:89:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Рекомендации после лечения кариеса у доктора Врач клиники. Исключите красящую пищу на 24 часа. Не жуйте до окончания действия анестезии. Если пломба мешает при смыкании — сразу пишите нам.',
+    expected: 'Рекомендации',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\persistentState.test.ts:1:1
+✖ src\tests\persistentState.test.ts (344.8284ms)
+  'test failed'
+
+test at src\tests\routes\clinical.test.ts:1:1039
+✖ POST /api/clinical/rules/evaluate handles organization not found (17.5763ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 500
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:53:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 500,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\clinical.test.ts:1:1556
+✖ POST /api/clinical/rules/evaluate succeeds (7.6607ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 200
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:77:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\clinical.test.ts:1:2451
+✖ POST /api/clinical/rules handles organization not found (6.2126ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 500
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:107:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 500,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\clinical.test.ts:1:3021
+✖ POST /api/clinical/rules succeeds (6.0408ms)
+  AssertionError [ERR_ASSERTION]: {"error":"AuthRequired","message":"Требуется авторизация рабочего кабинета клиники."}
+  
+  401 !== 200
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:130:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\clinical.test.ts:1:4421
+✖ PATCH /api/clinical/rules/:ruleId handles organization not found (7.117ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 500
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:160:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 500,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\clinical.test.ts:1:4752
+✖ PATCH /api/clinical/rules/:ruleId succeeds (6.1143ms)
+  AssertionError [ERR_ASSERTION]: {"error":"AuthRequired","message":"Требуется авторизация рабочего кабинета клиники."}
+  
+  401 !== 200
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\clinical.test.ts:191:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\visits.test.ts:1:755
+✖ PUT /api/visits/:visitId/draft/autosave handles "Визит не найден" (188.4955ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 404
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\visits.test.ts:51:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1518:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\visits.test.ts:1:1783
+✖ PUT /api/visits/:visitId/draft/autosave handles "Прием уже закрыт или аннулирован" (8.7909ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 409
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\visits.test.ts:72:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\visits.test.ts:1:3011
+✖ POST /api/visits/:visitId/draft/accept handles "Прием уже закрыт или аннулирован" (3.9876ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 409
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\visits.test.ts:96:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\routes\visits.test.ts:1:4274
+✖ PUT /api/visits/:visitId/draft/autosave handles generic errors (3.4557ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 409
+  
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\visits.test.ts:117:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\tests\sampleData.test.ts:1:1
+✖ src\tests\sampleData.test.ts (294.7622ms)
+  'test failed'
+
+test at src\tests\visitFlow.test.ts:1:640
+✖ executes all steps correctly when enabled (1.6205ms)
+  TypeError: Cannot redefine property: buildVisitDraftFromTranscript
+      at defineProperty (<anonymous>)
+      at MockTracker.method (node:internal/test_runner/mock/mock:534:5)
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\visitFlow.test.ts:10:30)
+      at TestHook.runInAsyncScope (node:async_hooks:214:14)
+      at TestHook.run (node:internal/test_runner/test:1106:25)
+      at TestHook.run (node:internal/test_runner/test:1427:18)
+      at Suite.runHook (node:internal/test_runner/test:1024:20)
+      at Test.run (node:internal/test_runner/test:1081:27)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at node:internal/test_runner/test:1516:71
+
+test at src\tests\visitFlow.test.ts:1:1176
+✖ skips disabled steps based on orchestratorConfig (0.473ms)
+  TypeError: Cannot redefine property: buildVisitDraftFromTranscript
+      at defineProperty (<anonymous>)
+      at MockTracker.method (node:internal/test_runner/mock/mock:534:5)
+      at TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\visitFlow.test.ts:10:30)
+      at TestHook.runInAsyncScope (node:async_hooks:214:14)
+      at TestHook.run (node:internal/test_runner/test:1106:25)
+      at TestHook.run (node:internal/test_runner/test:1427:18)
+      at Suite.runHook (node:internal/test_runner/test:1024:20)
+      at Test.run (node:internal/test_runner/test:1081:27)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Clinic_MVP\dental-crm\apps\api
+npm error workspace @dental/api@0.1.0
+npm error location C:\Clinic_MVP\dental-crm\apps\api
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c node --import tsx --test "src/**/*.test.ts"

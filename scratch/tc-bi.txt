@@ -1,0 +1,16 @@
+
+> dental-crm@0.1.0 typecheck
+> npm run typecheck -w @dental/shared && npm run typecheck -w @dental/api && npm run typecheck -w @dental/web
+
+
+> @dental/shared@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @dental/api@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @dental/web@0.1.0 typecheck
+> tsc -b --noEmit
+

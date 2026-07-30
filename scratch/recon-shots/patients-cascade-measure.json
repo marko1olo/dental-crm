@@ -1,0 +1,172 @@
+{
+  "окно": {
+    "w": 1576,
+    "h": 908,
+    "dpr": 1
+  },
+  "тема": "light",
+  "поиск": {
+    "поле": {
+      "left": 74,
+      "right": 586,
+      "top": 975,
+      "bottom": 1009,
+      "width": 512,
+      "height": 34
+    },
+    "бокс": {
+      "left": 74,
+      "right": 586,
+      "top": 975,
+      "bottom": 1009,
+      "width": 512,
+      "height": 34
+    },
+    "бокс_стиль": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "backgroundImage": "none",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(15, 30, 27)",
+      "borderStyle": "none",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "paddingTop": "0px",
+      "paddingLeft": "0px",
+      "flexBasis": "320px",
+      "flexGrow": "1",
+      "maxWidth": "512px",
+      "backdropFilter": "none"
+    },
+    "стиль": {
+      "paddingTop": "8px",
+      "paddingRight": "12px",
+      "paddingBottom": "8px",
+      "paddingLeft": "12px",
+      "borderTopWidth": "1px",
+      "borderLeftWidth": "1px",
+      "borderStyle": "solid",
+      "borderTopColor": "rgb(203, 213, 225)",
+      "borderRadius": "10px",
+      "backgroundColor": "rgb(248, 250, 252)",
+      "backgroundImage": "none",
+      "boxShadow": "none",
+      "fontSize": "13px",
+      "fontWeight": "400",
+      "fontFamily": "\"Golos Text\", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "textTransform": "none",
+      "letterSpacing": "normal",
+      "height": "34px",
+      "backdropFilter": "none"
+    },
+    "иконка": {
+      "left": 86,
+      "right": 104,
+      "top": 983,
+      "bottom": 1001,
+      "width": 18,
+      "height": 18
+    },
+    "объявленный_paddingLeft_в_patients_redesign": "40px",
+    "применённый_paddingLeft": "12px",
+    "начало_текста_px": 87,
+    "зазор_иконка_до_текста_px": -17
+  },
+  "создание": {
+    "поле": {
+      "left": 611,
+      "right": 1385.22,
+      "top": 975,
+      "bottom": 1009,
+      "width": 774.22,
+      "height": 34
+    },
+    "группа": {
+      "left": 602,
+      "right": 1492,
+      "top": 967,
+      "bottom": 1017,
+      "width": 890,
+      "height": 50
+    },
+    "группа_стиль": {
+      "backgroundColor": "rgba(204, 251, 241, 0.5)",
+      "backgroundImage": "none",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgb(203, 213, 225)",
+      "borderStyle": "solid",
+      "borderRadius": "12px",
+      "boxShadow": "none",
+      "paddingTop": "6px",
+      "paddingLeft": "8px",
+      "flexBasis": "416px",
+      "flexGrow": "1",
+      "maxWidth": "none",
+      "backdropFilter": "none"
+    },
+    "стиль": {
+      "paddingTop": "8px",
+      "paddingRight": "12px",
+      "paddingBottom": "8px",
+      "paddingLeft": "12px",
+      "borderTopWidth": "1px",
+      "borderLeftWidth": "1px",
+      "borderStyle": "solid",
+      "borderTopColor": "rgb(203, 213, 225)",
+      "borderRadius": "10px",
+      "backgroundColor": "rgb(248, 250, 252)",
+      "backgroundImage": "none",
+      "boxShadow": "none",
+      "fontSize": "13px",
+      "fontWeight": "400",
+      "fontFamily": "\"Golos Text\", Inter, ui-sans-serif, system-ui, -apple-system, sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "textTransform": "none",
+      "letterSpacing": "normal",
+      "height": "34px",
+      "backdropFilter": "none"
+    },
+    "кнопка": {
+      "left": 1397.22,
+      "right": 1483,
+      "top": 974,
+      "bottom": 1010,
+      "width": 85.78,
+      "height": 36
+    }
+  },
+  "сравнение_полей": {
+    "одинаковые": [
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft",
+      "borderTopWidth",
+      "borderLeftWidth",
+      "borderStyle",
+      "borderTopColor",
+      "borderRadius",
+      "backgroundColor",
+      "backgroundImage",
+      "boxShadow",
+      "fontSize",
+      "fontWeight",
+      "fontFamily",
+      "color",
+      "textTransform",
+      "letterSpacing",
+      "height",
+      "backdropFilter"
+    ],
+    "различия": {},
+    "ширины": {
+      "поиск": 512,
+      "создание": 774.22
+    }
+  },
+  "каскад": {
+    "rules": 4042,
+    "searchRule": true,
+    "globalImportant": true
+  }
+}

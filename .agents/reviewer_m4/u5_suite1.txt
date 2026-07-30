@@ -1,0 +1,1910 @@
+
+> @dental/api@0.1.0 test
+> node --import tsx --test "src/**/*.test.ts"
+
+▶ personalizeTreatmentPlan tests
+  ✔ returns rule-based fallback when neural configuration is disabled (2.3076ms)
+  ✔ uses primary explicitApiKey and calls fetch (4.9659ms)
+  ✔ handles non-JSON text wrapping from AI (1.3934ms)
+  ✔ cascades to fallback providers on primary provider failure (21.2092ms)
+  ✔ returns rule-based fallback when all AI calls fail (3.6949ms)
+✔ personalizeTreatmentPlan tests (36.2853ms)
+▶ recordAuditEvent
+  ✔ inserts audit event with provided organizationId (2.2739ms)
+  ✔ fetches first organization when organizationId is missing (0.5729ms)
+  ✔ returns early without inserting if no organization is found (0.4496ms)
+✔ recordAuditEvent (4.5894ms)
+▶ auditFromRequest
+  ✔ extracts ip and user-agent from fastify request when both headers are present (2.0633ms)
+  ✔ uses request.ip when x-forwarded-for is missing (0.4564ms)
+  ✔ handles missing ip and user-agent (0.3147ms)
+  ✔ handles single ip in x-forwarded-for header without spaces (0.2632ms)
+✔ auditFromRequest (4.4647ms)
+▶ recordAuditEventInDb
+  ✔ successfully inserts and returns an audit event with all fields (3.4854ms)
+  ✔ successfully inserts with minimal required fields (0.5782ms)
+  ✔ throws an error if insert returns empty array (0.8709ms)
+✔ recordAuditEventInDb (6.5656ms)
+▶ getPaymentsByPatientIdInDb
+  ✔ returns empty array when no payments are found (2.1966ms)
+  ✔ maps createdAt and paidAt dates to ISO strings correctly (1.6973ms)
+✔ getPaymentsByPatientIdInDb (5.1844ms)
+▶ clinicalQuery - getTreatmentPlanItemsForPatient
+  ✔ should return treatment plan items for a valid organization and patient (2.3277ms)
+  ✔ should return empty array when no items exist (0.8746ms)
+✔ clinicalQuery - getTreatmentPlanItemsForPatient (4.4167ms)
+▶ issueGeneratedDocumentInDb — подписант выдачи
+  ✔ литерал «doctor» отвергается до запроса в базу (2.8514ms)
+  ✔ любая не-UUID строка отвергается, а не только «doctor» (0.7178ms)
+✔ issueGeneratedDocumentInDb — подписант выдачи (4.7607ms)
+▶ voidGeneratedDocumentInDb — подписант аннулирования
+  ✔ литерал «doctor» отвергается до запроса в базу (0.4251ms)
+✔ voidGeneratedDocumentInDb — подписант аннулирования (0.5887ms)
+▶ отсутствие авторизованного сотрудника моделируется как null
+  ✔ null проходит guard и не считается ошибкой (96.5137ms)
+✔ отсутствие авторизованного сотрудника моделируется как null (96.7604ms)
+▶ createPaymentInDb
+  ✔ successfully creates a payment (3.7635ms)
+  ✔ throws error when returning is empty (1.3817ms)
+  ✔ не вставляет платёж, если пациент не найден или заблокирован (0.6791ms)
+✔ createPaymentInDb (7.1462ms)
+▶ evaluateClinicalRulesInDb
+  ✔ returns empty evaluations when no rules match (2.9736ms)
+  ✔ ignores inactive rules (0.7769ms)
+  ✔ resolves successfully when all required and completed services are present (0.6884ms)
+  ✔ does not resolve when missing required services (0.6736ms)
+  ✔ does not resolve when missing completed services (0.4923ms)
+  ✔ handles block_service logic correctly with blocked services (2.7142ms)
+  ✔ show_warning and schedule_followup always remain unresolved (0.6204ms)
+✔ evaluateClinicalRulesInDb (10.3108ms)
+▶ normalizedDocumentChainValue
+  ✔ returns empty string for null (1.1323ms)
+  ✔ returns empty string for undefined (0.2694ms)
+  ✔ trims whitespace (0.1768ms)
+  ✔ replaces multiple spaces with a single space (0.1658ms)
+  ✔ converts to lower case (ru-RU) (0.3268ms)
+  ✔ combines all transformations (0.1411ms)
+✔ normalizedDocumentChainValue (11.6914ms)
+▶ normalizedTaxpayerInn
+  ✔ returns empty string for null (0.261ms)
+  ✔ returns empty string for undefined (0.1419ms)
+  ✔ removes all non-digit characters (0.166ms)
+✔ normalizedTaxpayerInn (0.8568ms)
+▶ frozenTaxXmlPayments
+  ✔ returns payments from taxXmlSourceSnapshot if it exists (0.6624ms)
+  ✔ returns fallback payments if taxXmlSourceSnapshot is missing (0.1185ms)
+  ✔ returns fallback payments if taxXmlSourceSnapshot is present but payments is undefined (0.129ms)
+✔ frozenTaxXmlPayments (1.0881ms)
+▶ frozenTaxXmlPayments
+  ✔ returns payments from taxXmlSourceSnapshot if present (1.6538ms)
+  ✔ returns fallbackPayments if taxXmlSourceSnapshot is missing (0.2263ms)
+  ✔ returns fallbackPayments if payments is undefined in taxXmlSourceSnapshot (0.1855ms)
+  ✔ returns empty array from taxXmlSourceSnapshot if it is empty (0.1282ms)
+✔ frozenTaxXmlPayments (3.4395ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null when valid selection is provided (1.3226ms)
+  ✔ returns null if input kind is not tax paid document (0.1829ms)
+  ✔ returns error if tax document requires payment selection but none selected (0.149ms)
+  ✔ returns null if tax document does not require payment selection and none selected (0.2036ms)
+  ✔ returns error if there are duplicates in selected ids (0.148ms)
+  ✔ returns error if a selected payment is not found (0.148ms)
+  ✔ returns error if selected payment belongs to another patient (0.2424ms)
+  ✔ returns error if selected payment is not paid or amount is <= 0 (8.9376ms)
+  ✔ returns error if selected payment does not match tax year (18.3311ms)
+  ✔ returns error if taxYear is not provided but payments are selected (0.3659ms)
+  ✔ returns error if selected payment does not match payer INN (0.2265ms)
+✔ taxPaymentSelectionErrorForDocument (32.4221ms)
+▶ taxDocumentSelectionScope - edge cases
+  ✔ uses taxDeductionApplication.requestedTaxYear when kind is tax_deduction_application (0.2583ms)
+✔ taxDocumentSelectionScope - edge cases (0.3637ms)
+▶ paidAmountRubForDocument
+  ✔ returns 0 if metadata requiresPaidRecord, group is not tax, and no visitId (0.3863ms)
+  ✔ returns 0 if taxPaidDocumentsNeedYear and no taxYear (0.1652ms)
+  ✔ returns 0 if taxPaidDocumentKindIsKnd and taxYear < taxDeductionCertificateMinYear (0.1223ms)
+  ✔ returns 0 if taxPaidDocumentKindIsLegacy and taxYear is out of bounds (0.1308ms)
+  ✔ calculates sum for tax documents with payment selection (0.2023ms)
+  ✔ returns 0 for tax documents with payment selection but none selected (0.0904ms)
+  ✔ calculates sum for payment_receipt with specific payload (0.1635ms)
+  ✔ calculates sum for payment_refund_correction_request with specific payload (0.2212ms)
+  ✔ calculates sum for generic tax documents without payment selection (fallback) (0.1711ms)
+  ✔ calculates sum for non-tax documents without specific payload (fallback) (0.0964ms)
+✔ paidAmountRubForDocument (2.0586ms)
+▶ documentHasUnresolvedPlaceholders
+  ✔ returns false for HTML without placeholders (1.0916ms)
+  ✔ returns true for various unresolved placeholders (0.5072ms)
+  ✔ поиск заготовок не зависит от регистра (0.2193ms)
+  ✔ ignores placeholders inside signatures block (0.183ms)
+  ✔ detects placeholders if present both inside and outside signatures block (0.1645ms)
+  ✔ маркер [[{ находится даже внутри блока подписей (0.156ms)
+✔ documentHasUnresolvedPlaceholders (3.6949ms)
+▶ taxDocumentDuplicateSensitive
+  ✔ returns true for tax_deduction_certificate (0.7703ms)
+  ✔ returns true for legacy_tax_deduction_certificate (0.1832ms)
+  ✔ returns false for other document kinds (0.1392ms)
+✔ taxDocumentDuplicateSensitive (2.1198ms)
+▶ taxPaymentYear
+  ✔ returns null when neither fiscalReceiptIssuedAt nor paidAt are provided (0.348ms)
+  ✔ uses fiscalReceiptIssuedAt when both are provided (0.1878ms)
+  ✔ uses paidAt when fiscalReceiptIssuedAt is absent (0.1683ms)
+  ✔ extracts the year from standard ISO dates starting with 4 digits (13.0665ms)
+  ✔ parses valid date strings that do not start with a 4-digit year (4.2051ms)
+  ✔ returns null for completely invalid strings (0.4276ms)
+  ✔ returns null for empty strings (and falls back if one is empty) (0.248ms)
+  ✔ returns null for whitespace-only strings (0.1332ms)
+  ✔ returns null for missing/undefined fields (0.1368ms)
+✔ taxPaymentYear (19.59ms)
+▶ taxPaymentsForIssueSnapshot
+  ✔ returns base selected payments when explicit payment IDs are selected (0.5215ms)
+  ✔ returns base payments when document is not duplicate sensitive (0.1678ms)
+  ✔ filters out payments already used by other issued tax certificates in the same scope (0.2437ms)
+  ✔ ensures payments that are not covered are still included for duplicate sensitive documents (0.1911ms)
+  ✔ returns base payments if there are no existing documents causing duplicates (0.1456ms)
+  ✔ явно выбранный платёж всё равно отсеивается, если он уже в выданной справке (0.1741ms)
+  ✔ переоформление той же справки не отсеивает её собственные платежи (0.1692ms)
+✔ taxPaymentsForIssueSnapshot (1.8896ms)
+▶ buildKnd1151156Xml
+  ✔ happy path: generates valid XML for self payer (2.8604ms)
+  ✔ happy path: generates valid XML for other payer (0.8784ms)
+  ✔ error: wrong document kind (0.3184ms)
+  ✔ error: wrong tax year (0.2104ms)
+  ✔ error: missing tax office code (0.2016ms)
+  ✔ error: missing clinic details (INN length) (0.2473ms)
+  ✔ error: no tax payments (0.175ms)
+  ✔ error: invalid tax deduction code (0.1834ms)
+  ✔ error: missing payer details (no INN or identity doc) (0.2555ms)
+  ✔ error: different patient but missing patient details (0.2626ms)
+✔ buildKnd1151156Xml (7.0066ms)
+▶ loadAdditionalServerEnv
+  ✔ loads base env files if they exist (7.886ms)
+  ✔ does not overwrite existing environment variables (11.4318ms)
+  ✔ merges mergeable env keys like GROQ_API_KEYS (19.6619ms)
+  ✔ loads explicit env files and does NOT recursively follow DENTAL_EXTRA_ENV_FILES since it does not overwrite existing ones (15.1503ms)
+  ✔ ignores missing files without erroring (5.1734ms)
+✔ loadAdditionalServerEnv (60.8671ms)
+▶ getLoadedServerEnvFiles
+  ✔ returns deduplicated array of loaded env files (42.1734ms)
+  ✔ returns a new array instance to prevent accidental mutation of internal state (4.5802ms)
+✔ getLoadedServerEnvFiles (47.1066ms)
+▶ портрет колонки
+  ✔ маска скрывает содержимое, сохраняя форму (1.2102ms)
+  ✔ доли разбора отражают настоящее содержимое колонки (9.7473ms)
+  ✔ колонка целых уникальных чисел опознаётся как ключ (0.5476ms)
+✔ портрет колонки (15.7804ms)
+▶ опознание системы-источника
+  ✔ имена колонок сравниваются без регистра, пробелов и подчёркиваний (0.525ms)
+  ✔ Open Dental опознаётся по колонкам, а не по имени таблицы (0.9587ms)
+  ✔ российская выгрузка не опознаётся как западная система (0.5948ms)
+  ✔ слабое совпадение не выдаётся за опознанную систему (0.4758ms)
+  ✔ сущность определяется по ключевым колонкам, а не по общим (0.7409ms)
+  ✔ имя таблицы весит, но одной общей колонки для решения не хватает (0.2781ms)
+  ✔ неопознаваемый набор колонок возвращает unknown с объяснением (0.2559ms)
+✔ опознание системы-источника (4.3306ms)
+▶ алгоритмическое сопоставление колонок
+  ✔ российские заголовки сопоставляются словарём (3.9266ms)
+  ✔ правило профиля системы важнее обобщённого словаря (1.216ms)
+  ✔ КОЛОНКА С ОБМАНЧИВЫМ ИМЕНЕМ отклоняется содержимым (1.062ms)
+  ✔ колонка с бессмысленным именем опознаётся по содержимому (1.6964ms)
+  ✔ раздельные фамилия, имя и отчество сопоставляются по отдельности (0.7552ms)
+  ✔ две колонки на одно поле: выигрывает более полная, вторая не теряется (0.6863ms)
+  ✔ ручная поправка оператора имеет приоритет и не оспаривается данными (0.6915ms)
+  ✔ нераспознанные непустые колонки предлагаются модели, пустые — нет (1.3481ms)
+  ✔ в карту соответствия попадают маски, а не значения пациентов (1.3119ms)
+  ✔ платежи и приёмы сопоставляются своими полями (2.1726ms)
+✔ алгоритмическое сопоставление колонок (15.4303ms)
+▶ обязательные поля
+  ✔ ФИО можно собрать либо целиком, либо из частей (1.1619ms)
+  ✔ платёж без суммы или без пациента загружать нельзя (0.1654ms)
+  ✔ запись в расписании требует пациента и времени начала (0.0787ms)
+✔ обязательные поля (1.5805ms)
+(node:26568) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ определение кодировки
+  ✔ BOM UTF-8 распознаётся явно и без потерь (1.9237ms)
+  ✔ windows-1251 без признаков в файле определяется по частотности русских букв (5.9127ms)
+  ✔ cp866 из DOS-эпохи не путается с windows-1251 (2.433ms)
+  ✔ koi8-r определяется отдельно от остальных кириллических кодировок (1.6424ms)
+  ✔ двойное кодирование UTF-8 через windows-1251 восстанавливается (1.5441ms)
+  ✔ чистый ASCII не признаётся повреждённым (0.4122ms)
+  ✔ повреждение значения опознаётся отдельно от кодировки файла (0.2787ms)
+✔ определение кодировки (15.8157ms)
+▶ разбор таблиц с разделителем
+  ✔ значение с переводом строки внутри кавычек не разрывает запись (2.0233ms)
+  ✔ удвоенные кавычки внутри значения сохраняются как одна (0.5242ms)
+  ✔ кавычка в середине незакавыченного значения — это данные, а не цитата (0.3201ms)
+  ✔ разделитель выбирается по прямоугольности таблицы, а не по заголовку (5.9252ms)
+  ✔ таблица без заголовка не теряет первую строку данных (0.3679ms)
+  ✔ строка с лишним разделителем не отбрасывается, а помечается (1.2804ms)
+  ✔ повторяющиеся имена колонок разводятся, а безымянные получают номер (0.4192ms)
+  ✔ пустые строки в конце выгрузки не превращаются в пустых пациентов (0.2359ms)
+✔ разбор таблиц с разделителем (11.6656ms)
+▶ чтение таблиц dBASE/FoxPro
+  ✔ кодовая страница берётся из байта 29 заголовка, а не угадывается (6.8204ms)
+  ✔ типы полей читаются по спецификации, а не как текст (2.6092ms)
+  ✔ записи, помеченные удалёнными, по умолчанию не переносятся, но пересчитываются (2.4776ms)
+  ✔ отсутствие кодовой страницы в заголовке приводит к предупреждению, а не к тихой порче (22.3128ms)
+  ✔ повреждённый файл отклоняется с внятной причиной (4.4086ms)
+  ✔ опознание DBF не срабатывает на CSV и наоборот (2.6377ms)
+  ✔ пустая дата в DBF читается как пустое значение, а не как нули (0.9313ms)
+✔ чтение таблиц dBASE/FoxPro (42.641ms)
+▶ чтение книг Excel
+  ✔ адреса ячеек соблюдаются: пустая ячейка не сдвигает следующие колонки (4.4068ms)
+  ✔ дата, сохранённая числом со стилем даты, превращается в дату, а не в серийный номер (1.3783ms)
+  ✔ число без формата даты остаётся числом (0.9765ms)
+  ✔ пропущенная строка не сдвигает нумерацию (0.6405ms)
+  ✔ буквенные адреса колонок переводятся в номера (0.1175ms)
+✔ чтение книг Excel (7.8222ms)
+▶ разбор структурированных выгрузок
+  ✔ массив записей находится внутри обёртки ответа API (0.9216ms)
+  ✔ записи с разным набором ключей объединяются без сдвига колонок (0.3312ms)
+  ✔ массив простых значений склеивается, массив объектов сохраняется целиком (0.2567ms)
+  ✔ одна битая строка JSONL не роняет разбор остальных (0.2938ms)
+  ✔ обрезанный JSON отклоняется с внятной причиной (0.205ms)
+  ✔ повторяющийся элемент XML распознаётся как запись (1.4244ms)
+  ✔ CDATA читается как текст, а внешние сущности не обрабатываются (0.6743ms)
+✔ разбор структурированных выгрузок (4.4357ms)
+▶ выбор разбора по содержимому источника
+  ✔ DBF опознаётся по содержимому, даже если файл назван .txt (1.2019ms)
+  ✔ CSV в windows-1251 читается через определение кодировки (1.8802ms)
+  ✔ вставка из буфера обмена помечается своим видом источника (0.6994ms)
+  ✔ свободный текст не разбирается как таблица (0.3589ms)
+  ✔ дамп SQL опознаётся и отклоняется, а не разбирается вслепую (0.2019ms)
+  ✔ книга Excel разбирается по листам с сохранением позиций колонок (0.9536ms)
+  ✔ пустой источник не роняет разбор (0.1706ms)
+✔ выбор разбора по содержимому источника (5.8598ms)
+▶ признак пустого значения
+  ✔ обозначения пустоты из чужих систем не попадают в базу как текст (1.0041ms)
+  ✔ значения ошибок Excel не переносятся как текст (0.4177ms)
+  ✔ ноль пустой для ссылок, но значимый для денег (0.1857ms)
+  ✔ настоящее значение пустым не считается (0.2191ms)
+✔ признак пустого значения (3.1711ms)
+▶ даты
+  ✔ порядок компонентов определяется по всей колонке, а не по одному значению (0.4995ms)
+  ✔ одно и то же значение разбирается по-разному в зависимости от колонки (1.1923ms)
+  ✔ колонка со смешанным порядком помечается, а значения не выдумываются (0.5495ms)
+  ✔ форматы старых систем читаются без настройки (0.332ms)
+  ✔ двузначный год разворачивается в прошлое, а не в будущее (0.3448ms)
+  ✔ несуществующая дата уходит в отказ, а не записывается как есть (0.4354ms)
+  ✔ нераспознанный текст НЕ протекает в поле даты (0.3783ms)
+  ✔ пустое значение — это пустота, а не ошибка (0.159ms)
+✔ даты (4.6095ms)
+▶ дата со временем
+  ✔ время суток сохраняется, а не отбрасывается (0.6708ms)
+  ✔ секунды сохраняются, если были в источнике (0.3462ms)
+  ✔ явный часовой пояс делает значение абсолютным (0.1858ms)
+  ✔ отсутствие времени отличается от полуночи (0.1267ms)
+  ✔ нераспознанная дата остаётся нераспознанной и со временем (0.1183ms)
+  ✔ формат хранения сортируется лексикографически (1.0139ms)
+✔ дата со временем (2.7439ms)
+▶ перевод местного времени клиники в абсолютное
+  ✔ местное время не сдвигается: 14:30 в Москве это 11:30 UTC (37.4446ms)
+  ✔ значение с явным поясом не пересчитывается второй раз (0.5387ms)
+  ✔ исторический переход на летнее время учитывается (1.0671ms)
+  ✔ другой часовой пояс клиники учитывается (0.7298ms)
+  ✔ дата без времени получает переданное время по умолчанию (0.5308ms)
+  ✔ неизвестное имя пояса не роняет разбор (0.2572ms)
+  ✔ календарная часть отделяется от времени (0.1053ms)
+✔ перевод местного времени клиники в абсолютное (41.0925ms)
+▶ телефоны
+  ✔ российские записи приводятся к E.164 (0.7564ms)
+  ✔ городской номер переносится, но помечается как немобильный (0.1442ms)
+  ✔ добавочный номер отделяется, а не приклеивается к номеру (0.2341ms)
+  ✔ несколько номеров в ячейке: берётся первый, факт отмечается (0.1109ms)
+  ✔ нерабочие номера отклоняются с указанием причины (0.1666ms)
+  ✔ иностранный номер не переделывается в российский (0.126ms)
+✔ телефоны (1.7698ms)
+▶ имена
+  ✔ верхний регистр из DOS-систем приводится к обычному (1.4061ms)
+  ✔ смешанный регистр не ломается (0.2175ms)
+  ✔ двойная фамилия через дефис сохраняет обе заглавные (0.1311ms)
+  ✔ частицы фамилий остаются со строчной (0.0935ms)
+  ✔ формат DICOM с разделителем ^ разбирается (0.4084ms)
+  ✔ фамилия через запятую разбирается правильно (0.2365ms)
+  ✔ одно слово переносится, но с пониженной уверенностью (0.1444ms)
+  ✔ мусор вместо ФИО отклоняется (0.2037ms)
+  ✔ раздельные колонки фамилии, имени и отчества собираются (0.3224ms)
+✔ имена (3.5484ms)
+▶ деньги
+  ✔ российская запись с разрядами и валютой разбирается в копейки (0.8143ms)
+  ✔ копейки сохраняются точно, без плавающей точки (0.2224ms)
+  ✔ американская запись с точкой как дробной частью (0.1611ms)
+  ✔ отрицательная сумма в скобках — бухгалтерская запись (0.2256ms)
+  ✔ ноль — это сумма, а не пустота (0.1318ms)
+  ✔ целые рубли для колонки integer: округление отмечено в преобразованиях (0.2419ms)
+  ✔ неправдоподобная и нечисловая сумма отклоняются (0.1899ms)
+✔ деньги (2.2151ms)
+▶ перечисления, пол, флаги
+  ✔ пол распознаётся во всех встречающихся написаниях (0.3665ms)
+  ✔ флаги да/нет распознаются, мусор отклоняется (0.2016ms)
+  ✔ статус сопоставляется по словарю, включая частичное совпадение (0.4605ms)
+✔ перечисления, пол, флаги (1.1881ms)
+▶ зубная формула и почта
+  ✔ номера зубов приводятся к FDI (0.4748ms)
+  ✔ нотация Universal переводится в FDI с пониженной уверенностью (0.1511ms)
+  ✔ почта проверяется, из нескольких адресов берётся первый (0.4294ms)
+✔ зубная формула и почта (1.1852ms)
+▶ текст
+  ✔ лишние пробелы сжимаются, повреждение кодировки отклоняется (0.3432ms)
+  ✔ значение сверх предела поля отклоняется как признак склейки строк (0.2753ms)
+✔ текст (0.7403ms)
+▶ safeParseJsonObject
+  ✔ handles empty or whitespace strings (1.4933ms)
+  ✔ parses standard JSON object correctly (0.3617ms)
+  ✔ parses JSON object with text before and after (fallback logic) (0.2915ms)
+  ✔ returns empty object if fallback regex finds no object match (0.2129ms)
+  ✔ throws when fallback extracts invalid JSON (0.5316ms)
+✔ safeParseJsonObject (4.6325ms)
+▶ auth routes
+  ▶ clinic login
+    ✔ returns 400 for missing credentials (1107.5225ms)
+[AUTH_DB_ERROR] Error: DB Error
+    at Object.limit (C:\Clinic_MVP\dental-crm\apps\api\src\routes\auth.test.ts:37:40)
+    at Object.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\routes\auth.ts:115:102)
+    at preHandlerCallbackInner (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\handle-request.js:168:24)
+    at preHandlerCallback (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\handle-request.js:134:5)
+    at validationCompleted (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\handle-request.js:124:5)
+    at preValidationCallback (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\handle-request.js:101:5)
+    at handler (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\handle-request.js:78:7)
+    at onDone (C:\Clinic_MVP\dental-crm\apps\api\node_modules\fastify\lib\content-type-parser.js:229:5)
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at bound (node:async_hooks:245:16)
+    ✔ returns 500 when database throws an error (17.321ms)
+    ✔ returns 401 when organization not found (227.3981ms)
+    ✔ returns 200 and token on success (154.2374ms)
+  ✔ clinic login (1508.1399ms)
+  ▶ staff unlock
+    ✔ returns 401 if clinic token is missing (8.8578ms)
+    ✔ несуществующий сотрудник неотличим от неверного PIN (571.8337ms)
+    ✔ returns 200 on successful unlock (152.4539ms)
+  ✔ staff unlock (733.6985ms)
+  ▶ direct user login (/api/auth/login)
+    ✔ returns 400 for missing credentials (6.8769ms)
+    ✔ returns 401 for invalid credentials (216.8363ms)
+    ✔ returns 200 on successful direct login (125.4654ms)
+  ✔ direct user login (/api/auth/login) (349.6156ms)
+  ▶ user profile (/api/auth/user/me)
+    ✔ returns 401 if staff token missing (5.4208ms)
+    ✔ нет демо-профиля в обход базы: неизвестный сотрудник -> 404 (6.1405ms)
+    ✔ returns 200 with user profile (5.047ms)
+  ✔ user profile (/api/auth/user/me) (16.9653ms)
+✔ auth routes (2609.4871ms)
+✔ выдуманный UID больше не получает байты снимка (1049.3906ms)
+✔ образец отдаётся организации-владельцу под её собственными UID (23.2127ms)
+✔ вторая клиника установки не получает демонстрационный снимок владельца (5.4905ms)
+✔ организации, которой нет в базе, снимок не выдаётся (4.8962ms)
+✔ идентификатор организации не в формате UUID отклоняется без обращения к базе (4.5648ms)
+✔ без назначенного владельца образец не отдаётся никому (5.4827ms)
+✔ недоступная база не превращается в вывод «такой организации нет» (4.0976ms)
+✔ гейт клинического чтения отказывает токену клиники без секрета администратора (5.5488ms)
+✔ гейт клинического чтения с верным секретом администратора отдаёт снимок владельцу (17.6805ms)
+✔ гейт клинического чтения отказывает при неверном секрете администратора (6.4141ms)
+✔ верный UID исследования с чужой серией не отдаёт снимок (23.7347ms)
+✔ верные UID исследования и серии с чужим объектом не отдают снимок (20.2478ms)
+✔ строка imaging_instances отдаёт файл именно по своему storage_path (24.7243ms)
+✔ storage_path исследования не отдаётся, если байты не подтверждают серию и объект (22.0894ms)
+✔ storage_path исследования отдаётся, когда байты подтверждают все три UID (32.7625ms)
+✔ без токена клиники снимок не выдаётся (7.4917ms)
+✔ DICOM route does not return wildcard CORS (41.181ms)
+▶ renderIssuedHtmlToPdf try-catch fall-through error handling
+  ✔ returns error when exception is thrown inside the try block (3288.4076ms)
+✔ renderIssuedHtmlToPdf try-catch fall-through error handling (3290.0078ms)
+▶ medicalRecordCopyRequestDatesAreValid
+  ✔ returns true when all dates are valid and chronological (0.7968ms)
+  ✔ returns true when periodStart and periodEnd are the same (0.2492ms)
+  ✔ returns true when period dates are blank or undefined (0.2389ms)
+  ✔ returns false when period is not chronological (0.1895ms)
+  ✔ returns false when periodStart has invalid format (0.195ms)
+  ✔ returns false when periodEnd has invalid format (0.1757ms)
+  ✔ returns false when requestedAt has invalid format (0.2096ms)
+✔ medicalRecordCopyRequestDatesAreValid (2.679ms)
+▶ parseDicomSeriesManifest
+  ✔ returns default preview response when rawText yields no lines (6.0002ms)
+✔ parseDicomSeriesManifest (8.8686ms)
+▶ buildPatientImportIntake
+  ✔ processes unstructured text and normalizes it (9.9544ms)
+  ✔ processes image_ocr source and appends recognition notes (1.6524ms)
+  ✔ processes voice_dictation source and appends recognition notes (1.3346ms)
+  ✔ returns empty preview for empty rawText (0.7057ms)
+✔ buildPatientImportIntake (15.2566ms)
+▶ clinicProfileMutationRejection
+  ✔ returns 409 and clinic_time_zone_invalid when error message includes часовой пояс (2.8264ms)
+  ✔ returns 409 and active_schedule_conflict when error message includes активная запись (0.6521ms)
+  ✔ returns 409 and active_schedule_conflict when error message includes активные записи (0.5642ms)
+  ✔ returns 409 and clinic_profile_rejected for other errors (0.524ms)
+  ✔ handles non-Error objects gracefully (0.5084ms)
+✔ clinicProfileMutationRejection (6.5327ms)
+▶ normalizedTaxpayerInn
+  ✔ removes all non-digit characters (1.3332ms)
+  ✔ handles null and undefined (0.4918ms)
+  ✔ handles empty strings (0.3153ms)
+  ✔ handles strings with only non-digits (0.2196ms)
+  ✔ returns the original string if it contains only digits (0.2842ms)
+✔ normalizedTaxpayerInn (4.7214ms)
+▶ commitImagingImport
+  ✔ processes valid records only and maps properties to the created study correctly (7.4494ms)
+  ✔ не пишет в базу, если готовых строк нет (59.4534ms)
+✔ commitImagingImport (68.7274ms)
+▶ visits routes - accept visit draft errors
+  ✔ accept visit draft visit not found error path (729.9178ms)
+✔ visits routes - accept visit draft errors (731.0241ms)
+▶ validScheduleTimeZone
+  ✔ returns default timezone for invalid timezone (36.0618ms)
+  ✔ returns default timezone for null (1.1279ms)
+  ✔ returns default timezone for undefined (0.454ms)
+  ✔ returns default timezone for empty string (0.4897ms)
+  ✔ returns default timezone for whitespace string (0.2217ms)
+  ✔ returns the provided valid timezone (0.5332ms)
+  ✔ trims whitespace from valid timezone strings (0.934ms)
+✔ validScheduleTimeZone (43.0943ms)
+▶ buildDoctorProfitabilityRow — маржа
+  ✔ маржа всегда null: себестоимости в системе нет (1.0061ms)
+  ✔ маржа не выводится из выручки ни при каком её значении (0.3399ms)
+  ✔ ноль не подставляется вместо неизвестной прибыли (0.1586ms)
+✔ buildDoctorProfitabilityRow — маржа (2.6559ms)
+▶ buildDoctorProfitabilityRow — успешность
+  ✔ успешность — доля завершённых приёмов, а не константа 85 (0.3375ms)
+  ✔ единица измерения — процентные пункты, а не доля 0..1 (0.1587ms)
+  ✔ все приёмы завершены — 100 процентных пунктов (0.106ms)
+  ✔ приёмы есть, завершённых нет — это измеренный ноль, а не прочерк (0.1083ms)
+  ✔ приёмов нет вовсе — null, делить не на что (0.1437ms)
+✔ buildDoctorProfitabilityRow — успешность (1.2056ms)
+▶ buildDoctorProfitabilityRow — типы из драйвера
+  ✔ COUNT(*) приходит строкой: bigint драйвер числом не отдаёт (0.2337ms)
+  ✔ numeric-выручка строкой разбирается в число (0.2174ms)
+  ✔ пустая выручка — ноль рублей, а не NaN (0.1912ms)
+  ✔ врач без имени получает подпись, а не пустую строку (0.1178ms)
+✔ buildDoctorProfitabilityRow — типы из драйвера (1.0103ms)
+▶ buildDoctorProfitabilityRow — форма записи в снимок
+  ✔ в снимок уходят ровно четыре поля (0.9081ms)
+  ✔ ни одно поле снимка не содержит выдуманной константы (0.2375ms)
+✔ buildDoctorProfitabilityRow — форма записи в снимок (1.2621ms)
+[BackupWorker] Копия НЕ создана: Не удалось запустить pg_dump (spawn pg_dump ENOENT). Укажите путь в PG_DUMP_PATH.
+▶ BackupWorker start/stop
+  ✔ daemon starts, schedules, and stops (45.5343ms)
+  ✔ повторный запуск не создаёт второй интервал (4.6288ms)
+  ✔ без ключа шифрования демон не запускается и говорит об этом (3.748ms)
+  ✔ слишком короткий ключ отвергается, а не дополняется нулями (3.469ms)
+✔ BackupWorker start/stop (60.116ms)
+▶ ClinicalRouter — передача между клиническими этапами
+  ✔ задача передачи записывается в clinical_tasks и читается обратно (46.5781ms)
+  ✔ повторная отправка того же завершения не плодит вторую открытую задачу (8.1743ms)
+  ✔ описание не содержит пустых разделов, когда зубы и комментарий не указаны (3.1047ms)
+  ✔ неизвестный код этапа возвращает null и ничего не пишет (1.8895ms)
+  ✔ пациент чужой клиники отклоняется, а не записывается под своей организацией (2.8498ms)
+✔ ClinicalRouter — передача между клиническими этапами (146.9387ms)
+▶ startNotificationWorker
+  ✔ calls setInterval with correct timing and handles queue processing (1.8719ms)
+✔ startNotificationWorker (2.9145ms)
+▶ doctorProfitabilityRow
+  ✔ выручка берётся в рублях, а не делится на 100 (1.1382ms)
+  ✔ материалы, комиссия и маржа в сумме дают выручку до копейки (0.3774ms)
+  ✔ доли считаются точно: 15% и 25% от 1000 руб. (0.1855ms)
+  ✔ bigint из драйвера приходит строкой и разбирается без потерь (0.2627ms)
+  ✔ нулевая выручка не ломает расчёт (0.1533ms)
+✔ doctorProfitabilityRow (3.3905ms)
+✔ startBiAnalyticsWorker scheduling (8.1331ms)
+▶ postOpCareTrigger
+  ✔ triggerPostOpCare inserts correct notification (2.3438ms)
+✔ postOpCareTrigger (3.683ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+[RecallScheduler] Created 1 recall tasks for admin.
+▶ RecallScheduler
+  ✔ should trigger recall for upper jaw (6 months) (202.3367ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+[RecallScheduler] Created 1 recall tasks for admin.
+  ✔ should trigger recall for lower jaw (3 months) (33.3343ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should not trigger recall if healing time has not elapsed (27.5852ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should ignore items not in phase 2 (32.1564ms)
+[RecallScheduler] Scanning for osteointegration recalls...
+  ✔ should ignore items without toothNumber (23.4515ms)
+✔ RecallScheduler (320.6195ms)
+▶ AssemblyAI: бюджет ожидания задания и удаление аудио у провайдера
+  ✔ длинное задание опрашивается далеко за прежний предел 15 попыток и отдаёт текст (510.564ms)
+  ✔ после готового текста уходит DELETE расшифровки с ключом источника (2.9897ms)
+  ✔ один 429 посреди опроса больше не убивает живое задание: текст приходит, аудио не загружается второй раз (47.1686ms)
+  ✔ оборванный опрос терпится: задание доживает до готового текста (65.6014ms)
+  ✔ исчерпанный запас неудачных опросов бросает задание, но не молча: предупреждение врачу и запись в журнал (49.8703ms)
+  ✔ бюджет ожидания, истёкший на серии неудачных опросов, называет причину, а не выдаёт медлительность источника (68.395ms)
+  ✔ исчерпанный бюджет ожидания доходит до врача как истёкшее ожидание, а не как молчание источника (34.3773ms)
+  ✔ неудачное удаление не глотается: попадает в лог и в предупреждения фрагмента (16.6237ms)
+  ✔ аудио загружено, а задание не создано: продукт не обещает удаление, которого нет (4.5843ms)
+  ✔ неповторяемый сбой опроса терминален и всё равно удаляет аудио у провайдера (10.8798ms)
+  ✔ неверный ASSEMBLYAI_API_BASE_URL не подменяется молча на публичный хост (1.6629ms)
+✔ AssemblyAI: бюджет ожидания задания и удаление аудио у провайдера (814.9965ms)
+▶ speechJsonBodyLimitBytes
+  ✔ should calculate correct limit based on default env value when env var is not set (19.3672ms)
+  ✔ should calculate correct limit based on custom env value (4.4181ms)
+✔ speechJsonBodyLimitBytes (31.2336ms)
+▶ getSpeechGatewayStatus
+  ✔ should return default state when no environment variables are set (5.6095ms)
+  ✔ should handle external provider groq_whisper with keys configured (2.5789ms)
+  ✔ should handle external provider groq_whisper with missing config (2.4076ms)
+  ✔ should handle local provider local_whisper with URL configured (20.6437ms)
+  ✔ should handle local provider local_whisper with missing config (12.1224ms)
+  ✔ should apply threshold environment variables (2.5129ms)
+✔ getSpeechGatewayStatus (46.6572ms)
+▶ Утверждение продукта о судьбе аудио пациента на серверном маршруте
+  ✔ смешанная цепочка источников получает оба утверждения, а не одно вместо другого (364.6696ms)
+  ✔ обещание видимости заменено настоящими адресами записи неудачного удаления (9.6783ms)
+  ✔ цепочка без асинхронного источника не обещает удаления, которого не делает (8.7321ms)
+✔ Утверждение продукта о судьбе аудио пациента на серверном маршруте (384.6127ms)
+▶ хранение расшифровок диктовки
+  ✔ текст переживает перезапуск процесса и читается из PostgreSQL (28.1369ms)
+  ✔ собранный текст лежит в ai_jobs как voice_transcription и читается обычным SQL (13.6892ms)
+  ✔ одна запись диктовки даёт одну строку, а не строку на каждый фрагмент (25.3095ms)
+  ✔ фрагмент без пациента и приема отклоняется, а не приписывается выдуманной клинике (2.8998ms)
+  ✔ вытеснение из кэша не затирает продиктованный текст в PostgreSQL (22.5826ms)
+  ✔ чужие строки voice_transcription не съедают лимит восстановления (11.7365ms)
+  ✔ поток диктовок одной клиники не вытесняет расшифровку другой (13.0906ms)
+[SpeechStorage] Расшифровка test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4 не сохранена в базу: DrizzleQueryError: Failed query: insert into "ai_jobs" ("id", "organization_id", "patient_id", "visit_id", "imaging_study_id", "kind", "target", "status", "source_label", "input_text", "result_text", "confidence", "warnings", "suggested_next_step", "input_storage_path", "output_text", "model_name", "created_at", "reviewed_at", "updated_at") values (default, $1, $2, $3, default, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, default, $14, default, default, $15)
+params: d0000000-0000-4000-8000-00000000d001,d0000000-0000-4000-8000-000000000101,ada0fc99-3f34-4440-bc26-1d6d54445585,voice_transcription,visit_note,needs_review,speech_dictation:visit,{"envelopeVersion":1,"recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4","chunks":[{"id":"883e9ba4-af86-4090-b640-474875ba469e","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.542Z","chunkIndex":0,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Фрагмент, который база не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.538Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"}]},Фрагмент, который база не приняла.,0.91,{},Соберите фрагменты в текст визита или оставьте их как источник аудита.,speech-recording://test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4,Локальный текст браузера,2026-07-28T04:20:59.543Z
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async persistSpeechRecording (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:807:5) {
+  query: 'insert into "ai_jobs" ("id", "organization_id", "patient_id", "visit_id", "imaging_study_id", "kind", "target", "status", "source_label", "input_text", "result_text", "confidence", "warnings", "suggested_next_step", "input_storage_path", "output_text", "model_name", "created_at", "reviewed_at", "updated_at") values (default, $1, $2, $3, default, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, default, $14, default, default, $15)',
+  params: [
+    'd0000000-0000-4000-8000-00000000d001',
+    'd0000000-0000-4000-8000-000000000101',
+    'ada0fc99-3f34-4440-bc26-1d6d54445585',
+    'voice_transcription',
+    'visit_note',
+    'needs_review',
+    'speech_dictation:visit',
+    '{"envelopeVersion":1,"recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4","chunks":[{"id":"883e9ba4-af86-4090-b640-474875ba469e","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.542Z","chunkIndex":0,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Фрагмент, который база не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.538Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"}]}',
+    'Фрагмент, который база не приняла.',
+    0.91,
+    '{}',
+    'Соберите фрагменты в текст визита или оставьте их как источник аудита.',
+    'speech-recording://test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4',
+    'Локальный текст браузера',
+    '2026-07-28T04:20:59.543Z'
+  ],
+  cause: error: insert or update on table "ai_jobs" violates foreign key constraint "ai_jobs_visit_id_visits_id_fk"
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+      at async persistSpeechRecording (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:807:5) {
+    length: 305,
+    severity: 'ERROR',
+    code: '23503',
+    detail: 'Key (visit_id)=(ada0fc99-3f34-4440-bc26-1d6d54445585) is not present in table "visits".',
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: 'public',
+    table: 'ai_jobs',
+    column: undefined,
+    dataType: undefined,
+    constraint: 'ai_jobs_visit_id_visits_id_fk',
+    file: 'ri_triggers.c',
+    line: '2783',
+    routine: 'ri_ReportViolation'
+  }
+}
+[SpeechStorage] Расшифровка test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4 не сохранена в базу: DrizzleQueryError: Failed query: insert into "ai_jobs" ("id", "organization_id", "patient_id", "visit_id", "imaging_study_id", "kind", "target", "status", "source_label", "input_text", "result_text", "confidence", "warnings", "suggested_next_step", "input_storage_path", "output_text", "model_name", "created_at", "reviewed_at", "updated_at") values (default, $1, $2, $3, default, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, default, $14, default, default, $15)
+params: d0000000-0000-4000-8000-00000000d001,d0000000-0000-4000-8000-000000000101,ada0fc99-3f34-4440-bc26-1d6d54445585,voice_transcription,visit_note,needs_review,speech_dictation:visit,{"envelopeVersion":1,"recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4","chunks":[{"id":"883e9ba4-af86-4090-b640-474875ba469e","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.542Z","chunkIndex":0,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Фрагмент, который база не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.538Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"},{"id":"6e813be3-60c8-473f-8740-adb8f3a3b6ba","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.557Z","chunkIndex":1,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Второй фрагмент, который база тоже не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.552Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"}]},Фрагмент, который база не приняла.
+Второй фрагмент, который база тоже не приняла.,0.91,{},Соберите фрагменты в текст визита или оставьте их как источник аудита.,speech-recording://test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4,Локальный текст браузера,2026-07-28T04:20:59.558Z
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async persistSpeechRecording (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:807:5) {
+  query: 'insert into "ai_jobs" ("id", "organization_id", "patient_id", "visit_id", "imaging_study_id", "kind", "target", "status", "source_label", "input_text", "result_text", "confidence", "warnings", "suggested_next_step", "input_storage_path", "output_text", "model_name", "created_at", "reviewed_at", "updated_at") values (default, $1, $2, $3, default, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, default, $14, default, default, $15)',
+  params: [
+    'd0000000-0000-4000-8000-00000000d001',
+    'd0000000-0000-4000-8000-000000000101',
+    'ada0fc99-3f34-4440-bc26-1d6d54445585',
+    'voice_transcription',
+    'visit_note',
+    'needs_review',
+    'speech_dictation:visit',
+    '{"envelopeVersion":1,"recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4","chunks":[{"id":"883e9ba4-af86-4090-b640-474875ba469e","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.542Z","chunkIndex":0,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Фрагмент, который база не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.538Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"},{"id":"6e813be3-60c8-473f-8740-adb8f3a3b6ba","organizationId":"d0000000-0000-4000-8000-00000000d001","createdAt":"2026-07-28T04:20:59.557Z","chunkIndex":1,"source":"visit","patientId":"d0000000-0000-4000-8000-000000000101","visitId":"ada0fc99-3f34-4440-bc26-1d6d54445585","providerId":"none","providerLabel":"Локальный текст браузера","mimeType":"audio/webm","byteLength":2048,"durationMs":4000,"language":"ru","transcript":"Второй фрагмент, который база тоже не приняла.","confidence":0.91,"status":"transcribed","quality":{"level":"clear","confidence":0.91,"wordCount":11,"charCount":71,"durationMs":4000,"bytesPerSecond":512,"providerWarnings":[],"signals":["unit_test"],"nextAction":"Проверьте текст перед подписанием приема."},"warnings":[],"clientRecordedAt":"2026-07-28T04:20:59.552Z","recordingId":"test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4"}]}',
+    'Фрагмент, который база не приняла.\n' +
+      'Второй фрагмент, который база тоже не приняла.',
+    0.91,
+    '{}',
+    'Соберите фрагменты в текст визита или оставьте их как источник аудита.',
+    'speech-recording://test-undurable-2a401474-ea6d-4ac4-aba8-e18e8009e4a4',
+    'Локальный текст браузера',
+    '2026-07-28T04:20:59.558Z'
+  ],
+  cause: error: insert or update on table "ai_jobs" violates foreign key constraint "ai_jobs_visit_id_visits_id_fk"
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+      at async persistSpeechRecording (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:807:5) {
+    length: 305,
+    severity: 'ERROR',
+    code: '23503',
+    detail: 'Key (visit_id)=(ada0fc99-3f34-4440-bc26-1d6d54445585) is not present in table "visits".',
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: 'public',
+    table: 'ai_jobs',
+    column: undefined,
+    dataType: undefined,
+    constraint: 'ai_jobs_visit_id_visits_id_fk',
+    file: 'ri_triggers.c',
+    line: '2783',
+    routine: 'ri_ReportViolation'
+  }
+}
+  ✔ несохранённый фрагмент остаётся в памяти сверх лимита и несёт предупреждение (76.1917ms)
+  ✔ неизвестная уверенность распознавания не выдаётся молча за нулевую (19.0622ms)
+✔ хранение расшифровок диктовки (302.8996ms)
+[SpeechStorage] Фрагмент 1 записи test-identity-661364f1-ef73-4ec2-8eee-5b6032d086c9 отклонен: запись сохранена как прием d0000000-0000-4000-8000-000000000400, пациент d0000000-0000-4000-8000-000000000101, источник visit, язык ru, а фрагмент пришёл как прием d0000000-0000-4000-8000-000000000401, пациент d0000000-0000-4000-8000-000000000102, источник visit, язык ru.
+▶ личность записи диктовки
+  ✔ после вытеснения из кэша фрагмент чужого приема отклоняется, а не сливается в одну запись (48.0109ms)
+[SpeechStorage] Фрагмент 1 записи test-identity-race-5f15a181-20bd-4336-a8cf-fc5b4bce0f22 отклонен: запись сохранена как прием d0000000-0000-4000-8000-000000000400, пациент d0000000-0000-4000-8000-000000000101, источник visit, язык ru, а фрагмент пришёл как прием d0000000-0000-4000-8000-000000000401, пациент d0000000-0000-4000-8000-000000000102, источник visit, язык ru.
+  ✔ одновременные фрагменты двух приемов не собираются в одну строку (12.1253ms)
+SPEECH ROWS SCANNED: 10
+  ✔ в базе нет строки диктовки с фрагментами двух приемов или двух пациентов (2.3821ms)
+  ✔ уже смешанная строка не теряет текст и объявляет о ручном разборе (26.6651ms)
+✔ личность записи диктовки (164.7596ms)
+▶ потолок памяти восстановления расшифровок
+  ✔ общее число поднятых записей не растёт с числом клиник (49.0695ms)
+  ✔ запись, не влезающая в бюджет фрагментов, не поднимается половиной и не теряет текст (25.5259ms)
+  ✔ символьный бюджет отказывает длинной записи и оставляет её в базе целой (11.1634ms)
+✔ потолок памяти восстановления расшифровок (146.7833ms)
+[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы: DrizzleQueryError: Failed query: 
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        "ai_jobs"."input_text" AS input_text,
+        "ai_jobs"."input_storage_path" AS input_storage_path,
+        "ai_jobs"."updated_at" AS updated_at,
+        row_number() OVER (
+          PARTITION BY "ai_jobs"."organization_id"
+          ORDER BY "ai_jobs"."updated_at" DESC
+        ) AS recording_rank
+      FROM "ai_jobs"
+      WHERE "ai_jobs"."kind" = $1
+        AND "ai_jobs"."input_storage_path" LIKE $2
+    ) ranked
+    WHERE ranked.recording_rank <= $3
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT $4
+  
+params: voice_transcription,speech-recording://%,80,160
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at async restoreSpeechTranscriptionChunks (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:941:20) {
+  query: '\n' +
+    '    SELECT input_text, input_storage_path\n' +
+    '    FROM (\n' +
+    '      SELECT\n' +
+    '        "ai_jobs"."input_text" AS input_text,\n' +
+    '        "ai_jobs"."input_storage_path" AS input_storage_path,\n' +
+    '        "ai_jobs"."updated_at" AS updated_at,\n' +
+    '        row_number() OVER (\n' +
+    '          PARTITION BY "ai_jobs"."organization_id"\n' +
+    '          ORDER BY "ai_jobs"."updated_at" DESC\n' +
+    '        ) AS recording_rank\n' +
+    '      FROM "ai_jobs"\n' +
+    '      WHERE "ai_jobs"."kind" = $1\n' +
+    '        AND "ai_jobs"."input_storage_path" LIKE $2\n' +
+    '    ) ranked\n' +
+    '    WHERE ranked.recording_rank <= $3\n' +
+    '    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC\n' +
+    '    LIMIT $4\n' +
+    '  ',
+  params: [ 'voice_transcription', 'speech-recording://%', 80, 160 ],
+  cause: Error: Cannot use a pool after calling end on the pool
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+}
+[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы: DrizzleQueryError: Failed query: 
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        "ai_jobs"."input_text" AS input_text,
+        "ai_jobs"."input_storage_path" AS input_storage_path,
+        "ai_jobs"."updated_at" AS updated_at,
+        row_number() OVER (
+          PARTITION BY "ai_jobs"."organization_id"
+          ORDER BY "ai_jobs"."updated_at" DESC
+        ) AS recording_rank
+      FROM "ai_jobs"
+      WHERE "ai_jobs"."kind" = $1
+        AND "ai_jobs"."input_storage_path" LIKE $2
+    ) ranked
+    WHERE ranked.recording_rank <= $3
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT $4
+  
+params: voice_transcription,speech-recording://%,80,160
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at async restoreSpeechTranscriptionChunks (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:941:20)
+    at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:88:7)
+    at async withEnv (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:66:5)
+    at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:85:5)
+    at async Test.run (node:internal/test_runner/test:1113:7)
+    at async Promise.all (index 0)
+    at async Suite.run (node:internal/test_runner/test:1518:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+  query: '\n' +
+    '    SELECT input_text, input_storage_path\n' +
+    '    FROM (\n' +
+    '      SELECT\n' +
+    '        "ai_jobs"."input_text" AS input_text,\n' +
+    '        "ai_jobs"."input_storage_path" AS input_storage_path,\n' +
+    '        "ai_jobs"."updated_at" AS updated_at,\n' +
+    '        row_number() OVER (\n' +
+    '          PARTITION BY "ai_jobs"."organization_id"\n' +
+    '          ORDER BY "ai_jobs"."updated_at" DESC\n' +
+    '        ) AS recording_rank\n' +
+    '      FROM "ai_jobs"\n' +
+    '      WHERE "ai_jobs"."kind" = $1\n' +
+    '        AND "ai_jobs"."input_storage_path" LIKE $2\n' +
+    '    ) ranked\n' +
+    '    WHERE ranked.recording_rank <= $3\n' +
+    '    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC\n' +
+    '    LIMIT $4\n' +
+    '  ',
+  params: [ 'voice_transcription', 'speech-recording://%', 80, 160 ],
+  cause: Error: Cannot use a pool after calling end on the pool
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+}
+[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы: DrizzleQueryError: Failed query: 
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        "ai_jobs"."input_text" AS input_text,
+        "ai_jobs"."input_storage_path" AS input_storage_path,
+        "ai_jobs"."updated_at" AS updated_at,
+        row_number() OVER (
+          PARTITION BY "ai_jobs"."organization_id"
+          ORDER BY "ai_jobs"."updated_at" DESC
+        ) AS recording_rank
+      FROM "ai_jobs"
+      WHERE "ai_jobs"."kind" = $1
+        AND "ai_jobs"."input_storage_path" LIKE $2
+    ) ranked
+    WHERE ranked.recording_rank <= $3
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT $4
+  
+params: voice_transcription,speech-recording://%,80,160
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at async restoreSpeechTranscriptionChunks (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:941:20)
+    at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:95:7)
+    at async withEnv (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:66:5)
+    at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:85:5)
+    at async Test.run (node:internal/test_runner/test:1113:7)
+    at async Promise.all (index 0)
+    at async Suite.run (node:internal/test_runner/test:1518:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+  query: '\n' +
+    '    SELECT input_text, input_storage_path\n' +
+    '    FROM (\n' +
+    '      SELECT\n' +
+    '        "ai_jobs"."input_text" AS input_text,\n' +
+    '        "ai_jobs"."input_storage_path" AS input_storage_path,\n' +
+    '        "ai_jobs"."updated_at" AS updated_at,\n' +
+    '        row_number() OVER (\n' +
+    '          PARTITION BY "ai_jobs"."organization_id"\n' +
+    '          ORDER BY "ai_jobs"."updated_at" DESC\n' +
+    '        ) AS recording_rank\n' +
+    '      FROM "ai_jobs"\n' +
+    '      WHERE "ai_jobs"."kind" = $1\n' +
+    '        AND "ai_jobs"."input_storage_path" LIKE $2\n' +
+    '    ) ranked\n' +
+    '    WHERE ranked.recording_rank <= $3\n' +
+    '    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC\n' +
+    '    LIMIT $4\n' +
+    '  ',
+  params: [ 'voice_transcription', 'speech-recording://%', 80, 160 ],
+  cause: Error: Cannot use a pool after calling end on the pool
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+}
+[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы: DrizzleQueryError: Failed query: 
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        "ai_jobs"."input_text" AS input_text,
+        "ai_jobs"."input_storage_path" AS input_storage_path,
+        "ai_jobs"."updated_at" AS updated_at,
+        row_number() OVER (
+          PARTITION BY "ai_jobs"."organization_id"
+          ORDER BY "ai_jobs"."updated_at" DESC
+        ) AS recording_rank
+      FROM "ai_jobs"
+      WHERE "ai_jobs"."kind" = $1
+        AND "ai_jobs"."input_storage_path" LIKE $2
+    ) ranked
+    WHERE ranked.recording_rank <= $3
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT $4
+  
+params: voice_transcription,speech-recording://%,80,160
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at async restoreSpeechTranscriptionChunks (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:941:20)
+    at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:108:7)
+    at async withEnv (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:66:5)
+    at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:105:5)
+    at async Test.run (node:internal/test_runner/test:1113:7)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+  query: '\n' +
+    '    SELECT input_text, input_storage_path\n' +
+    '    FROM (\n' +
+    '      SELECT\n' +
+    '        "ai_jobs"."input_text" AS input_text,\n' +
+    '        "ai_jobs"."input_storage_path" AS input_storage_path,\n' +
+    '        "ai_jobs"."updated_at" AS updated_at,\n' +
+    '        row_number() OVER (\n' +
+    '          PARTITION BY "ai_jobs"."organization_id"\n' +
+    '          ORDER BY "ai_jobs"."updated_at" DESC\n' +
+    '        ) AS recording_rank\n' +
+    '      FROM "ai_jobs"\n' +
+    '      WHERE "ai_jobs"."kind" = $1\n' +
+    '        AND "ai_jobs"."input_storage_path" LIKE $2\n' +
+    '    ) ranked\n' +
+    '    WHERE ranked.recording_rank <= $3\n' +
+    '    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC\n' +
+    '    LIMIT $4\n' +
+    '  ',
+  params: [ 'voice_transcription', 'speech-recording://%', 80, 160 ],
+  cause: Error: Cannot use a pool after calling end on the pool
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+}
+[SpeechStorage] Не удалось восстановить расшифровки диктовки из базы: DrizzleQueryError: Failed query: 
+    SELECT input_text, input_storage_path
+    FROM (
+      SELECT
+        "ai_jobs"."input_text" AS input_text,
+        "ai_jobs"."input_storage_path" AS input_storage_path,
+        "ai_jobs"."updated_at" AS updated_at,
+        row_number() OVER (
+          PARTITION BY "ai_jobs"."organization_id"
+          ORDER BY "ai_jobs"."updated_at" DESC
+        ) AS recording_rank
+      FROM "ai_jobs"
+      WHERE "ai_jobs"."kind" = $1
+        AND "ai_jobs"."input_storage_path" LIKE $2
+    ) ranked
+    WHERE ranked.recording_rank <= $3
+    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC
+    LIMIT $4
+  
+params: voice_transcription,speech-recording://%,80,160
+    at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+    at async restoreSpeechTranscriptionChunks (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:941:20)
+    at async recordSpeechTranscriptionChunk (C:\Clinic_MVP\dental-crm\apps\api\src\speech\storage.ts:1074:3)
+    at async waitForActual (node:assert:646:5)
+    at async ok.rejects (node:assert:769:25)
+    at async <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:134:7)
+    at async withEnv (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:66:5)
+    at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\storageRestoreRetry.test.ts:130:5)
+    at async Test.run (node:internal/test_runner/test:1113:7)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+  query: '\n' +
+    '    SELECT input_text, input_storage_path\n' +
+    '    FROM (\n' +
+    '      SELECT\n' +
+    '        "ai_jobs"."input_text" AS input_text,\n' +
+    '        "ai_jobs"."input_storage_path" AS input_storage_path,\n' +
+    '        "ai_jobs"."updated_at" AS updated_at,\n' +
+    '        row_number() OVER (\n' +
+    '          PARTITION BY "ai_jobs"."organization_id"\n' +
+    '          ORDER BY "ai_jobs"."updated_at" DESC\n' +
+    '        ) AS recording_rank\n' +
+    '      FROM "ai_jobs"\n' +
+    '      WHERE "ai_jobs"."kind" = $1\n' +
+    '        AND "ai_jobs"."input_storage_path" LIKE $2\n' +
+    '    ) ranked\n' +
+    '    WHERE ranked.recording_rank <= $3\n' +
+    '    ORDER BY ranked.recording_rank ASC, ranked.updated_at DESC\n' +
+    '    LIMIT $4\n' +
+    '  ',
+  params: [ 'voice_transcription', 'speech-recording://%', 80, 160 ],
+  cause: Error: Cannot use a pool after calling end on the pool
+      at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+      at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+}
+▶ расшифровки диктовки при недоступной PostgreSQL
+  ✔ провал восстановления не запоминается навсегда: следующая проверка пробует снова (39.6506ms)
+  ✔ выдержка после провала не даёт бомбить упавшую базу на каждом фрагменте (1.9462ms)
+  ✔ при недоступной базе фрагмент отклоняется, а не копится в памяти (4.6431ms)
+✔ расшифровки диктовки при недоступной PostgreSQL (47.4799ms)
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[SSH Tunnel] Invalid SSH_HOST or SSH_KEY_PATH. Cannot start tunnel.
+[SSH Tunnel] Invalid SSH_HOST or SSH_KEY_PATH. Cannot start tunnel.
+[SSH Tunnel] SSH key not found at missing-key. Cannot start tunnel.
+[SSH Tunnel] Tunnel process spawned but port 1080 is still closed.
+[SSH Tunnel] Failed to launch SSH tunnel: Error: spawn failed
+    at Object.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\tunnel.test.ts:163:13)
+    at Object.apply (node:internal/test_runner/mock/mock:757:20)
+    at ensureSshTunnel (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tunnel.ts:69:24)
+    at async TestContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\speech\tests\tunnel.test.ts:166:17)
+    at async Test.run (node:internal/test_runner/test:1113:7)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+▶ tunnel
+  ✔ should fail if env variables not set (3.301ms)
+  ✔ should fail if invalid env variables (starts with -) (1.3096ms)
+  ✔ should return true if port is already open (1.4219ms)
+  ✔ should fail if SSH key not found (1.4749ms)
+  ✔ should return true if tunnel launched successfully and port opens (1.5519ms)
+  ✔ should return false if tunnel spawned but port remains closed (1.2155ms)
+  ✔ should return false if spawn throws error (34.2214ms)
+  ✔ should ignore errors during stopSshTunnel (2.3792ms)
+✔ tunnel (48.9331ms)
+▶ ensureSshTunnel
+  ✔ should catch and log error if child_process.spawn throws (7.8392ms)
+✔ ensureSshTunnel (8.0883ms)
+▶ safeDenteTelegramPublicHttpsUrl
+  ✔ returns valid URL string for a valid https URL (1.2293ms)
+  ✔ returns null for an invalid URL string (0.2479ms)
+  ✔ returns null for a non-https URL (0.1927ms)
+  ✔ returns null for empty string or null/undefined (0.139ms)
+  ✔ returns null for URL with username/password (0.1296ms)
+✔ safeDenteTelegramPublicHttpsUrl (3.1885ms)
+▶ accessGuard
+  ▶ configuredClinicalAccessSecret
+    ✔ returns trimmed secret when set (1.8625ms)
+    ✔ returns null when not set (0.5503ms)
+    ✔ returns null when empty (0.5272ms)
+  ✔ configuredClinicalAccessSecret (3.8569ms)
+  ▶ configuredClinicalMutationSecret
+    ✔ returns trimmed secret when set (0.4381ms)
+    ✔ returns null when not set (0.3912ms)
+    ✔ returns null when empty (0.2568ms)
+  ✔ configuredClinicalMutationSecret (1.3355ms)
+  ▶ requireClinicalMutationAccess
+    ✔ missing admin secret and guarded -> 503 (1.5299ms)
+    ✔ missing admin secret, but unguarded allowed in test -> true (0.363ms)
+    ✔ missing admin secret, unguarded allowed but env is production -> 503 (0.2745ms)
+    ✔ secret configured, missing header -> 403 (0.4102ms)
+    ✔ secret configured, incorrect header -> 403 (0.3946ms)
+    ✔ secret configured, correct header -> true (1.7541ms)
+    ✔ secret configured with spaces, correct header -> true (0.3229ms)
+    ✔ secret configured, array header -> true (0.236ms)
+  ✔ requireClinicalMutationAccess (5.7448ms)
+  ▶ requireClinicalReadAccess
+    ✔ missing admin secret and guarded -> 503 (0.4233ms)
+    ✔ missing admin secret, but unguarded allowed in test -> true (0.2204ms)
+    ✔ missing admin secret, unguarded allowed but env is production -> 503 (0.2442ms)
+    ✔ secret configured, missing header -> 403 (0.2511ms)
+    ✔ secret configured, incorrect header -> 403 (0.2796ms)
+    ✔ secret configured, correct header -> true (0.2396ms)
+  ✔ requireClinicalReadAccess (1.861ms)
+✔ accessGuard (13.5972ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код входа в портал пишется в лог сервера, пока у клиники не настроена отправка SMS. В production все они выключены автоматически.
+(node:23560) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[migration worker] запущен, идентификатор DESKTOP-RAR7JQB#23560
+{"level":30,"time":1785212462213,"pid":23560,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/ai/visit-note-draft","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+▶ AI Routes
+  ✔ POST /api/ai/visit-note-draft returns 400 on validation error (425.9535ms)
+✔ AI Routes (426.6315ms)
+{"level":30,"time":1785212462219,"pid":23560,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":400},"responseTime":5.223300009965897,"msg":"request completed"}
+[migration worker] запущен, идентификатор DESKTOP-RAR7JQB#23560
+{"level":30,"time":1785212462267,"pid":23560,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/ai/visit-note-draft","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212462272,"pid":23560,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":404},"responseTime":5.179199993610382,"msg":"request completed"}
+▶ AI Routes Integration
+  ▶ POST /api/ai/visit-note-draft
+    ✔ handles missing patient (404) (52.1367ms)
+  ✔ POST /api/ai/visit-note-draft (52.3456ms)
+✔ AI Routes Integration (52.4631ms)
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: fetch failed
+[AI Draft Cascade] Модель gemini-2.5-flash (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель gemini-3-flash (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель gemini-3.1-flash-lite (gemini) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель llama-3.3-70b-versatile (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель meta-llama/llama-4-scout-17b-16e-instruct (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель qwen/qwen3-32b (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель openai/gpt-oss-120b (groq) завершилась ошибкой: fetch failed
+[AI Draft Cascade] Модель llama-3.1-8b-instant (groq) завершилась ошибкой: fetch failed
+▶ buildVisitDraftFromTranscript
+  ✔ falls back to rule-based parser on AI JSON parsing error (71.007ms)
+✔ buildVisitDraftFromTranscript (71.1994ms)
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ИИ-генератор черновика вернул пустой или некорректный ответ.
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ИИ-генератор черновика вернул ответ не в формате JSON.
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[Speech Fetch] Direct connection failed (fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: fetch failed
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+▶ buildVisitDraftFromTranscript AI Errors
+  ✔ falls back to rule-based parser when AI returns empty/non-string content (52.5451ms)
+  ✔ falls back to rule-based parser when AI returns invalid JSON (30.4149ms)
+  ✔ falls back to rule-based parser on fetch network error (3.6203ms)
+  ✔ falls back to rule-based parser when AI returns invalid JSON even inside curly braces (3.1908ms)
+  ✔ successfully parses JSON wrapped in markdown using fallback regex (1.9831ms)
+✔ buildVisitDraftFromTranscript AI Errors (93.2928ms)
+[Speech Fetch] Direct connection failed (Draft fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Draft Primary Fallback Triggered] Сбой основного провайдера: Draft fetch failed
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера gemini
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[AI Draft Cascade] Нет доступных ключей для провайдера groq
+[Speech Fetch] Direct connection failed (Plan fetch failed). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+[AI Plan Personalize Primary Failed]: Plan fetch failed
+[AI Plan Personalize]: All providers failed, returning rule-based fallback.
+▶ runVisitFlow Orchestrator
+  ✔ runVisitFlow - happy path (48.0194ms)
+  ✔ runVisitFlow - draft fallback creates warnings but continues (33.5559ms)
+  ✔ runVisitFlow - plan and recs use fallback on error (2.9737ms)
+  ✔ runVisitFlow - skipped plan and recs when disabled (2.3638ms)
+  ✔ runVisitFlow - generates documents correctly (2.9011ms)
+✔ runVisitFlow Orchestrator (91.3094ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код входа в портал пишется в лог сервера, пока у клиники не настроена отправка SMS. В production все они выключены автоматически.
+(node:7364) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[migration worker] запущен, идентификатор DESKTOP-RAR7JQB#7364
+{"level":30,"time":1785212462399,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212462626,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-1","res":{"statusCode":401},"responseTime":226.5484999716282,"msg":"request completed"}
+{"level":30,"time":1785212462627,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-2","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212462842,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-2","res":{"statusCode":401},"responseTime":214.75760000944138,"msg":"request completed"}
+{"level":30,"time":1785212462842,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-3","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212463060,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-3","res":{"statusCode":401},"responseTime":217.68950000405312,"msg":"request completed"}
+{"level":30,"time":1785212463060,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-4","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212463274,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-4","res":{"statusCode":401},"responseTime":214.4539000093937,"msg":"request completed"}
+{"level":30,"time":1785212463275,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-5","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212463489,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-5","res":{"statusCode":401},"responseTime":214.54490000009537,"msg":"request completed"}
+✔ auth routes rate limiting - clinic login (1499.7624ms)
+{"level":30,"time":1785212463490,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-6","req":{"method":"POST","url":"/api/auth/clinic/login","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1785212463490,"pid":7364,"hostname":"DESKTOP-RAR7JQB","reqId":"req-6","res":{"statusCode":429},"responseTime":0.20600000023841858,"msg":"request completed"}
+▶ состояние автоматической отправки
+  ✔ выключено: сказано, что сообщения копятся, и как их отправить (0.7294ms)
+  ✔ включено: назван интервал, с которым разбирается очередь (0.2317ms)
+  ✔ значения вне допустимых границ не принимаются молча (0.132ms)
+  ✔ признак включения читается по-человечески, а не только как «1» (0.1662ms)
+✔ состояние автоматической отправки (2.1142ms)
+▶ getClinicalRules
+  ✔ should return an empty array if no rules exist (2.7933ms)
+  ✔ should parse arrays correctly from json strings (1.0515ms)
+✔ getClinicalRules (5.2814ms)
+[patientsQuery] Не удалось прочитать список пациентов из базы: Error: сбой соединения с базой
+    at <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\db\patientsQuery.test.ts:30:17)
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+[patientsQuery] Не удалось создать пациента в базе: Error: сбой соединения с базой
+    at <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\db\patientsQuery.test.ts:30:17)
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+[patientsQuery] Не удалось обновить пациента в базе: Error: сбой соединения с базой
+    at <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\db\patientsQuery.test.ts:30:17)
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+[patientsQuery] Не удалось обновить профиль пациента в базе: Error: сбой соединения с базой
+    at <anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\db\patientsQuery.test.ts:30:17)
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+▶ patientsQuery: сбой базы не подменяется памятью
+  ✔ getPatientsFromDb передаёт ошибку наружу, а не отдаёт массив-образец (4.9165ms)
+  ✔ createPatientInDb передаёт ошибку наружу, а не выдаёт несуществующий идентификатор (1.1286ms)
+  ✔ updatePatientInDb передаёт ошибку наружу, а не отвечает успехом (1.2036ms)
+  ✔ updatePatientAdministrativeProfileInDb передаёт ошибку наружу (1.1248ms)
+  ✔ контроль: при исправной базе список пациентов возвращается как есть (2.478ms)
+  ✔ контроль: обновление возвращает изменённую строку, когда база отвечает (1.0417ms)
+  ✔ обновление чужой карточки возвращает null: строка не найдена в своей организации (0.6399ms)
+✔ patientsQuery: сбой базы не подменяется памятью (14.0299ms)
+✔ строка без отметок времени называет пациента и поле, а не роняет map (0.292ms)
+✔ отметку времени принимает и строкой, и объектом Date (0.4742ms)
+✔ тихие часы через полночь считаются правильно (1.4901ms)
+✔ окно нулевой длины означает отсутствие тихих часов (0.2408ms)
+✔ ожидание до конца тихих часов (0.2682ms)
+✔ время считается в часовом поясе клиники, а не сервера (22.9933ms)
+✔ неизвестный часовой пояс не роняет рассылку (0.5605ms)
+✔ сервисное сообщение в тихие часы откладывается, а не отменяется (0.5393ms)
+✔ рекламное сообщение в тихие часы не отправляется вовсе (0.4264ms)
+✔ днём отправляются оба вида сообщений (0.4899ms)
+✔ сервисные сообщения допустимы по умолчанию, рекламные — нет (0.3014ms)
+✔ явный отказ перекрывает умолчание (0.3137ms)
+✔ согласие на рекламу по одному каналу не распространяется на другие (0.2094ms)
+✔ отказ от рекламы не блокирует сервисные сообщения (0.1439ms)
+✔ повторять имеет смысл только преходящие причины (0.159ms)
+✔ выдержка растёт экспоненциально и упирается в потолок (0.4259ms)
+✔ испорченный счётчик попыток не приводит к переполнению (0.1653ms)
+✔ разброс детерминирован, но различается между сообщениями (0.2862ms)
+✔ закончившиеся деньги ждут не меньше получаса (0.1244ms)
+✔ исчерпание попыток превращает повтор в окончательный отказ (0.214ms)
+✔ непреходящая ошибка не расходует попытки впустую (0.148ms)
+✔ ненастроенный канал помечается отдельно от отказа (0.1308ms)
+✔ преходящая ошибка при незакончившихся попытках даёт повтор (0.1377ms)
+▶ диспетчер: согласие и ответ на обращение
+  ✔ обычное служебное сообщение после отказа глушится по согласию (79.0468ms)
+  ✔ ответ на обращение пациента не глушится отозванным согласием (21.9221ms)
+✔ диспетчер: согласие и ответ на обращение (240.5413ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null for document kinds that do not require validation (1.2195ms)
+  ✔ requires payment selection for tax document if missing (0.2482ms)
+  ✔ detects duplicate selected payments (0.1559ms)
+  ✔ detects missing payments (0.1496ms)
+  ✔ detects payment for different patient (0.2247ms)
+  ✔ detects unpaid or zero amount payments (0.2218ms)
+  ✔ detects payment outside of tax year (0.2676ms)
+  ✔ detects payment with different payer INN (0.2619ms)
+  ✔ returns null for valid payment selection (0.4888ms)
+  ✔ returns null when tax_deduction_application has no payments but does not require them (0.2957ms)
+  ✔ validates payments for tax_deduction_application if provided (0.2695ms)
+✔ taxPaymentSelectionErrorForDocument (5.2905ms)
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null for non-tax document kinds (0.93ms)
+  ✔ returns error when no payments are selected for a tax document (0.4218ms)
+  ✔ returns error for duplicate selected payment IDs (0.2235ms)
+  ✔ returns error when a selected payment is not found (0.2093ms)
+  ✔ returns error when a selected payment belongs to a different patient (0.2533ms)
+  ✔ returns error when a selected payment is not paid (0.225ms)
+  ✔ returns error when a selected payment has zero amount (0.2014ms)
+  ✔ returns error when a selected payment is from a different tax year (0.3129ms)
+  ✔ returns error when a selected payment has a different taxpayer INN (0.4495ms)
+  ✔ returns null when all checks pass (0.2646ms)
+  ✔ returns null for tax_deduction_application when all checks pass (0.2266ms)
+✔ taxPaymentSelectionErrorForDocument (6.7178ms)
+▶ documentHasUnresolvedPlaceholders
+  ✔ returns false for empty string (1.2112ms)
+  ✔ returns false for html without placeholders (0.2491ms)
+  ✔ returns true for html with only opening placeholder marker (0.1737ms)
+  ✔ returns true for html with only closing placeholder marker (0.1854ms)
+  ✔ returns true for html with full placeholder marker (0.1821ms)
+  ✔ returns true for html with separated placeholder markers (0.1514ms)
+✔ documentHasUnresolvedPlaceholders (3.587ms)
+▶ generateDentalCdaXml
+  ✔ generates valid XML with full parameters (1.7093ms)
+  ✔ handles missing optional parameters correctly (0.3089ms)
+  ✔ handles 'other' or null gender code (0.1835ms)
+✔ generateDentalCdaXml (3.1507ms)
+✔ письмо проходит полный SMTP-диалог и принимается сервером (37.8149ms)
+✔ AUTH PLAIN передаёт логин и пароль через нулевой байт (5.7979ms)
+✔ при отсутствии AUTH PLAIN клиент переходит на AUTH LOGIN (3.7798ms)
+✔ отказ сервера классифицируется, а не превращается в исключение (3.5953ms)
+✔ неверный пароль даёт класс auth, а не network (3.8132ms)
+✔ без шифрования отправка отменяется, если requireTls включён (3.8189ms)
+✔ тело письма уходит в base64 и восстанавливается в исходный текст (4.4782ms)
+✔ кириллическая тема кодируется encoded-word (0.3797ms)
+✔ дата в заголовке соответствует RFC 5322 (0.1889ms)
+✔ строка с точкой в начале экранируется (0.328ms)
+✔ заголовки не принимают перевод строки (0.285ms)
+✔ адрес получателя проверяется до соединения (0.2103ms)
+✔ проверка адреса отсекает мусор (0.0922ms)
+✔ частично заполненное окружение считается ненастроенным (0.2455ms)
+✔ значения перечислений базы не теряются в контракте (1.5936ms)
+✔ каждая пара перечислений непуста — проверка не выродилась (0.3023ms)
+✔ канал связи содержит vk и max — из-за их отсутствия терялась переписка (0.144ms)
+▶ loadServerEnv
+  ▶ getLoadedServerEnvFiles
+    ✔ should return an array of strings without duplicates (9.1996ms)
+    ✔ should handle read errors gracefully without throwing (4.5383ms)
+  ✔ getLoadedServerEnvFiles (14.6475ms)
+✔ loadServerEnv (15.0936ms)
+✔ parseImagingManifest - handles empty text (2.2438ms)
+✔ parseImagingManifest - handles text with only empty lines (0.3397ms)
+▶ распознавание отказа от сообщений
+  ✔ однословный «стоп» в любом регистре и с точкой (2.0078ms)
+  ✔ короткая команда со стоп-словом впереди (0.1827ms)
+  ✔ многословные выражения отказа (0.1594ms)
+  ✔ вопрос со словом «стоп» отказом не считается (0.1704ms)
+  ✔ «старт» возвращает к рассылке (0.1805ms)
+  ✔ «ё» и «е» распознаются одинаково (0.1509ms)
+  ✔ пустое сообщение ничего не значит (0.1227ms)
+  ✔ подтверждение отписки называет способ вернуться (0.2493ms)
+✔ распознавание отказа от сообщений (4.3176ms)
+▶ разбор входящих сообщений
+  ✔ «СТОП» от известного пациента отзывает согласие по каналу (30.704ms)
+  ✔ после «СТОП» пациенту уходит подтверждение, а не тишина (16.1343ms)
+  ✔ повторный разбор того же события не удваивает подтверждение (24.8408ms)
+  ✔ «СТАРТ» возвращает только сервисные сообщения, но не рекламу (12.9293ms)
+  ✔ обычное сообщение попадает в переписку без изменения согласий (7.5842ms)
+  ✔ незнакомый номер становится лидом, а не карточкой пациента (9.6423ms)
+  ✔ номер, подходящий двум карточкам, не сопоставляется наугад (7.6209ms)
+  ✔ событие без текста закрывается без записи в переписку (4.8476ms)
+  ✔ повторный прогон не разбирает уже обработанное (1.6543ms)
+✔ разбор входящих сообщений (238.9275ms)
+▶ documentExtractor
+  ▶ extractDocument
+    ✔ extracts plain text provided via rawText (5.1432ms)
+    ✔ extracts simple text file provided via fileBase64 (1.2769ms)
+    ✔ handles JSON known format (0.6478ms)
+    ✔ handles PDF format (2.985ms)
+    ✔ handles image format (4.4487ms)
+    ✔ handles legacy database format (1.552ms)
+    ✔ truncates large text strings (3.0566ms)
+    ✔ decodes unknown format as text (0.7039ms)
+  ✔ extractDocument (21.2521ms)
+✔ documentExtractor (21.8203ms)
+[Speech Fetch] Direct connection failed (Network failure). Attempting SOCKS5 SSH Tunnel fallback...
+[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.
+▶ fetchWithProviderTimeout
+  ✔ returns successful response (5.9529ms)
+  ✔ throws SpeechProviderRequestError on AbortError timeout (1.0862ms)
+  ✔ re-throws generic errors without wrapping (1.3405ms)
+✔ fetchWithProviderTimeout (9.7214ms)
+▶ sanitizeProviderErrorMessage
+  ✔ redacts Bearer tokens (0.6728ms)
+  ✔ redacts Token tokens (0.2357ms)
+  ✔ redacts Authorization headers (0.2976ms)
+  ✔ redacts query parameters (api_key, token, access_token) (0.2748ms)
+  ✔ redacts secrets, passwords in key=value formats (0.2697ms)
+  ✔ redacts OpenAI-like keys (sk-...) (0.2008ms)
+  ✔ redacts long generic tokens (48+ characters) (0.2234ms)
+  ✔ truncates the message to 240 characters (0.1122ms)
+✔ sanitizeProviderErrorMessage (2.8984ms)
+▶ адрес получателя в MAX
+  ✔ голое число — это чат, потому что метку оставляет разбор входящих (2.0395ms)
+  ✔ префикс user: адресует пользователя, а не чат (0.4129ms)
+  ✔ телефон и почта адресом не считаются (0.3953ms)
+✔ адрес получателя в MAX (4.1973ms)
+▶ отправка в MAX
+  ✔ получатель уходит в строку запроса, токен — в заголовок (1.2211ms)
+  ✔ идентификатор сообщения читается, а при незнакомой форме — null (0.6423ms)
+  ✔ коды ответа различаются по тому, имеет ли смысл повтор (0.9075ms)
+  ✔ текст сервера сохраняется, а не заменяется своей фразой (0.4172ms)
+  ✔ слишком длинный текст отсекается до запроса, а не после (0.3269ms)
+✔ отправка в MAX (4.0136ms)
+  ДО (DENTAL_STATE_FLUSH_DELAY_MS=0): 20 действий -> 20 записей, 725 680 Б
+▶ слияние записей снимка состояния
+  ✔ ДО: синхронный режим повторяет полную запись на каждое действие (98.7389ms)
+  ПОСЛЕ (окно 60 мс): 20 действий -> 1 запись, 36 284 Б
+  ✔ ПОСЛЕ: 20 действий подряд дают ОДНУ запись, и ни одной до ответа клиенту (212.4742ms)
+  ✔ слияние не теряет последнее изменение (212.9549ms)
+  поток: 25 действий за ~250 мс -> 7 записей (окно 50 мс)
+  ✔ непрерывный поток изменений не откладывает запись бесконечно (564.6948ms)
+  ✔ разные места вызова сливаются в одну запись, а не в запись на каждое (202.3375ms)
+  ✔ flushPersistentStateNow дописывает отложенное и не пишет повторно (4.0826ms)
+  ✔ мусор в DENTAL_STATE_FLUSH_DELAY_MS не превращается в синхронную запись (3.346ms)
+✔ слияние записей снимка состояния (1306.0376ms)
+✔ слой доступа к данным не создаёт таблицы во время запроса (3.8426ms)
+✔ слой доступа к данным не подменяет результат выдуманными строками (2.9577ms)
+✔ слой доступа к данным не глушит ошибки базы через console.warn (4.3539ms)
+▶ registerMoneyTypeParsers
+  ✔ до включения numeric приходит строкой — это и есть источник склейки (1.0397ms)
+  ✔ после включения numeric приходит числом (0.4625ms)
+  ✔ копейки сохраняются точно (0.4243ms)
+  ✔ суммы теперь складываются как числа, а не склеиваются (0.223ms)
+  ✔ сравнение сумм перестаёт быть текстовым (0.2541ms)
+  ✔ пустое значение остаётся пустым, а не превращается в ноль (0.1652ms)
+  ✔ значение вне точного диапазона числа отдаётся строкой, а не округляется молча (0.2048ms)
+  ✔ включение повторно ничего не ломает (0.1599ms)
+✔ registerMoneyTypeParsers (4.1722ms)
+✔ неизвестная роль не получает прав (fail closed) (2.0061ms)
+✔ владелец клиники может всё (0.6959ms)
+✔ врач не допущен к кассе и настройкам (0.339ms)
+✔ администратор ресепшена не правит медицинскую документацию (0.208ms)
+✔ ассистент ничего не решает (0.2302ms)
+✔ в ЕГИСЗ отправляет врач и владелец, но не ресепшен (0.2257ms)
+✔ регистр роли не влияет на решение (0.2087ms)
+✔ ни одна роль кроме владельца и админа не пишет настройки (0.312ms)
+✔ право на запись всегда подразумевает право на чтение того же раздела (0.3902ms)
+▶ loadPersistentState
+  ✔ returns null when persistence is disabled (4.8121ms)
+  ✔ returns null when state file does not exist (3.6944ms)
+  ✔ returns null when persistence is disabled (3.0086ms)
+  ✔ returns null when file is missing (2.8502ms)
+  ✔ returns null when file is unreadable (invalid json) (3.1048ms)
+  ✔ returns null when version mismatches (2.2726ms)
+  ✔ returns null when checksum mismatches (3.3356ms)
+  ✔ returns null when file system access throws an error (4.3403ms)
+  ✔ returns null when file contains invalid JSON (4.2444ms)
+  ✔ returns null when file has incorrect version (4.7594ms)
+  ✔ returns null when file has no state property (5.2211ms)
+  ✔ returns null and logs warning when checksum mismatch (4.9423ms)
+  ✔ returns parsed state when file is valid and checksum matches (5.0302ms)
+✔ loadPersistentState (53.3865ms)
+▶ getPersistentStateMeta
+  ✔ returns default meta when files do not exist and persistence is enabled (2.4959ms)
+  ✔ returns correctly populated meta when valid state and backups exist (19.1025ms)
+  ✔ returns disabled meta when persistence is disabled (2.3716ms)
+✔ getPersistentStateMeta (24.1775ms)
+▶ getPersistentStateIntegrityReport
+  ✔ reports missing file warning when state file does not exist (3.693ms)
+Dental state file ignored: checksum mismatch
+  ✔ returns ok report for valid state file with no backups (18.482ms)
+Dental state file ignored: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+  ✔ returns warning for state file checksum mismatch (8.6759ms)
+  ✔ returns warning when state file is unreadable (invalid json) (6.8427ms)
+  ✔ returns ok report with valid backups (7.363ms)
+  ✔ returns null for stateFileHash when fs.promises.readFile throws an error (e.g. EACCES) (5.7542ms)
+  ✔ returns warning for backup checksum mismatch (11.1204ms)
+✔ getPersistentStateIntegrityReport (62.6282ms)
+▶ savePersistentState
+  ✔ does nothing if persistence is disabled (2.9367ms)
+  ✔ saves state to file with checksum (5.124ms)
+  ✔ rotates backup if file already exists (7.7387ms)
+  ✔ catches errors and logs a warning (3.9994ms)
+✔ savePersistentState (20.1372ms)
+▶ buildPersistentStateExport
+  ✔ happy path - builds export with valid state file (11.2158ms)
+  ✔ error path - file missing (2.1872ms)
+  ✔ error path - invalid JSON (6.4751ms)
+✔ buildPersistentStateExport (21.0431ms)
+▶ repairMojibakeText
+  ✔ returns normal ascii strings unchanged (0.596ms)
+  ✔ returns normal cyrillic strings unchanged (0.1425ms)
+  ✔ repairs fully mangled cyrillic mojibake (0.2289ms)
+  ✔ repairs token-mixed strings with mojibake (0.0991ms)
+  ✔ repairs various common mojibake strings (0.1364ms)
+  ✔ gracefully handles likely mojibake that cannot be decoded (0.0882ms)
+✔ repairMojibakeText (2.0208ms)
+▶ repairMojibakeDeep
+  ✔ repairs deep mojibake correctly (0.7886ms)
+  ✔ does not modify non-string primitive values (0.1394ms)
+✔ repairMojibakeDeep (1.0686ms)
+▶ область действия preHandler у маршрутного модуля
+  ✔ прямой вызов с корневым экземпляром распространяет хук на чужие маршруты (258.6609ms)
+  ✔ регистрация через app.register удерживает хук внутри модуля (4.8909ms)
+✔ область действия preHandler у маршрутного модуля (264.5869ms)
+▶ проводка маршрутных модулей со своими хуками
+  ✔ каждый модуль со своим хуком регистрируется через app.register (12.6815ms)
+✔ проводка маршрутных модулей со своими хуками (12.851ms)
+✔ каждый модуль маршрутов импортируется в server.ts (19.0399ms)
+✔ каждый импортированный модуль маршрутов ещё и вызывается (4.2603ms)
+▶ код ссылки на приём
+  ✔ алфавит кода не содержит похожих знаков (2.3228ms)
+  ✔ коды не повторяются (1.1287ms)
+  ✔ срок жизни считается от начала приёма с запасом (1.3579ms)
+  ✔ публичный адрес берётся только из настройки и без пути (0.3819ms)
+  ✔ короткая ссылка втрое дешевле подписанного токена в SMS (0.5543ms)
+  ✔ Fastify пропускает параметр такой длины (271.2214ms)
+✔ код ссылки на приём (278.4597ms)
+▶ страница подтверждения приёма
+  ✔ без публичного адреса ссылки не выдаются (0.3174ms)
+  ✔ подтверждение переводит приём в confirmed и показывает страницу (25.4614ms)
+  ✔ повторное нажатие не считается ошибкой (5.6053ms)
+  ✔ повторная выдача возвращает тот же код (4.9274ms)
+  ✔ прошедший приём подтвердить нельзя, и об этом сказано понятно (6.2485ms)
+  ✔ просроченный код не срабатывает (5.9226ms)
+  ✔ неизвестный и просроченный код отвечают одинаково (1.9394ms)
+  ✔ мусор вместо кода не доходит до базы (0.305ms)
+[reminders] снято напоминаний: 1, приём dce70000-0000-4000-8000-000000000606, причина: Приём отменён пациентом по ссылке
+  ✔ отмена освобождает слот, снимает напоминание и ставит задачу администратору (17.2366ms)
+  ✔ повторная отмена не создаёт вторую задачу (5.5885ms)
+  ✔ переход по ссылке отмечается временем (0.7078ms)
+✔ страница подтверждения приёма (137.9295ms)
+[reminders] снято напоминаний: 2, приём dce70000-0000-4000-8000-000000000611, причина: перенос в тесте
+▶ снятие устаревших напоминаний
+  ✔ снимаются только неотправленные напоминания этого приёма (4.2534ms)
+  ✔ повторный вызов ничего не ломает (1.3246ms)
+✔ снятие устаревших напоминаний (17.8224ms)
+▶ автоматические напоминания о приёме
+  ✔ обращение к пациенту по имени и отчеству (0.7585ms)
+  ✔ врач называется фамилией с инициалами (0.2286ms)
+  ✔ напоминания нельзя включить без шаблона (28.5055ms)
+  ✔ после создания шаблона напоминания включаются (11.8019ms)
+  ✔ приём в окне порождает ровно одно напоминание (26.9401ms)
+  ✔ повторный запуск планировщика не создаёт второе напоминание (9.2545ms)
+  ✔ отменённый приём напоминания не получает (6.932ms)
+  ✔ отказ пациента отменяет напоминание по этому каналу (8.4923ms)
+  ✔ приём вне окна не трогается (4.3177ms)
+  ✔ ручной запуск доступен через маршрут (10.1143ms)
+✔ автоматические напоминания о приёме (542.0394ms)
+▶ clinical routes integration
+  ✔ POST /api/clinical/rules/evaluate validates input (236.8493ms)
+  ✔ POST /api/clinical/rules/evaluate требует организацию (18.337ms)
+  ✔ POST /api/clinical/rules/evaluate игнорирует заголовок организации без DENTE_DEV_ALLOW_HEADER_ORG (7.0088ms)
+  ✔ POST /api/clinical/rules/evaluate succeeds (7.6311ms)
+  ✔ POST /api/clinical/rules validates input (6.0959ms)
+  ✔ POST /api/clinical/rules требует организацию (6.8063ms)
+  ✔ POST /api/clinical/rules succeeds (5.7469ms)
+  ✔ PATCH /api/clinical/rules/:ruleId validates input (6.2851ms)
+  ✔ PATCH /api/clinical/rules/:ruleId требует организацию (5.2084ms)
+  ✔ PATCH /api/clinical/rules/:ruleId succeeds (6.3702ms)
+✔ clinical routes integration (307.9377ms)
+▶ рассылки пациентам
+  ✔ стоимость SMS считается по сегментам, а не по числу получателей (0.9097ms)
+  ✔ рекламная рассылка отбирает только тех, кто дал согласие (4.7935ms)
+  ✔ сервисная рассылка не требует согласия по умолчанию (1.6445ms)
+  ✔ отбор «давно не были» опирается на завершённые приёмы (3.3115ms)
+  ✔ отбор «ни разу не были» исключает того, у кого приём есть (2.2322ms)
+  ✔ шаблон рассылки не принимает переменные конкретного приёма (25.8292ms)
+  ✔ рассылка создаётся на пригодном шаблоне (5.3237ms)
+  ✔ предпросмотр показывает отсев и стоимость до запуска (4.1838ms)
+  ✔ запуск ставит в очередь только получателей с согласием (8.3901ms)
+  ✔ идущая рассылка второй раз не запускается (1.8862ms)
+  ✔ ход рассылки содержит снимок аудитории на момент запуска (2.2456ms)
+  ✔ отмена снимает неотправленное с очереди (4.2036ms)
+  ✔ отменённую рассылку запустить нельзя (1.6656ms)
+  ✔ неизвестный признак отбора отклоняется (1.1061ms)
+  ✔ рассылка чужой организации не видна и не запускается (1.9052ms)
+✔ рассылки пациентам (467.0936ms)
+▶ маршруты сообщений пациентам
+  ✔ шаблон с опечаткой в переменной не сохраняется (25.3163ms)
+  ✔ медицинская переменная не проходит в канал без согласия (1.6113ms)
+  ✔ слишком длинная SMS отклоняется с указанием числа сегментов (1.5249ms)
+  ✔ корректный шаблон сохраняется вместе со списком переменных (4.5845ms)
+  ✔ предпросмотр подставляет примеры и считает сегменты (1.5387ms)
+  ✔ отправка по шаблону без значения переменной останавливается (3.1463ms)
+  ✔ сообщение с заполненными переменными встаёт в очередь (7.4177ms)
+  ✔ повторная постановка с тем же ключом не создаёт второе сообщение (5.0919ms)
+  ✔ ненастроенный шлюз даёт suppressed с причиной, а не «отправлено» (53.5631ms)
+  ✔ отказ пациента останавливает следующее сообщение (16.0837ms)
+  ✔ журнал показывает сводку по статусам (2.0929ms)
+  ✔ отправленное отменить нельзя, задержанное — можно повторить (2.857ms)
+  ✔ состояние шлюзов сообщает, что не настроено (3.0769ms)
+  ✔ настройки рассылки сохраняются и читаются (4.9745ms)
+  ✔ несогласованный интервал повторов отклоняется (2.2224ms)
+  ✔ сообщение чужой организации не видно в журнале (0.8508ms)
+✔ маршруты сообщений пациентам (423.3035ms)
+▶ границы дня в часовом поясе клиники
+  ✔ сутки начинаются по местному времени, а не по серверному (1.4903ms)
+  ✔ сутки длятся сутки (0.3043ms)
+  ✔ испорченная дата и неизвестный пояс не роняют разбор (0.16ms)
+✔ границы дня в часовом поясе клиники (2.6329ms)
+▶ список подтверждений на день
+  ✔ по умолчанию берётся завтрашний день в поясе клиники (29.0969ms)
+  ✔ звонить нужно только тем, до кого напоминание не дошло (4.707ms)
+  ✔ состояние напоминания и причина отказа видны в строке (4.4138ms)
+  ✔ нажатие ссылки видно отдельно от статуса записи (3.7348ms)
+  ✔ строки идут по времени приёма (3.9675ms)
+  ✔ день без приёмов помечен явно (1.7111ms)
+  ✔ испорченная дата отклоняется (0.8226ms)
+  ✔ данные чужой организации не видны (1.7463ms)
+✔ список подтверждений на день (313.2097ms)
+▶ разбор квитанций провайдеров
+  ✔ SMS.RU: несколько квитанций одним запросом (0.6665ms)
+  ✔ SMS.RU: идентификатор с дефисами не режется по первому знаку равенства (0.1045ms)
+  ✔ SMS.RU: незнакомый код не угадывается (0.119ms)
+  ✔ SMS.RU: мусор не превращается в квитанции (0.5463ms)
+  ✔ SMSC: доставка, отказ и ожидание различаются (0.1718ms)
+  ✔ WhatsApp: прочитано считается доставкой, а не отдельным исходом (0.1699ms)
+  ✔ WhatsApp: отказ объяснён человеческим текстом, а не кодом Meta (0.1001ms)
+  ✔ WhatsApp: окно 24 часов названо своими словами (0.0882ms)
+  ✔ WhatsApp: незнакомый код не выдумывает объяснение (0.1085ms)
+  ✔ WhatsApp: мусор и чужие поля не создают квитанций (0.1815ms)
+  ✔ SMSC: код ошибки попадает в текст квитанции (0.0941ms)
+  ✔ SMSC: без идентификатора или состояния квитанции нет (0.0601ms)
+✔ разбор квитанций провайдеров (3.2742ms)
+▶ применение квитанций к очереди
+  ✔ без секрета вызов отклоняется (17.9305ms)
+  ✔ неверный секрет отклоняется (0.915ms)
+  ✔ доставка переводит сообщение в delivered и ставит время (5.5086ms)
+  ✔ поздняя квитанция об ошибке не отменяет доставку (2.5977ms)
+  ✔ отменённое сообщение квитанция не оживляет (1.8882ms)
+  ✔ SMSC методом GET помечает недоставку (2.3603ms)
+  ✔ неизвестный идентификатор считается несопоставленным (1.1853ms)
+  ✔ пустой запрос не считается сбоем (0.5836ms)
+✔ применение квитанций к очереди (245.6156ms)
+▶ приём квитанций без настроенного секрета
+  ✔ обработчик отказывает, а не принимает вслепую (2.4966ms)
+✔ приём квитанций без настроенного секрета (2.5764ms)
+▶ церемония подписания дневника одинакова у POST и /lock
+  ✔ подпись через POST и через /lock дают одинаковое списание склада и одинаковый журнал (62.4077ms)
+  ✔ подпись через POST для визита без дневника тоже проводит церемонию (12.812ms)
+  ✔ печать считается по сохранённой строке, а не по телу запроса (12.2845ms)
+  ✔ пустая полка не даёт подписать приём и не восстанавливает остаток (9.0106ms)
+  ✔ повторная подпись подписанного дневника отклоняется на обоих маршрутах (15.7645ms)
+✔ церемония подписания дневника одинакова у POST и /lock (300.7031ms)
+▶ documentRequiresIssuedArchive
+  ✔ returns false for draft documents (0.3544ms)
+  ✔ returns true for issued documents (0.081ms)
+  ✔ returns false for voided documents without issuedAt (0.0721ms)
+  ✔ returns true for voided documents with issuedAt (0.0646ms)
+✔ documentRequiresIssuedArchive (1.1374ms)
+▶ documentHasIssuedArchiveMetadata
+  ✔ returns true when both sha256 and createdAt are present (0.1426ms)
+  ✔ returns false when sha256 is missing (0.0735ms)
+  ✔ returns false when createdAt is missing (0.0618ms)
+  ✔ returns false when both are missing (0.064ms)
+✔ documentHasIssuedArchiveMetadata (0.4992ms)
+▶ отчёты руководителю
+  ✔ в выручку идут только полученные деньги (18.3227ms)
+  ✔ детализация по месяцам сворачивает точки (1.9245ms)
+  ✔ по врачу считаются доли отмен и неявок, а маржа не выдумывается (3.3866ms)
+  ✔ платёж без приёма не размазывается по врачам, а называется отдельно (3.965ms)
+  ✔ занятость кресла считается в минутах и от названной базы (1.9653ms)
+  ✔ воронка приёмов даёт потери и доли (1.1584ms)
+  ✔ первичный считается по первому приёму за всю историю, а не в периоде (1.718ms)
+  ✔ услуги показывают назначенные суммы и оговаривают это (2.3645ms)
+  ✔ дебиторка считает долг как назначено минус оплачено (2.4433ms)
+  ✔ загрузка по дням недели и часам заполнена (1.525ms)
+  ✔ сводка собирает всё одним запросом (40.2493ms)
+  ✔ эффект напоминаний: малая выборка помечена, а не выдана за вывод (2.3833ms)
+  ✔ слишком широкий период отклоняется, а не обрезается молча (1.0789ms)
+  ✔ перевёрнутый период отклоняется (0.376ms)
+  ✔ данные чужой организации в отчёт не попадают (1.0127ms)
+✔ отчёты руководителю (270.5755ms)
+▶ нормализация имени
+  ✔ регистр, «ё» и лишние пробелы не мешают сравнению (0.6416ms)
+✔ нормализация имени (1.1988ms)
+▶ связи карточки пациента в базе
+  ✔ список ссылок берётся из каталога и не пуст (47.4893ms)
+✔ связи карточки пациента в базе (47.6656ms)
+▶ поиск и слияние дублей
+  ✔ настоящий дубль находится с высокой уверенностью (20.7646ms)
+  ✔ родственники на одном номере — не дубль, и это сказано словами (1.7039ms)
+  ✔ полные тёзки с разными датами рождения не предлагаются (1.6301ms)
+  ✔ «это разные люди» запоминается и пара исчезает из списка (6.581ms)
+  ✔ слияние переносит все записи и ничего не теряет (38.3729ms)
+  ✔ конфликт согласий разобран в пользу основной карточки (0.6904ms)
+  ✔ карточка не удалена, а стала архивной ссылкой (0.4886ms)
+  ✔ пустые поля основной карточки дозаполнены, заполненные не тронуты (0.4871ms)
+  ✔ повторное слияние той же карточки отклоняется (1.5089ms)
+  ✔ слияние карточки с самой собой отклоняется (0.8619ms)
+  ✔ карточка чужой организации не сливается (1.0869ms)
+  ✔ дубли конкретной карточки доступны отдельно (1.6392ms)
+✔ поиск и слияние дублей (248.9804ms)
+▶ возврат пациентов
+  ✔ зовут давних, не зовут недавних и уже записанных (27.0293ms)
+  ✔ приглашение ставится в очередь как реклама, а не как служебное сообщение (11.0519ms)
+  ✔ повторное приглашение в том же месяце не отправляется (6.0437ms)
+  ✔ канал, который не отправляется машиной, отклоняется с объяснением (1.0541ms)
+✔ возврат пациентов (336.6799ms)
+▶ одноразовый код входа в личный кабинет
+  ✔ «0000» больше не открывает чужую медкарту (112.636ms)
+  ✔ каждый запрос выдаёт новый код, а не общий секрет (97.8156ms)
+  ✔ код принимается ровно один раз (93.2236ms)
+  ✔ просроченный код не принимается (52.4783ms)
+  ✔ потолок попыток сжигает код: верный код после перебора уже не примут (268.4809ms)
+  ✔ в базе не лежит открытый код (47.6252ms)
+  ✔ ответ не выдаёт, есть ли такой пациент в клинике (50.6167ms)
+✖ одноразовый код входа в личный кабинет (1110.1724ms)
+▶ доступ к записи фрагмента диктовки
+  ✔ без учетных данных запись отклоняется, а не валидируется (19.0897ms)
+  ✔ пустое тело без токена отклоняется по авторизации, а не по схеме (1.1433ms)
+  ✔ с действующим токеном кабинета фрагмент сохраняется (19.994ms)
+  ✔ токен чужой клиники не пишет в карту пациента по patientId (1.6421ms)
+  ✔ токен чужой клиники не пишет в прием чужой клиники (1.4507ms)
+  ✔ булевый гейт чтения все еще пускает запрос без учетных данных (2.1618ms)
+  ✔ подделанный токен не пускает к записи (0.9787ms)
+✖ доступ к записи фрагмента диктовки (270.3959ms)
+▶ visits routes integration
+  ✔ PUT /api/visits/:visitId/draft/autosave handles "Визит не найден" (226.609ms)
+  ✔ sendVisitDraftMutationError: "Визит не найден" -> 404 visit_not_found (1.8059ms)
+  ✔ sendVisitDraftMutationError: закрытый прием при autosave -> 409 visit_closed (1.5083ms)
+  ✔ sendVisitDraftMutationError: закрытый прием при accept -> другое сообщение (1.3581ms)
+  ✔ sendVisitDraftMutationError: незнакомая ошибка -> 409 visit_draft_rejected (1.4488ms)
+  ✔ sendVisitDraftMutationError: не-Error тоже даёт 409, а не падение (1.2644ms)
+✔ visits routes integration (234.8523ms)
+▶ createClinicalRule
+  ✔ successfully creates a clinical rule (2.5142ms)
+  ✔ fails validation when blockedServiceIds is empty for block_service action (0.9369ms)
+  ✔ fails validation when requiredServiceIds is empty for add_required_service action (0.3877ms)
+✔ createClinicalRule (4.6068ms)
+▶ buildBillingSummary
+  ✔ should calculate zeros for empty state (0.9935ms)
+  ✔ should calculate totals for active plan items (0.3331ms)
+  ✔ should ignore cancelled items for total Planned Rub (0.2171ms)
+  ✔ should not include completed items in openTreatmentItems but include in totalPlannedRub (0.1225ms)
+  ✔ should calculate totalPaidRub for paid payments only (0.1949ms)
+  ✔ should calculate totalDueRub correctly (0.131ms)
+  ✔ should not have negative totalDueRub (0.1933ms)
+  ✔ should calculate draftDocumentAmountRub for draft documents only (0.159ms)
+  ✔ should calculate unpaidDocuments correctly (0.166ms)
+  ✔ should calculate taxDeductionEligibleRub from serviceCatalogMap (0.164ms)
+  ✔ should calculate taxDeductionEligibleRub from serviceCatalog array (0.172ms)
+✔ buildBillingSummary (3.2043ms)
+✔ секрет: production без AUTH_TOKEN_SECRET останавливает сервер (1.5438ms)
+✔ секрет: публичные демо-значения из репозитория запрещены (0.4475ms)
+✔ секрет: короткий секрет запрещён в production (0.229ms)
+✔ изоляция: заголовок x-organization-id не даёт доступ к чужой клинике (0.4069ms)
+✔ изоляция: dev-послабление по заголовку не работает в production (0.2527ms)
+✔ изоляция: валидный токен кабинета определяет организацию (0.6064ms)
+✔ изоляция: токен, подписанный старым публичным секретом, отвергается (0.3001ms)
+✔ изоляция: истёкший токен отвергается (0.2472ms)
+✔ изоляция: токен сотрудника другой клиники не наследует роль (0.312ms)
+✔ изоляция: requireOrganizationId отвечает 401 без токена (0.4752ms)
+✔ роли: врач не проходит проверку административной роли (0.553ms)
+✔ токены: подмена payload при сохранённой подписи отвергается (0.1372ms)
+✔ вебхуки: в production без настроенного секрета запрос отклоняется (0.3446ms)
+✔ вебхуки: неверный секрет отклоняется (0.2885ms)
+✔ вебхуки: верный секрет пропускается (0.2127ms)
+▶ непроверенная организация из заголовка не может изменять данные
+  ✔ живой сервер: клиническая запись по одному заголовку организации отклонена (33.0088ms)
+  ✔ живой сервер: POST-чтение по одному заголовку организации тоже отклонено (4.0932ms)
+  ✔ живой сервер: запрос вообще без заголовков получает обычный AuthRequired (2.6329ms)
+  ✔ живой сервер: подписанный токен кабинета по-прежнему пишет (5.6004ms)
+  ✔ живой сервер: чтение по заголовку организации остаётся рабочим (4.5531ms)
+  ✔ app.inject без слушающего порта: заголовок организации работает и на POST (17.771ms)
+✔ непроверенная организация из заголовка не может изменять данные (300.1263ms)
+[Watchdog] Local folder watcher disabled. X-Rays are now uploaded directly via the web interface (VisiographAnalyzer).
+[security] Режим разработки. Активные послабления: демо-вход, код входа в портал пишется в лог сервера, пока у клиники не настроена отправка SMS. В production все они выключены автоматически.
+(node:28180) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[migration worker] запущен, идентификатор DESKTOP-RAR7JQB#28180
+✔ createDenteApiApp - rejects insecure origins in production (319.7168ms)
+✔ SMS.RU: успешная отправка возвращает идентификатор сообщения (41.9937ms)
+✔ SMS.RU: отказ по конкретному номеру важнее общего OK (10.137ms)
+✔ SMS.RU: закончившиеся деньги отделены от прочих ошибок (4.5362ms)
+✔ SMS.RU: неверный ключ доступа — это auth, а не unknown (3.8351ms)
+✔ SMSC: успешная отправка возвращает идентификатор и число частей (4.5007ms)
+✔ SMSC: код ошибки классифицируется (5.6753ms)
+✔ ошибка HTTP не превращается в исключение (7.6974ms)
+✔ остаток на счету шлюза читается (3.9042ms)
+✔ пустой текст и неприведённый номер отсекаются до обращения к шлюзу (0.1778ms)
+✔ номера приводятся к международному формату (0.2055ms)
+✔ шлюз без ключей считается ненастроенным (0.1438ms)
+✔ адрес шлюза можно переопределить — для зеркал и прокси клиники (0.0843ms)
+✔ нормализация выкидывает разделители (0.6277ms)
+✔ принимает номера с верным контрольным числом (0.188ms)
+✔ отклоняет неверное контрольное число (0.1001ms)
+✔ отклоняет неверную длину и мусор (0.0736ms)
+✔ отклоняет номера из одинаковых цифр (0.081ms)
+✔ номера до 001-001-998 выданы без контрольного числа (0.0637ms)
+✔ сумма кратная 101 даёт контрольное число 0 (0.0774ms)
+✔ форматирование (0.0922ms)
+▶ updateDenteTelegramBotSettings - normalizeTelegramPublicHttpsUrl
+  ✔ throws invalid_url for an unparseable URL (0.8799ms)
+✔ updateDenteTelegramBotSettings - normalizeTelegramPublicHttpsUrl (1.4147ms)
+▶ buildDenteTelegramMessagePreviewData
+  ✔ should render appointment_reminder correctly (1.0653ms)
+  ✔ should render appointment_confirmation correctly (0.1395ms)
+  ✔ should render staff_daily_digest correctly (0.1228ms)
+  ✔ should format missing portal gracefully for payment_reminder_notice (0.0817ms)
+✔ buildDenteTelegramMessagePreviewData (2.1004ms)
+▶ частичная доставка «фото + текст» в очереди Telegram
+  ✔ текст длиннее подписи действительно уходит вторым сообщением (0.5162ms)
+  ✔ первая попытка: фото принято, текст отбит 429 — фиксируется доставленное фото, а не полный провал (0.8309ms)
+  ✔ повтор по квитанции частичной доставки досылает ТОЛЬКО текст — фото второй раз не уходит (0.228ms)
+  ✔ повтор пропускает фото и когда Telegram не вернул message_id — признак берётся из причины отказа (0.1691ms)
+  ✔ если фото так и не дошло, повтор обязан отправить его снова (0.1736ms)
+  ✔ короткий текст влезает в подпись: один вызов, второго сообщения нет (0.121ms)
+  ✔ фото отбито, текст ушёл: частичной доставки нет, помечать нечего (0.127ms)
+  ✔ успешная квитанция не выдаётся за частичную доставку (0.0911ms)
+✔ частичная доставка «фото + текст» в очереди Telegram (3.012ms)
+▶ состояние запланированного времени отправки Telegram
+  ✔ часы теста действительно фиксированы (0.129ms)
+  ✔ нечитаемое время НЕ считается наступившим — иначе сообщение уходит не в свой день (0.1771ms)
+  ✔ прошедшее время — пора, будущее — не пора, ровно текущее — пора (0.1088ms)
+  ✔ состояние считается от переданных часов, а не от системных (0.0558ms)
+✔ состояние запланированного времени отправки Telegram (0.618ms)
+▶ признак частичной доставки принадлежит позиции, а не попытке
+  ✔ повтор с ДРУГИМ clientMutationId находит доставленное фото (0.19ms)
+  ✔ повтор оператора с новым mutation id досылает ТОЛЬКО текст — фото второй раз не уходит (0.1909ms)
+  ✔ сдвиг scheduledAt меняет due-ключ, но признак всё равно находится (0.0658ms)
+  ✔ квитанция ЧУЖОЙ позиции не отменяет отправку фото (0.0531ms)
+  ✔ нет ни одной квитанции по позиции — фото обязано уйти (0.0332ms)
+  ✔ квитанция с message_id предпочтительнее квитанции без него (0.0669ms)
+✔ признак частичной доставки принадлежит позиции, а не попытке (0.6947ms)
+▶ createTelegramQrSvg
+  ✔ returns null for null payload (0.5117ms)
+  ✔ returns null for empty string payload (0.0914ms)
+  ✔ returns null if payload exceeds MAX_QR_BYTES (78 bytes) (0.1589ms)
+  ✔ generates valid SVG for normal payload (0.9446ms)
+  ✔ handles exact max byte limit payload (78 bytes) (0.4441ms)
+  ✔ handles multibyte characters within limit (0.4084ms)
+  ✔ fails for multibyte characters exceeding limit (0.1154ms)
+✔ createTelegramQrSvg (3.4086ms)
+▶ sendTelegramTextMessage
+  ✔ handles successful response (14.7797ms)
+  ✔ handles rate limit error (429) with retry_after (0.4914ms)
+  ✔ handles auth error (401) (0.3881ms)
+  ✔ handles timeout error (AbortError) (0.2489ms)
+  ✔ handles generic network error (0.2481ms)
+✔ sendTelegramTextMessage (16.8836ms)
+✔ находит переменные по порядку и без повторов (1.1429ms)
+✔ двойные скобки — это литеральные скобки, а не переменная (0.4033ms)
+✔ незаполненная переменная останавливает отправку (0.1334ms)
+✔ пустая строка и пробелы считаются отсутствующим значением (0.1192ms)
+✔ ноль — это значение, а не пустота (0.1129ms)
+✔ неизвестная переменная отклоняется на проверке шаблона (0.1067ms)
+✔ медицинские переменные не проходят в канал без согласия (0.1073ms)
+✔ предпросмотр подставляет примеры вместо пустых значений (0.0966ms)
+✔ у каждой переменной справочника есть подпись и пример (0.1946ms)
+✔ управляющие символы вычищаются, переводы строк остаются (0.1481ms)
+✔ кириллица считается как UCS-2 по 70 символов (0.1983ms)
+✔ латиница считается как GSM-7 по 160 символов (0.1079ms)
+✔ одна кириллическая буква переводит всё сообщение в UCS-2 (0.0783ms)
+✔ расширенные символы GSM-7 занимают два места (0.0451ms)
+✔ длинная SMS отклоняется по числу сегментов (0.1795ms)
+✔ превышение предела канала — отказ, а не молчаливое усечение (0.1385ms)
+▶ runVisitFlow Orchestrator
+  ✔ executes all steps correctly when enabled (34.1519ms)
+  ✔ skips disabled steps based on orchestratorConfig (14.651ms)
+✔ runVisitFlow Orchestrator (49.8511ms)
+▶ адреса, которые зовёт интерфейс
+  ✔ каждый вызванный адрес обслуживается сервером (62.2518ms)
+  ✔ список известного долга не разрастается молча (0.1475ms)
+  ✔ починенные адреса удаляются из списка долга (13.9706ms)
+✔ адреса, которые зовёт интерфейс (77.1359ms)
+✔ broadcastToOrganization не доставляет сообщения в чужую клинику (1.3256ms)
+✔ broadcastToPatient доставляет только подписке на этого пациента этой клиники (0.222ms)
+✔ закрытый клиент удаляется из рассылки (0.1281ms)
+✔ сообщение не отправляется в сокет, который ещё не открыт или уже закрывается (0.1014ms)
+✔ несколько клиентов одной клиники получают сообщение каждый (0.138ms)
+▶ repairMojibakeDeep
+  ✔ returns primitives as-is (0.4919ms)
+  ✔ repairs string values (0.2765ms)
+  ✔ repairs arrays deeply (0.5618ms)
+  ✔ repairs objects deeply (0.1668ms)
+  ✔ repairs complex nested structures (0.1828ms)
+✔ repairMojibakeDeep (2.4107ms)
+▶ TreatmentPlanBuilder
+  ✔ constructor and getItems (1.3622ms)
+  ▶ addItem - Success Cases
+    ✔ adds item without tooth code (0.7673ms)
+    ✔ adds item with valid tooth code and calculates snapshot correctly (0.2486ms)
+    ✔ prints wisdom tooth warning but adds item (0.1757ms)
+  ✔ addItem - Success Cases (1.6529ms)
+  ▶ addItem - Error Cases
+    ✔ throws if discount exceeds unit price (0.4063ms)
+    ✔ throws if treating missing tooth (0.1545ms)
+    ✔ throws if extracting already missing tooth (0.1916ms)
+  ✔ addItem - Error Cases (1.1583ms)
+  ✔ addItem - Surgery on missing teeth (0.2044ms)
+  ✔ calculateTotal (0.8427ms)
+  ▶ convertToAct
+    ✔ converts items, calculates totals, and deducts balance correctly (0.4107ms)
+    ✔ handles zero initial balance gracefully (0.2005ms)
+  ✔ convertToAct (0.9939ms)
+✔ TreatmentPlanBuilder (7.353ms)
+▶ cryptoHelper
+  ▶ verifyCredential
+    ✔ returns true for legacy plain equality (0.655ms)
+    ✔ returns false for incorrect legacy plain equality (0.108ms)
+    ✔ returns true for valid salt:hash matching (86.961ms)
+    ✔ returns false for invalid salt:hash matching (77.6846ms)
+    ✔ returns false when salt is missing in stored format (0.1361ms)
+    ✔ returns false when hash is missing in stored format (0.102ms)
+    ✔ returns false when stored hash has different length than expected (43.1243ms)
+    ✔ returns false when try block throws exception (0.3509ms)
+  ✔ verifyCredential (209.9153ms)
+✔ cryptoHelper (210.3548ms)
+▶ timingSafeSecretEqual
+  ✔ returns true when secrets match (0.5809ms)
+  ✔ returns false when provided secret is null (0.0859ms)
+  ✔ returns false when provided secret is empty (0.0659ms)
+  ✔ returns false when secrets have different lengths (0.0878ms)
+  ✔ returns false when secrets have the same length but differ (0.0757ms)
+  ✔ returns false when expected secret is undefined (prevents "undefined" string cast attacks) (0.0623ms)
+  ✔ returns false when expected secret is null (prevents "null" string cast attacks) (0.0896ms)
+  ✔ returns true when secrets match with unicode/emoji characters (0.1105ms)
+✔ timingSafeSecretEqual (1.8818ms)
+▶ toothGeometry
+  ▶ getToothPath
+    ✔ returns UPPER_CENTRAL_INCISOR for upper quadrants (1, 2) and index 1 (0.5611ms)
+    ✔ returns UPPER_LATERAL_INCISOR for upper quadrants (1, 2) and index 2 (0.0882ms)
+    ✔ returns UPPER_CANINE for upper quadrants (1, 2) and index 3 (0.1228ms)
+    ✔ returns UPPER_PREMOLAR for upper quadrants (1, 2) and index 4-5 (0.0851ms)
+    ✔ returns UPPER_MOLAR for upper quadrants (1, 2) and index >= 6 (0.0755ms)
+    ✔ returns LOWER_INCISOR for lower quadrants (3, 4) and index 1-2 (0.114ms)
+    ✔ returns LOWER_CANINE for lower quadrants (3, 4) and index 3 (0.0885ms)
+    ✔ returns LOWER_PREMOLAR for lower quadrants (3, 4) and index 4-5 (0.1339ms)
+    ✔ returns LOWER_MOLAR for lower quadrants (3, 4) and index >= 6 (0.0993ms)
+    ✔ handles invalid index (0 or negative) for upper quadrants (0.1281ms)
+    ✔ handles invalid index (0 or negative) for lower quadrants (0.0683ms)
+    ✔ handles large index for upper quadrants (0.0487ms)
+    ✔ handles large index for lower quadrants (0.074ms)
+    ✔ handles negative toothId (0.0488ms)
+    ✔ handles non-integer toothId (0.0461ms)
+  ✔ getToothPath (2.5697ms)
+✔ toothGeometry (2.836ms)
+✔ startWatchdog logs the expected deprecation message (0.7733ms)
+ℹ tests 970
+ℹ suites 158
+ℹ pass 970
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26618.4432
+
+✖ failing tests:
+
+test at src\tests\routes\portalOtp.test.ts:1:869
+✖ одноразовый код входа в личный кабинет (1110.1724ms)
+  Error: Failed query: delete from "organizations" where "organizations"."id" = $1
+  params: dce70000-0000-4000-8000-000000000901
+      at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async SuiteContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\portalOtp.test.ts:147:4)
+      ... 3 lines matching cause stack trace ...
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    query: 'delete from "organizations" where "organizations"."id" = $1',
+    params: [ 'dce70000-0000-4000-8000-000000000901' ],
+    cause: error: update or delete on table "organizations" violates foreign key constraint "patients_organization_id_organizations_id_fk" on table "patients"
+        at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+        at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+        at async SuiteContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\portalOtp.test.ts:147:4)
+        at async TestHook.run (node:internal/test_runner/test:1113:7)
+        at async Suite.runHook (node:internal/test_runner/test:1024:9)
+        at async Suite.run (node:internal/test_runner/test:1519:7)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+      length: 365,
+      severity: 'ERROR',
+      code: '23503',
+      detail: 'Key (id)=(dce70000-0000-4000-8000-000000000901) is still referenced from table "patients".',
+      hint: undefined,
+      position: undefined,
+      internalPosition: undefined,
+      internalQuery: undefined,
+      where: undefined,
+      schema: 'public',
+      table: 'patients',
+      column: undefined,
+      dataType: undefined,
+      constraint: 'patients_organization_id_organizations_id_fk',
+      file: 'ri_triggers.c',
+      line: '2811',
+      routine: 'ri_ReportViolation'
+    }
+  }
+
+test at src\tests\routes\speechTranscribeChunkAccess.test.ts:1:1573
+✖ доступ к записи фрагмента диктовки (270.3959ms)
+  Error: Failed query: delete from "patients" where "patients"."organization_id" = $1
+  params: dce70000-0000-4000-8000-000000000901
+      at NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:73:11)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async SuiteContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\speechTranscribeChunkAccess.test.ts:106:4)
+      ... 3 lines matching cause stack trace ...
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    query: 'delete from "patients" where "patients"."organization_id" = $1',
+    params: [ 'dce70000-0000-4000-8000-000000000901' ],
+    cause: error: update or delete on table "patients" violates foreign key constraint "portal_otp_codes_patient_id_fkey" on table "portal_otp_codes"
+        at C:\Clinic_MVP\dental-crm\node_modules\pg-pool\index.js:45:11
+        at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        at async <anonymous> (C:\Clinic_MVP\dental-crm\node_modules\src\node-postgres\session.ts:149:14)
+        at async NodePgPreparedQuery.queryWithCache (C:\Clinic_MVP\dental-crm\node_modules\src\pg-core\session.ts:71:12)
+        at async SuiteContext.<anonymous> (C:\Clinic_MVP\dental-crm\apps\api\src\tests\routes\speechTranscribeChunkAccess.test.ts:106:4)
+        at async TestHook.run (node:internal/test_runner/test:1113:7)
+        at async Suite.runHook (node:internal/test_runner/test:1024:9)
+        at async Suite.run (node:internal/test_runner/test:1519:7)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+      length: 360,
+      severity: 'ERROR',
+      code: '23503',
+      detail: 'Key (id)=(dce70000-0000-4000-8000-000000000902) is still referenced from table "portal_otp_codes".',
+      hint: undefined,
+      position: undefined,
+      internalPosition: undefined,
+      internalQuery: undefined,
+      where: undefined,
+      schema: 'public',
+      table: 'portal_otp_codes',
+      column: undefined,
+      dataType: undefined,
+      constraint: 'portal_otp_codes_patient_id_fkey',
+      file: 'ri_triggers.c',
+      line: '2811',
+      routine: 'ri_ReportViolation'
+    }
+  }
+EXIT=0

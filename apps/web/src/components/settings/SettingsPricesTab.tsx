@@ -25,6 +25,10 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { PriceDictationBar } from "../../PriceDictationBar";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import {
+	staffMutationHeaders,
+	type SettingsAccessHeaders,
+} from "./staffMutationRequest";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -159,6 +163,15 @@ export function SettingsPricesTab() {
 		}>;
 	const typedPricelistAnalysis = pricelistAnalysis as any;
 
+	/*
+	 * Сессионный секрет домена настроек + токены кабинета/сотрудника.
+	 * Раньше импорт читал dente_clinic_token из localStorage и клал его в
+	 * x-dente-admin-secret — в клинике с DENTE_SETTINGS_ADMIN_SECRET это 403,
+	 * а маршрут /api/settings/catalog-import на сервере не существует.
+	 */
+	const accessHeaders = (mergedProps as { auth?: { settingsAccessHeaders?: SettingsAccessHeaders } })
+		.auth?.settingsAccessHeaders;
+
 	const filteredCatalog = useMemo(() => {
 		let items = [...typedServiceCatalog];
 		if (searchQuery.trim()) {
@@ -196,27 +209,86 @@ export function SettingsPricesTab() {
 			return;
 		}
 
+		/*
+		 * Bulk-маршрута нет: на сервере только POST /api/settings/catalog
+		 * (одна услуга). Импорт идёт по одной позиции с теми же заголовками,
+		 * что createServiceCatalogItem — settingsAccessHeaders / staffMutationHeaders,
+		 * без ручного localStorage.getItem("dente_clinic_token").
+		 */
+		const headers = staffMutationHeaders(accessHeaders);
+		let imported = 0;
+		const failures: string[] = [];
+
 		try {
-			const token =
-				localStorage.getItem("dente_admin_secret") ||
-				localStorage.getItem("dente_clinic_token") ||
-				"";
-			const res = await fetch("/api/settings/catalog-import", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-admin-secret": token,
-				},
-				body: JSON.stringify(validItems),
+			for (const item of validItems) {
+				const payload = {
+					title: String(item.title || "").trim(),
+					code: item.code ? String(item.code) : undefined,
+					category: item.category || "other",
+					specialty: item.specialty || "therapist",
+					basePriceRub: item.priceRub,
+					durationMinutes:
+						typeof item.durationMinutes === "number"
+							? item.durationMinutes
+							: 30,
+					taxDeductible: item.taxDeductible !== false,
+					active: true,
+				};
+				if (!payload.title) {
+					failures.push("(без названия)");
+					continue;
+				}
+				try {
+					const res = await fetch("/api/settings/catalog", {
+						method: "POST",
+						headers,
+						body: JSON.stringify(payload),
+					});
+					const raw = await res.text();
+					if (!res.ok) {
+						let message = `HTTP ${res.status}`;
+						try {
+							const parsed = JSON.parse(raw) as { message?: string };
+							if (parsed.message) message = parsed.message;
+						} catch {
+							/* тело не JSON — оставляем код */
+						}
+						failures.push(`${payload.title}: ${message}`);
+						continue;
+					}
+					imported += 1;
+				} catch (err: unknown) {
+					const message =
+						err instanceof Error ? err.message : "сеть недоступна";
+					failures.push(`${payload.title}: ${message}`);
+				}
+			}
+
+			if (imported === 0) {
+				setImportResult({
+					error:
+						failures[0] ||
+						"Ни одна позиция не сохранена. Проверьте секрет настроек.",
+				});
+				return;
+			}
+
+			setImportResult({
+				count: imported,
+				error:
+					failures.length > 0
+						? `Сохранено ${imported}, с ошибкой ${failures.length}: ${failures[0]}`
+						: undefined,
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.message || "Ошибка импорта");
-			setImportResult({ count: data.count });
-			setTimeout(() => {
-				window.location.reload();
-			}, 2000);
-		} catch (err: any) {
-			setImportResult({ error: err.message });
+			if (failures.length === 0) {
+				setTimeout(() => {
+					window.location.reload();
+				}, 2000);
+			}
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Ошибка импорта";
+			setImportResult({ error: message });
 		} finally {
 			setIsImporting(false);
 		}

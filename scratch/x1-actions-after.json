@@ -1,0 +1,456 @@
+{
+  "phase": "after",
+  "at": "2026-07-28T10:33:11.639Z",
+  "viewports": [
+    {
+      "requested": {
+        "w": 390,
+        "h": 844
+      },
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "hash": "#patients",
+      "oldDockHosts": 0,
+      "reserveVar": "",
+      "actionsHosts": 1,
+      "actionsPlacement": "nav",
+      "actionsHostPosition": "static",
+      "actionsInsideTopbar": false,
+      "actionsInsideNav": true,
+      "navTrigger": {
+        "tag": "button",
+        "id": null,
+        "cls": "dnt-actions__trigger",
+        "position": "static",
+        "z": "auto",
+        "box": {
+          "x": 319,
+          "y": 777,
+          "w": 59,
+          "h": 59,
+          "top": 777,
+          "bottom": 836
+        }
+      },
+      "navTriggerLabel": "Голос",
+      "navItemCount": 5,
+      "navItems": [
+        {
+          "tag": "a",
+          "label": "Смена",
+          "w": 59,
+          "h": 59,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 33,
+          "labelScrollW": 33
+        },
+        {
+          "tag": "a",
+          "label": "Записи",
+          "w": 59,
+          "h": 59,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 38,
+          "labelScrollW": 38
+        },
+        {
+          "tag": "a",
+          "label": "Пациенты",
+          "w": 59,
+          "h": 59,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 51,
+          "labelScrollW": 51
+        },
+        {
+          "tag": "a",
+          "label": "Прием",
+          "w": 59,
+          "h": 59,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 34,
+          "labelScrollW": 34
+        },
+        {
+          "tag": "a",
+          "label": "Ещё",
+          "w": 59,
+          "h": 59,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 22,
+          "labelScrollW": 22
+        }
+      ],
+      "navVisible": true,
+      "navBox": {
+        "x": 0,
+        "y": 768,
+        "w": 390,
+        "h": 76,
+        "top": 768,
+        "bottom": 844
+      },
+      "controls": [
+        {
+          "label": "Голос",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "label": "Поиск",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "label": "Справка",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        }
+      ],
+      "controlCount": 3,
+      "paddingStack": {
+        "section.workspace": 72,
+        ".work-grid": 96,
+        ".patients-panel": 20,
+        "main.app-shell": 0
+      },
+      "stackTotal": 188,
+      "trailingBelowLastElement": 190,
+      "cornerFixed": [
+        {
+          "tag": "nav",
+          "id": null,
+          "cls": "dnt-bottom-nav",
+          "position": "fixed",
+          "z": "9999",
+          "box": {
+            "x": 0,
+            "y": 768,
+            "w": 390,
+            "h": 76,
+            "top": 768,
+            "bottom": 844
+          }
+        }
+      ]
+    },
+    {
+      "requested": {
+        "w": 720,
+        "h": 1100
+      },
+      "viewport": {
+        "w": 720,
+        "h": 1100
+      },
+      "hash": "#patients",
+      "oldDockHosts": 0,
+      "reserveVar": "",
+      "actionsHosts": 1,
+      "actionsPlacement": "nav",
+      "actionsHostPosition": "static",
+      "actionsInsideTopbar": false,
+      "actionsInsideNav": true,
+      "navTrigger": {
+        "tag": "button",
+        "id": null,
+        "cls": "dnt-actions__trigger",
+        "position": "static",
+        "z": "auto",
+        "box": {
+          "x": 613,
+          "y": 1045,
+          "w": 76,
+          "h": 47,
+          "top": 1045,
+          "bottom": 1092
+        }
+      },
+      "navTriggerLabel": "Голос",
+      "navItemCount": 5,
+      "navItems": [
+        {
+          "tag": "a",
+          "label": "Смена",
+          "w": 76,
+          "h": 47,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 33,
+          "labelScrollW": 33
+        },
+        {
+          "tag": "a",
+          "label": "Записи",
+          "w": 76,
+          "h": 47,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 38,
+          "labelScrollW": 38
+        },
+        {
+          "tag": "a",
+          "label": "Пациенты",
+          "w": 76,
+          "h": 47,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 53,
+          "labelScrollW": 53
+        },
+        {
+          "tag": "a",
+          "label": "Прием",
+          "w": 76,
+          "h": 47,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 34,
+          "labelScrollW": 34
+        },
+        {
+          "tag": "a",
+          "label": "Ещё",
+          "w": 76,
+          "h": 47,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 22,
+          "labelScrollW": 22
+        }
+      ],
+      "navVisible": true,
+      "navBox": {
+        "x": 0,
+        "y": 1036,
+        "w": 720,
+        "h": 64,
+        "top": 1036,
+        "bottom": 1100
+      },
+      "controls": [
+        {
+          "label": "Голос",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "label": "Поиск",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        {
+          "label": "Справка",
+          "hintVisible": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        }
+      ],
+      "controlCount": 3,
+      "paddingStack": {
+        "section.workspace": 72,
+        ".work-grid": 96,
+        ".patients-panel": 20,
+        "main.app-shell": 0
+      },
+      "stackTotal": 188,
+      "trailingBelowLastElement": 190,
+      "cornerFixed": [
+        {
+          "tag": "nav",
+          "id": null,
+          "cls": "dnt-bottom-nav",
+          "position": "fixed",
+          "z": "9999",
+          "box": {
+            "x": 0,
+            "y": 1036,
+            "w": 720,
+            "h": 64,
+            "top": 1036,
+            "bottom": 1100
+          }
+        }
+      ]
+    },
+    {
+      "requested": {
+        "w": 1600,
+        "h": 1100
+      },
+      "viewport": {
+        "w": 1600,
+        "h": 1100
+      },
+      "hash": "#patients",
+      "oldDockHosts": 0,
+      "reserveVar": "",
+      "actionsHosts": 1,
+      "actionsPlacement": "header",
+      "actionsHostPosition": "static",
+      "actionsInsideTopbar": true,
+      "actionsInsideNav": false,
+      "navTrigger": null,
+      "navTriggerLabel": null,
+      "navItemCount": 5,
+      "navItems": [
+        {
+          "tag": "a",
+          "label": "Смена",
+          "w": 0,
+          "h": 0,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 0,
+          "labelScrollW": 0
+        },
+        {
+          "tag": "a",
+          "label": "Записи",
+          "w": 0,
+          "h": 0,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 0,
+          "labelScrollW": 0
+        },
+        {
+          "tag": "a",
+          "label": "Пациенты",
+          "w": 0,
+          "h": 0,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 0,
+          "labelScrollW": 0
+        },
+        {
+          "tag": "a",
+          "label": "Прием",
+          "w": 0,
+          "h": 0,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 0,
+          "labelScrollW": 0
+        },
+        {
+          "tag": "a",
+          "label": "Ещё",
+          "w": 0,
+          "h": 0,
+          "lines": null,
+          "labelClipped": false,
+          "labelW": 0,
+          "labelScrollW": 0
+        }
+      ],
+      "navVisible": false,
+      "navBox": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "controls": [
+        {
+          "label": "Поиск",
+          "hintVisible": false,
+          "box": {
+            "x": 1016,
+            "y": 156,
+            "w": 94,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          }
+        },
+        {
+          "label": "Голос",
+          "hintVisible": false,
+          "box": {
+            "x": 1111,
+            "y": 156,
+            "w": 91,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          }
+        },
+        {
+          "label": "Справка",
+          "hintVisible": false,
+          "box": {
+            "x": 1203,
+            "y": 156,
+            "w": 109,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          }
+        }
+      ],
+      "controlCount": 3,
+      "paddingStack": {
+        "section.workspace": 48,
+        ".work-grid": 0,
+        ".patients-panel": 20,
+        "main.app-shell": 0
+      },
+      "stackTotal": 68,
+      "trailingBelowLastElement": 70,
+      "cornerFixed": []
+    }
+  ]
+}

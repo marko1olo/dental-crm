@@ -1,0 +1,20 @@
+import { readFileSync } from "node:fs";
+import pg from "pg";
+const env = readFileSync(new URL("../../../../.env", import.meta.url), "utf8");
+const url = /DATABASE_URL=(.+)/.exec(env)?.[1]?.trim();
+const c = new pg.Client({ connectionString: url });
+await c.connect();
+const q = async (label, sql) => {
+  const r = await c.query(sql);
+  console.log(`\n--- ${label} ---`);
+  console.log(JSON.stringify(r.rows, null, 1));
+};
+await q("organizations (count + ids)", "select id, name from organizations order by name");
+await q("service_catalog_items BY ORG", "select organization_id, count(*)::int as n from service_catalog_items group by organization_id");
+await q("service_catalog_items TOTAL", "select count(*)::int as n from service_catalog_items");
+await q("treatment_plans BY ORG", "select organization_id, count(*)::int as n from treatment_plans group by organization_id");
+await q("treatment_plan_items_new TOTAL", "select count(*)::int as n from treatment_plan_items_new");
+await q("the eight invented sums ever set?", "select organization_id, title, base_price_rub from service_catalog_items where base_price_rub in (4000,5500,6000,12500,35000,12000,5000,28000)");
+await q("money column types", "select column_name, data_type, numeric_precision, numeric_scale from information_schema.columns where table_name='service_catalog_items' and column_name in ('base_price_rub','price_rub')");
+await q("plan item price column type", "select column_name, data_type, numeric_precision, numeric_scale, is_nullable from information_schema.columns where table_name='treatment_plan_items_new' and column_name in ('price','quantity','price_id')");
+await c.end();

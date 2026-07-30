@@ -1,0 +1,27 @@
+
+> dental-crm@0.1.0 typecheck
+> npm run typecheck -w @dental/shared && npm run typecheck -w @dental/api && npm run typecheck -w @dental/web
+
+
+> @dental/shared@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @dental/api@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+src/routes/finance_family.ts(9,2): error TS2305: Module '"@dental/shared"' has no exported member 'kopecksToNumericString'.
+src/routes/finance_family.ts(10,2): error TS2305: Module '"@dental/shared"' has no exported member 'parseKopecks'.
+src/routes/finance_family.ts(11,2): error TS2305: Module '"@dental/shared"' has no exported member 'rublesToKopecks'.
+src/routes/finance_family.ts(264,5): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { organizationId?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 6 more ...; balance?: string | ... 2 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'number' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any> | undefined'.
+  Overload 2 of 2, '(values: { organizationId?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 6 more ...; balance?: string | ... 2 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'organizationId' does not exist in type '{ organizationId?: string | SQL<unknown> | Placeholder<string, any> | null | undefined; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 6 more ...; balance?: string | ... 2 more ... | undefined; }[]'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path C:\Clinic_MVP\dental-crm\apps\api
+npm error workspace @dental/api@0.1.0
+npm error location C:\Clinic_MVP\dental-crm\apps\api
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc -p tsconfig.json --noEmit

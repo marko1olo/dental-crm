@@ -1,0 +1,4165 @@
+{
+  "generatedFor": "http://127.0.0.1:5173",
+  "states": [
+    {
+      "id": "pc_light_onboarding",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "onboarding",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 23
+      },
+      "buildError": null
+    },
+    {
+      "id": "pc_light_shift",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "shift",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.shift-dashboard-grid > section.shift-intelligence > div.role-queue-header-row > button.text-button.toggle-queues-btn",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(13, 148, 136)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Показать другие роли",
+          "box": {
+            "x": 1235,
+            "y": 829,
+            "w": 159,
+            "h": 42
+          },
+          "pixel": 2.92,
+          "samples": 6678
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 412
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_schedule",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "schedule",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 399
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_patients",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "patients",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.patient-list > article.patient-row.focus:ring-2.focus:ring-teal-600 > div > p",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "+79161234567",
+          "box": {
+            "x": 316,
+            "y": 1462,
+            "w": 228,
+            "h": 16
+          },
+          "pixel": 2.97,
+          "samples": 3648
+        },
+        {
+          "sel": "div.clinical-col-left > div.patient-journey-timeline > div.timeline-header > h3",
+          "ratio": 1.58,
+          "need": 4.5,
+          "fontSize": 22.4,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(59, 59, 61)",
+          "text": "Лента приемов пациента",
+          "box": {
+            "x": 680,
+            "y": 2214,
+            "w": 346,
+            "h": 27
+          },
+          "pixel": 1.56,
+          "samples": 9342
+        },
+        {
+          "sel": "div.tooth-chart-container > div.tooth-chart-header > div.tooth-chart-legend > span.tooth-chart-legend-item",
+          "ratio": 4.34,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(241, 245, 249)",
+          "text": "Кариес",
+          "box": {
+            "x": 722,
+            "y": 4037,
+            "w": 61,
+            "h": 14
+          },
+          "pixel": 3.62,
+          "samples": 854
+        },
+        {
+          "sel": "div.phase-items-list > div.plan-item-card > div.plan-item-footer > span.plan-item-total-price",
+          "ratio": 2.42,
+          "need": 4.5,
+          "fontSize": 14,
+          "color": "rgb(16, 185, 129)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "12 500 ₽",
+          "box": {
+            "x": 1326,
+            "y": 4105,
+            "w": 46,
+            "h": 34
+          },
+          "pixel": 2.47,
+          "samples": 1564
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1059
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [
+        {
+          "sel": "div.panel.mb-5.p-4 > div.mt-3 > div.flex.gap-2 > button.flex-1.flex.items-center",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Создать семью",
+          "box": {
+            "x": 668,
+            "y": 2120,
+            "w": 341,
+            "h": 38
+          },
+          "pixel": 1.91,
+          "samples": 12958
+        },
+        {
+          "sel": "div.clinical-col-right > div.panel.p-4.rounded-xl > div.flex.flex-col.sm:flex-row > button.px-3.py-1.5.text-xs",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Рассчитать AI-риск",
+          "box": {
+            "x": 1180,
+            "y": 2630,
+            "w": 180,
+            "h": 36
+          },
+          "pixel": 18.49,
+          "samples": 6480
+        },
+        {
+          "sel": "div.p-4.rounded-xl.border > div.space-y-3 > div.flex.items-center.space-x-2 > button.px-3.py-1.5.rounded",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Добавить в черный список",
+          "box": {
+            "x": 668,
+            "y": 3411,
+            "w": 239,
+            "h": 36
+          },
+          "pixel": 17.46,
+          "samples": 8604
+        },
+        {
+          "sel": "div.flex.flex-col.h-full > div.flex.items-center.justify-between > div.flex.gap-2 > button.flex.items-center.gap-2",
+          "ratio": 1,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Сохранить",
+          "box": {
+            "x": 1296,
+            "y": 3905,
+            "w": 35,
+            "h": 34
+          },
+          "pixel": 5.34,
+          "samples": 1190
+        }
+      ],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_imaging",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "imaging",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section#workspace-content.workspace.view-imaging > section#imaging.imaging-panel > div.imaging-kind-filter > button.focus:ring-2.focus:ring-teal-600.focus:outline-none",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Все",
+          "box": {
+            "x": 294,
+            "y": 433,
+            "w": 54,
+            "h": 34
+          },
+          "pixel": 3.79,
+          "samples": 1836
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 298
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_visit",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "visit",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.close-checklist > button.close-task.done > div > p",
+          "ratio": 4.45,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(250, 247, 241)",
+          "text": "Бандлы, ограничения и предупреждения закрыты.",
+          "box": {
+            "x": 555,
+            "y": 3535,
+            "w": 301,
+            "h": 15
+          },
+          "pixel": 3.24,
+          "samples": 4515
+        },
+        {
+          "sel": "div.close-checklist > button.close-task > div > p",
+          "ratio": 4.45,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(250, 247, 241)",
+          "text": "AI не подписывает прием: врач сверяет текст вручну",
+          "box": {
+            "x": 498,
+            "y": 3649,
+            "w": 327,
+            "h": 15
+          },
+          "pixel": 3.24,
+          "samples": 4905
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1039
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button.active",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "универсально",
+          "box": {
+            "x": 313,
+            "y": 3369,
+            "w": 108,
+            "h": 32
+          },
+          "pixel": 7.98,
+          "samples": 3456
+        }
+      ]
+    },
+    {
+      "id": "pc_light_documents",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "documents",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 716
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_finance",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "finance",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.smart-details-content > div > div > div",
+          "ratio": 4.1,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(2, 132, 199)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "0 ₽",
+          "box": {
+            "x": 775,
+            "y": 1162,
+            "w": 83,
+            "h": 20
+          },
+          "pixel": 1.23,
+          "samples": 1660
+        },
+        {
+          "sel": "div#payment-capture.payment-capture.bg-white.dark:bg-slate-900 > details.payment-capture-detail-section > div.smart-details-content > div",
+          "ratio": 4.38,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(226, 251, 247)",
+          "text": "Итого по графику: 3 800 ₽",
+          "box": {
+            "x": 342,
+            "y": 1231,
+            "w": 1008,
+            "h": 15
+          },
+          "pixel": 1.01,
+          "samples": 15120
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 523
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_analytics",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "analytics",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 3.68,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(59, 130, 246)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Пациентов",
+          "box": {
+            "x": 319,
+            "y": 357,
+            "w": 220,
+            "h": 18
+          },
+          "pixel": 2.91,
+          "samples": 3960
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 2.54,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(16, 185, 129)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Выручка",
+          "box": {
+            "x": 597,
+            "y": 357,
+            "w": 220,
+            "h": 18
+          },
+          "pixel": 2.05,
+          "samples": 3960
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 4.23,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(139, 92, 246)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Приёмов",
+          "box": {
+            "x": 875,
+            "y": 357,
+            "w": 220,
+            "h": 18
+          },
+          "pixel": 2.69,
+          "samples": 3960
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 2.15,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(245, 158, 11)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Ср. выручка / пациент",
+          "box": {
+            "x": 1153,
+            "y": 357,
+            "w": 220,
+            "h": 18
+          },
+          "pixel": 2.03,
+          "samples": 3960
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 348
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_communications",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "communications",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 440
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_settings",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "settings",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > span",
+          "ratio": 4.39,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "1/5",
+          "box": {
+            "x": 1305,
+            "y": 256,
+            "w": 20,
+            "h": 15
+          },
+          "pixel": 4.39,
+          "samples": 300
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > small",
+          "ratio": 4.39,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "готовность документов",
+          "box": {
+            "x": 1243,
+            "y": 305,
+            "w": 144,
+            "h": 15
+          },
+          "pixel": 4.39,
+          "samples": 2160
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > strong",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Режим запуска",
+          "box": {
+            "x": 307,
+            "y": 484,
+            "w": 100,
+            "h": 15
+          },
+          "pixel": 3.74,
+          "samples": 1500
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > small",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "демо или чистая",
+          "box": {
+            "x": 307,
+            "y": 505,
+            "w": 92,
+            "h": 13
+          },
+          "pixel": 3.74,
+          "samples": 1196
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 329
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 4.87,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_light_marketing",
+      "viewport": "pc",
+      "theme": "light",
+      "view": "marketing",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#root > main.boot-state.boot-state-error > button",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Обновить рабочее место",
+          "box": {
+            "x": 370,
+            "y": 483,
+            "w": 699,
+            "h": 42
+          },
+          "pixel": 1.76,
+          "samples": 29358
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 7
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": []
+    },
+    {
+      "id": "pc_dark_onboarding",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "onboarding",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 23
+      },
+      "buildError": null
+    },
+    {
+      "id": "pc_dark_shift",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "shift",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 412
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_schedule",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "schedule",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.smart-ai-booking > div.flex.justify-between.items-center > div.flex.gap-2.items-center > span.save-state.save-state-idle.font-medium",
+          "ratio": 2.3,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "Заполните поля",
+          "box": {
+            "x": 1092,
+            "y": 615,
+            "w": 117,
+            "h": 32
+          },
+          "pixel": 2.3,
+          "samples": 3744
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 399
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_patients",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "patients",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1059
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_imaging",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "imaging",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 298
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-imaging > section#imaging.imaging-panel > div.imaging-kind-filter > button.focus:ring-2.focus:ring-teal-600.focus:outline-none",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Все",
+          "box": {
+            "x": 294,
+            "y": 433,
+            "w": 54,
+            "h": 34
+          },
+          "pixel": 12.39,
+          "samples": 1836
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_visit",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "visit",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#visit.panel.visit-panel > section.visit-focus-bar > div.visit-focus-status > span",
+          "ratio": 2.4,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(116, 77, 24)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "4 предупр.",
+          "box": {
+            "x": 779,
+            "y": 310,
+            "w": 367,
+            "h": 15
+          },
+          "pixel": 1.85,
+          "samples": 5505
+        },
+        {
+          "sel": "section.work-grid.page-grid > div#visit.panel.visit-panel > div.visit-sub-nav-tabs > button.secondary-button.focus:ring-2.focus:ring-teal-600",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(20, 184, 166)",
+          "text": "📝 ЭМК и Диктовка",
+          "box": {
+            "x": 298,
+            "y": 453,
+            "w": 157,
+            "h": 36
+          },
+          "pixel": 2.22,
+          "samples": 5652
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-map-legend > span.tooth-legend-item.legend-planned",
+          "ratio": 1.67,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(125, 44, 37)",
+          "bg": "rgb(49, 30, 46)",
+          "text": "В плане",
+          "box": {
+            "x": 311,
+            "y": 1846,
+            "w": 66,
+            "h": 26
+          },
+          "pixel": 1.88,
+          "samples": 1716
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.active",
+          "ratio": 2.16,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(218, 244, 243)",
+          "text": "🔍 Обычный клик",
+          "box": {
+            "x": 571,
+            "y": 1907,
+            "w": 141,
+            "h": 31
+          },
+          "pixel": 1.91,
+          "samples": 4371
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > section.visit-note-panel > div.emk-tabs-container > button.emk-tab-button.active",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Все поля",
+          "box": {
+            "x": 311,
+            "y": 2443,
+            "w": 76,
+            "h": 27
+          },
+          "pixel": 3.55,
+          "samples": 2052
+        },
+        {
+          "sel": "details.protocol-library > article.protocol-card > ul > li",
+          "ratio": 1.98,
+          "need": 4.5,
+          "fontSize": 14,
+          "color": "rgb(78, 70, 63)",
+          "bg": "rgb(13, 22, 25)",
+          "text": "Осмотр не заменяет профильную диагностику.",
+          "box": {
+            "x": 344,
+            "y": 3507,
+            "w": 1022,
+            "h": 17
+          },
+          "pixel": 2.17,
+          "samples": 17374
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1039
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button.active",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "универсально",
+          "box": {
+            "x": 313,
+            "y": 3369,
+            "w": 108,
+            "h": 32
+          },
+          "pixel": 14.34,
+          "samples": 3456
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button",
+          "ratio": 2.56,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "терапия",
+          "box": {
+            "x": 427,
+            "y": 3369,
+            "w": 72,
+            "h": 32
+          },
+          "pixel": 16.06,
+          "samples": 2304
+        },
+        {
+          "sel": "details.protocol-library > article.protocol-card > div.protocol-template-list > button.active",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(20, 184, 166)",
+          "text": "Осмотр и план",
+          "box": {
+            "x": 326,
+            "y": 3465,
+            "w": 110,
+            "h": 32
+          },
+          "pixel": 6.02,
+          "samples": 3520
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_documents",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "documents",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#documents.panel.documents-panel > div.document-factory > div.document-factory-selected-kind > span#document-create-selected-guidance",
+          "ratio": 2.44,
+          "need": 4.5,
+          "fontSize": 13.5,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(244, 251, 248)",
+          "text": "Перед созданием CRM проверит обязательные поля это",
+          "box": {
+            "x": 315,
+            "y": 503,
+            "w": 1062,
+            "h": 20
+          },
+          "pixel": 2.2,
+          "samples": 21240
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 716
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        },
+        {
+          "sel": "div#documents.panel.documents-panel > div.document-factory > div.document-factory-selected-kind > label",
+          "ratio": 2.44,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(244, 251, 248)",
+          "text": "Документ",
+          "box": {
+            "x": 315,
+            "y": 431,
+            "w": 1062,
+            "h": 60
+          },
+          "pixel": 19.21,
+          "samples": 63720
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_finance",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "finance",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section.work-grid.page-grid > div#finance.panel.finance-panel > div#payment-capture.payment-capture.bg-white.dark:bg-slate-900 > p.payment-capture-safeguard",
+          "ratio": 3.57,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(93, 116, 112)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "Каждая оплата добавляет новую строку в историю. Ош",
+          "box": {
+            "x": 311,
+            "y": 1096,
+            "w": 1070,
+            "h": 16
+          },
+          "pixel": 3.57,
+          "samples": 17120
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 523
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_analytics",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "analytics",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 4.22,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(139, 92, 246)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "Приёмов",
+          "box": {
+            "x": 875,
+            "y": 357,
+            "w": 220,
+            "h": 18
+          },
+          "pixel": 2.68,
+          "samples": 3960
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 348
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        },
+        {
+          "sel": "section.work-grid.page-grid > div.analytics-dashboard.panel.p-5 > header.analytics-header.flex.justify-between > h2.m-0.text-xl.font-bold",
+          "ratio": 1.21,
+          "need": 3,
+          "fontSize": 24,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(228, 228, 231)",
+          "text": "Аналитика клиники",
+          "box": {
+            "x": 298,
+            "y": 249,
+            "w": 235,
+            "h": 34
+          },
+          "pixel": 10.94,
+          "samples": 7990
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_communications",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "communications",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 440
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_settings",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "settings",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > span",
+          "ratio": 2.37,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "1/5",
+          "box": {
+            "x": 1305,
+            "y": 256,
+            "w": 20,
+            "h": 15
+          },
+          "pixel": 2.37,
+          "samples": 300
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > strong",
+          "ratio": 2.3,
+          "need": 3,
+          "fontSize": 28,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "29%",
+          "box": {
+            "x": 1286,
+            "y": 274,
+            "w": 58,
+            "h": 28
+          },
+          "pixel": 2.3,
+          "samples": 1624
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > small",
+          "ratio": 2.37,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "готовность документов",
+          "box": {
+            "x": 1243,
+            "y": 305,
+            "w": 144,
+            "h": 15
+          },
+          "pixel": 2.37,
+          "samples": 2160
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-settings > section.onboarding-shell > div.onboarding-fast-start > button.primary-button",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Открыть прием",
+          "box": {
+            "x": 959,
+            "y": 370,
+            "w": 154,
+            "h": 36
+          },
+          "pixel": 2.43,
+          "samples": 5544
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > strong",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Режим запуска",
+          "box": {
+            "x": 307,
+            "y": 484,
+            "w": 100,
+            "h": 15
+          },
+          "pixel": 1.86,
+          "samples": 1500
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > small",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "демо или чистая",
+          "box": {
+            "x": 307,
+            "y": 505,
+            "w": 92,
+            "h": 13
+          },
+          "pixel": 1.86,
+          "samples": 1196
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button > strong",
+          "ratio": 2.53,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(251, 254, 253)",
+          "text": "Клиника",
+          "box": {
+            "x": 586,
+            "y": 484,
+            "w": 56,
+            "h": 15
+          },
+          "pixel": 2.53,
+          "samples": 840
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button > small",
+          "ratio": 2.53,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(251, 254, 253)",
+          "text": "название и телефон",
+          "box": {
+            "x": 586,
+            "y": 505,
+            "w": 112,
+            "h": 13
+          },
+          "pixel": 2.53,
+          "samples": 1456
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-panel > div.onboarding-source-grid > span",
+          "ratio": 2.3,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "Прием: протоколы, голос, офлайн-черновик",
+          "box": {
+            "x": 309,
+            "y": 767,
+            "w": 257,
+            "h": 52
+          },
+          "pixel": 2.27,
+          "samples": 13364
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 329
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 279,
+            "y": 156,
+            "w": 201,
+            "h": 19
+          },
+          "pixel": 8.76,
+          "samples": 3819
+        }
+      ]
+    },
+    {
+      "id": "pc_dark_marketing",
+      "viewport": "pc",
+      "theme": "dark",
+      "view": "marketing",
+      "docScrollWidth": 1440,
+      "innerWidth": 1440,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#root > main.boot-state.boot-state-error > button",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Обновить рабочее место",
+          "box": {
+            "x": 370,
+            "y": 483,
+            "w": 699,
+            "h": 42
+          },
+          "pixel": 1.21,
+          "samples": 29358
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 7
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": []
+    },
+    {
+      "id": "mobile_light_onboarding",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "onboarding",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 23
+      },
+      "buildError": null
+    },
+    {
+      "id": "mobile_light_shift",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "shift",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "div.shift-dashboard-grid > section.shift-intelligence > div.role-queue-header-row > button.text-button.toggle-queues-btn",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(13, 148, 136)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Показать другие роли",
+          "box": {
+            "x": 197,
+            "y": 1349,
+            "w": 159,
+            "h": 44
+          },
+          "pixel": 2.84,
+          "samples": 6996
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div > div > div > button.secondary-button",
+          "w": 148,
+          "h": 30,
+          "own": "148x30",
+          "text": "Показать аналитику"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 412
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_schedule",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "schedule",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div#schedule.panel.schedule-panel > div.panel-heading > div > button.secondary-button",
+          "w": 148,
+          "h": 30,
+          "own": "148x30",
+          "text": "Показать аналитику"
+        },
+        {
+          "sel": "div.smart-ai-booking > div.flex.justify-between.items-center > div.flex.gap-3.items-center > button.secondary-button.focus:ring-2.focus:ring-teal-600",
+          "w": 224,
+          "h": 30,
+          "own": "224x30",
+          "text": "Показать все поля / Ручной вво"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 399
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_patients",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "patients",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "div.patient-list > article.patient-row.focus:ring-2.focus:ring-teal-600 > div > p",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "+79161234567",
+          "box": {
+            "x": 52,
+            "y": 1629,
+            "w": 230,
+            "h": 16
+          },
+          "pixel": 2.94,
+          "samples": 3680
+        },
+        {
+          "sel": "div.clinical-col-left > div.patient-journey-timeline > div.timeline-header > h3",
+          "ratio": 1.58,
+          "need": 4.5,
+          "fontSize": 22.4,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(59, 59, 61)",
+          "text": "Лента приемов пациента",
+          "box": {
+            "x": 68,
+            "y": 4225,
+            "w": 159,
+            "h": 81
+          },
+          "pixel": 1.56,
+          "samples": 12879
+        },
+        {
+          "sel": "div.tooth-chart-container > div.tooth-chart-header > div.tooth-chart-legend > span.tooth-chart-legend-item",
+          "ratio": 4.34,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(241, 245, 249)",
+          "text": "Кариес",
+          "box": {
+            "x": 110,
+            "y": 6816,
+            "w": 61,
+            "h": 14
+          },
+          "pixel": 3.62,
+          "samples": 854
+        },
+        {
+          "sel": "div.phase-items-list > div.plan-item-card > div.plan-item-footer > span.plan-item-total-price",
+          "ratio": 2.42,
+          "need": 4.5,
+          "fontSize": 14,
+          "color": "rgb(16, 185, 129)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "12 500 ₽",
+          "box": {
+            "x": 266,
+            "y": 7421,
+            "w": 46,
+            "h": 34
+          },
+          "pixel": 2.47,
+          "samples": 1564
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div.smart-create-group > div.smart-input-wrapper > div > button",
+          "w": 16,
+          "h": 36,
+          "own": "16x36",
+          "text": ""
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 176,
+          "h": 30,
+          "own": "176x30",
+          "text": "+ Очень тревожный"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 177,
+          "h": 30,
+          "own": "177x30",
+          "text": "+ Сложный пациент"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 61,
+          "h": 30,
+          "own": "61x30",
+          "text": "+ VIP"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 228,
+          "h": 30,
+          "own": "228x30",
+          "text": "+ Просит звонить заранее"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 159,
+          "h": 30,
+          "own": "159x30",
+          "text": "+ Часто отменяет"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 260,
+          "h": 30,
+          "own": "260x30",
+          "text": "+ Плохо переносит анестезию"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 107,
+          "h": 30,
+          "own": "107x30",
+          "text": "+ Должник"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 174,
+          "h": 30,
+          "own": "174x30",
+          "text": "+ Рвотный рефлекс"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1059
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [
+        {
+          "sel": "div.panel.mb-5.p-4 > div.mt-3 > div.flex.gap-2 > button.flex-1.flex.items-center",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Создать семью",
+          "box": {
+            "x": 72,
+            "y": 4131,
+            "w": 118,
+            "h": 56
+          },
+          "pixel": 3.27,
+          "samples": 6608
+        },
+        {
+          "sel": "div.clinical-col-right > div.panel.p-4.rounded-xl > div.flex.flex-col.sm:flex-row > button.px-3.py-1.5.text-xs",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Рассчитать AI-риск",
+          "box": {
+            "x": 72,
+            "y": 4871,
+            "w": 180,
+            "h": 36
+          },
+          "pixel": 18.05,
+          "samples": 6480
+        },
+        {
+          "sel": "div.p-4.rounded-xl.border > div.space-y-3 > div.flex.items-center.space-x-2 > button.px-3.py-1.5.rounded",
+          "ratio": 1.05,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(248, 250, 252)",
+          "text": "Добавить в черный список",
+          "box": {
+            "x": 72,
+            "y": 5924,
+            "w": 239,
+            "h": 36
+          },
+          "pixel": 17.46,
+          "samples": 8604
+        },
+        {
+          "sel": "div.flex.flex-col.h-full > div.flex.items-center.justify-between > div.flex.gap-2 > button.flex.items-center.gap-2",
+          "ratio": 1,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Сохранить",
+          "box": {
+            "x": 245,
+            "y": 7214,
+            "w": 44,
+            "h": 34
+          },
+          "pixel": 5.34,
+          "samples": 1496
+        }
+      ],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_imaging",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "imaging",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-imaging > section#imaging.imaging-panel > div.imaging-kind-filter > button.focus:ring-2.focus:ring-teal-600.focus:outline-none",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Все",
+          "box": {
+            "x": 28,
+            "y": 890,
+            "w": 54,
+            "h": 34
+          },
+          "pixel": 3.79,
+          "samples": 1836
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 298
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_visit",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "visit",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [
+        {
+          "sel": "section#workspace-content.workspace.view-visit > section.work-grid.page-grid > div > div.p-4.rounded-xl.border",
+          "right": 409,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 19
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-visit > section.work-grid.page-grid > div > div.p-4.bg-slate-900.border",
+          "right": 409,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 19
+        }
+      ],
+      "lowContrast": [
+        {
+          "sel": "div.close-checklist > button.close-task.done > div > p",
+          "ratio": 4.45,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(250, 247, 241)",
+          "text": "Бандлы, ограничения и предупреждения закрыты.",
+          "box": {
+            "x": 60,
+            "y": 6013,
+            "w": 276,
+            "h": 30
+          },
+          "pixel": 2.84,
+          "samples": 8280
+        },
+        {
+          "sel": "div.close-checklist > button.close-task > div > p",
+          "ratio": 4.45,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(250, 247, 241)",
+          "text": "AI не подписывает прием: врач сверяет текст вручну",
+          "box": {
+            "x": 60,
+            "y": 6342,
+            "w": 276,
+            "h": 30
+          },
+          "pixel": 2.84,
+          "samples": 8280
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.active",
+          "w": 141,
+          "h": 31,
+          "own": "141x31",
+          "text": "🔍 Обычный клик"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-planned",
+          "w": 90,
+          "h": 31,
+          "own": "90x31",
+          "text": "📝 В план"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-treatment",
+          "w": 102,
+          "h": 31,
+          "own": "102x31",
+          "text": "🔴 Лечение"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-watch",
+          "w": 129,
+          "h": 31,
+          "own": "129x31",
+          "text": "⚠️ Наблюдение"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-done",
+          "w": 90,
+          "h": 31,
+          "own": "90x31",
+          "text": "🟢 Готово"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-missing",
+          "w": 104,
+          "h": 31,
+          "own": "104x31",
+          "text": "❌ Нет зуба"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1039
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 115,
+            "y": 134,
+            "w": 160,
+            "h": 20
+          },
+          "pixel": 4.8,
+          "samples": 3200
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button.active",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "универсально",
+          "box": {
+            "x": 49,
+            "y": 5780,
+            "w": 108,
+            "h": 32
+          },
+          "pixel": 17.19,
+          "samples": 3456
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_documents",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "documents",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [
+        {
+          "sel": "section.work-grid.page-grid > div#documents.panel.documents-panel > div > div.p-4.rounded-xl.border",
+          "right": 414,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 24
+        }
+      ],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 716
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_finance",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "finance",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "div.smart-details-content > div > div > div",
+          "ratio": 4.1,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(2, 132, 199)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "0 ₽",
+          "box": {
+            "x": 151,
+            "y": 2334,
+            "w": 52,
+            "h": 20
+          },
+          "pixel": 1.11,
+          "samples": 1040
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 523
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        },
+        {
+          "sel": "div#payment-capture.payment-capture.bg-white.dark:bg-slate-900 > details.payment-capture-detail-section > div.smart-details-content > div",
+          "ratio": 4.38,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(226, 251, 247)",
+          "text": "Итого по графику: 3 800 ₽",
+          "box": {
+            "x": 78,
+            "y": 2418,
+            "w": 234,
+            "h": 15
+          },
+          "pixel": 5.02,
+          "samples": 3510
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_analytics",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "analytics",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 3.68,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(59, 130, 246)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Пациентов",
+          "box": {
+            "x": 55,
+            "y": 481,
+            "w": 280,
+            "h": 18
+          },
+          "pixel": 2.57,
+          "samples": 5040
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 2.54,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(16, 185, 129)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Выручка",
+          "box": {
+            "x": 55,
+            "y": 584,
+            "w": 280,
+            "h": 18
+          },
+          "pixel": 1.82,
+          "samples": 5040
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 4.23,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(139, 92, 246)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Приёмов",
+          "box": {
+            "x": 55,
+            "y": 687,
+            "w": 280,
+            "h": 18
+          },
+          "pixel": 2.18,
+          "samples": 5040
+        },
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 2.15,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(245, 158, 11)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Ср. выручка / пациент",
+          "box": {
+            "x": 55,
+            "y": 790,
+            "w": 280,
+            "h": 18
+          },
+          "pixel": 1.98,
+          "samples": 5040
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 348
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_communications",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "communications",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div.communication-note-row.bg-[var(--paper)].border > div.flex.justify-between.items-center > div > button.inline-flex.gap-1.5.items-center",
+          "w": 31,
+          "h": 36,
+          "own": "31x36",
+          "text": ""
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 440
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_settings",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "settings",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.topbar-context > details.workspace-role-switcher > summary > span",
+          "ratio": 4.48,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(230, 253, 248)",
+          "text": "Роль",
+          "box": {
+            "x": 224,
+            "y": 165,
+            "w": 29,
+            "h": 15
+          },
+          "pixel": 4.47,
+          "samples": 435
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > span",
+          "ratio": 4.39,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "1/5",
+          "box": {
+            "x": 185,
+            "y": 532,
+            "w": 20,
+            "h": 15
+          },
+          "pixel": 4.39,
+          "samples": 300
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > small",
+          "ratio": 4.39,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(100, 116, 139)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "готовность документов",
+          "box": {
+            "x": 123,
+            "y": 581,
+            "w": 144,
+            "h": 15
+          },
+          "pixel": 4.39,
+          "samples": 2160
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > strong",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Режим запуска",
+          "box": {
+            "x": 43,
+            "y": 938,
+            "w": 100,
+            "h": 15
+          },
+          "pixel": 3.74,
+          "samples": 1500
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > small",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "демо или чистая",
+          "box": {
+            "x": 43,
+            "y": 959,
+            "w": 92,
+            "h": 13
+          },
+          "pixel": 3.74,
+          "samples": 1196
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 329
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 3.24,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(17, 24, 39)",
+          "bg": "rgb(15, 118, 110)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 4.84,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_light_marketing",
+      "viewport": "mobile",
+      "theme": "light",
+      "view": "marketing",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(240, 245, 243)",
+      "htmlBg": "rgb(248, 250, 252)",
+      "bodyColor": "rgb(15, 30, 27)",
+      "dataTheme": "light",
+      "htmlClass": "light",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#root > main.boot-state.boot-state-error > button",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Обновить рабочее место",
+          "box": {
+            "x": 24,
+            "y": 447,
+            "w": 342,
+            "h": 42
+          },
+          "pixel": 3.73,
+          "samples": 14364
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 7
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": []
+    },
+    {
+      "id": "mobile_dark_onboarding",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "onboarding",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 23
+      },
+      "buildError": null
+    },
+    {
+      "id": "mobile_dark_shift",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "shift",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [
+        {
+          "sel": "div > div > div > button.secondary-button",
+          "w": 148,
+          "h": 30,
+          "own": "148x30",
+          "text": "Показать аналитику"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 412
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_schedule",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "schedule",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.smart-ai-booking > div.flex.justify-between.items-center > div.flex.gap-2.items-center > span.save-state.save-state-idle.font-medium",
+          "ratio": 2.3,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "Заполните поля",
+          "box": {
+            "x": 51,
+            "y": 861,
+            "w": 117,
+            "h": 32
+          },
+          "pixel": 2.3,
+          "samples": 3744
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div#schedule.panel.schedule-panel > div.panel-heading > div > button.secondary-button",
+          "w": 148,
+          "h": 30,
+          "own": "148x30",
+          "text": "Показать аналитику"
+        },
+        {
+          "sel": "div.smart-ai-booking > div.flex.justify-between.items-center > div.flex.gap-3.items-center > button.secondary-button.focus:ring-2.focus:ring-teal-600",
+          "w": 224,
+          "h": 30,
+          "own": "224x30",
+          "text": "Показать все поля / Ручной вво"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 399
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_patients",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "patients",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [
+        {
+          "sel": "div.smart-create-group > div.smart-input-wrapper > div > button",
+          "w": 16,
+          "h": 36,
+          "own": "16x36",
+          "text": ""
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 176,
+          "h": 30,
+          "own": "176x30",
+          "text": "+ Очень тревожный"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 177,
+          "h": 30,
+          "own": "177x30",
+          "text": "+ Сложный пациент"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 61,
+          "h": 30,
+          "own": "61x30",
+          "text": "+ VIP"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 228,
+          "h": 30,
+          "own": "228x30",
+          "text": "+ Просит звонить заранее"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 159,
+          "h": 30,
+          "own": "159x30",
+          "text": "+ Часто отменяет"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 260,
+          "h": 30,
+          "own": "260x30",
+          "text": "+ Плохо переносит анестезию"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 107,
+          "h": 30,
+          "own": "107x30",
+          "text": "+ Должник"
+        },
+        {
+          "sel": "div.clinic-profile-form-grid.patient-core-form-grid > div.form-span-2.flex.flex-col > div.flex.flex-wrap.gap-1.5 > button.px-2.5.py-1.text-xs",
+          "w": 174,
+          "h": 30,
+          "own": "174x30",
+          "text": "+ Рвотный рефлекс"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1059
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_imaging",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "imaging",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 298
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-imaging > section#imaging.imaging-panel > div.imaging-kind-filter > button.focus:ring-2.focus:ring-teal-600.focus:outline-none",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Все",
+          "box": {
+            "x": 28,
+            "y": 890,
+            "w": 54,
+            "h": 34
+          },
+          "pixel": 12.39,
+          "samples": 1836
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_visit",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "visit",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [
+        {
+          "sel": "section#workspace-content.workspace.view-visit > section.work-grid.page-grid > div > div.p-4.rounded-xl.border",
+          "right": 409,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 19
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-visit > section.work-grid.page-grid > div > div.p-4.bg-slate-900.border",
+          "right": 409,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 19
+        }
+      ],
+      "lowContrast": [
+        {
+          "sel": "div#visit.panel.visit-panel > section.visit-focus-bar > div.visit-focus-status > span",
+          "ratio": 2.4,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(116, 77, 24)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "4 предупр.",
+          "box": {
+            "x": 55,
+            "y": 395,
+            "w": 280,
+            "h": 15
+          },
+          "pixel": 2.22,
+          "samples": 4200
+        },
+        {
+          "sel": "section.work-grid.page-grid > div#visit.panel.visit-panel > div.visit-sub-nav-tabs > button.secondary-button.focus:ring-2.focus:ring-teal-600",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(20, 184, 166)",
+          "text": "📝 ЭМК и Диктовка",
+          "box": {
+            "x": 34,
+            "y": 593,
+            "w": 84,
+            "h": 51
+          },
+          "pixel": 2.39,
+          "samples": 4284
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-map-legend > span.tooth-legend-item.legend-planned",
+          "ratio": 1.67,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(125, 44, 37)",
+          "bg": "rgb(49, 30, 46)",
+          "text": "В плане",
+          "box": {
+            "x": 47,
+            "y": 2805,
+            "w": 66,
+            "h": 26
+          },
+          "pixel": 1.88,
+          "samples": 1716
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.active",
+          "ratio": 2.16,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(218, 244, 243)",
+          "text": "🔍 Обычный клик",
+          "box": {
+            "x": 76,
+            "y": 2924,
+            "w": 141,
+            "h": 31
+          },
+          "pixel": 1.96,
+          "samples": 4371
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > section.visit-note-panel > div.emk-tabs-container > button.emk-tab-button.active",
+          "ratio": 3.74,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(13, 148, 136)",
+          "text": "Все поля",
+          "box": {
+            "x": 47,
+            "y": 3602,
+            "w": 76,
+            "h": 44
+          },
+          "pixel": 3.13,
+          "samples": 3344
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button",
+          "ratio": 2.56,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "терапия",
+          "box": {
+            "x": 163,
+            "y": 5780,
+            "w": 72,
+            "h": 32
+          },
+          "pixel": 1.49,
+          "samples": 2304
+        }
+      ],
+      "tinyTargets": [
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.active",
+          "w": 141,
+          "h": 31,
+          "own": "141x31",
+          "text": "🔍 Обычный клик"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-planned",
+          "w": 90,
+          "h": 31,
+          "own": "90x31",
+          "text": "📝 В план"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-treatment",
+          "w": 102,
+          "h": 31,
+          "own": "102x31",
+          "text": "🔴 Лечение"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-watch",
+          "w": 129,
+          "h": 31,
+          "own": "129x31",
+          "text": "⚠️ Наблюдение"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-done",
+          "w": 90,
+          "h": 31,
+          "own": "90x31",
+          "text": "🟢 Готово"
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > div.tooth-map > div.tooth-stamp-bar > button.stamp-btn.stamp-missing",
+          "w": 104,
+          "h": 31,
+          "own": "104x31",
+          "text": "❌ Нет зуба"
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 1039
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 115,
+            "y": 134,
+            "w": 160,
+            "h": 20
+          },
+          "pixel": 8.33,
+          "samples": 3200
+        },
+        {
+          "sel": "div#visit.panel.visit-panel > details.protocol-library > div.specialty-strip > button.active",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "универсально",
+          "box": {
+            "x": 49,
+            "y": 5780,
+            "w": 108,
+            "h": 32
+          },
+          "pixel": 15.65,
+          "samples": 3456
+        },
+        {
+          "sel": "details.protocol-library > article.protocol-card > div.protocol-template-list > button.active",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(20, 184, 166)",
+          "text": "Осмотр и план",
+          "box": {
+            "x": 62,
+            "y": 5876,
+            "w": 110,
+            "h": 32
+          },
+          "pixel": 13.03,
+          "samples": 3520
+        },
+        {
+          "sel": "details.protocol-library > article.protocol-card > ul > li",
+          "ratio": 1.98,
+          "need": 4.5,
+          "fontSize": 14,
+          "color": "rgb(78, 70, 63)",
+          "bg": "rgb(13, 22, 25)",
+          "text": "Осмотр не заменяет профильную диагностику.",
+          "box": {
+            "x": 80,
+            "y": 5918,
+            "w": 248,
+            "h": 34
+          },
+          "pixel": 4.76,
+          "samples": 8432
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_documents",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "documents",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [
+        {
+          "sel": "section.work-grid.page-grid > div#documents.panel.documents-panel > div > div.p-4.rounded-xl.border",
+          "right": 414,
+          "width": 380,
+          "viewport": 390,
+          "overhang": 24
+        }
+      ],
+      "lowContrast": [],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 716
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        },
+        {
+          "sel": "div#documents.panel.documents-panel > div.document-factory > div.document-factory-selected-kind > label",
+          "ratio": 2.44,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(244, 251, 248)",
+          "text": "Документ",
+          "box": {
+            "x": 51,
+            "y": 654,
+            "w": 288,
+            "h": 60
+          },
+          "pixel": 19.21,
+          "samples": 17280
+        },
+        {
+          "sel": "div#documents.panel.documents-panel > div.document-factory > div.document-factory-selected-kind > span#document-create-selected-guidance",
+          "ratio": 2.44,
+          "need": 4.5,
+          "fontSize": 13.5,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(244, 251, 248)",
+          "text": "Перед созданием CRM проверит обязательные поля это",
+          "box": {
+            "x": 51,
+            "y": 726,
+            "w": 288,
+            "h": 81
+          },
+          "pixel": 17,
+          "samples": 23328
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_finance",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "finance",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section.work-grid.page-grid > div#finance.panel.finance-panel > div#payment-capture.payment-capture.bg-white.dark:bg-slate-900 > p.payment-capture-safeguard",
+          "ratio": 3.57,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(93, 116, 112)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "Каждая оплата добавляет новую строку в историю. Ош",
+          "box": {
+            "x": 47,
+            "y": 2165,
+            "w": 296,
+            "h": 49
+          },
+          "pixel": 3.57,
+          "samples": 14504
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 523
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_analytics",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "analytics",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div.analytics-dashboard.panel.p-5 > div > div > div",
+          "ratio": 4.22,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(139, 92, 246)",
+          "bg": "rgb(15, 23, 42)",
+          "text": "Приёмов",
+          "box": {
+            "x": 55,
+            "y": 687,
+            "w": 280,
+            "h": 18
+          },
+          "pixel": 2.17,
+          "samples": 5040
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 348
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        },
+        {
+          "sel": "section.work-grid.page-grid > div.analytics-dashboard.panel.p-5 > header.analytics-header.flex.justify-between > h2.m-0.text-xl.font-bold",
+          "ratio": 1.21,
+          "need": 3,
+          "fontSize": 24,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(228, 228, 231)",
+          "text": "Аналитика клиники",
+          "box": {
+            "x": 34,
+            "y": 340,
+            "w": 128,
+            "h": 67
+          },
+          "pixel": 10.82,
+          "samples": 8576
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_communications",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "communications",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [],
+      "tinyTargets": [
+        {
+          "sel": "div.communication-note-row.bg-[var(--paper)].border > div.flex.justify-between.items-center > div > button.inline-flex.gap-1.5.items-center",
+          "w": 31,
+          "h": 36,
+          "own": "31x36",
+          "text": ""
+        }
+      ],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 440
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_settings",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "settings",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > span",
+          "ratio": 2.37,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "1/5",
+          "box": {
+            "x": 185,
+            "y": 532,
+            "w": 20,
+            "h": 15
+          },
+          "pixel": 2.37,
+          "samples": 300
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > strong",
+          "ratio": 2.3,
+          "need": 3,
+          "fontSize": 28,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "29%",
+          "box": {
+            "x": 166,
+            "y": 550,
+            "w": 58,
+            "h": 28
+          },
+          "pixel": 2.3,
+          "samples": 1624
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-head > div.onboarding-score > small",
+          "ratio": 2.37,
+          "need": 4.5,
+          "fontSize": 12,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "готовность документов",
+          "box": {
+            "x": 123,
+            "y": 581,
+            "w": 144,
+            "h": 15
+          },
+          "pixel": 2.37,
+          "samples": 2160
+        },
+        {
+          "sel": "section#workspace-content.workspace.view-settings > section.onboarding-shell > div.onboarding-fast-start > button.primary-button",
+          "ratio": 2.49,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(255, 255, 255)",
+          "text": "Открыть прием",
+          "box": {
+            "x": 43,
+            "y": 718,
+            "w": 304,
+            "h": 44
+          },
+          "pixel": 1.46,
+          "samples": 13376
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > strong",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Режим запуска",
+          "box": {
+            "x": 43,
+            "y": 938,
+            "w": 100,
+            "h": 15
+          },
+          "pixel": 1.86,
+          "samples": 1500
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button.active > small",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "демо или чистая",
+          "box": {
+            "x": 43,
+            "y": 959,
+            "w": 92,
+            "h": 13
+          },
+          "pixel": 1.86,
+          "samples": 1196
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button > strong",
+          "ratio": 2.53,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(251, 254, 253)",
+          "text": "Клиника",
+          "box": {
+            "x": 43,
+            "y": 1046,
+            "w": 56,
+            "h": 15
+          },
+          "pixel": 2.53,
+          "samples": 840
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-step-list > button > small",
+          "ratio": 2.53,
+          "need": 4.5,
+          "fontSize": 11,
+          "color": "rgb(148, 163, 184)",
+          "bg": "rgb(251, 254, 253)",
+          "text": "название и телефон",
+          "box": {
+            "x": 43,
+            "y": 1067,
+            "w": 112,
+            "h": 13
+          },
+          "pixel": 2.53,
+          "samples": 1456
+        },
+        {
+          "sel": "section.onboarding-shell > div.onboarding-panel > div.onboarding-source-grid > span",
+          "ratio": 2.3,
+          "need": 4.5,
+          "fontSize": 13,
+          "color": "rgb(20, 184, 166)",
+          "bg": "rgb(238, 248, 245)",
+          "text": "Прием: протоколы, голос, офлайн-черновик",
+          "box": {
+            "x": 45,
+            "y": 1625,
+            "w": 300,
+            "h": 52
+          },
+          "pixel": 2.22,
+          "samples": 15600
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 329
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": [
+        {
+          "sel": "header.topbar > div.topbar-context > div.topbar-clinic > h1",
+          "ratio": 1.78,
+          "need": 4.5,
+          "fontSize": 17,
+          "color": "rgb(248, 250, 252)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Стоматология, 1 кабинет",
+          "box": {
+            "x": 13,
+            "y": 172,
+            "w": 160,
+            "h": 19
+          },
+          "pixel": 8.34,
+          "samples": 3040
+        }
+      ]
+    },
+    {
+      "id": "mobile_dark_marketing",
+      "viewport": "mobile",
+      "theme": "dark",
+      "view": "marketing",
+      "docScrollWidth": 390,
+      "innerWidth": 390,
+      "bodyBg": "rgb(10, 18, 17)",
+      "htmlBg": "rgb(2, 6, 23)",
+      "bodyColor": "rgb(233, 242, 239)",
+      "dataTheme": "dark",
+      "htmlClass": "dark",
+      "overflowX": [],
+      "lowContrast": [
+        {
+          "sel": "div#root > main.boot-state.boot-state-error > button",
+          "ratio": 1.86,
+          "need": 4.5,
+          "fontSize": 16,
+          "color": "rgb(255, 255, 255)",
+          "bg": "rgb(45, 212, 191)",
+          "text": "Обновить рабочее место",
+          "box": {
+            "x": 24,
+            "y": 447,
+            "w": 342,
+            "h": 42
+          },
+          "pixel": 1.85,
+          "samples": 14364
+        }
+      ],
+      "tinyTargets": [],
+      "clippedText": [],
+      "unnamedControls": [],
+      "invisibleText": [],
+      "counts": {
+        "elements": 7
+      },
+      "buildError": null,
+      "invisibleTextUnconfirmed": [],
+      "lowContrastUnconfirmed": []
+    }
+  ],
+  "consoleErrors": [
+    {
+      "viewport": "pc",
+      "theme": "light",
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "Error: <path> attribute d: Expected number, \"…50 30 L50 40 55 M50 55 L50 80\".",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:1166:52\n    at Ar",
+        "DENTE route failed: settings TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame (http://127.0.0.1",
+        "DENTE boot failed full stack TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame "
+      ]
+    },
+    {
+      "viewport": "pc",
+      "theme": "dark",
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "Error: <path> attribute d: Expected number, \"…50 30 L50 40 55 M50 55 L50 80\".",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:1166:52\n    at Ar",
+        "DENTE route failed: settings TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame (http://127.0.0.1",
+        "DENTE boot failed full stack TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame "
+      ]
+    },
+    {
+      "viewport": "mobile",
+      "theme": "light",
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "Error: <path> attribute d: Expected number, \"…50 30 L50 40 55 M50 55 L50 80\".",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:1166:52\n    at Ar",
+        "DENTE route failed: settings TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame (http://127.0.0.1",
+        "DENTE boot failed full stack TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame "
+      ]
+    },
+    {
+      "viewport": "mobile",
+      "theme": "dark",
+      "errors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "Error: <path> attribute d: Expected number, \"…50 30 L50 40 55 M50 55 L50 80\".",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:1166:52\n    at Ar",
+        "DENTE route failed: settings TypeError: Cannot read properties of undefined (reading '93bca14f-a11d-4088-9b48-cb7a0fd4c9ef')\n    at http://127.0.0.1:5173/src/components/settings/SettingsClinicTab.tsx:",
+        "%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame (http://127.0.0.1",
+        "DENTE boot failed full stack TypeError: Cannot read properties of null (reading 'phone')\n    at App (http://127.0.0.1:5173/src/App.tsx?t=1785154859899:5968:133)\n    at Object.react_stack_bottom_frame "
+      ]
+    }
+  ],
+  "buildErrors": []
+}

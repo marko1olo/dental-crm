@@ -1,0 +1,534 @@
+{
+  "startedAt": "2026-07-28T23:47:46.637Z",
+  "finishedAt": "2026-07-28T23:51:08.334Z",
+  "out": "C:/Clinic_MVP/dental-crm/.dente-ops-shots",
+  "palettes": [
+    {
+      "key": "light@1600x1000",
+      "fingerprint": "fb13b9804418"
+    },
+    {
+      "key": "dark@1600x1000",
+      "fingerprint": "85cb4671fb5f"
+    },
+    {
+      "key": "night@1600x1000",
+      "fingerprint": "0cba16b88626"
+    },
+    {
+      "key": "light@720x1100",
+      "fingerprint": "fb13b9804418"
+    }
+  ],
+  "plates": 46,
+  "uniqueMd5": 46,
+  "diagnostics": [],
+  "shots": [
+    {
+      "file": "light_callList.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "60da51ef9ae4cd1f9428984fc8513166",
+      "bytes": 105129,
+      "diagnostic": false
+    },
+    {
+      "file": "light_waitlist.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "6bd543ba1b0f6c35e15a2eb652f451e3",
+      "bytes": 189530,
+      "diagnostic": false
+    },
+    {
+      "file": "light_visit.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "8203c4368ffb03d0c2d1ad70e60997ef",
+      "bytes": 438794,
+      "diagnostic": false
+    },
+    {
+      "file": "light_delivery.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "46ee415a0e4adbbf48c87d8710d40f3b",
+      "bytes": 219995,
+      "diagnostic": false
+    },
+    {
+      "file": "light_campaigns.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "a24775d25a3520dd38661151a060845a",
+      "bytes": 43327,
+      "diagnostic": false
+    },
+    {
+      "file": "light_reports.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "219c7ac72b4981003b8818a8c33eeb77",
+      "bytes": 159326,
+      "diagnostic": false
+    },
+    {
+      "file": "light_recall.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "93468c034fdedbd8b354e2a9a054c428",
+      "bytes": 103815,
+      "diagnostic": false
+    },
+    {
+      "file": "light_freedSlots.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "8cd3a70d430c05347e0f8022bc866c8d",
+      "bytes": 28799,
+      "diagnostic": false
+    },
+    {
+      "file": "light_duplicates.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "bd9db05cdc7de50f6c7b14c9e5dd14df",
+      "bytes": 132823,
+      "diagnostic": false
+    },
+    {
+      "file": "light_duplicateAlert.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "93e61292609139a4f50ae93e31be5f64",
+      "bytes": 55802,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_callList.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "16e86404bfba4825070b1447f9dc94cc",
+      "bytes": 108526,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_waitlist.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "3f6c016dee666c63e963b5630a8f72e6",
+      "bytes": 202203,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_visit.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "59f798a5b2f1e0bb8173ac60506ccccc",
+      "bytes": 452582,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_delivery.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "23d69bca469a3ed98ba602a1c75beeaa",
+      "bytes": 226934,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_campaigns.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "2e1b5b4c562afaf4973163f0d688c738",
+      "bytes": 45181,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_reports.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "16a69cddbbd25c6a4a129373df6a1dc1",
+      "bytes": 162606,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_recall.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "69427f7a8d692dec30a4b0638ace9642",
+      "bytes": 106225,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_freedSlots.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "94fe48b43d8445e34b2a5b8f71ab6373",
+      "bytes": 29932,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_duplicates.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "2bd37c3949b092e46cf4f40eb870187a",
+      "bytes": 139107,
+      "diagnostic": false
+    },
+    {
+      "file": "dark_duplicateAlert.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "bdbf6e8a09e432f705ca1747ea632e15",
+      "bytes": 55674,
+      "diagnostic": false
+    },
+    {
+      "file": "night_callList.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "ee691395093962fc1092d3db4fd10f3c",
+      "bytes": 108598,
+      "diagnostic": false
+    },
+    {
+      "file": "night_waitlist.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "844b476086f6e0efa42805674104ecce",
+      "bytes": 187735,
+      "diagnostic": false
+    },
+    {
+      "file": "night_visit.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "f6680f51166fccdaec4c589e2e3d5375",
+      "bytes": 445331,
+      "diagnostic": false
+    },
+    {
+      "file": "night_delivery.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "46e39fa70c6cc53a71b1fc56d222a28e",
+      "bytes": 225981,
+      "diagnostic": false
+    },
+    {
+      "file": "night_campaigns.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "8381f8790d815fe749abf9294e1b7f37",
+      "bytes": 45068,
+      "diagnostic": false
+    },
+    {
+      "file": "night_reports.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "843060647271f2c04a990c6f4cc0a3c4",
+      "bytes": 161247,
+      "diagnostic": false
+    },
+    {
+      "file": "night_recall.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "7250111bcca8f80fa8fa5c35da64145b",
+      "bytes": 104520,
+      "diagnostic": false
+    },
+    {
+      "file": "night_freedSlots.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "d205c31148d6c11e2d45b5600ee103a9",
+      "bytes": 29541,
+      "diagnostic": false
+    },
+    {
+      "file": "night_duplicates.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "111271258aeca2579122ec7fba8bc9a6",
+      "bytes": 136793,
+      "diagnostic": false
+    },
+    {
+      "file": "night_duplicateAlert.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "1f0b5cdc7cc151fc149299c7861b61fb",
+      "bytes": 56767,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_callList.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "88a5509f18413a3656daf61d727399f6",
+      "bytes": 122643,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_waitlist.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "ab9980bcd835302e0b0e0f0bcbc277b7",
+      "bytes": 115084,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_visit.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "cf8ccba1690815588cf97d2d1771f123",
+      "bytes": 418826,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_delivery.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "b33dc237d17874fab4824ceefc30da57",
+      "bytes": 268433,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_campaigns.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "8abbb3e02e3749fb2d1df1a36fb229ef",
+      "bytes": 49326,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_reports.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "7293fd00c8d72eb2c31509ab7c39043f",
+      "bytes": 192170,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_recall.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "ca33776b12fc8620c9a528e27d22f847",
+      "bytes": 128237,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_freedSlots.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "dc75e51c73c4eb4f8de2f1a65382cbcb",
+      "bytes": 31575,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_duplicates.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "b42a53c9fb23699c72ddad337e8cb4f8",
+      "bytes": 138281,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_duplicateAlert.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "f879773e26f038975c691583389ddbf7",
+      "bytes": 56983,
+      "diagnostic": false
+    },
+    {
+      "file": "narrow_full.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "720x1100",
+      "md5": "caea5273d23372e256c79cad06aa47a4",
+      "bytes": 111702,
+      "diagnostic": false
+    },
+    {
+      "file": "finance_full.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "02067f0649dc758cae4cade6388ba2c1",
+      "bytes": 114048,
+      "diagnostic": false
+    },
+    {
+      "file": "patients_light_full.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "67294bfaa3c6be74c007264814e89246",
+      "bytes": 184089,
+      "diagnostic": false
+    },
+    {
+      "file": "patients_dark_full.png",
+      "theme": "dark",
+      "dataTheme": "dark",
+      "storeMode": "dark",
+      "palette": "85cb4671fb5f",
+      "viewport": "1600x1000",
+      "md5": "e6aa9ea0d3fca81d952a13d61c8c4d7f",
+      "bytes": 208243,
+      "diagnostic": false
+    },
+    {
+      "file": "patients_night_full.png",
+      "theme": "night",
+      "dataTheme": "night",
+      "storeMode": "night",
+      "palette": "0cba16b88626",
+      "viewport": "1600x1000",
+      "md5": "de461dc5c9349eee6cf248d6e398d39f",
+      "bytes": 211689,
+      "diagnostic": false
+    },
+    {
+      "file": "communications_full.png",
+      "theme": "light",
+      "dataTheme": "light",
+      "storeMode": "light",
+      "palette": "fb13b9804418",
+      "viewport": "1600x1000",
+      "md5": "45b2710a64857a22f1ec6d184b32efce",
+      "bytes": 156545,
+      "diagnostic": false
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+▶ taxPaymentSelectionErrorForDocument
+  ✔ returns null when valid selection is provided (0.6686ms)
+  ✔ returns null if input kind is not tax paid document (0.0812ms)
+  ✔ returns error if tax document requires payment selection but none selected (0.0725ms)
+  ✔ returns null if tax document does not require payment selection and none selected (0.0756ms)
+  ✔ returns error if there are duplicates in selected ids (0.0733ms)
+  ✔ returns error if a selected payment is not found (0.0988ms)
+  ✔ returns error if selected payment belongs to another patient (0.0682ms)
+  ✔ returns error if selected payment is not paid or amount is <= 0 (0.0889ms)
+  ✔ returns error if selected payment does not match tax year (0.0833ms)
+  ✔ returns error if taxYear is not provided but payments are selected (0.1131ms)
+  ✔ returns error if selected payment does not match payer INN (2.3709ms)
+✔ taxPaymentSelectionErrorForDocument (4.5869ms)
+▶ taxDocumentSelectionScope - edge cases
+  ✔ uses taxDeductionApplication.requestedTaxYear when kind is tax_deduction_application (0.2149ms)
+✔ taxDocumentSelectionScope - edge cases (0.308ms)
+▶ paidAmountRubForDocument
+  ✔ returns 0 if metadata requiresPaidRecord, group is not tax, and no visitId (0.2479ms)
+  ✔ returns 0 if taxPaidDocumentsNeedYear and no taxYear (0.0855ms)
+  ✔ returns 0 if taxPaidDocumentKindIsKnd and taxYear < taxDeductionCertificateMinYear (0.0541ms)
+  ✔ returns 0 if taxPaidDocumentKindIsLegacy and taxYear is out of bounds (0.0489ms)
+  ✔ calculates sum for tax documents with payment selection (0.0869ms)
+  ✔ returns 0 for tax documents with payment selection but none selected (0.0418ms)
+  ✔ calculates sum for payment_receipt with specific payload (0.0839ms)
+  ✔ calculates sum for payment_refund_correction_request with specific payload (0.0897ms)
+  ✔ calculates sum for generic tax documents without payment selection (fallback) (0.0759ms)
+  ✔ calculates sum for non-tax documents without specific payload (fallback) (0.0511ms)
+✔ paidAmountRubForDocument (1.0122ms)
+ℹ tests 22
+ℹ suites 3
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 246.8022

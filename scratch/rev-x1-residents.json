@@ -1,0 +1,103 @@
+{
+  "at": "2026-07-28T10:52:22.179Z",
+  "runs": [
+    {
+      "vw": 1600,
+      "vh": 1100,
+      "hash": "#patients",
+      "before": {
+        "controls": 0,
+        "slotChildren": [
+          "notice:0",
+          "search:0",
+          "voice:0",
+          "help:0"
+        ],
+        "omnibarDialogPresent": false,
+        "commandPaletteMarker": false
+      },
+      "afterCtrlK": {
+        "omnibarOpened": false,
+        "fixedInset0": 1,
+        "z9999": 1,
+        "controls": 0
+      },
+      "afterResize": {
+        "controls": 0,
+        "slotChildren": [
+          "notice:0",
+          "search:0",
+          "voice:0",
+          "help:0"
+        ],
+        "placement": "header"
+      },
+      "meta": {
+        "mainHasStrictMode": true,
+        "mainSnippet": "import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false};import __vite__cjsImport0_react_jsxDevRuntime from \"/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=136bb6ba\"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime[\"jsxDEV\"];\nimport __vite__cjsImport1_react from \"/node_modules/.vite/deps/react.js?v=136bb6ba\"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react;\nimport __vite__cjsImport2_reactDom_client from \"/node_modules/.vite/deps/react-dom_client.js?v=136bb6ba\"; const createRoo"
+      }
+    },
+    {
+      "vw": 1600,
+      "vh": 1100,
+      "hash": "#schedule",
+      "before": {
+        "controls": 0,
+        "slotChildren": [],
+        "omnibarDialogPresent": false,
+        "commandPaletteMarker": false
+      },
+      "afterCtrlK": {
+        "omnibarOpened": false,
+        "fixedInset0": 0,
+        "z9999": 0,
+        "controls": 0
+      },
+      "afterResize": {
+        "controls": 0,
+        "slotChildren": [],
+        "placement": null
+      },
+      "meta": {
+        "mainHasStrictMode": true,
+        "mainSnippet": "import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false};import __vite__cjsImport0_react_jsxDevRuntime from \"/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=136bb6ba\"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime[\"jsxDEV\"];\nimport __vite__cjsImport1_react from \"/node_modules/.vite/deps/react.js?v=136bb6ba\"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react;\nimport __vite__cjsImport2_reactDom_client from \"/node_modules/.vite/deps/react-dom_client.js?v=136bb6ba\"; const createRoo"
+      }
+    },
+    {
+      "vw": 390,
+      "vh": 844,
+      "hash": "#patients",
+      "before": {
+        "controls": 0,
+        "slotChildren": [
+          "notice:0",
+          "voice:0",
+          "search:0",
+          "help:0"
+        ],
+        "omnibarDialogPresent": false,
+        "commandPaletteMarker": false
+      },
+      "afterCtrlK": {
+        "omnibarOpened": false,
+        "fixedInset0": 1,
+        "z9999": 1,
+        "controls": 0
+      },
+      "afterResize": {
+        "controls": 0,
+        "slotChildren": [
+          "notice:0",
+          "voice:0",
+          "search:0",
+          "help:0"
+        ],
+        "placement": "nav"
+      },
+      "meta": {
+        "mainHasStrictMode": true,
+        "mainSnippet": "import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false};import __vite__cjsImport0_react_jsxDevRuntime from \"/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=136bb6ba\"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime[\"jsxDEV\"];\nimport __vite__cjsImport1_react from \"/node_modules/.vite/deps/react.js?v=136bb6ba\"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react;\nimport __vite__cjsImport2_reactDom_client from \"/node_modules/.vite/deps/react-dom_client.js?v=136bb6ba\"; const createRoo"
+      }
+    }
+  ]
+}

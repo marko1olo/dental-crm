@@ -1,0 +1,20 @@
+[ARCHON] refactor(настройки): мёртвая деструктуризация прайса маскировала невыполненный вынос вкладки
+
+Коммит d2601c4ea вынес разметку прайса в SettingsPricesTab, но в SettingsView
+и useSettingsDerivations оставил деструктуризацию useAppLogicContext
+закомментированной — по 22 строки в каждом файле: pricelistAnalysis,
+pricelistImageBase64, pricelistImageName, pricelistImageNote,
+pricelistItemMaterialText, pricelistMaterialSummaryText, pricelistWarningsText,
+pricelistParserModeLabels, pricelistRecognitionBrandGroups,
+pricelistRecognitionServiceGroups, pricelistSourceKind,
+pricelistSourceKindLabels, pricelistText, четыре сеттера и usePricelistAi.
+
+Причина закрытия блока — только «переменная объявлена и не используется» после
+переноса разметки, а не отключение функциональности. Но читается наоборот:
+следующий человек видит закомментированный pricelistWarningsText и заключает,
+что предупреждения разбора прайса выключены намеренно. Оба файла эти имена
+больше не рисуют и не отдают наружу — вкладка берёт их сама из
+useAppLogicContext, — поэтому строки удалены, а не раскомментированы.
+
+Изменение только на удаление: 0 добавлено, 22 удалено в каждом файле, число
+символов кириллицы совпадает с HEAD, parseDiagnostics = 0 в обоих файлах.

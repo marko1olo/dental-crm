@@ -1,0 +1,1535 @@
+
+> dental-crm@0.1.0 smoke:all
+> node scripts/run-smoke-suite.mjs
+
+Running 123 smoke checks.
+FAIL smoke:wave6 203ms
+=== Wave 6 Edge-Case & Smoke Suite ===
+[1/5] prodoctorov-sync
+❌ WAVE 6 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave7 169ms
+=== Wave 7 Edge-Case & Smoke Suite ===
+[1/5] non-dental-examination-forms
+❌ WAVE 7 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave8 180ms
+=== Wave 8 Edge-Case & Smoke Suite ===
+[1/5] schedule/clipboard-items
+❌ WAVE 8 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave10 178ms
+=== Wave 10 Edge-Case & Smoke Suite ===
+[1/5] documents/treatment-plan-lock-tokens
+❌ WAVE 10 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave11 172ms
+=== Wave 11 Edge-Case & Smoke Suite ===
+[1/1] communications/uis-omni-messenger-queues
+❌ WAVE 11 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave12 186ms
+=== Wave 12 Edge-Case & Smoke Suite ===
+[1/5] analytics/lost-patients-filters
+❌ WAVE 12 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave13 173ms
+=== Wave 13 Edge-Case & Smoke Suite ===
+[1/5] communications/appointment-channel-inheritances
+❌ WAVE 13 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave14 167ms
+=== Wave 14 Edge-Case & Smoke Suite ===
+[1/5] communications/uis-sms-chat-quotas
+❌ WAVE 14 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:wave15 176ms
+=== Wave 15 Edge-Case & Smoke Suite ===
+[1/5] crm/patient-communication-timelines
+❌ WAVE 15 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAIL smoke:mobile 12536ms
+{"href":"http://127.0.0.1:5173/#settings/sources","viewport":390,"scrollWidth":390,"overflow":0,"hasRequiredElement":false,"requiredElementHidden":null,"visibleText":"ПЕРВЫЙ ЗАПУСК\n\nБыстрая настройка CRM Dente\nРежим запуска приложения\n\nВыберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.\n\n🚀\nПопробовать демо-режим\nЗапустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.\n✨\nНачать с чистого "}
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279
+		throw new Error(`${requiredLabel} is not visible on the target page.`);
+		      ^
+Error: .dicom-mpr-workbench is not visible on the target page.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279:9
+Node.js v24.13.0
+FAIL smoke:mobile-overflow 12578ms
+{"href":"http://127.0.0.1:5173/#settings/sources","viewport":390,"scrollWidth":390,"overflow":0,"hasRequiredElement":false,"requiredElementHidden":null,"visibleText":"ПЕРВЫЙ ЗАПУСК\n\nБыстрая настройка CRM Dente\nРежим запуска приложения\n\nВыберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.\n\n🚀\nПопробовать демо-режим\nЗапустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.\n✨\nНачать с чистого "}
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279
+		throw new Error(`${requiredLabel} is not visible on the target page.`);
+		      ^
+Error: .dicom-mpr-workbench is not visible on the target page.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279:9
+Node.js v24.13.0
+FAIL smoke:web-render-gating-source 41ms
+    "{settingsTab === \"sources\" ? (\n          <section className=\"connector-grid\"",
+    "{settingsTab === \"sources\" ? (\n          <section className=\"dicom-capability-panel\"",
+    "{settingsTab === \"sources\" && typedDicomViewerToolStateBundle ? (\n            <section className=\"dicom-toolstate-result\"",
+    "{settingsTab === \"sources\" ? (\n          <section className=\"integration-presets\"",
+    "{settingsTab === \"ai\" ? (\n          <section className=\"recognition-lab\"",
+    "{settingsTab === \"imports\" ? (\n          <section className=\"import-studio smart-import-studio\"",
+    "{[\"imports\", \"sources\"].includes(settingsTab) ? (",
+    "{settingsTab === \"audit\" ? (\n          <section className=\"ops-grid\"",
+    "{settingsTab === \"imports\" ? (\n          <section className=\"import-studio\""
+  ],
+  "forbiddenPresent": [],
+  "forbiddenSettingsTabsPresent": [],
+  "appNoticeAlertCount": 2
+}
+PASS smoke:web-code-split-source 46ms
+FAIL smoke:web-bundle-budget 226ms
+    "ct planning state: 33500 bytes exceeds 8000",
+    "ct planning state: 10670 gzip bytes exceeds 4000",
+    "ct planning geometry: expected built asset matching /^ct-planning-geometry-[\\w-]+\\.js$/",
+    "react vendor: 244945 bytes exceeds 230000",
+    "react vendor: 75880 gzip bytes exceeds 72000",
+    "main stylesheet: 301066 bytes exceeds 240000",
+    "main stylesheet: 49720 gzip bytes exceeds 38000",
+    "jsBytes: 7999866 exceeds 2000000",
+    "jsGzipBytes: 2242159 exceeds 540000",
+    "totalBytes: 8372191 exceeds 2300000",
+    "totalGzipBytes: 2307217 exceeds 580000",
+    "FinanceView-CYaG7eIh.js: lazy route chunk must not statically import the heavy workspace chunk"
+  ]
+}
+PASS smoke:web-service-worker-cache-source 40ms
+PASS smoke:web-service-worker-runtime 366ms
+PASS smoke:app-update-recovery-source 40ms
+PASS smoke:workspace-shell-source 42ms
+FAIL smoke:daily-surfaces-keyboard-accessibility 44ms
+Daily surfaces keyboard/accessibility source smoke failed:
+- schedule: new appointment blocker guidance must be addressable.
+- schedule: create appointment button must point to blocker guidance.
+- schedule: new appointment create button must expose busy state.
+- schedule: appointment edit buttons must expose expanded state.
+- schedule: appointment edit buttons must point to the controlled editor.
+- schedule: repeated schedule row actions must have contextual accessible names.
+- schedule: edited appointment blocker guidance must be addressable.
+- schedule: edited appointment save button must point to blocker guidance.
+- settings: settings blockers and async feedback must be announced politely.
+FAIL smoke:segmented-controls-accessibility-source 43ms
+Segmented controls accessibility source smoke failed:
+- Settings price source picker must expose selected state.
+- Settings price AI toggle must expose selected state.
+- Settings recognition preset picker must expose selected state.
+- Settings smart import mode picker must expose selected state.
+- Settings imaging source picker must expose selected state.
+- Settings first-slice mirror toggle must expose selected state.
+- Settings first-slice inversion toggle must expose selected state.
+- Settings legacy import source picker must expose selected state.
+- Settings document ingestion route picker must expose selected state.
+PASS smoke:app-boot-state-source 47ms
+PASS smoke:interactive-buttons-source 49ms
+PASS smoke:clinical-rule-panel-source 45ms
+PASS smoke:clinical-rule-contract 655ms
+FAIL smoke:ai-recognition-scope 760ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:30
+	if (!condition) throw new Error(message);
+	                      ^
+Error: AI job blank input must return 400, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:30:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:175:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:imaging-viewer-usability-source 55ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:178
+	if (!pattern.test(source)) throw new Error(message);
+	                                 ^
+Error: Imaging viewer primary study image must decode asynchronously without lazy-loading the active diagnostic preview.
+    at requirePattern (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:178:35)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:281:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:imaging-study-visit-scope 814ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: wrong-patient imaging visit status mismatch: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:34:24)
+    at assertImagingError (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:61:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:160:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:patients-usability-source 45ms
+FAIL smoke:shift-visit-usability-source 44ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:20
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: Tooth map must keep visit-specific visual tooth states.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:20:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:73:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:documents-view-source 48ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:22
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: App.tsx must guard duplicate document creation.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:22:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:54:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:settings-view-source 51ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:71
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: DICOMweb archive check must use the Settings admin secret boundary.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:71:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:82:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:schedule-view-source 44ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:24
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: ScheduleView must own schedule panel.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:24:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:62:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:communications-view-source 44ms
+Communications view source smoke failed:
+- Communication completion must require a typed task outcome
+- CommunicationsView must own panel markup
+FAIL smoke:communication-task-complete-contract 632ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:26
+	if (!condition) throw new Error(message);
+	                      ^
+Error: unknown communication task must return 404, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:26:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:88:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:communication-task-outcomes 630ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:35
+	if (!condition) throw new Error(message);
+	                      ^
+Error: no_answer completion failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:35:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:151:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:core-route-validation 787ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:40
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient create invalid payload must return 400, got 401: {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:40:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:165:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:293:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:finance-view-source 46ms
+Finance view source smoke failed:
+- FinanceView must render patient-scoped clinical rules
+FAIL smoke:finance-planning-source 40ms
+Finance planning source smoke failed:
+- FinanceView must pass active payment count
+- FinanceView must pass patient-specific plan scenarios
+- FinancePlanning must own finance summary markup
+- Service catalog strip must stay compact
+FAIL smoke:finance-ledger-source 40ms
+Finance ledger source smoke failed:
+- FinanceView must pass patient-specific treatment items
+- FinanceView must pass patient-specific payments
+- FinanceView must pass documents so payment history can show document links
+- FinanceLedger must resolve linked payment document titles
+FAIL smoke:payment-capture-source 46ms
+Payment capture source smoke failed:
+- Payment handler must show network/runtime payment failures
+- Payment submit must mint a client operation id before POST
+- Payment handler must explain invalid whole-ruble amounts before POST
+- PaymentCapture must own payment form markup
+FAIL smoke:dental-persistence-routes-source 40ms
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\web\src\pages\InvoiceSplitPaymentModal.tsx'
+    at readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dental-persistence-routes-source.mjs:19:27
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\web\\src\\pages\\InvoiceSplitPaymentModal.tsx'
+}
+Node.js v24.13.0
+FAIL smoke:payment-idempotency 654ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: first payment must append: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:138:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:browser-file-input-dicom 34579ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-file-input-dicom.mjs:227
+		throw new Error(
+		      ^
+Error: Browser local imaging file input was not found: {"readyState":"complete","hash":"#settings/sources","hasShell":false,"hasSettings":false,"hasInput":false,"bodyText":"DENTE CRM-MIS\n\nВХОД В ЛИЧНЫЙ КАБИНЕТ ВРАЧА\n\nEMAIL\nПАРОЛЬ\nВойти в профиль\nЗарегистрировать клинику · Общий терминал клиники"}
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-file-input-dicom.mjs:227:9
+Node.js v24.13.0
+FAIL smoke:browser-imaging-scan-progress-source 53ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:16
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: Settings browser imaging scan UI missing marker: browser-cancel-local-imaging-folder-scan
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:16:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:79:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:78:3
+Node.js v24.13.0
+FAIL smoke:browser-migration-scan-progress-source 46ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:15
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: App browser migration scan progress contract missing marker: const scanCount = Math.min(selectedFileCount, browserMigrationScanFileLimit)
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:15:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:61:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:60:3
+Node.js v24.13.0
+FAIL smoke:billing-document-link 642ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:53
+	if (!condition) throw new Error(message);
+	                      ^
+Error: valid linked payment failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:53:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:159:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:document-guards 86ms
+FAIL smoke:document-html-issue-guards 701ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:19
+	if (!condition) throw new Error(message);
+	                      ^
+Error: structured document without payload must not render printable HTML: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:19:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:53:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:document-html-preview-source 45ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:13
+	if (!condition) throw new Error(message);
+	                      ^
+Error: Missing source end after async function openIssuedDocumentHtml(documentId: string): async function downloadIssuedDocumentPdf(documentId: string, overrideUrl?: string)
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:13:24)
+    at sourceBetween (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:28:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:32:38
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:document-issue-chains 655ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:27
+	if (!condition) throw new Error(message);
+	                      ^
+Error: contract create failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"organization_id\", \"patient_id\", \"appointment_id\", \"status\", \"revision\", \"complaint\", \"anamnesis\", \"objective_status\", \"diagnosis\", \"treatment_plan\", \"doctor_summary\", \"transcript\", \"draft_autosave\", \"signed_at\", \"created_at\", \"updated_at\" from \"visits\" where (\"visits\".\"organization_id\" = $1 and \"visits\".\"id\" = $2) limit $3\nparams: mock-org,af94df45-a669-4cae-b400-6e4f020f9120,1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:27:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:130:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:document-lifecycle 702ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:41
+	if (!condition) throw new Error(message);
+	                      ^
+Error: payment receipt create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:41:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:107:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:document-payloads 166ms
+FAIL smoke:document-payload-ui-source 94ms
+    "installmentPaymentSchedule",
+    "minorLegalRepresentativeConsent",
+    "warrantyServiceMemo",
+    "patientIntakeQuestionnaire",
+    "isDateInputValue(taxApplicationTaxpayerBirthDate)",
+    "isDateTimeLocalInputValue(taxApplicationRequestedAt)",
+    "fromDateTimeLocalValue(taxApplicationRequestedAt)",
+    "taxDeductionApplication",
+    "useState<\"\" | \"1\" | \"2\">(\"\")",
+    "createDocument payload validation before fetch",
+    "createDocument payload builder before fetch",
+    "refund/correction payload must persist explicit selected source payment ids"
+  ]
+}
+FAIL smoke:document-legal-confirmations 70ms
+    "app:const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false)",
+    "app:thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked",
+    "app:const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false)",
+    "app:thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked",
+    "app:const [documentIssueConfirmationId, setDocumentIssueConfirmationId] = useState<string | null>(null)",
+    "app:const [documentIssueIdentityChecked, setDocumentIssueIdentityChecked] = useState(false)",
+    "app:const [documentIssueDocumentOpenedAndChecked, setDocumentIssueDocumentOpenedAndChecked] = useState(false)",
+    "app:const [documentIssueRecipientSigned, setDocumentIssueRecipientSigned] = useState(false)",
+    "app:const [documentIssueClinicSigned, setDocumentIssueClinicSigned] = useState(false)"
+  ],
+  "forbidden": [],
+  "missingExplicitFalseState": [],
+  "forbiddenTrueState": []
+}
+FAIL smoke:document-route-validation 805ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: fixture payment receipt create failed: 500: {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"organization_id\", \"patient_id\", \"appointment_id\", \"status\", \"revision\", \"complaint\", \"anamnesis\", \"objective_status\", \"diagnosis\", \"treatment_plan\", \"doctor_summary\", \"transcript\", \"draft_autosave\", \"signed_at\", \"created_at\", \"updated_at\" from \"visits\" where (\"visits\".\"organization_id\" = $1 and \"visits\".\"id\" = $2) limit $3\nparams: mock-org,af94df45-a669-4cae-b400-6e4f020f9120,1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:244:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:patient-administrative-profile 532ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:47
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient core save button must be readable Russian
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:47:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:74:1
+Node.js v24.13.0
+FAIL smoke:patient-forms-lifecycle 670ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient_intake_questionnaire: missing structured payload must be blocked
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:34:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:204:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:import-contracts 746ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:73
+	if (!condition) throw new Error(message);
+	                      ^
+Error: migration workflow failures must keep readable server messages but hide raw fetch/DOM/stack failures.
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:73:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:294:1
+Node.js v24.13.0
+FAIL smoke:visit-draft-status-contract 641ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:25
+	if (!condition) throw new Error(message);
+	                      ^
+Error: draft autosave must work while visit is draft: 401 {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:25:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:129:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:visit-offline-queue-source 47ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:12
+	throw new Error(message);
+	      ^
+Error: Missing marker: const [localDraftWasRestored
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:12:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:17:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:35:23
+Node.js v24.13.0
+FAIL smoke:visit-route-validation 627ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:20
+	if (!condition) throw new Error(message);
+	                      ^
+Error: visit draft autosave invalid payload must return 400, got 401: {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:20:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:95:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:146:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:visit-workflow-forms-lifecycle 674ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: informed_consent: visit-required form without visit must be blocked
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:34:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:384:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:visit-dictation-simplified-actions-source 43ms
+Visit dictation must treat server microphone startup as active voice work.
+FAIL smoke:visit-live-workflow 21685ms
+file:///C:/Clinic_MVP/dental-crm/scripts/lib/cdp.mjs:13
+	throw new Error(
+	      ^
+Error: app shell did not become ready: false
+    at waitFor (file:///C:/Clinic_MVP/dental-crm/scripts/lib/cdp.mjs:13:8)
+    at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-live-workflow.mjs:156:2
+Node.js v24.13.0
+FAIL smoke:workspace-live-core-actions 52ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-core-actions.mjs:69
+	throw new Error(
+	      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-core-actions.mjs:69:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:workspace-live-settings-actions 53ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-settings-actions.mjs:68
+	throw new Error(
+	      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-settings-actions.mjs:68:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:workspace-live-routes 54ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-routes.mjs:73
+		throw new Error(
+		      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-routes.mjs:73:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:document-zip-redaction 100ms
+PASS smoke:documents-catalog 152ms
+PASS smoke:official-document-sources 78ms
+PASS smoke:patient-create-contract 593ms
+FAIL smoke:tax-certificate-duplicate-issue 637ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:29
+	if (!condition) throw new Error(message);
+	                      ^
+Error: first tax certificate create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:29:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:93:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:tax-document-explicit-payment-scope 611ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:29
+	if (!condition) throw new Error(message);
+	                      ^
+Error: tax certificate without selected payments must be 409, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:29:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:85:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:tax-knd-xml 635ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:31
+	if (!condition) throw new Error(message);
+	                      ^
+Error: tax certificate create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:31:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:232:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:tax-payment-explicit-payer 588ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: ordinary payment without tax payer fields must still pass, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:95:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:tax-registry-fiscal 108ms
+PASS smoke:tax-ui-year-source 42ms
+PASS smoke:settings-admin-guard 609ms
+PASS smoke:settings-route-validation 627ms
+FAIL smoke:clinical-mutation-guard 40ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:70
+	if (!condition) throw new Error(message);
+	                      ^
+Error: apps/api/src/routes/patients.ts must guard 3 protected route(s), found 0
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:70:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:97:2
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:imaging-preview-object-url-lifecycle 39ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-preview-object-url-lifecycle.mjs:13
+	throw new Error("imaging preview object URL effect not found");
+	      ^
+Error: imaging preview object URL effect not found
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-preview-object-url-lifecycle.mjs:13:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+PASS smoke:settings-preferences 611ms
+FAIL smoke:settings-persistence-file 574ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:53
+	if (!condition) throw new Error(message);
+	                      ^
+Error: preference save failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:53:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:266:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:db-runtime-contract 37ms
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\api\drizzle\0013_communication_telegram_runtime_tables.sql'
+    at readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-db-runtime-contract.mjs:8:31
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\api\\drizzle\\0013_communication_telegram_runtime_tables.sql'
+}
+Node.js v24.13.0
+FAIL smoke:schedule-active-visit-status-contract 572ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:25
+	if (!condition) throw new Error(message);
+	                      ^
+Error: draft visit appointment must reject completed: 401 {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:25:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:80:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:schedule-admin-guard 594ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:21
+	if (!condition) throw new Error(message);
+	                      ^
+Error: missing schedule secret must block mutation: 401
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:21:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:55:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:schedule-autosave-retry 40ms
+FAIL smoke:onboarding-configuration-source 50ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:23
+	if (!condition) throw new Error(message);
+	                      ^
+Error: new staff creation must save dirty clinic profile before inheriting working hours
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:23:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:99:1
+Node.js v24.13.0
+PASS smoke:telegram-bot 37ms
+PASS smoke:telegram-admin-guard 281ms
+FAIL smoke:telegram-validation 280ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:26
+	if (!condition) throw new Error(message);
+	                      ^
+Error: malformed webhook message must be Russian
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:26:24)
+    at assertBadRequest (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:72:2)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:141:1
+Node.js v24.13.0
+PASS smoke:telegram-outbox-persistence 309ms
+FAIL smoke:telegram-outbox-lookup 307ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:24
+	if (!condition) throw new Error(message);
+	                      ^
+Error: direct send lookup must not be capped to first 300 rows: 404
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:24:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:73:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+PASS smoke:telegram-due-worker-source 39ms
+FAIL smoke:telegram-outbox-sla-source 40ms
+{
+  "ok": false,
+  "missing": [
+    "if (!appointmentReminderInsideDispatchWindow(appointment, leadTimeHours, nowMs)) return [];"
+  ],
+  "forbidden": [],
+  "reason": "Telegram outbox must not send stale appointment reminders, let failed/skipped post-visit tasks suppress fallback, drop payment reminders, lose hygiene recalls, drop tax request SLA status items, lose issued-document notices, or miss post-visit checkups."
+}
+FAIL smoke:telegram-control-ui-source 46ms
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\api\drizzle\0008_document_payload_storage.sql'
+    at Object.readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-control-ui-source.mjs:36:5
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\api\\drizzle\\0008_document_payload_storage.sql'
+}
+Node.js v24.13.0
+FAIL smoke:telegram-url-ui-source 42ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:9
+	if (!condition) throw new Error(message);
+	                      ^
+Error: saveTelegramSettings body not found
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:9:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:17:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:telegram-handoff-source 49ms
+{
+  "ok": false,
+  "missing": [
+    "App.tsx missing initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget()"
+  ]
+}
+PASS smoke:api-global-error-boundary 897ms
+PASS smoke:api-text-encoding 131ms
+FAIL smoke:api-dicom-scan-abort-yield-source 40ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:8
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: API DICOM scan helper threading missing marker: buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, options: ApiDicomScanOptions = {})
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:8:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:98:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:97:3
+Node.js v24.13.0
+PASS smoke:web-text-encoding 87ms
+PASS smoke:russian-fallback-source 50ms
+FAIL smoke:ui-preferences 43ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:28
+	throw new Error(message);
+	      ^
+Error: Missing marker: saveUiPreferences({
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:28:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:33:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:43:25
+Node.js v24.13.0
+PASS smoke:dicomweb-connector-boundary 733ms
+FAIL smoke:dicom-folder-workup 853ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:28
+	if (!condition) throw new Error(message);
+	                      ^
+Error: blank imaging study create must fail with 400, got 500: {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:28:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:474:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:743:4
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAIL smoke:dicom-workbench-offline-source 45ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:28
+	throw new Error(message);
+	      ^
+Error: Missing marker: const restore = async () => {
+      const recovered = await loadLocalDicomWorkbenchDraft
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:28:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:33:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:51:28
+Node.js v24.13.0
+FAIL smoke:dicom-workbench-ui-cancel-source 45ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:14
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: App local DICOM operation cancel contract missing marker: fetchDicomFolderWorkup(folderPath, "dicom_folder_workup", { signal: controller.signal })
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:14:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:53:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:52:3
+Node.js v24.13.0
+FAIL smoke:pricelist-analyzer 41ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-pricelist-analyzer.mjs:49
+		throw new Error(`Missing pricelist/QR UI localization snippet: ${snippet}`);
+		      ^
+Error: Missing pricelist/QR UI localization snippet: Скачать QR
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-pricelist-analyzer.mjs:49:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAIL smoke:speech-queue-source 44ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:15
+	throw new Error(message);
+	      ^
+Error: Missing marker: function applyUiPreferences
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:15:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:22:18)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:30:20
+Node.js v24.13.0
+FAIL smoke:speech-local-bridge-readiness 43ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:17
+	throw new Error(message);
+	      ^
+Error: Visit speech status UI does not map local bridge readiness honestly: const serverVoiceRecordingAvailable =
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:17:8)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:77:3
+Node.js v24.13.0
+FAIL smoke:speech-recorder-resilience-source 42ms
+Visit voice recorder must track whether a stop was requested by the doctor.
+FAIL smoke:speech-final-ready-status-source 41ms
+Visit speech recording must remember whether the current recording already produced recognized text.
+FAIL smoke:speech-clinical-scope 595ms
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:38
+	if (!condition) throw new Error(message);
+	                      ^
+Error: speech prompt warnings must be readable for clinic staff
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:38:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:137:1
+Node.js v24.13.0
+PASS smoke:speech-russian-dental-draft 130ms
+PASS smoke:speech-groq-chunk-floor 501ms
+FAIL smoke:speech-provider-errors 745ms
+      at async file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/node-postgres/session.js:124:18
+      at async NodePgPreparedQuery.queryWithCache (file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/pg-core/session.js:39:16)
+      at async file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/node-postgres/session.js:117:22
+      at async recordSpeechTranscriptionChunk (file:///C:/Clinic_MVP/dental-crm/apps/api/dist/speech/storage.js:264:19)
+      at async transcribeSpeechChunk (file:///C:/Clinic_MVP/dental-crm/apps/api/dist/speech/gateway.js:1541:19)
+      at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-provider-errors.mjs:220:17 {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 5432
+  }
+}
+Node.js v24.13.0
+PASS smoke:speech-route-validation 678ms
+PASS smoke:speech-key-rotation 171ms
+PASS smoke:schema-ddl-coverage 86ms
+PASS smoke:schema-column-parity 114ms
+PASS smoke:persistent-state-save 57ms
+PASS smoke:imaging-manifest-parser 612ms
+SUMMARY total=123 failed=84 elapsedMs=113297
+FAILED smoke:wave6 code=3221226505 signal=null
+=== Wave 6 Edge-Case & Smoke Suite ===
+[1/5] prodoctorov-sync
+❌ WAVE 6 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave7 code=3221226505 signal=null
+=== Wave 7 Edge-Case & Smoke Suite ===
+[1/5] non-dental-examination-forms
+❌ WAVE 7 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave8 code=3221226505 signal=null
+=== Wave 8 Edge-Case & Smoke Suite ===
+[1/5] schedule/clipboard-items
+❌ WAVE 8 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave10 code=3221226505 signal=null
+=== Wave 10 Edge-Case & Smoke Suite ===
+[1/5] documents/treatment-plan-lock-tokens
+❌ WAVE 10 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave11 code=3221226505 signal=null
+=== Wave 11 Edge-Case & Smoke Suite ===
+[1/1] communications/uis-omni-messenger-queues
+❌ WAVE 11 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave12 code=3221226505 signal=null
+=== Wave 12 Edge-Case & Smoke Suite ===
+[1/5] analytics/lost-patients-filters
+❌ WAVE 12 SUITE FAILED: 200 valid org: expected 200 got 401
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave13 code=3221226505 signal=null
+=== Wave 13 Edge-Case & Smoke Suite ===
+[1/5] communications/appointment-channel-inheritances
+❌ WAVE 13 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave14 code=3221226505 signal=null
+=== Wave 14 Edge-Case & Smoke Suite ===
+[1/5] communications/uis-sms-chat-quotas
+❌ WAVE 14 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:wave15 code=3221226505 signal=null
+=== Wave 15 Edge-Case & Smoke Suite ===
+[1/5] crm/patient-communication-timelines
+❌ WAVE 15 SUITE FAILED: 200 valid org: expected 200 got 404
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+FAILED smoke:mobile code=1 signal=null
+{"href":"http://127.0.0.1:5173/#settings/sources","viewport":390,"scrollWidth":390,"overflow":0,"hasRequiredElement":false,"requiredElementHidden":null,"visibleText":"ПЕРВЫЙ ЗАПУСК\n\nБыстрая настройка CRM Dente\nРежим запуска приложения\n\nВыберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.\n\n🚀\nПопробовать демо-режим\nЗапустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.\n✨\nНачать с чистого "}
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279
+		throw new Error(`${requiredLabel} is not visible on the target page.`);
+		      ^
+Error: .dicom-mpr-workbench is not visible on the target page.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279:9
+Node.js v24.13.0
+FAILED smoke:mobile-overflow code=1 signal=null
+{"href":"http://127.0.0.1:5173/#settings/sources","viewport":390,"scrollWidth":390,"overflow":0,"hasRequiredElement":false,"requiredElementHidden":null,"visibleText":"ПЕРВЫЙ ЗАПУСК\n\nБыстрая настройка CRM Dente\nРежим запуска приложения\n\nВыберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.\n\n🚀\nПопробовать демо-режим\nЗапустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.\n✨\nНачать с чистого "}
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279
+		throw new Error(`${requiredLabel} is not visible on the target page.`);
+		      ^
+Error: .dicom-mpr-workbench is not visible on the target page.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-mobile-overflow.mjs:279:9
+Node.js v24.13.0
+FAILED smoke:web-render-gating-source code=1 signal=null
+    "{settingsTab === \"sources\" ? (\n          <section className=\"connector-grid\"",
+    "{settingsTab === \"sources\" ? (\n          <section className=\"dicom-capability-panel\"",
+    "{settingsTab === \"sources\" && typedDicomViewerToolStateBundle ? (\n            <section className=\"dicom-toolstate-result\"",
+    "{settingsTab === \"sources\" ? (\n          <section className=\"integration-presets\"",
+    "{settingsTab === \"ai\" ? (\n          <section className=\"recognition-lab\"",
+    "{settingsTab === \"imports\" ? (\n          <section className=\"import-studio smart-import-studio\"",
+    "{[\"imports\", \"sources\"].includes(settingsTab) ? (",
+    "{settingsTab === \"audit\" ? (\n          <section className=\"ops-grid\"",
+    "{settingsTab === \"imports\" ? (\n          <section className=\"import-studio\""
+  ],
+  "forbiddenPresent": [],
+  "forbiddenSettingsTabsPresent": [],
+  "appNoticeAlertCount": 2
+}
+FAILED smoke:web-bundle-budget code=1 signal=null
+    "ct planning state: 33500 bytes exceeds 8000",
+    "ct planning state: 10670 gzip bytes exceeds 4000",
+    "ct planning geometry: expected built asset matching /^ct-planning-geometry-[\\w-]+\\.js$/",
+    "react vendor: 244945 bytes exceeds 230000",
+    "react vendor: 75880 gzip bytes exceeds 72000",
+    "main stylesheet: 301066 bytes exceeds 240000",
+    "main stylesheet: 49720 gzip bytes exceeds 38000",
+    "jsBytes: 7999866 exceeds 2000000",
+    "jsGzipBytes: 2242159 exceeds 540000",
+    "totalBytes: 8372191 exceeds 2300000",
+    "totalGzipBytes: 2307217 exceeds 580000",
+    "FinanceView-CYaG7eIh.js: lazy route chunk must not statically import the heavy workspace chunk"
+  ]
+}
+FAILED smoke:daily-surfaces-keyboard-accessibility code=1 signal=null
+Daily surfaces keyboard/accessibility source smoke failed:
+- schedule: new appointment blocker guidance must be addressable.
+- schedule: create appointment button must point to blocker guidance.
+- schedule: new appointment create button must expose busy state.
+- schedule: appointment edit buttons must expose expanded state.
+- schedule: appointment edit buttons must point to the controlled editor.
+- schedule: repeated schedule row actions must have contextual accessible names.
+- schedule: edited appointment blocker guidance must be addressable.
+- schedule: edited appointment save button must point to blocker guidance.
+- settings: settings blockers and async feedback must be announced politely.
+FAILED smoke:segmented-controls-accessibility-source code=1 signal=null
+Segmented controls accessibility source smoke failed:
+- Settings price source picker must expose selected state.
+- Settings price AI toggle must expose selected state.
+- Settings recognition preset picker must expose selected state.
+- Settings smart import mode picker must expose selected state.
+- Settings imaging source picker must expose selected state.
+- Settings first-slice mirror toggle must expose selected state.
+- Settings first-slice inversion toggle must expose selected state.
+- Settings legacy import source picker must expose selected state.
+- Settings document ingestion route picker must expose selected state.
+FAILED smoke:ai-recognition-scope code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:30
+	if (!condition) throw new Error(message);
+	                      ^
+Error: AI job blank input must return 400, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:30:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ai-recognition-scope.mjs:175:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:imaging-viewer-usability-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:178
+	if (!pattern.test(source)) throw new Error(message);
+	                                 ^
+Error: Imaging viewer primary study image must decode asynchronously without lazy-loading the active diagnostic preview.
+    at requirePattern (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:178:35)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-viewer-usability-source.mjs:281:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:imaging-study-visit-scope code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: wrong-patient imaging visit status mismatch: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:34:24)
+    at assertImagingError (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:61:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-study-visit-scope.mjs:160:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:shift-visit-usability-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:20
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: Tooth map must keep visit-specific visual tooth states.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:20:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-shift-visit-usability-source.mjs:73:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:documents-view-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:22
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: App.tsx must guard duplicate document creation.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:22:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-documents-view-source.mjs:54:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:settings-view-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:71
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: DICOMweb archive check must use the Settings admin secret boundary.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:71:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-view-source.mjs:82:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:schedule-view-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:24
+	if (!source.includes(needle)) throw new Error(message);
+	                                    ^
+Error: ScheduleView must own schedule panel.
+    at requireIn (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:24:38)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-view-source.mjs:62:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:communications-view-source code=1 signal=null
+Communications view source smoke failed:
+- Communication completion must require a typed task outcome
+- CommunicationsView must own panel markup
+FAILED smoke:communication-task-complete-contract code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:26
+	if (!condition) throw new Error(message);
+	                      ^
+Error: unknown communication task must return 404, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:26:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-complete-contract.mjs:88:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:communication-task-outcomes code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:35
+	if (!condition) throw new Error(message);
+	                      ^
+Error: no_answer completion failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:35:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-communication-task-outcomes.mjs:151:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:core-route-validation code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:40
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient create invalid payload must return 400, got 401: {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:40:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:165:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-core-route-validation.mjs:293:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:finance-view-source code=1 signal=null
+Finance view source smoke failed:
+- FinanceView must render patient-scoped clinical rules
+FAILED smoke:finance-planning-source code=1 signal=null
+Finance planning source smoke failed:
+- FinanceView must pass active payment count
+- FinanceView must pass patient-specific plan scenarios
+- FinancePlanning must own finance summary markup
+- Service catalog strip must stay compact
+FAILED smoke:finance-ledger-source code=1 signal=null
+Finance ledger source smoke failed:
+- FinanceView must pass patient-specific treatment items
+- FinanceView must pass patient-specific payments
+- FinanceView must pass documents so payment history can show document links
+- FinanceLedger must resolve linked payment document titles
+FAILED smoke:payment-capture-source code=1 signal=null
+Payment capture source smoke failed:
+- Payment handler must show network/runtime payment failures
+- Payment submit must mint a client operation id before POST
+- Payment handler must explain invalid whole-ruble amounts before POST
+- PaymentCapture must own payment form markup
+FAILED smoke:dental-persistence-routes-source code=1 signal=null
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\web\src\pages\InvoiceSplitPaymentModal.tsx'
+    at readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dental-persistence-routes-source.mjs:19:27
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\web\\src\\pages\\InvoiceSplitPaymentModal.tsx'
+}
+Node.js v24.13.0
+FAILED smoke:payment-idempotency code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: first payment must append: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-payment-idempotency.mjs:138:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:browser-file-input-dicom code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-file-input-dicom.mjs:227
+		throw new Error(
+		      ^
+Error: Browser local imaging file input was not found: {"readyState":"complete","hash":"#settings/sources","hasShell":false,"hasSettings":false,"hasInput":false,"bodyText":"DENTE CRM-MIS\n\nВХОД В ЛИЧНЫЙ КАБИНЕТ ВРАЧА\n\nEMAIL\nПАРОЛЬ\nВойти в профиль\nЗарегистрировать клинику · Общий терминал клиники"}
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-file-input-dicom.mjs:227:9
+Node.js v24.13.0
+FAILED smoke:browser-imaging-scan-progress-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:16
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: Settings browser imaging scan UI missing marker: browser-cancel-local-imaging-folder-scan
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:16:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:79:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-imaging-scan-progress-source.mjs:78:3
+Node.js v24.13.0
+FAILED smoke:browser-migration-scan-progress-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:15
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: App browser migration scan progress contract missing marker: const scanCount = Math.min(selectedFileCount, browserMigrationScanFileLimit)
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:15:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:61:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-browser-migration-scan-progress-source.mjs:60:3
+Node.js v24.13.0
+FAILED smoke:billing-document-link code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:53
+	if (!condition) throw new Error(message);
+	                      ^
+Error: valid linked payment failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:53:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-billing-document-link.mjs:159:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:document-html-issue-guards code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:19
+	if (!condition) throw new Error(message);
+	                      ^
+Error: structured document without payload must not render printable HTML: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:19:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-issue-guards.mjs:53:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:document-html-preview-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:13
+	if (!condition) throw new Error(message);
+	                      ^
+Error: Missing source end after async function openIssuedDocumentHtml(documentId: string): async function downloadIssuedDocumentPdf(documentId: string, overrideUrl?: string)
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:13:24)
+    at sourceBetween (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:28:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-html-preview-source.mjs:32:38
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:document-issue-chains code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:27
+	if (!condition) throw new Error(message);
+	                      ^
+Error: contract create failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"organization_id\", \"patient_id\", \"appointment_id\", \"status\", \"revision\", \"complaint\", \"anamnesis\", \"objective_status\", \"diagnosis\", \"treatment_plan\", \"doctor_summary\", \"transcript\", \"draft_autosave\", \"signed_at\", \"created_at\", \"updated_at\" from \"visits\" where (\"visits\".\"organization_id\" = $1 and \"visits\".\"id\" = $2) limit $3\nparams: mock-org,af94df45-a669-4cae-b400-6e4f020f9120,1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:27:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-issue-chains.mjs:130:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:document-lifecycle code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:41
+	if (!condition) throw new Error(message);
+	                      ^
+Error: payment receipt create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:41:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-lifecycle.mjs:107:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:document-payload-ui-source code=1 signal=null
+    "installmentPaymentSchedule",
+    "minorLegalRepresentativeConsent",
+    "warrantyServiceMemo",
+    "patientIntakeQuestionnaire",
+    "isDateInputValue(taxApplicationTaxpayerBirthDate)",
+    "isDateTimeLocalInputValue(taxApplicationRequestedAt)",
+    "fromDateTimeLocalValue(taxApplicationRequestedAt)",
+    "taxDeductionApplication",
+    "useState<\"\" | \"1\" | \"2\">(\"\")",
+    "createDocument payload validation before fetch",
+    "createDocument payload builder before fetch",
+    "refund/correction payload must persist explicit selected source payment ids"
+  ]
+}
+FAILED smoke:document-legal-confirmations code=1 signal=null
+    "app:const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false)",
+    "app:thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked",
+    "app:const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false)",
+    "app:thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked",
+    "app:const [documentIssueConfirmationId, setDocumentIssueConfirmationId] = useState<string | null>(null)",
+    "app:const [documentIssueIdentityChecked, setDocumentIssueIdentityChecked] = useState(false)",
+    "app:const [documentIssueDocumentOpenedAndChecked, setDocumentIssueDocumentOpenedAndChecked] = useState(false)",
+    "app:const [documentIssueRecipientSigned, setDocumentIssueRecipientSigned] = useState(false)",
+    "app:const [documentIssueClinicSigned, setDocumentIssueClinicSigned] = useState(false)"
+  ],
+  "forbidden": [],
+  "missingExplicitFalseState": [],
+  "forbiddenTrueState": []
+}
+FAILED smoke:document-route-validation code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: fixture payment receipt create failed: 500: {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"organization_id\", \"patient_id\", \"appointment_id\", \"status\", \"revision\", \"complaint\", \"anamnesis\", \"objective_status\", \"diagnosis\", \"treatment_plan\", \"doctor_summary\", \"transcript\", \"draft_autosave\", \"signed_at\", \"created_at\", \"updated_at\" from \"visits\" where (\"visits\".\"organization_id\" = $1 and \"visits\".\"id\" = $2) limit $3\nparams: mock-org,af94df45-a669-4cae-b400-6e4f020f9120,1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-document-route-validation.mjs:244:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:patient-administrative-profile code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:47
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient core save button must be readable Russian
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:47:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-administrative-profile.mjs:74:1
+Node.js v24.13.0
+FAILED smoke:patient-forms-lifecycle code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: patient_intake_questionnaire: missing structured payload must be blocked
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:34:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-patient-forms-lifecycle.mjs:204:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:import-contracts code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:73
+	if (!condition) throw new Error(message);
+	                      ^
+Error: migration workflow failures must keep readable server messages but hide raw fetch/DOM/stack failures.
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:73:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-import-contracts.mjs:294:1
+Node.js v24.13.0
+FAILED smoke:visit-draft-status-contract code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:25
+	if (!condition) throw new Error(message);
+	                      ^
+Error: draft autosave must work while visit is draft: 401 {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:25:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-draft-status-contract.mjs:129:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:visit-offline-queue-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:12
+	throw new Error(message);
+	      ^
+Error: Missing marker: const [localDraftWasRestored
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:12:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:17:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-offline-queue-source.mjs:35:23
+Node.js v24.13.0
+FAILED smoke:visit-route-validation code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:20
+	if (!condition) throw new Error(message);
+	                      ^
+Error: visit draft autosave invalid payload must return 400, got 401: {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:20:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:95:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-route-validation.mjs:146:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:visit-workflow-forms-lifecycle code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:34
+	if (!condition) throw new Error(message);
+	                      ^
+Error: informed_consent: visit-required form without visit must be blocked
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:34:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-workflow-forms-lifecycle.mjs:384:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:visit-dictation-simplified-actions-source code=1 signal=null
+Visit dictation must treat server microphone startup as active voice work.
+FAILED smoke:visit-live-workflow code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/lib/cdp.mjs:13
+	throw new Error(
+	      ^
+Error: app shell did not become ready: false
+    at waitFor (file:///C:/Clinic_MVP/dental-crm/scripts/lib/cdp.mjs:13:8)
+    at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-visit-live-workflow.mjs:156:2
+Node.js v24.13.0
+FAILED smoke:workspace-live-core-actions code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-core-actions.mjs:69
+	throw new Error(
+	      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-core-actions.mjs:69:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:workspace-live-settings-actions code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-settings-actions.mjs:68
+	throw new Error(
+	      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-settings-actions.mjs:68:8
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:workspace-live-routes code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-routes.mjs:73
+		throw new Error(
+		      ^
+Error: Vite binary is missing. Run dependency install before this smoke test.
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-workspace-live-routes.mjs:73:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:tax-certificate-duplicate-issue code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:29
+	if (!condition) throw new Error(message);
+	                      ^
+Error: first tax certificate create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:29:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-certificate-duplicate-issue.mjs:93:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:tax-document-explicit-payment-scope code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:29
+	if (!condition) throw new Error(message);
+	                      ^
+Error: tax certificate without selected payments must be 409, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:29:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-document-explicit-payment-scope.mjs:85:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:tax-knd-xml code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:31
+	if (!condition) throw new Error(message);
+	                      ^
+Error: tax certificate create failed: 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:31:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-knd-xml.mjs:232:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:tax-payment-explicit-payer code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:33
+	if (!condition) throw new Error(message);
+	                      ^
+Error: ordinary payment without tax payer fields must still pass, got 500
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:33:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-tax-payment-explicit-payer.mjs:95:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:clinical-mutation-guard code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:70
+	if (!condition) throw new Error(message);
+	                      ^
+Error: apps/api/src/routes/patients.ts must guard 3 protected route(s), found 0
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:70:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-clinical-mutation-guard.mjs:97:2
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:imaging-preview-object-url-lifecycle code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-preview-object-url-lifecycle.mjs:13
+	throw new Error("imaging preview object URL effect not found");
+	      ^
+Error: imaging preview object URL effect not found
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-imaging-preview-object-url-lifecycle.mjs:13:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:settings-persistence-file code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:53
+	if (!condition) throw new Error(message);
+	                      ^
+Error: preference save failed: 500 {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at\", \"updated_at\" from \"organizations\" limit $1\nparams: 1"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:53:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-settings-persistence-file.mjs:266:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:db-runtime-contract code=1 signal=null
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\api\drizzle\0013_communication_telegram_runtime_tables.sql'
+    at readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-db-runtime-contract.mjs:8:31
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\api\\drizzle\\0013_communication_telegram_runtime_tables.sql'
+}
+Node.js v24.13.0
+FAILED smoke:schedule-active-visit-status-contract code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:25
+	if (!condition) throw new Error(message);
+	                      ^
+Error: draft visit appointment must reject completed: 401 {"error":"AuthRequired"}
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:25:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-active-visit-status-contract.mjs:80:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:schedule-admin-guard code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:21
+	if (!condition) throw new Error(message);
+	                      ^
+Error: missing schedule secret must block mutation: 401
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:21:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-schedule-admin-guard.mjs:55:1
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:onboarding-configuration-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:23
+	if (!condition) throw new Error(message);
+	                      ^
+Error: new staff creation must save dirty clinic profile before inheriting working hours
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:23:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-onboarding-configuration-source.mjs:99:1
+Node.js v24.13.0
+FAILED smoke:telegram-validation code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:26
+	if (!condition) throw new Error(message);
+	                      ^
+Error: malformed webhook message must be Russian
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:26:24)
+    at assertBadRequest (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:72:2)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-validation.mjs:141:1
+Node.js v24.13.0
+FAILED smoke:telegram-outbox-lookup code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:24
+	if (!condition) throw new Error(message);
+	                      ^
+Error: direct send lookup must not be capped to first 300 rows: 404
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:24:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-outbox-lookup.mjs:73:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:telegram-outbox-sla-source code=1 signal=null
+{
+  "ok": false,
+  "missing": [
+    "if (!appointmentReminderInsideDispatchWindow(appointment, leadTimeHours, nowMs)) return [];"
+  ],
+  "forbidden": [],
+  "reason": "Telegram outbox must not send stale appointment reminders, let failed/skipped post-visit tasks suppress fallback, drop payment reminders, lose hygiene recalls, drop tax request SLA status items, lose issued-document notices, or miss post-visit checkups."
+}
+FAILED smoke:telegram-control-ui-source code=1 signal=null
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open 'C:\Clinic_MVP\dental-crm\apps\api\drizzle\0008_document_payload_storage.sql'
+    at Object.readFileSync (node:fs:439:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-control-ui-source.mjs:36:5
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Clinic_MVP\\dental-crm\\apps\\api\\drizzle\\0008_document_payload_storage.sql'
+}
+Node.js v24.13.0
+FAILED smoke:telegram-url-ui-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:9
+	if (!condition) throw new Error(message);
+	                      ^
+Error: saveTelegramSettings body not found
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:9:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-telegram-url-ui-source.mjs:17:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:telegram-handoff-source code=1 signal=null
+{
+  "ok": false,
+  "missing": [
+    "App.tsx missing initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget()"
+  ]
+}
+FAILED smoke:api-dicom-scan-abort-yield-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:8
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: API DICOM scan helper threading missing marker: buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, options: ApiDicomScanOptions = {})
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:8:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:98:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-api-dicom-scan-abort-yield-source.mjs:97:3
+Node.js v24.13.0
+FAILED smoke:ui-preferences code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:28
+	throw new Error(message);
+	      ^
+Error: Missing marker: saveUiPreferences({
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:28:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:33:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-ui-preferences.mjs:43:25
+Node.js v24.13.0
+FAILED smoke:dicom-folder-workup code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:28
+	if (!condition) throw new Error(message);
+	                      ^
+Error: blank imaging study create must fail with 400, got 500: {"statusCode":500,"error":"Internal Server Error","message":"Failed query: select \"id\", \"name\", \"login_id\", \"password_hash\", \"inn\", \"kpp\", \"ogrn\", \"legal_address\", \"medical_license_number\", \"medical_license_issued_at\", \"medical_license_issuer\", \"email\", \"website\", \"bank_details\", \"signatory_name\", \"signatory_title\", \"clinic_mode\", \"clinic_schedule\", \"created_at
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:28:24)
+    at assertRouteValidationResponse (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:474:2)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-folder-workup.mjs:743:4
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Node.js v24.13.0
+FAILED smoke:dicom-workbench-offline-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:28
+	throw new Error(message);
+	      ^
+Error: Missing marker: const restore = async () => {
+      const recovered = await loadLocalDicomWorkbenchDraft
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:28:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:33:20)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-offline-source.mjs:51:28
+Node.js v24.13.0
+FAILED smoke:dicom-workbench-ui-cancel-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:14
+		throw new Error(`${label} missing marker: ${marker}`);
+		      ^
+Error: App local DICOM operation cancel contract missing marker: fetchDicomFolderWorkup(folderPath, "dicom_folder_workup", { signal: controller.signal })
+    at assertIncludes (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:14:9)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:53:2
+    at Array.forEach (<anonymous>)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-dicom-workbench-ui-cancel-source.mjs:52:3
+Node.js v24.13.0
+FAILED smoke:pricelist-analyzer code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-pricelist-analyzer.mjs:49
+		throw new Error(`Missing pricelist/QR UI localization snippet: ${snippet}`);
+		      ^
+Error: Missing pricelist/QR UI localization snippet: Скачать QR
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-pricelist-analyzer.mjs:49:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Node.js v24.13.0
+FAILED smoke:speech-queue-source code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:15
+	throw new Error(message);
+	      ^
+Error: Missing marker: function applyUiPreferences
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:15:8)
+    at sourceSlice (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:22:18)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-queue-source.mjs:30:20
+Node.js v24.13.0
+FAILED smoke:speech-local-bridge-readiness code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:17
+	throw new Error(message);
+	      ^
+Error: Visit speech status UI does not map local bridge readiness honestly: const serverVoiceRecordingAvailable =
+    at fail (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:17:8)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-local-bridge-readiness.mjs:77:3
+Node.js v24.13.0
+FAILED smoke:speech-recorder-resilience-source code=1 signal=null
+Visit voice recorder must track whether a stop was requested by the doctor.
+FAILED smoke:speech-final-ready-status-source code=1 signal=null
+Visit speech recording must remember whether the current recording already produced recognized text.
+FAILED smoke:speech-clinical-scope code=1 signal=null
+file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:38
+	if (!condition) throw new Error(message);
+	                      ^
+Error: speech prompt warnings must be readable for clinic staff
+    at assert (file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:38:24)
+    at file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-clinical-scope.mjs:137:1
+Node.js v24.13.0
+FAILED smoke:speech-provider-errors code=1 signal=null
+      at async file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/node-postgres/session.js:124:18
+      at async NodePgPreparedQuery.queryWithCache (file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/pg-core/session.js:39:16)
+      at async file:///C:/Clinic_MVP/dental-crm/node_modules/drizzle-orm/node-postgres/session.js:117:22
+      at async recordSpeechTranscriptionChunk (file:///C:/Clinic_MVP/dental-crm/apps/api/dist/speech/storage.js:264:19)
+      at async transcribeSpeechChunk (file:///C:/Clinic_MVP/dental-crm/apps/api/dist/speech/gateway.js:1541:19)
+      at async file:///C:/Clinic_MVP/dental-crm/scripts/smoke-speech-provider-errors.mjs:220:17 {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 5432
+  }
+}
+Node.js v24.13.0

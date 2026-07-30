@@ -1,0 +1,370 @@
+{
+  "viewport": {
+    "w": 390,
+    "h": 844
+  },
+  "appliedLift": 121,
+  "resting": {
+    "top": 708,
+    "bottom": 756
+  },
+  "samples": [
+    {
+      "lift": 0,
+      "rect": {
+        "top": 708,
+        "bottom": 756,
+        "left": 206,
+        "right": 374
+      },
+      "stackSize": 11,
+      "obstacles": [
+        {
+          "tag": "article",
+          "cls": "clickable-card",
+          "role": "button",
+          "tabIndex": 0,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 635,
+            "w": 364,
+            "h": 113
+          },
+          "obstacle": true,
+          "why": "role button"
+        }
+      ],
+      "ignored": [
+        {
+          "tag": "h3",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 28,
+            "y": 694,
+            "w": 334,
+            "h": 18
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 28,
+            "y": 694,
+            "w": 334,
+            "h": 39
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "patient-feature-grid",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 627,
+            "w": 364,
+            "h": 645
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "section",
+          "cls": "patient-cockpit dnt-cockpit",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 335,
+            "w": 364,
+            "h": 937
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "section",
+          "cls": "workspace view-patients",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "main",
+          "cls": "app-shell dente-redesign",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "body",
+          "cls": "antialiased",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "html",
+          "cls": "light",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "p",
+          "cls": "tile-meta",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 28,
+            "y": 718,
+            "w": 334,
+            "h": 15
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        }
+      ]
+    },
+    {
+      "lift": 121,
+      "rect": {
+        "top": 587,
+        "bottom": 635,
+        "left": 206,
+        "right": 374
+      },
+      "stackSize": 11,
+      "obstacles": [],
+      "ignored": [
+        {
+          "tag": "span",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 43,
+            "y": 566,
+            "w": 179,
+            "h": 23
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 43,
+            "y": 566,
+            "w": 304,
+            "h": 23
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "patient-insight-panel risk-high",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 28,
+            "y": 508,
+            "w": 334,
+            "h": 94
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "patient-summary-card col-gap-16",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 335,
+            "w": 364,
+            "h": 282
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "section",
+          "cls": "patient-cockpit dnt-cockpit",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 335,
+            "w": 364,
+            "h": 937
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "section",
+          "cls": "workspace view-patients",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "main",
+          "cls": "app-shell dente-redesign",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "body",
+          "cls": "antialiased",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "html",
+          "cls": "light",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9885
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        },
+        {
+          "tag": "div",
+          "cls": "patient-feature-grid",
+          "role": null,
+          "tabIndex": -1,
+          "pos": "static",
+          "box": {
+            "x": 13,
+            "y": 627,
+            "w": 364,
+            "h": 645
+          },
+          "obstacle": false,
+          "why": "not interactive"
+        }
+      ]
+    }
+  ]
+}

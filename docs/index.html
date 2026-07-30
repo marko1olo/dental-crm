@@ -1,179 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DENTE CRM — Official Interactive Showcase</title>
-    <meta name="description" content="Enterprise Dental CRM & Local 3D DICOM Interactive Viewer">
-    <meta property="og:title" content="DENTE CRM">
-    <meta property="og:description" content="Enterprise Dental CRM & Local 3D DICOM Interactive Viewer">
-    <meta property="og:image" content="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DENTE CRM">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090a0f;
-            --card-bg: rgba(18, 22, 34, 0.75);
-            --border: rgba(255, 255, 255, 0.12);
-            --accent: #00f2fe;
-            --accent-glow: rgba(0, 242, 254, 0.35);
-            --text: #f0f4f8;
-            --muted: #8a99ad;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-        }
-        .header-banner {
-            width: 100%;
-            max-width: 1200px;
-            margin: 2rem auto 0;
-            padding: 0 1rem;
-        }
-        .banner-img {
-            width: 100%;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px var(--accent-glow);
-            aspect-ratio: 16/9;
-            object-fit: cover;
-        }
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-        }
-        h1 {
-            font-size: 3.2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-        p.subtitle {
-            font-size: 1.25rem;
-            color: var(--muted);
-            margin-bottom: 2rem;
-        }
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 3rem;
-        }
-        .btn {
-            padding: 0.85rem 1.8rem;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: #000;
-            box-shadow: 0 4px 15px var(--accent-glow);
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--accent-glow);
-        }
-        .btn-secondary {
-            background: rgba(255,255,255,0.05);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            text-align: left;
-            margin-top: 2rem;
-        }
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            backdrop-filter: blur(10px);
-            transition: border-color 0.3s ease;
-        }
-        .card:hover {
-            border-color: var(--accent);
-        }
-        .card h3 {
-            font-size: 1.2rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-        .card p {
-            font-size: 0.95rem;
-            color: var(--muted);
-        }
-        footer {
-            margin-top: auto;
-            padding: 2rem;
-            color: var(--muted);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border);
-            width: 100%;
-            text-align: center;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DENTE Dental CRM — Enterprise PostgreSQL/Drizzle DICOM & MIS Platform</title>
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="DENTE Dental CRM — PostgreSQL/Drizzle DICOM MIS" />
+  <meta property="og:description" content="Enterprise Dental CRM with Drizzle ORM PostgreSQL 18, DICOM 2D/3D MPR viewports, NestJS/Fastify API, and React 19." />
+  <meta property="og:image" content="og-card.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://hades.github.io/dental-crm/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="DENTE Dental CRM — DICOM & EMR Platform" />
+  <meta name="twitter:description" content="PostgreSQL/Drizzle DICOM hooks, Form 025/u document generator, and React 19 workbench." />
+  <meta name="twitter:image" content="og-card.png" />
+
+  <style>
+    :root {
+      --bg-dark: #080e1a;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.25);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+      --font-mono: "Fira Code", "Consolas", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #fff;
+      text-decoration: none;
+    }
+    .brand-tag {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 2rem 2rem 2rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, #cff4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 750px;
+      margin: 0 auto 2rem auto;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .badge {
+      background: #153344;
+      border: 1px solid #1c526d;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      color: #cff4fc;
+    }
+
+    /* Live Interactive Demo */
+    .demo-section {
+      max-width: 1100px;
+      margin: 2rem auto 4rem auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+    .demo-header {
+      background: #153344;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .demo-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .demo-controls {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .btn {
+      background: var(--bg-card-hover);
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+    .btn-active {
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .viewport-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas#dicomCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .hud-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #cff4fc;
+      pointer-events: none;
+    }
+
+    .grid-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    .code-block {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #22d3ee;
+      overflow-x: auto;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 4rem;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="header-banner">
-        <img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg" class="banner-img" alt="DENTE CRM Showcase Banner"/>
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        DENTE
+        <span class="brand-tag">POSTGRESQL / DRIZZLE DICOM CRM</span>
+      </a>
+      <div class="nav-links">
+        <a href="#demo">DICOM 3D MPR Workbench</a>
+        <a href="#drizzle">Drizzle ORM Engine</a>
+        <a href="#forms">Form 025/u & KND 1151156</a>
+        <a href="https://github.com/hades/dental-crm" target="_blank">GitHub Repository</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Enterprise Dental CRM & MIS</h1>
+    <p>React 19 & NestJS/Fastify architecture with Drizzle ORM over native PostgreSQL 18, Cornerstone.js DICOM 2D/3D MPR viewports, STT dictation, and Form 025/u document generation.</p>
+    
+    <div class="badge-row">
+      <span class="badge">ORM: Drizzle PostgreSQL 18</span>
+      <span class="badge">Frontend: React 19</span>
+      <span class="badge">Backend: NestJS / Fastify</span>
+      <span class="badge">Imaging: DICOM 2D/3D MPR</span>
+      <span class="badge">Compliance: Form 025/u & KND 1151156</span>
+    </div>
+  </section>
+
+  <!-- Live Interactive Demo -->
+  <section class="demo-section" id="demo">
+    <div class="demo-header">
+      <div class="demo-title">
+        <span class="status-dot"></span>
+        Interactive DICOM 2D/3D MPR Orthogonal Slice Workbench
+      </div>
+      <div class="demo-controls">
+        <button class="btn btn-active" onclick="setPlane('axial')">Axial View</button>
+        <button class="btn" onclick="setPlane('sagittal')">Sagittal View</button>
+        <button class="btn" onclick="setPlane('coronal')">Coronal View</button>
+        <button class="btn" onclick="togglePreset()">Preset: Bone CT (W:2000 L:500)</button>
+      </div>
+    </div>
+    <div class="viewport-container">
+      <canvas id="dicomCanvas" width="960" height="540"></canvas>
+      <div class="hud-overlay" id="hudStats">
+        StudyUID: 1.2.840.113619... | Slice: 42/120 | Orthogonal: Axial | Window/Level: Bone CT (2000/500) | Drizzle DB: 127.0.0.1:5432
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Specs -->
+  <section class="grid-section" id="drizzle">
+    <div class="card">
+      <h3>Drizzle ORM & PostgreSQL 18 Schema</h3>
+      <p>Multi-tenant database model with tenant isolation, JSONB patient dental formulas, and indexed DICOM series metadata.</p>
+      <div class="code-block">
+// apps/api/src/db/schema.ts
+export const dicomStudies = pgTable('dicom_studies', {
+  id: uuid('id').primaryKey(),
+  patientId: uuid('patient_id').notNull(),
+  studyInstanceUid: text('study_instance_uid').notNull().unique(),
+  seriesCount: integer('series_count').default(1),
+  createdAt: timestamp('created_at').defaultNow()
+});
+      </div>
     </div>
 
-    <div class="container">
-        <h1>DENTE CRM</h1>
-        <p class="subtitle">Enterprise Dental CRM & Local 3D DICOM Interactive Viewer</p>
-
-        <div class="btn-group">
-            <a href="https://github.com/marko1olo/dental-crm" class="btn btn-primary" target="_blank">🚀 View on GitHub</a>
-            <a href="https://github.com/marko1olo/dental-crm#readme" class="btn btn-secondary" target="_blank">📖 Read Full Documentation</a>
-        </div>
-
-        <div class="grid">
-            <div class="card">
-                <h3>⚡ Zero-Bloat Execution</h3>
-                <p>Designed for low execution latency, deterministic memory management, and explicit hardware control.</p>
-            </div>
-            <div class="card">
-                <h3>🔍 100% Audited Codebase</h3>
-                <p>Fully open-source under True People's License v2.0 with complete architectural transparency.</p>
-            </div>
-            <div class="card">
-                <h3>🌐 Production Ready</h3>
-                <p>Includes structured file matrices, CLI parameters, and automated verification build suites.</p>
-            </div>
-        </div>
+    <div class="card" id="forms">
+      <h3>Regulatory Document Generator</h3>
+      <p>Automated PDF & XML generation for Russian healthcare compliance: Form 025/u medical cards and KND 1151156 tax deduction certificates.</p>
+      <div class="code-block">
+// apps/api/src/routes/documents.ts
+export async function generateForm025U(
+  patientId: string, visitId: string
+): Promise<Buffer>;
+      </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 DENTE CRM Maintainers & Community. Free & Open Source.</p>
-    </footer>
+    <div class="card">
+      <h3>STT Dictation Gateway</h3>
+      <p>Speech-to-text dictation integration allowing doctors to dictate clinical notes directly into patient EMR charts.</p>
+      <div class="code-block">
+// apps/api/src/routes/stt.ts
+export async function transcribeAudioChunk(
+  audioBuffer: Buffer
+): Promise<{ text: string }>;
+      </div>
+    </div>
+  </section>
 
+  <footer>
+    <p>DENTE Dental CRM & MIS • GitHub Pages Documentation</p>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('dicomCanvas');
+    const ctx = canvas.getContext('2d');
+    let planeMode = 'axial';
+    let sliceIdx = 42;
+    let windowPreset = 'Bone CT';
+
+    function setPlane(plane) {
+      planeMode = plane;
+      document.querySelectorAll('.demo-controls .btn').forEach(b => {
+        if (b.innerText.toLowerCase().includes(plane)) b.classList.add('btn-active');
+        else if (!b.innerText.includes('Preset')) b.classList.remove('btn-active');
+      });
+    }
+
+    function togglePreset() {
+      windowPreset = windowPreset === 'Bone CT' ? 'Soft Tissue' : 'Bone CT';
+    }
+
+    function renderDicomSim() {
+      sliceIdx = (sliceIdx + 0.1) % 120;
+      const curSlice = Math.floor(sliceIdx);
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, w, h);
+
+      // Render DICOM crosshair & slice grid
+      ctx.strokeStyle = windowPreset === 'Bone CT' ? '#06b6d4' : '#10b981';
+      ctx.lineWidth = 1.5;
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = 160 + Math.sin(curSlice * 0.05) * 10;
+
+      // Circle bone skull structure outline
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Mandible arch
+      ctx.beginPath();
+      ctx.arc(cx, cy + 20, radius * 0.6, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.stroke();
+
+      // Crosshairs
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(cx, 40); ctx.lineTo(cx, h - 40);
+      ctx.moveTo(40, cy); ctx.lineTo(w - 40, cy);
+      ctx.stroke();
+
+      document.getElementById('hudStats').innerText = 
+        `StudyUID: 1.2.840.113619... | Slice: ${curSlice}/120 | Orthogonal: ${planeMode.toUpperCase()} | Window/Level: ${windowPreset} | Drizzle DB: 127.0.0.1:5432`;
+
+      requestAnimationFrame(renderDicomSim);
+    }
+
+    renderDicomSim();
+  </script>
 </body>
 </html>

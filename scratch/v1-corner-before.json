@@ -1,0 +1,306 @@
+{
+  "phase": "before",
+  "at": "2026-07-28T04:51:56.334Z",
+  "viewports": [
+    {
+      "requested": {
+        "w": 390,
+        "h": 844
+      },
+      "geometry": {
+        "viewport": {
+          "w": 390,
+          "h": 844
+        },
+        "hash": "#patients",
+        "dockHosts": 1,
+        "reserveVar": "144px",
+        "navClearanceVar": "64px",
+        "liftVar": "121px",
+        "density": "comfortable",
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 96,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9757,
+            "top": 0,
+            "bottom": 9757
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 80,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 9659,
+          "clientHeight": 9659,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9661,
+            "top": 0,
+            "bottom": 9661
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": true,
+          "box": {
+            "x": 0,
+            "y": 780,
+            "w": 390,
+            "h": 64,
+            "top": 780,
+            "bottom": 844
+          }
+        },
+        "dockBar": {
+          "x": 206,
+          "y": 587,
+          "w": 168,
+          "h": 48,
+          "top": 587,
+          "bottom": 635
+        },
+        "cornerFixed": [
+          {
+            "tag": "nav",
+            "id": null,
+            "cls": "dnt-bottom-nav",
+            "role": null,
+            "z": "9999",
+            "box": {
+              "x": 0,
+              "y": 780,
+              "w": 390,
+              "h": 64,
+              "top": 780,
+              "bottom": 844
+            }
+          }
+        ]
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 8913,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 295,
+        "hitsPerFrame": 2.46,
+        "hitMsTotal": 21.05,
+        "rects": 689,
+        "rectsPerFrame": 5.74,
+        "rectMsTotal": 19.34,
+        "frameMeanMs": 16.71,
+        "frameP95Ms": 22,
+        "frameMaxMs": 25.29
+      }
+    },
+    {
+      "requested": {
+        "w": 840,
+        "h": 900
+      },
+      "geometry": {
+        "viewport": {
+          "w": 840,
+          "h": 900
+        },
+        "hash": "#patients",
+        "dockHosts": 1,
+        "reserveVar": "144px",
+        "navClearanceVar": "64px",
+        "liftVar": "116px",
+        "density": "comfortable",
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 96,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 840,
+            "h": 6851,
+            "top": 0,
+            "bottom": 6851
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 80,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 6753,
+          "clientHeight": 6753,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 840,
+            "h": 6755,
+            "top": 0,
+            "bottom": 6755
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": true,
+          "box": {
+            "x": 0,
+            "y": 836,
+            "w": 840,
+            "h": 64,
+            "top": 836,
+            "bottom": 900
+          }
+        },
+        "dockBar": {
+          "x": 656,
+          "y": 648,
+          "w": 168,
+          "h": 48,
+          "top": 648,
+          "bottom": 696
+        },
+        "cornerFixed": [
+          {
+            "tag": "nav",
+            "id": null,
+            "cls": "dnt-bottom-nav",
+            "role": null,
+            "z": "9999",
+            "box": {
+              "x": 0,
+              "y": 836,
+              "w": 840,
+              "h": 64,
+              "top": 836,
+              "bottom": 900
+            }
+          }
+        ]
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 5951,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 295,
+        "hitsPerFrame": 2.46,
+        "hitMsTotal": 21.01,
+        "rects": 693,
+        "rectsPerFrame": 5.78,
+        "rectMsTotal": 12.9,
+        "frameMeanMs": 25.66,
+        "frameP95Ms": 48.13,
+        "frameMaxMs": 50.06
+      }
+    },
+    {
+      "requested": {
+        "w": 1600,
+        "h": 1100
+      },
+      "geometry": {
+        "viewport": {
+          "w": 1600,
+          "h": 1100
+        },
+        "hash": "#patients",
+        "dockHosts": 1,
+        "reserveVar": "96px",
+        "navClearanceVar": "0px",
+        "liftVar": "46px",
+        "density": "comfortable",
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 0,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 1600,
+            "h": 6354,
+            "top": 0,
+            "bottom": 6354
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 96,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 6352,
+          "clientHeight": 6352,
+          "box": {
+            "x": 252,
+            "y": 0,
+            "w": 1348,
+            "h": 6354,
+            "top": 0,
+            "bottom": 6354
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": false,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        "dockBar": {
+          "x": 1298,
+          "y": 982,
+          "w": 278,
+          "h": 48,
+          "top": 982,
+          "bottom": 1030
+        },
+        "cornerFixed": [
+          {
+            "tag": "div",
+            "id": "dente-corner-dock",
+            "cls": "corner-dock",
+            "role": "region",
+            "z": "900",
+            "box": {
+              "x": 1298,
+              "y": 982,
+              "w": 278,
+              "h": 48,
+              "top": 982,
+              "bottom": 1030
+            }
+          }
+        ]
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 5254,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 295,
+        "hitsPerFrame": 2.46,
+        "hitMsTotal": 24.44,
+        "rects": 821,
+        "rectsPerFrame": 6.84,
+        "rectMsTotal": 19.79,
+        "frameMeanMs": 51.18,
+        "frameP95Ms": 99.82,
+        "frameMaxMs": 109.19
+      }
+    }
+  ]
+}

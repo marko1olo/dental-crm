@@ -1,103 +1,74 @@
-<div align="center">
+![DENTE Dental CRM MIS Header Banner](assets/banner.svg)
 
-![DENTAL-CRM Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/dental_crm_banner.jpg)
+# 🦷 DENTE — Enterprise Dental CRM / MIS Platform
 
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![NestJS/Fastify](https://img.shields.io/badge/NestJS-Fastify-e0234e.svg?style=flat&logo=nestjs)](https://nestjs.com/)
+[![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat&logo=react)](https://react.dev/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-c5f742.svg?style=flat)](https://orm.drizzle.team/)
+[![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18_Native-4169e1.svg?style=flat&logo=postgresql)](https://www.postgresql.org/)
+[![DICOM Engine](https://img.shields.io/badge/DICOM-2D/3D_MPR-00a86b.svg?style=flat)](https://dicom.nema.org/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen.svg?style=flat&logo=github)](https://hades.github.io/dental-crm/)
+[![CI Build](https://img.shields.io/github/actions/workflow/status/hades/dental-crm/deploy-gh-pages.yml?branch=main&label=CI%20Build&style=flat&logo=githubactions)](https://github.com/hades/dental-crm/actions/workflows/deploy-gh-pages.yml)
 
-# DENTE — Enterprise Dental CRM & DICOM Interactive Engine
-
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2018-blue?style=for-the-badge&logo=postgresql)][][![Live Website](https://img.shields.io/badge/Website-GitHub%20Pages-00f2fe?style=for-the-badge)](https://marko1olo.github.io/dental-crm/)
-[![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
-[![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
-
-> **Production-grade software architecture & complete human developer specification.**
-
-[🌐 Open Live Showcase](https://marko1olo.github.io/dental-crm/) &nbsp;·&nbsp; [📊 Architectural Diagram](#-system-architecture--pipeline) &nbsp;·&nbsp; [📜 Developer Specs](#-original-human-developer-documentation)
-
-</div>
-
----
----
-
-## 📸 Authentic Repository Media & Screenshots Gallery
-
-<p align="center"><i>Showing 24 verified screenshot(s) and visual assets directly from the repository source tree:</i></p>
-
-<div align="center">
-
-<a href=".data/screenshots/mobile-settings-clinic-fixed.png"><img src=".data/screenshots/mobile-settings-clinic-fixed.png" width="48%" alt="mobile settings clinic fixed"/></a> &nbsp; <a href=".data/screenshots/mobile-settings-clinic-fixed2.png"><img src=".data/screenshots/mobile-settings-clinic-fixed2.png" width="48%" alt="mobile settings clinic fixed2"/></a>
-<br/>
-<a href=".data/screenshots/mobile-settings-clinic-ready.png"><img src=".data/screenshots/mobile-settings-clinic-ready.png" width="48%" alt="mobile settings clinic ready"/></a> &nbsp; <a href=".data/screenshots/mobile-settings-clinic.png"><img src=".data/screenshots/mobile-settings-clinic.png" width="48%" alt="mobile settings clinic"/></a>
-<br/>
-<a href=".data/screenshots/mobile-settings-sources-smoke.png"><img src=".data/screenshots/mobile-settings-sources-smoke.png" width="48%" alt="mobile settings sources smoke"/></a> &nbsp; <a href="apps/web/scratch/documents_screenshot.png"><img src="apps/web/scratch/documents_screenshot.png" width="48%" alt="documents screenshot"/></a>
-<br/>
-<a href="apps/web/scratch/screenshots/3_visit.png"><img src="apps/web/scratch/screenshots/3_visit.png" width="48%" alt="3 visit"/></a> &nbsp; <a href="apps/web/scratch/screenshots/5_documents.png"><img src="apps/web/scratch/screenshots/5_documents.png" width="48%" alt="5 documents"/></a>
-<br/>
-<a href="apps/web/scratch/settings_screenshot.png"><img src="apps/web/scratch/settings_screenshot.png" width="48%" alt="settings screenshot"/></a> &nbsp; <a href="apps/web/screenshots/01_dashboard.png"><img src="apps/web/screenshots/01_dashboard.png" width="48%" alt="01 dashboard"/></a>
-<br/>
-<a href="apps/web/screenshots/01_shift_fixed.png"><img src="apps/web/screenshots/01_shift_fixed.png" width="48%" alt="01 shift fixed"/></a> &nbsp; <a href="apps/web/screenshots/02_schedule.png"><img src="apps/web/screenshots/02_schedule.png" width="48%" alt="02 schedule"/></a>
-<br/>
-<a href="apps/web/screenshots/02_schedule_fixed.png"><img src="apps/web/screenshots/02_schedule_fixed.png" width="48%" alt="02 schedule fixed"/></a> &nbsp; <a href="apps/web/screenshots/03_patients.png"><img src="apps/web/screenshots/03_patients.png" width="48%" alt="03 patients"/></a>
-<br/>
-<a href="apps/web/screenshots/03_patients_fixed.png"><img src="apps/web/screenshots/03_patients_fixed.png" width="48%" alt="03 patients fixed"/></a> &nbsp; <a href="apps/web/screenshots/04_settings.png"><img src="apps/web/screenshots/04_settings.png" width="48%" alt="04 settings"/></a>
-<br/>
-<a href="apps/web/screenshots/04_visit_fixed.png"><img src="apps/web/screenshots/04_visit_fixed.png" width="48%" alt="04 visit fixed"/></a> &nbsp; <a href="apps/web/screenshots/05_documents_fixed.png"><img src="apps/web/screenshots/05_documents_fixed.png" width="48%" alt="05 documents fixed"/></a>
-<br/>
-<a href="apps/web/screenshots/05_visit.png"><img src="apps/web/screenshots/05_visit.png" width="48%" alt="05 visit"/></a> &nbsp; <a href="apps/web/screenshots/audit_communications.png"><img src="apps/web/screenshots/audit_communications.png" width="48%" alt="audit communications"/></a>
-<br/>
-<a href="apps/web/screenshots/audit_documents.png"><img src="apps/web/screenshots/audit_documents.png" width="48%" alt="audit documents"/></a> &nbsp; <a href="apps/web/screenshots/audit_patients.png"><img src="apps/web/screenshots/audit_patients.png" width="48%" alt="audit patients"/></a>
-<br/>
-<a href="apps/web/screenshots/audit_schedule.png"><img src="apps/web/screenshots/audit_schedule.png" width="48%" alt="audit schedule"/></a> &nbsp; <a href="apps/web/screenshots/audit_settings.png"><img src="apps/web/screenshots/audit_settings.png" width="48%" alt="audit settings"/></a>
-<br/>
-
-</div>
-
-------
-
-## 📖 Executive Architectural Overview
-
-This repository contains **marko1olo/dental-crm**. The system architecture enforces strict module decoupling, low-latency execution pipelines, zero-allocation runtime performance, and explicit hardware resource management.
+**DENTE** is an enterprise-grade, multi-tenant **Dental CRM & Medical Information System (MIS)** designed for dental clinics, solo practices, and healthcare networks. It provides scheduling, clinical EMR, regulatory document generation (025/у & KND 1151156), DICOM 2D/3D imaging, STT dictation, and Telegram bot integration.
 
 ---
 
-## 📊 System Architecture & Pipeline
+## 🏗️ Technical Architecture & Database Engine
+
+DENTE is built on top of Node.js / TypeScript with a Fastify/NestJS API, React 19 web interface, Drizzle ORM, and native PostgreSQL 18 database.
 
 ```mermaid
 graph TD
-    A[Telegram Bot & Web Shell] --> B[Fastify API & Drizzle ORM]
-    B --> C[PostgreSQL 18 TCP Persistence]
-    C --> D[Structured Medical Card 025/у Generator]
-    D --> E[Interactive 2D/3D DICOM X-Ray Canvas]
+    Client[React 19 Frontend Web Shell] -->|HTTP / REST| API[NestJS / Fastify Backend API]
+    API -->|Schema & Queries| Drizzle[Drizzle ORM]
+    Drizzle -->|TCP 127.0.0.1:5432| DB[(PostgreSQL 18 Database)]
+    
+    subgraph Integrated Services & Modules
+        API -->|Generates Documents| DocEngine[Document Generator - Form 025/у & KND 1151156]
+        API -->|Processes Audio| STTGateway[STT Speech Dictation Gateway]
+        API -->|2D/3D Slice Rendering| DICOMEngine[DICOM & CBCT Workbench - MPR/OHIF]
+        API -->|Telegram Handoff| TelegramBot[DENTE Telegram Bot Gateway]
+    end
 ```
 
 ---
 
-## 🔧 Technical Configuration & Deep Domain Specifications
+## 📂 File Tree Component Matrix
 
-- **Native PostgreSQL 18**: Multi-tenant isolation over TCP on `127.0.0.1:5432`.
-- **KND 1151156 Tax Compliance**: Structured generation of tax certificates and 025/у medical records.
-- **Telegram Bot Webhook Scope**: Multi-clinic scoped webhook routing with zero PHI leakage.
-
-<details open>
-<summary><b>⚙️ Core System Configuration Parameters (Click to Collapse)</b></summary>
-
-| Parameter Key | Type | Default Value | Description |
-|---|---|---|---|
-| `MAX_BUFFER_SIZE` | SizeT | `65536` | Maximum pre-allocated memory buffer in bytes |
-| `FRAME_RATE_TARGET` | Int | `60` | Target loop frequency in Hz |
-| `ENABLE_TELEMETRY` | Bool | `true` | Emit real-time JSON metrics to stdout |
-| `THREAD_POOL_COUNT` | Int | `8` | Worker thread allocations for parallel processing |
-
-</details>
+```txt
+dental-crm/
+├── apps/
+│   ├── api/                     # NestJS / Fastify backend services & routers
+│   └── web/                     # React 19 frontend workspace & UI components
+├── assets/
+│   └── banner.svg               # 16:9 banner header graphic
+├── docs/                        # Technical architecture & legal compliance specifications
+│   ├── 00-product-architecture.md
+│   ├── 10-imaging-dicom-viewer-plan.md
+│   └── legal-sources/           # Official FNS order attachments & XSD specifications
+├── packages/
+│   ├── shared/                  # Shared Zod schemas, types, and constants
+│   └── ui/                      # Shared UI component library
+├── .agents/                     # Agent rules & authority routing
+├── AGENTS.md                    # Authority mandate index
+├── CLINICAL_USER_MANUAL.md      # Doctor & staff clinical user manual
+├── package.json                 # Monorepo dependencies & smoke test runners
+├── tsconfig.base.json           # Base TypeScript compiler configuration
+└── README.md                    # Main product documentation
+```
 
 ---
 
-## 📜 Original Human Developer Documentation
+## Original Developer Documentation
 
-The section below contains **100% of the true, un-truncated, original human developer documentation** created for this repository:
+### 🦷 DENTE — Dental CRM / MIS
 
----
+**Enterprise scheduling, patient records and clinical imaging for dental practices.**
 
-# DENTE / Dental CRM-MIS
+> [!IMPORTANT]
+> **AI AGENT INSTRUCTION:** If you are an AI assistant (Cursor, Claude Code, Aider, etc.) editing this codebase, you **MUST** read the [.cursorrules](file:///C:/Clinic_MVP/dental-crm/.cursorrules) and consult the modular developer documentation at [.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) before writing any code.
 
 Working repository for DENTE, a small-clinic dental CRM/MIS intended to grow into a hosted SaaS.
 
@@ -109,6 +80,7 @@ Primary document:
 - speech transcription plan: `docs/05-speech-transcription-plan.md`
 - speech provider research: `docs/06-speech-provider-research.md`
 - competitive voice/CRM audit: `docs/07-competitive-voice-and-crm-audit.md`
+- **competitive audit & feature parity suite**: `docs/competitive-audit/FEATURES_REGISTRY.md`
 - imaging/DICOM viewer plan: `docs/10-imaging-dicom-viewer-plan.md`
 - document generation forms: `docs/12-document-generation-forms.md`
 - DENTE Telegram bot plan: `docs/13-dente-telegram-bot-plan.md`
@@ -126,6 +98,7 @@ Useful checks:
 - `npm run smoke:telegram-control-ui-source`
 - `npm run smoke:telegram-handoff-source`
 - `npm run smoke:api-text-encoding`
+- `npm run smoke:web-text-encoding`
 - `npm run smoke:mobile` checks mobile layouts through headless Edge/Chromium CDP and fails on horizontal overflow; optional `SMOKE_SCREENSHOT_PATH`, `SMOKE_SELECTOR`, and `SMOKE_CLICK_SELECTOR` capture the exact tested screen.
 
 Implemented prototype surface:
@@ -169,7 +142,7 @@ Implemented prototype surface:
 - smart mixed-export parser that separates patient rows, imaging rows, DICOM/IMA/TRG/CBCT paths, and ignored noise before safe commit;
 - `/api/ingestion/extract` provides a built-in document/table extractor for ZIP archives, TXT, CSV, TSV, JSON, XML, HTML, RTF, PDF best-effort, DOCX, XLSX, PPTX, and image placeholders before routing text or uploaded images into smart import, patient import, imaging manifests, or price-list analysis;
 - ZIP ingestion is read-only and extracts supported nested documents/tables while listing binary DICOM/image entries as manifest references, so archived CBCT/RVG/OPG exports can go to imaging preview instead of becoming binary text garbage;
-- source and ZIP entry file names are redacted in extraction responses to stable safe labels (`Source file #...`, `Archive entry #...`) before preview text, warnings, or extracted file lists reach the browser;
+- source and ZIP entry file names are redacted in extraction responses to stable safe labels (`Файл архива #...`, `Архив #...`) before preview text, warnings, or extracted file lists reach the browser;
 - document ingestion returns a safety quality block (`ready`, `review`, `ocr_required`, `unsupported`) with confidence, suggested target, detected signals, and next action before any preview/commit step;
 - CSV diagnostic report for smart imports with classification, confidence, preview status, and warnings;
 - dedicated Imaging page for periapical/RVG, bitewing, OPG, TRG/ceph, CBCT, photos, and future PACS/DICOM connectors, so the Shift screen keeps only counts and a fast entry point;
@@ -199,11 +172,12 @@ Implemented prototype surface:
 - Settings -> Sources now also has a browser-only `Pick local CT` path: `showDirectoryPicker` when available, with a file-input directory fallback. It summarizes selected local DICOM/archive/3D/image files from metadata and DICOM magic bytes only, stores a PHI-safe local summary, and still routes pixel viewing/workup to the local worker, DICOMweb, OHIF, or Cornerstone boundary. The fallback has a dedicated synthetic non-PHI smoke (`npm run smoke:browser-file-input-dicom`) that verifies no-extension `DICM` detection and raw path/name redaction;
 - DICOM/CBCT folder workup now has a repeatable synthetic no-PHI API smoke (`npm run smoke:dicom-folder-workup`) that generates a local CT stack, verifies first-frame orientation preview, MPR/panoramic workup, high-end GPU cache planning, low-power external handoff, and server-side pixel-free bundle path redaction;
 - workstation readiness now includes a GPU render plan: GPU class, texture strategy (`single_3d_texture`, `bricked_3d_textures`, `stack_2d_textures`, or external viewer), quality mode, downsample factor, slice batch size, estimated GPU memory, Web Worker/OffscreenCanvas use, and first-paint strategy;
-- `/api/system/local-bridges/readiness` safely checks optional local workstation bridges for Whisper.cpp, Vosk, CBCT/DICOM worker, OCR worker, and OHIF without sending clinical payloads or exposing secrets; Settings -> Audit shows the result as admin diagnostics, not as doctor-facing noise;
-- `/api/system/local-bridges/use-plans` turns bridge readiness, server STT/Groq availability, and built-in parser capability into scenario plans for dictation, OCR, price-list photos, CBCT/MPR, and imaging import; every plan is warning-only for the doctor and preserves local-first recovery;
+- `/api/system/local-bridges/readiness` safely checks optional local workstation modules for Whisper.cpp, Vosk, CT/DICOM worker, OCR worker, and external viewer without sending clinical payloads or exposing secrets; Settings -> Audit shows the result as admin diagnostics, not as doctor-facing noise;
+- `/api/system/local-bridges/use-plans` turns local module readiness, server recognition availability, and built-in parser capability into scenario plans for dictation, OCR, price-list photos, CT/MPR, and imaging import; every plan is warning-only for the doctor and preserves local-first recovery;
 - DICOM series preview now recognizes ZIP/7z/RAR archive paths and expands ZIP central directories into virtual DICOM entries for read-only readiness checks; 7z/RAR are flagged for external extraction instead of silently pretending to load them;
 - CBCT/CT previews return an explicit `mprReadiness` contract with 3-plane MPR, oblique axes, panoramic reconstruction eligibility, window/level, crosshair, measurement, export, blocker, and next-action metadata;
 - DICOM/CBCT readiness also returns a resource policy: required workstation tier, load strategy, estimated browser memory, max client slice cap, cache mode, thumbnail-first rule, and safety caps so weak PCs get preview/handoff while strong workstations can open full MPR;
+- clinical MPR presets now separate exact protocol fit from safe fallback planes: unavailable panoramic/oblique routes can fall back to an available plane for navigation, but the UI does not claim an exact clinical protocol or offer a no-op fit action;
 - the Imaging page keeps CBCT advanced controls collapsed by default: doctors see quick status and external viewer handoff first, while axial/coronal/sagittal/oblique/panoramic projection choice, axis angle, slab thickness, window preset, crosshair, and linked-plane intent stay available on demand; Settings -> Sources keeps the admin readiness panel, DICOM import checks, DICOMweb connector check, and OHIF launch manifest builder;
 - clinic account settings for solo doctor, one-chair office, small clinic, and network clinic modes;
 - workspace profiles and role access policies for solo doctor, one-chair office, small clinic, network/branch operation, doctors, admins, assistants, managers, and owners;
@@ -245,10 +219,10 @@ Implemented prototype surface:
 - offline deterministic speech cleanup now covers common prosthetic, implant, hygiene, scanner, and material vocabulary such as E.max, zirconia, metal-ceramic, PMMA, veneers, inlay/onlay/overlay, endocrown, abutment, sinus-lift, bone grafting, iTero, Medit, and 3Shape;
 - rule-based visit drafts now carry a doctor-facing quality gate with confidence, detected teeth, specialty focus, parser signals, missing critical fields, and the next safe action; it is a warning layer, not a blocker;
 - the Visit screen has a compact safety strip for local autosave, server draft sync, browser/device readiness, queued STT audio, and recovery state so a doctor can see data protection without opening Settings;
-- optional server-only neural polish can run after deterministic STT cleanup through an OpenAI-compatible endpoint, disabled by default and guarded against added tooth/diagnosis facts;
+- optional server-only neural polish can run after deterministic speech cleanup through a configured server endpoint, disabled by default and guarded against added tooth/diagnosis facts;
 - OpenAI/Groq neural polish now uses the same server-only key-pool safety as STT: random available-key selection, retry limit, cooldown after 429/auth/timeout/5xx, sanitized provider errors, and fingerprint-only key health persistence;
 - `/api/pricelist/analyze` parses copied tables, OCR text, and photo-OCR text into validated dental price-list JSON: service category, specialty, material, crown/restoration type, brand, unit, price, warnings, and service mapping candidate;
-- Settings -> Прайс adds an admin-only preview and collapsed recognition catalog for treatment kinds, materials, crown/restoration types, implant systems, grafts/membranes, anesthetics, lab/imaging markers, and common brands, with optional Groq vision/text JSON extraction, browser-side photo compression, and deterministic fallback;
+- Settings -> Прайс adds an admin-only preview and collapsed recognition catalog for treatment kinds, materials, crown/restoration types, implant systems, grafts/membranes, anesthetics, lab/imaging markers, and common brands, with optional server image/text extraction, browser-side photo compression, and deterministic fallback;
 - visit dictation and structured EMR fields autosave locally in the browser per active visit and restore only when the local draft is newer than the server visit;
 - `/api/visits/:visitId/draft/autosave` stores a server-side draft snapshot before EMR acceptance, so typed/STT text can be recovered after refresh or another workstation without signing the medical record;
 - accepting/saving a reviewed visit note now has a browser queue: if the API is unavailable, the note stays local and retries server sync later;
@@ -258,7 +232,7 @@ Implemented prototype surface:
 - compact clinical warning disclosure on Visit, with full clinical rule explanation available on demand instead of occupying the default work surface;
 - staff roles, explicit doctor/assistant specialty selection, chair/room inventory, and role-derived access flags in Settings;
 - shift intelligence layer that calculates mode readiness, doctor/assistant/chair load, role queues, and schedule warnings from the same dashboard contract;
-- migration/integration preset catalog for 32top, IDENT, Cliniccards, Open Dental, spreadsheets, OCR paper archive, RVG/OPG/TRG/CBCT folders, PACS/DICOMweb, and accounting/tax flows;
+- migration/integration preset catalog for 32top, IDENT, Cliniccards, Open Dental, spreadsheets, OCR paper archive, RVG/OPG/TRG/CBCT folders, PACS/архивы снимков, and accounting/tax flows;
 - AI recognition job pipeline for voice dictation, paper-journal OCR, image summaries, document drafts, confidence, warnings, and explicit next steps;
 - Settings -> AI speech provider catalog for browser dictation, Groq Whisper, OpenAI transcription, Deepgram, AssemblyAI, Cloudflare Workers AI, Whisper.cpp, and Vosk, with server-only key boundaries;
 - Settings -> AI now also tracks Azure AI Speech, Google Cloud Speech-to-Text, Hugging Face ASR, and future native mobile speech as admin/provider choices, not doctor-facing treatment controls;
@@ -290,16 +264,34 @@ Implemented prototype surface:
 - `/api/system/persistence/verify` checks the current state file and recent backups for readability/checksum status; `/api/system/persistence/export` downloads a no-store JSON snapshot for emergency owner/admin backup before risky migrations and records the download in audit.
 - API responses now send baseline privacy/security headers: `Cache-Control: no-store`, `nosniff`, frame denial, no referrer, restricted browser permissions, and API-only CSP.
 - Protected clinical/financial read and write routes now require `x-dente-admin-secret` in production when `DENTE_CLINICAL_ADMIN_SECRET`, `DENTE_SETTINGS_ADMIN_SECRET`, or `DENTE_TELEGRAM_ADMIN_SECRET` is configured; production fails closed without one, while local prototypes can explicitly use `DENTE_CLINICAL_ALLOW_UNGUARDED_READS=1` and `DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS=1`.
-- PWA shell assets are present: manifest, app icon, service worker, and offline page. The service worker is same-origin only, uses network-first navigation with cached shell fallback, stale-while-revalidate for static assets, and avoids caching `/api/*` medical responses.
+- PWA shell assets are present: manifest, app icon, service worker, and offline page. The service worker is same-origin only, uses network-first navigation plus network-first JS/CSS shell assets with cached fallback, can clear stale shell cache on app request, and avoids caching `/api/*`, medical-document, DICOM pixel, or mesh/CAD/STL responses.
 - Settings -> Audit includes a browser continuity check for local draft writes, IndexedDB audio queue support, PWA/service-worker state, Cache Storage, quota estimate, persistent-storage grant, and queued sync counts; the doctor sees only a one-card device status in Visit.
-- Settings -> Audit also includes local workstation bridge preflight for optional desktop acceleration: local STT, local OCR, CBCT/DICOM worker, and OHIF viewer can be configured per clinic PC while the app keeps deterministic/server fallbacks when no bridge is available.
-- Settings -> Audit shows compact local bridge use-plans, so admins see whether the current workstation should use server STT/Groq, local OCR/DICOM, metadata preview, or manual review without pushing that complexity into Visit.
+- Settings -> Audit also includes local workstation module preflight for optional desktop acceleration: local speech recognition, local OCR, CT/DICOM worker, and external viewer can be configured per clinic PC while the app keeps deterministic/server fallbacks when no module is available.
+- Settings -> Audit shows compact local module use-plans, so admins see whether the current workstation should use server recognition, local OCR/CT processing, metadata preview, or manual review without pushing that complexity into Visit.
 - price-list parsing now has a synthetic no-PHI smoke for offline taxonomy coverage and invalid image protection: `npm run smoke:pricelist-analyzer` verifies core dental categories/materials/brands and confirms malformed image payloads do not trigger Groq calls.
 - Web production build is split into app, React vendor, shared schema, Zod, and icons chunks so the doctor-facing shell no longer ships as one oversized JavaScript file.
 
-
 ---
 
-## 📜 License & Community Standards
+<details>
+<summary><b>🇷🇺 Краткое описание на русском</b></summary>
 
-Distributed under the **True People's License v2.0** / Open License — Authors: **Jirnyak** & **Adolf Petushkov** (2026). Free for all maintainers, developers, and AI research. Zero paywalls.
+### Обзор системы DENTE Dental CRM / MIS
+
+**DENTE** — это промышленная веб-система управления стоматологической клиникой (CRM / MIS), созданная для автоматизации приема врачей, ведения электронных медицинских карт, планирования расписания, DICOM-диагностики, финансового учета и формирования юридических документов.
+
+#### Ключевые возможности системы:
+- **Медицинский модуль**: Карточка первичного осмотра, зубная формула (FDI), протоколы лечения (терапия, хирургия, ортопедия, ортодонтия, пародонтология, гигиена).
+- **Электронный документооборот**: Автоматическая генерация формы 025/у («Медицинская карта амбулаторного больного» по приказу Минздрава №274н), договоров, актов выполненных работ и справок для налогового вычета ФНС по форме КНД 1151156 с выгрузкой XML.
+- **Интеграция снимков (DICOM / КТ)**: Встроенный просмотрщик рентгеновских снимков (прицельные, ОПТГ, ТРГ) и модуль MPR для компьютерной томографии (КТ / CBCT) с поддержкой OHIF / DICOMweb.
+- **Голосовой ввод (STT)**: Диктовка протоколов приема врачом с автоматической очисткой от медицинских шумов и нормализацией стоматологической терминологии.
+- **Telegram Интеграция**: Телеграм-бот клиники для записи пациентов, отправки напоминаний, выгрузки справок и обратной связи.
+- **База данных**: Нативный PostgreSQL 18 и Drizzle ORM с полной изоляцией организаций и клиник.
+
+#### Основные проверки и команды разработки:
+```bash
+npm run typecheck       # Проверка типов TypeScript
+npm run build           # Продакшн-сборка всех пакетов
+npm run smoke:mobile    # Автоматизированный визуальный тест мобильной адаптивности
+```
+</details>

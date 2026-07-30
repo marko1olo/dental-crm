@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="bgGradDente" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06121e"/>
+      <stop offset="50%" stop-color="#0c2035"/>
+      <stop offset="100%" stop-color="#040b14"/>
+    </linearGradient>
+    <linearGradient id="emeraldGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.9"/>
+    </linearGradient>
+    <pattern id="gridDente" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#162e48" stroke-width="1" stroke-opacity="0.4"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="675" fill="url(#bgGradDente)"/>
+  <rect width="1200" height="675" fill="url(#gridDente)"/>
+
+  <!-- Ambient Glow -->
+  <circle cx="200" cy="160" r="280" fill="#10b981" opacity="0.08" filter="blur(45px)"/>
+  <circle cx="1000" cy="500" r="280" fill="#06b6d4" opacity="0.08" filter="blur(45px)"/>
+
+  <!-- Main Card -->
+  <rect x="90" y="85" width="1020" height="505" rx="16" fill="#0a192b" fill-opacity="0.8" stroke="#1c3858" stroke-width="2"/>
+
+  <!-- Header Badge -->
+  <rect x="130" y="125" width="280" height="36" rx="18" fill="url(#emeraldGlow)" opacity="0.2"/>
+  <text x="270" y="148" fill="#34d399" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" text-anchor="middle" letter-spacing="2">ENTERPRISE CLINIC MIS</text>
+
+  <!-- Main Title -->
+  <text x="130" y="235" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="50" font-weight="900" letter-spacing="1">🦷 DENTE — DENTAL MIS / CRM</text>
+  <text x="130" y="280" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="400">Enterprise Scheduling, DICOM Slice Viewing, Legal Compliance &amp; Multi-Tenant SaaS</text>
+
+  <!-- Tech Stack Chips -->
+  <g transform="translate(130, 335)">
+    <rect x="0" y="0" width="140" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="70" y="26" fill="#38bdf8" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">TypeScript 5.8</text>
+
+    <rect x="155" y="0" width="140" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="225" y="26" fill="#e11d48" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">NestJS / Fastify</text>
+
+    <rect x="310" y="0" width="120" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="370" y="26" fill="#61dafb" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">React 19</text>
+
+    <rect x="445" y="0" width="130" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="510" y="26" fill="#fbbf24" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">Drizzle ORM</text>
+
+    <rect x="590" y="0" width="150" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="665" y="26" fill="#60a5fa" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">PostgreSQL 18</text>
+
+    <rect x="755" y="0" width="120" height="42" rx="8" fill="#13273e" stroke="#214065" stroke-width="1"/>
+    <text x="815" y="26" fill="#34d399" font-family="sans-serif" font-size="14" font-weight="600" text-anchor="middle">DICOM 2D/3D</text>
+  </g>
+
+  <!-- Feature Highlights -->
+  <g transform="translate(130, 420)">
+    <text x="0" y="25" fill="#64748b" font-family="sans-serif" font-size="14" font-weight="500">Features: 025/у Form Gen • KND 1151156 Tax Export • Telegram Bot Gateway • STT Speech Dictation • Multi-Tenant</text>
+  </g>
+
+  <!-- Accent Divider -->
+  <rect x="130" y="480" width="940" height="4" rx="2" fill="url(#emeraldGlow)"/>
+</svg>

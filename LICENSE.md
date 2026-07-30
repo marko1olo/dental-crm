@@ -1,51 +1,29 @@
-# DENTE Enterprise CRM: Commercial Proprietary & Source-Available License
+# DENTE Enterprise CRM & Clinic MVP: Proprietary & Source-Available Commercial License
 
-**Copyright (c) 2026 Адольф Петушков / Adolf Petushkov**
-
----
-
-## 🇷🇺 Русская Версия (Russian Version)
-
-### 🩺 Коммерческая Лицензия DENTE CRM
-Высокопроизводительная CRM-система для стоматологий. Исходный код доступен для аудита (Source-Available). Запрещено коммерческое использование сторонними лицами без договора с **Адольфом Петушковым**.
----
-
-### 🤝 Мейнтейнеры, Контрибьюторы и ИИ (Maintainers & AI Welcome)
-* **Приветствуем всех контрибьюторов:** Мы искренне рады пул-реквестам (PR), багрепортам, оптимизациям и помощи в развитии проекта от любых мейнтейнеров и разработчиков!
-* **Разрешение на обучение ИИ:** Код, документация и архитектура открыты для исследования, обучения нейросетей, агентных ИИ-инструментов (Claude, Codex, Antigravity, LLM) и машинного обучения.
-
+**Copyright (c) 2026 Адольф Петушков. All Rights Reserved.**
 
 ---
 
-## 🇬🇧 English Version
-
-### 🩺 DENTE CRM Commercial License
-Enterprise Dental CRM with DICOM rendering. Source-Available for evaluation. Unauthorized commercial deployment is prohibited without a license agreement with **Adolf Petushkov**.
----
-
-### 🤝 Maintainers, Contributors & AI Welcome
-* **Contributors Welcome:** We sincerely welcome pull requests (PRs), bug reports, optimizations, and contributions from any maintainer or developer!
-* **AI Training & Agent Access:** Code, documentation, and architecture are open for research, neural network training, agentic AI tools (Claude Code, Codex, Antigravity, LLMs), and machine learning.
-
+### 🛡️ 1. Статус Проекта и Просмотр (Source-Available & Audit Rights)
+* **Статус:** Данный проект (DENTE CRM, ShadowAnalyst AI X-Ray, Clinic MVP, StomChat) является коммерческой медицинской платформой.
+* **Права на просмотр:** Исходный код, архитектура, API и медицинские алгоритмы предоставляются в режиме **Source-Available** — для аудита, изучения, безопасности и внутреннего тестирования.
 
 ---
 
-### 📜 Standard Legal Terms & Disclaimer / Официальные Условия
+### 🔴 2. Ограничения на Коммерческое Использование (Commercial Restrictions)
+1. **Запрет несанкционированной коммерции:** Категорически запрещено продавать, перепродавать, сдавать в субаренду, предоставлять в качестве платного облачного сервиса (SaaS / B2B) или разворачивать данный софт в сторонних клиниках без коммерческой лицензии или письменного соглашения с **Адольфом Петушковым**.
+2. **Запрет на приватизацию и ребрендинг:** Запрещено удалять копирайты, скрывать авторство или продавать данный продукт под видом собственного коммерческого решения.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+---
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+### 🤝 3. Партнёры, Мейнтейнеры и ИИ (Partners, Contributors & AI Welcome)
+* **Приветствуются партнёры и разработчики:** Мы открыты к коммерческому сотрудничеству, пул-реквестам (PR), предложениям от клиник, интеграторов и мейнтейнеров.
+* **Разрешение на обучение ИИ:** Исследование кода, бенчмарки и обучение агентных ИИ-инструментов (Claude, Codex, Antigravity, LLM) разрешены.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+---
+
+### ⚠️ 4. Отказ от Ответственности (No Liability)
+ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ» (AS IS), БЕЗ КАКИХ-ЛИБО ЯВНЫХ ИЛИ ПОДРАЗУМЕВАЕМЫХ ГАРАНТИЙ. АВТОР (АДОЛЬФ ПЕТУШКОВ) НЕ НЕСЁТ ОТВЕТСТВЕННОСТИ ЗА ЛЮБЫЕ ПРЯМЫЕ ИЛИ КОСВЕННЫЕ УБЫТКИ, СВЯЗАННЫЕ С ИСПОЛЬЗОВАНИЕМ ДАННОЙ СИСТЕМЫ.
+
+---
+*Слава DENTE CRM & Clinic MVP. Проект коммерчески защищён.*

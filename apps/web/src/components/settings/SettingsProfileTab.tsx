@@ -12,6 +12,7 @@ import {
   type ProfileLoadState,
   type StaffProfile,
 } from "./settingsProfileLoad";
+import { readDenteStaffToken } from "../../lib/safeLocalStorage";
 
 interface SettingsProfileTabProps {
   props: Record<string, any>;

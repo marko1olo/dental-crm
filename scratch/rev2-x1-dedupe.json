@@ -1,0 +1,569 @@
+{
+  "at": "2026-07-28T11:14:19.145Z",
+  "runs": [
+    {
+      "mode": "control",
+      "requested": {
+        "w": 390,
+        "h": 844
+      },
+      "served": {
+        "/src/workspaceShell.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234135879",
+        "/src/components/Omnibar.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234960377",
+        "/src/components/VoiceAssistantUI.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234960377"
+      },
+      "rewrites": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/reclamations",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/tickets",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "hostCount": 1,
+      "placement": "nav",
+      "hostConnected": true,
+      "hostInTopbar": false,
+      "hostInNav": true,
+      "slots": [
+        {
+          "slot": "notice",
+          "children": 0
+        },
+        {
+          "slot": "voice",
+          "children": 0
+        },
+        {
+          "slot": "search",
+          "children": 0
+        },
+        {
+          "slot": "help",
+          "children": 0
+        }
+      ],
+      "controls": [],
+      "controlCount": 0,
+      "triggerCount": 1,
+      "navPresent": true,
+      "topDictation": 1,
+      "interaction": {
+        "kind": "nav-sheet",
+        "hidden": false,
+        "sheetBox": {
+          "w": 390,
+          "h": 95,
+          "top": 685,
+          "bottom": 780
+        },
+        "navBox": {
+          "w": 390,
+          "h": 64,
+          "top": 780,
+          "bottom": 844
+        },
+        "gapSheetBottomToNavTop": 0,
+        "controls": []
+      }
+    },
+    {
+      "mode": "control",
+      "requested": {
+        "w": 1600,
+        "h": 1100
+      },
+      "served": {
+        "/src/workspaceShell.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234135879",
+        "/src/components/Omnibar.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234960377",
+        "/src/components/VoiceAssistantUI.tsx": "workspaceActions/WorkspaceActions.tsx?t=1785234960377"
+      },
+      "rewrites": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/reclamations",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/tickets",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "viewport": {
+        "w": 1600,
+        "h": 1100
+      },
+      "hostCount": 1,
+      "placement": "header",
+      "hostConnected": true,
+      "hostInTopbar": true,
+      "hostInNav": false,
+      "slots": [
+        {
+          "slot": "notice",
+          "children": 0
+        },
+        {
+          "slot": "search",
+          "children": 0
+        },
+        {
+          "slot": "voice",
+          "children": 0
+        },
+        {
+          "slot": "help",
+          "children": 0
+        }
+      ],
+      "controls": [],
+      "controlCount": 0,
+      "triggerCount": 0,
+      "navPresent": true,
+      "topDictation": 1,
+      "interaction": null
+    },
+    {
+      "mode": "deduped",
+      "requested": {
+        "w": 390,
+        "h": 844
+      },
+      "served": {
+        "/src/workspaceShell.tsx": "workspaceActions/WorkspaceActions.tsx",
+        "/src/components/Omnibar.tsx": "workspaceActions/WorkspaceActions.tsx",
+        "/src/components/VoiceAssistantUI.tsx": "workspaceActions/WorkspaceActions.tsx"
+      },
+      "rewrites": [
+        {
+          "url": "http://127.0.0.1:5173/src/components/VoiceAssistantUI.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/Omnibar.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/workspaceShell.tsx?t=1785234960377",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/VoiceAssistantUI.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/Omnibar.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/workspaceShell.tsx?t=1785234960377",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/workspaceShell.tsx",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/Omnibar.tsx",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/VoiceAssistantUI.tsx",
+          "changed": true
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/reclamations",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/tickets",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "hostCount": 1,
+      "placement": "nav",
+      "hostConnected": true,
+      "hostInTopbar": false,
+      "hostInNav": true,
+      "slots": [
+        {
+          "slot": "notice",
+          "children": 0
+        },
+        {
+          "slot": "voice",
+          "children": 1
+        },
+        {
+          "slot": "search",
+          "children": 1
+        },
+        {
+          "slot": "help",
+          "children": 1
+        }
+      ],
+      "controls": [
+        {
+          "label": "Голос",
+          "connected": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "visible": false
+        },
+        {
+          "label": "Поиск",
+          "connected": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "visible": false
+        },
+        {
+          "label": "Справка",
+          "connected": true,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "visible": false
+        }
+      ],
+      "controlCount": 3,
+      "triggerCount": 1,
+      "navPresent": true,
+      "topDictation": 1,
+      "interaction": {
+        "kind": "nav-sheet",
+        "hidden": false,
+        "sheetBox": {
+          "w": 390,
+          "h": 299,
+          "top": 481,
+          "bottom": 780
+        },
+        "navBox": {
+          "w": 390,
+          "h": 64,
+          "top": 780,
+          "bottom": 844
+        },
+        "gapSheetBottomToNavTop": 0,
+        "controls": [
+          {
+            "label": "Голос",
+            "box": {
+              "w": 358,
+              "h": 73,
+              "top": 560,
+              "bottom": 634
+            },
+            "hintBox": {
+              "w": 298,
+              "h": 32,
+              "top": 590,
+              "bottom": 623
+            },
+            "centreOwnedBySelf": true
+          },
+          {
+            "label": "Поиск",
+            "box": {
+              "w": 358,
+              "h": 57,
+              "top": 642,
+              "bottom": 699
+            },
+            "hintBox": {
+              "w": 227,
+              "h": 16,
+              "top": 672,
+              "bottom": 688
+            },
+            "centreOwnedBySelf": true
+          },
+          {
+            "label": "Справка",
+            "box": {
+              "w": 358,
+              "h": 57,
+              "top": 707,
+              "bottom": 764
+            },
+            "hintBox": {
+              "w": 218,
+              "h": 16,
+              "top": 737,
+              "bottom": 753
+            },
+            "centreOwnedBySelf": true
+          }
+        ]
+      }
+    },
+    {
+      "mode": "deduped",
+      "requested": {
+        "w": 1600,
+        "h": 1100
+      },
+      "served": {
+        "/src/workspaceShell.tsx": "workspaceActions/WorkspaceActions.tsx",
+        "/src/components/Omnibar.tsx": "workspaceActions/WorkspaceActions.tsx",
+        "/src/components/VoiceAssistantUI.tsx": "workspaceActions/WorkspaceActions.tsx"
+      },
+      "rewrites": [
+        {
+          "url": "http://127.0.0.1:5173/src/components/VoiceAssistantUI.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/Omnibar.tsx?t=1785237121187",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/workspaceShell.tsx?t=1785234960377",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/workspaceShell.tsx",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/Omnibar.tsx",
+          "changed": true
+        },
+        {
+          "url": "http://127.0.0.1:5173/src/components/VoiceAssistantUI.tsx",
+          "changed": true
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/reclamations",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[usePatientResource 5755a8aa-73e3-40ce-9faf-e7bebe399cd4] ответ 404 на /api/patients/5755a8aa-73e3-40ce-9faf-e7bebe399cd4/tickets",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "viewport": {
+        "w": 1600,
+        "h": 1100
+      },
+      "hostCount": 1,
+      "placement": "header",
+      "hostConnected": true,
+      "hostInTopbar": true,
+      "hostInNav": false,
+      "slots": [
+        {
+          "slot": "notice",
+          "children": 0
+        },
+        {
+          "slot": "search",
+          "children": 1
+        },
+        {
+          "slot": "voice",
+          "children": 1
+        },
+        {
+          "slot": "help",
+          "children": 1
+        }
+      ],
+      "controls": [
+        {
+          "label": "Поиск",
+          "connected": true,
+          "box": {
+            "x": 1016,
+            "y": 156,
+            "w": 94,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          },
+          "visible": true
+        },
+        {
+          "label": "Голос",
+          "connected": true,
+          "box": {
+            "x": 1111,
+            "y": 156,
+            "w": 91,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          },
+          "visible": true
+        },
+        {
+          "label": "Справка",
+          "connected": true,
+          "box": {
+            "x": 1203,
+            "y": 156,
+            "w": 109,
+            "h": 40,
+            "top": 156,
+            "bottom": 196
+          },
+          "visible": true
+        }
+      ],
+      "controlCount": 3,
+      "triggerCount": 0,
+      "navPresent": true,
+      "topDictation": 1,
+      "interaction": {
+        "kind": "header-help-panel",
+        "scrollBefore": 428,
+        "scrollAfter": 0,
+        "panelPresent": true,
+        "panelBox": {
+          "x": 928,
+          "w": 384,
+          "h": 560,
+          "top": 205,
+          "bottom": 765,
+          "right": 1312
+        },
+        "noticeBox": {
+          "x": 928,
+          "w": 384,
+          "h": 544,
+          "top": 205,
+          "bottom": 749,
+          "right": 1312
+        },
+        "noticePosition": "absolute",
+        "panelFullyInViewport": true,
+        "panelClippedByAncestor": [
+          {
+            "cls": "dnt-actions__slot dnt-actions__notice",
+            "overflow": "auto/auto",
+            "bottom": 749,
+            "right": 1312
+          },
+          {
+            "cls": "workspace view-patients",
+            "overflow": "hidden/auto",
+            "bottom": 5299,
+            "right": 1600
+          },
+          {
+            "cls": "app-shell dente-redesign",
+            "overflow": "hidden/auto",
+            "bottom": 5299,
+            "right": 1600
+          },
+          {
+            "cls": "antialiased",
+            "overflow": "hidden/auto",
+            "bottom": 5299,
+            "right": 1600
+          }
+        ],
+        "panelCentreOwnedBySelf": true
+      }
+    }
+  ]
+}

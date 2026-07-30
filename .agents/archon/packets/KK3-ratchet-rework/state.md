@@ -1,0 +1,2 @@
+KK3-ratchet-rework: START 2026-07-29T03:44:15Z — rework JJ4 review findings B/C + dead-debt verdict in apps/api/src/tests/webCallsExistingRoutes.test.ts
+KK3-ratchet-rework: DONE 2026-07-29T03:53:42Z — commits 80aa42a3a (сторож класса «путь есть, метод другой») + adf92f08d (вердикт по строкам долга по методу). 8/8 тестов, EXIT=0. Мутация «сведение к пути» даёт EXIT=1 на новом тесте; мутация мёртвой строки долга даёт EXIT=1. Рабочее дерево == HEAD.

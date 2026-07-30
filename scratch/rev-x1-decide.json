@@ -1,0 +1,32 @@
+{
+  "step1": {
+    "controls": 0,
+    "omnibarInput": 0,
+    "hostChildren": [
+      "notice:0",
+      "search:0",
+      "voice:0",
+      "help:0"
+    ],
+    "dictationBtn": 1
+  },
+  "step2": {
+    "omnibarInput": 1,
+    "omnibarInputVisible": true,
+    "bodyHasNavigationHeader": true,
+    "controls": 0
+  },
+  "step3": {
+    "devtoolsHook": true,
+    "roots": null
+  },
+  "step4": {
+    "transcript": 0,
+    "panel": 0,
+    "slotEls": 4,
+    "barEl": 1,
+    "mountEl": 1,
+    "hostOuter": "<div id=\"dnt-workspace-actions\" class=\"dnt-actions\" role=\"group\" aria-label=\"Голос и поиск\" data-placement=\"header\"><div class=\"dnt-actions__slot dnt-actions__notice\" data-dnt-slot=\"notice\"></div><div class=\"dnt-actions__bar\"><div class=\"dnt-actions__slot\" data-dnt-slot=\"search\"></div><div class=\"dnt-actions__slot\" data-dnt-slot=\"voice\"></div><div class=\"dnt-actions__slot\" data-dnt-slot=\"help\"></div></div></div>",
+    "topActionsHtml": "<div class=\"dnt-actions-mount dnt-actions-mount--header\"><div id=\"dnt-workspace-actions\" class=\"dnt-actions\" role=\"group\" aria-label=\"Голос и поиск\" data-placement=\"header\"><div class=\"dnt-actions__slot dnt-actions__notice\" data-dnt-slot=\"notice\"></div><div class=\"dnt-actions__bar\"><div class=\"dnt-actions__slot\" data-dnt-slot=\"search\"></div><div class=\"dnt-actions__slot\" data-dnt-slot=\"voice\"></div><div class=\"dnt-actions__slot\" data-dnt-slot=\"help\"></div></div></div></div><a class=\"icon-button\" href=\"#settings\" title=\"Настройки импорта и экспорта\" aria-label=\"Настройки импорта и экспорта\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-database\" aria-hidden=\"true\"><ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"></ellipse><path d=\"M3 5V19A9 3 0 0"
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "at": "2026-07-28T11:30:20.013Z",
+  "routes": [
+    {
+      "viewport": "1600x1100",
+      "hash": "#shift",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "1600x1100",
+      "hash": "#schedule",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "1600x1100",
+      "hash": "#patients",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "1600x1100",
+      "hash": "#visit",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "1600x1100",
+      "hash": "#finance",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "1600x1100",
+      "hash": "#settings",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "header",
+      "controlCount": 3,
+      "controlsVisible": 3,
+      "triggerCount": 0,
+      "navItems": 5,
+      "navH": null
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#shift",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "nav",
+      "controlCount": 3,
+      "controlsVisible": 0,
+      "triggerCount": 1,
+      "navItems": 5,
+      "navH": 64
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#schedule",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "nav",
+      "controlCount": 3,
+      "controlsVisible": 0,
+      "triggerCount": 1,
+      "navItems": 5,
+      "navH": 64
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#patients",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "nav",
+      "controlCount": 3,
+      "controlsVisible": 0,
+      "triggerCount": 1,
+      "navItems": 5,
+      "navH": 64
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#visit",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "nav",
+      "controlCount": 3,
+      "controlsVisible": 0,
+      "triggerCount": 1,
+      "navItems": 5,
+      "navH": 64
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#finance",
+      "topbarPresent": true,
+      "topActionsPresent": true,
+      "hostCount": 1,
+      "placement": "nav",
+      "controlCount": 3,
+      "controlsVisible": 0,
+      "triggerCount": 1,
+      "navItems": 5,
+      "navH": 64
+    },
+    {
+      "viewport": "390x844",
+      "hash": "#settings",
+      "topbarPresent": false,
+      "topActionsPresent": false,
+      "hostCount": 0,
+      "placement": null,
+      "controlCount": 0,
+      "controlsVisible": 0,
+      "triggerCount": 0,
+      "navItems": 0,
+      "navH": null
+    }
+  ],
+  "noticeVisibility": {
+    "collapsed": {
+      "tag": "sheet-collapsed",
+      "sheetHidden": true,
+      "sheetDisplay": "none",
+      "markerRects": 0,
+      "markerBox": {
+        "w": 0,
+        "h": 0
+      },
+      "markerVisibleToUser": false,
+      "triggerClass": "dnt-actions__trigger",
+      "triggerAria": "false"
+    },
+    "opened": {
+      "tag": "sheet-open",
+      "sheetHidden": false,
+      "sheetDisplay": "flex",
+      "markerRects": 1,
+      "markerBox": {
+        "w": 358,
+        "h": 40
+      },
+      "markerVisibleToUser": true,
+      "triggerClass": "dnt-actions__trigger dnt-actions__trigger--open",
+      "triggerAria": "true"
+    }
+  }
+}

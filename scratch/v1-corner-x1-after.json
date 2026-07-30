@@ -1,0 +1,269 @@
+{
+  "phase": "x1-after",
+  "at": "2026-07-28T10:31:29.657Z",
+  "viewports": [
+    {
+      "requested": {
+        "w": 390,
+        "h": 844
+      },
+      "geometry": {
+        "viewport": {
+          "w": 390,
+          "h": 844
+        },
+        "hash": "#patients",
+        "dockHosts": 0,
+        "reserveVar": "",
+        "navClearanceVar": null,
+        "liftVar": null,
+        "density": null,
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 0,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9803,
+            "top": 0,
+            "bottom": 9803
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 72,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 9801,
+          "clientHeight": 9801,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 9803,
+            "top": 0,
+            "bottom": 9803
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": true,
+          "box": {
+            "x": 0,
+            "y": 768,
+            "w": 390,
+            "h": 76,
+            "top": 768,
+            "bottom": 844
+          }
+        },
+        "dockBar": null,
+        "cornerFixed": [
+          {
+            "tag": "nav",
+            "id": null,
+            "cls": "dnt-bottom-nav",
+            "role": null,
+            "z": "9999",
+            "box": {
+              "x": 0,
+              "y": 768,
+              "w": 390,
+              "h": 76,
+              "top": 768,
+              "bottom": 844
+            }
+          }
+        ]
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 8959,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 0,
+        "hitsPerFrame": 0,
+        "hitMsTotal": 0,
+        "rects": 0,
+        "rectsPerFrame": 0,
+        "rectMsTotal": 0,
+        "frameMeanMs": 16.7,
+        "frameP95Ms": 20.77,
+        "frameMaxMs": 25.94
+      }
+    },
+    {
+      "requested": {
+        "w": 840,
+        "h": 900
+      },
+      "geometry": {
+        "viewport": {
+          "w": 840,
+          "h": 900
+        },
+        "hash": "#patients",
+        "dockHosts": 0,
+        "reserveVar": "",
+        "navClearanceVar": null,
+        "liftVar": null,
+        "density": null,
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 0,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 840,
+            "h": 6425,
+            "top": 0,
+            "bottom": 6425
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 72,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 6423,
+          "clientHeight": 6423,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 840,
+            "h": 6425,
+            "top": 0,
+            "bottom": 6425
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": true,
+          "box": {
+            "x": 0,
+            "y": 836,
+            "w": 840,
+            "h": 64,
+            "top": 836,
+            "bottom": 900
+          }
+        },
+        "dockBar": null,
+        "cornerFixed": [
+          {
+            "tag": "nav",
+            "id": null,
+            "cls": "dnt-bottom-nav",
+            "role": null,
+            "z": "9999",
+            "box": {
+              "x": 0,
+              "y": 836,
+              "w": 840,
+              "h": 64,
+              "top": 836,
+              "bottom": 900
+            }
+          }
+        ]
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 5525,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 0,
+        "hitsPerFrame": 0,
+        "hitMsTotal": 0,
+        "rects": 0,
+        "rectsPerFrame": 0,
+        "rectMsTotal": 0,
+        "frameMeanMs": 26.94,
+        "frameP95Ms": 50.73,
+        "frameMaxMs": 52.5
+      }
+    },
+    {
+      "requested": {
+        "w": 1600,
+        "h": 1100
+      },
+      "geometry": {
+        "viewport": {
+          "w": 1600,
+          "h": 1100
+        },
+        "hash": "#patients",
+        "dockHosts": 0,
+        "reserveVar": "",
+        "navClearanceVar": null,
+        "liftVar": null,
+        "density": null,
+        "shell": {
+          "present": true,
+          "cls": "app-shell dente-redesign",
+          "paddingBottom": 0,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 1600,
+            "h": 5299,
+            "top": 0,
+            "bottom": 5299
+          }
+        },
+        "workspace": {
+          "present": true,
+          "paddingBottom": 48,
+          "overflowY": "auto",
+          "backdropFilter": "blur(12px) saturate(1.8)",
+          "scrollHeight": 5297,
+          "clientHeight": 5297,
+          "box": {
+            "x": 252,
+            "y": 0,
+            "w": 1348,
+            "h": 5299,
+            "top": 0,
+            "bottom": 5299
+          }
+        },
+        "nav": {
+          "present": true,
+          "visible": false,
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0,
+            "top": 0,
+            "bottom": 0
+          }
+        },
+        "dockBar": null,
+        "cornerFixed": []
+      },
+      "scroll": {
+        "scroller": "html.light",
+        "scrollable": 4199,
+        "workspaceScrollable": 0,
+        "frames": 120,
+        "idleHitsIn30Frames": 0,
+        "hits": 0,
+        "hitsPerFrame": 0,
+        "hitMsTotal": 0,
+        "rects": 0,
+        "rectsPerFrame": 0,
+        "rectMsTotal": 0,
+        "frameMeanMs": 55.57,
+        "frameP95Ms": 109.02,
+        "frameMaxMs": 119.91
+      }
+    }
+  ]
+}

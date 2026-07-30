@@ -1,0 +1,143 @@
+СВЕРКА ТИПОВ: db/schema.ts против живой базы
+
+ДЕНЕЖНЫЕ КОЛОНКИ С ДРЕЙФОМ ТИПА: 2
+  doctor_commissions.material_cost_deduction_pct
+      модель: numeric(...)  -> numeric
+      база  : real
+      РИСК  : деньги в плавающей точке.
+  family_groups.balance
+      модель: integer(...)  -> integer
+      база  : numeric
+      РИСК  : драйвер вернёт строку, а TypeScript считает это number —
+              арифметика без Number() склеит строки вместо сложения.
+
+ПРОЧИЕ КОЛОНКИ С ДРЕЙФОМ ТИПА: 42
+  clinical_audit_logs.entity_id
+      модель: uuid(...)  -> uuid
+      база  : text
+  collaborative_chat_processing_states.chat_id
+      модель: uuid(...)  -> uuid
+      база  : text
+  crm_leads.name
+      модель: text(...)  -> text
+      база  : character varying
+  crm_leads.phone
+      модель: text(...)  -> text
+      база  : character varying
+  crm_leads.source
+      модель: text(...)  -> text
+      база  : character varying
+  crm_leads.status
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  crm_leads.created_at
+      модель: timestamp(...)  -> timestamp with time zone
+      база  : timestamp without time zone
+  dente_max_bot_configs.enabled_features_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  dente_max_bot_configs.staff_routing_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  dente_whatsapp_bot_configs.enabled_features_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  dente_whatsapp_bot_configs.staff_routing_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  doctor_commissions.specialty
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  doctor_commissions.service_category
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  doctor_commissions.commission_pct
+      модель: numeric(...)  -> numeric
+      база  : real
+      РИСК  : деньги в плавающей точке.
+  family_groups.name
+      модель: text(...)  -> text
+      база  : character varying
+  family_groups.created_at
+      модель: timestamp(...)  -> timestamp with time zone
+      база  : timestamp without time zone
+  inventory_items.stock_quantity
+      модель: numeric(...)  -> numeric
+      база  : integer
+  inventory_items.critical_threshold
+      модель: numeric(...)  -> numeric
+      база  : integer
+  inventory_transactions.quantity_changed
+      модель: numeric(...)  -> numeric
+      база  : integer
+  lab_orders.status
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  patient_ct_plannings.spline_points_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  patient_ct_plannings.nerve_points_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  patient_ct_plannings.implants_json
+      модель: jsonb(...)  -> jsonb
+      база  : text
+  patient_invoices.status
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  procedure_material_rules.quantity_to_deduct
+      модель: numeric(...)  -> numeric
+      база  : integer
+  sterilization_logs.autoclave_id
+      модель: text(...)  -> text
+      база  : character varying
+  sterilization_logs.barcode
+      модель: text(...)  -> text
+      база  : character varying
+  sterilization_logs.status
+      модель: text(...)  -> text
+      база  : character varying
+  sterilization_logs.timestamp
+      модель: timestamp(...)  -> timestamp with time zone
+      база  : timestamp without time zone
+  tooth_states.state
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  tooth_states.surfaces
+      модель: jsonb(...)  -> jsonb
+      база  : ARRAY
+  treatment_plans.status
+      модель: text(...)  -> text
+      база  : USER-DEFINED
+  visit_diaries.diagnosis_icd10
+      модель: text(...)  -> text
+      база  : character varying
+  visit_diaries.diagnosis_tooth
+      модель: text(...)  -> text
+      база  : character varying
+  visit_diaries.instrument_tray_barcode
+      модель: text(...)  -> text
+      база  : character varying
+  visit_diary_revisions.previous_diagnosis_icd10
+      модель: text(...)  -> text
+      база  : character varying
+  visit_examination_photo_links.visit_id
+      модель: uuid(...)  -> uuid
+      база  : text
+  visit_templates.title
+      модель: text(...)  -> text
+      база  : character varying
+  visit_templates.category
+      модель: text(...)  -> text
+      база  : character varying
+  visit_templates.specialty
+      модель: text(...)  -> text
+      база  : character varying
+  visit_templates.default_icd10
+      модель: text(...)  -> text
+      база  : character varying
+  visit_templates.default_icd10_label
+      модель: text(...)  -> text
+      база  : character varying
+
+ПРОВАЛ: 2 денежных колонок расходятся по типу с базой.

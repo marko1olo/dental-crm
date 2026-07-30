@@ -55,7 +55,7 @@ function objectLiteralKeys(source, declaration) {
 function tabDestructuredNames(source) {
 	const names = new Set();
 	// Блоки `const { ... } = p;` и `= props;`
-	for (const match of source.matchAll(/const\s*\{([\s\S]*?)\}\s*=\s*p\s*;/g)) {
+	for (const match of source.matchAll(/const\s*\{([\s\S]*?)\}\s*=\s*(?:p|props)\s*;/g)) {
 		for (const name of match[1].matchAll(/(?:^|[,\s])([A-Za-z_$][\w$]*)\s*(?=[,:}]|$)/gm)) {
 			names.add(name[1]);
 		}
@@ -90,7 +90,7 @@ console.log(`в settingsProps передаётся имён: ${provided.size}\n`
 
 for (const file of files.sort()) {
 	const source = readFileSync(`${TABS_DIR}/${file}`, "utf8");
-	if (!/=\s*p\s*;/.test(source)) continue;
+	if (!/=\s*(?:p|props)\s*;/.test(source)) continue;
 	const wanted = tabDestructuredNames(source);
 	const missing = [...wanted]
 		.filter((name) => !provided.has(name) && !OPTIONAL.has(name))
