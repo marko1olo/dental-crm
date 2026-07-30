@@ -7,12 +7,9 @@ async function run() {
     await db.waitReady;
     try {
         await db.exec('ALTER TABLE "generated_documents" DROP CONSTRAINT "generated_documents_visit_patient_organization_fk" CASCADE;');
-        console.log('Dropped generated_documents_visit_patient_organization_fk');
-    } catch(e) { console.error(e.message); }
+    } catch(e) { /* ignore expected error if constraint does not exist */ }
     try {
         await db.exec('ALTER TABLE "visits" DROP CONSTRAINT "visits_id_patient_organization_unique" CASCADE;');
-        console.log('Dropped visits_id_patient_organization_unique');
-    } catch(e) { console.error(e.message); }
-    console.log("Done");
+    } catch(e) { /* ignore expected error if constraint does not exist */ }
 }
 run();
