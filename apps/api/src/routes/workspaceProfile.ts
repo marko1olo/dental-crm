@@ -136,18 +136,34 @@ export const DEFAULT_WORKSPACE_FEATURE_FLAGS: WorkspaceFeatureFlags = {
  * Типы проверяются по значению, а не по вере: в jsonb может лежать что угодно,
  * включая результат ручной правки базы.
  */
-export function workspaceFlagsFromStorage(stored: unknown): WorkspaceFeatureFlags {
-  const source = stored && typeof stored === "object" ? (stored as Record<string, unknown>) : {};
-  const result = { ...DEFAULT_WORKSPACE_FEATURE_FLAGS } as Record<string, unknown>;
-  for (const [key, fallback] of Object.entries(DEFAULT_WORKSPACE_FEATURE_FLAGS)) {
+export function workspaceFlagsFromStorage(
+  stored: unknown,
+): WorkspaceFeatureFlags {
+  const source =
+    stored && typeof stored === "object"
+      ? (stored as Record<string, unknown>)
+      : {};
+  const result = { ...DEFAULT_WORKSPACE_FEATURE_FLAGS } as Record<
+    string,
+    unknown
+  >;
+  for (const [key, fallback] of Object.entries(
+    DEFAULT_WORKSPACE_FEATURE_FLAGS,
+  )) {
     const value = source[key];
-    if (typeof fallback === "boolean" && typeof value === "boolean") result[key] = value;
-    else if (typeof fallback === "string" && typeof value === "string" && value) result[key] = value;
+    if (typeof fallback === "boolean" && typeof value === "boolean")
+      result[key] = value;
+    else if (typeof fallback === "string" && typeof value === "string" && value)
+      result[key] = value;
     // Число проверяется отдельно: numberOfDoctors — единственный числовой
     // признак, и без этой ветки он отбрасывался бы наравне с чужими ключами.
     // NaN и Infinity в jsonb попасть могут (ручная правка базы), но признаком
     // числа доктора быть не могут.
-    else if (typeof fallback === "number" && typeof value === "number" && Number.isFinite(value))
+    else if (
+      typeof fallback === "number" &&
+      typeof value === "number" &&
+      Number.isFinite(value)
+    )
       result[key] = value;
   }
   return result as unknown as WorkspaceFeatureFlags;
@@ -449,40 +465,43 @@ async function seedDemoDataForPreset(
         phone: "+79305556677",
       },
     ];
-    for (const p of patientDefs) {
-      const [patient] = await db
-        .insert(schema.patients)
-        .values({
-          organizationId,
-          fullName: p.fullName,
-          birthDate: p.birthDate,
-          phone: p.phone,
-          isSynced: false,
-          version: 1,
-        })
-        .returning({ id: schema.patients.id });
-      if (!patient) continue;
-      // Add a visit with caries treatment plan
-      await db.insert(schema.visits).values({
+    const patientsToInsert = patientDefs.map((p) => ({
+      organizationId,
+      fullName: p.fullName,
+      birthDate: p.birthDate,
+      phone: p.phone,
+      isSynced: false,
+      version: 1,
+    }));
+
+    const patients = await db
+      .insert(schema.patients)
+      .values(patientsToInsert)
+      .returning({ id: schema.patients.id });
+
+    if (patients.length > 0) {
+      const visitsToInsert = patients.map((patient) => ({
         organizationId,
         patientId: patient.id,
-        status: "signed",
+        status: "signed" as const,
         complaint: "Боль в нижней правой челюсти на холодное",
         diagnosis: "Средний кариес 46 зуба",
         treatmentPlan:
           "Анестезия, препарирование, пломба светового отверждения (композит).",
         doctorSummary:
           "Проведено лечение среднего кариеса 46 зуба по протоколу.",
-      });
-      // Add an appointment
-      await db.insert(schema.appointments).values({
+      }));
+      await db.insert(schema.visits).values(visitsToInsert);
+
+      const appointmentsToInsert = patients.map((patient) => ({
         organizationId,
         patientId: patient.id,
-        status: "planned",
+        status: "planned" as const,
         startsAt: new Date(Date.now() + 86400000),
         endsAt: new Date(Date.now() + 86400000 + 3600000),
         reason: "Лечение кариеса 47 зуба",
-      });
+      }));
+      await db.insert(schema.appointments).values(appointmentsToInsert);
     }
   }
 
@@ -499,55 +518,55 @@ async function seedDemoDataForPreset(
         phone: "+79509876543",
       },
     ];
-    for (const p of patientDefs) {
-      const [patient] = await db
-        .insert(schema.patients)
-        .values({
-          organizationId,
-          fullName: p.fullName,
-          birthDate: p.birthDate,
-          phone: p.phone,
-        })
-        .returning({ id: schema.patients.id });
-      if (!patient) continue;
-      // Add a visit with prosthetic plan
-      const [visit] = await db
-        .insert(schema.visits)
-        .values({
-          organizationId,
-          patientId: patient.id,
-          status: "draft",
-          complaint: "Отсутствует зуб, эстетический дефект",
-          diagnosis: "Частичная вторичная адентия 24 зуба",
-          treatmentPlan:
-            "Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
-        })
-        .returning({ id: schema.visits.id });
+    const patientsToInsert = patientDefs.map((p) => ({
+      organizationId,
+      fullName: p.fullName,
+      birthDate: p.birthDate,
+      phone: p.phone,
+    }));
 
-      // Add communication task for lab orders
-      await db.insert(schema.communicationTasks).values({
+    const patients = await db
+      .insert(schema.patients)
+      .values(patientsToInsert)
+      .returning({ id: schema.patients.id });
+
+    if (patients.length > 0) {
+      const visitsToInsert = patients.map((patient) => ({
         organizationId,
         patientId: patient.id,
-        assignedRole: "doctor",
-        channel: "in_person",
-        intent: "general",
-        status: "queued",
-        priority: "normal",
+        status: "draft" as const,
+        complaint: "Отсутствует зуб, эстетический дефект",
+        diagnosis: "Частичная вторичная адентия 24 зуба",
+        treatmentPlan:
+          "Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
+      }));
+      await db.insert(schema.visits).values(visitsToInsert);
+
+      const communicationTasksToInsert = patients.map((patient) => ({
+        organizationId,
+        patientId: patient.id,
+        assignedRole: "doctor" as const,
+        channel: "in_person" as const,
+        intent: "general" as const,
+        status: "queued" as const,
+        priority: "normal" as const,
         dueAt: new Date(Date.now() + 86400000 * 5),
         title: "Изготовление циркониевой коронки",
-        body:
-          "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
-      });
+        body: "Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
+      }));
+      await db
+        .insert(schema.communicationTasks)
+        .values(communicationTasksToInsert);
 
-      // Add an appointment
-      await db.insert(schema.appointments).values({
+      const appointmentsToInsert = patients.map((patient) => ({
         organizationId,
         patientId: patient.id,
-        status: "planned",
+        status: "planned" as const,
         startsAt: new Date(Date.now() + 86400000 * 2),
         endsAt: new Date(Date.now() + 86400000 * 2 + 3600000),
         reason: "Примерка каркаса",
-      });
+      }));
+      await db.insert(schema.appointments).values(appointmentsToInsert);
     }
   }
 }
@@ -788,5 +807,4 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
    * прогоном tests/clinicScheduleSingleWriter.test.ts — иначе следующий писатель
    * повторит пункт 2.
    */
-
 }
