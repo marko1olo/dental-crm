@@ -60,7 +60,6 @@ export function parseSmsRuReceipts(rawData: unknown): ParsedReceipt[] {
 	const receipts: ParsedReceipt[] = [];
 	for (const line of rawData.split(/[\r\n]+/)) {
 		const trimmed = line.trim();
-		if (!trimmed) continue;
 
 		const separator = trimmed.lastIndexOf("=");
 		if (separator <= 0) continue;
