@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import { splitLine } from '../utils/strings.js';
+import { splitLine, isValidRussianSnils } from '../utils/strings.js';
 
 describe('splitLine', () => {
   test('splits simple strings with a delimiter', () => {
@@ -95,6 +95,56 @@ describe('splitLine', () => {
   test('handles quotes adjacent to characters without delimiters', () => {
     assert.deepStrictEqual(splitLine('a,"b""c",d', ','), ['a', 'bc', 'd']);
   });
+});
 
+describe('isValidRussianSnils', () => {
+  test('returns true for empty, null, or undefined values', () => {
+    assert.strictEqual(isValidRussianSnils(null), true);
+    assert.strictEqual(isValidRussianSnils(undefined), true);
+    assert.strictEqual(isValidRussianSnils(''), true);
+  });
 
+  test('validates correct SNILS with sum < 100', () => {
+    assert.strictEqual(isValidRussianSnils('112-233-445 95'), true);
+    assert.strictEqual(isValidRussianSnils('11223344595'), true);
+    assert.strictEqual(isValidRussianSnils(' 112 233 445 95 '), true);
+  });
+
+  test('validates correct SNILS with sum = 100', () => {
+    assert.strictEqual(isValidRussianSnils('322-222-223 00'), true);
+  });
+
+  test('validates correct SNILS with sum = 101', () => {
+    assert.strictEqual(isValidRussianSnils('322-222-224 00'), true);
+  });
+
+  test('validates correct SNILS with sum > 101 and specific remainder', () => {
+    // sum = 103, remainder 2 -> control 02
+    assert.strictEqual(isValidRussianSnils('322-222-226 02'), true);
+  });
+
+  test('validates correct SNILS with sum > 101 and remainder 100', () => {
+    // sum = 201, remainder 100 -> control 00
+    assert.strictEqual(isValidRussianSnils('644-444-455 00'), true);
+  });
+
+  test('returns true for SNILS with number part <= 1001001 regardless of checksum', () => {
+    assert.strictEqual(isValidRussianSnils('001-001-001 99'), true);
+    assert.strictEqual(isValidRussianSnils('000-000-001 00'), true);
+  });
+
+  test('returns false for SNILS with incorrect length', () => {
+    assert.strictEqual(isValidRussianSnils('112-233-445'), false); // 9 digits
+    assert.strictEqual(isValidRussianSnils('112-233-445 955'), false); // 12 digits
+  });
+
+  test('returns false for SNILS with identical repeating digits', () => {
+    assert.strictEqual(isValidRussianSnils('111-111-111 11'), false);
+    assert.strictEqual(isValidRussianSnils('000-000-000 00'), false);
+  });
+
+  test('returns false for SNILS with incorrect control digits', () => {
+    assert.strictEqual(isValidRussianSnils('112-233-445 96'), false); // Should be 95
+    assert.strictEqual(isValidRussianSnils('322-222-223 01'), false); // Should be 00
+  });
 });
