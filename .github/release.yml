@@ -1,0 +1,20 @@
+changelog:
+  exclude:
+    labels:
+      - ignore
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: 🚀 Features & Enhancements
+      labels:
+        - enhancement
+        - feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: 🧰 Maintenance & CI
+      labels:
+        - documentation
+        - maintenance
+        - ci
