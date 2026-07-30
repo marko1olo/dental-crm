@@ -1,0 +1,15 @@
+{
+  "name": "marko1olo/dental-crm",
+  "short_name": "dental-crm",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#00ffcc"
+}
