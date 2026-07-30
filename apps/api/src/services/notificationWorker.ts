@@ -48,16 +48,18 @@ export async function processNotificationQueue() {
 		const uniqueOrganizationIds = Array.from(new Set(pending.map((n) => n.organizationId)));
 		const uniquePatientIds = Array.from(new Set(pending.map((n) => n.patientId)));
 
-		// Pre-fetch configs and chat links for pending notifications
-		const botConfigs = await db.query.denteTelegramBotConfigs.findMany({
-			where: inArray(denteTelegramBotConfigs.organizationId, uniqueOrganizationIds),
-		});
-		const chatLinks = await db.query.denteTelegramChatLinks.findMany({
-			where: and(
-				inArray(denteTelegramChatLinks.subjectId, uniquePatientIds),
-				eq(denteTelegramChatLinks.status, "active")
-			),
-		});
+		// Pre-fetch configs and chat links for pending notifications concurrently
+		const [botConfigs, chatLinks] = await Promise.all([
+			db.query.denteTelegramBotConfigs.findMany({
+				where: inArray(denteTelegramBotConfigs.organizationId, uniqueOrganizationIds),
+			}),
+			db.query.denteTelegramChatLinks.findMany({
+				where: and(
+					inArray(denteTelegramChatLinks.subjectId, uniquePatientIds),
+					eq(denteTelegramChatLinks.status, "active")
+				),
+			}),
+		]);
 
 		const botConfigsMap = new Map(botConfigs.map((c) => [c.organizationId, c]));
 		const chatLinksMap = new Map(chatLinks.map((l) => [l.subjectId, l]));
