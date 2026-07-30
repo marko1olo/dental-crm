@@ -488,7 +488,6 @@ const DIARY_SIGNING_ROLE_MESSAGE =
 	"Дневник приёма подписывает только врач или администратор клиники: у вашей смены такого права нет, и повторный вход его не добавит. Позовите врача, который вёл приём, — подписать может он.";
 
 export default async function registerDiaryRoutes(app: FastifyInstance) {
-	// GET /api/diaries/visit/:visitId — fetch diary for a visit
 	app.get("/api/diaries/visit/:visitId", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary"))) return;
 		const { visitId } = req.params as { visitId: string };
@@ -511,7 +510,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		return reply.send({ diary: diary ?? null });
 	});
 
-	// GET /api/diaries/:id/revisions — audit trail for a diary
 	app.get("/api/diaries/:id/revisions", async (req, reply) => {
 		if (!(await requireClinicalReadAccess(req, reply, "read diary revisions")))
 			return;
@@ -545,7 +543,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		return reply.send({ revisions });
 	});
 
-	// POST /api/diaries — upsert (create or update) diary draft
 	app.post("/api/diaries", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "write diary")))
 			return;
@@ -734,7 +731,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// POST /api/diaries/:id/lock — forensic lock with SHA-256 seal + revision record
 	app.post("/api/diaries/:id/lock", async (req, reply) => {
 		if (!(await requireClinicalMutationAccess(req, reply, "lock diary")))
 			return;
@@ -836,7 +832,6 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// POST /api/diaries/:id/revise — post-lock forced revision (audit court trail)
 	app.post("/api/diaries/:id/revise", async (req, reply) => {
 		if (
 			!(await requireClinicalMutationAccess(req, reply, "revise locked diary"))
