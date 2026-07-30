@@ -76,6 +76,29 @@ test("время считается в часовом поясе клиники,
 	assert.equal(minuteOfDayInTimeZone(moment, "UTC"), 20 * 60 + 30);
 });
 
+test("корректно обрабатываются дробные смещения часовых поясов", () => {
+	const moment = new Date("2026-07-27T12:00:00Z"); // 12:00 UTC
+	// Индия: UTC+5:30 -> 17:30
+	assert.equal(minuteOfDayInTimeZone(moment, "Asia/Kolkata"), 17 * 60 + 30);
+	// Непал: UTC+5:45 -> 17:45
+	assert.equal(minuteOfDayInTimeZone(moment, "Asia/Kathmandu"), 17 * 60 + 45);
+});
+
+test("корректно обрабатываются переходы на летнее/зимнее время", () => {
+	// Нью-Йорк зимой (EST = UTC-5)
+	const winter = new Date("2026-01-15T17:00:00Z"); // 17:00 UTC -> 12:00 EST
+	assert.equal(minuteOfDayInTimeZone(winter, "America/New_York"), 12 * 60);
+
+	// Нью-Йорк летом (EDT = UTC-4)
+	const summer = new Date("2026-07-15T17:00:00Z"); // 17:00 UTC -> 13:00 EDT
+	assert.equal(minuteOfDayInTimeZone(summer, "America/New_York"), 13 * 60);
+});
+
+test("корректно обрабатывается полночь", () => {
+	const midnight = new Date("2026-07-27T00:00:00Z");
+	assert.equal(minuteOfDayInTimeZone(midnight, "UTC"), 0); // 00:00 = 0 минут
+});
+
 test("неизвестный часовой пояс не роняет рассылку", () => {
 	const moment = new Date("2026-07-27T20:30:00Z");
 	assert.equal(minuteOfDayInTimeZone(moment, "Марс/Олимп"), 20 * 60 + 30);
