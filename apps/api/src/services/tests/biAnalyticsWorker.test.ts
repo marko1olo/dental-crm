@@ -4,6 +4,7 @@ import {
 	doctorProfitabilityRow,
 	startBiAnalyticsWorker,
 } from "../biAnalyticsWorker.js";
+import { db } from "../../db/client.js";
 
 /**
  * ПЯТЬ ПРЕЖНИХ ПРОВЕРОК ОХРАНЯЛИ ВЫДУМАННЫЕ ЧИСЛА, А НЕ РАСЧЁТ.
@@ -92,31 +93,41 @@ describe("doctorProfitabilityRow", () => {
 	});
 });
 
-test("startBiAnalyticsWorker scheduling", (t) => {
+test("startBiAnalyticsWorker scheduling and execution", async (t) => {
 	t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
 	const setTimeoutMock = t.mock.method(global, "setTimeout");
 	const setIntervalMock = t.mock.method(global, "setInterval");
 
+	let dbSelectCalled = 0;
+	t.mock.method(db, "select", () => {
+		dbSelectCalled++;
+		return {
+			from: () => Promise.resolve([])
+		};
+	});
+
 	startBiAnalyticsWorker();
 
 	assert.strictEqual(setTimeoutMock.mock.calls.length, 1);
-	const timeoutCall = setTimeoutMock.mock.calls[0];
-	assert.ok(timeoutCall);
-	assert.strictEqual(timeoutCall.arguments[1], 5000);
+	assert.strictEqual(setTimeoutMock.mock.calls[0].arguments[1], 5000);
 
 	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
-	const intervalCall = setIntervalMock.mock.calls[0];
-	assert.ok(intervalCall);
 	assert.strictEqual(
-		intervalCall.arguments[1],
+		setIntervalMock.mock.calls[0].arguments[1],
 		1000 * 60 * 60,
 	);
 
-	const timeoutFn = timeoutCall.arguments[0] as Function;
-	const intervalFn = intervalCall.arguments[0] as Function;
+	assert.strictEqual(dbSelectCalled, 0, "Не должно быть вызовов до срабатывания таймера");
 
-	assert.strictEqual(typeof timeoutFn, 'function');
-	assert.strictEqual(typeof intervalFn, 'function');
+	t.mock.timers.tick(5000);
+	await Promise.resolve(); // даём микротаскам (async функциям) выполниться
+
+	assert.strictEqual(dbSelectCalled, 1, "Должен произойти один вызов через 5 секунд (setTimeout)");
+
+	t.mock.timers.tick(1000 * 60 * 60);
+	await Promise.resolve();
+
+	assert.strictEqual(dbSelectCalled, 2, "Должен произойти второй вызов через час (setInterval)");
 
 	t.mock.timers.reset();
 });
